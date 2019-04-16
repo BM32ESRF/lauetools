@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Dictionary of several parameters concerning Materials, Transforms etc
+Dictionary of several parameters concerning Detectors, Materials, Transforms etc
 that are used in LaueTools and in LaueToolsGUI module
 
 Lauetools project
-June 2014
+April 2019
 
 """
 

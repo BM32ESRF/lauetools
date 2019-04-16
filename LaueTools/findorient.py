@@ -26,7 +26,7 @@ from scipy.linalg.basic import lstsq
 from numpy import linalg as LA
 
 import CrystalParameters as CP
-import find2thetachi as F2TC
+import LaueGeometry as LTGeo
 import generaltools as GT
 
 from dict_LaueTools import dict_Materials

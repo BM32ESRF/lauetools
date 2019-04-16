@@ -2469,15 +2469,16 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.):
 
 if __name__ == "__main__":
     
-    import readwriteASCII as RWASCII
+    import IOLaueTools as IOLT
+
     import multiprocessing
     
     dirname = '/home/micha/LaueTools/MapSn/datfiles'
     file1 = 'SnsurfscanBig_0296.dat'
     file2 = 'SnsurfscanBig_0298.dat'
     
-    data1 = RWASCII.read_Peaklist(file1, dirname)
-    data2 = RWASCII.read_Peaklist(file2, dirname)
+    data1 = IOLT.read_Peaklist(file1, dirname)
+    data2 = IOLT.read_Peaklist(file2, dirname)
     
     nbspots1 = len(data1)
     nbspots2 = len(data2)
@@ -2515,10 +2516,10 @@ if __name__ == "__main__":
         
         """
         if data1 is None:
-            data1 = RWASCII.read_Peaklist(file1, dirname)
+            data1 = IOLT.read_Peaklist(file1, dirname)
         
         try:
-            data2 = RWASCII.read_Peaklist(file2, dirname)
+            data2 = IOLT.read_Peaklist(file2, dirname)
         except IOError:
             print("file %s does not exist"%file2)
             return 0
@@ -2613,7 +2614,7 @@ if __name__ == "__main__":
         dirname = Parameters_dict['dirname']
         
         file1 = prefixfilename+'%04d'%(imageindexref)+'.dat'
-        data1 = RWASCII.read_Peaklist(file1, dirname)
+        data1 = IOLT.read_Peaklist(file1, dirname)
         Parameters_dict['dataref']=data1
   
         
@@ -2695,11 +2696,11 @@ if __name__ == "__main__":
     res = getCommonSpots(filetoindex,fileauxiliary,toldistance, dirname=Parameters_dict['dirname'],
                    data1=None,fulloutput=True)
     
-    dataraw=RWASCII.read_Peaklist(filetoindex, Parameters_dict['dirname'])
+    dataraw=IOLT.read_Peaklist(filetoindex, Parameters_dict['dirname'])
     
     seletedspots = np.take(dataraw,res[0],axis=0)
     
-    RWASCII.writefile_Peaklist('selectedqpots.dat', seletedspots, dirname=Parameters_dict['dirname'])
+    IOLT.writefile_Peaklist('selectedqpots.dat', seletedspots, dirname=Parameters_dict['dirname'])
     
     
     
@@ -2763,12 +2764,12 @@ if __name__ == "__main__":
     
     expfile= 'VO2W_0024_LT_1.dat'
     
-    import readwriteASCII as RWASCII 
-    datapeak= RWASCII.read_Peaklist(blacklistedpeaklist_file, folder)
+    import readwriteASCII as IOLT 
+    datapeak= IOLT.read_Peaklist(blacklistedpeaklist_file, folder)
     pts_black = datapeak[:,:2]
     print("nb black listed points", len(pts_black))
     
-    datapeak2= RWASCII.read_Peaklist(expfile, folder)
+    datapeak2= IOLT.read_Peaklist(expfile, folder)
     pts = datapeak2[:,:2]
     print("nb exp points", len(pts))
     

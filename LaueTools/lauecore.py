@@ -28,10 +28,10 @@ from matplotlib.transforms import offset_copy as offset
 # LaueTools modules
 import CrystalParameters as CP
 import generaltools as GT
-import readwriteASCII as RWASCII
+import IOLaueTools as IOLT
 from dict_LaueTools import dict_Rot, dict_Materials, dict_Vect, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA
-# TODO: F2TC to be removed
-import find2thetachi as F2TC
+# TODO: LTGeo to be removed
+import LaueGeometry as LTGeo
 
 try:
     import generatehkl
@@ -1346,7 +1346,7 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
             _oncamsansh[i] = [_invdict[cle] for cle in list(_invdict.keys())]
 
         if fileOK:
-            RWASCII.Writefile_data_log(_oncamsansh[i], i, linestowrite=linestowrite)
+            IOLT.Writefile_data_log(_oncamsansh[i], i, linestowrite=linestowrite)
 
     return _oncamsansh
 
@@ -1537,7 +1537,7 @@ def filterLaueSpots(vec_and_indices,
             ListSpots_Oncam_wo_harmonics[grainindex] = listspot
 
             if fileOK:
-                RWASCII.Writefile_data_log(ListSpots_Oncam_wo_harmonics[grainindex],
+                IOLT.Writefile_data_log(ListSpots_Oncam_wo_harmonics[grainindex],
                                            grainindex,
                                            linestowrite=linestowrite)
 
@@ -1710,7 +1710,7 @@ def filterLaueSpots_full_np(veccoord, indicemiller,
             listspot = np.delete(np.array(listspot), toremove).tolist()
 
         if fileOK:
-            RWASCII.Writefile_data_log(TwthetaChiEnergyMillers_list_one_grain,
+            IOLT.Writefile_data_log(TwthetaChiEnergyMillers_list_one_grain,
                                        grainindex,
                                        linestowrite=linestowrite)
 
@@ -1929,9 +1929,9 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     # norms of Q vectors
     Qn = 1. * np.sqrt(Qsquare)
 
-    twthe, chi = F2TC.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
+    twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
 
-    X, Y, theta = F2TC.calc_xycam_from2thetachi(twthe,
+    X, Y, theta = LTGeo.calc_xycam_from2thetachi(twthe,
                                             chi, detectorparam,
                                             verbose=0,
                                             pixelsize=pixelsize,
@@ -2424,10 +2424,10 @@ def SimulateLaue(grain, emin, emax, detectorparameters,
     Miller_ind = np.array([list(spot.Millers) for spot in ListofSpots])
     Energy = np.array([spot.EwaldRadius * CST_ENERGYKEV for spot in ListofSpots])
 
-    posx, posy = F2TC.calc_xycam_from2thetachi(Twicetheta, Chi,
+    posx, posy = LTGeo.calc_xycam_from2thetachi(Twicetheta, Chi,
                                             detectorparameters,
                                             verbose=0,
-                                            signgam=F2TC.SIGN_OF_GAMMA,
+                                            signgam=LTGeo.SIGN_OF_GAMMA,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             kf_direction=kf_direction)[:2]
@@ -2502,10 +2502,10 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters,
 #     print 'len(Energy)', len(Energy)
 #     print 'len(Miller_ind)', len(Miller_ind)
 
-    posx, posy = F2TC.calc_xycam_from2thetachi(Twicetheta, Chi,
+    posx, posy = LTGeo.calc_xycam_from2thetachi(Twicetheta, Chi,
                                             detectorparameters,
                                             verbose=0,
-                                            signgam=F2TC.SIGN_OF_GAMMA,
+                                            signgam=LTGeo.SIGN_OF_GAMMA,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             kf_direction=kf_direction)[:2]
@@ -2626,7 +2626,7 @@ def simulatepattern(grain,
     if data_filename != None:
         # loadind experimental data:
         try:
-            res = RWASCII.readfile_cor(data_filename)
+            res = IOLT.readfile_cor(data_filename)
 
         except IOError:
             print("You must enter the name of experimental datafile (similar to e.g 'Ge_test.cor')")
@@ -2657,7 +2657,7 @@ def simulatepattern(grain,
                             linestowrite=linestowrite)
 
 #     # logbook file edition
-#     RWASCII.writefile_log(output_logfile_name=pre_filename + '.log',
+#     IOLT.writefile_log(output_logfile_name=pre_filename + '.log',
 #                  linestowrite=linestowrite)
 
 #     return CreateData_(oncam_sansh, outputname='laue6table', pickledOK=0), \
@@ -2845,7 +2845,7 @@ def test_simulation():
 
     # loadind experimental data:
     data_filename = 'Ge_test.cor'
-    data_2theta, data_chi, data_x, data_y, data_I = RWASCII.readfile_cor(data_filename)
+    data_2theta, data_chi, data_x, data_y, data_I = IOLT.readfile_cor(data_filename)
 
     # ----------  Time consumption information
     finishing_time = time.time()
@@ -2863,7 +2863,7 @@ def test_simulation():
                             linestowrite=linestowrite)
 
     # logbook file edition
-    RWASCII.writefile_log(output_logfile_name=pre_filename + '.log',
+    IOLT.writefile_log(output_logfile_name=pre_filename + '.log',
                  linestowrite=linestowrite)
 
     return CreateData_(oncam_sansh, outputname='tototable', pickledOK=0), \
@@ -3289,7 +3289,7 @@ if __name__ == "__main__":
         calib = [100., 1024., 1024., 90, 0.]
 
         SIGN_OF_GAMMA = 1
-        xyd_fromfind2 = F2TC.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
                              verbose=0,
                              pixelsize=165. / 2048,
                              dim=(2048, 2048),
@@ -3355,7 +3355,7 @@ if __name__ == "__main__":
         pixelsize = 0.048
 
         SIGN_OF_GAMMA = 1
-        xyd_fromfind2 = F2TC.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
                              verbose=0,
                              pixelsize=pixelsize,
                              dim=(2048, 2048),
@@ -3424,7 +3424,7 @@ if __name__ == "__main__":
         calib = [105., 1024., 1024., 0., 0.]
 
         SIGN_OF_GAMMA = 1
-        xyd_fromfind2 = F2TC.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(ard[:, 0], ard[:, 1], calib,
                              verbose=0,
                              pixelsize=0.048,
                              dim=(2048, 2048),
@@ -3435,7 +3435,7 @@ if __name__ == "__main__":
 
         intensity = np.ones_like(X)
 
-        RWASCII.writefile_Peaklist("ID15transSi111", np.array([X, Y, intensity,
+        IOLT.writefile_Peaklist("ID15transSi111", np.array([X, Y, intensity,
                                                                    intensity,
                                                                    intensity,
                                                                    intensity,
