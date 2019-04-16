@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Modules that creates and uses lookuptable of distance between pairs of 
 planes to propose a approximate orientation matrix
@@ -1948,7 +1950,7 @@ if __name__ == "__main__":
 #                             hkl1, hkl2, Gstar,
 #                             onlyclosest=1, filterharmonics=1, verbose=1)
 
-    if 0:  # some tests to play with angles LUT
+    if 1:  # some tests to play with angles LUT
 
         # these parameters cannot be randomly chosen (they are related each other)
         # But by setting one angle to 90. you may play a lot with the other lattice parameters
@@ -1957,6 +1959,8 @@ if __name__ == "__main__":
 
         # compute metric tensor
         Gstar = CP.Gstar_from_directlatticeparams(a, b, c, alpha, beta, gamma)
+        
+        print('Gstar',Gstar)
 
         # HKL_list = np.array([[0,0,1],[1,0,4],[-1,1,4],[1,2,0]])
         # for hkl1 in HKL_list[:-1]:
@@ -1966,10 +1970,14 @@ if __name__ == "__main__":
 
 
         # some hkl lists
-        hkl1 = GT.Positiveindices_up_to(1)
-        hkl2 = GT.Positiveindices_up_to(1)[4:5]
+        hkl1 = GT.Positiveindices_up_to(3)
+        hkl2 = GT.Positiveindices_up_to(2)
+        
+        print('hkl2',hkl2)
         # build LUT
         LUT = GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar)
+        
+        print('LUT',LUT)
 
 
         # test_hkl = np.array([[5,-5,3],[203,77,91],[-4,2,1],[6,3,3],[8,4,2],[1,1,1],[2,2,2],[0,2,8]])
@@ -1977,8 +1985,8 @@ if __name__ == "__main__":
 
         # res = GT.reduceHKL(test_hkl)
 
-        pp, LUT = PlanePairs_from2sets(60, 1,
-                                    hkl1, hkl2, Gstar,
+        pp, LUT = PlanePairs_from2sets(12.58, 1.,
+                                    hkl1, hkl2, 'Cu',
                                     onlyclosest=1, filterharmonics=1, verbose=1)
 
 

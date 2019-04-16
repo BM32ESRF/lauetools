@@ -275,9 +275,9 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
         print(OCrot)
 
         print("1 / lambdamin in corresponding R(a*),R(b*),R(c*) units")
-        print([1 / lambdamin / normastar,
-               1 / lambdamin / normbstar,
-               1 / lambdamin / normcstar])
+        print([1. / lambdamin / normastar,
+               1. / lambdamin / normbstar,
+               1. / lambdamin / normcstar])
 
     # for non alpha = beta = gamma = 90 deg case
     # Calculate the crossproduct of rotated vector to correct properly the range on each rotated vector
@@ -298,14 +298,6 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
 
     if verbose:
         print("cosangle", [cosanglea, cosangleb, cosanglec])
-
-    # hmin = GT.properinteger(OCrot[0]-1 / lambdamin / normastar)
-    # kmin = GT.properinteger(OCrot[1]-1 / lambdamin / normbstar)
-    # lmin = GT.properinteger(OCrot[2]-1 / lambdamin / normcstar)
-
-    # hmax = GT.properinteger( OCrot[0] + 1 / lambdamin / normastar  )
-    # kmax = GT.properinteger( OCrot[1] + 1 / lambdamin / normbstar  )
-    # lmax = GT.properinteger( OCrot[2] + 1 / lambdamin / normcstar  )
 
     hmin = GT.properinteger(OCrot[0] - 1. / lambdamin / normastar / cosanglea)
     kmin = GT.properinteger(OCrot[1] - 1. / lambdamin / normbstar / cosangleb)

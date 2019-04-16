@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Module of lauetools project to compute Laue spots position on CCD camera.
 It handles detection and source geometry. 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 module of lauetools project
 
@@ -335,7 +336,7 @@ def reflect_on_u(v, u):
     nUU = 1. * np.sqrt(np.sum(UU ** 2))
     unit_axis = np.array(UU) / nUU  # u plane's normal
 
-    mat = np.eye(3) - 2 * np.outer(unit_axis, unit_axis)
+    mat = np.eye(3) - 2. * np.outer(unit_axis, unit_axis)
 
     wholelistvecfiltered = np.dot(mat, v.T).T
 
@@ -650,7 +651,7 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
 
     print("select points index in TestPoints", selected_testpoints_indices)
 
-    selected_testpoints_indices = prepend_in_list(list(range(len(TestPoints))),
+    selected_testpoints_indices = prepend_in_list(list(list(range(len(TestPoints)))),
                                                  selected_testpoints_indices)
 
     print("select points index in TestPoints", selected_testpoints_indices)
@@ -731,7 +732,7 @@ def find_closest(input_array, target_array, tol):
     curr_tol = [tol] * len(target_array)
 
     est_tol = 0.0
-    for i in range(len(target_array)):
+    for i in list(range(len(target_array))):
         best_off = 0  # used to adjust closest_indices[i] for best approximating element in input_array
 
         if closest_indices[i] >= input_array_len:
@@ -794,8 +795,8 @@ def pairs_of_indices(n):
     Useful to get elements coming from expression derived from two non identical elements of a set
     """
     pairs = []
-    for i in range(n):
-        for j in range(i + 1, n):
+    for i in list(range(n)):
+        for j in list(range(i + 1, n)):
             pairs.append([i, j])
     return np.array(pairs)
 
@@ -1040,7 +1041,7 @@ def removeClosePoints_two_sets(XY1, XY2,
     if verbose:
         print("nb of spots to remove", len(toremove))
 
-    tokeep = list(set(range(nb_pts1)) - set(toremove))
+    tokeep = list(set(list(range(nb_pts1))) - set(toremove))
 
     return X[tokeep], Y[tokeep], tokeep
 
@@ -1111,7 +1112,7 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
         if len(val) > 1:
             toremove += val[1:]
 
-    tokeep = list(set(range(len(Twicetheta))) - set(toremove))
+    tokeep = list(set(list(range(len(Twicetheta)))) - set(toremove))
 
     return Twicetheta[tokeep], Chi[tokeep], tokeep
 
@@ -1140,7 +1141,7 @@ def removeClosePoints(X, Y, dist_tolerance=0.5):
         if len(val) > 1:
             toremove += val[1:]
 
-    tokeep = list(set(range(len(X))) - set(toremove))
+    tokeep = list(set(list(range(len(X)))) - set(toremove))
 
     return X[tokeep], Y[tokeep], tokeep
 
@@ -1248,7 +1249,7 @@ def threeindices_up_to(n, remove_negative_l=False):
 
             nbelem = len(majorindices)
 
-            majorindices_000removed = np.delete(majorindices, nbelem / 2, axis=0)
+            majorindices_000removed = np.delete(majorindices, nbelem // 2, axis=0)
 
             if remove_negative_l:
                 majorindices_000removed = majorindices_000removed[n * nbpos ** 2:]
@@ -1367,9 +1368,9 @@ def threeindicesfamily(n):
     remove harmonics
     """
     listhkl = []
-    for hh in range(n + 1):
-        for kk in range(n + 1):
-            for ll in range(n + 1):
+    for hh in list(range(n + 1)):
+        for kk in list(range(n + 1)):
+            for ll in list(range(n + 1)):
                 if hh >= kk and kk >= ll:
                     listhkl.append([hh, kk, ll])
     return listhkl[1:]
@@ -1404,8 +1405,8 @@ def find_parallel_hkl(HKLs):
     HKLs = np.array(HKLs)
     nb_elem = len(HKLs)
     res = np.zeros((nb_elem, nb_elem, 3))
-    for k in range(nb_elem):
-        for j in range(nb_elem):
+    for k in list(range(nb_elem)):
+        for j in list(range(nb_elem)):
             res[k, j] = np.cross(HKLs[k], HKLs[j])
 
     return res
@@ -1517,8 +1518,8 @@ def indices_in_flatTriuMatrix(n):
     ex: [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]] -> [1,2,3,6,7,11]
     """
 #    toc = []
-#    for i in range(n - 1):
-#        for j in range(i + 1, n):
+#    for i in list(range(n - 1):
+#        for j in list(range(i + 1, n):
 #            toc.append(n * i + j)
 #    return np.array(toc)
 
@@ -1535,7 +1536,7 @@ def indices_in_TriuMatrix(ar_indices, n):
     ( from [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]])
 
     """
-    i = ar_indices / n
+    i = ar_indices // n
     j = ar_indices % n
     return np.array([i, j]).T
 
@@ -1549,7 +1550,7 @@ def convert2indices(ar_indices, array_shape):
     """
     slow_dim_i = array_shape[1]
     ar_indices = np.array(ar_indices)
-    i = ar_indices / slow_dim_i
+    i = ar_indices // slow_dim_i
     j = ar_indices % slow_dim_i
     return np.array([i, j]).T
 
@@ -1582,8 +1583,8 @@ def ShortestLine(P1, P2, P3, P4):
     # TODO: error? why A2 is unused ?
     A2 = np.dot(A, A)
 
-    ma = (dCB * dAC - dAB * C2) / (B2 * C2 - dCB ** 2)
-    mb = (dAB + ma * B2) / (dCB)
+    ma = 1.*(dCB * dAC - dAB * C2) / (B2 * C2 - dCB ** 2)
+    mb = 1.*(dAB + ma * B2) / (dCB)
 
     return P1 + ma * B, P3 + mb * C
 
@@ -1607,12 +1608,12 @@ def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
 
     if nb_of_cpu > nb_files:
         nb_of_cpu = nb_files
-    step = nb_files / nb_of_cpu
+    step = nb_files // nb_of_cpu # integer division
 
     fileindexdivision = []
     st_ind = index_start
     fi_ind = index_start + step - 1
-    for k in range(nb_of_cpu):
+    for k in list(range(nb_of_cpu)):
         fileindexdivision.append([st_ind, fi_ind])
         st_ind += step
         fi_ind += step
@@ -1659,7 +1660,7 @@ def getRotationAngleFrom2Matrices(A, B):
     tr(R)=1+2cos(theta)
     with R = BA-1
     """
-    return np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1)) * 180 / np.pi
+    return np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1)) * 180. / np.pi
 
 def randomRotationMatrix():
     """
@@ -1892,9 +1893,9 @@ def matstarlab_to_matstarlabOND(matstarlab):
     bstar1 = matstarlab[3:6]
 #    cstar1 = matstarlab[6:]
 
-    astar0 = astar1 / norme(astar1)
+    astar0 = 1.*astar1 / norme(astar1)
     cstar0 = np.cross(astar0, bstar1)
-    cstar0 = cstar0 / norme(cstar0)
+    cstar0 = 1.*cstar0 / norme(cstar0)
     bstar0 = np.cross(cstar0, astar0)
 
     matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
@@ -1999,7 +2000,7 @@ def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame='sample', vec1 = [
 #     
 #     nbmatrices= len(UBmatrix_array)
     
-    UBB0s=np.dot(UBmatrix_array,B0)
+    UBB0s=1.*np.dot(UBmatrix_array,B0)
     
     qvec1s = np.dot(UBB0s,vecs[0])
     qvec2s = np.dot(UBB0s,vecs[1])
@@ -2084,7 +2085,7 @@ def fromQuat_to_MatrixRot(inputquat):
 
 
 def fromMatrix_toQuat(matrix):
-    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2
+    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
     qy = (matrix[0][2] - matrix[2][0]) / (4 * qw)
     qz = (matrix[1][0] - matrix[0][1]) / (4 * qw)
@@ -2094,12 +2095,12 @@ def fromMatrix_toQuat(matrix):
 def fromMatrix_toQuat_test(matrix):
     tracemat = matrix[0][0] + matrix[1][1] + matrix[2][2]
     if tracemat > 0.000001:
-        SS = np.sqrt(tracemat) * 2
+        SS = np.sqrt(tracemat) * 2.
         XX = (matrix[1][2] - matrix[2][1]) / SS
         YY = (matrix[2][0] - matrix[0][2]) / SS
         ZZ = (matrix[0][1] - matrix[1][0]) / SS
         WW = SS / 4.
-    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2
+    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.
     # TODO: ???
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
     qy = (matrix[0][2] - matrix[2][0]) / (4 * qw)
@@ -2119,7 +2120,7 @@ def fromQuat_to_vecangle(quat):
                             quat[2] ** 2 + \
                             quat[3] ** 2)
     # print "nor",normvectpart
-    angle = np.arccos(quat[3] / normvectpart) * 2  # in radians
+    angle = np.arccos(quat[3] / normvectpart) * 2.  # in radians
     unitvec = np.array(quat[:3]) / np.sin(angle / 2) / normvectpart
     return unitvec, angle
 
@@ -2334,7 +2335,7 @@ def read_elems_from_string(strlist, map_function=int, highest_index=0):
                     ff = min(highest_index, ff)
                 if ff == map_function(ss):
                     ff += 1
-            return list(range(map_function(ss), map_function(ff)))
+            return list(list(range(map_function(ss)), map_function(ff)))
 
     lcore = strlist[1:-1]
     if ',' not in lcore and len(lcore) == 1:
@@ -2416,7 +2417,7 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.):
         print("listindice dans removeduplicate2", listindice)
         print("longueur listindice", len(listindice))
 #    mylist = list(listindice)
-    for i in range(len(listindice)):  # scan over index of the experimental points
+    for i in list(range(len(listindice))):  # scan over index of the experimental points
         if verbose:
             print("---------------------------------------")
             print("experimental point index i= ", i)
@@ -2433,7 +2434,7 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.):
             mycopy = copy.copy(listindice)
             localcopy = list(mycopy)
             listvoisin_i = []
-            for k in range(nbrevoisinsupp + 1):
+            for k in list(range(nbrevoisinsupp + 1)):
                 element = localcopy.index(listindice[i])
                 if verbose:
                     print(" a le point voisin exp. d'indice", element)
@@ -2483,7 +2484,7 @@ if __name__ == "__main__":
     nbspots1 = len(data1)
     nbspots2 = len(data2)
     
-    print('nb peaks in data1',nbspots1)
+    print("nb peaks in data1",nbspots1)
     print('nb peaks in data2',nbspots2)
     
     XY1=data1[:,:2]
@@ -2544,8 +2545,6 @@ if __name__ == "__main__":
         
 #         print "mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.)
 
-         
-        
         # common spots:
         # x,y in XY1
         inXY1 = XY1[res[0]]
@@ -2575,11 +2574,13 @@ if __name__ == "__main__":
         
         commonspotsnb =[]
         file1 = 'dummy'
-        for imageindex in range(fileindexrange[0],fileindexrange[1]+1):
-            if imageindex>=185: print("imageindex",imageindex)
+        for imageindex in list(range(fileindexrange[0],fileindexrange[1]+1)):
+            if imageindex>=185:
+                print("imageindex",imageindex)
             file2 = fileprefix+'%04d'%(imageindex)+'.dat'
             commonspotsnb.append([imageindex,
-                                  getCommonSpots(file1,file2,toldistance, dirname=dirname, data1=dataref)])
+                                  getCommonSpots(file1,file2,toldistance,
+                                                 dirname=dirname, data1=dataref)])
         
       
         return commonspotsnb
@@ -2622,11 +2623,11 @@ if __name__ == "__main__":
                                             saveObject)
     
         pool = multiprocessing.Pool()
-    #     for ii in range(len(fileindexdivision)):  # range(nb_of_cpu):
+    #     for ii in list(range(len(fileindexdivision)):  # range(nb_of_cpu):
     #         pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
     
         results = []
-        for ii in range(len(fileindexdivision)):  # range(nb_of_cpu):
+        for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
             print("ii",ii)
             results.append( pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
     )
@@ -2640,7 +2641,7 @@ if __name__ == "__main__":
         dictcorrelval ={}
         for k,result in enumerate(results):
             dictk=dict(result.get())
-            print("dict %d"%k,  dictk)
+            print("dict {}".format(k),  dictk)
             dictcorrelval = dict(list(dictk.items()) + list(dictcorrelval.items()))
             
         listindval=[]
@@ -2676,7 +2677,8 @@ if __name__ == "__main__":
     nblines=32
     fileindexrange = (0,41*nblines-1)
     
-    imageindexref = 41*16+20
+#     imageindexref = 41*16+20
+    imageindexref = 41*2+20
 
     myc,cor1,cor2 = LaueSpotsCorrelator_multiprocessing(fileindexrange,imageindexref,
                              Parameters_dict=Parameters_dict,
@@ -2732,7 +2734,7 @@ if __name__ == "__main__":
     commonspotsnb =[]
     imageindexref= 41*32/2+20
     file1 = fileprefix+'%04d'%(imageindexref)+'.dat'
-    for imageindex in range(1350,1500):
+    for imageindex in list(range(1350,1500)):
         print("imageindex",imageindex)
         file2 = fileprefix+'%04d'%(imageindex)+'.dat'
         commonspotsnb.append(getCommonSpots(file1,file2,toldistance, dirname))
@@ -2764,7 +2766,7 @@ if __name__ == "__main__":
     
     expfile= 'VO2W_0024_LT_1.dat'
     
-    import readwriteASCII as IOLT 
+    import IOLaueTools as IOLT 
     datapeak= IOLT.read_Peaklist(blacklistedpeaklist_file, folder)
     pts_black = datapeak[:,:2]
     print("nb black listed points", len(pts_black))
