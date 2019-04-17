@@ -2855,7 +2855,7 @@ class spotsset():
         prefixgrain = prefix + '_g'
 
         outputfile = open(mergedfitfilename, 'w')
-        for grainindex in range(nbgrains):
+        for grainindex in list(range(nbgrains)):
 
             f = open(prefixgrain + '%d' % grainindex + '.fit', 'r')
             try:
@@ -2941,7 +2941,7 @@ class spotsset():
         dicocolor = {0: 'k', 1: 'r', 2: 'g', 3: 'b', 4: 'c', 5: 'm'}
         nbcolors = len(dicocolor)
         # theo spots
-        for i_grain in range(nb_of_orientations):
+        for i_grain in list(range(nb_of_orientations)):
             ax = fig.add_subplot(codefigure)
             # all exp spots
             scatter(all_tthchi[:, 0], all_tthchi[:, 1],
@@ -3033,7 +3033,7 @@ class spotsset():
             th_unind, Chi_unind = self.getUnIndexedSpotsallData(exceptgrains=unindexedspots)[:, 1:3].T
 
         # theo spots
-        for i_mat in range(min(nbMatrices, 9)):
+        for i_mat in list(range(min(nbMatrices, 9))):
 
             subplot(codefigure)
             if i_mat == 0:
@@ -3106,7 +3106,7 @@ class spotsset():
 
 
         # theo spots
-        for i_grain in range(nb_of_orientations):
+        for i_grain in list(range(nb_of_orientations)):
             tthchi = np.array(twicethetaChi[i_grain])
     #        print tthchi
             scatter(tthchi[:, 0], tthchi[:, 1],
@@ -3155,7 +3155,7 @@ def initIndexationDict(exp_data):
 
     indexed_spots_dict = {}
     # dictionary of exp spots
-    for k in range(nb_of_spots):
+    for k in list(range(nb_of_spots)):
         indexed_spots_dict[k] = [k,  # index of experimental spot in .cor file
                             tth[k], chi[k],  # 2theta, chi coordinates
                             posX[k], posY[k],  # pixel coordinates
@@ -3494,8 +3494,8 @@ def findtwins(imageindex, dmat,
 
     twins = []
     nbtwins = 0
-    for fileindex in range(imagerange[0], imagerange[1] + 1):
-        for matrix_grain_ind in range(0, nbgrains_per_image):
+    for fileindex in list(range(imagerange[0], imagerange[1] + 1)):
+        for matrix_grain_ind in list(range(0, nbgrains_per_image)):
             probed_matrix = dmat[fileindex][matrix_grain_ind]
             if probed_matrix != 0:
                 if AreTwinned(testmatrix, probed_matrix, tol=tol, allpermu=None)[0]:
@@ -3517,7 +3517,7 @@ def findsimilarmatrix(imageindex, dmat, grainindex=0, imagerange=(1708, 3323), t
     """
     simil = []
     nbsimil = 0
-    for k in range(imagerange[0], imagerange[1] + 1):
+    for k in list(range(imagerange[0], imagerange[1] + 1)):
         if comparematrices(dmat[imageindex][grainindex], dmat[k][0], tol=tol, allpermu=None)[0]:
             print("Got similar matrices !: [%d,%d]" % (imageindex, k))
             nbsimil += 1
@@ -3551,12 +3551,12 @@ def FindMatrices(dmat, tol=0.01):
 
     # dict of matrix in mapping
     goodpairs = []
-    for fileindex in range(firstindex, lastindex):
+    for fileindex in list(range(firstindex, lastindex)):
         mat = dmat[fileindex][0]
         if (fileindex % 100) == 0:
             print("fileindex ", fileindex)
 
-        for fileindex2 in range(fileindex + 1, lastindex + 1):
+        for fileindex2 in list(range(fileindex + 1, lastindex + 1)):
 
             if comparematrices(mat, dmat[fileindex2][0], tol=tol)[0]:
 
@@ -3672,14 +3672,14 @@ def createFakeData(key_material, nbgrains, emin=5, emax=25,
         if len(removespots) != nbgrains:
             raise ValueError("removespots needs as many integers than nbgrains!")
 
-    for k in range(nbgrains):
+    for k in list(range(nbgrains)):
         orientmat = GT.randomRotationMatrix()
         simul_matrices.append(orientmat)
 
     if twins >= 1:
         if twins <= nbgrains / 2:
             copysimul_matrices = copy.copy(simul_matrices)
-            for twin in range(0, twins + 1, 2):
+            for twin in list(range(0, twins + 1, 2)):
                 print("twin", twin)
                 simul_matrices[twin + 1] = np.dot(np.dot(copysimul_matrices[twin], DictLT.dict_Vect['sigma3_1']),
                                                   GT.matRot([1, 2, 3], 0))
@@ -4022,7 +4022,7 @@ def SpotLinks(twicetheta_exp, chi_exp, dataintensity_exp,  # experimental data
     refine_indexed_spots = {}
 
     # loop over theo. spot index
-    for theo_ind in range(len(List_Exp_spot_close)):
+    for theo_ind in list(range(len(List_Exp_spot_close))):
 
         exp_index = List_Exp_spot_close[theo_ind]
 
@@ -4714,7 +4714,7 @@ def plotgrains_from_indexspots(indexed_spots_dict):
     dicocolor = {0: 'k', 1: 'r', 2: 'g', 3: 'b', 4: 'c', 5: 'm'}
     nbcolors = len(dicocolor)
     # theo spots
-    for i_grain in range(nb_of_orientations):
+    for i_grain in list(range(nb_of_orientations)):
         ax = fig.add_subplot(codefigure)
         # all exp spots
         scatter(all_tthchi[:, 0], all_tthchi[:, 1],
@@ -4783,7 +4783,7 @@ def plotgrains(dict_mat, key_material, detectorparameters, emax,
         tth_exp, Chi_exp = exp_data[:2]
 
     # theo spots
-    for i_mat in range(nb_matrices):
+    for i_mat in list(range(nb_matrices)):
         ax = fig.add_subplot(codefigure)
 
         if exp_data is not None:
@@ -4818,7 +4818,7 @@ def PrintMatchingResults(bestmat_list, stats_res_list):
     for mat_elem, stat_elem in zip(bestmat_list, stats_res_list):
         mean_angular_residues = stat_elem[2]
         matching_rate = 100.*stat_elem[0] / stat_elem[1]
-        for kkk in range(3):
+        for kkk in list(range(3)):
             txt = '%s        ' % str(mat_elem[kkk])
             if kkk == 0:
                 txt += 'res: %s %.3f %.2f' % (str(stat_elem[:2]), mean_angular_residues, matching_rate)
@@ -5980,7 +5980,7 @@ def testtwin(fileindex=2301, nbGrainstoFind=3,
     nstart = fileindex
     nend = fileindex
 
-    for k in range(nstart, nend + 1):  # 92 - 1708
+    for k in list(range(nstart, nend + 1)):  # 92 - 1708
         file_to_index = os.path.join(dirname, 'TSVCU_%04d.cor' % k)
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
@@ -6012,7 +6012,7 @@ def testtwin(fileindex=2301, nbGrainstoFind=3,
                             nbGrainstoFind=nbGrainstoFind,
                             verbose=0, previousResults=previousResults)
 
-        for nbgrain in range(nbGrainstoFind):
+        for nbgrain in list(range(nbGrainstoFind)):
             dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
             dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
             dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
@@ -6096,7 +6096,7 @@ def test_SiCu(nstart=92, nend=1707):
     dictMR = {}
     dictNB = {}
 
-    for k in range(nstart, nend + 1):  # 92 - 1708
+    for k in list(range(nstart, nend + 1)):  # 92 - 1708
         file_to_index = os.path.join('/home/micha/LaueProjects/CuVia/filecor', 'TSVCU_%04d.cor' % k)
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
@@ -6119,7 +6119,7 @@ def test_SiCu(nstart=92, nend=1707):
         dictMat[k] = [0, 0, 0]
         dictMR[k] = [-1, -1, -1]
         dictNB[k] = [-1, -1, -1]
-        for nbgrain in range(nbGrainstoFind):
+        for nbgrain in list(range(nbGrainstoFind)):
             dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
             dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
             dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
@@ -6222,7 +6222,7 @@ def index_fileseries(fileindexrange,
     else:
         todump = dictRes
 
-    for k in range(nstart, nend + 1):  # 1708-3323
+    for k in list(range(nstart, nend + 1)):  # 1708-3323
         file_to_index = os.path.join(dirname, 'TSVCU_%04d.cor' % k)
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
@@ -6234,15 +6234,15 @@ def index_fileseries(fileindexrange,
 
         # TODO usefull ?
         # init res dict
-        DataSet_Cu.dict_grain_matrix = [0 for kk in range(nbGrainstoFind_Cu)]
-        DataSet_Cu.dict_grain_matching_rate = [[-1, -1] for kk in range(nbGrainstoFind_Cu)]
-        DataSet_Cu.dict_grain_devstrain = [0 for kk in range(nbGrainstoFind_Cu)]
+        DataSet_Cu.dict_grain_matrix = [0 for kk in list(range(nbGrainstoFind_Cu))]
+        DataSet_Cu.dict_grain_matching_rate = [[-1, -1] for kk in list(range(nbGrainstoFind_Cu))]
+        DataSet_Cu.dict_grain_devstrain = [0 for kk in list(range(nbGrainstoFind_Cu))]
 
         # preparing dicts of results
-        dictMat[k] = [0 for kk in range(nbGrainstoFind_Cu)]
-        dictMR[k] = [-1 for kk in range(nbGrainstoFind_Cu)]
-        dictNB[k] = [-1 for kk in range(nbGrainstoFind_Cu)]
-        dictstrain[k] = [0 for kk in range(nbGrainstoFind_Cu)]
+        dictMat[k] = [0 for kk in list(range(nbGrainstoFind_Cu))]
+        dictMR[k] = [-1 for kk in list(range(nbGrainstoFind_Cu))]
+        dictNB[k] = [-1 for kk in list(range(nbGrainstoFind_Cu))]
+        dictstrain[k] = [0 for kk in list(range(nbGrainstoFind_Cu))]
         previousResults = None
 
         if k > nstart and dictMat[k - 1][0] is not 0:
@@ -6261,7 +6261,7 @@ def index_fileseries(fileindexrange,
             dict_spotssetObj[k] = DataSet_Cu
 
         # filling dicts with indexation results
-        for nbgrain in range(nbGrainstoFind_Cu):
+        for nbgrain in list(range(nbGrainstoFind_Cu)):
             dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
             dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
             dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
@@ -6397,7 +6397,7 @@ def indexing_multiprocessing(fileindexrange,
     print("fileindexdivision", fileindexdivision)
 
     pool = multiprocessing.Pool()
-    for ii in range(len(fileindexdivision)):  # range(nb_of_cpu):
+    for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
         pool.apply_async(index_fileseries_3, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
 
     pool.close()
@@ -6591,7 +6591,7 @@ def index_fileseries_3(fileindexrange,
     outputdict_filename = prefixdictResname + '%04d_%04d' % (nstart, nend)
 
     totalnb_grains = 0
-    for material_index in range(nb_materials):
+    for material_index in list(range(nb_materials)):
         # read indexation parameters for the current material
         # TODO: add a function to set to default value if key is missing
         dict_param_SingleGrain = dict_params_list[material_index]
@@ -6612,7 +6612,7 @@ def index_fileseries_3(fileindexrange,
 
     #--- Loop over images ----------------------
     lastindex = nstart
-    for imageindex in range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2]):
+    for imageindex in list(range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2])):
 
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + '.res'
@@ -6680,15 +6680,15 @@ def index_fileseries_3(fileindexrange,
 #         DataSet.dict_grain_devstrain = {}
 
         # preparing dicts of results for indexation of peaks list corresponding to image with imageindex
-        dictMaterial[imageindex] = [None for kk in range(totalnb_grains)]
-        dictMat[imageindex] = [0 for kk in range(totalnb_grains)]
+        dictMaterial[imageindex] = [None for kk in list(range(totalnb_grains))]
+        dictMat[imageindex] = [0 for kk in list(range(totalnb_grains))]
         dictMat[imageindex][0] = GuessedUBMatrices
-        dictMR[imageindex] = [-1 for kk in range(totalnb_grains)]
-        dictNB[imageindex] = [-1 for kk in range(totalnb_grains)]
-        dictstrain[imageindex] = [0 for kk in range(totalnb_grains)]
+        dictMR[imageindex] = [-1 for kk in list(range(totalnb_grains))]
+        dictNB[imageindex] = [-1 for kk in list(range(totalnb_grains))]
+        dictstrain[imageindex] = [0 for kk in list(range(totalnb_grains))]
 
         #--- Loop over materials ----------------------
-        for material_index in range(nb_materials):
+        for material_index in list(range(nb_materials)):
 
             dict_param_SingleGrain = dict_params_list[material_index]
 
@@ -6931,7 +6931,7 @@ def index_fileseries_3(fileindexrange,
             dict_spotssetObj[imageindex] = DataSet
 
         # filling dicts with indexation results
-        for grainindex in range(totalnb_grains):
+        for grainindex in list(range(totalnb_grains)):
             if grainindex in DataSet.indexedgrains:
                 dictMaterial[imageindex][grainindex] = DataSet.dict_indexedgrains_material[grainindex]
                 dictMat[imageindex][grainindex] = DataSet.dict_grain_matrix[grainindex]
@@ -7058,7 +7058,7 @@ def saveIndexRefineConfigFile(dict_param, outputfilename=None):
 
     config.set('IndexRefine', 'nb materials', str(len(dict_param)))
 
-    for kk in range(len(dict_param)):
+    for kk in list(range(len(dict_param))):
         for key, val in list(dict_param[kk].items()):
             key_mat = key + '_%d' % kk
             params_comments += '# ' + key_mat + ' : ' + str(val) + '\n'
@@ -7076,7 +7076,7 @@ def saveIndexRefineConfigFile(dict_param, outputfilename=None):
 
 
     # Writing configuration file to 'PeakSearch.cfg'
-    with open(outputfilename, 'wb') as configfile:
+    with open(outputfilename, 'w') as configfile:
         config.write(configfile)
 
     return outputfilename
@@ -7113,7 +7113,7 @@ def readIndexRefineConfigFile(filename):
 
     nb_materials = int(config.getint(section, 'nb materials'))
 
-    dict_param = [{} for k in range(nb_materials)]
+    dict_param = [{} for k in list(range(nb_materials))]
 
 #     print "list_options_gen, list_material"
 #     print list_options_gen, list_material

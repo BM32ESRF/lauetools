@@ -830,8 +830,8 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose='yes', frame='lauetools'):
     chi_2 = coord2[1]
 
     # expression of unit q in chosen frame
-    qq1 = F2TC.unit_q(twicetheta_1 , chi_1, frame=frame)
-    qq2 = F2TC.unit_q(twicetheta_2 , chi_2, frame=frame)
+    qq1 = LTGeo.unit_q(twicetheta_1 , chi_1, frame=frame)
+    qq2 = LTGeo.unit_q(twicetheta_2 , chi_2, frame=frame)
 
     qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
 
@@ -903,8 +903,8 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
     chi_2 = coord2[1]
 
     # expression of unit q in chosen frame
-    qq1 = F2TC.unit_q(twicetheta_1, chi_1, frame=frame)
-    qq2 = F2TC.unit_q(twicetheta_2, chi_2, frame=frame)
+    qq1 = LTGeo.unit_q(twicetheta_1, chi_1, frame=frame)
+    qq2 = LTGeo.unit_q(twicetheta_2, chi_2, frame=frame)
 
     qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
     qq3n = np.sqrt(np.dot(qq3prod, qq3prod)) * 1.
@@ -948,8 +948,8 @@ def Allproposedmatrix(listrecogn, tolang):
     """
     print("------- All orientation matrices from picked file ----------")
     listofmatrix = []
-    for k in range(len(listrecogn)):
-        for j in range(k, len(listrecogn)):
+    for k in list(range(len(listrecogn))):
+        for j in list(range(k, len(listrecogn))):
             mama = proposematrix(k, j, listrecogn, tolang, verbose='no')
             if mama is not None:
                 listofmatrix.append([[k, j], mama])
@@ -1882,7 +1882,7 @@ def test():
     else:
         print("Argh no matrix found!")
 
-    for j in range(1, len(result)):
+    for j in list(range(1, len(result))):
         listcorrel = [np.corrcoef(np.ravel(result[j][1]), np.ravel(singlematrixlist[k]))[0][1] for k in range(len(singlematrixlist))]
 
         booltable = (np.array(listcorrel) < 0.995)  # True if matrices are uncorrelated
@@ -2134,8 +2134,8 @@ if __name__ == "__main__":
 
             # expression of unit q in chosen frame
             frame = 'lauetools'
-            qq1 = F2TC.unit_q(twicetheta_1 , chi_1, frame=frame)
-            qq2 = F2TC.unit_q(twicetheta_2 , chi_2, frame=frame)
+            qq1 = LTGeo.unit_q(twicetheta_1 , chi_1, frame=frame)
+            qq2 = LTGeo.unit_q(twicetheta_2 , chi_2, frame=frame)
 
             qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
             qq3n = np.sqrt(np.dot(qq3prod, qq3prod)) * 1.

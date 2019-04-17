@@ -312,7 +312,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
         
         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
         B[1, 2] = lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4]))
-        B[2, 2] = lat[2] * np.sqrt(1 - B[0, 2] ** 2 - B[1, 2] ** 2)
+        B[2, 2] = lat[2] * np.sqrt(1. - B[0, 2] ** 2 - B[1, 2] ** 2)
 
         return B
 
@@ -876,7 +876,7 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption='stre
     
     # use elasticity module instead
     devstrain_voigt_sampleframe = np.zeros(6)
-    for i in range(6):
+    for i in list(range(6)):
         val = deviatoricStrain_sampleframe[el.Voigt_notation[i]]
         if i >= 3:
             val *= 2.
@@ -1134,11 +1134,11 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
 
     strlist = ["x","y","z"]
     list_HKL_names = []
-    for i in range(3) :
+    for i in list(range(3)) :
         str1 = "HKL"+ strlist[i] + "_lab" + str_end
         list_HKL_names.append(str1)
      
-    for i in range(3) :
+    for i in list(range(3)) :
         str1 = "HKL"+ strlist[i] + "_sample" + str_end
         list_HKL_names.append(str1)
     
@@ -1149,11 +1149,11 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
                                                   mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame)
         
         mat3 =  inv(matstarlab3x3)
-        for i in range(3) :
+        for i in list(range(3)) :
             HKL_xyz[i] = (mat3[:,i]/max(abs(mat3[:,i]))).round(decimals=3)
            
         mat2 =  inv(matstarsample3x3)    
-        for i in range(3) :
+        for i in list(range(3)) :
             HKL_xyz[i+3] = (mat2[:,i]/max(abs(mat2[:,i]))).round(decimals=3)
             
     elif results_in_LT_frames :
@@ -1165,14 +1165,14 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
         UBmat_sample = np.dot(PP.transpose(), UBmat)  # variante 2
             
         mat3 =  inv(UBmat)
-        for i in range(3) :
+        for i in list(range(3)) :
             HKL_xyz[i] = (mat3[:,i]/max(abs(mat3[:,i]))).round(decimals=3)          
         mat2 =  inv(UBmat_sample)    
-        for i in range(3) :
+        for i in list(range(3)) :
             HKL_xyz[i+3] = (mat2[:,i]/max(abs(mat2[:,i]))).round(decimals=3)
               
     print("HKL coordinates of lab and sample frame axes :")
-    for i in range(6) :     
+    for i in list(range(6)) :     
         print(list_HKL_names[i], "\t",  HKL_xyz[i,:])
     
     return(list_HKL_names, HKL_xyz)

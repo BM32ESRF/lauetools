@@ -106,7 +106,7 @@ def stringint(k, n):
 #     strint = str(k)
 #     res = '0' * (n - len(strint)) + strint
 
-    encodingdigits = '%%0%dd' % int(n)
+    encodingdigits = '{'+':0{}'.format(int(n))+'}' 
     res = encodingdigits % k
 
     return res
@@ -270,22 +270,22 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 #     print "imagefilename",imagefilename
     if imagefilename.endswith('mccd'):
 
-        imagefilename = imagefilename[:-(5 + nbdigits)] + '%04d.mccd' % imageindex
+        imagefilename = imagefilename[:-(5 + nbdigits)] + '{:04d}.mccd'.format(imageindex)
         
     elif CCDLabel in ('sCMOS','sCMOS_fliplr'):
         if nbdigits is not None:
             if imagefilename.endswith('tif'):
-                imagefilename = imagefilename[:-(4 + nbdigits)] + '%04d.tif' % imageindex
+                imagefilename = imagefilename[:-(4 + nbdigits)] + '{:04d}.tif'.format(imageindex)
             elif imagefilename.endswith('tif.gz'):
-                imagefilename = imagefilename[:-(7 + nbdigits)] + '%04d.tif.gz' % imageindex
+                imagefilename = imagefilename[:-(7 + nbdigits)] + '{:04d}.tif.gz'.format(imageindex)
         else:
             if imagefilename.endswith('tif'):
                 prefix, extension = imagefilename.split('.')
                 prefix0 = prefix.split('_')[0]
                 if imageindex>9999:
-                    imagefilename = prefix0+'_%d.tif'%imageindex
+                    imagefilename = prefix0+'_{}.tif'.format(imageindex)
                 else:
-                    imagefilename = prefix0+'_%04d.tif'%imageindex
+                    imagefilename = prefix0+'_{:04d}.tif'.format(imageindex)
         
     elif CCDLabel in ('EIGER_4Mstack',):
         # only stackimageindex is changed not imagefilename
@@ -294,7 +294,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 #     print "imagefilename archetype", imagefilename
     elif imagefilename.endswith('mar.tiff'):
 
-        imagefilename = imagefilename[:-(9 + nbdigits)] + '%04d_mar.tiff' % imageindex
+        imagefilename = imagefilename[:-(9 + nbdigits)] + '{:04d}_mar.tiff'.format(imageindex)
 
     elif imagefilename.endswith('mar.tif'):
         # requires two underscores with number in between
@@ -306,7 +306,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
             prefix = imagefilename.rstrip(sname2)
         else:
             prefix = imagefilename.split('_')[0]
-        imagefilename = prefix + '_%d_mar.tif' % imageindex
+        imagefilename = prefix + '_{}_mar.tif'.format(imageindex)
 
     # special case for image id15 frelon corrected form distorsion
     elif imagefilename.endswith(('.tif', '.edf')):
@@ -322,25 +322,25 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
                 indexnodigit += 1
             prefix = prefixwihtindex[:-(indexnodigit)]
             print("prefix", prefix)
-            imagefilename = prefix + '%d.tif' % imageindex
+            imagefilename = prefix + '{}.tif'.format(imageindex)
 
         else:
             suffix = imagefilename[-4:]
             prefix = imagefilename[:-(4 + nbdigits)]
             
-            imagefilename = prefix + '%04d%s' % (imageindex, suffix)
+            imagefilename = prefix + '{:04d}{}'.format(imageindex, suffix)
 
     elif imagefilename.endswith('mccd'):
 
-        imagefilename = imagefilename[:-(5 + nbdigits)] + '%04d.mccd' % imageindex
+        imagefilename = imagefilename[:-(5 + nbdigits)] + '{:04d}.mccd'.format(imageindex)
 
     elif imagefilename.endswith('edf'):
 
-        imagefilename = imagefilename[:-(4 + nbdigits)] + '%04d.edf' % imageindex
+        imagefilename = imagefilename[:-(4 + nbdigits)] + '{:04d}.edf'.format(imageindex)
         
     elif imagefilename.endswith('unstacked'):
 
-        imagefilename = imagefilename[:-(10 + nbdigits)] + '%04d.unstacked' % imageindex
+        imagefilename = imagefilename[:-(10 + nbdigits)] + '{:04d}.unstacked'.format(imageindex)
 
 #     print "set filename to:", imagefilename
     return imagefilename
@@ -532,7 +532,7 @@ def getwildcardstring(CCDlabel):
 
     wcd = ''
     for inf, ext in zip(infos, extensions):
-        wcd += '%s|*%s|' % (inf, ext)
+        wcd += '{}|*{}|'.format(inf, ext)
 
     wildcard_extensions = wcd[:-1]
 
@@ -865,7 +865,7 @@ def readCCDimage(filename, CCDLabel='PRINCETON', dirname=None, stackimageindex=-
             print("framedim nb of elements",framedim[0]*framedim[1])
             dataimage = np.reshape(dataimage, framedim)
     except ValueError:
-        raise ValueError('Selected CCD type :%s may be wrong (or nb of pixels, dimensions...)' % CCDLabel) 
+        raise ValueError('Selected CCD type :{} may be wrong (or nb of pixels, dimensions...)'.format(CCDLabel))
     
     # some array transformations if needed depending on the CCD mounting
     if fliprot == "spe":
@@ -1088,7 +1088,7 @@ def readrectangle_in_image(filename,  pixx, pixy, halfboxx, halfboxy,
     try:
         filesize = os.path.getsize(fullpathfilename)
     except OSError:
-        print('missing file %s\n'%fullpathfilename)
+        print('missing file {}\n'.format(fullpathfilename))
         return None
 
     # uint16
@@ -1606,13 +1606,13 @@ def readoneimage_multiROIfit(filename,
             # print startingparams
             print("\n *****fitting results ************\n")
             print(params)
-            print("background intensity:                        %.2f" % params[0])
-            print("Peak amplitude above background              %.2f" % params[1])
-            print("pixel position (X)                   %.2f" % (params[3] - Xboxsize[k_image] + centers[k_image][0]))  # WARNING Y and X are exchanged in params !
-            print("pixel position (Y)                   %.2f" % (params[2] - Yboxsize[k_image] + centers[k_image][1]))
-            print("std 1,std 2 (pix)                    ( %.2f , %.2f )" % (params[4], params[5]))
-            print("e=min(std1,std2)/max(std1,std2)              %.3f" % (min(params[4], params[5]) / max(params[4], params[5])))
-            print("Rotation angle (deg)                 %.2f" % (params[6] % 360))
+            print("background intensity:                        {:.2f}".format(params[0]))
+            print("Peak amplitude above background              {:.2f}".format(params[1]))
+            print("pixel position (X)                   {:.2f}".format(params[3] - Xboxsize[k_image] + centers[k_image][0]))  # WARNING Y and X are exchanged in params !
+            print("pixel position (Y)                   {:.2f}".format(params[2] - Yboxsize[k_image] + centers[k_image][1]))
+            print("std 1,std 2 (pix)                    ( {:.2f} , {:.2f} )".format(params[4], params[5]))
+            print("e=min(std1,std2)/max(std1,std2)              {:.3f}".format(min(params[4], params[5]) / max(params[4], params[5])))
+            print("Rotation angle (deg)                 {:.2f}".format(params[6] % 360))
             print("************************************\n")
         bkg_sol, amp_sol, Y_sol, X_sol, std1_sol, std2_sol, ang_sol = params
 
@@ -1801,18 +1801,16 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
                                             xtol=xtol)
 
         if showfitresults:
-            # print "startingparams"
-            # print startingparams
             print("\n *****fitting results ************\n")
             print("  for k_image = ",k_image)
             print(params)
-            print("background intensity:                        %.2f" % params[0])
-            print("Peak amplitude above background              %.2f" % params[1])
-            print("pixel position (X)                   %.2f" % (params[3] - Xhalfboxsize[k_image] + centers[k_image][0]))  # WARNING Y and X are exchanged in params !
-            print("pixel position (Y)                   %.2f" % (params[2] - Yhalfboxsize[k_image] + centers[k_image][1]))
-            print("std 1,std 2 (pix)                    ( %.2f , %.2f )" % (params[4], params[5]))
-            print("e=min(std1,std2)/max(std1,std2)              %.3f" % (min(params[4], params[5]) / max(params[4], params[5])))
-            print("Rotation angle (deg)                 %.2f" % (params[6] % 360))
+            print("background intensity:                        {:.2f}".format(params[0]))
+            print("Peak amplitude above background              {:.2f}".format(params[1]))
+            print("pixel position (X)                   {:.2f}".format(params[3] - Xhalfboxsize[k_image] + centers[k_image][0]))  # WARNING Y and X are exchanged in params !
+            print("pixel position (Y)                   {:.2f}".format(params[2] - Yhalfboxsize[k_image] + centers[k_image][1]))
+            print("std 1,std 2 (pix)                    ( {:.2f} , {:.2f} )".format(params[4], params[5]))
+            print("e=min(std1,std2)/max(std1,std2)              {:.3f}".format(min(params[4], params[5]) / max(params[4], params[5])))
+            print("Rotation angle (deg)                 {:.2f}".format(params[6] % 360))
             print("- Xboxsize[k_image]",- Xhalfboxsize[k_image])
             print("centers[k_image][0]",centers[k_image][0])
             print("************************************\n")
@@ -1991,7 +1989,7 @@ def writeimage(outputname, _header, data, dataformat=np.uint16):
     data = np.array(data, dtype=dataformat)
     data.tofile(newfile)
     newfile.close()
-    print("image written in %s" % outputname)
+    print("image written in ",outputname)
 
 
 def write_rawbinary(outputname, data, dataformat=np.uint16):
@@ -2004,7 +2002,7 @@ def write_rawbinary(outputname, data, dataformat=np.uint16):
     data.tofile(newfile)
 
     newfile.close()
-    print("image written in %s" % outputname)
+    print("image written in ",outputname)
 
 
 def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
@@ -2018,9 +2016,9 @@ def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
 #     dirname = '/home/micha/LaueProjects/Vita'
 
 
-    output_filename = 'mean_%s_%04d_%d%s' % (prefixname, ind_start, ind_end, suffixname)
+    output_filename = 'mean_{}_{:04d}_{}{}'.format(prefixname, ind_start, ind_end, suffixname)
 
-    filename = '%s%04d%s' % (prefixname, ind_start, suffixname)
+    filename = '{}{:04d}{}'.format(prefixname, ind_start, suffixname)
 
     data, shape, fliprot = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname)
 
@@ -2043,7 +2041,7 @@ def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
     indexscanlist = list(range(ind_start, ind_end + 1, 1))
     for k in indexscanlist:
         # print k
-        filename = '%s%04d%s' % (prefixname, k, suffixname)
+        filename = '{}{:04d}{}'.format(prefixname, k, suffixname)
         # print filename1
         data, shape, fliprot = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname)
         # print max(data1), np.argmax(data1)
@@ -2054,8 +2052,10 @@ def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
         header = readheader(os.path.join(dirname, filename), offset=offsetheader)
         writeimage(os.path.join(dirname, outputfilename), header, datasum, dataformat=np.uint32)
 
-        print("Added images with prefix %s from %d to %d written in %s" % \
-                                    (prefixname, ind_start, ind_end, outputfilename))
+        print("Added images with prefix {} from {} to {} written in {}".format(prefixname,
+                                                                               ind_start,
+                                                                               ind_end,
+                                                                               outputfilename))
     if plot:
         print('later')
 
@@ -2177,9 +2177,9 @@ def rebin(a, *args):
     lenShape = len(shape)
     factor = np.asarray(shape) // np.asarray(args)
     evList = ['a.reshape('] + \
-             ['args[%d],factor[%d],' % (i, i) for i in list(range(lenShape))] + \
-             [')'] + ['.sum(%d)' % (i + 1) for i in list(range(lenShape))] + \
-             ['/factor[%d]' % i for i in list(range(lenShape))]
+             ['args[{:d}],factor[{:d}],'.format(i, i) for i in list(range(lenShape))] + \
+             [')'] + ['.sum({:d})'.format(i + 1) for i in list(range(lenShape))] + \
+             ['/factor[{:d}]'.format(i) for i in list(range(lenShape))]
     return a.reshape(args[0],
                      factor[0],
                     args[1],
@@ -2896,8 +2896,7 @@ def LocalMaxima_KernelConvolution(Data,
         # using th_peaklist which is float position
         pass
 
-    print("%d local maxima found after thresholding above %d (amplitude above local background)" % \
-                        (len(th_ar_amp), threshold_amp))
+    print("{} local maxima found after thresholding above {} (amplitude above local background)".format(len(th_ar_amp), threshold_amp))
 
     # NEW --- from method array shift!
     # remove duplicates (close points), the most intense pixel is kept
@@ -2912,8 +2911,7 @@ def LocalMaxima_KernelConvolution(Data,
     purged_ptp = np.delete(th_ar_ptp, index_todelete, axis=0)
 
 #     print 'shape of purged_ptp method conv.', purged_ptp.shape
-    print("%d local maxima found after removing duplicates (minimum intermaxima distance = %d)" % \
-                        (len(purged_amp), pixeldistance))
+    print("{} local maxima found after removing duplicates (minimum intermaxima distance = {})".format(len(purged_amp), pixeldistance))
 
     # print "purged_pklist", purged_pklist
 #     print "shape(purged_pklist)", np.shape(purged_pklist)
@@ -2937,7 +2935,7 @@ def LocalMaxima_KernelConvolution(Data,
 #     npeaks = np.shape(th_peaklist)[0]
 #     Ipixmax = np.zeros(npeaks, dtype=int)
 #     # print np.shape(Data)
-#     for i in range(npeaks):
+#     for i in list(range(npeaks)):
 #         # Ipixmax[i]=Data[th_peaklist[i,0],th_peaklist[i,1]]
 #         Ipixmax[i] = th_ar_ptp[i][1]
 #
@@ -3082,7 +3080,7 @@ def LocalMaxima_ShiftArrays(Data,
 
     # print peaklistfit2D
     # print peaklist[100:150]
-    print("%d local maxima have been found" % len(peaklist))
+    print("{} local maxima have been found".format(len(peaklist)))
 
     # probing background and maximal intensity in boxsize
     #
@@ -3107,7 +3105,7 @@ def LocalMaxima_ShiftArrays(Data,
     th_peaklist = peaklist_sorted[cond]
     th_ar_amp = amp_sorted[cond]
 
-    print("%d local maxima found after thresholding above %d amplitude above local background" % (len(th_ar_amp), threshold_amp))
+    print("{} local maxima found after thresholding above {} amplitude above local background".format(len(th_ar_amp), threshold_amp))
 
     # remove duplicates (close points), the most intense pixel is kept
     # minimum distance between hot pixel
@@ -3118,7 +3116,7 @@ def LocalMaxima_ShiftArrays(Data,
                                                          pixeldistance)
 
     purged_amp = np.delete(th_ar_amp, index_todelete)
-    print("%d local maxima found after removing duplicates (minimum intermaxima distance = %d)" % (len(purged_amp), pixeldistance))
+    print("{} local maxima found after removing duplicates (minimum intermaxima distance = {})".format(len(purged_amp), pixeldistance))
 
     # print "execution time : %f  secondes"%( ttt.time() - time_0)
 
@@ -3513,7 +3511,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize,
                                     addImax=ComputeIpixmax,
                                     use_data_corrected=use_data_corrected)
     
-    print('fitting time for %d peaks is : %.4f' % (len(peaklist), ttt.time() - tstart))
+    print('fitting time for {} peaks is : {:.4f}'.format(len(peaklist), ttt.time() - tstart))
     print("nb of results: ",len(ResFit[0]))
 
     if ComputeIpixmax == True:
@@ -3554,7 +3552,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize,
     for inf in info:
         if inf['nfev'] > 1550:
             if verbose:
-                print("k= %d   too much iteration" % k)
+                print("k= {}   too much iteration".format(k))
             to_reject.append(k)
         k += 1
 
@@ -3594,13 +3592,12 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize,
         print(np.take(peaklist, to_reject2, axis=0))
         print(np.take(peaklist, to_reject3, axis=0))
 
-    print("After fitting, %d/%d peaks have been rejected\n due to (final - initial position)> FitPixelDev = %f" % \
-                                (len(to_reject3), len(peaklist), FitPixelDev))
-    print("%d spots have been rejected\n due to negative baseline"%len(to_reject2))
-    print("%d spots have been rejected\n due to much intensity "%len(to_reject4))
-    print("%d spots have been rejected\n due to weak intensity "%len(to_reject5))
-    print("%d spots have been rejected\n due to small peak size"%len(to_reject6))
-    print("%d spots have been rejected\n due to large peak size"%len(to_reject7))
+    print("After fitting, {}/{} peaks have been rejected\n due to (final - initial position)> FitPixelDev = {}" .format(len(to_reject3), len(peaklist), FitPixelDev))
+    print("{} spots have been rejected\n due to negative baseline".format(len(to_reject2)))
+    print("{} spots have been rejected\n due to much intensity ".format(len(to_reject4)))
+    print("{} spots have been rejected\n due to weak intensity ".format(len(to_reject5)))
+    print("{} spots have been rejected\n due to small peak size".format(len(to_reject6)))
+    print("{} spots have been rejected\n due to large peak size".format(len(to_reject7)))
 
     # spots indices to reject
     ToR = set(to_reject) | set(to_reject2) | set(to_reject3) | set(to_reject4) | set(to_reject5) | set(to_reject6) | set(to_reject7)# to reject
@@ -3656,7 +3653,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize,
         print(tabIsorted[:10])
         print("X,Y", tabIsorted[:10, :2])
 
-    print("\n%d fitted peak(s)\n" % len(tabIsorted))
+    print("\n{} fitted peak(s)\n".format(len(tabIsorted)))
 
     if purgeDuplicates and len(tabIsorted) > 2:
         print("Removing duplicates from fit")
@@ -3673,8 +3670,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize,
 
         tabIsorted = np.delete(tabIsorted, index_todelete, axis=0)
 
-        print("\n%d peaks found after removing duplicates (minimum intermaxima distance = %d)" % \
-                            (len(tabIsorted), pixeldistance))
+        print("\n{} peaks found after removing duplicates (minimum intermaxima distance = {})".format(len(tabIsorted), pixeldistance))
 
     if return_histo == 1:  # return 4 elements, last is the image histogram
         return tabIsorted, par, peaklist, histo
@@ -3884,7 +3880,7 @@ def PeakSearch(filename, stackimageindex = -1,
         Data, framedim, fliprot = readCCDimage(filename, stackimageindex=stackimageindex,
                                                CCDLabel=CCDLabel,
                                                dirname=None, verbose=1)
-        print("image from filename %s read!" % filename)
+        print("image from filename {} read!".format(filename))
 
         # peak search in a particular region of image
         if center is not None:
@@ -3899,7 +3895,7 @@ def PeakSearch(filename, stackimageindex = -1,
         if write_execution_time:
             dtread = ttt.time() - t0
             ttread = ttt.time()
-            print("Read Image. Execution time : %.3f seconds" % dtread)
+            print("Read Image. Execution time : {:.3f} seconds" .format(dtread))
 
         if return_histo:
             # from histogram, deduces
@@ -3915,7 +3911,7 @@ def PeakSearch(filename, stackimageindex = -1,
         print('Using Data_for_localMaxima for local maxima search: --->', Data_for_localMaxima)
         # compute and remove background from this image
         if Data_for_localMaxima == 'auto_background':
-            print("computing background from current image %s" % filename)
+            print("computing background from current image ",filename)
             backgroundimage = compute_autobackground_image(Data,
                                                            boxsizefilter=10)
             # basic substraction
@@ -3925,12 +3921,12 @@ def PeakSearch(filename, stackimageindex = -1,
             if stackimageindex == -1:
                 raise ValueError('Use stacked images as background is not implement')
             path_to_bkgfile = Data_for_localMaxima
-            print("Using image file %s as background" % path_to_bkgfile)
+            print("Using image file {} as background".format(path_to_bkgfile))
             try:
                 backgroundimage, framedim_bkg, fliprot_bkg = readCCDimage(path_to_bkgfile,
                                                                       CCDLabel=CCDLabel)
             except IOError:
-                raise ValueError("%s does not seem to be a path file " % path_to_bkgfile)
+                raise ValueError("{} does not seem to be a path file ".format(path_to_bkgfile))
 
             usemask = False
 
@@ -4016,7 +4012,7 @@ def PeakSearch(filename, stackimageindex = -1,
     if write_execution_time:
         dtsearch = ttt.time() - float(ttread)
 
-        print("Local maxima search. Execution time : %2.3f seconds" % dtsearch)
+        print("Local maxima search. Execution time : {:.3f} seconds".format(dtsearch))
 
     # removing some duplicates ------------
     if len(peaklist) >= 2:
@@ -4037,8 +4033,7 @@ def PeakSearch(filename, stackimageindex = -1,
         peaklist = np.array([Xpeaklist, Ypeaklist]).T
         Ipixmax = np.take(Ipixmax, tokeep)
 
-        print("Keep %d from %d initial peaks (ready for peak positions and shape fitting)" % \
-                            (len(peaklist), nb_peaks_before))
+        print("Keep {} from {} initial peaks (ready for peak positions and shape fitting)".format(len(peaklist), nb_peaks_before))
     # -----------------------------------------------
 
     # remove black listed peaks option
@@ -4063,8 +4058,7 @@ def PeakSearch(filename, stackimageindex = -1,
             npeak_before = len(X)
             npeak_after = len(peakX)
 
-            print("\n Removed %d (over %d) peaks belonging to the blacklist %s\n" % \
-                                    (npeak_before - npeak_after, npeak_before, Remove_BlackListedPeaks_fromfile))
+            print("\n Removed {} (over {}) peaks belonging to the blacklist {}\n".format(npeak_before - npeak_after, npeak_before, Remove_BlackListedPeaks_fromfile))
 
 #             print "peaklist before", peaklist
 #             print "peakX, peakY blacklisted", XY_blacklisted
@@ -4088,7 +4082,7 @@ def PeakSearch(filename, stackimageindex = -1,
             peaklist[:, 1] = framedim[0] - peaklist[:, 1] + 0.5
 
         if verbose:
-            print("%d local maxima found" % len(peaklist))
+            print("{} local maxima found".format(len(peaklist)))
             print("20 first peaks", peaklist[:20])
 
         # tabpeak mimics the array built after fitting procedures
@@ -4116,7 +4110,7 @@ def PeakSearch(filename, stackimageindex = -1,
         raise ValueError("optional fit_peaks_gaussian value is not understood! Must be 0,1 or 2")
 
     print("\n*****************")
-    print("%d local maxima found" % len(peaklist))
+    print("{} local maxima found".format(len(peaklist)))
     print("\n Fitting of each local maxima\n")
 
 #    print "framedim", framedim
@@ -4200,7 +4194,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
 
         BackgroundImageCreated = True
         
-        print("consider dataimagefile %s as background" % fullpath_backgroundimage)
+        print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
         (dataimage_raw,
          framedim_raw,
          fliprot_raw) = readCCDimage(filename_in,
@@ -4219,7 +4213,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
                                             formulaexpression=formulaexpression,
                                             SaturationLevel=saturationlevel, clipintensities=True)
 
-        print("using %s in peaksearch_fileseries" % formulaexpression)
+        print("using {} in peaksearch_fileseries".format(formulaexpression))
 
         # for finding local maxima in image from formula
         PEAKSEARCHDICT_Convolve['Data_for_localMaxima'] = fullpath_backgroundimage
@@ -4236,7 +4230,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
                         **PEAKSEARCHDICT_Convolve)
     
     if Res in (False, None):
-        print("No peak found for image file: %s" % filename_in)
+        print("No peak found for image file: ", filename_in)
         return None
     # write file with comments
     Isorted, fitpeak, localpeak = Res[:3]
@@ -4245,7 +4239,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
 
         params_comments = 'Peak Search and Fit parameters\n'
     
-        params_comments += '# %s: %s\n' % ('CCDLabel', CCDLabel)
+        params_comments += '# {}: {}\n'.format('CCDLabel', CCDLabel)
     
         for key, val in list(PEAKSEARCHDICT_Convolve.items()):
             if not BackgroundImageCreated or key not in ('Data_for_localMaxima',):
@@ -4253,10 +4247,10 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
     
         if BackgroundImageCreated:
             params_comments += '# ' + 'Data_for_localMaxima' + \
-                            ' : %s \n' % fullpath_backgroundimage
+                            ' : {} \n'.format(fullpath_backgroundimage)
         # .dat file extension is done in writefile_Peaklist()
 
-        IOLT.writefile_Peaklist('%s' % outputfilename, Isorted,
+        IOLT.writefile_Peaklist('{}'.format(outputfilename), Isorted,
                                    overwrite=1,
                                    initialfilename=filename_in,
                                    comments=params_comments)
@@ -4345,9 +4339,8 @@ def savePeakSearchConfigFile(dict_param, outputfilename=None):
         else:
             outputfilename += '.psp'
 
-
     # Writing configuration file to 'PeakSearch.cfg'
-    with open(outputfilename, 'wb') as configfile:
+    with open(outputfilename, 'w') as configfile:
         config.write(configfile)
 
     return outputfilename
@@ -4362,8 +4355,7 @@ def readPeakSearchConfigFile(filename):
     section = config.sections()[0]
 
     if section not in ('PeakSearch',):
-        raise ValueError("wrong section name in config file %s. Must be in %s" % \
-                            (filename, 'IndexRefine'))
+        raise ValueError("wrong section name in config file {}. Must be in {}".format(filename, 'IndexRefine'))
 
 #     print "section", section
 
@@ -4406,7 +4398,7 @@ def readPeakSearchConfigFile(filename):
 #                     print "optionkey", optionkey
 #                     print "option_lower", option_lower
                 except ValueError:
-                    print("Value of option '% s' has not the correct type" % option)
+                    print("Value of option '{}' has not the correct type".format(option))
                     return None
 
                 break
@@ -4440,7 +4432,7 @@ def read_background_flag(background_flag):
             filepath, formulaexpression = ressplit
 
         if not os.path.exists(filepath):
-            wx.MessageBox('%s does not exist. Check filename and path.' % filepath, 'Error')
+            wx.MessageBox('{} does not exist. Check filename and path.'.format(filepath), 'Error')
             return
 
         Data_for_localMaxima = filepath
@@ -4474,9 +4466,9 @@ def plot_image_markers(image, markerpos, position_definition=1):
         row = int(y + 0.5)
         if col >= 0 and col < numcols and row >= 0 and row < numrows:
             z = image[row, col]
-            return 'x = % 1.4f, y = % 1.4f, z = % 1.4f' % (x, y, z)
+            return 'x = {:.4f}, y = {:.4f}, z = {:.4f}'.format(x, y, z)
         else:
-            return 'x = % 1.4f, y = % 1.4f' % (x, y)
+            return 'x = {:.4f}, y = {:.4f}'.format(x, y)
 
     ax.format_coord = format_coord
 
@@ -4577,10 +4569,10 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
     # special case for _mar.tif files...
     if nbdigits in ('varying',):
         DEFAULT_DIGITSENCODING = 4
-        encodingdigits = '%%0%dd' % DEFAULT_DIGITSENCODING
+        encodingdigits = '{'+':0{}'.format(DEFAULT_DIGITSENCODING)+'}'
     # normal case
     else:
-        encodingdigits = '%%0%dd' % int(nbdigits)
+        encodingdigits = '{'+':0{}'.format(int(nbdigits))+'}'
 
     if suffix == '':
         suffix = '.mccd'
@@ -4631,23 +4623,22 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
     for fileindex in list(range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2])):
         # TODO to move this branching elsewhere (readmccd)
         if suffix.endswith('_mar.tif'):
-            filename_in = setfilename(filenameprefix_in + '%d' % fileindex + suffix, fileindex)
+            filename_in = setfilename(filenameprefix_in + '{}'.format(fileindex) + suffix, fileindex)
         else:
 #             filename_in = filenameprefix_in + encodingdigits % fileindex + suffix
             filename_in = filenameprefix_in + str(fileindex).zfill(4) +suffix
 
 
         tirets = '-' * 15
-        print("\n\n %s PeakSearch on filename%s\n%s\n%s%s%s\n\n" % \
-            (tirets, tirets, filename_in, tirets, tirets, tirets))
+        print("\n\n {} PeakSearch on filename {}\n{}\n{}{}{}n\n".format(tirets, tirets, filename_in, tirets, tirets, tirets))
 
         if not os.path.exists(filename_in):
-            raise ValueError("\n\n*******\nSomething wrong with the filename: %s. Please check carefully the filename!" % filename_in)
+            raise ValueError("\n\n*******\nSomething wrong with the filename: {}. Please check carefully the filename!".format(filename_in))
 
         # remove a single image (considered as background) to current image
         if BackgroundImageCreated:
 
-            print("consider dataimagefile %s as background" % fullpath_backgroundimage)
+            print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
             (dataimage_raw,
              framedim_raw,
              fliprot_raw) = readCCDimage(filename_in,
@@ -4666,7 +4657,7 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
                                                 formulaexpression=formulaexpression,
                                                 SaturationLevel=saturationlevel, clipintensities=True)
 
-            print("using %s in peaksearch_fileseries" % formulaexpression)
+            print("using {} in peaksearch_fileseries".format(formulaexpression))
 
 
 #             print 'Imin Imax dataimage_raw', np.amin(A), np.amax(A)
@@ -4691,14 +4682,14 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
                         **PEAKSEARCHDICT_Convolve)
 
         if Res in (False, None):
-            print("No peak found for image file: %s" % filename_in)
+            print("No peak found for image file: ",filename_in)
 #             Isorted, fitpeak, localpeak = None, None, None
         else:  # write file with comments
             Isorted, fitpeak, localpeak = Res[:3]
 
             params_comments = 'Peak Search and Fit parameters\n'
 
-            params_comments += '# %s: %s\n' % ('CCDLabel', CCDLABEL)
+            params_comments += '# {}: {}\n'.format('CCDLabel', CCDLABEL)
 
             for key, val in list(PEAKSEARCHDICT_Convolve.items()):
                 if not BackgroundImageCreated or key not in ('Data_for_localMaxima',):
@@ -4706,10 +4697,10 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
 
             if BackgroundImageCreated:
                 params_comments += '# ' + 'Data_for_localMaxima' + \
-                                ' : %s \n' % fullpath_backgroundimage
+                                ' : {} \n'.format(fullpath_backgroundimage)
             # .dat file extension is done in writefile_Peaklist()
             filename_out = prefix_outputname + encodingdigits % fileindex
-            IOLT.writefile_Peaklist('%s' % filename_out, Isorted,
+            IOLT.writefile_Peaklist('{}'.format(filename_out), Isorted,
                                        overwrite=1,
                                        initialfilename=filename_in,
                                        comments=params_comments)
@@ -4771,7 +4762,7 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix,
 def peaklist_dict(prefixfilename, startindex, finalindex, dirname=None):
     dict_peaks = {}
     for k in list(range(startindex, finalindex + 1)):
-        filename = prefixfilename + '%04d.dat' % k
+        filename = prefixfilename + '{:04d}.dat'.format(k)
 
         array_peaks = IOLT.read_Peaklist(filename, dirname=dirname)
         dict_peaks[k] = array_peaks
@@ -5026,7 +5017,7 @@ def write_PurgedPeakListFile(filename1, blacklisted_XY, outputfilename,
                                comments='Some peaks have been removed by write_PurgedPeakListFile',
                                dirname=dirname)
 
-    print("New peak list file %s has been written" % outputfilename)
+    print("New peak list file {} has been written".format(outputfilename))
 
 
 def removePeaks_inPeakList(PeakListfilename, BlackListed_PeakListfilename, outputfilename,
@@ -5074,10 +5065,10 @@ def writefile_mergedPeaklist(filename1, filename2, outputfilename,
     (and removed duplicates within dist_tolerance (pixel))
     """
     merged_data = merge_2Peaklist(filename1, filename2, dist_tolerance, dirname1, dirname2, verbose)
-    comments = "Peaks from merging %s and %s with pixel tolerance %.3f" % (filename1, filename2, dist_tolerance)
+    comments = "Peaks from merging {} and {} with pixel tolerance {:.3f}".format(filename1, filename2, dist_tolerance)
     writefile_Peaklist(outputfilename, merged_data, 1, None, comments, None)
     
-    print("Merged peak lists written in file: %s" % outputfilename)
+    print("Merged peak lists written in file: ",outputfilename)
 
 
 #--- --------------  Test functions
