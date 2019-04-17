@@ -72,7 +72,7 @@ import pylab as P
 
 import findorient as FindO
 import generaltools as GT
-import LaueGeometry as LTGeo
+import IOLaueTools as IOLT
 import CrystalParameters as CP
 
 import dict_LaueTools as DictLT
@@ -1026,7 +1026,7 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
     print("calibration, orientation matrix")
     print("convert matrix to matstarlabOR")
 
-    calib, mat_line = LTGeo.readfile_det(filedet)
+    calib, mat_line = IOLT.readfile_det(filedet)
 
     matLT3x3 = (GT.matline_to_mat3x3(mat_line)).T
 
@@ -1199,7 +1199,7 @@ def readlt_fit(filefit,
 def readall_str(grain_index, filemane_str,
                 returnmatLT=False, min_matLT=False):
 
-    data_str, matstr, calib, dev_str = LTGeo.readfile_str(filemane_str, grain_index)
+    data_str, matstr, calib, dev_str = IOLT.readfile_str(filemane_str, grain_index)
 
     # postprocessing
 
@@ -1550,13 +1550,13 @@ def convert2corfile(filename, calibparam,
 
         # update dict according to values in file .cor
         f = open(filename_in, 'r')
-        param = LTGeo.readCalibParametersInFile(f, Dict_to_update=CCDCalibdict)
+        param = IOLT.readCalibParametersInFile(f, Dict_to_update=CCDCalibdict)
         f.close()
 
     else:
         param = calibparam + [pixelsize]
 
-    LTGeo.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
+    IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
                           sortedexit=0,
                           param=param,
                           initialfilename=filename)
@@ -2386,7 +2386,7 @@ def test_correction_1():
                                                                      )
 
     print(twicetheta)
-    LTGeo.writefile_cor('polyZrO2_test', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
+    IOLT.writefile_cor('polyZrO2_test', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
 
 
 def test_correction_2():
@@ -2404,7 +2404,7 @@ def test_correction_2():
                                                                      )
 
     print(twicetheta)
-    LTGeo.writefile_cor('Ge_test', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
+    IOLT.writefile_cor('Ge_test', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
 
 
 def test_correction_3():
@@ -2422,7 +2422,7 @@ def test_correction_3():
                                                                      )
 
     print(twicetheta)
-    LTGeo.writefile_cor('Ge_run41_1_0003', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
+    IOLT.writefile_cor('Ge_run41_1_0003', twicetheta, chi, data_x, data_y, dataintensity, param=param, initialfilename=peaksfilename)
 
 
 def find_referencepicture(anglesample=40,
@@ -2612,7 +2612,7 @@ if __name__ == "__main__":
     # twicetheta,chi,dataintensity,data_x,data_y=Compute_data2thetachi(filename,(col_X,col_Y,col_I),nblines_headertoskip)
 
     # plotXY2thetachi(data_x,data_y,twicetheta,chi,mostintense=200)
-    # LTGeo.writefile_cor(prefix+indexfile,twicetheta,chi,data_x,data_y,sortedexit=Intensitysorted)
+    # IOLT.writefile_cor(prefix+indexfile,twicetheta,chi,data_x,data_y,sortedexit=Intensitysorted)
 
 
     # for doing a files serie
@@ -2623,7 +2623,7 @@ if __name__ == "__main__":
         for index in range(620, 1276):
             filename = prefix + '%04d' % index + suffix
             twicetheta, chi, dataintensity, data_x, data_y = Compute_data2thetachi(filename, (col_X, col_Y, col_I), nblines_headertoskip)
-            LTGeo.writefile_cor(prefix + '%04d' % index, twicetheta, chi, data_x, data_y, dataintensity, sortedexit=Intensitysorted)
+            IOLT.writefile_cor(prefix + '%04d' % index, twicetheta, chi, data_x, data_y, dataintensity, sortedexit=Intensitysorted)
 
     # series()
 

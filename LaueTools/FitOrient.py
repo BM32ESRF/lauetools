@@ -1,0 +1,3417 @@
+# -*- coding: utf-8 -*-
+"""
+Module of Lauetools project
+
+JS Micha Feb 2012
+
+module to fit orientation and strain
+
+http://sourceforge.net/projects/lauetools/
+"""
+
+__author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
+__version__ = '$Revision$'
+
+from scipy.optimize import leastsq
+import numpy as np
+
+np.set_printoptions(precision=15)
+from scipy.linalg import qr
+
+import LaueGeometry as F2TC
+import generaltools as GT
+
+import CrystalParameters as CP
+import dict_LaueTools as DictLT
+
+#  sign of CCD camera angle =1 to mimic XMAS conventionSIGN_OF_GAMMA = 1
+from dict_LaueTools import SIGN_OF_GAMMA, DEG
+
+RAD = 1. / DEG
+IDENTITYMATRIX = np.eye(3)
+
+
+def remove_harmonic(hkl, uflab, yz):
+
+    # print "removing harmonics from theoretical peak list"
+    nn = len(uflab[:, 0])
+    isbadpeak = np.zeros(nn, dtype=np.int)
+    toluf = 0.05
+
+    for i in range(nn):
+        if (isbadpeak[i] == 0):
+            # print "i=", i
+            for j in range(i + 1, nn):
+                if (isbadpeak[j] == 0):
+                    # print "j=", j
+                    if (GT.norme_vec(uflab[j, :] - uflab[i, :]) < toluf):
+                        isbadpeak[j] = 1
+                        # print "harmonics :"
+                        # print hkl[i,:]
+                        # print hkl[j,:]
+
+    # print "isbadpeak = ", isbadpeak
+    index_goodpeak = np.where(isbadpeak == 0)
+    # print "index_goodpeak =", index_goodpeak
+    hkl2 = hkl[index_goodpeak]
+    uflab2 = uflab[index_goodpeak]
+    yz2 = yz[index_goodpeak]
+    nspots2 = len(hkl2[:, 0])
+
+    return(hkl2, uflab2, yz2, nspots2, isbadpeak)
+
+
+def xy_from_Quat(varying_parameter_values,
+                    DATA_Q, nspots,
+                    varying_parameter_indices,
+                    allparameters,
+                    initrot=None,
+                    vecteurref=IDENTITYMATRIX,
+                    pureRotation=0,
+                    labXMAS=0,
+                    verbose=0,
+                    pixelsize=165. / 2048,
+                    dim=(2048, 2048),
+                    signgam=SIGN_OF_GAMMA,
+                    kf_direction='Z>0'
+                    ):
+    """
+    from:
+    varying_parameter_values: array of value that will be taken into account
+    varying_parameter_indices: list of indices (element position) of varying parameters in allparameters array
+    allparameters: array of 8 elements: 5 first of calibration parameters and 3 of angles defining quaternion
+
+    must: len(varying_parameter_values)=len(varying_parameter_indices)
+
+    DATA_Q: array of all 3 elements miller indices
+    nspots: indices of selected spots of DATA_Q
+    initrot: 
+
+    WARNING: All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat
+    returns:
+    """
+
+    allparameters.put(varying_parameter_indices, varying_parameter_values)
+#     detect = allparameters[0]
+#     xcen = allparameters[1]
+#     ycen = allparameters[2]
+#     the0 = allparameters[3]
+#     gam = allparameters[4]
+    calibration_parameters = allparameters[:5]
+    angle_Quat = allparameters[5:8]  # three angles of quaternion
+
+    # selecting nspots of DATA_Q
+#     print "DATA_Q in xy_from_Quat", DATA_Q
+#     print "nspots", nspots
+#     print "len(DATA_Q)", len(DATA_Q)
+    DATAQ = np.take(DATA_Q, nspots, axis=0)
+    trQ = np.transpose(DATAQ)  # np.array(Hs, Ks,Ls) for further computations
+
+#     print "DATAQ in xy_from_Quat", DATAQ
+
+    if initrot is not None:
+
+        # R is a pure rotation
+        # dot(R,Q)=initrot
+        # Q may be viewed as lattice distortion
+        if pureRotation:  # extract pure rotation matrix from  UB matrix
+            R, Q = qr(initrot)
+            R = R / np.sign(np.diag(Q))
+        else:  # keep UB matrix rotation + distorsion
+            R = initrot
+
+        # initial lattice rotation and distorsion (/ cubic structure)  q = U*B * Q
+        trQ = np.dot(np.dot(R, vecteurref), trQ)
+        # results are qx,qy,qz
+
+    else:
+        print("I DONT LIKE INITROT == None")
+        print("this must mean that INITROT = Identity ?...")
+
+        # with sample rotation
+    # print "3 angles representation of quaternion",angle_Quat
+    Quat = GT.from3rotangles_toQuat(angle_Quat)
+    # print "Quat",Quat
+    matfromQuat = np.array(GT.fromQuat_to_MatrixRot(Quat))
+#     print "matfromQuat", matfromQuat
+
+
+    Qrot = np.dot(matfromQuat, trQ)  # lattice rotation due to quaternion
+    Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
+
+    twthe, chi = F2TC.from_qunit_to_twchi(Qrot / Qrotn, labXMAS=labXMAS)
+    if 0:  # verbose:
+        print("matfromQuat", matfromQuat)
+        print("tDATA_Q", np.transpose(DATA_Q))
+        print("Qrot", Qrot)
+        print("Qrotn", Qrotn)
+        print("Qrot/Qrotn", Qrot / Qrotn)
+        print("twthe,chi", twthe, chi)
+
+    X, Y, theta = F2TC.calc_xycam_from2thetachi(twthe,
+                                            chi, calibration_parameters,
+                                            verbose=0,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            signgam=signgam,
+                                            kf_direction=kf_direction)
+
+    return X, Y, theta, R
+
+
+def calc_XY_pixelpositions(calibration_parameters,
+                    DATA_Q, nspots,
+                    UBmatrix=None,
+                    B0matrix=IDENTITYMATRIX,
+                    offset = 0,
+                    pureRotation=0,
+                    labXMAS=0,
+                    verbose=0,
+                    pixelsize=0.079,
+                    dim=(2048, 2048),
+                    signgam=SIGN_OF_GAMMA,
+                    kf_direction='Z>0'
+                    ):
+    """
+    
+    must: len(varying_parameter_values)=len(varying_parameter_indices)
+
+    DATA_Q: array of all 3 elements miller indices
+    nspots: indices of selected spots of DATA_Q
+    UBmatrix: 
+
+    WARNING: All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat
+    returns:
+    """
+
+    # selecting nspots of DATA_Q
+#     print "DATA_Q in calc_XY_pixelpositions", DATA_Q
+#     print "nspots", nspots
+#     print "len(DATA_Q)", len(DATA_Q)
+    DATAQ = np.take(DATA_Q, nspots, axis=0)
+    trQ = np.transpose(DATAQ)  # np.array(Hs, Ks,Ls) for further computations
+
+#     print "DATAQ in xy_from_Quat", DATAQ
+    if UBmatrix is not None:
+
+        R = UBmatrix
+
+        #  q = UB * B0 * Q
+        trQ = np.dot(np.dot(R, B0matrix), trQ)
+        # results are qx,qy,qz
+    else:
+        print("I DON'T LIKE INITROT == None")
+        print("this must mean that INITROT = Identity ?...")
+
+    Qrot = trQ  # lattice rotation due to quaternion
+    Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
+
+    twthe, chi = F2TC.from_qunit_to_twchi(Qrot / Qrotn, labXMAS=labXMAS)
+    
+#     print "twthe, chi", twthe, chi
+    
+    if 0:  # verbose:
+        print("tDATA_Q", np.transpose(DATA_Q))
+        print("Qrot", Qrot)
+        print("Qrotn", Qrotn)
+        print("Qrot/Qrotn", Qrot / Qrotn)
+        print("twthe,chi", twthe, chi)
+
+    X, Y, theta = F2TC.calc_xycam_from2thetachi(twthe,
+                                            chi, calibration_parameters,
+                                            offset=offset,
+                                            verbose=0,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            signgam=signgam,
+                                            kf_direction=kf_direction)
+
+    return X, Y, theta, R
+
+
+def error_function_on_demand_calibration(param_calib,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots, pixX, pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        vecteurref=IDENTITYMATRIX,
+                                        pureRotation=1,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        allspots_info=0,
+                                        kf_direction='Z>0'):
+    """
+    #All miller indices must be entered in DATA_Q,
+    selection is done in xy_from_Quat with nspots (array of indices)
+    # param_orient is three elements array representation of quaternion
+    """
+    mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+
+    if 5 in arr_indexvaryingparameters:
+        ind1 = np.where(arr_indexvaryingparameters == 5)[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a1 = param_calib[ind1] * DEG
+        else:
+            a1 = param_calib[0] * DEG
+        # print "a1 (rad)= ",a1
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
+
+    if 6 in arr_indexvaryingparameters:
+        ind2 = np.where(arr_indexvaryingparameters == 6)[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a2 = param_calib[ind2] * DEG
+        else:
+            a2 = param_calib[0] * DEG
+        # print "a2 (rad)= ",a2
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
+
+    if 7 in arr_indexvaryingparameters:
+        ind3 = np.where(arr_indexvaryingparameters == 7)[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a3 = param_calib[ind3] * DEG
+        else:
+            a3 = param_calib[0] * DEG
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                        [np.sin(a3), np.cos(a3), 0],
+                        [0, 0, 1]])
+
+    deltamat = np.dot(mat3, np.dot(mat2, mat1))
+    newmatrix = np.dot(deltamat, initrot)
+
+    # three last parameters are orientation angles in quaternion expression
+    onlydetectorindices = arr_indexvaryingparameters[arr_indexvaryingparameters < 5]
+
+    X, Y, theta, R = xy_from_Quat(param_calib,
+                            DATA_Q, nspots,
+                            onlydetectorindices,
+                            allparameters,
+                            initrot=newmatrix,
+                            vecteurref=vecteurref,
+                            pureRotation=pureRotation,
+                            labXMAS=0,
+                            verbose=verbose,
+                            pixelsize=pixelsize,
+                            dim=dim,
+                            signgam=signgam,
+                            kf_direction=kf_direction)
+
+    distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
+
+    if weights is not None:  # take into account the exp. spots intensity as weight in cost distance function
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+        # print "**mean weighted distanceterm   ",mean(distanceterm),"    ********"
+        # print "**mean distanceterm   ",mean(distanceterm),"    ********"
+
+    if allspots_info == 0:
+        if verbose:
+            # print "X",X
+            # print "pixX",pixX
+            # print "Y",Y
+            # print "pixY",pixY
+            # print "param_orient",param_calib
+            # print "distanceterm",distanceterm
+            # print "*****************mean distanceterm   ",mean(distanceterm),"    ********"
+            # print "newmatrix", newmatrix
+            return distanceterm, deltamat, newmatrix
+
+        else:
+            return distanceterm
+
+    elif allspots_info == 1:
+        Xtheo = X
+        Ytheo = Y
+        Xexp = pixX
+        Yexp = pixY
+        Xdev = Xtheo - Xexp
+        Ydev = Ytheo - Yexp
+
+        theta_theo = theta
+
+        spotsData = [Xtheo, Ytheo, Xexp, Yexp, Xdev, Ydev, theta_theo]
+
+        return distanceterm, deltamat, newmatrix, spotsData
+
+
+def fit_on_demand_calibration(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_calibration,
+                                arr_indexvaryingparameters,
+                                nspots, pixX, pixY,
+                                initrot=IDENTITYMATRIX,
+                                vecteurref=IDENTITYMATRIX,
+                                pureRotation=1,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                **kwd
+                                ):
+    """
+    #All miller indices must be entered in miller,
+    selection is done in xy_from_Quat with nspots (array of indices)
+    """
+    parameters = ['distance (mm)', 'Xcen (pixel)', 'Ycen (pixel)', 'Angle1 (deg)', 'Angle2 (deg)', 'theta1', 'theta2', 'theta3']
+
+    parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
+    param_calib_0 = starting_param
+    if verbose:
+        print("\n\n***************************\nfirst error with initial values of:", parameters_being_fitted, " \n\n***************************\n")
+
+        _error_function_on_demand_calibration(param_calib_0,
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                nspots, pixX, pixY,
+                                                initrot=initrot,
+                                                vecteurref=vecteurref,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted, "\n\n***************************\n")
+        # NEEDS AT LEAST 5 spots (len of nspots)
+        print("With initial values", param_calib_0)
+
+
+    # setting  keywords of _error_function_on_demand_calibration during the fitting because leastsq handle only *args but not **kwds
+    _error_function_on_demand_calibration.__defaults__ = (initrot,
+                                                           vecteurref,
+                                                           pureRotation,
+                                                            0,
+                                                             pixelsize,
+                                                             dim,
+                                                             weights,
+                                                             signgam,
+                                                             0,
+                                                             kf_direction)
+
+    # LEASTSQUARE
+    calib_sol = leastsq(_error_function_on_demand_calibration,
+                param_calib_0,
+                args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY,),
+                maxfev=5000,
+                **kwd)  # args=(rre,ertetr,) last , is important!
+
+    # print "calib_sol",calib_sol
+
+    if calib_sol[-1] in (1, 2, 3, 4, 5):
+        if verbose:
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_calibration(calib_sol[0],
+                                                    miller,
+                                                    allparameters,
+                                                    arr_indexvaryingparameters,
+                                                    nspots, pixX, pixY,
+                                                    initrot=initrot,
+                                                    pureRotation=pureRotation,
+                                                    verbose=verbose,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    signgam=signgam,
+                                                    kf_direction=kf_direction)
+        return calib_sol[0]  # 5 detector parameters + deltaangles
+    else:
+        return None
+
+
+def error_function_on_demand_strain(param_strain,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots, pixX, pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        Bmat=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0'):
+    """
+    #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
+    # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
+    # param_strain must contain values of one or many parameters of allparameters
+    #   
+    #   strain = param_strain[:5]
+    #   deltaangles = param_strain[5:8]
+    #   arr_indexvaryingparameters = array of position of parameters whose values are in param_strain
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit strain without orientation refinement
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12]) for strain AND orientation refinement
+    #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
+    Bmat=  B0 matrix 
+
+    """
+
+    mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+
+    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last fro roatation
+    index_of_rot_in_arr_indexvaryingparameters = [10, 11, 12]
+
+    if index_of_rot_in_arr_indexvaryingparameters[0] in arr_indexvaryingparameters:
+        ind1 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[0])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a1 = param_strain[ind1] * DEG
+        else:
+            a1 = param_strain[0] * DEG
+        # print "a1 (rad)= ",a1
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters[1] in arr_indexvaryingparameters:
+        ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[1])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a2 = param_strain[ind2] * DEG
+        else:
+            a2 = param_strain[0] * DEG
+        # print "a2 (rad)= ",a2
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters[2] in arr_indexvaryingparameters:
+        ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[2])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a3 = param_strain[ind3] * DEG
+        else:
+            a3 = param_strain[0] * DEG
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                        [np.sin(a3), np.cos(a3), 0],
+                        [0, 0, 1]])
+
+    deltamat = np.dot(mat3, np.dot(mat2, mat1))
+
+    # building B mat
+    varyingstrain = np.array([[1., param_strain[2], param_strain[3]],
+                                [0, param_strain[0], param_strain[4]],
+                                [0, 0, param_strain[1]]])
+
+    newmatrix = np.dot(np.dot(deltamat, initrot), varyingstrain)
+
+    # # three last parameters are orientation angles in quaternion expression and are here not used
+    # varying_parameter_value = array(allparameters[:5])
+    # arr_indexvaryingparameters =  arr_indexvaryingparameters [arr_indexvaryingparameters < 5]
+
+    # varying_parameter_value: array of value that will be taken into account
+    # xy_from_Quat  only uses 5 detector calibration parameter
+    # fitting_param: index of position of varying parameters in allparameters array
+    # allparameters: array of 8 elements: 5 first of calibration parameters and 3 of angles defining quaternion
+
+    patchallparam = allparameters.tolist()
+
+    ally = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
+    # because elem 5 to 7 are used in quaternion calculation
+    # TODO : correct also strain calib in the same manner
+    X, Y, theta, R = xy_from_Quat(allparameters[:5],
+                            DATA_Q, nspots,
+                            np.arange(5),
+                            ally,
+                            initrot=newmatrix,
+                            vecteurref=Bmat,
+                            pureRotation=0,
+                            labXMAS=0,
+                            verbose=0,
+                            pixelsize=pixelsize,
+                            dim=dim,
+                            signgam=signgam,
+                            kf_direction=kf_direction)
+
+    distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
+
+    if weights is not None:
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+        # print "**mean weighted distanceterm   ",mean(distanceterm),"    ********"
+    # print "**mean distanceterm   ",mean(distanceterm),"    ********"
+
+    if verbose:
+        # print "param_strain in error_function_on_demand_strain",param_strain
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "X",X
+        # print "pixX",pixX
+        # print "Y",Y
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "Bmat",Bmat
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
+#        print "newmatrix", newmatrix
+        return distanceterm, deltamat, newmatrix
+
+    else:
+        return distanceterm
+
+
+def error_function_strain_with_two_orientations(param_strain,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots, pixX, pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        Bmat=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA):
+    """
+    #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
+    # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
+    # param_strain must contain values of one or many parameters of allparameters
+    #   
+    #   strain = param_strain[:5]
+    #   deltaangles = param_strain[5:8]
+    #   arr_indexvaryingparameters = array of position of parameters whose values are in param_strain
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit strain without orientation refinement
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12, 13,14,15]) for strain AND orientation refinement
+    #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
+
+    TODO: not implemented for transmission geometry (kf_direction='X>0') and backreflection ('X<0')
+    
+    # TODO: not completed
+    """
+
+    mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+
+    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 6 last for misorientation of two grains
+    index_of_rot_in_arr_indexvaryingparameters_1 = [10, 11, 12]
+    index_of_rot_in_arr_indexvaryingparameters_2 = [13, 14, 15]
+
+
+    if index_of_rot_in_arr_indexvaryingparameters_1[0] in arr_indexvaryingparameters:
+        ind1 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[0])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a1 = param_strain[ind1] * DEG
+        else:
+            a1 = param_strain[0] * DEG
+        # print "a1 (rad)= ",a1
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters_1[1] in arr_indexvaryingparameters:
+        ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[1])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a2 = param_strain[ind2] * DEG
+        else:
+            a2 = param_strain[0] * DEG
+        # print "a2 (rad)= ",a2
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters_1[2] in arr_indexvaryingparameters:
+        ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[2])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a3 = param_strain[ind3] * DEG
+        else:
+            a3 = param_strain[0] * DEG
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                        [np.sin(a3), np.cos(a3), 0],
+                        [0, 0, 1]])
+
+    deltamat_1 = np.dot(mat3, np.dot(mat2, mat1))
+
+    if index_of_rot_in_arr_indexvaryingparameters_2[0] in arr_indexvaryingparameters:
+        ind1 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_2[0])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a1 = param_strain[ind1] * DEG
+        else:
+            a1 = param_strain[0] * DEG
+        # print "a1 (rad)= ",a1
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters_2[1] in arr_indexvaryingparameters:
+        ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_2[1])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a2 = param_strain[ind2] * DEG
+        else:
+            a2 = param_strain[0] * DEG
+        # print "a2 (rad)= ",a2
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
+
+    if index_of_rot_in_arr_indexvaryingparameters_2[2] in arr_indexvaryingparameters:
+        ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_2[2])[0][0]
+        if len(arr_indexvaryingparameters) > 1:
+            a3 = param_strain[ind3] * DEG
+        else:
+            a3 = param_strain[0] * DEG
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                        [np.sin(a3), np.cos(a3), 0],
+                        [0, 0, 1]])
+
+
+    deltamat_2 = np.dot(mat3, np.dot(mat2, mat1))
+
+    # building B mat
+    varyingstrain = np.array([[1., param_strain[2], param_strain[3]],
+                                [0, param_strain[0], param_strain[4]],
+                                [0, 0, param_strain[1]]])
+
+    newmatrix_1 = np.dot(np.dot(deltamat_1, initrot), varyingstrain)
+
+    newmatrix_2 = np.dot(np.dot(deltamat_2, initrot), varyingstrain)
+
+    # # three last parameters are orientation angles in quaternion expression and are here not used
+    # varying_parameter_value = array(allparameters[:5])
+    # arr_indexvaryingparameters =  arr_indexvaryingparameters [arr_indexvaryingparameters < 5]
+
+    # varying_parameter_value: array of value that will be taken into account
+    # xy_from_Quat  only uses 5 detector calibration parameter
+    # fitting_param: index of position of varying parameters in allparameters array
+    # allparameters: array of 8 elements: 5 first of calibration parameters and 3 of angles defining quaternion
+
+    patchallparam = allparameters.tolist()
+
+    #                5 det parameters    +  3 small rotations     +   5 strain parameters
+    ally_1 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
+    # because elem 5 to 7 are used in quaternion calculation
+    # TODO : correct also strain calib in the same manner
+    X1, Y1, theta1, R1 = xy_from_Quat(allparameters[:5],
+                            DATA_Q, nspots,
+                            np.arange(5),
+                            ally_1,
+                            initrot=newmatrix_1,
+                            vecteurref=Bmat,
+                            pureRotation=0,
+                            labXMAS=0,
+                            verbose=0,
+                            pixelsize=pixelsize,
+                            dim=dim,
+                            signgam=signgam)
+
+    distanceterm1 = np.sqrt((X1 - pixX) ** 2 + (Y1 - pixY) ** 2)
+
+    #                5 det parameters    +  3 small rotations     +   5 strain parameters
+    ally_2 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
+    # because elem 5 to 7 are used in quaternion calculation
+    # TODO : correct also strain calib in the same manner
+    X2, Y2, theta2, R2 = xy_from_Quat(allparameters[:5],
+                            DATA_Q, nspots,
+                            np.arange(5),
+                            ally_2,
+                            initrot=newmatrix_2,
+                            vecteurref=Bmat,
+                            pureRotation=0,
+                            labXMAS=0,
+                            verbose=0,
+                            pixelsize=pixelsize,
+                            dim=dim,
+                            signgam=signgam)
+
+    distanceterm2 = np.sqrt((X2 - pixX) ** 2 + (Y2 - pixY) ** 2)
+
+    if weights is not None:
+        allweights = np.sum(weights)
+        distanceterm = distanceterm2 * weights / allweights
+        # print "**mean weighted distanceterm   ",mean(distanceterm),"    ********"
+    # print "**mean distanceterm   ",mean(distanceterm),"    ********"
+
+    if verbose:
+        # print "param_strain in error_function_on_demand_strain",param_strain
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "X",X
+        # print "pixX",pixX
+        # print "Y",Y
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "Bmat",Bmat
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
+#        print "newmatrix", newmatrix
+        return distanceterm2, deltamat, newmatrix
+
+    else:
+        return distanceterm
+
+
+def fit_on_demand_strain(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_strain,
+                                arr_indexvaryingparameters,
+                                nspots, pixX, pixY,
+                                initrot=IDENTITYMATRIX,
+                                Bmat=IDENTITYMATRIX,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                **kwd
+                                ):
+    """
+    To use it:
+    allparameters = 5calibdetectorparams + fivestrainparameter + 3deltaangles of orientations
+    starting_param = [fivestrainparameter + 3deltaangles of orientations] = [1,1,0,0,0,0,0,0]  typically
+    arr_indexvaryingparameters = range(5,13)
+    """
+
+    # All miller indices must be entered in miller, selection is done in xy_from_Quat with nspots (array of indices)
+    parameters = ['dd', 'xcen', 'ycen', 'angle1', 'angle2', 'b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+    parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
+
+
+    param_strain_0 = starting_param
+    if verbose:
+        print("\n\n***************************\nfirst error with initial values of:", parameters_being_fitted, " \n\n***************************\n")
+
+        _error_function_on_demand_strain(param_strain_0,
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                nspots, pixX, pixY,
+                                                initrot=initrot,
+                                                Bmat=Bmat,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted, "\n\n***************************\n")
+        # NEEDS AT LEAST 5 spots (len of nspots)
+        print("With initial values", param_strain_0)
+
+    # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
+    _error_function_on_demand_strain.__defaults__ = (initrot, Bmat, pureRotation,
+                                                      0, pixelsize, dim, weights, signgam, kf_direction)
+    
+#     print "_error_function_on_demand_strain.func_defaults", _error_function_on_demand_strain.func_defaults
+
+#     pixX = np.array(pixX, dtype=np.float64)
+#     pixY = np.array(pixY, dtype=np.float64)
+    # LEASTSQUARE
+    res = leastsq(_error_function_on_demand_strain,
+                param_strain_0,
+                args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY,),
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)  # args=(rre,ertetr,) last , is important!
+
+    strain_sol = res[0]
+
+#     print "res", res
+    print("code results", res[-1])
+    print("nb iterations", res[2]["nfev"])
+    print("mesg", res[-2])
+
+    if verbose:
+        print("strain_sol", strain_sol)
+
+    if res[-1] not in (1, 2, 3, 4, 5):
+        return None
+    else:
+        if verbose:
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_strain(strain_sol[0],
+                                                    miller,
+                                                    allparameters,
+                                                    arr_indexvaryingparameters,
+                                                    nspots, pixX, pixY,
+                                                    initrot=initrot,
+                                                    Bmat=Bmat,
+                                                    pureRotation=pureRotation,
+                                                    verbose=verbose,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    signgam=signgam,
+                                                    kf_direction=kf_direction)
+        return strain_sol
+
+
+def plot_refinement_oneparameter(starting_param, miller,
+                                    allparameters,
+                                    _error_function_on_demand_calibration,
+                                    arr_indexvaryingparameters,
+                                    nspots, pixX, pixY,
+                                    param_range,
+                                    initrot=IDENTITYMATRIX,
+                                    vecteurref=IDENTITYMATRIX,
+                                    pureRotation=1,
+                                    verbose=0,
+                                    pixelsize=165. / 2048,
+                                    dim=(2048, 2048),
+                                    weights=None,
+                                    signgam=SIGN_OF_GAMMA,
+                                    kf_direction='Z>0',
+                                    **kwd):
+
+    """
+    All miller indices must be entered in miller, 
+    selection is done in xy_from_Quat with nspots (array of indices)
+    """
+    parameters = ['distance (mm)', 'Xcen (pixel)', 'Ycen (pixel)',
+                'Angle1 (deg)', 'Angle2 (deg)',
+                'theta1', 'theta2', 'theta3']
+
+    parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
+    param_calib_0 = starting_param
+
+
+    mini, maxi, nbsteps = param_range
+
+
+    # setting  keywords of _error_function_on_demand_calibration during the fitting because leastsq handle only *args but not **kwds
+    _error_function_on_demand_calibration.__defaults__ = (initrot,
+                                                           vecteurref,
+                                                           pureRotation,
+                                                           0,
+                                                           pixelsize,
+                                                           dim,
+                                                           weights,
+                                                           signgam,
+                                                           kf_direction)
+
+    # designed for rotation angle
+    res = []
+    for angle in (np.linspace(mini, maxi, nbsteps) + param_calib_0):
+        residues = _error_function_on_demand_calibration(np.array([angle]),
+                            miller,
+                            allparameters, arr_indexvaryingparameters, nspots,
+                            pixX, pixY,
+                            initrot=initrot,
+                            vecteurref=vecteurref,
+                            pureRotation=pureRotation,
+                            verbose=0,
+                            pixelsize=pixelsize,
+                            weights=weights,
+                            signgam=signgam,
+                            kf_direction=kf_direction)
+        # print "mean(residues)",mean(residues)
+        res.append([angle, np.mean(residues)])
+
+    return res
+
+
+def error_function_XCEN(param_calib,
+                        DATA_Q,
+                        allparameters,
+                        nspots,
+                        pixX, pixY,
+                        initrot=IDENTITYMATRIX,
+                        pureRotation=1,
+                        verbose=0,
+                        pixelsize=165. / 2048,
+                        signgam=SIGN_OF_GAMMA):
+    """
+    seems to be useless ?
+    """
+    # All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
+    # param_orient is three elements array representation of quaternion
+
+    X, Y, theta, R = xy_from_Quat(param_calib,
+                            DATA_Q, nspots,
+                            np.arange(8)[1],
+                            allparameters,
+                            initrot=initrot,
+                            pureRotation=pureRotation,
+                            labXMAS=0,
+                            verbose=verbose,
+                            pixelsize=pixelsize,
+                            signgam=signgam)
+
+    distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
+
+    # print "**mean distanceterm   ",mean(distanceterm),"    ********"
+
+    if verbose:
+        print("X", X)
+        print("pixX", pixX)
+        print("Y", Y)
+        print("pixY", pixY)
+        print("param_orient", param_calib)
+        print("distanceterm", distanceterm)
+        print("\n*****************\n\nmean distanceterm   ", np.mean(distanceterm), "    ********\n")
+        return distanceterm, R
+    else:
+        return distanceterm
+
+
+def fitXCEN(starting_param,
+            miller, allparameters,
+            _error_function_XCEN,
+            nspots, pixX, pixY,
+            initrot=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1.]]),
+            pureRotation=1, verbose=0, pixelsize=165. / 2048,
+            signgam=SIGN_OF_GAMMA,
+            **kwd):
+    """
+    #All miller indices must be entered in miller, 
+    selection is done in xy_from_Quat with nspots (array of indices)
+    """
+    param_calib_0 = starting_param
+    if verbose:
+        print("\n\n***************************\nfirst error XCEN************************\n")
+
+        _error_function_XCEN(param_calib_0, miller, allparameters, nspots, pixX, pixY,
+                                initrot=initrot, pureRotation=pureRotation,
+                                verbose=1, pixelsize=pixelsize, signgam=signgam)
+
+        print("\n\n***************************\nFitting XCEN ...\n\n***************************\n")
+
+        print("Starting parameters", param_calib_0)
+
+
+    # setting  keywords of _error_function_XCEN during the fitting because leastsq handle only *args but not **kwds
+    _error_function_XCEN.__defaults__ = (initrot, pureRotation, 0, pixelsize, signgam)
+
+    calib_sol = leastsq(_error_function_XCEN, param_calib_0, args=(miller, allparameters, nspots, pixX, pixY,), **kwd)  # args=(rre,ertetr,) last , is important!
+
+    print("calib_sol", calib_sol)
+    if calib_sol[-1] in (1, 2, 3, 4, 5):
+        if verbose:
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_XCEN(calib_sol[0],
+                                miller, allparameters, nspots, pixX, pixY,
+                                initrot=initrot, pureRotation=pureRotation,
+                                verbose=verbose, pixelsize=pixelsize, signgam=signgam)
+        return calib_sol[0]  # 5 detector parameters
+    else:
+        return None
+
+
+def fit_on_demand_strain_2grains(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_strain_2grains,
+                                arr_indexvaryingparameters,
+                                absolutespotsindices, pixX, pixY,
+                                initrot=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                ** kwd
+                                ):
+    """
+    Fit a model of two grains of the same material
+    Initial orientation matrices are the same (only strain state differs) 
+    
+    To use it:
+    allparameters = 5calibdetectorparams + fivestrainparameters_g1 + 3deltaangles_g1 of orientations
+                    + fivestrainparameters_g2 + 3deltaangles_g2 of orientations
+    starting_param = [fivestrainparameter + 3deltaangles of orientations] = [1,1,0,0,0,0,0,0]+[1,1,0,0,0,0,0,0]  typically
+    arr_indexvaryingparameters = range(5,21)
+    
+    B0matrix   : B0 matrix defining a*,b*,c* basis vectors (in columns) in initial orientation / LT frame
+    """
+    # All miller indices must be entered in miller
+    # selection is done in xy_from_Quat with absolutespotsindices (array of indices)
+    parameterscalib = ['dd', 'xcen', 'ycen', 'angle1', 'angle2']
+    strain_g1 = ['b/a', 'c/a', 'a12', 'a13', 'a23'] 
+    rot_g1 = ['theta1', 'theta2', 'theta3']
+    strain_g2 = ['b/a', 'c/a', 'a12', 'a13', 'a23']
+    
+    parameters = parameterscalib + strain_g1 + rot_g1 + strain_g2
+    
+    parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
+
+    init_strain_values = starting_param
+    if 1:  # verbose:
+        print("\n\n***************************\nfirst error with initial values of:", parameters_being_fitted, " \n\n***************************\n")
+
+        _error_function_on_demand_strain_2grains(init_strain_values,
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                absolutespotsindices, pixX, pixY,
+                                                initrot=initrot,
+                                                B0matrix=B0matrix,
+                                                nb_grains=nb_grains,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted, "\n\n***************************\n")
+        # NEEDS AT LEAST 5 spots (len of nspots)
+        print("With initial values", init_strain_values)
+
+    # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
+    _error_function_on_demand_strain_2grains.__defaults__ = (initrot, B0matrix, nb_grains, pureRotation,
+                                                      0, pixelsize, dim, weights, signgam, kf_direction, False)
+
+#     pixX = np.array(pixX, dtype=np.float64)
+#     pixY = np.array(pixY, dtype=np.float64)
+    # LEASTSQUARE
+    res = leastsq(_error_function_on_demand_strain_2grains,
+                init_strain_values,
+                args=(miller, allparameters, arr_indexvaryingparameters, absolutespotsindices, pixX, pixY,),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)  
+
+    strain_sol = res[0]
+
+#     print "res", res
+#     print "code results", res[-1]
+    print("nb iterations", res[2]["nfev"])
+
+    if 1:  # verbose:
+        print("strain_sol", strain_sol)
+
+    if res[-1] not in (1, 2, 3, 4, 5):
+        return None
+    else:
+        if 1:  # verbose:
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_strain_2grains(strain_sol,
+                                                    miller,
+                                                    allparameters,
+                                                    arr_indexvaryingparameters,
+                                                    absolutespotsindices, pixX, pixY,
+                                                    initrot=initrot,
+                                                    B0matrix=B0matrix,
+                                                    nb_grains=nb_grains,
+                                                    pureRotation=pureRotation,
+                                                    verbose=verbose,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    signgam=signgam,
+                                                    kf_direction=kf_direction,
+                                                    returnalldata=True)
+        return strain_sol
+
+
+def error_function_on_demand_strain_2grains(varying_parameters_values,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        absolutespotsindices, pixX, pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        B0matrix=IDENTITYMATRIX,
+                                        nb_grains=1,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0',
+                                        returnalldata=False):
+    """
+    compute array of errors of weight*((Xtheo-pixX)**2+(Ytheo-pixY)**2) for each pears
+    Xtheo, Ytheo derived from kf and q vector: q = UB Bmat B0 G* where G* =[h ,k, l] vector
+    
+    Bmat is the displacements matrix   strain = Bmat-Id
+    
+    #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with absolutespotsindices (array of indices)
+    # allparameters must contain 5 detector calibration parameters + 5 parameters_g1 of strain + 3 angles_g1 of elementary rotation
+    #                             + 5 parameters_g2 of strain
+    # varying_parameters_values must contain values of one or many parameters of allparameters
+    #   
+    #   strain_g1 = varying_parameters_values[:5]
+        strain_g2 = varying_parameters_values[8:13]
+    #   deltaangles_g1 = varying_parameters_values[5:8]
+
+    #   arr_indexvaryingparameters = array of position of parameters whose values are in varying_parameters_values
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit g1's strain without orientation refinement
+    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12]) for g1's strain AND orientation refinement
+    #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
+
+    DATA_Q   array of hkl vectors
+    pixX     arrays of pixels exp. peaks X positions  [Xs g1,Xs g2]
+    pixY     arrays of pixels exp. peaks Y positions [Ys g1,Ys g2]
+    absolutespotsindices        [absolutespotsindices g1, absolutespotsindices g2]
+    weights    None or [weights g1, weight g2]
+    initrot   = guessed UB orientation matrix
+    B0matrix    B0 matrix defining a*,b*,c* basis vectors (in columns) in initial orientation / LT frame
+    
+    
+    TODO: ?? not implemented for transmission geometry (kf_direction='X>0') ? and backreflection ('X<0')
+    """ 
+    
+    if isinstance(allparameters, np.ndarray):
+        calibrationparameters = (allparameters.tolist())[:5]
+    else:
+        calibrationparameters = allparameters[:5]
+        
+    rotationselements_indices = [[10, 11, 12], [18, 19, 20]]  # with counting 5 calib parameters
+    strainelements_indices = [[5, 6, 7, 8, 9], [13, 14, 15, 16, 17]]
+    
+    distances_vector_list = []
+    all_deltamatrices = []
+    all_newmatrices = []
+    for grain_index in range(nb_grains):
+        mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+    
+        # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last fro roatation
+        index_of_rot_in_arr_indexvaryingparameters = rotationselements_indices[grain_index]
+    
+        if index_of_rot_in_arr_indexvaryingparameters[0] in arr_indexvaryingparameters:
+            ind1 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[0])[0][0]
+            if len(arr_indexvaryingparameters) > 1:
+                a1 = varying_parameters_values[ind1] * DEG
+            else:
+                a1 = varying_parameters_values[0] * DEG
+            # print "a1 (rad)= ",a1
+            mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                            [0, 1, 0],
+                            [-np.sin(a1), 0, np.cos(a1)]])
+    
+        if index_of_rot_in_arr_indexvaryingparameters[1] in arr_indexvaryingparameters:
+            ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[1])[0][0]
+            if len(arr_indexvaryingparameters) > 1:
+                a2 = varying_parameters_values[ind2] * DEG
+            else:
+                a2 = varying_parameters_values[0] * DEG
+            # print "a2 (rad)= ",a2
+            mat2 = np.array([[1, 0, 0],
+                            [0, np.cos(a2), np.sin(a2)],
+                            [0, np.sin(-a2), np.cos(a2)]])
+    
+        if index_of_rot_in_arr_indexvaryingparameters[2] in arr_indexvaryingparameters:
+            ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[2])[0][0]
+            if len(arr_indexvaryingparameters) > 1:
+                a3 = varying_parameters_values[ind3] * DEG
+            else:
+                a3 = varying_parameters_values[0] * DEG
+            mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                            [np.sin(a3), np.cos(a3), 0],
+                            [0, 0, 1]])
+    
+        deltamat = np.dot(mat3, np.dot(mat2, mat1))
+        
+         
+        all_deltamatrices.append(deltamat)
+        
+        print('all_deltamatrices', all_deltamatrices)
+
+        # building Bmat ------------(triangular up matrix) 
+        index_of_strain_in_arr_indexvaryingparameters = strainelements_indices[grain_index]
+        
+        print("arr_indexvaryingparameters", arr_indexvaryingparameters)
+        print('varying_parameters_values', varying_parameters_values)
+        
+        # default parameters
+        s_list = [1, 1, 0, 0, 0]
+        for s_index in range(5):
+            if index_of_strain_in_arr_indexvaryingparameters[s_index] in arr_indexvaryingparameters:
+                ind1 = np.where(arr_indexvaryingparameters == index_of_strain_in_arr_indexvaryingparameters[s_index])[0][0]
+                if len(arr_indexvaryingparameters) > 1:
+                    s_list[s_index] = varying_parameters_values[ind1]
+                else:  # handling fit with single fitting parameter
+                    s_list[s_index] = varying_parameters_values[0]
+                    
+        s0, s1, s2, s3, s4 = s_list
+        varyingstrain = np.array([[1., s2, s3],
+                                    [0, s0, s4],
+                                    [0, 0, s1]])
+        
+        
+    
+        newmatrix = np.dot(np.dot(deltamat, initrot), varyingstrain)
+        all_newmatrices.append(newmatrix)
+        
+#         print "varyingstrain", varyingstrain
+#         print 'all_newmatrices', all_newmatrices
+     
+        Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                    DATA_Q, absolutespotsindices[grain_index],
+                                                    UBmatrix=newmatrix,
+                                                    B0matrix=B0matrix,
+                                                    pureRotation=0,
+                                                    labXMAS=0,
+                                                    verbose=0,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    signgam=signgam,
+                                                    kf_direction=kf_direction)
+#         import laue6 as Laue
+#         dictCCD = {}
+#         dictCCD['CCDparam'] = calibrationparameters
+#         dictCCD['pixelsize'] = pixelsize
+#         dictCCD['dim'] = dim
+# 
+#         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, B0matrix, DATA_Q, dictCCD)
+#         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+        
+        Xexp = pixX[grain_index]
+        Yexp = pixY[grain_index]
+    
+        distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
+
+        if weights is not None:
+            allweights = np.sum(weights[grain_index])
+            distanceterm = distanceterm * weights[grain_index] / allweights
+
+        if verbose: 
+            print("**   grain %d   distance residues = " % grain_index, distanceterm, "    ********")
+            print("**   grain %d   mean distance residue = " % grain_index, np.mean(distanceterm), "    ********")
+#             print "twthe, chi", twthe, chi
+        distances_vector_list.append(distanceterm)
+    
+#     print 'len(distances_vector_list)', len(distances_vector_list)
+    
+    if nb_grains == 2:
+        alldistances_array = np.hstack((distances_vector_list[0], distances_vector_list[1]))
+    if nb_grains == 1:
+        alldistances_array = distances_vector_list[0]
+
+    if verbose:
+        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "Xmodel",Xmodel
+        # print "pixX",pixX
+        # print "Ymodel",Ymodel
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "B0matrix",B0matrix
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(alldistances_array), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
+#        print "newmatrix", newmatrix
+    if returnalldata is True:
+        # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
+        return alldistances_array, all_deltamatrices, all_newmatrices
+
+    else:
+        return alldistances_array
+    
+
+def error_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, Xexp, Yexp,
+                                        initrot=IDENTITYMATRIX,
+                                        B0matrix=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0',
+                                        returnalldata=False):
+    """
+    
+    q = T_LT  UzUyUz Ustart  T_c B0 G*
+    
+    Interface error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+    
+    q = T_LT  UzUyUz Ustart  T_c B0 G*
+    
+    B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
+            i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
+     
+    possible keys for parameters to be refined are:
+      
+    five detector frame calibration parameters:
+    detectordistance,xcen,ycen,beta, gamma
+    
+    three misorientation angles with respect to LT orthonormal frame (x, y, z) matrices Ux, Uy,Uz:
+    anglex,angley,anglez   
+    
+    5 independent elements of a distortion operator 
+    
+    -[[Tc00,Tc01,Tc02],[Tc10,Tc11,Tc12],[Tc20,Tc21,Tc22]]
+    each column is the transformed reciprocal unit cell vector a*',b*' or c*' expressed in a*,b*,c* frame (reference reciprocal unit cell)
+    
+    Usually Tc11, Tc22, Tc01,Tc02,Tc12  with Tc00=1 and the all others = 0 (matrix triangular up)
+    
+    # TODO :- [[Td00,Td01,Td02],[Td10,Td11,Td12],[Td20,Td21,Td22]]
+    #
+    #each column is the transformed direct crystal unit cell vector a',b' or c' expressed in a,b,c frame (reference unit cell)
+    
+    -[[T00,T01,T02],[T10,T11,T12],[T20,T21,T22]]
+    each column is the transformed LT frame vector x',y' or z' expressed in x,y,z frame
+    
+    -[[Ts00,Ts01,Ts02],[Ts10,Ts11,Ts12],[Ts20,Ts21,Ts22]]
+    each column is the transformed sample frame vector xs',ys' or zs' expressed in xs,ys,zs frame
+    """
+    
+    if isinstance(allparameters, np.ndarray):
+        calibrationparameters = (allparameters.tolist())[:5]
+    else:
+        calibrationparameters = allparameters[:5]
+        
+#     print 'allparameters',allparameters
+        
+    Uy, Ux, Uz = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+    Tc = np.array(allparameters[8:17]).reshape((3, 3))
+    T = np.array(allparameters[17:26]).reshape((3, 3))
+    Ts = np.array(allparameters[26:35]).reshape((3, 3))
+    latticeparameters = np.array(allparameters[35:41])
+    sourcedepth = allparameters[41]
+    
+    
+#     print "Tc before", Tc
+    
+    T_has_elements = False
+    Ts_has_elements = False
+    Tc_has_elements = False
+    latticeparameters_has_elements = False
+    
+    nb_varying_parameters = len(varying_parameters_keys)
+    
+    for varying_parameter_index, parameter_name in enumerate(varying_parameters_keys):
+#         print "varying_parameter_index,parameter_name", varying_parameter_index, parameter_name
+
+        if parameter_name in ('anglex', 'angley', 'anglez'):
+#             print "got angles!"
+            if nb_varying_parameters > 1:
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
+            else:
+                anglevalue = varying_parameters_values_array[0] * DEG
+            # print "anglevalue (rad)= ",anglevalue
+            ca = np.cos(anglevalue)
+            sa = np.sin(anglevalue)
+            if parameter_name is 'angley':
+                Uy = np.array([[ca, 0, sa],
+                            [0, 1, 0],
+                            [-sa, 0, ca]])
+            elif parameter_name is 'anglex':
+                Ux = np.array([[1., 0, 0],
+                            [0, ca, sa],
+                            [0, -sa, ca]])
+            
+            elif parameter_name is 'anglez':
+                Uz = np.array([[ca, -sa, 0],
+                            [sa, ca, 0],
+                            [0, 0, 1.]])
+                
+        elif (not T_has_elements) and (not Ts_has_elements) and parameter_name in ('Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22'):
+#             print 'got Tc elements: ', parameter_name
+            for i in range(3):
+                for j in range(3):
+                    if parameter_name == 'Tc%d%d' % (i, j):
+#                         print "got parameter_name", parameter_name
+                        if nb_varying_parameters > 1:
+                            Tc[i, j] = varying_parameters_values_array[varying_parameter_index]
+                        else:
+                            Tc[i, j] = varying_parameters_values_array[0]
+                        Tc_has_elements = True
+                            
+        elif not Tc_has_elements and not Ts_has_elements and parameter_name in ('T00', 'T01', 'T02', 'T10', 'T11', 'T12', 'T20', 'T21', 'T22'):
+            for i in range(3):
+                for j in range(3):
+                    if parameter_name is 'T%d%d' % (i, j):
+                        if nb_varying_parameters > 1:
+                            T[i, j] = varying_parameters_values_array[varying_parameter_index]
+                        else:
+                            T[i, j] = varying_parameters_values_array[0]
+                        T_has_elements = True
+                        
+        elif not Tc_has_elements and not T_has_elements and parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts10', 'Ts11', 'Ts12', 'Ts20', 'Ts21', 'Ts22'):
+            for i in range(3):
+                for j in range(3):
+                    if parameter_name is 'Ts%d%d' % (i, j):
+                        if nb_varying_parameters > 1:
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
+                        else:
+                            Ts[i, j] = varying_parameters_values_array[0]
+                        Ts_has_elements = True
+                            
+        elif parameter_name in ('a', 'b', 'c','alpha','beta','gamma'):
+            indparam = dict_lattice_parameters[parameter_name]
+                        
+#             if nb_varying_parameters > 1:
+#                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[varying_parameter_index] / factorscale)
+#             else:
+#                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[0] / factorscale)
+            
+            if nb_varying_parameters > 1:
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index] 
+            else:
+                latticeparameters[indparam] = varying_parameters_values_array[0]
+            latticeparameters_has_elements = True
+                            
+        elif parameter_name in ('distance',):
+            calibrationparameters[0]=varying_parameters_values_array[varying_parameter_index]
+        elif parameter_name in ('xcen',):
+            calibrationparameters[1]=varying_parameters_values_array[varying_parameter_index]
+        elif parameter_name in ('ycen',):
+            calibrationparameters[2]=varying_parameters_values_array[varying_parameter_index]
+        elif parameter_name in ('beta',):
+            calibrationparameters[3]=varying_parameters_values_array[varying_parameter_index]
+        elif parameter_name in ('gamma',):
+            calibrationparameters[4]=varying_parameters_values_array[varying_parameter_index]
+            
+        elif parameter_name in ('depth',):
+            sourcedepth = varying_parameters_values_array[varying_parameter_index]
+    
+    Uxyz = np.dot(Uz, np.dot(Ux, Uy))
+    
+    
+    if verbose:
+        print('Uxyz', Uxyz)
+        print("varying_parameters_keys", varying_parameters_keys)
+        print('varying_parameters_values_array', varying_parameters_values_array)
+        
+        print('Tc_has_elements', Tc_has_elements)
+        print('T_has_elements', T_has_elements)
+        print('Ts_has_elements', Ts_has_elements)
+        print("latticeparameters_has_elements",latticeparameters_has_elements)
+        
+#     print "Tc after", Tc
+#     print "T", T
+#     print 'Ts', Ts
+    
+    # DictLT.RotY40 such as   X=DictLT.RotY40 Xsample  (xs,ys,zs =columns expressed in x,y,z frame)
+    # transform in sample frame   Ts
+    # same transform in x,y,z LT frame T
+    # Ts = DictLT.RotY40-1 T DictLT.RotY40
+    # T = DictLT.RotY40 Ts DictLT.RotY40-1
+    
+    newmatrix = np.dot(Uxyz, initrot)
+    
+    if Tc_has_elements is True:
+        newmatrix = np.dot(newmatrix, Tc)
+    elif T_has_elements is True:
+        newmatrix = np.dot(T, newmatrix)
+    elif Ts_has_elements is True:
+        T = np.dot(np.dot(DictLT.RotY40, Ts), DictLT.RotYm40)
+        newmatrix = np.dot(T, newmatrix)
+    elif latticeparameters_has_elements is True:
+        B0matrix = CP.calc_B_RR(latticeparameters, directspace=1, setvolume=False)
+    if verbose:
+        print('newmatrix', newmatrix)
+        print('B0matrix',B0matrix)
+        
+    
+ 
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                Miller_indices, absolutespotsindices,
+                                                UBmatrix=newmatrix,
+                                                B0matrix=B0matrix,
+                                                offset=sourcedepth,
+                                                pureRotation=0,
+                                                labXMAS=0,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+#         import laue6 as Laue
+#         dictCCD = {}
+#         dictCCD['CCDparam'] = calibrationparameters
+#         dictCCD['pixelsize'] = pixelsize
+#         dictCCD['dim'] = dim
+# 
+#         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, B0matrix, DATA_Q, dictCCD)
+#         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+    
+#     print 'Xmodel, Ymodel', Xmodel, Ymodel
+
+    distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
+
+    if weights is not None:
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+
+    if verbose: 
+#         print "**      distance residues = " , distanceterm, "    ********"
+        print("**    mean distance residue = " , np.mean(distanceterm), "    ********")
+#             print "twthe, chi", twthe, chi
+    
+    alldistances_array = distanceterm
+    if verbose:
+        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "Xmodel",Xmodel
+        # print "pixX",pixX
+        # print "Ymodel",Ymodel
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "B0matrix",B0matrix
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(alldistances_array), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
+#        print "newmatrix", newmatrix
+    if returnalldata is True:
+        # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
+        return alldistances_array, Uxyz, newmatrix, Tc, T, Ts
+
+    else:
+        return alldistances_array
+
+
+def fit_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices, Xexp, Yexp,
+                                UBmatrix_start=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                **kwd
+                                ):
+    """
+    
+    """
+
+    if 1:  # verbose:
+        print("\n\n******************\nfirst error with initial values of:", varying_parameters_keys, " \n\n***************************\n")
+
+        error_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                B0matrix=B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n********************\nFitting parameters:  ", varying_parameters_keys, "\n\n***************************\n")
+        print("With initial values", varying_parameters_values_array)
+
+    # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
+    error_function_general.__defaults__ = (UBmatrix_start, B0matrix, pureRotation,
+                                                      0, pixelsize, dim, weights, signgam, kf_direction, False)
+
+#     pixX = np.array(pixX, dtype=np.float64)
+#     pixY = np.array(pixY, dtype=np.float64)
+    # LEASTSQUARE
+    res = leastsq(error_function_general,
+                varying_parameters_values_array,
+                args=(varying_parameters_keys, Miller_indices, allparameters,
+                                absolutespotsindices, Xexp, Yexp,),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)  
+
+    refined_values = res[0]
+
+#     print "res fit in fit function general", res
+    print("code results", res[-1])
+    print("nb iterations", res[2]["nfev"])
+    print("refined_values", refined_values)
+
+    if res[-1] not in (1, 2, 3, 4, 5):
+        return None
+    else:
+        if 1:  # verbose:
+            print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n")
+            alldata = error_function_general(refined_values, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                B0matrix=B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction,
+                                                returnalldata=True)
+            
+            # alldistances_array, Uxyz, newmatrix, Tc, T, Ts
+            alldistances_array, Uxyz, refinedUB, refinedTc, refinedT, refinedTs = alldata
+            
+
+                
+            for k, param_key in enumerate(varying_parameters_keys):
+                print("%s  : start %.4f   --->   refined %.4f" % (param_key,
+                                                                  varying_parameters_values_array[k],
+                                                                  refined_values[k]))
+            print("results:\n q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
+            print("refined UBmatrix", refinedUB)
+            print("Uxyz", Uxyz)
+            print('refinedTc, refinedT, refinedTs', refinedTc, refinedT, refinedTs)
+            print('final mean pixel residues : %f with %d spots' % (np.mean(alldistances_array), len(absolutespotsindices)))
+                
+        return refined_values
+
+
+dict_lattice_parameters = {'a':0,
+                         'b':1,
+                         'c':2,
+                         'alpha':3,
+                         'beta':4,
+                         'gamma':5}
+
+
+def fit_function_latticeparameters(varying_parameters_values_array, varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices, Xexp, Yexp,
+                                UBmatrix_start=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                **kwd
+                                ):
+    """
+    fit direct (real) unit cell lattice parameters  (in refinedB0)
+    and orientation 
+    
+    q =   refinedUzUyUz Ustart   refinedB0 G*
+    
+    with error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+
+    
+    
+    """
+    if  verbose:
+        print("\n\n******************\nfirst error with initial values of:", varying_parameters_keys, " \n\n***************************\n")
+
+        error_function_latticeparameters(varying_parameters_values_array, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n********************\nFitting parameters:  ", varying_parameters_keys, "\n\n***************************\n")
+        print("With initial values", varying_parameters_values_array)
+        
+#     print '*************** UBmatrix_start before fit************'
+#     print UBmatrix_start
+#     print '*******************************************'
+
+    # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
+    error_function_latticeparameters.__defaults__ = (UBmatrix_start, pureRotation,
+                                                      0, pixelsize, dim, weights, signgam, kf_direction, False)
+
+#     pixX = np.array(pixX, dtype=np.float64)
+#     pixY = np.array(pixY, dtype=np.float64)
+    # LEASTSQUARE
+    res = leastsq(error_function_latticeparameters,
+                varying_parameters_values_array,
+                args=(varying_parameters_keys, Miller_indices, allparameters,
+                                absolutespotsindices, Xexp, Yexp,),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)  
+
+    refined_values = res[0]
+
+#     print "res fit in fit function general", res
+    print("code results", res[-1])
+    print("nb iterations", res[2]["nfev"])
+    print("refined_values", refined_values)
+
+    if res[-1] not in (1, 2, 3, 4, 5):
+        return None
+    else:
+        if 1:
+            print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n")
+            alldata = error_function_latticeparameters(refined_values, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction,
+                                                returnalldata=True)
+            
+            # alldistances_array, Uxyz, newmatrix, Tc, T, Ts
+            alldistances_array, Uxyz, refinedUB, refinedB0matrix, refinedLatticeparameters = alldata
+            
+            print('\n--------------------\nresults:\n------------------')
+            for k, param_key in enumerate(varying_parameters_keys):
+                print("%s  : start %f   --->   refined %f" % (param_key,
+                                                                  varying_parameters_values_array[k],
+                                                                  refined_values[k]))
+            print("q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
+            print("refined UBmatrix", refinedUB.tolist())
+            print("Uxyz", Uxyz.tolist())
+            print('refinedB0matrix', refinedB0matrix.tolist())
+            print('refinedLatticeparameters', refinedLatticeparameters)
+            print('final mean pixel residues : %f with %d spots' % (np.mean(alldistances_array), len(absolutespotsindices)))
+                
+        return refined_values
+
+def error_function_latticeparameters(varying_parameters_values_array, varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, Xexp, Yexp,
+                                        initrot=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0',
+                                        returnalldata=False):
+    """
+    
+    q =   UzUyUz Ustart   B0 G*
+    
+    Interface error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+
+    q =   refinedUzUyUz Ustart   refinedB0 G*
+    
+    B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
+            i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
+            
+    refinedB0 is obtained by refining the 5 /6  lattice parameters
+     
+    possible keys for parameters to be refined are:
+      
+    five detector frame calibration parameters:
+    det_distance,det_xcen,det_ycen,det_beta, det_gamma
+    
+    three misorientation angles with respect to LT orthonormal frame (x, y, z) matrices Ux, Uy,Uz:
+    anglex,angley,anglez   
+    
+    5 lattice parameters among 6 (a,b,c,alpha, beta,gamma) 
+
+    """
+    # reading default parameters
+    # CCD plane calibration parameters
+    if isinstance(allparameters, np.ndarray):
+        calibrationparameters = (allparameters.tolist())[:5]
+    else:
+        calibrationparameters = allparameters[:5]
+    
+    # allparameters[5:8]  = 0,0,0
+    Uy, Ux, Uz = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+    
+    latticeparameters = np.array(allparameters[8:14])
+    
+    nb_varying_parameters = len(varying_parameters_keys)
+    
+#     factorscale = 1.
+    
+    for varying_parameter_index, parameter_name in enumerate(varying_parameters_keys):
+#         print "varying_parameter_index,parameter_name", varying_parameter_index, parameter_name
+
+        if parameter_name in ('anglex', 'angley', 'anglez'):
+#             print "got angles!"
+            if nb_varying_parameters > 1:
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
+            else:
+                anglevalue = varying_parameters_values_array[0] * DEG
+            # print "anglevalue (rad)= ",anglevalue
+            ca = np.cos(anglevalue)
+            sa = np.sin(anglevalue)
+            if parameter_name is 'angley':
+                Uy = np.array([[ca, 0, sa],
+                            [0, 1, 0],
+                            [-sa, 0, ca]])
+            elif parameter_name is 'anglex':
+                Ux = np.array([[1., 0, 0],
+                            [0, ca, sa],
+                            [0, -sa, ca]])
+            
+            elif parameter_name is 'anglez':
+                Uz = np.array([[ca, -sa, 0],
+                            [sa, ca, 0],
+                            [0, 0, 1.]])
+                
+        elif parameter_name in ('alpha', 'beta', 'gamma'):
+#             print 'got Tc elements: ', parameter_name
+            indparam = dict_lattice_parameters[parameter_name]      
+#             if nb_varying_parameters > 1:
+#                 latticeparameters[indparam] = latticeparameters[3] * np.exp(varying_parameters_values_array[varying_parameter_index] / factorscale)
+#             else:
+#                 latticeparameters[indparam] = latticeparameters[3] * np.exp(varying_parameters_values_array[0] / factorscale)
+                
+            if nb_varying_parameters > 1:
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index] 
+            else:
+                latticeparameters[indparam] = varying_parameters_values_array[0] 
+
+                
+        elif parameter_name in ('a', 'b', 'c'):
+#             print 'got Tc elements: ', parameter_name
+            indparam = dict_lattice_parameters[parameter_name]
+                        
+#             if nb_varying_parameters > 1:
+#                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[varying_parameter_index] / factorscale)
+#             else:
+#                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[0] / factorscale)
+            
+            if nb_varying_parameters > 1:
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index] 
+            else:
+                latticeparameters[indparam] = varying_parameters_values_array[0] 
+            
+    Uxyz = np.dot(Uz, np.dot(Ux, Uy))
+    
+    newB0matrix = CP.calc_B_RR(latticeparameters, directspace=1, setvolume=False)
+    
+    
+    if verbose:
+        print("\n-------\nvarying_parameters_keys", varying_parameters_keys)
+        print('varying_parameters_values_array', varying_parameters_values_array)
+        print('Uxyz', Uxyz)
+        print('latticeparameters', latticeparameters)
+        print('newB0matrix', newB0matrix)
+        
+
+    # DictLT.RotY40 such as   X=DictLT.RotY40 Xsample  (xs,ys,zs =columns expressed in x,y,z frame)
+    # transform in sample frame   Ts
+    # same transform in x,y,z LT frame T
+    # Ts = DictLT.RotY40-1 T DictLT.RotY40
+    # T = DictLT.RotY40 Ts DictLT.RotY40-1
+    
+    newmatrix = np.dot(Uxyz, initrot)
+
+    if 0:  # verbose:
+        print('initrot', initrot)
+        print('newmatrix', newmatrix)
+ 
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                Miller_indices, absolutespotsindices,
+                                                UBmatrix=newmatrix,
+                                                B0matrix=newB0matrix,
+                                                pureRotation=0,
+                                                labXMAS=0,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+#         import laue6 as Laue
+#         dictCCD = {}
+#         dictCCD['CCDparam'] = calibrationparameters
+#         dictCCD['pixelsize'] = pixelsize
+#         dictCCD['dim'] = dim
+# 
+#         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
+#         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+    
+    if 0:  # verbose:
+        print('Xmodel, Ymodel', Xmodel, Ymodel)
+    if 0:  # verbose:
+        print('Xexp, Yexp', Xexp, Yexp)
+
+    distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
+
+    if weights is not None:
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+
+    if verbose: 
+#         print "**      distance residues = " , distanceterm, "    ********"
+        print("**    mean distance residue = " , np.mean(distanceterm), "    ********")
+#             print "twthe, chi", twthe, chi
+    
+    alldistances_array = distanceterm
+    if verbose:
+        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "Xmodel",Xmodel
+        # print "pixX",pixX
+        # print "Ymodel",Ymodel
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "newB0matrix",newB0matrix
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(alldistances_array), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
+#        print "newmatrix", newmatrix
+    if returnalldata is True:
+        # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
+        return alldistances_array, Uxyz, newmatrix, newB0matrix, latticeparameters
+
+    else:
+        return alldistances_array
+    
+    
+def error_function_strain(varying_parameters_values_array, varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, Xexp, Yexp,
+                                        initrot=IDENTITYMATRIX,
+                                        B0matrix=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0',
+                                        returnalldata=False):
+    """
+    q =   refinedStrain refinedUzUyUz Ustart   B0 G*
+
+    
+    Interface error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+
+
+    B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
+            i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
+            
+    Strain of reciprocal vectors   : 6 compenents of triangular up matrix ( T00  T01 T02)
+                                                                          ( 0    T11 T12)
+                                                                         ( 0    0   T22)
+                one must be set (usually T00 = 1)
+                
+    Algebra:
+    X=PX'        e'1    e'2    e'3
+                  |      |      |
+                  v      v      v
+            e1 (  .      .      .  )
+        P=  e2 (  .      .      .  )
+            e3 (  .      .      .  )
+            
+    If A  transform expressed in (e1,e2,e3) basis
+    and A' same transform but expressed in (e'1,e'2,e'3) basis
+    then  A'=P-1 A P
+    
+    X_LT=P X_sample
+    P=(cos40, 0 -sin40)
+      (0      1    0  )
+      (sin40  0  cos40)
+      
+    Strain_sample=P-1 Strain_LT P
+    Strain_LT    = P  Strain_Sample P-1
+
+    """
+    # reading default parameters
+    # CCD plane calibration parameters
+    if isinstance(allparameters, np.ndarray):
+        calibrationparameters = (allparameters.tolist())[:5]
+    else:
+        calibrationparameters = allparameters[:5]
+#     print 'calibrationparameters', calibrationparameters
+    
+    # allparameters[5:8]  = 0,0,0
+    Uy, Ux, Uz = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+    
+    straincomponents = np.array(allparameters[8:14])
+    
+    Ts = np.array([straincomponents[:3],
+                   [0., straincomponents[3], straincomponents[4]],
+                   [0, 0, straincomponents[5]]])
+    
+#     print 'Ts before', Ts
+    
+    nb_varying_parameters = len(varying_parameters_keys)
+        
+    for varying_parameter_index, parameter_name in enumerate(varying_parameters_keys):
+#         print "varying_parameter_index,parameter_name", varying_parameter_index, parameter_name
+
+        if parameter_name in ('anglex', 'angley', 'anglez'):
+#             print "got angles!"
+            if nb_varying_parameters > 1:
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
+            else:
+                anglevalue = varying_parameters_values_array[0] * DEG
+            # print "anglevalue (rad)= ",anglevalue
+            ca = np.cos(anglevalue)
+            sa = np.sin(anglevalue)
+            if parameter_name is 'angley':
+                Uy = np.array([[ca, 0, sa],
+                            [0, 1, 0],
+                            [-sa, 0, ca]])
+            elif parameter_name is 'anglex':
+                Ux = np.array([[1., 0, 0],
+                            [0, ca, sa],
+                            [0, -sa, ca]])
+            
+            elif parameter_name is 'anglez':
+                Uz = np.array([[ca, -sa, 0],
+                            [sa, ca, 0],
+                            [0, 0, 1.]])
+        elif parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22'):
+#             print 'got Ts elements: ', parameter_name
+            for i in range(3):
+                for j in range(3):
+                    if parameter_name == 'Ts%d%d' % (i, j):
+#                         print "got parameter_name", parameter_name
+                        if nb_varying_parameters > 1:
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
+                        else:
+                            Ts[i, j] = varying_parameters_values_array[0]
+                            
+#     print 'Ts after', Ts
+    
+    Uxyz = np.dot(Uz, np.dot(Ux, Uy))
+    
+    newmatrix = np.dot(Uxyz, initrot)
+    
+#     print 'Uxyz', Uxyz
+#     print 'newmatrix', newmatrix
+    
+    # DictLT.RotY40 such as   X=DictLT.RotY40 Xsample  (xs,ys,zs =columns expressed in x,y,z frame)
+    # transform in sample frame   Ts
+    # same transform in x,y,z LT frame T
+    # Ts = DictLT.RotY40-1 T DictLT.RotY40
+    # T = DictLT.RotY40 Ts DictLT.RotY40-1
+    
+    T = np.dot(np.dot(DictLT.RotY40, Ts), DictLT.RotYm40)
+#     T = np.dot(np.dot(DictLT.RotYm40, Ts), DictLT.RotY40)
+    
+#     print 'T', T
+    
+    newmatrix = np.dot(T, newmatrix)
+
+    if 0:  # verbose:
+        print('initrot', initrot)
+        print('newmatrix', newmatrix)
+        print('Miller_indices', Miller_indices)
+        print('absolutespotsindices', absolutespotsindices)
+ 
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                Miller_indices, absolutespotsindices,
+                                                UBmatrix=newmatrix,
+                                                B0matrix=B0matrix,
+                                                pureRotation=0,
+                                                labXMAS=0,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+#         import laue6 as Laue
+#         dictCCD = {}
+#         dictCCD['CCDparam'] = calibrationparameters
+#         dictCCD['pixelsize'] = pixelsize
+#         dictCCD['dim'] = dim
+# 
+#         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
+#         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+    
+#     print 'Xmodel, Ymodel', Xmodel, Ymodel
+
+    distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
+
+    if weights not in (None, False, 'None', 'False', 0, '0'):
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+
+    if verbose: 
+#         print "**      distance residues = " , distanceterm, "    ********"
+        print("**    mean distance residue = " , np.mean(distanceterm), "    ********")
+#             print "twthe, chi", twthe, chi
+    
+    alldistances_array = distanceterm
+    if verbose:
+        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "Xmodel",Xmodel
+        # print "pixX",pixX
+        # print "Ymodel",Ymodel
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "newB0matrix",newB0matrix
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(alldistances_array), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
+#        print "newmatrix", newmatrix
+    if returnalldata is True:
+        # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
+        return alldistances_array, Uxyz, newmatrix, Ts, T
+
+    else:
+        return alldistances_array
+
+
+def fit_function_strain(varying_parameters_values_array, varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices, Xexp, Yexp,
+                                UBmatrix_start=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165. / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                **kwd
+                                ):
+    """
+    fit strain components in sample frame
+    and orientation 
+    
+    q =   refinedT refinedUzUyUz Ustart   refinedB0 G*
+    
+    with error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+    
+    where T comes from Ts
+    """
+    if  verbose:
+        print("\n\n******************\nfirst error with initial values of:", varying_parameters_keys, " \n\n***************************\n")
+
+        error_function_strain(varying_parameters_values_array, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                B0matrix=B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+
+        print("\n\n********************\nFitting parameters:  ", varying_parameters_keys, "\n\n***************************\n")
+        print("With initial values", varying_parameters_values_array)
+        
+#     print '*************** UBmatrix_start before fit************'
+#     print UBmatrix_start
+#     print '*******************************************'
+
+    # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
+    error_function_strain.__defaults__ = (UBmatrix_start, B0matrix, pureRotation,
+                                                      0, pixelsize, dim, weights, signgam, kf_direction, False)
+
+#     pixX = np.array(pixX, dtype=np.float64)
+#     pixY = np.array(pixY, dtype=np.float64)
+    # LEASTSQUARE
+    res = leastsq(error_function_strain,
+                varying_parameters_values_array,
+                args=(varying_parameters_keys, Miller_indices, allparameters,
+                                absolutespotsindices, Xexp, Yexp,),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)  
+
+    refined_values = res[0]
+
+#     print "res fit in fit function general", res
+    print("code results", res[-1])
+    print("mesg", res[-2])
+    print("nb iterations", res[2]["nfev"])
+    print("refined_values", refined_values)
+
+    if res[-1] not in (1, 2, 3, 4, 5):
+        return None
+    else:
+        if 1:
+            print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n")
+            alldata = error_function_strain(refined_values, varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices, Xexp, Yexp,
+                                                initrot=UBmatrix_start,
+                                                B0matrix=B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction,
+                                                returnalldata=True)
+            
+            # alldistances_array, Uxyz, newmatrix, Ts, T
+            alldistances_array, Uxyz, newmatrix, refinedTs, refinedT = alldata
+            
+            print('\n--------------------\nresults:\n------------------')
+            for k, param_key in enumerate(varying_parameters_keys):
+                print("%s  : start %f   --->   refined %f" % (param_key,
+                                                                  varying_parameters_values_array[k],
+                                                                  refined_values[k]))
+            print("q= refinedT UBstart B0 G*\nq = refinedUB B0 G*")
+            print("refined UBmatrix", newmatrix.tolist())
+            print("Uxyz", Uxyz.tolist())
+            print('refinedT', refinedT.tolist())
+            print('refinedTs', refinedTs.tolist())
+            print('refined_values', refined_values)
+            print('final mean pixel residues : %f with %d spots' % (np.mean(alldistances_array), len(absolutespotsindices)))
+                
+        return refined_values
+
+
+def error_strain_from_elongation(varying_parameters_values_array, varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, Xexp, Yexp,
+                                        initrot=IDENTITYMATRIX,
+                                        B0matrix=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165. / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        kf_direction='Z>0',
+                                        returnalldata=False):
+    """
+    calculate array of the sum of 3 distances from aligned points composing one single Laue spot
+    
+    Each elongated spot is composed by 3 points: P1 Pc P2 (Pc at the center et P1, P2 at the ends)
+    
+    error = sum (P1-P1exp)**2 +  (P2-P2exp)**2 +(Pc-Pcexp)**2
+    
+    But since P1exp end could be wrongly assign to simulated P2 end
+    
+    error = sum (P1-P1exp)**2 +  (P1-P2exp)**2 -P1P2exp**2 +
+                  (P2-P2exp)**2 + (P2-P1exp)**2 -P1P2exp**2 
+                  +(Pc-Pcexp)**2
+                  
+    
+    strain axis in sample frame:
+    axis_angle_1, axis_angle_2,minstrainamplitude,zerostrain,maxstrainamplitude
+    example: minstrainamplitude=0.98, maxstrainamplitude=1.05, zerostrain=1
+    
+    u= (cos angle1, sin angle 1 cos angle 2, sin angle1 sin angle 2)
+    
+    X1Model, Y1Model, XcModel,YcModel
+    tensile_along_u(v, tensile, u='zsample')
+    
+    
+    q =   refinedStrain refinedUzUyUz Ustart   B0 G*
+    
+    Xmodel,Ymodel comes from G*=ha*+kb*+lc*
+
+
+    B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
+            i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
+            
+    Strain   : 6 compenents of triangular up matrix ( T00  T01 T02)
+                                                   ( 0    T11 T12)
+                                                   ( 0    0   T22)
+                one must be set (usually T00 = 1)
+                
+    Algebra:
+    X=PX'        e'1    e'2    e'3
+                  |      |      |
+                  v      v      v
+            e1 (  .      .      .  )
+        P=  e2 (  .      .      .  )
+            e3 (  .      .      .  )
+            
+    If A  transform expressed in (e1,e2,e3) basis
+    and A' same transform but expressed in (e'1,e'2,e'3) basis
+    then  A'=P-1 A P
+    
+    X_LT=P X_sample
+    P=(cos40, 0 -sin40)
+      (0      1    0  )
+      (sin40  0  cos40)
+      
+    Strain_sample=P-1 Strain_LT P
+    Strain_LT    = P  Strain_Sample P-1
+
+    """
+    # reading default parameters
+    # CCD plane calibration parameters
+    if isinstance(allparameters, np.ndarray):
+        calibrationparameters = (allparameters.tolist())[:5]
+    else:
+        calibrationparameters = allparameters[:5]
+#     print 'calibrationparameters', calibrationparameters
+    
+    # allparameters[5:8]  = 0,0,0
+    Uy, Ux, Uz = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+    
+    straincomponents = np.array(allparameters[8:14])
+    
+    Ts = np.array([straincomponents[:3],
+                   [0., straincomponents[3], straincomponents[4]],
+                   [0, 0, straincomponents[5]]])
+    
+#     print 'Ts before', Ts
+    
+    nb_varying_parameters = len(varying_parameters_keys)
+        
+    for varying_parameter_index, parameter_name in enumerate(varying_parameters_keys):
+#         print "varying_parameter_index,parameter_name", varying_parameter_index, parameter_name
+
+        if parameter_name in ('anglex', 'angley', 'anglez'):
+#             print "got angles!"
+            if nb_varying_parameters > 1:
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
+            else:
+                anglevalue = varying_parameters_values_array[0] * DEG
+            # print "anglevalue (rad)= ",anglevalue
+            ca = np.cos(anglevalue)
+            sa = np.sin(anglevalue)
+            if parameter_name is 'angley':
+                Uy = np.array([[ca, 0, sa],
+                            [0, 1, 0],
+                            [-sa, 0, ca]])
+            elif parameter_name is 'anglex':
+                Ux = np.array([[1., 0, 0],
+                            [0, ca, sa],
+                            [0, -sa, ca]])
+            
+            elif parameter_name is 'anglez':
+                Uz = np.array([[ca, -sa, 0],
+                            [sa, ca, 0],
+                            [0, 0, 1.]])
+        elif parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22'):
+#             print 'got Ts elements: ', parameter_name
+            for i in range(3):
+                for j in range(3):
+                    if parameter_name == 'Ts%d%d' % (i, j):
+#                         print "got parameter_name", parameter_name
+                        if nb_varying_parameters > 1:
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
+                        else:
+                            Ts[i, j] = varying_parameters_values_array[0]
+                            
+#     print 'Ts after', Ts
+    
+    Uxyz = np.dot(Uz, np.dot(Ux, Uy))
+    
+    newmatrix = np.dot(Uxyz, initrot)
+    
+#     print 'Uxyz', Uxyz
+#     print 'newmatrix', newmatrix
+    
+    # DictLT.RotY40 such as   X=DictLT.RotY40 Xsample  (xs,ys,zs =columns expressed in x,y,z frame)
+    # transform in sample frame   Ts
+    # same transform in x,y,z LT frame T
+    # Ts = DictLT.RotY40-1 T DictLT.RotY40
+    # T = DictLT.RotY40 Ts DictLT.RotY40-1
+    
+    T = np.dot(np.dot(DictLT.RotY40, Ts), DictLT.RotYm40)
+    
+#     print 'T', T
+    
+    newmatrix = np.dot(T, newmatrix)
+
+    if 0:  # verbose:
+        print('initrot', initrot)
+        print('newmatrix', newmatrix)
+        print('Miller_indices', Miller_indices)
+        print('absolutespotsindices', absolutespotsindices)
+ 
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                Miller_indices, absolutespotsindices,
+                                                UBmatrix=newmatrix,
+                                                B0matrix=B0matrix,
+                                                pureRotation=0,
+                                                labXMAS=0,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                signgam=signgam,
+                                                kf_direction=kf_direction)
+#         import laue6 as Laue
+#         dictCCD = {}
+#         dictCCD['CCDparam'] = calibrationparameters
+#         dictCCD['pixelsize'] = pixelsize
+#         dictCCD['dim'] = dim
+# 
+#         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
+#         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+    
+#     print 'Xmodel, Ymodel', Xmodel, Ymodel
+
+    distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
+
+    if weights is not None:
+        allweights = np.sum(weights)
+        distanceterm = distanceterm * weights / allweights
+
+    if verbose: 
+#         print "**      distance residues = " , distanceterm, "    ********"
+        print("**    mean distance residue = " , np.mean(distanceterm), "    ********")
+#             print "twthe, chi", twthe, chi
+    
+    alldistances_array = distanceterm
+    if verbose:
+        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
+        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
+        # print "Xmodel",Xmodel
+        # print "pixX",pixX
+        # print "Ymodel",Ymodel
+        # print "pixY",pixY
+        # print "newmatrix",newmatrix
+        # print "newB0matrix",newB0matrix
+        # print "deltamat",deltamat
+        # print "initrot",initrot
+        # print "param_orient",param_calib
+        # print "distanceterm",distanceterm
+        if weights is not None:
+            print("***********mean weighted pixel deviation   ", np.mean(alldistances_array), "    ********")
+        else:
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
+#        print "newmatrix", newmatrix
+    if returnalldata is True:
+        # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
+        return alldistances_array, Uxyz, newmatrix, Ts, T
+
+    else:
+        return alldistances_array
+    
+    
+#--- -----   TESTS & DEMOS  ----------------------
+
+def test_generalfitfunction():
+    # Ge example unstrained
+    pixX = np.array([1027.1099965580365, 1379.1700028337193, 1288.1100055910788, 926.219994375393,
+                     595.4599989710869, 1183.2699986884652, 1672.670001029018, 1497.400007802548,
+                     780.2700069727559, 819.9099991880139, 873.5600007021501, 1579.39000403102,
+                     1216.4900044928474, 1481.199997684615, 399.87000836895436, 548.2499911593322,
+                     1352.760007116035, 702.5200057620646, 383.7700117705855, 707.2000052800154,
+                     1140.9300043834062, 1730.3299981313016, 289.68999155533413, 1274.8600008806216,
+                     1063.2499947675371, 1660.8600022917144, 1426.670005812432])
+    pixY = np.array([1293.2799953573963, 1553.5800003037994, 1460.1599988550274, 872.0599978043742,
+                     876.4400033114814, 598.9200007214372, 1258.6199918206175, 1224.7000037967478,
+                     1242.530005349013, 552.8399954684833, 706.9700021553684, 754.63000554209,
+                     1042.2800069222762, 364.8400055136739, 1297.1899933698528, 1260.320007366279,
+                     568.0299942819768, 949.8800073732916, 754.580011319991, 261.1099917270594,
+                     748.3999917806088, 1063.319998717625, 945.9700059216573, 306.9500110237749,
+                     497.7900029269757, 706.310001700921, 858.780004244009])
+    miller_indices = np.array([[3.0, 3.0, 3.0], [2.0, 4.0, 2.0], [3.0, 5.0, 3.0], [5.0, 3.0, 3.0],
+                               [6.0, 2.0, 4.0], [6.0, 4.0, 2.0], [3.0, 5.0, 1.0], [4.0, 6.0, 2.0],
+                               [5.0, 3.0, 5.0], [7.0, 3.0, 3.0], [4.0, 2.0, 2.0], [5.0, 5.0, 1.0],
+                               [5.0, 5.0, 3.0], [7.0, 5.0, 1.0], [5.0, 1.0, 5.0], [3.0, 1.0, 3.0],
+                               [8.0, 6.0, 2.0], [7.0, 3.0, 5.0], [5.0, 1.0, 3.0], [9.0, 3.0, 3.0],
+                               [7.0, 5.0, 3.0], [5.0, 7.0, 1.0], [7.0, 1.0, 5.0], [5.0, 3.0, 1.0],
+                               [9.0, 5.0, 3.0], [7.0, 7.0, 1.0], [3.0, 3.0, 1.0]])
+    starting_orientmatrix = np.array([[-0.9727538909589738, -0.21247913537718385, 0.09274958034159074],
+                           [0.22567394392094073, -0.7761682018781203, 0.5887564805829774],
+                           [-0.053107604650232926, 0.593645098498364, 0.8029726516869564]])
+#         B0matrix = np.array([[0.17675651789659746, -2.8424615990749217e-17, -2.8424615990749217e-17],
+#                            [0.0, 0.17675651789659746, -1.0823215193524997e-17],
+#                            [0.0, 0.0, 0.17675651789659746]])
+    pixelsize = 0.08057
+    calibparameters = [69.196, 1050.78, 1116.22, 0.152, -0.251]
+    
+    absolutespotsindices = np.arange(len(pixY))
+#     
+    varying_parameters_keys = ['anglex', 'angley', 'anglez', 
+                                    'a', 'b', 'alpha', 'beta', 'gamma', 'depth']
+    varying_parameters_values_array = [0., -0, 0.,
+                                       5.678, 5.59, 89.999, 90, 90.0001, 0.02]
+    
+#     varying_parameters_keys = ['distance','xcen','ycen','beta','gamma',
+#                                'anglex', 'angley', 'anglez',
+#                                     'a', 'b', 'alpha', 'beta', 'gamma']
+#     varying_parameters_values_array = [68.5, 1049,1116,0,0,
+#                                        0., -0, 0.,
+#                                        5.678, 5.59, 89.999, 90, 90.0001]
+    
+#     varying_parameters_keys = ['distance','xcen','ycen',
+#                                'anglex', 'angley', 'anglez',
+#                                     'a', 'b', 'alpha', 'beta', 'gamma']
+#     varying_parameters_values_array = [68.9, 1050,1116,
+#                                        0., -0, 0.,
+#                                        5.678, 5.59, 89.999, 90, 90.0001]
+    
+#     varying_parameters_keys = ['distance','ycen',
+#                                'anglex', 'angley', 'anglez',
+#                                     'a', 'b', 'alpha', 'beta', 'gamma']
+#     varying_parameters_values_array = [68.9,1116,
+#                                        0., -0, 0.,
+#                                        5.675, 5.65, 89.999, 90, 90.0001]
+    
+    latticeparameters= DictLT.dict_Materials['Ge'][1]
+    B0=CP.calc_B_RR(latticeparameters)
+    
+    transformparameters = [0, 0, 0,  # 3 misorientation / initial UB matrix
+                                               1., 0, 0, 0, 1., 0, 0, -.0, 1,  # Tc
+                                                1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+                                                 1, 0, 0, 0, 1, 0, 0, 0, 1]   # Ts
+    sourcedepth = [0]
+    allparameters = calibparameters + transformparameters + latticeparameters + sourcedepth
+    
+    pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
+        
+    print('len(allparameters)', len(allparameters))
+    print('starting_orientmatrix', starting_orientmatrix)
+    print("pureUmatrix", pureUmatrix)
+ 
+    refined_values = fit_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                miller_indices,
+                                allparameters,
+                                absolutespotsindices, pixX, pixY,
+                                UBmatrix_start=pureUmatrix,
+                                B0matrix=B0,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=pixelsize,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA,
+                                kf_direction='Z>0',
+                                )
+
+    dictRes = {}
+    print("\n****** Refined Values *********\n")
+    for paramname, val in zip(varying_parameters_keys,refined_values):
+        dictRes[paramname]=val
+        print('%s     =>  %.6f'%(paramname, val))
+    print("\n*******************************\n")
+    
+    return dictRes
+
+
+# ---------------------  MAIN  -------------------------------
+if __name__ == "__main__":
+    if 1:
+        res =test_generalfitfunction()
+    
+    if 0:
+        # strain ezz   0.8 % expansion
+        xy_unstrained = np.array([[ 1864.1964, 528.2291], [ 1483.1531, 831.0652], [ 1367.9447, 509.2246],
+                       [ 1297.8918, 343.6432], [  531.3408, 828.5554], [  649.4996, 503.518 ], 
+                       [  720.9098, 337.4965],
+                       [  132.9455, 514.9325], [ 1573.9556, 1172.6193], [ 1011.1447, 1646.7052],
+                       [ 1011.0166, 997.3441], [ 1010.93  , 736.8167], [  437.578 , 1176.0942], 
+                       [ 1212.8536, 1159.3779],
+                       [  807.9199, 1160.5224]])
+        
+        xy_strained = np.array([[ 1874.9749, 523.2668], [ 1487.7885, 828.8836], [ 1372.0172, 503.281 ],
+       [ 1301.4263, 335.3735], [  526.3259, 826.4333], [  645.0339, 497.5334], [  716.9751, 329.15  ],
+       [  121.3076, 509.8661], [ 1578.7537, 1173.9111], [ 1011.0582, 1651.2125],
+       [ 1010.9028, 995.9055], [ 1010.7975, 733.1437],
+       [  432.4181, 1177.5707], [ 1214.3957, 1159.399 ], [  806.1505, 1160.6082]])
+        
+        Miller_indices = np.array([[ 1., -3., 7.], [ 1., -1., 3.], [ 1., -1., 5.], [ 1., -1., 7.], 
+                                   [ 1., 1., 3.],
+                                   [ 1., 1., 5.], [ 1., 1., 7.], [ 1., 3., 7.], [ 2., -2., 4.], 
+                                   [ 2., 0., 2.], [ 2., 0., 4.], 
+                                   [ 2., 0., 6.],
+                                   [ 2., 2., 4.], [ 3., -1., 5.], [ 3., 1., 5.]], dtype=np.int8)
+        
+        # in sample frame
+        # [[1,0.002,-0.0305],
+        # [0,.987,0.001],
+        # [0,0,1.005]]
+        xy_transformed = np.array([[ 1880.6296, 452.7668],
+       [ 1488.0745, 772.5628],
+       [ 1372.5274, 444.8035],
+       [ 1301.7704, 273.0066],
+       [  523.5532, 773.0022],
+       [  641.1567, 441.0898],
+       [  712.7738, 268.3781],
+       [ 1578.4334, 1111.5036],
+       [ 1010.0983, 1570.1612],
+       [ 1009.5975, 945.137 ],
+       [ 1009.2564, 682.6361],
+       [  431.0182, 1119.0867],
+       [ 1213.2493, 1103.6393],
+       [  805.001 , 1106.403 ]])
+        
+        Miller_indices = np.array([[ 1., -3., 7.],
+       [ 1., -1., 3.],
+       [ 1., -1., 5.],
+       [ 1., -1., 7.],
+       [ 1., 1., 3.],
+       [ 1., 1., 5.],
+       [ 1., 1., 7.],
+       [ 1., 3., 7.],
+       [ 2., -2., 4.],
+       [ 2., 0., 2.],
+       [ 2., 0., 4.],
+       [ 2., 0., 6.],
+       [ 2., 2., 4.],
+       [ 3., -1., 5.],
+       [ 3., 1., 5.]], dtype=np.int8)
+  
+        calibparameters = [70., 1024, 1024, 0, 0]
+        pixelsize = 0.079142
+        
+        # only for xy_transformed
+        Miller_indices = np.array([[ 1., -3., 7.],
+       [ 1., -1., 3.],
+       [ 1., -1., 5.],
+       [ 1., -1., 7.],
+       [ 1., 1., 3.],
+       [ 1., 1., 5.],
+       [ 1., 1., 7.],
+       [ 2., -2., 4.],
+       [ 2., 0., 2.],
+       [ 2., 0., 4.],
+       [ 2., 0., 6.],
+       [ 2., 2., 4.],
+       [ 3., -1., 5.],
+       [ 3., 1., 5.]], dtype=np.int8)
+
+        # unstrained
+        Xexp, Yexp = xy_unstrained.T
+        # strained
+        Xexp, Yexp = xy_strained.T
+        # general transform
+        # must found : # [0.002,-0.0305, .987,0.001,1.005]
+        Xexp, Yexp = xy_transformed.T
+        
+        
+        absolutespotsindices = np.arange(len(Xexp))
+        UB_raw = np.array([[  3.01902932e-01, 2.83134021e-04, -9.53338848e-01],
+                               [  1.36290076e-02, 9.99896715e-01, 4.61298957e-03],
+                               [  9.53241483e-01, -1.43857343e-02, 3.01867885e-01]])
+            
+        B0matrix = 1. / 3.6 * np.eye(3)
+        
+        varying_parameters_keys = ['anglex', 'angley', 'anglez',
+                                        'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22']
+        varying_parameters_values_array = [0., -0, 0.,
+                                           0.005, -.001, 1.002, .02, 1.03]
+#         varying_parameters_values_array = [0., -0, 0.,
+#                                            0.002, -0.0305, .987, 0.001, 1.005]
+        
+        allparameters = calibparameters + [0, 0, 0,  # 3 misorientation / initial UB matrix
+                                               1, 0, 0, 1, 0, 1]  # 5 strain compenents
+        
+        print(error_function_strain(varying_parameters_values_array, varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, Xexp, Yexp,
+                                        initrot=UB_raw,
+                                        B0matrix=B0matrix,
+                                        pureRotation=0,
+                                        verbose=1,
+                                        pixelsize=pixelsize,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA,
+                                        returnalldata=True))
+        
+        fit_function_strain(varying_parameters_values_array, varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices, Xexp, Yexp,
+                                UBmatrix_start=UB_raw,
+                                B0matrix=B0matrix,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=pixelsize,
+                                dim=(2048, 2048),
+                                weights=None,
+                                signgam=SIGN_OF_GAMMA
+                                )
+        
+    
+    if 0:  # Ge example unstrained
+        pixX = np.array([1027.1099965580365, 1379.1700028337193, 1288.1100055910788, 926.219994375393,
+                         595.4599989710869, 1183.2699986884652, 1672.670001029018, 1497.400007802548,
+                         780.2700069727559, 819.9099991880139, 873.5600007021501, 1579.39000403102,
+                         1216.4900044928474, 1481.199997684615, 399.87000836895436, 548.2499911593322,
+                         1352.760007116035, 702.5200057620646, 383.7700117705855, 707.2000052800154,
+                         1140.9300043834062, 1730.3299981313016, 289.68999155533413, 1274.8600008806216,
+                         1063.2499947675371, 1660.8600022917144, 1426.670005812432])
+        pixY = np.array([1293.2799953573963, 1553.5800003037994, 1460.1599988550274, 872.0599978043742,
+                         876.4400033114814, 598.9200007214372, 1258.6199918206175, 1224.7000037967478,
+                         1242.530005349013, 552.8399954684833, 706.9700021553684, 754.63000554209,
+                         1042.2800069222762, 364.8400055136739, 1297.1899933698528, 1260.320007366279,
+                         568.0299942819768, 949.8800073732916, 754.580011319991, 261.1099917270594,
+                         748.3999917806088, 1063.319998717625, 945.9700059216573, 306.9500110237749,
+                         497.7900029269757, 706.310001700921, 858.780004244009])
+        miller_indices = np.array([[3.0, 3.0, 3.0], [2.0, 4.0, 2.0], [3.0, 5.0, 3.0], [5.0, 3.0, 3.0],
+                                   [6.0, 2.0, 4.0], [6.0, 4.0, 2.0], [3.0, 5.0, 1.0], [4.0, 6.0, 2.0],
+                                   [5.0, 3.0, 5.0], [7.0, 3.0, 3.0], [4.0, 2.0, 2.0], [5.0, 5.0, 1.0],
+                                   [5.0, 5.0, 3.0], [7.0, 5.0, 1.0], [5.0, 1.0, 5.0], [3.0, 1.0, 3.0],
+                                   [8.0, 6.0, 2.0], [7.0, 3.0, 5.0], [5.0, 1.0, 3.0], [9.0, 3.0, 3.0],
+                                   [7.0, 5.0, 3.0], [5.0, 7.0, 1.0], [7.0, 1.0, 5.0], [5.0, 3.0, 1.0],
+                                   [9.0, 5.0, 3.0], [7.0, 7.0, 1.0], [3.0, 3.0, 1.0]])
+        starting_orientmatrix = np.array([[-0.9727538909589738, -0.21247913537718385, 0.09274958034159074],
+                               [0.22567394392094073, -0.7761682018781203, 0.5887564805829774],
+                               [-0.053107604650232926, 0.593645098498364, 0.8029726516869564]])
+#         B0matrix = np.array([[0.17675651789659746, -2.8424615990749217e-17, -2.8424615990749217e-17],
+#                            [0.0, 0.17675651789659746, -1.0823215193524997e-17],
+#                            [0.0, 0.0, 0.17675651789659746]])
+        pixelsize = 0.08057
+        calibparameters = [69.196, 1050.78, 1116.22, 0.152, -0.251]
+        
+        absolutespotsindices = np.arange(len(pixY))
+        
+        varying_parameters_keys = ['anglex', 'angley', 'anglez',
+                                        'a', 'b', 'alpha', 'beta', 'gamma']
+        varying_parameters_values_array = [0., -0, 0.,
+                                           5.678, 5.59, 89.999, 90, 90.0001]
+        
+        allparameters = calibparameters + [0, 0, 0,  # 3 misorientation / initial UB matrix
+                                               5.67, 5.67, 5.67, 90., 90., 90.]  # lattice parameters
+        
+        pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
+            
+        print('len(allparameters)', len(allparameters))
+        print('starting_orientmatrix', starting_orientmatrix)
+        print("pureUmatrix", pureUmatrix)
+
+        
+#         error_function_latticeparameters(varying_parameters_values_array, varying_parameters_keys,
+#                                                 miller_indices,
+#                                                 allparameters,
+#                                                 absolutespotsindices, pixX, pixY,
+#                                                 initrot=pureUmatrix,
+#                                                 pureRotation=0,
+#                                                 verbose=0,
+#                                                 pixelsize=pixelsize,
+#                                                 dim=(2048, 2048),
+#                                                 weights=None,
+#                                                 signgam=SIGN_OF_GAMMA,
+#                                                 returnalldata=False)
+        
+        
+        fit_function_latticeparameters(varying_parameters_values_array, varying_parameters_keys,
+                                        miller_indices,
+                                        allparameters,
+                                        absolutespotsindices, pixX, pixY,
+                                        UBmatrix_start=pureUmatrix,
+                                        nb_grains=1,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=pixelsize,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        signgam=SIGN_OF_GAMMA)
+    
+    
+    if 0:  # cu example unstrained
+    
+        hkl = np.array([[ 1., -3., 7.], [ 1., -1., 3.], [ 1., -1., 5.], [ 1., -1., 7.], [ 1., -1., 9.],
+                        [ 1., 1., 3.], [ 1., 1., 5.], [ 1., 1., 7.], [ 1., 1., 9.], [ 1., 3., 7.],
+                        [ 2., -2., 4.], [ 2., -2., 8.], [ 2., 0., 2.], [ 2., 0., 4.],
+                        [ 2., 0., 6.], [ 2., 0., 8.], [ 2., 2., 4.], [ 2., 2., 8.], [ 3., -1., 3.],
+                        [ 3., -1., 5.], [ 3., -1., 7.], [ 3., 1., 3.], [ 3., 1., 5.], [ 3., 1., 7.]], dtype=np.int8)
+        
+        # unstrained
+        xyg1 = np.array([[ 1864.1964, 528.2291], [ 1483.1531, 831.0652], [ 1367.9447, 509.2246], [ 1297.8918, 343.6432],
+           [ 1250.7968, 240.1083], [  531.3408, 828.5554], [  649.4996, 503.518 ], [  720.9098, 337.4965],
+           [  768.7331, 234.1588], [  132.9455, 514.9325], [ 1573.9556, 1172.6193], [ 1417.5544, 638.138 ],
+           [ 1011.1447, 1646.7052], [ 1011.0166, 997.3441], [ 1010.93  , 736.8167], [ 1010.8677, 577.4817],
+           [  437.578 , 1176.0942], [  598.7294, 633.3692], [ 1245.1782, 1703.9742], [ 1212.8536, 1159.3779],
+           [ 1188.3552, 908.1057], [  775.3161, 1709.6555], [  807.9199, 1160.5224], [  832.584 , 907.6238]])
+        
+        tthchig1 = np.array([[ 112.1164, -43.529 ], [ 100.9569, -274347], [ 118.477 , -21.2493], [ 126.308 , -17.2058],
+           [ 130.6459, -14.3817], [ 100.9262, 29.1178], [ 118.4526, 22.9483], [ 126.2879, 18.9152],
+           [ 130.6289, 16.0984], [ 112.071 , 45.212 ], [  81.879 , -31.8725], [ 111.7312, -23.9868],
+           [  54.8561, 0.8327], [  91.726 , 0.841 ], [ 107.9862, 0.8466], [ 116.7836, 0.8506], [  81.844 , 33.5447],
+           [ 111.704 , 25.6788], [  53.2839, -14.0397], [  81.4869, -12.0527], [  97.3407, -10.5266],
+           [  53.2673, 15.704 ], [  81.4725, 13.7285], [  97.3279, 12.2113]])
+        
+        
+        calibparameters = [70., 1024, 1024, 0, 0]
+            
+        pixelsize = 0.079142
+        
+        absolutespotsindices = np.arange(len(xyg1))
+        UB_raw = np.array([[  3.01902932e-01, 2.83134021e-04, -9.53338848e-01],
+                               [  1.36290076e-02, 9.99896715e-01, 4.61298957e-03],
+                               [  9.53241483e-01, -1.43857343e-02, 3.01867885e-01]])
+            
+        B0matrix = 1. / 3.6 * np.eye(3)
+        
+        varying_parameters_keys = ['anglex', 'angley', 'anglez', 'Tc11', 'Tc22', 'Tc01', 'Tc02', 'Tc12']
+        varying_parameters_values_array = [.2, -1.01, .3, 0.955, .99, -0.1, 0.2, 0.01]
+        
+    #     varying_parameters_keys = ['anglex', 'angley', 'anglez', 'Tc22', 'Tc01', 'Tc02', 'Tc12']
+    #     varying_parameters_values_array = [.2, -1.01, .3, 1.005, 0.1, 0.2, 0.01]
+        
+        all_keys = ['anglex', 'angley', 'anglez',
+        'Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22',
+        'T00', 'T01', 'T02', 'T10', 'T11', 'T12', 'T20', 'T21', 'T22',
+        'Ts00', 'Ts01', 'Ts02', 'Ts10', 'Ts11', 'Ts12', 'Ts20', 'Ts21', 'Ts22']
+        
+        latticeparameters= DictLT.dict_Materials['Cu'][1]
+        
+        transformparameters =[0, 0, 0,  # 3 misorientation / initial UB matrix
+                                           1., 0, -.0, -.223145, 1.01, 0, 0, -.0, 1,  # Tc
+                                            1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+                                             1, 0, 0, 0, 1, 0, 0, 0, 1]  # Ts
+        sourcedepth = [0]
+        allparameters = calibparameters + transformparameters + latticeparameters + sourcedepth
+        
+        print('len(allparameters)', len(allparameters))
+        
+        error_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                            hkl,
+                                            allparameters,
+                                            absolutespotsindices, xyg1[:, 0], xyg1[:, 1],
+                                            initrot=UB_raw,
+                                            B0matrix=B0matrix,
+                                            pureRotation=0,
+                                            verbose=0,
+                                            pixelsize=pixelsize,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            signgam=SIGN_OF_GAMMA,
+                                            returnalldata=False)
+        
+        
+        fit_function_general(varying_parameters_values_array, varying_parameters_keys,
+                                    hkl,
+                                    allparameters,
+                                    absolutespotsindices, xyg1[:, 0], xyg1[:, 1],
+                                    UBmatrix_start=UB_raw,
+                                    B0matrix=B0matrix,
+                                    nb_grains=1,
+                                    pureRotation=0,
+                                    verbose=0,
+                                    pixelsize=pixelsize,
+                                    dim=(2048, 2048),
+                                    weights=None,
+                                    signgam=SIGN_OF_GAMMA)
+        
+    
+    
+    if 0:
+        hkl = np.array([[ 1., -3., 7.], [ 1., -1., 3.], [ 1., -1., 5.], [ 1., -1., 7.], [ 1., -1., 9.],
+                    [ 1., 1., 3.], [ 1., 1., 5.], [ 1., 1., 7.], [ 1., 1., 9.], [ 1., 3., 7.],
+                    [ 2., -2., 4.], [ 2., -2., 8.], [ 2., 0., 2.], [ 2., 0., 4.],
+                    [ 2., 0., 6.], [ 2., 0., 8.], [ 2., 2., 4.], [ 2., 2., 8.], [ 3., -1., 3.],
+                    [ 3., -1., 5.], [ 3., -1., 7.], [ 3., 1., 3.], [ 3., 1., 5.], [ 3., 1., 7.]], dtype=np.int8)
+    
+        # unstrained
+        xyg1 = np.array([[ 1864.1964, 528.2291], [ 1483.1531, 831.0652], [ 1367.9447, 509.2246], [ 1297.8918, 343.6432],
+           [ 1250.7968, 240.1083], [  531.3408, 828.5554], [  649.4996, 503.518 ], [  720.9098, 337.4965],
+           [  768.7331, 234.1588], [  132.9455, 514.9325], [ 1573.9556, 1172.6193], [ 1417.5544, 638.138 ],
+           [ 1011.1447, 1646.7052], [ 1011.0166, 997.3441], [ 1010.93  , 736.8167], [ 1010.8677, 577.4817],
+           [  437.578 , 1176.0942], [  598.7294, 633.3692], [ 1245.1782, 1703.9742], [ 1212.8536, 1159.3779],
+           [ 1188.3552, 908.1057], [  775.3161, 1709.6555], [  807.9199, 1160.5224], [  832.584 , 907.6238]])
+        
+        tthchig1 = np.array([[ 112.1164, -43.529 ], [ 100.9569, -274347], [ 118.477 , -21.2493], [ 126.308 , -17.2058],
+           [ 130.6459, -14.3817], [ 100.9262, 29.1178], [ 118.4526, 22.9483], [ 126.2879, 18.9152],
+           [ 130.6289, 16.0984], [ 112.071 , 45.212 ], [  81.879 , -31.8725], [ 111.7312, -23.9868],
+           [  54.8561, 0.8327], [  91.726 , 0.841 ], [ 107.9862, 0.8466], [ 116.7836, 0.8506], [  81.844 , 33.5447],
+           [ 111.704 , 25.6788], [  53.2839, -14.0397], [  81.4869, -12.0527], [  97.3407, -10.5266],
+           [  53.2673, 15.704 ], [  81.4725, 13.7285], [  97.3279, 12.2113]])
+    
+        # strain ezz   0.5 % expansion
+        xyg2 = np.array([[ 1877.6856, 522.0243],
+           [ 1488.9504, 828.3393],
+           [ 1373.0401, 501.7915],
+           [ 1302.3153, 333.2976],
+           [ 1254.6638, 227.7165],
+           [  525.0688, 825.9042],
+           [  643.9121, 496.0335],
+           [  715.9854, 327.0547],
+           [  764.3583, 221.6543],
+           [  118.3798, 508.5973],
+           [ 1579.9543, 1174.2373],
+           [ 1423.0134, 632.7145],
+           [ 1011.0366, 1652.3422],
+           [ 1010.8743, 995.5458],
+           [ 1010.7643, 732.2246],
+           [ 1010.6848, 570.8221],
+           [  431.1269, 1177.9435],
+           [  592.7848, 627.9403],
+           [ 1247.0364, 1710.8555],
+           [ 1214.7814, 1159.4047],
+           [ 1190.2586, 905.5328],
+           [  773.2221, 1716.7161],
+           [  805.7081, 1160.6302],
+           [  830.3609, 905.0903]])
+        
+        calibparameters = [70., 1024, 1024, 0, 0]
+        
+        pixelsize = 0.079142
+        
+        g1strain = [1, 1, 0, 0, 0]
+        g1rot = [0, 0, 0]
+        g2strain = [1, 1.005, 0, 0, 0]
+        
+    
+        allparameters = calibparameters + g1strain + g1rot + g2strain  # g1 g2 UB + g2 strain
+        
+    #     # unstrained Cu grain
+    #     nb_grains = 1
+    #     arr_indexvaryingparameters = np.array([5, 6, 7, 8, 9, 10, 11, 12])
+    #     starting_param = [0.9998, 1.0001, 0.001, -0.002, 0.001, -0.03, 0.01, 0.05]
+        
+        # strained Cu grain
+        nb_grains = 1
+        arr_indexvaryingparameters = np.array([5, 6, 7, 8, 9, 10, 11, 12])
+        starting_param = [0.9998, 1.0001, 0.001, -0.002, 0.001, -0.03, 0.01, 0.05]
+        xyg1 = xyg2
+        
+    #     nb_grains = 2
+    #     arr_indexvaryingparameters = np.array([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+    #     starting_param = [0.9998, 1.0001, 0.001, -0.002, 0.001, -0.03, 0.01, 0.05, 1, 1.005, 0, 0, 0]
+        
+        miller = hkl
+        absolutespotsindices = [np.arange(len(xyg1)), np.arange(len(xyg2))]
+        pixX = [xyg1[:, 0], xyg2[:, 0]]
+        pixY = [xyg1[:, 1], xyg2[:, 1]]
+        
+        UB_raw = np.array([[  3.01902932e-01, 2.83134021e-04, -9.53338848e-01],
+                           [  1.36290076e-02, 9.99896715e-01, 4.61298957e-03],
+                           [  9.53241483e-01, -1.43857343e-02, 3.01867885e-01]])
+        
+        B0matrix = 1. / 3.6 * np.eye(3)
+        
+        res = error_function_on_demand_strain_2grains(g1strain + g1rot + g2strain,
+                                            miller,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            absolutespotsindices, pixX, pixY,
+                                            initrot=UB_raw,
+                                            B0matrix=B0matrix,
+                                            nb_grains=nb_grains,
+                                            pureRotation=0,
+                                            verbose=1,
+                                            pixelsize=pixelsize,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            signgam=SIGN_OF_GAMMA,
+                                            returnalldata=True)
+         
+        print("alldistances_array,all_deltamatrices,all_newmatrices", res)
+        
+        strain_sol = fit_on_demand_strain_2grains(np.array(starting_param),
+                                    miller,
+                                    allparameters,
+                                    error_function_on_demand_strain_2grains,
+                                    arr_indexvaryingparameters,
+                                    absolutespotsindices, pixX, pixY,
+                                    initrot=UB_raw,
+                                    B0matrix=1. / 3.6 * np.eye(3),
+                                    nb_grains=nb_grains,
+                                    pureRotation=0,
+                                    verbose=0,
+                                    pixelsize=pixelsize,
+                                    dim=(2048, 2048),
+                                    weights=None,
+                                    signgam=SIGN_OF_GAMMA
+                                    )
+        
+        print("\n\n\n\nStrain refinement completed !!! \n\n\n\n")
+        
+        fit_results = error_function_on_demand_strain_2grains(strain_sol,
+                                            miller,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            absolutespotsindices, pixX, pixY,
+                                            initrot=UB_raw,
+                                            B0matrix=1. / 3.6 * np.eye(3),
+                                            nb_grains=nb_grains,
+                                            pureRotation=0,
+                                            verbose=1,
+                                            pixelsize=pixelsize,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            signgam=SIGN_OF_GAMMA,
+                                            returnalldata=True)
+        
+        if nb_grains >= 2:
+            alldistances_array, all_deltamatrices, all_newmatrices = fit_results
+        
+        elif nb_grains == 1:
+            alldistances_array = fit_results[0]
+            refinedUB = fit_results[2][0]
+            finalB = np.eye(3)
+            for k, ind_par in enumerate(arr_indexvaryingparameters):
+                refined_value = strain_sol[k]
+                if ind_par == 5:
+                    finalB[1, 1] = refined_value
+                elif ind_par == 6:
+                    finalB[2, 2] = refined_value
+                elif ind_par == 7:
+                    finalB[0, 1] = refined_value
+                elif ind_par == 8:
+                    finalB[0, 2] = refined_value
+                elif ind_par == 9:
+                    finalB[1, 2] = refined_value
+            
+            print('refinedUB', refinedUB)
+            print('finalB', finalB)
+        
+    if 0:
+        # ge
+        xyGe = np.array([[ 1027.11, 1293.28], [ 1379.17, 1553.58], [ 1288.11, 1460.16], [  926.22, 872.06],
+           [  595.46, 876.44], [ 1183.27, 598.92], [  626.12, 1661.28], [  856.14, 1702.52],
+           [ 1672.67, 1258.62], [ 1497.4 , 1224.7 ], [ 1176.09, 1086.19], [  780.27, 1242.53],
+           [  828.68, 1246.06], [  819.91, 552.84], [  873.56, 706.97], [ 1085.8 , 1725.83],
+           [ 1579.39, 754.63], [ 1216.49, 1042.28], [ 1481.2 , 364.84], [  399.87, 1297.19],
+           [  548.25, 1260.32], [ 1396.71, 1217.56], [ 1573.49, 1073.13], [ 1199.06, 1387.53],
+           [ 1352.76, 568.03], [  467.05, 984.6 ], [  638.87, 1246.59], [  967.15, 1019.9 ],
+           [  977.5 , 1060.31], [  702.52, 949.88], [  383.77, 754.58], [ 1283.34, 976.69],
+           [  707.2 , 261.11], [ 1140.93, 748.4 ], [  701.05, 1560.17],
+           [ 1730.33, 1063.32], [  905.64, 804.81], [ 1055.14, 634.64],
+           [  703.42, 801.02], [  289.69, 945.97], [ 1151.05, 1115.85],
+           [ 1339.11, 926.87], [ 1458.76, 556.69], [  861.48, 1250.42],
+           [  327.89, 1321.03], [  621.54, 713.5 ], [ 1274.86, 306.95],
+           [ 1280.51, 691.44], [ 1063.25, 497.79], [ 1520.65, 1382.65], [ 1765.96, 958.47],
+           [ 1660.86, 706.31], [ 1101.37, 907.29], [ 1075.86, 1633.06], [ 1473.72, 1088.4 ],
+           [ 1819.62, 1305.46], [ 1626.9 , 982.64], [  576.2 , 1016.97], [  701.5 , 1242.55],
+           [ 1426.67, 858.78], [  911.32, 1538.14], [  841.45, 613.02], [ 1219.19, 482.3 ],
+           [ 1588.65, 403.05], [  521.92, 1574.92], [  810.65, 1039.11], [  982.11, 264.38],
+           [  537.37, 496.91], [  393.71, 1057.16], [  245.42, 1050.38], [ 1050.01, 728.62],
+           [  296.95, 544.57], [  510.17, 824.17], [ 1285.92, 1221.22], [ 1090.08, 954.93],
+           [ 1711.33, 678.47], [ 1377.04, 659.84], [  775.11, 434.93], [  757.84, 863.72],
+           [  983.89, 1090.23], [  925.43, 261.1 ], [ 1244.11, 1013.22], [ 1530.97, 552.13]])
+        
+        gehkl = np.array([[ -3., 3., 3.], [ -2., 2., 4.], [ -3., 3., 5.], [ -5., 3., 3.], [ -6., 4., 2.],
+           [ -6., 2., 4.], [ -4., 6., 2.], [ -3., 5., 3.], [ -3., 1., 5.], [ -4., 2., 6.], [ -6., 4., 6.],
+           [ -5., 5., 3.], [ -6., 6., 4.], [ -7., 3., 3.], [ -4., 2., 2.], [ -3., 5., 5.], [ -5., 1., 5.],
+           [ -5., 3., 5.], [ -7., 1., 5.], [ -5., 5., 1.], [ -3., 3., 1.], [ -5., 3., 7.], [ -6., 2., 8.],
+           [ -5., 5., 7.], [ -8., 2., 6.], [ -8., 6., 2.], [ -7., 7., 3.], [ -7., 5., 5.], [ -8., 6., 6.],
+           [ -7., 5., 3.], [ -5., 3., 1.], [ -8., 4., 8.], [ -9., 3., 3.], [ -7., 3., 5.], [ -5., 7., 3.],
+           [ -5., 1., 7.], [ -9., 5., 5.], [-10., 4., 6.], [-10., 6., 4.], [ -7., 5., 1.], [ -7., 5., 7.],
+           [ -7., 3., 7.], [-10., 2., 8.], [ -7., 7., 5.], [ -7., 7., 1.], [ -9., 5., 3.], [ -5., 1., 3.],
+           [ -9., 3., 7.], [ -9., 3., 5.], [ -5., 3., 9.], [ -7., 1., 9.], [ -7., 1., 7.],
+           [ -9., 5., 7.], [ -4., 6., 6.], [ -7., 3., 9.], [ -5., 1., 9.], [ -8., 2., 10.],
+           [ -9., 7., 3.], [ -8., 8., 4.], [ -3., 1., 3.], [ -5., 7., 5.], [-11., 5., 5.], [-11., 3., 7.],
+           [ -9., 1., 7.], [ -6., 8., 2.], [ -9., 7., 5.], [-11., 3., 5.], [-11., 5., 3.],
+           [-10., 8., 2.], [ -9., 7., 1.], [-11., 5., 7.], [-12., 6., 2.], [-11., 7., 3.], [ -7., 5., 9.],
+           [-10., 6., 8.], [ -9., 1., 9.], [-11., 3., 9.], [-13., 5., 5.], [-11., 7., 5.], [ -9., 7., 7.],
+           [-14., 4., 6.], [ -9., 5., 9.], [-12., 2., 10.]])
+    
+        UBGe = np.array([[ 0.97294265, 0.09236186, -0.21176475],
+                         [-0.22489545, 0.58960648, -0.77593813],
+                         [ 0.05318109, 0.80262461, 0.59457586]])
+        B0Ge = np.array([[  1.76756518e-01, -2.84246160e-17, -2.84246160e-17],
+                         [  0.00000000e+00, 1.76756518e-01, -1.08232152e-17],
+                         [  0.00000000e+00, 0.00000000e+00, 1.76756518e-01]])
+    
+        calibGe = [69.196, 1050.78, 1116.22, 0.152, -0.251]
+    
+
+        #--- ----------- input parameters
+        calibparameters = calibGe
+        nb_grains = 1
+        g1strain = [1, 1, 0, 0, 0]
+        g1rot = [0, 0, 0]
+    #     g2strain = [1, 1.005, 0, 0, 0]
+        
+    
+        allparameters = calibparameters + g1strain + g1rot  # + g2strain
+        
+        nbgrains = 1
+    #     arr_indexvaryingparameters = np.arange(5, 5 + nbgrains * 5 + 3)
+    #     starting_param = [1, 1, 0, 0, 0, 0, 0, 0] + [1, 1.005, 0, 0, 0]
+        arr_indexvaryingparameters = np.array([5, 6, 7, 8, 9, 10, 11, 12])
+        starting_param = [1, 1, 0, 0, 0, 0, 0, 0]
+        
+        miller = gehkl
+        absolutespotsindices = [np.arange(len(xyGe)), np.arange(len(xyGe))]
+        pixX = [xyGe[:, 0], xyGe[:, 0]]
+        pixY = [xyGe[:, 1], xyGe[:, 1]]
+        
+        UB_raw = UBGe
+        B0matrix = B0Ge
+    
+        #----------------------------------------------------------
+        
+    
+        
+        
+        res = error_function_on_demand_strain_2grains(g1strain + g1rot,
+                                            miller,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            absolutespotsindices, pixX, pixY,
+                                            initrot=UB_raw,
+                                            B0matrix=B0matrix,
+                                            nb_grains=nb_grains,
+                                            pureRotation=0,
+                                            verbose=1,
+                                            pixelsize=pixelsize,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            signgam=SIGN_OF_GAMMA,
+                                            returnalldata=True)
+         
+        print("alldistances_array,all_deltamatrices,all_newmatrices", res)
+        
+        strain_sol = fit_on_demand_strain_2grains(np.array(starting_param),
+                                    miller,
+                                    allparameters,
+                                    error_function_on_demand_strain_2grains,
+                                    arr_indexvaryingparameters,
+                                    absolutespotsindices, pixX, pixY,
+                                    initrot=UB_raw,
+                                    B0matrix=1. / 3.6 * np.eye(3),
+                                    nb_grains=nb_grains,
+                                    pureRotation=0,
+                                    verbose=0,
+                                    pixelsize=pixelsize,
+                                    dim=(2048, 2048),
+                                    weights=None,
+                                    signgam=SIGN_OF_GAMMA
+                                    )
+        
+        print("\n\n\n\nStrain refinement completed !!! \n\n\n\n")
+        
+        fit_results = error_function_on_demand_strain_2grains(strain_sol,
+                                            miller,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            absolutespotsindices, pixX, pixY,
+                                            initrot=UB_raw,
+                                            B0matrix=1. / 3.6 * np.eye(3),
+                                            nb_grains=nb_grains,
+                                            pureRotation=0,
+                                            verbose=1,
+                                            pixelsize=pixelsize,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            signgam=SIGN_OF_GAMMA,
+                                            returnalldata=True)
+        
+        if nb_grains >= 2:
+            alldistances_array, all_deltamatrices, all_newmatrices = fit_results
+        
+        elif nb_grains == 1:
+            alldistances_array = fit_results[0]
+            refinedUB = fit_results[2][0]
+            finalB = np.eye(3)
+            for k, ind_par in enumerate(arr_indexvaryingparameters):
+                refined_value = strain_sol[k]
+                if ind_par == 5:
+                    finalB[1, 1] = refined_value
+                elif ind_par == 6:
+                    finalB[2, 2] = refined_value
+                elif ind_par == 7:
+                    finalB[0, 1] = refined_value
+                elif ind_par == 8:
+                    finalB[0, 2] = refined_value
+                elif ind_par == 9:
+                    finalB[1, 2] = refined_value
+            
+            print('refinedUB', refinedUB)
+            print('finalB', finalB)
+            
+             
+        
+        
+        
+    
+
+
+    
+    
+    ueirhgioeuhgeiu
+#     print "up to now, no test !"
+#     import sys
+#     sys.exit()
+
+
+
+    # test of strain refinement of non cubic structure
+
+    mat_manualindexation = np.array([[ 0.16821451, -0.36210799 , -0.91683242],
+                                [-0.42638856 , 0.81196112, -0.39863761],
+                                [ 0.8905644  , 0.45406003, -0.02691724]])
+
+    mat_manualindexation = np.array([[ 0.6431522 , 0.20977096, -0.73644497], [-0.08385282 , 0.97525494 , 0.20456386], [ 0.76113324, -0.06981272  , 0.64482731]])
+    pixelsize = 165. / 2048
+    if 0:
+        filename_ind = 'Ge_test.idx'
+        calibration_parameter = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]  # Nov 09 J. Villanova BM32
+
+    ################################################################################
+
+    filename_image = 'Ge_run41_1_0003.mccd'
+    filename_idx = 'Ge_run41_1_0003.idx'
+
+    calibration_parameter = [69.66055, 895.27118, 960.77417, 0.8415, -.31818]  # Nov 09 J. Villanova BM32
+
+
+    if 0:
+        # VHR camera 05 Mar 2010
+        filename_idx = 'toto.idx'
+        pixelsize = 0.0168
+        calibration_parameter = [41.7, 1780, 700., 0.84324, -.32201]
+        calibration_parameter = [32, 1100, 600, 0, 0]
+
+    # Peak position estimation
+    # 0 for fit2D centroids or default position in idx
+    # 1 XMAS file (.ind)
+    # 2 Gaussian fit
+    # 3 lorentzian fit
+    # 4 Centroid
+    flag_pos = 0
+
+    nb_steps = 60  # max number of iterations
+    relative_error = 0.0000001  # pixdev relative error variation limit to stop the loop
+
+    #################################################################################
+
+    from . import readmccd
+
+    filename_idx = 'Custrained_1.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
+    filename_idx = 'Cu_3.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
+    twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = \
+                                    readmccd.Read_indexationfile(filename_idx)
+
+    if detectorparam:
+        calibration_parameter = detectorparam
+
+
+    starting_orientmatrix = mat_manualindexation
+    starting_orientmatrix = grainUmatrix['0']  # from .idx file
+
+    print("starting_orientmatrix", starting_orientmatrix)
+
+    allparameters = np.array(calibration_parameter + [0., 0., 0.])
+    DATA_Q = miller  # all miller indices must be entered in fit procedures
+
+    # spots selection
+    nspots = np.arange(13)  #  array([0,1,2,3,4,5,6,7,8,9,10])
+    pixX, pixY = np.take(pixX, nspots), np.take(pixY, nspots)
+
+    # find the best orientation with a pure rotation matrix (1) or product pure rotation* strain matrix (triangle up)  (0)
+    pureRotation = 1
+
+
+    if 0:
+        print("c'est parti")
+        Xcen = np.array([1000.])
+        Xcen_sol = fitXCEN(Xcen, miller, allparameters, error_function_XCEN, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
+
+    if 0:
+        print("c'est parti")
+        initial_values = np.array([1000., 1200.])  # XCEN and YCEN
+        arr_indexvaryingparameters = np.array([1, 2])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = fit_on_demand_calibration(initial_values, miller, allparameters, error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
+
+    if 0:
+        print("c'est parti")
+        initial_values = np.array([65.])  # dd
+        arr_indexvaryingparameters = np.array([0])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = fit_on_demand_calibration(initial_values, miller, allparameters, error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
+
+    if 1:
+        print("c'est parti")
+        initial_values = np.array([65., 200, 900, 5, -3])  # [dd,xcen,ycen,ang1,ang2]
+        arr_indexvaryingparameters = np.array([0, 1, 2, 3, 4])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = fit_on_demand_calibration(initial_values,
+                                            miller,
+                                            allparameters,
+                                            error_function_on_demand_calibration,
+                                            arr_indexvaryingparameters,
+                                            nspots,
+                                            pixX, pixY,
+                                            initrot=starting_orientmatrix,
+                                            verbose=0)
+
+
+    raise ValueError("end of example")
+
+    # fit of peaks (better than previous fit2d or LaueTools peaksearch) -------------------------------
+    if flag_pos in (2, 3):
+        if flag_pos == 2:
+            fitfunc = 'gaussian'
+        if flag_pos == 3:
+            fitfunc = 'lorentzian'
+
+
+        peaklist = np.transpose(np.array([pixX, pixY]))
+        params, cov, info, message, baseline = readmccd.readoneimage_multiROIfit(filename_image,
+                                                                    peaklist,
+                                                                    20,
+                                                                    CCDLabel='MARCCD165',
+                                                                    baseline='auto',  # min in ROI box
+                                                                    startangles=0.,
+                                                                    start_sigma1=1.,
+                                                                    start_sigma2=1.,
+                                                                    position_start='max',  # 'centers' or 'max'
+                                                                    fitfunc=fitfunc,
+                                                                    showfitresults=0,
+                                                                    offsetposition=0)  # =1 XMAS pixel convention
+
+        pixX, pixY = np.transpose(np.array(params)[:, 2:4])
+    # -----------------------------------------------------------------------------------------------
+
+    if flag_pos == 4:
+        from . import Centroid
+        peaklist = np.transpose([pixX, pixY])
+        tab_centroid = Centroid.read_multicentroid(filename_image, peaklist, boxsize=10)
+        pixX, pixY = np.transpose(tab_centroid)

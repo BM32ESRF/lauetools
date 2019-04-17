@@ -95,8 +95,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile.write(firstline)
     outputfile.write('\n'.join([format_string % \
-                                tuple(zip(twicetheta, chi, data_x, data_y, dataintensity)[i]) \
-                                for i in range(longueur)]))
+                                tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i]) \
+                                for i in list(range(longueur))]))
 
     outputfile.write('\n# File created at %s with readwriteASCII.py' % \
                                                 (ttt.asctime()))
@@ -108,12 +108,12 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         outputfile.write('\n# Calibration parameters')
         if isinstance(param, (list, np.ndarray)):
             if len(param) == 6:
-                for par, value in zip(CCD_CALIBRATION_PARAMETERS[:6], param):
+                for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:6], param)):
                     outputfile.write('\n# %s     :   %s' % (par, value))
                 ypixelsize = param[5] * (1.0 + rectpix)
                 outputfile.write('\n# ypixelsize     :   ' + str(ypixelsize))
             elif len(param) == 5:
-                for par, value in zip(CCD_CALIBRATION_PARAMETERS[:5], param):
+                for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:5], param)):
                     outputfile.write('\n# %s     :   %s' % (par, value))
             else:
                 raise ValueError("5 or 6 calibration parameters are needed!")
@@ -361,7 +361,7 @@ def readCalib_det_file(filename_det):
         CCDcalib['CCDCalibParameters'] = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
     else:
         CCDcalib['CCDCalibParameters'] = calibparam
-        for key, val in zip(CCD_CALIBRATION_PARAMETERS[:5], calibparam):
+        for key, val in list(zip(CCD_CALIBRATION_PARAMETERS[:5], calibparam)):
             CCDcalib[key] = val
 
     return CCDcalib
@@ -456,14 +456,11 @@ def writefile_Peaklist(outputfilename,
          Xdev, Ydev,
          peak_bkg, Ipixmax) = Data_array.T
          
-             
-             
     elif nbcolumns == 11:
         (peak_X, peak_Y, peak_Itot, peak_I,
          peak_fwaxmaj, peak_fwaxmin, peak_inclination,
          Xdev, Ydev,
          peak_bkg, Ipixmax) = Data_array.T
-
 
     outputfile = open(os.path.join(dirname, outputfilename), 'w')
 
@@ -471,20 +468,7 @@ def writefile_Peaklist(outputfilename,
 
     if longueur == 1:
         print("nbcolumns",nbcolumns)
-#         print "write one row !!!"
-#         for elem in (np.round(peak_X[0], decimals=2),
-#                         np.round(peak_Y[0], decimals=2),
-#                         np.round(peak_I[0] + peak_bkg[0], decimals=2),
-#                         np.round(peak_I[0], decimals=2),
-#                         np.round(peak_fwaxmaj[0], decimals=2),
-#                         np.round(peak_fwaxmin[0], decimals=2),
-#                         np.round(peak_inclination[0], decimals=2),
-#                         np.round(Xdev[0], decimals=2),
-#                         np.round(Ydev[0], decimals=2),
-#                         np.round(peak_bkg[0], decimals=2),
-#                         Ipixmax[0]
-#                         ):
-#             print elem, type(elem)
+
         outputfile.write('\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d' % \
                         (np.round(peak_X[0], decimals=2),
                         np.round(peak_Y[0], decimals=2),
@@ -504,7 +488,7 @@ def writefile_Peaklist(outputfilename,
     else:
 
         outputfile.write('\n'.join(['%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d' % \
-                        tuple(zip(peak_X.round(decimals=2),
+                        tuple(list(zip(peak_X.round(decimals=2),
                                 peak_Y.round(decimals=2),
                                 (peak_I + peak_bkg).round(decimals=2),
                                 peak_I.round(decimals=2),
@@ -512,7 +496,7 @@ def writefile_Peaklist(outputfilename,
                                 peak_inclination.round(decimals=2),
                                 Xdev.round(decimals=2), Ydev.round(decimals=2),
                                 peak_bkg.round(decimals=2),
-                                Ipixmax)[i]) for i in range(longueur)]))
+                                Ipixmax))[i]) for i in list(range(longueur))]))
         nbpeaks=len(peak_X)
 
     outputfile.write('\n# File created at %s with readwriteASCII.py' % (ttt.asctime()))
@@ -688,7 +672,7 @@ def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
 
     if ("HKLxyz_names" in dict_matrices) and ("HKLxyz" in dict_matrices) :
         outputfile.write("#HKL coord. of lab and sample frame axes :\n")
-        for k in range(6) :
+        for k in list(range(6)) :
             str1 = "#" + dict_matrices["HKLxyz_names"][k] + '\t' +  str(dict_matrices["HKLxyz"][k].round(decimals=3)) + '\n'
             outputfile.write(str1)
             
@@ -864,7 +848,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     f = open(fitfilename, 'r')
 
-    for grain_index in range(nbgrains):
+    for grain_index in list(range(nbgrains)):
 #         print "read data for grain_index %d" % grain_index
 #         print linepos_grain_list[grain_index + 1]
 #         print linepos_grain_list[grain_index]
@@ -907,7 +891,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     nbspots = nb_indexed_spots
 
                     dataspots = []
-                    for kline in range(nbspots):
+                    for kline in list(range(nbspots)):
                         line = f.readline()
                         iline += 1
                         dataspots.append(line.rstrip('\n').replace('[', '').replace(']', '').split())
@@ -921,7 +905,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     nbspots = nb_UNindexed_spots
 
                     dataspots_Unindexed = []
-                    for kline in range(nbspots):
+                    for kline in list(range(nbspots)):
                         line = f.readline()
                         iline += 1
                         dataspots_Unindexed.append(line.rstrip('\n').replace('[', '').replace(']', '').split())
@@ -958,7 +942,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 lineeuler = iline + 1
 
             if matrixfound:
-                for jline_matrix in range(3):
+                for jline_matrix in list(range(3)):
                     line = f.readline()
 #                     print "line in matrix", line
                     lineval = line.rstrip('\n').replace('[', '').replace(']', '').split()
@@ -968,7 +952,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 #                 print "got UB matrix:", UBmat
                 matrixfound = 0
             if strainfound:
-                for jline_matrix in range(3):
+                for jline_matrix in list(range(3)):
                     line = f.readline()
 #                     print "line in matrix", line
                     lineval = line.rstrip('\n').replace('[', '').replace(']', '').split()
@@ -979,7 +963,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 strainfound = 0
             if calibfoundJSM:
                 calibparam = []
-                for jline_calib in range(7):
+                for jline_calib in list(range(7)):
                     line = f.readline()
 #                     print "line in matrix", line
                     val = float(line.split(':')[-1])
@@ -1029,7 +1013,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     f.close()
 
-    for grain_index in range(1, nbgrains):
+    for grain_index in list(range(1, nbgrains)):
         list_starting_rows_in_data[grain_index] = list_starting_rows_in_data[grain_index - 1] + list_nb_indexed_peaks[grain_index - 1]
 
     pixdev = np.array(PixDev_list, dtype=np.float)
@@ -1085,7 +1069,7 @@ def read3linesasMatrix(fileobject):
     """
     matrix = np.zeros((3, 3))
     iline = 0
-    for i in range(3):
+    for i in list(range(3)):
         line = fileobject.readline()
 
 #         lineval = line.rstrip('\n').replace('[', '').replace(']', '').split()
@@ -1268,8 +1252,8 @@ def readCheckOrientationsFile(fullpathtoFile):
     
     List_CheckOrientations = []
     
-    known_values = [False for k in range(6)]
-    Current_CheckOrientationParameters =[0 for k in range(6)]
+    known_values = [False for k in list(range(6))]
+    Current_CheckOrientationParameters =[0 for k in list(range(6))]
     
     f = open(fullpathtoFile, 'r')
     lineindex = 0
@@ -1328,7 +1312,7 @@ def readCheckOrientationsFile(fullpathtoFile):
                 
                 if posfile != -1:
                     f.seek(posfile)                
-                    for k in range(nblines):
+                    for k in list(range(nblines)):
                         f.readline()
                         lineindex+=1
                 else:
@@ -1429,7 +1413,7 @@ def writefilegnomon(gnomonx, gnomony, outputfilename, dataselected):
     linestowrite = []
     linestowrite.append(['gnomonx gnomony 2theta chi I #spot'])
     longueur = len(gnomonx)
-    for i in range(longueur):
+    for i in list(range(longueur)):
         linestowrite.append([str(gnomonx[i]), str(gnomony[i]),
                             str(2. * dataselected[0][i]),
                             str(dataselected[1][i]),
@@ -1510,7 +1494,7 @@ def ReadSpec(fname, scan):
             break
     d = {}
     coltit = coltit.split()
-    for i in range(1, len(coltit)):
+    for i in list(range(1, len(coltit))):
         d[coltit[i]] = []
 
     ii = 0
@@ -1532,7 +1516,7 @@ def ReadSpec(fname, scan):
 #         print "coltit", coltit
         # print "nb columns",len(coltit)-1
         if l[0] != '@A':
-            for i in range(1, len(coltit)):
+            for i in list(range(1, len(coltit))):
                 d[coltit[i]].append(float(l[i - 1]))
         else:
             # print "reading mca data array for one point"
@@ -1543,7 +1527,7 @@ def ReadSpec(fname, scan):
             bill[0] = np.array(np.array(l[1:]), dtype=np.int16)
             # fist line has its first element = '@A'
             if ii % 10 == 0: print("%d" % ii)
-            for k in range(1, 127):  # first and last line off , each line contains 16 integers
+            for k in list(range(1, 127)):  # first and last line off , each line contains 16 integers
                 l = f.readline()
 
                 l = l.split()
@@ -1566,9 +1550,9 @@ def ReadSpec(fname, scan):
 
     nb = len(d[coltit[1]])  # nb of points
     # print "nb",nb
-    for i in range(1, len(coltit)):
+    for i in list(range(1, len(coltit))):
         a = np.zeros(nb, dtype=float)
-        for j in range(nb):
+        for j in list(range(nb)):
             a[j] = d[coltit[i]][j]
         d[coltit[i]] = deepcopy(a)
     f.close()
@@ -1631,7 +1615,7 @@ def readxy_XMASind(filename):
     nb_peaks = int(l.split()[-1])
     f.readline()
     datalines = []
-    for k in range(nb_peaks):
+    for k in list(range(nb_peaks)):
         datalines.append(f.readline().split())
 
     return np.array(datalines, dtype=float)
@@ -1671,7 +1655,7 @@ def read_cri(filecri):
             if i == 2:
                 if VERBOSE:
                     print("unit cell parameters (direct space) : ", line[:-1])
-                for j in range(6):
+                for j in list(range(6)):
                     if j < 3:
                     # print line.split()[j]
                         uc[j] = float(line.split()[j]) * 1.0
@@ -1712,7 +1696,7 @@ def read_cri(filecri):
 
         print("%d atom(s) in asymmetric unit :" % num_at)
         if num_at > 1:
-            for i in range(num_at):
+            for i in list(range(num_at)):
                 print(element_name[i], "\t", element_coord_and_occ[i, :])
         else :
             print(element_name, "\t", element_coord_and_occ)
@@ -1848,7 +1832,7 @@ def start_func():
 
     print("print current", ttt.asctime())
 
-    for k in range(20):
+    for k in list(range(20)):
         print("k=%d, k**2=%d" % (k, k ** 2))
         
 # ----------------------------------
@@ -2006,7 +1990,7 @@ class LT_fitfile:
 
     def __Peaks__(self, f, l):
         self.peak = {}
-        for iii in range(self.NumberOfIndexedSpots):
+        for iii in list(range(self.NumberOfIndexedSpots)):
           l = f.readline().split()
           self.peak['{:d} {:d} {:d}'.format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
 
