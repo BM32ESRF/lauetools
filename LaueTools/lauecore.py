@@ -796,7 +796,7 @@ def getLaueSpots(wavelmin, wavelmax,
         print("Number of grains: ", nb_of_grains)
 
     # loop over grains
-    for i in range(nb_of_grains):
+    for i in list(range(nb_of_grains)):
         try:
             Elem = dict_Materials[crystalsParams[i][3]][0]
         except (IndexError, TypeError, KeyError):
@@ -824,7 +824,7 @@ def getLaueSpots(wavelmin, wavelmax,
     # calculation of RS lattice nodes in lauetools laboratory frame and indices
 
     # loop over grains
-    for i in range(nb_of_grains):
+    for i in list(range(nb_of_grains)):
 
         Bmatrix, Extinc, Orientmatrix, key_for_dict = readinputparameters(crystalsParams[i])
 
@@ -1326,7 +1326,7 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
         linestowrite.append(['\n'])
         linestowrite.append(['#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest'])
 
-    for i in range(nbofgrains):
+    for i in list(range(nbofgrains)):
         condCam = elem.Xcam ** 2 + elem.Ycam ** 2 <= (DEFAULT_DETECTOR_DIAMETER / 2) ** 2
         _oncam[i] = [elem for elem in listoflistofspots[i] if (elem.Xcam is not None and condCam)]
 
@@ -1404,7 +1404,7 @@ def filterLaueSpots(vec_and_indices,
         Oncamchi = emptylists(nbofgrains)
 
     # loop over grains
-    for grainindex in range(nbofgrains):
+    for grainindex in list(range(nbofgrains)):
         try:
             Qx = Qvectors_list[grainindex][:, 0] * 1.
             Qy = Qvectors_list[grainindex][:, 1] * 1.
@@ -1950,7 +1950,7 @@ def emptylists(n):
     but
     xx=[[]]*2 ; xx[0].append((2) => [[2],[2]] instead of [[2],[]] !!
     """
-    return [[] for k in range(n)]
+    return [[] for k in list(range(n))]
 
 
 def Plot_Laue(_emin, _emax,
@@ -2007,7 +2007,7 @@ def Plot_Laue(_emin, _emax,
 
     # building  simul data
     # loop over grains
-    for i in range(nb_of_grains):
+    for i in list(range(nb_of_grains)):
 
         print("Number of spots on camera (w / o harmonics): GRAIN number ", i , \
                                         " : ", len(oncam_sansh[i]))
@@ -2056,7 +2056,7 @@ def Plot_Laue(_emin, _emax,
         # END PLOT EXP DATA
 
     # Plot Simulated laue patterns
-    for i in range(nb_of_grains):  # loop over grains
+    for i in list(range(nb_of_grains)):  # loop over grains
         # ax.plot(tuple(xxx[i]),tuple(yyy[i]),dicosymbol[i])
 
         # display label to the side of the point
@@ -2143,7 +2143,7 @@ def Plot_Laue(_emin, _emax,
         whole_yyy = yyy[0]
         whole_indy = indy[0]
         whole_energy = energy[0]
-        for i in range(nb_of_grains - 1):
+        for i in list(range(nb_of_grains - 1)):
             whole_xxx += xxx[i + 1]
             whole_yyy += yyy[i + 1]
             whole_indy += indy[i + 1]
@@ -2185,7 +2185,7 @@ def CreateData_(list_spots, outputname='fakedatapickle', pickledOK=0):
             line_to_write = []
             line_to_write.append(['2theta   chi h k l E spotnumber'])
             spotnumber = 0
-            for i in range(len(list_spots)):
+            for i in list(range(len(list_spots))):
 
                 for elem in list_spots[i]:
 
@@ -2724,7 +2724,7 @@ def atomicformfactor(qvector,element='Ge'):
         p=(3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800)
 
     val=0
-    for k in range(4):
+    for k in list(range(4)):
         val+= p[2*k]*np.exp(-p[2*k+1]*(qvector/4/np.pi)**2)
     val+=p[-1]
     return val 
@@ -3002,7 +3002,7 @@ if __name__ == "__main__":
         dict_Materials['Cu3'] = ['Cu3', [Id, Umat, Id , BmatCu2], 'fcc']
 
         grains = []
-        for k in range(-5, 6):
+        for k in list(range(-5, 6)):
             dict_Materials['Cu_%d' % k] = dict_Materials['Cu3']
             # set material label
             dict_Materials['Cu_%d' % k][0] = 'Cu_%d' % k
@@ -3363,7 +3363,7 @@ if __name__ == "__main__":
 
         f = open('Ni_fake_transmission.dat', 'w')
         f.write('X Y I from simulation\n')
-        for k in range(len(X)):
+        for k in list(range(len(X))):
             f.write('%s %s %s %s %s %s %s %s %s %s %s\n' % (X[k], Y[k], 65000 * (1 - .8 * k / len(X)), 65000 * (1 - .8 * k / len(X)), 1.47, 1.81, 82.460, -1.07, 1.78, 624.74, 64740))
         f.write('# %s pixelsize %s' % (str(calib), pixelsize))
         f.close()

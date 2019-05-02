@@ -38,10 +38,10 @@ def remove_harmonic(hkl, uflab, yz):
     isbadpeak = np.zeros(nn, dtype=np.int)
     toluf = 0.05
 
-    for i in range(nn):
+    for i in list(range(nn)):
         if (isbadpeak[i] == 0):
             # print "i=", i
-            for j in range(i + 1, nn):
+            for j in list(range(i + 1, nn)):
                 if (isbadpeak[j] == 0):
                     # print "j=", j
                     if (GT.norme_vec(uflab[j, :] - uflab[i, :]) < toluf):
@@ -1187,7 +1187,7 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
     distances_vector_list = []
     all_deltamatrices = []
     all_newmatrices = []
-    for grain_index in range(nb_grains):
+    for grain_index in list(range(nb_grains)):
         mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
     
         # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last fro roatation
@@ -1240,7 +1240,7 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
         
         # default parameters
         s_list = [1, 1, 0, 0, 0]
-        for s_index in range(5):
+        for s_index in list(range(5)):
             if index_of_strain_in_arr_indexvaryingparameters[s_index] in arr_indexvaryingparameters:
                 ind1 = np.where(arr_indexvaryingparameters == index_of_strain_in_arr_indexvaryingparameters[s_index])[0][0]
                 if len(arr_indexvaryingparameters) > 1:
@@ -1435,8 +1435,8 @@ def error_function_general(varying_parameters_values_array, varying_parameters_k
                 
         elif (not T_has_elements) and (not Ts_has_elements) and parameter_name in ('Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22'):
 #             print 'got Tc elements: ', parameter_name
-            for i in range(3):
-                for j in range(3):
+            for i in list(range(3)):
+                for j in list(range(3)):
                     if parameter_name == 'Tc%d%d' % (i, j):
 #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:
@@ -1446,8 +1446,8 @@ def error_function_general(varying_parameters_values_array, varying_parameters_k
                         Tc_has_elements = True
                             
         elif not Tc_has_elements and not Ts_has_elements and parameter_name in ('T00', 'T01', 'T02', 'T10', 'T11', 'T12', 'T20', 'T21', 'T22'):
-            for i in range(3):
-                for j in range(3):
+            for i in list(range(3)):
+                for j in list(range(3)):
                     if parameter_name is 'T%d%d' % (i, j):
                         if nb_varying_parameters > 1:
                             T[i, j] = varying_parameters_values_array[varying_parameter_index]
@@ -1456,8 +1456,8 @@ def error_function_general(varying_parameters_values_array, varying_parameters_k
                         T_has_elements = True
                         
         elif not Tc_has_elements and not T_has_elements and parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts10', 'Ts11', 'Ts12', 'Ts20', 'Ts21', 'Ts22'):
-            for i in range(3):
-                for j in range(3):
+            for i in list(range(3)):
+                for j in list(range(3)):
                     if parameter_name is 'Ts%d%d' % (i, j):
                         if nb_varying_parameters > 1:
                             Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
@@ -2115,8 +2115,8 @@ def error_function_strain(varying_parameters_values_array, varying_parameters_ke
                             [0, 0, 1.]])
         elif parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22'):
 #             print 'got Ts elements: ', parameter_name
-            for i in range(3):
-                for j in range(3):
+            for i in list(range(3)):
+                for j in list(range(3)):
                     if parameter_name == 'Ts%d%d' % (i, j):
 #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:
@@ -2449,8 +2449,8 @@ def error_strain_from_elongation(varying_parameters_values_array, varying_parame
                             [0, 0, 1.]])
         elif parameter_name in ('Ts00', 'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22'):
 #             print 'got Ts elements: ', parameter_name
-            for i in range(3):
-                for j in range(3):
+            for i in list(range(3)):
+                for j in list(range(3)):
                     if parameter_name == 'Ts%d%d' % (i, j):
 #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:

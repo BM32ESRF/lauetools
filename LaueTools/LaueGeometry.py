@@ -1431,7 +1431,7 @@ def Compute_data2thetachi(filename,
 #        print "dd = ", param_det[0]
 #        print "pixelsize = ", pixelsize
 #        print "scale_factor = ", scale_factor
-        for i in range(npics):
+        for i in list(range(npics)):
             xynew[i, :] = xystart[i, :] \
                 + alpha_xray_incidence_correction * scale_factor * dxy[i, :] * dxynorm[i]
 
@@ -1583,7 +1583,7 @@ def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam,
     if suffix == '':
         suffix = '.dat'
 
-    for fileindex in range(fileindexrange[0], fileindexrange[1] + 1):
+    for fileindex in list(range(fileindexrange[0], fileindexrange[1] + 1)):
         filename_in = filenameprefix + encodingdigits % fileindex + suffix
         print("filename_in", filename_in)
         convert2corfile(filename_in, calibparam,
@@ -1612,7 +1612,7 @@ def convert2corfile_multiprocessing(fileindexrange, filenameprefix, calibparam,
 
 #    t00 = time.time()
     jobs = []
-    for ii in range(nb_of_cpu):
+    for ii in list(range(nb_of_cpu)):
         proc = multiprocessing.Process(target=convert2corfile_fileseries,
                                     args=(fileindexdivision[ii], filenameprefix, calibparam,
                                suffix, nbdigits,
@@ -1901,7 +1901,7 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae
         print(pairs)
 
     results = []
-    for k in range(len(pairs)):
+    for k in list(range(len(pairs))):
         p = pairs[k]
         if verbose:
             print("p", p)
@@ -2450,7 +2450,7 @@ def find_referencepicture(anglesample=40,
         print(xbet)
         print(step)
 
-    for k in range(0, 700):
+    for k in list(range(0, 700)):
         temp = test_Gec(anglesample=anglesample, referencepicture=k, wire_height=wire_height)
         ylab = temp[falling_or_rising][combination][0]
         "falling_or_rising : 0 for falling edge (first edge); 1 for rising edge (second edge)"
@@ -2620,7 +2620,7 @@ if __name__ == "__main__":
         """
         doing a files serie
         """
-        for index in range(620, 1276):
+        for index in list(range(620, 1276)):
             filename = prefix + '%04d' % index + suffix
             twicetheta, chi, dataintensity, data_x, data_y = Compute_data2thetachi(filename, (col_X, col_Y, col_I), nblines_headertoskip)
             IOLT.writefile_cor(prefix + '%04d' % index, twicetheta, chi, data_x, data_y, dataintensity, sortedexit=Intensitysorted)

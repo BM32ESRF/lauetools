@@ -428,7 +428,7 @@ def gen_Nuplets(items, n):
     if n == 0:
         yield []
     else:
-        for i in range(len(items) - n + 1):
+        for i in list(range(len(items) - n + 1)):
             for cc in gen_Nuplets(items[i + 1:], n - 1):
                 yield [items[i]] + cc
 
@@ -818,7 +818,7 @@ def ComputeHough(_datagnomonx, _datagnomony,
         # TwicethetaChi=map(rhotable_from_one_point,tra)
 
         # ---TOO LONG !!!
-        for k in range(len(_datagnomonx)):  # JSM 21 OCt 2010   10 what for ???
+        for k in list(range(len(_datagnomonx))):  # JSM 21 OCt 2010   10 what for ???
             # print "tra",tra[k]
             # print "intiti",Intensity_table[k]
             # print "%d/%d"%(k,len(_datagnomonx)-1)
@@ -1739,7 +1739,7 @@ def findGrain_in_orientSpace(CorrelIntensTab, nbfirstpt):
         print("Remaining orientations")
         remindices = np.array(list(set(gluck) - torem))
         remelem = []
-        for k in range(len(gluck)):
+        for k in list(range(len(gluck))):
             if gluck[k] in remindices:
                 remelem.append(gluck[k])
         return remelem
@@ -2961,7 +2961,7 @@ def builddatabaseRange(startAngle, endAngle):
     
     prompt> /usr/bin/python builddatabase.py angle1 angle2
     """
-    for ind in range(startAngle, endAngle + 1):
+    for ind in list(range(startAngle, endAngle + 1)):
         BuildDataBaseImageMatching_fast(ind, ind + 1, ind)
 
 #--- to read
@@ -2992,7 +2992,7 @@ def CreateDataBasestep1deg(databasefolder=None, prefixname='Si_REF_'):
         databasefolder = os.curdir
     toreturn = []
 
-    for k in range(90):
+    for k in list(range(90)):
         print("loading databank #%d/89" % k)
         toreturn.append(Read_One_DataBaseImageMatching(k, prefixname=prefixname,
                                                        databasefolder=databasefolder))
@@ -3142,7 +3142,7 @@ def test_ImageMatching(database=None):
 #                            key_material='Si',EULER=1)
 
     p.close()
-    for k in range(len(bestEULER)):
+    for k in list(range(len(bestEULER))):
         p.close()
         Plot_compare_2thetachi(bestEULER[k], dataselected[0], dataselected[1],
                            verbose=1, key_material='Si', emax=22,
@@ -3234,7 +3234,7 @@ def test_ImageMatching_2(database=None):
 # #                            key_material='Si',EULER=1)
 #
     p.close()
-    for k in range(len(bestEULER)):
+    for k in list(range(len(bestEULER))):
         p.close()
         Plot_compare_2thetachi(bestEULER[k], dataselected[0], dataselected[1],
                            verbose=1, key_material='Si', emax=25,
@@ -3279,7 +3279,7 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
     grains = []
     Twicetheta, Chi, posx, posy, dataintensity = [], [], [], [], []
 
-    for k in range(nbgrains):
+    for k in list(range(nbgrains)):
         orientmat = GT.randomRotationMatrix()
 #        print "orientmat %d"%k
 #        print orientmat.tolist()
@@ -3421,7 +3421,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
     grains = []
     Twicetheta, Chi, posx, posy, dataintensity = [], [], [], [], []
 
-    for k in range(nbgrains):
+    for k in list(range(nbgrains)):
         orientmat = GT.randomRotationMatrix()
 #        print "orientmat %d"%k
 #        print orientmat.tolist()
@@ -3629,7 +3629,7 @@ def test_ImageMatching_dev(database=None):
 #                            key_material='Si',EULER=1)
 
     p.close()
-    for k in range(len(bestEULER)):
+    for k in list(range(len(bestEULER))):
         p.close()
         Plot_compare_2thetachi(bestEULER[k], dataselected[0], dataselected[1],
                            verbose=1, key_material='Si', emax=25,
@@ -3727,7 +3727,7 @@ def test_ImageMatching_twins(database=None):
 
     grains.append([np.eye(3), EXTINCTION, np.dot(DictLT.dict_Vect['sigma3_1'], orientmat), ELEMENT])
 
-    for k in range(2):
+    for k in list(range(2)):
 
         Twicetheta1, Chi1, Miller_ind1, posx1, posy1, Energy1 = LAUE.SimulateLaue(grains[k], 5, 25,
                                                                         detectorparameters,

@@ -224,7 +224,7 @@ def gen_Nuplets(items, n):
     if n == 0:
         yield []
     else:
-        for i in range(len(items) - n + 1):
+        for i in list(range(len(items) - n + 1)):
             for cc in gen_Nuplets(items[i + 1:], n - 1):
                 yield [items[i]] + cc
 
@@ -344,7 +344,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
 
     ind_sorted_LUT_MAIN_CUBIC = [np.argsort(elem) for elem in FindO.LUT_MAIN_CUBIC]
     sorted_table_angle = []
-    for k in range(len(ind_sorted_LUT_MAIN_CUBIC)):
+    for k in list(range(len(ind_sorted_LUT_MAIN_CUBIC))):
         # print len(LUT_MAIN_CUBIC[k])
         # print len(ind_sorted_LUT_MAIN_CUBIC[k])
         sorted_table_angle.append((FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]])
@@ -354,7 +354,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
         # print "gjhgjh",one_value
 
         sol_one_value = []
-        for k in range(len(one_value)):
+        for k in list(range(len(one_value))):
             if return_index(one_value[k]):
                 if verbose:
                     print("k", k, "  sortedindex ", one_value[k][0][0])
@@ -365,7 +365,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
         # reading the solution
         # print sol_one_value
         planes_sol = []
-        for m in range(len(sol_one_value)):
+        for m in list(range(len(sol_one_value))):
             first_plane_sol = FindO.convplanetypetoindice(FindO.INVDICOPLANE[sol_one_value[m][0]])
             second_plane_sol = FindO.DICOLISTNEIGHBOURS[FindO.INVDICOPLANE[sol_one_value[m][0]]][sol_one_value[m][1]]
             if verbose:
@@ -382,13 +382,13 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
 
         values = [findInArray1D(np.array(elem), angles_value, tole) for elem in sorted_table_angle]
         sol_one_value = []
-        for k in range(len(values)):
+        for k in list(range(len(values))):
             if len(values[k]):
                 for ind in values[k]:
                     sol_one_value.append([k, ind_sorted_LUT_MAIN_CUBIC[k][ind]])
 
         planes_sol = []
-        for m in range(len(sol_one_value)):
+        for m in list(range(len(sol_one_value))):
             first_plane_sol = FindO.convplanetypetoindice(FindO.INVDICOPLANE[sol_one_value[m][0]])
             second_plane_sol = FindO.DICOLISTNEIGHBOURS[FindO.INVDICOPLANE[sol_one_value[m][0]]][sol_one_value[m][1]]
             if verbose:
@@ -424,7 +424,7 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     couples_index = []
     couples_type = []
 
-    for m in range(len(from_spot)):
+    for m in list(range(len(from_spot))):
         nbcouples = len(from_spot[m])
         if nbcouples > 0:
             couples_index.append([spot_index_1, m])
@@ -452,7 +452,7 @@ def plane_type_attribution_twospots(spot_index_1, spot_index_2,
     angle = table_angdist[spot_index_1][spot_index_2]
     from_spot = Possible_planes(angle, tole=angulartolerance, verbose=0)
     couples_type = []
-    for m in range(len(from_spot)):
+    for m in list(range(len(from_spot))):
         nbcouples = len(from_spot[m])
         if nbcouples > 0:
             couples_type.append(from_spot[m])
@@ -478,7 +478,7 @@ def twospots_recognition(spot_1, spot_2, angulartolerance, onlyclosest=1):
     angle = calculdist_from_thetachi(listspot, listspot)[0, 1]
     from_spot = Possible_planes(angle, tole=angulartolerance, verbose=1, onlyclosest=onlyclosest)
     couples_type = []
-    for m in range(len(from_spot)):
+    for m in list(range(len(from_spot))):
         nbcouples = len(from_spot[m])
         if nbcouples > 0:
             couples_type.append(from_spot[m])
@@ -511,7 +511,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi,
 
     nb_couplespots = len(possible_couplespots)
 
-    for cs_index in range(nb_couplespots):
+    for cs_index in list(range(nb_couplespots)):
 
         spot_index_2 = possible_couplespots[cs_index][1]
         if verbose:
@@ -520,7 +520,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi,
             print("spot2 index", spot_index_2)
         nb_coupleplanes_for_this_cs = len(possible_coupleplanes[cs_index])
 
-        for pp_index in range(nb_coupleplanes_for_this_cs):
+        for pp_index in list(range(nb_coupleplanes_for_this_cs)):
 
             plane_1 = possible_coupleplanes[cs_index][pp_index][0]
             plane_2 = possible_coupleplanes[cs_index][pp_index][1]
@@ -779,7 +779,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT,
         WORKEREXIST = 1
     # loop over orient matrix given from LUT recognition for one central spot
     nb_UB_matrices = len(list_orient_matrix)
-    for mat_ind in range(nb_UB_matrices):
+    for mat_ind in list(range(nb_UB_matrices)):
         if WORKEREXIST:
 #             print "there is a worker !!"
             if worker._want_abort:
@@ -860,7 +860,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT,
         # for search from many spots (<=9)
         # one keeps only the best matrix
 
-        for mm in range(min(MAX_NB_SOLUTIONS, len(orient_index_fame))):
+        for mm in list(range(min(MAX_NB_SOLUTIONS, len(orient_index_fame)))):
             bestmatrix = list_UBs_for_plot[orient_index_fame[mm]]
             bestscores = list(hall_of_fame[mm]) + list([psb[mm]]) + list([ppb[mm]])
 #                 print "bestmatrix", bestmatrix
@@ -1313,7 +1313,7 @@ def getOrientMatrix_from_onespot(spot_index,
 
             else:  # several pairs of solutions
 
-                for m in range(nbpairs):
+                for m in list(range(nbpairs)):
 
                     # ---compute matrix by using hkl1 and hkl2
                     hkl1, hkl2 = hkls[m].tolist()
@@ -1627,7 +1627,7 @@ def getOrientMatrices(spot_index_central,
     if key_material == '':
         raise ValueError("Warning! key_material is not defined in getOrientMatrices()")
 
-    BestScores_per_centralspot = [[] for k in range(len(list_spot_central_indices))]
+    BestScores_per_centralspot = [[] for k in list(range(len(list_spot_central_indices)))]
 
     List_UBs = []  # matrix list
     List_Scores = []  # hall of fame BestScores_per_centralspot list
@@ -1641,7 +1641,7 @@ def getOrientMatrices(spot_index_central,
 
     # ---------------------------------
     # filling hkl central spots list
-    set_central_spots_hkl_list = [None for ll in range(len(list_spot_central_indices))]
+    set_central_spots_hkl_list = [None for ll in list(range(len(list_spot_central_indices)))]
     
     print("set_central_spots_hkl",set_central_spots_hkl)
 
@@ -1801,7 +1801,7 @@ def getOrientMatrices(spot_index_central,
 
         #--- loop over orient matrix given from LUT recognition for one central spot
         currentspotindex2 = -1
-        for mat_ind in range(len(list_orient_matrix)):
+        for mat_ind in list(range(len(list_orient_matrix))):
             
 #             print "calculating matching with exp. Data for matrix condidate index=%d" % mat_ind
 
@@ -1876,7 +1876,7 @@ def getOrientMatrices(spot_index_central,
             # for search from many spots (<=9)
             # one keeps only the best matrix
 
-            for mm in range(min(nbbestplot, len(orient_index_fame))):
+            for mm in list(range(min(nbbestplot, len(orient_index_fame)))):
                 bestmatrix = list_UBs_for_plot[orient_index_fame[mm]]
                 bestscores = list(hall_of_fame[mm]) + list([psb[mm]]) + list([ppb[mm]])
 #                 print "bestmatrix", bestmatrix
@@ -1944,7 +1944,7 @@ def getOrientMatrices(spot_index_central,
         # that has hit good rank in previous angular residues test
         if len(fame_add) > 0:
 
-            for mm in range(nbpriorimatrices):
+            for mm in list(range(nbpriorimatrices)):
                 List_UBs.append(addMatrix[orient_index_best_add[mm]])
                 List_Scores.append(list(score_best_add[mm]) + \
                            list([pair_spots_best_add[mm]]) + \
@@ -2542,7 +2542,7 @@ def test_indexation_with_apriori_Matrices():
 
     ind_sorted_LUT_MAIN_CUBIC = [np.argsort(elem) for elem in FindO.LUT_MAIN_CUBIC]
     sorted_table_angle = []
-    for k in range(len(ind_sorted_LUT_MAIN_CUBIC)):
+    for k in list(range(len(ind_sorted_LUT_MAIN_CUBIC))):
         # print len(LUT_MAIN_CUBIC[k])
         # print len(ind_sorted_LUT_MAIN_CUBIC[k])
         sorted_table_angle.append((FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]])
@@ -2839,7 +2839,7 @@ def plotgrains(listmat, key_material, emax, file_to_index='toto.cor'):
     nbcolors = len(dicocolor)
 
     # theo spots
-    for i_mat in range(nb_matrices):
+    for i_mat in list(range(nb_matrices)):
         p.subplot(codefigure)
 
         if file_to_index is not None:
