@@ -1537,7 +1537,7 @@ class ImshowFrame(wx.Frame):
 
         info = wx.AboutDialogInfo()
 
-        info.SetIcon(wx.Icon('transmissionLaue_fcc_111.png', wx.BITMAP_TYPE_PNG))
+        info.SetIcon(wx.Icon(os.path.join('icons','transmissionLaue_fcc_111.png'), wx.BITMAP_TYPE_PNG))
         info.SetName('LaueTools')
         info.SetVersion('6.0')
         info.SetDescription(description)
@@ -2637,7 +2637,7 @@ class MyCustomToolbar(NavigationToolbar):
 #                            'Pan to the right', 'Pan graph to the right')
 #         wx.EVT_TOOL(self, self.ON_CUSTOM_RIGHT, self._on_custom_pan_right)
     
-        image = wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER, 'transmissionLauesmall.png'))
+        image = wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER, 'icons','transmissionLauesmall.png'))
         image.SetSize((30, 30))
 #         self.SetToolBitmapSize((30,30))
         if WXPYTHON4:
@@ -2650,9 +2650,6 @@ class MyCustomToolbar(NavigationToolbar):
             self.AddSimpleTool(self.ON_YAXIS_UPPER, image,
                            'Y axis origin upper', 'Y axis origin upper')
         
-        
-    #         image = wx.Bitmap('transmissionLaue.png')
-    #         image.SetSize((30, 30))
             self.AddSimpleTool(self.ON_YAXIS_LOWER, image,
                                'Y axis origin lower', 'Y axis origin lower')
             self.Bind(wx.EVT_TOOL, self.onYaxisUpper,id= self.ON_YAXIS_UPPER)

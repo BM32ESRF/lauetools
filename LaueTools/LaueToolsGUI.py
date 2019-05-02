@@ -137,7 +137,7 @@ class MainWindow(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
 
-        self.SetIcon(wx.Icon(os.path.join(projectfolder,
+        self.SetIcon(wx.Icon(os.path.join(projectfolder,'icons',
                                 'transmissionLaue_fcc_111.png'),
                              wx.BITMAP_TYPE_PNG))
 
@@ -2501,7 +2501,7 @@ class MainWindow(wx.Frame):
 
         info = wx.AboutDialogInfo()
 
-        info.SetIcon(wx.Icon('transmissionLaue.png', wx.BITMAP_TYPE_PNG))
+        info.SetIcon(wx.Icon(os.path.join('icons','transmissionLaue.png'), wx.BITMAP_TYPE_PNG))
         info.SetName('LaueTools')
         info.SetVersion('%s %s %s\nRevision Number (subversion): %s' % (DAY, MONTH, YEAR, REV))
         info.SetDescription(description)
@@ -5759,8 +5759,6 @@ class PlotLimitsBoard(wx.Dialog):
         else:
             grid = wx.GridSizer(6, 5)
 
-        
-
         grid.Add(wx.StaticText(self, -1, ''))
         grid.Add(wx.StaticText(self, -1, ''))
         grid.Add(wx.StaticText(self, -1, 'Y'), wx.ALIGN_CENTER_HORIZONTAL)
@@ -5888,7 +5886,7 @@ if WXPYTHON4:
         def __init__(self, parent, duration=2000):
             # pick a splash image file you have in the working folder
     
-            image_file = os.path.join(DictLT.LAUETOOLSFOLDER, 'transmissionLaue_fcc_111.png')
+            image_file = os.path.join(DictLT.LAUETOOLSFOLDER, 'icons','transmissionLaue_fcc_111.png')
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
@@ -5902,7 +5900,7 @@ else:
         def __init__(self, parent, duration=2000):
             # pick a splash image file you have in the working folder
     
-            image_file = os.path.join(DictLT.LAUETOOLSFOLDER, 'transmissionLaue_fcc_111.png')
+            image_file = os.path.join(DictLT.LAUETOOLSFOLDER, os.path.join('icons','transmissionLaue_fcc_111.png'))
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
