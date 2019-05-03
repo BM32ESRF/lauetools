@@ -4,7 +4,7 @@ module of lauetools project
 
 http://sourceforge.net/projects/lauetools/
 
-JS Micha   June 2014
+JS Micha   May 2019
 
 this module gathers functions to read and write ASCII file corresponding
 to various data
@@ -26,9 +26,8 @@ from copy import deepcopy
 import copy
 import re
 
-import dict_LaueTools
 
-from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS, RECTPIX
+from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
 
 
 #--- ------------  PROCEDURES
@@ -1991,8 +1990,8 @@ class LT_fitfile:
     def __Peaks__(self, f, l):
         self.peak = {}
         for iii in list(range(self.NumberOfIndexedSpots)):
-          l = f.readline().split()
-          self.peak['{:d} {:d} {:d}'.format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
+            l = f.readline().split()
+            self.peak['{:d} {:d} {:d}'.format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
 
     def __NumberIndexedSpots__(self, f, l):
         self.NumberOfIndexedSpots = int(l.split(' ')[-1])

@@ -14,7 +14,6 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import time
 import copy
-import math
 import os.path
 
 import matplotlib
@@ -5926,7 +5925,7 @@ class RedirectText:
 
 def start_func():
     LaueToolsGUIApp = wx.App()
-    LaueToolsframe = MainWindow(None, -1, 'toto', projectfolder=LaueToolsProjectFolder)
+    LaueToolsframe = MainWindow(None, -1, 'Image Viewer and PeakSearch Board', projectfolder=LaueToolsProjectFolder)
     LaueToolsframe.Show()
 
     MySplash(LaueToolsframe, duration=500)

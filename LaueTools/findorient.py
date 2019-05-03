@@ -4,7 +4,6 @@ from __future__ import print_function
 """
 Modules that creates and uses lookuptable of distance between pairs of 
 planes to propose a approximate orientation matrix
-ONLY FOR CUBIC structure
 
 Lookuptable is divided with respect to the a known plane [1,0,0],[1,1,0],...,up to [3,2,1] (central plane)
 For each family of plane (hkl) all equivalent planes of this family are listed [h,k,l],[-h,k,l], ...

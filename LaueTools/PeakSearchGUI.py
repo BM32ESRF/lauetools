@@ -1,6 +1,5 @@
 #--- ------------  IMAGE VIEWER and PEAK SEARCH Tools GUI
 
-
 import os
 import sys
 import time
@@ -11,7 +10,6 @@ import numpy as np
 import wx
 if wx.__version__ <'4.':
     WXPYTHON4 = False
-    
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
@@ -80,7 +78,6 @@ SIGN_OF_GAMMA = 1
 LaueToolsProjectFolder = os.path.split(__file__)[0]
 
 print("LaueToolsProjectFolder", LaueToolsProjectFolder)
-
 
 class ViewColorPanel(wx.Panel):
     def __init__(self, parent):
