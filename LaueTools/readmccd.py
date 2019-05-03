@@ -4571,7 +4571,7 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
             filename_in = setfilename(filenameprefix_in + '{}'.format(fileindex) + suffix, fileindex)
         else:
 #             filename_in = filenameprefix_in + encodingdigits % fileindex + suffix
-            filename_in = filenameprefix_in + str(fileindex).zfill(4) +suffix
+            filename_in = filenameprefix_in + str(fileindex).zfill(nbdigits) +suffix
 
 
         tirets = '-' * 15
@@ -4644,7 +4644,9 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
                 params_comments += '# ' + 'Data_for_localMaxima' + \
                                 ' : {} \n'.format(fullpath_backgroundimage)
             # .dat file extension is done in writefile_Peaklist()
-            filename_out = prefix_outputname + encodingdigits % fileindex
+            # filename_out = prefix_outputname + encodingdigits % fileindex
+            # TODO valid whatever
+            filename_out = prefix_outputname +str(fileindex).zfill(nbdigits)
             IOLT.writefile_Peaklist('{}'.format(filename_out), Isorted,
                                        overwrite=1,
                                        initialfilename=filename_in,
