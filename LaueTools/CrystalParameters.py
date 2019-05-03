@@ -2,9 +2,7 @@
 """
 module of lauetools project
 
-JS Micha Feb 2012
-
-http://sourceforge.net/projects/lauetools/
+JS Micha May 2019
 
 this module gathers procedures to define crystal lattice parameters 
 """
@@ -148,7 +146,6 @@ def Prepare_Grain(key_material, OrientMatrix=None, force_extinction=None):
             raise ValueError("An OrientMatrix is needed !!! in Prepare_Grain()")
 
 
-
 def AngleBetweenNormals(HKL1s, HKL2s, Gstar):
     """
     compute angle in degrees between two reflections or lattice plane normals
@@ -156,7 +153,7 @@ def AngleBetweenNormals(HKL1s, HKL2s, Gstar):
     inputs:
     HKL1,HKL2            :  list of n1 [H1,K1,L1], list of n2 [H2,K2,L2]
     Gstar            : 3*3 matrix corresponding to reciprocal metric tensor of unit cell
-                    (use Gstar_from_directlatticeparams())
+                    (provided by Gstar_from_directlatticeparams())
     """
     HKL1r = np.array(HKL1s)
     HKL2r = np.array(HKL2s)
@@ -861,7 +858,6 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption='stre
     import elasticity as el
     C_sampleframe = el.rotate_cubic_elastic_constants(c11, c12, c44, transformmatrix)
 
-    
     print("C_sampleframe", C_sampleframe)
     
     deviatoricStrain_sampleframe = strain_from_crystal_to_sample_frame2(deviatoricStrain, UBmatrix)
@@ -1102,7 +1098,7 @@ def matstarlab_to_matstarsample3x3(matstarlab,
     if (omega  is  not None)&(mat_from_lab_to_sample_frame is None) : # deprecated - only for retrocompatibility
         omega = omega*DEG
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
+        mat_from_lab_to_sample_frame = np.array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
         
     matstarsample3x3 = np.dot(mat_from_lab_to_sample_frame, matstarlab3x3)
     
@@ -1118,7 +1114,7 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
                                                  sampletilt = 40. # 
                                                   ):
 
-    # attention ici UBmat c'est UBB0
+    # warning  here  UBmat stands for UBB0  (i.e. UB times B0)
 
     if UBmat is not None :
         matstarlab = matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True)
@@ -1379,7 +1375,7 @@ def scale_fitfile(fitfileObject, energy, denergy, h, k, l, a0=5.6575):
         hydrostatic_upper = 3 * ((a_upper - a0) / a0 - fitfileObject.deviatoric[0, 0])
         
         fitfileObject.hydrostatic_measured_error = (abs(fitfileObject.hydrostatic_measured - hydrostatic_lower) + abs(fitfileObject.hydrostatic_measured - hydrostatic_upper)) / 2.
-        fitfileObject.full_strain_measured_error = eye(3) * fitfileObject.hydrostatic_measured_error / 3.
+        fitfileObject.full_strain_measured_error = np.eye(3) * fitfileObject.hydrostatic_measured_error / 3.
     
     
 def calculate_from_UB(UBB0, energy, h, k, l):

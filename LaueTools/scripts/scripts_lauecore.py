@@ -10,7 +10,8 @@
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision: 1717$'
-
+import sys,os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
 import time

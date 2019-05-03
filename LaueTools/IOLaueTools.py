@@ -1686,7 +1686,7 @@ def read_cri(filecri):
     lineend = num_at + 4
 
     # element_coord_and_occ = scipy.io.array_import.read_array(filecri,columns=(1,2,3,4),lines=(linestart,(linestart+1,lineend)))
-    element_coord_and_occ = np.genfromtxt(filecri, usecols=(1, 2, 3, 4), skiprows=linestart)
+    element_coord_and_occ = np.genfromtxt(filecri, usecols=(1, 2, 3, 4), skiprows=linestart)   # skiprows could be replaced bt skip_header
 
     if VERBOSE:
         print("element_coord_and_occ = \n", element_coord_and_occ)

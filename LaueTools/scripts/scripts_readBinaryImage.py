@@ -1,3 +1,6 @@
+import sys,os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import os
 import numpy as np
 import time as ttt
@@ -1147,10 +1150,6 @@ def test_edf(filename='test_0058.edf'):
     p.show()
 
     Isorted, fitpeak, localpeak = RMCCD.PeakSearch(newfilename, CCDLabel='FRELON',
-                                                framedim=framedim,
-                                                offset=offset,
-                                                formatdata=formatdata,
-                                                fliprot=fliprot,
                                                 PixelNearRadius=10,
                                                 removeedge=2,
                                                 IntensityThreshold=500,
@@ -1217,10 +1216,6 @@ def test_peaksearch(filenameindex=23,
     filename = 'UO2_Kr_1_%04d.mccd' % filenameindex
     filename = os.path.join(dirname, filename)
     Isorted, fitpeak, localpeak = RMCCD.PeakSearch(filename, CCDLabel='MARCCD165',
-                                                framedim=framedim,
-                                                offset=offset,
-                                                formatdata=formatdata,
-                                                fliprot=fliprot,
                                                 PixelNearRadius=10,
                                                 removeedge=2,
                                                 IntensityThreshold=10,
@@ -1520,78 +1515,77 @@ p.subplot(144)
 p.imshow(band2D[:,xpixmin:xpixmax+1], vmin = 10, vmax=4000, origin='upper',interpolation='nearest')
 
 
-dfgdfg
+if 0:
 
-background_flag = "auto"
-blacklistpeaklist = None
-outputfilename = 'testpsearch.dat'
-pspfile = "PeakSearch_Ge_blanc_0000_LT_0.psp"
-RMCCD.peaksearch_on_Image('Ge_blanc_0000.mccd', pspfile, background_flag, blacklistpeaklist, 'MARCCD165', outputfilename)
+    background_flag = "auto"
+    blacklistpeaklist = None
+    outputfilename = 'testpsearch.dat'
+    pspfile = "PeakSearch_Ge_blanc_0000_LT_0.psp"
+    RMCCD.peaksearch_on_Image('Ge_blanc_0000.mccd', pspfile, background_flag, blacklistpeaklist, 'MARCCD165', outputfilename)
 
 
-gfhfgh
-import pylab as p
-dirname = '/home/micha/LaueProjects/NW'
-filename = 'NW_curve2_000078.mccd'
+if 0:
+    import pylab as p
+    dirname = '/home/micha/LaueProjects/NW'
+    filename = 'NW_curve2_000078.mccd'
 
-d, framedim, fliprot = RMCCD.readCCDimage(os.path.join(dirname, filename))
+    d, framedim, fliprot = RMCCD.readCCDimage(os.path.join(dirname, filename))
 
-p.figure(1)
+    p.figure(1)
 
-ax = p.subplot(221)
-ax.imshow(d, interpolation='nearest')
+    ax = p.subplot(221)
+    ax.imshow(d, interpolation='nearest')
 
-dmin = ndimage.filters.minimum_filter(d, size=(11, 11))
+    dmin = ndimage.filters.minimum_filter(d, size=(11, 11))
 
-ax2 = p.subplot(222)
-ax2.imshow(dmin, interpolation='nearest')
+    ax2 = p.subplot(222)
+    ax2.imshow(dmin, interpolation='nearest')
 
-ax3 = p.subplot(223)
-ax3.imshow(d - dmin, interpolation='nearest')
+    ax3 = p.subplot(223)
+    ax3.imshow(d - dmin, interpolation='nearest')
 
-ax4 = p.subplot(224)
-dblur = RMCCD.blurCCD(d, 5)
-ax4.imshow(dblur, interpolation='nearest')
+    ax4 = p.subplot(224)
+    dblur = RMCCD.blurCCD(d, 5)
+    ax4.imshow(dblur, interpolation='nearest')
 
-cd = np.clip(d - dblur, 0, 57500)
-maskcd = np.where(RMCCD.circularMask((1024, 1024), 1020, (2048, 2048)), cd, 0)
-overbkg = np.array(maskcd, dtype=np.uint16)
+    cd = np.clip(d - dblur, 0, 57500)
+    maskcd = np.where(RMCCD.circularMask((1024, 1024), 1020, (2048, 2048)), cd, 0)
+    overbkg = np.array(maskcd, dtype=np.uint16)
 
-numrows, numcols = d.shape
+    numrows, numcols = d.shape
 
-def format_coord(x, y):
-    col = int(x + 0.5)
-    row = int(y + 0.5)
-    if col >= 0 and col < numcols and row >= 0 and row < numrows:
-        z = d[row, col]
-        zmin = dmin[row, col]
-        zblur = dblur[row, col]
-        return 'x=%1.4f, y=%1.4f, z=%1.4f zblur=%1.4f z-zblur=%1.4f' % (x, y, z, zblur, z - zblur)
-    else:
-        return 'x=%1.4f, y=%1.4f' % (x, y)
+    def format_coord(x, y):
+        col = int(x + 0.5)
+        row = int(y + 0.5)
+        if col >= 0 and col < numcols and row >= 0 and row < numrows:
+            z = d[row, col]
+            zmin = dmin[row, col]
+            zblur = dblur[row, col]
+            return 'x=%1.4f, y=%1.4f, z=%1.4f zblur=%1.4f z-zblur=%1.4f' % (x, y, z, zblur, z - zblur)
+        else:
+            return 'x=%1.4f, y=%1.4f' % (x, y)
 
-ax.format_coord = format_coord
-#
-#    p.show()
+    ax.format_coord = format_coord
+    #
+    #    p.show()
 
-_header = RMCCD.readheader(os.path.join(dirname, filename))
+    _header = RMCCD.readheader(os.path.join(dirname, filename))
 
-print("shape")
+    print("shape")
 
-RMCCD.writeimage(os.path.join(dirname, 'NW_curve2_001000.mccd'), _header, np.ravel(overbkg))
+    RMCCD.writeimage(os.path.join(dirname, 'NW_curve2_001000.mccd'), _header, np.ravel(overbkg))
 
 if 0:
 
     filename = 'Ge_blanc_0000.mccd'
     t = 1000
     time_0 = ttt.time()
-    d = readoneimage('Ge_blanc_0000.mccd')
+    d = RMCCD.readoneimage('Ge_blanc_0000.mccd')
     # , framedim = (2048,2048), dirname = None, offset = 4100, formatdata = "uint16").reshape((2048,2048))
 
     # d = rot90(d,k=3)
 
     Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename, CCDLabel='MARCCD165',
-                                            framedim=(2048, 2048),
                                             center=None,
                                             boxsizeROI=(200, 200),
                                             PixelNearRadius=5,
@@ -1617,7 +1611,6 @@ if 0:
     ax.imshow(np.log(d), interpolation='nearest')
 
     from matplotlib.patches import Circle
-
 
     for po in Isorted:
 
@@ -1663,7 +1656,7 @@ if 0:
     for tc in (0, 100, 200, 500, 750, 1000, 1500, 2000, 2500, 3000,
                4000, 5000, 10000):
         # tstart = ttt.time()
-        Isorted, fitpeak, localpeak, nbrawblobs = PeakSearch(filename, CCDLabel='MARCCD165',
+        Isorted, fitpeak, localpeak, nbrawblobs = RMCCD.PeakSearch(filename, CCDLabel='MARCCD165',
                                             PixelNearRadius=20,
                                             removeedge=2,
                                             IntensityThreshold=IntensityThreshold,
@@ -1692,7 +1685,8 @@ if 0:
     # plot_image_markers(d, Isorted[:,:2])
 
     raise ValueError("end of example")
-
+if 0:
+    import scipy
     image = scipy.misc.lena().astype(np.float32)
     # Convolve with a Gaussian Gt for t=2 ------------------------------------------------------
     [X, Y] = np.mgrid[-6:7, -6:7]
@@ -1709,8 +1703,7 @@ if 0:
     # Laplacian
     Lplz = ndimage.laplace(np.float32(convImage))
 
-#    juhuihuihuihuihiu
-
+if 0:
     Gx = ndimage.sobel(d, axis=0)
     Gy = ndimage.sobel(d, axis=1)
     G = np.sqrt(Gx ** 2 + Gy ** 2)
@@ -1776,7 +1769,7 @@ if 0:
         filename = sys.argv[1]
         time_0 = ttt.time()
 
-        Isorted, fitpeak, localpeak, histo = PeakSearch(filename, CCDLabel='MARCCD165',
+        Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename, CCDLabel='MARCCD165',
                                                 PixelNearRadius=20,
                                                 removeedge=2,
                                                 IntensityThreshold=100,
@@ -1821,13 +1814,13 @@ if 0:
     # test_peaksearch_ROI()
     # test_VHR_ROI()
 
-#    ghhhy
+if 0:
 
     if 0:  # TODO: finish that ...
         filename = 'Ge_blanc_0000.mccd'
         centers = [[621, 1656], [1242, 1661]]
         boxsize = 15
-        taby = readoneimage_multi_barycenters(filename, centers, boxsize, offsetposition=0)
+        taby = RMCCD.readoneimage_multi_barycenters(filename, centers, boxsize, offsetposition=0)
 
 
     if 1:  # reading of marccd image #peak search with convolve or shifted arrays
@@ -1835,7 +1828,7 @@ if 0:
         # filename='CdTe_I999_03Jul06_0200.mccd'
         # filename = 'SS_0171.mccd'
         time_0 = ttt.time()
-        pilimage, dataimage = readoneimage_full(filename)
+        pilimage, dataimage = RMCCD.readoneimage_full(filename)
 
         xminf2d, xmaxfit2d, yminfit2d, ymaxfit2d = 1, 2048, 1, 2048
 
@@ -1845,7 +1838,7 @@ if 0:
         # fit2d index:  X=j Y=2048-i
 
         # WARNING LocalMaxima_ShiftArrays returns 2 args
-        purged_pklist = LocalMaxima_ShiftArrays(dataimage_ROI,
+        purged_pklist = RMCCD.LocalMaxima_ShiftArrays(dataimage_ROI,
                                                 IntensityThreshold=500,
                                                 Saturation_value=65535,
                                                 boxsize_for_probing_minimal_value_background=30,

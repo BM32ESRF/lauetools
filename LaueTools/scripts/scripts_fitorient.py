@@ -1,3 +1,6 @@
+import sys,os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import FitOrient as FitO
 import numpy as np
 import generaltools as GT
@@ -619,150 +622,142 @@ if 0:
         print('finalB', finalB)
         
             
-    
-    
-    
-
-
-
-
-
-ueirhgioeuhgeiu
-#     print "up to now, no test !"
-#     import sys
-#     sys.exit()
-
-
-
-# test of strain refinement of non cubic structure
-
-mat_manualindexation = np.array([[ 0.16821451, -0.36210799 , -0.91683242],
-                            [-0.42638856 , 0.81196112, -0.39863761],
-                            [ 0.8905644  , 0.45406003, -0.02691724]])
-
-mat_manualindexation = np.array([[ 0.6431522 , 0.20977096, -0.73644497], [-0.08385282 , 0.97525494 , 0.20456386], [ 0.76113324, -0.06981272  , 0.64482731]])
-pixelsize = 165. / 2048
 if 0:
-    filename_ind = 'Ge_test.idx'
-    calibration_parameter = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]  # Nov 09 J. Villanova BM32
-
-################################################################################
-
-filename_image = 'Ge_run41_1_0003.mccd'
-filename_idx = 'Ge_run41_1_0003.idx'
-
-calibration_parameter = [69.66055, 895.27118, 960.77417, 0.8415, -.31818]  # Nov 09 J. Villanova BM32
+    #     print "up to now, no test !"
+    #     import sys
+    #     sys.exit()
 
 
-if 0:
-    # VHR camera 05 Mar 2010
-    filename_idx = 'toto.idx'
-    pixelsize = 0.0168
-    calibration_parameter = [41.7, 1780, 700., 0.84324, -.32201]
-    calibration_parameter = [32, 1100, 600, 0, 0]
 
-# Peak position estimation
-# 0 for fit2D centroids or default position in idx
-# 1 XMAS file (.ind)
-# 2 Gaussian fit
-# 3 lorentzian fit
-# 4 Centroid
-flag_pos = 0
+    # test of strain refinement of non cubic structure
 
-nb_steps = 60  # max number of iterations
-relative_error = 0.0000001  # pixdev relative error variation limit to stop the loop
+    mat_manualindexation = np.array([[ 0.16821451, -0.36210799 , -0.91683242],
+                                [-0.42638856 , 0.81196112, -0.39863761],
+                                [ 0.8905644  , 0.45406003, -0.02691724]])
 
-#################################################################################
+    mat_manualindexation = np.array([[ 0.6431522 , 0.20977096, -0.73644497], [-0.08385282 , 0.97525494 , 0.20456386], [ 0.76113324, -0.06981272  , 0.64482731]])
+    pixelsize = 165. / 2048
+    if 0:
+        filename_ind = 'Ge_test.idx'
+        calibration_parameter = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]  # Nov 09 J. Villanova BM32
 
-import readmccd as RMCCD
+    ################################################################################
 
-filename_idx = 'Custrained_1.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
-filename_idx = 'Cu_3.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
-# TODO 
-twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = \
-                                RMCCD.Read_indexationfile(filename_idx)
+    filename_image = 'Ge_run41_1_0003.mccd'
+    filename_idx = 'Ge_run41_1_0003.idx'
 
-if detectorparam:
-    calibration_parameter = detectorparam
+    calibration_parameter = [69.66055, 895.27118, 960.77417, 0.8415, -.31818]  # Nov 09 J. Villanova BM32
 
 
-starting_orientmatrix = mat_manualindexation
-starting_orientmatrix = grainUmatrix['0']  # from .idx file
+    if 0:
+        # VHR camera 05 Mar 2010
+        filename_idx = 'toto.idx'
+        pixelsize = 0.0168
+        calibration_parameter = [41.7, 1780, 700., 0.84324, -.32201]
+        calibration_parameter = [32, 1100, 600, 0, 0]
 
-print("starting_orientmatrix", starting_orientmatrix)
+    # Peak position estimation
+    # 0 for fit2D centroids or default position in idx
+    # 1 XMAS file (.ind)
+    # 2 Gaussian fit
+    # 3 lorentzian fit
+    # 4 Centroid
+    flag_pos = 0
 
-allparameters = np.array(calibration_parameter + [0., 0., 0.])
-DATA_Q = miller  # all miller indices must be entered in fit procedures
+    nb_steps = 60  # max number of iterations
+    relative_error = 0.0000001  # pixdev relative error variation limit to stop the loop
 
-# spots selection
-nspots = np.arange(13)  #  array([0,1,2,3,4,5,6,7,8,9,10])
-pixX, pixY = np.take(pixX, nspots), np.take(pixY, nspots)
+    #################################################################################
 
-# find the best orientation with a pure rotation matrix (1) or product pure rotation* strain matrix (triangle up)  (0)
-pureRotation = 1
+    import readmccd as RMCCD
 
+    filename_idx = 'Custrained_1.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
+    filename_idx = 'Cu_3.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
+    # TODO 
+    twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = \
+                                    RMCCD.Read_indexationfile(filename_idx)
 
-if 0:
-    print("c'est parti")
-    Xcen = np.array([1000.])
-    Xcen_sol = FitO.fitXCEN(Xcen, miller, allparameters, FitO.error_function_XCEN, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
-
-if 0:
-    print("c'est parti")
-    initial_values = np.array([1000., 1200.])  # XCEN and YCEN
-    arr_indexvaryingparameters = np.array([1, 2])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
-    results = FitO.fit_on_demand_calibration(initial_values, miller, allparameters, FitO.error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
-
-if 0:
-    print("c'est parti")
-    initial_values = np.array([65.])  # dd
-    arr_indexvaryingparameters = np.array([0])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
-    results = FitO.fit_on_demand_calibration(initial_values, miller, allparameters, FitO.error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
-
-if 1:
-    print("c'est parti")
-    initial_values = np.array([65., 200, 900, 5, -3])  # [dd,xcen,ycen,ang1,ang2]
-    arr_indexvaryingparameters = np.array([0, 1, 2, 3, 4])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
-    results = FitO.fit_on_demand_calibration(initial_values,
-                                        miller,
-                                        allparameters,
-                                        FitO.error_function_on_demand_calibration,
-                                        arr_indexvaryingparameters,
-                                        nspots,
-                                        pixX, pixY,
-                                        initrot=starting_orientmatrix,
-                                        verbose=0)
+    if detectorparam:
+        calibration_parameter = detectorparam
 
 
-raise ValueError("end of example")
+    starting_orientmatrix = mat_manualindexation
+    starting_orientmatrix = grainUmatrix['0']  # from .idx file
 
-# fit of peaks (better than previous fit2d or LaueTools peaksearch) -------------------------------
-if flag_pos in (2, 3):
-    if flag_pos == 2:
-        fitfunc = 'gaussian'
-    if flag_pos == 3:
-        fitfunc = 'lorentzian'
+    print("starting_orientmatrix", starting_orientmatrix)
+
+    allparameters = np.array(calibration_parameter + [0., 0., 0.])
+    DATA_Q = miller  # all miller indices must be entered in fit procedures
+
+    # spots selection
+    nspots = np.arange(13)  #  array([0,1,2,3,4,5,6,7,8,9,10])
+    pixX, pixY = np.take(pixX, nspots), np.take(pixY, nspots)
+
+    # find the best orientation with a pure rotation matrix (1) or product pure rotation* strain matrix (triangle up)  (0)
+    pureRotation = 1
 
 
-    peaklist = np.transpose(np.array([pixX, pixY]))
-    params, cov, info, message, baseline = RMCCD.readoneimage_multiROIfit(filename_image,
-                                                                peaklist,
-                                                                20,
-                                                                CCDLabel='MARCCD165',
-                                                                baseline='auto',  # min in ROI box
-                                                                startangles=0.,
-                                                                start_sigma1=1.,
-                                                                start_sigma2=1.,
-                                                                position_start='max',  # 'centers' or 'max'
-                                                                fitfunc=fitfunc,
-                                                                showfitresults=0,
-                                                                offsetposition=0)  # =1 XMAS pixel convention
+    if 0:
+        print("c'est parti")
+        Xcen = np.array([1000.])
+        Xcen_sol = FitO.fitXCEN(Xcen, miller, allparameters, FitO.error_function_XCEN, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
 
-    pixX, pixY = np.transpose(np.array(params)[:, 2:4])
-# -----------------------------------------------------------------------------------------------
+    if 0:
+        print("c'est parti")
+        initial_values = np.array([1000., 1200.])  # XCEN and YCEN
+        arr_indexvaryingparameters = np.array([1, 2])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = FitO.fit_on_demand_calibration(initial_values, miller, allparameters, FitO.error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
 
-if flag_pos == 4:
-    import Centroid
-    peaklist = np.transpose([pixX, pixY])
-    tab_centroid = Centroid.read_multicentroid(filename_image, peaklist, boxsize=10)
-    pixX, pixY = np.transpose(tab_centroid)
+    if 0:
+        print("c'est parti")
+        initial_values = np.array([65.])  # dd
+        arr_indexvaryingparameters = np.array([0])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = FitO.fit_on_demand_calibration(initial_values, miller, allparameters, FitO.error_function_on_demand_calibration, arr_indexvaryingparameters, nspots, pixX, pixY, initrot=starting_orientmatrix, verbose=0)
+
+    if 1:
+        print("c'est parti")
+        initial_values = np.array([65., 200, 900, 5, -3])  # [dd,xcen,ycen,ang1,ang2]
+        arr_indexvaryingparameters = np.array([0, 1, 2, 3, 4])  # indices of position of parameters in [dd,xcen,ycen,ang1,ang2]
+        results = FitO.fit_on_demand_calibration(initial_values,
+                                            miller,
+                                            allparameters,
+                                            FitO.error_function_on_demand_calibration,
+                                            arr_indexvaryingparameters,
+                                            nspots,
+                                            pixX, pixY,
+                                            initrot=starting_orientmatrix,
+                                            verbose=0)
+
+
+    raise ValueError("end of example")
+
+    # fit of peaks (better than previous fit2d or LaueTools peaksearch) -------------------------------
+    if flag_pos in (2, 3):
+        if flag_pos == 2:
+            fitfunc = 'gaussian'
+        if flag_pos == 3:
+            fitfunc = 'lorentzian'
+
+
+        peaklist = np.transpose(np.array([pixX, pixY]))
+        params, cov, info, message, baseline = RMCCD.readoneimage_multiROIfit(filename_image,
+                                                                    peaklist,
+                                                                    20,
+                                                                    CCDLabel='MARCCD165',
+                                                                    baseline='auto',  # min in ROI box
+                                                                    startangles=0.,
+                                                                    start_sigma1=1.,
+                                                                    start_sigma2=1.,
+                                                                    position_start='max',  # 'centers' or 'max'
+                                                                    fitfunc=fitfunc,
+                                                                    showfitresults=0,
+                                                                    offsetposition=0)  # =1 XMAS pixel convention
+
+        pixX, pixY = np.transpose(np.array(params)[:, 2:4])
+    # -----------------------------------------------------------------------------------------------
+
+    if flag_pos == 4:
+        import Centroid
+        peaklist = np.transpose([pixX, pixY])
+        tab_centroid = Centroid.read_multicentroid(filename_image, peaklist, boxsize=10)
+        pixX, pixY = np.transpose(tab_centroid)

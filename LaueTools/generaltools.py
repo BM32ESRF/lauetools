@@ -2,7 +2,7 @@ from __future__ import print_function
 """
 module of lauetools project
 
-JS Micha June 2018
+JS Micha May 2019
 
 package gathering general tools
 
@@ -10,6 +10,7 @@ package gathering general tools
 import copy
 import pickle
 import numpy as np
+import multiprocessing
 
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
@@ -23,6 +24,8 @@ import matplotlib.cm as mplcm
 DEG = np.pi / 180.
 
 IDENTITYMATRIX = np.eye(3)
+
+import IOLaueTools as IOLT
 
 
 #--- --------------  Vectors
@@ -94,51 +97,7 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
     return np.arccos(ratio) / DEG
 
 
-def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
-    """compute angles between all pairs of kf vectors corresponding to HKL1s and HKL2s Vectors
 
-    inputs:
-    HKL1s, HKL2s            :  list of n1 3D vectors, list of n2 3D vectors
-    Gstar            : metrics , default np.eye(3)
-    #TODO NOT FINISHED
-                    """
-    HKL1r = np.array(HKL1s)
-    HKL2r = np.array(HKL2s)
-
-    if HKL1r.shape[0] == 1:
-        pass
-
-    elif HKL1r.shape == (3,):
-        HKL1r = np.array([HKL1r])
-
-    n1 = len(HKL1r)
-    n2 = len(HKL2r)
-    dstar_square_1 = np.diag(np.inner(np.inner(HKL1r, metrics), HKL1r))
-    dstar_square_2 = np.diag(np.inner(np.inner(HKL2r, metrics), HKL2r))
-    scalar_product = np.inner(np.inner(HKL1r, metrics), HKL2r) * 1.
-
-    d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.
-    d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.
-
-    outy = np.outer(d1, d2)
-    if 0:
-        print("d1", d1)
-        print("d2", d2)
-        print("len(d1)", len(d1))
-        print("len(d2)", len(d2))
-        print("outy", outy)
-        print(outy.shape)
-
-        print("scalar_product", scalar_product)
-        print(scalar_product.shape)
-
-    ratio = scalar_product / outy
-    ratio = np.round(ratio, decimals=7)
-#    print "ratio", ratio
-#    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
-#    np.putmask(ratio, ratio == 0, 0)
-
-    return np.arccos(ratio) / DEG
 
 
 def calculdist2D(listpoints1, listpoints2):
@@ -1198,17 +1157,158 @@ def purgeClosePoints2(peaklist, pixeldistance_remove_duplicates, verbose=0):
     purged_pklist = np.delete(peaklist, index_todelete, axis=0)  # np.delete
     return purged_pklist, index_todelete
 
-def nearestValuesindices(A, B):
+def getCommonSpots(file1,file2,toldistance, dirname=None, data1=None,fulloutput=False):
     """
-    A, B : 1D arrays
-    return for each element of B the index of element A closest to B
+    return nb of spots in common in two list of peaks file1 and file2
     
-    len(indexInA)=len(B)
+    if data1 is provided, file1 is not read
+    
     """
-    indexInA = np.abs(np.subtract.outer(A, B)).argmin(0)
-    return indexInA
+    if data1 is None:
+        data1 = IOLT.read_Peaklist(file1, dirname)
+    
+    try:
+        data2 = IOLT.read_Peaklist(file2, dirname)
+    except IOError:
+        print("file %s does not exist"%file2)
+        return 0
+    
+    nbspots1 = len(data1)
+    nbspots2 = len(data2)
+    
+#         print 'nb peaks in data1',nbspots1
+#         print 'nb peaks in data2',nbspots2
 
+    XY1=data1[:,:2]
+    XY2=data2[:,:2]
+    
+    toldistance= 1.
+    
+    res = getCommonPts(XY1, XY2, toldistance)
+    
+    nbcommonspots=len(res[0])
+    
+#         print 'nb of common spots (< %.f): '%toldistance, nbcommonspots
+    
+#         print "mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.)
 
+    # common spots:
+    # x,y in XY1
+    inXY1 = XY1[res[0]]
+    # x,y in XY2
+    inXY2 = XY2[res[1]]
+    # dist between x1,y1 and x2,y2
+    distances = np.sqrt(np.sum((inXY1.T-inXY2.T)**2,axis=0))
+    
+    if fulloutput:
+        return res[0],res[1],inXY1,inXY2,nbcommonspots,distances
+    
+    return nbcommonspots
+
+def computingFunction(fileindexrange,
+                    Parameters_dict=None,
+                    saveObject=0):
+    """
+    Core procedure to compute common spots over a list of peaks list files
+    """
+    import multiprocessing
+    p = multiprocessing.current_process()
+    print('Starting:', p.name, p.pid)
+    
+    fileprefix = Parameters_dict['prefixfilename']
+    toldistance = Parameters_dict['toldistance']
+    dirname = Parameters_dict['dirname']
+    dataref = Parameters_dict['dataref']
+    
+    commonspotsnb =[]
+    file1 = 'dummy'
+    for imageindex in list(range(fileindexrange[0],fileindexrange[1]+1)):
+        if imageindex>=185:
+            print("imageindex",imageindex)
+        file2 = fileprefix+'%04d'%(imageindex)+'.dat'
+        commonspotsnb.append([imageindex,
+                                getCommonSpots(file1,file2,toldistance,
+                                                dirname=dirname, data1=dataref)])
+    
+    
+    return commonspotsnb
+
+def LaueSpotsCorrelator_multiprocessing(fileindexrange,imageindexref,
+                            Parameters_dict=None,
+                            saveObject=0,
+                            nb_of_cpu=5):
+    """
+    launch several processes in parallel
+    """
+    try:
+        if len(fileindexrange) > 2:
+            print('\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n')
+        index_start, index_final = fileindexrange[:2]
+    except:
+        raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
+        return
+
+    fileindexdivision = getlist_fileindexrange_multiprocessing(index_start,
+                                                                    index_final,
+                                                                    nb_of_cpu)
+
+    saveObject = 0
+
+    print("fileindexdivision", fileindexdivision)
+    
+    nbimagesperline=Parameters_dict['nbimagesperline']
+    prefixfortitle=Parameters_dict['prefixfilename']
+    prefixfilename=Parameters_dict['prefixfilename']
+    dirname = Parameters_dict['dirname']
+    
+    file1 = prefixfilename+'%04d'%(imageindexref)+'.dat'
+    data1 = IOLT.read_Peaklist(file1, dirname)
+    Parameters_dict['dataref']=data1
+
+    
+    computingFunction.__defaults__ = (Parameters_dict,
+                                        saveObject)
+
+    pool = multiprocessing.Pool()
+#     for ii in list(range(len(fileindexdivision)):  # range(nb_of_cpu):
+#         pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
+
+    results = []
+    for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
+        print("ii",ii)
+        results.append( pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
+)
+    
+    pool.close()
+    pool.join()
+    
+    print('results',results)
+    print("HOURRA it's FINISHED")
+    
+    dictcorrelval ={}
+    for k,result in enumerate(results):
+        dictk=dict(result.get())
+        print("dict {}".format(k),  dictk)
+        dictcorrelval = dict(list(dictk.items()) + list(dictcorrelval.items()))
+        
+    listindval=[]
+    for k,val in dictcorrelval.items():
+        listindval.append([k,val])
+        
+    arr_correl=np.array(listindval)
+    sortedindex=np.argsort(arr_correl[:,0])
+    myc=arr_correl[sortedindex][:,1].reshape((len(arr_correl)/nbimagesperline,nbimagesperline))
+    
+    return myc,dictcorrelval,listindval
+
+def log_result(result):
+
+    if len(result) == 2:
+        print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
+        list_produced_files.append(str(result[1]))
+
+    print('mylog print')
+    
 #------------- -----------  COMBINATORICS -----------------------
 def threeindices_up_to_old(n):
     """
@@ -1375,9 +1475,7 @@ def threeindicesfamily(n):
                     listhkl.append([hh, kk, ll])
     return listhkl[1:]
                 
-                
-
-
+            
 def reduceHKL(ar_hkl):
     """
     return hkl expressed in irreductible element (with h,k,l prime to each other)
@@ -1417,9 +1515,7 @@ def extract2Dslice(center, halfsizes, inputarray2D):
     extract a rectangular 2D slice array from inputarray2D centered on 'center' (value in inputarray2D)
     
     halfsizes : tuple of 2 integers (half height, half width) ie (half slow axis length, half fast axis length)
-    
-    
-    
+
     example: 
 
     aa= array([[ 0,  1,  2,  3,  4,  5,  6],
@@ -1849,7 +1945,6 @@ def fromEULERangles_toMatrix2(threeangles):
             [ DB     -DA    C] ])
             
     """
-
     thetaX = threeangles[0] * DEG
     thetaY = threeangles[1] * DEG
     thetaZ = threeangles[2] * DEG
@@ -2032,7 +2127,6 @@ def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame='sample', vec1 = [
                              cosvec3_X,cosvec3_Y,cosvec3_Z])
     # return array with (nb matrices, 9) shape
     return cosinesarray.T, vecs 
-    
     
 
 #--- ------------ Quaternions
@@ -2276,7 +2370,6 @@ def printcyan(message):
     pcolor(message, 'c')
 
 # ---------------- object manipulation  ----------------
-
 def put_on_top_list(top_elements_list, raw_list, forceinsertion=False):
     """
     modify and return raw_list with elements of top_elements_list as first elements
@@ -2393,15 +2486,6 @@ def CCDintensitymodel2(x):
                          lambda x: 0.95 / 4. * x - 5.5 / 4,
                          lambda x: 10. / np.power(x, 0.95)])
 
-
-
-# import pylab as p
-# x = np.linspace(0, 22, 100)
-# # p.plot(x, 5 * lognorm(x, 10, 0.08) + 3 * lognorm(x, 11, 0.15) + 1 * lognorm(x, 13, 0.2))
-# p.plot(x, intensitymodel(x))
-#
-# p.show()
-
 # -------------------------  IN DEVELOPMENT  ----------------
 def removeduplicate2(listindice, tabangledist, ang_tol=1.):
     """ retourne la liste d'indice de proximite sans dupliques
@@ -2468,338 +2552,58 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.):
     return list_exp_vers_theo
 
 
-if __name__ == "__main__":
-    
-    import IOLaueTools as IOLT
+def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
+    """compute angles between all pairs of kf vectors corresponding to HKL1s and HKL2s Vectors
 
-    import multiprocessing
-    
-    dirname = '/home/micha/LaueTools/MapSn/datfiles'
-    file1 = 'SnsurfscanBig_0296.dat'
-    file2 = 'SnsurfscanBig_0298.dat'
-    
-    data1 = IOLT.read_Peaklist(file1, dirname)
-    data2 = IOLT.read_Peaklist(file2, dirname)
-    
-    nbspots1 = len(data1)
-    nbspots2 = len(data2)
-    
-    print("nb peaks in data1",nbspots1)
-    print('nb peaks in data2',nbspots2)
-    
-    XY1=data1[:,:2]
-    XY2=data2[:,:2]
-    
-    toldistance= 1.
-    
-    res = getCommonPts(XY1, XY2, toldistance)
-    
-    nbcommonspots=len(res[0])
-    
-    print('nb of common spots (< %.f): '%toldistance, nbcommonspots)
-    
-    print("mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.))
-    
-    # common spots:
-    # x,y in XY1
-    inXY1 = XY1[res[0]]
-    # x,y in XY2
-    inXY2 = XY2[res[1]]
-    # dist between x1,y1 and x2,y2
-    distances = np.sqrt(np.sum((inXY1.T-inXY2.T)**2,axis=0))
-    
-    
-    def getCommonSpots(file1,file2,toldistance, dirname=None, data1=None,fulloutput=False):
-        """
-        return nb of spots in common in two list of peaks file1 and file2
-        
-        if data1 is provided, file1 is not read
-        
-        """
-        if data1 is None:
-            data1 = IOLT.read_Peaklist(file1, dirname)
-        
-        try:
-            data2 = IOLT.read_Peaklist(file2, dirname)
-        except IOError:
-            print("file %s does not exist"%file2)
-            return 0
-        
-        nbspots1 = len(data1)
-        nbspots2 = len(data2)
-        
-#         print 'nb peaks in data1',nbspots1
-#         print 'nb peaks in data2',nbspots2
+    inputs:
+    HKL1s, HKL2s            :  list of n1 3D vectors, list of n2 3D vectors
+    Gstar            : metrics , default np.eye(3)
+    #TODO NOT FINISHED
+                    """
+    HKL1r = np.array(HKL1s)
+    HKL2r = np.array(HKL2s)
 
-        
-        XY1=data1[:,:2]
-        XY2=data2[:,:2]
-        
-        toldistance= 1.
-        
-        res = getCommonPts(XY1, XY2, toldistance)
-        
-        nbcommonspots=len(res[0])
-        
-#         print 'nb of common spots (< %.f): '%toldistance, nbcommonspots
-        
-#         print "mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.)
+    if HKL1r.shape[0] == 1:
+        pass
 
-        # common spots:
-        # x,y in XY1
-        inXY1 = XY1[res[0]]
-        # x,y in XY2
-        inXY2 = XY2[res[1]]
-        # dist between x1,y1 and x2,y2
-        distances = np.sqrt(np.sum((inXY1.T-inXY2.T)**2,axis=0))
-        
-        if fulloutput:
-            return res[0],res[1],inXY1,inXY2,nbcommonspots,distances
-        
-        return nbcommonspots
-    
-    def computingFunction(fileindexrange,
-                       Parameters_dict=None,
-                       saveObject=0):
-        """
-        Core procedure to compute common spots over a list of peaks list files
-        """
-        p = multiprocessing.current_process()
-        print('Starting:', p.name, p.pid)
-        
-        fileprefix = Parameters_dict['prefixfilename']
-        toldistance = Parameters_dict['toldistance']
-        dirname = Parameters_dict['dirname']
-        dataref = Parameters_dict['dataref']
-        
-        commonspotsnb =[]
-        file1 = 'dummy'
-        for imageindex in list(range(fileindexrange[0],fileindexrange[1]+1)):
-            if imageindex>=185:
-                print("imageindex",imageindex)
-            file2 = fileprefix+'%04d'%(imageindex)+'.dat'
-            commonspotsnb.append([imageindex,
-                                  getCommonSpots(file1,file2,toldistance,
-                                                 dirname=dirname, data1=dataref)])
-        
-      
-        return commonspotsnb
-    
-    
-    def LaueSpotsCorrelator_multiprocessing(fileindexrange,imageindexref,
-                             Parameters_dict=None,
-                                saveObject=0,
-                                nb_of_cpu=5):
-        """
-        launch several processes in parallel
-        """
-        try:
-            if len(fileindexrange) > 2:
-                print('\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n')
-            index_start, index_final = fileindexrange[:2]
-        except:
-            raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
-            return
-    
-        fileindexdivision = getlist_fileindexrange_multiprocessing(index_start,
-                                                                      index_final,
-                                                                      nb_of_cpu)
-    
-        saveObject = 0
-    
-        print("fileindexdivision", fileindexdivision)
-        
-        nbimagesperline=Parameters_dict['nbimagesperline']
-        prefixfortitle=Parameters_dict['prefixfilename']
-        prefixfilename=Parameters_dict['prefixfilename']
-        dirname = Parameters_dict['dirname']
-        
-        file1 = prefixfilename+'%04d'%(imageindexref)+'.dat'
-        data1 = IOLT.read_Peaklist(file1, dirname)
-        Parameters_dict['dataref']=data1
-  
-        
-        computingFunction.__defaults__ = (Parameters_dict,
-                                            saveObject)
-    
-        pool = multiprocessing.Pool()
-    #     for ii in list(range(len(fileindexdivision)):  # range(nb_of_cpu):
-    #         pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
-    
-        results = []
-        for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
-            print("ii",ii)
-            results.append( pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
-    )
-        
-        pool.close()
-        pool.join()
-        
-        print('results',results)
-        print("HOURRA it's FINISHED")
-        
-        dictcorrelval ={}
-        for k,result in enumerate(results):
-            dictk=dict(result.get())
-            print("dict {}".format(k),  dictk)
-            dictcorrelval = dict(list(dictk.items()) + list(dictcorrelval.items()))
-            
-        listindval=[]
-        for k,val in dictcorrelval.items():
-            listindval.append([k,val])
-            
-        arr_correl=np.array(listindval)
-        sortedindex=np.argsort(arr_correl[:,0])
-        myc=arr_correl[sortedindex][:,1].reshape((len(arr_correl)/nbimagesperline,nbimagesperline))
-        
-        return myc,dictcorrelval,listindval
-    
-    list_produced_files = []
+    elif HKL1r.shape == (3,):
+        HKL1r = np.array([HKL1r])
 
-    def log_result(result):
+    n1 = len(HKL1r)
+    n2 = len(HKL2r)
+    dstar_square_1 = np.diag(np.inner(np.inner(HKL1r, metrics), HKL1r))
+    dstar_square_2 = np.diag(np.inner(np.inner(HKL2r, metrics), HKL2r))
+    scalar_product = np.inner(np.inner(HKL1r, metrics), HKL2r) * 1.
 
-        if len(result) == 2:
-            print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
-            list_produced_files.append(str(result[1]))
-    
-        print('mylog print')
-        
-        
-        
-        
-    Parameters_dict={}
-    Parameters_dict['prefixfilename']='SnsurfscanBig_'
-    Parameters_dict['dirname']='/home/micha/LaueTools/MapSn/datfiles'
-    Parameters_dict['nbimagesperline'] = 41
-    Parameters_dict['toldistance']=0.1
-    
+    d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.
+    d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.
 
-    nblines=32
-    fileindexrange = (0,41*nblines-1)
-    
-#     imageindexref = 41*16+20
-    imageindexref = 41*2+20
+    outy = np.outer(d1, d2)
+    if 0:
+        print("d1", d1)
+        print("d2", d2)
+        print("len(d1)", len(d1))
+        print("len(d2)", len(d2))
+        print("outy", outy)
+        print(outy.shape)
 
-    myc,cor1,cor2 = LaueSpotsCorrelator_multiprocessing(fileindexrange,imageindexref,
-                             Parameters_dict=Parameters_dict,
-                                saveObject=0,
-                                nb_of_cpu=7)
-    
-    import pylab as p
-    p.imshow(myc,interpolation='nearest',origin='lower',vmin=0)
-    p.show()
-    
-    indexauxiliary = imageindexref-1
-    filetoindex = Parameters_dict['prefixfilename']+'%04d'%(imageindexref)+'.dat'
-    fileauxiliary = Parameters_dict['prefixfilename']+'%04d'%(indexauxiliary)+'.dat'
-    
-    
-    toldistance=.1
-    res = getCommonSpots(filetoindex,fileauxiliary,toldistance, dirname=Parameters_dict['dirname'],
-                   data1=None,fulloutput=True)
-    
-    dataraw=IOLT.read_Peaklist(filetoindex, Parameters_dict['dirname'])
-    
-    seletedspots = np.take(dataraw,res[0],axis=0)
-    
-    IOLT.writefile_Peaklist('selectedqpots.dat', seletedspots, dirname=Parameters_dict['dirname'])
-    
-    
-    
-    
-    gfgdfgsdfgfd
-    dictcorrelval ={}
-    for k,result in enumerate(jesus):
-        dictk=dict(result.get())
-        print("dict %d"%k,  dictk)
-        dictcorrelval = dict(list(dictk.items()) + list(dictcorrelval.items()))
-        
-    listindval=[]
-    for k,val in dictcorrelval.items():
-        listindval.append([k,val])
-        
-    arr_correl=np.array(listindval)
-    sortedindex=np.argsort(arr_correl[:,0])
-    myc=arr_correl[sortedindex][:,1].reshape((nblines,41))
-    
-    
-    import pylab as p
-    p.imshow(myc,interpolation='nearest',origin='lower',vmin=0)
-    p.show()
+        print("scalar_product", scalar_product)
+        print(scalar_product.shape)
 
-    fdffdhgf
-    toldistance =2.
-    dirname = '/home/micha/LaueTools/MapSn/datfiles'
-    fileprefix = 'SnsurfscanBig_'
-    commonspotsnb =[]
-    imageindexref= 41*32/2+20
-    file1 = fileprefix+'%04d'%(imageindexref)+'.dat'
-    for imageindex in list(range(1350,1500)):
-        print("imageindex",imageindex)
-        file2 = fileprefix+'%04d'%(imageindex)+'.dat'
-        commonspotsnb.append(getCommonSpots(file1,file2,toldistance, dirname))
-        
-    myc=np.array(commonspotsnb).reshape((32,41))
-    import pylab as p
-    
-    p.imshow(myc,interpolation='nearest',origin='upper',vmin=0,vmax=150)
-    p.show()
-    dfgdfg
-#     XY1 = np.array([[0, 0], [7, 7], [1, 1], [3, 3], [4, 4]])
-#     XY2 = np.array([[0, 5], [1, 1.3], [2, 20], [30, 3], [44, 4], [10, 1.3], [152, 1.4]])
-#     
-#     p, del_1, del_2 = mergelistofPoints(XY1, XY2, dist_tolerance=0.31, verbose=0)
-#     
-#     print "init 1", XY1
-#     print "init 2", XY2
-#     
-#     print "purged list", p
-#     print "delete in 1", del_1
-#     print "delete in 2", del_2
-#     
-#     XYref = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4],[0,5]])
-#     XYtest = np.array([[0, 2.1], [0, 1.1], [0, 0.1], [0, 5.1], [0, 6.1]])
-#     
-#     res=SortPoints_fromPositions(XYtest, XYref, 0.2)
-    folder = '/home/micha/LaueProjects/VO2/'
-    blacklistedpeaklist_file= 'VO2W_0025_LT_1.dat'
-    
-    expfile= 'VO2W_0024_LT_1.dat'
-    
-    import IOLaueTools as IOLT 
-    datapeak= IOLT.read_Peaklist(blacklistedpeaklist_file, folder)
-    pts_black = datapeak[:,:2]
-    print("nb black listed points", len(pts_black))
-    
-    datapeak2= IOLT.read_Peaklist(expfile, folder)
-    pts = datapeak2[:,:2]
-    print("nb exp points", len(pts))
-    
-    xkept, ykept, tab = removeClosePoints_two_sets(pts.T, pts_black.T,
-                               dist_tolerance=0.5,
-                               verbose=1)
+    ratio = scalar_product / outy
+    ratio = np.round(ratio, decimals=7)
+#    print "ratio", ratio
+#    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
+#    np.putmask(ratio, ratio == 0, 0)
 
+    return np.arccos(ratio) / DEG
+
+def nearestValuesindices(A, B):
+    """
+    A, B : 1D arrays
+    return for each element of B the index of element A closest to B
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    len(indexInA)=len(B)
+    """
+    indexInA = np.abs(np.subtract.outer(A, B)).argmin(0)
+    return indexInA
