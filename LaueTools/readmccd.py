@@ -21,6 +21,8 @@ import copy
 import time as ttt
 import struct
 
+import math
+
 # third party modules
 
 import scipy.interpolate as sci
@@ -69,7 +71,7 @@ import dict_LaueTools as DictLT
 
 listfile = os.listdir(os.curdir)
 
-# Default dictionary peak search parameter:
+# Default dictionary peak search parameters:
 
 PEAKSEARCHDICT_Convolve = {'PixelNearRadius': 10,
                            'thresholdConvolve': 500,
@@ -85,10 +87,10 @@ PEAKSEARCHDICT_Convolve = {'PixelNearRadius': 10,
                         'return_histo': 0,
                         'write_execution_time': 0,
                         'Data_for_localMaxima': 'auto_background',
-                        'NumberMaxofFits': 5000,
-                        'MaxPeakSize':3.0,
-                        'MinPeakSize':0.01
-                        }
+                        'NumberMaxofFits': 5000}
+                        # 'MaxPeakSize':3.0,
+                        # 'MinPeakSize':0.01
+                        # }
 
 def stringint(k, n):
     """ returns string of integer k with n zeros padding
@@ -1344,7 +1346,7 @@ def readoneimage_manycrops_old(filename, centers, boxsize):
     else:
         xboxsize, yboxsize = boxsize
 
-    f = II.open(filename)  # file is only opened once
+    f = Image.open(filename)  # file is only opened once
 
     if type(boxsize) == type(5):
         boxsizex, boxsizey = boxsize, boxsize
@@ -4094,12 +4096,13 @@ def PeakSearch(filename, stackimageindex = -1,
                           reject_negative_baseline=reject_negative_baseline
                           )
 
-def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpeaklist=None,
-                        CCDLabel='MARCCD165', outputfilename=None, KF_DIRECTION='Z>0'):
-    
+def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpeaklist=None,dictPeakSearch={},
+                        CCDLabel='MARCCD165', outputfilename=None, KF_DIRECTION='Z>0', psdict_Convolve=PEAKSEARCHDICT_Convolve):
     """
-    Perform a peaksearch by using .psp file 
-    
+    Perform a peaksearch by using .psp file
+
+    # not very used ?
+    # missing dictPeakSearch   as function argument for formulaexpression  or dict_param??
     """
     
     dict_param = readPeakSearchConfigFile(pspfile)
@@ -4120,7 +4123,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
     if flag_for_backgroundremoval not in ('auto_background', None) and \
         not isinstance(flag_for_backgroundremoval, np.ndarray):
 
-        fullpath_backgroundimage = PEAKSEARCHDICT_Convolve['Data_for_localMaxima']
+        fullpath_backgroundimage = psdict_Convolve['Data_for_localMaxima']
 
 #         print "fullpath_backgroundimage ", fullpath_backgroundimage
 
@@ -4158,18 +4161,18 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
         print("using {} in peaksearch_fileseries".format(formulaexpression))
 
         # for finding local maxima in image from formula
-        PEAKSEARCHDICT_Convolve['Data_for_localMaxima'] = fullpath_backgroundimage
+        psdict_Convolve['Data_for_localMaxima'] = fullpath_backgroundimage
 
         # for fitting peaks in image from formula
-        PEAKSEARCHDICT_Convolve['reject_negative_baseline'] = False
-        PEAKSEARCHDICT_Convolve['formulaexpression'] = formulaexpression
-        PEAKSEARCHDICT_Convolve['Fit_with_Data_for_localMaxima'] = True
+        psdict_Convolve['reject_negative_baseline'] = False
+        psdict_Convolve['formulaexpression'] = formulaexpression
+        psdict_Convolve['Fit_with_Data_for_localMaxima'] = True
 
 
     Res = PeakSearch(filename_in, CCDLabel=CCDLabel,
                         Saturation_value=DictLT.dict_CCD[CCDLabel][2],
                         Saturation_value_flatpeak=DictLT.dict_CCD[CCDLabel][2],
-                        **PEAKSEARCHDICT_Convolve)
+                        **psdict_Convolve)
     
     if Res in (False, None):
         print("No peak found for image file: ", filename_in)
@@ -4183,7 +4186,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag='no', blacklistpea
     
         params_comments += '# {}: {}\n'.format('CCDLabel', CCDLabel)
     
-        for key, val in list(PEAKSEARCHDICT_Convolve.items()):
+        for key, val in list(psdict_Convolve.items()):
             if not BackgroundImageCreated or key not in ('Data_for_localMaxima',):
                 params_comments += '# ' + key + ' : ' + str(val) + '\n'
     
@@ -4982,8 +4985,8 @@ def merge_2Peaklist(filename1, filename2, dist_tolerance=5, dirname1=None, dirna
     return merge spots data from two peaklists and removed duplicates within dist_tolerance (pixel)
     
     """
-    data_peak_1 = read_Peaklist(filename1, dirname=dirname1)
-    data_peak_2 = read_Peaklist(filename2, dirname=dirname2)
+    data_peak_1 = IOLT.read_Peaklist(filename1, dirname=dirname1)
+    data_peak_2 = IOLT.read_Peaklist(filename2, dirname=dirname2)
     
     XY1 = data_peak_1[:, 0:2]
     XY2 = data_peak_2[:, 0:2]
@@ -5008,7 +5011,7 @@ def writefile_mergedPeaklist(filename1, filename2, outputfilename,
     """
     merged_data = merge_2Peaklist(filename1, filename2, dist_tolerance, dirname1, dirname2, verbose)
     comments = "Peaks from merging {} and {} with pixel tolerance {:.3f}".format(filename1, filename2, dist_tolerance)
-    writefile_Peaklist(outputfilename, merged_data, 1, None, comments, None)
+    IOLT.writefile_Peaklist(outputfilename, merged_data, 1, None, comments, None)
     
     print("Merged peak lists written in file: ",outputfilename)
 

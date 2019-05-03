@@ -4940,7 +4940,6 @@ class MainPeakSearchFrame(wx.Frame):
                           FitPixelDev=FitPixelDev,  # accept all pixel deviation
                           Ipixmax=None,
                           verbose=0,
-                          return_histo=0,
                           position_definition=self.position_definition,
                           use_data_corrected=use_data_corrected,
                           reject_negative_baseline=reject_negative_baseline
@@ -5682,8 +5681,12 @@ if __name__ == '__main__':
 #     initialParameter['imagefilename'] = 'f0p53_u190_flat_0003.tif.gz'
 #     initialParameter['CCDLabel'] = 'sCMOS'
 
-    initialParameter['dirname'] = '/home/micha/LaueProjects/DiamondOct18/data'
-    initialParameter['imagefilename'] = 'Ge40_1999.tif'
+    # initialParameter['dirname'] = '/home/micha/LaueProjects/DiamondOct18/data'
+    # initialParameter['imagefilename'] = 'Ge40_1999.tif'
+    # initialParameter['CCDLabel'] = 'sCMOS'
+
+    initialParameter['dirname'] = os.path.join(DictLT.LAUETOOLSFOLDER, 'LaueImages')
+    initialParameter['imagefilename'] = 'AH12_CMT_r14_0200.tif'
     initialParameter['CCDLabel'] = 'sCMOS'
 
     PSGUIApp = wx.App()

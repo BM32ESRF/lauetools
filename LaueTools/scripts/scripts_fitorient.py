@@ -2,7 +2,6 @@ import FitOrient as FitO
 import numpy as np
 import generaltools as GT
 import dict_LaueTools as DictLT
-import scipy.interpolate as sci
 
 SIGN_OF_GAMMA = 1
 
@@ -679,6 +678,7 @@ import readmccd as RMCCD
 
 filename_idx = 'Custrained_1.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
 filename_idx = 'Cu_3.idx'  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
+# TODO 
 twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = \
                                 RMCCD.Read_indexationfile(filename_idx)
 
