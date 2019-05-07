@@ -2022,34 +2022,8 @@ def best_orientations_new(Database, bigHoughcollector, nb_orientations=20):
 
     return bestAngles
 
-#--- ---current method
 
 
-def bestorient_from_2thetachi(tth_chi_int, database,
-                              dictparameters=None):
-    """
-    return sorted list of 3eulers angles and corresponding matching rate
-    
-    dictparameters is a dictionary of parameters for imagematching technique
-    keys = 'maxindex','plotHough','rank_n','sigmagaussian','Hough_init_sigmas',
-            'Hough_init_Threshold','useintensities','tolerancedistance'
-    """
-    # if Nonee then use default parameter
-    if dictparameters == None:
-        dictparameters = {}
-
-    TBO, dataselected, gno_dataselected = getOrientationfromDatabase(tth_chi_int,
-                                                                     database, **dictparameters)
-
-    if TBO is None:
-        print("Image Matching technique has not found any potential orientations!")
-        return None
-
-    # table of best 3 Eulerian angles
-    bestEULER = np.transpose(TBO)
-
-
-    return bestEULER
 
 
 def readnselectdata(filename_data, nbofpeaks_max, dirname=None, verbose=0):
