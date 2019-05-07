@@ -164,7 +164,7 @@ def TableDistance_exp(filename, nb_of_spots, col_Int=4):
 
     # array of interangular distance of all points
     print("Calculating all angular distances ...")
-    angulardisttable = INDEX.calculdist_from_thetachi(sorted_data[:, 0:2], sorted_data[:, 0:2])
+    angulardisttable = GT.calculdist_from_thetachi(sorted_data[:, 0:2], sorted_data[:, 0:2])
     print("... Done !")
     # ind_sort=argsort(Tabledistance[0,1:])
     return angulardisttable, upto

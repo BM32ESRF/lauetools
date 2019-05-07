@@ -33,6 +33,7 @@ import LaueGeometry as F2TC
 import indexingAnglesLUT as INDEX
 import indexingImageMatching as IIM
 # import indexingSpotsSet as ISS
+import matchingrate
 import lauecore as LAUE
 import findorient as FindO
 import FitOrient as FitO
@@ -1329,7 +1330,7 @@ class MainCalibrationFrame(wx.Frame):
         for k in range(len(twicetheta)):
             print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
-        Resi, ProxTable = INDEX.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
+        Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                     self.twicetheta / 2., self.chi,  # warning theta, chi for exp
                                     proxtable=1, angtol=5.,
                                     verbose=0,
@@ -3192,7 +3193,7 @@ class MainCalibrationFrame(wx.Frame):
                     self.TwicethetaChi_solution[k] = TwicethetaChi
 
                     if self.datatype == '2thetachi':
-                        tout = INDEX.getProximity(TwicethetaChi,
+                        tout = matchingrate.getProximity(TwicethetaChi,
                                                     np.array(self.data[0]) / 2.,
                                                     np.array(self.data[1]),
                                                     angtol=ang_match)
@@ -3201,7 +3202,7 @@ class MainCalibrationFrame(wx.Frame):
                         TW, CH = IIM.Fromgnomon_to_2thetachi(self.data[:2], 0)[:2]
                         # print "TW in reckon 2pst",TW[:10]
                         # LaueToolsframe.control.SetValue(str(array(TW, dtype = '|S8'))+'\n'+str(array(CH, dtype = '|S8')))
-                        tout = INDEX.getProximity(TwicethetaChi,
+                        tout = matchingrate.getProximity(TwicethetaChi,
                                                     np.array(TW) / 2., np.array(CH),
                                                     angtol=ang_match)
 

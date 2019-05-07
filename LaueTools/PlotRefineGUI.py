@@ -40,6 +40,7 @@ import LaueGeometry as F2TC
 import LaueSpotsEditor as LSEditor
 import indexingAnglesLUT as INDEX
 import indexingSpotsSet as ISS
+import matchingrate
 import dict_LaueTools as DictLT
 
 # Plot & Tools Frame Class
@@ -1230,7 +1231,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # print "toc", toc
         # print "exp", twicetheta_exp, chi_exp
-        Resi, ProxTable = INDEX.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
+        Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                                         twicetheta_exp / 2., chi_exp,  # warning theta, chi for exp
                                                         proxtable=1, angtol=5.,
                                                         verbose=0,

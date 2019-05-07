@@ -6,6 +6,7 @@ import lauecore as LT
 import CrystalParameters as CP
 import indexingSpotsSet as ISS
 import indexingAnglesLUT as INDEX
+import matchingrate
 
 import IOLaueTools as IOLT
 import generaltools as GT
@@ -379,7 +380,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             
             listcouple = np.array([self.select_theta, self.select_chi]).T
             # compute angles between spots
-            Tabledistance = INDEX.calculdist_from_thetachi(listcouple, listcouple)
+            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
             
 #             # with CYTHON
 #             import angulardist
@@ -1063,7 +1064,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
             print("*-**********************")
             # print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-            toutsigma3 = INDEX.getProximity(TwicethetaChi,
+            toutsigma3 = matchingrate.getProximity(TwicethetaChi,
                                             np.array(self.data[0]) / 2.,
                                             np.array(self.data[1]))
             print("calcul residues", toutsigma3[2:])

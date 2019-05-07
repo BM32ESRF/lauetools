@@ -20,6 +20,7 @@ import generaltools as GT
 import CrystalParameters as CP
 import lauecore as LAUE
 import indexingAnglesLUT as INDEX
+import matchingrate
 import dict_LaueTools as DictLT
 import FitOrient as FitO
 import LaueGeometry as F2TC
@@ -706,7 +707,7 @@ class spotsset():
             # print select_chi
             select_thetachi = np.array([select_theta, select_chi]).T
             # compute angles between spots
-            Tabledistance = INDEX.calculdist_from_thetachi(select_thetachi,
+            Tabledistance = GT.calculdist_from_thetachi(select_thetachi,
                                                            select_thetachi)
 
         latticeparams = DictLT.dict_Materials[key_material][1]
@@ -1554,7 +1555,7 @@ class spotsset():
 
         spots2 = np.array([spots2_data[:, 0] / 2., spots2_data[:, 1]]).T
 
-        table_dist = INDEX.calculdist_from_thetachi(spot1, spots2)[:, 0]
+        table_dist = GT.calculdist_from_thetachi(spot1, spots2)[:, 0]
 
         pos_close = np.where(table_dist <= angle_tol)[0]
 
@@ -1656,7 +1657,7 @@ class spotsset():
         nb_of_simulated_spots = len(Twicetheta)
 
         # find close pairs between exp. and theo. spots
-        res = SpotLinks(twicetheta_data, chi_data, I_data,  # experimental data
+        res = matchingrate.SpotLinks(twicetheta_data, chi_data, I_data,  # experimental data
                         veryclose_angletol,  # tolerance angle
                         Twicetheta, Chi, Miller_ind, posx, posy, Energy,
                         absoluteindex=useabsoluteindex)
@@ -1702,7 +1703,7 @@ class spotsset():
             Missing_Reflections_Data = Missing_Reflections_Pos, Missing_Reflections_Miller, Missing_Reflections_Energy
 
     #        # check if some missing reflections are quite close to some exp spots
-    #        Resi, ProxTable = INDEX.getProximity(Missing_Reflections_Pos[:2], # warning array(2theta, chi)
+    #        Resi, ProxTable = matchingrate.getProximity(Missing_Reflections_Pos[:2], # warning array(2theta, chi)
     #                                                    twicetheta_data / 2., chi_data, # warning theta, chi for exp
     #                                                    proxtable=1, angtol=veryclose_angletol,
     #                                                    verbose=0,
@@ -1778,7 +1779,7 @@ class spotsset():
         if nbmax is not None:
             nbmax = min(nbmax, nbspots)
 
-        self.table_angdist = INDEX.calculdist_from_thetachi(thechi_exp, thechi_exp)[:nbmax, :nbmax]
+        self.table_angdist = GT.calculdist_from_thetachi(thechi_exp, thechi_exp)[:nbmax, :nbmax]
 
         tablelength = len(self.table_angdist)
 
@@ -1985,7 +1986,7 @@ class spotsset():
 
             test_Matrix = GT.fromEULERangles_toMatrix(angles_sol)
 
-            res = Angular_residues(test_Matrix, twicetheta_data, chi_data,
+            res = matchingrate.Angular_residues(test_Matrix, twicetheta_data, chi_data,
                                          ang_tol=ang_tol,
                                          key_material=self.key_material,
                                          emin=self.emin,
@@ -2568,16 +2569,16 @@ class spotsset():
             outputfile.write('#deviatoric strain (10-3 unit)\n')
             outputfile.write(str(self.dict_grain_devstrain[grain_index] * 1000.) + '\n')
 
-        addCCDparams = 0
-        if addCCDparams:
-            outputfile.write('#CCDLabel\n')
-            outputfile.write(self.CCDLabel + '\n')
-            outputfile.write('#DetectorParameters\n')
-            outputfile.write(str(self.CCDcalib) + '\n')
-            outputfile.write('#pixelsize\n')
-            outputfile.write(str(self.pixelsize) + '\n')
-            outputfile.write('#Frame dimensions\n')
-            outputfile.write(str(self.framedim) + '\n')
+        # addCCDparams = 0
+        # if addCCDparams:
+        #     outputfile.write('#CCDLabel\n')
+        #     outputfile.write(self.CCDLabel + '\n')
+        #     outputfile.write('#DetectorParameters\n')
+        #     outputfile.write(str(self.CCDcalib) + '\n')
+        #     outputfile.write('#pixelsize\n')
+        #     outputfile.write(str(self.pixelsize) + '\n')
+        #     outputfile.write('#Frame dimensions\n')
+        #     outputfile.write(str(self.framedim) + '\n')
 
         outputfile.close()
 
@@ -3184,7 +3185,7 @@ def filterEulersList(bestEULER, tth_chi_int, key_material, emax,
     print("*******************************use filterEulersList")
 
     # sort solution by matching rate
-    sortedindices, matchingrates = getStatsOnMatching(bestEULER,
+    sortedindices, matchingrates = matchingrate.getStatsOnMatching(bestEULER,
                                                       tth_chi_int[0], tth_chi_int[1],
                                                       key_material,
                                                       ang_tol=rawAngularmatchingtolerance,
@@ -3507,9 +3508,6 @@ def findtwins(imageindex, dmat,
     return twins
 
 
-
-
-
 def findsimilarmatrix(imageindex, dmat, grainindex=0, imagerange=(1708, 3323), tol=0.001):
     """
     find similar matrices in dmat to matrix given by imageindex
@@ -3525,6 +3523,27 @@ def findsimilarmatrix(imageindex, dmat, grainindex=0, imagerange=(1708, 3323), t
 
     print("Found %d similar matrices" % nbsimil)
     return simil
+
+def printmatrix(mat, decimals=3):
+    """
+    confortable print of matrix
+    """
+    for row in np.round(np.array(mat), decimals=decimals).tolist():
+        print(row)
+
+def matrix_to_string(mat):
+    """
+    convert the 3 rows to a list of string
+    """
+    liststr = []
+    try:
+        mat = mat.tolist()
+    except AttributeError:
+        pass
+    for row in mat:
+        liststr.append(str(row))
+
+    return liststr
 
 
 def FindMatrices(dmat, tol=0.01):
@@ -3565,6 +3584,7 @@ def FindMatrices(dmat, tol=0.01):
     res_final, res_dict = GT.Set_dict_frompairs(np.array(goodpairs), verbose=0)
     return res_final
 
+
 def mergesimilarmatrices(dmat):
 
     import pickle
@@ -3582,59 +3602,6 @@ def mergesimilarmatrices(dmat):
     return dmatm
 
 
-#--- ------------ Simulate fake data
-def IofE(Energy, Amplitude=50000, powerp=-1, offset=-5):
-    """
-    returns simulated intensity of bragg spot as a function of Energy only
-    """
-    return 1. * Amplitude * np.power(Energy + offset, powerp * 1.)
-
-
-def Grain_to_string(grains):
-    """
-    convert each 4 elements grain parameters contained in grains list to list of string
-    """
-    liststr = ['mat, EXTINCTION, orientmat, ELEMENT']
-    for k, grain in enumerate(grains):
-        mat, EXTINCTION, orientmat, ELEMENT = grain
-
-        matstr = matrix_to_string(mat)
-        orientmatstr = matrix_to_string(orientmat)
-
-        liststr.append('Grain G % d' % k)
-        for elem in matstr:
-            liststr.append(elem)
-        liststr.append(EXTINCTION)
-        for elem in orientmatstr:
-            liststr.append(elem)
-        liststr.append(ELEMENT)
-
-    return liststr
-
-
-def printmatrix(mat, decimals=3):
-    """
-    confortable print of matrix
-    """
-    for row in np.round(np.array(mat), decimals=decimals).tolist():
-        print(row)
-
-
-def matrix_to_string(mat):
-    """
-    convert the 3 rows to a list of string
-    """
-    liststr = []
-    try:
-        mat = mat.tolist()
-    except AttributeError:
-        pass
-    for row in mat:
-        liststr.append(str(row))
-
-    return liststr
-
-
 def get4sigma3Matrices(mat):
     """
     from mat return 4 sigma3 matrices (180 deg rotation around 111 family plane)
@@ -3645,130 +3612,6 @@ def get4sigma3Matrices(mat):
         listmat.append(np.dot(mat, elem))
 
     return listmat
-
-
-def createFakeData(key_material, nbgrains, emin=5, emax=25,
-                   outputfilename=None, removespots=None, addspots=None, twins=0):
-    """
-    create fake data with nbgrains grains and random detecgtor parameters
-
-    removespots    : nb of spots to remove (randomly) in each grains
-    addspots        : number of random experimental spots to add
-    """
-    if not outputfilename:
-        outputfilename = 'testSirandom'
-        print("%s.cor has be written" % outputfilename)
-    #    detectorparameters = [70, 1024, 1024, 0, 0]
-    detectorparameters = IMM.randomdetectorparameters()
-
-    # generate .cor file
-    simul_matrices = []
-    grains = []
-    Twicetheta, Chi, posx, posy, dataintensity = [], [], [], [], []
-
-    EXTINCTION = DictLT.dict_Materials[key_material][2]
-
-    if removespots is not None:
-        if len(removespots) != nbgrains:
-            raise ValueError("removespots needs as many integers than nbgrains!")
-
-    for k in list(range(nbgrains)):
-        orientmat = GT.randomRotationMatrix()
-        simul_matrices.append(orientmat)
-
-    if twins >= 1:
-        if twins <= nbgrains / 2:
-            copysimul_matrices = copy.copy(simul_matrices)
-            for twin in list(range(0, twins + 1, 2)):
-                print("twin", twin)
-                simul_matrices[twin + 1] = np.dot(np.dot(copysimul_matrices[twin], DictLT.dict_Vect['sigma3_1']),
-                                                  GT.matRot([1, 2, 3], 0))
-        else:
-            raise ValueError("nb of twins must not be higher than half of nbgrains")
-
-    for k, orientmat in enumerate(simul_matrices):
-
-        grains.append([np.eye(3), EXTINCTION, orientmat, key_material])
-
-        print("orientmat", orientmat)
-
-        # Twicetheta, Chi, Miller_ind, posx, posy, Energy
-        (Twicetheta1, Chi1,
-         Miller_ind1, posx1, posy1, Energy1) = LAUE.SimulateLaue(grains[k],
-                                                                 emin, emax,
-                                                                 detectorparameters,
-                                                                removeharmonics=1)
-
-        if removespots is not None:
-            # TODO : to simplify
-            nbspots_init = len(Twicetheta1)
-            print("nbspots_init", nbspots_init)
-            toremoveind = np.random.randint(nbspots_init, size=removespots[k])
-
-            # remove duplicate
-            toremoveind = list(set(toremoveind))
-            print("nb of removed spots", len(toremoveind))
-            Twicetheta1 = np.delete(Twicetheta1, toremoveind, axis=0)
-            Chi1 = np.delete(Chi1, toremoveind, axis=0)
-            posx1 = np.delete(posx1, toremoveind, axis=0)
-            posy1 = np.delete(posy1, toremoveind, axis=0)
-            Energy1 = np.delete(Energy1, toremoveind, axis=0)
-
-            Miller_ind1 = np.delete(Miller_ind1, toremoveind, axis=0)
-
-#            dataintensity1 = (20000 + k) * np.ones(len(Twicetheta1))
-        dataintensity1 = IofE(Energy1)
-
-        Twicetheta = np.concatenate((Twicetheta, Twicetheta1))
-        Chi = np.concatenate((Chi, Chi1))
-        posx = np.concatenate((posx, posx1))
-        posy = np.concatenate((posy, posy1))
-        dataintensity = np.concatenate((dataintensity, dataintensity1))
-
-        k += 1
-
-    if twins:
-        # need to delete duplicates
-        Twicetheta, Chi, tokeep = GT.removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.01)
-        posx = np.take(posx, tokeep)
-        posy = np.take(posy, tokeep)
-        dataintensity = np.take(dataintensity, tokeep)
-
-    if addspots is not None:
-
-        posx1 = (2048) * np.random.random_sample(addspots)
-        posy1 = (2048) * np.random.random_sample(addspots)
-        dataintensity1 = (65000) * np.random.random_sample(addspots)
-
-        from find2thetachi import calc_uflab
-
-        Twicetheta1, Chi1 = calc_uflab(posx1, posy1, detectorparameters)
-
-        Twicetheta = np.concatenate((Twicetheta, Twicetheta1))
-        Chi = np.concatenate((Chi, Chi1))
-        posx = np.concatenate((posx, posx1))
-        posy = np.concatenate((posy, posy1))
-        dataintensity = np.concatenate((dataintensity, dataintensity1))
-
-    # write fake .cor file
-    strgrains = ['simulated pattern with two grains']
-    strgrains += Grain_to_string(grains)
-
-    # sorting data by decreasing intensity:
-    intensitysortedind = np.argsort(dataintensity)[::-1]
-    arraydata = np.array([Twicetheta, Chi, posx, posy, dataintensity]).T
-
-    sortedarraydata = arraydata[intensitysortedind]
-
-    Twicetheta, Chi, posx, posy, dataintensity = sortedarraydata.T
-
-    IOLT.writefile_cor(outputfilename, Twicetheta, Chi, posx, posy, dataintensity,
-                                                        param=detectorparameters,
-                                                        comments=strgrains)
-
-    fullname = outputfilename + '.cor'
-    print("Fake data have been saved in %s" % fullname)
-    return fullname
 
 
 #--- ----------  old non OOP methods
@@ -3878,245 +3721,6 @@ def updateIndexationDict(indexation_res, indexed_spots_dict, grain_index, overwr
     return indexed_spots_dict, nb_updates
 
 
-def SpotLinks(twicetheta_exp, chi_exp, dataintensity_exp,  # experimental data
-            veryclose_angletol,  # tolerance angle
-            twicetheta, chi, Miller_ind, posx, posy, energy,  # theoretical data
-            absoluteindex=None,
-            verbose=0):
-    """
-    Create automatically links between currently close experimental and theoretical spots
-    in 2theta, chi representation
-
-    return table of association with theo and exp spots indices.
-
-    if absoluteindex = None    : spots indices and order are those of data
-                                    (twicetheta_exp, chi_exp, dataintensity_exp)
-                    = list_of_absolute_indices
-                            : list containing the absolute indices
-
-
-    veryclose_angletol     :    max tolerance angle for association in degree
-    absoluteindex        : list of absolute exp spot index to output in res
-                            (conversion table between relative and absolute index)
-                           i.e.  absoluteindex[localindex] = absolute index
-
-    TODO: to improve, always difficult to understand immediately the algorithm :-[
-    """
-
-    if verbose:
-        print("\n ************** Spots Association ************** \n")
-
-    Resi, ProxTable = INDEX.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
-                                    twicetheta_exp / 2., chi_exp,  # warning theta, chi for exp
-                                    proxtable=1, angtol=veryclose_angletol,
-                                    verbose=0,
-                                    signchi=1)[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
-
-    # ProxTable is table giving the closest exp.spot index for each theo. spot
-    # len(Resi) = nb of theo spots
-    # len(ProxTable) = nb of theo spots
-    # ProxTable[index_theo]  = index_exp   closest link
-    # print "Resi",Resi
-    # print "ProxTable",ProxTable
-    # print "Nb of theo spots", len(ProxTable)
-
-    # array of theo. spot index
-    very_close_ind = np.where(Resi < veryclose_angletol)[0]
-    # print "In OnLinkSpotsAutomatic() very close indices",very_close_ind
-
-    # build a list all theo. spots such as: exp_index = List_Exp_spot_close[theo_index]
-    List_Exp_spot_close = []
-    Miller_Exp_spot = []
-    Energy_Exp_spot = []
-
-    # if nb of pairs between exp and theo spots is enough
-    if len(very_close_ind) > 0:
-        # loop over theo spots index
-        for theospot_ind in very_close_ind:
-            # print "theospot_ind ",theospot_ind
-            List_Exp_spot_close.append(ProxTable[theospot_ind])
-            Miller_Exp_spot.append(Miller_ind[theospot_ind])
-            Energy_Exp_spot.append(energy[theospot_ind])
-
-#    print "List_Exp_spot_close", List_Exp_spot_close
-#    print "Miller_Exp_spot", Miller_Exp_spot
-
-    if len(List_Exp_spot_close) == 0:
-        print("Found no pair within tolerance in SpotLinks()")
-        return 0
-
-    elif len(List_Exp_spot_close) == 1:
-        print("Just a single found! Nb of pairs equal to 1  is not implemented yet in SpotLinks()")
-        return 0
-
-    #--------------------------------------------------------------
-    # removing exp spot which appears many times
-    # (close to several simulated spots of one grain)--------------
-    #   now len(List_Exp_spot_close) >= 2
-    # ---------------------------------------------------------
-
-    arrayLESC = np.array(List_Exp_spot_close, dtype=float)
-
-    sorted_LESC = np.sort(arrayLESC)
-
-    # print "List_Exp_spot_close", List_Exp_spot_close
-    # print "sorted_LESC", sorted_LESC
-
-    diff_index = sorted_LESC - np.array(list(sorted_LESC[1:]) + [sorted_LESC[0]])
-    toremoveindex = np.where(diff_index == 0)[0]
-
-    # print "toremoveindex", toremoveindex
-
-    # print "number labelled exp spots", len(List_Exp_spot_close)
-    # print "List_Exp_spot_close", List_Exp_spot_close
-    # print "Miller_Exp_spot", Miller_Exp_spot
-
-    # find exp spot that can not be indexed safely
-    # (too many theo. neighbouring spots)
-    if len(toremoveindex) > 0:
-        # index of exp spot in arrayLESC that are duplicated
-        TOLERANCEANGLE = 0.1
-        ambiguous_exp_ind = GT.find_closest(np.array(sorted_LESC[toremoveindex],
-                                                     dtype=float),
-                                            arrayLESC, TOLERANCEANGLE)[1]
-        # print "ambiguous_exp_ind", ambiguous_exp_ind
-
-        # tagging (inhibiting) exp spots
-        # that belong ambiguously to several simulated grains
-        for exp_ind in ambiguous_exp_ind:
-            Miller_Exp_spot[exp_ind] = None
-            Energy_Exp_spot[exp_ind] = 0.0
-
-    # -----------------------------------------------------------------------------------------------------
-    ProxTablecopy = copy.copy(ProxTable)
-    # tag duplicates in ProxTable with negative sign ----------------------
-    # ProxTable[index_theo] = index_exp   closest link
-
-    for theo_ind, exp_ind in enumerate(ProxTable):
-        where_th_ind = np.where(ProxTablecopy == exp_ind)[0]
-        # print "theo_ind, exp_ind ******** ",theo_ind, exp_ind
-        if len(where_th_ind) > 1:
-            # exp spot (exp_ind) is close to several theo spots
-            # then tag the index with negative sign
-            for indy in where_th_ind:
-                ProxTablecopy[indy] = -ProxTable[indy]
-            # except that which corresponds to the closest
-            closest = np.argmin(Resi[where_th_ind])
-            # print "residues = Resi[where_th_ind]",Resi[where_th_ind]
-            # print "closest",closest
-            # print "where_exp_ind[closest]",where_th_ind[closest]
-            # print "Resi[where_th_ind[closest]]", Resi[where_th_ind[closest]]
-            ProxTablecopy[where_th_ind[closest]] *= -1
-
-    # ------------------------------------------------------------------
-    # print "ProxTable after duplicate removal tagging"
-    # print ProxTablecopy
-
-    # print "List_Exp_spot_close",List_Exp_spot_close
-    # print "Results",[Miller_Exp_spot, List_Exp_spot_close]
-
-    # list of exp. spot index that have only one theo. neighbouring spots
-    singleindices = []
-
-    # dictionary of links (pairs) between exp. and theo. spots
-    refine_indexed_spots = {}
-
-    # loop over theo. spot index
-    for theo_ind in list(range(len(List_Exp_spot_close))):
-
-        exp_index = List_Exp_spot_close[theo_ind]
-
-        # print "exp_index",exp_index
-
-        # there is not exp_index in singleindices
-        if not singleindices.count(exp_index):
-            # so append singleindices with exp_index
-            singleindices.append(exp_index)
-
-            # lisf of index of theo spot that are the closest for a given exp. spot
-            theo_index = np.where(ProxTablecopy == exp_index)[0]
-            # print "theo_index", theo_index
-
-            # unambiguous pairing
-            if len(theo_index) == 1:
-                refine_indexed_spots[exp_index] = [exp_index,
-                                                   theo_index,
-                                                   Miller_Exp_spot[theo_ind],
-                                                   Energy_Exp_spot[theo_ind]]
-
-            # in case of several theo. candidate, keep the closest to exp. spot
-            else:
-                # print "Resi[theo_index]", Resi[theo_index]
-                closest_theo_ind = np.argmin(Resi[theo_index])
-                # print theo_index[closest_theo_ind]
-
-                # pairing if distance withing angular tolerance
-                if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
-                    refine_indexed_spots[exp_index] = [exp_index,
-                                                       theo_index[closest_theo_ind],
-                                                       Miller_Exp_spot[theo_ind],
-                                                       Energy_Exp_spot[theo_ind]]
-
-        # there is already exp_index in singleindices
-        else:
-            # do not update the dictionary 'refine_indexed_spots'
-            if verbose:
-                print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
-            pass
-    # find theo spot linked to exp spot ---------------------------------
-
-
-
-    # refine_indexed_spots is a dictionary:
-    # key is experimental spot index and value is [experimental spot index,h,k,l]
-    # print "refine_indexed_spots",refine_indexed_spots
-
-    listofpairs = []
-    linkExpMiller = []
-    linkIntensity = []
-    linkResidues = []
-    linkEnergy = []
-    # Dataxy = []
-
-    for val in list(refine_indexed_spots.values()):
-
-        exp_id, theo_id, Miller_id, Energy_id = val
-
-        if Miller_id is not None:
-
-            # absoluteindex is a list of absolute exp. spots indices
-            if absoluteindex is not None:
-                absoluteexpspotindex = absoluteindex[exp_id]
-            else:
-                absoluteexpspotindex = exp_id
-
-            # appending lists of links
-
-            listofpairs.append([absoluteexpspotindex, theo_id])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-            linkExpMiller.append([float(absoluteexpspotindex)] + [float(elem) for elem in Miller_id])  # float(val) for further handling as floats array
-            linkResidues.append([absoluteexpspotindex, theo_id, Resi[theo_id]])
-            linkEnergy.append([absoluteexpspotindex, theo_id, Energy_id])
-            linkIntensity.append(dataintensity_exp[exp_id])
-            # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
-
-    linkedspots_link = np.array(listofpairs)
-    linkExpMiller_link = linkExpMiller
-    linkIntensity_link = linkIntensity
-    linkResidues_link = linkResidues
-    linkEnergy_link = linkEnergy
-    fields = ['#Spot Exp', '#Spot Theo', 'h', 'k', 'l', 'Intensity', 'residues (deg)']
-
-    # self.Data_X, self.Data_Y = np.transpose( np.array(Dataxy) )
-
-    return (refine_indexed_spots,
-            linkedspots_link,
-            linkExpMiller_link,
-            linkIntensity_link,
-            linkResidues_link,
-            linkEnergy_link,
-            fields)
-
-
 def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters,
                     useabsoluteindex=None,
                        removeharmonics=0,
@@ -4148,7 +3752,7 @@ def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters,
 
     nb_of_simulated_spots = len(Twicetheta)
 
-    res = SpotLinks(twicetheta_data, chi_data, dataI,  # experimental data
+    res = matchingrate.SpotLinks(twicetheta_data, chi_data, dataI,  # experimental data
                     veryclose_angletol,  # tolerance angle
                     Twicetheta, Chi, Miller_ind, posx, posy, Energy,
                     absoluteindex=useabsoluteindex)
@@ -4273,273 +3877,7 @@ def getSpotsFamilyData(indexed_spots_dict, grain_index, onlywithMiller=1):
     return np.array(data)
 
 
-def Angular_residues_np(test_Matrix, twicetheta_data, chi_data,
-                    ang_tol=0.5,
-                    key_material='Si',
-                    emin=5, emax=25,
-                    ResolutionAngstrom=False,
-                    detectorparameters=None):
 
-    """ Simulate Laue pattern (single grain) and
-    Compute angular residues between pairs of close exp. and theo. spots 
-    
-    USED in manual indexation
-    Used in AutoIndexation module
-
-    inputs: 
-    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
-    test_Matrix                : orientation matrix
-    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
-
-    detectorparameters  : dictionary of detector parameters (key, value)
-                            'kf_direction' , general position of detector plane
-                            'detectordistance', detector distance (mm)
-                            'detectordiameter', detector diameter (mm)
-    """
-    if detectorparameters is None:
-        # use default parameter
-        kf_direction = 'Z>0'
-        detectordistance = 70.
-        detectordiameter = 165.
-        pixelsize = 165. / 2048
-        dim = (2048, 2048)
-    else:
-        kf_direction = detectorparameters['kf_direction']
-        detectordistance = detectorparameters['detectorparameters'][0]
-        detectordiameter = detectorparameters['detectordiameter']
-        pixelsize = detectorparameters['pixelsize']
-        dim = detectorparameters['dim']
-
-#     print "kf_direction,pixelsize,detectordistance", kf_direction, pixelsize, detectordistance
-
-    # ---simulation
-    # print "Reference Element or structure label", key_material
-
-    # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
-
-    # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin,
-                                                        [grain], 1,
-                                                        fastcompute=1,
-                                                        fileOK=0, verbose=0,
-                                                        kf_direction=kf_direction,
-                                                        ResolutionAngstrom=ResolutionAngstrom
-                                                        )
-    
-    # 2theta,chi of spot which are on camera (with harmonics)
-    # None because no need of hkl vectors
-    # TwicethetaChi without energy calculations and hkl selection
-    # without use of spots instantation (faster)
-    TwicethetaChi = LAUE.filterLaueSpots_full_np(spots2pi[0][0], None,
-                                                 HarmonicsRemoval=0,
-                                                 fileOK=0, fastcompute=1,
-                                         kf_direction=kf_direction,
-                                         detectordistance=detectordistance,
-                                         detectordiameter=detectordiameter,
-                                         pixelsize=pixelsize,
-                                         dim=dim)
-    
-    # old calculation with spots instantiation
-#     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
-#                                          kf_direction=kf_direction,
-#                                          detectordistance=detectordistance,
-#                                          detectordiameter=detectordiameter,
-#                                          pixelsize=pixelsize,
-#                                          dim=dim)
-
-#     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-    if len(TwicethetaChi[0]) == 0:
-#         print 'no peak found'
-        return None
-
-
-    # no particular gain...?
-    return matchingrate.getProximity(TwicethetaChi,
-                              twicetheta_data / 2., chi_data,
-                              angtol=ang_tol, proxtable=0)
-    
-    #     return INDEX.getProximity(TwicethetaChi,
-#                               twicetheta_data / 2., chi_data,
-#                               angtol=ang_tol, proxtable=0)
-
-
-def Angular_residues(test_Matrix, twicetheta_data, chi_data,
-                    ang_tol=0.5,
-                    key_material='Si',
-                    emin=5, emax=25,
-                    ResolutionAngstrom=False,
-                    detectorparameters=None):
-
-    """ Simulate Laue pattern and
-    Compute angular residues between pairs of close exp. and theo. spots 
-
-    inputs: 
-    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
-    test_Matrix                : orientation matrix
-    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
-
-    detectorparameters  : dictionary of detector parameters (key, value)
-                            'kf_direction' , general position of detector plane
-                            'detectordistance', detector distance (mm)
-                            'detectordiameter', detector diameter (mm)
-    """
-    if detectorparameters is None:
-        # use default parameter
-        kf_direction = 'Z>0'
-        detectordistance = 70.
-        detectordiameter = 165.
-        pixelsize = 165. / 2048
-        dim = (2048, 2048)
-    else:
-        kf_direction = detectorparameters['kf_direction']
-        detectordistance = detectorparameters['detectorparameters'][0]
-        detectordiameter = detectorparameters['detectordiameter']
-        pixelsize = detectorparameters['pixelsize']
-        dim = detectorparameters['dim']
-
-#     print "kf_direction,pixelsize,detectordistance", kf_direction, pixelsize, detectordistance
-
-    # ---simulation
-    # print "Reference Element or structure label", key_material
-
-    # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
-
-    # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin,
-                                                        [grain], 1,
-                                                        fastcompute=1,
-                                                        fileOK=0, verbose=0,
-                                                        kf_direction=kf_direction,
-                                                        ResolutionAngstrom=ResolutionAngstrom
-                                                        )
-    # 2theta,chi of spot which are on camera (with harmonics)
-    TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
-                                         kf_direction=kf_direction,
-                                         detectordistance=detectordistance,
-                                         detectordiameter=detectordiameter,
-                                         pixelsize=pixelsize,
-                                         dim=dim)
-
-#     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-#     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-    if len(TwicethetaChi[0]) == 0:
-        return None
-
-    return INDEX.getProximity(TwicethetaChi,
-                              twicetheta_data / 2., chi_data,
-                              angtol=ang_tol, proxtable=0)
-
-
-def getMatchingRate(indexed_spots_dict, test_Matrix, ang_tol,
-                    simulparam, removeharmonics=1,
-                    detectordiameter=165.):
-    """
-    get matching rate for an orientation matrix
-                    for all exp. data stored in dictionary indexed_spots_dict
-
-    input:
-    indexed_spots_dict    : dict of exp spots (indexed or not)
-    test_Matrix            : orientation matrix (3x3)
-    ang_tol                : angular tolerance below which a pair between
-                            exp. and simulated spots is accepted
-    simulparam            : tuple containing:
-                    emin, emax, key_material, detectorparameters
-    removeharmonics        : 0 or 1 to compute respectively without or with harmonics in simulated pattern
-
-    return:
-    [0]             number of pairs between exp and theo spots
-    [1]            number of theo. spots
-    [2]              matching rate (ratio*100 of the two previous numbers)
-    """
-    emin, emax, key_material, detectorparameters = simulparam
-    # TODO to shorten
-    ind, twicetheta_data, chi_data , posx, posy, intensity_data = getSpotsData(indexed_spots_dict).T
-
-    # simulated data
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
-    (Twicetheta, Chi,
-     Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(grain,
-                                       emin, emax,
-                                       detectorparameters,
-                                       removeharmonics=removeharmonics,
-                                       detectordiameter=detectordiameter * 1.25)
-
-    nb_of_simulated_spots = len(Twicetheta)
-
-    # find close pairs between exp. and theo. spots
-    res = SpotLinks(twicetheta_data, chi_data, intensity_data,  # experimental data
-                    ang_tol,  # tolerance angle
-                    Twicetheta, Chi, Miller_ind, posx, posy, Energy,
-                    absoluteindex=None)
-
-    if res == 0 or len(res[1]) == 0:
-        return None, nb_of_simulated_spots, None
-
-    print("res_links", res[1])
-
-    print("nb of exp spots data probed :", len(twicetheta_data))
-
-    nb_of_links = len(res[1])
-
-    matching_rate = 100.*nb_of_links / nb_of_simulated_spots
-
-
-    return nb_of_links, nb_of_simulated_spots, matching_rate
-
-
-def getStatsOnMatching(List_of_Angles, twicetheta_data, chi_data, key_material,
-                       ang_tol=1.,
-                       emin=5,
-                       emax=25,
-                       intensity_data=None,
-                       verbose=0):
-    """
-    return matching rate in terms of nb of close pairs of spots (exp. and simul. ones)
-    within angular tolerance
-    (simulated pattern contains harmonics)
-     
-    :param List_of_Angles: list of 3 angles (EULER angles)
-    :type List_of_Angles: list of 3 floats
-    :param twicetheta_data, chi_data: experimental spots angles coordinates (kf vectors)
-    :type twicetheta_data, chi_data: 2 arrays of floats
-    :param key_material: key for material used in simulation
-    :type key_material: string
-    :param ang_tol: matching angular tolerance to form pairs
-    :type ang_tol: float
-    """
-    kk = 0
-    allmatchingrate = []
-    for angles_sol in List_of_Angles:
-
-        test_Matrix = GT.fromEULERangles_toMatrix(angles_sol)
-
-        res = Angular_residues(test_Matrix, twicetheta_data, chi_data,
-                                     ang_tol=ang_tol,
-                                     key_material=key_material,
-                                     emin=emin,
-                                     emax=emax)
-
-        if res is None:
-            continue
-
-        matching_rate = 100.*res[2] / res[3]
-        absolute_matching_rate = res[2]
-        allmatchingrate.append(matching_rate)
-
-        if verbose:
-            print("*"*30)
-            print("res for k:%d and angles: [%.1f,%.1f,%.1f]" % (kk, angles_sol[0], angles_sol[1], angles_sol[2]))
-    #        print "res",res[2:]
-            print("Matching rate ----(in %%):                %.2f " % matching_rate)
-            print("Nb of close spot pairs (< %.2f deg) : %d" % (ang_tol, res[2]))
-            print("Nb of simulated spots : %d" % res[3])
-            print("mean angular residues %.2f deg." % res[4])
-            print("highest residues %.2f deg." % res[5])
-        kk += 1
-
-    return np.argsort(np.array(allmatchingrate))[::-1], allmatchingrate
 
 
 def refineUBSpotsFamily(indexed_spots_dict, grain_index,
@@ -4660,7 +3998,7 @@ def proposeEnergyforMatching(indexed_spots_dict, test_Matrix, ang_tol,
     for energy in np.linspace(ener_min, ener_max,
                               int((ener_max - ener_min) / step) + 1):
         simulparam[1] = energy
-        res = getMatchingRate(indexed_spots_dict, test_Matrix, 0.1,
+        res = matchingrate.getMatchingRate(indexed_spots_dict, test_Matrix, 0.1,
                               simulparam, removeharmonics=removeharmonics)
         RES.append([energy] + list(res))
 
@@ -5126,1020 +4464,6 @@ def plotindexingMap_scalar(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
     show()
 
 
-#--- -----------------  Tests
-def example_angularresidues_np(ang_tol):
-    
-    detectorparameters = {}
-    detectorparameters['kf_direction'] = 'Z>0'
-    detectorparameters['detectorparameters'] = [70, 1024, 1024, 0, -1]
-    detectorparameters['detectordiameter'] = 170
-    detectorparameters['pixelsize'] = 0.079
-    detectorparameters['dim'] = (2048, 2048)
-    
-    test_Matrix = np.eye(3)
-    # random data
-    expdata = np.array([[  59.2164, -66.6041],
-       [  54.7398, -88.3875],
-       [  43.0763, -83.0983],
-       [  58.895 , -88.7721],
-       [  39.3337, -65.6132],
-       [  52.4121, -58.2399],
-       [  47.6515, -100.4466],
-       [  47.9575, -83.2749],
-       [  44.0163, -64.8536],
-       [  56.4791, -57.2717],
-       [  48.434 , -115.549 ],
-       [  52.2976, -101.5099],
-       [  28.9731, -75.0536],
-       [  53.191 , -83.4718],
-       [  49.0293, -64.0107],
-       [  41.0373, -47.0408],
-       [  52.3338, -117.1192],
-       [  37.1386, -98.1813],
-       [  58.7918, -83.6928],
-       [  54.3839, -63.0704],
-       [  55.9659, -41.1327],
-       [  39.5682, -118.0816],
-       [  56.3583, -118.8114],
-       [  41.6482, -74.3025],
-       [  49.9809, -43.6082],
-       [  53.2592, -130.741 ],
-       [  44.4802, -120.2579],
-       [  49.9426, -100.9654],
-       [  38.9334, -47.8105]])
-    
-    twicetheta_data, chi_data = expdata.T
-    
-    AngRes = Angular_residues_np(test_Matrix, twicetheta_data, chi_data,
-                    ang_tol=ang_tol,
-                    key_material='CdTe',
-                    emin=5, emax=40,
-                    ResolutionAngstrom=False,
-                    detectorparameters=detectorparameters)
-    
-    if AngRes is not None:
-        allresidues, res, nb_in_res, nb_of_theospots, meanres, maxi = AngRes
-        
-        matchringrate = 1.*nb_in_res / nb_of_theospots * 100.
-        print('nb of theo spots', nb_of_theospots)
-        print("matching rate is %.2f" % matchringrate)
-
-def test_old(database):
-    """
-    test refinement and multigrains indexing with class
-    """
-    readfile = 'test.cor'
-
-    DictLT.dict_Materials['DIAs'] = ['DIAs', [3.16, 3.16, 3.16, 90, 90, 90], 'dia']
-    firstmatchingtolerance = 1.
-
-    if 1:
-
-        key_material = 'Si'
-        emin = 5
-        emax = 25
-
-        MatchingRate_Threshold = 30  # percent
-
-        dictimm = {'sigmagaussian':(0.5, 0.5, 0.5),
-                   'Hough_init_sigmas' : (1, .7),
-                   'Hough_init_Threshold':1,
-                   'rank_n':20,
-                   'useintensities':0}
-
-    # read database
-    if database is None:
-        # ------------------------------------------------------------------------
-        # LOAD High resolutio diamond (1 deg step)
-        database = IMM.DataBaseImageMatchingSi()
-        # ------------------------------------------------------------------------
-
-    # create a fake data file of randomly oriented crystal
-    if readfile is None:
-        outputfilename = 'testSirandom'
-        nbgrains = 3
-        file_to_index = createFakeData(key_material, nbgrains, outputfilename=outputfilename)
-    else:
-        file_to_index = readfile
-
-
-    # read spots data and init dictionary of indexed spots
-    DataSet = spotsset()
-    DataSet.importdatafromfile(file_to_index)
-
-    TwiceTheta_Chi_Int = DataSet.getSpotsExpData()
-    totalnbspots = len(TwiceTheta_Chi_Int[0])
-    # Find the best orientations and gives a table of results
-
-    DataSet.key_material = key_material
-    DataSet.emin = emin
-    DataSet.emax = emax
-
-
-    # potential orientation solutions from image matching
-    bestEULER = IMM.bestorient_from_2thetachi(TwiceTheta_Chi_Int,
-                                                                 database,
-                                                               dictparameters=dictimm)
-
-    bestEULER, bestmatchingrates = filterEulersList(bestEULER, TwiceTheta_Chi_Int, key_material, emax,
-                                                    rawAngularmatchingtolerance=firstmatchingtolerance,
-                                                    MatchingRate_Threshold=MatchingRate_Threshold,
-                                                    verbose=1)
-
-
-    MatrixPile = bestEULER.tolist()
-
-
-
-    matrix_to_test = True
-    grain_index = 0  # current grain to be indexed
-
-    indexedgrains = []
-
-    selectedspots_index = None
-
-    AngleTol_0 = 1.
-    while matrix_to_test:
-
-        if len(MatrixPile) != 0:
-            eulerangles = MatrixPile.pop(0)
-            trialmatrix = GT.fromEULERangles_toMatrix(eulerangles)
-        else:
-            print("no more orientation to test (euler angles)")
-            print("need to use other indexing techniques, Angles LUT, cliques help...")
-            return
-
-#        #add a matrix in dictionary
-#        DataSet.dict_grain_matrix[grain_index] = trialmatrix
-
-        print("dict_grain_matrix before initial indexing with a raw orientation")
-        print(DataSet.dict_grain_matrix)
-
-        # indexation of spots with raw (un refined) matrices & #update dictionaries
-        print("\n\n---------------indexing grain  #%d-----------------------" % grain_index)
-        print("eulerangles", eulerangles)
-#        print "selectedspots_index", selectedspots_index
-#        print "making raw links for grain #%d" % grain_index
-        #TODO update
-        DataSet.AssignHKL(eulerangles, grain_index, AngleTol_0,
-                              use_spots_in_currentselection=selectedspots_index)
-
-
-#        print "dict_grain_matrix after raw matching", DataSet.dict_grain_matrix
-#        print "dict_matching_rate", DataSet.dict_grain_matching_rate
-
-        # plot
-        if DataSet.dict_grain_matrix is not None:
-            DataSet.plotgrains(exp_data=TwiceTheta_Chi_Int,
-                               titlefig='%d Exp. spots data (/%d) after raw matching grain #%d' % \
-                               (len(TwiceTheta_Chi_Int[0]), totalnbspots, grain_index))
-        else:
-            print("plot the best last orientation matrix candidate")
-            IMM.Plot_compare_2thetachi(eulerangles, TwiceTheta_Chi_Int[0], TwiceTheta_Chi_Int[1],
-                               verbose=1, key_material=DataSet.key_material, emax=DataSet.emax,
-                               EULER=1)
-
-            IMM.Plot_compare_gnomondata(eulerangles, TwiceTheta_Chi_Int[0], TwiceTheta_Chi_Int[1],
-                               verbose=1, key_material=DataSet.key_material, emax=DataSet.emax,
-                               EULER=1)
-
-
-        AngleTol_List = [0.5, 0.2, 0.1]
-
-        # TODO: data flow and branching will be improved later
-        for k, AngleTol in enumerate(AngleTol_List):
-
-            print("\n\n refining grain #%d step -----%d\n" % (grain_index, k))
-        #    print "initial matrix", dict_grain_matrix[grain_index]
-
-
-            refinedMatrix = DataSet.refineUBSpotsFamily(grain_index,
-                                DataSet.dict_grain_matrix[grain_index],
-                                use_weights=1)
-
-            if refinedMatrix is None:
-                break
-
-            # extract data not yet indexed or temporarly indexed
-            print("\n\n---------------extracting data-----------------------")
-            toindexdata = DataSet.getUnIndexedSpotsallData(exceptgrains=indexedgrains)
-            absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
-            intensity_data = toindexdata[:, 5]
-            absoluteindex = np.array(absoluteindex, dtype=np.int)
-
-            TwiceTheta_Chi_Int = np.array([twicetheta_data, chi_data, intensity_data])
-
-#            print "spots index to index", toindexdata[:20, 0]
-#            print "twicetheta_data", toindexdata[:5, 1]
-
-            print("\n\n---------------extracting data-----------------------")
-            indexation_res, nbtheospots, missingRefs = DataSet.getSpotsLinks(refinedMatrix,
-                                       exp_data=TwiceTheta_Chi_Int,
-                                       useabsoluteindex=absoluteindex,
-                                       removeharmonics=1,
-                                       veryclose_angletol=AngleTol,
-                                       verbose=0)
-
-        #        print 'nb of links', len(indexation_res[1])
-
-            if indexation_res is None:
-                print("no unambiguous close links between exp. and  theo. spots have been found!")
-                break
-
-            # TODO: getstatsonmatching before updateindexation... ?
-            nb_updates = DataSet.updateIndexationDict(indexation_res,
-                                                      grain_index,
-                                                      overwrite=1)
-
-
-            print("\nnb of indexed spots for this refined matrix: %d / %d" % (nb_updates, nbtheospots))
-            print("with tolerance angle : %.2f deg" % AngleTol)
-
-            Matching_rate = 100.*nb_updates / nbtheospots
-
-            if Matching_rate < 50.:
-                # matching rate too low
-                # then remove previous indexed data and launch again imagematching
-                print("matching rate too low")
-                # there are at least one indexed grain
-                # so remove the corresponding data and restart the imagematching
-                if len(indexedgrains) > 0:
-
-                    print("\n\n---------------------------------------------")
-                    print("Use again imagematching on purged data from previously indexed spots")
-                    print("---------------------------------------------\n\n")
-
-#                    print "indexedgrains", indexedgrains
-
-                    # extract data not yet indexed or temporarly indexed
-                    toindexdata = DataSet.getUnIndexedSpotsallData(exceptgrains=indexedgrains)
-                    absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
-                    intensity_data = toindexdata[:, 5]
-
-                    TwiceTheta_Chi_Int = np.array([twicetheta_data, chi_data, intensity_data])
-
-
-
-                    # potential orientation solutions from image matching
-                    bestEULER2 = IMM.bestorient_from_2thetachi(TwiceTheta_Chi_Int, database,
-                                                                               dictparameters=dictimm)
-
-                    bestEULER2, bestmatchingrates2 = filterEulersList(bestEULER, TwiceTheta_Chi_Int, key_material, emax,
-                                                    rawAngularmatchingtolerance=firstmatchingtolerance,
-                                                    MatchingRate_Threshold=MatchingRate_Threshold,
-                                                    verbose=1)
-
-                    # overwrite (NOT add in) MatrixPile
-                    MatrixPile = bestEULER2.tolist()
-
-                    selectedspots_index = absoluteindex
-
-                    print("working with a new set of trial orientations")
-
-                    # exit the for loop of refinement and start with other set of spots
-                    break
-
-                # no data to remove
-                else:
-                    break
-
-            # matching rate is high than threshold
-            else:
-                # keep on refining and reducing tolerance angle
-                # or for the lowest tolerance angle, consider the refinement-indexation is completed
-                DataSet.dict_grain_matrix[grain_index] = refinedMatrix
-                DataSet.dict_grain_matching_rate[grain_index] = [nb_updates, Matching_rate]
-
-
-                DataSet.plotgrains(exp_data=DataSet.getSpotsExpData(),
-                                   titlefig='%d Exp. spots data (/%d), after refinement of grain #%d at step #%d' % \
-                                   (totalnbspots, totalnbspots, grain_index, k))
-
-                # if this is the last tolerance step
-                if k == len(AngleTol_List) - 1:
-
-                    print("\n---------------------------------------------")
-                    print("indexing completed for grain #%d with matching rate %.2f " % (grain_index,
-                                                                                       Matching_rate))
-                    print("---------------------------------------------\n")
-                    indexedgrains.append(grain_index)
-                    grain_index += 1
-
-
-#                    spots_G0 = DataSet.getSpotsFamily(0)
-#                    print "len(G0)", len(spots_G0)
-#                    print "G0", spots_G0
-
-def test(database):
-    """
-    test refinement and multigrains indexing with class
-    """
-
-#    readfile = 'test6.cor'
-#    readfile = 'test7.cor'
-    readfile = 'test11.cor'
-#    readfile = None
-
-    DictLT.dict_Materials['DIAs'] = ['DIAs', [3.16, 3.16, 3.16, 90, 90, 90], 'dia']
-
-    key_material = 'Si'
-    emin = 5
-    emax = 25
-
-    MatchingRate_Threshold = 30  # percent
-
-
-    # read database
-    if database is None:
-        # ------------------------------------------------------------------------
-        # LOAD High resolutio diamond (1 deg step)
-        database = IMM.DataBaseImageMatchingSi()
-        # ------------------------------------------------------------------------
-
-    dictimm = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':20,
-               'useintensities':0}
-
-    # create a fake data file of randomly oriented crystal
-    if readfile is None:
-        outputfilename = 'testSirandom'
-        nbgrains = 5
-        removespots = [9, 8, 15, 6, 2]
-        addspots = 6
-#        removespots = None
-#        addspots = None
-        file_to_index = createFakeData(key_material, nbgrains,
-                                       outputfilename=outputfilename,
-                                       removespots=removespots,
-                                       addspots=addspots)
-    else:
-        file_to_index = readfile
-
-    # read spots data and init dictionary of indexed spots
-    DataSet = spotsset()
-    DataSet.importdatafromfile(file_to_index)
-    totalnbspots = DataSet.nbspots
-
-    DataSet.setMaterial(key_material)
-    DataSet.setEnergyBand(emin, emax)
-
-    DataSet.setImageMatchingParameters(dictimm, database)
-
-    grain_index = 0  # current grain to be indexed
-    AngleTol_0 = 1.
-    AngleTol_List = [0.5, 0.2, 0.1]
-    PLOTRESULTS = 0
-    VERBOSE = 0
-
-    provideNewMatrices = True
-    indexgraincompleted = False
-
-    while 1:
-
-        nb_remaining_spots = len(DataSet.getUnIndexedSpots())
-
-        print("\n nb of spots to index  : %d\n" % nb_remaining_spots)
-        if nb_remaining_spots < 2:
-            print("%d spots have been indexed over %d" % (totalnbspots - nb_remaining_spots, totalnbspots))
-            print("indexing rate is --- : %.1f percents" % (100.*(totalnbspots - nb_remaining_spots) / totalnbspots))
-            print("indexation of %s is completed" % DataSet.filename)
-#            self.dict_grain_matching_rate[grain_index] = [0, 0]
-            break
-
-        if 1:
-            print("start to index grain #%d" % grain_index)
-
-        if provideNewMatrices == True:
-            # potential orientation solutions from image matching
-            print("providing new set of matrices")
-
-            (bestUB,
-             bestmatchingrates,
-             nbspotsIMM) = DataSet.getOrients_ImageMatching(MatchingRate_Threshold=MatchingRate_Threshold,
-                                                        exceptgrains=DataSet.indexedgrains,
-                                                        verbose=VERBOSE)
-
-            print("\n working with a new stack of orientation matrices")
-
-            # update (overwrite) candidate orientMatrix object list
-            DataSet.UBStack = bestUB
-
-        if DataSet.UBStack is not None and len(DataSet.UBStack) != 0:
-            print("%d Matrices are candidates in the Matrix Pile !" % len(DataSet.UBStack))
-            if VERBOSE:
-                print("\n  -----   Taking a new matrix from the matrices stack  -------")
-            UB = DataSet.UBStack.pop(0)
-
-        else:
-            print("matrices stack to test is empty")
-            print("%d spot(s) have not been indexed" % nb_remaining_spots)
-
-#            print "You may need to use other indexing techniques, Angles LUT, cliques help..."
-            break
-
-        # add a matrix in dictionary
-        DataSet.dict_grain_matrix[grain_index] = UB.matrix
-
-#        print "dict_grain_matrix before initial indexing with a raw orientation"
-#        print DataSet.dict_grain_matrix
-
-        # indexation of spots with raw (un refined) matrices & #update dictionaries
-        print("\n\n---------------indexing grain  #%d-----------------------" % grain_index)
-        if VERBOSE:
-            print("eulerangles", UB.eulers)
-
-        # select data, link spots, update spot dictionary, update matrix dictionary
-        DataSet.AssignHKL(UB.eulers, grain_index, AngleTol_0, verbose=VERBOSE)
-
-        # plot
-        if PLOTRESULTS:
-            if DataSet.dict_grain_matrix is not None:
-                DataSet.plotgrains(exp_data=DataSet.TwiceTheta_Chi_Int,
-                                   titlefig='%d Exp. spots data (/%d) after raw matching grain #%d' % \
-                                   (nbspotsIMM, totalnbspots, grain_index))
-
-        print("\n\n---------------refining grain orientation #%d-----------------" % grain_index)
-        # TODO: data flow and branching will be improved later
-        for k, AngleTol in enumerate(AngleTol_List):
-            if VERBOSE:
-                print("\n\n refining grain #%d step -----%d\n" % (grain_index, k))
-
-            refinedMatrix = DataSet.refineUBSpotsFamily(grain_index,
-                                DataSet.dict_grain_matrix[grain_index],
-                                use_weights=1,
-                                verbose=VERBOSE)
-
-            if refinedMatrix is not None:
-
-                UBrefined = OrientMatrix(matrix=refinedMatrix)
-    #            print "UBrefined", UBrefined.matrix
-                DataSet.dict_grain_matrix[grain_index] = UBrefined.matrix
-                # select data, link spots, update spot dictionary, update matrix dictionary
-                Matching_rate, nb_updates, missingRefs = DataSet.AssignHKL(UBrefined,
-                                                                                grain_index,
-                                                                                AngleTol,
-                                                                                verbose=VERBOSE)
-
-            if Matching_rate < 50. or refinedMatrix is None:
-                # matching rate too low
-                # then remove previous indexed data and launch again imagematching
-                if 1:
-                    print("matching rate too low")
-
-                DataSet.resetSpotsFamily(grain_index)
-
-                # there are at least one indexed grain and this dataset has not been already tested with the matrix stack
-                # so remove the corresponding data and restart the imagematching
-                if len(DataSet.indexedgrains) > 0 and indexgraincompleted == True:
-                    # exit the 'for' loop of refinement and start with other set of spots
-                    provideNewMatrices = True
-                    indexgraincompleted = False
-                    print("Need to re apply imagematching on purged data")
-                    break
-
-                # no data to remove
-                # keep on trying matrix in matrix stack
-                else:
-                    provideNewMatrices = False
-                    print("Need to look at the next matrix")
-                    break
-
-            # matching rate is higher than threshold
-            else:
-                if PLOTRESULTS:
-                    DataSet.plotgrains(exp_data=DataSet.getSpotsExpData(),
-                                   titlefig='%d Exp. spots data (/%d), after refinement of grain #%d at step #%d' % \
-                                   (totalnbspots, totalnbspots, grain_index, k))
-
-                # if this is the last tolerance step
-                if k == len(AngleTol_List) - 1:
-
-                    if 1:
-                        print("\n---------------------------------------------")
-                        print("indexing completed for grain #%d with matching rate %.2f " % (grain_index,
-                                                                                           Matching_rate))
-                        print("---------------------------------------------\n")
-
-                    DataSet.indexedgrains.append(grain_index)
-                    provideNewMatrices = False
-                    indexgraincompleted = True
-                    grain_index += 1
-
-    return DataSet
-
-
-def test_index(database):
-    """
-    test refinement and multigrains indexing with class
-    """
-#    readfile = 'test6.cor'
-#    readfile = 'test7.cor'
-#    readfile = 'test10.cor'
-    readfile = None
-
-    key_material = 'Si'
-    emin = 5
-    emax = 25
-
-    MatchingRate_Threshold = 30  # percent
-
-    # read database
-    if database is None:
-        # ------------------------------------------------------------------------
-        # LOAD High resolutio diamond (1 deg step)
-        database = IMM.DataBaseImageMatchingSi()
-        # ------------------------------------------------------------------------
-
-    dictimm = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':20,
-               'useintensities':0}
-
-    # create a fake data file of randomly oriented crystal
-    if readfile is None:
-        outputfilename = 'testSirandom'
-        nbgrains = 5
-        removespots = [9, 8, 15, 6, 2]
-        addspots = 6
-#        removespots = None
-#        addspots = None
-        file_to_index = createFakeData(key_material, nbgrains,
-                                       outputfilename=outputfilename,
-                                       removespots=removespots,
-                                       addspots=addspots)
-    else:
-        file_to_index = readfile
-
-
-    DataSet = spotsset()
-
-    DataSet.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database)
-
-    DataSet.plotallgrains()
-
-    return DataSet
-
-
-def test_compare_IMM_IAM(database, nbgrains, twins=0):
-    """
-    test refinement and multigrains indexing with class
-    
-    comparison Indexing Matching Method and indexing Angles Method
-    """
-#    readfile = 'test6.cor'
-#    readfile = 'test7.cor'
-#    readfile = 'test10.cor'
-    import time, os
-    readfile = os.path.join('./Examples/strain_calib_test2', 'dat_Wmap_WB_14sep_d0_500MPa_0045_LT_0.cor')
-
-    key_material = 'W'
-    emin = 5
-    emax = 22
-
-    nbGrainstoFind = 'max'  # '1 #'max'
-
-    # read database
-    if database is None:
-        # ------------------------------------------------------------------------
-        # LOAD High resolutio diamond (1 deg step)
-        database = IMM.DataBaseImageMatchingSi()
-        # ------------------------------------------------------------------------
-
-    MatchingRate_Threshold_Si = 30  # percent for simulated Si
-    dictimm_Si = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':20,
-               'useintensities':0}
-
-    MatchingRate_Threshold_W = 15  # percent W
-    dictimm_W = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':40,
-               'useintensities':0}
-
-
-    MatchingRate_Threshold = MatchingRate_Threshold_W
-    dictimm = dictimm_W
-
-    # create a fake data file of randomly oriented crystal
-    if readfile is None:
-        outputfilename = 'testSirandom'
-#        nbgrains = 2
-        removespots = np.zeros(nbgrains)
-        addspots = 0
-#        removespots = None
-#        addspots = None
-        file_to_index = createFakeData(key_material, nbgrains,
-                                       outputfilename=outputfilename,
-                                       removespots=removespots,
-                                       addspots=addspots,
-                                       twins=twins)
-    else:
-        file_to_index = readfile
-
-#    t0 = time.time()
-#
-#    DataSet = spotsset()
-#
-#    DataSet.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database,
-#                          IMM=True,
-#                          nbGrainstoFind=nbGrainstoFind)
-#
-#    tf1 = time.time()
-#    print "imageMatching execution time %.3f sec." % (tf1 - t0)
-#
-#    DataSet.plotallgrains()
-
-    # IAM technique
-    print("\n\n\n\n\n")
-    print("ANGLES LUT ---------------------------------------------")
-    print("\n\n\n\n\n")
-
-    t0_2 = time.time()
-    DataSet_2 = spotsset()
-
-    DataSet_2.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database, IMM=False,
-                            MatchingRate_List=[40, 50, 60],
-                            nbGrainstoFind=nbGrainstoFind)
-
-    tf2 = time.time()
-    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
-
-    DataSet_2.plotallgrains()
-    return DataSet_2  # , DataSet_2
-
-
-def test_IAM_real():
-    """
-    test refinement and multigrains indexing with class wit angles LUT indexing technique
-    """
-#    readfile = 'test6.cor'
-#    readfile = 'test7.cor'
-#    readfile = 'test10.cor'
-    import time, os
-    readfile = os.path.join('./Examples/UO2', 'dat_UO2_A163_2_0028_LT_0.cor')
-
-    key_material = 'UO2'
-    emin = 5
-    emax = 22
-
-    nbGrainstoFind = 3  # 'max'#'1 #'max'
-
-    MatchingRate_Threshold_Si = 30  # percent for simulated Si
-    dictimm_Si = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':20,
-               'useintensities':0}
-
-    MatchingRate_Threshold_W = 15  # percent W
-    dictimm_W = {'sigmagaussian':(0.5, 0.5, 0.5),
-               'Hough_init_sigmas' : (1, .7),
-               'Hough_init_Threshold':1,
-               'rank_n':40,
-               'useintensities':0}
-
-    MatchingRate_Threshold = MatchingRate_Threshold_W
-    dictimm = dictimm_W
-
-    database = None
-    file_to_index = readfile
-
-#    t0 = time.time()
-#
-#    DataSet = spotsset()
-#
-#    DataSet.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database,
-#                          IMM=True,
-#                          nbGrainstoFind=nbGrainstoFind)
-#
-#    tf1 = time.time()
-#    print "imageMatching execution time %.3f sec." % (tf1 - t0)
-#
-#    DataSet.plotallgrains()
-
-    # IAM technique
-    print("\n\n\n\n\n")
-    print("ANGLES LUT ---------------------------------------------")
-    print("\n\n\n\n\n")
-
-    dict_params = {'MATCHINGRATE_THRESHOLD_IAL':60,
-                   'MATCHINGRATE_ANGLE_TOL' : 0.2,
-                   'NBMAXPROBED' : 10,
-                   'central spots indices' : 10}
-
-    t0_2 = time.time()
-    DataSet_2 = spotsset()
-
-    DataSet_2.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database, IMM=False,
-                            MatchingRate_List=[20, 20, 20],
-                            nbGrainstoFind=nbGrainstoFind)
-
-    tf2 = time.time()
-    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
-
-    DataSet_2.plotallgrains()
-    return DataSet_2  # , DataSet_2
-
-
-def testIAM():
-    """
-    test indexing by angles Matching
-    """
-    readfile = None
-
-    spot_index_central = [0, 1, 2]
-    key_material = 'Cu'
-    emin = 5
-    emax = 22
-
-    nbmax_probed = 8000000
-    nbGrainstoFind = 10
-
-    angleTolerance_LUT = .1
-    MatchingRate_Angle_Tol = 0.001
-    Matching_Threshold_Stop = 50.  # minimum to stop the loop for searching potential solution
-
-    # create a fake data file of randomly oriented crystal
-    if readfile is None:
-        outputfilename = 'toto'
-        nbgrains = nbGrainstoFind
-        removespots = [0] * nbgrains
-        addspots = 3
-#        removespots = None
-#        addspots = None
-        file_to_index = createFakeData(key_material, nbgrains,
-                                       emin=emin, emax=emax,
-                                       outputfilename=outputfilename,
-                                       removespots=removespots,
-                                       addspots=addspots)
-    else:
-        file_to_index = readfile
-
-    # read data
-    data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(file_to_index)[1:]
-    tth = 2 * data_theta
-
-    exp_data = np.array([tth, Chi])
-
-    thechi_exp = np.array([data_theta, Chi]).T
-
-    from .indexingAnglesLUT import calculdist_from_thetachi
-    table_angdist = calculdist_from_thetachi(thechi_exp, thechi_exp)
-
-    latticeparams = DictLT.dict_Materials[key_material][1]
-    B = CP.calc_B_RR(latticeparams)
-
-    nbmax_probed = min(nbmax_probed, len(data_theta))
-    #---------------------------------------------------------------
-    import time
-    t0_2 = time.time()
-    DataSet_2 = spotsset()
-
-    database = None
-    dictimm = None
-    DataSet_2.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database, IMM=False,
-                            MatchingRate_List=[20, 20, 20],
-                            nbGrainstoFind=nbGrainstoFind,
-                            verbose=0)
-
-    tf2 = time.time()
-    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
-
-    DataSet_2.plotallgrains()
-
-
-#--- CuVia analysis
-def testtwin(fileindex=2301, nbGrainstoFind=3,
-             dirname='/home/micha/LaueProjects/CuVia/Carto', dirtowrite=None):
-    """
-    test twin
-    """
-    if dirtowrite is None:
-        dirtowrite = dirname
-
-#     spot_index_central = [0, 1, 2]
-    key_material = 'Si'
-    emin = 5
-    emax = 25
-
-    file_to_index = os.path.join(dirname, 'Si_TSV.cor')
-
-    t0_2 = time.time()
-    DataSet_Si = spotsset()
-
-    database = None
-
-    dict_params = {'MATCHINGRATE_THRESHOLD_IAL': 60,
-                   'MATCHINGRATE_ANGLE_TOL': 0.2,
-                   'NBMAXPROBED': 10,
-                   'central spots indices': 10,
-                   'AngleTolLUT': .5,
-                   'UseIntensityWeights': True,
-                   'MinimumNumberMatches': 10}
-
-    DataSet_Si.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database,
-                             IMM=False,
-                            MatchingRate_List=[20, 20, 20], angletol_list=[0.5, 0.2],
-                            nbGrainstoFind=1,
-                            verbose=0)
-
-    tf2 = time.time()
-    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
-
-    DataSet_Si.plotallgrains()
-
-    # ind, 2theta, chi, posx, posy, int
-    dataSubstrate = DataSet_Si.getSpotsFamilyExpData(0).T
-
-    DataSet_Cu = spotsset()
-    DataSet_Cu.importdatafromfile(file_to_index)
-
-    DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
-
-    key_material = 'Cu'
-    dict_params = {'MATCHINGRATE_THRESHOLD_IAL':40,
-                   'MATCHINGRATE_ANGLE_TOL': 0.2,
-                   'NBMAXPROBED': 20,
-                   'central spots indices': 3,
-                   'AngleTolLUT': .5,
-                   'UseIntensityWeights':True,
-                   'MinimumNumberMatches': 10}
-
-    dictMat = {}
-    dictMR = {}
-    dictNB = {}
-    dictstrain = {}
-    dictRes = (dictMat, dictMR, dictNB, dictstrain)
-
-    nstart = fileindex
-    nend = fileindex
-
-    for k in list(range(nstart, nend + 1)):  # 92 - 1708
-        file_to_index = os.path.join(dirname, 'TSVCU_%04d.cor' % k)
-
-        print("\n\nINDEXING    file : %s\n\n" % file_to_index)
-
-        DataSet_Cu = spotsset()
-        DataSet_Cu.importdatafromfile(file_to_index)
-
-        DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
-
-        # init res dict
-        DataSet_Cu.dict_grain_matrix = [0, 0, 0]
-        DataSet_Cu.dict_grain_matching_rate = [[-1, -1], [-1, -1], [-1, -1]]
-
-        # filling results
-        dictMat[k] = [0, 0, 0]
-        dictMR[k] = [-1, -1, -1]
-        dictNB[k] = [-1, -1, -1]
-        dictstrain[k] = [0, 0, 0]
-        previousResults = None
-
-        if k > nstart and dictMat[k - 1][0] is not 0:
-            addMatrix = dictMat[k - 1][0]
-            previousResults = addMatrix, dictMR[k - 1][0], dictNB[k - 1][0]
-
-        DataSet_Cu.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database,
-                                 checkSigma3=True,
-                             use_file=0, IMM=False, angletol_list=[0.5, 0.5],
-                            MatchingRate_List=[10, 10, 10],
-                            nbGrainstoFind=nbGrainstoFind,
-                            verbose=0, previousResults=previousResults)
-
-        for nbgrain in list(range(nbGrainstoFind)):
-            dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
-            dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
-            dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
-            dictstrain[k][nbgrain] = DataSet_Cu.dict_grain_devstrain[nbgrain]
-
-        # intermediate saving
-        if (k % 100) == 0:
-#            dictRes = dictMat, dictMR, dictNB
-            filepickle = open('dictCuViaaddMatrix%04d_%04d' % (nstart, nend), 'w')
-            pickle.dump(dictRes, filepickle)
-            filepickle.close()
-
-    filepickle = open('dictCuViaaddMatrix%04d_%04d' % (nstart, nend), 'w')
-    pickle.dump(dictRes, filepickle)
-    filepickle.close()
-
-#        DataSet_Cu.plotallgrains()
-    return dictRes
-#    return DataSet_Si, DataSet_Cu
-
-
-def SiCu(nstart, nend):
-    """
-    shortcut of file serie indexation of Si and Cu grains
-    """
-    return test_SiCu(nstart=nstart, nend=nend)
-
-
-def test_SiCu(nstart=92, nend=1707):
-    """
-    test to index a file series with Si pattern and Cu pattern
-    with starting and ending image index as arguments
-    """
-    import pickle
-    spot_index_central = [0, 1, 2]
-    key_material = 'Si'
-    emin = 5
-    emax = 25
-    nbGrainstoFind = 1
-
-    import time, os
-    file_to_index = os.path.join('/home/micha/LaueProjects/CuVia/filecor', 'dat_TSVCU_0092.cor')
-
-    t0_2 = time.time()
-    DataSet_Si = spotsset()
-
-    database = None
-
-    dict_params = {'MATCHINGRATE_THRESHOLD_IAL':60,
-                   'MATCHINGRATE_ANGLE_TOL' : 0.2,
-                   'NBMAXPROBED' : 10,
-                   'central spots indices' : 10}
-
-    DataSet_Si.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database, IMM=False,
-                            MatchingRate_List=[20, 20, 20], angletol_list=[0.5, 0.2],
-                            nbGrainstoFind=nbGrainstoFind,
-                            verbose=0)
-
-    tf2 = time.time()
-    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
-
-    DataSet_Si.plotallgrains()
-
-
-    # ind, 2theta, chi, posx, posy, int
-    dataSubstrate = DataSet_Si.getSpotsFamilyExpData(0).T
-
-    DataSet_Cu = spotsset()
-    DataSet_Cu.importdatafromfile(file_to_index)
-
-    DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
-
-    key_material = 'Cu'
-    nbGrainstoFind = 3
-    dict_params = {'MATCHINGRATE_THRESHOLD_IAL':40,
-                   'MATCHINGRATE_ANGLE_TOL' : 0.2,
-                   'NBMAXPROBED' : 20,
-                   'central spots indices' : 3}
-
-    dictMat = {}
-    dictMR = {}
-    dictNB = {}
-
-    for k in list(range(nstart, nend + 1)):  # 92 - 1708
-        file_to_index = os.path.join('/home/micha/LaueProjects/CuVia/filecor', 'TSVCU_%04d.cor' % k)
-
-        print("\n\nINDEXING    file : %s\n\n" % file_to_index)
-
-        DataSet_Cu = spotsset()
-        DataSet_Cu.importdatafromfile(file_to_index)
-
-        DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
-
-        # init res dict
-        DataSet_Cu.dict_grain_matrix = [0, 0, 0]
-        DataSet_Cu.dict_grain_matching_rate = [[-1, -1], [-1, -1], [-1, -1]]
-
-        DataSet_Cu.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database,
-                             use_file=0, IMM=False, angletol_list=[0.5, 0.5],
-                            MatchingRate_List=[10, 10, 10],
-                            nbGrainstoFind=nbGrainstoFind,
-                            verbose=0)
-        # filling results
-        dictMat[k] = [0, 0, 0]
-        dictMR[k] = [-1, -1, -1]
-        dictNB[k] = [-1, -1, -1]
-        for nbgrain in list(range(nbGrainstoFind)):
-            dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
-            dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
-            dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
-
-        # intermediate saving
-        dictRes = dictMat, dictMR, dictNB
-        if (k % 100) == 0:
-            filepickle = open('dictCuVia%04d_%04d' % (nstart, nend), 'w')
-            pickle.dump(dictRes, filepickle)
-            filepickle.close()
-
-    filepickle = open('dictCuVia', 'w')
-    pickle.dump(dictRes, filepickle)
-    filepickle.close()
-
-#        DataSet_Cu.plotallgrains()
-    return dictRes
-#    return DataSet_Si, DataSet_Cu
-
-
 #--- ---------------------- index file series
 def index_fileseries(fileindexrange,
                      nbGrainstoFind=1,
@@ -6270,13 +4594,20 @@ def index_fileseries(fileindexrange,
         # intermediate saving
         if (k % 10) == 0:
 #            dictRes = dictMat, dictMR, dictNB
-            filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
-            pickle.dump(todump, filepickle)
-            filepickle.close()
+            # filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
+            # pickle.dump(todump, filepickle)
+            # filepickle.close()
 
-    filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
-    pickle.dump(todump, filepickle)
-    filepickle.close()
+            with open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w') as f:
+                pickle.dump(todump, f)
+
+    # filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
+    # pickle.dump(todump, filepickle)
+    # filepickle.close()
+
+    with open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w') as f:
+        pickle.dump(todump, f)
+
 
 #        DataSet_Cu.plotallgrains()
 
@@ -6300,7 +4631,8 @@ def mergeDictRes(list_of_dictfiles, outputfilename='MergedRes', dirname=None):
     print("list_of_dictfiles", list_of_dictfiles)
 
     for _file in list_of_dictfiles:
-
+      
+        
         filepickle = open(os.path.join(dirname, _file), 'r')
         Res = pickle.load(filepickle)
 
@@ -6312,13 +4644,18 @@ def mergeDictRes(list_of_dictfiles, outputfilename='MergedRes', dirname=None):
         dictNB = dict(list(dNB.items()) + list(dictNB.items()))
         dictstrain = dict(list(dstrain.items()) + list(dictstrain.items()))
         dictspots = dict(list(dspots.items()) + list(dictspots.items()))
+        
+
         filepickle.close()
 
     tuple_dicts = dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots
 
-    output_file = open(os.path.join(dirname, outputfilename), 'w')
-    pickle.dump(tuple_dicts, output_file)
-    output_file.close()
+    # output_file = open(os.path.join(dirname, outputfilename), 'w')
+    # pickle.dump(tuple_dicts, output_file)
+    # output_file.close()
+
+    with open(os.path.join(dirname, outputfilename), 'w') as f:
+        pickle.dump(tuple_dicts, f)
 
     return dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots
 
@@ -6560,9 +4897,6 @@ def index_fileseries_3(fileindexrange,
         CheckOrientations = IOLT.readCheckOrientationsFile(CheckOrientationsFile)
         # let s start with simple case of two signals
         
-        
-        
-
     # preparing dicts of results for all peaklists (key= imageindex)
     # values = several dicts (key = grainindex)
     dictMaterial = {}
@@ -6948,23 +5282,32 @@ def index_fileseries_3(fileindexrange,
         # intermediate saving
         if (imageindex % 10) == 0:
 #            dictRes = dictMat, dictMR, dictNB
-            filepickle = open(os.path.join(ResultsFolder, outputdict_filename), 'w')
-            pickle.dump(todump, filepickle)
-            filepickle.close()
+            # filepickle = open(os.path.join(ResultsFolder, outputdict_filename), 'w')
+            # pickle.dump(todump, filepickle)
+            # filepickle.close()
+
+            with open(os.path.join(ResultsFolder, outputdict_filename), 'wb') as f:
+                pickle.dump(todump, f)
 
         lastindex = imageindex
 
         # ind, 2theta, chi, posx, posy, int
 #        spots_to_remove = DataSet.getSpotsFamilyExpData(0).T
 
-    filepickle = open(os.path.join(ResultsFolder, 'LUT'), 'w')
-    pickle.dump(DataSet.LUT, filepickle)
-    filepickle.close()
+    # filepickle = open(os.path.join(ResultsFolder, 'LUT'), 'w')
+    # pickle.dump(DataSet.LUT, filepickle)
+    # filepickle.close()
+
+    with open(os.path.join(ResultsFolder, 'LUT'), 'wb') as f:
+        pickle.dump(DataSet.LUT, f)
 
 
-    filepickle = open(os.path.join(ResultsFolder, outputdict_filename), 'w')
-    pickle.dump(todump, filepickle)
-    filepickle.close()
+    # filepickle = open(os.path.join(ResultsFolder, outputdict_filename), 'w')
+    # pickle.dump(todump, filepickle)
+    # filepickle.close()
+
+    with open(os.path.join(ResultsFolder, outputdict_filename), 'wb') as f:
+        pickle.dump(todump, f)
 
 #        DataSet.plotallgrains()
 
@@ -6976,7 +5319,7 @@ def index_fileseries_3(fileindexrange,
 
     if build_hdf5:
 
-        from . import Lauehdf5 as LaueHDF5
+        import Lauehdf5 as LaueHDF5
 
         LaueHDF5.build_hdf5(outputdict_filename,
                                 dirname_dictRes=ResultsFolder,
@@ -7167,122 +5510,6 @@ def readIndexRefineConfigFile(filename):
     return dict_param
 
 
-if __name__ == '__main__':
-    
-    if 0:
-        initialparameters = {}
-    
-        LaueToolsProjectFolder = os.path.abspath(os.curdir)
-    
-        print('LaueToolProjectFolder', LaueToolsProjectFolder)
-    
-        MainFolder = os.path.join(LaueToolsProjectFolder, 'Examples', 'GeGaN')
-    
-        print("MainFolder", MainFolder)
-    
-        initialparameters['PeakList Folder'] = os.path.join(MainFolder,
-                                                    'datfiles')
-        initialparameters['IndexRefine PeakList Folder'] = os.path.join(MainFolder,
-                                                            'fitfiles')
-        initialparameters['PeakListCor Folder'] = os.path.join(MainFolder,
-                                                   'corfiles')
-        initialparameters['PeakList Filename Prefix'] = 'nanox2_400_'
-        initialparameters['IndexRefine Parameters File'] = os.path.join(MainFolder,
-                                                        'GeGaN.irp')
-        initialparameters['Detector Calibration File .det'] = os.path.join(MainFolder,
-                                                        'calibGe_nanowMARCCD165.det')
-        initialparameters['Detector Calibration File (.dat)'] = os.path.join(MainFolder,
-                                                         'nanox2_400_0000_LT_1.dat')
-        initialparameters['PeakList Filename Suffix'] = '.dat'
-    
-    
-    
-        print(initialparameters['IndexRefine Parameters File'])
-    
-    
-        dict_param_list = readIndexRefineConfigFile(initialparameters['IndexRefine Parameters File'])
-    
-        CCDparams, calibmatrix = IOLT.readfile_det(initialparameters['Detector Calibration File .det'],
-                                                      nbCCDparameters=8)
-    
-        Index_Refine_Parameters_dict = {}
-        Index_Refine_Parameters_dict['CCDCalibParameters'] = CCDparams[:5]
-        Index_Refine_Parameters_dict['pixelsize'] = CCDparams[5]
-        Index_Refine_Parameters_dict['framedim'] = CCDparams[6:8]
-    
-        Index_Refine_Parameters_dict['PeakList Folder'] = initialparameters['PeakList Folder']
-        Index_Refine_Parameters_dict['PeakListCor Folder'] = initialparameters['PeakListCor Folder']
-        Index_Refine_Parameters_dict['nbdigits'] = 4
-        Index_Refine_Parameters_dict['prefixfilename'] = initialparameters['PeakList Filename Prefix']
-        Index_Refine_Parameters_dict['suffixfilename'] = '.dat'
-        Index_Refine_Parameters_dict['prefixdictResname'] = initialparameters['PeakList Filename Prefix'] + \
-                                                            '_dict_'
-    
-        Index_Refine_Parameters_dict['PeakListFit Folder'] = initialparameters['IndexRefine PeakList Folder'] + '_test'
-        Index_Refine_Parameters_dict['Results Folder'] = initialparameters['IndexRefine PeakList Folder'] + '_test'
-    
-        Index_Refine_Parameters_dict['dict params list'] = dict_param_list
-        Index_Refine_Parameters_dict['Spots Order Reference File'] = None
-    
-    
-        print(Index_Refine_Parameters_dict)
-    
-        index_fileseries_3((0, 1, 1),
-                           Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                           saveObject=0,
-                           verbose=0,
-                           nb_materials=None,
-                           build_hdf5=False,
-                           prefixfortitle='',
-                           use_previous_results=False,
-                           CCDCalibdict=None)
-
-
-
-    if 1:
-        # E1_13_run2_0171.mccd
-        Index_Refine_Parameters_dict = {}
-
-        dict_params = [{'MATCHINGRATE THRESHOLD IAL':100.,
-                       'MATCHINGRATE ANGLE TOL': 0.5,
-                       'NBMAXPROBED': 30,
-                       'central spots indices': 5,
-                       'key material':'ZrO2Y2O3',
-                       'emin':5,
-                       'emax':23,
-                       'nbGrainstoFind': 2}
-                       ]
-        
-        CCDcalib = [68.61556108571234347,
-                    940.77744180377760586, 1005.14714125015211721,
-                    0.72531401975651599, -0.76181063603636234]
-        
-        CCDCalibdict = {}
-        CCDCalibdict['CCDCalibParameters'] = CCDcalib
-        CCDCalibdict['framedim'] = (2048, 2048)
-        CCDCalibdict['detectordiameter'] = 165.
-        
-        Index_Refine_Parameters_dict['CCDCalibParameters'] = CCDcalib
-        # , 0.08056640625000000, 2048.00000000000000000, 2048.00000000000000000]
-        Index_Refine_Parameters_dict['pixelsize'] = 0.080566
-        # 0.08057, 2048, 2048
-
-        Index_Refine_Parameters_dict['dict params list'] = dict_params
-
-        Index_Refine_Parameters_dict['PeakList Folder'] = '/home/micha/LaueTools/Examples/ZrO2'
-        Index_Refine_Parameters_dict['PeakListCor Folder'] = '/home/micha/LaueTools/Examples/ZrO2'
-        Index_Refine_Parameters_dict['nbdigits'] = 4
-        Index_Refine_Parameters_dict['prefixfilename'] = 'E1_13_run2_'
-        Index_Refine_Parameters_dict['suffixfilename'] = '.dat'
-        Index_Refine_Parameters_dict['prefixdictResname'] = 'E1_13_run2_dict_'
-
-        Index_Refine_Parameters_dict['PeakListFit Folder'] = '/home/micha/LaueTools/Examples/ZrO2'
-        Index_Refine_Parameters_dict['Results Folder'] = '/home/micha/LaueTools/Examples/ZrO2'
-
-        fileindexrange = (171, 177, 3)
-
-        index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-              saveObject=0, CCDCalibdict=CCDCalibdict)
 
 
 

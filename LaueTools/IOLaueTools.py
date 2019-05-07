@@ -731,6 +731,36 @@ def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
     outputfile.close()
 
 
+def ReadASCIIfile(_filename_data, col_2theta=0, col_chi=1, col_Int=-1, nblineskip=1):
+    """ from a file
+    return 3 arrays of columns located at index given by
+    col_2theta=0, col_chi=1, col_Int=-1:
+    [0] theta
+    [1] chi
+    [2] intensity
+
+    # Quite basic and useless function
+    """
+    _tempdata = np.loadtxt(_filename_data, skiprows=nblineskip)
+    # _tempdata = scipy.io.array_import.read_array(_filename_data, lines = (nblineskip,-1))
+
+    _data_theta = _tempdata[nblineskip - 1:, col_2theta] / 2.
+    _data_chi = _tempdata[nblineskip - 1:, col_chi]
+
+    try:
+        _data_I = _tempdata[nblineskip - 1:, col_Int]
+    except IndexError:
+        print("there are not 5 columns in data.cor file")
+        print("I create then a uniform intensity data!")
+        _data_I = np.ones(len(_data_theta))
+    if (np.array(_data_I) < 0.).any():
+        print("Strange ! I don't like negative intensity...")
+        print("I create then a uniform intensity data!")
+        _data_I = np.ones(len(_data_theta))
+
+    return (_data_theta, _data_chi, _data_I)
+
+
 def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                             fileextensionmarker=('.fit', '.cor', '.dat'),
                             returnUnindexedSpots=False,
@@ -1685,6 +1715,8 @@ def read_cri(filecri):
     linestart = 4
     lineend = num_at + 4
 
+    
+    # TODO: to use loadtxt ...
     # element_coord_and_occ = scipy.io.array_import.read_array(filecri,columns=(1,2,3,4),lines=(linestart,(linestart+1,lineend)))
     element_coord_and_occ = np.genfromtxt(filecri, usecols=(1, 2, 3, 4), skiprows=linestart)   # skiprows could be replaced bt skip_header
 

@@ -1452,7 +1452,7 @@ class MainWindow(wx.Frame):
             # print select_theta
             # print select_chi
 #            listcouple = np.array([select_theta, select_chi]).T
-#            Tabledistance = INDEX.calculdist_from_thetachi(listcouple, listcouple)
+#            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
             # nbspots = len(Tabledistance)
 
         CliquesFindingBoard(None, -1, 'Cliques Finding Board :%s' % self.DataPlot_filename)
@@ -1577,7 +1577,7 @@ class MainWindow(wx.Frame):
         RESOLUTIONANGSTROM = False
         
 
-        AngRes = ISS.Angular_residues_np(UBmatrix_toCheck,
+        AngRes = matchingrate.Angular_residues_np(UBmatrix_toCheck,
                                     2.*self.select_theta, self.select_chi,
                                     key_material=self.key_material,
                                     emax=self.emax,
@@ -5402,7 +5402,7 @@ class ManualIndexFrame(wx.Frame):
 #             # print select_chi
 #             listcouple = np.array([self.select_theta, self.select_chi]).T
 #             # compute angles between spots
-#             Tabledistance = INDEX.calculdist_from_thetachi(listcouple, listcouple)
+#             Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
 
         # there is no precomputed angular distances between spots
         if not self.parent.ClassicalIndexation_Tabledist:
@@ -5431,7 +5431,7 @@ class ManualIndexFrame(wx.Frame):
             
             listcouple = np.array([self.select_theta, self.select_chi]).T
             # compute angles between spots
-            Tabledistance = INDEX.calculdist_from_thetachi(listcouple, listcouple)
+            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
             
         else:
             print("Reuse computed ClassicalIndexation_Tabledist with size: %d" % \
