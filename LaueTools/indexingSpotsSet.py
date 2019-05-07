@@ -4633,8 +4633,11 @@ def mergeDictRes(list_of_dictfiles, outputfilename='MergedRes', dirname=None):
     for _file in list_of_dictfiles:
       
         
-        filepickle = open(os.path.join(dirname, _file), 'r')
-        Res = pickle.load(filepickle)
+        # filepickle = open(os.path.join(dirname, _file), 'r')
+        # Res = pickle.load(filepickle)
+
+        with open(os.path.join(dirname, _file), 'rb') as f:
+            Res = pickle.load(f)
 
         dMater, dMat, dMR, dNB, dstrain, dspots = Res
 
@@ -4645,8 +4648,7 @@ def mergeDictRes(list_of_dictfiles, outputfilename='MergedRes', dirname=None):
         dictstrain = dict(list(dstrain.items()) + list(dictstrain.items()))
         dictspots = dict(list(dspots.items()) + list(dictspots.items()))
         
-
-        filepickle.close()
+        # filepickle.close()
 
     tuple_dicts = dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots
 
@@ -4654,7 +4656,7 @@ def mergeDictRes(list_of_dictfiles, outputfilename='MergedRes', dirname=None):
     # pickle.dump(tuple_dicts, output_file)
     # output_file.close()
 
-    with open(os.path.join(dirname, outputfilename), 'w') as f:
+    with open(os.path.join(dirname, outputfilename), 'wb') as f:
         pickle.dump(tuple_dicts, f)
 
     return dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots
@@ -4775,7 +4777,7 @@ def indexing_multiprocessing(fileindexrange,
 
     if build_hdf5:
         try:
-            from . import Lauehdf5 as LaueHDF5
+            import Lauehdf5 as LaueHDF5
             print("Building hdf5 file")
         except ImportError:
             print("module Lauehdf5 is not installed!")

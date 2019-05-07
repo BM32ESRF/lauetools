@@ -3614,7 +3614,7 @@ class IntensityScaleBoard(wx.Dialog):
         initialize board window
 
         """
-        wx.Dialog.__init__(self, parent, _id, title, size=(400, 250))
+        wx.Dialog.__init__(self, parent, _id, title, size=(400, 300))
 
         self.parent = parent
         print("self.parent in IntensityScaleBoard ", self.parent)
@@ -3788,7 +3788,7 @@ class IntensityScaleBoard(wx.Dialog):
             pass
 
     def readnewimage(self):
-        from . import readmccd as RMCCD
+        import readmccd as RMCCD
         folder = str(self.folderexpimagetxtctrl.GetValue())
         imagename = str(self.expimagetxtctrl.GetValue())
         self.fullpathimagefile = os.path.join(folder, imagename)

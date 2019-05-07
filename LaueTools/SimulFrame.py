@@ -1475,7 +1475,7 @@ class SimulationPlotFrame(wx.Frame):
         """
         open a board to change image scale
         """
-        from .PlotRefineGUI import IntensityScaleBoard
+        from PlotRefineGUI import IntensityScaleBoard
         IScaleBoard = IntensityScaleBoard(self, -1, 'Image scale setting Board',
                                                 self.data_dict)
 

@@ -1533,7 +1533,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # show 2D pixel intensity from image file
         ImageArray = None
         if showExperimentalImage:
-            from . import readmccd as RMCCD
+            import readmccd as RMCCD
 
             fullpathimagename = str(self.rightpanel.expimagetxtctrl.GetValue())
             if not os.path.isfile(fullpathimagename):

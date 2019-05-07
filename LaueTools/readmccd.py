@@ -4518,6 +4518,7 @@ def peaksearch_fileseries(fileindexrange, filenameprefix,
     # normal case
     else:
         encodingdigits = '{'+':0{}'.format(int(nbdigits))+'}'
+        nbdigits = int(nbdigits)
 
     if suffix == '':
         suffix = '.mccd'
