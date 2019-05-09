@@ -29,188 +29,71 @@ sys.path.append('..')
 import FileSeries.multigrainFS as MG
 
 list_txtparamPM = ['Map Summary File',
-                 'File xyz',
-                 'maptype',
-                 'filetype',
-                 'substract_mean',
-                 'probed_grainindex',
-                 'filter_on_pixdev_and_npeaks',
-                 'maxpixdev_forfilter',
-                 'minnpeaks_forfilter',
-                 'min_forplot',
-                 'max_forplot',
-                 'pixdevmin_forplot',
-                 'pixdevmax_forplot',
-                 'npeaksmin_forplot',
-                 'npeaksmax_forplot',
-                 'zoom',
-             'xylim',
-             'filter_mean_strain_on_misorientation',
-             'max_misorientation',  # only for filter_mean_strain_on_misorientation = 1
-             'change_sign_xy_xz',
-             'subtract_constant',
-             'remove_ticklabels_titles',
-             'col_for_simple_map',
-             'low_npeaks_as_missing',
-             'low_npeaks_as_red_in_npeaks_map',  # only for maptype = "fit"
-             'low_pixdev_as_green_in_pixdev_map',  # only for maptype = "fit"
-             'use_mrad_for_misorientation',  # only for maptype = "misorientation_angle"
-             'color_for_duplicate_images',  # [0.,1.,0.]
-             'color_for_missing',
-             'high_pixdev_as_blue_and_red_in_pixdev_map',  # only for maptype = "fit"
-             'filter_on_intensity',
-             'min_intensity_forfilter',  # only for filter_on_intensity = 1
-             'color_for_max_strain_positive',  # red  # [1.0,1.0,0.0]  # yellow
-             'color_for_max_strain_negative',  # blue
-             'plot_grid',
-             'map_rotation'
-                 ]
+                    'File xyz',
+                    'maptype']
 
-
-import numpy as np
 list_txtparamPM_type_dict = {'Map Summary File':str,
-                 'File xyz':str,
-                 'maptype':str,
-                 'filetype':str,
-                 'substract_mean':str,
-                 'probed_grainindex':int,
-                 'filter_on_pixdev_and_npeaks':float,
-                 'maxpixdev_forfilter':float,
-                 'minnpeaks_forfilter':float,
-                 'min_forplot':float,
-                 'max_forplot':float,
-                 'pixdevmin_forplot':float,
-                 'pixdevmax_forplot':float,
-                 'npeaksmin_forplot':float,
-                 'npeaksmax_forplot':float,
-                 'zoom':str,
-             'xylim':str,
-             'filter_mean_strain_on_misorientation':float,
-             'max_misorientation':float,  # only for filter_mean_strain_on_misorientation = 1
-             'change_sign_xy_xz':int,
-             'subtract_constant':str,
-             'remove_ticklabels_titles':str,
-             'col_for_simple_map':str,
-             'low_npeaks_as_missing':str,
-             'low_npeaks_as_red_in_npeaks_map':str,  # only for maptype = "fit"
-             'low_pixdev_as_green_in_pixdev_map':str,  # only for maptype = "fit"
-             'use_mrad_for_misorientation':str,  # only for maptype = "misorientation_angle"
-             'color_for_duplicate_images':str,  # [0.:,1.:,0.]
-             'color_for_missing':str,
-             'high_pixdev_as_blue_and_red_in_pixdev_map':str,  # only for maptype = "fit"
-             'filter_on_intensity':int,
-             'min_intensity_forfilter':float,  # only for filter_on_intensity = 1
-             'color_for_max_strain_positive':str,  # red  # [1.0:,1.0:,0.0]  # yellow
-             'color_for_max_strain_negative':str,  # blue
-             'plot_grid':int,
-             'map_rotation':int
-                            }
+                    'File xyz':str,
+                    'maptype':str}
 
 
 class MainFrame_plotmaps (wx.Frame):
     def __init__(self, parent, _id, title, dict_params):
-        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 1280))
+        wx.Frame.__init__(self, parent, _id, title, size=(1000, 2000))
 
-#         print "__init__ of MainFrame_plotmaps"
         self.dict_params = dict_params
 
         self.list_of_windows = []
         self.list_txtctrl_new = []
-
         print((self.dict_params))
-
-        self.panel = wx.Panel(self)
-
-        nb_of_params = len(list_txtparamPM) - 2
-        
-        if WXPYTHON4:
-            grid0 = wx.FlexGridSizer(4, 10, 10)
-        else:
-            grid0 = wx.FlexGridSizer(7, 4)
-
-        grid0.SetFlexibleDirection(wx.HORIZONTAL)
-
-        txt_fileparameters = wx.StaticText(self.panel, -1, "File parameters ")
-        font = wx.Font(18, wx.MODERN, wx.ITALIC, wx.NORMAL)
-        txt_fileparameters.SetFont(font)
-        txt_none = wx.StaticText(self.panel, -1, " ")
-        txt_none2 = wx.StaticText(self.panel, -1, " ")
-        txt_none3 = wx.StaticText(self.panel, -1, " ")
-
-        grid0.Add(txt_fileparameters)
-        grid0.Add(txt_none)
-        grid0.Add(txt_none2)
-        grid0.Add(txt_none3)
-
-
-        #          txt_none2= wx.StaticText(self.panel, -1, " ")
-        #          grid.Add(txt_none2)
-        #          txt_none3= wx.StaticText(self.panel, -1, " ")
-        #          grid.Add(txt_none3)
-
-
-        #          Affichage summary file et filexyzfile par défaut
-
-        txt_summary = wx.StaticText(self.panel, -1, "Map SUMMARY .dat File")
-
         fullpath_summaryfile = self.dict_params['Map Summary File']
         folderpath, summaryfile = os.path.split(fullpath_summaryfile)
-
-        self.summarypath_folder = wx.TextCtrl(self.panel, -1,
-                                       folderpath,
-                                       size=(250, -1))
-
-        self.summarypath_file = wx.TextCtrl(self.panel, -1,
-                                       summaryfile,
-                                       size=(250, -1))
-
-        btnbrowse = wx.Button(self.panel, -1, "Browse")
-        btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filesum)
-
-        grid0.Add(txt_summary)
-        grid0.Add(self.summarypath_folder)
-        grid0.Add(self.summarypath_file)
-        grid0.Add(btnbrowse)
-
-        txt_filexyz = wx.StaticText(self.panel, -1, "Map SUMMARY .dat File XYZ")
-        txt_filexyz.SetToolTipString("A file containing 3 columns imageindex, x, y")
-
-
         fullpath_filexyz = self.dict_params['File xyz']
         folderpathxyz, summaryfilexyz = os.path.split(fullpath_filexyz)
 
+        font = wx.Font(18, wx.MODERN, wx.ITALIC, wx.NORMAL)
+
+        #GUI
+        self.panel = wx.Panel(self)
+
+        txt_fileparameters = wx.StaticText(self.panel, -1, "File parameters ")
+        txt_fileparameters.SetFont(font)
+
+        txt_summary = wx.StaticText(self.panel, -1, "Map SUMMARY .dat File")
+        btnbrowse1 = wx.Button(self.panel, -1, "Browse")
+        btnbrowse1.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filesum)
+
+        self.summarypath_folder = wx.TextCtrl(self.panel, -1,
+                                        folderpath,
+                                        size=(400, -1))
+        self.summarypath_file = wx.TextCtrl(self.panel, -1,
+                                        summaryfile,
+                                        size=(400, -1))
+
+        hbox1summaryfile=wx.BoxSizer(wx.HORIZONTAL)
+        hbox1summaryfile.Add(btnbrowse1, 0, wx.ALL)
+        hbox1summaryfile.AddSpacer(10)
+        hbox1summaryfile.Add(txt_summary, 0, wx.ALL)
+
+        # file xyz 
+        txt_filexyz = wx.StaticText(self.panel, -1, "Map File XYZ .dat ")
+        btnbrowse2 = wx.Button(self.panel, -1, "Browse")
+        btnbrowse2.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filexyz)
+
         self.filexyzpath_folder = wx.TextCtrl(self.panel, -1,
-                                       folderpathxyz,
-                                       size=(250, -1))
-
+                                        folderpathxyz,
+                                        size=(400, -1))
         self.filexyzpath_file = wx.TextCtrl(self.panel, -1,
-                                       summaryfilexyz,
-                                       size=(250, -1))
+                                        summaryfilexyz,
+                                        size=(400, -1))
 
-        btnbrowse = wx.Button(self.panel, -1, "Browse")
-        btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filexyz)
+        hbox3summaryfile=wx.BoxSizer(wx.HORIZONTAL)
+        hbox3summaryfile.Add(btnbrowse2, 0, wx.ALL)
+        hbox3summaryfile.AddSpacer(10)
+        hbox3summaryfile.Add(txt_filexyz, 0, wx.ALL)
 
-        grid0.Add(txt_filexyz)
-        grid0.Add(self.filexyzpath_folder)
-        grid0.Add(self.filexyzpath_file)
-        grid0.Add(btnbrowse)
-
-        txt_mapparameters = wx.StaticText(self.panel, -1, "Map parameters ")
+        txt_mapparameters = wx.StaticText(self.panel, -1, "Map Type ")
         txt_mapparameters.SetFont(font)
-        txt_none4 = wx.StaticText(self.panel, -1, " ")
-        txt_none5 = wx.StaticText(self.panel, -1, " ")
-        txt_none6 = wx.StaticText(self.panel, -1, " ")
-        grid0.Add(txt_mapparameters)
-        grid0.Add(txt_none4)
-        grid0.Add(txt_none5)
-        grid0.Add(txt_none6)
-
-        #          txt_none7= wx.StaticText(self.panel, -1, " ")
-        #          grid.Add(txt_none7)
-        #          txt_none8= wx.StaticText(self.panel, -1, " ")
-        #          grid.Add(txt_none8)
-
-        txt_maptype = wx.StaticText(self.panel, -1, "Maptype: ")
 
         self.choice_maptype = wx.Choice(self.panel, -1, choices=['fit',
                                                                'strain6_crystal',
@@ -224,50 +107,57 @@ class MainFrame_plotmaps (wx.Frame):
                                                                'von_mises',
                                                                'w_mrad'
                                                                ])
+        self.choice_maptype.SetSelection(0)
 
         self.choice_maptype.Bind(wx.EVT_CHOICE, self.Onchoice_maptype)
 
-        self.btnclearwindows = wx.Button(self.panel, -1, "Clear Windows")
+        self.btnclearwindows = wx.Button(self.panel, -1, "Clear Windows",size=(200,-1))
         self.btnclearwindows.Bind(wx.EVT_BUTTON, self.OnClearChildWindows)
 
-        grid0.Add(txt_maptype)
-        grid0.Add(self.choice_maptype)
-        grid0.Add(self.btnclearwindows)
+        vbox5=wx.BoxSizer(wx.VERTICAL)
+        vbox5.Add(self.choice_maptype,0,wx.EXPAND)
+        vbox5.Add(self.btnclearwindows,0,wx.ALL)
 
-        #          Affichage des parametres selectionnés ou par défaut
-        
-        if WXPYTHON4:
-            grid = wx.FlexGridSizer(4, 10, 10)
-        else:
-            grid = wx.FlexGridSizer(nb_of_params / 2, 4)
+        btnplot = SButton(self.panel, -1, "PLOT", size=(-1, 60))
+        btnplot.Bind(wx.EVT_BUTTON, self.OnPlot)
 
-        grid.SetFlexibleDirection(wx.HORIZONTAL)
+        hboxplot=wx.BoxSizer(wx.HORIZONTAL)
+        hboxplot.Add(vbox5,0,wx.ALL)
+        hboxplot.Add(btnplot,1,wx.EXPAND)
 
-        self.list_txtctrl = []
+        vbox=wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txt_fileparameters, 0, wx.CENTER, 0)
+        vbox.Add(hbox1summaryfile, 0, wx.ALL, 0)
+        vbox.Add(self.summarypath_folder,0,wx.ALL)
+        vbox.Add(self.summarypath_file,0,wx.ALL)
+        vbox.AddSpacer(20)
+        vbox.Add(hbox3summaryfile, 0, wx.ALL, 0)
+        vbox.Add(self.filexyzpath_folder, 0, wx.ALL, 0)
+        vbox.Add(self.filexyzpath_file,0,wx.ALL)
+        vbox.AddSpacer(20)
+        vbox.Add(txt_mapparameters, 0, wx.CENTER, 0)
+        vbox.Add(hboxplot, 0, wx.EXPAND, 0)
 
-        for kk, key in enumerate(list_txtparamPM):
-            if kk >= 2:
-                grid.Add(wx.StaticText(self.panel, -1, key))
-                self.txtctrl = wx.TextCtrl(self.panel, -1, '', size=(150, 25))  # , style=wx.TE_READONLY,)
-                self.txtctrl.SetValue(str(self.dict_params[key]))
-                self.list_txtctrl.append(self.txtctrl)
-                grid.Add(self.txtctrl)
-            else:
-                self.list_txtctrl.append('')
-
-        btnPlot = SButton(self.panel, -1, "PLOT", size=(-1, 60))
-        btnPlot.Bind(wx.EVT_BUTTON, self.OnPlot)
-#         grid.Add(btnPlot, wx.EXPAND | wx.ALL)
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(grid0, 1, wx.EXPAND, 0)
-        vbox.Add(grid, 0, wx.EXPAND, 0)
-        vbox.Add(btnPlot, 0, wx.EXPAND, 0)
-        self.panel.SetSizer(vbox, wx.EXPAND)
+        self.panel.SetSizer(vbox)
         vbox.Fit(self)
         self.Layout()
 
-#         self.panel.SetSizer(grid, wx.EXPAND)
+        # tooltip
+        txt_summary.SetToolTipString("File elaborated by Build_Summary.py module as a summary of all images analysis")
+        btnbrowse1.SetToolTipString("Browse to find : File elaborated by Build_Summary.py module as a summary of all images analysis")
+        self.summarypath_folder.SetToolTipString("folder of summary file")
+        self.summarypath_file.SetToolTipString("Filename of summary file")
+        txt_filexyz.SetToolTipString("A file containing 3 columns imageindex, x, y")
+        self.filexyzpath_folder.SetToolTipString("folder of file xy")
+        self.filexyzpath_file.SetToolTipString("Filename of file xy")
+
+        tiptype="Select the quantity to plot"
+        txt_mapparameters.SetToolTipString(tiptype)
+        self.choice_maptype.SetToolTipString(tiptype)
+
+        self.btnclearwindows.SetToolTipString("Clear Previous plotting windows")
+
+
 
     def OnClearChildWindows(self, evt):
         print("killing child windows!")
@@ -297,57 +187,13 @@ class MainFrame_plotmaps (wx.Frame):
         self.dict_params['Map Summary File'] = filesummary_path
         self.dict_params['File xyz'] = filexyz_path
 
-        #dict_params = {}
-
-        for kk, key in enumerate(list_txtparamPM):
-            if kk >= 2:
-                strvalue = str(self.list_txtctrl[kk].GetValue())
-                
-                if strvalue in ('maptype','probed_grainindex'):
-                    print((strvalue, kk))
-
-                print(("key, type, raw, kk", key, list_txtparamPM_type_dict[key], strvalue, kk))
-                try:
-                    convvalue = list_txtparamPM_type_dict[key](strvalue)
-                except ValueError:
-                    sentence = 'Something wrong for parameter "%s"\n. Should be of type: %s' % \
-                                    (key, list_txtparamPM_type_dict[key])
-                    wx.MessageBox(sentence, 'Error')
-                    return None
-
-                print(("converted value, type", convvalue, type(convvalue)))
-
-                if convvalue in ('None',):
-                    convvalue = None
-                    print(("converted None", convvalue))
-
-                self.dict_params[key] = convvalue
+        self.dict_params['maptype']=self.choice_maptype.GetString(self.choice_maptype.GetSelection())
 
         return self.dict_params
 
-    def convStrlist_to_array(self, liststring):
-        res = []
-        for elem in liststring[1:-1].split(','):
-            res.append(float(elem))
-        return np.array(res)
-
-    def CheckValueParams(self):
-        list_keys = ['color_for_max_strain_negative', 'color_for_max_strain_positive']
-        for key in list_keys:
-            val = self.dict_params[key]
-            print(("val, type", val, type(val)))
-            if isinstance(val, str):
-                print(('val for key=%s converted to array' % key))
-                cv_val = self.convStrlist_to_array(val)
-                print(cv_val)
-                self.dict_params[key] = cv_val
-
     def Onchoice_maptype (self, event):
-        maptype = self.choice_maptype.GetStringSelection()
-        self.dict_params['maptype'] = maptype
-        self.list_txtctrl[2].SetValue(str(maptype))
-
-
+        self.dict_params['maptype']=self.choice_maptype.GetString(self.choice_maptype.GetSelection())
+        
     def OnbtnBrowse_filesum(self, event):
         folder = wx.FileDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
@@ -366,62 +212,15 @@ class MainFrame_plotmaps (wx.Frame):
         dictpars = self.OnReadParameters()
         print(("self.dict_params", self.dict_params))
 
-        self.CheckValueParams()
-
-        if dictpars is not None:
-#             MG.plot_map_new(self.dict_params, App_parent=self)
-
-            maptype = str(self.list_txtctrl[2].GetValue())
-            grain_index = int(self.list_txtctrl[5].GetValue())
-            MG.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
-
+        maptype = dictpars['maptype']
+        grain_index = 0
+        MG.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
 
 
 class Stock_parameters_PlotMaps:
     def __init__(self, _list_txtparamPM, _list_valueparamPM):
         self.list_txtparamPM = _list_txtparamPM
         self.dict_params = _list_valueparamPM
-
-def fill_list_valueparamPM(dict_initialparameters):
-    """
-    return a list of default value for buildsummary board from a dict initialparameters
-    """
-    list_valueparam_PM = [
-                    dict_initialparameters['Map Summary File'],
-                     dict_initialparameters['File xyz'],
-                     dict_initialparameters['maptype'],
-                     dict_initialparameters['filetype'],
-                     dict_initialparameters['substract_mean'],
-                     dict_initialparameters['numgrain'],
-                     dict_initialparameters['filter_on_pixdev_and_npeaks'],
-                     dict_initialparameters['maxpixdev_forfilter'],
-                     dict_initialparameters['minnpeaks_forfilter'],
-                     dict_initialparameters['min_forplot'],
-                     dict_initialparameters['max_forplot'],
-                     dict_initialparameters['pixdevmin_forplot'],
-                     dict_initialparameters['npeaksmin_forplot'],
-                     dict_initialparameters['npeaksmax_forplot']
-
-                     ]
-    return list_valueparam_PM
-
-# list_txtparamPM = ['Map Summary File',
-#                  'File xyz',
-#                  'maptype',
-#                  'filetype',
-#                  'substract_mean',
-#                  'numgrain',
-#                  'filter_on_pixdev_and_npeaks',
-#                  'maxpixdev_forfilter',
-#                  'minnpeaks_forfilter',
-#                  'min_forplot',
-#                  'max_forplot',
-#                  'pixdevmin_forplot',
-#                  'pixdevmax_forplot',
-#                  'npeaksmin_forplot',
-#                  'npeaksmax_forplot'
-#                  ]
-
 
 initialparameters = {}
 
@@ -467,22 +266,8 @@ initialparameters['fast axis: x or y'] = 'x'
 
 list_valueparamPM = [initialparameters['Map Summary File'],
                      initialparameters['File xyz'],
-                     "fit",
-                     "LT",
-                     "no",
-                     0,
-                     1,
-                     20, 1, -0.2, 0.2, 0, 20, 6, 70,
-                     'no', None, 0, 0.15, 0, None, 0,
-                     None, None, None, None,
-                     'no', None, None, None,
-                     0, 20000,
-                     [1., 0., 0.], [0., 0., 1.],
-                    1,
-                    0]
+                     "fit"]
 
-
-# dict_params = fill_list_valueparamPM(initialparameters)
 
 def prepare_params_for_plot(list_val, list_key=None):
     if list_key is None:
@@ -503,12 +288,11 @@ def prepare_params_for_plot(list_val, list_key=None):
     return resdict
 
 if __name__ == '__main__':
-#     import Version1 as mainGui
 
     dict_parameters = prepare_params_for_plot(list_valueparamPM)
 
     PlotMapsApp = wx.App()
-    PMFrame = MainFrame_plotmaps(None, -1, 'PlotMaps2 Board', dict_parameters)
+    PMFrame = MainFrame_plotmaps(None, -1, 'Plot_Maps2.py GUI Board', dict_parameters)
     PMFrame.Show(True)
     PlotMapsApp.MainLoop()
 
