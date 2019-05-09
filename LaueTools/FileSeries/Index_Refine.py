@@ -2,14 +2,17 @@
 """
 Created on Wed Jun 26 12:23:40 2013
 
-@author: guest
+@author: micha
 """
 import sys
 import os
 
+
+
 sys.path.append('..')
 
 import wx
+
 if wx.__version__ <'4.':
     WXPYTHON4 = False
 else:

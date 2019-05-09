@@ -17,7 +17,7 @@ else:
     def sttip(argself, strtip):
         return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
     wx.Window.SetToolTipString = sttip
-import multigrain as MG
+import multigrainFS as MG
 
 import module_graphique as modgraph
 import os

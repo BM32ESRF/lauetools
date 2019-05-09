@@ -2,8 +2,14 @@
 """
 Created on Tue Jul  2 11:20:21 2013
 
-@author: guest
+@author: micha
 """
+import os
+
+import multigrainFS as MG
+print('MG position',MG.__file__)
+import param_multigrain as PAR
+
 import wx
 if wx.__version__ <'4.':
     WXPYTHON4 = False
@@ -15,13 +21,8 @@ else:
     def sttip(argself, strtip):
         return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
     wx.Window.SetToolTipString = sttip
-    
-import multigrain as MG
-import module_graphique as modgraph
-import param_multigrain as PAR
-import os
 from wx.lib.agw.shapedbutton import SButton, SBitmapButton
-
+    
 list_txtparamPM = ['Map Summary File',
                  'File xyz',
                  'maptype',
@@ -101,8 +102,6 @@ list_txtparamPM_type_dict = {'Map Summary File':str,
                             }
 
 
-
-
 class MainFrame_plotmaps (wx.Frame):
     def __init__(self, parent, id, title, dict_params):
         wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(1000, 1280))
@@ -113,13 +112,6 @@ class MainFrame_plotmaps (wx.Frame):
         self.list_of_windows = []
 
         print((self.dict_params))
-
-#         if manag.matrice_callfunctions [2, 2] == 12 or manag.matrice_callfunctions [2, 2] == 11 or manag.matrice_callfunctions [2, 2] == 3 :
-#             objet_PM.dict_params[0] = modgraph.stockfilesumcolumn
-#             objet_PM.dict_params[1] = objet_BS.list_valueparamBS[1]
-#         else:
-#             objet_PM.dict_params[0] = None
-#             objet_PM.dict_params[1] = None
 
         self.panel = wx.Panel(self)
 
@@ -196,8 +188,6 @@ class MainFrame_plotmaps (wx.Frame):
         grid0.Add(self.filexyzpath_folder)
         grid0.Add(self.filexyzpath_file)
         grid0.Add(btnbrowse)
-
-
 
         txt_mapparameters = wx.StaticText(self.panel, -1, "Map parameters ")
         txt_mapparameters.SetFont(font)
