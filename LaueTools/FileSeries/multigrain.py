@@ -1777,7 +1777,7 @@ def test_index_refine(filedat, paramdetector_top, use_weights=False, proposed_ma
     xyind = np.column_stack((data_pixX[numlist], data_pixY[numlist]))
     # print xyind
 
-    print("matrix with lowest Euler angles", end=' ')
+    print("matrix with lowest Euler angles")
     matLTmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(UBmat_2)
     print("matLTmin \n", matLTmin.round(decimals=6))
     print("original UB matrix \n", UBmat_2.round(decimals=6))
@@ -6430,7 +6430,7 @@ def class_data_into_grainnum(filesum, filepathout, tol1=0.1, test_mode="yes"):  
             for j in range(i + 1, nmax):
                 if has_grain_num[j] == 0 :
                     drgb = norme(sorted_list[j, -6:] - rgbref)
-                    if verbose : print("j, drgb = ", j, round(drgb, 3), end=' ')
+                    if verbose : print("j, drgb = ", j, round(drgb, 3))
                     if drgb < tol1 :
                         has_grain_num[j] = 1
                         global_gnum[j] = gnum
@@ -7120,9 +7120,9 @@ def list_edge_lines(pixel_edge_code):  # 29May13
         # print testBit(pixel_edge_code,bit1)
         if testBit(pixel_edge_code, bit1) > 0 : list_edge_lines.append(dict_edge_lines[bit1])
 
-    print(pixel_edge_code, end=' ')
-    print(": ", end=' ')
-    print(list_edge_lines, end=' ')
+    print(pixel_edge_code)
+    print(": ")
+    print(list_edge_lines)
     print(",")
     # print shape(list_edge_lines)[0]
 

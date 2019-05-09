@@ -287,7 +287,7 @@ class SimulationPlotFrame(wx.Frame):
                         print("angular distance (q1,q2):  %.3f deg " % _dist)
 
                     if self.datatype == 'gnomon':
-                        from .indexingImageMatching import Fromgnomon_to_2thetachi
+                        from indexingImageMatching import Fromgnomon_to_2thetachi
                         tw, ch = Fromgnomon_to_2thetachi([  np.array([spot1[0], spot2[0]])  ,
                                                                 np.array([spot1[1], spot2[1]])  ], 0)[:2]
                         _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))

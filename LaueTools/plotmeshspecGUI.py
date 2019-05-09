@@ -455,7 +455,7 @@ class MainFrame(wx.Frame):
         
         print("spec command",tit)
         
-        print("tit.split()", end=' ')
+        print("tit.split()")
         
         titlesplit = tit.split()
         minmotor1 =  float(titlesplit[4])
@@ -648,7 +648,7 @@ class MainFrame(wx.Frame):
         """
         update at each time step time
         """
-        print("\nupdated: ", end=' ')
+        print("\nupdated: ")
         print(time.ctime())
         if self.scan_in_progress:
             self.scan_in_progress = self.ReadScan_SpecFile(self.scan_index)
@@ -674,7 +674,7 @@ class MainFrame(wx.Frame):
         USETHREAD = 1
         if USETHREAD:
             # with a thread 2----------------------------------------
-            from . import threadGUI2 as TG
+            import threadGUI2 as TG
             self.worker = None
             self.results = None
             self.scan_in_progress = True
@@ -696,7 +696,7 @@ class MainFrame(wx.Frame):
         not used 
         update at each time step time
         """
-        print("\nupdated: ", end=' ')
+        print("\nupdated: ")
         print(time.ctime())
         WORKEREXISTS = False
         if worker is not None:

@@ -3462,7 +3462,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         update at each time step time
         """
-        print("\nupdated: ", end=' ')
+        print("\nupdated: ")
         print(time.ctime())
 
         if self.CurrentFileIsReady():
@@ -3661,7 +3661,7 @@ class MainPeakSearchFrame(wx.Frame):
 #         self.dataimage_ROI_display = self.dataimage_ROI
         
 #         self.Show_Image(1)
-        print("new image display execution time :", end=' ')
+        print("new image display execution time :")
         self.getdeltatime()
         self.viewingLUTpanel.updateLineXYProfile(1)
 #         self.viewingLUTpanel.OnShowLineXYProfiler(1)
@@ -4212,7 +4212,7 @@ class MainPeakSearchFrame(wx.Frame):
         boxsize_col = int(self.Monitor.boxxctrl.GetValue())
         boxsize_line = int(self.Monitor.boxyctrl.GetValue())
         
-        print('selected pixel position: xpic, ypic',xpic, ypic, end=' ')
+        print('selected pixel position: xpic, ypic',xpic, ypic)
 
         selectedcounters = self.Monitor.cselected
         

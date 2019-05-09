@@ -740,7 +740,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         # read .irp file ---------------------------
         fileirp = self.list_txtctrl[12].GetValue()
-        print("read index refine parameters in:", end=' ')
+        print("read index refine parameters in:")
 
         if not os.path.exists(fileirp):
             wx.MessageBox("Index_refine config file %s does not exist!\n" % fileirp, 'Error')

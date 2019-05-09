@@ -3877,9 +3877,6 @@ def getSpotsFamilyData(indexed_spots_dict, grain_index, onlywithMiller=1):
     return np.array(data)
 
 
-
-
-
 def refineUBSpotsFamily(indexed_spots_dict, grain_index,
                         initial_matrix, key_material, detectorparameters,
                         use_weights=1,
@@ -3927,7 +3924,7 @@ def refineUBSpotsFamily(indexed_spots_dict, grain_index,
     arr_indexvaryingparameters = np.arange(5, 13)
     # print "\nInitial error--------------------------------------\n"
     print("initial_matrix", initial_matrix)
-    from . import FitOrient as FitO
+    import FitOrient as FitO
     residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(initial_values,
                                     Miller,
                                     allparameters,

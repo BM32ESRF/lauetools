@@ -4380,7 +4380,7 @@ class ManualIndexFrame(wx.Frame):
         """
         open a board to change image scale
         """
-        from . import PlotRefineGUI as PRGUI
+        import PlotRefineGUI as PRGUI
 
         IScaleBoard = PRGUI.IntensityScaleBoard(self, -1, 'Image scale setting Board',
                                                 self.data_dict)

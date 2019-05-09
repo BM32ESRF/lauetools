@@ -4994,7 +4994,7 @@ def merge_2Peaklist(filename1, filename2, dist_tolerance=5, dirname1=None, dirna
     XY1 = data_peak_1[:, 0:2]
     XY2 = data_peak_2[:, 0:2]
     
-    from . import generaltools as GT
+    import generaltools as GT
     
     XY, ind_delele_1, ind_delele_2 = GT.mergelistofPoints(XY1, XY2,
                                                           dist_tolerance=dist_tolerance,

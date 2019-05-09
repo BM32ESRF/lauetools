@@ -956,7 +956,7 @@ def Allproposedmatrix(listrecogn, tolang):
 
 
 def computeUnique_UBmatrix(UBmat):
-    print("matrix with lowest Euler angles", end=' ')
+    print("matrix with lowest Euler angles")
     matLTmin, transfmat = find_lowest_Euler_Angles_matrix(UBmat)
     return matLTmin, transfmat
 
@@ -1198,7 +1198,7 @@ def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    from . import dict_LaueTools as DictLT
+    import dict_LaueTools as DictLT
     latticeparams = DictLT.dict_Materials[key_material][1]
 
     return buildLUT_fromLatticeParams(latticeparams, n,
@@ -1218,7 +1218,7 @@ def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    from . import dict_LaueTools as DictLT
+    import dict_LaueTools as DictLT
     latticeparams = DictLT.dict_Materials[key_material][1]
 
     restrictLUT = False
@@ -1281,7 +1281,7 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material):
 
     latticeparams_or_material  : either string key for material or list of 6 lattice parameters
     """
-    from . import dict_LaueTools as DictLT
+    import dict_LaueTools as DictLT
     if isinstance(latticeparams_or_material, str):
         latticeparams = DictLT.dict_Materials[latticeparams_or_material][1]
     else:

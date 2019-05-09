@@ -52,7 +52,7 @@ def test_3(anglesample, calib, IIprime):
 
     print("finding source origin from two reflectionx")
     OM = LGeo.OM_from_uf(uf, calib, energy=0, offset=None, verbose=0)[:2]
-    print("OM", end=' ')
+    print("OM")
     IWs = np.transpose(IW)[:2]
     OMs = np.transpose(OM)[:2]
     print("Using 2 reflections")
@@ -81,7 +81,7 @@ def test_4(IIprime, height_wire, errorOM1, errorOM2):
 
     print("finding source origin from two reflectionx")
     OM = LGeo.OM_from_uf(uf, calib, energy=0, offset=None, verbose=0)[:2]
-    print("OM", end=' ')
+    print("OM")
 
     print("Using 2 reflections")
     IWs = np.transpose(IW)[:2]
