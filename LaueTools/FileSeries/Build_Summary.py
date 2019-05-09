@@ -6,6 +6,9 @@ Created on Wed Jun 26 12:23:57 2013
 
 from initially T. Cerba
 """
+import multigrainFS as MG
+import module_graphique as modgraph
+
 import wx
 if wx.__version__ <'4.':
     WXPYTHON4 = False
@@ -17,9 +20,7 @@ else:
     def sttip(argself, strtip):
         return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
     wx.Window.SetToolTipString = sttip
-import multigrainFS as MG
 
-import module_graphique as modgraph
 import os
 import param_multigrain as PAR
 import sys

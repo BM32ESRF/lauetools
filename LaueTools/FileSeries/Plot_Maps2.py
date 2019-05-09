@@ -3,26 +3,31 @@
 Created on Tue Jul  2 11:20:21 2013
 
 @author: micha
+
+from initially T. Cerba
+
 """
 import os
-
-import multigrainFS as MG
-print('MG position',MG.__file__)
-import param_multigrain as PAR
-
+import sys
 import wx
-if wx.__version__ <'4.':
+if wx.__version__ < '4.':
     WXPYTHON4 = False
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
-    
+
     def sttip(argself, strtip):
+        """ translate name of tooltip
+        """
         return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
     wx.Window.SetToolTipString = sttip
-from wx.lib.agw.shapedbutton import SButton, SBitmapButton
-    
+from wx.lib.agw.shapedbutton import SButton
+
+sys.path.append('..')
+
+import FileSeries.multigrainFS as MG
+
 list_txtparamPM = ['Map Summary File',
                  'File xyz',
                  'maptype',
@@ -103,13 +108,14 @@ list_txtparamPM_type_dict = {'Map Summary File':str,
 
 
 class MainFrame_plotmaps (wx.Frame):
-    def __init__(self, parent, id, title, dict_params):
-        wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(1000, 1280))
+    def __init__(self, parent, _id, title, dict_params):
+        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 1280))
 
 #         print "__init__ of MainFrame_plotmaps"
         self.dict_params = dict_params
 
         self.list_of_windows = []
+        self.list_txtctrl_new = []
 
         print((self.dict_params))
 
@@ -291,7 +297,7 @@ class MainFrame_plotmaps (wx.Frame):
         self.dict_params['Map Summary File'] = filesummary_path
         self.dict_params['File xyz'] = filexyz_path
 
-        dict_params = {}
+        #dict_params = {}
 
         for kk, key in enumerate(list_txtparamPM):
             if kk >= 2:
@@ -372,29 +378,29 @@ class MainFrame_plotmaps (wx.Frame):
 
 
 class Stock_parameters_PlotMaps:
-    def __init__(self, list_txtparamPM, list_valueparamPM):
-        self.list_txtparamPM = list_txtparamPM
-        self.dict_params = list_valueparamPM
+    def __init__(self, _list_txtparamPM, _list_valueparamPM):
+        self.list_txtparamPM = _list_txtparamPM
+        self.dict_params = _list_valueparamPM
 
-def fill_list_valueparamPM(initialparameters):
+def fill_list_valueparamPM(dict_initialparameters):
     """
     return a list of default value for buildsummary board from a dict initialparameters
     """
     list_valueparam_PM = [
-                    initialparameters['Map Summary File'],
-                     initialparameters['File xyz'],
-                     initialparameters['maptype'],
-                     initialparameters['filetype'],
-                     initialparameters['substract_mean'],
-                     initialparameters['numgrain'],
-                     initialparameters['filter_on_pixdev_and_npeaks'],
-                     initialparameters['maxpixdev_forfilter'],
-                     initialparameters['minnpeaks_forfilter'],
-                     initialparameters['min_forplot'],
-                     initialparameters['max_forplot'],
-                     initialparameters['pixdevmin_forplot'],
-                     initialparameters['npeaksmin_forplot'],
-                     initialparameters['npeaksmax_forplot']
+                    dict_initialparameters['Map Summary File'],
+                     dict_initialparameters['File xyz'],
+                     dict_initialparameters['maptype'],
+                     dict_initialparameters['filetype'],
+                     dict_initialparameters['substract_mean'],
+                     dict_initialparameters['numgrain'],
+                     dict_initialparameters['filter_on_pixdev_and_npeaks'],
+                     dict_initialparameters['maxpixdev_forfilter'],
+                     dict_initialparameters['minnpeaks_forfilter'],
+                     dict_initialparameters['min_forplot'],
+                     dict_initialparameters['max_forplot'],
+                     dict_initialparameters['pixdevmin_forplot'],
+                     dict_initialparameters['npeaksmin_forplot'],
+                     dict_initialparameters['npeaksmax_forplot']
 
                      ]
     return list_valueparam_PM
@@ -458,7 +464,6 @@ initialparameters['fast axis: x or y'] = 'x'
 # initialparameters['File xyz'] = os.path.join(MainFolder, 'mappos1__xy_0_to_1425.dat')
 # initialparameters['stiffness file'] = os.path.join(MainFolder, 'si.stf')
 
-import numpy as np
 
 list_valueparamPM = [initialparameters['Map Summary File'],
                      initialparameters['File xyz'],
@@ -479,7 +484,10 @@ list_valueparamPM = [initialparameters['Map Summary File'],
 
 # dict_params = fill_list_valueparamPM(initialparameters)
 
-def prepare_params_for_plot(list_val, list_key=list_txtparamPM):
+def prepare_params_for_plot(list_val, list_key=None):
+    if list_key is None:
+        list_key = list_txtparamPM
+
     if len(list_val) != len(list_key):
         sentence = "Lengthes of list_val and list_key differ in prepare_params_for_plot() in Plot_maps\n"
         sentence += "Nb_of_parameters= %d, Nb of values %d !!!\n" % (len(list_key), len(list_val))

@@ -3,11 +3,11 @@
 Created on Wed Jun 26 12:23:40 2013
 
 @author: micha
+
+from initially T. Cerba
 """
 import sys
 import os
-
-
 
 sys.path.append('..')
 

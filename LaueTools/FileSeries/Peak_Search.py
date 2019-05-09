@@ -4,7 +4,7 @@ Created on Wed Jun 26 12:23:18 2013
 
 @author: js micha
 
-January 2013
+from initially T. Cerba
 """
 import sys
 import os
@@ -24,8 +24,8 @@ else:
     wx.Window.SetToolTipString = sttip
 
 import readmccd as RMCCD
-
 import dict_LaueTools as DictLT
+
 dict_CCD = DictLT.dict_CCD
 LIST_OF_CCDS = list(dict_CCD.keys())
 LIST_OF_CCDS.sort()
