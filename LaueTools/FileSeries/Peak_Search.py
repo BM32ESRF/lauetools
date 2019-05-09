@@ -101,24 +101,24 @@ for key, tip in zip(LIST_TXTPARAM_FILE_PS, TIP_PS):
 
 
 class Stock_parameters_PeakSearch:
-    def __init__(self, list_txtparamPS, list_valueparamPS):
-        self.list_txtparamIR = list_txtparamPS
-        self.list_valueparamIR = list_valueparamPS
+    def __init__(self, _list_txtparamPS, _list_valueparamPS):
+        self.list_txtparamIR = _list_txtparamPS
+        self.list_valueparamIR = _list_valueparamPS
 
 
 #--- --  Class of Local Maxima and peak fitting board
 class PeakSearchParameters(wx.Frame):
-    def __init__(self, parent, _id, title, listParameters):
+    def __init__(self, parent, _id, title, _listParameters):
 
-        list_txtparamPS, list_valueparamPS, list_unitsparams = listParameters
+        _list_txtparamPS, _list_valueparamPS, _list_unitsparams = _listParameters
 
         self.parent = parent
 
-        self.list_txtparamIR = list_txtparamPS
-        self.list_valueparamIR = list_valueparamPS
-        self.list_unitsparams = list_unitsparams
+        self.list_txtparamIR = _list_txtparamPS
+        self.list_valueparamIR = _list_valueparamPS
+        self.list_unitsparams = _list_unitsparams
 
-        nbrows = len(list_txtparamPS)
+        nbrows = len(_list_txtparamPS)
 
         wx.Frame.__init__(self, parent, _id, title,
                           wx.DefaultPosition, wx.Size(500, nbrows * 40))
@@ -153,6 +153,7 @@ class PeakSearchParameters(wx.Frame):
             wxtxt.SetToolTipString(self.tips_dict[kk])
             self.txtctrl.SetToolTipString(self.tips_dict[kk])
 
+        self.dict_param = {}
         self.setParams()
 
         btnSave = wx.Button(self.panel, -1, "ACCEPT && SAVE",
@@ -357,10 +358,10 @@ class PeakSearchParameters(wx.Frame):
 
 #---  -- Class of Folder and Filename parameters for PeakSearch Series
 class MainFrame_peaksearch(wx.Frame):
-    def __init__(self, parent, _id, title, initialparameters, objet_PS):
+    def __init__(self, parent, _id, title, _initialparameters, objet_PS):
         wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 500))
 
-        self.initialparameters = initialparameters
+        self.initialparameters = _initialparameters
 
         self.parent = parent
         self.objet_PS = objet_PS

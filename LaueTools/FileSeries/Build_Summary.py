@@ -6,8 +6,11 @@ Created on Wed Jun 26 12:23:57 2013
 
 from initially T. Cerba
 """
-import multigrainFS as MG
-import module_graphique as modgraph
+import sys
+import os
+sys.path.append('..')
+import FileSeries.multigrainFS as MG
+import FileSeries.module_graphique as modgraph
 
 import wx
 if wx.__version__ <'4.':
@@ -21,9 +24,9 @@ else:
         return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
     wx.Window.SetToolTipString = sttip
 
-import os
+
 import param_multigrain as PAR
-import sys
+
 
 sys.path.append('..')
 
@@ -66,11 +69,11 @@ DICT_TOOLTIP['Material'] = 'Material : Material'
 DICT_TOOLTIP['file xyz'] = 'file xyz : full path to file xy with 3 columns (imagefile_index x y)'
 
 class MainFrame_BuildSummary(wx.Frame):
-    def __init__(self, parent, _id, title, initialparameters):
+    def __init__(self, parent, _id, title, _initialparameters):
         wx.Frame.__init__(self, parent, _id, title,
                           wx.DefaultPosition, wx.Size(1000, 550))
 
-        self.initialparameters = initialparameters
+        self.initialparameters = _initialparameters
 
         file_xyz = self.initialparameters.pop(1)
 
@@ -239,9 +242,9 @@ class MainFrame_BuildSummary(wx.Frame):
 
         wx.MessageBox('Sorry! This will be implemented very soon!', 'INFO')
         return
-        PSboard = SetParametersFrame(self, -1, 'New parameters',
-                                              objet_BS, objet_BSi, self.list_txtctrl)
-        PSboard.Show(True)
+        # PSboard = SetParametersFrame(self, -1, 'New parameters',
+        #                                       objet_BS, objet_BSi, self.list_txtctrl)
+        # PSboard.Show(True)
 
     def OnbuildManually(self, event):
         PSboard = Manual_XYZfilecreation_Frame(self, -1,
@@ -251,9 +254,9 @@ class MainFrame_BuildSummary(wx.Frame):
     def Onbtn_fabrication_with_image(self, event):
         wx.MessageBox('Sorry! This will be implemented very soon!', 'INFO')
         return
-        PSboard = SetParameters_BuildSummary_fabricationImage(self, -1,
-                        'Entryparameters_fabricationimage')
-        PSboard.Show(True)
+        # PSboard = SetParameters_BuildSummary_fabricationImage(self, -1,
+        #                 'Entryparameters_fabricationimage')
+        # PSboard.Show(True)
 
     def OnCreateSummary(self, event):
 
