@@ -1144,6 +1144,154 @@ def test_SiCu(nstart=92, nend=1707):
     return dictRes
 #    return DataSet_Si, DataSet_Cu
 
+def index_fileseries(fileindexrange,
+                     nbGrainstoFind=1,
+          dirname='/home/micha/LaueProjects/CuVia/Carto',
+          dirtowrite=None,
+          saveObject=0):
+    """
+    This is still an example specific to CuVia (Cu and Si)
+    for CuVia Jul 11
+    nstart = 1708
+    nend = 3323
+    """
+    nstart, nend = fileindexrange
+
+    if dirtowrite is None:
+        dirtowrite = dirname
+
+    spot_index_central = [0, 1, 2]
+    key_material = 'Si'
+    emin = 5
+    emax = 25
+    nbGrainstoFind_Si = 1
+
+    import time
+    file_to_index = os.path.join(dirname, 'Si_TSV.cor')
+
+    t0_2 = time.time()
+    DataSet_Si = spotsset()
+
+    database = None
+
+    dict_params = {'MATCHINGRATE_THRESHOLD_IAL': 60,
+                   'MATCHINGRATE_ANGLE_TOL': 0.2,
+                   'NBMAXPROBED': 10,
+                   'central spots indices': 10,
+                   'AngleTolLUT': .5,
+                   'UseIntensityWeights':True,
+                   'MinimumNumberMatches':10}
+
+    DataSet_Si.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database, IMM=False,
+                            MatchingRate_List=[20, 20, 20], angletol_list=[0.5, 0.2],
+                            nbGrainstoFind=nbGrainstoFind_Si,
+                            verbose=0)
+
+    tf2 = time.time()
+    print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
+
+    # DataSet_Si.plotallgrains() # to comment when mutliprocessing
+
+    # ind, 2theta, chi, posx, posy, int
+    dataSubstrate = DataSet_Si.getSpotsFamilyExpData(0).T
+
+    key_material = 'Cu'
+    nbGrainstoFind_Cu = nbGrainstoFind
+    dict_params = {'MATCHINGRATE_THRESHOLD_IAL':40,
+                   'MATCHINGRATE_ANGLE_TOL': 0.2,
+                   'NBMAXPROBED': 20,
+                   'central spots indices': 3,
+                   'AngleTolLUT': .5,
+                   'UseIntensityWeights':True,
+                   'MinimumNumberMatches':10}
+
+    dictMat = {}
+    dictMR = {}
+    dictNB = {}
+    dictstrain = {}
+    dictspots = {}
+
+    if saveObject:
+        dict_spotssetObj = {}
+
+#    dictRes = {'dictMat':dictMat,
+#               'dictMR':dictMR,
+#               'dictNB':dictNB,
+#               'dictstrain':dictstrain}
+    dictRes = dictMat, dictMR, dictNB, dictstrain, dictspots
+
+    if saveObject:
+        todump = dictRes, dict_spotssetObj
+    else:
+        todump = dictRes
+
+    for k in list(range(nstart, nend + 1)):  # 1708-3323
+        file_to_index = os.path.join(dirname, 'TSVCU_%04d.cor' % k)
+
+        print("\n\nINDEXING    file : %s\n\n" % file_to_index)
+
+        DataSet_Cu = spotsset()
+        DataSet_Cu.importdatafromfile(file_to_index)
+
+        DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
+
+        # TODO usefull ?
+        # init res dict
+        DataSet_Cu.dict_grain_matrix = [0 for kk in list(range(nbGrainstoFind_Cu))]
+        DataSet_Cu.dict_grain_matching_rate = [[-1, -1] for kk in list(range(nbGrainstoFind_Cu))]
+        DataSet_Cu.dict_grain_devstrain = [0 for kk in list(range(nbGrainstoFind_Cu))]
+
+        # preparing dicts of results
+        dictMat[k] = [0 for kk in list(range(nbGrainstoFind_Cu))]
+        dictMR[k] = [-1 for kk in list(range(nbGrainstoFind_Cu))]
+        dictNB[k] = [-1 for kk in list(range(nbGrainstoFind_Cu))]
+        dictstrain[k] = [0 for kk in list(range(nbGrainstoFind_Cu))]
+        previousResults = None
+
+        if k > nstart and dictMat[k - 1][0] is not 0:
+            addMatrix = dictMat[k - 1][0]
+            previousResults = addMatrix, dictMR[k - 1][0], dictNB[k - 1][0]
+
+        DataSet_Cu.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_params, database,
+                             use_file=0, IMM=False, angletol_list=[0.5, 0.5],
+                            MatchingRate_List=[10, 10, 10],
+                            nbGrainstoFind=nbGrainstoFind_Cu,
+                            verbose=0, previousResults=previousResults)
+
+        dictspots[k] = DataSet_Cu.getSummaryallData()
+
+        if saveObject:
+            dict_spotssetObj[k] = DataSet_Cu
+
+        # filling dicts with indexation results
+        for nbgrain in list(range(nbGrainstoFind_Cu)):
+            dictMat[k][nbgrain] = DataSet_Cu.dict_grain_matrix[nbgrain]
+            dictMR[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][1]
+            dictNB[k][nbgrain] = DataSet_Cu.dict_grain_matching_rate[nbgrain][0]
+            dictstrain[k][nbgrain] = DataSet_Cu.dict_grain_devstrain[nbgrain]
+
+        # intermediate saving
+        if (k % 10) == 0:
+#            dictRes = dictMat, dictMR, dictNB
+            # filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
+            # pickle.dump(todump, filepickle)
+            # filepickle.close()
+
+            with open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w') as f:
+                pickle.dump(todump, f)
+
+    # filepickle = open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w')
+    # pickle.dump(todump, filepickle)
+    # filepickle.close()
+
+    with open(os.path.join(dirtowrite, 'dictCu_3g_%04d_%04d' % (nstart, nend)), 'w') as f:
+        pickle.dump(todump, f)
+
+
+#        DataSet_Cu.plotallgrains()
+
+    return todump
+#    return DataSet_Si, DataSet_Cu
 
 # ------------  Main            ------------------------------
 if __name__ == '__main__':

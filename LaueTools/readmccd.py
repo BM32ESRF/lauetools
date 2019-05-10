@@ -34,7 +34,7 @@ try:
 except:
     print("Missing fabio module. Please install it if you need open some tiff images from the sCMOS camera")
     FABIO_EXISTS = False
-    
+
 #try:
 #    import Image as II
 #except:
@@ -47,7 +47,7 @@ try:
 except:
     print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images")
     LIBTIFF_EXISTS = False
-    
+
 try:
     from PIL import Image
     PIL_EXISTS = True
@@ -3410,12 +3410,14 @@ def writepeaklist(tabpeaks, output_filename,
     """
     write peaks properties and comments in file with extension .dat added
     """
-    IOLT.writefile_Peaklist(output_filename,
+    outputfilefullpath= IOLT.writefile_Peaklist(output_filename,
                     tabpeaks,
                     dirname=outputfolder,
                     overwrite=1,
                     initialfilename=initialfilename,
                     comments=comments)
+
+    return outputfilefullpath
 
 
 def fitoneimage_manypeaks(filename, peaklist, boxsize,

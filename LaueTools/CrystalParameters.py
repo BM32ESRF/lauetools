@@ -4,7 +4,7 @@ module of lauetools project
 
 JS Micha May 2019
 
-this module gathers procedures to define crystal lattice parameters 
+this module gathers procedures to define crystal lattice parameters
 """
 
 import numpy as np
@@ -17,6 +17,7 @@ import generaltools as GT
 DEG = np.pi / 180.
 RAD = 1 / DEG
 IDENTITYMATRIX = np.eye(3)
+NORMAL_TO_SAMPLE_AXIS = np.array([-np.sin(40. * DEG), 0, np.cos(40. * DEG)])
 
 
 def hasCubicSymmetry(key_material):
@@ -59,8 +60,8 @@ def isCubic(latticeparams):
 def GrainParameter_from_Material(key_material):
     """
     create grain parameters list for the Laue pattern simulation
-    
-    Can handle material defined in dictionary by four elements instead of 6 lattice parameters 
+
+    Can handle material defined in dictionary by four elements instead of 6 lattice parameters
 
     :param key_material: material or structure label
     :type key_material: string
@@ -131,7 +132,7 @@ def Prepare_Grain(key_material, OrientMatrix=None, force_extinction=None):
                             " Prepare_Grain." % key_material)
 
     grain, contains_U = GrainParameter_from_Material(key_material)
-    
+
     if force_extinction is not None:
         grain[1] = force_extinction
 
@@ -235,26 +236,26 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
     """
     Calculate B0 matrix (columns = vectors a*,b*,c*) from direct (real) space lattice parameters when directspace=1
     Calculate B0 matrix (columns = vectors a,b,c) from direct (real) space lattice parameters when directspace=0
-    
+
     directspace=1  converts  (reciprocal) direct lattice parameters to (direct) reciprocal space
     directspace=0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
-    
-    
+
+
     directspace=1 direct space lattice parameters dlat=[a,b,c, alpha, beta, gamma]
     (angles are in degrees)
     else: directspace=0 reciprocal space lattice parameters dlat=[a*,b*,c*, alpha*, beta*, gamma*]
     (angles are in degrees)
 
     Returns B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix:
-    X_ortho=B G* where G*=ha*+kb*+lc* 
+    X_ortho=B G* where G*=ha*+kb*+lc*
 
     B matrix is used in q=U B G* formula or
         as B0  in q= (UB) B0 G*
 
     directspace=1 calculates "B" matrix in the reciprocal space of input latticeparameters
     directspace=0 calculates "B" matrix in same space of  input latticeparameters
-    
-    
+
+
     setvolume  : False   compute true volume from lattice parameters
                 1       set direct unit cell volume to 1
                 'a**3'  set direct unit cell volume to a**3
@@ -265,7 +266,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
     (a*  b*cosgam*  c*cosbeta*)
     (0   b*singam* -c*sinbeta*cosalpha)
     (0   0          c*sinbeta*sinalpha)
-    with 
+    with
     cos(alpha)=(cosbeta*cosgam*-cosalpha*)/(sinbeta*singam*)
     c*sinbeta*sinalpha = 1/c
     """
@@ -298,15 +299,15 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
         # C=(ccosbeta,c/singamma*(cosalpha-cosgamma*cosbeta),0)
         # C=(cx,cy,c*sqrt(1-cx**2-cy**2))
         B[0, 0] = lat[0]
-        
+
         B[0, 1] = lat[1] * np.cos(lat[5])  # gamma angle
         B[1, 1] = lat[1] * np.sin(lat[5])
-        
+
 #         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
 #         latstar = dlat_to_rlat(lat)
 #         B[1, 2] = -lat[2] * np.sin(lat[4]) * np.cos(latstar[3] * DEG)
 #         B[2, 2] = lat[2] * np.sin(lat[4]) * np.sin(latstar[3] * DEG)
-        
+
         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
         B[1, 2] = lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4]))
         B[2, 2] = lat[2] * np.sqrt(1. - B[0, 2] ** 2 - B[1, 2] ** 2)
@@ -319,14 +320,13 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams,constantlength='a'):
     """
     Computes deviatoric strain and new lattice parameter from matrix UB
     and reference unit cell parameter
-    
+
     latticeparams    : 6 lattice parameters  [a,b,c,alpga,beta,gamma]   in Angstrom and deg
     constantlength    : 'a','b','c' to set one length according to the value in latticeparams
 
     q = newUBmat . B .  G*  where B (triangular up matrix) comes from lattice parameters input 
     q = UBstar_s . G*
     """
-    
 
     # print "new UBs matrix in q= UBs G"
     B = calc_B_RR(latticeparams)
@@ -370,7 +370,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams,constantlength='a'):
     lattice_parameter_direct_strain[2] *= ratio
 
     print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
-    
+
     return devstrain, lattice_parameter_direct_strain
 
 
@@ -410,15 +410,15 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,constantlength='a'):
     # starting B0matrix corresponding to the unit cell   -----
     latticeparams = dict_Materials[key_material][1]
     B0matrix = calc_B_RR(latticeparams)
-    
+
     UBmat = copy.copy(UBmatrix)
-    
+
     (devstrain,
      lattice_parameter_direct_strain) = compute_deviatoricstrain(UBmat,
                                                                     B0matrix,
                                                                     latticeparams)
 
-    
+
     if constantlength == 'a':
         index_constant_length = 0
     elif constantlength == 'b':
@@ -434,7 +434,7 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,constantlength='a'):
     lattice_parameter_direct_strain[2] *= ratio
 
     print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
-    
+
     return lattice_parameter_direct_strain
 
 
@@ -442,9 +442,9 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
     """
     return matrix whose columns are unit cell basis vector a,b,c in absolute Lauetools frame
     from Bmatrix
-    
+
     Corresponds to Matrix from real unit cell frame to reciprocal unit cell frame
-    X)in a*,b*,c* = P * X)in a,b,c 
+    X)in a*,b*,c* = P * X)in a,b,c
     """
     Bm = np.array(Bmatrix)
     Astar, Bstar, Cstar = Bm.T
@@ -453,17 +453,17 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
     a = np.cross(Bstar, Cstar) / volumestar
     b = np.cross(Cstar, Astar) / volumestar
     c = np.cross(Astar, Bstar) / volumestar
-    
+
     return np.array([a, b, c]).T
 
 
 def fromrealframe_to_reciprocalframe(vector, Bmatrix):
     """
     convert components of vector expressed in direct (real) unit cell basis vectors to reciprocal ones
-    
-    v= ua+vb+wc (real unit cell a,b,c)  
+
+    v= ua+vb+wc (real unit cell a,b,c)
     v= fromrealframe_to_reciprocalframe([u,v,w], UB,Bmatrix) = [h,k,l]   i.e. ha*+kb*+lc*
-    
+
     Xrecipr= B-1*P* Xreal
     """
     P = computeDirectUnitCell_from_Bmatrix(Bmatrix)
@@ -474,12 +474,12 @@ def fromrealframe_to_reciprocalframe(vector, Bmatrix):
 def fromreciprocalframe_to_realframe(vector, Bmatrix):
     """
     convert components of vector expressed in reciprocal unit cell basis vectors to  direct (real) ones
-    
+
     v= ha*+kb*+lc*
     v= fromreciprocalframe_to_realframe([h,k,l])  = [u,v,w]
-    
+
     Xreal= P-1 * B* Xrecipr
-    
+
     """
     P = computeDirectUnitCell_from_Bmatrix(Bmatrix)
     invP = np.linalg.inv(P)
@@ -489,18 +489,18 @@ def fromreciprocalframe_to_realframe(vector, Bmatrix):
 def DirectUnitCellVectors_from_UB(UB, Bmatrix):
     """
     return matrix whose columns are unit cell basis vector a,b,c in absolute Lauetools frame
-    
+
     get a,b,c from  astar=UB Bmatrix (1 0 0)
                     bstar=UB Bmatrix (0 1 0)
                     cstar=UB Bmatrix (0 0 1)
     computeDirectUnitCell_from_Bmatrix(dot(UB,Bmatrix))
-    
+
     ASSUMPTION: small deformation case where UB is considered as a pure rotation
     then dot(UB,computeDirectUnitCell_from_Bmatrix(Bmatrix))
     """
     return computeDirectUnitCell_from_Bmatrix(np.dot(UB, Bmatrix))
-    
-    
+
+
 def VolumeCell(latticeparameters):
     """
     unit cell volume from lattice parameters (either real or reciprocal)
@@ -598,8 +598,7 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     then results angles are in degrees
 
     TIP: dlat stands for direct lattice, rlat for reciprocal lattice 
-    
-    
+
     TODO: to remove setvolume
     """
     rlat = np.zeros(6)
@@ -613,7 +612,7 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     # a[i]*b[j] = d[ij], i.e. no 2PI's in reciprocal lattice.
 
     # compute volume of real lattice cell
-    
+
 #     print 'dlat[:6]', dlat[:6]
 
     if setvolume is False:
@@ -725,43 +724,43 @@ def calc_epsp(dlat):
 def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.):
     """
     qxyzLT= UB B0 q_a*b*c*
-    
+
     if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
-    
+
     Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
-    
+
     qxyzLT=P q sample  (P = (cos40,0,-sin40),(0,1,0),(sin40,0,cos40))
-    
+
     then:
-    
+
     operator_sample= P-1 UB operator_crystal UB-1 P
-    
+
     sampletilt in degree
-    
+
     """
     P = GT.matRot([0, 1, 0], -sampletilt)
 #    M = np.dot(np.linalg.inv(P), UBmat)
     M = np.dot(P.transpose(), UBmat)  # matrice unitaire : inverse = transposee
     invM = np.dot(np.linalg.inv(UBmat), P)
-    
+
     strain_sampleframe = np.dot(M, np.dot(strain, invM))
-    
+
     return strain_sampleframe
 
 def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
     """
     qxyzLT= UB B0 q_a*b*c*
-    
+
     if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
-    
+
     Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
-    
+
     operator_LT= UB operator_crystal UB-1
-    
+
     """
-   
+
     strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
-    
+
     return strain_LaueToolsframe
 
 def strain_from_crystal_to_sample_frame(deviat_strain, UBmat,
@@ -800,22 +799,22 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption='stre
     """
     compute full strain & stress from deviatoricStrain (voigt notation in crystal frame), material
     and mechanical assumtion
-    
-    
+
+
     C a*b*c* = (UB-1P)**2 C sample (P-1 UB)**2
     qxyzLT = P qsample
     qxyzLT=UB qcrystal(a*b*c*)
     stress xyzLT = P stress sample P-1
-    
+
     sigma =C eps
     rank 2 = rank 4 rank 2
-    
+
     voigt notation
     sigma = C eps
-    
+
     (s11,s22,s33,s23,s13,s12)=C (eps11,eps22,eps33,2*eps23,2*eps13,2*eps12)
     with C = 6x6 'matrix'
-    
+
     full strain = deviatoric_strain + hydrostatic_strain/3 * Identity
       eps =eps_dev+eps_h/3 * Idmatrix(3,3):
      (s11,s22,s33,s23,s13,s12)=C (eps_dev11+eps_h/3,
@@ -824,52 +823,52 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption='stre
                                  2*eps_dev23,
                                  2*eps_dev13,
                                  2*eps_dev12)
-    to get  eps_h since                           
-    mechanical assumption on sigmazz=0 corresponds to third component calcutation: 
+    to get  eps_h since
+    mechanical assumption on sigmazz=0 corresponds to third component calcutation:
     scalar product of C[2] with eps =0
-    
+
     """
     if assumption != 'stresszz=0':
         print("not yet implemented")
         return None
-    
+
     symmetry = dict_Stiffness[key_material][2]
     if symmetry != 'cubic':
         print("not yet implemented")
         return None
     # constant in crystal frame
     c11, c12, c44 = dict_Stiffness[key_material][1]
-    
+
     print('c11, c12, c44', c11, c12, c44)
-    
+
     Cmatrix = np.array([[c11, c12, c12, 0, 0, 0],
                          [c12, c11, c12, 0, 0, 0],
                          [c12, c12, c11, 0, 0, 0],
                          [0, 0, 0, c44, 0, 0],
                          [0, 0, 0, 0, c44, 0],
                          [0, 0, 0, 0, 0, c44]], dtype=np.float)
-    
+
     P = GT.matRot([0, 1, 0], -sampletilt)
-    
+
     transformmatrix = np.dot(np.linalg.inv(UBmatrix), P)
 #     invtransformmatrix = np.linalg.inv(transformmatrix)
 #     transformmatrix = np.eye(3)
-    
+
     import elasticity as el
     C_sampleframe = el.rotate_cubic_elastic_constants(c11, c12, c44, transformmatrix)
 
     print("C_sampleframe", C_sampleframe)
-    
+
     deviatoricStrain_sampleframe = strain_from_crystal_to_sample_frame2(deviatoricStrain, UBmatrix)
-    
+
     # with UBmatrix=np.eye(3)
     #     deviatoricStrain_crystalframe=np.array([[ 0.00082635, -0.00076604, -0.00098481],
     #                                    [ 0.        , -0.001     ,  0.        ],
     #                                    [-0.00098481, -0.00064279,  0.00117365]])
-    
+
     #     deviatoricStrain_sampleframe = np.array([[-0.001, -0.0, 0], [0.0, -0.001, 0], [0, 0, 0.002]])
     print("deviatoricStrain_sampleframe", deviatoricStrain_sampleframe)
-    
+
     # use elasticity module instead
     devstrain_voigt_sampleframe = np.zeros(6)
     for i in list(range(6)):
@@ -877,68 +876,66 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption='stre
         if i >= 3:
             val *= 2.
         devstrain_voigt_sampleframe[i] = val
-        
+
     print("devstrain_voigt_sampleframe", devstrain_voigt_sampleframe)
-    
+
     print(" numerator", np.dot(devstrain_voigt_sampleframe, C_sampleframe[2]))
     print("denominator", np.sum(C_sampleframe[2][:3]))
     print("C_sampleframe[2]", C_sampleframe[2])
-        
+
     # third row gives an equation where eps_hydro can be extracted
     # 0 = np.dot(devstrain_voigt,C_sampleframe[2])+eps_hydro/3.*np.sum(np.dot(devstrain_voigt[:3],C_sampleframe[2][3:]))
     hydrostrain = -np.dot(devstrain_voigt_sampleframe, C_sampleframe[2]) * 3 / np.sum(C_sampleframe[2][:3])
-    
+
     print("hydrostatic strain", hydrostrain)
 
     fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.*np.eye(3)
-    
+
     fullstrain_voigt_sampleframe = devstrain_voigt_sampleframe + hydrostrain / 3.*np.array([1, 1, 1, 0, 0, 0])
-    
+
     fullstress_voigt_sampleframe = np.dot(C_sampleframe, fullstrain_voigt_sampleframe)
-    
+
     print('fullstress_voigt_sampleframe', fullstress_voigt_sampleframe)
     print('fullstress_voigt_sampleframe[2] stress normal to sample surface (must be 0)', fullstress_voigt_sampleframe[2])
-    
+
     return fullstrain_sampleframe, fullstress_voigt_sampleframe, hydrostrain, deviatoricStrain_sampleframe
 
 
-def matstarlab_to_matstarlabOND(matstarlab = None, 
-                                matLT3x3 = None,
-                                verbose = 1):  # OR
+def matstarlab_to_matstarlabOND(matstarlab=None, 
+                                matLT3x3=None,
+                                verbose=1):  # OR
 
-        if verbose : print("entering CP.matstarlab_to_matstarlabOND")
-        if matstarlab is not None :
-            if verbose : print("matstarlab = " , matstarlab)
-            astar1 = matstarlab[:3]
-            bstar1 = matstarlab[3:6]
-            cstar1 = matstarlab[6:]
+    if verbose: print("entering CP.matstarlab_to_matstarlabOND")
+    if matstarlab is not None:
+        if verbose: print("matstarlab = ", matstarlab)
+        astar1 = matstarlab[:3]
+        bstar1 = matstarlab[3:6]
+        cstar1 = matstarlab[6:]
 
-        elif matLT3x3 is not None :
-            if verbose : print("matLT3x3 = ", matLT3x3)
-            astar1 = matLT3x3[:,0]
-            bstar1 = matLT3x3[:,1]
-            cstar1 = matLT3x3[:,2]
+    elif matLT3x3 is not None :
+        if verbose: print("matLT3x3 = ", matLT3x3)
+        astar1 = matLT3x3[:, 0]
+        bstar1 = matLT3x3[:, 1]
+        cstar1 = matLT3x3[:, 2]
 
-        astar0 = astar1 / GT.norme_vec(astar1)
-        cstar0 = np.cross(astar0, bstar1)
-        cstar0 = cstar0 / GT.norme_vec(cstar0)
-        bstar0 = np.cross(cstar0, astar0)
-        
-        if matstarlab is not None :
-            matstarlabOND = np.hstack((astar0, bstar0, cstar0)).transpose()
-            if verbose : 
-                print("exiting CP.matstarlab_to_matstarlabOND")
-            return(matstarlabOND)
-        elif matLT3x3 is not None :
-            matLT3x3OND = np.column_stack((astar0,bstar0,cstar0))
-            if verbose : 
-                print("matLT3x3OND = ", matLT3x3OND)
-                print("exiting CP.matstarlab_to_matstarlabOND")
-            return(matLT3x3OND)
+    astar0 = astar1 / GT.norme_vec(astar1)
+    cstar0 = np.cross(astar0, bstar1)
+    cstar0 = cstar0 / GT.norme_vec(cstar0)
+    bstar0 = np.cross(cstar0, astar0)
 
-        #print matstarlabOND
+    if matstarlab is not None:
+        matstarlabOND = np.hstack((astar0, bstar0, cstar0)).transpose()
+        if verbose: 
+            print("exiting CP.matstarlab_to_matstarlabOND")
+        return(matstarlabOND)
+    elif matLT3x3 is not None:
+        matLT3x3OND = np.column_stack((astar0,bstar0,cstar0))
+        if verbose: 
+            print("matLT3x3OND = ", matLT3x3OND)
+            print("exiting CP.matstarlab_to_matstarlabOND")
+        return(matLT3x3OND)
 
-        
+
 def matstarlab_to_matdirONDsample(matstarlab, omega0=40.,
                                   matrix_in_LaueToolsFrame=False):
     """
@@ -1010,9 +1007,6 @@ def directlatticeparameters_fromBmatrix(Bmatrix):
     return lattice_parameter_direct
 
 
-
-
-
 def matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True):
     """
     convert matrix from lauetools frame: ki//x, z towards CCD (top), y = z^x
@@ -1029,9 +1023,9 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True):
     ie a0,a1,a2 forms the 1rst column!
     so take care of transpose the natural reshaped matrix
     mat3x3 = mat.reshape((3,3)).T
-    
+
     warning : here input UBmat should include B0  # OR
-    
+
     """
     mm = UBmat
 
@@ -1065,10 +1059,9 @@ def from_ORlabframe_to_Lauetools(mat):
 def matstarlabOR_to_matstarlabLaueTools(matstarlab, vec_in_columns=True):
     """
     reciprocal function of matstarlabLaueTools_to_matstarlabOR
-    see corresponding doc 
-    
+    see corresponding doc
+
     warning : here resulting UBmat includes B0   # OR
-    
     """
     matstarlab = matstarlab[:]
 
@@ -1088,89 +1081,89 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab, vec_in_columns=True):
 
 def matstarlab_to_matstarsample3x3(matstarlab,
                                    omega = None, # 40.
-                                   mat_from_lab_to_sample_frame = np.array([[ 1.,                 0.  ,               0.               ],
-                                                          [ 0.,                 0.766044443118978,  0.642787609686539],
-                                                          [ 0.,                -0.642787609686539,  0.766044443118978]]),                                             
+                                   mat_from_lab_to_sample_frame = np.array([[ 1., 0.  , 0.],
+                                                          [ 0., 0.766044443118978, 0.642787609686539],
+                                                          [ 0., -0.642787609686539, 0.766044443118978]]),                                             
                                    ):
 
-    matstarlab3x3 =  GT.matline_to_mat3x3(matstarlab)
-    
+    matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
+
     if (omega  is  not None)&(mat_from_lab_to_sample_frame is None) : # deprecated - only for retrocompatibility
         omega = omega*DEG
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
         mat_from_lab_to_sample_frame = np.array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
-        
+
     matstarsample3x3 = np.dot(mat_from_lab_to_sample_frame, matstarlab3x3)
-    
+
     #print  "matstarsample3x3 =\n" , matstarsample3x3.round(decimals=6)
     return(matstarsample3x3)
 
 def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
-                                                  UBmat = None,  # LT , UBB0 ici
-                                                  omega = None, # 40. was MG.PAR.omega_sample_frame,
-                                                  mat_from_lab_to_sample_frame = None,
-                                                  results_in_OR_frames = 1,
-                                                 results_in_LT_frames = 0,
-                                                 sampletilt = 40. # 
+                                                  UBmat=None,  # LT , UBB0 ici
+                                                  omega=None, # 40. was MG.PAR.omega_sample_frame,
+                                                  mat_from_lab_to_sample_frame=None,
+                                                  results_in_OR_frames=1,
+                                                 results_in_LT_frames=0,
+                                                 sampletilt=40. # 
                                                   ):
 
     # warning  here  UBmat stands for UBB0  (i.e. UB times B0)
 
-    if UBmat is not None :
+    if UBmat is not None:
         matstarlab = matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True)
 
     print("matstarlab = ", matstarlab)
-    
-    matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
-       
-    if results_in_OR_frames : str_end = "_OR"
-    elif results_in_LT_frames : str_end = "_LT"
-    
-    HKL_xyz = np.zeros((6,3),float)
 
-    strlist = ["x","y","z"]
+    matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
+
+    if results_in_OR_frames: str_end = "_OR"
+    elif results_in_LT_frames: str_end = "_LT"
+
+    HKL_xyz = np.zeros((6, 3), float)
+
+    strlist = ["x", "y", "z"]
     list_HKL_names = []
-    for i in list(range(3)) :
+    for i in list(range(3)):
         str1 = "HKL"+ strlist[i] + "_lab" + str_end
         list_HKL_names.append(str1)
-     
-    for i in list(range(3)) :
+
+    for i in list(range(3)):
         str1 = "HKL"+ strlist[i] + "_sample" + str_end
         list_HKL_names.append(str1)
-    
-    if results_in_OR_frames : 
-        
+
+    if results_in_OR_frames: 
+
         matstarsample3x3 = matstarlab_to_matstarsample3x3(matstarlab,                                                              
                                                  omega = omega,
                                                   mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame)
-        
-        mat3 =  inv(matstarlab3x3)
-        for i in list(range(3)) :
+
+        mat3 = inv(matstarlab3x3)
+        for i in list(range(3)):
             HKL_xyz[i] = (mat3[:,i]/max(abs(mat3[:,i]))).round(decimals=3)
-           
-        mat2 =  inv(matstarsample3x3)    
-        for i in list(range(3)) :
-            HKL_xyz[i+3] = (mat2[:,i]/max(abs(mat2[:,i]))).round(decimals=3)
-            
-    elif results_in_LT_frames :
-        
+
+        mat2 = inv(matstarsample3x3)    
+        for i in list(range(3)):
+            HKL_xyz[i+3] = (mat2[:, i]/max(abs(mat2[:, i]))).round(decimals=3)
+
+    elif results_in_LT_frames:
+
         if UBmat is None :
             UBmat = from_ORlabframe_to_Lauetools(matstarlab3x3)
 #            UBmat_sample =  CP.from_ORlabframe_to_Lauetools(matstarsample3x3) # variante 1
         PP = GT.matRot([0, 1, 0], -sampletilt)
         UBmat_sample = np.dot(PP.transpose(), UBmat)  # variante 2
-            
-        mat3 =  inv(UBmat)
-        for i in list(range(3)) :
-            HKL_xyz[i] = (mat3[:,i]/max(abs(mat3[:,i]))).round(decimals=3)          
+
+        mat3 = inv(UBmat)
+        for i in list(range(3)):
+            HKL_xyz[i] = (mat3[:, i]/max(abs(mat3[:, i]))).round(decimals=3)          
         mat2 =  inv(UBmat_sample)    
-        for i in list(range(3)) :
-            HKL_xyz[i+3] = (mat2[:,i]/max(abs(mat2[:,i]))).round(decimals=3)
-              
+        for i in list(range(3)):
+            HKL_xyz[i+3] = (mat2[:, i]/max(abs(mat2[:, i]))).round(decimals=3)
+
     print("HKL coordinates of lab and sample frame axes :")
     for i in list(range(6)) :     
-        print(list_HKL_names[i], "\t",  HKL_xyz[i,:])
-    
+        print(list_HKL_names[i], "\t",  HKL_xyz[i, :])
+
     return(list_HKL_names, HKL_xyz)
 
 #---------------------    Metric tensor
@@ -1193,7 +1186,7 @@ def ComputeMetricTensor(a, b, c, alpha, beta, gamma):
 
 def Gstar_from_directlatticeparams(a, b, c, alpha, beta, gamma):
     """
-    G  = G*-1 
+    G  = G*-1
     """
     return inv(ComputeMetricTensor(a, b, c, alpha, beta, gamma))
 
@@ -1331,34 +1324,34 @@ def calculate_a(fitfile, energy, h, k, l):
     # Bragg angle
     print("astar,bstar,cstar", astar, bstar, cstar)
     theta = np.arccos((h * astar + k * bstar + l * cstar)[0] / norm((h * astar + k * bstar + l * cstar))) - np.pi / 2.
-    
+
     print("theta in rad", theta)
     print("theta in degree", theta / np.pi * 180.)
     normG = norm((h * astar + k * bstar + l * cstar))
     print("normG par norm linalg", normG)
     normGclassic = np.sqrt(np.sum((h * astar + k * bstar + l * cstar) ** 2))
     print("normGclassic", normGclassic)
-    
+
     a = E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2. / np.sin(theta)
 #     a = E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2. / qxoverq
-    return a 
-  
+    return a
+
 
 def scale_fitfile(fitfileObject, energy, denergy, h, k, l, a0=5.6575):
     """
     compute hydrostatic strain and full strain tensor
-    
+
     from:
     fitfileObject
-    
+
     energy in eV
     error on energy in eV
     h,k,l Miller indices
     a0  lattice parameter in Angstrom (10-10 m or 0.1 nm)
-    
-    Do: 
+
+    Do:
     set fitfileObjectObject strain attributes
-    
+
     """
     a = 1E10 * calculate_a(fitfileObject, energy, h, k, l)
     print("calculated lattice parameter (Angstr)", a)
@@ -1373,11 +1366,11 @@ def scale_fitfile(fitfileObject, energy, denergy, h, k, l, a0=5.6575):
         hydrostatic_lower = 3 * ((a_lower - a0) / a0 - fitfileObject.deviatoric[0, 0])
         a_upper = 1E10 * calculate_a(fitfileObject, energy - denergy, h, k, l)
         hydrostatic_upper = 3 * ((a_upper - a0) / a0 - fitfileObject.deviatoric[0, 0])
-        
+
         fitfileObject.hydrostatic_measured_error = (abs(fitfileObject.hydrostatic_measured - hydrostatic_lower) + abs(fitfileObject.hydrostatic_measured - hydrostatic_upper)) / 2.
         fitfileObject.full_strain_measured_error = np.eye(3) * fitfileObject.hydrostatic_measured_error / 3.
-    
-    
+
+
 def calculate_from_UB(UBB0, energy, h, k, l):
     astar_prime = UBB0[:, 0]
     bstar_prime = UBB0[:, 1]
@@ -1396,7 +1389,7 @@ def calculate_from_UB(UBB0, energy, h, k, l):
 
     theta = np.arccos((h * astar_prime + k * bstar_prime + l * cstar_prime)[0] / norm((h * astar_prime + k * bstar_prime + l * cstar_prime))) - np.pi / 2.
     a = E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2. / np.sin(theta)
-    return a 
+    return a
 
 
 def calculate_energy_from_UB(UBB0, a0, h, k, l):
@@ -1417,10 +1410,149 @@ def calculate_energy_from_UB(UBB0, a0, h, k, l):
 
     theta = np.arccos((h * astar_prime + k * bstar_prime + l * cstar_prime)[0] / norm((h * astar_prime + k * bstar_prime + l * cstar_prime))) - np.pi / 2.
     energy = L2E(a0 / (np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2. / np.sin(theta)))
-    return energy 
+    return energy
 
 
 def scale_UB(UBB0, energy, h, k, l, a0=5.6575):
     a = 1E10 * calculate_a(UBB0, energy, h, k, l)
     # calculate the hydrostatic strain:
-    return (a - a0) / a0 
+    return (a - a0) / a0
+
+#--- -------------------  Mapping visualization
+def norme(vec1):
+    """
+    computes norm of one vector
+    from O Robach
+    TODO: use better generaltools module
+    """
+    nvec = np.sqrt(np.inner(vec1, vec1))
+    return nvec
+
+
+def matstarlab_to_matstarlabOND(matstarlab):
+    """
+    transform matrix in a orthonormalized frame
+    (Schmid orthogonalisation procedure)
+
+    From O. Robach
+    
+    TODO: to be moved to generaltools
+    """
+    astar1 = matstarlab[:3]
+    bstar1 = matstarlab[3:6]
+#    cstar1 = matstarlab[6:]
+
+    astar0 = astar1 / norme(astar1)
+    cstar0 = np.cross(astar0, bstar1)
+    cstar0 = cstar0 / norme(cstar0)
+    bstar0 = np.cross(cstar0, astar0)
+
+    matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
+
+    # print matstarlabOND
+
+    return matstarlabOND
+
+
+def calc_Euler_angles(mat3x3):
+    """
+    Calculates unique 3 euler angles representation of mat3x3
+    from O Robach
+    """
+    # mat3x3 = matrix "minimized" in LT lab frame
+    # see F2TC.find_lowest_Euler_Angles_matrix
+    # phi 0, theta 1, psi 2
+
+    mat = GT.matline_to_mat3x3(matstarlab_to_matstarlabOND(GT.mat3x3_to_matline(mat3x3)))
+
+    RAD = 180.0 / np.pi
+
+    euler = np.zeros(3, float)
+    euler[1] = RAD * np.arccos(mat[2, 2])
+
+    if (np.abs(np.abs(mat[2, 2]) - 1.0) < 1e-5):
+        # if theta is zero, phi+psi is defined, if theta is pi, phi-psi is defined */
+        # put psi = 0 and calculate phi */
+        # psi */
+        euler[2] = 0.0
+        # phi */
+        euler[0] = RAD * np.arccos(mat[0, 0])
+        if (mat[0, 1] < 0.0):
+            euler[0] = -euler[0]
+    else:
+        # psi */
+        toto = np.sqrt(1 - mat[2, 2] * mat[2, 2])  # sin theta - >0 */
+        euler[2] = RAD * np.arccos(mat[1, 2] / toto)
+        # phi */
+        euler[0] = RAD * np.arccos(-mat[2, 1] / toto)
+        if (mat[2, 0] < 0.0):
+            euler[0] = 360.0 - euler[0]
+
+        # print "Euler angles phi theta psi (deg)"
+        # print euler.round(decimals = 3)
+
+        return euler
+
+
+def myRGB_3(mat):
+    """
+    propose a RGB (red green blue) vector to represent a matrix
+    """
+    allpermu = DictLT.OpSymArray
+    allpermudet1 = np.array([kkk for kkk in allpermu if np.linalg.det(kkk) == 1.0 ])
+
+    vec = F2TC.vec_normalTosurface(mat)
+    # allvec = np.dot(allpermudet1,vec)
+    # allposvec = allvec[np.all(allvec>=0,axis=1)]
+    # # pos of row in allposvec where last element is the higher element of each row
+    # hpos = np.where(np.argmax(allposvec, axis=1)==2)[0][0]
+    # #print hpos
+    # return allposvec[hpos].tolist()
+
+    myframe = np.array([[0, 0, 1],
+                        [0, 1, 1],
+                        [1, 1, 1]])
+    invf = np.linalg.inv(myframe)
+
+    # vec expressed in myframe basis
+    vec_in_frame = np.dot(invf, vec)
+
+    # find permutation that lead to 3 positive components
+    # TODO: do the permutation before expressing the myframe basis ??
+    allvec = np.dot(allpermudet1, vec_in_frame)
+    allposvec = allvec[np.all(allvec >= 0, axis=1)]
+
+    if len(np.shape(allposvec)) > 1:
+        vecmaxfirstcolumn = np.argmax(allposvec[:, 0])
+        allposvec = allposvec[vecmaxfirstcolumn]
+
+    return allposvec
+
+
+def getMisorientation(mat, refAxis=NORMAL_TO_SAMPLE_AXIS, followVector=np.array([0, 0, 1])):
+    """
+    compute an angle of a reflection / an axis
+
+    # default axis normal to surface tilted by  40 degrees from horizontal
+    """
+
+    # angle between mat.G* and refAxis
+#    norm = np.sqrt(np.dot(followVector, followVector))
+    rotGstar = np.dot(mat, followVector)
+
+    norm_rotGstar = np.sqrt(np.dot(rotGstar, rotGstar))
+
+    angle = np.arccos(np.dot(rotGstar, refAxis) / (norm_rotGstar)) / DEG
+
+    return angle
+
+
+def Matrix_to_RGB_2(mat):
+    """
+    from odile robach
+    use unique representation of orientation matrix with its euler angles
+    """
+    normalisation_angles = np.array([180., 360, 180.])
+    # normalisation_angles = np.ones(3)
+
+    return calc_Euler_angles(FO.find_lowest_Euler_Angles_matrix(mat)[0]) / normalisation_angles + np.array([0.1, 0.1, 0.1])

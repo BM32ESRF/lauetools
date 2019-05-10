@@ -1,0 +1,18 @@
+70.775, 941.74, 1082.57, 0.631, -0.681, 0.07914, 2048, 2048
+Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2
+Calibration done with Si at Fri May 10 11:09:51 2019 with LaueToolsGUI.py
+Experimental Data file: Ge_blanc_0000_LT_4.dat
+Orientation Matrix:
+[[0.9958270,-0.0714658,-0.0567559],[0.0122054,0.7206143,-0.6932287],[0.0904413,0.6896431,0.7184795]]
+# Material : Si
+# dd : 70.775
+# xcen : 941.74
+# ycen : 1082.57
+# xbet : 0.631
+# xgam : -0.681
+# xpixelsize : 0.079142
+# ypixelsize : 0.079142
+# CCDLabel : MARCCD165
+# framedim : (2048, 2048)
+# detectordiameter : 162.082816
+# kf_direction : Z>0

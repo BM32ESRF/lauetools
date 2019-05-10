@@ -396,7 +396,7 @@ def readStringOfIterable(striter):
     return listvals
 
 
-def writefile_Peaklist(outputfilename,
+def writefile_Peaklist(outputprefixfilename,
                 Data_array,
                 overwrite=1,
                 initialfilename=None,
@@ -438,7 +438,7 @@ def writefile_Peaklist(outputfilename,
     if dirname is None:
         dirname = os.curdir
 
-    outputfilename = outputfilename + '.dat'
+    outputfilename = outputprefixfilename + '.dat'
 
     if outputfilename in os.listdir(os.curdir) and not overwrite:
         outputfilename = outputfilename + '_new' + '.dat'
@@ -512,7 +512,7 @@ def writefile_Peaklist(outputfilename,
                     (longueur, nbcolumns,
                      os.path.join(os.path.abspath(dirname), outputfilename)))
 
-    return True
+    return os.path.join(os.path.abspath(dirname), outputfilename)
 
 
 def addPeaks_in_Peaklist(filename_in, data_new_peaks,
@@ -1133,8 +1133,8 @@ def readListofMatrices(fullpathtoFile):
             if elem not in ('',):
                 val = float(elem)
                 listelem.append(val)
-                nbElements+=1
-        
+                nbElements += 1
+
 #         print 'listelem', listelem
 
     if (nbElements%9)!=0:
@@ -1143,12 +1143,12 @@ def readListofMatrices(fullpathtoFile):
     nbMatrices=nbElements/9
     matrices=np.array(listelem, dtype=float).reshape((nbMatrices,3,3))
     return nbMatrices,matrices
-    
-    
+
+
 def readCheckOrientationsFile(fullpathtoFile):
     """
     read .ubs file
-        
+
     return tuple of two elements:
     [0] nb of Material in output
     [1] list of infos:
@@ -1157,37 +1157,37 @@ def readCheckOrientationsFile(fullpathtoFile):
         [2] Energy max and minimum matching rate threshold (nb of coincidence / nb of theo. spots)
         [3] nb of matrices to be tested 
         [4] matrix or list of matrices
-        
+
     # design of .mats file aiming at giving infos of guesses UB matrix solutions
     prior to indexation from scratch
-    
+
     Hierarchical tree structure  FileIndex  / Grain / Material / EnergyMax / MatchingThreshold / Matrix(ces)
-    
+
     --- Fileindex1  --Grain- Material 1-1 -EnergyMax -MatchingThreshold- Matrix(ces)
                     |
                     --Grain- Material 1-2 --- Matrix(ces)
                     |
                     --Grain -  ...
-                    
+
     --- Fileindex2  --- Material 2-1 --- Matrix(ces)
                     |
                     --- Material 2-2 --- Matrix(ces)
                     |
                     ---  ...
-                    
+
     --- Fileindex3  --- Material 3-1 --- Matrix(ces)
                     |
                     --- Material 3-2 --- Matrix(ces)
                     |
                     ---  ...
-    
+
     When using this file, current fileindex will be searched among the  Fileindex3 sets.
     If found, guessed Material and matrices will be then tested before indexation from scratch              
-    
+
     return:
-    
+
     List_CheckOrientations
-    
+
     where each element is a list of:
     - File index (list or -2 for all images)
     - Grain index
@@ -1195,8 +1195,8 @@ def readCheckOrientationsFile(fullpathtoFile):
     - Energy Max
     - MatchingThreshold
     - Matrix(ces) 
-    
-    
+
+
     example.ubs--------
     $FileIndex
     [0,1,2,3,4,5]
@@ -1244,8 +1244,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     [0.3198951498,-0.148979,0.123126],
     [-.4264896,.654128,-.012595747]]
     END
-    
-    
+
     substrate_and_grains.ubs--------
     $FileIndex
     All
@@ -1278,16 +1277,16 @@ def readCheckOrientationsFile(fullpathtoFile):
     List_posEnergyMax = []
     List_posMatchingThreshold = []
     List_posMatrices = []
-    
+
     List_CheckOrientations = []
-    
+
     known_values = [False for k in list(range(6))]
     Current_CheckOrientationParameters =[0 for k in list(range(6))]
-    
+
     f = open(fullpathtoFile, 'r')
     lineindex = 0
     while (1):
-        line =f.readline()
+        line = f.readline()
         print(line)
         if line.startswith('$'):
             if line.startswith('$FileIndex'):
@@ -1329,16 +1328,16 @@ def readCheckOrientationsFile(fullpathtoFile):
             elif line.startswith('$Matrix'):
                 nbMatrices,matrices, nblines, posfile = readdataasmatrices(f)
                 print('nbMatrices,matrices, nblines, posfile',nbMatrices,matrices, nblines, posfile)
-                
+
                 Current_CheckOrientationParameters[5]=matrices
                 known_values[5]=True
                 List_posMatrices.append(lineindex)
-                
+
                 print('Current_CheckOrientationParameters',Current_CheckOrientationParameters)
                 print("known_values",known_values)
-                
+
                 List_CheckOrientations.append(copy.copy(Current_CheckOrientationParameters))
-                
+
                 if posfile != -1:
                     f.seek(posfile)                
                     for k in list(range(nblines)):
@@ -1350,25 +1349,27 @@ def readCheckOrientationsFile(fullpathtoFile):
 
     return List_CheckOrientations
 
+
 def getfileindex(str_expression):
     print("str_expression",str_expression)
     if str_expression.strip() in ('all','All'):
         return -1
-    
+
     list_val= str_expression.strip('[]()\n').split(',')
     print("list_val",list_val)
     integerlist = [int(elem) for elem in list_val]
     return integerlist
 
+
 def readdataasmatrices(fileobject):
     
     posfile = fileobject.tell()
-    
+
     nbElements = 0
-    
+
     nblines =1
     lines = []
-    
+
     while True:
         line=str(fileobject.readline())
         print("line matrix",line)
@@ -1381,19 +1382,18 @@ def readdataasmatrices(fileobject):
         nblines+=1
 #         if nblines == 5:
 #             break
-        
-        
+
     listelem = []
     for line in lines:
-              
+
         listval = re.split('[ ()\[\)\;\,\]\n\t\a\b\f\r\v]', line)
-        
+
         for elem in listval:
             if elem not in ('',):
                 val = float(elem)
                 listelem.append(val)
                 nbElements+=1
-        
+
 #         print 'listelem', listelem
 
     if (nbElements%9)!=0:
@@ -1401,9 +1401,10 @@ def readdataasmatrices(fileobject):
         return None
     nbMatrices=nbElements/9
     matrices=np.array(listelem, dtype=float).reshape((nbMatrices,3,3))
-    
+
     return nbMatrices,matrices, nblines-1, posfile
-        
+
+
 def writefile_log(output_logfile_name='lauepattern.log', linestowrite=[[""]]):
     """
     TODO: maybe useless ?
@@ -1457,6 +1458,37 @@ def writefilegnomon(gnomonx, gnomony, outputfilename, dataselected):
         outputfile.write('\n')
     outputfile.close()
 
+
+def ReadSummaryFile(filename, dirname=None):
+    """
+    read summary .dat file generated by multigrain
+
+    one line per grain and per image
+    """
+    fullpath = filename
+    if dirname is not None:
+        fullpath = os.path.join(dirname, filename)
+
+    f = open(fullpath, 'r')
+    # skip first line
+    f.readline()
+
+    # read columns name
+    columns = f.readline()
+    list_cols = columns.split(' ')
+    list_column_names = []
+    dict_column_names = {}
+    for k, elem in enumerate(list_cols):
+        list_column_names.append(elem)
+        dict_column_names[elem] = k
+
+    data = np.loadtxt(f, dtype=np.float)  # , comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
+
+    f.close()
+
+    # remove last elem = '\n'
+    del dict_column_names['\n']
+    return data, list_column_names[:-1], dict_column_names
 
 def createselecteddata(tupledata_theta_chi_I,
                        _listofselectedpts,
