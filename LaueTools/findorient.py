@@ -17,7 +17,7 @@ There is no refinement of U according to other spots
 TODO: generalise to other structure and include symetry considerations in selecting part of the lookuptable
 
 """
-__version__ = '$Revision$'
+__version__ = "$Revision$"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import string
@@ -32,499 +32,531 @@ import generaltools as GT
 
 from dict_LaueTools import dict_Materials
 
-#--- ---------  CONSTANTS
-DEG = np.pi / 180.
+# --- ---------  CONSTANTS
+DEG = np.pi / 180.0
 
 
-#--- ------ Cubic ANGULAR DISTANCE
-DICOPLANE = {100:0, 110:1, 111:2, 210:3, 211:4, 221:5, 310:6, 311:7, 321:8}
-INVDICOPLANE = {0:100, 1:110, 2:111, 3:210, 4:211, 5:221, 6:310, 7:311, 8:321}
+# --- ------ Cubic ANGULAR DISTANCE
+DICOPLANE = {100: 0, 110: 1, 111: 2, 210: 3, 211: 4, 221: 5, 310: 6, 311: 7, 321: 8}
+INVDICOPLANE = {0: 100, 1: 110, 2: 111, 3: 210, 4: 211, 5: 221, 6: 310, 7: 311, 8: 321}
 
-LISTNEIGHBORS_100 = [[0, 1, 0],
-
-                   [1, 1, 0],
-                   [0, 1, 1],
-
-                   [1, 1, 1],
-
-                   [2, 1, 0],
-                   [1, 0, 2],
-                   [0, 1, 2],
-
-                   [2, 1, 1],
-                   [1, 1, 2],
-
-                   [2, 2, 1],
-                   [1, 2, 2],
-
-                   [1, 0, 3],
-                   [0, 1, 3],
-                   [3, 1, 0],
-
-                   [3, 1, 1],
-                   [1, 1, 3],
-
-                   [1, 2, 3],
-                   [2, 1, 3],
-                   [3, 1, 2]
-                   ]
+LISTNEIGHBORS_100 = [
+    [0, 1, 0],
+    [1, 1, 0],
+    [0, 1, 1],
+    [1, 1, 1],
+    [2, 1, 0],
+    [1, 0, 2],
+    [0, 1, 2],
+    [2, 1, 1],
+    [1, 1, 2],
+    [2, 2, 1],
+    [1, 2, 2],
+    [1, 0, 3],
+    [0, 1, 3],
+    [3, 1, 0],
+    [3, 1, 1],
+    [1, 1, 3],
+    [1, 2, 3],
+    [2, 1, 3],
+    [3, 1, 2],
+]
 LISTCUT100 = [0, 1, 3, 4, 7, 9, 11, 14, 16, 19]
-SLICING100 = [[0, 1], [1, 3], [3, 4], [4, 7], [7, 9], [9, 11], [11, 14], [14, 16], [16, 19]]
+SLICING100 = [
+    [0, 1],
+    [1, 3],
+    [3, 4],
+    [4, 7],
+    [7, 9],
+    [9, 11],
+    [11, 14],
+    [14, 16],
+    [16, 19],
+]
 
-LISTNEIGHBORS_110 = [[1, 0, 0],
-                   [0, 0, 1],
-
-                   [-1, 1, 0],
-                   [0, 1, 1],
-
-                   [1, 1, 1],
-                   [-1, 1, 1],
-
-                   [2, 1, 0],
-                    [2, 0, 1],
-                   [1, 0, 2],
-
-                   [2, 1, 1],
-                   [-1, 2, 1],
-                   [1, 1, 2],
-                   [-1, 1, 2],
-
-                   [2, 2, 1],
-                   [2, 1, 2],
-                   [2, -1, 2],
-                   [2, -2, 1],
-
-                   [1, 0, 3],
-                   [1, 3, 0],
-                   [0, 3, 1],
-                   [-1, 3, 0],
-
-                   [3, 1, 1],
-                   [1, 1, 3],
-                   [-1, 1, 3],
-
-                   [3, 2, 1],
-                   [3, 1, 2],
-                   [1, 2, 3],
-                   [-1, 3, 2],
-                   [-2, 3, 1]
-                   ]
+LISTNEIGHBORS_110 = [
+    [1, 0, 0],
+    [0, 0, 1],
+    [-1, 1, 0],
+    [0, 1, 1],
+    [1, 1, 1],
+    [-1, 1, 1],
+    [2, 1, 0],
+    [2, 0, 1],
+    [1, 0, 2],
+    [2, 1, 1],
+    [-1, 2, 1],
+    [1, 1, 2],
+    [-1, 1, 2],
+    [2, 2, 1],
+    [2, 1, 2],
+    [2, -1, 2],
+    [2, -2, 1],
+    [1, 0, 3],
+    [1, 3, 0],
+    [0, 3, 1],
+    [-1, 3, 0],
+    [3, 1, 1],
+    [1, 1, 3],
+    [-1, 1, 3],
+    [3, 2, 1],
+    [3, 1, 2],
+    [1, 2, 3],
+    [-1, 3, 2],
+    [-2, 3, 1],
+]
 LISTCUT110 = [0, 2, 4, 6, 9, 13, 17, 21, 24, 29]
-SLICING110 = [[0, 2], [2, 4], [4, 6], [6, 9], [9, 13], [13, 17], [17, 21], [21, 24], [24, 29]]
+SLICING110 = [
+    [0, 2],
+    [2, 4],
+    [4, 6],
+    [6, 9],
+    [9, 13],
+    [13, 17],
+    [17, 21],
+    [21, 24],
+    [24, 29],
+]
 
-LISTNEIGHBORS_111 = [[1, 0, 0],
-
-                   [1, 1, 0],
-                   [-1, 1, 0],
-
-                   [-1, 1, 1],
-
-                   [1, 2, 0],
-                   [-1, 2, 0],
-
-                   [1, 1, 2],
-                   [-1, 1, 2],
-                   [-2, 1, 1],
-
-                   [2, 2, 1],
-                   [-1, 2, 2],
-                   [-2, 1, 2],
-
-                   [1, 0, 3],
-                   [-1, 0, 3],
-
-                   [1, 1, 3],
-                   [-1, 1, 3],
-                   [3, -1, -1],
-
-                   [1, 2, 3],
-                   [-1, 2, 3],
-                   [-2, 1, 3],
-                   [-3, 1, 2]
-                   ]
+LISTNEIGHBORS_111 = [
+    [1, 0, 0],
+    [1, 1, 0],
+    [-1, 1, 0],
+    [-1, 1, 1],
+    [1, 2, 0],
+    [-1, 2, 0],
+    [1, 1, 2],
+    [-1, 1, 2],
+    [-2, 1, 1],
+    [2, 2, 1],
+    [-1, 2, 2],
+    [-2, 1, 2],
+    [1, 0, 3],
+    [-1, 0, 3],
+    [1, 1, 3],
+    [-1, 1, 3],
+    [3, -1, -1],
+    [1, 2, 3],
+    [-1, 2, 3],
+    [-2, 1, 3],
+    [-3, 1, 2],
+]
 LISTCUT111 = [0, 1, 3, 4, 6, 9, 12, 14, 17, 21]
-SLICING111 = [[0, 1], [1, 3], [3, 4], [4, 6], [6, 9], [9, 12], [12, 14], [14, 17], [17, 21]]
+SLICING111 = [
+    [0, 1],
+    [1, 3],
+    [3, 4],
+    [4, 6],
+    [6, 9],
+    [9, 12],
+    [12, 14],
+    [14, 17],
+    [17, 21],
+]
 
-LISTNEIGHBORS_210 = [[1, 0, 0],
-                   [0, 1, 0],
-                   [0, 0, 1],
-
-                   [1, 1, 0],
-                   [1, 0, 1],
-                   [1, -1, 0],
-
-                   [1, 1, 1],
-                   [1, -1, 1],
-
-                   [2, -1, 0],
-                   [1, 2, 0],
-                   [1, 0, 2],
-                   [0, 1, 2],
-                   [-1, 2, 0],
-
-                   [2, 1, 1],
-                   [1, 2, 1],
-                   [1, 1, 2],
-                   [1, -1, 2],
-                   [1, -2, 1],
-
-                   [2, 2, 1],
-                   [2, 1, 2],
-                   [1, 2, 2],
-                   [2, -1, 2],
-                   [2, -2, 1],
-                   [-1, 2, 2],
-
-                   [3, 1, 0],
-                   [3, 0, 1],
-                   [1, 3, 0],
-                   [0, 3, 1],
-                   [1, 0, 3],
-                   [0, 1, 3],
-
-                   [3, 1, 1],
-                   [1, 3, 1],
-                   [1, 1, 3],
-                   [1, -1, 3],
-
-                   [3, 2, 1],
-                   [2, 3, 1],
-                   [1, 3, 2],
-                   [1, 2, 3],
-                   [2, -1, 3],
-                   [-1, 3, 2],
-                   [1, -2, 3]
-                   ]
+LISTNEIGHBORS_210 = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 1, 0],
+    [1, 0, 1],
+    [1, -1, 0],
+    [1, 1, 1],
+    [1, -1, 1],
+    [2, -1, 0],
+    [1, 2, 0],
+    [1, 0, 2],
+    [0, 1, 2],
+    [-1, 2, 0],
+    [2, 1, 1],
+    [1, 2, 1],
+    [1, 1, 2],
+    [1, -1, 2],
+    [1, -2, 1],
+    [2, 2, 1],
+    [2, 1, 2],
+    [1, 2, 2],
+    [2, -1, 2],
+    [2, -2, 1],
+    [-1, 2, 2],
+    [3, 1, 0],
+    [3, 0, 1],
+    [1, 3, 0],
+    [0, 3, 1],
+    [1, 0, 3],
+    [0, 1, 3],
+    [3, 1, 1],
+    [1, 3, 1],
+    [1, 1, 3],
+    [1, -1, 3],
+    [3, 2, 1],
+    [2, 3, 1],
+    [1, 3, 2],
+    [1, 2, 3],
+    [2, -1, 3],
+    [-1, 3, 2],
+    [1, -2, 3],
+]
 LISTCUT210 = [0, 3, 6, 8, 13, 18, 24, 30, 34, 42]
-SLICING210 = [[0, 3], [3, 6], [6, 8], [8, 13], [13, 18], [18, 24], [24, 30], [30, 34], [34, 42]]
+SLICING210 = [
+    [0, 3],
+    [3, 6],
+    [6, 8],
+    [8, 13],
+    [13, 18],
+    [18, 24],
+    [24, 30],
+    [30, 34],
+    [34, 42],
+]
 
-LISTNEIGHBORS_211 = [[1, 0, 0],
-                   [0, 1, 0],
-
-                   [1, 1, 0],
-                   [0, 1, 1],
-                   [1, -1, 0],
-                   [0, 1, -1],
-
-                   [1, 1, 1],
-                   [1, -1, 1],
-                   [1, -1, -1],
-
-                   [2, 1, 0],
-                   [1, 2, 0],
-                   [2, -1, 0],
-                   [0, -1, 2],
-                   [1, 0, -2],
-
-                   [1, 2, 1],
-                   [2, 1, -1],
-                   [1, 2, -1],
-                   [2, -1, -1],
-                   [1, -2, 1],
-
-                   [2, 2, 1],
-                   [1, 2, 2],
-                   [2, 2, -1],
-                   [2, -2, 1],
-                   [1, 2, -2],
-                   [2, -1, -2],
-
-                   [3, 1, 0],
-                   [3, -1, 0],
-                   [0, 1, 3],
-                   [0, -1, 3],
-                   [-1, 3, 0],
-
-                   [3, 1, 1],
-                   [3, 1, -1],
-                   [3, -1, -1],
-                   [-1, 1, 3],
-                   [-1, -1, 3],
-
-                   [3, 2, 1],
-                   [2, 3, 1],
-                   [3, 2, -1],
-                   [2, 3, -1],
-                   [3, -2, 1],
-                   [3, -2, -1],
-                   [2, -3, 1],
-                   [2, -3, -1]
-                   ]
+LISTNEIGHBORS_211 = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [1, 1, 0],
+    [0, 1, 1],
+    [1, -1, 0],
+    [0, 1, -1],
+    [1, 1, 1],
+    [1, -1, 1],
+    [1, -1, -1],
+    [2, 1, 0],
+    [1, 2, 0],
+    [2, -1, 0],
+    [0, -1, 2],
+    [1, 0, -2],
+    [1, 2, 1],
+    [2, 1, -1],
+    [1, 2, -1],
+    [2, -1, -1],
+    [1, -2, 1],
+    [2, 2, 1],
+    [1, 2, 2],
+    [2, 2, -1],
+    [2, -2, 1],
+    [1, 2, -2],
+    [2, -1, -2],
+    [3, 1, 0],
+    [3, -1, 0],
+    [0, 1, 3],
+    [0, -1, 3],
+    [-1, 3, 0],
+    [3, 1, 1],
+    [3, 1, -1],
+    [3, -1, -1],
+    [-1, 1, 3],
+    [-1, -1, 3],
+    [3, 2, 1],
+    [2, 3, 1],
+    [3, 2, -1],
+    [2, 3, -1],
+    [3, -2, 1],
+    [3, -2, -1],
+    [2, -3, 1],
+    [2, -3, -1],
+]
 LISTCUT211 = [0, 2, 6, 9, 14, 19, 25, 30, 35, 43]
-SLICING211 = [[0, 2], [2, 6], [6, 9], [9, 14], [14, 19], [19, 25], [25, 30], [30, 35], [35, 43]]
+SLICING211 = [
+    [0, 2],
+    [2, 6],
+    [6, 9],
+    [9, 14],
+    [14, 19],
+    [19, 25],
+    [25, 30],
+    [30, 35],
+    [35, 43],
+]
 
-LISTNEIGHBORS_221 = [[1, 0, 0],
-                   [0, 0, 1],
-
-                   [1, 1, 0],
-                   [1, 0, 1],
-                   [1, 0, -1],
-                   [1, -1, 0],
-
-                   [1, 1, 1],
-                   [1, 1, -1],
-                   [1, -1, 1],
-
-                   [2, 1, 0],
-                   [2, 0, 1],
-                   [1, 0, 2],
-                   [2, 0, -1],
-                   [2, -1, 0],
-                   [1, 0, -2],
-
-                   [2, 1, 1],
-                   [1, 1, 2],
-                   [2, 1, -1],
-                   [2, -1, 1],
-                   [1, 1, -2],
-                   [2, -1, -1],
-
-                    [2, 1, 2],
-                   [2, 2, -1],
-                   [2, 1, -2],
-                   [2, -2, 1],
-                   [2, -1, -2],
-
-                   [3, 1, 0],
-                   [3, 0, 1],
-                   [3, 0, -1],
-                   [3, -1, 0],
-                   [-1, 0, 3],
-
-                   [3, 1, 1],
-                   [3, 1, -1],
-                   [3, -1, 1],
-                   [3, -1, -1],
-                   [1, 1, -3],
-
-                   [3, 2, 1],
-                   [3, 1, 2],
-                   [3, 2, -1],
-                   [3, 1, -2],
-                   [2, -1, 3],
-                    [3, -2, 1],
-                   [3, -1, -2],
-                   [3, -2, -1]
-                   ]
+LISTNEIGHBORS_221 = [
+    [1, 0, 0],
+    [0, 0, 1],
+    [1, 1, 0],
+    [1, 0, 1],
+    [1, 0, -1],
+    [1, -1, 0],
+    [1, 1, 1],
+    [1, 1, -1],
+    [1, -1, 1],
+    [2, 1, 0],
+    [2, 0, 1],
+    [1, 0, 2],
+    [2, 0, -1],
+    [2, -1, 0],
+    [1, 0, -2],
+    [2, 1, 1],
+    [1, 1, 2],
+    [2, 1, -1],
+    [2, -1, 1],
+    [1, 1, -2],
+    [2, -1, -1],
+    [2, 1, 2],
+    [2, 2, -1],
+    [2, 1, -2],
+    [2, -2, 1],
+    [2, -1, -2],
+    [3, 1, 0],
+    [3, 0, 1],
+    [3, 0, -1],
+    [3, -1, 0],
+    [-1, 0, 3],
+    [3, 1, 1],
+    [3, 1, -1],
+    [3, -1, 1],
+    [3, -1, -1],
+    [1, 1, -3],
+    [3, 2, 1],
+    [3, 1, 2],
+    [3, 2, -1],
+    [3, 1, -2],
+    [2, -1, 3],
+    [3, -2, 1],
+    [3, -1, -2],
+    [3, -2, -1],
+]
 LISTCUT221 = [0, 2, 6, 9, 15, 21, 26, 31, 36, 44]
-SLICING221 = [[0, 2], [2, 6], [6, 9], [9, 15], [15, 21], [21, 26], [26, 31], [31, 36], [36, 44]]
+SLICING221 = [
+    [0, 2],
+    [2, 6],
+    [6, 9],
+    [9, 15],
+    [15, 21],
+    [21, 26],
+    [26, 31],
+    [31, 36],
+    [36, 44],
+]
 
-LISTNEIGHBORS_310 = [[1, 0, 0],
-                   [0, 1, 0],
-                   [0, 0, 1],
-
-                   [1, 1, 0],
-                   [1, 0, 1],
-                   [1, -1, 0],
-                   [0, 1, 1],
-
-                   [1, 1, 1],
-                   [1, -1, 1],
-
-                   [2, 1, 0],
-                   [2, 0, 1],
-                   [1, 2, 0],
-                   [1, 0, 2],
-                   [0, 2, 1],
-                   [0, 1, 2],
-
-                   [2, 1, 1],
-                   [2, -1, 1],
-                   [1, 1, 2],
-                   [1, -1, 2],
-                   [1, -2, 1],
-
-                   [2, 2, 1],
-                   [2, 1, 2],
-                   [2, -1, 2],
-                   [2, -2, 1],
-                   [1, -2, 2],
-
-                   [3, 0, 1],
-                   [3, -1, 0],
-                   [1, 3, 0],
-                   [1, 0, 3],
-                   [0, 1, 3],
-                   [1, -3, 0],
-
-                    [3, 1, 1],
-                   [3, -1, 1],
-                   [1, 3, 1],
-                   [1, 1, 3],
-                   [1, -1, 3],
-                   [1, -3, 1],
-
-                   [3, 2, 1],
-                   [3, 1, 2],
-                   [2, 3, 1],
-                   [3, -1, 2],
-                   [3, -2, 1],
-                   [1, 3, 2],
-                   [2, -1, 3],
-                   [2, -3, 1],
-                   [1, -2, 3],
-                   [1, -3, 2]
-                   ]
+LISTNEIGHBORS_310 = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 1, 0],
+    [1, 0, 1],
+    [1, -1, 0],
+    [0, 1, 1],
+    [1, 1, 1],
+    [1, -1, 1],
+    [2, 1, 0],
+    [2, 0, 1],
+    [1, 2, 0],
+    [1, 0, 2],
+    [0, 2, 1],
+    [0, 1, 2],
+    [2, 1, 1],
+    [2, -1, 1],
+    [1, 1, 2],
+    [1, -1, 2],
+    [1, -2, 1],
+    [2, 2, 1],
+    [2, 1, 2],
+    [2, -1, 2],
+    [2, -2, 1],
+    [1, -2, 2],
+    [3, 0, 1],
+    [3, -1, 0],
+    [1, 3, 0],
+    [1, 0, 3],
+    [0, 1, 3],
+    [1, -3, 0],
+    [3, 1, 1],
+    [3, -1, 1],
+    [1, 3, 1],
+    [1, 1, 3],
+    [1, -1, 3],
+    [1, -3, 1],
+    [3, 2, 1],
+    [3, 1, 2],
+    [2, 3, 1],
+    [3, -1, 2],
+    [3, -2, 1],
+    [1, 3, 2],
+    [2, -1, 3],
+    [2, -3, 1],
+    [1, -2, 3],
+    [1, -3, 2],
+]
 LISTCUT310 = [0, 3, 7, 9, 15, 20, 25, 31, 37, 47]
-SLICING310 = [[0, 3], [3, 7], [7, 9], [9, 15], [15, 20], [20, 25], [25, 31], [31, 37], [37, 47]]
+SLICING310 = [
+    [0, 3],
+    [3, 7],
+    [7, 9],
+    [9, 15],
+    [15, 20],
+    [20, 25],
+    [25, 31],
+    [31, 37],
+    [37, 47],
+]
 
-LISTNEIGHBORS_311 = [[1, 0, 0],
-                   [0, 1, 0],
-
-                   [1, 1, 0],
-                   [0, 1, 1],
-                   [0, 1, -1],
-
-                   [1, 1, 1],
-                   [1, -1, 1],
-                   [1, -1, -1],
-
-                   [2, 1, 0],
-                   [1, 2, 0],
-                   [0, 1, 2],
-                   [0, -1, 2],
-
-                   [2, 1, 1],
-                   [2, 1, -1],
-                   [2, -1, -1],
-                   [1, 1, -2],
-                   [1, -1, -2],
-
-                   [2, 2, 1],
-                   [2, 2, -1],
-                   [2, -2, 1],
-                   [2, -2, -1],
-                   [-1, 2, 2],
-
-                   [3, 1, 0],
-                   [3, -1, 0],
-                   [1, 3, 0],
-                   [0, 1, 3],
-                   [0, -1, 3],
-                   [-1, 3, 0],
-
-                   [3, 1, -1],
-                   [3, -1, -1],
-                   [1, 3, -1],
-                   [1, -3, 1],
-
-                   [3, 2, 1],
-                   [3, 2, -1],
-                   [3, -2, 1],
-                   [3, -2, -1],
-                   [2, -3, 1],
-                   [2, -3, -1]
-                   ]
+LISTNEIGHBORS_311 = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [1, 1, 0],
+    [0, 1, 1],
+    [0, 1, -1],
+    [1, 1, 1],
+    [1, -1, 1],
+    [1, -1, -1],
+    [2, 1, 0],
+    [1, 2, 0],
+    [0, 1, 2],
+    [0, -1, 2],
+    [2, 1, 1],
+    [2, 1, -1],
+    [2, -1, -1],
+    [1, 1, -2],
+    [1, -1, -2],
+    [2, 2, 1],
+    [2, 2, -1],
+    [2, -2, 1],
+    [2, -2, -1],
+    [-1, 2, 2],
+    [3, 1, 0],
+    [3, -1, 0],
+    [1, 3, 0],
+    [0, 1, 3],
+    [0, -1, 3],
+    [-1, 3, 0],
+    [3, 1, -1],
+    [3, -1, -1],
+    [1, 3, -1],
+    [1, -3, 1],
+    [3, 2, 1],
+    [3, 2, -1],
+    [3, -2, 1],
+    [3, -2, -1],
+    [2, -3, 1],
+    [2, -3, -1],
+]
 LISTCUT311 = [0, 2, 5, 8, 12, 17, 22, 28, 32, 38]
-SLICING311 = [[0, 2], [2, 5], [5, 8], [8, 12], [12, 17], [17, 22], [22, 28], [28, 32], [32, 38]]
+SLICING311 = [
+    [0, 2],
+    [2, 5],
+    [5, 8],
+    [8, 12],
+    [12, 17],
+    [17, 22],
+    [22, 28],
+    [28, 32],
+    [32, 38],
+]
 
-LISTNEIGHBORS_321 = [[1, 0, 0],
-                   [0, 1, 0],
-                   [0, 0, 1],
-
-                   [1, 1, 0],
-                   [1, 0, 1],
-                   [0, 1, 1],
-                   [1, 0, -1],
-                   [1, -1, 0],
-
-                   [1, 1, 1],
-                   [1, 1, -1],
-                   [1, -1, 1],
-                   [-1, 1, 1],
-
-                   [2, 1, 0],
-                   [1, 2, 0],
-                   [1, 0, 2],
-                   [0, 1, 2],
-                   [0, 2, -1],
-                   [1, 0, -2],
-                   [0, -1, 2],
-
-                   [2, 1, 1],
-                   [1, 2, 1],
-                   [2, 1, -1],
-                   [1, 2, -1],
-                   [2, -1, 1],
-                   [2, -1, -1],
-                   [-1, 2, 1],
-                   [-1, 2, -1],
-
-                   [2, 2, 1],
-                   [2, 1, 2],
-                   [2, 2, -1],
-                   [2, 1, -2],
-                   [1, 2, -2],
-                   [2, -2, 1],
-                   [2, -1, -2],
-                   [2, -2, -1],
-
-                   [3, 1, 0],
-                   [3, 0, 1],
-                   [1, 3, 0],
-                   [3, 0, -1],
-                   [3, -1, 0],
-                   [1, 0, 3],
-                   [0, 3, -1],
-                   [-1, 3, 0],
-                   [0, -1, 3],
-                   [1, 0, -3],
-
-                   [3, 1, 1],
-                   [3, 1, -1],
-                   [3, -1, 1],
-                   [3, -1, -1],
-                   [-1, 3, 1],
-                   [-1, 3, -1],
-
-                   [3, 1, 2],
-                   [3, 2, -1],
-                   [3, 1, -2],
-                   [1, 2, 3],
-                   [3, -1, 2],
-                   [2, -1, 3],
-                   [3, -2, 1],
-                   [3, -1, -2],
-                   [3, -2, -1],
-                   [1, -2, 3],
-                   [2, -3, 1]
-
-                   ]
+LISTNEIGHBORS_321 = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 1, 0],
+    [1, 0, 1],
+    [0, 1, 1],
+    [1, 0, -1],
+    [1, -1, 0],
+    [1, 1, 1],
+    [1, 1, -1],
+    [1, -1, 1],
+    [-1, 1, 1],
+    [2, 1, 0],
+    [1, 2, 0],
+    [1, 0, 2],
+    [0, 1, 2],
+    [0, 2, -1],
+    [1, 0, -2],
+    [0, -1, 2],
+    [2, 1, 1],
+    [1, 2, 1],
+    [2, 1, -1],
+    [1, 2, -1],
+    [2, -1, 1],
+    [2, -1, -1],
+    [-1, 2, 1],
+    [-1, 2, -1],
+    [2, 2, 1],
+    [2, 1, 2],
+    [2, 2, -1],
+    [2, 1, -2],
+    [1, 2, -2],
+    [2, -2, 1],
+    [2, -1, -2],
+    [2, -2, -1],
+    [3, 1, 0],
+    [3, 0, 1],
+    [1, 3, 0],
+    [3, 0, -1],
+    [3, -1, 0],
+    [1, 0, 3],
+    [0, 3, -1],
+    [-1, 3, 0],
+    [0, -1, 3],
+    [1, 0, -3],
+    [3, 1, 1],
+    [3, 1, -1],
+    [3, -1, 1],
+    [3, -1, -1],
+    [-1, 3, 1],
+    [-1, 3, -1],
+    [3, 1, 2],
+    [3, 2, -1],
+    [3, 1, -2],
+    [1, 2, 3],
+    [3, -1, 2],
+    [2, -1, 3],
+    [3, -2, 1],
+    [3, -1, -2],
+    [3, -2, -1],
+    [1, -2, 3],
+    [2, -3, 1],
+]
 LISTCUT321 = [0, 3, 8, 12, 19, 27, 35, 45, 51, 62]
-SLICING321 = [[0, 3], [3, 8], [8, 12], [12, 19], [19, 27], [27, 35], [35, 45], [45, 51], [51, 62]]
+SLICING321 = [
+    [0, 3],
+    [3, 8],
+    [8, 12],
+    [12, 19],
+    [19, 27],
+    [27, 35],
+    [35, 45],
+    [45, 51],
+    [51, 62],
+]
 
-DICOLISTNEIGHBOURS = {100:LISTNEIGHBORS_100,
-                    110:LISTNEIGHBORS_110,
-                    111:LISTNEIGHBORS_111,
-                    210:LISTNEIGHBORS_210,
-                    211:LISTNEIGHBORS_211,
-                    221:LISTNEIGHBORS_221,
-                    310:LISTNEIGHBORS_310,
-                    311:LISTNEIGHBORS_311,
-                    321:LISTNEIGHBORS_321}
+DICOLISTNEIGHBOURS = {
+    100: LISTNEIGHBORS_100,
+    110: LISTNEIGHBORS_110,
+    111: LISTNEIGHBORS_111,
+    210: LISTNEIGHBORS_210,
+    211: LISTNEIGHBORS_211,
+    221: LISTNEIGHBORS_221,
+    310: LISTNEIGHBORS_310,
+    311: LISTNEIGHBORS_311,
+    321: LISTNEIGHBORS_321,
+}
 
-DICOSLICING = {100:SLICING100,
-                    110:SLICING110,
-                    111:SLICING111,
-                    210:SLICING210,
-                    211:SLICING211,
-                    221:SLICING221,
-                    310:SLICING310,
-                    311:SLICING311,
-                    321:SLICING321}
+DICOSLICING = {
+    100: SLICING100,
+    110: SLICING110,
+    111: SLICING111,
+    210: SLICING210,
+    211: SLICING211,
+    221: SLICING221,
+    310: SLICING310,
+    311: SLICING311,
+    321: SLICING321,
+}
 
-DICOINDICE = {100:[1, 0, 0],
-                     110:[1, 1, 0],
-                     111:[1, 1, 1],
-                     210:[2, 1, 0],
-                     211:[2, 1, 1],
-                     221:[2, 2, 1],
-                     310:[3, 1, 0],
-                     311:[3, 1, 1],
-                     321:[3, 2, 1]}
+DICOINDICE = {
+    100: [1, 0, 0],
+    110: [1, 1, 0],
+    111: [1, 1, 1],
+    210: [2, 1, 0],
+    211: [2, 1, 1],
+    221: [2, 2, 1],
+    310: [3, 1, 0],
+    311: [3, 1, 1],
+    321: [3, 2, 1],
+}
 
 
-#--- ------------------  END of tables and dictionnaries
+# --- ------------------  END of tables and dictionnaries
 def anglebetween(lista, listb):
     """
     Returns angle (deg) between two 3-elements lists
@@ -616,19 +648,23 @@ def prodtab_321():
     """
     listangles_321 = [anglebetween([3, 2, 1], elemref) for elemref in LISTNEIGHBORS_321]
     return np.array(listangles_321)
-#--- --------------  LUT for Cubic
-LUT_MAIN_CUBIC = [prodtab_100(),
-               prodtab_110(),
-               prodtab_111(),
-               prodtab_210(),
-               prodtab_211(),
-               prodtab_221(),
-               prodtab_310(),
-               prodtab_311(),
-               prodtab_321()]
 
 
-#--- ----------   FUNCTIONS
+# --- --------------  LUT for Cubic
+LUT_MAIN_CUBIC = [
+    prodtab_100(),
+    prodtab_110(),
+    prodtab_111(),
+    prodtab_210(),
+    prodtab_211(),
+    prodtab_221(),
+    prodtab_310(),
+    prodtab_311(),
+    prodtab_321(),
+]
+
+
+# --- ----------   FUNCTIONS
 def convplanetypetoindice(myinteger):
     """
 
@@ -649,11 +685,15 @@ def convindicetoplanetype(listindice):
     """
     listpositiveinteger = [abs(elem) for elem in listindice]
     listpositiveinteger.sort(reverse=True)
-    resint = 100 * listpositiveinteger[0] + 10 * listpositiveinteger[1] + 1 * listpositiveinteger[2]
+    resint = (
+        100 * listpositiveinteger[0]
+        + 10 * listpositiveinteger[1]
+        + 1 * listpositiveinteger[2]
+    )
     return resint
 
 
-def findneighbours(central_type, neighbour_type, angle, tolerance, verbose='yes'):
+def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"):
     """
     Returns plane(s) solution of the matching between angular distance (angle) and lookup table 
     between plane central type and neighbour type plane)
@@ -664,39 +704,68 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose='yes'
     extractindiceplane = DICOPLANE[neighbour_type]
 
     # select all equivalent neighbours planes of the family given by  neighbour_type in lookuptable
-    extracted = investigatedlistneighbours[slicing[extractindiceplane][0]:slicing[extractindiceplane][1]]
+    extracted = investigatedlistneighbours[
+        slicing[extractindiceplane][0] : slicing[extractindiceplane][1]
+    ]
     # compute the distance matrix from central plane and just above selected planes
-    extractprodtab = [anglebetween(DICOINDICE[central_type], elemref) for elemref in extracted]
+    extractprodtab = [
+        anglebetween(DICOINDICE[central_type], elemref) for elemref in extracted
+    ]
 
-    if verbose == 'yes':
-        print("possible ang. dist. between (%s,%s) planes:" % (central_type, neighbour_type))
+    if verbose == "yes":
+        print(
+            "possible ang. dist. between (%s,%s) planes:"
+            % (central_type, neighbour_type)
+        )
         print(extractprodtab)
 
     # position in extracprodtab where there is a match
-    winnerindicefound = GT.find_closest(np.array([angle * 1.]), np.array(extractprodtab), tolerance)[1]
+    winnerindicefound = GT.find_closest(
+        np.array([angle * 1.0]), np.array(extractprodtab), tolerance
+    )[1]
     # matching planes list
     possibleplanes = np.take(extracted, winnerindicefound, axis=0)
     if len(possibleplanes) == 0:
-        if verbose == 'yes':
-            print("No planes of type ", str(neighbour_type), " is found around ", str(central_type), " at ", angle, " within ", tolerance, " deg")
+        if verbose == "yes":
+            print(
+                "No planes of type ",
+                str(neighbour_type),
+                " is found around ",
+                str(central_type),
+                " at ",
+                angle,
+                " within ",
+                tolerance,
+                " deg",
+            )
         return None
-    elif len(possibleplanes) > 1:  # very rare case for family with small multiplicity and small ang. tolerance
-        if verbose == 'yes':
-            print("Ambiguity! I found more than two planes! You may reduce the angular tolerance")
+    elif (
+        len(possibleplanes) > 1
+    ):  # very rare case for family with small multiplicity and small ang. tolerance
+        if verbose == "yes":
+            print(
+                "Ambiguity! I found more than two planes! You may reduce the angular tolerance"
+            )
         return possibleplanes
     else:  # matching planes list generally contain 1 solution
         errortheoexp = angle - np.take(extractprodtab, winnerindicefound)[0]
         listindicesecondplane = possibleplanes[0].tolist()
-        if verbose == 'yes':
+        if verbose == "yes":
             print("-------************-------------*************-------")
             print("Excellent! I've found an unique solution")
             print("First plane is ", convplanetypetoindice(central_type))
-            print("Second plane is ", listindicesecondplane, " (ang. error of ", errortheoexp, " deg.)")
+            print(
+                "Second plane is ",
+                listindicesecondplane,
+                " (ang. error of ",
+                errortheoexp,
+                " deg.)",
+            )
             print("------------------")
         return listindicesecondplane
 
 
-def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose='yes'):
+def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose="yes"):
     """
 
     Gives orientation matrix from two points in recogn
@@ -714,17 +783,23 @@ def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose='yes'):
     coord1 = np.array(recogn[indexpoint1][:2])
     coord2 = np.array(recogn[indexpoint2][:2])
     didist = GT.distfrom2thetachi(coord1, coord2)
-    if verbose == 'yes':
+    if verbose == "yes":
         print("distance between the two recognised spots: ", didist, " deg.")
 
     hkl1 = convplanetypetoindice(recogn[indexpoint1][2])
     # find a matching pair (planetype 1,planetype 2)
-    hkl2 = findneighbours(recogn[indexpoint1][2], recogn[indexpoint2][2], didist, angulartolerance, verbose=_verbose)
+    hkl2 = findneighbours(
+        recogn[indexpoint1][2],
+        recogn[indexpoint2][2],
+        didist,
+        angulartolerance,
+        verbose=_verbose,
+    )
     # print "hkl2 in findorient",hkl2
     if hkl2:
         return givematorient(hkl1, coord1, hkl2, coord2, verbose=_verbose)
     else:
-        if verbose == 'yes':
+        if verbose == "yes":
             print("Unfortunately, one spot has not been well recognised !!")
         return None
 
@@ -746,10 +821,13 @@ def constructMat(matrice_P, qq1, qq2, qq3prod):
     secondline = lstsq(matrice_P, Yq)
     thirdline = lstsq(matrice_P, Zq)
 
-    matrixorient = np.array([firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
-                        secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
-                        thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0]))])  # second line may be negative because of wrong Y sign chi ???
-
+    matrixorient = np.array(
+        [
+            firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
+            secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
+            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0])),
+        ]
+    )  # second line may be negative because of wrong Y sign chi ???
 
     return matrixorient
 
@@ -771,12 +849,15 @@ def constructMat_new(matrice_P, qq1, qq2, qq3prod):
     secondline = lstsq(matrice_P, Yq)
     thirdline = lstsq(matrice_P, Zq)
 
-    matrixorient = np.array([firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
-                        secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
-                        thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0]))])  # second line may be negative because of wrong Y sign chi ???
+    matrixorient = np.array(
+        [
+            firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
+            secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
+            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0])),
+        ]
+    )  # second line may be negative because of wrong Y sign chi ???
 
     # print "matrixorient in constructMat_new()",matrixorient
-
 
     # # more general lstsq
     # big_matrice_P = np.zeros((9,9))
@@ -790,7 +871,7 @@ def constructMat_new(matrice_P, qq1, qq2, qq3prod):
     return matrixorient
 
 
-def givematorient(hkl1, coord1, hkl2, coord2, verbose='yes', frame='lauetools'):
+def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     """
     Returns orientation matrix in chosen frame
     from:
@@ -829,23 +910,27 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose='yes', frame='lauetools'):
     chi_2 = coord2[1]
 
     # expression of unit q in chosen frame
-    qq1 = LTGeo.unit_q(twicetheta_1 , chi_1, frame=frame)
-    qq2 = LTGeo.unit_q(twicetheta_2 , chi_2, frame=frame)
+    qq1 = LTGeo.unit_q(twicetheta_1, chi_1, frame=frame)
+    qq2 = LTGeo.unit_q(twicetheta_2, chi_2, frame=frame)
 
-    qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
+    qq3prod = np.cross(
+        qq1, qq2
+    )  # can be negative, we want to have finally a matrix with one eigenvalue of +1
 
     matou = constructMat(matrice_P, qq1, qq2, qq3prod)
 
     valeurpropres = np.linalg.eigvals(matou)  # eigen values
     # check number of eigen values that are close to 1.0 (+- 0.05)
     # (we want to have finally a matrix with one eigenvalue of +1, corresponding eigen vector is the rotation axis
-    if len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), .05)[1]) == 1:  # we have an axis: OK
+    if (
+        len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) == 1
+    ):  # we have an axis: OK
         matorient = matou
     else:  # matou is not a rotation matrix
         # print "I need to construct an other matrix"
         matorient = constructMat(matrice_P, qq1, qq2, -qq3prod)
 
-    if verbose == 'yes':
+    if verbose == "yes":
         print("Estimated Orientation Matrix")
         print(matorient)
         print("--------------------------------------------")
@@ -853,8 +938,7 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose='yes', frame='lauetools'):
     return matorient
 
 
-def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
-                           verbose=0, frame='lauetools'):
+def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="lauetools"):
     """
     Upgrade of just above givematorient()
     take into account distorted structure by using Gstar (metric tensor of unit cell)
@@ -874,9 +958,9 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
     h1, k1, l1 = hkl1
     h2, k2, l2 = hkl2
 
-#     print "hkl1", hkl1
-#     print "hkl2", hkl2
-#     print "B", B
+    #     print "hkl1", hkl1
+    #     print "hkl2", hkl2
+    #     print "B", B
 
     G1 = np.dot(B, np.array(hkl1))
     G2 = np.dot(B, np.array(hkl2))
@@ -887,12 +971,10 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
     normG3 = np.sqrt(np.dot(G3, G3))
 
     # print normG1,normG2,normG3
-    matrice_P = np.array([G1 / normG1,
-                          G2 / normG2,
-                          G3 / normG3])
+    matrice_P = np.array([G1 / normG1, G2 / normG2, G3 / normG3])
 
-#     print "Gs", G1, G2, G3
-#     print "matrice_P", matrice_P
+    #     print "Gs", G1, G2, G3
+    #     print "matrice_P", matrice_P
     # print "Angle G1,G2",np.arccos(np.dot(matrice_P[0],matrice_P[1]))*180./np.pi
 
     # similar matrix but with 2theta,chi coordinate
@@ -905,8 +987,10 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
     qq1 = LTGeo.unit_q(twicetheta_1, chi_1, frame=frame)
     qq2 = LTGeo.unit_q(twicetheta_2, chi_2, frame=frame)
 
-    qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
-    qq3n = np.sqrt(np.dot(qq3prod, qq3prod)) * 1.
+    qq3prod = np.cross(
+        qq1, qq2
+    )  # can be negative, we want to have finally a matrix with one eigenvalue of +1
+    qq3n = np.sqrt(np.dot(qq3prod, qq3prod)) * 1.0
 
     # print "qs",qq1,qq2,qq3prod/qq3n
     # print "Angle qq1,qq2",np.arccos(np.dot(qq1,qq2))*180./np.pi
@@ -927,13 +1011,16 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
 
     # check number of eigen values that are close to 1.0 (+- 0.05)
     # (we want to have finally a matrix with one eigenvalue of +1, corresponding eigen vector is the rotation axis
-    if len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), .05)[1]) in (1, 3):  # we have an axis: OK
+    if len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) in (
+        1,
+        3,
+    ):  # we have an axis: OK
         matorient = matou
     else:  # matou is not a rotation matrix
         # print "I need to construct an other matrix"
         matorient = constructMat(matrice_P, qq1, qq2, -qq3prod)
 
-    if verbose in ('yes', 1):
+    if verbose in ("yes", 1):
         print("Estimated Orientation Matrix ---------------")
         print(matorient)
         print("--------------------------------------------")
@@ -949,7 +1036,7 @@ def Allproposedmatrix(listrecogn, tolang):
     listofmatrix = []
     for k in list(range(len(listrecogn))):
         for j in list(range(k, len(listrecogn))):
-            mama = proposematrix(k, j, listrecogn, tolang, verbose='no')
+            mama = proposematrix(k, j, listrecogn, tolang, verbose="no")
             if mama is not None:
                 listofmatrix.append([[k, j], mama])
     return listofmatrix
@@ -966,8 +1053,10 @@ def find_lowest_Euler_Angles_matrix(mat):
         # corrected 08 Nov 11 by O. Robach
         # mat : gives columns of a* b* c* on x y z
     """
-    if LA.det(mat) < 0.0 :
-        raise ValueError("warning : det < 0 in input of find_lowest_Euler_Angles_matrix")
+    if LA.det(mat) < 0.0:
+        raise ValueError(
+            "warning : det < 0 in input of find_lowest_Euler_Angles_matrix"
+        )
 
     sign3 = np.ones(3)
     ind6 = np.zeros(6)
@@ -1016,36 +1105,38 @@ def find_lowest_Euler_Angles_matrix(mat):
     csec = mat6[:, ic]
     asec = mat4[:, ia]
     b1 = np.cross(csec, asec)
-    if np.inner(b1, mat2[:, 0]) > 0.0 :
+    if np.inner(b1, mat2[:, 0]) > 0.0:
         bsec = mat2[:, 0]
-    else :
+    else:
         bsec = mat2[:, 1]
 
     matfinal = np.column_stack((asec, bsec, csec))
-# #    print sign(inner(cross(mat[:,0], mat[:,1]),mat[:,2]))
-# #    sign0 = sign(inner(cross(matfinal[:,0], matfinal[:,1]),matfinal[:,2]))
-# #        print sign0
+    # #    print sign(inner(cross(mat[:,0], mat[:,1]),mat[:,2]))
+    # #    sign0 = sign(inner(cross(matfinal[:,0], matfinal[:,1]),matfinal[:,2]))
+    # #        print sign0
     print("transform matrix to matrix with lowest Euler Angles")
     print("start \n", mat)
     print("final \n", matfinal)
 
     # matrix to transform hkl's
     transfmat = LA.inv((np.dot(LA.inv(mat), matfinal).round(decimals=1)))
-# #    print "transfmat = \n ", transfmat
-# #        hkl = array([5.0,-7.0,3.0])
-# #        print shape(hkl)
-# #        # hkl needs to be as column vector
-# #        qxyz = dot(mat,hkl)
-# #        print "qxyz =", qxyz.round(decimals = 4)
-# #        hkl2 = dot(transfmat,hkl)
-# #        qxyz2 = dot(matfinal,dot(transfmat,hkl))
-# #        print "qxyz2 =", qxyz2.round(decimals = 4)
-# #        print "hkl = ", hkl
-# #        print "hkl2 = ", hkl2
+    # #    print "transfmat = \n ", transfmat
+    # #        hkl = array([5.0,-7.0,3.0])
+    # #        print shape(hkl)
+    # #        # hkl needs to be as column vector
+    # #        qxyz = dot(mat,hkl)
+    # #        print "qxyz =", qxyz.round(decimals = 4)
+    # #        hkl2 = dot(transfmat,hkl)
+    # #        qxyz2 = dot(matfinal,dot(transfmat,hkl))
+    # #        print "qxyz2 =", qxyz2.round(decimals = 4)
+    # #        print "hkl = ", hkl
+    # #        print "hkl2 = ", hkl2
 
-    if LA.det(matfinal) < 0.0 :
+    if LA.det(matfinal) < 0.0:
         # print "warning : det < 0 in output of find_lowest_Euler_Angles_matrix"
-        raise ValueError("warning : det < 0 in output of find_lowest_Euler_Angles_matrix")
+        raise ValueError(
+            "warning : det < 0 in output of find_lowest_Euler_Angles_matrix"
+        )
 
     return matfinal, transfmat
 
@@ -1080,7 +1171,9 @@ def GenerateLookUpTable(hkl_all, Gstar):
     # from square interangles matrix (from the same set of hkl)
     tab_side_size = tab_angulardist.shape[0]
     indy = GT.indices_in_flatTriuMatrix(tab_side_size)
-    angles_set = np.take(tab_angulardist, indy)  # 1D array (flatten automatically tab_angulardist)
+    angles_set = np.take(
+        tab_angulardist, indy
+    )  # 1D array (flatten automatically tab_angulardist)
 
     # sort indices (from 1D array) from angle values
     sorted_ind = np.argsort(angles_set)
@@ -1101,9 +1194,21 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0):
 
     return GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=verbose)
 
-HKL_CUBIC_UP3 = [[1, 0, 0], [1, 1, 0], [1, 1, 1],
-           [2, 1, 0], [2, 1, 1], [2, 2, 1],
-           [3, 1, 0], [3, 1, 1], [3, 2, 1], [3, 2, 2], [3, 3, 1], [3, 3, 2]]
+
+HKL_CUBIC_UP3 = [
+    [1, 0, 0],
+    [1, 1, 0],
+    [1, 1, 1],
+    [2, 1, 0],
+    [2, 1, 1],
+    [2, 2, 1],
+    [3, 1, 0],
+    [3, 1, 1],
+    [3, 2, 1],
+    [3, 2, 2],
+    [3, 3, 1],
+    [3, 3, 2],
+]
 
 
 def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
@@ -1135,9 +1240,9 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     tab_side_size        : size of the square pairs angles matrix
     """
     # compute square matrix containing angles
-    tab_angulardist = CP.AngleBetweenNormals(hkl1, hkl2 , Gstar)
+    tab_angulardist = CP.AngleBetweenNormals(hkl1, hkl2, Gstar)
     # shape of tab_angulardist  (len(hkl1), len(hkl2))
-#     print "tab_angulardist.shape", tab_angulardist.shape
+    #     print "tab_angulardist.shape", tab_angulardist.shape
 
     # to exclude parallel hkls for further purpose (putting very high angle value)
     np.putmask(tab_angulardist, np.abs(tab_angulardist) < 0.001, 400)
@@ -1154,7 +1259,7 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     sorted_angles = angles_set[sorted_ind]
 
     sorted_ind_ij = GT.convert2indices(sorted_ind, tab_angulardist.shape)
-#     print "finished GenerateLookUpTable_from2sets"
+    #     print "finished GenerateLookUpTable_from2sets"
     return sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist.shape
 
 
@@ -1199,10 +1304,12 @@ def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True):
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
     import dict_LaueTools as DictLT
+
     latticeparams = DictLT.dict_Materials[key_material][1]
 
-    return buildLUT_fromLatticeParams(latticeparams, n,
-                                      CheckAndUseCubicSymmetry=CheckAndUseCubicSymmetry)
+    return buildLUT_fromLatticeParams(
+        latticeparams, n, CheckAndUseCubicSymmetry=CheckAndUseCubicSymmetry
+    )
 
 
 def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
@@ -1219,6 +1326,7 @@ def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
     import dict_LaueTools as DictLT
+
     latticeparams = DictLT.dict_Materials[key_material][1]
 
     restrictLUT = False
@@ -1230,7 +1338,7 @@ def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
     hkls_2 = GT.threeindices_up_to(m, remove_negative_l=restrictLUT)
 
     if 1:  # filterharmonics:
-#        hkl_all = CP.FilterHarmonics_2(hkl_all)
+        #        hkl_all = CP.FilterHarmonics_2(hkl_all)
         hkls_1 = FilterHarmonics(hkls_1)
         hkls_2 = FilterHarmonics(hkls_2)
 
@@ -1263,7 +1371,7 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
     hkl_all = GT.threeindices_up_to(n, remove_negative_l=restrictLUT)
 
     if 1:  # filterharmonics:
-#        hkl_all = CP.FilterHarmonics_2(hkl_all)
+        #        hkl_all = CP.FilterHarmonics_2(hkl_all)
         hkl_all = FilterHarmonics(hkl_all)
 
     Gstar_metric = CP.Gstar_from_directlatticeparams(*latticeparams)
@@ -1282,6 +1390,7 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material):
     latticeparams_or_material  : either string key for material or list of 6 lattice parameters
     """
     import dict_LaueTools as DictLT
+
     if isinstance(latticeparams_or_material, str):
         latticeparams = DictLT.dict_Materials[latticeparams_or_material][1]
     else:
@@ -1324,7 +1433,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
     angle_query = query_angle
 
     # if angle_query is a tuple,array,list
-    if type(query_angle) not in (type(5), type(5.5), type(np.arange(0., 2., 3.)[0])):
+    if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
         angle_query = query_angle[0]
 
     # Find matching
@@ -1332,9 +1441,9 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
     # only planes pairs corresponding to one matched angle are returned
     # taking the first value of angle_target
     if onlyclosest:
-        closest_index_in_sorted_angles_raw = GT.find_closest(sorted_angles,
-                                                             np.array([angle_query]),
-                                                             angular_tolerance_Recognition)[0]
+        closest_index_in_sorted_angles_raw = GT.find_closest(
+            sorted_angles, np.array([angle_query]), angular_tolerance_Recognition
+        )[0]
 
         closest_angle = sorted_angles[closest_index_in_sorted_angles_raw][0]
         # print "Closest_angle",closest_angle
@@ -1358,8 +1467,10 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print("\n within %.3f and close to %.9f deg" % \
-                        (angular_tolerance_Recognition, angle_query))
+                print(
+                    "\n within %.3f and close to %.9f deg"
+                    % (angular_tolerance_Recognition, angle_query)
+                )
                 for pair in planes_pairs:
                     print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
 
@@ -1367,7 +1478,10 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
 
         else:
             if angle_query > 0.5:
-                print("\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition))
+                print(
+                    "\nthere is no angle close to %.2f within %.2f deg"
+                    % (angle_query, angular_tolerance_Recognition)
+                )
                 print("Nearest angle found is %.2f deg\n" % closest_angle)
             return None
 
@@ -1389,22 +1503,32 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print("\n within %.3f and close to %.9f deg" % \
-                        (angular_tolerance_Recognition, angle_query))
+                print(
+                    "\n within %.3f and close to %.9f deg"
+                    % (angular_tolerance_Recognition, angle_query)
+                )
                 for k, pair in enumerate(planes_pairs):
-                    print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]])
+                    print(
+                        "< ",
+                        pair[0],
+                        "  ,  ",
+                        pair[1],
+                        " > = %.6f "
+                        % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]],
+                    )
             return planes_pairs
 
         else:
             if angle_query > 0.5:
-#                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
-#                 print "Nearest angle found is %s deg\n" % str(sorted_ind)
+                #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
+                #                 print "Nearest angle found is %s deg\n" % str(sorted_ind)
                 pass
             return None
 
 
-def PlanePairs(query_angle, angle_tol, Gstar, n,
-               onlyclosest=1, filterharmonics=1, verbose=0):
+def PlanePairs(
+    query_angle, angle_tol, Gstar, n, onlyclosest=1, filterharmonics=1, verbose=0
+):
     """
     return pairs of lattice hkl planes
     whose angle between normals are the closest to the given query_angle within tolerance
@@ -1427,7 +1551,7 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
     hkl_all = GT.threeindices_up_to(n)
 
     if filterharmonics:
-#         hkl_all = FilterHarmonics(hkl_all)
+        #         hkl_all = FilterHarmonics(hkl_all)
         hkl_all = CP.FilterHarmonics_2(hkl_all)
 
     # GenerateLookUpTable
@@ -1439,7 +1563,7 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
     angle_query = query_angle
 
     # if angle_query is a tuple,array,list
-    if type(query_angle) not in (type(5), type(5.5), type(np.arange(0., 2., 3.)[0])):
+    if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
         angle_query = query_angle[0]
 
     # Find matching
@@ -1448,7 +1572,9 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
     # taking the first value of angle_target
     if onlyclosest:
 
-        closest_index_in_sorted_angles_raw = GT.find_closest(sorted_angles, np.array([angle_query]), angular_tolerance_Recognition)[0]
+        closest_index_in_sorted_angles_raw = GT.find_closest(
+            sorted_angles, np.array([angle_query]), angular_tolerance_Recognition
+        )[0]
         closest_angle = sorted_angles[closest_index_in_sorted_angles_raw][0]
         # print "Closest_angle",closest_angle
 
@@ -1468,11 +1594,13 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
             index_in_triu_orig = np.take(indy, index_in_triu)
             IJ_indices = GT.indices_in_TriuMatrix(index_in_triu_orig, tab_side_size)
 
-
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print("\n within %.3f and close to %.9f deg" % (angular_tolerance_Recognition, angle_query))
+                print(
+                    "\n within %.3f and close to %.9f deg"
+                    % (angular_tolerance_Recognition, angle_query)
+                )
                 for pair in planes_pairs:
                     print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
 
@@ -1480,15 +1608,17 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
 
         else:
             if angle_query > 0.5:
-#                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
-#                 print "Nearest angle found is %.2f deg\n" % closest_angle
+                #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
+                #                 print "Nearest angle found is %.2f deg\n" % closest_angle
                 pass
             return None
 
     # planes pairs corresponding to all matched angles in angle range
     # (defined by query_angle and angle_tol) are returned
     else:  # onlyclosest = 0
-        closest_indices_in_sorted_angles_raw = np.where(np.abs(sorted_angles - angle_query) < angular_tolerance_Recognition / 2.)
+        closest_indices_in_sorted_angles_raw = np.where(
+            np.abs(sorted_angles - angle_query) < angular_tolerance_Recognition / 2.0
+        )
 
         if len(closest_indices_in_sorted_angles_raw[0]) > 1:
 
@@ -1498,28 +1628,43 @@ def PlanePairs(query_angle, angle_tol, Gstar, n,
             index_in_triu_orig = np.take(indy, index_in_triu)
             IJ_indices = GT.indices_in_TriuMatrix(index_in_triu_orig, tab_side_size)
 
-
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print("\n within %.3f and close to %.9f deg" % (angular_tolerance_Recognition, angle_query))
+                print(
+                    "\n within %.3f and close to %.9f deg"
+                    % (angular_tolerance_Recognition, angle_query)
+                )
                 for k, pair in enumerate(planes_pairs):
-                    print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]])
+                    print(
+                        "< ",
+                        pair[0],
+                        "  ,  ",
+                        pair[1],
+                        " > = %.6f "
+                        % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]],
+                    )
             return planes_pairs
 
         else:
             if angle_query > 0.5:
-#                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
-#                 print "Nearest angle found is %.2f deg\n" % sorted_ind
+                #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
+                #                 print "Nearest angle found is %.2f deg\n" % sorted_ind
                 pass
             return None
 
 
-def PlanePairs_from2sets(query_angle, angle_tol,
-                            hkl1, hkl2, key_material,
-                            onlyclosest=1, filterharmonics=1,
-                            LUT=None,
-                            verbose=0):
+def PlanePairs_from2sets(
+    query_angle,
+    angle_tol,
+    hkl1,
+    hkl2,
+    key_material,
+    onlyclosest=1,
+    filterharmonics=1,
+    LUT=None,
+    verbose=0,
+):
     """
     Generate a particular LUT from hkl1 and hkl2
     and return pairs of lattice hkl planes
@@ -1542,19 +1687,19 @@ def PlanePairs_from2sets(query_angle, angle_tol,
         hkl1 = np.array(hkl1)
     if isinstance(hkl2, list):
         hkl2 = np.array(hkl2)
-        
-#     print "hkl1", hkl1
-#     print "hkl2", hkl2
-    
+
+    #     print "hkl1", hkl1
+    #     print "hkl2", hkl2
+
     if filterharmonics:
-#         hkl1 = FilterHarmonics(hkl1)
-#         hkl2 = FilterHarmonics(hkl2)
+        #         hkl1 = FilterHarmonics(hkl1)
+        #         hkl2 = FilterHarmonics(hkl2)
 
         if hkl1.shape != (3,):
             hkl1 = CP.FilterHarmonics_2(hkl1)
         if hkl2.shape != (3,):
             hkl2 = CP.FilterHarmonics_2(hkl2)
-            
+
     if hkl1.shape == (3,):
         hkl1 = np.array([hkl1])
     if hkl2.shape == (3,):
@@ -1565,18 +1710,15 @@ def PlanePairs_from2sets(query_angle, angle_tol,
         print("Calculating LUT in PlanePairs_from2sets()")
         LUT = Generate_selectedLUT(hkl1, hkl2, key_material)
 
-    (sorted_ind,
-     sorted_angles,
-     sorted_ind_ij,
-     tab_angulardist_shape) = LUT
+    (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
 
-#     print "sorted_ind", sorted_ind
-#     print "sorted_ind_ij", sorted_ind_ij
+    #     print "sorted_ind", sorted_ind
+    #     print "sorted_ind_ij", sorted_ind_ij
 
     angular_tolerance_Recognition = angle_tol
     angle_query = query_angle
 
-#     if type(query_angle) not in (type(5), type(5.5), type(np.arange(0., 2., 3.)[0])):  # if angle_query is a tuple,array,list
+    #     if type(query_angle) not in (type(5), type(5.5), type(np.arange(0., 2., 3.)[0])):  # if angle_query is a tuple,array,list
     if isinstance(query_angle, (list, np.ndarray, tuple)):
         angle_query = query_angle[0]
 
@@ -1585,14 +1727,14 @@ def PlanePairs_from2sets(query_angle, angle_tol,
     pos_min = np.argmin(array_angledist)
 
     closest_angle = sorted_angles[pos_min]
-    
-#     print "closest_angle ok ===>", closest_angle
+
+    #     print "closest_angle ok ===>", closest_angle
 
     if np.abs(closest_angle - query_angle) > angular_tolerance_Recognition:
         if angle_query > 0.5:
-#             print "\nThere is no angle close to %.2f within %.2f deg" % \
-#                             (angle_query, angular_tolerance_Recognition)
-#             print "Nearest angle found is %.2f deg\n" % closest_angle
+            #             print "\nThere is no angle close to %.2f within %.2f deg" % \
+            #                             (angle_query, angular_tolerance_Recognition)
+            #             print "Nearest angle found is %.2f deg\n" % closest_angle
             pass
         return None, LUT
 
@@ -1607,7 +1749,9 @@ def PlanePairs_from2sets(query_angle, angle_tol,
 
         if len(close_angles_duplicates) > 1:
             if verbose:
-                print("\nThere are several angles in structure from different lattice plane pairs that are equal\n")
+                print(
+                    "\nThere are several angles in structure from different lattice plane pairs that are equal\n"
+                )
             closest_index_in_sorted_angles_raw = close_angles_duplicates
         else:
             pass
@@ -1619,12 +1763,12 @@ def PlanePairs_from2sets(query_angle, angle_tol,
 
     plane_1 = np.take(hkl1, IJ_indices[:, 0], axis=0)
     plane_2 = np.take(hkl2, IJ_indices[:, 1], axis=0)
-    
-#     print "plane_1", plane_1
-#     print "plane_2", plane_2
+
+    #     print "plane_1", plane_1
+    #     print "plane_2", plane_2
 
     if len(plane_1) > 1:
-#         print 'nb sol >1'
+        #         print 'nb sol >1'
         planes_pairs = np.hstack((plane_1, plane_2)).reshape((len(plane_1), 2, 3))
     else:
         planes_pairs = np.array([plane_1[0], plane_2[0]])
@@ -1640,17 +1784,30 @@ def PlanePairs_from2sets(query_angle, angle_tol,
         print("IJ_indices", IJ_indices)
         print("plane_1", plane_1)
         print("plane_2", plane_2)
-        print('len(plane_1)', len(plane_1))
-        print('len(plane_2)', len(plane_2))
+        print("len(plane_1)", len(plane_1))
+        print("len(plane_2)", len(plane_2))
         print("planes_pairs", planes_pairs)
-        print("\n Lattice Planes pairs found within %.3f and close to %.9f deg" % \
-                    (angular_tolerance_Recognition, angle_query))
+        print(
+            "\n Lattice Planes pairs found within %.3f and close to %.9f deg"
+            % (angular_tolerance_Recognition, angle_query)
+        )
         if len(plane_1) > 1:
             for k, pair in enumerate(planes_pairs):
-                print("< ", pair[0], " , ", pair[1], " > = %.2f, AngDev %.2f" % \
-                (closest_angles_values[k], AngDev[k]))
+                print(
+                    "< ",
+                    pair[0],
+                    " , ",
+                    pair[1],
+                    " > = %.2f, AngDev %.2f" % (closest_angles_values[k], AngDev[k]),
+                )
         else:
-            print("< ", planes_pairs[0], "  ,  ", planes_pairs[1], " > = %.6f " % closest_angles_values)
+            print(
+                "< ",
+                planes_pairs[0],
+                "  ,  ",
+                planes_pairs[1],
+                " > = %.6f " % closest_angles_values,
+            )
     return planes_pairs, LUT
 
 
@@ -1664,9 +1821,9 @@ def FilterHarmonics(hkl):
 
     NOTE: this function used to build angles LUT seems correct
     """
-#     print "np.array(hkl) in FilterHarmonics", np.array(hkl)
+    #     print "np.array(hkl) in FilterHarmonics", np.array(hkl)
     if np.array(hkl).shape[0] == 1:
-#         print "input array has only one element! So Nothing to filter..."
+        #         print "input array has only one element! So Nothing to filter..."
         return hkl
     elif np.array(hkl).shape == (3,):
         return np.array([hkl])
@@ -1711,13 +1868,13 @@ def HKL2string(hkl):
     convert hkl into string
     [-10.0,-0.0,5.0]  -> '-10,0,5'
     """
-    res = ''
+    res = ""
     for elem in hkl:
         ind = int(elem)
         strind = str(ind)
-        if strind == '-0':  # removing sign before 0
-            strind = '0'
-        res += strind + ','
+        if strind == "-0":  # removing sign before 0
+            strind = "0"
+        res += strind + ","
 
     return res[:-1]
 
@@ -1764,7 +1921,9 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         # i,j position of
         truepos_ij = np.array([truepos[0], truepos[1]]).T
 
-        dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(truepos_ij, verbose=0)
+        dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(
+            truepos_ij, verbose=0
+        )
 
         toremove_pairs = []
         for key, val in list(dictsets_pairs.items()):
@@ -1778,4 +1937,3 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         print("Purge is not needed, since there is only one pair of hkls ..!")
 
         return purged_pp
-

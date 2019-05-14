@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 """
 module of lauetools project
 
@@ -14,21 +15,22 @@ import multiprocessing
 
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
-if mpl.__version__<'2.2':
-    MATPLOTLIB2p2=False
+
+if mpl.__version__ < "2.2":
+    MATPLOTLIB2p2 = False
 else:
-    MATPLOTLIB2p2=True
+    MATPLOTLIB2p2 = True
 
 import matplotlib.cm as mplcm
 
-DEG = np.pi / 180.
+DEG = np.pi / 180.0
 
 IDENTITYMATRIX = np.eye(3)
 
 import IOLaueTools as IOLT
 
 
-#--- --------------  Vectors
+# --- --------------  Vectors
 def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
     """compute angles between all pairs of vectors from Vectors1 and Vectors2
 
@@ -47,7 +49,7 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
     else:
         H1 = HKL1r
         n1 = HKL1r.shape[0]
-        
+
     if HKL2r.shape == (3,):
         H2 = np.array([HKL2r])
     elif HKL2r.shape == (1, 3):
@@ -59,22 +61,22 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
 
     dstar_square_1 = np.diag(np.inner(np.inner(H1, metrics), H1))
     dstar_square_2 = np.diag(np.inner(np.inner(H2, metrics), H2))
-    
-    scalar_product = np.inner(np.inner(H1, metrics), H2) * 1.
+
+    scalar_product = np.inner(np.inner(H1, metrics), H2) * 1.0
 
     if n1 != 1:
         # 1d
-        d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.
+        d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.0
     else:
         d1 = np.sqrt(dstar_square_1)
     if n2 != 1:
         # 1d
-        d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.
+        d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.0
     else:
         d2 = np.sqrt(dstar_square_2)
-        
+
     outy = np.outer(d1, d2)
-    
+
     if 0:
         print("H1", H1)
         print("H2", H2)
@@ -90,14 +92,11 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
 
     ratio = scalar_product / outy
     ratio = np.round(ratio, decimals=7)
-#    print "ratio", ratio
-#    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
-#    np.putmask(ratio, ratio == 0, 0)
+    #    print "ratio", ratio
+    #    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
+    #    np.putmask(ratio, ratio == 0, 0)
 
     return np.arccos(ratio) / DEG
-
-
-
 
 
 def calculdist2D(listpoints1, listpoints2):
@@ -113,6 +112,7 @@ def calculdist2D(listpoints1, listpoints2):
     """
     # return CLOSEST
     return np.argmin(calcdistancetab(listpoints1, listpoints2))
+
 
 def calcdistancetab(listpoints1, listpoints2):
     data1 = np.array(listpoints1)
@@ -139,15 +139,16 @@ def distfrom2thetachi(points1, points2):
     points1, points2 must be two elements array: [2theta_1, chi_1], [2theta_2, chi_2]  
     """
 
-    longdata1 = points1[0] * DEG / 2.  # theta
+    longdata1 = points1[0] * DEG / 2.0  # theta
     latdata1 = points1[1] * DEG  # chi
 
-    longdata2 = points2[0] * DEG / 2.
+    longdata2 = points2[0] * DEG / 2.0
     latdata2 = points2[1] * DEG
 
     deltalat = latdata1 - latdata2
-    cosang = np.sin(longdata1) * np.sin(longdata2) + \
-                        np.cos(longdata1) * np.cos(longdata2) * np.cos(deltalat)
+    cosang = np.sin(longdata1) * np.sin(longdata2) + np.cos(longdata1) * np.cos(
+        longdata2
+    ) * np.cos(deltalat)
 
     return np.arccos(cosang) / DEG
 
@@ -181,7 +182,7 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
 
     arccos_arg = np.around(prodsin + prodcos * np.cos(deltalat), decimals=9)
 
-    tab_angulardist = (1. / DEG) * np.arccos(arccos_arg)
+    tab_angulardist = (1.0 / DEG) * np.arccos(arccos_arg)
 
     return tab_angulardist
 
@@ -197,12 +198,12 @@ def norme_vec(vec1):
     """
     return the scalar cartesian norm of a single 3 elements vector
     """
-#     if isinstance(vec1, list):
-#         if len(vec1) != 3:
-#             raise TypeError, "%s is not a list or array of 3 elements" % str(vec1)
-#     elif isinstance(vec1, np.ndarray):
-#         if len(vec1.shape) != 1 or vec1.shape[0] != 3:
-#             raise TypeError, "%s is not a list or array of 3 elements" % str(vec1)
+    #     if isinstance(vec1, list):
+    #         if len(vec1) != 3:
+    #             raise TypeError, "%s is not a list or array of 3 elements" % str(vec1)
+    #     elif isinstance(vec1, np.ndarray):
+    #         if len(vec1.shape) != 1 or vec1.shape[0] != 3:
+    #             raise TypeError, "%s is not a list or array of 3 elements" % str(vec1)
     norm = np.sqrt(np.inner(vec1, vec1))
     return norm
 
@@ -211,10 +212,10 @@ def getAngle_2Vectors(vec1, vec2):
     """
     return angle between two vectors in degree
     """
-    n1 = np.sqrt(np.dot(vec1, vec1)) * 1.
-    n2 = np.sqrt(np.dot(vec2, vec2)) * 1.
+    n1 = np.sqrt(np.dot(vec1, vec1)) * 1.0
+    n2 = np.sqrt(np.dot(vec2, vec2)) * 1.0
 
-    return 180. / np.pi * np.arccos(np.dot(vec1, vec2) / n1 / n2)
+    return 180.0 / np.pi * np.arccos(np.dot(vec1, vec2) / n1 / n2)
 
 
 def norme_list(listvec):
@@ -226,7 +227,7 @@ def norme_list(listvec):
     return np.diag(normarray)
 
 
-def tensile_along_u(v, tensile, u='zsample'):
+def tensile_along_u(v, tensile, u="zsample"):
     """
     from list of vectors of q vectors expressed in absolute frame,
     transform them so that to expand or compress the q vector component along u axis by factor 'tensile'. 
@@ -246,15 +247,17 @@ def tensile_along_u(v, tensile, u='zsample'):
     # print wholelistindicesfiltered
     omegasurfacesample = 40 * DEG  # 40 deg sample inclination
     real_expansion_coef = tensile
-    if u == 'zsample':
-        direction_traction = np.array([-np.sin(omegasurfacesample),
-                                       0,
-                                       np.cos(omegasurfacesample)])  # u direction traction in q space in absolute frame
+    if u == "zsample":
+        direction_traction = np.array(
+            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)]
+        )  # u direction traction in q space in absolute frame
     else:
         # normalized axis vector u
         UU = np.array(u)
-        nUU = 1.*np.sqrt(np.sum(UU ** 2))
-        direction_traction = np.array(UU) / nUU  # u direction traction in q space in absolute frame
+        nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
+        direction_traction = (
+            np.array(UU) / nUU
+        )  # u direction traction in q space in absolute frame
 
     # u must be normalized
     scalaruv = np.inner(v, direction_traction)  # array of all scalar product (u, v)
@@ -262,7 +265,12 @@ def tensile_along_u(v, tensile, u='zsample'):
 
     # crossuvu = cross(cross(direction_traction, wholelistvecfiltered[0]),direction_traction)
     # wholelistvecfiltered = [crossuvu+1./real_expansion_coef*np.reshape(scalaruv,(len(scalaruv),1))*direction_traction]
-    wholelistvecfiltered = v + (1. / real_expansion_coef - 1) * np.reshape(scalaruv, (len(scalaruv), 1)) * direction_traction
+    wholelistvecfiltered = (
+        v
+        + (1.0 / real_expansion_coef - 1)
+        * np.reshape(scalaruv, (len(scalaruv), 1))
+        * direction_traction
+    )
     # print "lala",wholelistvecfiltered
 
     return wholelistvecfiltered
@@ -275,7 +283,7 @@ def rotate_around_u(v, angle, u):
     result is an array
     """
     UU = np.array(u)
-    nUU = 1. * np.sqrt(np.sum(UU ** 2))
+    nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
     unit_axis = np.array(UU) / nUU  # u direction traction in q space in absolute frame
 
     mat = matRot(unit_axis, angle)
@@ -292,17 +300,17 @@ def reflect_on_u(v, u):
     result is an array
     """
     UU = np.array(u)
-    nUU = 1. * np.sqrt(np.sum(UU ** 2))
+    nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
     unit_axis = np.array(UU) / nUU  # u plane's normal
 
-    mat = np.eye(3) - 2. * np.outer(unit_axis, unit_axis)
+    mat = np.eye(3) - 2.0 * np.outer(unit_axis, unit_axis)
 
     wholelistvecfiltered = np.dot(mat, v.T).T
 
     return wholelistvecfiltered
 
 
-def strain_along_u(v, alpha, u='zsample', anglesample=40):
+def strain_along_u(v, alpha, u="zsample", anglesample=40):
     """
     from list of vectors of v in absolute frame, 
     /alpha expand or contract one vector component along u
@@ -311,24 +319,25 @@ def strain_along_u(v, alpha, u='zsample', anglesample=40):
     result is an array
     """
     omegasurfacesample = anglesample * DEG  # 40 deg sample inclination
-    if u == 'zsample':
-        direction_traction = np.array([-np.sin(omegasurfacesample),
-                                       0,
-                                       np.cos(omegasurfacesample)])  # u direction traction in q space in absolute frame
+    if u == "zsample":
+        direction_traction = np.array(
+            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)]
+        )  # u direction traction in q space in absolute frame
     else:
         UU = np.array(u)
-        nUU = 1. * np.sqrt(np.sum(UU ** 2))
+        nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
         direction_traction = np.array(UU) / nUU  # u direction traction in q space
 
-    mat = np.eye(3) + \
-        (1. / alpha - 1) * np.outer(direction_traction, direction_traction)
+    mat = np.eye(3) + (1.0 / alpha - 1) * np.outer(
+        direction_traction, direction_traction
+    )
 
     wholelistvecfiltered = np.dot(mat, v.T).T
 
     return wholelistvecfiltered
 
 
-#------ ---------  Matrices
+# ------ ---------  Matrices
 def matline_to_mat3x3(mat):
     """
     arrange  9 elements in columns in a 3*3 matrix
@@ -348,7 +357,7 @@ def mat3x3_to_matline(mat):
     # print "mat 3x3 \n", mat
     mat1 = np.hstack((mat[:, 0], mat[:, 1], mat[:, 2]))
     # print "mat ligne \n", mat1
-    return(mat1)
+    return mat1
 
 
 def epsline_to_epsmat(epsline):
@@ -358,7 +367,9 @@ def epsline_to_epsmat(epsline):
     NOTE: # deviatoric strain 11 22 33 -dalf 23, -dbet 13, -dgam 12
     """
     if len(epsline) != 6:
-        raise ValueError("%s argument in epsline_to_epsmat has not 6 elements" % epsline)
+        raise ValueError(
+            "%s argument in epsline_to_epsmat has not 6 elements" % epsline
+        )
 
     epsmat = np.identity(3, float)
 
@@ -440,10 +451,12 @@ def UBdecomposition_RRPP(UBmat):
 
     return RR, PP
 
-#---- ------------------  TENSORS -------
+
+# ---- ------------------  TENSORS -------
 """
 http://www.continuummechanics.org/coordxforms.html
 """
+
 
 def rotT(T, g):
     """
@@ -459,16 +472,18 @@ def rotT(T, g):
     axes = ((0, 2, 4, 6), (0, 1, 2, 3))
     return np.tensordot(gggg, T, axes)
 
+
 def rotT_faster(T, gggg):
     """
     even 2x faster
     """
-    
-    return np.dot(gggg.transpose((1, 3, 5, 7, 0, 2, 4, 6)).reshape((81, 81)),
-                  T.reshape(81, 1)).reshape((3, 3, 3, 3))
-                  
 
-#-------------- ----------   ALGEBRA
+    return np.dot(
+        gggg.transpose((1, 3, 5, 7, 0, 2, 4, 6)).reshape((81, 81)), T.reshape(81, 1)
+    ).reshape((3, 3, 3, 3))
+
+
+# -------------- ----------   ALGEBRA
 def pgcd(a, b):
     """return the highest common divisor of two positive integers
     Method of sequential substractions
@@ -521,7 +536,7 @@ def properinteger(flo):
         return np.floor(flo)
 
 
-#----- ------------  SET
+# ----- ------------  SET
 def FindClosestPoint(arraypts, XY, returndist=0):
     """
     Returns the index of the closest point in arraypts from point XY =[X,Y]
@@ -534,8 +549,8 @@ def FindClosestPoint(arraypts, XY, returndist=0):
         return indclose, np.sqrt(np.sum(dist ** 2, axis=1))
     else:
         return indclose
-    
-    
+
+
 def FindTwoClosestPoints(arraypts, XY):
     """
     Returns the index of the two closest points in arraypts from point XY =[X,Y]
@@ -543,12 +558,13 @@ def FindTwoClosestPoints(arraypts, XY):
     arraypts = [[x1,y1],[x2,y2],...]
     """
     if arraypts.shape[0] <= 2:
-        raise ValueError('arraypts does not contain more than 2 elements: %s' % str(arraypts))
+        raise ValueError(
+            "arraypts does not contain more than 2 elements: %s" % str(arraypts)
+        )
     dist = np.array(arraypts) - XY
     indclose = np.argsort(np.hypot(dist[:, 0], dist[:, 1]))[:2]
 
     return indclose, np.sqrt(np.sum(dist ** 2, axis=1))[indclose]
-
 
 
 def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
@@ -580,12 +596,14 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
     list_mindist = []
 
     for XY_Ref in ReferencePoints:
-        indclose_XY_Ref, distances_to_XY_Ref = FindClosestPoint(TestPoints, XY_Ref, returndist=1)
+        indclose_XY_Ref, distances_to_XY_Ref = FindClosestPoint(
+            TestPoints, XY_Ref, returndist=1
+        )
 
         list_closest_ind.append(indclose_XY_Ref)
 
         sortdist_ind = np.argsort(distances_to_XY_Ref)
-#         print 'sortdist_ind', sortdist_ind
+        #         print 'sortdist_ind', sortdist_ind
         close_pts = np.where(distances_to_XY_Ref[sortdist_ind] <= tolerancedistance)[0]
 
         list_allclose_ind.append(sortdist_ind[close_pts])
@@ -610,15 +628,20 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
 
     print("select points index in TestPoints", selected_testpoints_indices)
 
-    selected_testpoints_indices = prepend_in_list(list(list(range(len(TestPoints)))),
-                                                 selected_testpoints_indices)
+    selected_testpoints_indices = prepend_in_list(
+        list(list(range(len(TestPoints)))), selected_testpoints_indices
+    )
 
     print("select points index in TestPoints", selected_testpoints_indices)
 
-#     return list_closest_ind, list_allclose_ind, list_all_dist, list_mindist
+    #     return list_closest_ind, list_allclose_ind, list_all_dist, list_mindist
     selected_testpoints = np.take(TestPoints, selected_testpoints_indices, axis=0)
 
-    return selected_testpoints, selected_testpoints_indices, isolated_pts_in_ReferencePoints
+    return (
+        selected_testpoints,
+        selected_testpoints_indices,
+        isolated_pts_in_ReferencePoints,
+    )
 
 
 def prepend_in_list(list_to_modify, elems):
@@ -639,12 +662,16 @@ def prepend_in_list(list_to_modify, elems):
 
     for el in list_to_modify:
         if list_to_modify.count(el) > 1:
-            raise ValueError("%s (input list to modify) contains duplicates!!" % str(list_to_modify))
+            raise ValueError(
+                "%s (input list to modify) contains duplicates!!" % str(list_to_modify)
+            )
 
     todelete = []
     for k in elems:
         if elems.count(k) > 1:
-            raise ValueError("%s (elements list to prepend) contains duplicates!!" % elems)
+            raise ValueError(
+                "%s (elements list to prepend) contains duplicates!!" % elems
+            )
 
         nb_occurences = list_to_modify.count(k)
         if nb_occurences == 0:
@@ -686,13 +713,17 @@ def find_closest(input_array, target_array, tol):
     from stats.py
     """
     input_array_len = len(input_array)
-    closest_indices = np.searchsorted(input_array, target_array)  # determine the locations of target_array in input_array
+    closest_indices = np.searchsorted(
+        input_array, target_array
+    )  # determine the locations of target_array in input_array
     acc_rej_indices = [-1] * len(target_array)
     curr_tol = [tol] * len(target_array)
 
     est_tol = 0.0
     for i in list(range(len(target_array))):
-        best_off = 0  # used to adjust closest_indices[i] for best approximating element in input_array
+        best_off = (
+            0
+        )  # used to adjust closest_indices[i] for best approximating element in input_array
 
         if closest_indices[i] >= input_array_len:
             # the value target_array[i] is >= all elements in input_array so check whether it is within tolerance of the last element
@@ -731,7 +762,9 @@ def find_closest(input_array, target_array, tol):
             closest_indices[i] += best_off
 
     accept_indices = np.compress(np.greater(acc_rej_indices, -1), acc_rej_indices)
-    reject_indices = np.compress(np.equal(acc_rej_indices, -1), np.arange(len(acc_rej_indices)))
+    reject_indices = np.compress(
+        np.equal(acc_rej_indices, -1), np.arange(len(acc_rej_indices))
+    )
 
     return closest_indices, accept_indices, reject_indices
 
@@ -827,10 +860,12 @@ def getSets(pairs):
     """
     try:
         import networkx as NX
-        
+
     except ImportError:
         print("\n***********************************************************")
-        print("networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/")
+        print(
+            "networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/"
+        )
         print("***********************************************************\n")
         return None
 
@@ -844,7 +879,7 @@ def getSets(pairs):
         adjencymat[i, j] = 1
         adjencymat[j, i] = 1
 
-    if NX.__version__ <= '0.99':
+    if NX.__version__ <= "0.99":
         GGraw = NX.from_whatever(adjencymat, create_using=NX.Graph())  # old syntax
     else:
         GGraw = NX.to_networkx_graph(adjencymat, create_using=NX.Graph())
@@ -913,7 +948,7 @@ def Set_dict_frompairs(pairs_index, verbose=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1, XY2,dist_tolerance=0.5,verbose=0):
+def getCommonPts(XY1, XY2, dist_tolerance=0.5, verbose=0):
     """
     return indices in XY1 and in XY2 of common pts (2D)
     
@@ -925,25 +960,23 @@ def getCommonPts(XY1, XY2,dist_tolerance=0.5,verbose=0):
     => (array([2, 4]), array([1, 2]))
     
     """
-    x1,y1= np.array(XY1).T
+    x1, y1 = np.array(XY1).T
 
-    x2,y2= np.array(XY2).T
-    
-    diffx = x1[:,np.newaxis]-x2
-    diffy = y1[:,np.newaxis]-y2
-    
-    dist = np.hypot(diffx,diffy)
-    
-    ind_XY1,ind_XY2=np.where(dist<=dist_tolerance)
-    
+    x2, y2 = np.array(XY2).T
+
+    diffx = x1[:, np.newaxis] - x2
+    diffy = y1[:, np.newaxis] - y2
+
+    dist = np.hypot(diffx, diffy)
+
+    ind_XY1, ind_XY2 = np.where(dist <= dist_tolerance)
+
     # closedistances = dist[(ind_XY1,ind_XY2)]
-    
-    return ind_XY1,ind_XY2
+
+    return ind_XY1, ind_XY2
 
 
-def removeClosePoints_two_sets(XY1, XY2,
-                               dist_tolerance=0.5,
-                               verbose=0):
+def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
     """
     remove in XY1 spots those present in XY2 within the cartesian distance dist_tolerance
 
@@ -954,48 +987,47 @@ def removeClosePoints_two_sets(XY1, XY2,
 
     coord_1 = np.array(XY1).T
     coord_2 = np.array(XY2).T
-    
+
     nb_pts1 = len(coord_1)
-    
-    coord12 = np.vstack((coord_1,coord_2))
 
-#    print "coord_1", coord_1
-#    print "coord_2", coord_2
+    coord12 = np.vstack((coord_1, coord_2))
 
-    print("coord12",coord12)
-    
+    #    print "coord_1", coord_1
+    #    print "coord_2", coord_2
+
+    print("coord12", coord12)
+
     import scipy.spatial.distance as ssd
-    tabdist=ssd.squareform(ssd.pdist(coord12,metric='euclidean'))
-    
+
+    tabdist = ssd.squareform(ssd.pdist(coord12, metric="euclidean"))
+
     close_pos1 = np.where(tabdist < dist_tolerance)
 
     i1, j1 = close_pos1
-    
-    ionly = i1[np.logical_and(i1!=j1,i1<nb_pts1-1)]
-    
+
+    ionly = i1[np.logical_and(i1 != j1, i1 < nb_pts1 - 1)]
+
     toremove = ionly
 
+    #     nb_of_spots_set1 = len(X)
 
-
-#     nb_of_spots_set1 = len(X)
-
-#     angular_tab = calculdist_from_thetachi(coord_1, coord_2)
-# 
-#     # angular_tab.shape = (len(coord_2),len(coord_1))
-# #    print "angular_tab.shape", angular_tab.shape
-# 
-#     close_pos = np.where(angular_tab < dist_tolerance)
-# 
-#     i, j = close_pos
-# 
-# #    print "len(i)", len(i)
-# #    print "len(j)", len(j)
-# #    # len(i) = len(coord_2)
-# #    print "close_pos", close_pos
-# #    print "i", i
-# #    print "j", j
-# 
-#     toremove = j
+    #     angular_tab = calculdist_from_thetachi(coord_1, coord_2)
+    #
+    #     # angular_tab.shape = (len(coord_2),len(coord_1))
+    # #    print "angular_tab.shape", angular_tab.shape
+    #
+    #     close_pos = np.where(angular_tab < dist_tolerance)
+    #
+    #     i, j = close_pos
+    #
+    # #    print "len(i)", len(i)
+    # #    print "len(j)", len(j)
+    # #    # len(i) = len(coord_2)
+    # #    print "close_pos", close_pos
+    # #    print "i", i
+    # #    print "j", j
+    #
+    #     toremove = j
 
     if verbose:
         print("nb of spots to remove", len(toremove))
@@ -1017,26 +1049,28 @@ def mergelistofPoints(XY1, XY2, dist_tolerance=0.5, verbose=0):
     
     return merged list XY, list spot index of XY1 to delete, list spot index of XY2 to delete
     """
-      
+
     # concatenate
     c12 = np.concatenate((XY1, XY2), axis=0)
     n1 = len(XY1)
     n2 = len(XY2)
     # then purged from duplicates with localisation of them
-    purged_c12, index_todelete_in_c12 = purgeClosePoints2(c12, dist_tolerance, verbose=verbose)
+    purged_c12, index_todelete_in_c12 = purgeClosePoints2(
+        c12, dist_tolerance, verbose=verbose
+    )
     print("c12", c12)
     print("purged_c12", purged_c12)
     print("index_todelete_in_c12", index_todelete_in_c12)
     print("n1 %d,n2 %d" % (n1, n2))
     print(index_todelete_in_c12 < n1)
     print(index_todelete_in_c12 >= n1)
-    
+
     index_todelete_in_1 = index_todelete_in_c12[index_todelete_in_c12 < n1]
     index_todelete_in_2 = index_todelete_in_c12[index_todelete_in_c12 >= n1] - n1
-    
+
     return purged_c12, index_todelete_in_1, index_todelete_in_2
-    
-    
+
+
 def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
     """
     remove very close spots within dist_tolerance
@@ -1058,13 +1092,13 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
 
     i, j = close_pos
 
-#    print "close_pos", close_pos
-#    print "i", i
-#    print "j", j
+    #    print "close_pos", close_pos
+    #    print "i", i
+    #    print "j", j
 
     dict_sets = Set_dict_frompairs(np.array([i, j]).T, verbose=0)[0]
 
-#    print "dict_sets", dict_sets
+    #    print "dict_sets", dict_sets
 
     toremove = []
     for val in list(dict_sets.values()):
@@ -1087,13 +1121,13 @@ def removeClosePoints(X, Y, dist_tolerance=0.5):
 
     i, j = close_pos
 
-#    print "close_pos", close_pos
-#    print "i", i
-#    print "j", j
+    #    print "close_pos", close_pos
+    #    print "i", i
+    #    print "j", j
 
     dict_sets = Set_dict_frompairs(np.array([i, j]).T, verbose=0)[0]
 
-#    print "dict_sets", dict_sets
+    #    print "dict_sets", dict_sets
 
     toremove = []
     for val in list(dict_sets.values()):
@@ -1110,8 +1144,9 @@ def purgeClosePoints(peaklist, dist_tolerance=0.5):
     """
     remove points in peaklist that are too close one to the other within dist_tolerance
     """
-    X, Y, tokeep = removeClosePoints(peaklist[:, 0], peaklist[:, 1],
-                                     dist_tolerance=dist_tolerance)
+    X, Y, tokeep = removeClosePoints(
+        peaklist[:, 0], peaklist[:, 1], dist_tolerance=dist_tolerance
+    )
 
     return np.array([X, Y]).T
 
@@ -1121,31 +1156,29 @@ def purgeClosePoints2(peaklist, pixeldistance_remove_duplicates, verbose=0):
     return peaks list without peaks closer than pixeldistance (pixeldistance_remove_duplicates)
     """
 
-    if np.shape(peaklist)[0] < 2 :
+    if np.shape(peaklist)[0] < 2:
         print("GT.purgeClosePoints2 : shape(peaklist) = ", np.shape(peaklist))
         return peaklist, []
 
     pixeldistance = pixeldistance_remove_duplicates
 
-    disttable = ssd.pdist(peaklist, 'euclidean')
-    
+    disttable = ssd.pdist(peaklist, "euclidean")
+
     maxdistance = np.amax(disttable)
     sqdistmatrix = ssd.squareform(disttable)
     # we add on diagonal a large number to avoid the zero (=self interdistance!)
-    # that is annoying when finding minimum 
+    # that is annoying when finding minimum
     distmatrix = sqdistmatrix + np.eye(sqdistmatrix.shape[0]) * maxdistance
-    
 
     si, fi = np.where(distmatrix < pixeldistance)
-    
 
     index_to_delete = np.where(fi > si, fi, si)
-    
+
     # there could be several spots close to one.
     # so remove duplicates in index_todelete !
     itd = set(index_to_delete.tolist())
     index_todelete = np.array(list(itd))
-    
+
     if verbose:
         print("disttable", disttable)
         print("maxdistance", maxdistance)
@@ -1157,7 +1190,10 @@ def purgeClosePoints2(peaklist, pixeldistance_remove_duplicates, verbose=0):
     purged_pklist = np.delete(peaklist, index_todelete, axis=0)  # np.delete
     return purged_pklist, index_todelete
 
-def getCommonSpots(file1,file2,toldistance, dirname=None, data1=None,fulloutput=False):
+
+def getCommonSpots(
+    file1, file2, toldistance, dirname=None, data1=None, fulloutput=False
+):
     """
     return nb of spots in common in two list of peaks file1 and file2
     
@@ -1166,31 +1202,31 @@ def getCommonSpots(file1,file2,toldistance, dirname=None, data1=None,fulloutput=
     """
     if data1 is None:
         data1 = IOLT.read_Peaklist(file1, dirname)
-    
+
     try:
         data2 = IOLT.read_Peaklist(file2, dirname)
     except IOError:
-        print("file %s does not exist"%file2)
+        print("file %s does not exist" % file2)
         return 0
-    
+
     nbspots1 = len(data1)
     nbspots2 = len(data2)
-    
-#         print 'nb peaks in data1',nbspots1
-#         print 'nb peaks in data2',nbspots2
 
-    XY1=data1[:,:2]
-    XY2=data2[:,:2]
-    
-    toldistance= 1.
-    
+    #         print 'nb peaks in data1',nbspots1
+    #         print 'nb peaks in data2',nbspots2
+
+    XY1 = data1[:, :2]
+    XY2 = data2[:, :2]
+
+    toldistance = 1.0
+
     res = getCommonPts(XY1, XY2, toldistance)
-    
-    nbcommonspots=len(res[0])
-    
-#         print 'nb of common spots (< %.f): '%toldistance, nbcommonspots
-    
-#         print "mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.)
+
+    nbcommonspots = len(res[0])
+
+    #         print 'nb of common spots (< %.f): '%toldistance, nbcommonspots
+
+    #         print "mean % of common spots: ", 100.*nbcommonspots/((nbspots2+nbspots1)/2.)
 
     # common spots:
     # x,y in XY1
@@ -1198,118 +1234,131 @@ def getCommonSpots(file1,file2,toldistance, dirname=None, data1=None,fulloutput=
     # x,y in XY2
     inXY2 = XY2[res[1]]
     # dist between x1,y1 and x2,y2
-    distances = np.sqrt(np.sum((inXY1.T-inXY2.T)**2,axis=0))
-    
+    distances = np.sqrt(np.sum((inXY1.T - inXY2.T) ** 2, axis=0))
+
     if fulloutput:
-        return res[0],res[1],inXY1,inXY2,nbcommonspots,distances
-    
+        return res[0], res[1], inXY1, inXY2, nbcommonspots, distances
+
     return nbcommonspots
 
-def computingFunction(fileindexrange,
-                    Parameters_dict=None,
-                    saveObject=0):
+
+def computingFunction(fileindexrange, Parameters_dict=None, saveObject=0):
     """
     Core procedure to compute common spots over a list of peaks list files
     """
     import multiprocessing
+
     p = multiprocessing.current_process()
-    print('Starting:', p.name, p.pid)
-    
-    fileprefix = Parameters_dict['prefixfilename']
-    toldistance = Parameters_dict['toldistance']
-    dirname = Parameters_dict['dirname']
-    dataref = Parameters_dict['dataref']
-    
-    commonspotsnb =[]
-    file1 = 'dummy'
-    for imageindex in list(range(fileindexrange[0],fileindexrange[1]+1)):
-        if imageindex>=185:
-            print("imageindex",imageindex)
-        file2 = fileprefix+'%04d'%(imageindex)+'.dat'
-        commonspotsnb.append([imageindex,
-                                getCommonSpots(file1,file2,toldistance,
-                                                dirname=dirname, data1=dataref)])
-    
-    
+    print("Starting:", p.name, p.pid)
+
+    fileprefix = Parameters_dict["prefixfilename"]
+    toldistance = Parameters_dict["toldistance"]
+    dirname = Parameters_dict["dirname"]
+    dataref = Parameters_dict["dataref"]
+
+    commonspotsnb = []
+    file1 = "dummy"
+    for imageindex in list(range(fileindexrange[0], fileindexrange[1] + 1)):
+        if imageindex >= 185:
+            print("imageindex", imageindex)
+        file2 = fileprefix + "%04d" % (imageindex) + ".dat"
+        commonspotsnb.append(
+            [
+                imageindex,
+                getCommonSpots(
+                    file1, file2, toldistance, dirname=dirname, data1=dataref
+                ),
+            ]
+        )
+
     return commonspotsnb
 
-def LaueSpotsCorrelator_multiprocessing(fileindexrange,imageindexref,
-                            Parameters_dict=None,
-                            saveObject=0,
-                            nb_of_cpu=5):
+
+def LaueSpotsCorrelator_multiprocessing(
+    fileindexrange, imageindexref, Parameters_dict=None, saveObject=0, nb_of_cpu=5
+):
     """
     launch several processes in parallel
     """
     try:
         if len(fileindexrange) > 2:
-            print('\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n')
+            print("\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n")
         index_start, index_final = fileindexrange[:2]
     except:
-        raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
+        raise ValueError(
+            "Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)"
+        )
         return
 
-    fileindexdivision = getlist_fileindexrange_multiprocessing(index_start,
-                                                                    index_final,
-                                                                    nb_of_cpu)
+    fileindexdivision = getlist_fileindexrange_multiprocessing(
+        index_start, index_final, nb_of_cpu
+    )
 
     saveObject = 0
 
     print("fileindexdivision", fileindexdivision)
-    
-    nbimagesperline=Parameters_dict['nbimagesperline']
-    prefixfortitle=Parameters_dict['prefixfilename']
-    prefixfilename=Parameters_dict['prefixfilename']
-    dirname = Parameters_dict['dirname']
-    
-    file1 = prefixfilename+'%04d'%(imageindexref)+'.dat'
-    data1 = IOLT.read_Peaklist(file1, dirname)
-    Parameters_dict['dataref']=data1
 
-    
-    computingFunction.__defaults__ = (Parameters_dict,
-                                        saveObject)
+    nbimagesperline = Parameters_dict["nbimagesperline"]
+    prefixfortitle = Parameters_dict["prefixfilename"]
+    prefixfilename = Parameters_dict["prefixfilename"]
+    dirname = Parameters_dict["dirname"]
+
+    file1 = prefixfilename + "%04d" % (imageindexref) + ".dat"
+    data1 = IOLT.read_Peaklist(file1, dirname)
+    Parameters_dict["dataref"] = data1
+
+    computingFunction.__defaults__ = (Parameters_dict, saveObject)
 
     pool = multiprocessing.Pool()
-#     for ii in list(range(len(fileindexdivision)):  # range(nb_of_cpu):
-#         pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
+    #     for ii in list(range(len(fileindexdivision)):  # range(nb_of_cpu):
+    #         pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
 
     results = []
     for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
-        print("ii",ii)
-        results.append( pool.apply_async(computingFunction, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
-)
-    
+        print("ii", ii)
+        results.append(
+            pool.apply_async(
+                computingFunction, args=(fileindexdivision[ii],), callback=log_result
+            )  # make our results with a map call
+        )
+
     pool.close()
     pool.join()
-    
-    print('results',results)
+
+    print("results", results)
     print("HOURRA it's FINISHED")
-    
-    dictcorrelval ={}
-    for k,result in enumerate(results):
-        dictk=dict(result.get())
-        print("dict {}".format(k),  dictk)
+
+    dictcorrelval = {}
+    for k, result in enumerate(results):
+        dictk = dict(result.get())
+        print("dict {}".format(k), dictk)
         dictcorrelval = dict(list(dictk.items()) + list(dictcorrelval.items()))
-        
-    listindval=[]
-    for k,val in dictcorrelval.items():
-        listindval.append([k,val])
-        
-    arr_correl=np.array(listindval)
-    sortedindex=np.argsort(arr_correl[:,0])
-    myc=arr_correl[sortedindex][:,1].reshape((len(arr_correl)/nbimagesperline,nbimagesperline))
-    
-    return myc,dictcorrelval,listindval
+
+    listindval = []
+    for k, val in dictcorrelval.items():
+        listindval.append([k, val])
+
+    arr_correl = np.array(listindval)
+    sortedindex = np.argsort(arr_correl[:, 0])
+    myc = arr_correl[sortedindex][:, 1].reshape(
+        (len(arr_correl) / nbimagesperline, nbimagesperline)
+    )
+
+    return myc, dictcorrelval, listindval
+
 
 def log_result(result):
 
     if len(result) == 2:
-        print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
+        print(
+            "********************\n\n\n\n %s \n\n\n\n\n******************" % result[1]
+        )
         list_produced_files.append(str(result[1]))
 
-    print('mylog print')
-    
-#------------- -----------  COMBINATORICS -----------------------
+    print("mylog print")
+
+
+# ------------- -----------  COMBINATORICS -----------------------
 def threeindices_up_to_old(n):
     """
     build major hkl indices up to n  (each scanned from -n to n)
@@ -1321,7 +1370,9 @@ def threeindices_up_to_old(n):
 
             nbpos = n + 1
 
-            gripos = np.mgrid[0:n:nbpos * 1j, 0:n:nbpos * 1j, 0:n:nbpos * 1j]
+            gripos = np.mgrid[
+                0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j
+            ]
             majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
 
             majorindices_neg = -majorindices_pos
@@ -1344,7 +1395,9 @@ def threeindices_up_to(n, remove_negative_l=False):
 
             nbpos = 2 * n + 1
 
-            gripos = np.mgrid[-n:n:nbpos * 1j, -n:n:nbpos * 1j, -n:n:nbpos * 1j]
+            gripos = np.mgrid[
+                -n : n : nbpos * 1j, -n : n : nbpos * 1j, -n : n : nbpos * 1j
+            ]
             majorindices = np.reshape(gripos.T, (nbpos ** 3, 3))
 
             nbelem = len(majorindices)
@@ -1352,7 +1405,7 @@ def threeindices_up_to(n, remove_negative_l=False):
             majorindices_000removed = np.delete(majorindices, nbelem // 2, axis=0)
 
             if remove_negative_l:
-                majorindices_000removed = majorindices_000removed[n * nbpos ** 2:]
+                majorindices_000removed = majorindices_000removed[n * nbpos ** 2 :]
 
             return majorindices_000removed
 
@@ -1367,7 +1420,7 @@ def twoindices_up_to(n):
 
     nbpos = 2 * n + 1
 
-    gripos = np.mgrid[-n:n:nbpos * 1j, -n:n:nbpos * 1j]
+    gripos = np.mgrid[-n : n : nbpos * 1j, -n : n : nbpos * 1j]
     indices_pos = np.reshape(gripos.T, (nbpos ** 2, 2))
 
     return indices_pos
@@ -1384,7 +1437,7 @@ def twoindices_positive_up_to(n, m):
     nbpos_n = n + 1
     nbpos_m = m + 1
 
-    gripos = np.mgrid[:n:nbpos_n * 1j, :m:nbpos_m * 1j]
+    gripos = np.mgrid[: n : nbpos_n * 1j, : m : nbpos_m * 1j]
     indices_pos = np.reshape(gripos.T, (nbpos_n * nbpos_m, 2))
 
     return indices_pos
@@ -1431,8 +1484,8 @@ def GCD(ar_hkl, verbose=0):
         # print "X",X
 
         # if X,Y have zero at the same place, i , then GCD[i] = Z[i]
-        X0 = (X == 0)
-        Y0 = (Y == 0)
+        X0 = X == 0
+        Y0 = Y == 0
         # print "X0,Y0", X0,Y0
 
         indices_finish = np.where(np.logical_and(X0, Y0) == True)[0]
@@ -1442,7 +1495,8 @@ def GCD(ar_hkl, verbose=0):
             for k in indices_finish:
                 if GCD[k] == 0:  # then fill GCD, otherwise keep the value
                     GCD[k] = Z[k]
-                    if verbose: print("GCD[%d] = Z[%d] = %d" % (k, k, Z[k]))
+                    if verbose:
+                        print("GCD[%d] = Z[%d] = %d" % (k, k, Z[k]))
                     counter += 1
 
         t = np.array([X, Y, Z]).T
@@ -1462,6 +1516,7 @@ def GCD(ar_hkl, verbose=0):
 
     return GCD
 
+
 def threeindicesfamily(n):
     """
     #TODO to be OPTIMIZED
@@ -1474,8 +1529,8 @@ def threeindicesfamily(n):
                 if hh >= kk and kk >= ll:
                     listhkl.append([hh, kk, ll])
     return listhkl[1:]
-                
-            
+
+
 def reduceHKL(ar_hkl):
     """
     return hkl expressed in irreductible element (with h,k,l prime to each other)
@@ -1535,15 +1590,16 @@ def extract2Dslice(center, halfsizes, inputarray2D):
        [31, 32, 33],
        [38, 39, 40]])
     """
-    
+
     indices_center = np.where(inputarray2D == center)
-#     print "indices_center", indices_center
+    #     print "indices_center", indices_center
     if len(indices_center[0]) == 0:
         raise ValueError("value %s is not in array!" % center)
     elif len(indices_center[0]) > 1:
         raise ValueError("value %s is not  unique in array!" % center)
-    
+
     return extract_array(indices_center, halfsizes, inputarray2D)
+
 
 def extract_array(indices_center, halfsizes, inputarray2D):
     """
@@ -1576,10 +1632,10 @@ def extract_array(indices_center, halfsizes, inputarray2D):
 
     jmax = min(fastindex_center + fastindex_halfsize, nfast - 1)[0]
     jmin = max(fastindex_center - fastindex_halfsize, 0)[0]
-    
-    print("imin:imax + 1, jmin:jmax + 1",imin,imax + 1, jmin,jmax + 1)
 
-    return inputarray2D[imin:imax + 1, jmin:jmax + 1]
+    print("imin:imax + 1, jmin:jmax + 1", imin, imax + 1, jmin, jmax + 1)
+
+    return inputarray2D[imin : imax + 1, jmin : jmax + 1]
 
 
 def Positiveindices_up_to(n):
@@ -1593,11 +1649,13 @@ def Positiveindices_up_to(n):
 
             nbpos = n + 1
 
-            gripos = np.mgrid[0:n:nbpos * 1j, 0:n:nbpos * 1j, 0:n:nbpos * 1j]
+            gripos = np.mgrid[
+                0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j
+            ]
             majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
 
-
             return majorindices_pos
+
 
 def fct_j(p, q):
     """
@@ -1606,6 +1664,7 @@ def fct_j(p, q):
     """
     return q
 
+
 def indices_in_flatTriuMatrix(n):
     """
     return index in flattened array of triangular up element
@@ -1613,11 +1672,11 @@ def indices_in_flatTriuMatrix(n):
 
     ex: [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]] -> [1,2,3,6,7,11]
     """
-#    toc = []
-#    for i in list(range(n - 1):
-#        for j in list(range(i + 1, n):
-#            toc.append(n * i + j)
-#    return np.array(toc)
+    #    toc = []
+    #    for i in list(range(n - 1):
+    #        for j in list(range(i + 1, n):
+    #            toc.append(n * i + j)
+    #    return np.array(toc)
 
     return np.where(np.ravel(np.triu(np.fromfunction(fct_j, (n, n)), k=1)) != 0)[0]
 
@@ -1651,7 +1710,7 @@ def convert2indices(ar_indices, array_shape):
     return np.array([i, j]).T
 
 
-#-----  --------------------    3D GEOMETRY
+# -----  --------------------    3D GEOMETRY
 def ShortestLine(P1, P2, P3, P4):
     """
     thanks to http://local.wasp.uwa.edu.au/~pbourke/geometry/lineline3d/L3D.py
@@ -1679,21 +1738,23 @@ def ShortestLine(P1, P2, P3, P4):
     # TODO: error? why A2 is unused ?
     A2 = np.dot(A, A)
 
-    ma = 1.*(dCB * dAC - dAB * C2) / (B2 * C2 - dCB ** 2)
-    mb = 1.*(dAB + ma * B2) / (dCB)
+    ma = 1.0 * (dCB * dAC - dAB * C2) / (B2 * C2 - dCB ** 2)
+    mb = 1.0 * (dAB + ma * B2) / (dCB)
 
     return P1 + ma * B, P3 + mb * C
+
 
 def ShortestDistance(P1, P2, P3, P4):
     """
     returns distance  between lines L1, L2
     """
-    
+
     Pa, Pb = ShortestLine(P1, P2, P3, P4)
-    
+
     return norme_vec(Pa - Pb)
 
-#------------------  miscellaneous
+
+# ------------------  miscellaneous
 def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
     """
     returns list of 2 elements (index_start, index_final) for each cpu
@@ -1704,7 +1765,7 @@ def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
 
     if nb_of_cpu > nb_files:
         nb_of_cpu = nb_files
-    step = nb_files // nb_of_cpu # integer division
+    step = nb_files // nb_of_cpu  # integer division
 
     fileindexdivision = []
     st_ind = index_start
@@ -1720,34 +1781,42 @@ def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
     return fileindexdivision
 
 
-#---- ---------------- Rotation matrices
+# ---- ---------------- Rotation matrices
 def rotY(angle):
     """
     return rotation matrix around 2 basis vector (ie Y) with angle in DEGREES
     """
-    angrad = angle * np.pi / 180.
+    angrad = angle * np.pi / 180.0
     ca = np.cos(angrad)
     sa = np.sin(angrad)
 
-    return np.array([[1, 0, 0. ], [0. , ca , sa], [0 , -sa  , ca]])
+    return np.array([[1, 0, 0.0], [0.0, ca, sa], [0, -sa, ca]])
 
 
 def matRot(axis, angle):
     """
     gives rotation matrix around axis and angle deg
     """
-#     print "axis, angle", axis, angle
+    #     print "axis, angle", axis, angle
     axis = np.array(axis)
-    norm = 1. * np.sqrt(np.sum(axis * axis))
+    norm = 1.0 * np.sqrt(np.sum(axis * axis))
     unitvec = axis / norm
 
     syme = np.outer(unitvec, unitvec)
-    antisyme = np.array([[0, -unitvec[2], unitvec[1]],
-                    [unitvec[2], 0., -unitvec[0]],
-                    [-unitvec[1], unitvec[0], 0.]])
+    antisyme = np.array(
+        [
+            [0, -unitvec[2], unitvec[1]],
+            [unitvec[2], 0.0, -unitvec[0]],
+            [-unitvec[1], unitvec[0], 0.0],
+        ]
+    )
     angrad = angle * DEG
 
-    return np.cos(angrad) * IDENTITYMATRIX + (1 - np.cos(angrad)) * syme + np.sin(angrad) * antisyme
+    return (
+        np.cos(angrad) * IDENTITYMATRIX
+        + (1 - np.cos(angrad)) * syme
+        + np.sin(angrad) * antisyme
+    )
 
 
 def getRotationAngleFrom2Matrices(A, B):
@@ -1756,63 +1825,65 @@ def getRotationAngleFrom2Matrices(A, B):
     tr(R)=1+2cos(theta)
     with R = BA-1
     """
-    return np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1)) * 180. / np.pi
+    return (
+        np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1))
+        * 180.0
+        / np.pi
+    )
+
 
 def randomRotationMatrix():
     """
     return a random rotation matrix
     """
     axis = np.random.randn(3)
-    angle = np.random.rand() * 360. - 180
+    angle = np.random.rand() * 360.0 - 180
     return matRot(axis, angle)
+
 
 def frommatGLtomat(orientmatrix_fromQuat):  # TODO: to BE DELETED ...?
     """ gives correct orientation matrix from orientation matrix found by a the quaternion:
     fromMatrix_toQuat(extract_rawmatrix_fromGL())
     """
-    sqrt2 = np.sqrt(1 / 2.)
-    rotY45 = np.array([[sqrt2, 0, sqrt2],
-                        [0, 1, 0],
-                        [-sqrt2, 0, sqrt2]])
-    rotY45_inv = np.array([[sqrt2, 0, -sqrt2],
-                           [0, 1, 0],
-                        [sqrt2, 0, sqrt2]])
+    sqrt2 = np.sqrt(1 / 2.0)
+    rotY45 = np.array([[sqrt2, 0, sqrt2], [0, 1, 0], [-sqrt2, 0, sqrt2]])
+    rotY45_inv = np.array([[sqrt2, 0, -sqrt2], [0, 1, 0], [sqrt2, 0, sqrt2]])
     # Trick: Oientation matrix from quat (calculated by fromMatrix_toQuat(extract_rawmatrix_fromGL())   ) doesn't need a transposition !!
     result = np.dot(np.dot(rotY45_inv, orientmatrix_fromQuat), rotY45)
 
     return result
 
 
-def OrientMatrix_fromGL(filename='matrixfromopenGL.dat'):
+def OrientMatrix_fromGL(filename="matrixfromopenGL.dat"):
     """
     frame basis conversion from OpenGL laue3D.py  to lauetools frame
     """
-    sqrt2 = np.sqrt(1 / 2.)
-    rotY45 = np.array([[sqrt2, 0, sqrt2],
-                        [0, 1, 0],
-                        [-sqrt2, 0, sqrt2]])
-    rotY45_inv = np.array([[sqrt2, 0, -sqrt2],
-                           [0, 1, 0],
-                        [sqrt2, 0, sqrt2]])
+    sqrt2 = np.sqrt(1 / 2.0)
+    rotY45 = np.array([[sqrt2, 0, sqrt2], [0, 1, 0], [-sqrt2, 0, sqrt2]])
+    rotY45_inv = np.array([[sqrt2, 0, -sqrt2], [0, 1, 0], [sqrt2, 0, sqrt2]])
 
     # Laboratory and OPENGL frames are different (only a 45 deg of rotation around Y)
 
     # result = rotY45_inv.prodmat((extract_rawmatrix_fromGL(extfilename = filename).transpo()).prodmat(rotY45))
-    result = np.dot(rotY45_inv,
-            np.dot(extract_rawmatrix_fromGL(extfilename=filename).T, rotY45))
+    result = np.dot(
+        rotY45_inv, np.dot(extract_rawmatrix_fromGL(extfilename=filename).T, rotY45)
+    )
     # print "mat3x3fromGL",mat3x3fromGL
 
     return result
 
-def extract_rawmatrix_fromGL(extfilename='matrixfromopenGL.dat'):
+
+def extract_rawmatrix_fromGL(extfilename="matrixfromopenGL.dat"):
     """
         return orientation matrix from that given by openGL laue3d.py
     """
 
-    filefrompickle = open(extfilename, 'r')
+    filefrompickle = open(extfilename, "r")
     matfromGL = pickle.load(filefrompickle)  # 4x4 matrix of openGL
     filefrompickle.close()
-    mat3x3fromGLtemp = np.array(matfromGL[:3, :3])  # extraction of orientation matrix (3x3)
+    mat3x3fromGLtemp = np.array(
+        matfromGL[:3, :3]
+    )  # extraction of orientation matrix (3x3)
     return mat3x3fromGLtemp
 
 
@@ -1837,8 +1908,8 @@ def fromMatrix_to_elemangles(mat):  # PROBLEME D'UNICITE de la decomposition
     if cosY != 0:
         # thetaZ = np.atan2(-mat[0][1],mat[0][0])
         # thetaX = np.atan2(-mat[1][2],mat[2][2]) # general procedure
-        thetaZ = np.arctan(-mat[0][1] * 1. / mat[0][0])
-        thetaX = np.arctan(-mat[1][2] * 1. / mat[2][2])
+        thetaZ = np.arctan(-mat[0][1] * 1.0 / mat[0][0])
+        thetaX = np.arctan(-mat[1][2] * 1.0 / mat[2][2])
 
     thetaX = thetaX / DEG
     thetaY = thetaY / DEG
@@ -1986,11 +2057,11 @@ def matstarlab_to_matstarlabOND(matstarlab):
     """
     astar1 = matstarlab[:3]
     bstar1 = matstarlab[3:6]
-#    cstar1 = matstarlab[6:]
+    #    cstar1 = matstarlab[6:]
 
-    astar0 = 1.*astar1 / norme(astar1)
+    astar0 = 1.0 * astar1 / norme(astar1)
     cstar0 = np.cross(astar0, bstar1)
-    cstar0 = 1.*cstar0 / norme(cstar0)
+    cstar0 = 1.0 * cstar0 / norme(cstar0)
     bstar0 = np.cross(cstar0, astar0)
 
     matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
@@ -2016,14 +2087,14 @@ def calc_Euler_angles(mat3x3):
     euler = np.zeros(3, float)
     euler[1] = RAD * np.arccos(mat[2, 2])
 
-    if (np.abs(np.abs(mat[2, 2]) - 1.0) < 1e-5):
+    if np.abs(np.abs(mat[2, 2]) - 1.0) < 1e-5:
         # if theta is zero, phi+psi is defined, if theta is pi, phi-psi is defined */
         # put psi = 0 and calculate phi */
         # psi */
         euler[2] = 0.0
         # phi */
         euler[0] = RAD * np.arccos(mat[0, 0])
-        if (mat[0, 1] < 0.0):
+        if mat[0, 1] < 0.0:
             euler[0] = -euler[0]
     else:
         # psi */
@@ -2031,15 +2102,15 @@ def calc_Euler_angles(mat3x3):
         euler[2] = RAD * np.arccos(mat[1, 2] / toto)
         # phi */
         euler[0] = RAD * np.arccos(-mat[2, 1] / toto)
-        if (mat[2, 0] < 0.0):
+        if mat[2, 0] < 0.0:
             euler[0] = 360.0 - euler[0]
 
         # print "Euler angles phi theta psi (deg)"
         # print euler.round(decimals = 3)
 
         return euler
-    
-    
+
+
 def fromMatrix_to_EulerAngles(mat):
     """
     following bunge's euler definition 
@@ -2062,9 +2133,19 @@ def fromMatrix_to_EulerAngles(mat):
     # something strange:
     return -phi2, np.abs(PHI), -phi1
     # would expect to be the inverse function of fromEULERangles_toMatrix!!
+
+
 #    return phi1, PHI, phi2
 
-def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame='sample', vec1 = [1,0,0],vec2 = [0,1,0],vec3 = [0,0,1]):
+
+def getdirectbasiscosines(
+    UBmatrix_array,
+    B0=np.eye(3),
+    frame="sample",
+    vec1=[1, 0, 0],
+    vec2=[0, 1, 0],
+    vec3=[0, 0, 1],
+):
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
     
@@ -2078,58 +2159,94 @@ def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame='sample', vec1 = [
     cos2 = qsample.(010)/norme(qsample)
     cos3 = qsample.(001)/norme(qsample)
     """
-    SAMPLETILT = 40.
+    SAMPLETILT = 40.0
 
-    DEG = np.pi / 180.
+    DEG = np.pi / 180.0
     PI = np.pi
-    RotY40 = np.array([[np.cos(SAMPLETILT * DEG) , 0 , -np.sin(SAMPLETILT * DEG)],
-                       [0, 1, 0],
-                       [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
-    RotYm40 = np.array([[np.cos(SAMPLETILT * DEG) , 0 , np.sin(SAMPLETILT * DEG)],
-                        [0, 1, 0], [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
-    
-    
-    vecs= np.array([vec1,vec2,vec3]).T
-    
-#     normes_vecs = norme_list(vecs)
-#     
-#     nbmatrices= len(UBmatrix_array)
-    
-    UBB0s=1.*np.dot(UBmatrix_array,B0)
-    
-    qvec1s = np.dot(UBB0s,vecs[0])
-    qvec2s = np.dot(UBB0s,vecs[1])
-    qvec3s = np.dot(UBB0s,vecs[2])
-    
-    normqvec1 = norme_list(qvec1s)
-    qvec1s_sample = np.dot(RotYm40,qvec1s.T).T
-    
-    cosvec1_X = np.inner(qvec1s_sample,np.array([1,0,0]))/normqvec1  # cosine component along x sample
-    cosvec1_Y = np.inner(qvec1s_sample,np.array([0,1,0]))/normqvec1  # cosine component along y sample
-    cosvec1_Z = np.inner(qvec1s_sample,np.array([0,0,1]))/normqvec1  # cosine component along z sample
-    
-    normqvec2 = norme_list(qvec2s)
-    qvec2s_sample = np.dot(RotYm40,qvec2s.T).T
-    
-    cosvec2_X = np.inner(qvec2s_sample,np.array([1,0,0]))/normqvec2  # cosine component along x sample
-    cosvec2_Y = np.inner(qvec2s_sample,np.array([0,1,0]))/normqvec2  # cosine component along y sample
-    cosvec2_Z = np.inner(qvec2s_sample,np.array([0,0,1]))/normqvec2  # cosine component along z sample
-    
-    normqvec3 = norme_list(qvec3s)
-    qvec3s_sample = np.dot(RotYm40,qvec3s.T).T
-    
-    cosvec3_X = np.inner(qvec3s_sample,np.array([1,0,0]))/normqvec3  # cosine component along x sample
-    cosvec3_Y = np.inner(qvec3s_sample,np.array([0,1,0]))/normqvec3  # cosine component along y sample
-    cosvec3_Z = np.inner(qvec3s_sample,np.array([0,0,1]))/normqvec3  # cosine component along z sample
-    
-    cosinesarray = np.array([cosvec1_X,cosvec1_Y,cosvec1_Z,
-                              cosvec2_X,cosvec2_Y,cosvec2_Z,
-                             cosvec3_X,cosvec3_Y,cosvec3_Z])
-    # return array with (nb matrices, 9) shape
-    return cosinesarray.T, vecs 
-    
+    RotY40 = np.array(
+        [
+            [np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
+            [0, 1, 0],
+            [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
+        ]
+    )
+    RotYm40 = np.array(
+        [
+            [np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
+            [0, 1, 0],
+            [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
+        ]
+    )
 
-#--- ------------ Quaternions
+    vecs = np.array([vec1, vec2, vec3]).T
+
+    #     normes_vecs = norme_list(vecs)
+    #
+    #     nbmatrices= len(UBmatrix_array)
+
+    UBB0s = 1.0 * np.dot(UBmatrix_array, B0)
+
+    qvec1s = np.dot(UBB0s, vecs[0])
+    qvec2s = np.dot(UBB0s, vecs[1])
+    qvec3s = np.dot(UBB0s, vecs[2])
+
+    normqvec1 = norme_list(qvec1s)
+    qvec1s_sample = np.dot(RotYm40, qvec1s.T).T
+
+    cosvec1_X = (
+        np.inner(qvec1s_sample, np.array([1, 0, 0])) / normqvec1
+    )  # cosine component along x sample
+    cosvec1_Y = (
+        np.inner(qvec1s_sample, np.array([0, 1, 0])) / normqvec1
+    )  # cosine component along y sample
+    cosvec1_Z = (
+        np.inner(qvec1s_sample, np.array([0, 0, 1])) / normqvec1
+    )  # cosine component along z sample
+
+    normqvec2 = norme_list(qvec2s)
+    qvec2s_sample = np.dot(RotYm40, qvec2s.T).T
+
+    cosvec2_X = (
+        np.inner(qvec2s_sample, np.array([1, 0, 0])) / normqvec2
+    )  # cosine component along x sample
+    cosvec2_Y = (
+        np.inner(qvec2s_sample, np.array([0, 1, 0])) / normqvec2
+    )  # cosine component along y sample
+    cosvec2_Z = (
+        np.inner(qvec2s_sample, np.array([0, 0, 1])) / normqvec2
+    )  # cosine component along z sample
+
+    normqvec3 = norme_list(qvec3s)
+    qvec3s_sample = np.dot(RotYm40, qvec3s.T).T
+
+    cosvec3_X = (
+        np.inner(qvec3s_sample, np.array([1, 0, 0])) / normqvec3
+    )  # cosine component along x sample
+    cosvec3_Y = (
+        np.inner(qvec3s_sample, np.array([0, 1, 0])) / normqvec3
+    )  # cosine component along y sample
+    cosvec3_Z = (
+        np.inner(qvec3s_sample, np.array([0, 0, 1])) / normqvec3
+    )  # cosine component along z sample
+
+    cosinesarray = np.array(
+        [
+            cosvec1_X,
+            cosvec1_Y,
+            cosvec1_Z,
+            cosvec2_X,
+            cosvec2_Y,
+            cosvec2_Z,
+            cosvec3_X,
+            cosvec3_Y,
+            cosvec3_Z,
+        ]
+    )
+    # return array with (nb matrices, 9) shape
+    return cosinesarray.T, vecs
+
+
+# --- ------------ Quaternions
 def fromQuat_to_MatrixRot(inputquat):
     """
     Converts the H quaternion quat into a new equivalent 3x3 rotation matrix.
@@ -2143,43 +2260,60 @@ def fromQuat_to_MatrixRot(inputquat):
     n = np.dot(inputquat, inputquat)
     # print "n",n
     s = 0.0
-    if (n > 0.0):
+    if n > 0.0:
         s = 2.0 / n
 
-    xs = inputquat[X] * s;  ys = inputquat[Y] * s;  zs = inputquat[Z] * s
-    wx = inputquat[W] * xs; wy = inputquat[W] * ys; wz = inputquat[W] * zs
-    xx = inputquat[X] * xs; xy = inputquat[X] * ys; xz = inputquat[X] * zs
-    yy = inputquat[Y] * ys; yz = inputquat[Y] * zs; zz = inputquat[Z] * zs
+    xs = inputquat[X] * s
+    ys = inputquat[Y] * s
+    zs = inputquat[Z] * s
+    wx = inputquat[W] * xs
+    wy = inputquat[W] * ys
+    wz = inputquat[W] * zs
+    xx = inputquat[X] * xs
+    xy = inputquat[X] * ys
+    xz = inputquat[X] * zs
+    yy = inputquat[Y] * ys
+    yz = inputquat[Y] * zs
+    zz = inputquat[Z] * zs
     # This math all comes about by way of algebra, complex math, and trig identities.
     # See Lengyel pages 88-92
 
     # print "xs",xs
-    NewObj [X][X] = 1.0 - (yy + zz); NewObj [Y][X] = xy - wz;     NewObj [Z][X] = xz + wy;
-    NewObj [X][Y] = xy + wz;   NewObj [Y][Y] = 1.0 - (xx + zz); NewObj [Z][Y] = yz - wx;
-    NewObj [X][Z] = xz - wy;   NewObj [Y][Z] = yz + wx;     NewObj [Z][Z] = 1.0 - (xx + yy)
+    NewObj[X][X] = 1.0 - (yy + zz)
+    NewObj[Y][X] = xy - wz
+    NewObj[Z][X] = xz + wy
+    NewObj[X][Y] = xy + wz
+    NewObj[Y][Y] = 1.0 - (xx + zz)
+    NewObj[Z][Y] = yz - wx
+    NewObj[X][Z] = xz - wy
+    NewObj[Y][Z] = yz + wx
+    NewObj[Z][Z] = 1.0 - (xx + yy)
 
     # return NewObj # this function is originally made to produce a matrix read by OpenGL
-    return np.transpose(NewObj)  # transpose to read matrix correctly (OpenGL matrix are transposed of this one)
+    return np.transpose(
+        NewObj
+    )  # transpose to read matrix correctly (OpenGL matrix are transposed of this one)
+
 
 # def fromQuat_to_matrix_2(quat):
-    # X, Y, Z, W = quat[0],quat[1],quat[2],quat[3]
-    # a00 = 1-2*(Y*Y+Z*Z)
-    # a01 = 2*(X*Y-Z*W)
-    # a02 = 2*(X*Z+Y*W)
+# X, Y, Z, W = quat[0],quat[1],quat[2],quat[3]
+# a00 = 1-2*(Y*Y+Z*Z)
+# a01 = 2*(X*Y-Z*W)
+# a02 = 2*(X*Z+Y*W)
 
-    # a10 = 2*(X*Y+Z*W)
-    # a11 = 1-2*(X*X+Z*Z)
-    # a12 = 2*(Y*Z-X*W)
+# a10 = 2*(X*Y+Z*W)
+# a11 = 1-2*(X*X+Z*Z)
+# a12 = 2*(Y*Z-X*W)
 
-    # a20 = 2*(X*Z-Y*W)
-    # a21 = 2*(Y*Z+X*W)
-    # a22 = 1-2*(X*X+Y*Y)
+# a20 = 2*(X*Z-Y*W)
+# a21 = 2*(Y*Z+X*W)
+# a22 = 1-2*(X*X+Y*Y)
 
-    # return np.array([[a00, a01, a02],[a10, a11, a12],[a20, a21, a22]])
+# return np.array([[a00, a01, a02],[a10, a11, a12],[a20, a21, a22]])
 
 
 def fromMatrix_toQuat(matrix):
-    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.
+    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.0
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
     qy = (matrix[0][2] - matrix[2][0]) / (4 * qw)
     qz = (matrix[1][0] - matrix[0][1]) / (4 * qw)
@@ -2189,12 +2323,12 @@ def fromMatrix_toQuat(matrix):
 def fromMatrix_toQuat_test(matrix):
     tracemat = matrix[0][0] + matrix[1][1] + matrix[2][2]
     if tracemat > 0.000001:
-        SS = np.sqrt(tracemat) * 2.
+        SS = np.sqrt(tracemat) * 2.0
         XX = (matrix[1][2] - matrix[2][1]) / SS
         YY = (matrix[2][0] - matrix[0][2]) / SS
         ZZ = (matrix[0][1] - matrix[1][0]) / SS
-        WW = SS / 4.
-    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.
+        WW = SS / 4.0
+    qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.0
     # TODO: ???
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
     qy = (matrix[0][2] - matrix[2][0]) / (4 * qw)
@@ -2209,12 +2343,9 @@ def fromQuat_to_vecangle(quat):
     from quat = [vec, scalar] = [sin angle / 2 (unitvec(x, y, z)), cos angle / 2]
     gives unitvec and angle of rotation around unitvec
     """
-    normvectpart = np.sqrt(quat[0] ** 2 + \
-                            quat[1] ** 2 + \
-                            quat[2] ** 2 + \
-                            quat[3] ** 2)
+    normvectpart = np.sqrt(quat[0] ** 2 + quat[1] ** 2 + quat[2] ** 2 + quat[3] ** 2)
     # print "nor",normvectpart
-    angle = np.arccos(quat[3] / normvectpart) * 2.  # in radians
+    angle = np.arccos(quat[3] / normvectpart) * 2.0  # in radians
     unitvec = np.array(quat[:3]) / np.sin(angle / 2) / normvectpart
     return unitvec, angle
 
@@ -2229,25 +2360,31 @@ def fromvec_to_directionangles(vec):
     # normalisation
     myvec = np.array(vec)
     norm = np.sqrt(np.dot(vec, vec))
-    finalvec = myvec * 1. / norm
+    finalvec = myvec * 1.0 / norm
 
     if np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2) != 0:
-        lat = np.arctan(finalvec[2] / (np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2))) * 180. / np.pi  # latitude
+        lat = (
+            np.arctan(finalvec[2] / (np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2)))
+            * 180.0
+            / np.pi
+        )  # latitude
     else:
         if finalvec[2] > 0:
-            lat = 90.
+            lat = 90.0
         else:
-            lat = -90.
+            lat = -90.0
     if finalvec[0] != 0:
         if finalvec[0] > 0:
-            longit = np.arctan(finalvec[1] / finalvec[0]) * 180. / np.pi  # longitude
+            longit = np.arctan(finalvec[1] / finalvec[0]) * 180.0 / np.pi  # longitude
         else:
-            longit = 180 + np.arctan(finalvec[1] / finalvec[0]) * 180. / np.pi  # longitude
+            longit = (
+                180 + np.arctan(finalvec[1] / finalvec[0]) * 180.0 / np.pi
+            )  # longitude
     else:
         if finalvec[1] > 0:
-            longit = 90.
+            longit = 90.0
         else:
-            longit = -90.
+            longit = -90.0
 
     return longit, lat
 
@@ -2266,8 +2403,8 @@ def from3rotangles_toQuat(listangles):
 
     myquat = np.zeros(4, dtype=float)
 
-    sinhalfrotangle = np.sin(rotangle / 2. * np.pi / 180.)
-    coshalfrotangle = np.cos(rotangle / 2. * np.pi / 180.)
+    sinhalfrotangle = np.sin(rotangle / 2.0 * np.pi / 180.0)
+    coshalfrotangle = np.cos(rotangle / 2.0 * np.pi / 180.0)
 
     myquat[3] = coshalfrotangle
 
@@ -2293,7 +2430,7 @@ def fromQuat_to3rotangles(initquat):
     unitvec, rotangle = fromQuat_to_vecangle(quat)
     longit, lat = fromvec_to_directionangles(unitvec)
 
-    return rotangle * 180. / np.pi, longit, lat
+    return rotangle * 180.0 / np.pi, longit, lat
 
 
 def prodquat(quat1, quat2):
@@ -2301,73 +2438,88 @@ def prodquat(quat1, quat2):
     returns product quaternion od  quat1.quat2
     Seems to be not used in Lauetools package
     """
-    return [[quat1[3] * quat2[0] + quat1[0] * quat2[3] + \
-            quat1[1] * quat2[2] - quat1[2] * quat2[1],
-            quat1[3] * quat2[1] + quat1[1] * quat2[3] + \
-            quat1[2] * quat2[0] - quat1[0] * quat2[2],
-            quat1[3] * quat2[2] + quat1[2] * quat2[3] + \
-            quat1[0] * quat2[1] - quat1[1] * quat2[0],
-            quat1[3] * quat2[3] - quat1[0] * quat2[0] - \
-            quat1[1] * quat2[1] - quat1[2] * quat2[2]]]
+    return [
+        [
+            quat1[3] * quat2[0]
+            + quat1[0] * quat2[3]
+            + quat1[1] * quat2[2]
+            - quat1[2] * quat2[1],
+            quat1[3] * quat2[1]
+            + quat1[1] * quat2[3]
+            + quat1[2] * quat2[0]
+            - quat1[0] * quat2[2],
+            quat1[3] * quat2[2]
+            + quat1[2] * quat2[3]
+            + quat1[0] * quat2[1]
+            - quat1[1] * quat2[0],
+            quat1[3] * quat2[3]
+            - quat1[0] * quat2[0]
+            - quat1[1] * quat2[1]
+            - quat1[2] * quat2[2],
+        ]
+    ]
 
-#----- ------------  plot tools: colormap
 
-COPPER = mplcm.get_cmap('copper')
-GIST_EARTH_R = mplcm.get_cmap('gist_earth_r')
-JET = mplcm.get_cmap('jet')
-GREENS = mplcm.get_cmap('Greens')
-REDS = mplcm.get_cmap('Reds')
-GREYS = mplcm.get_cmap('Greys')
-BWR = mplcm.get_cmap('bwr')
-ORRD = mplcm.get_cmap('OrRd')
-SEISMIC = mplcm.get_cmap('seismic')
+# ----- ------------  plot tools: colormap
+
+COPPER = mplcm.get_cmap("copper")
+GIST_EARTH_R = mplcm.get_cmap("gist_earth_r")
+JET = mplcm.get_cmap("jet")
+GREENS = mplcm.get_cmap("Greens")
+REDS = mplcm.get_cmap("Reds")
+GREYS = mplcm.get_cmap("Greys")
+BWR = mplcm.get_cmap("bwr")
+ORRD = mplcm.get_cmap("OrRd")
+SEISMIC = mplcm.get_cmap("seismic")
 if MATPLOTLIB2p2:
-    SPECTRAL = mplcm.get_cmap('Spectral')
-    SPECTRAL_R = mplcm.get_cmap('Spectral_r')
+    SPECTRAL = mplcm.get_cmap("Spectral")
+    SPECTRAL_R = mplcm.get_cmap("Spectral_r")
 
 else:
-    SPECTRAL = mplcm.get_cmap('spectral')
-    SPECTRAL_R = mplcm.get_cmap('spectral_r')
+    SPECTRAL = mplcm.get_cmap("spectral")
+    SPECTRAL_R = mplcm.get_cmap("spectral_r")
 
-#----  terminal coloredprint
+# ----  terminal coloredprint
 class bcolors:
-    WHITE = '\033[97m'
-    LIGHTBLUE = '\033[96m'
-    CYAN = '\033[95m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
+    WHITE = "\033[97m"
+    LIGHTBLUE = "\033[96m"
+    CYAN = "\033[95m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    ENDC = "\033[0m"
 
 
-dictcoloredprint = {'r': bcolors.RED,
-                  'g': bcolors.GREEN,
-                  'b': bcolors.BLUE,
-                  'y': bcolors.YELLOW,
-                  'c': bcolors.CYAN
-                  }
+dictcoloredprint = {
+    "r": bcolors.RED,
+    "g": bcolors.GREEN,
+    "b": bcolors.BLUE,
+    "y": bcolors.YELLOW,
+    "c": bcolors.CYAN,
+}
 
 
-def pcolor(message, color='r'):
+def pcolor(message, color="r"):
     if color in dictcoloredprint:
         print("%s%s%s" % (dictcoloredprint[color], message, bcolors.ENDC))
 
 
 def printred(message):
-    pcolor(message, 'r')
+    pcolor(message, "r")
 
 
 def printgreen(message):
-    pcolor(message, 'g')
+    pcolor(message, "g")
 
 
 def printyellow(message):
-    pcolor(message, 'y')
+    pcolor(message, "y")
 
 
 def printcyan(message):
-    pcolor(message, 'c')
+    pcolor(message, "c")
+
 
 # ---------------- object manipulation  ----------------
 def put_on_top_list(top_elements_list, raw_list, forceinsertion=False):
@@ -2396,10 +2548,10 @@ def fromstringtolist(strlist, map_function=int):
 
     map_function  function to convert from string to suited element type
     """
-    if strlist in ('None', None):
+    if strlist in ("None", None):
         return None
 
-    list_elems = strlist[1:-1].split(',')
+    list_elems = strlist[1:-1].split(",")
     toreturn = [map_function(elem) for elem in list_elems]
     return toreturn
 
@@ -2416,8 +2568,8 @@ def read_elems_from_string(strlist, map_function=int, highest_index=0):
     if len(strlist) == 1:
         return [map_function(strlist)]
 
-    if ':' in strlist:
-        spstrlist = strlist.split(':')
+    if ":" in strlist:
+        spstrlist = strlist.split(":")
         if len(spstrlist) == 2:
             ss, ff = spstrlist
             if len(ss) == 0:
@@ -2431,7 +2583,7 @@ def read_elems_from_string(strlist, map_function=int, highest_index=0):
             return list(list(range(map_function(ss)), map_function(ff)))
 
     lcore = strlist[1:-1]
-    if ',' not in lcore and len(lcore) == 1:
+    if "," not in lcore and len(lcore) == 1:
         return [map_function(lcore)]
     else:
         return fromstringtolist(strlist, map_function=map_function)
@@ -2446,8 +2598,8 @@ def findfirstnumberpos(s):
     pattern_0005.cor
     => 8
     """
-    if '.' in s:
-        splits = s.split('.')
+    if "." in s:
+        splits = s.split(".")
         if len(splits) != 2:
             raise ValueError("%s must contain a single '.'!" % s)
         beforedot = splits[-2]
@@ -2457,37 +2609,52 @@ def findfirstnumberpos(s):
 
     l = len(beforedot)
     for k, elem in enumerate(beforedot[::-1]):
-        if elem not in '0123456789':
+        if elem not in "0123456789":
             break
 
     nbdigits_found = k
     indexpos_first_digit = l - k
 
-#     print "len", l
-#     print "nbdigits_found",nbdigits_found
-#     print "indexpos_first_digit", indexpos_first_digit
+    #     print "len", l
+    #     print "nbdigits_found",nbdigits_found
+    #     print "indexpos_first_digit", indexpos_first_digit
 
     return indexpos_first_digit, nbdigits_found
 
 
 def lognorm(x, mu, s):
 
-    return 1. / (x * s * np.sqrt(2 * np.pi)) * np.exp(-np.log(x / (1.*mu)) ** 2 / (2 * s ** 2))
+    return (
+        1.0
+        / (x * s * np.sqrt(2 * np.pi))
+        * np.exp(-np.log(x / (1.0 * mu)) ** 2 / (2 * s ** 2))
+    )
+
 
 def CCDintensitymodel(x):
 
-    return np.piecewise(x, [x < 7., (x >= 7.) & (x <= 10.), x > 10.],
-                        [lambda x: 0.2, lambda x: 0.8 / 3. * x - 5. / 3, lambda x: 10. / x])
+    return np.piecewise(
+        x,
+        [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
+        [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x],
+    )
+
 
 def CCDintensitymodel2(x):
 
-    return np.piecewise(x, [x < 6., (x >= 6.) & (x <= 10.), x > 10.],
-                        [lambda x: 0.05,
-                         lambda x: 0.95 / 4. * x - 5.5 / 4,
-                         lambda x: 10. / np.power(x, 0.95)])
+    return np.piecewise(
+        x,
+        [x < 6.0, (x >= 6.0) & (x <= 10.0), x > 10.0],
+        [
+            lambda x: 0.05,
+            lambda x: 0.95 / 4.0 * x - 5.5 / 4,
+            lambda x: 10.0 / np.power(x, 0.95),
+        ],
+    )
+
 
 # -------------------------  IN DEVELOPMENT  ----------------
-def removeduplicate2(listindice, tabangledist, ang_tol=1.):
+def removeduplicate2(listindice, tabangledist, ang_tol=1.0):
     """ retourne la liste d'indice de proximite sans dupliques
     (remplace par un signe negatif)
 
@@ -2500,18 +2667,20 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.):
     if verbose:
         print("listindice dans removeduplicate2", listindice)
         print("longueur listindice", len(listindice))
-#    mylist = list(listindice)
+    #    mylist = list(listindice)
     for i in list(range(len(listindice))):  # scan over index of the experimental points
         if verbose:
             print("---------------------------------------")
             print("experimental point index i= ", i)
-        nbrevoisinsupp = np.sum(np.where(listindice[ i + 1:] == listindice[i], 1, 0))
+        nbrevoisinsupp = np.sum(np.where(listindice[i + 1 :] == listindice[i], 1, 0))
         # pour un point theo donne, nbr de voisin exp supplementaire pour qui ce point est le plus proche voisin
         # =0 = >  OK      1 pt theo pour 1 seul point exp
         #
         # print "nbrevoisinsupp",nbrevoisinsupp
         # CLAUSE A SUPPRIMER ?
-        if 0:  # nbrevoisinsupp > 0: # il existe plusieurs point exp ayant en premier voisin le meme pt theo
+        if (
+            0
+        ):  # nbrevoisinsupp > 0: # il existe plusieurs point exp ayant en premier voisin le meme pt theo
             if verbose:
                 print("spot theo d'indice j= ", listindice[i])
 
@@ -2573,10 +2742,10 @@ def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
     n2 = len(HKL2r)
     dstar_square_1 = np.diag(np.inner(np.inner(HKL1r, metrics), HKL1r))
     dstar_square_2 = np.diag(np.inner(np.inner(HKL2r, metrics), HKL2r))
-    scalar_product = np.inner(np.inner(HKL1r, metrics), HKL2r) * 1.
+    scalar_product = np.inner(np.inner(HKL1r, metrics), HKL2r) * 1.0
 
-    d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.
-    d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.
+    d1 = np.sqrt(dstar_square_1.reshape((n1, 1))) * 1.0
+    d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.0
 
     outy = np.outer(d1, d2)
     if 0:
@@ -2592,11 +2761,12 @@ def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
 
     ratio = scalar_product / outy
     ratio = np.round(ratio, decimals=7)
-#    print "ratio", ratio
-#    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
-#    np.putmask(ratio, ratio == 0, 0)
+    #    print "ratio", ratio
+    #    np.putmask(ratio, np.abs(ratio + 1) <= .0001, -1)
+    #    np.putmask(ratio, ratio == 0, 0)
 
     return np.arccos(ratio) / DEG
+
 
 def nearestValuesindices(A, B):
     """

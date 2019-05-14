@@ -63,7 +63,7 @@ from absolute frame by the rotation (axis= -i, angle= wo) where wo is the angle 
 """
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = '$Revision$'
+__version__ = "$Revision$"
 
 import sys, os
 
@@ -81,24 +81,29 @@ import dict_LaueTools as DictLT
 RECTPIX = DictLT.RECTPIX  # see above  camera skewness
 
 PI = np.pi
-DEG = PI / 180.
+DEG = PI / 180.0
 
 CST_CONV_LAMBDA_KEV = DictLT.CST_ENERGYKEV
 
 # sign of CCD camera angle =1 to mimic XMAS convention
 SIGN_OF_GAMMA = 1
 
-#--- -----   old function  ---------------
+# --- -----   old function  ---------------
 norme = GT.norme_vec
 
-#--- -------- geometrical functions relating 2theta, chi, pixel X, pixel Y, detector plane ---- 
-def calc_uflab(xcam, ycam, CCDcalibrationparameters,offset=0,
-               returnAngles=1,
-               verbose=0,
-               pixelsize=165. / 2048,
-               signgam=SIGN_OF_GAMMA,
-               rectpix=RECTPIX,
-               kf_direction='Z>0'):
+# --- -------- geometrical functions relating 2theta, chi, pixel X, pixel Y, detector plane ----
+def calc_uflab(
+    xcam,
+    ycam,
+    CCDcalibrationparameters,
+    offset=0,
+    returnAngles=1,
+    verbose=0,
+    pixelsize=165.0 / 2048,
+    signgam=SIGN_OF_GAMMA,
+    rectpix=RECTPIX,
+    kf_direction="Z>0",
+):
     r"""
     compute 2theta and chi scattering angles or scattered unit vector uf and kf vectors
     from lists of X and Y Laue spots pixels positions on detector
@@ -118,25 +123,30 @@ def calc_uflab(xcam, ycam, CCDcalibrationparameters,offset=0,
         - if returnAngles!=1  : uflab, IMlab
     """
     calib = CCDcalibrationparameters[:5]
-    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.
-#    print "pixelsize in calc_uflab ", pixelsize
+    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
+    #    print "pixelsize in calc_uflab ", pixelsize
 
     # transmission geometry
-    if kf_direction in ('X>0',):
-        return calc_uflab_trans(xcam, ycam, calib,
-               returnAngles=returnAngles,
-               verbose=verbose,
-               pixelsize=pixelsize,
-               signgam=signgam,
-               rectpix=rectpix)
+    if kf_direction in ("X>0",):
+        return calc_uflab_trans(
+            xcam,
+            ycam,
+            calib,
+            returnAngles=returnAngles,
+            verbose=verbose,
+            pixelsize=pixelsize,
+            signgam=signgam,
+            rectpix=rectpix,
+        )
     # 2theta=90 deg reflection geometry (top side+ and side -)
-    elif kf_direction in ('Z>0', 'Y>0', 'Y<0'):
-        cosbeta = np.cos(PI / 2. - xbet * DEG)
-        sinbeta = np.sin(PI / 2. - xbet * DEG)
+    elif kf_direction in ("Z>0", "Y>0", "Y<0"):
+        cosbeta = np.cos(PI / 2.0 - xbet * DEG)
+        sinbeta = np.sin(PI / 2.0 - xbet * DEG)
 
     else:
-        raise ValueError("kf_direction = %s not implemented in calc_uflab" % \
-                                            str(kf_direction))
+        raise ValueError(
+            "kf_direction = %s not implemented in calc_uflab" % str(kf_direction)
+        )
 
     cosgam = np.cos(-signgam * xgam * DEG)
     singam = np.sin(-signgam * xgam * DEG)
@@ -170,39 +180,39 @@ def calc_uflab(xcam, ycam, CCDcalibrationparameters,offset=0,
 
     # norm of IM vector
     # nIMlab=sqrt(dot(IMlab,IMlab))
-    nIMlab = 1. * np.sqrt(xM ** 2 + yM ** 2 + zM ** 2)
+    nIMlab = 1.0 * np.sqrt(xM ** 2 + yM ** 2 + zM ** 2)
 
     # print transpose(array([xM,yM,zM])) # vector joining source and pt on CCD in abs frame
     # print nIMlab #distance source pt on CCD (mm)
 
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
-    
-#     print "uflab w/o source offset",uflab
-    
-    if offset not in (None, 0,0.0):
+
+    #     print "uflab w/o source offset",uflab
+
+    if offset not in (None, 0, 0.0):
         # with source offset along y (>0 if along the beam and in sample depth)
-        #ufprimelab = unit(IpMlab) = unit(IpIlab+IMlab)
-        IpMlab=np.array([0,offset,0])+IMlab
-        normedIpM = np.sqrt(np.sum(IpMlab**2,axis=1)).reshape((len(IpMlab),1))
-        
-        ufprime = 1.*IpMlab/normedIpM
-        
-        print("ufprime, uflab with source offset",ufprime)
-        
-        uflab=ufprime
+        # ufprimelab = unit(IpMlab) = unit(IpIlab+IMlab)
+        IpMlab = np.array([0, offset, 0]) + IMlab
+        normedIpM = np.sqrt(np.sum(IpMlab ** 2, axis=1)).reshape((len(IpMlab), 1))
+
+        ufprime = 1.0 * IpMlab / normedIpM
+
+        print("ufprime, uflab with source offset", ufprime)
+
+        uflab = ufprime
 
     # calculus of scattering angles
-    EPS = 1E-17
+    EPS = 1e-17
     chi = np.arctan(-uflab[:, 0] / (uflab[:, 2] + EPS)) / DEG  # JSM convention
-#     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
-#     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
+    #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
+    #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
 
     twicetheta = np.arccos(uflab[:, 1]) / DEG
 
     if verbose:
         print("chi_JSM", chi)
-#         print "chi_XMAS", chiXMAS
-#         print "chi_XMAS2", chiXMAS2
+        #         print "chi_XMAS", chiXMAS
+        #         print "chi_XMAS2", chiXMAS2
         print("2theta", twicetheta)
 
     if returnAngles != 1:
@@ -211,12 +221,16 @@ def calc_uflab(xcam, ycam, CCDcalibrationparameters,offset=0,
         return twicetheta, chi
 
 
-def calc_uflab_trans(xcam, ycam, calib,
-               returnAngles=1,
-               verbose=0,
-               pixelsize=165. / 2048,
-               signgam=SIGN_OF_GAMMA,
-               rectpix=RECTPIX):
+def calc_uflab_trans(
+    xcam,
+    ycam,
+    calib,
+    returnAngles=1,
+    verbose=0,
+    pixelsize=165.0 / 2048,
+    signgam=SIGN_OF_GAMMA,
+    rectpix=RECTPIX,
+):
     r"""
     compute 2theta and chi scattering angles or uf and kf vectors
     from lists of X and Y Laue spots positions
@@ -234,9 +248,9 @@ def calc_uflab_trans(xcam, ycam, calib,
         
     # TODO: add offset like in reflection geometry
     """
-    print('transmission GEOMETRY')
-    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.
-#    print "pixelsize in calc_uflab ", pixelsize
+    print("transmission GEOMETRY")
+    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
+    #    print "pixelsize in calc_uflab ", pixelsize
 
     cosbeta = np.cos(-xbet * DEG)
     sinbeta = np.sin(-xbet * DEG)
@@ -271,28 +285,28 @@ def calc_uflab_trans(xcam, ycam, calib,
 
     # norm of IM vector
     # nIMlab=sqrt(dot(IMlab,IMlab))
-    nIMlab = 1. * np.sqrt(xM ** 2 + yM ** 2 + zM ** 2)
+    nIMlab = 1.0 * np.sqrt(xM ** 2 + yM ** 2 + zM ** 2)
 
     # print transpose(array([xM,yM,zM])) # vector joining source and pt on CCD in abs frame
     # print nIMlab #distance source pt on CCD (mm)
 
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     # print "uflab",uflab
-    EPS = 1E-17
+    EPS = 1e-17
 
     print("transmission mode ", -uflab[:, 2], (uflab[:, 0] + EPS))
 
     chi = np.arctan2(-xM, zM) / DEG
 
-#     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
-#     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
+    #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
+    #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
 
     twicetheta = np.arccos(uflab[:, 1]) / DEG
 
     if verbose:
         print("chi_JSM", chi)
-#         print "chi_XMAS", chiXMAS
-#         print "chi_XMAS2", chiXMAS2
+        #         print "chi_XMAS", chiXMAS
+        #         print "chi_XMAS2", chiXMAS2
         print("2theta", twicetheta)
 
     if returnAngles != 1:
@@ -306,7 +320,9 @@ def OM_from_uf(uflab, calib, signgam=SIGN_OF_GAMMA, energy=0, offset=None, verbo
     2D vector position of point OM in detector frame plane in pixels
     alias function to calc_xycam
     """
-    return calc_xycam(uflab, calib, signgam=signgam, energy=energy, offset=offset, verbose=verbose)
+    return calc_xycam(
+        uflab, calib, signgam=signgam, energy=energy, offset=offset, verbose=verbose
+    )
 
 
 def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
@@ -319,25 +335,29 @@ def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
     IprimeM vector joining shifted source emission to point M lying on CCD
     """
 
-    return calc_xycam(uflab, calib,
-                      signgam=signgam,
-                      energy=0,
-                      offset=posI,
-                      verbose=verbose,
-                      returnIpM=True)
+    return calc_xycam(
+        uflab,
+        calib,
+        signgam=signgam,
+        energy=0,
+        offset=posI,
+        verbose=verbose,
+        returnIpM=True,
+    )
 
 
-def calc_xycam(uflab,
-                calib,
-                signgam=SIGN_OF_GAMMA,
-                energy=0,
-                offset=None,
-                verbose=0,
-                returnIpM=False,
-                pixelsize=165. / 2048,
-                dim=(2048, 2048),
-                rectpix=RECTPIX
-                ):
+def calc_xycam(
+    uflab,
+    calib,
+    signgam=SIGN_OF_GAMMA,
+    energy=0,
+    offset=None,
+    verbose=0,
+    returnIpM=False,
+    pixelsize=165.0 / 2048,
+    dim=(2048, 2048),
+    rectpix=RECTPIX,
+):
     r"""
     compute Laue spots position x and y in pixels units in CCD frame from scattering vector q
 
@@ -372,7 +392,7 @@ def calc_xycam(uflab,
 
         - if returnIpM and offset not None: return list of vectors **IprimeM** 
     """
-    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.
+    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
     # beta = PI/2 - xbet*DEG
     # xbet angle between IO and z axis
@@ -380,16 +400,16 @@ def calc_xycam(uflab,
     # cosbeta= sin xbet
     # sinbeta = cos xbet
 
-    cosbeta = np.cos(PI / 2. - xbet * DEG)
-    sinbeta = np.sin(PI / 2. - xbet * DEG)
+    cosbeta = np.cos(PI / 2.0 - xbet * DEG)
+    sinbeta = np.sin(PI / 2.0 - xbet * DEG)
 
-#    print "cosbeta", cosbeta
-#    print "sinbeta", sinbeta
+    #    print "cosbeta", cosbeta
+    #    print "sinbeta", sinbeta
 
     # IOlab: vector joining O nearest point of CCD plane and I (origin of lab frame and emission source)
     IOlab = detect * np.array([0.0, cosbeta, sinbeta])
 
-#    print "IOlab", IOlab
+    #    print "IOlab", IOlab
 
     # unitary normal vector of CCD plane
     # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
@@ -408,16 +428,16 @@ def calc_xycam(uflab,
 
     OMlab = IMlab - IOlab
 
-#    print "OMlab", OMlab
+    #    print "OMlab", OMlab
 
-    if offset not in (None,0,0.0):  # offset input in millimeter
+    if offset not in (None, 0, 0.0):  # offset input in millimeter
         # OO'=II'-(II'.un)un  # 1 vector
         # dd'=  dd - II'.un # scalar
         # I'M= dd'/(uf.un) uf # n vector
         # I'O'= dd' un # 1 vectorin
         # O'M=I'M - I'O' # n vector
         # OM = OO' + O'M # n vector
-        IIprime = offset*np.array([1,0,0])
+        IIprime = offset * np.array([1, 0, 0])
         IIprime_un = np.dot(IIprime, unlab)
         OOprime = IIprime - IIprime_un * unlab
         ddprime = detect + IIprime_un
@@ -441,7 +461,7 @@ def calc_xycam(uflab,
 
     # OMlab = array([xca0, yca0*sinbeta, -yca0*cosbeta])
     xca0 = OMlab[:, 0]
-    if sinbeta != 0.:
+    if sinbeta != 0.0:
         yca0 = OMlab[:, 1] / sinbeta
     else:
         yca0 = -OMlab[:, 2] / cosbeta
@@ -453,8 +473,8 @@ def calc_xycam(uflab,
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
 
-#    print "xcam1", xcam1
-#    print "ycam1", ycam1
+    #    print "xcam1", xcam1
+    #    print "ycam1", ycam1
 
     xcam = xcen + xcam1 / pixelsize
     ycam = ycen + ycam1 / (pixelsize * (1.0 + rectpix))
@@ -463,10 +483,10 @@ def calc_xycam(uflab,
     th0 = twicetheta / 2.0
 
     # q = kf - ki
-    qlab = uflab - np.array([0., 1., 0.])
+    qlab = uflab - np.array([0.0, 1.0, 0.0])
     norme_qlab = np.sqrt(np.sum(qlab ** 2, axis=1))
 
-    Energy = CST_CONV_LAMBDA_KEV * norme_qlab ** 2 / (2. * np.sin(th0 * DEG))
+    Energy = CST_CONV_LAMBDA_KEV * norme_qlab ** 2 / (2.0 * np.sin(th0 * DEG))
 
     if energy:
         return xcam, ycam, th0, Energy
@@ -474,24 +494,25 @@ def calc_xycam(uflab,
         return xcam, ycam, th0
 
 
-def calc_xycam_transmission(uflab,
-                calib,
-                signgam=SIGN_OF_GAMMA,
-                energy=0,
-                offset=None,
-                verbose=0,
-                returnIpM=False,
-                pixelsize=165. / 2048,
-                dim=(2048, 2048),
-                rectpix=RECTPIX
-                ):
+def calc_xycam_transmission(
+    uflab,
+    calib,
+    signgam=SIGN_OF_GAMMA,
+    energy=0,
+    offset=None,
+    verbose=0,
+    returnIpM=False,
+    pixelsize=165.0 / 2048,
+    dim=(2048, 2048),
+    rectpix=RECTPIX,
+):
     """
     Compute Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
 
     As calc_xycam() but in TRANSMISSION geometry
     """
 
-    distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.
+    distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
     # beta = PI/2 - xbet*DEG
     # xbet angle between IO and z axis
@@ -499,15 +520,15 @@ def calc_xycam_transmission(uflab,
     # cosbeta= sin xbet
     # sinbeta = cos xbet
 
-#     cosbeta = np.cos(PI / 2. - xbet * DEG)
-#     sinbeta = np.sin(PI / 2. - xbet * DEG)
+    #     cosbeta = np.cos(PI / 2. - xbet * DEG)
+    #     sinbeta = np.sin(PI / 2. - xbet * DEG)
 
     cosbeta = np.cos(-xbet * DEG)
     sinbeta = np.sin(-xbet * DEG)
     # if xbet positive bottom part of CCD is closer to sample than top part
 
-#    print "cosbeta", cosbeta
-#    print "sinbeta", sinbeta
+    #    print "cosbeta", cosbeta
+    #    print "sinbeta", sinbeta
 
     # IOlab: vector joining O nearest point of CCD plane and I (origin of lab frame and emission source)
 
@@ -515,7 +536,7 @@ def calc_xycam_transmission(uflab,
 
     # sinbeta negative for xbet positive
 
-#    print "IOlab", IOlab
+    #    print "IOlab", IOlab
 
     # unitary normal vector of CCD plane
     # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
@@ -534,9 +555,9 @@ def calc_xycam_transmission(uflab,
 
     OMlab = IMlab - IOlab
 
-#    print "OMlab", OMlab
+    #    print "OMlab", OMlab
 
-    if offset not in (None,0,0.0):  # offset input in millimeter
+    if offset not in (None, 0, 0.0):  # offset input in millimeter
         # OO'=II'-(II'.un)un  # 1 vector
         # dd'=  dd - II'.un # scalar
         # I'M= dd'/(uf.un) uf # n vector
@@ -567,7 +588,7 @@ def calc_xycam_transmission(uflab,
 
     # OMlab = array([xca0, yca0*sinbeta, -yca0*cosbeta])
     xca0 = OMlab[:, 0]
-    if sinbeta != 0.:
+    if sinbeta != 0.0:
         yca0 = OMlab[:, 1] / sinbeta
     else:
         yca0 = -OMlab[:, 2] / cosbeta
@@ -579,8 +600,8 @@ def calc_xycam_transmission(uflab,
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
 
-#    print "xcam1", xcam1
-#    print "ycam1", ycam1
+    #    print "xcam1", xcam1
+    #    print "ycam1", ycam1
 
     xcam = xcen + xcam1 / pixelsize
     ycam = ycen + ycam1 / (pixelsize * (1.0 + rectpix))
@@ -589,10 +610,10 @@ def calc_xycam_transmission(uflab,
     th0 = twicetheta / 2.0
 
     # q = kf - ki
-    qf = uflab - np.array([0., 1., 0.])
+    qf = uflab - np.array([0.0, 1.0, 0.0])
     norme_qflab = np.sqrt(np.sum(qf ** 2, axis=1))
 
-    Energy = CST_CONV_LAMBDA_KEV * norme_qflab ** 2 / (2. * np.sin(th0 * DEG))
+    Energy = CST_CONV_LAMBDA_KEV * norme_qflab ** 2 / (2.0 * np.sin(th0 * DEG))
 
     if energy:
         return xcam, ycam, th0, Energy
@@ -600,13 +621,17 @@ def calc_xycam_transmission(uflab,
         return xcam, ycam, th0
 
 
-def calc_xycam_from2thetachi(twicetheta, chi, calib,
-                             offset = 0,
-                             verbose=0,
-                             pixelsize=165. / 2048,
-                             dim=(2048, 2048),
-                             signgam=SIGN_OF_GAMMA,
-                             kf_direction='Z>0'):
+def calc_xycam_from2thetachi(
+    twicetheta,
+    chi,
+    calib,
+    offset=0,
+    verbose=0,
+    pixelsize=165.0 / 2048,
+    dim=(2048, 2048),
+    signgam=SIGN_OF_GAMMA,
+    kf_direction="Z>0",
+):
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
@@ -624,17 +649,20 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib,
     if verbose:
         print("uflab", uflab)
 
-    if kf_direction in ('Z>0',):  # , '[90.0, 45.0]'):
-        return calc_xycam(uflab, calib, offset = offset, pixelsize=pixelsize, dim=dim,
-                          signgam=signgam)
-    elif kf_direction in ('Y>0', 'Y<0',):
+    if kf_direction in ("Z>0",):  # , '[90.0, 45.0]'):
+        return calc_xycam(
+            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
+        )
+    elif kf_direction in ("Y>0", "Y<0"):
         print("CAUTION: not checked yet")
         # TODO raise ValueError, print "not checked yet"
-        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim,
-                          signgam=signgam)
-    elif kf_direction in ('X>0',):  # transmission
-        return calc_xycam_transmission(uflab, calib, offset = offset, pixelsize=pixelsize,
-                                       dim=dim, signgam=signgam)
+        return calc_xycam(
+            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
+        )
+    elif kf_direction in ("X>0",):  # transmission
+        return calc_xycam_transmission(
+            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
+        )
     else:
         sentence = "kf_direction = %s is not implemented yet " % kf_direction
         sentence += "in calc_xycam_from2thetachi() in find2thetachi"
@@ -683,11 +711,11 @@ def q_unit_XYZ(twicetheta, chi):
     lauetools frame 
     #in deg
     """
-    THETA = twicetheta / 2. * DEG
+    THETA = twicetheta / 2.0 * DEG
     CHI = chi * DEG
-    return np.array([-np.sin(THETA),
-                     np.cos(THETA) * np.sin(CHI),
-                     np.cos(THETA) * np.cos(CHI)])
+    return np.array(
+        [-np.sin(THETA), np.cos(THETA) * np.sin(CHI), np.cos(THETA) * np.cos(CHI)]
+    )
 
 
 def q_unit_2thetachi(vec):
@@ -701,7 +729,7 @@ def q_unit_2thetachi(vec):
     # TODO: sign of chi must be checked
     chi = np.arctan2(Y, Z) / DEG
     theta = -np.arcsin(X) / DEG
-    return np.array([2. * theta, chi])
+    return np.array([2.0 * theta, chi])
 
 
 def from_twchi_to_qunit(Angles):
@@ -719,7 +747,7 @@ def from_twchi_to_qunit(Angles):
 
     twthe = np.array(Angles[0]) * DEG
     chi = np.array(Angles[1]) * DEG
-    no = 2. * np.sin(twthe / 2.)
+    no = 2.0 * np.sin(twthe / 2.0)
     qx = np.cos(twthe) - 1
     qy = np.sin(twthe) * np.sin(chi)
     qz = np.sin(twthe) * np.cos(chi)
@@ -743,16 +771,16 @@ def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
     X, Y, Z = arrayXYZ
 
     if labXMAS:
-        chi = np.arctan2(-X * 1., Z)
-        twthe = 2 * np.arcsin(-Y * 1.)
+        chi = np.arctan2(-X * 1.0, Z)
+        twthe = 2 * np.arcsin(-Y * 1.0)
     else:  # labXMAS=0  lauetools
-        chi = np.arctan2(Y * 1., Z)
-        twthe = 2 * np.arcsin(-X * 1.)
+        chi = np.arctan2(Y * 1.0, Z)
+        twthe = 2 * np.arcsin(-X * 1.0)
 
     return np.array([twthe, chi]) / DEG
 
 
-def qvector_from_xy_E(xcamList,ycamList,energy,CCDcalibrationparameters,pixelsize):
+def qvector_from_xy_E(xcamList, ycamList, energy, CCDcalibrationparameters, pixelsize):
 
     """
     return q vectors in Lauetools frame given x and y pixel positions on detector
@@ -760,52 +788,53 @@ def qvector_from_xy_E(xcamList,ycamList,energy,CCDcalibrationparameters,pixelsiz
     
     """
     # in LT's frame (x// ki)
-    
-#     print "xcamList",xcamList
-#     print "ycamList",ycamList
-    twtheta,chi = calc_uflab(xcamList, ycamList, CCDcalibrationparameters,
-               returnAngles=1,
-               verbose=0,
-               pixelsize=pixelsize,
-               signgam=SIGN_OF_GAMMA,
-               rectpix=RECTPIX,
-               kf_direction='Z>0')
-    
-    thetarad = twtheta * DEG / 2.
-    chirad = chi * DEG
 
+    #     print "xcamList",xcamList
+    #     print "ycamList",ycamList
+    twtheta, chi = calc_uflab(
+        xcamList,
+        ycamList,
+        CCDcalibrationparameters,
+        returnAngles=1,
+        verbose=0,
+        pixelsize=pixelsize,
+        signgam=SIGN_OF_GAMMA,
+        rectpix=RECTPIX,
+        kf_direction="Z>0",
+    )
+
+    thetarad = twtheta * DEG / 2.0
+    chirad = chi * DEG
 
     qx = -np.sin(thetarad)
     qy = np.cos(thetarad) * np.sin(chirad)
     qz = np.cos(thetarad) * np.cos(chirad)
 
     newq = np.array([qx, qy, qz])
-    normnewq = np.sqrt(qx**2+qy**2+qz**2)
-    
-    qvec=newq*(1./normnewq)
-#     print "qvec",qvec
-    
+    normnewq = np.sqrt(qx ** 2 + qy ** 2 + qz ** 2)
 
-#     print "energy",energy
-    
-    
-    qvector_Lauetoolsframe = qvec*np.sin(thetarad)*(2*energy/12.398)
-    
-#     print "qvector_Lauetoolsframe",qvector_Lauetoolsframe
-    
-    
+    qvec = newq * (1.0 / normnewq)
+    #     print "qvec",qvec
+
+    #     print "energy",energy
+
+    qvector_Lauetoolsframe = qvec * np.sin(thetarad) * (2 * energy / 12.398)
+
+    #     print "qvector_Lauetoolsframe",qvector_Lauetoolsframe
+
     return qvector_Lauetoolsframe
 
-def unit_q(ttheta, chi, frame='lauetools', anglesample=40.):
+
+def unit_q(ttheta, chi, frame="lauetools", anglesample=40.0):
     """
     returns unit q vector from 2theta,chi coordinates
 
     three possible frames: lauetools , XMASlab, XMASsample
     """
-    thetarad = ttheta * DEG / 2.
+    thetarad = ttheta * DEG / 2.0
     chirad = chi * DEG
 
-    if frame == 'lauetools':
+    if frame == "lauetools":
         qx = -np.sin(thetarad)
         qy = np.cos(thetarad) * np.sin(chirad)
         qz = np.cos(thetarad) * np.cos(chirad)
@@ -815,7 +844,7 @@ def unit_q(ttheta, chi, frame='lauetools', anglesample=40.):
 
         return newq / normnewq
     # LT2 frame
-    elif frame == 'XMASlab':
+    elif frame == "XMASlab":
         # chi convention:
         # y along Xray horizontal
         # x towards wall behind horizontal
@@ -835,20 +864,18 @@ def unit_q(ttheta, chi, frame='lauetools', anglesample=40.):
 
         return newq / normnewq
     # LT2 sample frame
-    elif frame == 'XMASsample':
+    elif frame == "XMASsample":
 
         # kf=( - sin 2theta sin chi, cos 2theta  , sin 2theta cos chi) XMAS convention
         # ki=( 0, 1  , 0) XMAS convention
         # q = 2 sin theta (- costheta sinchi , - sintheta  ,  costheta coschi)
         #  unitkf  =  unitki  +   2sintheta unitq
 
-        angrad = anglesample * np.pi / 180.  # Must include -xbet/2 correction ???
+        angrad = anglesample * np.pi / 180.0  # Must include -xbet/2 correction ???
         ca = np.cos(angrad)
         sa = np.sin(angrad)
 
-        matrot = np.array([[1, 0, 0.],
-                           [0., ca, sa],
-                           [0, -sa, ca]])
+        matrot = np.array([[1, 0, 0.0], [0.0, ca, sa], [0, -sa, ca]])
 
         qx = np.cos(thetarad) * np.sin(chirad)
         qy = -np.sin(thetarad)
@@ -876,17 +903,16 @@ def plotXY2thetachi(datX, datY, dat2the, datchi, mostintense=None):
         chi = datchi
 
     plot1 = P.subplot(121)
-    plot1.set_aspect(aspect='equal')
-    P.xlabel('X')
-    P.ylabel('Y')
+    plot1.set_aspect(aspect="equal")
+    P.xlabel("X")
+    P.ylabel("Y")
     plot1.scatter(tuple(data_x), tuple(data_y))
 
-
     plot2 = P.subplot(122)
-    plot2.set_aspect(aspect=.5)
-    P.xlabel('chi')
-    P.ylabel('2theta')
-    plot2.scatter(tuple(chi), tuple(twicetheta), c='r', marker='d')
+    plot2.set_aspect(aspect=0.5)
+    P.xlabel("chi")
+    P.ylabel("2theta")
+    plot2.scatter(tuple(chi), tuple(twicetheta), c="r", marker="d")
 
     P.show()
 
@@ -918,9 +944,13 @@ def matxmas_to_OrientMatrix(satocr, calib):
     # print "omega" , omega*180.0/np.pi
 
     # rotation de omega autour de l'axe x pour repasser dans Rlab
-    matrot = np.array([[1.0, 0.0, 0.0],
-                       [0.0, np.cos(omega), np.sin(omega)],
-                      [0.0, -np.sin(omega), np.cos(omega)]])
+    matrot = np.array(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, np.cos(omega), np.sin(omega)],
+            [0.0, -np.sin(omega), np.cos(omega)],
+        ]
+    )
     # print "matrot \n" , matrot
 
     labtocr = np.dot(matrot, satocrnorm)
@@ -938,9 +968,9 @@ def matxmas_to_OrientMatrix(satocr, calib):
     mm = matstarlab2
 
     # matstarlabLaueTools= array([[mm[1],-mm[4],-mm[7]],[mm[0],-mm[6],-mm[3]],[-mm[2],mm[5],mm[8]]])
-    matstarlabLaueTools = np.array([[mm[1], mm[4], mm[7]],
-                                    [-mm[0], -mm[3], -mm[6]],
-                                    [mm[2], mm[5], mm[8]]])
+    matstarlabLaueTools = np.array(
+        [[mm[1], mm[4], mm[7]], [-mm[0], -mm[3], -mm[6]], [mm[2], mm[5], mm[8]]]
+    )
 
     # resulting matrix contains orientation + strain
 
@@ -970,9 +1000,19 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat):
     # print "cross products sign(astar1xbstar1).cstar1", sign(inner(cross(astar1,bstar1),cstar1))
 
     # matstarlab = array([-mm[1,0],mm[0,0],mm[2,0],mm[1,1],-mm[0,1],-mm[2,1],mm[1,2],-mm[0,2],-mm[2,2]])
-    matstarlab = np.array([-mm[1, 0], mm[0, 0], mm[2, 0],
-                           - mm[1, 1], mm[0, 1], mm[2, 1],
-                           - mm[1, 2], mm[0, 2], mm[2, 2]])
+    matstarlab = np.array(
+        [
+            -mm[1, 0],
+            mm[0, 0],
+            mm[2, 0],
+            -mm[1, 1],
+            mm[0, 1],
+            mm[2, 1],
+            -mm[1, 2],
+            mm[0, 2],
+            mm[2, 2],
+        ]
+    )
 
     matstarlab = matstarlab / GT.norme_vec(matstarlab[:3])
 
@@ -995,15 +1035,16 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab):
     #      inner(astar1,bstar1), inner(bstar1,cstar1), inner(cstar1,astar1)
     # print "cross products sign(astar1xbstar1).cstar1", sign(inner(cross(astar1,bstar1),cstar1))
 
-    UBmat = np.array([[mm[1], mm[4], mm[7]],
-                    [-mm[0], -mm[3], -mm[6]],
-                    [mm[2], mm[5], mm[8]]])
+    UBmat = np.array(
+        [[mm[1], mm[4], mm[7]], [-mm[0], -mm[3], -mm[6]], [mm[2], mm[5], mm[8]]]
+    )
 
     return UBmat
 
+
 def matstarlab_to_matwithlatpar(matstarlab, dlatu_rad):
 
-    norm_vec0 =np.sqrt(np.inner(matstarlab[0:3],matstarlab[0:3])) 
+    norm_vec0 = np.sqrt(np.inner(matstarlab[0:3], matstarlab[0:3]))
     matnorm = matstarlab / norm_vec0
     rlatsr = CP.matrix_to_rlat(GT.matline_to_mat3x3(matnorm), angles_in_deg=0)
     dlatsr = CP.dlat_to_rlat(rlatsr, angles_in_deg=0)
@@ -1014,10 +1055,10 @@ def matstarlab_to_matwithlatpar(matstarlab, dlatu_rad):
     rlats1 = np.hstack((rlatsr[0:3] * (1.0 + dil), rlatsr[3:6]))
     # print "rlats1 = ", rlats1
     mat = matnorm * rlats1[0]
-    #dlats1 = CP.dlat_to_rlat(rlats1, angles_in_deg=0)
+    # dlats1 = CP.dlat_to_rlat(rlats1, angles_in_deg=0)
     # print "dlats1 = ", dlats1
 
-    return(mat)
+    return mat
 
 
 def readlt_det(filedet, returnmatLT=False, min_matLT=False):
@@ -1030,7 +1071,7 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
 
     matLT3x3 = (GT.matline_to_mat3x3(mat_line)).T
 
-    if min_matLT == True :
+    if min_matLT == True:
         matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
         matLT3x3 = matmin
 
@@ -1038,30 +1079,34 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
 
     print("matstarlab = \n", matstarlab.round(decimals=6))
 
+    if returnmatLT == False:
+        return (calib, matstarlab)
+    else:
+        return (calib, matstarlab, matLT3x3)
 
-    if returnmatLT == False :
-        return(calib, matstarlab)
-    else :
-        return(calib, matstarlab, matLT3x3)
 
-
-def readlt_fit(filefit,
-            returnmatLT=False, min_matLT=False,
-            readmore=False, verbose=1,
-            verbose2=0, readmore2=False):
+def readlt_fit(
+    filefit,
+    returnmatLT=False,
+    min_matLT=False,
+    readmore=False,
+    verbose=1,
+    verbose2=0,
+    readmore2=False,
+):
     """
     modif 03Aug12 : genfromtxt removed (problem with skip_footer)
     add transfo of HKL's if matmin_LT  == True
     """
 
-    if verbose :
+    if verbose:
         print("reading info from LaueTools fit file : \n", filefit)
         print("strained orientation matrix, peak list")
         print("convert matrix to matstarlabOR")
 
     matLT3x3 = np.zeros((3, 3), dtype=np.float)
     strain = np.zeros((3, 3), dtype=np.float)
-    f = open(filefit, 'r')
+    f = open(filefit, "r")
     i = 0
     matrixfound = 0
     calibfound = 0
@@ -1080,56 +1125,60 @@ def readlt_fit(filefit,
         for line in f:
             i = i + 1
             # print i
-            if line[:5] == "spot#" :
-                linecol = line.rstrip('\n')
+            if line[:5] == "spot#":
+                linecol = line.rstrip("\n")
                 linestartspot = i + 1
-            if line[:3] == "#UB" :
+            if line[:3] == "#UB":
                 # print line
                 matrixfound = 1
                 linestartmat = i
                 lineendspot = i
                 j = 0
                 # print "matrix found"
-            if line[:3] == "#Sa" :
+            if line[:3] == "#Sa":
                 # print line
                 calibfound = 1
                 linecalib = i + 1
-            if line[:3] == "#pi" :
+            if line[:3] == "#pi":
                 # print line
                 pixdevfound = 1
                 linepixdev = i + 1
-            if line[:3] == "#de" :
+            if line[:3] == "#de":
                 # print line
                 strainfound = 1
                 linestrain = i
                 j = 0
-            if line[:3] == "#Eu" :
+            if line[:3] == "#Eu":
                 # print line
                 eulerfound = 1
                 lineeuler = i + 1
-            if matrixfound :
-                if i in (linestartmat + 1, linestartmat + 2, linestartmat + 3) :
-                    toto = line.rstrip('\n').replace('[', '').replace(']', '').split()
+            if matrixfound:
+                if i in (linestartmat + 1, linestartmat + 2, linestartmat + 3):
+                    toto = line.rstrip("\n").replace("[", "").replace("]", "").split()
                     # print toto
                     matLT3x3[j, :] = np.array(toto, dtype=float)
                     j = j + 1
-            if strainfound :
-                if i in (linestrain + 1, linestrain + 2, linestrain + 3) :
-                    toto = line.rstrip('\n').replace('[', '').replace(']', '').split()
+            if strainfound:
+                if i in (linestrain + 1, linestrain + 2, linestrain + 3):
+                    toto = line.rstrip("\n").replace("[", "").replace("]", "").split()
                     # print toto
                     strain[j, :] = np.array(toto, dtype=float)
                     j = j + 1
             if calibfound & (i == linecalib):
-                calib = np.array(line.split(',')[:5], dtype=float)
+                calib = np.array(line.split(",")[:5], dtype=float)
                 # print "calib = ", calib
             if eulerfound & (i == lineeuler):
-                euler = np.array(line.replace('[', '').replace(']', '').split()[:3], dtype=float)
+                euler = np.array(
+                    line.replace("[", "").replace("]", "").split()[:3], dtype=float
+                )
                 # print "euler = ", euler
             if pixdevfound & (i == linepixdev):
-                pixdev = float(line.rstrip('\n'))
+                pixdev = float(line.rstrip("\n"))
                 # print "pixdev = ", pixdev
-            if (i >= linestartspot) & (i < lineendspot) :
-                list1.append(line.rstrip('\n').replace('[', '').replace(']', '').split())
+            if (i >= linestartspot) & (i < lineendspot):
+                list1.append(
+                    line.rstrip("\n").replace("[", "").replace("]", "").split()
+                )
     finally:
         f.close()
         linetot = i
@@ -1138,14 +1187,14 @@ def readlt_fit(filefit,
 
     data_fit = np.array(list1, dtype=float)
 
-    if verbose :
+    if verbose:
         print(np.shape(data_fit))
         print(data_fit[0, :])
         print(data_fit[-1, :])
 
     # print "UB matrix = \n", matLT3x3.round(decimals=6)
 
-    if verbose2 :
+    if verbose2:
         print("before transfo")
         print(data_fit[0, 2:5])
         print(data_fit[-1, 2:5])
@@ -1154,16 +1203,18 @@ def readlt_fit(filefit,
         qm1 = np.dot(matLT3x3, data_fit[-1, 2:5])
         print("qm1 = ", qm1.round(decimals=4))
 
-    if min_matLT == True :
-        matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3, verbose=verbose)
+    if min_matLT == True:
+        matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(
+            matLT3x3, verbose=verbose
+        )
         matLT3x3 = matmin
-        if verbose :
+        if verbose:
             print("transfmat \n", list(transfmat))
         # transformer aussi les HKL pour qu'ils soient coherents avec matmin
         hkl = data_fit[:, 2:5]
         data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
 
-    if verbose2 :
+    if verbose2:
         print("after transfo")
         print(data_fit[0, 2:5])
         print(data_fit[-1, 2:5])
@@ -1174,30 +1225,41 @@ def readlt_fit(filefit,
 
     matstarlab = matstarlabLaueTools_to_matstarlabOR(matLT3x3)
 
-    if verbose : print("matstarlab = \n", matstarlab.round(decimals=6))
+    if verbose:
+        print("matstarlab = \n", matstarlab.round(decimals=6))
 
-    if readmore2 == True : readmore = False
+    if readmore2 == True:
+        readmore = False
 
     # xx yy zz yz xz xy
-    strain6 = np.array([strain[0, 0], strain[1, 1], strain[2, 2], strain[1, 2], strain[0, 2], strain[0, 1]])
+    strain6 = np.array(
+        [
+            strain[0, 0],
+            strain[1, 1],
+            strain[2, 2],
+            strain[1, 2],
+            strain[0, 2],
+            strain[0, 1],
+        ]
+    )
 
-    if returnmatLT == False :
-        if readmore == True :
-            return(matstarlab, data_fit, calib, pixdev)
-        elif readmore2 == True :
-            return(matstarlab, data_fit, calib, pixdev, strain6, euler)
-        else :
-            return(matstarlab, data_fit)
-    else :
-        if readmore == True :
-            return(matstarlab, data_fit, matLT3x3, calib, pixdev)
-        elif readmore2 == True :
-            return(matstarlab, data_fit, matLT3x3, calib, pixdev, strain6, euler)
-        else :
-            return(matstarlab, data_fit, matLT3x3)
+    if returnmatLT == False:
+        if readmore == True:
+            return (matstarlab, data_fit, calib, pixdev)
+        elif readmore2 == True:
+            return (matstarlab, data_fit, calib, pixdev, strain6, euler)
+        else:
+            return (matstarlab, data_fit)
+    else:
+        if readmore == True:
+            return (matstarlab, data_fit, matLT3x3, calib, pixdev)
+        elif readmore2 == True:
+            return (matstarlab, data_fit, matLT3x3, calib, pixdev, strain6, euler)
+        else:
+            return (matstarlab, data_fit, matLT3x3)
 
-def readall_str(grain_index, filemane_str,
-                returnmatLT=False, min_matLT=False):
+
+def readall_str(grain_index, filemane_str, returnmatLT=False, min_matLT=False):
 
     data_str, matstr, calib, dev_str = IOLT.readfile_str(filemane_str, grain_index)
 
@@ -1210,7 +1272,7 @@ def readall_str(grain_index, filemane_str,
 
     matstarlab = matxmas_to_matstarlab(satocrs, calib)
 
-    if min_matLT == True :
+    if min_matLT == True:
         matLT3x3 = matstarlabOR_to_matstarlabLaueTools(matstarlab)
         matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
         matLT3x3 = matmin
@@ -1219,10 +1281,10 @@ def readall_str(grain_index, filemane_str,
         hklmin = np.dot(transfmat, data_str[:, 2:5].transpose()).T
         data_str[:, 2:5] = hklmin
 
-    if returnmatLT == False :
-        return(data_str, matstarlab, calib, dev_str)
-    else :
-        return(data_str, matstarlab, calib, dev_str, matLT3x3)
+    if returnmatLT == False:
+        return (data_str, matstarlab, calib, dev_str)
+    else:
+        return (data_str, matstarlab, calib, dev_str, matLT3x3)
 
 
 def matxmas_to_matstarlab(satocr, calib):
@@ -1252,9 +1314,13 @@ def matxmas_to_matstarlab(satocr, calib):
     # print "omega" , omega*180.0/np.pi
 
     # rotation de omega autour de l'axe x pour repasser dans Rlab
-    matrot = np.array([[1.0, 0.0, 0.0],
-                       [0.0, np.cos(omega), np.sin(omega)],
-                       [0.0, -np.sin(omega), np.cos(omega)]])
+    matrot = np.array(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, np.cos(omega), np.sin(omega)],
+            [0.0, -np.sin(omega), np.cos(omega)],
+        ]
+    )
     # print "matrot \n" , matrot
 
     labtocr = np.dot(matrot, satocrnorm)
@@ -1269,20 +1335,22 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi(filename,
-                        tuple_column_X_Y_I,
-                        _nblines_headertoskip,
-                        sorting_intensity='yes',
-                        param=None,
-                        kf_direction='Z>0',
-                        verbose=1,
-                        signgam=SIGN_OF_GAMMA,
-                        pixelsize=165. / 2048,
-                        dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
-                        saturation=0,
-                        forceextension_lines_to_extract=None,
-                        col_isbadspot=None,
-                        alpha_xray_incidence_correction=None):
+def Compute_data2thetachi(
+    filename,
+    tuple_column_X_Y_I,
+    _nblines_headertoskip,
+    sorting_intensity="yes",
+    param=None,
+    kf_direction="Z>0",
+    verbose=1,
+    signgam=SIGN_OF_GAMMA,
+    pixelsize=165.0 / 2048,
+    dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
+    saturation=0,
+    forceextension_lines_to_extract=None,
+    col_isbadspot=None,
+    alpha_xray_incidence_correction=None,
+):
     """
     Convert spot positions x,y to scattering angles 2theta, chi from a list of peaks
 
@@ -1318,25 +1386,22 @@ def Compute_data2thetachi(filename,
     """
     col_X, col_Y, col_I = tuple_column_X_Y_I
 
-    extension = filename.split('.')[-1]
+    extension = filename.split(".")[-1]
 
     if forceextension_lines_to_extract is not None:
-        extension = 'forcedextension'
+        extension = "forcedextension"
 
-    if extension == 'pik':  # no header
+    if extension == "pik":  # no header
         nbline = 0
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I),
-                              skiprows=nbline)
-    elif extension == 'peaks':  # single line header
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I),
-                              skiprows=1)
+        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=nbline)
+    elif extension == "peaks":  # single line header
+        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
 
-    elif extension in ('dat', 'DAT'):  # peak list single line header
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I),
-                              skiprows=1)
+    elif extension in ("dat", "DAT"):  # peak list single line header
+        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
         print("nb of spots and columns in .dat file", data_xyI.shape)
 
-        if saturation :
+        if saturation:
             data_Ipixmax = np.loadtxt(filename, usecols=-1, skiprows=1)
             # print "Ipixmax ",data_Ipixmax
             indsat = np.where(data_Ipixmax >= saturation)
@@ -1345,27 +1410,25 @@ def Compute_data2thetachi(filename,
             data_sat[indsat[0]] = 1
             # print data_sat
 
-            if col_isbadspot is not None :
-                data_isbadspot = np.loadtxt(filename, usecols=col_isbadspot,
-                                            skiprows=1)
+            if col_isbadspot is not None:
+                data_isbadspot = np.loadtxt(filename, usecols=col_isbadspot, skiprows=1)
                 print(data_isbadspot)
 
         # mike.close()
 
-    elif extension == 'forcedextension':
+    elif extension == "forcedextension":
         # mike=scipy.io.array_import.get_open_file(filename)
         # mike.readline()
         # data_xyI=scipy.io.array_import.read_array(filename,columns=(col_X,col_Y,col_I),lines=forceextension_lines_to_extract)
         data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
         # mike.close()
-    elif extension == 'cor':  # single line header
+    elif extension == "cor":  # single line header
         try:
-            data_xyI = np.loadtxt(filename, usecols=(2, 3, 4),
-                              skiprows=1)
+            data_xyI = np.loadtxt(filename, usecols=(2, 3, 4), skiprows=1)
         except:
-            raise ValueError('%s does contain just one header line'%filename)
+            raise ValueError("%s does contain just one header line" % filename)
     else:
-        raise ValueError('Unknown file extension for %s'%filename)
+        raise ValueError("Unknown file extension for %s" % filename)
 
     sha = data_xyI.shape
 
@@ -1376,7 +1439,9 @@ def Compute_data2thetachi(filename,
         nb_peaks = sha[0]
 
     if param is None:
-        raise ValueError('Missing param arg in Compute_data2thetachi() of find2thetachi module')
+        raise ValueError(
+            "Missing param arg in Compute_data2thetachi() of find2thetachi module"
+        )
     else:
         param_det = param
 
@@ -1390,12 +1455,14 @@ def Compute_data2thetachi(filename,
     # data_y=data_xyI[:,1]
     # data_I=data_xyI[:,2]
 
-    if filename.split('.')[-1] in ('pik', 'peaks'):
+    if filename.split(".")[-1] in ("pik", "peaks"):
         data_x = data_xyI[:, 0]  # + 0.5  # 0.5 for being closer to XMAS peaks position
-        data_y = dim[1] - data_xyI[:, 1]  # + 0.5 # 0.5 for being closer to XMAS peaks position
+        data_y = (
+            dim[1] - data_xyI[:, 1]
+        )  # + 0.5 # 0.5 for being closer to XMAS peaks position
         data_I = data_xyI[:, 2]  # for fit2d pixels convention
 
-    elif filename.split('.')[-1] in ('dat', 'DAT'):
+    elif filename.split(".")[-1] in ("dat", "DAT"):
         if nb_peaks > 1:
             data_x = data_xyI[:, 0]
             data_y = data_xyI[:, 1]
@@ -1405,62 +1472,75 @@ def Compute_data2thetachi(filename,
             data_y = [data_xyI[1], data_xyI[1]]
             data_I = [data_xyI[2], data_xyI[2]]
 
-    if extension in ('forcedextension','cor'):
+    if extension in ("forcedextension", "cor"):
         data_x = data_xyI[:, 0]
         data_y = data_xyI[:, 1]
         data_I = data_xyI[:, 2]
-        
-    # 21Jul14  O. Robach---------------
-    if alpha_xray_incidence_correction != None :
 
-        print("Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction)
+    # 21Jul14  O. Robach---------------
+    if alpha_xray_incidence_correction != None:
+
+        print(
+            "Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction
+        )
         xystart = np.column_stack((data_x, data_y))
-#        print "xystart = ", xystart
+        #        print "xystart = ", xystart
         npics = np.shape(xystart)[0]
         xynew = np.zeros((npics, 2), float)
         xycen = np.array([param_det[1], param_det[2]])
-#        print "xycen = ", xycen
+        #        print "xycen = ", xycen
         dxy = xystart - xycen
         dxynorm2 = (np.multiply(dxy, dxy)).sum(axis=1)
-#        print "dxynorm2 = ", dxynorm2
+        #        print "dxynorm2 = ", dxynorm2
         dxynorm = np.power(dxynorm2, 0.5)
-#        print "dxynorm =", dxynorm
-        dxynorminv = 1. / dxynorm
+        #        print "dxynorm =", dxynorm
+        dxynorminv = 1.0 / dxynorm
         scale_factor = pixelsize / param_det[0]
         scale_factor = scale_factor * scale_factor
-#        print "dd = ", param_det[0]
-#        print "pixelsize = ", pixelsize
-#        print "scale_factor = ", scale_factor
+        #        print "dd = ", param_det[0]
+        #        print "pixelsize = ", pixelsize
+        #        print "scale_factor = ", scale_factor
         for i in list(range(npics)):
-            xynew[i, :] = xystart[i, :] \
-                + alpha_xray_incidence_correction * scale_factor * dxy[i, :] * dxynorm[i]
+            xynew[i, :] = (
+                xystart[i, :]
+                + alpha_xray_incidence_correction
+                * scale_factor
+                * dxy[i, :]
+                * dxynorm[i]
+            )
 
         delta_xy = xynew - xystart
-#        print "delta_xy = ", delta_xy
-        print("maximum spot displacement |dx| |dy| : ", (abs(delta_xy)).max(axis=0).round(decimals=3))
+        #        print "delta_xy = ", delta_xy
+        print(
+            "maximum spot displacement |dx| |dy| : ",
+            (abs(delta_xy)).max(axis=0).round(decimals=3),
+        )
 
         data_x = xynew[:, 0]
         data_y = xynew[:, 1]
-    #-----------------------------------
+    # -----------------------------------
 
-    twicethetaraw, chiraw = calc_uflab(data_x, data_y,
-                                       param_det[:5],
-                                       returnAngles=1,
-                                       pixelsize=pixelsize,
-                                       signgam=signgam,
-                                       kf_direction=kf_direction)
+    twicethetaraw, chiraw = calc_uflab(
+        data_x,
+        data_y,
+        param_det[:5],
+        returnAngles=1,
+        pixelsize=pixelsize,
+        signgam=signgam,
+        kf_direction=kf_direction,
+    )
 
     # print chi,twicetheta
-    if nb_peaks > 1 and sorting_intensity == 'yes':
+    if nb_peaks > 1 and sorting_intensity == "yes":
         listsorted = np.argsort(data_I)[::-1]
         chi = np.take(chiraw, listsorted)
         twicetheta = np.take(twicethetaraw, listsorted)
         data_x = np.take(data_x, listsorted)
         data_y = np.take(data_y, listsorted)
         dataintensity = np.take(data_I, listsorted)
-        if saturation :
+        if saturation:
             data_sat = np.take(data_sat, listsorted)
-        if col_isbadspot != None :
+        if col_isbadspot != None:
             data_isbadspot = np.take(data_isbadspot, listsorted)
 
     else:
@@ -1475,24 +1555,28 @@ def Compute_data2thetachi(filename,
         data_x = [data_x[0]]
         data_y = [data_y[0]]
 
-    if saturation :
+    if saturation:
         print("adding flag column for saturated peaks")
         return twicetheta, chi, dataintensity, data_x, data_y, data_sat
-    if col_isbadspot != None :
+    if col_isbadspot != None:
         return twicetheta, chi, dataintensity, data_x, data_y, data_sat, data_isbadspot
 
-    else :
-        if col_isbadspot != None :
+    else:
+        if col_isbadspot != None:
             return twicetheta, chi, dataintensity, data_x, data_y, data_isbadspot
-        else :
+        else:
             return twicetheta, chi, dataintensity, data_x, data_y
 
 
-def convert2corfile(filename, calibparam,
-                    dirname_in=None, dirname_out=None,
-                    signgam=SIGN_OF_GAMMA,
-                    pixelsize=165. / 2048,
-                    CCDCalibdict=None):
+def convert2corfile(
+    filename,
+    calibparam,
+    dirname_in=None,
+    dirname_out=None,
+    signgam=SIGN_OF_GAMMA,
+    pixelsize=165.0 / 2048,
+    CCDCalibdict=None,
+):
     """
     create a .cor file (ascii peaks list (2theta chi X Y int ...))
     from a peak list file (x,y,I,...)
@@ -1510,62 +1594,79 @@ def convert2corfile(filename, calibparam,
         filename_in = filename
 
     if CCDCalibdict is not None:
-        if 'CCDCalibParameters' in CCDCalibdict:
-            calibparam = CCDCalibdict['CCDCalibParameters']
+        if "CCDCalibParameters" in CCDCalibdict:
+            calibparam = CCDCalibdict["CCDCalibParameters"]
 
-        if 'xpixelsize' in CCDCalibdict:
-            pixelsize = CCDCalibdict['xpixelsize']
+        if "xpixelsize" in CCDCalibdict:
+            pixelsize = CCDCalibdict["xpixelsize"]
 
-    (twicetheta, chi,
-     dataintensity,
-     data_x, data_y) = Compute_data2thetachi(filename_in,
-                                       (0, 1, 3), 1,  # 2 for centroid intensity, 3 for integrated  intensity
-                                        sorting_intensity='yes',
-                                        param=calibparam,
-                                        signgam=signgam,
-                                        pixelsize=pixelsize)
+    (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(
+        filename_in,
+        (0, 1, 3),
+        1,  # 2 for centroid intensity, 3 for integrated  intensity
+        sorting_intensity="yes",
+        param=calibparam,
+        signgam=signgam,
+        pixelsize=pixelsize,
+    )
 
     # TODO: handle windowsOS path syntax
-    filename_wo_path = filename.split('/')[-1]
+    filename_wo_path = filename.split("/")[-1]
 
-    file_extension = filename_wo_path.split('.')[-1]
+    file_extension = filename_wo_path.split(".")[-1]
 
-    prefix_outputname = filename_wo_path[:-len(file_extension) - 1]
+    prefix_outputname = filename_wo_path[: -len(file_extension) - 1]
 
     if dirname_out != None:
         filename_out = os.path.join(dirname_out, prefix_outputname)
     else:
         filename_out = prefix_outputname
 
-#     print "filename_out", filename_out
+    #     print "filename_out", filename_out
 
     if CCDCalibdict is not None:
         for kk, key in enumerate(DictLT.CCD_CALIBRATION_PARAMETERS[:5]):
             CCDCalibdict[key] = calibparam[kk]
 
-        CCDCalibdict['xpixelsize'] = pixelsize
-        CCDCalibdict['ypixelsize'] = pixelsize
+        CCDCalibdict["xpixelsize"] = pixelsize
+        CCDCalibdict["ypixelsize"] = pixelsize
 
         param = CCDCalibdict
 
         # update dict according to values in file .cor
-        f = open(filename_in, 'r')
+        f = open(filename_in, "r")
         param = IOLT.readCalibParametersInFile(f, Dict_to_update=CCDCalibdict)
         f.close()
 
     else:
         param = calibparam + [pixelsize]
 
-    IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
-                          sortedexit=0,
-                          param=param,
-                          initialfilename=filename)
+    IOLT.writefile_cor(
+        filename_out,
+        twicetheta,
+        chi,
+        data_x,
+        data_y,
+        dataintensity,
+        sortedexit=0,
+        param=param,
+        initialfilename=filename,
+    )
 
 
-def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam,
-                               suffix='', nbdigits=4,
-                               dirname_in=None, outputname=None, dirname_out=None,
-                               signgam=SIGN_OF_GAMMA, pixelsize=165. / 2048, fliprot='no'):
+def convert2corfile_fileseries(
+    fileindexrange,
+    filenameprefix,
+    calibparam,
+    suffix="",
+    nbdigits=4,
+    dirname_in=None,
+    outputname=None,
+    dirname_out=None,
+    signgam=SIGN_OF_GAMMA,
+    pixelsize=165.0 / 2048,
+    fliprot="no",
+):
     """
     convert a serie of peaks list ascii files to .cor files (adding scattering angles)
     
@@ -1578,25 +1679,39 @@ def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam,
     
     :param calibparam: list of 5 CCD cakibration parameters
     """
-    encodingdigits = '%%0%dd' % nbdigits
+    encodingdigits = "%%0%dd" % nbdigits
 
-    if suffix == '':
-        suffix = '.dat'
+    if suffix == "":
+        suffix = ".dat"
 
     for fileindex in list(range(fileindexrange[0], fileindexrange[1] + 1)):
         filename_in = filenameprefix + encodingdigits % fileindex + suffix
         print("filename_in", filename_in)
-        convert2corfile(filename_in, calibparam,
-                        dirname_in=dirname_in, outputname=outputname,
-                        dirname_out=dirname_out, signgam=signgam,
-                        pixelsize=pixelsize)
+        convert2corfile(
+            filename_in,
+            calibparam,
+            dirname_in=dirname_in,
+            outputname=outputname,
+            dirname_out=dirname_out,
+            signgam=signgam,
+            pixelsize=pixelsize,
+        )
 
 
-def convert2corfile_multiprocessing(fileindexrange, filenameprefix, calibparam,
-                                    dirname_in=None,
-                                    suffix='', nbdigits=4,
-                    outputname=None, dirname_out=None, signgam=SIGN_OF_GAMMA,
-                    pixelsize=165. / 2048, fliprot='no', nb_of_cpu=6):
+def convert2corfile_multiprocessing(
+    fileindexrange,
+    filenameprefix,
+    calibparam,
+    dirname_in=None,
+    suffix="",
+    nbdigits=4,
+    outputname=None,
+    dirname_out=None,
+    signgam=SIGN_OF_GAMMA,
+    pixelsize=165.0 / 2048,
+    fliprot="no",
+    nb_of_cpu=6,
+):
     """
     launch several processes in parallel to convert .dat file to .cor file
     """
@@ -1605,21 +1720,37 @@ def convert2corfile_multiprocessing(fileindexrange, filenameprefix, calibparam,
     try:
         index_start, index_final = fileindexrange
     except:
-        raise ValueError("Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)")
+        raise ValueError(
+            "Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)"
+        )
         return
 
-    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
+    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(
+        index_start, index_final, nb_of_cpu
+    )
 
-#    t00 = time.time()
+    #    t00 = time.time()
     jobs = []
     for ii in list(range(nb_of_cpu)):
-        proc = multiprocessing.Process(target=convert2corfile_fileseries,
-                                    args=(fileindexdivision[ii], filenameprefix, calibparam,
-                               suffix, nbdigits,
-                               dirname_in, outputname, dirname_out,
-                               signgam, pixelsize))
+        proc = multiprocessing.Process(
+            target=convert2corfile_fileseries,
+            args=(
+                fileindexdivision[ii],
+                filenameprefix,
+                calibparam,
+                suffix,
+                nbdigits,
+                dirname_in,
+                outputname,
+                dirname_out,
+                signgam,
+                pixelsize,
+            ),
+        )
         jobs.append(proc)
         proc.start()
+
+
 #    t_mp = time.time() - t00
 #    print "Execution time : %.2f" % t_mp
 
@@ -1637,9 +1768,13 @@ def fromlab_tosample(UB, anglesample_deg=40):  # in deg
 
     """
     anglesample = anglesample_deg * DEG  # in rad
-    Rot = np.array([[ np.cos(anglesample), 0, np.sin(anglesample)],
-                    [0, 1, 0],
-                    [-np.sin(anglesample), 0, np.cos(anglesample)]])
+    Rot = np.array(
+        [
+            [np.cos(anglesample), 0, np.sin(anglesample)],
+            [0, 1, 0],
+            [-np.sin(anglesample), 0, np.cos(anglesample)],
+        ]
+    )
 
     # = GT.matRot([0,1,0], 40)
     # invRot = np.linalg.inv(Rot)
@@ -1673,7 +1808,8 @@ def vec_onsurface_alongys(mat_labframe):
 
 # Following functions are for dealing with in depth  x-ray emission source
 
-def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.):
+
+def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.0):
     """
     from vector IM in absolute frame  I origin, M point in CCD plane
     uf: unit vector in absolute frame joining Iprime (source) and M
@@ -1684,7 +1820,7 @@ def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.):
     ux, uy, uz = uf.T
     x, y, z = IM.T
 
-    deltaZ = z - depth_z * 1000.  # in millimeters
+    deltaZ = z - depth_z * 1000.0  # in millimeters
     ratio = deltaZ / uz
 
     xsource = x - ratio * ux
@@ -1704,7 +1840,6 @@ def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.):
     IIprime = tsource.T
     IIprime_s = np.array([xsource_s, ysource_s, zsource_s]).T
 
-
     return IIprime, IIprime_s
 
 
@@ -1713,7 +1848,9 @@ def IMlab_from_xycam(xcam, ycam, calib, verbose=0, signgam=SIGN_OF_GAMMA):
     returns list of vector position of M (on CCD camera) in absolute frame 
     from pixels position vector in CCD frame
     """
-    uflab_not_used, IMlab = calc_uflab(xcam, ycam, calib, returnAngles='uflab', signgam=signgam)
+    uflab_not_used, IMlab = calc_uflab(
+        xcam, ycam, calib, returnAngles="uflab", signgam=signgam
+    )
 
     if verbose:
         print("IMlab", IMlab)
@@ -1721,7 +1858,7 @@ def IMlab_from_xycam(xcam, ycam, calib, verbose=0, signgam=SIGN_OF_GAMMA):
     return IMlab
 
 
-def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40., anglewire=40.):
+def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40.0, anglewire=40.0):
     """
     from:
     II': single vector II' (2 elements= y,z) source position in absolute frame
@@ -1741,7 +1878,7 @@ def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40., anglewire=40.
     angs = anglesample * DEG
     angw = anglewire * DEG
 
-    x, y, z = (IM * 1.).T
+    x, y, z = (IM * 1.0).T
 
     IH = np.array([0, -depth_wire * np.sin(angs), depth_wire * np.cos(angs)])
 
@@ -1757,7 +1894,7 @@ def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40., anglewire=40.
     return np.array([yw, zw])
 
 
-def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.):
+def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.0):
     """
     TODO : MAY BE FALSE
     from:
@@ -1770,7 +1907,7 @@ def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.):
     array of vectors wire position (y,z)  (hypothesis: wire parallel to Ox)
     """
 
-    yIp, zIp = (IIprime * 1.).T
+    yIp, zIp = (IIprime * 1.0).T
     x, y, z = IM
 
     slope = (zIp - z) / (yIp - y)
@@ -1781,11 +1918,10 @@ def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.):
     yw = (yIp * slope + zIp + depth_wire) / (slope - tw0)
     zw = tw0 * yw + depth_wire
 
-
     return np.array([yw, zw])
 
 
-def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.):
+def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.0):
     """
     from:
     OM: list of vectors OM (2 elements) in CCD plane in CCD frame (pixels unit)
@@ -1804,10 +1940,12 @@ def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.):
 
     IMlab_yz = IMlab[:, 1:]
 
-    return find_yzsource_from_IM_uf(IMlab_yz, uf, depth_z=depth_z, anglesample=anglesample)
+    return find_yzsource_from_IM_uf(
+        IMlab_yz, uf, depth_z=depth_z, anglesample=anglesample
+    )
 
 
-def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.):
+def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
     """
     from:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
@@ -1844,7 +1982,9 @@ def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.):
     return np.array([ysource, zsource])
 
 
-def find_yzsource_from_2xycam_2yzwire_version2(OMs, IWs, calib, anglesample=40., verbose=0):
+def find_yzsource_from_2xycam_2yzwire_version2(
+    OMs, IWs, calib, anglesample=40.0, verbose=0
+):
     """
     from:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
@@ -1872,10 +2012,12 @@ def find_yzsource_from_2xycam_2yzwire_version2(OMs, IWs, calib, anglesample=40.,
         print("two points", A, B)
         print("distance ", np.sqrt(np.dot(A - B, A - B)))
 
-    return (A + B) / 2.
+    return (A + B) / 2.0
 
 
-def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae, calib, anglesample=40., wire_height=0.3, verbose=0):
+def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
+    OMs, Wire_abscissae, calib, anglesample=40.0, wire_height=0.3, verbose=0
+):
     """
     from:
     OMs: array of n vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2, ..., OMn])
@@ -1890,7 +2032,9 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae
 
     """
 
-    IWs = IW_from_wireabscissa(Wire_abscissae, wire_height, anglesample=anglesample)  # array of [y,z]
+    IWs = IW_from_wireabscissa(
+        Wire_abscissae, wire_height, anglesample=anglesample
+    )  # array of [y,z]
     IWs = IWs.T
     pairs = GT.pairs_of_indices(len(IWs))
 
@@ -1908,16 +2052,20 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae
             print("oms", np.take(OMs, p, axis=0))
             print("iws", np.take(IWs, p, axis=0))
 
-        results.append(find_yzsource_from_2xycam_2yzwire_version2(np.take(OMs, p, axis=0),
-                                                                  np.take(IWs, p, axis=0),
-                                                                  calib,
-                                                                  anglesample=anglesample,
-                                                                  verbose=0))
+        results.append(
+            find_yzsource_from_2xycam_2yzwire_version2(
+                np.take(OMs, p, axis=0),
+                np.take(IWs, p, axis=0),
+                calib,
+                anglesample=anglesample,
+                verbose=0,
+            )
+        )
 
     return np.array(results)
 
 
-def IW_from_wireabscissa(abscissa, wire_height, anglesample=40.):
+def IW_from_wireabscissa(abscissa, wire_height, anglesample=40.0):
     """
     from:
     abscissa of wire and wire height from sample surface inclined by anglesample (deg)
@@ -1933,7 +2081,7 @@ def IW_from_wireabscissa(abscissa, wire_height, anglesample=40.):
     return np.array([y, z])
 
 
-def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.):
+def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.0):
     """
     from:
     absolute coordinate of wire (hypothesis x is undetermined)
@@ -1954,7 +2102,6 @@ def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.):
     # add sign simply for angle wire  around 40 deg
     signe = np.where(IWz > wire_height * np.cos(angs), 1, -1)
 
-
     return signe * np.sqrt(WHy ** 2 + WHz ** 2)
 
 
@@ -1970,11 +2117,16 @@ def twotheta_from_wire_and_source(ysource, Height_wire, Abscissa_wire, anglesamp
     returns scattering angle 2theta from y direction to I'Iw (no x component)
     """
 
-    lambda_angle = np.arctan(Height_wire * 1. / Abscissa_wire) / DEG + anglesample
+    lambda_angle = np.arctan(Height_wire * 1.0 / Abscissa_wire) / DEG + anglesample
     coslambda = np.cos(lambda_angle * DEG)
-    yprime = ysource * 1. / Abscissa_wire
+    yprime = ysource * 1.0 / Abscissa_wire
 
-    return np.arccos((coslambda - yprime) / np.sqrt(1 + yprime ** 2 - 2 * yprime * coslambda)) / DEG
+    return (
+        np.arccos(
+            (coslambda - yprime) / np.sqrt(1 + yprime ** 2 - 2 * yprime * coslambda)
+        )
+        / DEG
+    )
 
 
 def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_GAMMA):
@@ -1985,21 +2137,43 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_G
     return new value of x,y 
     """
     xcam, ycam = OMs.T
-    uflab, IM = calc_uflab(xcam, ycam, calib, returnAngles=0, verbose=0, pixelsize=165. / 2048, signgam=signgam)  # IM normalized
+    uflab, IM = calc_uflab(
+        xcam,
+        ycam,
+        calib,
+        returnAngles=0,
+        verbose=0,
+        pixelsize=165.0 / 2048,
+        signgam=signgam,
+    )  # IM normalized
     # IM vectors
     # IM=IprimeM_from_uf(uflab,array([0,0,0]),calib,verbose=0)
-    OM = calc_xycam(uflab, calib,
-                    signgam=signgam, energy=1, offset=None,
-                    verbose=0, returnIpM=False, pixelsize=165. / 2048)
+    OM = calc_xycam(
+        uflab,
+        calib,
+        signgam=signgam,
+        energy=1,
+        offset=None,
+        verbose=0,
+        returnIpM=False,
+        pixelsize=165.0 / 2048,
+    )
     x0cam, y0cam, th0, E0 = OM
     # IpM=IpI + IM= IM-IIP
     IpM = IM - IIp
     nor = np.sqrt(np.sum(IpM ** 2, axis=1))
     # new uf prime
-    ufp = IpM * 1. / np.reshape(nor, (len(nor), 1))
-    OpMp = calc_xycam(ufp, calib,
-                      signgam=signgam, energy=1, offset=None,
-                      verbose=0, returnIpM=False, pixelsize=165. / 2048)
+    ufp = IpM * 1.0 / np.reshape(nor, (len(nor), 1))
+    OpMp = calc_xycam(
+        ufp,
+        calib,
+        signgam=signgam,
+        energy=1,
+        offset=None,
+        verbose=0,
+        returnIpM=False,
+        pixelsize=165.0 / 2048,
+    )
     xpcam, ypcam, thp, Ep = OpMp
 
     if verbose:
@@ -2009,7 +2183,7 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_G
         print("Y in pixel")
         print(y0cam, ypcam)
         print("2theta in deg")
-        print(2.*th0, 2.*thp)
+        print(2.0 * th0, 2.0 * thp)
         print("Energy")
         print(E0, Ep)
         # print uflab,ufp
@@ -2020,23 +2194,24 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_G
         print("shift to add to Y")
         print(ypcam - y0cam)
         print("shift to add to 2theta in deg")
-        print(2.*(thp - th0))
+        print(2.0 * (thp - th0))
         print("shift to add to Energy (IN eV)")
-        print(1000.*(Ep - E0))
+        print(1000.0 * (Ep - E0))
 
 
 def absorbprofile(x, R, mu, x0):
 
-    cond = (np.fabs(x - x0) <= R)
+    cond = np.fabs(x - x0) <= R
     print(cond)
     print(cond.dtype)
+
     def Absorbfunction(x, radius=R, coef=mu, center=x0):
-            return np.exp(-2 * coef * np.sqrt(radius ** 2 - (x - center) ** 2))
+        return np.exp(-2 * coef * np.sqrt(radius ** 2 - (x - center) ** 2))
 
     yabs = list(map(Absorbfunction, x))
     print(yabs)
     # y=np.piecewise(x,[cond],[Absorbfunction,1.],radius=R,coef=mu,center=x0)
-    y = np.select([cond], [yabs], 1.)
+    y = np.select([cond], [yabs], 1.0)
     return y
 
 
@@ -2061,24 +2236,24 @@ def lengthInSample(depth, twtheta, chi, omega):
     legnth BC is proportional to the depth D
     
     """
-    D=depth*1.
-    c2theta = np.cos(twtheta*DEG)
-    s2theta = np.sin(twtheta*DEG)
-    cchi = np.cos(chi*DEG)
-    schi = np.sin(chi*DEG)
-    comega=np.cos(omega*DEG)
-    somega = np.sin(omega*DEG)
-    
-    factor = D*somega/(-c2theta*somega+s2theta*cchi*comega)
-    xc= factor*(-c2theta)
-    yc= factor*(-s2theta*schi)
-    zc= factor*(s2theta*cchi)
-    
-    BC = np.sqrt((xc+D)**2+yc**2+zc**2)
-    
-    print('[x,y,z] of BC')
-    print(np.array([twtheta,chi,xc,yc,zc]).T)
-    
-    Ratio_BC_over_D = BC/D
-    
-    return D+BC, BC,Ratio_BC_over_D, D
+    D = depth * 1.0
+    c2theta = np.cos(twtheta * DEG)
+    s2theta = np.sin(twtheta * DEG)
+    cchi = np.cos(chi * DEG)
+    schi = np.sin(chi * DEG)
+    comega = np.cos(omega * DEG)
+    somega = np.sin(omega * DEG)
+
+    factor = D * somega / (-c2theta * somega + s2theta * cchi * comega)
+    xc = factor * (-c2theta)
+    yc = factor * (-s2theta * schi)
+    zc = factor * (s2theta * cchi)
+
+    BC = np.sqrt((xc + D) ** 2 + yc ** 2 + zc ** 2)
+
+    print("[x,y,z] of BC")
+    print(np.array([twtheta, chi, xc, yc, zc]).T)
+
+    Ratio_BC_over_D = BC / D
+
+    return D + BC, BC, Ratio_BC_over_D, D

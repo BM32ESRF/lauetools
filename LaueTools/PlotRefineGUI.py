@@ -7,7 +7,7 @@ mailto: micha at esrf dot fr
 
 August 2014
 """
-__version__ = '$Revision: 1712 $'
+__version__ = "$Revision: 1712 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy
@@ -16,18 +16,21 @@ import sys
 import time
 
 import wx
-if wx.__version__ <'4.':
+
+if wx.__version__ < "4.":
     WXPYTHON4 = False
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
-    
+
     def sttip(argself, strtip):
-        return wx.Window.SetToolTip(argself,wx.ToolTip(strtip))
+        return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
     wx.Window.SetToolTipString = sttip
-    
+
 import numpy as np
+
 np.set_printoptions(precision=15)
 
 import CrystalParameters as CP
@@ -45,9 +48,10 @@ import dict_LaueTools as DictLT
 
 # Plot & Tools Frame Class
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import \
-    FigureCanvasWxAgg as FigCanvas, \
-    NavigationToolbar2WxAgg as NavigationToolbar
+from matplotlib.backends.backend_wxagg import (
+    FigureCanvasWxAgg as FigCanvas,
+    NavigationToolbar2WxAgg as NavigationToolbar,
+)
 
 from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
@@ -62,26 +66,26 @@ SIGN_OF_GAMMA = DictLT.SIGN_OF_GAMMA
 class MessageDataBox(wx.Frame):
     def __init__(self, parent, _id, title, matrix, defaultname):
         wx.Frame.__init__(self, parent, _id, title, size=(400, 200))
-        
+
         self.parent = parent
         self.matrix = matrix
-        
-        txt = wx.StaticText(self, -1, 'Choose Matrix name')
-        
+
+        txt = wx.StaticText(self, -1, "Choose Matrix name")
+
         self.comments = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=(300, 100))
         self.comments.SetValue(self.CreateStringfromMatrix(matrix))
-#         text.SetBackgroundColour(wx.SystemSettings.GetColour(4))
-        
-        self.text2 = wx.TextCtrl(self, -1, '', style=wx.TE_MULTILINE, size=(300, 30))
+        #         text.SetBackgroundColour(wx.SystemSettings.GetColour(4))
+
+        self.text2 = wx.TextCtrl(self, -1, "", style=wx.TE_MULTILINE, size=(300, 30))
         self.text2.SetValue(defaultname)
-        
-        btna = wx.Button(self, wx.ID_OK, 'Accept', size=(150, 40))
+
+        btna = wx.Button(self, wx.ID_OK, "Accept", size=(150, 40))
         btna.Bind(wx.EVT_BUTTON, self.OnAccept)
         btna.SetDefault()
 
-        btnc = wx.Button(self, -1, 'Cancel', size=(100, 40))
+        btnc = wx.Button(self, -1, "Cancel", size=(100, 40))
         btnc.Bind(wx.EVT_BUTTON, self.OnQuit)
-        
+
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(btna, 1)
         hbox.Add(btnc, 1)
@@ -91,57 +95,63 @@ class MessageDataBox(wx.Frame):
         vbox.Add(self.comments, 0, wx.EXPAND)
         vbox.Add(self.text2, 0, wx.EXPAND)
         vbox.Add(hbox, 0)
-        vbox.Add(wx.StaticText(self, -1, ''), 0)
+        vbox.Add(wx.StaticText(self, -1, ""), 0)
 
         self.SetSizer(vbox)
-        
+
     def OnQuit(self, evt):
         self.Close()
-        
+
     def OnAccept(self, evt):
         matrixname = str(self.text2.GetValue())
         self.parent.dict_Rot[matrixname] = self.matrix
         self.parent.selectedName = matrixname
 
         self.Close()
-        
-    def CreateStringfromMatrix(self, matrix):
-        matstr = 'UBmat=\n['
-        for elem in matrix:
-            matstr += str(elem) + ',\n'
-            
-        res = matstr[:-2] + ']'
-        
-        print('res')
-            
-        return res
-            
 
-#--- ---------Plot & Tools Frame Class
+    def CreateStringfromMatrix(self, matrix):
+        matstr = "UBmat=\n["
+        for elem in matrix:
+            matstr += str(elem) + ",\n"
+
+        res = matstr[:-2] + "]"
+
+        print("res")
+
+        return res
+
+
+# --- ---------Plot & Tools Frame Class
 class Plot_RefineFrame(wx.Frame):
     """
     Class to implement a window enabling indexation and strain refinement
     """
-    def __init__(self, parent, _id, title,
-                                data=(1, 1, 1, 1),
-                                data_added=None,
-                                Size=SIZE_PLOTTOOLS,
-                                datatype='2thetachi',
-                                data_2thetachi=(None, None),
-                                data_XY=(None, None),
-                                ImageArray=None,
-                                kf_direction='Z>0',
-                                key_material='Ge',
-                                Params_to_simulPattern=None,  # Grain, Emin, Emax
-                                ResolutionAngstrom=False,
-                                DRTA=0.5,
-                                MATR=0.5,
-                                CCDdetectorparameters=None,
-                                IndexationParameters=None,
-                                StorageDict=None,
-                                mainframe=None,
-                                DataSetObject=None,
-                                ** kwds):
+
+    def __init__(
+        self,
+        parent,
+        _id,
+        title,
+        data=(1, 1, 1, 1),
+        data_added=None,
+        Size=SIZE_PLOTTOOLS,
+        datatype="2thetachi",
+        data_2thetachi=(None, None),
+        data_XY=(None, None),
+        ImageArray=None,
+        kf_direction="Z>0",
+        key_material="Ge",
+        Params_to_simulPattern=None,  # Grain, Emin, Emax
+        ResolutionAngstrom=False,
+        DRTA=0.5,
+        MATR=0.5,
+        CCDdetectorparameters=None,
+        IndexationParameters=None,
+        StorageDict=None,
+        mainframe=None,
+        DataSetObject=None,
+        **kwds
+    ):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
         # wxmpl.PlotFrame(self, -1,'fdgf', size =(600, 400),dpi = 96)
@@ -149,97 +159,104 @@ class Plot_RefineFrame(wx.Frame):
         self.panel = wx.Panel(self)
         self.parent = parent
 
-#         if mainframe is not None:
-#             self.mainframe = mainframe
-#         else:
-#             self.mainframe = self.parent.parent.parent
+        #         if mainframe is not None:
+        #             self.mainframe = mainframe
+        #         else:
+        #             self.mainframe = self.parent.parent.parent
 
-        self.IndexationParameters=IndexationParameters
+        self.IndexationParameters = IndexationParameters
 
-        self.mainframe = IndexationParameters['mainAppframe']
-        if 'indexationframe' in IndexationParameters:
-            self.indexationframe = IndexationParameters['indexationframe']
+        self.mainframe = IndexationParameters["mainAppframe"]
+        if "indexationframe" in IndexationParameters:
+            self.indexationframe = IndexationParameters["indexationframe"]
         else:
-            self.indexationframe = 'unknown'
+            self.indexationframe = "unknown"
 
-#         print "Plot_RefineFramemy parent is ", self.parent
+        #         print "Plot_RefineFramemy parent is ", self.parent
         print("mainframe of Plot_RefineFrame is ", self.mainframe)
 
-#         # in dvpt --------------------
-#         import readmccd as RMCCD
-#         ImageArray, framedim, fliprot = RMCCD.readCCDimage('/home/micha/LaueTools/Examples/Ge/Ge0001.mccd',
-#                                                            'MARCCD165', dirname=None)
-        #-----image array pixels data ------------------------
+        #         # in dvpt --------------------
+        #         import readmccd as RMCCD
+        #         ImageArray, framedim, fliprot = RMCCD.readCCDimage('/home/micha/LaueTools/Examples/Ge/Ge0001.mccd',
+        #                                                            'MARCCD165', dirname=None)
+        # -----image array pixels data ------------------------
         self.ImageArray = ImageArray
         self.data_dict = {}
-        self.data_dict['Imin'] = 1
-        self.data_dict['Imax'] = 1000
-        self.data_dict['vmin'] = 1
-        self.data_dict['vmax'] = 1000
-        self.data_dict['lut'] = 'jet'
-        self.data_dict['logscale'] = True
-        self.data_dict['markercolor'] = 'b'
-        
+        self.data_dict["Imin"] = 1
+        self.data_dict["Imax"] = 1000
+        self.data_dict["vmin"] = 1
+        self.data_dict["vmax"] = 1000
+        self.data_dict["lut"] = "jet"
+        self.data_dict["logscale"] = True
+        self.data_dict["markercolor"] = "b"
+
         self.sigmanoise = 0
 
         self.datatype = datatype
 
-        
-#         # save spots data used for indexation (could be part of the whole set of spot data)
-#         self.IndexationParameters['ExpData_UsedForIndexation']={}
-#         self.IndexationParameters['ExpData_UsedForIndexation']['data']=data
-#         self.IndexationParameters['ExpData_UsedForIndexation']['Data_X']=data[0]
-#         self.IndexationParameters['ExpData_UsedForIndexation']['Data_Y']=data[1]
-#         self.IndexationParameters['ExpData_UsedForIndexation']['Data_I']=data[2]
-#         self.IndexationParameters['ExpData_UsedForIndexation']['File_NAME']=data[3]
-#         self.IndexationParameters['ExpData_UsedForIndexation']['data_XY']=data_XY
-#         self.IndexationParameters['ExpData_UsedForIndexation']['data_2thetachi']=data_2thetachi
-#         self.IndexationParameters['ExpData_UsedForIndexation']['absolutespotindex']=IndexationParameters['current_exp_spot_index_list']
-        
-        
+        #         # save spots data used for indexation (could be part of the whole set of spot data)
+        #         self.IndexationParameters['ExpData_UsedForIndexation']={}
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['data']=data
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_X']=data[0]
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_Y']=data[1]
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_I']=data[2]
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['File_NAME']=data[3]
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['data_XY']=data_XY
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['data_2thetachi']=data_2thetachi
+        #         self.IndexationParameters['ExpData_UsedForIndexation']['absolutespotindex']=IndexationParameters['current_exp_spot_index_list']
+
         # read exp. data spots properties
         # WANRING:
         # depending of datatype self.Data_X, self.Data_Y can be 2theta, chi or gnomonX,gnomonY, or pixelX,pixelY
         # print "data",data
         # Data_X, Data_Y, Data_I, File_NAME = data
-#         self.data = data
-#         self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-#         self.data_XY = data_XY
-#         self.data_2thetachi = data_2thetachi
-        
-        
+        #         self.data = data
+        #         self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
+        #         self.data_XY = data_XY
+        #         self.data_2thetachi = data_2thetachi
+
         if IndexationParameters is not None:
             # all data to be indexed in this board
-#             AllData = self.IndexationParameters['AllDataToIndex']
-            
-            DataToIndex = self.IndexationParameters['DataToIndex']
-            print("\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",len(DataToIndex['data_theta']))
-            if self.datatype is '2thetachi':
-                self.Data_X=2.*DataToIndex['data_theta']
-                self.Data_Y=DataToIndex['data_chi']
-            elif self.datatype is 'pixels':
-                self.Data_X=DataToIndex['data_X']
-                self.Data_Y=DataToIndex['data_Y']
-                
-            self.Data_I=DataToIndex['data_I']
-            self.File_NAME =self.IndexationParameters['Filename']
-            self.data_XY = DataToIndex['data_X'],DataToIndex['data_Y']
-            self.data_2thetachi = 2*DataToIndex['data_theta'],DataToIndex['data_chi']
-            print("self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",self.data_2thetachi[0][:5],self.data_2thetachi[1][:5])
+            #             AllData = self.IndexationParameters['AllDataToIndex']
+
+            DataToIndex = self.IndexationParameters["DataToIndex"]
+            print(
+                "\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
+                len(DataToIndex["data_theta"]),
+            )
+            if self.datatype is "2thetachi":
+                self.Data_X = 2.0 * DataToIndex["data_theta"]
+                self.Data_Y = DataToIndex["data_chi"]
+            elif self.datatype is "pixels":
+                self.Data_X = DataToIndex["data_X"]
+                self.Data_Y = DataToIndex["data_Y"]
+
+            self.Data_I = DataToIndex["data_I"]
+            self.File_NAME = self.IndexationParameters["Filename"]
+            self.data_XY = DataToIndex["data_X"], DataToIndex["data_Y"]
+            self.data_2thetachi = 2 * DataToIndex["data_theta"], DataToIndex["data_chi"]
+            print(
+                "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
+                self.data_2thetachi[0][:5],
+                self.data_2thetachi[1][:5],
+            )
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
-#             print DataToIndex.keys()
-            self.selectedAbsoluteSpotIndices_init=DataToIndex['current_exp_spot_index_list']
-            self.selectedAbsoluteSpotIndices=copy.copy(self.selectedAbsoluteSpotIndices_init)
-            
-        
+            #             print DataToIndex.keys()
+            self.selectedAbsoluteSpotIndices_init = DataToIndex[
+                "current_exp_spot_index_list"
+            ]
+            self.selectedAbsoluteSpotIndices = copy.copy(
+                self.selectedAbsoluteSpotIndices_init
+            )
+
         self.setDatacoordinates()
-        
+
         self.xlim, self.ylim = self.getDataLimits()
-        self.flipyaxis = IndexationParameters['flipyaxis']
-        
-#         if 'Plot_xlim' in IndexationParameters:
-#                 self.xlim = IndexationParameters['Plot_xlim']
-#                 self.ylim = IndexationParameters['Plot_ylim']
+        self.flipyaxis = IndexationParameters["flipyaxis"]
+
+        #         if 'Plot_xlim' in IndexationParameters:
+        #                 self.xlim = IndexationParameters['Plot_xlim']
+        #                 self.ylim = IndexationParameters['Plot_ylim']
 
         self.Millerindices = None
         self.Data_index_expspot = np.arange(len(self.Data_X))
@@ -249,26 +266,29 @@ class Plot_RefineFrame(wx.Frame):
         # simulation parameters
         # self.SimulParam =(grain, emin, self.emax.GetValue())
         self.SimulParam = Params_to_simulPattern
-        print("self.SimulParam",self.SimulParam)
+        print("self.SimulParam", self.SimulParam)
 
         self.kf_direction = kf_direction
 
         if IndexationParameters is not None:
-            self.DataPlot_filename = IndexationParameters['DataPlot_filename']
-            self.current_processedgrain = IndexationParameters['current_processedgrain']
-            
-            print("self.current_processedgrain in init () Plot_RefineFrame", self.current_processedgrain)
+            self.DataPlot_filename = IndexationParameters["DataPlot_filename"]
+            self.current_processedgrain = IndexationParameters["current_processedgrain"]
+
+            print(
+                "self.current_processedgrain in init () Plot_RefineFrame",
+                self.current_processedgrain,
+            )
         else:
             self.DataPlot_filename = self.mainframe.DataPlot_filename
             self.current_processedgrain = self.mainframe.current_processedgrain
 
         # initial parameters of calibration ----------------------*
         if CCDdetectorparameters is not None:
-            self.CCDcalib = CCDdetectorparameters['CCDcalib']
-            self.framedim = CCDdetectorparameters['framedim']
-            self.pixelsize = CCDdetectorparameters['pixelsize']
-            self.CCDLabel = CCDdetectorparameters['CCDLabel']
-            self.detectordiameter = CCDdetectorparameters['detectordiameter']
+            self.CCDcalib = CCDdetectorparameters["CCDcalib"]
+            self.framedim = CCDdetectorparameters["framedim"]
+            self.pixelsize = CCDdetectorparameters["pixelsize"]
+            self.CCDLabel = CCDdetectorparameters["CCDLabel"]
+            self.detectordiameter = CCDdetectorparameters["detectordiameter"]
         else:
             self.CCDcalib = self.mainframe.defaultParam
             self.framedim = self.mainframe.framedim
@@ -276,10 +296,10 @@ class Plot_RefineFrame(wx.Frame):
             self.CCDLabel = self.mainframe.CCDLabel
 
         if StorageDict is not None:
-            self.mat_store_ind = StorageDict['mat_store_ind']
-            self.Matrix_Store = StorageDict['Matrix_Store']
-            self.dict_Rot = StorageDict['dict_Rot']
-            self.dict_Materials = StorageDict['dict_Materials']
+            self.mat_store_ind = StorageDict["mat_store_ind"]
+            self.Matrix_Store = StorageDict["Matrix_Store"]
+            self.dict_Rot = StorageDict["dict_Rot"]
+            self.dict_Materials = StorageDict["dict_Materials"]
         else:
             self.mat_store_ind = self.mainframe.mat_store_ind
             self.Matrix_Store = self.mainframe.Matrix_Store
@@ -310,7 +330,11 @@ class Plot_RefineFrame(wx.Frame):
         self.onlyclosest = 1
 
         # defaut value for Miller attribution
-        self.B0matrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  # means: columns are a*,b*,c* in xyz frame
+        self.B0matrix = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ]  # means: columns are a*,b*,c* in xyz frame
         self.key_material = key_material
         self.detectordistance = None
 
@@ -320,7 +344,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.drawnAnnotations_theo = {}
         self.links_theo = []
-        #------------------
+        # ------------------
 
         # No links between exp and theo spots have been done so far
         self.linkedspots = []
@@ -336,37 +360,41 @@ class Plot_RefineFrame(wx.Frame):
         self.Umat = None
         self.Umat2 = None
         self.Bmat_tri = None
-        
+
         self.UBmat = self.SimulParam[0][2]
         self.current_matrix = self.UBmat
         # saving previous unit cell strain and orientation
         self.previous_UBmat = self.UBmat
 
         self.deviatoricstrain = None
-        
+
         self.Tsresults = None
         self.new_latticeparameters = None
-        self.constantlength = 'a'
-        
-        DictLT.dict_Rot['Input UBmatrix'] = copy.copy(self.UBmat)
-        
+        self.constantlength = "a"
+
+        DictLT.dict_Rot["Input UBmatrix"] = copy.copy(self.UBmat)
+
         self.DataSet = DataSetObject
-        print("self.DataSet.detectordiameter in init plot refine frame", self.DataSet.detectordiameter)
+        print(
+            "self.DataSet.detectordiameter in init plot refine frame",
+            self.DataSet.detectordiameter,
+        )
 
         self.initGUI()
 
     def initGUI(self):
 
         colourb_bkg = [242, 241, 240, 255]
-        colourb_bkg = np.array(colourb_bkg) / 255.
+        colourb_bkg = np.array(colourb_bkg) / 255.0
 
-#         print 'colourb_bkg', colourb_bkg
-#         print 'ugiuhiu', wx.NullColor
+        #         print 'colourb_bkg', colourb_bkg
+        #         print 'ugiuhiu', wx.NullColor
 
         self.dpi = 100
         self.figsizex, self.figsizey = 4, 3
-        self.fig = Figure((self.figsizex, self.figsizey),
-                          dpi=self.dpi, facecolor=tuple(colourb_bkg))
+        self.fig = Figure(
+            (self.figsizex, self.figsizey), dpi=self.dpi, facecolor=tuple(colourb_bkg)
+        )
         self.fig.set_size_inches(self.figsizex, self.figsizey, forward=True)
         self.canvas = FigCanvas(self.panel, -1, self.fig)
         self.init_plot = True
@@ -375,23 +403,23 @@ class Plot_RefineFrame(wx.Frame):
 
         self.toolbar = NavigationToolbar(self.canvas)
 
-#         self.sb = self.CreateStatusBar()
+        #         self.sb = self.CreateStatusBar()
 
         self.sb = wx.StatusBar(self, -1)
         self.sb.SetFieldsCount(2)
         self.SetStatusBar(self.sb)
 
-        self.fig.canvas.mpl_connect('button_press_event', self.onClick)
+        self.fig.canvas.mpl_connect("button_press_event", self.onClick)
 
-        self.tooltip = wx.ToolTip(tip='Welcome on LaueTools UB refinement board')
+        self.tooltip = wx.ToolTip(tip="Welcome on LaueTools UB refinement board")
         self.canvas.SetToolTip(self.tooltip)
         self.tooltip.Enable(False)
         self.tooltip.SetDelay(0)
-        self.fig.canvas.mpl_connect('motion_notify_event', self.onMotion_ToolTip)
+        self.fig.canvas.mpl_connect("motion_notify_event", self.onMotion_ToolTip)
 
-        self.pointButton5 = wx.ToggleButton(self.panel, 5, 'Accept Matching')
-        self.pointButton6 = wx.ToggleButton(self.panel, 6, 'Draw Exp. Spot index')
-        self.pointButton7 = wx.ToggleButton(self.panel, 7, 'Draw Theo. Spot index')
+        self.pointButton5 = wx.ToggleButton(self.panel, 5, "Accept Matching")
+        self.pointButton6 = wx.ToggleButton(self.panel, 6, "Draw Exp. Spot index")
+        self.pointButton7 = wx.ToggleButton(self.panel, 7, "Draw Theo. Spot index")
         self.listbuttons = [self.pointButton5, self.pointButton6, self.pointButton7]
         self.defaultColor = self.GetBackgroundColour()
         self.p5S, self.p6S, self.p7S = 0, 0, 0
@@ -402,132 +430,146 @@ class Plot_RefineFrame(wx.Frame):
         self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.T7, id=7)
 
-#        self.pointButton5.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
-#        self.pointButton5.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
+        #        self.pointButton5.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
+        #        self.pointButton5.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
 
-        self.switchCoordinatesbtn = wx.Button(self.panel, -1, 'Switch Coord.')
+        self.switchCoordinatesbtn = wx.Button(self.panel, -1, "Switch Coord.")
         self.switchCoordinatesbtn.Bind(wx.EVT_BUTTON, self.OnSwitchCoords)
         self.datatype_unchanged = True
 
-        self.imagescalebtn = wx.Button(self.panel, -1, 'Set Image && Scale')
+        self.imagescalebtn = wx.Button(self.panel, -1, "Set Image && Scale")
         self.imagescalebtn.Bind(wx.EVT_BUTTON, self.onSetImageScale)
-        
-        self.noisebtn = wx.Button(self.panel, -1, 'Noise')
+
+        self.noisebtn = wx.Button(self.panel, -1, "Noise")
         self.noisebtn.Bind(wx.EVT_BUTTON, self.onSetNoise)
-        
-        self.enterUBbtn = wx.Button(self.panel, -1, 'Enter Matrix')
+
+        self.enterUBbtn = wx.Button(self.panel, -1, "Enter Matrix")
         self.enterUBbtn.Bind(wx.EVT_BUTTON, self.onEnterMatrix)
 
-        self.txt1 = wx.StaticText(self.panel, -1, 'Match. Ang. Tol.')
+        self.txt1 = wx.StaticText(self.panel, -1, "Match. Ang. Tol.")
         # self.matr_ctrl = wx.TextCtrl(self.parampanel, -1,'0.5',(350, 40))
         self.matr_ctrl = wx.TextCtrl(self.panel, -1, str(self.MATR))
 
-        self.eminmaxtxt = wx.StaticText(self.panel, -1, 'Energy min. and max.(keV): ')
-        self.SCEmin = wx.SpinCtrl(self.panel, -1, '5', min=5, max=150)
+        self.eminmaxtxt = wx.StaticText(self.panel, -1, "Energy min. and max.(keV): ")
+        self.SCEmin = wx.SpinCtrl(self.panel, -1, "5", min=5, max=150)
 
         if self.SimulParam is not None:
-            self.SCEmax = wx.SpinCtrl(self.panel, -1, str(self.SimulParam[2]),
-                                      min=6, max=150)
+            self.SCEmax = wx.SpinCtrl(
+                self.panel, -1, str(self.SimulParam[2]), min=6, max=150
+            )
         else:
-            self.SCEmax = wx.SpinCtrl(self.panel, -1, '25',
-                                      min=6, max=150)
+            self.SCEmax = wx.SpinCtrl(self.panel, -1, "25", min=6, max=150)
 
-        self.resolutiontxt = wx.StaticText(self.panel, -1, 'Latt. Spacing Res.')
+        self.resolutiontxt = wx.StaticText(self.panel, -1, "Latt. Spacing Res.")
         self.resolutionctrl = wx.TextCtrl(self.panel, -1, str(self.ResolutionAngstrom))
 
         self.list_Materials = sorted(self.dict_Materials.keys())
-        self.txtelem = wx.StaticText(self.panel, -1, 'Material Element Structure:       ')
-        self.comboElem = wx.ComboBox(self.panel, -1, self.key_material,
-                                     choices=self.list_Materials, style=wx.CB_READONLY)
+        self.txtelem = wx.StaticText(
+            self.panel, -1, "Material Element Structure:       "
+        )
+        self.comboElem = wx.ComboBox(
+            self.panel,
+            -1,
+            self.key_material,
+            choices=self.list_Materials,
+            style=wx.CB_READONLY,
+        )
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.EnterComboElem)
 
-#         for k, key_material in enumerate(list_Materials):
-#             self.comboElem.SetString(k, str(LaueToolsframe.dict_Materials[key_material]))
-        self.txtmatrix = wx.StaticText(self.panel, -1, 'Orientation Matrix (UB)')
+        #         for k, key_material in enumerate(list_Materials):
+        #             self.comboElem.SetString(k, str(LaueToolsframe.dict_Materials[key_material]))
+        self.txtmatrix = wx.StaticText(self.panel, -1, "Orientation Matrix (UB)")
 
-        self.comboUBmatrix = wx.ComboBox(self.panel, -1, 'Input UBmatrix',
-                                     choices=list(DictLT.dict_Rot.keys()), style=wx.CB_READONLY)
+        self.comboUBmatrix = wx.ComboBox(
+            self.panel,
+            -1,
+            "Input UBmatrix",
+            choices=list(DictLT.dict_Rot.keys()),
+            style=wx.CB_READONLY,
+        )
         self.comboUBmatrix.Bind(wx.EVT_COMBOBOX, self.onSelectUBmatrix)
 
-        self.btnreplot = wx.Button(self.panel, -1, 'Replot')
+        self.btnreplot = wx.Button(self.panel, -1, "Replot")
         self.btnreplot.Bind(wx.EVT_BUTTON, self.OnReplot)
 
-        self.UpdateFromRefinement = wx.CheckBox(self.panel, -1, 'Use fitting results')
+        self.UpdateFromRefinement = wx.CheckBox(self.panel, -1, "Use fitting results")
         self.UpdateFromRefinement.SetValue(False)
 
-        self.undo_btn = wx.Button(self.panel, -1, 'Undo Replot')
+        self.undo_btn = wx.Button(self.panel, -1, "Undo Replot")
         self.undo_btn.Bind(wx.EVT_BUTTON, self.OnUndoReplot)
 
-        self.btnfilterdata = wx.Button(self.panel, -1, 'Filter Exp. Data')
+        self.btnfilterdata = wx.Button(self.panel, -1, "Filter Exp. Data")
         self.btnfilterdata.Bind(wx.EVT_BUTTON, self.BuildDataDict)
 
-        self.btnautolink = wx.Button(self.panel, -1, 'Auto. Links')
+        self.btnautolink = wx.Button(self.panel, -1, "Auto. Links")
         self.btnautolink.Bind(wx.EVT_BUTTON, self.OnAutoLink)
 
-        self.btnfilterlink = wx.Button(self.panel, -1, 'Filter Links')
+        self.btnfilterlink = wx.Button(self.panel, -1, "Filter Links")
         self.btnfilterlink.Bind(wx.EVT_BUTTON, self.BuildDataDictAfterLinks)
 
-        self.btnrefine = wx.Button(self.panel, -1, 'Refine')
+        self.btnrefine = wx.Button(self.panel, -1, "Refine")
         self.btnrefine.Bind(wx.EVT_BUTTON, self.OnRefine_UB_and_Strain)
 
-        self.btnShowResults = wx.Button(self.panel, -1, 'Show Results')
+        self.btnShowResults = wx.Button(self.panel, -1, "Show Results")
         self.btnShowResults.Bind(wx.EVT_BUTTON, self.build_FitResults_Dict)
 
-        self.btnstoreUBmat = wx.Button(self.panel, -1, 'Store UBMat')
+        self.btnstoreUBmat = wx.Button(self.panel, -1, "Store UBMat")
         self.btnstoreUBmat.Bind(wx.EVT_BUTTON, self.OnStoreMatrix)
 
-        self.use_forfit1 = wx.RadioButton(self.panel, -1, '', style=wx.RB_GROUP)
-        self.use_forfit2 = wx.RadioButton(self.panel, -1, '')
-        self.use_forfit3 = wx.RadioButton(self.panel, -1, '')
+        self.use_forfit1 = wx.RadioButton(self.panel, -1, "", style=wx.RB_GROUP)
+        self.use_forfit2 = wx.RadioButton(self.panel, -1, "")
+        self.use_forfit3 = wx.RadioButton(self.panel, -1, "")
         self.use_forfit1.SetValue(True)
-        self.txtuserefine = wx.StaticText(self.panel, -1, '<--- Use either built links for Refinement --->')
+        self.txtuserefine = wx.StaticText(
+            self.panel, -1, "<--- Use either built links for Refinement --->"
+        )
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        self.title1 = wx.StaticText(self.panel, -1, 'Fitting parameters')
+        self.title1 = wx.StaticText(self.panel, -1, "Fitting parameters")
         self.title1.SetFont(font3)
 
-        self.use_weights = wx.CheckBox(self.panel, -1, 'Use Intensity Weights')
+        self.use_weights = wx.CheckBox(self.panel, -1, "Use Intensity Weights")
         self.use_weights.SetValue(False)
-        
-        self.fitTrecip = wx.CheckBox(self.panel, -1, 'Fit Global operator')
+
+        self.fitTrecip = wx.CheckBox(self.panel, -1, "Fit Global operator")
         self.fitTrecip.SetValue(True)
 
-        self.fitorient1 = wx.CheckBox(self.panel, -1, 'Orient. 1')
+        self.fitorient1 = wx.CheckBox(self.panel, -1, "Orient. 1")
         self.fitorient1.SetValue(False)
-        self.fitorient2 = wx.CheckBox(self.panel, -1, 'Orient. 2')
+        self.fitorient2 = wx.CheckBox(self.panel, -1, "Orient. 2")
         self.fitorient2.SetValue(False)
-        self.fitorient3 = wx.CheckBox(self.panel, -1, 'Orient. 3')
+        self.fitorient3 = wx.CheckBox(self.panel, -1, "Orient. 3")
         self.fitorient3.SetValue(False)
-        
-        self.txtfitlatticeparameters = wx.StaticText(self.panel, -1, '+ ---> ')
-        
-        self.fita = wx.CheckBox(self.panel, -1, 'a')
+
+        self.txtfitlatticeparameters = wx.StaticText(self.panel, -1, "+ ---> ")
+
+        self.fita = wx.CheckBox(self.panel, -1, "a")
         self.fita.SetValue(False)
-        self.fitb = wx.CheckBox(self.panel, -1, 'b')
+        self.fitb = wx.CheckBox(self.panel, -1, "b")
         self.fitb.SetValue(False)
-        self.fitc = wx.CheckBox(self.panel, -1, 'c')
+        self.fitc = wx.CheckBox(self.panel, -1, "c")
         self.fitc.SetValue(False)
-        self.fitalpha = wx.CheckBox(self.panel, -1, 'alpha')
+        self.fitalpha = wx.CheckBox(self.panel, -1, "alpha")
         self.fitalpha.SetValue(False)
-        self.fitbeta = wx.CheckBox(self.panel, -1, 'beta')
+        self.fitbeta = wx.CheckBox(self.panel, -1, "beta")
         self.fitbeta.SetValue(False)
-        self.fitgamma = wx.CheckBox(self.panel, -1, 'gamma')
+        self.fitgamma = wx.CheckBox(self.panel, -1, "gamma")
         self.fitgamma.SetValue(False)
-        
-        self.txtfitTsparameters = wx.StaticText(self.panel, -1, 'OR + ---> ')
-        self.Ts00chck = wx.CheckBox(self.panel, -1, 'Ts00')
+
+        self.txtfitTsparameters = wx.StaticText(self.panel, -1, "OR + ---> ")
+        self.Ts00chck = wx.CheckBox(self.panel, -1, "Ts00")
         self.Ts00chck.SetValue(False)
-        self.Ts01chck = wx.CheckBox(self.panel, -1, 'Ts01')
+        self.Ts01chck = wx.CheckBox(self.panel, -1, "Ts01")
         self.Ts01chck.SetValue(False)
-        self.Ts02chck = wx.CheckBox(self.panel, -1, 'Ts02')
+        self.Ts02chck = wx.CheckBox(self.panel, -1, "Ts02")
         self.Ts02chck.SetValue(False)
-        self.Ts11chck = wx.CheckBox(self.panel, -1, 'Ts11')
+        self.Ts11chck = wx.CheckBox(self.panel, -1, "Ts11")
         self.Ts11chck.SetValue(False)
-        self.Ts12chck = wx.CheckBox(self.panel, -1, 'Ts12')
+        self.Ts12chck = wx.CheckBox(self.panel, -1, "Ts12")
         self.Ts12chck.SetValue(False)
-        self.Ts22chck = wx.CheckBox(self.panel, -1, 'Ts22')
+        self.Ts22chck = wx.CheckBox(self.panel, -1, "Ts22")
         self.Ts22chck.SetValue(False)
-        
+
         self.fita.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_latticeparams)
         self.fitb.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_latticeparams)
         self.fitc.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_latticeparams)
@@ -540,11 +582,11 @@ class Plot_RefineFrame(wx.Frame):
         self.Ts11chck.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_Tsparams)
         self.Ts12chck.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_Tsparams)
         self.Ts22chck.Bind(wx.EVT_CHECKBOX, self.Onselectfitparameters_Tsparams)
-        
-        self.incrementfilename = wx.CheckBox(self.panel, -1, 'Auto Increment .fit file')
+
+        self.incrementfilename = wx.CheckBox(self.panel, -1, "Auto Increment .fit file")
         self.incrementfilename.SetValue(True)
 
-        self.svbutton = wx.Button(self.panel, -1, 'Save Results')
+        self.svbutton = wx.Button(self.panel, -1, "Save Results")
         self.svbutton.Bind(wx.EVT_BUTTON, self.onWriteFitFile)
         self.svbutton.SetFont(font3)
 
@@ -552,57 +594,91 @@ class Plot_RefineFrame(wx.Frame):
         self._replot()
 
         # tooltips
-        self.use_weights.SetToolTipString('Weight each pair distance (separating exp. and modeled spot) by intensity of exp. spot.')
-        self.incrementfilename.SetToolTipString('If checked, increment the index appearing in the name of the results file (avoiding overwriting).')
+        self.use_weights.SetToolTipString(
+            "Weight each pair distance (separating exp. and modeled spot) by intensity of exp. spot."
+        )
+        self.incrementfilename.SetToolTipString(
+            "If checked, increment the index appearing in the name of the results file (avoiding overwriting)."
+        )
 
-        linktip = 'Maximum angle separating one exp. and one simulated spot to form a spot pairs for automatic spots linksprocedue.'
+        linktip = "Maximum angle separating one exp. and one simulated spot to form a spot pairs for automatic spots linksprocedue."
         self.txt1.SetToolTipString(linktip)
         self.matr_ctrl.SetToolTipString(linktip)
 
-        self.use_forfit1.SetToolTipString('Refine model build from automatic spots pairing')
-        self.use_forfit2.SetToolTipString('Refine model build from spots pairs selected by means of "Filter links" board.')
-        self.use_forfit3.SetToolTipString('Refine model build from spots pairs selected by means of "Show results" board.')
+        self.use_forfit1.SetToolTipString(
+            "Refine model build from automatic spots pairing"
+        )
+        self.use_forfit2.SetToolTipString(
+            'Refine model build from spots pairs selected by means of "Filter links" board.'
+        )
+        self.use_forfit3.SetToolTipString(
+            'Refine model build from spots pairs selected by means of "Show results" board.'
+        )
 
-        self.btnstoreUBmat.SetToolTipString('Store in LaueToolsGUI software the current refined orientation matrix.')
+        self.btnstoreUBmat.SetToolTipString(
+            "Store in LaueToolsGUI software the current refined orientation matrix."
+        )
 
-        self.pointButton5.SetToolTipString('Accept the current (refined) model to index the spots. Within "angular tolerance" each exp. spot will get the hkl of the nearest simulated spot. Indexed spots will not belong to the peaks list for further indexation.')
+        self.pointButton5.SetToolTipString(
+            'Accept the current (refined) model to index the spots. Within "angular tolerance" each exp. spot will get the hkl of the nearest simulated spot. Indexed spots will not belong to the peaks list for further indexation.'
+        )
 
-        self.UpdateFromRefinement.SetToolTipString('If checked, update the plot of simulated spots according to the last refined model.')
+        self.UpdateFromRefinement.SetToolTipString(
+            "If checked, update the plot of simulated spots according to the last refined model."
+        )
 
-        self.btnfilterdata.SetToolTipString('Select experimental spots to be plot and used to build a spots pairs model for refinement.')
+        self.btnfilterdata.SetToolTipString(
+            "Select experimental spots to be plot and used to build a spots pairs model for refinement."
+        )
 
-        self.btnautolink.SetToolTipString('Build automatically a list of pairs composed of exp. and simulated spots. Each pair is found from close spots withing "angular tolerance".')
+        self.btnautolink.SetToolTipString(
+            'Build automatically a list of pairs composed of exp. and simulated spots. Each pair is found from close spots withing "angular tolerance".'
+        )
 
-        self.btnfilterlink.SetToolTipString('Open a board to select pairs from those coming from the automatic spots pairing.')
+        self.btnfilterlink.SetToolTipString(
+            "Open a board to select pairs from those coming from the automatic spots pairing."
+        )
 
-        self.btnShowResults.SetToolTipString('Open a board to view results of model refinement. As with "filter links" button, some pairs can be selected to form a model to be refined.')
+        self.btnShowResults.SetToolTipString(
+            'Open a board to view results of model refinement. As with "filter links" button, some pairs can be selected to form a model to be refined.'
+        )
 
-        self.btnrefine.SetToolTipString('Start the refinement of the model of a unit cell  (orientation and strain) by minimizing the pair distances between exp. and simulated spots. List of pairs to be used in model refinement can be selected by clicking on one circular radio button.')
+        self.btnrefine.SetToolTipString(
+            "Start the refinement of the model of a unit cell  (orientation and strain) by minimizing the pair distances between exp. and simulated spots. List of pairs to be used in model refinement can be selected by clicking on one circular radio button."
+        )
 
-        self.btnreplot.SetToolTipString('Replot simulated spots (red hollow circles) according to unit cell parameters.')
+        self.btnreplot.SetToolTipString(
+            "Replot simulated spots (red hollow circles) according to unit cell parameters."
+        )
 
-        self.svbutton.SetToolTipString('write .fit file with spots belonging to the current indexation')
+        self.svbutton.SetToolTipString(
+            "write .fit file with spots belonging to the current indexation"
+        )
 
-        self.switchCoordinatesbtn.SetToolTipString('Switch coordinates: Scattering Angles/pixels')
-        
-        fittip = 'Parameters to be refined:\n'
-        fittip += '--- Global: Crystal orientation and Strain of reciprocal vectors\n'
-        fittip += 'qref = UBref Trecipref B0 G*\nwhere UBref=Rotx,y,z UBinit\n Trecipref is triangular up matrix with first element set to 1\n'
-        fittip += 'If Checked: next boxes will not be considered\n\n'
-        fittip += '--- Crystal orientation and Unit cell lattice parameters a,b,c,alpha, beta, gamma except that one distance must be fixed\n'
-        fittip += '(default a is set to a of the reference structure)\n'
-        fittip += 'qref = UBref B0 G*\n where UBref=Rotx,y,z UBinit Mref,\nMref is triangular up matrix with first element set to 1\n'
-        fittip += '\n     OR      \n\n'
-        fittip += '--- Crystal orientation and Strain in sample frame (tilted by 40deg)\n'
-        fittip += '6 elements of Ts which is a triangular up matrix, except that one element must be fixed'
-        fittip += 'qref = Tref Uref B0 G*\n'
-        fittip += 'with Tref= P-1 Tsref P\n'
-        fittip += 'P conversion matrix from sample frame to Lauetools one\n'
-        fittip += '     (Ts00  Ts01   Ts02)\n'
-        fittip += 'Ts=  (0     Ts11   Ts12)\n'
-        fittip += '     (0     0      Ts22)\n'
-        fittip += 'default value= Ts00 Ts11 Ts22 = 1 and Ts01 Ts02 Ts12 =0'
-        
+        self.switchCoordinatesbtn.SetToolTipString(
+            "Switch coordinates: Scattering Angles/pixels"
+        )
+
+        fittip = "Parameters to be refined:\n"
+        fittip += "--- Global: Crystal orientation and Strain of reciprocal vectors\n"
+        fittip += "qref = UBref Trecipref B0 G*\nwhere UBref=Rotx,y,z UBinit\n Trecipref is triangular up matrix with first element set to 1\n"
+        fittip += "If Checked: next boxes will not be considered\n\n"
+        fittip += "--- Crystal orientation and Unit cell lattice parameters a,b,c,alpha, beta, gamma except that one distance must be fixed\n"
+        fittip += "(default a is set to a of the reference structure)\n"
+        fittip += "qref = UBref B0 G*\n where UBref=Rotx,y,z UBinit Mref,\nMref is triangular up matrix with first element set to 1\n"
+        fittip += "\n     OR      \n\n"
+        fittip += (
+            "--- Crystal orientation and Strain in sample frame (tilted by 40deg)\n"
+        )
+        fittip += "6 elements of Ts which is a triangular up matrix, except that one element must be fixed"
+        fittip += "qref = Tref Uref B0 G*\n"
+        fittip += "with Tref= P-1 Tsref P\n"
+        fittip += "P conversion matrix from sample frame to Lauetools one\n"
+        fittip += "     (Ts00  Ts01   Ts02)\n"
+        fittip += "Ts=  (0     Ts11   Ts12)\n"
+        fittip += "     (0     0      Ts22)\n"
+        fittip += "default value= Ts00 Ts11 Ts22 = 1 and Ts01 Ts02 Ts12 =0"
+
         self.fitTrecip.SetToolTipString(fittip)
         self.fitorient1.SetToolTipString(fittip)
         self.fitorient2.SetToolTipString(fittip)
@@ -619,9 +695,9 @@ class Plot_RefineFrame(wx.Frame):
         self.Ts11chck.SetToolTipString(fittip)
         self.Ts12chck.SetToolTipString(fittip)
         self.Ts22chck.SetToolTipString(fittip)
-        
-        self.enterUBbtn.SetToolTipString('Enter Orientation Matrix UB')
-        
+
+        self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
+
     def _layout(self):
         """ layout
         """
@@ -632,20 +708,20 @@ class Plot_RefineFrame(wx.Frame):
 
         energy0Sizer = wx.BoxSizer(wx.HORIZONTAL)
         energy0Sizer.Add(self.eminmaxtxt, 0, wx.ALL)
-        energy0Sizer.Add(wx.StaticText(self.panel,-1,'        '), 0, wx.ALL)
+        energy0Sizer.Add(wx.StaticText(self.panel, -1, "        "), 0, wx.ALL)
         energy0Sizer.Add(self.resolutiontxt, 0, wx.ALL)
 
         energy1Sizer = wx.BoxSizer(wx.HORIZONTAL)
         energy1Sizer.Add(self.SCEmin, 0, wx.ALL)
         energy1Sizer.Add(self.SCEmax, 0, wx.ALL)
-        energy1Sizer.Add(wx.StaticText(self.panel, -1, '    '), 0, wx.ALL)
+        energy1Sizer.Add(wx.StaticText(self.panel, -1, "    "), 0, wx.ALL)
         energy1Sizer.Add(self.resolutionctrl, 0, wx.ALL)
 
         fitparamSizer = wx.BoxSizer(wx.HORIZONTAL)
         fitparamSizer.Add(self.fitorient1, 0, wx.ALL)
         fitparamSizer.Add(self.fitorient2, 0, wx.ALL)
         fitparamSizer.Add(self.fitorient3, 0, wx.ALL)
-        
+
         fitparam2Sizer = wx.BoxSizer(wx.HORIZONTAL)
         fitparam2Sizer.Add(self.txtfitlatticeparameters, 0, wx.ALL)
         fitparam2Sizer.Add(self.fita, 0, wx.ALL)
@@ -654,7 +730,7 @@ class Plot_RefineFrame(wx.Frame):
         fitparam2Sizer.Add(self.fitalpha, 0, wx.ALL)
         fitparam2Sizer.Add(self.fitbeta, 0, wx.ALL)
         fitparam2Sizer.Add(self.fitgamma, 0, wx.ALL)
-        
+
         fitparam3Sizer = wx.BoxSizer(wx.HORIZONTAL)
         fitparam3Sizer.Add(self.txtfitTsparameters, 0, wx.ALL)
         fitparam3Sizer.Add(self.Ts00chck, 0, wx.ALL)
@@ -665,18 +741,44 @@ class Plot_RefineFrame(wx.Frame):
         fitparam3Sizer.Add(self.Ts22chck, 0, wx.ALL)
 
         if WXPYTHON4:
-            vbox3 = wx.GridSizer(3, 10,10)
+            vbox3 = wx.GridSizer(3, 10, 10)
         else:
             vbox3 = wx.GridSizer(2, 3)
-            
-        vbox3.AddMany([ (self.btnautolink, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (self.btnfilterlink, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (self.btnShowResults, 0 , wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
 
-                        (self.use_forfit1, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (self.use_forfit2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (self.use_forfit3, 0 , wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
-                        ])
+        vbox3.AddMany(
+            [
+                (
+                    self.btnautolink,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+                (
+                    self.btnfilterlink,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+                (
+                    self.btnShowResults,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+                (
+                    self.use_forfit1,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+                (
+                    self.use_forfit2,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+                (
+                    self.use_forfit3,
+                    0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                ),
+            ]
+        )
 
         plotparSizer = wx.BoxSizer(wx.HORIZONTAL)
         plotparSizer.Add(self.btnreplot, 0, wx.ALL)
@@ -697,19 +799,19 @@ class Plot_RefineFrame(wx.Frame):
         hbox2.Add(self.imagescalebtn, 0, wx.ALL)
         hbox2.Add(self.noisebtn, 0, wx.ALL)
         hbox2.Add(self.enterUBbtn, 0, wx.ALL)
-        
+
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
         hbox3.Add(self.txtelem, 0, wx.ALL)
         hbox3.Add(self.txtmatrix, 0, wx.ALL)
-        
+
         hbox4 = wx.BoxSizer(wx.HORIZONTAL)
         hbox4.Add(self.comboElem, 0, wx.ALL)
         hbox4.Add(self.comboUBmatrix, 0, wx.ALL)
-        
+
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
         hbox5.Add(self.use_weights, 0, wx.ALL)
         hbox5.Add(self.incrementfilename, 0, wx.ALL)
- 
+
         sizerparam = wx.BoxSizer(wx.VERTICAL)
         sizerparam.Add(hbox2, 0, wx.ALL)
         sizerparam.Add(hbox, 0, wx.ALL)
@@ -749,63 +851,88 @@ class Plot_RefineFrame(wx.Frame):
         self.panel.SetSizer(sizerH)
         sizerH.Fit(self)
         self.Layout()
-                
+
     def Onselectfitparameters_latticeparams(self, evt):
         self.fitTrecip.SetValue(False)
-        if self.fita.GetValue() or \
-            self.fitb.GetValue() or \
-            self.fitc.GetValue() or \
-            self.fitalpha.GetValue() or \
-            self.fitbeta.GetValue() or \
-            self.fitgamma.GetValue():
-            for chck in (self.Ts00chck, self.Ts01chck, self.Ts02chck, self.Ts11chck, self.Ts12chck, self.Ts22chck):
+        if (
+            self.fita.GetValue()
+            or self.fitb.GetValue()
+            or self.fitc.GetValue()
+            or self.fitalpha.GetValue()
+            or self.fitbeta.GetValue()
+            or self.fitgamma.GetValue()
+        ):
+            for chck in (
+                self.Ts00chck,
+                self.Ts01chck,
+                self.Ts02chck,
+                self.Ts11chck,
+                self.Ts12chck,
+                self.Ts22chck,
+            ):
                 chck.SetValue(False)
+
     def Onselectfitparameters_Tsparams(self, evt):
         self.fitTrecip.SetValue(False)
-        if self.Ts00chck.GetValue() or \
-            self.Ts01chck.GetValue() or \
-            self.Ts02chck.GetValue() or \
-            self.Ts11chck.GetValue() or \
-            self.Ts12chck.GetValue() or \
-            self.Ts22chck.GetValue():
-            for chck in (self.fita, self.fitb, self.fitc, self.fitalpha, self.fitbeta, self.fitgamma):
+        if (
+            self.Ts00chck.GetValue()
+            or self.Ts01chck.GetValue()
+            or self.Ts02chck.GetValue()
+            or self.Ts11chck.GetValue()
+            or self.Ts12chck.GetValue()
+            or self.Ts22chck.GetValue()
+        ):
+            for chck in (
+                self.fita,
+                self.fitb,
+                self.fitc,
+                self.fitalpha,
+                self.fitbeta,
+                self.fitgamma,
+            ):
                 chck.SetValue(False)
-            
+
     def onSetImageScale(self, evt):
         """
         open a board to change image scale
         """
-        IScaleBoard = IntensityScaleBoard(self, -1, 'Image & scale setting Board',
-                                                self.data_dict)
+        IScaleBoard = IntensityScaleBoard(
+            self, -1, "Image & scale setting Board", self.data_dict
+        )
 
         IScaleBoard.Show(True)
-#         PlotLismitsBoard.ShowModal()
-#         PlotLismitsBoard.Destroy()
 
-#         self._replot()
+    #         PlotLismitsBoard.ShowModal()
+    #         PlotLismitsBoard.Destroy()
+
+    #         self._replot()
 
     def onSetNoise(self, evt):
         """
         open a board to add noise in experimental data
         """
-        NLevelBoard = NoiseLevelBoard(self, -1, 'Noise level setting Board',
-                                                self.data_dict)
+        NLevelBoard = NoiseLevelBoard(
+            self, -1, "Noise level setting Board", self.data_dict
+        )
 
         NLevelBoard.Show(True)
-        
-    def onEnterMatrix(self, evt):
-        
-        helptstr = 'Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]'
-        helptstr += ' Or list of Matrices'
-        dlg = wx.TextEntryDialog(self, helptstr, 'Calibration- Orientation Matrix elements Entry')
 
-        _param = '[[1,0,0],[0, 1,0],[0, 0,1]]'
+    def onEnterMatrix(self, evt):
+
+        helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
+        helptstr += " Or list of Matrices"
+        dlg = wx.TextEntryDialog(
+            self, helptstr, "Calibration- Orientation Matrix elements Entry"
+        )
+
+        _param = "[[1,0,0],[0, 1,0],[0, 0,1]]"
         dlg.SetValue(_param)
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
             import re
-            listval = re.split('[ ()\[\)\;\,\]\n\t\a\b\f\r\v]', paramraw)
-#             print "listval", listval
+
+            listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+            #             print "listval", listval
             listelem = []
             for elem in listval:
                 try:
@@ -813,17 +940,17 @@ class Plot_RefineFrame(wx.Frame):
                     listelem.append(val)
                 except ValueError:
                     continue
-            
+
             nbval = len(listelem)
-#             print "nbval", nbval
-            
+            #             print "nbval", nbval
+
             if (nbval % 9) != 0:
                 txt = "Something wrong, I can't read matrix or matrices"
                 print(txt)
-                
-                wx.MessageBox(txt, 'INFO')
+
+                wx.MessageBox(txt, "INFO")
                 return
-            
+
             nbmatrices = nbval / 9
             ListMatrices = np.zeros((nbmatrices, 3, 3))
             ind_elem = 0
@@ -833,37 +960,37 @@ class Plot_RefineFrame(wx.Frame):
                         floatval = listelem[ind_elem]
                         ListMatrices[ind_matrix][i][j] = floatval
                         ind_elem += 1
-            
+
             # save in list of orientation matrix
             # default name
-            inputmatrixname = 'InputMat_'
-            
+            inputmatrixname = "InputMat_"
+
             initlength = len(DictLT.dict_Rot)
             for k, mat in enumerate(ListMatrices):
-                mname = inputmatrixname + '%d' % k
+                mname = inputmatrixname + "%d" % k
                 DictLT.dict_Rot[mname] = mat
                 self.comboUBmatrix.Append(mname)
             print("len dict", len(DictLT.dict_Rot))
-                
+
             # or combo.Clear  combo.Appenditems(dict.rot)
-#             listrot = DictLT.dict_Rot.keys()
-#             sorted(listrot)
-#             self.crystalparampanel.comboMatrix.choices = listrot
+            #             listrot = DictLT.dict_Rot.keys()
+            #             sorted(listrot)
+            #             self.crystalparampanel.comboMatrix.choices = listrot
             self.comboUBmatrix.SetSelection(initlength)
-#             self.crystalparampanel.comboMatrix.SetValue(inputmatrixname + '0')
-                
+            #             self.crystalparampanel.comboMatrix.SetValue(inputmatrixname + '0')
+
             dlg.Destroy()
 
             self.OnReplot(evt)
 
     def setDatacoordinates(self):
-        if self.datatype == '2thetachi':
-#             self.tth, self.chi = self.Data_X, self.Data_Y
+        if self.datatype == "2thetachi":
+            #             self.tth, self.chi = self.Data_X, self.Data_Y
             self.tth, self.chi = self.data_2thetachi
             self.pixelX, self.pixelY = self.data_XY
-        elif self.datatype == 'gnomon':
+        elif self.datatype == "gnomon":
             pass
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             self.tth, self.chi = self.data_2thetachi
             self.pixelX, self.pixelY = self.data_XY
             print("pixels plot")
@@ -872,41 +999,41 @@ class Plot_RefineFrame(wx.Frame):
         """
         returns plot limits from experimental data 
         """
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             return get2Dlimits(self.tth, self.chi)
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             if self.pixelX is None:
-                return (0,2300),(0,2300)
+                return (0, 2300), (0, 2300)
             return get2Dlimits(self.pixelX, self.pixelY)
-        
+
     def OnSwitchCoords(self, evt):
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             print("was 2theta")
-            self.datatype = 'pixels'
-            
-        elif self.datatype == 'pixels':
+            self.datatype = "pixels"
+
+        elif self.datatype == "pixels":
             print("was pixels")
-            self.datatype = '2thetachi'
-            
+            self.datatype = "2thetachi"
+
         self.setDatacoordinates()
 
         print("space coordinates is now:", self.datatype)
         self.datatype_unchanged = False
-        
+
         self.setplotlimits_fromdata()
 
         self._replot()
 
     def onMouseOver(self, evt):
         name = evt.GetEventObject().GetClassName()
-        self.sb.SetStatusText(name + ' widget' + '     ' + str(evt.GetEventObject()))
-        print('I am on it!')
+        self.sb.SetStatusText(name + " widget" + "     " + str(evt.GetEventObject()))
+        print("I am on it!")
         print(evt.GetEventObject())
         print(name)
         evt.Skip()
 
     def onMouseLeave(self, evt):
-        self.sb.SetStatusText('')
+        self.sb.SetStatusText("")
         print("I leave")
         evt.Skip()
 
@@ -932,12 +1059,12 @@ class Plot_RefineFrame(wx.Frame):
 
             Grain = self.SimulParam[0]
             Grain[3] = keymaterial
-            
+
             Grain[2] = DictLT.dict_Rot[str(self.comboUBmatrix.GetValue())]
 
             if self.UpdateFromRefinement.GetValue():
                 print("Using refined UB matrix")
-#                 if self.Umat != None and self.Bmat != None:
+                #                 if self.Umat != None and self.Bmat != None:
                 if self.fit_completed:
                     # this comes from the end of onrefinePicky()
                     # self.UBmat = UBmat
@@ -957,25 +1084,28 @@ class Plot_RefineFrame(wx.Frame):
                     Grain[0] = np.eye(3)
 
                 else:
-                    wx.MessageBox('You have not refined data yet !\n I will keep using non distorted matrices...', 'INFO')
+                    wx.MessageBox(
+                        "You have not refined data yet !\n I will keep using non distorted matrices...",
+                        "INFO",
+                    )
 
             self.SimulParam = (Grain, Emin, Emax)
             resActrl = self.resolutionctrl.GetValue()
-            if resActrl in ('False', 'None', None, 0, '0', '0.0'):
+            if resActrl in ("False", "None", None, 0, "0", "0.0"):
                 self.ResolutionAngstrom = False
             else:
                 self.ResolutionAngstrom = float(resActrl)
             self.Simulate_Pattern()
             self._replot()
         else:
-            wx.MessageBox('There is not simulated data to replot !!', 'INFO')
+            wx.MessageBox("There is not simulated data to replot !!", "INFO")
 
     def onClick(self, event):
         """ onclick
         """
-#        print 'clicked on mouse'
+        #        print 'clicked on mouse'
         if event.inaxes:
-#            print("inaxes", event)
+            #            print("inaxes", event)
             print(("inaxes x,y", event.x, event.y))
             print(("inaxes  xdata, ydata", event.xdata, event.ydata))
             self.centerx, self.centery = event.xdata, event.ydata
@@ -996,50 +1126,65 @@ class Plot_RefineFrame(wx.Frame):
         collisionFound_exp = False
         collisionFound_theo = False
 
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             xtol = 5
             ytol = 5
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             xtol = 200
             ytol = 200
 
         # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
         # self.Data_index_expspot = np.arange(len(self.Data_X))
         # """
-        if self.datatype == '2thetachi':
-            xdata, ydata, _annotes_exp = (self.Data_X,
-                                 self.Data_Y,
-                                 list(zip(self.Data_index_expspot, self.Data_I)))
-        elif self.datatype == 'pixels':
-            xdata, ydata, _annotes_exp = (self.data_XY[0], self.data_XY[1],
-                                 list(zip(self.Data_index_expspot, self.Data_I)))
+        if self.datatype == "2thetachi":
+            xdata, ydata, _annotes_exp = (
+                self.Data_X,
+                self.Data_Y,
+                list(zip(self.Data_index_expspot, self.Data_I)),
+            )
+        elif self.datatype == "pixels":
+            xdata, ydata, _annotes_exp = (
+                self.data_XY[0],
+                self.data_XY[1],
+                list(zip(self.Data_index_expspot, self.Data_I)),
+            )
 
-        xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
-                                                self.data_theo[1],
-                                                list(zip(*self.data_theo[2:])))
+        xdata_theo, ydata_theo, _annotes_theo = (
+            self.data_theo[0],
+            self.data_theo[1],
+            list(zip(*self.data_theo[2:])),
+        )
 
-#         print "exp. DATA:    \n\n\n", xdata[:5], ydata[:5], _annotes_exp[:5]
-#         print "theo. DATA:    \n\n\n", xdata_theo[:5], ydata_theo[:5], _annotes_theo[:5]
+        #         print "exp. DATA:    \n\n\n", xdata[:5], ydata[:5], _annotes_exp[:5]
+        #         print "theo. DATA:    \n\n\n", xdata_theo[:5], ydata_theo[:5], _annotes_theo[:5]
 
         if event.xdata != None and event.ydata != None:
 
             clickX = event.xdata
             clickY = event.ydata
 
-#             print 'clickX,clickY in onMotion_ToolTip', clickX, clickY
+            #             print 'clickX,clickY in onMotion_ToolTip', clickX, clickY
 
             annotes_exp = []
             for x, y, aexp in zip(xdata, ydata, _annotes_exp):
-                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
-#                     print "got exp. spot!! at x,y", x, y
-                    annotes_exp.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, aexp))
+                if (clickX - xtol < x < clickX + xtol) and (
+                    clickY - ytol < y < clickY + ytol
+                ):
+                    #                     print "got exp. spot!! at x,y", x, y
+                    annotes_exp.append(
+                        (GT.cartesiandistance(x, clickX, y, clickY), x, y, aexp)
+                    )
 
             annotes_theo = []
             for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
-                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
-#                     print "got theo. spot!!"
-#                     print "with info: ", atheo
-                    annotes_theo.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo))
+                if (clickX - xtol < x < clickX + xtol) and (
+                    clickY - ytol < y < clickY + ytol
+                ):
+                    #                     print "got theo. spot!!"
+                    #                     print "with info: ", atheo
+                    annotes_theo.append(
+                        (GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo)
+                    )
 
             if annotes_exp != []:
                 collisionFound_exp = True
@@ -1049,13 +1194,13 @@ class Plot_RefineFrame(wx.Frame):
             if not collisionFound_exp and not collisionFound_theo:
                 return
 
-            tip_exp = ''
-            tip_theo = ''
-            if self.datatype == '2thetachi':
-                closedistance = 2.
-            elif self.datatype == 'pixels':
-                closedistance = 100.
-                
+            tip_exp = ""
+            tip_theo = ""
+            if self.datatype == "2thetachi":
+                closedistance = 2.0
+            elif self.datatype == "pixels":
+                closedistance = 100.0
+
             if collisionFound_exp:
                 annotes_exp.sort()
                 _distanceexp, x, y, annote_exp = annotes_exp[0]
@@ -1064,40 +1209,53 @@ class Plot_RefineFrame(wx.Frame):
                 if _distanceexp < closedistance:
                     print("\nthe nearest exp point is at(%.2f,%.2f)" % (x, y))
                     print("with info ", annote_exp)
-                    tip_exp = "spot index=%d. Intensity=%.1f" % \
-                                    (annote_exp[0], annote_exp[1])
-                    self.updateStatusBar(x, y, annote_exp, spottype='exp')
+                    tip_exp = "spot index=%d. Intensity=%.1f" % (
+                        annote_exp[0],
+                        annote_exp[1],
+                    )
+                    self.updateStatusBar(x, y, annote_exp, spottype="exp")
                 else:
-                    self.sb.SetStatusText('', 1)
-                    tip_exp = ''
+                    self.sb.SetStatusText("", 1)
+                    tip_exp = ""
                     collisionFound_exp = False
 
             if collisionFound_theo:
                 annotes_theo.sort()
-#                 print 'annotes_theo', annotes_theo
+                #                 print 'annotes_theo', annotes_theo
                 _distancetheo, x, y, annote_theo = annotes_theo[0]
-                
+
                 # if theo spot is close enough
                 if _distancetheo < closedistance:
                     print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
                     print("with info (hkl, other coordinates, energy)", annote_theo)
-                    
-                    tip_theo = "[h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
-                    if self.datatype == 'pixels': 
-                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % \
-                                    (x, y, annote_theo[1], annote_theo[2])
-                    if self.datatype == '2thetachi':
-                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % \
-                                    (annote_theo[1], annote_theo[2], x, y)
-                    self.updateStatusBar(x, y, annote_theo, spottype='theo')
+
+                    tip_theo = "[h k l]=%s Energy=%.2f keV" % (
+                        str(annote_theo[0]),
+                        annote_theo[3],
+                    )
+                    if self.datatype == "pixels":
+                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            x,
+                            y,
+                            annote_theo[1],
+                            annote_theo[2],
+                        )
+                    if self.datatype == "2thetachi":
+                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            annote_theo[1],
+                            annote_theo[2],
+                            x,
+                            y,
+                        )
+                    self.updateStatusBar(x, y, annote_theo, spottype="theo")
                 else:
-                    self.sb.SetStatusText('', 0)
-                    tip_theo = ''
+                    self.sb.SetStatusText("", 0)
+                    tip_theo = ""
                     collisionFound_theo = False
 
             if collisionFound_exp or collisionFound_theo:
-                if tip_exp is not '':
-                    fulltip = tip_exp + '\n' + tip_theo
+                if tip_exp is not "":
+                    fulltip = tip_exp + "\n" + tip_theo
                 else:
                     fulltip = tip_theo
 
@@ -1106,11 +1264,12 @@ class Plot_RefineFrame(wx.Frame):
                 return
 
         if not collisionFound_exp and not collisionFound_theo:
-            self.tooltip.SetTip('')
+            self.tooltip.SetTip("")
             # set to False to avoid blocked tooltips from btns and checkboxes on windows platforms
-#             self.tooltip.Enable(False)
 
-    #--- ---------Spot Links Editor
+    #             self.tooltip.Enable(False)
+
+    # --- ---------Spot Links Editor
     def BuildDataDict(self, evt):  # filter Exp Data spots
         """
         in Plot_RefineFrame class
@@ -1119,33 +1278,37 @@ class Plot_RefineFrame(wx.Frame):
         
         Filter exp. spots data to be displayed 
         """
-        
+
         C0 = self.selectedAbsoluteSpotIndices_init
-        AllDataToIndex=self.IndexationParameters['AllDataToIndex']
-        
-        C1=2.*AllDataToIndex['data_theta'][C0]
-        C2=AllDataToIndex['data_chi'][C0]
-        C3=AllDataToIndex['data_I'][C0]
-        C4=AllDataToIndex['data_pixX'][C0]
-        C5=AllDataToIndex['data_pixY'][C0]
-        
-        if self.datatype is '2thetachi':
-            fields = ['Spot index', '2theta', 'Chi', 'Intensity']
-            
+        AllDataToIndex = self.IndexationParameters["AllDataToIndex"]
+
+        C1 = 2.0 * AllDataToIndex["data_theta"][C0]
+        C2 = AllDataToIndex["data_chi"][C0]
+        C3 = AllDataToIndex["data_I"][C0]
+        C4 = AllDataToIndex["data_pixX"][C0]
+        C5 = AllDataToIndex["data_pixY"][C0]
+
+        if self.datatype is "2thetachi":
+            fields = ["Spot index", "2theta", "Chi", "Intensity"]
+
             to_put_in_dict = C0, C1, C2, C3
-            
-        if self.datatype is 'pixels':
-            fields = ['Spot index', 'pixelX', 'pixelY', 'Intensity','2Theta', 'Chi']
 
-            to_put_in_dict = C0, C4,C5, C3, C1, C2
+        if self.datatype is "pixels":
+            fields = ["Spot index", "pixelX", "pixelY", "Intensity", "2Theta", "Chi"]
 
+            to_put_in_dict = C0, C4, C5, C3, C1, C2
 
         mySpotData = {}
         for k, ff in enumerate(fields):
             mySpotData[ff] = to_put_in_dict[k]
-        dia = LSEditor.SpotsEditor(None, -1, 'Filter Experimental Spots Data', mySpotData,
-                                   func_to_call=self.readdata_fromEditor,
-                                   field_name_and_order=fields)
+        dia = LSEditor.SpotsEditor(
+            None,
+            -1,
+            "Filter Experimental Spots Data",
+            mySpotData,
+            func_to_call=self.readdata_fromEditor,
+            field_name_and_order=fields,
+        )
         dia.Show(True)
 
     def readdata_fromEditor(self, data):
@@ -1153,33 +1316,44 @@ class Plot_RefineFrame(wx.Frame):
         update exp. spots data according to the user selected filter
         """
         selectedSpotsPropsarray = data.T
-        
-        
-        col0=selectedSpotsPropsarray[0]
-        col1,col2,col3 = selectedSpotsPropsarray[1:4]
-        
-        self.selectedAbsoluteSpotIndices = np.array(col0,dtype=np.int)
-        
-        if self.datatype is '2thetachi':
-            
-            self.data_2thetachi = col1,col2
-            self.tth, self.chi = col1,col2
-            self.Data_I=col3
+
+        col0 = selectedSpotsPropsarray[0]
+        col1, col2, col3 = selectedSpotsPropsarray[1:4]
+
+        self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int)
+
+        if self.datatype is "2thetachi":
+
+            self.data_2thetachi = col1, col2
+            self.tth, self.chi = col1, col2
+            self.Data_I = col3
             # pixelX pixelY
-            self.data_XY = (self.IndexationParameters['AllDataToIndex']['data_pixX'][self.selectedAbsoluteSpotIndices],
-                            self.IndexationParameters['AllDataToIndex']['data_pixY'][self.selectedAbsoluteSpotIndices])
-            self.pixelX,self.pixelY  = self.data_XY
-        
+            self.data_XY = (
+                self.IndexationParameters["AllDataToIndex"]["data_pixX"][
+                    self.selectedAbsoluteSpotIndices
+                ],
+                self.IndexationParameters["AllDataToIndex"]["data_pixY"][
+                    self.selectedAbsoluteSpotIndices
+                ],
+            )
+            self.pixelX, self.pixelY = self.data_XY
+
             print("\n****SELECTED and DISPLAYED PART OF EXPERIMENTAL SPOTS\n")
-        if self.datatype is 'pixels':
-            col4,col5=selectedSpotsPropsarray[4:6]
-            self.data_2thetachi = col4,col5
-            self.tth, self.chi = col4,col5
-            self.Data_I=col3
-            self.data_XY = (self.IndexationParameters['AllDataToIndex']['data_pixX'][self.selectedAbsoluteSpotIndices],
-                            self.IndexationParameters['AllDataToIndex']['data_pixY'][self.selectedAbsoluteSpotIndices])
-            self.pixelX,self.pixelY  = self.data_XY
-        
+        if self.datatype is "pixels":
+            col4, col5 = selectedSpotsPropsarray[4:6]
+            self.data_2thetachi = col4, col5
+            self.tth, self.chi = col4, col5
+            self.Data_I = col3
+            self.data_XY = (
+                self.IndexationParameters["AllDataToIndex"]["data_pixX"][
+                    self.selectedAbsoluteSpotIndices
+                ],
+                self.IndexationParameters["AllDataToIndex"]["data_pixY"][
+                    self.selectedAbsoluteSpotIndices
+                ],
+            )
+            self.pixelX, self.pixelY = self.data_XY
+
         # update experimental spots display
         self._replot()
 
@@ -1190,52 +1364,60 @@ class Plot_RefineFrame(wx.Frame):
         TODO: use a similar autolink function with indexingspotsset
         """
         if self.SimulParam is None:
-            wx.MessageBox('There is not simulated data to plot and match with experimental data !!', 'INFO')
+            wx.MessageBox(
+                "There is not simulated data to plot and match with experimental data !!",
+                "INFO",
+            )
             return
         print("\n ******  Matching Theo. and Exp. spots ***********\n")
 
         veryclose_angletol = float(self.matr_ctrl.GetValue())  # in degrees
         # ---------  theoretical data
-        (twicetheta, chi,
-         Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
+        (twicetheta, chi, Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
 
         # whole experimental data
         # twicetheta_exp, chi_exp, dataintensity_exp = F2TC.Compute_data2thetachi(self.filename,
-                                                                            # (0, 1, self.colI),
-                                                                            # 0,
-                                                                            # param = self.paramDet,
-                                                                            # pixelsize = self.pixelsize,
-                                                                            # signgam = SIGN_OF_GAMMA,
-                                                                            # framedim = self.framedim # only for peaks coming from fit2d doing an y direction inversion
-                                                                            # )[:3]
+        # (0, 1, self.colI),
+        # 0,
+        # param = self.paramDet,
+        # pixelsize = self.pixelsize,
+        # signgam = SIGN_OF_GAMMA,
+        # framedim = self.framedim # only for peaks coming from fit2d doing an y direction inversion
+        # )[:3]
 
         # selected exp. spots ------------------
         # starting from(may be filtered) experimental data
-        if self.datatype == '2thetachi':
-#             twicetheta_exp, chi_exp, dataintensity_exp = self.data[:3]
+        if self.datatype == "2thetachi":
+            #             twicetheta_exp, chi_exp, dataintensity_exp = self.data[:3]
             twicetheta_exp, chi_exp, dataintensity_exp = self.tth, self.chi, self.Data_I
-            
-#             print "twicetheta_exp",twicetheta_exp
-            print('nb of spots in OnAutoLink',len(twicetheta_exp))
-        elif self.datatype == 'pixels':
+
+            #             print "twicetheta_exp",twicetheta_exp
+            print("nb of spots in OnAutoLink", len(twicetheta_exp))
+        elif self.datatype == "pixels":
             twicetheta_exp, chi_exp = self.tth, self.chi
             dataintensity_exp = self.Data_I
 
         print("Nb of exp. spots", len(twicetheta_exp))
-        print("exp",twicetheta_exp)
-        print("chi_exp",chi_exp)
-        print("theo",twicetheta)
+        print("exp", twicetheta_exp)
+        print("chi_exp", chi_exp)
+        print("theo", twicetheta)
         # toc = []
         # for k,val in enumerate(Miller_ind):
-            # toc.append([k,val])
+        # toc.append([k,val])
 
         # print "toc", toc
         # print "exp", twicetheta_exp, chi_exp
-        Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
-                                                        twicetheta_exp / 2., chi_exp,  # warning theta, chi for exp
-                                                        proxtable=1, angtol=5.,
-                                                        verbose=0,
-                                                        signchi=1)[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+        Resi, ProxTable = matchingrate.getProximity(
+            np.array([twicetheta, chi]),  # warning array(2theta, chi)
+            twicetheta_exp / 2.0,
+            chi_exp,  # warning theta, chi for exp
+            proxtable=1,
+            angtol=5.0,
+            verbose=0,
+            signchi=1,
+        )[
+            :2
+        ]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
 
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
@@ -1260,11 +1442,15 @@ class Plot_RefineFrame(wx.Frame):
                 Miller_Exp_spot.append(Miller_ind[theospot_ind])
                 Energy_Exp_spot.append(energy[theospot_ind])
 
-#         print "List_Exp_spot_close", List_Exp_spot_close
-#         print "Miller_Exp_spot", Miller_Exp_spot
+        #         print "List_Exp_spot_close", List_Exp_spot_close
+        #         print "Miller_Exp_spot", Miller_Exp_spot
 
         if List_Exp_spot_close == []:
-            wx.MessageBox('No links have been found for tolerance angle : %.2f deg' % veryclose_angletol, 'INFO')
+            wx.MessageBox(
+                "No links have been found for tolerance angle : %.2f deg"
+                % veryclose_angletol,
+                "INFO",
+            )
             return
 
         # removing exp spot which appears many times(close to several simulated spots of one grain)--------------
@@ -1285,8 +1471,9 @@ class Plot_RefineFrame(wx.Frame):
 
         if len(toremoveindex) > 0:
             # index of exp spot in arrayLESC that are duplicated
-            ambiguous_exp_ind = GT.find_closest(np.array(sorted_LESC[toremoveindex], dtype=float),
-                                                arrayLESC, .1)[1]
+            ambiguous_exp_ind = GT.find_closest(
+                np.array(sorted_LESC[toremoveindex], dtype=float), arrayLESC, 0.1
+            )[1]
             # print "ambiguous_exp_ind", ambiguous_exp_ind
 
             # marking exp spots(belonging ambiguously to several simulated grains)
@@ -1313,13 +1500,15 @@ class Plot_RefineFrame(wx.Frame):
                 # print "closest",closest
                 # print "where_exp_ind[closest]",where_th_ind[closest]
                 # print "Resi[where_th_ind[closest]]", Resi[where_th_ind[closest]]
-                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[where_th_ind[closest]]
+                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[
+                    where_th_ind[closest]
+                ]
 
         # ------------------------------------------------------------------
         # print "ProxTable after duplicate removal tagging"
         # print ProxTablecopy
 
-#         print "len List_Exp_spot_close", len(List_Exp_spot_close)
+        #         print "len List_Exp_spot_close", len(List_Exp_spot_close)
         # print "Results",[Miller_Exp_spot, List_Exp_spot_close]
 
         singleindices = []
@@ -1337,23 +1526,36 @@ class Plot_RefineFrame(wx.Frame):
                 # print "exp_index", exp_index
                 # print "theo_index", theo_index
 
-                if len(theo_index) == 1:  # only one theo spot close to the current exp. spot
+                if (
+                    len(theo_index) == 1
+                ):  # only one theo spot close to the current exp. spot
                     # print "add in dict refine_indexed_spots\n"
-                    refine_indexed_spots[exp_index] = [exp_index, theo_index, Miller_Exp_spot[k]]  # expindex,[h,k,l]
+                    refine_indexed_spots[exp_index] = [
+                        exp_index,
+                        theo_index,
+                        Miller_Exp_spot[k],
+                    ]  # expindex,[h,k,l]
                 # else:  # test whether all theo spots are harmonics
-                    # ar_miller = np.take(Miller_ind, theo_index, axis =0)
-                    # print "ar_miller",ar_miller
-                    # filtered_miller = FindO.FilterHarmonics(ar_miller)
-                    # if len(filtered_miller) == 1:
-                        # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_Exp_spot[k]]  # expindex,[h,k,l]
+                # ar_miller = np.take(Miller_ind, theo_index, axis =0)
+                # print "ar_miller",ar_miller
+                # filtered_miller = FindO.FilterHarmonics(ar_miller)
+                # if len(filtered_miller) == 1:
+                # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_Exp_spot[k]]  # expindex,[h,k,l]
                 else:  # recent PATCH:
                     # print "Resi[theo_index]", Resi[theo_index]
                     closest_theo_ind = np.argmin(Resi[theo_index])
                     # print theo_index[closest_theo_ind]
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
-                        refine_indexed_spots[exp_index] = [exp_index, theo_index[closest_theo_ind], Miller_Exp_spot[k]]
+                        refine_indexed_spots[exp_index] = [
+                            exp_index,
+                            theo_index[closest_theo_ind],
+                            Miller_Exp_spot[k],
+                        ]
             else:
-                print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
+                print(
+                    "Experimental spot #%d may belong to several theo. spots!"
+                    % exp_index
+                )
 
         # find theo spot linked to exp spot ---------------------------------
 
@@ -1370,10 +1572,14 @@ class Plot_RefineFrame(wx.Frame):
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
-                absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex] 
+                absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
 
-                listofpairs.append([absolute_spot_index, val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-                linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
+                listofpairs.append(
+                    [absolute_spot_index, val[1]]
+                )  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+                linkExpMiller.append(
+                    [float(absolute_spot_index)] + [float(elem) for elem in val[2]]
+                )  # float(val) for further handling as floats array
                 linkIntensity.append(dataintensity_exp[localspotindex])
                 linkResidues.append([absolute_spot_index, val[1], Resi[val[1]]])
                 # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
@@ -1383,7 +1589,15 @@ class Plot_RefineFrame(wx.Frame):
         self.linkIntensity_link = linkIntensity
         self.linkResidues_link = linkResidues
         self.Energy_Exp_spot = Energy_Exp_spot
-        self.fields = ['#Spot Exp', '#Spot Theo', 'h', 'k', 'l', 'Intensity', 'residues(deg)']
+        self.fields = [
+            "#Spot Exp",
+            "#Spot Theo",
+            "h",
+            "k",
+            "l",
+            "Intensity",
+            "residues(deg)",
+        ]
 
         print("Nb of links between exp. and theo. spots", len(self.linkedspots_link))
 
@@ -1391,7 +1605,9 @@ class Plot_RefineFrame(wx.Frame):
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks(self, evt):  # filter links between spots(after OnAutoLink() )
+    def BuildDataDictAfterLinks(
+        self, evt
+    ):  # filter links between spots(after OnAutoLink() )
         """
         open editor to look at spots links and filter them
         
@@ -1403,7 +1619,9 @@ class Plot_RefineFrame(wx.Frame):
 
             indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int)
             indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int))[1:4]
+            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int))[
+                1:4
+            ]
             intens = self.linkIntensity_link
             if self.linkResidues_link is not None:
                 residues = np.array(self.linkResidues_link)[:, 2]
@@ -1415,14 +1633,21 @@ class Plot_RefineFrame(wx.Frame):
             mySpotData = {}
             for k, ff in enumerate(self.fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(None, -1, 'Filter spots links Editor', mySpotData,
-                                       func_to_call=self.readdata_fromEditor_after,
-                                       field_name_and_order=self.fields)
+            dia = LSEditor.SpotsEditor(
+                None,
+                -1,
+                "Filter spots links Editor",
+                mySpotData,
+                func_to_call=self.readdata_fromEditor_after,
+                field_name_and_order=self.fields,
+            )
             dia.Show(True)
 
-
         else:
-            wx.MessageBox('There are not existing links between simulated and experimental data!! Click on "Auto Links" button ', 'INFO')
+            wx.MessageBox(
+                'There are not existing links between simulated and experimental data!! Click on "Auto Links" button ',
+                "INFO",
+            )
 
     def readdata_fromEditor_after(self, data):
 
@@ -1433,7 +1658,7 @@ class Plot_RefineFrame(wx.Frame):
         self.linkIntensity = ArrayReturn[:, 5]
         self.linkResidues = np.take(ArrayReturn, [0, 1, 6], axis=1)
 
-#--- ------------ Fitting functions ----
+    # --- ------------ Fitting functions ----
     def OnRefine_UB_and_Strain(self, evt):
         """
         in plot_RefineFrame
@@ -1444,14 +1669,21 @@ class Plot_RefineFrame(wx.Frame):
         NOTE: refine strained and oriented crystal by minimizing peaks positions (pixels).
         NOTE: experimental peaks pixel positions are reevaluated from 2theta and chi angles 
         """
-        
+
         if self.use_forfit1.GetValue():
             if self.linkedspots_link is None:
-                wx.MessageBox('There are not existing links between simulated and experimental data for the refinement!! Click on "Auto Links" button ', 'INFO')
+                wx.MessageBox(
+                    'There are not existing links between simulated and experimental data for the refinement!! Click on "Auto Links" button ',
+                    "INFO",
+                )
                 return
 
             if len(self.linkedspots_link) < 8:
-                wx.MessageBox('You have only %d over the 8 links needed between exp. and theo. spots to refine orientation and strain' % len(self.linkedspots_link), 'INFO')
+                wx.MessageBox(
+                    "You have only %d over the 8 links needed between exp. and theo. spots to refine orientation and strain"
+                    % len(self.linkedspots_link),
+                    "INFO",
+                )
                 return
             self.linkedspots_fit = self.linkedspots_link
             self.linkExpMiller_fit = self.linkExpMiller_link
@@ -1459,25 +1691,30 @@ class Plot_RefineFrame(wx.Frame):
             self.linkResidues_fit = None
         elif self.use_forfit2.GetValue():
             if self.linkedspots == []:
-                txt = 'There are not existing links between simulated and experimental data for the refinement!!\n'
+                txt = "There are not existing links between simulated and experimental data for the refinement!!\n"
                 txt += 'Click first on "Auto Links" button and then filter and select data for the refinement'
-                wx.MessageBox(txt, 'INFO')
+                wx.MessageBox(txt, "INFO")
                 return
             self.linkedspots_fit = self.linkedspots
             self.linkExpMiller_fit = self.linkExpMiller
             self.linkIntensity_fit = self.linkIntensity
             self.linkResidues_fit = None
         elif self.use_forfit3.GetValue():
-            print("I will use for the refinement the(filtered) results of the previous fit")
+            print(
+                "I will use for the refinement the(filtered) results of the previous fit"
+            )
             if self.linkedspots_fit is None:
-                wx.MessageBox('You need to refine once for starting the refinement from previous fit(filtered) results', 'INFO')
+                wx.MessageBox(
+                    "You need to refine once for starting the refinement from previous fit(filtered) results",
+                    "INFO",
+                )
                 return
 
         print("\nStarting fit of strain and orientation from spots links ...\n")
         # print "Pairs of spots used",self.linkedspots
         arraycouples = np.array(self.linkedspots_fit)
-        
-#         print "\n\n***arraycouples", arraycouples
+
+        #         print "\n\n***arraycouples", arraycouples
 
         exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
         sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
@@ -1491,32 +1728,37 @@ class Plot_RefineFrame(wx.Frame):
 
         # print "self.linkExpMiller",self.linkExpMiller
         Data_Q = np.array(self.linkExpMiller_fit)[:, 1:]
-        sim_indices = np.arange(nb_pairs)  # for fitting function this must be an arange...
-#         print "DataQ from self.linkExpMiller", Data_Q
+        sim_indices = np.arange(
+            nb_pairs
+        )  # for fitting function this must be an arange...
+        #         print "DataQ from self.linkExpMiller", Data_Q
 
         # experimental spots selection -------------------------------------
-        AllData = self.IndexationParameters['AllDataToIndex']
-        _twth, _chi = np.take(2.*AllData['data_theta'], exp_indices), np.take(AllData['data_chi'], exp_indices)  # 2theta chi coordinates
+        AllData = self.IndexationParameters["AllDataToIndex"]
+        _twth, _chi = (
+            np.take(2.0 * AllData["data_theta"], exp_indices),
+            np.take(AllData["data_chi"], exp_indices),
+        )  # 2theta chi coordinates
         # experimental spots pixel coordinates
-#         pixX, pixY, _th = F2TC.calc_xycam_from2thetachi(_twth, _chi, self.CCDcalib,
-#                                         verbose=0,
-#                                         pixelsize=self.pixelsize,
-#                                         dim=self.framedim,
-#                                         signgam=SIGN_OF_GAMMA,
-#                                         kf_direction=self.kf_direction)
-        
-        pixX = np.take(AllData['data_pixX'], exp_indices)
-        pixY = np.take(AllData['data_pixY'], exp_indices)
-        
+        #         pixX, pixY, _th = F2TC.calc_xycam_from2thetachi(_twth, _chi, self.CCDcalib,
+        #                                         verbose=0,
+        #                                         pixelsize=self.pixelsize,
+        #                                         dim=self.framedim,
+        #                                         signgam=SIGN_OF_GAMMA,
+        #                                         kf_direction=self.kf_direction)
+
+        pixX = np.take(AllData["data_pixX"], exp_indices)
+        pixY = np.take(AllData["data_pixY"], exp_indices)
+
         if self.sigmanoise not in (0,):
             nbpeaks = len(pixX)
-            
+
             sigma = self.sigmanoise
             mu = 0
             pixX = pixX + sigma * np.random.randn(nbpeaks) + mu
             pixY = pixY + sigma * np.random.randn(nbpeaks) + mu
 
-#         starting_orientmatrix = np.array(self.SimulParam[0][2])
+        #         starting_orientmatrix = np.array(self.SimulParam[0][2])
         starting_orientmatrix = self.UBmat
 
         # print "nb_pairs",nb_pairs
@@ -1533,156 +1775,187 @@ class Plot_RefineFrame(wx.Frame):
         self.fitresults = False
         self.Tsresults = None
         self.new_latticeparameters = None
-        
-        #----------------------------------
+
+        # ----------------------------------
         #  refinement model
-        #----------------------------------
+        # ----------------------------------
         if self.fitTrecip.GetValue():
-            #--------------------------------------------------------
+            # --------------------------------------------------------
             # fitting procedure refining right distortion of UB
             # q = Rot x,y,z_refined) UBinit Trecip_refined B0 G*
             # Trecip refined is ((1,refined,refined),(0,refined,refined),(0,0,refined))
             # -------------------------------------------------------
-            
+
             # starting B0matrix corresponding to the unit cell   -----
             latticeparams = DictLT.dict_Materials[self.key_material][1]
             self.B0matrix = CP.calc_B_RR(latticeparams)
             # -------------------------------------------------------
-            
+
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
-    
+
             nspots = np.arange(nb_pairs)
             miller = Data_Q
-    
+
             # strain & orient
-            initial_values = np.array([1., 1., 0., 0., 0., 0, .0, 0.])
+            initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0])
             arr_indexvaryingparameters = np.arange(5, 13)
-    
+
             print("\nInitial error--------------------------------------\n")
-            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(initial_values,
-                                            Data_Q,
-                                            allparameters,
-                                            arr_indexvaryingparameters,
-                                            sim_indices,
-                                            pixX, pixY,
-                                            initrot=starting_orientmatrix,
-                                            Bmat=self.B0matrix,
-                                            pureRotation=0, verbose=1,
-                                            pixelsize=self.pixelsize,
-                                            dim=self.framedim,
-                                            weights=weights,
-                                            signgam=SIGN_OF_GAMMA,
-                                            kf_direction=self.kf_direction)
-            
+            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
+                initial_values,
+                Data_Q,
+                allparameters,
+                arr_indexvaryingparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                Bmat=self.B0matrix,
+                pureRotation=0,
+                verbose=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=weights,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+            )
+
             print("Initial residues", residues)
             print("---------------------------------------------------\n")
-    
-            results = FitO.fit_on_demand_strain(initial_values,
-                            Data_Q,
-                            allparameters,
-                            FitO.error_function_on_demand_strain,
-                            arr_indexvaryingparameters,
-                            sim_indices,
-                            pixX, pixY,
-                            initrot=starting_orientmatrix,
-                            Bmat=self.B0matrix,
-                            pixelsize=self.pixelsize,
-                            dim=self.framedim,
-                            verbose=0,
-                            weights=weights,
-                            signgam=SIGN_OF_GAMMA,
-                            kf_direction=self.kf_direction)
-    
-            print("\n********************\n       Results of Fit        \n********************")
+
+            results = FitO.fit_on_demand_strain(
+                initial_values,
+                Data_Q,
+                allparameters,
+                FitO.error_function_on_demand_strain,
+                arr_indexvaryingparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                Bmat=self.B0matrix,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                verbose=0,
+                weights=weights,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+            )
+
+            print(
+                "\n********************\n       Results of Fit        \n********************"
+            )
             print("results", results)
-    
+
             self.fit_completed = False
-    
+
             if results is None:
                 return
-            
-    
+
             self.fitresults = True
-    
+
             print("\nFinal error--------------------------------------\n")
-            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(results,
-                                            Data_Q,
-                                            allparameters,
-                                            arr_indexvaryingparameters,
-                                            sim_indices,
-                                            pixX, pixY,
-                                            initrot=starting_orientmatrix,
-                                            Bmat=self.B0matrix,
-                                            pureRotation=0, verbose=1,
-                                            pixelsize=self.pixelsize,
-                                            dim=self.framedim,
-                                            weights=weights,
-                                            signgam=SIGN_OF_GAMMA,
-                                            kf_direction=self.kf_direction)
-    
-            self.residues_non_weighted = FitO.error_function_on_demand_strain(results,
-                                            Data_Q,
-                                            allparameters,
-                                            arr_indexvaryingparameters,
-                                            sim_indices,
-                                            pixX, pixY,
-                                            initrot=starting_orientmatrix,
-                                            Bmat=self.B0matrix,
-                                            pureRotation=0, verbose=1,
-                                            pixelsize=self.pixelsize,
-                                            dim=self.framedim,
-                                            weights=None,
-                                            signgam=SIGN_OF_GAMMA,
-                                            kf_direction=self.kf_direction)[0]
-    
+            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
+                results,
+                Data_Q,
+                allparameters,
+                arr_indexvaryingparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                Bmat=self.B0matrix,
+                pureRotation=0,
+                verbose=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=weights,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+            )
+
+            self.residues_non_weighted = FitO.error_function_on_demand_strain(
+                results,
+                Data_Q,
+                allparameters,
+                arr_indexvaryingparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                Bmat=self.B0matrix,
+                pureRotation=0,
+                verbose=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=None,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+            )[0]
+
             print("Final residues", residues)
             print("---------------------------------------------------\n")
             print("mean", np.mean(residues))
-    
+
             # building B mat
             param_strain_sol = results
-            self.varyingstrain = np.array([[1., param_strain_sol[2], param_strain_sol[3]],
-                                      [0, param_strain_sol[0], param_strain_sol[4]],
-                                      [0, 0, param_strain_sol[1]]])
+            self.varyingstrain = np.array(
+                [
+                    [1.0, param_strain_sol[2], param_strain_sol[3]],
+                    [0, param_strain_sol[0], param_strain_sol[4]],
+                    [0, 0, param_strain_sol[1]],
+                ]
+            )
             print("varyingstrain results")
             print(self.varyingstrain)
-    
+
             self.newUmat = np.dot(deltamat, starting_orientmatrix)
-    
+
             # building UBmat(= newmatrix)
             self.newUBmat = np.dot(self.newUmat, self.varyingstrain)
             print("newUBmat", self.newUBmat)
-            
-            self.constantlength = 'a'
-            
-        
-        elif self.fita.GetValue() or \
-                self.fitb.GetValue() or \
-                self.fitc.GetValue() or \
-                self.fitalpha.GetValue() or \
-                self.fitbeta.GetValue() or \
-                self.fitgamma.GetValue():
-            #--------------------------------------------------
+
+            self.constantlength = "a"
+
+        elif (
+            self.fita.GetValue()
+            or self.fitb.GetValue()
+            or self.fitc.GetValue()
+            or self.fitalpha.GetValue()
+            or self.fitbeta.GetValue()
+            or self.fitgamma.GetValue()
+        ):
+            # --------------------------------------------------
             # ---  lattice parameters refinement
-            #--------------------------------------------------
-            print("starting_orientmatrix in plotrefineGUI before fit_lattice_parameters", starting_orientmatrix)
-            self.fit_lattice_parameters(pixX, pixY, Data_Q, starting_orientmatrix, self.key_material, weights)
-        
+            # --------------------------------------------------
+            print(
+                "starting_orientmatrix in plotrefineGUI before fit_lattice_parameters",
+                starting_orientmatrix,
+            )
+            self.fit_lattice_parameters(
+                pixX, pixY, Data_Q, starting_orientmatrix, self.key_material, weights
+            )
+
         else:
-            #--------------------------------------------------
+            # --------------------------------------------------
             # ---  transform matrix in sample frame elements refinement
-            #--------------------------------------------------
-            self.fit_transform_parameters(pixX, pixY, Data_Q, starting_orientmatrix, self.key_material, weights)
-        
-        #---------------------------------------------------------------
+            # --------------------------------------------------
+            self.fit_transform_parameters(
+                pixX, pixY, Data_Q, starting_orientmatrix, self.key_material, weights
+            )
+
+        # ---------------------------------------------------------------
         # postprocessing of unit cell orientation and strain refinement
-        #---------------------------------------------------------------
-        print('self.newUBmat after fitting', self.newUBmat)
-        self.evaluate_strain_display_results(self.newUBmat, self.key_material,
-                                             self.residues_non_weighted, nb_pairs,
-                                             constantlength=self.constantlength,
-                                             Tsresults=self.Tsresults)
-    
+        # ---------------------------------------------------------------
+        print("self.newUBmat after fitting", self.newUBmat)
+        self.evaluate_strain_display_results(
+            self.newUBmat,
+            self.key_material,
+            self.residues_non_weighted,
+            nb_pairs,
+            constantlength=self.constantlength,
+            Tsresults=self.Tsresults,
+        )
 
         # new fitting procedure (more general)
         if 0:
@@ -1694,143 +1967,195 @@ class Plot_RefineFrame(wx.Frame):
             # compute self.fitting_parameters_keys and self.fitting_parameters_values
             # TODO still pb
             self.selectFittingParameters()
-            
-#             print 'self.CCDcalib', self.CCDcalib
-#             print 'pixelsize', self.pixelsize
-#             print 'pixX', pixX
-#             print 'pixY', pixY
-#             print 'Data_Q', Data_Q
-            print('starting_orientmatrix', starting_orientmatrix)
-#             
-#             print 'self.B0matrix', self.B0matrix
-            
+
+            #             print 'self.CCDcalib', self.CCDcalib
+            #             print 'pixelsize', self.pixelsize
+            #             print 'pixX', pixX
+            #             print 'pixY', pixY
+            #             print 'Data_Q', Data_Q
+            print("starting_orientmatrix", starting_orientmatrix)
+            #
+            #             print 'self.B0matrix', self.B0matrix
+
             # varying parameters
             varying_parameters_keys = self.fitting_parameters_keys
             varying_parameters_values_array = np.array(self.fitting_parameters_values)
             # fixed parameters (must be an array)
             allparameters = self.allparameters
-            
-            #--------------------------------------------
+
+            # --------------------------------------------
             # new allparameters format
             #   see test_fitgeneralfunction -------- in FitOrient.py -------
-            latticeparameters= DictLT.dict_Materials['Cu'][1]
-        
-            transformparameters =[0, 0, 0,  # 3 misorientation / initial UB matrix
-                                           1., 0, -.0, -.223145, 1.01, 0, 0, -.0, 1,  # Tc
-                                            1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
-                                             1, 0, 0, 0, 1, 0, 0, 0, 1]  # Ts
+            latticeparameters = DictLT.dict_Materials["Cu"][1]
+
+            transformparameters = [
+                0,
+                0,
+                0,  # 3 misorientation / initial UB matrix
+                1.0,
+                0,
+                -0.0,
+                -0.223145,
+                1.01,
+                0,
+                0,
+                -0.0,
+                1,  # Tc
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,  # T
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+            ]  # Ts
             sourcedepth = [0]
-            allparameters = calibparameters + transformparameters + latticeparameters + sourcedepth
-            
+            allparameters = (
+                calibparameters + transformparameters + latticeparameters + sourcedepth
+            )
+
             # print "\nInitial error--------------------------------------\n"
-            residues = FitO.error_function_general(varying_parameters_values_array, varying_parameters_keys,
-                                                Data_Q,
-                                                allparameters,
-                                                sim_indices, pixX, pixY,
-                                                initrot=starting_orientmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=False)
+            residues = FitO.error_function_general(
+                varying_parameters_values_array,
+                varying_parameters_keys,
+                Data_Q,
+                allparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                B0matrix=self.B0matrix,
+                pureRotation=0,
+                verbose=0,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=None,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+                returnalldata=False,
+            )
             print("Initial mean pixel residues", np.mean(residues))
             print("---------------------------------------------------\n")
-            
-            results = FitO.fit_function_general(varying_parameters_values_array, varying_parameters_keys,
-                                Data_Q,
-                                allparameters,
-                                sim_indices, pixX, pixY,
-                                UBmatrix_start=starting_orientmatrix,
-                                B0matrix=self.B0matrix,
-                                nb_grains=1,
-                                pureRotation=0,
-                                verbose=0,
-                                pixelsize=self.pixelsize,
-                                dim=self.framedim,
-                                weights=weights,
-                                signgam=SIGN_OF_GAMMA,
-                                kf_direction=self.kf_direction)
-            
+
+            results = FitO.fit_function_general(
+                varying_parameters_values_array,
+                varying_parameters_keys,
+                Data_Q,
+                allparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                UBmatrix_start=starting_orientmatrix,
+                B0matrix=self.B0matrix,
+                nb_grains=1,
+                pureRotation=0,
+                verbose=0,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=weights,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+            )
+
             self.fit_completed = False
             print("res", results)
-            
-#             print 'self.CCDcalib', self.CCDcalib
-#             print 'pixelsize', self.pixelsize
-#             print 'pixX', pixX.tolist()
-#             print 'pixY', pixY.tolist()
-#             print 'Data_Q', Data_Q.tolist()
-#             print 'starting_orientmatrix', starting_orientmatrix
-#             
-#             print 'self.B0matrix', self.B0matrix.tolist()
+
+            #             print 'self.CCDcalib', self.CCDcalib
+            #             print 'pixelsize', self.pixelsize
+            #             print 'pixX', pixX.tolist()
+            #             print 'pixY', pixY.tolist()
+            #             print 'Data_Q', Data_Q.tolist()
+            #             print 'starting_orientmatrix', starting_orientmatrix
+            #
+            #             print 'self.B0matrix', self.B0matrix.tolist()
             if results is None:
                 return
-        
 
             self.fitresults = True
             print("\nFinal error--------------------------------------\n")
             residues, Uxyz, newmatrix, Tc, T, Ts = FitO.error_function_general(
-                                                results,
-                                                varying_parameters_keys,
-                                                Data_Q,
-                                                allparameters,
-                                                sim_indices, pixX, pixY,
-                                                initrot=starting_orientmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=weights,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=True)
-    
-            self.residues_non_weighted = FitO.error_function_general(results, varying_parameters_keys,
-                                                Data_Q,
-                                                allparameters,
-                                                sim_indices, pixX, pixY,
-                                                initrot=starting_orientmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=False)
+                results,
+                varying_parameters_keys,
+                Data_Q,
+                allparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                B0matrix=self.B0matrix,
+                pureRotation=0,
+                verbose=0,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=weights,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+                returnalldata=True,
+            )
+
+            self.residues_non_weighted = FitO.error_function_general(
+                results,
+                varying_parameters_keys,
+                Data_Q,
+                allparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                initrot=starting_orientmatrix,
+                B0matrix=self.B0matrix,
+                pureRotation=0,
+                verbose=0,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=None,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+                returnalldata=False,
+            )
 
             print("Final pixel residues", residues)
             print("---------------------------------------------------\n")
             print("Final mean pixel residues", np.mean(residues))
-            
+
             self.newUBmat = newmatrix
             self.newUmat = np.dot(Uxyz, starting_orientmatrix)
             self.varyingstrain = Tc
-            
-            print('Uxyz, newmatrix, newUmat')
+
+            print("Uxyz, newmatrix, newUmat")
             print(Uxyz, newmatrix, newUmat)
-            print('Tc, T, Ts')
+            print("Tc, T, Ts")
             print(Tc, T, Ts)
-            
-            self.constantlength = 'a'
+
+            self.constantlength = "a"
 
             # postprocessing of unit cell orientation and strain refinement
-            self.evaluate_strain_display_results(self.newUBmat, self.key_material,
-                                             self.residues_non_weighted, nb_pairs,
-                                             constantlength=self.constantlength)
+            self.evaluate_strain_display_results(
+                self.newUBmat,
+                self.key_material,
+                self.residues_non_weighted,
+                nb_pairs,
+                constantlength=self.constantlength,
+            )
 
-        #---------------------------------------------
+        # ---------------------------------------------
         # treatment of results of GUI
-        #---------------------------------------------
-        
+        # ---------------------------------------------
+
         # update linked spots with residues
-        self.linkResidues_fit = np.array([exp_indices, sim_indices,
-                                          self.residues_non_weighted]).T
+        self.linkResidues_fit = np.array(
+            [exp_indices, sim_indices, self.residues_non_weighted]
+        ).T
 
         # saving previous unit cell strain and orientation
         self.previous_UBmat = copy.copy(self.UBmat)
@@ -1850,29 +2175,37 @@ class Plot_RefineFrame(wx.Frame):
         print("self.Bmat", self.Bmat)
         print("self.Bmat_tri", self.Bmat_tri)
         print("self.HKLxyz_names", self.HKLxyz_names)
-        print("self.HKLxyz", self.HKLxyz)           
+        print("self.HKLxyz", self.HKLxyz)
         print("B0matrix", self.B0matrix)
         print("self.UBB0mat = np.dot(newUBmat, B0matrix)", self.UBB0mat)
         print("np.dot(newUBmat, B0matrix)", np.dot(self.newUBmat, self.B0matrix))
         print("deviatoric strain", self.deviatoricstrain)
         print("deviatoric strain sample frame", self.deviatoricstrain_sampleframe)
-        
+
         # update dictionnary of UB matrices
-        DictLT.dict_Rot['Last Refined UB matrix %d' % self.fitcounterindex] = copy.copy(self.newUBmat)
-        self.comboUBmatrix.Append('Last Refined UB matrix %d' % self.fitcounterindex)
-        
+        DictLT.dict_Rot["Last Refined UB matrix %d" % self.fitcounterindex] = copy.copy(
+            self.newUBmat
+        )
+        self.comboUBmatrix.Append("Last Refined UB matrix %d" % self.fitcounterindex)
+
         self.fitcounterindex += 1
 
         self.fit_completed = True
-        
-    def evaluate_strain_display_results(self, newUBmat, key_material,
-                                        residues_non_weighted, nb_pairs, constantlength='a',
-                                        Tsresults=None):
+
+    def evaluate_strain_display_results(
+        self,
+        newUBmat,
+        key_material,
+        residues_non_weighted,
+        nb_pairs,
+        constantlength="a",
+        Tsresults=None,
+    ):
         """
         evaluate strain and display fitting results
         """
         # print "newmatrix",newmatrix # must be equal to UBmat
-    
+
         # RR,PP = GT.UBdecomposition_RRPP(UBmat)
 
         # symetric matrix(strain) in direct real distance
@@ -1901,350 +2234,400 @@ class Plot_RefineFrame(wx.Frame):
         # print "trace of pure strain", np.trace(purestrain)
         # print "deviatoric strain of pure strain"
         # print purestrain - np.trace(purestrain)/3.*np.eye(3)
-                
+
         # compute new lattice parameters  -----
         latticeparams = DictLT.dict_Materials[key_material][1]
         B0matrix = CP.calc_B_RR(latticeparams)
-        
+
         UBmat = copy.copy(newUBmat)
-        
-        (devstrain,
-         lattice_parameter_direct_strain) = CP.compute_deviatoricstrain(UBmat,
-                                                                        B0matrix,
-                                                                        latticeparams)
-        #overwrite and rescale possibly lattice lengthes
-        lattice_parameter_direct_strain = CP.computeLatticeParameters_from_UB(UBmat,key_material,constantlength)
-        
+
+        (devstrain, lattice_parameter_direct_strain) = CP.compute_deviatoricstrain(
+            UBmat, B0matrix, latticeparams
+        )
+        # overwrite and rescale possibly lattice lengthes
+        lattice_parameter_direct_strain = CP.computeLatticeParameters_from_UB(
+            UBmat, key_material, constantlength
+        )
+
         print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
-        
+
         self.new_latticeparameters = lattice_parameter_direct_strain
-        
+
         # compute strain
 
-#         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame(devstrain, UBmat,
-#                                   omega0=40.,
-#                                   LaueToolsFrame_for_UBmat=True)
-        deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(devstrain, UBmat)
+        #         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame(devstrain, UBmat,
+        #                                   omega0=40.,
+        #                                   LaueToolsFrame_for_UBmat=True)
+        deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
+            devstrain, UBmat
+        )
 
-        devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
+        devstrain_sampleframe_round = np.round(
+            deviatoricstrain_sampleframe * 1000, decimals=3
+        )
         devstrain_round = np.round(devstrain * 1000, decimals=3)
-        
+
         self.deviatoricstrain = devstrain
         self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
-        
+
         # TODO: to complete ---------------------
-        devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)),
-                                         (0, 4, 8, 5, 2, 1))
-#         print 'devstrain_sample_voigt', devstrain_sample_voigt
+        devstrain_crystal_voigt = np.take(
+            np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1)
+        )
+        #         print 'devstrain_sample_voigt', devstrain_sample_voigt
         # full strain with assumption stress33=0
-#         fullstrain_crystal, fullstrain_stress, strain_hydrostatic = CP.hydrostaticStrain(devstrain_crystal_voigt,
-#                                                               self.key_material, UBmat,
-#                                                                assumption='stress33=0')
-#         
-#         fullstrain_sample = CP.strain_from_crystal_to_sample_frame2(fullstrain_crystal, UBmat)
-#         fullstrain_round = np.round(fullstrain_sample * 1000, decimals=3)
-#         print 'fullstrain', fullstrain
-        #---------------------------------------------------
+        #         fullstrain_crystal, fullstrain_stress, strain_hydrostatic = CP.hydrostaticStrain(devstrain_crystal_voigt,
+        #                                                               self.key_material, UBmat,
+        #                                                                assumption='stress33=0')
+        #
+        #         fullstrain_sample = CP.strain_from_crystal_to_sample_frame2(fullstrain_crystal, UBmat)
+        #         fullstrain_round = np.round(fullstrain_sample * 1000, decimals=3)
+        #         print 'fullstrain', fullstrain
+        # ---------------------------------------------------
         self.UBB0mat = np.dot(self.newUBmat, B0matrix)
 
         Umat = None
-        
-        Umat = CP.matstarlab_to_matstarlabOND(matstarlab = None, matLT3x3 = np.array(self.UBmat))
+
+        Umat = CP.matstarlab_to_matstarlabOND(
+            matstarlab=None, matLT3x3=np.array(self.UBmat)
+        )
         # conversion en np array necessaire apres automatic indexation, pas necessaire apres check orientation
-            
+
         print("**********test U ****************************")
         print("U matrix = ")
-        print(Umat.round(decimals = 9))
+        print(Umat.round(decimals=9))
         print("normes :")
-        for i in range(3) :
-            print(i, GT.norme_vec(Umat[:,i]).round(decimals = 5))
+        for i in range(3):
+            print(i, GT.norme_vec(Umat[:, i]).round(decimals=5))
         print("produit scalaire")
-        for i in range(3) :
-            j = np.mod(i+1, 3)
-            print(i, j, np.inner(Umat[:,i],Umat[:,j]).round(decimals = 5))
+        for i in range(3):
+            j = np.mod(i + 1, 3)
+            print(i, j, np.inner(Umat[:, i], Umat[:, j]).round(decimals=5))
         print("determinant")
-        print(np.linalg.det(Umat).round(decimals = 5))
-        
-        Bmat_triang_up = np.dot(np.transpose(Umat),self.UBmat)
-        
+        print(np.linalg.det(Umat).round(decimals=5))
+
+        Bmat_triang_up = np.dot(np.transpose(Umat), self.UBmat)
+
         print(" Bmat_triang_up= ")
-        print(Bmat_triang_up.round(decimals = 9)) 
-        
+        print(Bmat_triang_up.round(decimals=9))
+
         self.Umat2 = Umat
         self.Bmat_tri = Bmat_triang_up
-        
-        list_HKL_names, HKL_xyz = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab (matstarlab = None, # OR
-                                      UBmat =  self.UBB0mat,  # LT , UBB0 ici
-                                      omega = None, # was MG.PAR.omega_sample_frame,
-                                      mat_from_lab_to_sample_frame = None,
-                                     results_in_OR_frames = 0,
-                                     results_in_LT_frames = 1,
-                                     sampletilt = 40.
-                                      )
-        self.HKLxyz_names =  list_HKL_names
+
+        list_HKL_names, HKL_xyz = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
+            matstarlab=None,  # OR
+            UBmat=self.UBB0mat,  # LT , UBB0 ici
+            omega=None,  # was MG.PAR.omega_sample_frame,
+            mat_from_lab_to_sample_frame=None,
+            results_in_OR_frames=0,
+            results_in_LT_frames=1,
+            sampletilt=40.0,
+        )
+        self.HKLxyz_names = list_HKL_names
         self.HKLxyz = HKL_xyz
-        
+
         # Message box Window displaying results
-        
-#         
-# 
-#         txt = 'Mean Pixel Deviation: %.3f\n' % np.mean(residues_non_weighted)
-#         txt += 'Number of fitted spots: %d\n' % nb_pairs
-#         
-#         txt += '\nDeviatoric Strain(10-3 units) direct crystal frame\n'
-#         for k in range(3):
-#             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_round[k])
-# 
-#         txt += 'Deviatoric Strain(10-3 units) sample frame (tilt=40deg)\n'
-#         for k in range(3):
-#             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_sampleframe_round[k])
-# 
-#         txt += '\n'
-#         txt += 'Initial Lattice Parameters\n'
-#         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
-#         for name, val in zip(paramcellname, latticeparams):
-#             txt += '%s\t\t%.6f\n' % (name, val)
-# 
-#         txt += '\n'
-#         txt += 'Final Lattice Parameters\n'
-#         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
-#         for name, val in zip(paramcellname, lattice_parameter_direct_strain):
-#             txt += '%s\t\t%.6f\n' % (name, val)
-#             
-#         if Tsresults is not None:
-#             print "Tsresults", Tsresults
-#             
-#             Ts = Tsresults[2]
-#             
-#             Tsvalues = [Ts[0, 0], Ts[0, 1], Ts[0, 2], Ts[1, 1], Ts[1, 2], Ts[2, 2]]
-#             txt += '\n'
-#             txt += 'Final Transform Parameters\n'
-#             transformelements = ['  Ts00', '  Ts01', '  Ts02', 'Ts11', 'Ts12', 'Ts22']
-#             for name, val in zip(transformelements, Tsvalues):
-#                 txt += '%s\t\t%.6f\n' % (name, val)
-# 
-#         wx.MessageBox(txt, 'REFINEMENT RESULTS')
-        
-        #---------------------------------------------------
+
+        #
+        #
+        #         txt = 'Mean Pixel Deviation: %.3f\n' % np.mean(residues_non_weighted)
+        #         txt += 'Number of fitted spots: %d\n' % nb_pairs
+        #
+        #         txt += '\nDeviatoric Strain(10-3 units) direct crystal frame\n'
+        #         for k in range(3):
+        #             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_round[k])
+        #
+        #         txt += 'Deviatoric Strain(10-3 units) sample frame (tilt=40deg)\n'
+        #         for k in range(3):
+        #             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_sampleframe_round[k])
+        #
+        #         txt += '\n'
+        #         txt += 'Initial Lattice Parameters\n'
+        #         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
+        #         for name, val in zip(paramcellname, latticeparams):
+        #             txt += '%s\t\t%.6f\n' % (name, val)
+        #
+        #         txt += '\n'
+        #         txt += 'Final Lattice Parameters\n'
+        #         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
+        #         for name, val in zip(paramcellname, lattice_parameter_direct_strain):
+        #             txt += '%s\t\t%.6f\n' % (name, val)
+        #
+        #         if Tsresults is not None:
+        #             print "Tsresults", Tsresults
+        #
+        #             Ts = Tsresults[2]
+        #
+        #             Tsvalues = [Ts[0, 0], Ts[0, 1], Ts[0, 2], Ts[1, 1], Ts[1, 2], Ts[2, 2]]
+        #             txt += '\n'
+        #             txt += 'Final Transform Parameters\n'
+        #             transformelements = ['  Ts00', '  Ts01', '  Ts02', 'Ts11', 'Ts12', 'Ts22']
+        #             for name, val in zip(transformelements, Tsvalues):
+        #                 txt += '%s\t\t%.6f\n' % (name, val)
+        #
+        #         wx.MessageBox(txt, 'REFINEMENT RESULTS')
+
+        # ---------------------------------------------------
         texts_dict = {}
-        
-        txt0 = 'Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n' % (self.DataPlot_filename, time.asctime())
-        txt0 += 'Mean Pixel Deviation: %.3f\n' % np.mean(residues_non_weighted)
-        txt0 += 'Number of refined Laue spots: %d\n' % nb_pairs
-        texts_dict['NbspotsResidues'] = txt0
-        
-        txt1 = 'Deviatoric Strain (10-3 units) in crystal frame (direct space) \n'
+
+        txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (
+            self.DataPlot_filename,
+            time.asctime(),
+        )
+        txt0 += "Mean Pixel Deviation: %.3f\n" % np.mean(residues_non_weighted)
+        txt0 += "Number of refined Laue spots: %d\n" % nb_pairs
+        texts_dict["NbspotsResidues"] = txt0
+
+        txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
         for k in range(3):
-            txt1 += '%.3f   %.3f   %.3f\n' % tuple(devstrain_round[k])
-        texts_dict['devstrain_crystal'] = txt1
-        
-        txt2 = 'Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n'
+            txt1 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_round[k])
+        texts_dict["devstrain_crystal"] = txt1
+
+        txt2 = "Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n"
         for k in range(3):
-            txt2 += '%.3f   %.3f   %.3f\n' % tuple(devstrain_sampleframe_round[k])
-        texts_dict['devstrain_sample'] = txt2
-        
-#         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
-#         txt3 += 'Assumption: cubic material + stress33=0\n'
-#         for k in range(3):
-#             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
-        txt3 = ''
-        texts_dict['fullstrain_sample'] = txt3
-        
-        txtinitlattice = 'Initial Lattice Parameters\n'
-        paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
+            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_round[k])
+        texts_dict["devstrain_sample"] = txt2
+
+        #         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
+        #         txt3 += 'Assumption: cubic material + stress33=0\n'
+        #         for k in range(3):
+        #             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
+        txt3 = ""
+        texts_dict["fullstrain_sample"] = txt3
+
+        txtinitlattice = "Initial Lattice Parameters\n"
+        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
         for name, val in zip(paramcellname, latticeparams):
-            txtinitlattice += '%s\t\t%.6f\n' % (name, val)
-            
-        texts_dict['Initial lattice'] = txtinitlattice
-        
-        txtfinallattice = 'Refined Lattice Parameters\n'
-        paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
+            txtinitlattice += "%s\t\t%.6f\n" % (name, val)
+
+        texts_dict["Initial lattice"] = txtinitlattice
+
+        txtfinallattice = "Refined Lattice Parameters\n"
+        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
         for name, val in zip(paramcellname, lattice_parameter_direct_strain):
-            txtfinallattice += '%s\t\t%.6f\n' % (name, val)
-            
-        texts_dict['Refined lattice'] = txtfinallattice
-        
+            txtfinallattice += "%s\t\t%.6f\n" % (name, val)
+
+        texts_dict["Refined lattice"] = txtfinallattice
+
         if Tsresults is not None:
-            
+
             Ts = Tsresults[2]
-             
+
             Tsvalues = [Ts[0, 0], Ts[0, 1], Ts[0, 2], Ts[1, 1], Ts[1, 2], Ts[2, 2]]
-            
-            Tsmat = [[Ts[0, 0], Ts[0, 1], Ts[0, 2]], [0.0, Ts[1, 1], Ts[1, 2]], [0.0, 0.0, Ts[2, 2]]]
-            
-            txtTs = 'Final Transform Parameters\n'
-            transformelements = ['  Ts00', '  Ts01', '  Ts02', ' Ts11', ' Ts12', ' Ts22']
+
+            Tsmat = [
+                [Ts[0, 0], Ts[0, 1], Ts[0, 2]],
+                [0.0, Ts[1, 1], Ts[1, 2]],
+                [0.0, 0.0, Ts[2, 2]],
+            ]
+
+            txtTs = "Final Transform Parameters\n"
+            transformelements = [
+                "  Ts00",
+                "  Ts01",
+                "  Ts02",
+                " Ts11",
+                " Ts12",
+                " Ts22",
+            ]
             for name in transformelements:
                 txtTs += name
-            txtTs += ' = ['
+            txtTs += " = ["
             for val in Tsvalues:
-                txtTs += '%.6f, ' % val
-            txtTs = txtTs[:-2] + ']\n'
-            txtTs += 'Ts matrix in q = P Ts P-1 U B0 G*\n'
-            txtTs += '['
+                txtTs += "%.6f, " % val
+            txtTs = txtTs[:-2] + "]\n"
+            txtTs += "Ts matrix in q = P Ts P-1 U B0 G*\n"
+            txtTs += "["
             for k in range(3):
-                txtTs += '[%.8f, %.8f, %.8f],\n' % tuple(Tsmat[k])
-#             for name, val in zip(transformelements, Tsvalues):
-#                 txtTs += '%s\t\t%.6f\n' % (name, val)
-            
-            texts_dict['Ts parameters'] = txtTs[:-2] + ']'
-        
-        txtUB = 'UB matrix in q = UB B0 G*\n'
-        txtUB += '['
+                txtTs += "[%.8f, %.8f, %.8f],\n" % tuple(Tsmat[k])
+            #             for name, val in zip(transformelements, Tsvalues):
+            #                 txtTs += '%s\t\t%.6f\n' % (name, val)
+
+            texts_dict["Ts parameters"] = txtTs[:-2] + "]"
+
+        txtUB = "UB matrix in q = UB B0 G*\n"
+        txtUB += "["
         for k in range(3):
-            txtUB += '[%.8f, %.8f, %.8f],\n' % tuple(UBmat[k])
-        texts_dict['UBmatrix'] = txtUB[:-2] + ']'
-        
-        txtB0 = 'B0 matrix in q = UB B0 G*\n'
-        txtB0 += '['
+            txtUB += "[%.8f, %.8f, %.8f],\n" % tuple(UBmat[k])
+        texts_dict["UBmatrix"] = txtUB[:-2] + "]"
+
+        txtB0 = "B0 matrix in q = UB B0 G*\n"
+        txtB0 += "["
         for k in range(3):
-            txtB0 += '[%.8f, %.8f, %.8f],\n' % tuple(B0matrix[k])
-        texts_dict['B0matrix'] = txtB0[:-2] + ']'
-            
+            txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0matrix[k])
+        texts_dict["B0matrix"] = txtB0[:-2] + "]"
+
         txtHKLxyz_names = "HKL coord. of lab and sample frame axes :\n"
-        for k in range(6) :
-            txtHKLxyz_names += self.HKLxyz_names[k] + '\t [%.3f, %.3f, %.3f]\n' % tuple(self.HKLxyz[k])
-            texts_dict['HKLxyz_names'] = txtHKLxyz_names
-        
+        for k in range(6):
+            txtHKLxyz_names += self.HKLxyz_names[k] + "\t [%.3f, %.3f, %.3f]\n" % tuple(
+                self.HKLxyz[k]
+            )
+            texts_dict["HKLxyz_names"] = txtHKLxyz_names
+
         print(txtHKLxyz_names)
-        
-        if 0 :
+
+        if 0:
             txtHKLxyz = "HKL = \n"
-            txtHKLxyz += '['
-            for k in range(6) :
-                txtHKLxyz += '[%.3f, %.3f, %.3f],\n' % tuple(self.HKLxyz[k])
-                texts_dict['HKLxyz'] = txtHKLxyz[:-2] + ']'
+            txtHKLxyz += "["
+            for k in range(6):
+                txtHKLxyz += "[%.3f, %.3f, %.3f],\n" % tuple(self.HKLxyz[k])
+                texts_dict["HKLxyz"] = txtHKLxyz[:-2] + "]"
             print(txtHKLxyz)
-        texts_dict['HKLxyz'] = ""    
-        
-        
-        frb = FitResultsBoard(self, -1, 'REFINEMENT RESULTS', texts_dict)
+        texts_dict["HKLxyz"] = ""
+
+        frb = FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
         frb.ShowModal()
 
         frb.Destroy()
-        
-    def fit_transform_parameters(self, pixX, pixY, hkls, starting_orientmatrix, key_material, weights):
-        
+
+    def fit_transform_parameters(
+        self, pixX, pixY, hkls, starting_orientmatrix, key_material, weights
+    ):
+
         self.selectFittingTransformParameters(key_material)
-        
+
         pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
 
-        print('self.fitting_parameters_values, self.fitting_parameters_keys')
+        print("self.fitting_parameters_values, self.fitting_parameters_keys")
         print(self.fitting_parameters_values, self.fitting_parameters_keys)
-        print('len(allparameters)', len(self.allparameters))
-        print('starting_orientmatrix', starting_orientmatrix)
+        print("len(allparameters)", len(self.allparameters))
+        print("starting_orientmatrix", starting_orientmatrix)
 
         absolutespotsindices = np.arange(len(pixX))
-        
+
         print("initial errors")
-        print(FitO.error_function_strain(self.fitting_parameters_values, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=1,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=True))
-        
+        print(
+            FitO.error_function_strain(
+                self.fitting_parameters_values,
+                self.fitting_parameters_keys,
+                hkls,
+                self.allparameters,
+                absolutespotsindices,
+                pixX,
+                pixY,
+                initrot=pureUmatrix,
+                B0matrix=self.B0matrix,
+                pureRotation=0,
+                verbose=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=None,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+                returnalldata=True,
+            )
+        )
+
         print("\n\n*** fit_transform_parameters (PlotRefineGUI.py) *****\n")
         print("fitting_parameters_values", self.fitting_parameters_values)
         print("fitting_parameters_keys", self.fitting_parameters_keys)
         print("hkls", hkls)
-        print('allparameters', self.allparameters)
+        print("allparameters", self.allparameters)
         print("absolutespotsindices", absolutespotsindices)
         print("pixX", pixX)
         print("pixY", pixY)
         print("UBmatrix_start", pureUmatrix)
-        print('B0matrix', self.B0matrix)
+        print("B0matrix", self.B0matrix)
         print("self.pixelsize", self.pixelsize)
         print("self.dim", self.framedim)
         print("weights", weights)
-        
+
         print("fitting strain parameters")
-        results = FitO.fit_function_strain(self.fitting_parameters_values, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                        UBmatrix_start=pureUmatrix,
-                                        B0matrix=self.B0matrix,
-                                        nb_grains=1,
-                                        pureRotation=0,
-                                        verbose=0,
-                                        pixelsize=self.pixelsize,
-                                        dim=self.framedim,
-                                        weights=weights,
-                                        signgam=SIGN_OF_GAMMA,
-                                        kf_direction=self.kf_direction)
-        
+        results = FitO.fit_function_strain(
+            self.fitting_parameters_values,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            UBmatrix_start=pureUmatrix,
+            B0matrix=self.B0matrix,
+            nb_grains=1,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=weights,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+        )
+
         self.fit_completed = False
         print("results", results)
-            
-#             print 'self.CCDcalib', self.CCDcalib
-#             print 'pixelsize', self.pixelsize
-#             print 'pixX', pixX.tolist()
-#             print 'pixY', pixY.tolist()
-#             print 'Data_Q', Data_Q.tolist()
-#             print 'starting_orientmatrix', starting_orientmatrix
-#             
-#             print 'self.B0matrix', self.B0matrix.tolist()
+
+        #             print 'self.CCDcalib', self.CCDcalib
+        #             print 'pixelsize', self.pixelsize
+        #             print 'pixX', pixX.tolist()
+        #             print 'pixY', pixY.tolist()
+        #             print 'Data_Q', Data_Q.tolist()
+        #             print 'starting_orientmatrix', starting_orientmatrix
+        #
+        #             print 'self.B0matrix', self.B0matrix.tolist()
         if results is None:
             return
 
         self.fitresults = True
         print("\nFinal errors--------------------------------------\n")
         # alldistances_array, Uxyz, newmatrix, Ts, T
-        (residues,
-         Uxyz, newUmat, refinedTs, refinedT) = FitO.error_function_strain(results, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=weights,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=True)
-         
-        self.residues_non_weighted = FitO.error_function_strain(results, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                B0matrix=self.B0matrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=False)
-        
+        (residues, Uxyz, newUmat, refinedTs, refinedT) = FitO.error_function_strain(
+            results,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            initrot=pureUmatrix,
+            B0matrix=self.B0matrix,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=weights,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+            returnalldata=True,
+        )
+
+        self.residues_non_weighted = FitO.error_function_strain(
+            results,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            initrot=pureUmatrix,
+            B0matrix=self.B0matrix,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=None,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+            returnalldata=False,
+        )
+
         print("Final pixel residues", residues)
         print("---------------------------------------------------\n")
         print("Final mean pixel residues", np.mean(residues))
-        
+
         # q = T Uxyz U B0init G*
         # q = Tnew newU B0init G*
         # q = P Tsnew P-1 newU B0init G*
         # q = newUB B0init G*
         self.newUBmat = newUmat
 
-        
         Umat_init = pureUmatrix
-        
+
         print("in q = T Uxyz U B0init G*")
         print("q = T newU B0init G*")
         print("q = P Tsnew P-1 newU B0init G*")
-        print('q = newUB B0init G*')
+        print("q = newUB B0init G*")
         print("in q = newUmat varyingstrain B0init G*")
-        print('Uxyz, Umat_init, newUmat, refinedT,refinedTs')
+        print("Uxyz, Umat_init, newUmat, refinedT,refinedTs")
         print(Uxyz, Umat_init, newUmat, refinedT, refinedTs)
         print("in q = newUBmat B0init G*")
         print("newUBmat, B0matrix_init")
@@ -2252,163 +2635,214 @@ class Plot_RefineFrame(wx.Frame):
 
         self.newUmat = newUmat
         self.varyingstrain = np.dot(np.linalg.inv(self.newUmat), self.newUBmat)
-        
-        self.Tsresults = ('triangular', 'sampleframe', refinedTs)
-        
-    def fit_lattice_parameters(self, pixX, pixY, hkls, starting_orientmatrix, key_material, weights):
-        
+
+        self.Tsresults = ("triangular", "sampleframe", refinedTs)
+
+    def fit_lattice_parameters(
+        self, pixX, pixY, hkls, starting_orientmatrix, key_material, weights
+    ):
+
         self.selectFittingLatticeParameters(key_material)
-        
-        
-        print('self.kf_direction in fit_lattice_parameters', self.kf_direction)
-        
+
+        print("self.kf_direction in fit_lattice_parameters", self.kf_direction)
+
         pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
-        
-        print('self.fitting_parameters_values, self.fitting_parameters_keys')
+
+        print("self.fitting_parameters_values, self.fitting_parameters_keys")
         print(self.fitting_parameters_values, self.fitting_parameters_keys)
-            
-        print('len(allparameters)', len(self.allparameters))
-        print('starting_orientmatrix', starting_orientmatrix)
+
+        print("len(allparameters)", len(self.allparameters))
+        print("starting_orientmatrix", starting_orientmatrix)
         print("pureUmatrix", pureUmatrix)
-        
+
         absolutespotsindices = np.arange(len(pixX))
-        
-        
-        print('\n\n -**--  Using fit_lattice_parameters() ----**--')
+
+        print("\n\n -**--  Using fit_lattice_parameters() ----**--")
         print("\n----------- Initial errors ------------------")
-        print(FitO.error_function_latticeparameters(self.fitting_parameters_values, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                pureRotation=0,
-                                                verbose=1,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=True))
-        
-        
-        
+        print(
+            FitO.error_function_latticeparameters(
+                self.fitting_parameters_values,
+                self.fitting_parameters_keys,
+                hkls,
+                self.allparameters,
+                absolutespotsindices,
+                pixX,
+                pixY,
+                initrot=pureUmatrix,
+                pureRotation=0,
+                verbose=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                weights=None,
+                signgam=SIGN_OF_GAMMA,
+                kf_direction=self.kf_direction,
+                returnalldata=True,
+            )
+        )
+
         print("\n--- Now fitting lattice parameters ---------")
-        results = FitO.fit_function_latticeparameters(self.fitting_parameters_values, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                        UBmatrix_start=pureUmatrix,
-                                        nb_grains=1,
-                                        pureRotation=0,
-                                        verbose=0,
-                                        pixelsize=self.pixelsize,
-                                        dim=self.framedim,
-                                        weights=weights,
-                                        signgam=SIGN_OF_GAMMA,
-                                        kf_direction=self.kf_direction)
-        
+        results = FitO.fit_function_latticeparameters(
+            self.fitting_parameters_values,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            UBmatrix_start=pureUmatrix,
+            nb_grains=1,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=weights,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+        )
+
         self.fit_completed = False
         print("res", results)
-            
-#             print 'self.CCDcalib', self.CCDcalib
-#             print 'pixelsize', self.pixelsize
-#             print 'pixX', pixX.tolist()
-#             print 'pixY', pixY.tolist()
-#             print 'Data_Q', Data_Q.tolist()
-#             print 'starting_orientmatrix', starting_orientmatrix
-#             
-#             print 'self.B0matrix', self.B0matrix.tolist()
+
+        #             print 'self.CCDcalib', self.CCDcalib
+        #             print 'pixelsize', self.pixelsize
+        #             print 'pixX', pixX.tolist()
+        #             print 'pixY', pixY.tolist()
+        #             print 'Data_Q', Data_Q.tolist()
+        #             print 'starting_orientmatrix', starting_orientmatrix
+        #
+        #             print 'self.B0matrix', self.B0matrix.tolist()
         if results is None:
             return
-    
 
         self.fitresults = True
         print("\n---------Final errors----------------------------\n")
-        
-        (residues,
-         Uxyz, newUmat, newB0matrix,
-         newlatticeparameters) = FitO.error_function_latticeparameters(results, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=weights,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=True)
-         
-        self.residues_non_weighted = FitO.error_function_latticeparameters(results, self.fitting_parameters_keys,
-                                        hkls, self.allparameters,
-                                        absolutespotsindices, pixX, pixY,
-                                                initrot=pureUmatrix,
-                                                pureRotation=0,
-                                                verbose=0,
-                                                pixelsize=self.pixelsize,
-                                                dim=self.framedim,
-                                                weights=None,
-                                                signgam=SIGN_OF_GAMMA,
-                                                kf_direction=self.kf_direction,
-                                                returnalldata=False)
-        
+
+        (
+            residues,
+            Uxyz,
+            newUmat,
+            newB0matrix,
+            newlatticeparameters,
+        ) = FitO.error_function_latticeparameters(
+            results,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            initrot=pureUmatrix,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=weights,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+            returnalldata=True,
+        )
+
+        self.residues_non_weighted = FitO.error_function_latticeparameters(
+            results,
+            self.fitting_parameters_keys,
+            hkls,
+            self.allparameters,
+            absolutespotsindices,
+            pixX,
+            pixY,
+            initrot=pureUmatrix,
+            pureRotation=0,
+            verbose=0,
+            pixelsize=self.pixelsize,
+            dim=self.framedim,
+            weights=None,
+            signgam=SIGN_OF_GAMMA,
+            kf_direction=self.kf_direction,
+            returnalldata=False,
+        )
+
         print("Final pixel all residues", residues)
         print("---------------------------------------------------\n")
         print("Final mean pixel residues", np.mean(residues))
-        
+
         # q = Uxyz U newB0 G*
         # q = UB B0init G*
-        self.newUBmat = np.dot(np.dot(newUmat, newB0matrix), np.linalg.inv(self.B0matrix))
-        
+        self.newUBmat = np.dot(
+            np.dot(newUmat, newB0matrix), np.linalg.inv(self.B0matrix)
+        )
+
         Umat_init = pureUmatrix
-        
+
         print("in q = Uxyz Umat_init newB0matrix G*")
         print("q= newUmat newB0matrix G*")
-        print('Uxyz, Umat_init, newUmat, newB0matrix')
+        print("Uxyz, Umat_init, newUmat, newB0matrix")
         print(Uxyz, Umat_init, newUmat, newB0matrix)
         print("in q = newUBmat B0matrix_init G*")
         print("newUBmat, B0matrix_init")
         print(self.newUBmat, self.B0matrix)
         print("in q = newUmat varyingstrain B0matrix_init G*")
         print("newUBmat, B0matrix_init")
-        
+
         self.newUmat = newUmat
         self.varyingstrain = np.dot(newB0matrix, np.linalg.inv(self.B0matrix))
-        
+
     def selectFittingTransformParameters(self, key_material):
         # fixed parameters (must be an array)
-        
+
         # triangular up transform in sample frame
-        TransformParameters = [1, 0, 0, 1, 0, 1.]
+        TransformParameters = [1, 0, 0, 1, 0, 1.0]
         # corresponding to Identity matrix
-        
+
         latticeparameters = DictLT.dict_Materials[key_material][1]
         self.B0matrix = CP.calc_B_RR(latticeparameters)
-        
+
         self.allparameters = np.array(self.CCDcalib + [0, 0, 0] + TransformParameters)
-        
-        if self.Ts00chck.GetValue() and \
-            self.Ts01chck.GetValue() and \
-            self.Ts02chck.GetValue() and \
-            self.Ts11chck.GetValue() and \
-            self.Ts12chck.GetValue() and \
-            self.Ts22chck.GetValue():
+
+        if (
+            self.Ts00chck.GetValue()
+            and self.Ts01chck.GetValue()
+            and self.Ts02chck.GetValue()
+            and self.Ts11chck.GetValue()
+            and self.Ts12chck.GetValue()
+            and self.Ts22chck.GetValue()
+        ):
             self.Ts00chck.SetValue(False)
-            
-        
-        List_of_defaultvalues = np.array(self.CCDcalib + [0, 0, 0] + TransformParameters)
-        List_of_checkwidgets = [self.fitorient1, self.fitorient2, self.fitorient3,
-                        self.Ts00chck, self.Ts01chck, self.Ts02chck, self.Ts11chck, self.Ts12chck, self.Ts22chck]
-        
-        List_of_keys = ['anglex', 'angley', 'anglez', 'Ts00', 'Ts01', 'Ts02', 'Ts11', 'Ts12', 'Ts22']
-        
+
+        List_of_defaultvalues = np.array(
+            self.CCDcalib + [0, 0, 0] + TransformParameters
+        )
+        List_of_checkwidgets = [
+            self.fitorient1,
+            self.fitorient2,
+            self.fitorient3,
+            self.Ts00chck,
+            self.Ts01chck,
+            self.Ts02chck,
+            self.Ts11chck,
+            self.Ts12chck,
+            self.Ts22chck,
+        ]
+
+        List_of_keys = [
+            "anglex",
+            "angley",
+            "anglez",
+            "Ts00",
+            "Ts01",
+            "Ts02",
+            "Ts11",
+            "Ts12",
+            "Ts22",
+        ]
+
         print("List_of_defaultvalues", List_of_defaultvalues)
-        
+
         self.fitting_parameters_keys = []
         self.fitting_parameters_values = []
         for k, checkwidget in enumerate(List_of_checkwidgets):
-            
+
             if checkwidget.GetValue():
-                print('k,checkwidget', k, checkwidget)
+                print("k,checkwidget", k, checkwidget)
                 self.fitting_parameters_keys.append(List_of_keys[k])
                 self.fitting_parameters_values.append(List_of_defaultvalues[k + 5])
 
@@ -2417,51 +2851,117 @@ class Plot_RefineFrame(wx.Frame):
         latticeparameters = DictLT.dict_Materials[key_material][1]
         self.B0matrix = CP.calc_B_RR(latticeparameters)
         self.allparameters = np.array(self.CCDcalib + [0, 0, 0] + latticeparameters)
-        
-        self.constantlength = 'a'
+
+        self.constantlength = "a"
         if self.fita.GetValue() and self.fitb.GetValue() and self.fitc.GetValue():
             self.fita.SetValue(False)
-            
+
         elif not self.fitb.GetValue():
-            self.constantlength = 'b'
+            self.constantlength = "b"
         elif not self.fitc.GetValue():
-            self.constantlength = 'c'
-        
-        
+            self.constantlength = "c"
+
         List_of_defaultvalues = np.array(self.CCDcalib + [0, 0, 0] + latticeparameters)
-        List_of_checkwidgets = [self.fitorient1, self.fitorient2, self.fitorient3,
-                        self.fita, self.fitb, self.fitc, self.fitalpha, self.fitbeta, self.fitgamma]
-        
-        List_of_keys = ['anglex', 'angley', 'anglez', 'a', 'b', 'c', 'alpha', 'beta', 'gamma']
-        
+        List_of_checkwidgets = [
+            self.fitorient1,
+            self.fitorient2,
+            self.fitorient3,
+            self.fita,
+            self.fitb,
+            self.fitc,
+            self.fitalpha,
+            self.fitbeta,
+            self.fitgamma,
+        ]
+
+        List_of_keys = [
+            "anglex",
+            "angley",
+            "anglez",
+            "a",
+            "b",
+            "c",
+            "alpha",
+            "beta",
+            "gamma",
+        ]
+
         print("List_of_defaultvalues", List_of_defaultvalues)
-        
+
         self.fitting_parameters_keys = []
         self.fitting_parameters_values = []
         for k, checkwidget in enumerate(List_of_checkwidgets):
-            
+
             if checkwidget.GetValue():
-                print('k,checkwidget', k, checkwidget)
+                print("k,checkwidget", k, checkwidget)
                 self.fitting_parameters_keys.append(List_of_keys[k])
                 self.fitting_parameters_values.append(List_of_defaultvalues[k + 5])
 
     def selectFittingParameters(self):
         # fixed parameters (must be an array)
-        self.allparameters = np.array(self.CCDcalib + [0., 0, 0,  # 3 misorientation / initial UB matrix
-                                       1, 0, 0, 0, 1, 0, 0, 0, 1,  # Tc
-                                        1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
-                                         1, 0, 0, 0, 1, 0, 0, 0, 1])  # Ts
-        
-#         all_keys = ['anglex', 'angley', 'anglez',
-#         'Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22',
-#         'T00', 'T01', 'T02', 'T10', 'T11', 'T12', 'T20', 'T21', 'T22',
-#         'Ts00', 'Ts01', 'Ts02', 'Ts10', 'Ts11', 'Ts12', 'Ts20', 'Ts21', 'Ts22']
-        
-        List_of_keys = ['anglex', 'angley', 'anglez', 'Tc11', 'Tc22', 'Tc01', 'Tc02', 'Tc12']
+        self.allparameters = np.array(
+            self.CCDcalib
+            + [
+                0.0,
+                0,
+                0,  # 3 misorientation / initial UB matrix
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,  # Tc
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,  # T
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+            ]
+        )  # Ts
+
+        #         all_keys = ['anglex', 'angley', 'anglez',
+        #         'Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22',
+        #         'T00', 'T01', 'T02', 'T10', 'T11', 'T12', 'T20', 'T21', 'T22',
+        #         'Ts00', 'Ts01', 'Ts02', 'Ts10', 'Ts11', 'Ts12', 'Ts20', 'Ts21', 'Ts22']
+
+        List_of_keys = [
+            "anglex",
+            "angley",
+            "anglez",
+            "Tc11",
+            "Tc22",
+            "Tc01",
+            "Tc02",
+            "Tc12",
+        ]
         List_of_defaultvalues = [0, 0, 0, 1, 1, 0, 0, 0]
-        List_of_checkwidgets = [self.fitorient1, self.fitorient2, self.fitorient3,
-                        self.fitbovera, self.fitcovera, self.fitshear1, self.fitshear2, self.fitshear3]
-        
+        List_of_checkwidgets = [
+            self.fitorient1,
+            self.fitorient2,
+            self.fitorient3,
+            self.fitbovera,
+            self.fitcovera,
+            self.fitshear1,
+            self.fitshear2,
+            self.fitshear3,
+        ]
+
         self.fitting_parameters_keys = []
         self.fitting_parameters_values = []
         for k, checkwidget in enumerate(List_of_checkwidgets):
@@ -2477,14 +2977,24 @@ class Plot_RefineFrame(wx.Frame):
         """
         if self.fitresults:
 
-            fields = ['#Spot Exp', '#Spot Theo', 'h', 'k', 'l', 'Intensity', 'residues(pix.)']
+            fields = [
+                "#Spot Exp",
+                "#Spot Theo",
+                "h",
+                "k",
+                "l",
+                "Intensity",
+                "residues(pix.)",
+            ]
             # filter results Data spots
 
             # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
 
             indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int)
             indTheo = np.array(self.linkedspots_fit[:, 1], dtype=np.int)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int))[1:4]
+            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int))[
+                1:4
+            ]
             intens = self.linkIntensity_fit
             if self.linkResidues_fit is not None:
                 residues = np.array(self.linkResidues_fit)[:, 2]
@@ -2496,13 +3006,18 @@ class Plot_RefineFrame(wx.Frame):
             mySpotData = {}
             for k, ff in enumerate(fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(None, -1, 'Show and Filter fit results Spots Editor ', mySpotData,
-                                       func_to_call=self.readdata_fromEditor_Res,
-                                       field_name_and_order=fields)
+            dia = LSEditor.SpotsEditor(
+                None,
+                -1,
+                "Show and Filter fit results Spots Editor ",
+                mySpotData,
+                func_to_call=self.readdata_fromEditor_Res,
+                field_name_and_order=fields,
+            )
             dia.Show(True)
 
         else:
-            wx.MessageBox('You must have run once a data refinement!', 'INFO')
+            wx.MessageBox("You must have run once a data refinement!", "INFO")
 
     def readdata_fromEditor_Res(self, data):
         ArrayReturn = np.array(data)
@@ -2517,15 +3032,15 @@ class Plot_RefineFrame(wx.Frame):
         write a .fit file of indexation results of 1 grain
         """
         if self.fitresults is False:
-            wx.MessageBox('You must have run once a data refinement!', 'INFO')
+            wx.MessageBox("You must have run once a data refinement!", "INFO")
             return
 
-        suffix = ''
+        suffix = ""
         if self.incrementfilename.GetValue():
             self.savedfileindex += 1
-            suffix = '_fitnb_%d' % self.savedfileindex
+            suffix = "_fitnb_%d" % self.savedfileindex
 
-        outputfilename = self.DataPlot_filename.split('.')[0] + suffix + '.fit'
+        outputfilename = self.DataPlot_filename.split(".")[0] + suffix + ".fit"
 
         # absolute exp spot index as found in .cor or .dat file
         indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int)
@@ -2535,120 +3050,142 @@ class Plot_RefineFrame(wx.Frame):
 
         fullresults = 1
         addCCDparams = 1
-        
+
         if fullresults:
             # theoretical spots properties
             dictCCD = {}
-            dictCCD['dim'] = self.framedim
-            dictCCD['CCDparam'] = self.CCDcalib
-            dictCCD['pixelsize'] = self.pixelsize
-            dictCCD['kf_direction'] = self.kf_direction
-            SpotsProperties = LAUE.calcSpots_fromHKLlist(self.UBmat,
-                                       self.B0matrix,
-                                       np.array([_h, _k, _l]).T,
-                                       dictCCD)
-            H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo = SpotsProperties
+            dictCCD["dim"] = self.framedim
+            dictCCD["CCDparam"] = self.CCDcalib
+            dictCCD["pixelsize"] = self.pixelsize
+            dictCCD["kf_direction"] = self.kf_direction
+            SpotsProperties = LAUE.calcSpots_fromHKLlist(
+                self.UBmat, self.B0matrix, np.array([_h, _k, _l]).T, dictCCD
+            )
+            H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo = (
+                SpotsProperties
+            )
 
-#                self.Data_2theta, self.Data_chi, self.Data_I, self.File_NAME = self.data
+            #                self.Data_2theta, self.Data_chi, self.Data_I, self.File_NAME = self.data
 
-            AllDataToIndex=self.IndexationParameters['AllDataToIndex']
-            
-            twtheexp=2.*AllDataToIndex['data_theta'][indExp]
-            chiexp = AllDataToIndex['data_chi'][indExp]
-            Xexp=AllDataToIndex['data_pixX'][indExp]
-            Yexp=AllDataToIndex['data_pixY'][indExp]      
-                 
-            Columns = [indExp, intens, _h, _k, _l, residues,
-                       Energytheo, Xexp, Yexp, twtheexp, chiexp, Xtheo, Ytheo, twthetheo, chitheo,
-                       Qx, Qy, Qz]
+            AllDataToIndex = self.IndexationParameters["AllDataToIndex"]
 
-            columnsname = '#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n'
+            twtheexp = 2.0 * AllDataToIndex["data_theta"][indExp]
+            chiexp = AllDataToIndex["data_chi"][indExp]
+            Xexp = AllDataToIndex["data_pixX"][indExp]
+            Yexp = AllDataToIndex["data_pixY"][indExp]
+
+            Columns = [
+                indExp,
+                intens,
+                _h,
+                _k,
+                _l,
+                residues,
+                Energytheo,
+                Xexp,
+                Yexp,
+                twtheexp,
+                chiexp,
+                Xtheo,
+                Ytheo,
+                twthetheo,
+                chitheo,
+                Qx,
+                Qy,
+                Qz,
+            ]
+
+            columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
 
         else:  # old only 5 columns in .fit file
-            Columns = [indExp, intens, _h, _k, _l , residues]
-            columnsname = '#spot_index Intensity h k l pixDev\n'
+            Columns = [indExp, intens, _h, _k, _l, residues]
+            columnsname = "#spot_index Intensity h k l pixDev\n"
 
         datatooutput = np.transpose(np.array(Columns)).round(decimals=6)
 
         dict_matrices = {}
-        dict_matrices['UBmat'] = self.UBmat
-        
+        dict_matrices["UBmat"] = self.UBmat
+
         # OR
-        dict_matrices['Umat2'] = self.Umat2
-        dict_matrices['Bmat_tri'] = self.Bmat_tri
-        dict_matrices['HKLxyz_names'] = self.HKLxyz_names
-        dict_matrices['HKLxyz'] = self.HKLxyz
-        
-        dict_matrices['B0'] = self.B0matrix
-        dict_matrices['UBB0'] = self.UBB0mat
-        dict_matrices['devstrain_crystal'] = self.deviatoricstrain
-        dict_matrices['devstrain_sample'] = self.deviatoricstrain_sampleframe
-        dict_matrices['CCDLabel'] = self.CCDLabel
-        dict_matrices['detectorparameters'] = self.CCDcalib
-        dict_matrices['pixelsize'] = self.pixelsize
-        dict_matrices['framedim'] = self.framedim
-        dict_matrices['kf_direction'] = self.kf_direction
-        
+        dict_matrices["Umat2"] = self.Umat2
+        dict_matrices["Bmat_tri"] = self.Bmat_tri
+        dict_matrices["HKLxyz_names"] = self.HKLxyz_names
+        dict_matrices["HKLxyz"] = self.HKLxyz
+
+        dict_matrices["B0"] = self.B0matrix
+        dict_matrices["UBB0"] = self.UBB0mat
+        dict_matrices["devstrain_crystal"] = self.deviatoricstrain
+        dict_matrices["devstrain_sample"] = self.deviatoricstrain_sampleframe
+        dict_matrices["CCDLabel"] = self.CCDLabel
+        dict_matrices["detectorparameters"] = self.CCDcalib
+        dict_matrices["pixelsize"] = self.pixelsize
+        dict_matrices["framedim"] = self.framedim
+        dict_matrices["kf_direction"] = self.kf_direction
+
         euler_angles = GT.calc_Euler_angles(self.UBB0mat).round(decimals=3)
-        dict_matrices['euler_angles'] = euler_angles
+        dict_matrices["euler_angles"] = euler_angles
 
         if self.new_latticeparameters is not None:
-            dict_matrices['LatticeParameters']=self.new_latticeparameters
-        
+            dict_matrices["LatticeParameters"] = self.new_latticeparameters
+
         if self.Tsresults is not None:
-            dict_matrices['Ts'] = self.Tsresults
-        
-        dlg = wx.TextEntryDialog(self, 'Enter fit File name : \n',
-                                 'Saving Calibration Parameters Entry')
-        dlg.SetValue('%s' % outputfilename)
+            dict_matrices["Ts"] = self.Tsresults
+
+        dlg = wx.TextEntryDialog(
+            self, "Enter fit File name : \n", "Saving Calibration Parameters Entry"
+        )
+        dlg.SetValue("%s" % outputfilename)
         filenamefit = None
         if dlg.ShowModal() == wx.ID_OK:
             filenamefit = str(dlg.GetValue())
-            
 
         dlg.Destroy()
 
-        IOLT.writefitfile(filenamefit, datatooutput, len(indExp),
-                             meanresidues=np.mean(residues),
-                             PeakListFilename=self.DataPlot_filename,
-                             columnsname=columnsname,
-                             dict_matrices=dict_matrices,
-                             modulecaller='LaueToolsGUI.py')
+        IOLT.writefitfile(
+            filenamefit,
+            datatooutput,
+            len(indExp),
+            meanresidues=np.mean(residues),
+            PeakListFilename=self.DataPlot_filename,
+            columnsname=columnsname,
+            dict_matrices=dict_matrices,
+            modulecaller="LaueToolsGUI.py",
+        )
 
-#         header = '# Strain and Orientation Refinement of: %s\n' % (LaueToolsframe.DataPlot_filename)
-#         header += '# File created at %s with LaueToolsGUI.py\n' % (time.asctime())
-#         header += '# Number of indexed spots: %d\n' % len(indExp)
-#         header += '# Mean Deviation(pixel): %.3f\n' % np.mean(residues)
-#         if fullresults:
-#             header += '#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n'
-#         else:
-#             header += '#spot_index Intensity h k l pixDev\n'
-#         outputfile = open(outputfilename, 'w')
-#         outputfile.write(header)
-#         np.savetxt(outputfile, datatooutput, fmt='%.6f')
-#         outputfile.write('#UB matrix in q= (UB) B0 G*\n')
-# #            outputfile.write(str(self.UBB0mat) + '\n')
-#         outputfile.write(str(self.UBmat) + '\n')
-#         outputfile.write('#B0 matrix in q= UB (B0) G*\n')
-#         outputfile.write(str(self.B0matrix) + '\n')
-#         outputfile.write('#UBB0 matrix in q= (UB B0) G*\n')
-#         outputfile.write(str(self.UBB0mat) + '\n')
-#         outputfile.write('#deviatoric strain(10-3 unit)\n')
-#         outputfile.write(str(self.deviatoricstrain * 1000.) + '\n')
-#
-#         if addCCDparams:
-#             outputfile.write('#CCDLabel\n')
-#             outputfile.write(self.CCDLabel + '\n')
-#             outputfile.write('#DetectorParameters\n')
-#             outputfile.write(str(self.CCDcalib) + '\n')
-#             outputfile.write('#pixelsize\n')
-#             outputfile.write(str(self.pixelsize) + '\n')
-#             outputfile.write('#Frame dimensions\n')
-#             outputfile.write(str(self.framedim) + '\n')
-#
-#         outputfile.close()
+        #         header = '# Strain and Orientation Refinement of: %s\n' % (LaueToolsframe.DataPlot_filename)
+        #         header += '# File created at %s with LaueToolsGUI.py\n' % (time.asctime())
+        #         header += '# Number of indexed spots: %d\n' % len(indExp)
+        #         header += '# Mean Deviation(pixel): %.3f\n' % np.mean(residues)
+        #         if fullresults:
+        #             header += '#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n'
+        #         else:
+        #             header += '#spot_index Intensity h k l pixDev\n'
+        #         outputfile = open(outputfilename, 'w')
+        #         outputfile.write(header)
+        #         np.savetxt(outputfile, datatooutput, fmt='%.6f')
+        #         outputfile.write('#UB matrix in q= (UB) B0 G*\n')
+        # #            outputfile.write(str(self.UBB0mat) + '\n')
+        #         outputfile.write(str(self.UBmat) + '\n')
+        #         outputfile.write('#B0 matrix in q= UB (B0) G*\n')
+        #         outputfile.write(str(self.B0matrix) + '\n')
+        #         outputfile.write('#UBB0 matrix in q= (UB B0) G*\n')
+        #         outputfile.write(str(self.UBB0mat) + '\n')
+        #         outputfile.write('#deviatoric strain(10-3 unit)\n')
+        #         outputfile.write(str(self.deviatoricstrain * 1000.) + '\n')
+        #
+        #         if addCCDparams:
+        #             outputfile.write('#CCDLabel\n')
+        #             outputfile.write(self.CCDLabel + '\n')
+        #             outputfile.write('#DetectorParameters\n')
+        #             outputfile.write(str(self.CCDcalib) + '\n')
+        #             outputfile.write('#pixelsize\n')
+        #             outputfile.write(str(self.pixelsize) + '\n')
+        #             outputfile.write('#Frame dimensions\n')
+        #             outputfile.write(str(self.framedim) + '\n')
+        #
+        #         outputfile.close()
 
-        wx.MessageBox('Fit results saved in %s' % filenamefit, 'INFO')
+        wx.MessageBox("Fit results saved in %s" % filenamefit, "INFO")
 
     def Simulate_Pattern(self):
         """
@@ -2660,40 +3197,44 @@ class Plot_RefineFrame(wx.Frame):
         
         self.data_theo_pixXY = [posx, posy, Miller_ind, Twicetheta, Chi, energy]
         """
-        print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ", self.detectordiameter)
-        
+        print(
+            " self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
+            self.detectordiameter,
+        )
+
         # for squared detector need to increase a bit
-        if self.CCDLabel.startswith('sCMOS'):
-            diameter_for_simulation = self.detectordiameter*1.4*1.25
+        if self.CCDLabel.startswith("sCMOS"):
+            diameter_for_simulation = self.detectordiameter * 1.4 * 1.25
         else:
             diameter_for_simulation = self.detectordiameter
         if self.SimulParam != None:
             # print "self.SimulParam in Plot_RefineFrame.Annotate_theo()",self.SimulParam
             Grain, Emin, Emax = self.SimulParam
-            (Twicetheta, Chi,
-             Miller_ind,
-             posx, posy,
-             energy) = LAUE.SimulateLaue(Grain, Emin, Emax, self.CCDcalib,
-                                         kf_direction=self.kf_direction,
-                                         removeharmonics=1,
-                                         pixelsize=self.pixelsize,
-                                         dim=self.framedim,
-                                         ResolutionAngstrom=self.ResolutionAngstrom,
-                                         detectordiameter=diameter_for_simulation* 1.25)
+            (Twicetheta, Chi, Miller_ind, posx, posy, energy) = LAUE.SimulateLaue(
+                Grain,
+                Emin,
+                Emax,
+                self.CCDcalib,
+                kf_direction=self.kf_direction,
+                removeharmonics=1,
+                pixelsize=self.pixelsize,
+                dim=self.framedim,
+                ResolutionAngstrom=self.ResolutionAngstrom,
+                detectordiameter=diameter_for_simulation * 1.25,
+            )
 
             self.data_theo = [Twicetheta, Chi, Miller_ind, posx, posy, energy]
 
             self.data_theo_pixXY = [posx, posy, Miller_ind, Twicetheta, Chi, energy]
 
             # if self.datatype == 'gnomon':  # really needed?
-                # # compute Gnomonic projection
-                # _nbofspots = len(Twicetheta)
-                # sim_dataselected = IOLT.createselecteddata((Twicetheta,Chi,np.ones(_nbofspots)),
-                                                            # np.arange(_nbofspots),
-                                                            # _nbofspots)[0]
-                # sim_gnomonx, sim_gnomony = IIM.ComputeGnomon_2(sim_dataselected)
-                # self.data_theo=[sim_gnomonx, sim_gnomony, Miller_ind]
-
+            # # compute Gnomonic projection
+            # _nbofspots = len(Twicetheta)
+            # sim_dataselected = IOLT.createselecteddata((Twicetheta,Chi,np.ones(_nbofspots)),
+            # np.arange(_nbofspots),
+            # _nbofspots)[0]
+            # sim_gnomonx, sim_gnomony = IIM.ComputeGnomon_2(sim_dataselected)
+            # self.data_theo=[sim_gnomonx, sim_gnomony, Miller_ind]
 
             # print "I have(Re)-simulated data in Plot_RefineFrame *************"
             return Twicetheta, Chi, Miller_ind, posx, posy, energy
@@ -2708,15 +3249,18 @@ class Plot_RefineFrame(wx.Frame):
 
         print("self.key_material", self.key_material)
 
-        self.sb.SetStatusText("Selected material: %s" % \
-                        str(self.dict_Materials[self.key_material]))
-        
+        self.sb.SetStatusText(
+            "Selected material: %s" % str(self.dict_Materials[self.key_material])
+        )
+
         self.OnReplot(1)
 
         event.Skip()
-        
+
     def onSelectUBmatrix(self, event):
-        self.sb.SetStatusText("Selected Ubmatrix: %s" % str(self.comboUBmatrix.GetValue()))
+        self.sb.SetStatusText(
+            "Selected Ubmatrix: %s" % str(self.comboUBmatrix.GetValue())
+        )
         self.UpdateFromRefinement.SetValue(False)
         self.OnReplot(1)
         event.Skip()
@@ -2731,15 +3275,17 @@ class Plot_RefineFrame(wx.Frame):
             print([butt.GetValue() for butt in self.listbuttons])
             print("self.listbuttonstate", self.listbuttonstate)
 
-    def OnAcceptMatching(self, evt):  # accept AcceptMatching indexation 
+    def OnAcceptMatching(self, evt):  # accept AcceptMatching indexation
         self.what_was_pressed(0)
         if self.listbuttonstate[0] == 0:
             self.all_reds()
             self.allbuttons_off()
             self.pointButton5.SetValue(True)
-            self.pointButton5.SetBackgroundColour('Green')
+            self.pointButton5.SetBackgroundColour("Green")
             self.listbuttonstate = [1, 0, 0]
-            print("\n\n********************\nAccepting Matching...\n********************\n\n")
+            print(
+                "\n\n********************\nAccepting Matching...\n********************\n\n"
+            )
             self.Spot_MillerAttribution(evt)
         else:
             self.pointButton5.SetBackgroundColour(self.defaultColor)
@@ -2754,7 +3300,7 @@ class Plot_RefineFrame(wx.Frame):
             self.all_reds()
             self.allbuttons_off()
             self.pointButton6.SetValue(True)
-            self.pointButton6.SetBackgroundColour('Green')
+            self.pointButton6.SetBackgroundColour("Green")
             self.listbuttonstate = [0, 1, 0]
         else:
             self.pointButton6.SetBackgroundColour(self.defaultColor)
@@ -2770,7 +3316,7 @@ class Plot_RefineFrame(wx.Frame):
             self.all_reds()
             self.allbuttons_off()
             self.pointButton7.SetValue(True)
-            self.pointButton7.SetBackgroundColour('Green')
+            self.pointButton7.SetBackgroundColour("Green")
             self.listbuttonstate = [0, 0, 1]
         else:
             self.pointButton7.SetBackgroundColour(self.defaultColor)
@@ -2780,21 +3326,22 @@ class Plot_RefineFrame(wx.Frame):
     def close(self, event):
         self.Close(True)
 
-    #--- ---------Plot  functions
+    # --- ---------Plot  functions
     def setplotlimits_fromcurrentplot(self):
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
-#         print "new limits x", self.xlim
-#         print "new limits y", self.ylim
-        
+
+    #         print "new limits x", self.xlim
+    #         print "new limits y", self.ylim
+
     def setplotlimits_fromdata(self):
         self.xlim, self.ylim = self.getDataLimits()
-        
+
         ylim = self.ylim
-        
-        if self.flipyaxis and self.datatype == 'pixels':
+
+        if self.flipyaxis and self.datatype == "pixels":
             ylim = (self.ylim[1], self.ylim[0])
-            
+
         self.ylim = ylim
 
     def _replot(self):
@@ -2802,15 +3349,15 @@ class Plot_RefineFrame(wx.Frame):
         _replot in Plot_RefineFrame
         """
         print("_replot")
-        
+
         # offsets to match imshow and scatter plot coordinates frames
-        if self.datatype == 'pixels':
+        if self.datatype == "pixels":
             X_offset = 1
             Y_offset = 1
         else:
             X_offset = 0
             Y_offset = 0
-            
+
         self.setplotlimits_fromdata()
 
         if self.datatype_unchanged:
@@ -2818,23 +3365,24 @@ class Plot_RefineFrame(wx.Frame):
                 self.setplotlimits_fromcurrentplot()
         else:
             self.init_plot = True
-            
+
         # Data_X, Data_Y, Data_I, File_NAME = self.data
 
-#        fig = self.plotPanel.get_figure()
-#        self.axes = fig.gca()
+        #        fig = self.plotPanel.get_figure()
+        #        self.axes = fig.gca()
         self.axes.clear()
 
         # clear the axes and replot everything
-#        self.axes.cla()
+        #        self.axes.cla()
 
         def fromindex_to_pixelpos_x(index, pos):
-            if self.datatype == 'pixels':
+            if self.datatype == "pixels":
                 return int(index)
             else:
                 return index
+
         def fromindex_to_pixelpos_y(index, pos):
-            if self.datatype == 'pixels':
+            if self.datatype == "pixels":
                 return int(index)
             else:
                 return index
@@ -2843,151 +3391,188 @@ class Plot_RefineFrame(wx.Frame):
         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y))
 
         # background image
-        if self.ImageArray is not None and self.datatype == 'pixels':
-#             print 'self.ImageArray', self.ImageArray.shape
-            self.myplot = self.axes.imshow(self.ImageArray, interpolation='nearest', origin='upper')
+        if self.ImageArray is not None and self.datatype == "pixels":
+            #             print 'self.ImageArray', self.ImageArray.shape
+            self.myplot = self.axes.imshow(
+                self.ImageArray, interpolation="nearest", origin="upper"
+            )
 
-            if not self.data_dict['logscale']:
-                norm = matplotlib.colors.Normalize(vmin=self.data_dict['vmin'],
-                                    vmax=self.data_dict['vmax'])
+            if not self.data_dict["logscale"]:
+                norm = matplotlib.colors.Normalize(
+                    vmin=self.data_dict["vmin"], vmax=self.data_dict["vmax"]
+                )
             else:
-                norm = matplotlib.colors.LogNorm(vmin=self.data_dict['vmin'],
-                                    vmax=self.data_dict['vmax'])
+                norm = matplotlib.colors.LogNorm(
+                    vmin=self.data_dict["vmin"], vmax=self.data_dict["vmax"]
+                )
 
             self.myplot.set_norm(norm)
-            self.myplot.set_cmap(self.data_dict['lut'])
+            self.myplot.set_cmap(self.data_dict["lut"])
 
-#             if self.init_plot:
-#                 self.axes.set_ylim((2048, 0))
-#                 self.axes.set_xlim((0, 2048))
+        #             if self.init_plot:
+        #                 self.axes.set_ylim((2048, 0))
+        #                 self.axes.set_xlim((0, 2048))
 
         # there are theoretical data
         if self.data_theo is not None:
-#             print "there is theo. data in plot_RefineFrame"
+            #             print "there is theo. data in plot_RefineFrame"
 
-            markerstyle = '*'  # 'o' 'h'
+            markerstyle = "*"  # 'o' 'h'
 
-            if self.datatype in ('2thetachi',):
+            if self.datatype in ("2thetachi",):
                 # define self.data_theo
                 self.Simulate_Pattern()
                 self.data_theo_displayed = self.data_theo
 
-            elif self.datatype == 'pixels':
+            elif self.datatype == "pixels":
                 self.data_theo = self.data_theo_pixXY
-                self.data_theo_displayed = (np.array(self.data_theo_pixXY[:2]).T - \
-                                            np.array([X_offset, Y_offset])).T
-#                 print "self.data_theo_displayed", self.data_theo_displayed
+                self.data_theo_displayed = (
+                    np.array(self.data_theo_pixXY[:2]).T
+                    - np.array([X_offset, Y_offset])
+                ).T
+            #                 print "self.data_theo_displayed", self.data_theo_displayed
 
             try:  # in linux there is not keyword 'OS'...!
                 # TODO: very strange !
-                os.environ['OS'] == 'Windows_NT'
+                os.environ["OS"] == "Windows_NT"
             except KeyError:
                 # print "No acces to this key is os.environ ??!!"
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = 50, marker = 'o',facecolor = 'None',edgecolor = 'r',alpha = 1.)  # ok for window, matplotlib 0.99.1.1
-                self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
-                                  s=50, marker=markerstyle,
-                                edgecolor='r',
-                                facecolors='None')
-                if matplotlibversion == '0.99.1':  # ok linux with matplotlib 0.99.1
+                self.axes.scatter(
+                    self.data_theo_displayed[0],
+                    self.data_theo_displayed[1],
+                    s=50,
+                    marker=markerstyle,
+                    edgecolor="r",
+                    facecolors="None",
+                )
+                if matplotlibversion == "0.99.1":  # ok linux with matplotlib 0.99.1
                     # print "matplotlibversion  ==  '0.99.1'"
-                    self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
-                                      s=50, marker=markerstyle,
-                                      edgecolor='r',
-                                      facecolor='None')
+                    self.axes.scatter(
+                        self.data_theo_displayed[0],
+                        self.data_theo_displayed[1],
+                        s=50,
+                        marker=markerstyle,
+                        edgecolor="r",
+                        facecolor="None",
+                    )
 
             else:
                 print("else of KeyError")
                 # ok for windows matplotlib 0.99.1
-                self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
-                                  s=50, marker=markerstyle,
-                                  facecolor='None',
-                                  edgecolor='r')
+                self.axes.scatter(
+                    self.data_theo_displayed[0],
+                    self.data_theo_displayed[1],
+                    s=50,
+                    marker=markerstyle,
+                    facecolor="None",
+                    edgecolor="r",
+                )
         # with size varying according to F**2 = self.Millerindices**2
         # print "self.Millerindices",self.Millerindices
         # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = np.sum(self.Millerindices**2, axis = 1),marker = 'o',alpha = 0, edgecolor = 'r',c = 'w')
 
-        #---------------------
+        # ---------------------
         # Experimental spots
-        #---------------------
-        if self.datatype == '2thetachi':
-#             print "first 5 experimental spots self.tth,self.chi", self.tth[:5], self.chi[:5]
-#             self.axes.scatter(self.tth, self.chi,
-#                           s=self.Data_I / np.amax(self.Data_I) * 100., alpha=0.5)
-#                           # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
-                          
-            self.axes.scatter(self.data_2thetachi[0], self.data_2thetachi[1],
-                          s=self.Data_I / np.amax(self.Data_I) * 100., alpha=0.5)
-                          # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
+        # ---------------------
+        if self.datatype == "2thetachi":
+            #             print "first 5 experimental spots self.tth,self.chi", self.tth[:5], self.chi[:5]
+            #             self.axes.scatter(self.tth, self.chi,
+            #                           s=self.Data_I / np.amax(self.Data_I) * 100., alpha=0.5)
+            #                           # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
 
-        elif self.datatype == 'pixels':
+            self.axes.scatter(
+                self.data_2thetachi[0],
+                self.data_2thetachi[1],
+                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                alpha=0.5,
+            )
+            # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
+
+        elif self.datatype == "pixels":
 
             # background image
             if self.ImageArray is not None:
-                kwords = {'marker':'o', 'facecolor':'None',
-                          'edgecolor':self.data_dict['markercolor']}
+                kwords = {
+                    "marker": "o",
+                    "facecolor": "None",
+                    "edgecolor": self.data_dict["markercolor"],
+                }
             else:
-#                 self.axes.set_xbound(self.currentbounds[0])
-#                 self.axes.set_ybound(self.currentbounds[1])
+                #                 self.axes.set_xbound(self.currentbounds[0])
+                #                 self.axes.set_ybound(self.currentbounds[1])
 
-                kwords = {'edgecolor':'None', 'facecolor':self.data_dict['markercolor']}
+                kwords = {
+                    "edgecolor": "None",
+                    "facecolor": self.data_dict["markercolor"],
+                }
 
-#             print "experimental spots self.pixelX,self.pixelY", self.pixelX[:5], self.pixelY[:5]
-            self.axes.scatter(self.pixelX - X_offset, self.pixelY - Y_offset,
-                                s=self.Data_I / np.amax(self.Data_I) * 100.,
-                                alpha=0.5,
-                                **kwords)
-                                # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
-        
+            #             print "experimental spots self.pixelX,self.pixelY", self.pixelX[:5], self.pixelY[:5]
+            self.axes.scatter(
+                self.pixelX - X_offset,
+                self.pixelY - Y_offset,
+                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                alpha=0.5,
+                **kwords
+            )
+            # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
+
         # axes labels
-        if self.datatype == '2thetachi':
-            self.axes.set_xlabel('2theta(deg.)')
-            self.axes.set_ylabel('chi(deg)')
-        elif self.datatype == 'pixels':
-            self.axes.set_xlabel('X pixel')
-            self.axes.set_ylabel('Y pixel')
+        if self.datatype == "2thetachi":
+            self.axes.set_xlabel("2theta(deg.)")
+            self.axes.set_ylabel("chi(deg)")
+        elif self.datatype == "pixels":
+            self.axes.set_xlabel("X pixel")
+            self.axes.set_ylabel("Y pixel")
 
         # limits of plots
-#         if self.datatype == '2thetachi':
-#             if self.kf_direction == 'Z>0':
-#                 if self.init_plot or self.datatype_unchanged is False:
-#                     if self.xlim is None and self.ylim is None:
-#                         self.xlim = (34, 146)
-#                         self.ylim = (-50, 50)
-#  
-#             elif self.kf_direction == 'X>0':
-#                 if self.init_plot or self.datatype_unchanged is False:
-#                     if self.xlim is None and self.ylim is None:
-#                         self.xlim = (-1, 25)
-#                         self.ylim = (-180, 180)
-#  
-# #         elif self.datatype == 'gnomon':
-# #             if self.init_plot or self.datatype_unchanged is False:
-# #                 if self.xlim is None and self.ylim is None:
-# #                     self.ylim = (-.6, .6)
-# #                     self.xlim = (-.6, 0.6)
-# #             self.axes.set_xlabel('X gnomon')
-# #             self.axes.set_ylabel('Y gnomon')
-#  
-#         elif self.datatype == 'pixels':
-#  
-# #             ylim = (-100, 2150)
-#             if self.init_plot or self.datatype_unchanged is False:
-#                 # marccd and roper convention flipyaxis= True
-#                 if self.xlim is None and self.ylim is None:
-#                     if self.flipyaxis:
-#                         self.ylim = (2048, 0)
-#                     else:
-#                         self.ylim = (0, 2048)
-#                          
-#                     self.xlim = (0, 2048)
+        #         if self.datatype == '2thetachi':
+        #             if self.kf_direction == 'Z>0':
+        #                 if self.init_plot or self.datatype_unchanged is False:
+        #                     if self.xlim is None and self.ylim is None:
+        #                         self.xlim = (34, 146)
+        #                         self.ylim = (-50, 50)
+        #
+        #             elif self.kf_direction == 'X>0':
+        #                 if self.init_plot or self.datatype_unchanged is False:
+        #                     if self.xlim is None and self.ylim is None:
+        #                         self.xlim = (-1, 25)
+        #                         self.ylim = (-180, 180)
+        #
+        # #         elif self.datatype == 'gnomon':
+        # #             if self.init_plot or self.datatype_unchanged is False:
+        # #                 if self.xlim is None and self.ylim is None:
+        # #                     self.ylim = (-.6, .6)
+        # #                     self.xlim = (-.6, 0.6)
+        # #             self.axes.set_xlabel('X gnomon')
+        # #             self.axes.set_ylabel('Y gnomon')
+        #
+        #         elif self.datatype == 'pixels':
+        #
+        # #             ylim = (-100, 2150)
+        #             if self.init_plot or self.datatype_unchanged is False:
+        #                 # marccd and roper convention flipyaxis= True
+        #                 if self.xlim is None and self.ylim is None:
+        #                     if self.flipyaxis:
+        #                         self.ylim = (2048, 0)
+        #                     else:
+        #                         self.ylim = (0, 2048)
+        #
+        #                     self.xlim = (0, 2048)
 
-        nbspotstoindex = len(self.IndexationParameters['DataToIndex']['current_exp_spot_index_list'])
-        
-        texttitle = '%s %d/%d spots' % (self.File_NAME, len(self.Data_I),nbspotstoindex)       
+        nbspotstoindex = len(
+            self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"]
+        )
+
+        texttitle = "%s %d/%d spots" % (
+            self.File_NAME,
+            len(self.Data_I),
+            nbspotstoindex,
+        )
         if self.ImageArray is not None:
-            if hasattr(self, 'fullpathimagefile'):  
-                texttitle += '\nImage: %s' % self.fullpathimagefile
-        
+            if hasattr(self, "fullpathimagefile"):
+                texttitle += "\nImage: %s" % self.fullpathimagefile
+
         self.axes.set_title(texttitle)
         self.axes.grid(True)
 
@@ -3000,7 +3585,7 @@ class Plot_RefineFrame(wx.Frame):
         self.datatype_unchanged = True
 
         # redraw the display
-#        self.plotPanel.draw()
+        #        self.plotPanel.draw()
         self.canvas.draw()
 
     def allbuttons_off(self):
@@ -3027,32 +3612,32 @@ class Plot_RefineFrame(wx.Frame):
 
         if all_states == [False, False, True]:
             self.pointButton7.SetValue(True)
-#            print "self.Annotate_theo(evt) in Plot_RefineFrame"
+            #            print "self.Annotate_theo(evt) in Plot_RefineFrame"
             self.Annotate_theo(evt)
         if all_states == [False, False, False]:
             # evt.Skip()
             pass
 
-#    def Store_matrix(self, evt):
-#        """
-#        Plot_RefineFrame
-#        """
-#        if self.current_matrix != []:
-#            LaueToolsframe.mat_store_ind += 1
-#            if self.Bmat != None and self.Umat != None:
-#                tostore = self.UBmat
-#            else:
-#                tostore = self.current_matrix
-#
-#            LaueToolsframe.Matrix_Store.append(tostore)
-#            LaueToolsframe.dict_Rot["MatManualIndex_%d" % LaueToolsframe.mat_store_ind] = tostore
-#
-#            print "Stored matrix ..."
-#            print "MatManualIndex_%d" % LaueToolsframe.mat_store_ind
-#
-#            wx.MessageBox('Matrix is stored as %s\nin rotation matrix list for further simulation with B matrix = Id' % ("MatManualIndex_%d" % LaueToolsframe.mat_store_ind), 'INFO')
-#        else:
-#            print "No simulation matrix available!..."
+    #    def Store_matrix(self, evt):
+    #        """
+    #        Plot_RefineFrame
+    #        """
+    #        if self.current_matrix != []:
+    #            LaueToolsframe.mat_store_ind += 1
+    #            if self.Bmat != None and self.Umat != None:
+    #                tostore = self.UBmat
+    #            else:
+    #                tostore = self.current_matrix
+    #
+    #            LaueToolsframe.Matrix_Store.append(tostore)
+    #            LaueToolsframe.dict_Rot["MatManualIndex_%d" % LaueToolsframe.mat_store_ind] = tostore
+    #
+    #            print "Stored matrix ..."
+    #            print "MatManualIndex_%d" % LaueToolsframe.mat_store_ind
+    #
+    #            wx.MessageBox('Matrix is stored as %s\nin rotation matrix list for further simulation with B matrix = Id' % ("MatManualIndex_%d" % LaueToolsframe.mat_store_ind), 'INFO')
+    #        else:
+    #            print "No simulation matrix available!..."
 
     def OnStoreMatrix(self, evt):
         """
@@ -3067,32 +3652,33 @@ class Plot_RefineFrame(wx.Frame):
 
             self.Matrix_Store.append(tostore)
 
-            prefix = 'MatrixManualIndex'
+            prefix = "MatrixManualIndex"
 
             proposed_name = "%s_%d" % (prefix, self.mat_store_ind)
 
             # dialog for matrix name
-#             dlg = wx.TextEntryDialog(self, '%s\nEnter Matrix Name : \n default is: \n %s' \
-#                                      % (str(tostore), proposed_name),
-#                                      'Storing Matrix Name Entry')
-#             dlg.SetValue(proposed_name)
-            
-            self.selectedName =None
-            dlg = MessageDataBox(self, -1,
-                                 'Storing Matrix Name Entry', tostore, proposed_name)
-            
+            #             dlg = wx.TextEntryDialog(self, '%s\nEnter Matrix Name : \n default is: \n %s' \
+            #                                      % (str(tostore), proposed_name),
+            #                                      'Storing Matrix Name Entry')
+            #             dlg.SetValue(proposed_name)
+
+            self.selectedName = None
+            dlg = MessageDataBox(
+                self, -1, "Storing Matrix Name Entry", tostore, proposed_name
+            )
+
             dlg.Show(True)
 
-#             dlg.ShowModal()
-#             dlg.Destroy()
-            
-#             txtmsg = 'Matrix is stored as %s\n'% self.selectedName
-#             txtmsg+='in rotation matrix list for further simulation with B matrix = Id' 
-#             wx.MessageBox(txtmsg, 'INFO')
-            
+        #             dlg.ShowModal()
+        #             dlg.Destroy()
+
+        #             txtmsg = 'Matrix is stored as %s\n'% self.selectedName
+        #             txtmsg+='in rotation matrix list for further simulation with B matrix = Id'
+        #             wx.MessageBox(txtmsg, 'INFO')
+
         else:
             print("No simulation matrix available!...")
-            
+
     def Spot_MillerAttribution(self, evt):
         """
         in Plot_RefineFrame
@@ -3107,7 +3693,10 @@ class Plot_RefineFrame(wx.Frame):
         TODO: use other reference crystal with other geometry
         """
         if self.mainframe is None:
-            wx.MessageBox('This button is useful only for sequential indexation of several grains from LaueToolsGUI', 'Info')
+            wx.MessageBox(
+                "This button is useful only for sequential indexation of several grains from LaueToolsGUI",
+                "Info",
+            )
             self.pointButton5.SetBackgroundColour(self.defaultColor)
             self.pointButton5.SetValue(False)
             self.listbuttonstate = [0, 0, 0]
@@ -3131,12 +3720,12 @@ class Plot_RefineFrame(wx.Frame):
         # or this may due to the fact that U matrix given from indexation relies on RS vectors in an other order than in simulation?
 
         # if self.Bmat != None:
-            # Grain[0] = self.Bmat
-            # updategrain = True
+        # Grain[0] = self.Bmat
+        # updategrain = True
 
         # if self.Umat != None:
-            # Grain[2] = self.Umat
-            # updategrain = True
+        # Grain[2] = self.Umat
+        # updategrain = True
 
         if self.Bmat is not None and self.Umat is not None:
             Grain[0] = np.eye(3)
@@ -3148,10 +3737,12 @@ class Plot_RefineFrame(wx.Frame):
             epsil = self.deviatoricstrain
 
         if updategrain:
-            self.SimulParam = (Grain , emin, emax)
+            self.SimulParam = (Grain, emin, emax)
 
         # Generating link automatically
-        self.OnAutoLink(evt)  # inside there is simulatePattern() which uses self.SimulParam
+        self.OnAutoLink(
+            evt
+        )  # inside there is simulatePattern() which uses self.SimulParam
 
         # self.linkedspots_link
         # self.linkExpMiller_link
@@ -3162,26 +3753,32 @@ class Plot_RefineFrame(wx.Frame):
         Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int)[:, 1:4]
         List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int)
         Energy_Exp_spot = self.Energy_Exp_spot
-        
-        
-        print("List_Exp_spot_close in Spot_MillerAttribution",List_Exp_spot_close)
+
+        print("List_Exp_spot_close in Spot_MillerAttribution", List_Exp_spot_close)
 
         # Updating the DB ------------------
         if self.Bmat is None and self.Umat is None:
             # non  pure U matrix but rather UB matrix due to refinement procedure to find a matrix from two spots
-            self.mainframe.last_orientmatrix_fromindexation[self.current_processedgrain] = Grain[2]
+            self.mainframe.last_orientmatrix_fromindexation[
+                self.current_processedgrain
+            ] = Grain[2]
             # Identity use for recognition
-            self.mainframe.last_Bmatrix_fromindexation[self.current_processedgrain] = Grain[0]
+            self.mainframe.last_Bmatrix_fromindexation[
+                self.current_processedgrain
+            ] = Grain[0]
         else:  # use results of refinement
             # a UB matrix
-            self.mainframe.last_orientmatrix_fromindexation[self.current_processedgrain] = self.UBmat
+            self.mainframe.last_orientmatrix_fromindexation[
+                self.current_processedgrain
+            ] = self.UBmat
             # the B matrix
-            self.mainframe.last_Bmatrix_fromindexation[self.current_processedgrain] = self.Bmat
+            self.mainframe.last_Bmatrix_fromindexation[
+                self.current_processedgrain
+            ] = self.Bmat
             # we can if needed from UB and B extract B  ...
-            
-            
+
         # update DataSetObject: -----------------------------
-#         after refineUB dicts created
+        #         after refineUB dicts created
         grain_index = self.current_processedgrain
         self.DataSet.key_material = self.key_material
         self.DataSet.emin = emin
@@ -3191,53 +3788,63 @@ class Plot_RefineFrame(wx.Frame):
         print("DataSet.deviatoricstrain", self.deviatoricstrain)
         print("DataSet.pixelresidues", self.linkResidues_link)
         print("self.DataSet.detectordiameter", self.DataSet.detectordiameter)
-#         print "DataSet.spotindexabs", DataSet.spotindexabs
-        
+        #         print "DataSet.spotindexabs", DataSet.spotindexabs
+
         matching_angle_tolerance = float(self.matr_ctrl.GetValue())
-        
-        #--- Indexed  spots will be only those used for the refinement
-#         self.DataSet.resetSpotsFamily(self.current_processedgrain)
-#         if self.linkResidues_fit is not None:
-#             self.DataSet.getSpotsFromSpotIndices(np.array(self.linkResidues_fit[:,0],dtype=np.int))
-#         else:
-#             wx.MessageBox('You must perform a fitting!','Info')
-#             return
-        
+
+        # --- Indexed  spots will be only those used for the refinement
+        #         self.DataSet.resetSpotsFamily(self.current_processedgrain)
+        #         if self.linkResidues_fit is not None:
+        #             self.DataSet.getSpotsFromSpotIndices(np.array(self.linkResidues_fit[:,0],dtype=np.int))
+        #         else:
+        #             wx.MessageBox('You must perform a fitting!','Info')
+        #             return
+
         # matching
-        
-        print("\n\n\n self.linkResidues_fit[:,0]",self.linkResidues_fit[:,0])
-        print("self.current_processedgrain",self.current_processedgrain)
+
+        print("\n\n\n self.linkResidues_fit[:,0]", self.linkResidues_fit[:, 0])
+        print("self.current_processedgrain", self.current_processedgrain)
         print("\n\n\n")
-        self.DataSet.AssignHKL(ISS.OrientMatrix(self.UBmat),
-                               grain_index,
-                               matching_angle_tolerance,
-                               selectbyspotsindices = np.array(self.linkResidues_fit[:,0],dtype=np.int))
+        self.DataSet.AssignHKL(
+            ISS.OrientMatrix(self.UBmat),
+            grain_index,
+            matching_angle_tolerance,
+            selectbyspotsindices=np.array(self.linkResidues_fit[:, 0], dtype=np.int),
+        )
         self.DataSet.dict_grain_devstrain[grain_index] = self.deviatoricstrain
         self.DataSet.dict_indexedgrains_material[grain_index] = self.key_material
-        
+
         print(self.DataSet.dict_grain_devstrain[grain_index])
         print(self.DataSet.dict_grain_matrix[grain_index])  # = matrix
-        print(self.DataSet.dict_grain_matching_rate[grain_index])  # = [nb_updates, matching_rate]
+        print(
+            self.DataSet.dict_grain_matching_rate[grain_index]
+        )  # = [nb_updates, matching_rate]
         print(self.DataSet.dict_Missing_Reflections[grain_index])  # = missingRefs
-        
+
         self.DataSet.indexedgrains.append(self.current_processedgrain)
-        
+
         print("self.DataSet.dict_grain_matrix", self.DataSet.dict_grain_matrix)
-        print("self.DataSet.dict_grain_matching_rate", self.DataSet.dict_grain_matching_rate)
+        print(
+            "self.DataSet.dict_grain_matching_rate",
+            self.DataSet.dict_grain_matching_rate,
+        )
         # -----------------------------------
 
         # update spots properties with respect to indexation results (and self.current_processedgrain +=1)
         self.mainframe.last_epsil_fromindexation[self.current_processedgrain] = epsil
-        self.mainframe.Update_DataToIndex_Dict([Miller_Exp_spot, Energy_Exp_spot,
-                                                 List_Exp_spot_close],self.current_processedgrain)
-        self.mainframe.Update_DB_fromIndexation([Miller_Exp_spot, Energy_Exp_spot,
-                                                 List_Exp_spot_close])
-        
+        self.mainframe.Update_DataToIndex_Dict(
+            [Miller_Exp_spot, Energy_Exp_spot, List_Exp_spot_close],
+            self.current_processedgrain,
+        )
+        self.mainframe.Update_DB_fromIndexation(
+            [Miller_Exp_spot, Energy_Exp_spot, List_Exp_spot_close]
+        )
+
         # closing windows
         self.Close(True)
         self.parent.Close(True)
 
-        if self.indexationframe is not 'unknown':
+        if self.indexationframe is not "unknown":
             self.indexationframe.Close(True)
         else:
             # preventing to close the mainframe App !!
@@ -3246,16 +3853,16 @@ class Plot_RefineFrame(wx.Frame):
 
         evt.Skip()
 
-    #--- ---------  Plot annotations 
+    # --- ---------  Plot annotations
     def drawAnnote_exp(self, axis, x, y, annote):
         """
         Draw the annotation on the plot here it s exp spot index
         #Plot_RefineFrame
         """
         # TODO texts offset as a function of plot size
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             textshifts = (1, 1, 2, -2)
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             textshifts = (15, 15, 40, -40)
         if (x, y) in self.drawnAnnotations_exp:
             markers = self.drawnAnnotations_exp[(x, y)]
@@ -3263,19 +3870,30 @@ class Plot_RefineFrame(wx.Frame):
             for m in markers:
                 m.set_visible(not m.get_visible())
             # self.axis.figure.canvas.draw()
-#            self.plotPanel.draw()
+            #            self.plotPanel.draw()
             self.canvas.draw()
         else:
             # t = axis.text(x, y, "(%3.2f, %3.2f) - %s"%(x, y,annote), )  # par defaut
-            t1 = axis.text(x + textshifts[0], y + textshifts[1], "#spot %d" % (annote[0]), size=8)
-            t2 = axis.text(x + textshifts[2], y + textshifts[3], "Intens. %.1f" % (annote[1]), size=8)
-            if matplotlibversion <= '0.99.1':
-                m = axis.scatter([x], [y], s=1, marker='d', c='r', zorder=100, faceted=False)
+            t1 = axis.text(
+                x + textshifts[0], y + textshifts[1], "#spot %d" % (annote[0]), size=8
+            )
+            t2 = axis.text(
+                x + textshifts[2],
+                y + textshifts[3],
+                "Intens. %.1f" % (annote[1]),
+                size=8,
+            )
+            if matplotlibversion <= "0.99.1":
+                m = axis.scatter(
+                    [x], [y], s=1, marker="d", c="r", zorder=100, faceted=False
+                )
             else:
-                m = axis.scatter([x], [y], s=1, marker='d', c='r', zorder=100, edgecolors='None')  # matplotlib 0.99.1.1
+                m = axis.scatter(
+                    [x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None"
+                )  # matplotlib 0.99.1.1
             self.drawnAnnotations_exp[(x, y)] = (t1, t2, m)
             # self.axis.figure.canvas.draw()
-#            self.plotPanel.draw()
+            #            self.plotPanel.draw()
             self.canvas.draw()
 
     def drawSpecificAnnote_exp(self, annote):
@@ -3290,23 +3908,28 @@ class Plot_RefineFrame(wx.Frame):
         """
         in Plot_RefineFrame
         """
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             xtol = 5
             ytol = 5
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             xtol = 200
             ytol = 200
         # """
         # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
         # self.Data_index_expspot = np.arange(len(self.Data_X))
         # """
-        if self.datatype == '2thetachi':
-            xdata, ydata, annotes = (self.Data_X,
-                                 self.Data_Y,
-                                 list(zip(self.Data_index_expspot, self.Data_I)))
-        elif self.datatype == 'pixels':
-            xdata, ydata, annotes = (self.data_XY[0], self.data_XY[1],
-                                 list(zip(self.Data_index_expspot, self.Data_I)))
+        if self.datatype == "2thetachi":
+            xdata, ydata, annotes = (
+                self.Data_X,
+                self.Data_Y,
+                list(zip(self.Data_index_expspot, self.Data_I)),
+            )
+        elif self.datatype == "pixels":
+            xdata, ydata, annotes = (
+                self.data_XY[0],
+                self.data_XY[1],
+                list(zip(self.Data_index_expspot, self.Data_I)),
+            )
         # print self.Idat
         # print self.Mdat
         # print annotes
@@ -3319,7 +3942,9 @@ class Plot_RefineFrame(wx.Frame):
 
         annotes = []
         for x, y, a in self._dataANNOTE_exp:
-            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol) :
+            if (clickX - xtol < x < clickX + xtol) and (
+                clickY - ytol < y < clickY + ytol
+            ):
                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
         if annotes:
@@ -3331,7 +3956,7 @@ class Plot_RefineFrame(wx.Frame):
             for l in self.links_exp:
                 l.drawSpecificAnnote_exp(annote)
 
-            self.updateStatusBar(x, y, annote, spottype='exp')
+            self.updateStatusBar(x, y, annote, spottype="exp")
 
     def drawAnnote_theo(self, axis, x, y, annote):
         """
@@ -3339,35 +3964,45 @@ class Plot_RefineFrame(wx.Frame):
 
         in Plot_RefineFrame
         """
-        if self.datatype == 'pixels':
+        if self.datatype == "pixels":
             textoffset = 10
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             textoffset = 2
-        
+
         if (x, y) in self.drawnAnnotations_theo:
             markers = self.drawnAnnotations_theo[(x, y)]
             # print markers
             for m in markers:
                 m.set_visible(not m.get_visible())
             # self.axis.figure.canvas.draw()
-#            self.plotPanel.draw()
+            #            self.plotPanel.draw()
             self.canvas.draw()
         else:
             # t = axis.text(x, y, "(%3.2f, %3.2f) - %s"%(x, y,annote), )  # par defaut
-            t1 = axis.text(x + textoffset, y, "%s\n%.2f" % (str(annote[0]), annote[3]), size=8, color='r')
-#             # for self.datatype=='2thertachi'
-#             annote = hkl, 2theta chi energy
-#             # for self.datatype=='2thertachi'
-#             annote = hkl, x y  energy
+            t1 = axis.text(
+                x + textoffset,
+                y,
+                "%s\n%.2f" % (str(annote[0]), annote[3]),
+                size=8,
+                color="r",
+            )
+            #             # for self.datatype=='2thertachi'
+            #             annote = hkl, 2theta chi energy
+            #             # for self.datatype=='2thertachi'
+            #             annote = hkl, x y  energy
 
-            if matplotlibversion <= '0.99.1':
-                m = axis.scatter([x], [y], s=1, marker='d', c='r', zorder=100, faceted=False)
+            if matplotlibversion <= "0.99.1":
+                m = axis.scatter(
+                    [x], [y], s=1, marker="d", c="r", zorder=100, faceted=False
+                )
             else:
-                m = axis.scatter([x], [y], s=1, marker='d', c='r', zorder=100, edgecolors='None')  # matplotlib 0.99.1.1
+                m = axis.scatter(
+                    [x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None"
+                )  # matplotlib 0.99.1.1
 
             self.drawnAnnotations_theo[(x, y)] = (t1, m)
             # self.axis.figure.canvas.draw()
-#            self.plotPanel.draw()
+            #            self.plotPanel.draw()
             self.canvas.draw()
 
     def drawSpecificAnnote_theo(self, annote):
@@ -3384,44 +4019,58 @@ class Plot_RefineFrame(wx.Frame):
         """
         print("Plot_RefineFrame.Annotate_theo()")
 
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             xtol = 5
             ytol = 5
-        elif self.datatype == 'pixels':
+        elif self.datatype == "pixels":
             xtol = 200
             ytol = 200
 
-        if self.datatype == '2thetachi':
+        if self.datatype == "2thetachi":
             # 2theta, chi, (miller posx posy energy)
-            xdata, ydata, annotes = self.data_theo[0], self.data_theo[1], self.data_theo[2:]
-        if self.datatype == 'pixels':
+            xdata, ydata, annotes = (
+                self.data_theo[0],
+                self.data_theo[1],
+                self.data_theo[2:],
+            )
+        if self.datatype == "pixels":
             # x, y, (miller 2theta chi energy)
-            xdata, ydata, annotes = self.data_theo_pixXY[0], self.data_theo_pixXY[1], self.data_theo_pixXY[2:] 
+            xdata, ydata, annotes = (
+                self.data_theo_pixXY[0],
+                self.data_theo_pixXY[1],
+                self.data_theo_pixXY[2:],
+            )
 
-#         elif self.datatype == 'gnomon':
-#             xdata, ydata, annotes = self.data_theo  # sim_gnomonx, sim_gnomony, Miller_ind
+        #         elif self.datatype == 'gnomon':
+        #             xdata, ydata, annotes = self.data_theo  # sim_gnomonx, sim_gnomony, Miller_ind
 
-#         self._dataANNOTE_theo = zip(xdata, ydata, annotes)
-        xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
-                                                self.data_theo[1],
-                                                list(zip(*self.data_theo[2:])))
+        #         self._dataANNOTE_theo = zip(xdata, ydata, annotes)
+        xdata_theo, ydata_theo, _annotes_theo = (
+            self.data_theo[0],
+            self.data_theo[1],
+            list(zip(*self.data_theo[2:])),
+        )
 
         clickX = event.xdata
         clickY = event.ydata
 
         print("clickX, clickY", clickX, clickY)
 
-#         annotes = []
-#         for x, y, a in self._dataANNOTE_theo:
-#             if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
-#                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
-                
+        #         annotes = []
+        #         for x, y, a in self._dataANNOTE_theo:
+        #             if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+        #                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
+
         annotes = []
         for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
-            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
-#                     print "got theo. spot!!"
-#                     print "with info: ", atheo
-                annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo))
+            if (clickX - xtol < x < clickX + xtol) and (
+                clickY - ytol < y < clickY + ytol
+            ):
+                #                     print "got theo. spot!!"
+                #                     print "with info: ", atheo
+                annotes.append(
+                    (GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo)
+                )
 
         if annotes:
             annotes.sort()
@@ -3434,92 +4083,111 @@ class Plot_RefineFrame(wx.Frame):
 
             self.updateStatusBar(x, y, annote)
 
-    def updateStatusBar(self, x, y, annote, spottype='theo'):
+    def updateStatusBar(self, x, y, annote, spottype="theo"):
 
-        if self.datatype == '2thetachi':
-            Xplot = '2theta'
-            Yplot = 'chi'
+        if self.datatype == "2thetachi":
+            Xplot = "2theta"
+            Yplot = "chi"
         else:
-            Xplot = 'x'
-            Yplot = 'y'
+            Xplot = "x"
+            Yplot = "y"
 
-        if spottype == 'theo':
-            self.sb.SetStatusText(("%s= %.2f " % (Xplot, x) + 
-                                    " %s= %.2f " % (Yplot, y) + 
-                                    "  HKL=%s " % str(annote[0]) + 
-                                    "E=%.2f keV" % annote[3]),
-                                    0)
+        if spottype == "theo":
+            self.sb.SetStatusText(
+                (
+                    "%s= %.2f " % (Xplot, x)
+                    + " %s= %.2f " % (Yplot, y)
+                    + "  HKL=%s " % str(annote[0])
+                    + "E=%.2f keV" % annote[3]
+                ),
+                0,
+            )
 
-        elif spottype == 'exp':
+        elif spottype == "exp":
 
-            self.sb.SetStatusText(("%s= %.2f " % (Xplot, x) + 
-                                    " %s= %.2f " % (Yplot, y) + 
-                                    "   Spotindex=%d " % annote[0] + 
-                                    "   Intensity=%.2f" % annote[1]),
-                                    1)
-            
-            
-#--- ---------Results of fitting Dialog class ------------------
+            self.sb.SetStatusText(
+                (
+                    "%s= %.2f " % (Xplot, x)
+                    + " %s= %.2f " % (Yplot, y)
+                    + "   Spotindex=%d " % annote[0]
+                    + "   Intensity=%.2f" % annote[1]
+                ),
+                1,
+            )
+
+
+# --- ---------Results of fitting Dialog class ------------------
 class FitResultsBoard(wx.Dialog):
     """
     Class to set image file parameters
     """
+
     def __init__(self, parent, _id, title, data_dict):
         """
         
         initialize FitResultsBoard window
 
         """
-        textdsc = data_dict['devstrain_crystal']
-        textdss = data_dict['devstrain_sample']
-        textfulls = data_dict['fullstrain_sample']
-        textub = data_dict['UBmatrix']
-        textb0 = data_dict['B0matrix']
-        textil = data_dict['Initial lattice']
-        textrl = data_dict['Refined lattice']
-        texttnbresidues = data_dict['NbspotsResidues']
-         
-        textts = data_dict.get('Ts parameters', '')
+        textdsc = data_dict["devstrain_crystal"]
+        textdss = data_dict["devstrain_sample"]
+        textfulls = data_dict["fullstrain_sample"]
+        textub = data_dict["UBmatrix"]
+        textb0 = data_dict["B0matrix"]
+        textil = data_dict["Initial lattice"]
+        textrl = data_dict["Refined lattice"]
+        texttnbresidues = data_dict["NbspotsResidues"]
+
+        textts = data_dict.get("Ts parameters", "")
         textHKLxyz_names = data_dict["HKLxyz_names"]
         textHKLxyz = data_dict["HKLxyz"]
-        
-#         wx.Frame.__init__(self, None, title=title, pos=(200, 200), size=(810, 500))
-#         wx.Dialog.__init__(self, parent, title=title, pos=(200, 200), size=(810, 500))
-        wx.Dialog.__init__(self, parent, -1, title=title, pos=(200, 200), size=(810, 660))
-#         super(FitResultsBoard, self).__init__(parent, title=title, pos=(200, 200), size=(810, 500))
-        
+
+        #         wx.Frame.__init__(self, None, title=title, pos=(200, 200), size=(810, 500))
+        #         wx.Dialog.__init__(self, parent, title=title, pos=(200, 200), size=(810, 500))
+        wx.Dialog.__init__(
+            self, parent, -1, title=title, pos=(200, 200), size=(810, 660)
+        )
+        #         super(FitResultsBoard, self).__init__(parent, title=title, pos=(200, 200), size=(810, 500))
+
         # Start of sizers and widgets contained within.
         self.background = self  # wx.Panel(self)
-        
+
         self.OKBtn = wx.Button(self.background, wx.ID_OK)
         self.OKBtn.SetDefault()
-        
+
         WIDTH = 400
-        
+
         self.txtnbresidues = wx.StaticText(self.background, -1, texttnbresidues)
-        self.initlat = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140))
-        self.finallat = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140))
-        self.ub = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100))
-        self.b0 = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100))
-        self.devstraincryst = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100))
-        self.devstrainsample = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100))
-        self.Ts = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 120))
-        self.fullstrainsample = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 120))  
+        self.initlat = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140)
+        )
+        self.finallat = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140)
+        )
+        self.ub = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100)
+        )
+        self.b0 = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100)
+        )
+        self.devstraincryst = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100)
+        )
+        self.devstrainsample = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 100)
+        )
+        self.Ts = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 120)
+        )
+        self.fullstrainsample = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 120)
+        )
 
-
-        self.HKLxyz_names = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140))  
-        self.HKLxyz = wx.TextCtrl(self.background,
-                                       style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140))  
-
+        self.HKLxyz_names = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140)
+        )
+        self.HKLxyz = wx.TextCtrl(
+            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE, size=(WIDTH, 140)
+        )
 
         self.initlat.SetValue(textil)
         self.finallat.SetValue(textrl)
@@ -3531,7 +4199,7 @@ class FitResultsBoard(wx.Dialog):
         self.fullstrainsample.SetValue(textfulls)
         self.HKLxyz_names.SetValue(textHKLxyz_names)
         self.HKLxyz.SetValue(textHKLxyz)
-        
+
         self.devstrainsample.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.initlat.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.finallat.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
@@ -3540,38 +4208,38 @@ class FitResultsBoard(wx.Dialog):
         self.Ts.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.devstraincryst.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.HKLxyz_names.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
-        self.HKLxyz.Bind(wx.EVT_TEXT_ENTER, self.onNothing)       
-#         self.OKBtn.Bind(wx.EVT_BUTTON, self.onOK)
-        
+        self.HKLxyz.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
+        #         self.OKBtn.Bind(wx.EVT_BUTTON, self.onOK)
+
         # layout
-        
+
         # OR 06Nov18
-        horizontalBox1 = wx.BoxSizer()       
+        horizontalBox1 = wx.BoxSizer()
         horizontalBox1.Add(self.txtnbresidues, proportion=1, border=0)
-        
+
         horizontalBox2 = wx.BoxSizer()
         horizontalBox2.Add(self.initlat, proportion=1, border=0)
         horizontalBox2.Add(self.finallat, proportion=1, border=0)
-        
+
         horizontalBox3 = wx.BoxSizer()
         horizontalBox3.Add(self.ub, proportion=1, border=0)
         horizontalBox3.Add(self.b0, proportion=1, border=0)
-        
+
         horizontalBox = wx.BoxSizer()
         horizontalBox.Add(self.devstraincryst, proportion=1, border=0)
         horizontalBox.Add(self.devstrainsample, proportion=1, border=0)
-        
+
         horizontalBox4 = wx.BoxSizer()
         horizontalBox4.Add(self.Ts, proportion=1, border=0)
         horizontalBox4.Add(self.fullstrainsample, proportion=1, border=0)
-        
+
         # OR 20Nov18
         horizontalBox5 = wx.BoxSizer()
         horizontalBox5.Add(self.HKLxyz_names, proportion=1, border=0)
         horizontalBox5.Add(self.HKLxyz, proportion=1, border=0)
-        
+
         verticalBox = wx.BoxSizer(wx.VERTICAL)
-#        verticalBox.Add(self.txtnbresidues, proportion=0, flag=wx.EXPAND, border=5)
+        #        verticalBox.Add(self.txtnbresidues, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox1, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox2, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox3, proportion=0, flag=wx.EXPAND, border=5)
@@ -3580,35 +4248,39 @@ class FitResultsBoard(wx.Dialog):
         verticalBox.Add(self.OKBtn, proportion=0, flag=wx.EXPAND, border=0)
         verticalBox.Add(horizontalBox4, proportion=0, flag=wx.EXPAND, border=5)
 
-        
         self.background.SetSizer(verticalBox)
-        
+
         self.CentreOnParent(wx.BOTH)
         self.SetFocus()
-        
-        txt_define_reference_frames = 'Lab frame Rlab (LT) :\n xlab along incident beam ki (downstream),\n zlab perpendicular to CCD screen (upwards),\n ylab = z^x approx along -xech (door-wards)\n'
-        txt_define_reference_frames += 'Sample frame Rsample (LT) :\n obtained from lab frame by rotation of sampletilt = 40 degrees around -ylab. \n'
-        txt_define_reference_frames += ' xsample approx along yech (downstream + upwards),\n ysample = approx along -xech (door-wards),\n zsample approx along microscope axis (upstream upwards) \n'
+
+        txt_define_reference_frames = "Lab frame Rlab (LT) :\n xlab along incident beam ki (downstream),\n zlab perpendicular to CCD screen (upwards),\n ylab = z^x approx along -xech (door-wards)\n"
+        txt_define_reference_frames += "Sample frame Rsample (LT) :\n obtained from lab frame by rotation of sampletilt = 40 degrees around -ylab. \n"
+        txt_define_reference_frames += " xsample approx along yech (downstream + upwards),\n ysample = approx along -xech (door-wards),\n zsample approx along microscope axis (upstream upwards) \n"
         txt_define_reference_frames += "Warning : xech yech here give the position of the microbeam spot with respect to the sample, xech right-wards and yech upwards with respect to the sample image on the microscope camera. \n"
-        txt_define_reference_frames += 'The UB B0 matrix gives as columns the components of astar, btar and cstar in Rlab frame. \n'        
-        txt_define_reference_frames += 'The B0 matrix gives as columns the \"before-fit\" components of astar bstar cstar on the cartesian frame built from Rstar,\n'
-        txt_define_reference_frames += " i.e. the initial shape of the reciprocal unit cell \n"
+        txt_define_reference_frames += "The UB B0 matrix gives as columns the components of astar, btar and cstar in Rlab frame. \n"
+        txt_define_reference_frames += 'The B0 matrix gives as columns the "before-fit" components of astar bstar cstar on the cartesian frame built from Rstar,\n'
+        txt_define_reference_frames += (
+            " i.e. the initial shape of the reciprocal unit cell \n"
+        )
         txt_define_reference_frames += "Deviatoric strain in crystal frame is in the cartesian frame built from the vectors of the direct-space crystal unit cell. \n"
         self.OKBtn.SetToolTipString(txt_define_reference_frames)
-#        for key, value in data_dict.iteritems() :
-#            print key, value
-        
+
+    #        for key, value in data_dict.iteritems() :
+    #            print key, value
+
     def onOK(self, evt):
         self.Close()
+
     def onNothing(self, evt):
         return
 
 
-#--- ---------------  Plot limits board  parameters
+# --- ---------------  Plot limits board  parameters
 class IntensityScaleBoard(wx.Dialog):
     """
     Class to set image file parameters
     """
+
     def __init__(self, parent, _id, title, data_dict):
         """
         initialize board window
@@ -3621,21 +4293,29 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.ImageArray = None
         if self.parent is not None:
-            if hasattr(self.parent, 'ImageArray'):
+            if hasattr(self.parent, "ImageArray"):
                 self.ImageArray = self.parent.ImageArray
-#                 self.fullpathimagefile = self.parent.fullpathimagefile
-        
+        #                 self.fullpathimagefile = self.parent.fullpathimagefile
+
         self.data_dict = data_dict
-        self.dict_colors = {0:'b', 1:'g', 2:'r', 3:'yellow',
-                           4:'m', 5:'grey', 6:'black',
-                           7:'white', 8:'pink'}
+        self.dict_colors = {
+            0: "b",
+            1: "g",
+            2: "r",
+            3: "yellow",
+            4: "m",
+            5: "grey",
+            6: "black",
+            7: "white",
+            8: "pink",
+        }
         self.colorindex = 0
 
-        Imin = self.data_dict['Imin']
-        Imax = self.data_dict['Imax']
-        self.IminDisplayed = vmin = self.data_dict['vmin']
-        self.ImaxDisplayed = vmax = self.data_dict['vmax']
-        lut = self.data_dict['lut']
+        Imin = self.data_dict["Imin"]
+        Imax = self.data_dict["Imax"]
+        self.IminDisplayed = vmin = self.data_dict["vmin"]
+        self.ImaxDisplayed = vmax = self.data_dict["vmax"]
+        lut = self.data_dict["lut"]
 
         self.init_Imin = copy.copy(Imin)
         self.init_Imax = copy.copy(Imax)
@@ -3643,104 +4323,124 @@ class IntensityScaleBoard(wx.Dialog):
         self.init_vman = copy.copy(vmax)
         self.init_lut = copy.copy(lut)
 
-        self.mapsLUT = ['jet', 'GnBu', 'cool', 'BuGn',
-                        'PuBu', 'autumn', 'copper', 'gist_heat',
-                        'hot', 'spring']
-        
+        self.mapsLUT = [
+            "jet",
+            "GnBu",
+            "cool",
+            "BuGn",
+            "PuBu",
+            "autumn",
+            "copper",
+            "gist_heat",
+            "hot",
+            "spring",
+        ]
+
         # WIDGETS
-        luttxt = wx.StaticText(self, -1, 'LUT', (5, 7))
-        self.comboLUT = wx.ComboBox(self, -1,
-                                    self.init_lut, (70, 5),
-                                    choices=self.mapsLUT)  # ,
-                                    # style=wx.CB_READONLY)
+        luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
+        self.comboLUT = wx.ComboBox(
+            self, -1, self.init_lut, (70, 5), choices=self.mapsLUT
+        )  # ,
+        # style=wx.CB_READONLY)
 
         posv = 40
 
-        self.slider_label = wx.StaticText(self, -1,
-            "Imin: ", (5, posv + 5))
+        self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
 
-        self.vminctrl = wx.SpinCtrl(self, -1, '1', pos=(50, posv), size=(80, -1),
-                                    min=-200, max=100000)
-        
+        self.vminctrl = wx.SpinCtrl(
+            self, -1, "1", pos=(50, posv), size=(80, -1), min=-200, max=100000
+        )
 
         # second horizontal band
-        self.slider_label2 = wx.StaticText(self, -1,
-            "Imax: ", (5, posv + 35))
+        self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
 
-        self.vmaxctrl = wx.SpinCtrl(self, -1, '1000', pos=(50, posv + 30), size=(80, -1),
-                                    min=2, max=1000000)
-        
+        self.vmaxctrl = wx.SpinCtrl(
+            self, -1, "1000", pos=(50, posv + 30), size=(80, -1), min=2, max=1000000
+        )
 
         #         self.slider_label = wx.StaticText(self, -1,
-#             "peak tilt (%): ")
-        self.slider_vmin = wx.Slider(self, -1, pos=(150, posv + 5),
-                                     size=(220, -1),
+        #             "peak tilt (%): ")
+        self.slider_vmin = wx.Slider(
+            self,
+            -1,
+            pos=(150, posv + 5),
+            size=(220, -1),
             value=0,
             minValue=0,
             maxValue=1000,
-            style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
+            style=wx.SL_AUTOTICKS,
+        )  # | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
-        
 
         # second horizontal band
-#         self.slider_label2 = wx.StaticText(self, -1,
-#             "data size (%): ")
-        self.slider_vmax = wx.Slider(self, -1, pos=(150, posv + 35), size=(220, -1),
+        #         self.slider_label2 = wx.StaticText(self, -1,
+        #             "data size (%): ")
+        self.slider_vmax = wx.Slider(
+            self,
+            -1,
+            pos=(150, posv + 35),
+            size=(220, -1),
             value=1000,
             minValue=1,
             maxValue=1000,
-            style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
+            style=wx.SL_AUTOTICKS,
+        )  # | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_vmax.SetTickFreq(500)
         else:
             self.slider_vmax.SetTickFreq(500, 1)
-        
-        self.Iminvaltxt = wx.StaticText(self, -1, '0', pos=(400, posv + 5))
-        self.Imaxvaltxt = wx.StaticText(self, -1, '1000', pos=(400, posv + 35))
 
-        self.chck_scaletypeplot = wx.CheckBox(self, -1, 'Logscale', pos=(5, posv + 70))
+        self.Iminvaltxt = wx.StaticText(self, -1, "0", pos=(400, posv + 5))
+        self.Imaxvaltxt = wx.StaticText(self, -1, "1000", pos=(400, posv + 35))
+
+        self.chck_scaletypeplot = wx.CheckBox(self, -1, "Logscale", pos=(5, posv + 70))
         self.chck_scaletypeplot.SetValue(True)
-        
-        self.changecolorbtn = wx.Button(self, -1,
-                                   'Change Circle Color', pos=(150, posv + 70))
-        
 
-        txtimage = wx.StaticText(self, -1, 'Image:', pos=(5, posv + 107))
-        txtfolderimage = wx.StaticText(self, -1, 'folder:', pos=(70, posv + 107))
-        txtfilename = wx.StaticText(self, -1, 'filename:', pos=(70, posv + 137))
+        self.changecolorbtn = wx.Button(
+            self, -1, "Change Circle Color", pos=(150, posv + 70)
+        )
 
-        self.folderexpimagetxtctrl = wx.TextCtrl(self, -1,
-                                   '', size=(240, -1), pos=(140, posv + 105))
-        self.expimagetxtctrl = wx.TextCtrl(self, -1,
-                                   '', size=(240, -1), pos=(140, posv + 135))
-        self.expimagebrowsebtn = wx.Button(self, -1,
-                                   'Open', size=(50, -1), pos=(5, posv + 165))
-        self.btncloseimage = wx.Button(self, -1,
-                                   'Close', size=(50, -1), pos=(100, posv + 165))
+        txtimage = wx.StaticText(self, -1, "Image:", pos=(5, posv + 107))
+        txtfolderimage = wx.StaticText(self, -1, "folder:", pos=(70, posv + 107))
+        txtfilename = wx.StaticText(self, -1, "filename:", pos=(70, posv + 137))
+
+        self.folderexpimagetxtctrl = wx.TextCtrl(
+            self, -1, "", size=(240, -1), pos=(140, posv + 105)
+        )
+        self.expimagetxtctrl = wx.TextCtrl(
+            self, -1, "", size=(240, -1), pos=(140, posv + 135)
+        )
+        self.expimagebrowsebtn = wx.Button(
+            self, -1, "Open", size=(50, -1), pos=(5, posv + 165)
+        )
+        self.btncloseimage = wx.Button(
+            self, -1, "Close", size=(50, -1), pos=(100, posv + 165)
+        )
         self.btncloseimage.Disable()
-        
+
         # BINDS
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
         self.Bind(wx.EVT_SPINCTRL, self.OnSpinCtrl_IminDisplayed, self.vminctrl)
         self.Bind(wx.EVT_SPINCTRL, self.OnSpinCtrl_ImaxDisplayed, self.vmaxctrl)
-        self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                  self.on_slider_IminDisplayed)
-        self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                              self.on_slider_ImaxDisplayed)
+        self.slider_vmin.Bind(
+            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.on_slider_IminDisplayed
+        )
+        self.slider_vmax.Bind(
+            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.on_slider_ImaxDisplayed
+        )
         self.chck_scaletypeplot.Bind(wx.EVT_CHECKBOX, self.onChangeScaleTypeplot)
         self.changecolorbtn.Bind(wx.EVT_BUTTON, self.onChangeColor)
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.OpenImage)
         self.btncloseimage.Bind(wx.EVT_BUTTON, self.onCloseImage)
-        
+
         # tooltips
-        t1 = 'Change Look-up-Table of Colors'
-        tmin = 'Set min. Intensity displayed'
-        tmax = 'Set max. Intensity displayed'
-        tscale = 'Set Linear or Log pixel intensity scale'
-        
+        t1 = "Change Look-up-Table of Colors"
+        tmin = "Set min. Intensity displayed"
+        tmax = "Set max. Intensity displayed"
+        tscale = "Set Linear or Log pixel intensity scale"
 
         self.comboLUT.SetToolTipString(t1)
         self.vminctrl.SetToolTipString(tmin)
@@ -3748,82 +4448,93 @@ class IntensityScaleBoard(wx.Dialog):
         self.vmaxctrl.SetToolTipString(tmax)
         self.slider_vmax.SetToolTipString(tmax)
         self.chck_scaletypeplot.SetToolTipString(tscale)
-        self.changecolorbtn.SetToolTipString('Change Color of Simulated Spots hollow circles ')
-        self.expimagebrowsebtn.SetToolTipString('Open new or update displayed Image according to image filename field')
-        
+        self.changecolorbtn.SetToolTipString(
+            "Change Color of Simulated Spots hollow circles "
+        )
+        self.expimagebrowsebtn.SetToolTipString(
+            "Open new or update displayed Image according to image filename field"
+        )
+
     def OpenImage(self, evt):
-        
-#         print "self.ImageArray in OpenImage", self.ImageArray
-        if hasattr(self, 'fullpathimagefile'):
-            if self.fullpathimagefile  in ('', None, ' '):
+
+        #         print "self.ImageArray in OpenImage", self.ImageArray
+        if hasattr(self, "fullpathimagefile"):
+            if self.fullpathimagefile in ("", None, " "):
                 self.onSelectImageFile(1)
         else:
             self.onSelectImageFile(1)
-        
-        
-            
+
         self.readnewimage()
         self.update_ImageArray()
-        
+
     def onSelectImageFile(self, evt):
         self.GetfullpathFile(evt)
 
         folder, imagefile = os.path.split(self.fullpathimagefile)
         self.folderexpimagetxtctrl.SetValue(folder)
         self.expimagetxtctrl.SetValue(imagefile)
-        
+
     def GetfullpathFile(self, evt):
-        myFileDialog = wx.FileDialog(self, "Choose an image file",
-                                        style=wx.OPEN,
-#                                         defaultDir=self.dirname,
-                                        wildcard=DictLT.getwildcardstring(self.parent.CCDLabel))
+        myFileDialog = wx.FileDialog(
+            self,
+            "Choose an image file",
+            style=wx.OPEN,
+            #                                         defaultDir=self.dirname,
+            wildcard=DictLT.getwildcardstring(self.parent.CCDLabel),
+        )
         dlg = myFileDialog
         dlg.SetMessage("Choose an image file")
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
 
-#             self.dirnameBlackList = dlg.GetDirectory()
+            #             self.dirnameBlackList = dlg.GetDirectory()
             self.fullpathimagefile = str(filename)
         else:
             pass
 
     def readnewimage(self):
         import readmccd as RMCCD
+
         folder = str(self.folderexpimagetxtctrl.GetValue())
         imagename = str(self.expimagetxtctrl.GetValue())
         self.fullpathimagefile = os.path.join(folder, imagename)
-        
-        if self.fullpathimagefile in ('', None, ' '):
+
+        if self.fullpathimagefile in ("", None, " "):
             self.onSelectImageFile(1)
-        
+
         print("read %s" % self.fullpathimagefile)
 
         if not os.path.isfile(self.fullpathimagefile):
-            dlg = wx.MessageDialog(self, 'Path to image file : %s\n\ndoes not exist!!' % self.fullpathimagename,
-                                   'error', wx.OK | wx.ICON_ERROR)
-#                 dlg = wx.MessageDialog(self, 'Detector parameters must be float with dot separator',
-#                                    'Bad Input Parameters',)
+            dlg = wx.MessageDialog(
+                self,
+                "Path to image file : %s\n\ndoes not exist!!" % self.fullpathimagename,
+                "error",
+                wx.OK | wx.ICON_ERROR,
+            )
+            #                 dlg = wx.MessageDialog(self, 'Detector parameters must be float with dot separator',
+            #                                    'Bad Input Parameters',)
             dlg.ShowModal()
             dlg.Destroy()
             return
-        
+
         CCDLabel = self.parent.CCDLabel
 
         print("using CCDLabel", CCDLabel)
 
-        ImageArray, framedim, fliprot = RMCCD.readCCDimage(self.fullpathimagefile,
-                                                           CCDLabel, dirname=None)
+        ImageArray, framedim, fliprot = RMCCD.readCCDimage(
+            self.fullpathimagefile, CCDLabel, dirname=None
+        )
 
         self.ImageArray = ImageArray
         if self.parent is not None:
             self.parent.fullpathimagefile = self.fullpathimagefile
-        
+
     def update_ImageArray(self):
         self.parent.ImageArray = self.ImageArray
 
         self.btncloseimage.Enable()
         self.updateplot()
-        
+
     def onCloseImage(self, evt):
         self.ImageArray = None
         self.parent.ImageArray = self.ImageArray
@@ -3831,17 +4542,17 @@ class IntensityScaleBoard(wx.Dialog):
         self.updateplot()
 
     def OnChangeLUT(self, evt):
-        self.data_dict['lut'] = self.comboLUT.GetValue()
+        self.data_dict["lut"] = self.comboLUT.GetValue()
 
-        print("now selected lut:%s" % self.data_dict['lut'])
+        print("now selected lut:%s" % self.data_dict["lut"])
         self.updateplot()
 
     def onChangeColor(self, evt):
         self.colorindex += 1
         self.colorindex = self.colorindex % 8
-        self.data_dict['markercolor'] = self.dict_colors[self.colorindex]
+        self.data_dict["markercolor"] = self.dict_colors[self.colorindex]
 
-        print("now selected markercolor:%s" % self.data_dict['markercolor'])
+        print("now selected markercolor:%s" % self.data_dict["markercolor"])
 
         self.updateplot()
 
@@ -3871,24 +4582,24 @@ class IntensityScaleBoard(wx.Dialog):
 
     def normalizeplot(self):
 
-        self.data_dict['vmin'] = self.IminDisplayed
-        self.data_dict['vmax'] = self.ImaxDisplayed
+        self.data_dict["vmin"] = self.IminDisplayed
+        self.data_dict["vmax"] = self.ImaxDisplayed
 
-#         print "self.data_dict in normalizeplot", self.data_dict
+        #         print "self.data_dict in normalizeplot", self.data_dict
 
         self.updateplot()
 
     def onChangeScaleTypeplot(self, evt):
 
-        self.data_dict['logscale'] = not self.data_dict['logscale']
+        self.data_dict["logscale"] = not self.data_dict["logscale"]
 
-        print("Now logscale is %s" % str(self.data_dict['logscale']))
+        print("Now logscale is %s" % str(self.data_dict["logscale"]))
 
-        if self.data_dict['logscale'] is True:
+        if self.data_dict["logscale"] is True:
             positivemin = max(1, int(self.vminctrl.GetValue()))
             self.vminctrl.SetValue(positivemin)
-            self.data_dict['vmin'] = positivemin
-            self.data_dict['Imin'] = positivemin
+            self.data_dict["vmin"] = positivemin
+            self.data_dict["Imin"] = positivemin
             self.slider_vmin.SetMin(positivemin)
 
             self.on_slider_IminDisplayed(1)
@@ -3898,7 +4609,7 @@ class IntensityScaleBoard(wx.Dialog):
     def on_slider_IminDisplayed(self, evt):
         self.IminDisplayed = self.slider_vmin.GetValue()
 
-#         self.viewingLUTpanel.vminctrl.SetValue(int(self.IminDisplayed))
+        #         self.viewingLUTpanel.vminctrl.SetValue(int(self.IminDisplayed))
 
         if self.ImaxDisplayed <= self.IminDisplayed:
             self.IminDisplayed = self.ImaxDisplayed - 1
@@ -3909,10 +4620,10 @@ class IntensityScaleBoard(wx.Dialog):
 
     def on_slider_ImaxDisplayed(self, evt):
         self.ImaxDisplayed = self.slider_vmax.GetValue()
-#         self.viewingLUTpanel.vmaxctrl.SetValue(int(self.ImaxDisplayed))
+        #         self.viewingLUTpanel.vmaxctrl.SetValue(int(self.ImaxDisplayed))
 
-#        print "self.ImaxDisplayed", self.ImaxDisplayed
-#         self.viewingLUTpanel.slider_vmax.SetValue(self.ImaxDisplayed)
+        #        print "self.ImaxDisplayed", self.ImaxDisplayed
+        #         self.viewingLUTpanel.slider_vmax.SetValue(self.ImaxDisplayed)
 
         if self.ImaxDisplayed <= self.IminDisplayed:
             self.ImaxDisplayed = self.IminDisplayed + 1
@@ -3930,10 +4641,10 @@ class IntensityScaleBoard(wx.Dialog):
         self.updateplot()
 
     def updateplot(self):
-#         self.parent.xlim = self.xlim
-#         self.parent.ylim = self.ylim
+        #         self.parent.xlim = self.xlim
+        #         self.parent.ylim = self.ylim
 
-#         self.parent.fullpathimagefile = self.fullpathimagefile
+        #         self.parent.fullpathimagefile = self.fullpathimagefile
         self.parent.setplotlimits_fromcurrentplot()
         self.parent._replot()
 
@@ -3960,13 +4671,14 @@ class IntensityScaleBoard(wx.Dialog):
         self.parent.xlim = self.init_xlim
         self.parent.ylim = self.init_ylim
         self.Close()
-        
-        
-#--- ---------------  Plot limits board  parameters
+
+
+# --- ---------------  Plot limits board  parameters
 class NoiseLevelBoard(wx.Dialog):
     """
     Class to set noise level ONLY when refining crystal strain and orientation
     """
+
     def __init__(self, parent, _id, title, data_dict):
         """
         initialize board window
@@ -3980,32 +4692,35 @@ class NoiseLevelBoard(wx.Dialog):
 
         posv = 5
 
-        txtimage = wx.StaticText(self, -1, 'RMS Radial pixel noise', pos=(5, posv + 57))
+        txtimage = wx.StaticText(self, -1, "RMS Radial pixel noise", pos=(5, posv + 57))
 
-        self.noisetxtctrl = wx.TextCtrl(self, -1,
-                                   '0', size=(150, -1), pos=(120, posv + 55))
-        self.applynoisebtn = wx.Button(self, -1,
-                                   'Apply', size=(70, -1), pos=(300, posv + 55))
+        self.noisetxtctrl = wx.TextCtrl(
+            self, -1, "0", size=(150, -1), pos=(120, posv + 55)
+        )
+        self.applynoisebtn = wx.Button(
+            self, -1, "Apply", size=(70, -1), pos=(300, posv + 55)
+        )
 
         self.applynoisebtn.Bind(wx.EVT_BUTTON, self.onApplyNoise)
 
     def onApplyNoise(self, evt):
-        
+
         self.parent.sigmanoise = float(self.noisetxtctrl.GetValue())
         self.parent._replot()
 
 
 def get2Dlimits(X, Y):
-        Xmin = min(X)
-        Xmax = max(X)
-        Ymin = min(Y)
-        Ymax = max(Y)
-        xlim = Xmin, Xmax
-        ylim = Ymin, Ymax
-        return xlim, ylim
-    
+    Xmin = min(X)
+    Xmax = max(X)
+    Ymin = min(Y)
+    Ymax = max(Y)
+    xlim = Xmin, Xmax
+    ylim = Ymin, Ymax
+    return xlim, ylim
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
+
     class App(wx.App):
 
         data_dict = {}
@@ -4014,17 +4729,19 @@ if __name__ == '__main__':
         Imax = 1000
         vmin = 5
         vmax = 500
-        lut = 'jet'
+        lut = "jet"
 
-        data_dict['Imin'] = Imin
-        data_dict['Imax'] = Imax
-        data_dict['vmin'] = vmin
-        data_dict['vmax'] = vmax
-        data_dict['lut'] = lut
+        data_dict["Imin"] = Imin
+        data_dict["Imax"] = Imax
+        data_dict["vmin"] = vmin
+        data_dict["vmax"] = vmax
+        data_dict["lut"] = lut
 
         def OnInit(self):
             """Create the main window and insert the custom frame"""
-            dlg = IntensityScaleBoard(None, -1, 'Laue Simulation Frame', data_dict=self.data_dict)
+            dlg = IntensityScaleBoard(
+                None, -1, "Laue Simulation Frame", data_dict=self.data_dict
+            )
             dlg.Show(True)
             return True
 

@@ -36,8 +36,6 @@ class AnnoteFinder:
         self.drawnAnnotations = {}
         self.links = []
 
-
-
     def __call__(self, event):
         if event.inaxes:
             clickX = event.xdata
@@ -45,7 +43,9 @@ class AnnoteFinder:
             if (self.axis is None) or (self.axis == event.inaxes):
                 annotes = []
                 for x, y, a in self.data:
-                    if  (clickX - self.xtol < x < clickX + self.xtol) and  (clickY - self.ytol < y < clickY + self.ytol) :
+                    if (clickX - self.xtol < x < clickX + self.xtol) and (
+                        clickY - self.ytol < y < clickY + self.ytol
+                    ):
                         annotes.append((pointsdistance(x, clickX, y, clickY), x, y, a))
                 if annotes:
                     annotes.sort()
@@ -64,9 +64,11 @@ class AnnoteFinder:
                 m.set_visible(not m.get_visible())
             self.axis.figure.canvas.draw()
         else:
-            #t = axis.text(x,y, "(%3.2f, %3.2f) - %s"%(x,y,annote), ) # par defaut
-            t = axis.text(x, y, "%s" % (str(annote)),)  
-            m = axis.scatter([x], [y], s=1, marker='d', c='r', zorder=100, faceted=False)
+            # t = axis.text(x,y, "(%3.2f, %3.2f) - %s"%(x,y,annote), ) # par defaut
+            t = axis.text(x, y, "%s" % (str(annote)))
+            m = axis.scatter(
+                [x], [y], s=1, marker="d", c="r", zorder=100, faceted=False
+            )
             self.drawnAnnotations[(x, y)] = (t, m)
             self.axis.figure.canvas.draw()
 
@@ -74,6 +76,7 @@ class AnnoteFinder:
         annotesToDraw = [(x, y, a) for x, y, a in self.data if a == annote]
         for x, y, a in annotesToDraw:
             self.drawAnnote(self.axis, x, y, a)
+
 
 def pointsdistance(x1, x2, y1, y2):
     """

@@ -21,6 +21,7 @@ import generaltools as GT
 
 try:
     import gaussian2D
+
     USE_CYTHON = True
 except ImportError:
     print("Cython compiled module 'gaussian2D' for fast computation is not installed!")
@@ -35,7 +36,7 @@ def stringint(k, n):
     #TODO: replace by string format %04d
     """
     strint = str(k)
-    res = '0' * (n - len(strint)) + strint
+    res = "0" * (n - len(strint)) + strint
     return res
 
 
@@ -44,20 +45,21 @@ def gaussian(height, center_x, center_y, width_x, width_y):
     width_x = float(width_x)
     width_y = float(width_y)
     return lambda x, y: height * np.exp(
- -(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+        -(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2
+    )
 
 
 def moments(data):
     """Returns (height, x, y, width_x, width_y)
     the gaussian parameters of a 2D distribution by calculating its
     moments """
-    total = data.sum()*1.
+    total = data.sum() * 1.0
     X, Y = np.indices(data.shape)
     x = (X * data).sum() / total
     y = (Y * data).sum() / total
-    col = data[:, int(y)]*1.
+    col = data[:, int(y)] * 1.0
     width_x = np.sqrt(np.abs((np.arange(col.size) - y) ** 2 * col).sum() / col.sum())
-    row = data[int(x), :]*1.
+    row = data[int(x), :] * 1.0
     width_y = np.sqrt(np.abs((np.arange(row.size) - x) ** 2 * row).sum() / row.sum())
     height = data.max()
     return height, x, y, width_x, width_y
@@ -67,8 +69,7 @@ def fitgaussian(data):
     """Returns (height, x, y, width_x, width_y)
     the gaussian parameters of a 2D distribution found by a fit"""
     params = moments(data)
-    errorfunction = lambda p: np.ravel(gaussian(*p)(*np.indices(data.shape)) - 
-                                 data)
+    errorfunction = lambda p: np.ravel(gaussian(*p)(*np.indices(data.shape)) - data)
     p, success = optimize.leastsq(errorfunction, params)
     return p
 
@@ -78,15 +79,15 @@ def momentsr(data, circle, rotate, vheight):
     the gaussian parameters of a 2D distribution by calculating its
     moments.  Depending on the input parameters, will only output 
     a subset of the above"""
-    total = data.sum()*1.
+    total = data.sum() * 1.0
     X, Y = np.indices(data.shape)
     x = (X * data).sum() / total
     y = (Y * data).sum() / total
-    col = data[:, int(y)]*1.
+    col = data[:, int(y)] * 1.0
     width_x = np.sqrt(np.abs((np.arange(col.size) - y) ** 2 * col).sum() / col.sum())
-    row = data[int(x), :]*1.
+    row = data[int(x), :] * 1.0
     width_y = np.sqrt(np.abs((np.arange(row.size) - x) ** 2 * row).sum() / row.sum())
-    width = (width_x + width_y) / 2.
+    width = (width_x + width_y) / 2.0
     height = stats.mode(data.ravel())[0][0]
     amplitude = data.max() - height
     mylist = [amplitude, x, y]
@@ -97,7 +98,7 @@ def momentsr(data, circle, rotate, vheight):
     else:
         mylist = mylist + [width]
     if rotate == 1:
-        mylist = mylist + [0.]  # rotation "moment" is just zero...
+        mylist = mylist + [0.0]  # rotation "moment" is just zero...
     return tuple(mylist)
 
 
@@ -144,15 +145,20 @@ def twodgaussian(inpars, circle, rotate, vheight):
         width_y = float(width_y)
     if rotate == 1:
         rota = inpars.pop(0)
-        rota = np.pi / 180. * float(rota)
+        rota = np.pi / 180.0 * float(rota)
         rcen_x = center_x * np.cos(rota) - center_y * np.sin(rota)
         rcen_y = center_x * np.sin(rota) + center_y * np.cos(rota)
     else:
         rcen_x = center_x
         rcen_y = center_y
     if len(inpars) > 0:
-        raise ValueError("There are still input parameters:" + str(inpars) + \
-                " and you've input: " + str(inpars_old) + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight))
+        raise ValueError(
+            "There are still input parameters:"
+            + str(inpars)
+            + " and you've input: "
+            + str(inpars_old)
+            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight)
+        )
 
     def rotgauss(x, y):
         if rotate == 1:
@@ -162,8 +168,8 @@ def twodgaussian(inpars, circle, rotate, vheight):
             xp = x
             yp = y
         g = height + amplitude * np.exp(
- -(((rcen_x - xp) / width_x) ** 2 + 
-            ((rcen_y - yp) / width_y) ** 2) / 2.)
+            -(((rcen_x - xp) / width_x) ** 2 + ((rcen_y - yp) / width_y) ** 2) / 2.0
+        )
         return g
 
     return rotgauss
@@ -228,11 +234,11 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
         width_y_2 = float(width_y_2)
     if rotate == 1:
         rota_1 = inpars[6]
-        rota_1 = np.pi / 180. * float(rota_1)
+        rota_1 = np.pi / 180.0 * float(rota_1)
         rcen_x_1 = center_x_1 * np.cos(rota_1) - center_y_1 * np.sin(rota_1)
         rcen_y_1 = center_x_1 * np.sin(rota_1) + center_y_1 * np.cos(rota_1)
         rota_2 = inpars[12]
-        rota_2 = np.pi / 180. * float(rota_2)
+        rota_2 = np.pi / 180.0 * float(rota_2)
         rcen_x_2 = center_x_2 * np.cos(rota_2) - center_y_2 * np.sin(rota_2)
         rcen_y_2 = center_x_2 * np.sin(rota_2) + center_y_2 * np.cos(rota_2)
     else:
@@ -240,32 +246,32 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
         # rcen_x = center_x
         # rcen_y = center_y
     # if len(inpars) > 0:
-        # raise ValueError("There are still input parameters:" + str(inpars) + \
-                # " and you've input: " + str(inpars_old) + " circle=%d, rotate=%d, vheight=%d" % (circle,rotate,vheight) )
+    # raise ValueError("There are still input parameters:" + str(inpars) + \
+    # " and you've input: " + str(inpars_old) + " circle=%d, rotate=%d, vheight=%d" % (circle,rotate,vheight) )
 
     # def rotgauss_1(x,y):
-        # if rotate==1:
-            # xp = x * cos(rota_1) - y * sin(rota_1)
-            # yp = x * sin(rota_1) + y * cos(rota_1)
-        # else:
-            # xp = x
-            # yp = y
-        # g1 = height_1+amplitude_1*exp(
-            # -(((rcen_x_1-xp)/width_x_1)**2+
-            # ((rcen_y_1-yp)/width_y_1)**2)/2.)
-        # return g1
+    # if rotate==1:
+    # xp = x * cos(rota_1) - y * sin(rota_1)
+    # yp = x * sin(rota_1) + y * cos(rota_1)
+    # else:
+    # xp = x
+    # yp = y
+    # g1 = height_1+amplitude_1*exp(
+    # -(((rcen_x_1-xp)/width_x_1)**2+
+    # ((rcen_y_1-yp)/width_y_1)**2)/2.)
+    # return g1
 
     # def rotgauss_2(x,y):
-        # if rotate==1:
-            # xp = x * cos(rota_2) - y * sin(rota_2)
-            # yp = x * sin(rota_2) + y * cos(rota_2)
-        # else:
-            # xp = x
-            # yp = y
-        # g2 = height_2+amplitude_2*exp(
-            # -(((rcen_x_2-xp)/width_x_2)**2+
-            # ((rcen_y_2-yp)/width_y_2)**2)/2.)
-        # return g2
+    # if rotate==1:
+    # xp = x * cos(rota_2) - y * sin(rota_2)
+    # yp = x * sin(rota_2) + y * cos(rota_2)
+    # else:
+    # xp = x
+    # yp = y
+    # g2 = height_2+amplitude_2*exp(
+    # -(((rcen_x_2-xp)/width_x_2)**2+
+    # ((rcen_y_2-yp)/width_y_2)**2)/2.)
+    # return g2
 
     def rotgauss_2peaks(x, y):
 
@@ -274,31 +280,51 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
         xp_2 = x * np.cos(rota_2) - y * np.sin(rota_2)
         yp_2 = x * np.sin(rota_2) + y * np.cos(rota_2)
 
-        g = height_1 + \
-            amplitude_1 * np.exp(\
-            - (((rcen_x_1 - xp_1) / width_x_1) ** 2 + \
-            ((rcen_y_1 - yp_1) / width_y_1) ** 2) / 2.) + \
-            amplitude_2 * np.exp(\
-            - (((rcen_x_2 - xp_2) / width_x_2) ** 2 + \
-            ((rcen_y_2 - yp_2) / width_y_2) ** 2) / 2.)
+        g = (
+            height_1
+            + amplitude_1
+            * np.exp(
+                -(
+                    ((rcen_x_1 - xp_1) / width_x_1) ** 2
+                    + ((rcen_y_1 - yp_1) / width_y_1) ** 2
+                )
+                / 2.0
+            )
+            + amplitude_2
+            * np.exp(
+                -(
+                    ((rcen_x_2 - xp_2) / width_x_2) ** 2
+                    + ((rcen_y_2 - yp_2) / width_y_2) ** 2
+                )
+                / 2.0
+            )
+        )
 
         return g
 
     return rotgauss_2peaks
 
     # if flag ==1:
-        # return rotgauss_1
+    # return rotgauss_1
     # if flag ==2:
-        # return rotgauss_2
+    # return rotgauss_2
 
 
-def gaussfit(data, err=None, params=[],
-             autoderiv=1, return_all=0, circle=0,
-             rotate=1, vheight=1, xtol=0.0000001,
-             Acceptable_HighestValue=False,
-             Acceptable_LowestValue=False,
-             ijindices_array=None,
-             usecythonmodule=USE_CYTHON):
+def gaussfit(
+    data,
+    err=None,
+    params=[],
+    autoderiv=1,
+    return_all=0,
+    circle=0,
+    rotate=1,
+    vheight=1,
+    xtol=0.0000001,
+    Acceptable_HighestValue=False,
+    Acceptable_LowestValue=False,
+    ijindices_array=None,
+    usecythonmodule=USE_CYTHON,
+):
     """
     Gaussian fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
 
@@ -331,9 +357,9 @@ def gaussfit(data, err=None, params=[],
 
         Warning: Does NOT necessarily output a rotation angle between 0 and 360 degrees.
     """
-#     data = np.ma.array(data, mask=False)
-#
-#     data.mask[data >= 65535] = True
+    #     data = np.ma.array(data, mask=False)
+    #
+    #     data.mask[data >= 65535] = True
     if (Acceptable_HighestValue is not False) or (Acceptable_LowestValue is not False):
         err = np.ones(data.shape)
     if Acceptable_HighestValue is not False:
@@ -342,20 +368,27 @@ def gaussfit(data, err=None, params=[],
         err[data <= Acceptable_LowestValue] = 0
 
     if params == []:
-        params = (momentsr(data, circle, rotate, vheight))
-        
+        params = momentsr(data, circle, rotate, vheight)
+
     if ijindices_array is None:
         ijindices_array = np.indices(data.shape)
-    
-    if not usecythonmodule:     
+
+    if not usecythonmodule:
         if err is None:
-            errorfunction = lambda p: np.ravel((twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data))
+            errorfunction = lambda p: np.ravel(
+                (twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data)
+            )
         else:
-            errorfunction = lambda p: np.ravel((twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data) * err)
+            errorfunction = lambda p: np.ravel(
+                (twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data)
+                * err
+            )
     else:
-        
-        n1, n2 = data.shape      
-        errorfunction = lambda p: np.ravel((gaussian2D.twodgaussian_cython(n1, n2, p) - data))
+
+        n1, n2 = data.shape
+        errorfunction = lambda p: np.ravel(
+            (gaussian2D.twodgaussian_cython(n1, n2, p) - data)
+        )
 
     if autoderiv == 0:
         # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
@@ -363,19 +396,27 @@ def gaussfit(data, err=None, params=[],
         # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
-        (p,
-         cov,
-         infodict,
-         errmsg,
-         success) = optimize.leastsq(errorfunction, params, full_output=1, xtol=xtol)
+        (p, cov, infodict, errmsg, success) = optimize.leastsq(
+            errorfunction, params, full_output=1, xtol=xtol
+        )
 
-    if  return_all == 0:
+    if return_all == 0:
         return p
     elif return_all == 1:
         return p, cov, infodict, errmsg
 
 
-def gaussfit_2peaks(data, err=None, params=[], autoderiv=1, return_all=0, circle=0, rotate=1, vheight=1, xtol=0.0000001):
+def gaussfit_2peaks(
+    data,
+    err=None,
+    params=[],
+    autoderiv=1,
+    return_all=0,
+    circle=0,
+    rotate=1,
+    vheight=1,
+    xtol=0.0000001,
+):
     """
     two Gaussians fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
 
@@ -409,17 +450,27 @@ def gaussfit_2peaks(data, err=None, params=[], autoderiv=1, return_all=0, circle
         print("I'm sorry, I haven't implemented this feature yet. in gaussfit_2peaks()")
         # params = (momentsr(data,circle,rotate,vheight))
     if err is None:
-        errorfunction = lambda p: np.ravel((twodgaussian_2peaks(p, circle, rotate, vheight)(*np.indices(data.shape)) - data))
+        errorfunction = lambda p: np.ravel(
+            (
+                twodgaussian_2peaks(p, circle, rotate, vheight)(*np.indices(data.shape))
+                - data
+            )
+        )
     else:
-        errorfunction = lambda p: np.ravel((twodgaussian(p, circle, rotate, vheight)(*np.indices(data.shape)) - data) / err)
+        errorfunction = lambda p: np.ravel(
+            (twodgaussian(p, circle, rotate, vheight)(*np.indices(data.shape)) - data)
+            / err
+        )
     if autoderiv == 0:
         # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
         # putting it here because I was instructed to do so for a class project - please ask if you would like
         # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
-        p, cov, infodict, errmsg, success = optimize.leastsq(errorfunction, params, full_output=1, xtol=xtol)
-    if  return_all == 0:
+        p, cov, infodict, errmsg, success = optimize.leastsq(
+            errorfunction, params, full_output=1, xtol=xtol
+        )
+    if return_all == 0:
         return p
     elif return_all == 1:
         return p, cov, infodict, errmsg
@@ -439,13 +490,20 @@ def junk():
     ax = p.gca()
     (height, x, y, width_x, width_y) = params
 
-    p.text(0.95, 0.05, """
+    p.text(
+        0.95,
+        0.05,
+        """
     x : %.1f
     y : %.1f
     width_x : %.1f
-    width_y : %.1f""" % (x, y, width_x, width_y),
-        fontsize=16, horizontalalignment='right',
-        verticalalignment='bottom', transform=ax.transAxes)
+    width_y : %.1f"""
+        % (x, y, width_x, width_y),
+        fontsize=16,
+        horizontalalignment="right",
+        verticalalignment="bottom",
+        transform=ax.transAxes,
+    )
 
     p.show()
 
@@ -453,7 +511,6 @@ def junk():
 if __name__ == "__main__":
 
     import os
-
 
     if 0:
         # Create the gaussian data
@@ -466,19 +523,20 @@ if __name__ == "__main__":
         circle = 0
         rotate = 1
         vheight = 1
-        data = twodgaussian(inpars, circle, rotate, vheight)(Xin, Yin) + 10 * np.random.random(Xin.shape)
+        data = twodgaussian(inpars, circle, rotate, vheight)(
+            Xin, Yin
+        ) + 10 * np.random.random(Xin.shape)
         # -------------------------------------
-
 
     # fifi='Zr_A169_0220.mccd'
     # fifi='CKRMONO.0057'
     # fifi='BKr_0252.mccd'
 
     fifi = "UO2_A163_2_0028.mccd"
-    dirname = '/home/micha/lauetools/trunk/Examples/UO2'
+    dirname = "/home/micha/lauetools/trunk/Examples/UO2"
 
     fifi = "He60keV_telque_mono_0007.mccd"
-    dirname = '/home/micha/LT4/'
+    dirname = "/home/micha/LT4/"
 
     CenCam = np.array([830, 1190])
 
@@ -511,10 +569,13 @@ if __name__ == "__main__":
 
     import readmccd as RMCCD
 
-    dat = RMCCD.readoneimage_crop(fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname)
+    dat = RMCCD.readoneimage_crop(
+        fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname
+    )
 
     def fromindex_to_pixelpos_x(index, pos):
         return center_pixel[0] - xboxsize + index
+
     def fromindex_to_pixelpos_y(index, pos):
         return center_pixel[1] - yboxsize + index
 
@@ -526,24 +587,33 @@ if __name__ == "__main__":
 
     start_baseline = np.amin(dat)
     # start_j,start_i=yboxsize,xboxsize # from input center
-    start_j, start_i = np.argmax(dat) // dat.shape[1], np.argmax(dat) % dat.shape[1]  # from maximum intensity in dat
+    start_j, start_i = (
+        np.argmax(dat) // dat.shape[1],
+        np.argmax(dat) % dat.shape[1],
+    )  # from maximum intensity in dat
     start_amplitude_1 = np.amax(dat) - start_baseline
-    start_amplitude_2 = start_amplitude_1 / 10.
+    start_amplitude_2 = start_amplitude_1 / 10.0
     # start_amplitude=dat[start_j,start_i]-start_baseline
     start_sigma1, start_sigma2 = 2, 2
     start_anglerot = 0
     # startingparams=[start_baseline,start_amplitude,start_j,start_i,start_sigma1,start_sigma2,start_anglerot,
-                    # start_baseline,start_amplitude,start_j,start_i,start_sigma1,start_sigma2,start_anglerot]
+    # start_baseline,start_amplitude,start_j,start_i,start_sigma1,start_sigma2,start_anglerot]
 
-    startingparams = [start_baseline,
-                    start_amplitude_1,
-                    peak_1[1] - (center_pixel[1] - yboxsize),
-                    peak_1[0] - (center_pixel[0] - xboxsize),
-                    start_sigma1, start_sigma2, start_anglerot,
-                    start_amplitude_2,
-                    peak_2[1] - (center_pixel[1] - yboxsize),
-                    peak_2[0] - (center_pixel[0] - xboxsize),
-                    start_sigma1, start_sigma2, start_anglerot]
+    startingparams = [
+        start_baseline,
+        start_amplitude_1,
+        peak_1[1] - (center_pixel[1] - yboxsize),
+        peak_1[0] - (center_pixel[0] - xboxsize),
+        start_sigma1,
+        start_sigma2,
+        start_anglerot,
+        start_amplitude_2,
+        peak_2[1] - (center_pixel[1] - yboxsize),
+        peak_2[0] - (center_pixel[0] - xboxsize),
+        start_sigma1,
+        start_sigma2,
+        start_anglerot,
+    ]
 
     print("startingparams")
     print(startingparams[:7])
@@ -551,28 +621,58 @@ if __name__ == "__main__":
 
     if 0:  # all(dat>0):
         print("logscale")  # matshow seems slow !
-        p.matshow(np.log(dat), cmap=GT.GIST_EARTH_R, interpolation='nearest', origin='upper')
+        p.matshow(
+            np.log(dat), cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper"
+        )
     else:
-        p.imshow(np.log(dat + 0.000000000000001), cmap=GT.GIST_EARTH_R, interpolation='nearest', origin='upper')
+        p.imshow(
+            np.log(dat + 0.000000000000001),
+            cmap=GT.GIST_EARTH_R,
+            interpolation="nearest",
+            origin="upper",
+        )
 
     # fit one peak
-    params, cov, infodict, errmsg = gaussfit_2peaks(dat, err=None, params=startingparams, autoderiv=1, return_all=1, circle=0, rotate=1, vheight=1)
+    params, cov, infodict, errmsg = gaussfit_2peaks(
+        dat,
+        err=None,
+        params=startingparams,
+        autoderiv=1,
+        return_all=1,
+        circle=0,
+        rotate=1,
+        vheight=1,
+    )
 
     print("\n *****fitting results ************\n")
     print("background intensity:            %.2f" % params[0])
     print("Peak amplitude above background        %.2f" % params[1])
-    print("pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0]))
-    print("pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1]))
+    print(
+        "pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0])
+    )
+    print(
+        "pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1])
+    )
     print("std 1,std 2 (pix)            ( %.2f , %.2f )" % (params[4], params[5]))
-    print("e=min(std1,std2)/max(std1,std2)        %.3f" % (min(params[4], params[5]) / max(params[4], params[5])))
+    print(
+        "e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[4], params[5]) / max(params[4], params[5]))
+    )
     print("Rotation angle (deg)            %.2f\n\n" % (params[6] % 360))
 
     print("background intensity:            %.2f" % params[0])
     print("Peak amplitude above background        %.2f" % params[7])
-    print("pixel position (X)            %.2f" % (params[9] - xboxsize + center_pixel[0]))
-    print("pixel position (Y)            %.2f" % (params[8] - yboxsize + center_pixel[1]))
+    print(
+        "pixel position (X)            %.2f" % (params[9] - xboxsize + center_pixel[0])
+    )
+    print(
+        "pixel position (Y)            %.2f" % (params[8] - yboxsize + center_pixel[1])
+    )
     print("std 1,std 2 (pix)            ( %.2f , %.2f )" % (params[10], params[11]))
-    print("e=min(std1,std2)/max(std1,std2)        %.3f" % (min(params[10], params[11]) / max(params[10], params[11])))
+    print(
+        "e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[10], params[11]) / max(params[10], params[11]))
+    )
     print("Rotation angle (deg)            %.2f" % (params[12] % 360))
     print("************************************\n")
     # print params
@@ -583,16 +683,18 @@ if __name__ == "__main__":
     # fit = gaussian(*params)
 
     # params1=[  8.37532076e+01 ,  7.46353362e+01 ,  2.30777891e+01+11 ,  2.23761344e+01+8,
-   # 6.05357888e+00  , 1.20693476e+01 , -1.16509603e+06]
-       # params2=[ 79.3635639 ,  93.12639397  , 9.3952523 +70,  29.51984472+22 ,  5.46769477
-# ,  17.71425257 , 84.66087334]
+    # 6.05357888e+00  , 1.20693476e+01 , -1.16509603e+06]
+    # params2=[ 79.3635639 ,  93.12639397  , 9.3952523 +70,  29.51984472+22 ,  5.46769477
+    # ,  17.71425257 , 84.66087334]
     # params3=[ 89.21628068  ,53.17974564,  9.98964225+18 ,  5.45738096+59 , 11.84612735,
-   # 5.08762344 , 30.90213561]
+    # 5.08762344 , 30.90213561]
     # fit=twodgaussian(params,0,1,1)
-       # fit1=twodgaussian(params1,0,1,1)
+    # fit1=twodgaussian(params1,0,1,1)
     # fit2=twodgaussian(params2,0,1,1)
     # fit3=twodgaussian(params3,0,1,1)
-    isointensity = np.logspace(np.log(params[0] * .5), np.log(max(params[1], params[7])), 40)
+    isointensity = np.logspace(
+        np.log(params[0] * 0.5), np.log(max(params[1], params[7])), 40
+    )
     p.contour(fit_1(*np.indices(dat.shape)), isointensity, cmap=GT.COPPER)
     # contour(fit(*indices(dat.shape))+fit1(*indices(dat.shape))+fit2(*indices(dat.shape))+fit3(*indices(dat.shape)), isointensity,cmap=cm.copper)
     ax = p.gca()
@@ -605,11 +707,7 @@ if __name__ == "__main__":
     # y : %.1f
     # width_x : %.1f
     # width_y : %.1f""" %(x, y, width_x, width_y),
-        # fontsize=16, horizontalalignment='right',
-        # verticalalignment='bottom', transform=ax.transAxes)
-
-
-
-
+    # fontsize=16, horizontalalignment='right',
+    # verticalalignment='bottom', transform=ax.transAxes)
 
     p.show()
