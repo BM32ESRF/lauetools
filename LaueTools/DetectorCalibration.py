@@ -20,7 +20,6 @@ else:
 
 from matplotlib.ticker import FuncFormatter
 
-# import scipy.optimize
 from matplotlib import __version__ as matplotlibversion
 from matplotlib.backends.backend_wxagg import (
     FigureCanvasWxAgg as FigCanvas,
@@ -29,33 +28,20 @@ from matplotlib.backends.backend_wxagg import (
 
 from matplotlib.figure import Figure
 
-# import wxmpl
-
 import dict_LaueTools as DictLT
 import LaueGeometry as F2TC
 
 import indexingAnglesLUT as INDEX
 import indexingImageMatching as IIM
-
-# import indexingSpotsSet as ISS
 import matchingrate
 import lauecore as LAUE
 import findorient as FindO
 import FitOrient as FitO
 import spotslinkeditor as SLE
 
-# import graingraph as GraGra
 
-# import fromxmastolauetools as FXL
 import LaueSpotsEditor as LSEditor
 
-# import fit2Dintensity as fit2d
-# import readmccd as rmccd
-# import peaklistfit2d as plf2d
-# import Plot1DFrame as PLOT1D
-# import HistogramPlot as HISTOPLOT
-
-# import ImshowFrame as IMSHOW
 import generaltools as GT
 import IOLaueTools as IOLT
 import CrystalParameters as CP

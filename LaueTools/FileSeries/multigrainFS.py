@@ -6336,7 +6336,6 @@ def plot_map(
     print(shape(plotdat))
 
     sys.path.append(os.path.abspath(".."))
-    from mosaic import ImshowFrameNew
 
     for j in range(nb_plots):
         p.figure(1, figsize=(15, 10))
@@ -6418,12 +6417,10 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         grain_index  = "indexing rank" of grain selected for mapping (for multigrain Laue patterns)
         first grain = grain with most intense spot  
         first grain has gnumloc = 0  (LT summary files)
-
-
-
-        maptype =  "fit" 
-                or "euler3" or "rgb_x_sample"     
-                or "strain6_crystal" or "strain6_sample" 
+        
+        maptype =  "fit"
+                or "euler3" or "rgb_x_sample"
+                or "strain6_crystal" or "strain6_sample"
                 or "stress6_crystal" or "stress6_sample"
                 or "res_shear_stress"
                 or 'max_rss'
@@ -7486,7 +7483,6 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         print("zoom : minxj, maxxj, minyi, maxyi : ", minxj, maxxj, minyi, maxyi)
 
     sys.path.append(os.path.abspath(".."))
-    from mosaic import ImshowFrameNew, ImshowFrame_Scalar
 
     p.rcParams["figure.subplot.right"] = 0.9
     p.rcParams["figure.subplot.left"] = 0.1
@@ -7603,7 +7599,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
             colorbar_label=colorbar_label,
         )
 
-        #             plo = ImshowFrameNew(App_parent, -1, strname, plotdat[:, :, 3 * j:3 * (j + 1)],
+        #    plo = ImshowFrameNew(App_parent, -1, strname, plotdat[:, :, 3 * j:3 * (j + 1)],
         #                                  dataarray_info=AddedArrayInfo,
         #                                  datatype=datatype,
         #                                  extent=extent, xylabels=("dxech (microns)", "dyech (microns)"),

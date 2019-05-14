@@ -16,18 +16,13 @@ else:
     wx.Window.SetToolTipString = sttip
 
 import numpy as np
-
-# import math
 import os
 import time
 
 import matplotlib
 
 matplotlib.use("WXAgg")
-# from mosaic import ImshowFrame_Scalar
-#
-# import matplotlib.pyplot as plt
-# import matplotlib.ticker as pltticker
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import (
     FigureCanvasWxAgg as FigCanvas,
@@ -36,7 +31,6 @@ from matplotlib.backends.backend_wxagg import (
 
 import matplotlib.colors as colors
 
-# from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import FuncFormatter
 import matplotlib as mpl
 from pylab import cm as pcm
@@ -58,32 +52,7 @@ class TreePanel(wx.Panel):
         self.tree = wx.TreeCtrl(
             self, -1, wx.DefaultPosition, (-1, -1), wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
         )
-        #         self.tree = wx.TreeCtrl(panel1, 1, wx.DefaultPosition, (-1, -1),
-        #                                 wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
-        #         root = self.tree.AddRoot('Programmer')
-        #         os = self.tree.AppendItem(root, 'Operating Systems')
-        #         pl = self.tree.AppendItem(root, 'Programming Languages')
-        #         tk = self.tree.AppendItem(root, 'Toolkits')
-        #         self.tree.AppendItem(os, 'Linux')
-        #         self.tree.AppendItem(os, 'FreeBSD')
-        #         self.tree.AppendItem(os, 'OpenBSD')
-        #         self.tree.AppendItem(os, 'NetBSD')
-        #         self.tree.AppendItem(os, 'Solaris')
-        #         cl = self.tree.AppendItem(pl, 'Compiled languages')
-        #         sl = self.tree.AppendItem(pl, 'Scripting languages')
-        #         self.tree.AppendItem(cl, 'Java')
-        #         self.tree.AppendItem(cl, 'C++')
-        #         self.tree.AppendItem(cl, 'C')
-        #         self.tree.AppendItem(cl, 'Pascal')
-        #         self.tree.AppendItem(sl, 'Python')
-        #         self.tree.AppendItem(sl, 'Ruby')
-        #         self.tree.AppendItem(sl, 'Tcl')
-        #         self.tree.AppendItem(sl, 'PHP')
-        #         self.tree.AppendItem(tk, 'Qt')
-        #         self.tree.AppendItem(tk, 'MFC')
-        #         self.tree.AppendItem(tk, 'wxPython')
-        #         self.tree.AppendItem(tk, 'GTK+')
-        #         self.tree.AppendItem(tk, 'Swing')
+
         self.maketree()
 
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
@@ -99,7 +68,7 @@ class TreePanel(wx.Panel):
 
     def maketree(self):
         self.root = self.tree.AddRoot("SpecFiles")
-        scan1 = self.tree.AppendItem(self.root, str(self.scantype))
+        self.tree.AppendItem(self.root, str(self.scantype))
 
     def OnSelChanged(self, event):
         item = event.GetItem()
@@ -162,7 +131,10 @@ class MessageCommand(wx.Dialog):
         self.Close()
 
     def onCommandtoSpec(self, evt):
-        from SpecClient_gevent import SpecCommand
+        try: 
+            from SpecClient_gevent import SpecCommand
+        except:
+            return
 
         myspec = SpecCommand.SpecCommand("", "crg1:laue")
 
@@ -343,8 +315,6 @@ class MainFrame(wx.Frame):
         """
         Write  file containing data = [list_1,list_2,list_3]
         """
-        import time
-
         longueur = len(data[0])
 
         outputfile = open(output_filename, "w")
@@ -354,7 +324,7 @@ class MainFrame(wx.Frame):
         outputfile.write(
             "\n".join(
                 [
-                    "%.06f   %.06f   %06f" % tuple(zip(data[0], data[1], data[2])[i])
+                    "%.06f   %.06f   %06f" % tuple(list(zip(data[0], data[1], data[2])[i]))
                     for i in range(longueur)
                 ]
             )
