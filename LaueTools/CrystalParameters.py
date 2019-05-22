@@ -1024,9 +1024,11 @@ def matstarlab_to_matdirONDsample(
     matstarlab, omega0=40.0, matrix_in_LaueToolsFrame=False
 ):
     """
-    return matrix whose columns are basis vectors of frame OND related to direct crystal expressed in sample frame basis vectors
+    return matrix whose columns are basis vectors of frame OND related to
+    direct crystal expressed in sample frame basis vectors
 
-    matdirONDsample[:,0]   (ie 1rst column) : 3 components of vector a of OND related direct crystal in sample frame basis 
+    matdirONDsample[:,0]   (ie 1rst column) : 3 components of vector a of OND related direct crystal
+    in sample frame basis
 
     matstarlab   :   matrix with columns expressing components of a*,b*,c* in laboratory frame
                             (UBmat expressed in OR lab. frame)
@@ -1068,7 +1070,8 @@ def matstarlab_to_matdirONDsample(
     # matdirONDsample = uc_dir_OND on sample
     # rsample = matdirONDsample * ruc_dir_OND
     # orientation of the OND frame related to a,b,c (direct lattice vectors)
-    # 1rst column is components of vector basis 'a' of OND frame related to crystal (direct space) expressed in sample frame
+    # 1rst column is components of vector basis 'a' of OND frame related to 
+    # crystal (direct space) expressed in sample frame
     matdirONDsample = np.dot(matrot, matdirONDlab)
 
     return matdirONDsample
@@ -1304,7 +1307,8 @@ def Gstar_from_directlatticeparams(a, b, c, alpha, beta, gamma):
 
 def DSpacing(HKL, Gstar):
     """
-    compute dspacing, or interatomic distance between lattice plane), or d(hkl)  = 1/d(hkl)* in unit of 1/length in sqrt(Gstar)
+    compute dspacing, or interatomic distance between lattice plane),
+    or d(hkl)  = 1/d(hkl)* in unit of 1/length in sqrt(Gstar)
 
     inputs:
     HKL            :  [H,K,L]
@@ -1346,11 +1350,9 @@ def strain_from_metric_difference(Ginit, Gfinal):
 from numpy.linalg.linalg import norm
 
 # import xray_tools as xrt
-
 """
 boa  means  b over a!!!!
 """
-
 
 def S11p(boa, coa, alpha, beta, gamma):
     return boa ** 2 * coa ** 2 * np.sin(alpha) ** 2
@@ -1407,8 +1409,8 @@ def fhkl(boa, coa, alpha, beta, gamma, h, k, l):
 
 def dhkl(a, b, c, alpha, beta, gamma, h, k, l):
     """
-    return lattice spacing in the unit of a 
-    
+    return lattice spacing in the unit of a
+
     a,b,c must have the same unit
     alpha, beta, gamma   in radians
     h,k,l Miller indices
@@ -1435,8 +1437,8 @@ def calculate_a(fitfile, energy, h, k, l):
     """
     compute lattice parameter from lattice spacing measured from energy for hkl reflection
     and deviatoric strain
-    
-    fitfile   object 
+
+    fitfile   object
     energy  in eV
     """
     print("calculate_a function in CrystalParameters")
@@ -1451,7 +1453,7 @@ def calculate_a(fitfile, energy, h, k, l):
     astar = fitfile.astar_prime
     bstar = fitfile.bstar_prime
     cstar = fitfile.cstar_prime
-    #     qxoverq = (h * astar + k * bstar + l * cstar)[0] / norm((h * astar + k * bstar + l * cstar))
+    #  qxoverq = (h * astar + k * bstar + l * cstar)[0] / norm((h * astar + k * bstar + l * cstar))
     # Bragg angle
     print("astar,bstar,cstar", astar, bstar, cstar)
     theta = (
@@ -1611,31 +1613,6 @@ def norme(vec1):
     """
     nvec = np.sqrt(np.inner(vec1, vec1))
     return nvec
-
-
-def matstarlab_to_matstarlabOND(matstarlab):
-    """
-    transform matrix in a orthonormalized frame
-    (Schmid orthogonalisation procedure)
-
-    From O. Robach
-    
-    TODO: to be moved to generaltools
-    """
-    astar1 = matstarlab[:3]
-    bstar1 = matstarlab[3:6]
-    #    cstar1 = matstarlab[6:]
-
-    astar0 = astar1 / norme(astar1)
-    cstar0 = np.cross(astar0, bstar1)
-    cstar0 = cstar0 / norme(cstar0)
-    bstar0 = np.cross(cstar0, astar0)
-
-    matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
-
-    # print matstarlabOND
-
-    return matstarlabOND
 
 
 def calc_Euler_angles(mat3x3):
