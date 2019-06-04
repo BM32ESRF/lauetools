@@ -28,7 +28,7 @@ from wx.lib.agw.shapedbutton import SButton
 
 sys.path.append("..")
 
-import FileSeries.multigrainFS as MG
+import FileSeries.multigrainFS as MGFS
 
 list_txtparamPM = ["Map Summary File", "File xyz", "maptype"]
 
@@ -91,23 +91,10 @@ class MainFrame_plotmaps(wx.Frame):
         txt_mapparameters = wx.StaticText(self.panel, -1, "Map Type ")
         txt_mapparameters.SetFont(font)
 
-        self.choice_maptype = wx.Choice(
-            self.panel,
-            -1,
-            choices=[
-                "fit",
-                "strain6_crystal",
-                "rgb_x_sample",
-                "strain6_sample",
-                "euler3",
-                "stress6_crystal",
-                "stress6_sample",
-                "res_shear_stress",
-                "max_rss",
-                "von_mises",
-                "w_mrad",
-            ],
-        )
+        self.choice_maptype = wx.Choice( self.panel, -1,
+                        choices=[ "fit", "strain6_crystal", "rgb_x_sample",
+                        "strain6_sample", "euler3", "stress6_crystal", "stress6_sample",
+                        "res_shear_stress", "max_rss", "von_mises", "w_mrad", ], )
         self.choice_maptype.SetSelection(0)
 
         self.choice_maptype.Bind(wx.EVT_CHOICE, self.Onchoice_maptype)
@@ -223,7 +210,7 @@ class MainFrame_plotmaps(wx.Frame):
 
         maptype = dictpars["maptype"]
         grain_index = 0
-        MG.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
+        MGFS.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
 
 
 class Stock_parameters_PlotMaps:
