@@ -474,6 +474,48 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
     return np.array([a, b, c]).T
 
 
+def mat_to_rlat(matstarlab):
+    """  from odile script
+    """
+
+    rlat = np.zeros(6, float)
+
+    astarlab = matstarlab[0:3]
+    bstarlab = matstarlab[3:6]
+    cstarlab = matstarlab[6:9]
+    rlat[0] = norme(astarlab)
+    rlat[1] = norme(bstarlab)
+    rlat[2] = norme(cstarlab)
+    rlat[5] = np.arccos(np.inner(astarlab, bstarlab) / (rlat[0] * rlat[1]))
+    rlat[4] = np.arccos(np.inner(cstarlab, astarlab) / (rlat[2] * rlat[0]))
+    rlat[3] = np.arccos(np.inner(bstarlab, cstarlab) / (rlat[1] * rlat[2]))
+
+    # print "rlat = ",rlat
+
+    return rlat
+
+def rlat_to_Bstar(rlat):  # 29May13
+    """
+        # Xcart = Bstar*Xcrist_rec
+        # changement de coordonnees pour le vecteur X entre 
+        # le repere de la maille reciproque Rcrist_rec
+        # et le repere OND Rcart associe a Rcrist_rec
+        # rlat  reciprocal lattice parameters
+        # dlat  direct lattice parameters
+        # en radians
+        """
+    Bstar = np.zeros((3, 3), dtype=float)
+    dlat = dlat_to_rlat(rlat)
+
+    Bstar[0, 0] = rlat[0]
+    Bstar[0, 1] = rlat[1] * np.cos(rlat[5])
+    Bstar[1, 1] = rlat[1] * np.sin(rlat[5])
+    Bstar[0, 2] = rlat[2] * np.cos(rlat[4])
+    Bstar[1, 2] = -rlat[2] * np.sin(rlat[4]) * np.cos(dlat[3])
+    Bstar[2, 2] = 1.0 / dlat[2]
+
+    return Bstar
+
 def fromrealframe_to_reciprocalframe(vector, Bmatrix):
     """
     convert components of vector expressed in direct (real) unit cell basis vectors to reciprocal ones
