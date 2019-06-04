@@ -338,10 +338,10 @@ def build_hdf5(
         )
         # Fill the table with data
         indexedUB = tableUB.row
-
+        print("using Lauehdf5.....")
         for key_image in keys_indexfile:
             indexedUB["fileindex"] = key_image
-            #            print "key_image", key_image
+            print("key_image", key_image)
             print("dictMat[key_image]", dictMat[key_image])
             nbmatrices = len(dictMat[key_image])
             grainindex = 0

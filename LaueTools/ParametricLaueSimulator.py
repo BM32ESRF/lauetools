@@ -1524,7 +1524,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         fifi.write(
             "\n# File created at %s by by ParametricLaueSimulator.py" % (time.asctime())
         )
-        fifi.write("\n# Calibration parameters(XMAS)")
+        fifi.write("\n# Calibration parameters")
         for par, value in zip(["dd", "xcen", "ycen", "xbet", "xgam"], self.calib):
             fifi.write("\n# %s     :   %s" % (par, value))
         fifi.close()

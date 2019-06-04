@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
+"""
+Module for 2D rearrangement to be displayed as map of given quantities
+
+mosaic.py belong to the LaueTools Software
+
+May 2019
+"""
 import os
 import sys
 from copy import copy
 
 try:
     import Image
-except:
+except ImportError:
     print("module Image / PIL is not installed")
-
 
 try:
     import wx
-except:
+except ImportError:
     print("wx is not installed! Could be some trouble from this lack...")
-    pass
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
@@ -62,7 +67,6 @@ class ImshowFrameNew(wx.Frame):
     """
     Class to show 2D array intensity data
     """
-
     def __init__(
         self,
         parent,
@@ -131,7 +135,7 @@ class ImshowFrameNew(wx.Frame):
         self.clear_axes_create_imshow()
 
     def create_main_panel(self):
-        """ 
+        """ create main GUI panel of ImshowFrameNew class
         """
         # # Set up the MenuBar
         MenuBar = wx.MenuBar()
@@ -175,26 +179,19 @@ class ImshowFrameNew(wx.Frame):
 
         self.axes = self.fig.add_subplot(111)
 
-        #         self.tooltip = wx.ToolTip(tip='tip with a long %s line and a newline\n' % (' ' * 100))
-        #         self.canvas.SetToolTip(self.tooltip)
-        #         self.tooltip.Enable(False)
-        #         self.tooltip.SetDelay(0)
-        #         self.fig.canvas.mpl_connect('motion_notify_event', self.onMotion_ToolTip)
+#         self.tooltip = wx.ToolTip(tip='tip with a long %s line and a newline\n' % (' ' * 100))
+#         self.canvas.SetToolTip(self.tooltip)
+#         self.tooltip.Enable(False)
+#         self.tooltip.SetDelay(0)
+#         self.fig.canvas.mpl_connect('motion_notify_event', self.onMotion_ToolTip)
 
         self.toolbar = NavigationToolbar(self.canvas)
 
         self.calc_norm_minmax_values()
 
         self.slidertxt_min = wx.StaticText(self.panel, -1, "Min :")
-        self.slider_min = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=0,
-            minValue=0,
-            maxValue=99,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_min = wx.Slider( self.panel, -1, size=(200, 50), value=0,
+                            minValue=0, maxValue=99, style=wx.SL_AUTOTICKS | wx.SL_LABELS, )
         if WXPYTHON4:
             self.slider_min.SetTickFreq(50)
         else:
@@ -202,15 +199,8 @@ class ImshowFrameNew(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
 
         self.slidertxt_max = wx.StaticText(self.panel, -1, "Max :")
-        self.slider_max = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=100,
-            minValue=1,
-            maxValue=100,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_max = wx.Slider( self.panel, -1, size=(200, 50), value=100,
+                            minValue=1, maxValue=100, style=wx.SL_AUTOTICKS | wx.SL_LABELS, )
         if WXPYTHON4:
             self.slider_max.SetTickFreq(50)
         else:
@@ -238,7 +228,6 @@ class ImshowFrameNew(wx.Frame):
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
         # --- ---layout
-
         self.slidersbox = wx.BoxSizer(wx.HORIZONTAL)
         self.slidersbox.Add(self.slidertxt_min, 0)
         self.slidersbox.Add(self.slider_min, 0)
@@ -305,7 +294,6 @@ class ImshowFrameNew(wx.Frame):
             self.dirname = dialog.GetDirectory()
             print(self.filename)
             print(self.dirname)
-
         else:
             userProvidedFilename = False
         dialog.Destroy()
@@ -320,46 +308,6 @@ class ImshowFrameNew(wx.Frame):
 
     def OnQuit(self, event):
         self.Close(True)
-
-    #     def onMotion_ToolTip(self, event):  # tool tip to show data when mouse hovers on plot
-    #
-    #         if self.data == None:
-    #             return
-    #
-    #         collisionFound = False
-    #
-    #         dims, dimf = self.data.shape[:2]
-    # #        print "self.data_2D.shape onmotion", self.data_2D.shape
-    #         radius = .5
-    #         if event.xdata != None and event.ydata != None:  # mouse is inside the axes
-    # #            for i in xrange(len(self.dataX)):
-    # #                radius = 1
-    # #                if abs(event.xdata - self.dataX[i]) < radius and abs(event.ydata - self.dataY[i]) < radius:
-    # #                    top = tip = 'x=%f\ny=%f' % (event.xdata, event.ydata)
-    # #            for i in xrange(dims * dimf):
-    # #                X, Y = self.Xin[0, i % dimf], self.Yin[i % dimf, 0]
-    #             rx = int(np.round(event.xdata))
-    #             ry = int(np.round(event.ydata))
-    #
-    #             if abs(rx - (dimf - 1) / 2) <= (dimf - 1) / 2 and abs(ry - (dims - 1) / 2) <= (dims - 1) / 2:
-    # #                print X, Y
-    # #                print event.xdata, event.ydata
-    #
-    #                 zvalue = self.data[ry, rx]
-    #
-    #
-    #                 tip = 'X=%d\nY=%d\n(x,y):(%d %d)\nI=%.5f' % (self.center[0] - self.boxsize[0] + rx,
-    #                                                           self.center[1] - self.boxsize[1] + ry,
-    #                                                           rx, ry, zvalue)
-    #
-    #
-    #                 self.tooltip.SetTip(tip)
-    #                 self.tooltip.Enable(True)
-    #                 collisionFound = True
-    #     #            break
-    #                 return
-    #         if not collisionFound:
-    #             self.tooltip.Enable(False)
 
     def calc_norm_minmax_values(self):
         if self.dataarray_info is not None:
@@ -397,7 +345,6 @@ class ImshowFrameNew(wx.Frame):
     def clear_axes_create_imshow(self):
         """ init the figure
         """
-
         def fromindex_to_pixelpos_x_mosaic(index, pos):
             return index  # self.center[0]-self.boxsize[0]+index
 
@@ -484,7 +431,7 @@ class ImshowFrameNew(wx.Frame):
 class ImshowFrame_Scalar(wx.Frame):
     """
     Class to show 2D array intensity data
-    
+
     used in multigrains.py to plot maps
     """
 
@@ -2261,6 +2208,10 @@ class ImshowFrame(wx.Frame):
         self.DisplayXYZMotorsPositions()
 
     def GetXYZmotorsfromCurrentImage(self):
+        """
+        Read metadata of motors and exposure time
+        #TODO   add exposure time
+        """
         print("current image index pointed", self.currentpointedImageIndex)
         imagesfolder = self.dict_param["imagesfolder"]
         imagefilenameexample = self.dict_param["filename_representative"]
@@ -3137,87 +3088,9 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 print("framedim of ccdlabel", framedimraw, ccdlabel)
                 print("fliprot", fliprot)
 
-                # #                 parent.GetParent().GetParent().GetParent().gettime()
-                #                 dataimage, framedim, fliprot = RMCCD.readCCDimage(filename,
-                #                                                           CCDLabel=ccdlabel, dirname=None)
-                # #                 parent.GetParent().GetParent().GetParent().getdeltatime()
-
                 center_pixel = (xpic, ypic)
                 if fliprot in ("sCMOS_fliplr",):
                     center_pixel = (framedimraw[1] - xpic, ypic)
-
-                #                 if 0:
-                #                     print "center_pixel",center_pixel
-                #
-                #     #                 # patch switch: framedim  almost of for fliplr = 0 in sCMOS
-                #                     framedim = framedimraw[1], framedimraw[0]
-                #     #                 flipxycenter = 1
-                #                     flipxycenter=0
-                #
-                #                 if 1:
-                #                     framedim=framedimraw
-                #                     flipxycenter = 0
-                #
-                #                     framediminv=framedimraw[1], framedimraw[0]
-                #
-                #
-                #
-                #     #                 # patch switch: framedim
-                #     #                 framedim = self.framedim[1], self.framedim[0]
-                #     #
-                #     #                 (min_value, max_value,
-                #     #                  min_position, max_position) = RMCCD.getExtrema(self.dataimage_ROI,
-                #     #                                                              [np.round(self.centerx),
-                #     #                                                               np.round(self.centery)],
-                #     #                                                              self.boxsize_fit, framedim,
-                #     #                                                              ROIcoords=0, flipxycenter=0)
-                #     #
-                #     #                 indicesborders = getindices2cropArray(center, [boxsize, boxsize], framedim, flipxycenter=flipxycenter)
-                #     #                 imin, imax, jmin, jmax = indicesborders
-                #     #
-                #     #                 print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
-                #     #                 datacropped = data2d[imin:imax, jmin:jmax]
-                #
-                #
-                #
-                #                 framedim=framedimraw
-                #                 indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
-                #                                                         (halfboxsizes[0], halfboxsizes[1]),
-                #                                                         framedimraw,
-                #                                                         flipxycenter=0)
-                #                 imin, imax, jmin, jmax = indicesborders
-                #
-                #                 print 'indicesborders', indicesborders
-                #
-                #                 # avoid to wrong indices when slicing the data
-                #                 imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1,
-                #                                                                    jmin, jmax + 1,
-                #                                                                    framedim=framedimraw)
-                #
-                #                 print "imin, imax, jmin, jmax",imin, imax, jmin, jmax
-                # #                 print 'framedim',framedim
-                #
-                #                 # use old way to read whole data and crop them
-                #                 if 0:#fliprot in ('vhr','fliplr'):
-                #                     pass
-                #                     firstElemIndex= imin*framedim[0]+framedim[0]-jmax
-                #                     lastElemIndex = (imax-1)*framedim[0]+framedim[0]-jmin
-                #                 else:
-                #                     firstElemIndex= imin*framedim[1]+jmin
-                #                     lastElemIndex = imax*framedim[1]+jmax
-                #
-                #                 print "center_pixel",center_pixel
-                #                 print "halfboxsizes",halfboxsizes
-                #                 print "firstElemIndex",firstElemIndex
-                #                 print "lastElemIndex",lastElemIndex
-                #                 print "framedim",framedim
-                #
-                #                 dataimage, framedim, fliprot = RMCCD.readoneimage_crop_fast(filename,
-                #                                                         dirname=None,CCDLabel=ccdlabel,
-                #                                                           firstElemIndex=firstElemIndex,
-                #                                                           lastElemIndex=lastElemIndex)
-                #
-                #                 datacrop = dataimage[imin:imax, jmin:jmax]
 
                 if not filename.endswith("tif.gz"):
 

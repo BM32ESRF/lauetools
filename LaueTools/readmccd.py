@@ -33,7 +33,7 @@ try:
     import fabio
 
     FABIO_EXISTS = True
-except:
+except ImportError:
     print(
         "Missing fabio module. Please install it if you need open some tiff images from the sCMOS camera"
     )
@@ -49,7 +49,7 @@ try:
 
     libtiff_ctypes.suppress_warnings()
     LIBTIFF_EXISTS = True
-except:
+except ImportError:
     print(
         "Missing library libtiff, Please install: pylibtiff if you need open some tiff images"
     )
@@ -59,7 +59,7 @@ try:
     from PIL import Image
 
     PIL_EXISTS = True
-except:
+except ImportError:
     print(
         "Missing python module called PIL. Please install it if you need open some tiff images from vhr camera"
     )
@@ -108,7 +108,7 @@ def stringint(k, n):
 
     :param k: integer to convert
     :param n: nb of digits for zero padding
-    
+
     :return: string of length n containing integer k
 
     Example: 1 -> '0001'
@@ -125,7 +125,7 @@ def stringint(k, n):
 
 
 @deprecated
-def Read_indexationfile(filename):
+def Read_indexationfile(filename, grainindex_mat=0):
     """
     Read indexation file created by lauetools with extension .idx
 
@@ -294,29 +294,38 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 
     #     print "imagefilename",imagefilename
     if imagefilename.endswith("mccd"):
-
-        imagefilename = imagefilename[: -(5 + nbdigits)] + "{:04d}.mccd".format(
+        lenext = 5 #length of extension including '.'
+        imagefilename = imagefilename[: -(lenext + nbdigits)] + "{:04d}.mccd".format(
             imageindex
         )
 
     elif CCDLabel in ("sCMOS", "sCMOS_fliplr"):
+        #default file extension for sCMOS camera
+        ext= "tif"
+        lenext = 4 #length of extension including '.'
+        if imagefilename.endswith("tiff"):
+            ext = "tiff"
+            lenext = 5 
+        # zero padded index for filename
+        
         if nbdigits is not None:
-            if imagefilename.endswith("tif"):
-                imagefilename = imagefilename[: -(4 + nbdigits)] + "{:04d}.tif".format(
-                    imageindex
+            if imagefilename.endswith(ext):
+                imagefilename = imagefilename[: -(lenext + nbdigits)] + "{:04d}.{}".format(
+                    imageindex,ext
                 )
-            elif imagefilename.endswith("tif.gz"):
+            elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[
-                    : -(7 + nbdigits)
-                ] + "{:04d}.tif.gz".format(imageindex)
+                    : -(lenext+3 + nbdigits)
+                ] + "{:04d}.{}.gz".format(imageindex,ext)
+        # no zero padded index for filename
         else:
-            if imagefilename.endswith("tif"):
+            if imagefilename.endswith(ext):
                 prefix, extension = imagefilename.split(".")
                 prefix0 = prefix.split("_")[0]
                 if imageindex > 9999:
-                    imagefilename = prefix0 + "_{}.tif".format(imageindex)
+                    imagefilename = prefix0 + "_{}.{}".format(imageindex,ext)
                 else:
-                    imagefilename = prefix0 + "_{:04d}.tif".format(imageindex)
+                    imagefilename = prefix0 + "_{:04d}.{}".format(imageindex,ext)
 
     elif CCDLabel in ("EIGER_4Mstack",):
         # only stackimageindex is changed not imagefilename
@@ -396,15 +405,23 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     #     print "CCDLabel",CCDLabel
     #     print "imagefilename",imagefilename
 
+    
     if CCDLabel in ("sCMOS", "sCMOS_fliplr"):
+        #default file extension for sCMOS camera
+        ext= "tif"
+        lenext = 4 #length of extension including '.'
+        
+        if imagefilename.endswith("tiff"):
+            ext = "tiff"
+            lenext = 5
         print(imagefilename)
         if nbdigits is not None:
-            if imagefilename.endswith("tif"):
-                imageindex = int(imagefilename[-(4 + nbdigits) : -4])
-            elif imagefilename.endswith("tif.gz"):
-                imageindex = int(imagefilename[-(7 + nbdigits) : -7])
+            if imagefilename.endswith(ext):
+                imageindex = int(imagefilename[-(lenext + nbdigits) : -(lenext)])
+            elif imagefilename.endswith(ext+".gz"):
+                imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
         else:
-            if imagefilename.endswith("tif"):
+            if imagefilename.endswith(ext):
                 prefix, extension = imagefilename.split(".")
                 imageindex = int(prefix.split("_")[1])
 
@@ -678,8 +695,8 @@ def read_header_scmos(filename):
     - print allsentences  displays the header
     - use allsentences.split('\n') to get a list
     """
-
-    import Image
+    if not PIL_EXISTS:
+        return {}
 
     img = Image.open(filename)
 
@@ -719,7 +736,9 @@ def read_motorsposition_fromheader(filename, CCDLabel="MARCCD165"):
             if "Xech" in elem or "Yech" in elem or "Zech" in elem:
                 dictpar[elem.lstrip("(")] = float(elem.rstrip(")"))
 
-        expo_time = read_header_scmos(filename)["exposure"]
+        headerdict = read_header_scmos(filename)
+        if headerdict:
+            expo_time = headerdict["exposure"]
         xyzpositions = []
         for motorname in ("Xech", "Yech", "Zech"):
             xyzpositions.append(dictpar[motorname])
