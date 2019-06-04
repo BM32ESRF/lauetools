@@ -5,6 +5,8 @@ Created on Wed Jun 26 12:23:40 2013
 @author: micha
 
 from initially T. Cerba
+
+Revised May 2019
 """
 import sys
 import os
@@ -38,29 +40,15 @@ except ImportError:
 import IOLaueTools as IOLT
 import indexingSpotsSet as ISS
 
+from dict_LaueTools import LAUETOOLSFOLDER
+LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
+print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 # --- ---- core index and refine parameters
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
-LIST_VALUESPARAMS = [
-    "Ge",
-    1,
-    5,
-    22,
-    100.0,
-    0.5,
-    0.5,
-    10,
-    6,
-    [0],
-    False,
-    3,
-    None,
-    True,
-    1000,
-    [1, 1],
-    None,
-]
+LIST_VALUESPARAMS = [ "Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
+                    False, 3, None, True, 1000, [1, 1], None, ]
 
 # WARNING when adding parameters above:
 # check if field position is correct in def hascorrectvalue(self, kk, val):
@@ -112,7 +100,6 @@ DEFAULT_KF_DIRECTION = "Z>0"
 class IndexRefineParameters(wx.Frame):
     """
     class for GUI to create a .irp file
-    
     """
 
     def __init__(self, parent, _id, title, listParameters, nb_of_materials=1):
@@ -123,15 +110,18 @@ class IndexRefineParameters(wx.Frame):
 
         self.listParameters = listParameters
 
-        list_txtparamIR, list_valueparamIR, list_unitsparams = listParameters
+        _list_txtparamIR, _list_valueparamIR, _list_unitsparams = listParameters
 
         self.parent = parent
 
-        self.list_txtparamIR = list_txtparamIR
-        self.list_valueparamIR = list_valueparamIR
-        self.list_unitsparams = list_unitsparams
+        self.list_txtparamIR = _list_txtparamIR
+        self.list_valueparamIR = _list_valueparamIR
+        self.list_unitsparams = _list_unitsparams
 
         self.nb_of_materials = nb_of_materials
+        self.dict_param_list
+
+        # GUI widgets
 
         nbmaterialtxt = wx.StaticText(self.panel, -1, "Nb Material")
         self.nbmaterialctrl = wx.SpinCtrl(self.panel, -1, "1", min=1, max=15)
@@ -157,6 +147,7 @@ class IndexRefineParameters(wx.Frame):
         btnQuit = wx.Button(self.panel, -1, "Cancel", size=(-1, 50))
         btnQuit.Bind(wx.EVT_BUTTON, self.OnQuit)
 
+        #widgets layout------
         hbox0 = wx.BoxSizer(wx.HORIZONTAL)
         hbox0.Add(nbmaterialtxt, 0, wx.EXPAND)
         hbox0.Add(self.nbmaterialctrl, 0, wx.EXPAND)
@@ -191,12 +182,9 @@ class IndexRefineParameters(wx.Frame):
             self.materialpages_list.append(pagematerial)
             self.nb.AddPage(pagematerial, "Material %d" % material_index)
 
-    #            print dir(self.nb)
-
     def AddDeleteTabs(self):
         diff = self.nb_of_materials_new - self.nb_of_materials
         if diff >= 1:
-            #             print "i add"
             for material_index in range(diff):
                 abs_material_index = material_index + self.nb_of_materials
                 pagematerial = PageMaterialPanel(self.nb)
@@ -214,7 +202,6 @@ class IndexRefineParameters(wx.Frame):
                 self.materialpages_list.pop(nb_tabs - (tabindex + 1))
 
             self.nb_of_materials = len(self.materialpages_list)
-
     #             print dir(self.nb)
 
     def OnTabChange_PeakSearchMethod(self, evt):
@@ -274,11 +261,11 @@ class IndexRefineParameters(wx.Frame):
             self.InitTabs()
 
             for k_page, pagematerial in enumerate(self.materialpages_list):
-                for kk, key in enumerate(LIST_TXTPARAMS):
-                    if key in list(self.dict_param_list[k_page].keys()):
+                for kk, _key in enumerate(LIST_TXTPARAMS):
+                    if _key in list(self.dict_param_list[k_page].keys()):
                         pagematerial.list_valueparamIR[kk] = self.dict_param_list[
                             k_page
-                        ][key]
+                        ][_key]
 
                 pagematerial.setParams()
 
@@ -302,6 +289,7 @@ class IndexRefineParameters(wx.Frame):
         print("reset")
         self.list_valueparamIR = LIST_VALUESPARAMS
         self.setParams()
+            #             print "i add"
 
     def OnQuit(self, evt):
         self.Close()
@@ -316,6 +304,8 @@ class PageMaterialPanel(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.granparent = parent.GetParent().GetParent()
+
+        self.dict_param_list = {}
 
         (
             self.list_txtparamIR,
@@ -476,9 +466,9 @@ class Stock_parameters_IndexRefine:
     """ class to stock parameters
     """
 
-    def __init__(self, list_txtparamIR, list_valueparamIR):
+    def __init__(self, list_txtparamIR, _list_valueparamIR):
         self.list_txtparamIR = list_txtparamIR
-        self.list_valueparamIR = list_valueparamIR
+        self.list_valueparamIR = _list_valueparamIR
 
 
 class MainFrame_indexrefine(wx.Frame):
@@ -486,12 +476,12 @@ class MainFrame_indexrefine(wx.Frame):
     main class providing a board from which to launch indexation and refinement of data
     """
 
-    def __init__(self, parent, id, title, initialparameters, objet_IR):
+    def __init__(self, parent, _id, title, _initialparameters, objet_IR):
         wx.Frame.__init__(
-            self, parent, id, title, wx.DefaultPosition, wx.Size(850, 650)
+            self, parent, _id, title, wx.DefaultPosition, wx.Size(850, 650)
         )
 
-        self.initialparameters = initialparameters
+        self.initialparameters = _initialparameters
 
         self.parent = parent
         if WXPYTHON4:
@@ -589,6 +579,7 @@ class MainFrame_indexrefine(wx.Frame):
         )  # ,size=(-1, 50))
         btnStart.Bind(wx.EVT_BUTTON, self.OnStart)
 
+        #widgets layout-----
         hfinal = wx.BoxSizer(wx.HORIZONTAL)
         hfinal.Add(txt_cpus, 0)
         hfinal.Add(self.txtctrl_cpus, 0)
@@ -737,9 +728,9 @@ class MainFrame_indexrefine(wx.Frame):
                 dict_param = {}
 
         listvals = [] * len(LIST_VALUESPARAMS)
-        for kk, key in enumerate(LIST_TXTPARAMS):
-            if key in list(dict_param.keys()):
-                listvals.append(dict_param[key])
+        for kk, _key in enumerate(LIST_TXTPARAMS):
+            if _key in list(dict_param.keys()):
+                listvals.append(dict_param[_key])
             else:
                 listvals.append(None)
 
@@ -1155,13 +1146,9 @@ def fill_list_valueparamIR(initialparameters):
 # default values for the fields appearing in the Index_Refine.py GUI
 initialparameters = {}
 
-LaueToolsProjectFolder = os.path.dirname(os.path.abspath(os.curdir))
 
-print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
-
-print("MainFolder", MainFolder)
 
 initialparameters["PeakList Folder"] = os.path.join(MainFolder, "datfiles")
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
@@ -1192,7 +1179,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 
 
 # for local test:
-MainFolder = "/home/micha/LaueTools/Examples/CuSi"
+MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
 print("MainFolder", MainFolder)
 initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
