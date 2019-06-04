@@ -78,19 +78,23 @@ def xy_from_Quat(
     kf_direction="Z>0",
 ):
     """
-    from:
-    varying_parameter_values: array of value that will be taken into account
-    varying_parameter_indices: list of indices (element position) of varying parameters in allparameters array
-    allparameters: array of 8 elements: 5 first of calibration parameters and 3 of angles defining quaternion
-
-    must: len(varying_parameter_values)=len(varying_parameter_indices)
+    compute x and y pixel positions of Laue spots given hkl list
 
     DATA_Q: array of all 3 elements miller indices
     nspots: indices of selected spots of DATA_Q
-    initrot: 
+    initrot: initial orientation matrix (rotation and distorsion)
+
+    varying_parameter_values: array of value that will be taken into account
+    varying_parameter_indices: list of indices (element position) of
+                            varying parameters in allparameters array
+    allparameters: array of 8 elements: 5 first of calibration parameters
+                                        and 3 of angles defining quaternion
 
     WARNING: All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat
+    WARNING2: len(varying_parameter_values)=len(varying_parameter_indices)
     returns:
+
+    array of x y pixel positions of Laue peaks
     """
 
     allparameters.put(varying_parameter_indices, varying_parameter_values)
