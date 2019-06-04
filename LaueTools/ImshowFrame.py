@@ -20,7 +20,6 @@ class ImshowFrame(wx.Frame):
     """
 
     """
-
     def __init__(
         self,
         parent,
@@ -174,7 +173,7 @@ class ImshowFrame(wx.Frame):
                 listparams_title = self.fitresults
             else:
                 listparams_title = self.fitresults.tolist()
-            sentence = "%s\n Intbkg= %.1f Int-Intbkg=%.1f \n(X,Y)XMAS=(%.2f,%.2f) (std1,std2)=(%.3f,%.3f) rotAng=%.1f"
+            sentence = "%s\n Intbkg= %.1f Int-Intbkg=%.1f \n(X,Y)=(%.2f,%.2f) (std1,std2)=(%.3f,%.3f) rotAng=%.1f"
             self.axes.set_title(sentence % tuple([self.title] + listparams_title))
         else:
             self.axes.set_title("%s\n" % self.title)
