@@ -1676,6 +1676,8 @@ class spotsset:
                                                 initial_latticeparameters,
                                                 constantlength="a",
                             )
+                            print("self.deviatoricstrain,self.new_latticeparameters",self.deviatoricstrain,
+                                                    self.new_latticeparameters)
                             # write .fit file of single grain spots results
 
                             self.writeFitFile(
@@ -3085,22 +3087,12 @@ class spotsset:
             # -----------------------------
 
             nbindexedspots = len(index)
-            grain_index * np.ones(nbindexedspots)
+            # grain_index * np.ones(nbindexedspots)
 
-            Columns = [
-                index,
-                intensity,
-                H,
-                K,
-                L,
-                tth,
-                chi,
-                posX,
-                posY,
-                Energy,
-                grain_index * np.ones(nbindexedspots),
-                pixeldevarray,
-            ]
+            Columns = [ index, intensity, H, K, L,
+                        tth, chi, posX, posY, Energy,
+                        grain_index * np.ones(nbindexedspots),
+                        pixeldevarray, ]
         else:
             Columns = [index, intensity, H, K, L, tth, chi, posX, posY, Energy]
             nbindexedspots = len(index)
@@ -3250,6 +3242,9 @@ class spotsset:
                     outputfile.write("\n# %s     :   %s" % (par, value))
             else:
                 raise ValueError("5 or 6 calibration parameters are needed!")
+
+        # add CCDlabel:
+        outputfile.write("\n# CCDLabel    :  %s"%self.CCDLabel)
 
         outputfile.close()
 

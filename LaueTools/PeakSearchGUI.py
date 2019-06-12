@@ -5467,30 +5467,10 @@ class MainPeakSearchFrame(wx.Frame):
         datapeak = tabIsorted[0]
         params_res = params_res[0]
 
-        (
-            peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            Ipixmax,
-        ) = datapeak
+        ( peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin,
+            peak_inclination, Xdev, Ydev, peak_bkg, Ipixmax, ) = datapeak
 
-        # sentence in ImshowFrame
-        # sentence = '%s\n Intbkg= %.1f Int-Intbkg=%.1f \n(X,Y)XMAS=(%.2f,%.2f) (std1,std2)=(%.3f,%.3f) rotAng=%.1f'
-        fitresults = [
-            peak_bkg,
-            peak_I,
-            peak_X,
-            peak_Y,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-        ]
+        fitresults = [ peak_bkg, peak_I, peak_X, peak_Y, peak_fwaxmaj, peak_fwaxmin, peak_inclination, ]
 
         print("fitresults", fitresults)
 

@@ -434,9 +434,9 @@ class MainFrame_peaksearch(wx.Frame):
         self.allMaterialsnames = LIST_OF_CCDS
 
         if WXPYTHON4:
-            grid = wx.FlexGridSizer(4, 7, 7)
+            grid = wx.FlexGridSizer(3, 7, 7)
         else:
-            grid = wx.FlexGridSizer(11, 4, 7, 7)
+            grid = wx.FlexGridSizer(11, 3, 7, 7)
 
         grid.SetFlexibleDirection(wx.HORIZONTAL)
         self.panel = wx.Panel(self)
@@ -461,7 +461,7 @@ class MainFrame_peaksearch(wx.Frame):
                 self.txtctrl.SetToolTipString(dict_tooltip[txt_elem])
 
             if kk in (0, 1, 2, 8, 9, 10):
-                btnbrowse = wx.Button(self.panel, kk + 10, "Browse")
+                btnbrowse = wx.Button(self.panel, kk + 10, "Browse File/Folder")
                 grid.Add(btnbrowse)
                 if kk == 0:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepath)
@@ -489,7 +489,7 @@ class MainFrame_peaksearch(wx.Frame):
                 elif kk == 10:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_pspfile)
                     btnbrowse.SetToolTipString(
-                        "Select .psp file containing Peak Search parameters to be used on images"
+                        "Select .psp file containing Peak Search parameters to be applied on all images"
                     )
 
             elif kk == 3:
@@ -497,6 +497,7 @@ class MainFrame_peaksearch(wx.Frame):
                     self.panel,
                     -1,
                     "MARCCD165",
+                    size=(150,-1),
                     choices=self.allMaterialsnames,
                     style=wx.CB_READONLY,
                 )
@@ -505,16 +506,16 @@ class MainFrame_peaksearch(wx.Frame):
             else:
                 nothing = wx.StaticText(self.panel, -1, "")
                 grid.Add(nothing)
-            grid.Add(wx.Button(self.panel, kk + 12, "?", size=(25, 25)))
+            #grid.Add(wx.Button(self.panel, kk + 12, "?", size=(25, 25)))
 
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepath, id=12)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepathout, id=13)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_fileprefix, id=14)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filesuffix, id=15)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbdigits, id=16)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbpicture1, id=17)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nblastpicture, id=18)
-        self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_increment, id=19)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepath, id=12)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepathout, id=13)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_fileprefix, id=14)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filesuffix, id=15)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbdigits, id=16)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbpicture1, id=17)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nblastpicture, id=18)
+        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_increment, id=19)
 
         Createcfgbtn = wx.Button(
             self.panel, -1, "Edit/Create .psp file", size=(150, -1)
@@ -535,6 +536,7 @@ class MainFrame_peaksearch(wx.Frame):
 
         btnStart.Bind(wx.EVT_BUTTON, self.OnStart)
 
+        # widgets layout--------------
         hfinal = wx.BoxSizer(wx.HORIZONTAL)
         hfinal.Add(Createcfgbtn, 0)
         hfinal.AddSpacer(10)
@@ -547,7 +549,9 @@ class MainFrame_peaksearch(wx.Frame):
         vbox.AddSpacer(5)
         vbox.Add(btnStart, 1, wx.EXPAND)
 
-        self.panel.SetSizer(vbox, wx.EXPAND)
+        self.panel.SetSizer(vbox)
+        vbox.Fit(self)
+        self.Layout()
 
         # tooltips
         btnStart.SetToolTipString(

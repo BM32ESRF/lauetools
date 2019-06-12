@@ -360,6 +360,7 @@ def gaussfit(
     #     data = np.ma.array(data, mask=False)
     #
     #     data.mask[data >= 65535] = True
+    # print("in gaussfit")
     if (Acceptable_HighestValue is not False) or (Acceptable_LowestValue is not False):
         err = np.ones(data.shape)
     if Acceptable_HighestValue is not False:
@@ -384,16 +385,15 @@ def gaussfit(
                 * err
             )
     else:
-
         n1, n2 = data.shape
         errorfunction = lambda p: np.ravel(
             (gaussian2D.twodgaussian_cython(n1, n2, p) - data)
         )
 
     if autoderiv == 0:
-        # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
-        # putting it here because I was instructed to do so for a class project - please ask if you would like
-        # this feature implemented
+        # the analytic derivative, while not terribly difficult, is less efficient and useful. 
+        # I only bothered putting it here because I was instructed to do so for a class project.
+        #  - please ask if you would like    # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
         (p, cov, infodict, errmsg, success) = optimize.leastsq(
@@ -418,7 +418,8 @@ def gaussfit_2peaks(
     xtol=0.0000001,
 ):
     """
-    two Gaussians fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
+    two Gaussians fitter with the ability to fit a variety of
+    different forms of 2-dimensional gaussian.
 
     Input Parameters:
         data - 2-dimensional data array
@@ -462,9 +463,6 @@ def gaussfit_2peaks(
             / err
         )
     if autoderiv == 0:
-        # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
-        # putting it here because I was instructed to do so for a class project - please ask if you would like
-        # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
         p, cov, infodict, errmsg, success = optimize.leastsq(
@@ -476,7 +474,7 @@ def gaussfit_2peaks(
         return p, cov, infodict, errmsg
 
 
-def junk():
+def create2Dgaussiandata():
     # Create the gaussian data
     Xin, Yin = np.mgrid[0:201, 0:201]
     data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + np.random.random(Xin.shape)

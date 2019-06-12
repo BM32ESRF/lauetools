@@ -1352,7 +1352,7 @@ def readoneimage_manycrops(
     centers,
     boxsize,
     stackimageindex=-1,
-    CCDLabel="PRINCETON",
+    CCDLabel="MARCCD165",
     addImax=False,
     use_data_corrected=None,
 ):
@@ -1378,7 +1378,7 @@ def readoneimage_manycrops(
     ----------
     Data : list of 2D array pixel intensity
 
-    Imax : 
+    Imax :
     returns:
     array of data: list of 2D array of intensity
     """
@@ -1557,9 +1557,9 @@ def readoneimage_multiROIfit(
                      'centers' (centre of each ROI)
 
     offsetposition : integer
-                     0 for no offset
-                     1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0)
-                     2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)
+        0 for no offset
+        1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0)
+        2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)
 
     use_data_corrected : tuple of 3 elements    
                          Enter data instead of reading data from file:
@@ -1613,9 +1613,9 @@ def readoneimage_multiROIfit(
     saturation_value = DictLT.dict_CCD[CCDLabel][2]
 
     #     print "len(Datalist)",Datalist
-    for elem in Datalist:
-        print(len(elem))
-        print(elem.shape)
+    # for elem in Datalist:
+    #     print("nb 2D intensities arrays",len(elem))
+    #     print("2D array intensity shape",elem.shape)
     Data = np.array(Datalist)
     #
     #     condition=Data>=saturation_value
@@ -3956,7 +3956,7 @@ def fitoneimage_manypeaks(
         ]
     ).T
 
-    print("tabpeak", tabpeak)
+    # print("Results of all fits in tabpeak", tabpeak)
 
     tabpeak = np.take(tabpeak, list(ToTake), axis=0)
 
@@ -4950,6 +4950,11 @@ def peaksearch_fileseries(
     if isinstance(dictPeakSearch, dict):
         for key, val in list(dictPeakSearch.items()):
             PEAKSEARCHDICT_Convolve[key] = val
+
+    if not "MinPeakSize" in PEAKSEARCHDICT_Convolve:
+        PEAKSEARCHDICT_Convolve["MinPeakSize"] = 0.65
+        PEAKSEARCHDICT_Convolve["MaxPeakSize"] = 3.
+        print("Default values for minimal and maximal peaksize are used!. Resp. 0.65 and 3 pixels.")
 
     PEAKSEARCHDICT_Convolve["PeakSizeRange"] = (
         copy.copy(PEAKSEARCHDICT_Convolve["MinPeakSize"]),
