@@ -569,7 +569,7 @@ CST_ENERGYKEV = (
 # --- ----------- cubic permutation operators
 opsymlist = np.zeros((48, 9), float)
 
-opsymlist[0, :] = np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+opsymlist[0, :] = np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])  # identity
 opsymlist[1, :] = np.array([-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0])
 
 opsymlist[2, :] = np.array([1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0])

@@ -5,7 +5,7 @@ from __future__ import print_function
 Module of lauetools project to compute Laue spots position on CCD camera.
 It handles detection and source geometry. 
 
-JS Micha August 2014
+JS Micha June 2019
 
 http://sourceforge.net/projects/lauetools/
 
@@ -65,7 +65,7 @@ from absolute frame by the rotation (axis= -i, angle= wo) where wo is the angle 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision$"
 
-import sys, os
+import os
 
 import numpy as np
 import pylab as P
@@ -105,7 +105,9 @@ def calc_uflab(
     kf_direction="Z>0",
 ):
     r"""
-    compute 2theta and chi scattering angles or scattered unit vector uf and kf vectors
+    compute unit vector of scattered beam (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
+
+    Unit vector uf correspond to normalized kf vector: q = kf - ki
     from lists of X and Y Laue spots pixels positions on detector
 
     :param xcam: list of pixel X position
@@ -354,12 +356,13 @@ def calc_xycam(
     offset=None,
     verbose=0,
     returnIpM=False,
-    pixelsize=165.0 / 2048,
+    pixelsize=165.0 / 2048.,
     dim=(2048, 2048),
     rectpix=RECTPIX,
 ):
     r"""
-    compute Laue spots position x and y in pixels units in CCD frame from scattering vector q
+    compute Laue spots position x and y in pixels units in CCD frame
+    from unit scattered vector uf expressed in Lab. frame
 
     computes coordinates of point M on CCD from point source and **uflab**.
     Point Ip (source Iprime of x-ray scattered beams)
@@ -479,7 +482,7 @@ def calc_xycam(
     xcam = xcen + xcam1 / pixelsize
     ycam = ycen + ycam1 / (pixelsize * (1.0 + rectpix))
 
-    twicetheta = (1 / DEG) * np.arccos(uflab[:, 1])
+    twicetheta = (1. / DEG) * np.arccos(uflab[:, 1])
     th0 = twicetheta / 2.0
 
     # q = kf - ki
@@ -1630,6 +1633,7 @@ def convert2corfile(
 
         CCDCalibdict["xpixelsize"] = pixelsize
         CCDCalibdict["ypixelsize"] = pixelsize
+        CCDCalibdict["pixelsize"] = pixelsize
 
         param = CCDCalibdict
 

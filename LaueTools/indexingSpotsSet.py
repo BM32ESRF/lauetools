@@ -247,12 +247,10 @@ class spotsset:
         print("after purge self.nbspots", self.nbspots)
 
     def importdatafromfile(
-        self, filename, removeSpots=None, sortSpots_from_refenceList=None
+        self, filename, sortSpots_from_refenceList=None
     ):
         """
-        initialize spots indexation dictionary from data in file
-
-        # TODO: read and set calibration parameters in this function!
+        Read .cor file and initialize spots indexation dictionary from peaks list²
         """
         (
             data_theta,
@@ -296,13 +294,45 @@ class spotsset:
 
         self.importdata([Twicetheta, Chi, dataintensity, posx, posy])
 
+        self.CCDcalibdict = CCDcalibdict
+        self.CCDLabel=self.CCDcalibdict['CCDLabel']
+        
+        self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
+        for key in ('pixelsize','xpixelsize','ypixelsize'):
+            if key in self.CCDcalibdict:
+                self.pixelsize = self.CCDcalibdict[key]
+                break
+        if 'framedim' in self.CCDcalibdict:
+            self.dim = self.CCDcalibdict["framedim"]
+        else:
+            self.dim=DictLT.dict_CCD[self.CCDLabel][0]
+
+        if "detectordiameter" in self.CCDcalibdict:
+            self.detectordiameter = self.CCDcalibdict["detectordiameter"]
+        else:
+            self.detectordiameter = max(self.dim)*self.pixelsize
+
+        if "kf_direction" in self.CCDcalibdict:
+            self.kf_direction = self.CCDcalibdict["kf_direction"]
+        else:
+            printcyan(
+                "\n\n*******\n warning: use default geometry: \n%s\n*****\n\n"
+                % DEFAULT_KF_DIRECTION
+            )
+            self.kf_direction = DEFAULT_KF_DIRECTION
+
         self.detectorparameters = detectorparameters
         self.nbspots = nb_spots
         self.filename = filename
 
-        return True
+        if self.detectorparameters is None:
+            printred(
+                "file %s does not contain the 5 detector parameters"
+                % filename
+            )
+            return
 
-    #         self.updateSimulParameters()
+        return True
 
     def getSpotsallData(self):
         """
@@ -1477,9 +1507,9 @@ class spotsset:
                     print("GoodRefinement condition is ", GoodRefinement)
                     print("nb_updates %d compared to 6" % nb_updates)
 
-                # matching rate after refinement and making links is too small
-                if (
-                    Matching_rate < MatchingRate_List[step_refinement_index]
+                # matching rate (after refinement and making links) is too small
+                if (Matching_rate is None
+                    or Matching_rate < MatchingRate_List[step_refinement_index]
                     or refinedMatrix is None
                     or not GoodRefinement
                 ):
@@ -1665,21 +1695,14 @@ class spotsset:
                             )
                             print("self.refinedUBmatrix", self.refinedUBmatrix)
 
-                            # Update strain (if lower euler angles transform x have been applied on UBmatri)
-                            initial_latticeparameters = DictLT.dict_Materials[self.key_material][1]
-
-                            (
-                                self.deviatoricstrain,
-                                self.new_latticeparameters
-                                ) = CP.DeviatoricStrain_LatticeParams(
-                                                self.dict_grain_matrix[grain_index],
-                                                initial_latticeparameters,
-                                                constantlength="a",
-                            )
-                            print("self.deviatoricstrain,self.new_latticeparameters",self.deviatoricstrain,
-                                                    self.new_latticeparameters)
+                            # WARNING: Update strain (if lower euler angles transform x have been applied on UBmatrix)
+                            (self.deviatoricstrain,
+                            self.deviatoricstrain_sampleframe,
+                            self.new_latticeparameters)=CP.evaluate_strain_fromUBmat(self.refinedUBmatrix,
+                                                                                        self.key_material,
+                                                                                        constantlength='a')
+    
                             # write .fit file of single grain spots results
-
                             self.writeFitFile(
                                 grain_index,
                                 corfilename=corfilename,
@@ -2427,6 +2450,24 @@ class spotsset:
         latticeparams = DictLT.dict_Materials[self.key_material][1]
         Bmatrix = CP.calc_B_RR(latticeparams)
 
+        print("initial_values, Miller,allparameters, arr_indexvaryingparameters,  etc...")
+        print(initial_values,
+            Miller,
+            allparameters,
+            arr_indexvaryingparameters,
+            sim_indices,
+            posX,
+            posY,
+            initial_matrix,
+            Bmatrix,
+            0,
+            1,
+            self.pixelsize,
+            self.dim,
+            weights,
+            1,
+            self.kf_direction)
+
         residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
             initial_values,
             Miller,
@@ -2445,8 +2486,8 @@ class spotsset:
             signgam=1,
             kf_direction=self.kf_direction,
         )
-        #    print "Initial residues", residues
-        #    print "---------------------------------------------------\n"
+        print("Initial residues", residues)
+        print("---------------------------------------------------\n")
 
         results = FitO.fit_on_demand_strain(
             initial_values,
@@ -2513,36 +2554,7 @@ class spotsset:
             newUBmat = np.dot(np.dot(deltamat, starting_orientmatrix), varyingstrain)
             if verbose:
                 print("newUBmat", newUBmat)
-            # print "newmatrix",newmatrix # must be equal to UBmat
 
-            # RR,PP = GT.UBdecomposition_RRPP(UBmat)
-
-            # symetric matrix(strain) in direct real distance
-            # epsil = GT.epsline_to_epsmat(CP.calc_epsp(CP.dlat_to_rlat(CP.matrix_to_rlat(PP))))
-
-            # #print "epsil is already a zero trace symetric matrix ",np.round(epsil*1000, decimals = 2)
-            # # if the trace is not zero
-            # epsil = epsil - np.trace(epsil)*np.eye(3)/3.
-
-            # epsil_round = np.round(epsil*1000, decimals = 2)
-            # print "\n********************\n       result of Strain and Orientation  Fitting        \n********************"
-            # print "last pixdev table non weighted"
-            # print residues_non_weighted.round(decimals=3)
-            # print "Mean pixdev non weighted"
-            # print np.mean(residues_non_weighted).round(decimals=5)
-            # print "\nPure Orientation Matrix"
-            # #print RR.tolist()
-            # print RR
-
-            # print "Deviatoric strain with respect to initial crystal unit cell(in 10-3 units)"
-            # #print epsil.tolist()
-            # print epsil_round
-            # print "Pure strain"
-            # purestrain =(varyingstrain + varyingstrain.T)/2 - np.eye(3)
-            # print purestrain
-            # print "trace of pure strain", np.trace(purestrain)
-            # print "deviatoric strain of pure strain"
-            # print purestrain - np.trace(purestrain)/3.*np.eye(3)
 
             Bstar_s = np.dot(newUBmat, Bmatrix)
             if verbose:
@@ -2582,9 +2594,15 @@ class spotsset:
 
             #             devstrain_round = np.round(devstrain * 1000, decimals=2)
 
+            (devstrain,
+            deviatoricstrain_sampleframe,
+            lattice_parameters)=CP.evaluate_strain_fromUBmat(newUBmat,self.key_material,constantlength="a")
+
             self.refinedUBmatrix = newUBmat
             self.B0matrix = Bmatrix
             self.deviatoricstrain = devstrain
+            self.deviatoricstrain_sampleframe=deviatoricstrain_sampleframe
+            self.new_latticeparameters = lattice_parameters
 
             self.pixelresidues = residues
             self.spotindexabs = index
@@ -3054,9 +3072,10 @@ class spotsset:
             # deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame(self.deviatoricstrain,
             #                                         self.refinedUBmatrix,
             #                                        LaueToolsFrame_for_UBmat=True)
-            deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
-                self.deviatoricstrain, self.refinedUBmatrix
-            )
+            # deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
+            #     self.deviatoricstrain, self.refinedUBmatrix
+            # )
+            deviatoricstrain_sampleframe = self.deviatoricstrain_sampleframe
 
         if addpixdev:
             pixeldevs = self.pixelresidues
@@ -3100,7 +3119,7 @@ class spotsset:
         if verbose:
             print("Columns", Columns)
 
-        datatooutput = np.transpose(np.array(Columns))
+        datatooutput = np.array(Columns).T
         datatooutput = np.round(datatooutput, decimals=7)
 
         try:
@@ -3787,6 +3806,9 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
 
     resflag = np.all(flagdiff.reshape(Shape[0], ny), axis=1)
 
+    print("resflag",resflag)
+    print("np.any(resflag)",np.any(resflag))
+
     return np.any(resflag), resflag
 
 
@@ -3842,6 +3864,7 @@ def RemoveDuplicatesOrientationMatrix(
     if len(matrices) == 1:
         return matrices
 
+    #best scored matrices
     BSM = matrices.tolist()
 
     # print "len(BSM)",len(BSM)
@@ -3858,6 +3881,7 @@ def RemoveDuplicatesOrientationMatrix(
         Dict_mat[k] = elem
 
     # filtering loop
+    # from six.moves import filter
     k = 0
     while BSM:
 
@@ -3865,10 +3889,15 @@ def RemoveDuplicatesOrientationMatrix(
             """
             Return False if m == BSM[0] in the sense of comparematrices()
             """
-            return not comparematrices(BSM[0], m, tol=tol, allpermu=allpermu)[0]
+            boolval = not comparematrices(BSM[0], m, tol=tol, allpermu=allpermu)[0]
+            print("\n*********boolval", boolval)
+            return boolval
 
+        print("k,FilteredMatrixList",k,FilteredMatrixList)
         FilteredMatrixList.append(BSM[0])
-        BSM = [m for m in BSM if Matrixcomparewith(m)]
+        # BSM = [m for m in BSM if Matrixcomparewith(m)]
+
+        BSM = list(filter(lambda m: Matrixcomparewith(m), BSM))
 
         k += 1
 
@@ -3886,7 +3915,7 @@ def MergeSortand_RemoveDuplicates(
     OrientMatrices, Scores, threshold_matching, tol=0.0001, keep_only_equivalent=True
 ):
     """
-    Returns: Best Sorted Non equivalent orientation matrix
+    Returns: Best Sorted Non equivalent orientation matrix (according to matching rate)
 
     1)Merge matrices solution of distance recognition in LUT
         and matrices coming from user (previous results)
@@ -5156,8 +5185,6 @@ def index_fileseries_3(
         nLUTmax = 3
         printcyan("default value for nLUTmax: %d" % nLUTmax)
 
-    calibparam = CCDCalibdict["CCDCalibParameters"]
-
     dict_params_list = Index_Refine_Parameters_dict["dict params list"]
 
     if nb_materials is None:
@@ -5172,6 +5199,9 @@ def index_fileseries_3(
     prefixdictResname = Index_Refine_Parameters_dict["prefixdictResname"]
     ResultsFolder = Index_Refine_Parameters_dict["Results Folder"]
     fitfile_folder = Index_Refine_Parameters_dict["PeakListFit Folder"]
+
+    if suffixfilename.endswith(".dat"):
+        calibparam = CCDCalibdict["CCDCalibParameters"]
 
     GuessedUBMatrices = 0
     if "GuessedUBMatrix" in Index_Refine_Parameters_dict:
@@ -5234,10 +5264,7 @@ def index_fileseries_3(
 
     # --- Loop over images ----------------------
     lastindex = nstart
-    for imageindex in list(
-        range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2])
-    ):
-
+    for imageindex in list(range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2])):
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + ".res"
             if resfilename in list_resfiles_in_folder:
@@ -5248,6 +5275,7 @@ def index_fileseries_3(
                 continue
 
         if suffixfilename.endswith(".dat"):
+            print("CCDCalibdict eeeeee.dat",CCDCalibdict)
             datfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
 
             dirname_in = Index_Refine_Parameters_dict["PeakList Folder"]
@@ -5265,6 +5293,7 @@ def index_fileseries_3(
                 printcyan("Missing file : %s\n Keep on scanning files\n" % datfilename)
                 continue
 
+            
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
             print("build .cor file")
             print("in %s" % Index_Refine_Parameters_dict["PeakListCor Folder"])
@@ -5279,6 +5308,7 @@ def index_fileseries_3(
             corfilename = datfilename.split(".")[0] + ".cor"
 
         elif suffixfilename == ".cor":
+            print("CCDCalibdict fffffff.cor",CCDCalibdict)
             corfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
             dirname_in = Index_Refine_Parameters_dict["PeakListCor Folder"]
 
@@ -5293,19 +5323,7 @@ def index_fileseries_3(
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
         DataSet = spotsset()
-
-        DataSet.pixelsize = CCDCalibdict["xpixelsize"]
-        DataSet.dim = CCDCalibdict["framedim"]
-        DataSet.detectordiameter = CCDCalibdict["detectordiameter"]
-        if "kf_direction" in CCDCalibdict:
-            DataSet.kf_direction = CCDCalibdict["kf_direction"]
-        else:
-            printcyan(
-                "\n\n*******\n warning: use default geometry: \n%s\n*****\n\n"
-                % DEFAULT_KF_DIRECTION
-            )
-            DataSet.kf_direction = DEFAULT_KF_DIRECTION
-
+        
         #         DataSet.dict_indexedgrains_material = {}
         #         DataSet.dict_grain_matrix = {}
         #         DataSet.dict_grain_matching_rate = {}
@@ -5340,29 +5358,24 @@ def index_fileseries_3(
                     sortSpots_from_refenceList = dict_param_SingleGrain[
                         "Spots Order Reference File"
                     ]
-
-                DataSet.importdatafromfile(
-                    file_to_index, sortSpots_from_refenceList=sortSpots_from_refenceList
-                )
+                # read data and calibration parameters
+                DataSet.importdatafromfile(file_to_index,
+                        sortSpots_from_refenceList=sortSpots_from_refenceList)
+                print("CCDCalibdict after import fffffff.cor",CCDCalibdict)
+                print("CCDCalibdict after import fffffff.cor",DataSet.CCDcalibdict)
 
                 if DataSet.nbspots < 3:
                     print("%d spot(s) are too few to be indexed" % DataSet.nbspots)
                     DataSet.LUT = None
                     continue
 
-                if DataSet.detectorparameters is None:
-                    printred(
-                        "file %s does not contain the 5 detector parameters"
-                        % file_to_index
-                    )
-                    return
-
-            #             print 'DataSet.detectorparameters', DataSet.detectorparameters
+                
+            
             print(
                 "\n ########### starting_grainindex %d ###########\n"
                 % starting_grainindex
             )
-
+            print("dataset.pixelsize  ee",DataSet.pixelsize)
             key_material = dict_param_SingleGrain["key material"]
             emin = dict_param_SingleGrain["emin"]
             emax = dict_param_SingleGrain["emax"]
@@ -5403,7 +5416,7 @@ def index_fileseries_3(
                 return
 
             print("with material: %s\n" % key_material)
-
+            print("dataset.pixelsize  ff",DataSet.pixelsize)
             t0_2 = time.time()
 
             dict_loop = {
@@ -5472,7 +5485,7 @@ def index_fileseries_3(
             #             if dataSubstrate is not None:
             #                 DataSet.purgedata(dataSubstrate[1:3],
             #                                   dist_tolerance=ANGLE_TOL_REMOVE_PEAKS)
-
+            print("dataset.pixelsize  ggg",DataSet.pixelsize)
             previousResults = None
             # read a guessed orientation matrix in dictMat
             if use_previous_results:
@@ -5533,6 +5546,7 @@ def index_fileseries_3(
                     + encodingdigits % imageindex
                     + "_g%d.fit" % material_index
                 )
+
                 (
                     list_indexedgrains_indices,
                     list_nb_indexed_peaks,
@@ -5572,6 +5586,9 @@ def index_fileseries_3(
                 LUT = dict_LUT_material[key_material]
             else:
                 LUT = None
+
+
+            print("dataset.pixelsize",DataSet.pixelsize)
             #             print "current unindexed spot absolute index", DataSet.getUnIndexedSpots()
             DataSet.IndexSpotsSet(
                 file_to_index,
@@ -5588,18 +5605,7 @@ def index_fileseries_3(
                 set_central_spots_hkl=set_central_spots_hkl,
                 ResolutionAngstrom=ResolutionAngstrom,
                 angletol_list=List_Matching_Tol_Angles,
-                MatchingRate_List=[
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                ],  # 10 steps of refinements is highly reasonable
+                MatchingRate_List=[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ],  # 10 steps of refinements is highly reasonable
                 nbGrainstoFind=nbGrainstoFind,
                 verbose=0,
                 corfilename=corfilename,

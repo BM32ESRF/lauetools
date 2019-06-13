@@ -388,6 +388,45 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     return devstrain, lattice_parameter_direct_strain
 
 
+def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a"):
+    """
+    evaluate strain from UBmat matrix    q = UBmat B0 G*
+
+    returns:
+    
+    devstrain, deviatoricstrain_sampleframe, lattice_parameters
+    
+    """
+    # compute new lattice parameters  -----
+    latticeparams = dict_Materials[key_material][1]
+    B0matrix = calc_B_RR(latticeparams)
+
+    UBmat = copy.copy(UBmat)
+
+    (devstrain, lattice_parameters) = compute_deviatoricstrain(
+        UBmat, B0matrix, latticeparams
+    )
+    # overwrite and rescale possibly lattice lengthes
+    lattice_parameters = computeLatticeParameters_from_UB(
+        UBmat, key_material, constantlength
+    )
+
+    print("final lattice_parameters", lattice_parameters)
+
+    deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(
+        devstrain, UBmat
+    )
+
+    # devstrain_sampleframe_round = np.round(
+    #     deviatoricstrain_sampleframe * 1000, decimals=3
+    # )
+    # devstrain_round = np.round(devstrain * 1000, decimals=3)
+
+    return devstrain, deviatoricstrain_sampleframe, lattice_parameters
+    
+    
+
+
 def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
     """
     # starting B0matrix corresponding to the unit cell   -----

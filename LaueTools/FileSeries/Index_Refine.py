@@ -101,10 +101,9 @@ class IndexRefineParameters(wx.Frame):
     """
     class for GUI to create a .irp file
     """
-
     def __init__(self, parent, _id, title, listParameters, nb_of_materials=1):
 
-        wx.Frame.__init__(self, parent, _id, title, size=(600, 600))
+        wx.Frame.__init__(self, parent, _id, title, size=(700, 600))
 
         self.panel = wx.Panel(self)
 
@@ -165,9 +164,8 @@ class IndexRefineParameters(wx.Frame):
         vbox.Add(hbox, 0, wx.EXPAND)
 
         self.panel.SetSizer(vbox)
-
-    #        vbox.Fit(self)
-    #        self.Layout()
+        vbox.Fit(self)
+        self.Layout()
 
     def OnChangeNbMaterial(self, evt):
         self.nb_of_materials_new = int(self.nbmaterialctrl.GetValue())
@@ -478,7 +476,7 @@ class MainFrame_indexrefine(wx.Frame):
 
     def __init__(self, parent, _id, title, _initialparameters, objet_IR):
         wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(850, 650)
+            self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650)
         )
 
         self.initialparameters = _initialparameters
@@ -575,8 +573,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         #          bouton STARTdfd
         btnStart = wx.Button(
-            self.panel, -1, "START INDEX and REFINE (files .fit in OutPutFolder)"
-        )  # ,size=(-1, 50))
+            self.panel, -1, "START INDEX and REFINE (files .fit in OutPutFolder)", size=(-1, 60))
         btnStart.Bind(wx.EVT_BUTTON, self.OnStart)
 
         #widgets layout-----
@@ -592,7 +589,9 @@ class MainFrame_indexrefine(wx.Frame):
         vbox.Add(hfinal, 0, wx.EXPAND)
         vbox.Add(btnStart, 0, wx.EXPAND)
 
-        self.panel.SetSizer(vbox, wx.EXPAND)
+        self.panel.SetSizer(vbox)
+        vbox.Fit(self)
+        self.Layout()
 
         # tooltips
         sentencereanaylse = "If not checked, indexation will be performed for images for which corresponding .res file is missing.\n"
@@ -945,7 +944,10 @@ class MainFrame_indexrefine(wx.Frame):
                 return
 
             #             CCDparams, calibmatrix = IOLT.readfile_det(filedet, nbCCDparameters=8)
-            CCDCalibdict = IOLT.readCalib_det_file(filedet)
+            
+            CCDCalibdict = None
+            if filesuffix in ('.dat'):
+                CCDCalibdict = IOLT.readCalib_det_file(filedet)
 
             Index_Refine_Parameters_dict = {}
 

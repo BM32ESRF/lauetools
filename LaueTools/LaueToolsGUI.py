@@ -74,6 +74,8 @@ import DetectorCalibration as DC
 import CCDFileParametersGUI as CCDParamGUI
 import dragpoints as DGP
 
+import matchingrate
+
 # from PlotRefineGUI import Plot_RefineFrame
 
 from AutoindexationGUI import (
@@ -1820,7 +1822,7 @@ class MainWindow(wx.Frame):
                 wx.MessageBox(txt, "INFO")
                 return
 
-            nbmatrices = nbval / 9
+            nbmatrices = nbval // 9
             ListMatrices = np.zeros((nbmatrices, 3, 3))
             ind_elem = 0
             for ind_matrix in range(nbmatrices):

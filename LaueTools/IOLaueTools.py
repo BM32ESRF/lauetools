@@ -29,6 +29,7 @@ import re
 
 from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
 
+DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
 def writefile_cor(
@@ -221,7 +222,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             data_theta = data_2theta / 2.0
 
     #    print "Reading detector parameters if exist"
-    mike = open(filename, "r")
+    openf = open(filename, "r")
     findcalib = False
 
     #     # fancy way to extract detector parameter;
@@ -247,27 +248,21 @@ def readfile_cor(filename, output_CCDparamsdict=False):
 
     # new way of reading CCD calibration parameters
 
-    CCDcalib = readCalibParametersInFile(mike)
+    CCDcalib = readCalibParametersInFile(openf)
+    print('CCDcalib in readfile_cor',CCDcalib)
 
     if len(CCDcalib) >= 5:
         print("CCD Detector parameters read from .cor file")
         detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
 
-    mike.close()
+    openf.close()
 
     if output_CCDparamsdict:
-        return (
-            alldata,
-            data_theta,
-            data_chi,
-            data_pixX,
-            data_pixY,
-            data_I,
-            detParam,
-            CCDcalib,
-        )
+        return ( alldata, data_theta, data_chi,
+                    data_pixX, data_pixY, data_I, detParam, CCDcalib, )
     else:
-        return alldata, data_theta, data_chi, data_pixX, data_pixY, data_I, detParam
+        return (alldata, data_theta, data_chi,
+                    data_pixX, data_pixY, data_I, detParam)
 
 
 def getpixelsize_from_corfile(filename):
@@ -350,6 +345,14 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
             key_param = key[2:].strip()
             CCDcalib[key_param] = val
 
+    if 'ypixelsize' in CCDcalib:
+        CCDcalib['pixelsize'] = CCDcalib['ypixelsize']
+    if 'xpixelsize' in CCDcalib:
+        CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
+
+    if 'CCDLabel' not in CCDcalib:
+        CCDcalib['CCDLabel']=DEFAULT_CCDLABEL
+
     return CCDcalib
 
 
@@ -367,7 +370,9 @@ def readCalib_det_file(filename_det):
 
     CCDcalib["framedim"] = calibparam[6:8]
     CCDcalib["detectordiameter"] = max(calibparam[6:8]) * calibparam[5]
+    
     CCDcalib["xpixelsize"] = calibparam[5]
+    CCDcalib["pixelsize"] = CCDcalib["xpixelsize"]
     CCDcalib["ypixelsize"] = CCDcalib["xpixelsize"]
     CCDcalib["UB_calib"] = UB_calib
 

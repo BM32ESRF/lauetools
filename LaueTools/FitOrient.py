@@ -144,7 +144,7 @@ def xy_from_Quat(
     Qrot = np.dot(matfromQuat, trQ)  # lattice rotation due to quaternion
     Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
 
-    twthe, chi = F2TC.from_qunit_to_twchi(Qrot / Qrotn, labXMAS=labXMAS)
+    twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn, labXMAS=labXMAS)
     if 0:  # verbose:
         print("matfromQuat", matfromQuat)
         print("tDATA_Q", np.transpose(DATA_Q))
@@ -498,7 +498,7 @@ def error_function_on_demand_strain(
     Bmat=IDENTITYMATRIX,
     pureRotation=0,
     verbose=0,
-    pixelsize=165.0 / 2048,
+    pixelsize=165.0 / 2048.,
     dim=(2048, 2048),
     weights=None,
     signgam=SIGN_OF_GAMMA,
@@ -566,11 +566,9 @@ def error_function_on_demand_strain(
 
     # building B mat
     varyingstrain = np.array(
-        [
-            [1.0, param_strain[2], param_strain[3]],
-            [0, param_strain[0], param_strain[4]],
-            [0, 0, param_strain[1]],
-        ]
+        [ [1.0, param_strain[2], param_strain[3]],
+        [0, param_strain[0], param_strain[4]],
+        [0, 0, param_strain[1]], ]
     )
 
     newmatrix = np.dot(np.dot(deltamat, initrot), varyingstrain)
@@ -925,7 +923,7 @@ def fit_on_demand_strain(
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     param_strain_0 = starting_param
-    if verbose:
+    if 1:#verbose:
         print(
             "\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted,
@@ -995,18 +993,18 @@ def fit_on_demand_strain(
     print("nb iterations", res[2]["nfev"])
     print("mesg", res[-2])
 
-    if verbose:
+    if 1:#verbose:
         print("strain_sol", strain_sol)
 
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if verbose:
+        if 1:#verbose:
             print(
                 "\n\n **************  End of Fitting  -  Final errors  ****************** \n\n"
             )
             _error_function_on_demand_strain(
-                strain_sol[0],
+                strain_sol,
                 miller,
                 allparameters,
                 arr_indexvaryingparameters,

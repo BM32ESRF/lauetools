@@ -1793,14 +1793,34 @@ class Plot_RefineFrame(wx.Frame):
 
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
 
-            nspots = np.arange(nb_pairs)
-            miller = Data_Q
+            # nspots = np.arange(nb_pairs)
+            # miller = Data_Q
 
             # strain & orient
             initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0])
             arr_indexvaryingparameters = np.arange(5, 13)
 
             print("\nInitial error--------------------------------------\n")
+
+            print("initial_values, Data_Q, allparameters, arr_indexvaryingparameters,etc")
+            print(initial_values,
+                Data_Q,
+                allparameters,
+                arr_indexvaryingparameters,
+                sim_indices,
+                pixX,
+                pixY,
+                starting_orientmatrix,
+                self.B0matrix,
+                0,
+                1,
+                self.pixelsize,
+                self.framedim,
+                weights,
+                SIGN_OF_GAMMA,
+                self.kf_direction)
+
+
             residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
                 initial_values,
                 Data_Q,
@@ -1988,38 +2008,10 @@ class Plot_RefineFrame(wx.Frame):
             #   see test_fitgeneralfunction -------- in FitOrient.py -------
             latticeparameters = DictLT.dict_Materials["Cu"][1]
 
-            transformparameters = [
-                0,
-                0,
-                0,  # 3 misorientation / initial UB matrix
-                1.0,
-                0,
-                -0.0,
-                -0.223145,
-                1.01,
-                0,
-                0,
-                -0.0,
-                1,  # Tc
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,  # T
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-            ]  # Ts
+            transformparameters = [ 0, 0, 0,  # 3 misorientation / initial UB matrix
+                                    1.0, 0, -0.0, -0.223145, 1.01, 0, 0, -0.0, 1,  # Tc
+                                    1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+                                    1, 0, 0, 0, 1, 0, 0, 0, 1, ]  # Ts
             sourcedepth = [0]
             allparameters = (
                 calibparameters + transformparameters + latticeparameters + sourcedepth
@@ -2204,37 +2196,6 @@ class Plot_RefineFrame(wx.Frame):
         """
         evaluate strain and display fitting results
         """
-        # print "newmatrix",newmatrix # must be equal to UBmat
-
-        # RR,PP = GT.UBdecomposition_RRPP(UBmat)
-
-        # symetric matrix(strain) in direct real distance
-        # epsil = GT.epsline_to_epsmat(CP.calc_epsp(CP.dlat_to_rlat(CP.matrix_to_rlat(PP))))
-
-        # #print "epsil is already a zero trace symetric matrix ",np.round(epsil*1000, decimals = 2)
-        # # if the trace is not zero
-        # epsil = epsil - np.trace(epsil)*np.eye(3)/3.
-
-        # epsil_round = np.round(epsil*1000, decimals = 2)
-        # print "\n********************\n       result of Strain and Orientation  Fitting        \n********************"
-        # print "last pixdev table non weighted"
-        # print residues_non_weighted.round(decimals=3)
-        # print "Mean pixdev non weighted"
-        # print np.mean(residues_non_weighted).round(decimals=5)
-        # print "\nPure Orientation Matrix"
-        # #print RR.tolist()
-        # print RR
-
-        # print "Deviatoric strain with respect to initial crystal unit cell(in 10-3 units)"
-        # #print epsil.tolist()
-        # print epsil_round
-        # print "Pure strain"
-        # purestrain =(varyingstrain + varyingstrain.T)/2 - np.eye(3)
-        # print purestrain
-        # print "trace of pure strain", np.trace(purestrain)
-        # print "deviatoric strain of pure strain"
-        # print purestrain - np.trace(purestrain)/3.*np.eye(3)
-
         # compute new lattice parameters  -----
         latticeparams = DictLT.dict_Materials[key_material][1]
         B0matrix = CP.calc_B_RR(latticeparams)
@@ -2251,13 +2212,6 @@ class Plot_RefineFrame(wx.Frame):
 
         print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
 
-        self.new_latticeparameters = lattice_parameter_direct_strain
-
-        # compute strain
-
-        #         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame(devstrain, UBmat,
-        #                                   omega0=40.,
-        #                                   LaueToolsFrame_for_UBmat=True)
         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
             devstrain, UBmat
         )
@@ -2267,6 +2221,7 @@ class Plot_RefineFrame(wx.Frame):
         )
         devstrain_round = np.round(devstrain * 1000, decimals=3)
 
+        self.new_latticeparameters = lattice_parameter_direct_strain
         self.deviatoricstrain = devstrain
         self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
 
@@ -2274,16 +2229,7 @@ class Plot_RefineFrame(wx.Frame):
         devstrain_crystal_voigt = np.take(
             np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1)
         )
-        #         print 'devstrain_sample_voigt', devstrain_sample_voigt
-        # full strain with assumption stress33=0
-        #         fullstrain_crystal, fullstrain_stress, strain_hydrostatic = CP.hydrostaticStrain(devstrain_crystal_voigt,
-        #                                                               self.key_material, UBmat,
-        #                                                                assumption='stress33=0')
-        #
-        #         fullstrain_sample = CP.strain_from_crystal_to_sample_frame2(fullstrain_crystal, UBmat)
-        #         fullstrain_round = np.round(fullstrain_sample * 1000, decimals=3)
-        #         print 'fullstrain', fullstrain
-        # ---------------------------------------------------
+        
         self.UBB0mat = np.dot(self.newUBmat, B0matrix)
 
         Umat = None
@@ -2291,6 +2237,7 @@ class Plot_RefineFrame(wx.Frame):
         Umat = CP.matstarlab_to_matstarlabOND(
             matstarlab=None, matLT3x3=np.array(self.UBmat)
         )
+        # TODO to be translated !----------------------
         # conversion en np array necessaire apres automatic indexation, pas necessaire apres check orientation
 
         print("**********test U ****************************")
