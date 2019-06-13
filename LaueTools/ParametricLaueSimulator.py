@@ -2570,19 +2570,17 @@ def dosimulation_parametric(
 
 
 # end dosimulation_parametric
-
-
 def Edit_String_SimulData(data):
     """
     return string object made of lines which contains laue spots properties 
     
     Called to be Edited in LaueToolsframe.control
-    
+
     params:
 
     data tuple of spots properties    
     data =(list_twicetheta, list_chi, list_energy, list_Miller, list_posX, list_posY,
-            ListName, nb of(parent) grains,
+           ListName, nb of(parent) grains,
             calibration parameters list, total nb of grains)
     """
     nb_total_grains = data[9]

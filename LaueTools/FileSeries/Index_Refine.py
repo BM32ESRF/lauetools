@@ -1165,7 +1165,7 @@ initialparameters["Detector Calibration File (.dat)"] = os.path.join(
 )
 initialparameters["PeakList Filename Suffix"] = ".dat"
 
-initialparameters["nbdigits"] = 4
+initialparameters["nbdigits"] = 0
 initialparameters["startingindex"] = 0
 initialparameters["finalindex"] = 5
 initialparameters["stepindex"] = 1
@@ -1186,7 +1186,7 @@ print("MainFolder", MainFolder)
 initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
 initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
-initialparameters["PeakList Filename Prefix"] = "cusi_"
+initialparameters["PeakList Filename Prefix"] = "SiCustrain"
 initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
 initialparameters["PeakList Filename Suffix"] = ".cor"
 
