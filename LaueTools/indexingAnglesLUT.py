@@ -57,8 +57,8 @@ def stringint(k, n):
     """ returns string of k by placing zeros before to have n characters
     ex: 1 -> '0001'
     15 -> '0015'
-    
-    # TODO: replace by string format %04d
+
+    # ugly way: better use  '%04d'%k  for n=4 for isntance
     """
     strint = str(k)
     res = "0" * (n - len(strint)) + strint
@@ -136,7 +136,6 @@ def Plot_compare_2thetachi_multi(
     emax=25,
     emin=5,
     key_material=14,
-    arraysize=(600, 720),
     EULER=0,
     exp_spots_list_selection=None,
     title_plot="default",
@@ -176,7 +175,8 @@ def Plot_compare_2thetachi_multi(
         # PATCH to use correctly getLaueSpots() of laue6
         grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
 
-        # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
+        # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0)
+        # of spots exiting the crystal in 2pi steradian (Z>0)
         spots2pi = LAUE.getLaueSpots(
             CST_ENERGYKEV / emax,
             CST_ENERGYKEV / emin,
@@ -245,7 +245,6 @@ def findInArray1D(array1D, val, tol):
     """
     return array of index where val has been found in input_array within tol as
     tolerance value
-    #TODO: to put outside in general module to deal with list and array ?
     """
     return np.where(abs(array1D - val) <= tol)[0]
 
@@ -298,7 +297,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
     returns possible pairs of planes
     (among the first most important 100 110 111 210 211 221 310 311 321)
 
-    TODO: possiblity of rejecting some plane type according the structure fcc dia...)
+    #TODO: possiblity of rejecting some plane type according the structure fcc dia...)
     """
 
     # LUT_MAIN_CUBIC comes from findorient
@@ -1594,7 +1593,7 @@ def getOrientMatrices(
     Distances between two spots are compared to a reference
     angles look up table (LUT).
 
-    Used AutoIndexation module (in LaueToolsGUI.py Classical Angular indexation)
+    Used in AutoIndexation module (in LaueToolsGUI.py Classical Angular indexation)
     USED in FileSeries
 
     From:

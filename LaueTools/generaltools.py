@@ -157,13 +157,12 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
     """
     From two lists of pairs (THETA, CHI) return:
 
-    tab_angulardist:
-    matrix of all mutual angular distance
+    return:
+    tab_angulardist:   matrix of all mutual angular distance
+                whose shape is (len(list2),len(list1))
 
-    NOTE: It would be necessary later to remove duplicates 
-    since there are pairs that have the same second value
-
-    TODO: absorb similar function in indexingAngleLut
+    WARNING: theta angle is used, i.e. NOT 2THETA!
+    TIP: used with listpoints1 = expspots  and listpoints2 = theospots
     """
     data1 = np.array(listpoints1)
     data2 = np.array(listpoints2)
@@ -186,6 +185,71 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
 
     return tab_angulardist
 
+from numba import double
+from numba.decorators import njit, autojit
+import math
+
+@njit(fastmath=True, parallel=True)
+def mycalcangle(a,b):
+
+    Lo1 = a[0]*DEG / 2.0
+    Lo2 = b[0]*DEG / 2.0
+
+    La1 = a[1]*DEG
+    La2 = b[1]*DEG
+    delta = La1 - La2
+    cang = math.sin(Lo1)*math.sin(Lo2) + math.cos(Lo1)*math.cos(Lo2)*math.cos(delta)
+
+    return math.acos(cang)/DEG
+
+def pairwise_mutualangles(XY1, XY2):
+    """
+    From two lists of pairs (2THETA, CHI) return:
+
+    return:
+    tab_angulardist:   matrix of all mutual angular distance
+                whose shape is (len(list2),len(list1))
+
+    TIP: used with listpoints1 = expspots  and listpoints2 = theospots
+    """
+    M1 = XY1.shape[0]
+    M2 = XY2.shape[0]
+    D = np.empty((M1, M2), dtype=np.float)
+    #k=0
+    for i in range(M1):
+        #print("XY1[i]",XY1[i])
+        for j in range(M2):
+            D[i,j] = mycalcangle(XY1[i], XY2[j])
+            #k+=1
+    return D
+
+def pairwise_mutualangles_1D(XY1, XY2):
+    """
+    From two lists of pairs (2THETA, CHI) return:
+
+    return:
+    tab_angulardist:   matrix of all mutual angular distance
+                whose shape is (len(list2),len(list1))
+
+    TIP: used with listpoints1 = expspots  and listpoints2 = theospots
+    """
+    M1 = XY1.shape[0]
+    M2 = XY2.shape[0]
+    D = np.empty(M1*M2, dtype=np.float)
+    k = 0
+    for i in range(M1):
+        #print("XY1[i]",XY1[i])
+        for j in range(M2):
+            D[k] = mycalcangle(XY1[i], XY2[j])
+            k += 1
+    return D
+
+def computeMutualAngles(listpoints1, listpoints2, TwicethetaInput=True):
+
+    if TwicethetaInput:
+        pairwiseangles_numba = autojit(pairwise_mutualangles)
+
+    return pairwiseangles_numba(listpoints1, listpoints2)
 
 def cartesiandistance(x1, x2, y1, y2):
     """

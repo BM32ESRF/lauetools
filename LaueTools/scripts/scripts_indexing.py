@@ -1667,19 +1667,9 @@ if __name__ == "__main__":
         build a dictionary of color and marker to distinguish contribution of grains in scatter plot
         """
         # faudrait rendre aleatoire l'indice i_dict pour un meilleur rendu
-        colorlist = [
-            "k",
-            (1.0, 0.0, 0.5),
-            "b",
-            "g",
-            "y",
-            "r",
-            "c",
-            "m",
-            "0.75",
-            (0.2, 0.2, 0.2),
-            (0.0, 0.5, 1.0),
-        ]
+        colorlist = [ "k", (1.0, 0.0, 0.5),
+                    "b", "g", "y", "r", "c", "m", "0.75",
+                    (0.2, 0.2, 0.2), (0.0, 0.5, 1.0), ]
         markerlist = ["s", "v", "h", "d", "o", "^", "8"]
         colormarkerdict = {}
         i_dict = 0
@@ -1694,7 +1684,7 @@ if __name__ == "__main__":
         example of map plot given list of coordinates ?? ( I do not remember actually)
 
         """
-        import pylab as p
+        import pylab as ptest_Matrix, twicetheta_data, chi_data, ang_tol=0.5, key_material="Si", emin=5, emax=25, ResolutionAngstrom=False, detectorparameters=None
 
         p.close()
         colormarkerdict = make_colormarkerdict()

@@ -22,9 +22,16 @@ LAUETOOLSFOLDER = os.path.split(__file__)[0]
 print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
 
 WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
-
+######## Geometrey Default  ##############
+# Default constant
+DEFAULT_DETECTOR_DISTANCE = 70.0  # mm
+DEFAULT_DETECTOR_DIAMETER = 165.0  # mm
+DEFAULT_TOP_GEOMETRY = "Z>0"
 
 #############   2D DETECTOR ##############
+
+
+
 LAUEIMAGING_DATA_FORMAT = "uint16"  # 'uint8'
 LAUEIMAGING_FRAME_DIM = (1290, 1970)  # (645, 985)
 

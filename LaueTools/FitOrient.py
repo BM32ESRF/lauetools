@@ -1561,14 +1561,7 @@ def error_function_on_demand_strain_2grains(
             signgam=signgam,
             kf_direction=kf_direction,
         )
-        #         import laue6 as Laue
-        #         dictCCD = {}
-        #         dictCCD['CCDparam'] = calibrationparameters
-        #         dictCCD['pixelsize'] = pixelsize
-        #         dictCCD['dim'] = dim
-        #
-        #         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, B0matrix, DATA_Q, dictCCD)
-        #         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+
 
         Xexp = pixX[grain_index]
         Yexp = pixY[grain_index]
@@ -1885,16 +1878,7 @@ def error_function_general(
         signgam=signgam,
         kf_direction=kf_direction,
     )
-    #         import laue6 as Laue
-    #         dictCCD = {}
-    #         dictCCD['CCDparam'] = calibrationparameters
-    #         dictCCD['pixelsize'] = pixelsize
-    #         dictCCD['dim'] = dim
-    #
-    #         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, B0matrix, DATA_Q, dictCCD)
-    #         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
 
-    #     print 'Xmodel, Ymodel', Xmodel, Ymodel
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
 
@@ -2404,14 +2388,7 @@ def error_function_latticeparameters(
         signgam=signgam,
         kf_direction=kf_direction,
     )
-    #         import laue6 as Laue
-    #         dictCCD = {}
-    #         dictCCD['CCDparam'] = calibrationparameters
-    #         dictCCD['pixelsize'] = pixelsize
-    #         dictCCD['dim'] = dim
-    #
-    #         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
-    #         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
+ 
 
     if 0:  # verbose:
         print("Xmodel, Ymodel", Xmodel, Ymodel)
@@ -2623,16 +2600,7 @@ def error_function_strain(
         signgam=signgam,
         kf_direction=kf_direction,
     )
-    #         import laue6 as Laue
-    #         dictCCD = {}
-    #         dictCCD['CCDparam'] = calibrationparameters
-    #         dictCCD['pixelsize'] = pixelsize
-    #         dictCCD['dim'] = dim
-    #
-    #         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
-    #         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
 
-    #     print 'Xmodel, Ymodel', Xmodel, Ymodel
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
 
@@ -3020,16 +2988,7 @@ def error_strain_from_elongation(
         signgam=signgam,
         kf_direction=kf_direction,
     )
-    #         import laue6 as Laue
-    #         dictCCD = {}
-    #         dictCCD['CCDparam'] = calibrationparameters
-    #         dictCCD['pixelsize'] = pixelsize
-    #         dictCCD['dim'] = dim
-    #
-    #         dataspots = Laue.calcSpots_fromHKLlist(newmatrix, newB0matrix, DATA_Q, dictCCD)
-    #         H, K, L, Qx, Qy, Qz, Xmodel, Ymodel, twthe, chi, Energy = dataspots
 
-    #     print 'Xmodel, Ymodel', Xmodel, Ymodel
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
 

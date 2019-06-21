@@ -7,6 +7,10 @@ import lauecore as LAUE
 import CrystalParameters as CP
 import generaltools as GT
 
+import sklearn.metrics as sm
+import LaueGeometry as LaueGeo
+import scipy.spatial.distance as ssd
+
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
@@ -302,7 +306,113 @@ def SpotLinks(
         linkEnergy_link,
         fields,
     )
+def getProximity_multimatrices(
+    Arr_Theo2Theta, Arr_TheoChi,
+    data_theta,
+    data_chi,
+    angtol=0.5,
+    proxtable=0,
+    verbose=0,
+    signchi=1,
+    usecython=USE_CYTHON,
+):
+    """
+    WARNING: ArrTheo2theta   contains 2theta instead of data_theta contains theta !
+    """
+    nbpeaksbunches=len(Arr_Theo2Theta)
+    # theo simul data
+    # theodata = array([np.ravel(Arr_Theo2Theta)/2.0, signchi *np.ravel(Arr_TheoChi)]).T
+    # # exp data
+    sorted_data = array([data_theta, data_chi]).T
 
+    #     table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+    #     print "table_dist_old", table_dist[:5, :5]
+    #     print "table_dist_old", table_dist[-5:, -5:]
+    #     print "table_dist_old", table_dist.shape
+
+    print('sorted_data.shape',sorted_data.shape)
+    print('Arr_Theo2Theta.shape',Arr_Theo2Theta.shape)
+
+    if not usecython:
+        # table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+
+        table_dist=GT.computeMutualAngles(array([np.ravel(Arr_Theo2Theta), signchi *np.ravel(Arr_TheoChi)]).T,
+                                sorted_data
+                            )
+
+        print('table_dist.shape',table_dist.shape)
+
+    #         print "table_dist normal", table_dist[:5, :5]
+    #     print "table_dist_new", table_dist.shape
+
+    # shape is: along i   dim =  NBMAXSPOTS*nbmatrices = dim(theodata)
+    #           along j   dim = dim(sorted_data)  experimental
+
+    # prox_table = getArgmin(table_dist)
+
+    # print "shape table_dist",shape(table_dist)
+    # table_dist has shape (len(theo),len(exp))
+    # tab[0] has len(exp) elements
+    # tab[i] with i index of theo spot contains all distance from theo spot #i and all the exprimental spots
+    # prox_table has len(exp) elements
+    # prox_table[i] is the index of the exp. spot closest to theo spot (index i)
+    # table_dist[i][prox_table[i]] is the minimum angular distance separating theo spot i from a exp spot of index prox_table[i]
+
+    if verbose:
+        #        print "/0", np.where(table_dist[:, 0] < 1.)
+        #        print np.argmin(table_dist[:, 0])
+        #        print "/4 exp", np.where(table_dist[:, 4] < 1.)
+        #        print np.argmin(table_dist[:, 4])
+        #        print np.shape(table_dist)
+        print(table_dist[:, 4])
+
+    #    pos_closest = np.transpose(array([arange(len(theodata)), prox_table]))
+    #     nb_exp_spots = len(data_chi)
+    #     nb_theo_spots = len(theodata)
+    #     pos_closest_1d = array(arange(nb_theo_spots) * nb_exp_spots * ones(nb_theo_spots) + \
+    #                                prox_table,
+    #                                dtype=int32)
+    #     allresidues = ravel(table_dist)[pos_closest_1d]
+
+    allresidues = amin(table_dist, axis=1)
+    taballresidues = allresidues.reshape((nbpeaksbunches,len(allresidues)//nbpeaksbunches))
+
+    #     print "allresidues", allresidues
+    # len(allresidues)  = len(theo)
+
+    #     print "theodata", theodata
+    #     print 'len(allresidues)', len(allresidues)
+    if proxtable == 0:
+        SIMILRATYTHRESHOLD = 0.9999
+        nb_in_res = getNbMatches(taballresidues,SIMILRATYTHRESHOLD)
+        
+
+        # taballresiduesM=np.ma.masked_greater_equal(taballresidues,angtol)
+        # meanres = np.mean(taballresiduesM,axis=1)
+        # maxi = np.amax(taballresiduesM,axis=1)
+        
+
+        # res = allresidues[cond]
+        # longueur_res = len(cond[0])
+        # #         print allresidues
+        # #         print "len(res)", len(res)
+        # #         print "longueur_res", longueur_res
+        # nb_in_res = len(res)
+        # maxi = max(res)
+        # meanres = mean(res)
+
+        return taballresidues, taballresidues[0], nb_in_res, len(allresidues)
+        # return taballresidues, taballresidues[0], nb_in_res, len(allresidues), meanres, maxi
+
+
+def getNbMatches(residues,thresholdsimilarity):
+    cond = where(residues > thresholdsimilarity)
+    return len(cond[0])
+    # unique_elements, counts_elements = np.unique(cond[0], return_counts=True)
+    # print("Frequency of unique values of the said array:")
+    # print(np.asarray((unique_elements, counts_elements)))
+    # nb_in_res=counts_elements
+    # return np.sum(counts_elements)
 
 def getProximity(
     TwicethetaChi,
@@ -318,9 +428,11 @@ def getProximity(
     TwicethetaChi has two elements: 2theta array and chi array (same length!) (theo. data)
     data_theta, data_chi : array of theta, array of chi (exp. data) (same length!)
     
-
     data_theta array of exp spot
     data_chi array of exp spot
+
+    return:
+    if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
 
     WARNING: TwicethetaChi contains 2theta instead of data_theta contains theta !
     
@@ -340,8 +452,10 @@ def getProximity(
     #     print "table_dist_old", table_dist.shape
 
     if not usecython:
-        table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
-    #         print "table_dist normal", table_dist[:5, :5]
+        # table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+        import scipy
+        table_dist = scipy.spatial.distance.cdist(sorted_data, theodata)
+        
     else:
         # TODO to be improved by not preparing array?
         array_twthetachi_theo = array([TwicethetaChi[0], TwicethetaChi[1]]).T
@@ -359,7 +473,8 @@ def getProximity(
     #     print "table_dist_new", table_dist[-5:, -5:]
     #     print "table_dist_new", table_dist.shape
 
-    prox_table = getArgmin(table_dist)
+    if proxtable==1:
+        prox_table = getArgmin(table_dist)
     # print "shape table_dist",shape(table_dist)
     # table_dist has shape (len(theo),len(exp))
     # tab[0] has len(exp) elements
@@ -533,6 +648,8 @@ def Angular_residues_np(
     emax=25,
     ResolutionAngstrom=False,
     detectorparameters=None,
+    onlyXYZ=False,
+    simthreshold= 0.999
 ):
 
     """ Simulate Laue pattern (single grain) and
@@ -586,46 +703,173 @@ def Angular_residues_np(
         ResolutionAngstrom=ResolutionAngstrom,
     )
 
-    # 2theta,chi of spot which are on camera (with harmonics)
-    # None because no need of hkl vectors
-    # TwicethetaChi without energy calculations and hkl selection
-    # without use of spots instantation (faster)
-    TwicethetaChi = LAUE.filterLaueSpots_full_np(
-        spots2pi[0][0],
-        None,
-        HarmonicsRemoval=0,
-        fileOK=0,
-        fastcompute=1,
-        kf_direction=kf_direction,
-        detectordistance=detectordistance,
-        detectordiameter=detectordiameter,
-        pixelsize=pixelsize,
-        dim=dim,
-    )
+    if not onlyXYZ:
+        # 2theta,chi of spot which are on camera (with harmonics)
+        # None because no need of hkl vectors
+        # TwicethetaChi without energy calculations and hkl selection
+        # without use of spots instantation (faster)
+        TwicethetaChi = LAUE.filterLaueSpots_full_np(
+            spots2pi[0][0],
+            None,
+            onlyXYZ=False,
+            HarmonicsRemoval=0,
+            fileOK=0,
+            fastcompute=1,
+            kf_direction=kf_direction,
+            detectordistance=detectordistance,
+            detectordiameter=detectordiameter,
+            pixelsize=pixelsize,
+            dim=dim,
+        )
 
-    # old calculation with spots instantiation
-    #     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
-    #                                          kf_direction=kf_direction,
-    #                                          detectordistance=detectordistance,
-    #                                          detectordiameter=detectordiameter,
-    #                                          pixelsize=pixelsize,
-    #                                          dim=dim)
+        # old calculation with spots instantiation
+        #     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
+        #                                          kf_direction=kf_direction,
+        #                                          detectordistance=detectordistance,
+        #                                          detectordiameter=detectordiameter,
+        #                                          pixelsize=pixelsize,
+        #                                          dim=dim)
 
-    #     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-    if len(TwicethetaChi[0]) == 0:
-        #         print 'no peak found'
-        return None
+        #     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
+        if len(TwicethetaChi[0]) == 0:
+            #         print 'no peak found'
+            return None
+
+        # no particular gain...?
+        return getProximity(
+            TwicethetaChi, twicetheta_data / 2.0, chi_data, angtol=ang_tol, proxtable=0
+        )
+
+    else:
+        Q_XYZ_onCam = LAUE.filterLaueSpots_full_np(
+            spots2pi[0][0],
+            None,
+            onlyXYZ=True,
+            HarmonicsRemoval=0,
+            fileOK=0,
+            fastcompute=1,
+            kf_direction=kf_direction,
+            detectordistance=detectordistance,
+            detectordiameter=detectordiameter,
+            pixelsize=pixelsize,
+            dim=dim,
+        )
+
+        # Y should be Q vectors corresponding to exp. twicetheta_data and chi_data
+        Y=LaueGeo.from_twchi_to_q((twicetheta_data,chi_data)).T
+
+        # print("Q_XYZ_onCam   theo",Q_XYZ_onCam)
+        # print("Y exp.",Y)
+
+        # print("Q_XYZ_onCam   theo  shape",Q_XYZ_onCam.shape)
+        # print("Y exp.  shape",Y.shape)
+        # return ssd.cosine(Q_XYZ_onCam, Y)
+        # return np.arccos(1-sm.pairwise.cosine_similarity(Q_XYZ_onCam, Y, dense_output=True))*180./np.pi
+        smMat=sm.pairwise.cosine_similarity(Q_XYZ_onCam, Y, dense_output=True)
+        SIMILRATYTHRESHOLD = simthreshold
+        nb_in_res = getNbMatches(smMat,SIMILRATYTHRESHOLD)
+        return nb_in_res
+
+
+
+
+def Angular_residues_np_multimatrices(
+    ListMatrices,
+    twicetheta_data,
+    chi_data,
+    ang_tol=0.5,
+    key_material="Si",
+    emin=5,
+    emax=25,
+    ResolutionAngstrom=False,
+    detectorparameters=None,
+):
+
+    """ Simulate Laue pattern (single grain) and
+    Compute angular residues between pairs of close exp. and theo. spots 
+    
+    USED in manual indexation
+    Used in AutoIndexation module
+
+    inputs: 
+    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
+    test_Matrix                : orientation matrix
+    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
+
+    detectorparameters  : dictionary of detector parameters (key, value)
+                            'kf_direction' , general position of detector plane
+                            'detectordistance', detector distance (mm)
+                            'detectordiameter', detector diameter (mm)
+    """
+    NBMAXPEAKS = 1700
+
+    if detectorparameters is None:
+        # use default parameter
+        kf_direction = "Z>0"
+        detectordistance = 70.0
+        detectordiameter = 165.0
+        pixelsize = 165.0 / 2048
+        dim = (2048, 2048)
+    else:
+        kf_direction = detectorparameters["kf_direction"]
+        detectordistance = detectorparameters["detectorparameters"][0]
+        detectordiameter = detectorparameters["detectordiameter"]
+        pixelsize = detectorparameters["pixelsize"]
+        dim = detectorparameters["dim"]
+
+    #     print "kf_direction,pixelsize,detectordistance", kf_direction, pixelsize, detectordistance
+
+    # ---simulation
+
+    nbmatrices = len(ListMatrices)
+    
+    Arr_Theo2Theta = np.empty((nbmatrices,NBMAXPEAKS))
+    Arr_TheoChi = np.empty((nbmatrices,NBMAXPEAKS))
+    # print "Reference Element or structure label", key_material
+    for matindex in list(range(nbmatrices)):
+        test_Matrix = ListMatrices[matindex]
+        grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
+        # array(vec) and array(indices) (here with fastcompute=0 
+        # array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
+        spots2pi = LAUE.getLaueSpots(
+            CST_ENERGYKEV / emax,
+            CST_ENERGYKEV / emin,
+            [grain],
+            1,
+            fastcompute=1,
+            fileOK=0,
+            verbose=0,
+            kf_direction=kf_direction,
+            ResolutionAngstrom=ResolutionAngstrom,
+        )
+
+        # 2theta,chi of spot which are on camera (with harmonics)
+        # None because no need of hkl vectors
+        # TwicethetaChi without energy calculations and hkl selection
+        # without use of spots instantation (faster)
+        TheoTwicethetaChi = LAUE.filterLaueSpots_full_np(
+            spots2pi[0][0],
+            None,
+            HarmonicsRemoval=0,
+            fileOK=0,
+            fastcompute=1,
+            kf_direction=kf_direction,
+            detectordistance=detectordistance,
+            detectordiameter=detectordiameter,
+            pixelsize=pixelsize,
+            dim=dim,
+        )
+        # print("matindex",matindex)
+        Arr_Theo2Theta[matindex]=TheoTwicethetaChi[0][:NBMAXPEAKS]
+        Arr_TheoChi[matindex]=TheoTwicethetaChi[1][:NBMAXPEAKS]
+        # if len(TheoTwicethetaChi[0]) == 0:
+        #     #         print 'no peak found'
+        #     return None
 
     # no particular gain...?
-    return getProximity(
-        TwicethetaChi, twicetheta_data / 2.0, chi_data, angtol=ang_tol, proxtable=0
+    return getProximity_multimatrices(
+        Arr_Theo2Theta, Arr_TheoChi,twicetheta_data / 2.0, chi_data, angtol=ang_tol, proxtable=0
     )
-
-    #     return matchingrate..getProximity(TwicethetaChi,
-
-
-#                               twicetheta_data / 2., chi_data,
-#                               angtol=ang_tol, proxtable=0)
 
 
 def Angular_residues(

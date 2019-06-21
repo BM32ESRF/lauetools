@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-#  laue6.py programm to compute Laue Pattern in various geometry
+#  Core module to compute Laue Pattern in various geometry
 #  J. S. Micha   micha [at] esrf [dot] fr
 # version May 2019
 #  from LaueTools package
-#  http://sourceforge.net/projects/lauetools/
+#  http://sourceforge.net/projects/lauetools/  
 
 """
 
@@ -18,7 +18,6 @@ import builtins
 import numpy as np
 
 np.set_printoptions(precision=15)
-# http://www.scipy.org/Cookbook/Matplotlib/Transformations
 from pylab import figure, show, connect, title
 from matplotlib.transforms import offset_copy as offset
 
@@ -26,7 +25,8 @@ from matplotlib.transforms import offset_copy as offset
 import CrystalParameters as CP
 import generaltools as GT
 import IOLaueTools as IOLT
-from dict_LaueTools import dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA
+from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
+                            DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
 
 # TODO: LTGeo to be removed
 import LaueGeometry as LTGeo
@@ -41,17 +41,11 @@ except ImportError:
 
 DEG = np.pi / 180.0
 
-# Default constant
-DEFAULT_DETECTOR_DISTANCE = 70.0  # mm
-DEFAULT_DETECTOR_DIAMETER = 165.0  # mm
-DEFAULT_TOP_GEOMETRY = "Z>0"
-
 # --- ---------- Spot class
 class spot:
     """
     Laue Spot class
     """
-
     def __init__(self, indice):
         self.Millers = indice
         self.Qxyz = None
@@ -60,19 +54,6 @@ class spot:
         self.Ycam = None
         self.Twicetheta = None
         self.Chi = None
-
-    #        self._psilatitude = None
-    #        self._philongitude = None
-
-    #     def isfcc(self):
-    #         """ return True if spot indices are compatible with fcc struture
-    #         (all even or all odd)
-    #         """
-    #         listtst = [x % 2 == 0 for x in self.Millers]
-    #         if listtst == [1, 1, 1] or listtst == [0, 0, 0]:
-    #             return True
-    #         else:
-    #             return False
 
     def __lt__(self, autre):
         """ renvoie True si la norme de self est plus petite que celle de autre
@@ -93,9 +74,6 @@ class spot:
         """
         return self.Millers == autre.Millers
 
-        # def __hash__(self):
-        #    return reduce(lambda x, y:x + y, self.have_fond().Millers, 0)
-
     def __hash__(self):
         """
         to used indices for defining a key and using set() sorted()  ... object
@@ -110,18 +88,6 @@ class spot:
         listint = tuple(np.array([100000, 1000, 1]) + III)
         return listint.__hash__()
 
-    #     def have_fond(self):
-    #         """
-    #         veco = np.array(self.Millers)
-    #         absvec = abs(veco[veco != 0])
-    #         return spot(1.*veco / pgcdl(absvec))
-    #         """
-    #         interlist = filter(lambda x:x != 0, list(self.Millers))
-    #         inter = map(lambda elem:int(math.fabs(elem)), interlist)
-    #         # print "interlist ",interlist
-    #         # print "inter ", inter
-    #         return spot((np.array(self.Millers) / GT.pgcdl(inter)))
-
     def have_fond_indices(self):
         """
         return prime indices (fondamental direction)
@@ -131,57 +97,6 @@ class spot:
         # print "interlist ",interlist
         # print "inter ", inter
         return np.array(self.Millers) / GT.pgcdl(inter)
-
-
-#     def is_insidesphere(self, wave):
-#         """ Renvoie True si self est dans la sphere d'ewald
-#         de rayon 1 / wavelength (en angstrom-1) et centre en (-r, 0, 0).
-#         l'argument radius est une longueur d'onde       """
-#         # print math.sqrt((self.Qxyz[0]-1. / radius) ** 2+self.Qxyz[1] ** 2+self.Qxyz[2] ** 2),1. / radius
-#         recip_pos_trans = np.array(self.Qxyz) + np.array([1. / wave, 0., 0.])
-#         # return (self.Qxyz[0]+1. / wave) ** 2+self.Qxyz[1] ** 2+self.Qxyz[2] ** 2  <= 1. / wave ** 2
-#         return np.dot(recip_pos_trans, recip_pos_trans) <= 1. / wave ** 2
-#
-#     def is_insidespherecentered(self, wave):
-#         """ Renvoie True si self est dans la sphere d'ewald
-#         de rayon 1 / wavelength (en angstrom-1) et centre en (0, 0, 0).
-#         l'argument radius est une longueur d'onde       """
-#         # print math.sqrt((self.Qxyz[0]-1. / radius) ** 2+self.Qxyz[1] ** 2+self.Qxyz[2] ** 2),1. / radius
-#         return self.Qxyz[0] ** 2 + \
-#                 self.Qxyz[1] ** 2 + \
-#                 self.Qxyz[2] ** 2 <= 1. / wave ** 2
-
-#     def sepvector(self, autre):
-#         """ donne le tuple difference de self - autre
-#         """
-#         return (self.Millers[0] - autre.Millers[0],
-#                 self.Millers[1] - autre.Millers[1],
-#                 self.Millers[2] - autre.Millers[2])
-
-#     def is_1rstneighbor_of(self, autre):
-#         """ renvoie le vecteur difference (true avec if) si le vecteur separant self et autre est un vecteur definissant la maille, sinon 0 (false avec if)
-#         Dans le cas cubique fcc..."""
-#         res = 0
-#         if self.sepvector(autre) in [(1, 1, 1), (-1, 1, 1), (1, -1, 1),
-#                                     (1, 1, -1), (-1, -1, -1), (1, -1, -1),
-#                                     (-1, 1, -1), (-1, -1, 1)]:
-#             res = self.sepvector(autre)
-#         return res
-
-#     def is_2ndneighbor_of(self, autre):
-#         """ renvoie le vecteur difference (true avec if) si le vecteur
-#         separant self et autre est un vecteur definissant la maille,
-#         sinon 0 (false avec if)
-#         """
-#         res = 0
-#         if self.sepvector(autre) in [(2, 0, 0), (-2, 0, 0), (0, 2, 0),
-#                                     (0, -2, 0), (0, 0, 2), (0, 0, -2),
-#                                     (1, 1, 1), (-1, 1, 1), (1, -1, 1),
-#                                     (1, 1, -1), (-1, -1, -1), (1, -1, -1),
-#                                         (-1, 1, -1), (-1, -1, 1)]:
-#             res = self.sepvector(autre)
-#         return res
-
 
 # --- ---------------   PROCEDURES
 def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose=0):
@@ -199,6 +114,17 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     :return: [[hmin,hmax],[kmin,kmax],[lmin,lmax]]
     """
     #     print "OrientMatrix in Quicklist", OrientMatrix
+
+    assert lambdamin>0,"lambdamin in Quicklist is not positive! %s"%str(lambdamin)
+
+    if isinstance(OrientMatrix, list):
+        OrientMatrix= np.array(OrientMatrix)
+            
+    if len(OrientMatrix)!=3:
+        raise ValueError("Matrix is not 3*3 array !!!%s"%str(OrientMatrix))
+
+    if 0. in listRSnorm or 0 in listRSnorm:
+        raise ValueError("listRSnorm contains 0 !! %s"%str(listRSnorm))
 
     # lengthes of a*,b*,c*
     astarnorm, bstarnorm, cstarnorm = listRSnorm[:3]
@@ -420,6 +346,8 @@ def genHKL_np(listn, Extinc):
         return None
 
     nbelements = (n_h_max - n_h_min) * (n_k_max - n_k_min) * (n_l_max - n_l_min)
+
+    assert nbelements>0 
 
     if (not isinstance(nbelements, int)) or nbelements <= 0.0:
         raise ValueError("Needs (3,2) list of sorted integers")
@@ -683,7 +611,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
 
 # --- -----------------------  Main procedures
-def readinputparameters(SingleCrystalParams):
+def parse_grainparameters(SingleCrystalParams):
     """
     extract and test type of the 4 elements of SingleCrystalParams
     """
@@ -718,7 +646,8 @@ def getLaueSpots(
     verbose=1,
 ):
     r"""
-    build a list of laue spots
+    Compute Qxyz vectors and corresponding HKL miller indices for nodes in recicprocal space that can be measured
+    for the given detection geometry and energy bandpass configuration.
 
     :param wavelmin:   smallest wavelength in Angstrom
     :param wavelmax:  largest wavelength in Angstrom
@@ -726,14 +655,14 @@ def getLaueSpots(
     :param crystalsParams:     list of *SingleCrystalParams*, each of them being a list
                         of 4 elements for crystal orientation and strain properties:
 
-                        SingleCrystalParams[0]: is the B matrix a*,b*,c* vectors are expressed in column
+                        SingleCrystalParams[0](array): is the B matrix a*,b*,c* vectors are expressed in column
                         in LaueTools frame in reciprocal angstrom units
 
-                        SingleCrystalParams[1]: peak Extinction rules ('no','fcc','dia', etc...)
+                        SingleCrystalParams[1](str): peak Extinction rules ('no','fcc','dia', etc...)
 
-                        SingleCrystalParams[2]: orientation matrix
+                        SingleCrystalParams[2](array): orientation matrix
 
-                        SingleCrystalParams[3]: key for material element
+                        SingleCrystalParams[3](str): key for material element
 
     :param linestowrite:   list of [string] that can be write in file or display in
                     stdout. Example: [[""]] or [["**********"],["lauetools"]]
@@ -801,6 +730,9 @@ def getLaueSpots(
     ):
         raise ValueError("Missing list of string")
 
+    if not isinstance(crystalsParams,list):
+        raise ValueError("Grains parameters list is not correct. It Must be: [grain] for 1 grain or [grain1, grain2] for 2 grains...")
+
     nb_of_grains = len(crystalsParams)
 
     if verbose:
@@ -821,16 +753,9 @@ def getLaueSpots(
             print(" crystal parameters:", crystalsParams[i])
         if fileOK:
             linestowrite.append(["%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"])
-            linestowrite.append(
-                [
-                    "grain no ",
-                    str(i),
-                    " made of ",
-                    Elem,
-                    " default lattice parameter ",
-                    str(dict_Materials[crystalsParams[i][3]][1]),
-                ]
-            )
+            linestowrite.append( [ "grain no ", str(i), " made of ", Elem,
+                                " default lattice parameter ",
+                                str(dict_Materials[crystalsParams[i][3]][1]), ] )
             linestowrite.append(
                 [
                     "(vec* basis in lab. frame, real lattice lengthes expansion, orientation matrix, atomic number):"
@@ -867,7 +792,7 @@ def getLaueSpots(
     # loop over grains
     for i in list(range(nb_of_grains)):
 
-        Bmatrix, Extinc, Orientmatrix, key_for_dict = readinputparameters(
+        Bmatrix, Extinc, Orientmatrix, key_for_dict = parse_grainparameters(
             crystalsParams[i]
         )
 
@@ -1445,64 +1370,6 @@ def create_spot_back(
     return spotty
 
 
-def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
-
-    """ Calculates list of grains spots on camera w / o harmonics,
-    from liligrains (list of grains spots instances scattering in 2pi steradians)
-    [[spots grain 0],[spots grain 0],etc] = >
-    [[spots grain 0],[spots grain 0],etc] w / o harmonics and on camera  CCD
-
-    TODO: useless  only used in Plot_Laue(), need to be replace by filterLaueSpots
-    """
-
-    nbofgrains = len(listoflistofspots)
-
-    _oncam = emptylists(nbofgrains)  # list of spot on the camera (harmonics included)
-    _oncamsansh = emptylists(
-        nbofgrains
-    )  # list of spot on the camera (harmonics EXCLUDED) only fondamental (but still with E > Emin)
-
-    if fileOK:
-        linestowrite.append(["\n"])
-        linestowrite.append(
-            ["--------------------------------------------------------"]
-        )
-        linestowrite.append(
-            ["------------- Simulation Data --------------------------"]
-        )
-        linestowrite.append(
-            ["--------------------------------------------------------"]
-        )
-        linestowrite.append(["\n"])
-        linestowrite.append(
-            [
-                "#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"
-            ]
-        )
-
-    for i in list(range(nbofgrains)):
-        condCam = (
-            elem.Xcam ** 2 + elem.Ycam ** 2 <= (DEFAULT_DETECTOR_DIAMETER / 2) ** 2
-        )
-        _oncam[i] = [
-            elem for elem in listoflistofspots[i] if (elem.Xcam is not None and condCam)
-        ]
-
-        # Creating list of spot without harmonics
-        _invdict = (
-            {}
-        )  # for each grain, use of _invdict to remove harmonics present in _oncam
-
-        for elem in sorted(_oncam[i], reverse=True):
-            _invdict[elem.__hash__()] = elem
-            _oncamsansh[i] = [_invdict[cle] for cle in list(_invdict.keys())]
-
-        if fileOK:
-            IOLT.Writefile_data_log(_oncamsansh[i], i, linestowrite=linestowrite)
-
-    return _oncamsansh
-
-
 def filterLaueSpots(
     vec_and_indices,
     HarmonicsRemoval=1,
@@ -1541,8 +1408,12 @@ def filterLaueSpots(
     
                 2theta, chi          if fastcompute=1
 
+    USED IMPORTANTLY in lauecore.SimulateResults  lauecore.SimulateLaue
+    USED in matchingrate...AngularResidues
+    USED in ParametricLaueSimulator...dosimulation_parametric
+
+    USED in AutoindexationGUI...OnSimulate_S3, DetectorCalibration...Reckon_2pts, and others
     #TODO: add dim in create_spot in various geometries
-    #TODO: complete the doc
     """
     try:
         Qvectors_list, HKLs_list = vec_and_indices
@@ -1743,6 +1614,7 @@ def filterLaueSpots(
 def filterLaueSpots_full_np(
     veccoord,
     indicemiller,
+    onlyXYZ=False,
     HarmonicsRemoval=1,
     fastcompute=0,
     kf_direction=DEFAULT_TOP_GEOMETRY,
@@ -1779,6 +1651,7 @@ def filterLaueSpots_full_np(
     
                 tuple of lists 2theta, chi          if fastcompute=1
 
+    NOT USED  (only tentatively on matching rate)
     #TODO: add dim in create_spot in various geometries
     #TODO: complete the doc
     """
@@ -1849,6 +1722,9 @@ def filterLaueSpots_full_np(
     oncam_vecX = np.compress(onCam_cond, VecX)
     oncam_vecY = np.compress(onCam_cond, VecY)
     oncam_vecZ = np.compress(onCam_cond, VecZ)
+
+    if onlyXYZ:
+        return np.array([oncam_vecX,oncam_vecY,oncam_vecZ]).T
 
     # creates spot instances which takes some times...
     # will compute spots on the camera
@@ -1981,6 +1857,8 @@ def get2ThetaChi_geometry(
     
     :return: list of spot
 
+    USED in lauecore.filterLaueSpots
+
     TODO: to be replaced by something not using spot class
     TODO: put this function obviously in find2thetachi ?
     """
@@ -2044,10 +1922,12 @@ def get2ThetaChi_geometry_full_np(
     
     :return: list of spot
 
+    USED in lauecore.filterLaueSpots_full_np
+
     TODO: put this function obviously in find2thetachi ?
     """
     if len(oncam_vec) != len(oncam_HKL):
-        raise ValueError("Wrong input for get2ThetaChi_geometry()")
+        raise ValueError("Wrong input for get2ThetaChi_geometry_full_np()")
 
     TwthetaChiEnergy_list = []
     options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
@@ -2075,6 +1955,8 @@ def get2ThetaChi_geometry_full_np(
 def RemoveHarmonics(listspot):
     """
     remove harmonics present in listspot (list of objects of spot class)
+
+    # TODO : NOT USED ANYMORE
     """
     _invdict = {}
 
@@ -2109,6 +1991,8 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     Fundamental equation
     q = UB*B0 * Gstar
     with Gstar = h*astar+k*bstar+l*cstar
+
+    USED in DetectorCalibration...OnWriteResults, and PlotRefineGUI...onWriteFitFile
     """
 
     detectorparam = dictCCD["CCDparam"]
@@ -2165,293 +2049,6 @@ def emptylists(n):
     xx=[[]]*2 ; xx[0].append((2) => [[2],[2]] instead of [[2],[]] !!
     """
     return [[] for k in list(range(n))]
-
-
-def Plot_Laue(
-    _emin,
-    _emax,
-    list_of_spots,
-    _data_2theta,
-    _data_chi,
-    _data_filename,
-    Plot_Data=1,
-    Display_label=1,
-    What_to_plot="2thetachi",
-    saveplotOK=1,
-    WriteLogFile=1,
-    removeharmonics=0,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    linestowrite=[[""]],
-):
-    """
-    basic function to plot LaueData for showcase
-    """
-    import annot
-
-    # creation donnee pour etiquette sur figure
-    # if plotOK:
-    font = {"fontname": "Courier", "color": "k", "fontweight": "normal", "fontsize": 7}
-    fig = figure(figsize=(6.0, 6.0), dpi=80)  # ? small but ok for savefig!
-    ax = fig.add_subplot(111)
-
-    title(
-        "Laue pattern %.1f-%.1f keV \n %s" % (_emin, _emax, _data_filename),
-        font,
-        fontsize=12,
-    )
-    # text(0.5, 2.5, 'a line', font, color = 'k')
-
-    if removeharmonics == 0:
-        oncam_sansh = Calc_spot_on_cam_sansh(
-            list_of_spots, fileOK=WriteLogFile, linestowrite=linestowrite
-        )
-    elif removeharmonics == 1:
-        print("harmonics have been already removed")
-        oncam_sansh = list_of_spots
-
-    nb_of_grains = len(list_of_spots)
-    print("Number of grains in Plot_Laue", nb_of_grains)
-
-    xxx = emptylists(nb_of_grains)
-    yyy = emptylists(nb_of_grains)
-
-    energy = emptylists(nb_of_grains)
-    trans = emptylists(nb_of_grains)
-    indy = emptylists(nb_of_grains)
-
-    # calculation for a list of spots object of spots belonging to the camera direction
-
-    if WriteLogFile:
-        linestowrite.append(["-" * 60])
-        linestowrite.append([" Number of spots w / o harmonics: "])
-
-    # building  simul data
-    # loop over grains
-    for i in list(range(nb_of_grains)):
-
-        print(
-            "Number of spots on camera (w / o harmonics): GRAIN number ",
-            i,
-            " : ",
-            len(oncam_sansh[i]),
-        )
-        if WriteLogFile:
-            linestowrite.append(
-                [
-                    "--- GRAIN number ",
-                    str(i),
-                    " : ",
-                    str(len(oncam_sansh[i])),
-                    " ----------",
-                ]
-            )
-        facscale = 1.0
-        # loop over spots
-        for elem in oncam_sansh[i]:
-            if What_to_plot == "2thetachi" and (
-                isinstance(kf_direction, list) or kf_direction in ("Z>0", "Y>0", "Y<0")
-            ):
-                xxx[i].append(elem.Twicetheta)
-                yyy[i].append(elem.Chi)
-            elif What_to_plot == "XYcam" or kf_direction in ("X>0", "X<0"):
-                facscale = 2.0  # for bigger spot on graph
-                xxx[i].append(elem.Xcam)
-                yyy[i].append(elem.Ycam)
-            elif What_to_plot == "projgnom":  # essai pas fait
-                xxx[i].append(elem.Xcam)
-                yyy[i].append(elem.Ycam)
-            #            elif What_to_plot == 'directionq':
-            #                xxx[i].append(elem._philongitude)
-            #                yyy[i].append(elem._psilatitude)
-            else:
-                xxx[i].append(elem.Xcam)
-                yyy[i].append(elem.Ycam)
-            energy[i].append(elem.EwaldRadius * CST_ENERGYKEV)
-            # if etiquette: # maintenant avec la souris!!!
-            indy[i].append(elem.Millers)
-
-        print(len(xxx[i]))
-
-    # plot of simulation and or not data
-    # affichage avec ou sans etiquettes
-    dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
-    #        dicosymbol = {0:'k.',1:'r.',2:'g.',3:'b.',4:'c.',5:'m.'}
-
-    # exp data
-    if _data_2theta is not None and _data_chi is not None and Plot_Data:
-        xxx_data = tuple(_data_2theta)
-        yyy_data = tuple(_data_chi)
-
-        # PLOT EXT DATA
-        # print "jkhhkjhkjhjk**********",xxx_data[:20]
-        ax.scatter(xxx_data, yyy_data, s=40, c="w", marker="o", faceted=True, alpha=0.5)
-        # END PLOT EXP DATA
-
-    # Plot Simulated laue patterns
-    for i in list(range(nb_of_grains)):  # loop over grains
-        # ax.plot(tuple(xxx[i]),tuple(yyy[i]),dicosymbol[i])
-
-        # display label to the side of the point
-        if nb_of_grains >= 3:
-            #            trans[i] = offset(ax, fig, 10, -5 * (nb_of_grains - 2) + 5 * i)
-            trans[i] = offset(
-                ax.transData, fig, 10, -5 * (nb_of_grains - 2) + 5 * i, units="dots"
-            )
-        else:
-            #            trans[i] = offset(ax, fig, 10, 5 * (-1) ** (i % 2))
-            trans[i] = offset(ax.transData, fig, 10, 5 * (-1) ** (i % 2), units="dots")
-
-        print("nb of spots for grain # %d : %d" % (i, len(xxx[i])))
-        #        print tuple(xxx[i])
-        #        print tuple(yyy[i])
-        ax.scatter(
-            tuple(xxx[i]),
-            tuple(yyy[i]),
-            s=[facscale * int(200.0 / en) for en in energy[i]],
-            c=dicocolor[(i + 1) % (len(dicocolor))],
-            marker="o",
-            faceted=False,
-            alpha=0.5,
-        )
-
-        if Display_label:  # displaying labels c and d at position a, b
-            for a, b, c, d in zip(
-                tuple(xxx[i]), tuple(yyy[i]), tuple(indy[i]), tuple(energy[i])
-            ):
-                ax.text(
-                    a,
-                    b,
-                    "%s,%.1f" % (str(c), d),
-                    font,
-                    fontsize=7,
-                    color=dicocolor[i % (len(dicocolor))],
-                    transform=trans[i],
-                )
-
-    ax.set_aspect(aspect="equal")
-    if What_to_plot == "XYcam":
-        # ax.set_axis_off()
-        ax.set_xlim((0.0, 2030.0))
-        ax.set_ylim((0.0, 2030.0))
-    #    elif What_to_plot == 'directionq':
-    #        #ax.set_axis_off()
-    #        ax.set_xlim((120.,240.))
-    #        ax.set_ylim((20.,70.))
-
-    # CCD circle contour border drawing
-
-    t = np.arange(0.0, 6.38, 0.1)
-
-    if What_to_plot == "2thetachi" and kf_direction in ("Y>0", "Y<0"):
-        if kf_direction == "Y>0":
-            si = 1
-        else:
-            si = -1
-
-        circY = si * (-90 + 45 * np.sin(t))
-        circX = 90 + 45 * np.cos(t)
-        Xtol = 5.0
-        Ytol = 5.0
-
-    elif What_to_plot == "2thetachi" and (
-        isinstance(kf_direction, list) or kf_direction in ("Z>0")
-    ):
-
-        circX = 90 + 45 * np.cos(t)
-        circY = 45 * np.sin(t)
-        Xtol = 5.0
-        Ytol = 5.0
-    #    elif What_to_plot == 'directionq': #essai coordonnee du cercle camera???
-    #        circX = map(lambda tutu: 180 + 60 * math.cos(tutu), t)
-    #        circY = map(lambda tutu: 45 + 25 * math.sin(tutu), t)
-    #        Xtol = 5.
-    #        Ytol = 5.
-    # TODO embellished with numpy like above
-    elif kf_direction in ("X>0", "X<0"):
-        circX = [1024 + 1024 * math.cos(tutu) for tutu in t]
-        circY = [1024 + 1024 * math.sin(tutu) for tutu in t]
-        Xtol = 20
-        Ytol = 20
-    else:
-        circX = [1024 + 1024 * math.cos(tutu) for tutu in t]
-        circY = [1024 + 1024 * math.sin(tutu) for tutu in t]
-        Xtol = 20
-        Ytol = 20
-    ax.plot(circX, circY, "")
-
-    if saveplotOK:
-        fig.savefig(
-            "figlaue.png", dpi=300, facecolor="w", edgecolor="w", orientation="portrait"
-        )
-
-    if not Display_label:
-        whole_xxx = xxx[0]
-        whole_yyy = yyy[0]
-        whole_indy = indy[0]
-        whole_energy = energy[0]
-        for i in list(range(nb_of_grains - 1)):
-            whole_xxx += xxx[i + 1]
-            whole_yyy += yyy[i + 1]
-            whole_indy += indy[i + 1]
-            whole_energy += energy[i + 1]
-
-        whole_energy_r = np.around(np.array(whole_energy), decimals=2)
-
-        todisplay = np.vstack((np.array(whole_indy, dtype=np.int8).T, whole_energy_r)).T
-
-        # af =  annot.AnnoteFinder(xxx[0] + xxx[1],yyy[0] + yyy[1],indy[0] + indy[1])
-        # af =  annot.AnnoteFinder(whole_xxx, whole_yyy, whole_indy, xtol = 5.,ytol = 5.)
-        # af =  annot.AnnoteFinder(whole_xxx, whole_yyy, whole_energy_r, xtol = 10.,ytol = 10.)
-        af = annot.AnnoteFinder(whole_xxx, whole_yyy, todisplay, xtol=Xtol, ytol=Ytol)
-        # af =  AnnoteFinder(xxx[0],yyy[0],energy[0],indy[0])
-        connect("button_press_event", af)
-    show()
-
-
-def CreateData_(list_spots, outputname="fakedatapickle", pickledOK=0):
-    """
-    return list de (2theta, chi)
-    
-    :param list_spots: list of list of instances of class 'spot'
-    
-    Data may be pickled if needed
-    """
-    mydata = [[elem.Twicetheta, elem.Chi] for elem in list_spots[0]]
-    if outputname != None:
-        if pickledOK:
-            filepickle = open(outputname, "w")
-            pickle.dump(mydata, filepickle)
-            filepickle.close()
-        else:
-            line_to_write = []
-            line_to_write.append(["2theta   chi h k l E spotnumber"])
-            spotnumber = 0
-            for i in list(range(len(list_spots))):
-
-                for elem in list_spots[i]:
-
-                    line_to_write.append(
-                        [
-                            str(elem.Twicetheta),
-                            str(elem.Chi),
-                            str(elem.Millers[0]),
-                            str(elem.Millers[1]),
-                            str(elem.Millers[2]),
-                            str(elem.EwaldRadius * CST_ENERGYKEV),
-                            str(spotnumber),
-                        ]
-                    )
-                    spotnumber += 1
-
-            filetowrite = open(outputname, "w")
-            aecrire = line_to_write
-            for line in aecrire:
-                lineData = "\t".join(line)
-                filetowrite.write(lineData)
-                filetowrite.write("\n")
-            filetowrite.close()
-
-    return mydata
 
 
 def SimulateLaue_merge(
@@ -2584,12 +2181,15 @@ def SimulateLaue_twins(
     """
     simulate Laue pattern full data for twinned grain
 
-    input:
+    params:
 
     grainparent
     twins_operators     : list of 3*3 matrices corresponding of Matrices
 
     output_nb_spots  : True    output a second element with list of partial nb of spots per grain
+
+    USED in detectorCalibration...simulate_theo  to simulate 2 twinned crystals
+
     """
     nb_twins = len(twins_operators)
 
@@ -2641,7 +2241,9 @@ def SimulateLaue(
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
-    TODO: to update to accept kf_direction not in reflection geometry 
+    TODO: to update to accept kf_direction not in reflection geometry
+
+    USED in detectorCalibration...simulate_theo  for non routine geometry (ie except Z>0 (reflection top) X>0 (transmission)
     """
 
     if detectordiameter is None:
@@ -2733,7 +2335,9 @@ def SimulateLaue_full_np(
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
-    TODO: to update to accept kf_direction not in reflection geometry 
+    TODO: to update to accept kf_direction not in reflection geometry
+
+    USED in detectorCalibration...simulate_theo  for routine geometry Z>0 (reflection top) X>0 (transmission)
     """
 
     if detectordiameter is None:
@@ -2813,6 +2417,9 @@ def SimulateResult(
     to restrict simulation to a limited solid angle
 
     Returns 2theta and chi array only
+
+    USED: in AutoindexationGUI...OnStart, LaueToolsGUI...OnCheckOrientationMatrix
+    USED also IndexingImageMatching, lauecore.SimulateLaue_merge
     """
 
     detectordiameter = simulparameters["detectordiameter"]
@@ -2859,165 +2466,6 @@ def SimulateResult(
     )
 
     return TwicethetaChi
-
-
-def simulatepattern(
-    grain,
-    emin,
-    emax,
-    kf_direction,
-    data_filename,
-    PlotLaueDiagram=1,
-    Plot_Data=0,
-    verbose=0,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    ResolutionAngstrom=False,
-    Display_label=1,
-    HarmonicsRemoval=1,
-):
-
-    whatplot = "2thetachi"
-
-    print("kf_direction", kf_direction)
-
-    Starting_time = time.time()
-    linestowrite = [
-        ["*********"],
-        ["file .log generated by laue6.py"],
-        ["at %s" % (time.asctime())],
-        [" ==" * 20],
-    ]
-    # vec and indices of spots Z > 0 (vectors [x, y, z] array, miller indices [H, K, L] array)
-
-    vecind = getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        grain,
-        linestowrite,
-        fileOK=0,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        verbose=verbose,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
-    pre_filename = "laue6simul"
-
-    print("len(vecind[0])", len(vecind[0][0]))
-
-    # selecting RR nodes without harmonics (fastcompute = 1 loses the miller indices and RR positions associations for quicker computation)
-    try:
-        oncam_sansh = filterLaueSpots(
-            vecind,
-            fileOK=1,
-            fastcompute=0,
-            kf_direction=kf_direction,
-            detectordistance=detectordistance,
-            HarmonicsRemoval=HarmonicsRemoval,
-            linestowrite=linestowrite,
-        )
-    #        print "oncam_sansh",oncam_sansh
-    except UnboundLocalError:
-        raise UnboundLocalError("Empty list of spots or vector (variable: vecind)")
-
-    # plot and save and write file of simulated Data
-    # third input is a list whose each element corresponds to one grain list of spots object
-
-    data_2theta, data_chi = None, None  # exp. data
-
-    if data_filename != None:
-        # loadind experimental data:
-        try:
-            res = IOLT.readfile_cor(data_filename)
-
-        except IOError:
-            print(
-                "You must enter the name of experimental datafile (similar to e.g 'Ge_test.cor')"
-            )
-            print("or set Plot_Data=0")
-            return
-
-        else:
-            alldata, data_2theta, data_chi, data_x, data_y, data_I, detparam = res
-
-    else:
-        print(
-            "You must enter the name of experimental datafile (similar to e.g 'Ge_test.cor')"
-        )
-
-    # ----------  Time consumption information
-    finishing_time = time.time()
-    duration = finishing_time - Starting_time
-    print("Time duration for computation %.2f sec." % duration)
-
-    if PlotLaueDiagram:
-
-        Plot_Laue(
-            emin,
-            emax,
-            oncam_sansh,
-            data_2theta,
-            data_chi,
-            data_filename,
-            removeharmonics=1,
-            kf_direction=kf_direction,
-            Plot_Data=Plot_Data,
-            Display_label=Display_label,
-            What_to_plot=whatplot,
-            saveplotOK=0,
-            WriteLogFile=1,
-            linestowrite=linestowrite,
-        )
-
-    #     # logbook file edition
-    #     IOLT.writefile_log(output_logfile_name=pre_filename + '.log',
-    #                  linestowrite=linestowrite)
-
-    #     return CreateData_(oncam_sansh, outputname='laue6table', pickledOK=0), \
-    #             oncam_sansh
-    return True
-
-
-def simulatepurepattern(
-    grain,
-    emin,
-    emax,
-    kf_direction,
-    data_filename,
-    PlotLaueDiagram=1,
-    Plot_Data=0,
-    verbose=0,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    ResolutionAngstrom=False,
-    Display_label=1,
-    HarmonicsRemoval=1,
-):
-
-    vecind = getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        grain,
-        1,
-        fileOK=0,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        verbose=verbose,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
-
-    print("len(vecind[0])", len(vecind[0][0]))
-
-    # selecting RR nodes without harmonics (fastcompute = 1 loses the miller indices and RR positions associations for quicker computation)
-
-    oncam_sansh = filterLaueSpots(
-        vecind,
-        fileOK=0,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        detectordistance=detectordistance,
-        HarmonicsRemoval=HarmonicsRemoval,
-    )
-
-    return True
 
 
 def StructureFactorCubic(h, k, l, extinctions="dia"):
@@ -3101,6 +2549,9 @@ def simulatepurepattern_np(
     Display_label=1,
     HarmonicsRemoval=1,
 ):
+    """
+    NOT USED !!???
+    """
 
     vecind = getLaueSpots(
         CST_ENERGYKEV / emax,

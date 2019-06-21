@@ -756,6 +756,24 @@ def from_twchi_to_qunit(Angles):
     qz = np.sin(twthe) * np.cos(chi)
     return np.array([qx, qy, qz]) / no
 
+def from_twchi_to_q(Angles):
+
+    """
+    from kf 2theta,chi to q (arbitrary lenght) in lab frame (xx// ki) q=kf-ki
+    returns array = (all qx's, all qy's, all qz's)
+    
+    Angles in degrees !! 
+    Angles[0] 2theta deg values,
+    Angles[1] chi values in deg
+    """
+
+    twthe = np.array(Angles[0]) * DEG
+    chi = np.array(Angles[1]) * DEG
+    qx = np.cos(twthe) - 1
+    qy = np.sin(twthe) * np.sin(chi)
+    qz = np.sin(twthe) * np.cos(chi)
+    return np.array([qx, qy, qz])
+
 
 def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
     """

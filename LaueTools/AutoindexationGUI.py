@@ -498,7 +498,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.select_dataXY = (self.select_dataX, self.select_dataY)
 
         wrongsets = False
-        # recongnition spots set size (RSSS)
+        # recognition spots set size (RSSS)
         nbmax_probed = int(self.nbspotmax.GetValue())
 
         spot_list = self.spotlist.GetValue()
