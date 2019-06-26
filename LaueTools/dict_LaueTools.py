@@ -294,6 +294,9 @@ dict_Extinc = {
     "h+l=2n": "h+l=2n",
     "h+k+l=2n": "h+k+l=2n",
     "Ti2AlN": "Ti2AlN",
+    "Al2O3_rhombo":"Al2O3_rhombo",
+    "VO2_mono2":"VO2_mono2",
+    "rutile":"rutile"
 }
 
 dict_Extinc_inv = {
@@ -309,6 +312,9 @@ dict_Extinc_inv = {
     "h+l=2n": "h+l=2n",
     "h+k+l=2n": "h+k+l=2n",
     "Ti2AlN": "Ti2AlN",
+    "Al2O3_rhombo":"Al2O3_rhombo",
+    "VO2_mono2":"VO2_mono2",
+    "rutile":"rutile"
 }
 
 # --- -------------- Transforms 3x3 Matrix

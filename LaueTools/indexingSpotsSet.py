@@ -1950,7 +1950,7 @@ class spotsset:
         #         print "self.dim in getSpotsLinks()", self.dim, type(self.dim)
         print("UBOrientMatrix", UBOrientMatrix)
         # simulated data
-        grain = CP.Prepare_Grain(self.key_material, OrientMatrix=UBOrientMatrix)
+        grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix)
         (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
             grain,
             self.emin,
@@ -4284,7 +4284,7 @@ def getIndexedSpots(
     twicetheta_data, chi_data, dataI = exp_data
 
     # simulated data
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=OrientMatrix)
+    grain = CP.Prepare_Grain(key_material, OrientMatrix)
     (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
         grain,
         emin,

@@ -2912,7 +2912,7 @@ class MainCalibrationFrame(wx.Frame):
         self.key_material = self.crystalparampanel.comboElem.GetValue()
 
         Grain = CP.Prepare_Grain(
-            self.key_material, OrientMatrix=self.crystalparampanel.UBmatrix
+            self.key_material, self.crystalparampanel.UBmatrix
         )
 
         self.B0matrix = Grain[0]
@@ -3641,7 +3641,7 @@ class MainCalibrationFrame(wx.Frame):
 
                     # PATCH: redefinition of grain to simulate any unit cell(not only cubic) ---
                     key_material = grain[3]
-                    grain = CP.Prepare_Grain(key_material, OrientMatrix=grain[2])
+                    grain = CP.Prepare_Grain(key_material, grain[2])
                     # -----------------------------------------------------------------------------
 
                     # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)

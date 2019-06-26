@@ -1236,7 +1236,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
             # PATCH: redefinition of grain to simulate any unit cell (not only cubic) ---
             key_material = grain[3]
-            grain = CP.Prepare_Grain(key_material, OrientMatrix=Equivalent_matrix)
+            grain = CP.Prepare_Grain(key_material, Equivalent_matrix)
 
             # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
             spots2pi = LT.getLaueSpots(

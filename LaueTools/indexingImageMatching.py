@@ -160,7 +160,7 @@ def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14, EUL
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -261,7 +261,7 @@ def Plot_compare_gnomondata(
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -331,7 +331,7 @@ def Plot_compare_2thetachi(
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -411,7 +411,7 @@ def Plot_compare_2thetachi_multi(
                 print("mymat", mymat)
 
         # PATCH to use correctly getLaueSpots() of laue6
-        grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+        grain = CP.Prepare_Grain(key_material, mymat)
 
         # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
         spots2pi = LAUE.getLaueSpots(
@@ -941,7 +941,7 @@ def Hough_peak_position(
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -1180,7 +1180,7 @@ def Hough_peak_position_fast(
             [angle_X * 1.0, angle_Y * 1.0, angle_Z * 1.0]
         )
 
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     if printOrientMatrix:
         print("grainparameters")
@@ -1652,7 +1652,7 @@ def StickLabel_on_exp_peaks(
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # fastcompute=0 => array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(

@@ -2017,7 +2017,7 @@ def dosimulation_parametric(
         # then compute B matrix)
         elif key_material != "inputB":
 
-            grain = CP.Prepare_Grain(key_material, OrientMatrix=np.eye(3))
+            grain = CP.Prepare_Grain(key_material, np.eye(3))
 
             # print "grain in dosimulation_parametric() input Element",grain
 

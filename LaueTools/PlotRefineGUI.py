@@ -1358,10 +1358,11 @@ class Plot_RefineFrame(wx.Frame):
         self._replot()
 
     def OnAutoLink(self, evt):
-        """ create automatically links between currently DISPLAYED close experimental and
-        theoretical spots in 2theta chi representation
+        r""" create automatically links between currently DISPLAYED close experimental and
+        theoretical spots in 2theta, chi representation
 
-        TODO: use a similar autolink function with indexingspotsset
+        .. todo::
+            TODO: use a similar autolink function with indexingspotsset
         """
         if self.SimulParam is None:
             wx.MessageBox(
@@ -1398,9 +1399,9 @@ class Plot_RefineFrame(wx.Frame):
             dataintensity_exp = self.Data_I
 
         print("Nb of exp. spots", len(twicetheta_exp))
-        print("exp", twicetheta_exp)
+        print("twicetheta_exp", twicetheta_exp)
         print("chi_exp", chi_exp)
-        print("theo", twicetheta)
+        print("theo 2theta", twicetheta)
         # toc = []
         # for k,val in enumerate(Miller_ind):
         # toc.append([k,val])
@@ -1408,49 +1409,44 @@ class Plot_RefineFrame(wx.Frame):
         # print "toc", toc
         # print "exp", twicetheta_exp, chi_exp
         Resi, ProxTable = matchingrate.getProximity(
-            np.array([twicetheta, chi]),  # warning array(2theta, chi)
-            twicetheta_exp / 2.0,
-            chi_exp,  # warning theta, chi for exp
-            proxtable=1,
-            angtol=5.0,
-            verbose=0,
-            signchi=1,
-        )[
-            :2
-        ]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+                            np.array([twicetheta, chi]),  # warning array(2theta, chi)
+                            twicetheta_exp / 2.0,
+                            chi_exp,  # warning theta, chi for exp
+                            proxtable=1,
+                            angtol=5.0,
+                            verbose=0,
+                            signchi=1,
+                        )[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
 
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
         # ProxTable[index_theo]  = index_exp   closest link
-        # print "Resi",Resi
-        # print "ProxTable",ProxTable
-        print("Nb of theo spots", len(ProxTable))
+        # print("Resi",Resi)
+        # print("ProxTable",ProxTable)
+        # print("Nb of theo spots", len(ProxTable))
 
         # array theo spot index
         very_close_ind = np.where(Resi < veryclose_angletol)[0]
         # print "In OnLinkSpotsAutomatic() very close indices",very_close_ind
-        longueur_very_close = len(very_close_ind)
+        nb_very_close = len(very_close_ind)
 
         List_Exp_spot_close = []
         Miller_Exp_spot = []
         Energy_Exp_spot = []
         # todisplay = ''
-        if longueur_very_close > 0:
+        if nb_very_close > 0:
             for theospot_ind in very_close_ind:  # loop over theo spots index
 
                 List_Exp_spot_close.append(ProxTable[theospot_ind])
                 Miller_Exp_spot.append(Miller_ind[theospot_ind])
                 Energy_Exp_spot.append(energy[theospot_ind])
 
-        #         print "List_Exp_spot_close", List_Exp_spot_close
-        #         print "Miller_Exp_spot", Miller_Exp_spot
+        # print("List_Exp_spot_close", List_Exp_spot_close)
+        # print("Miller_Exp_spot", Miller_Exp_spot)
 
         if List_Exp_spot_close == []:
-            wx.MessageBox(
-                "No links have been found for tolerance angle : %.2f deg"
-                % veryclose_angletol,
-                "INFO",
-            )
+            wx.MessageBox("No links have been found for tolerance angle : %.2f deg" % veryclose_angletol,
+                                    "INFO", )
             return
 
         # removing exp spot which appears many times(close to several simulated spots of one grain)--------------
@@ -1503,7 +1499,6 @@ class Plot_RefineFrame(wx.Frame):
                 ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[
                     where_th_ind[closest]
                 ]
-
         # ------------------------------------------------------------------
         # print "ProxTable after duplicate removal tagging"
         # print ProxTablecopy
@@ -1514,6 +1509,7 @@ class Plot_RefineFrame(wx.Frame):
         singleindices = []
         refine_indexed_spots = {}
 
+        # loop over close exp. spots
         for k in range(len(List_Exp_spot_close)):
 
             exp_index = List_Exp_spot_close[k]
@@ -1526,36 +1522,27 @@ class Plot_RefineFrame(wx.Frame):
                 # print "exp_index", exp_index
                 # print "theo_index", theo_index
 
-                if (
-                    len(theo_index) == 1
-                ):  # only one theo spot close to the current exp. spot
+                if (len(theo_index) == 1):  # only one theo spot close to the current exp. spot
                     # print "add in dict refine_indexed_spots\n"
-                    refine_indexed_spots[exp_index] = [
-                        exp_index,
-                        theo_index,
-                        Miller_Exp_spot[k],
-                    ]  # expindex,[h,k,l]
+                    refine_indexed_spots[exp_index] = [exp_index,
+                                                        theo_index,
+                                                        Miller_Exp_spot[k], ]
                 # else:  # test whether all theo spots are harmonics
                 # ar_miller = np.take(Miller_ind, theo_index, axis =0)
                 # print "ar_miller",ar_miller
                 # filtered_miller = FindO.FilterHarmonics(ar_miller)
                 # if len(filtered_miller) == 1:
-                # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_Exp_spot[k]]  # expindex,[h,k,l]
+                # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_Exp_spot[k]]
                 else:  # recent PATCH:
                     # print "Resi[theo_index]", Resi[theo_index]
                     closest_theo_ind = np.argmin(Resi[theo_index])
                     # print theo_index[closest_theo_ind]
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
-                        refine_indexed_spots[exp_index] = [
-                            exp_index,
-                            theo_index[closest_theo_ind],
-                            Miller_Exp_spot[k],
-                        ]
+                        refine_indexed_spots[exp_index] = [exp_index,
+                                                        theo_index[closest_theo_ind],
+                                                        Miller_Exp_spot[k]]
             else:
-                print(
-                    "Experimental spot #%d may belong to several theo. spots!"
-                    % exp_index
-                )
+                print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
 
         # find theo spot linked to exp spot ---------------------------------
 
@@ -1569,9 +1556,12 @@ class Plot_RefineFrame(wx.Frame):
         linkResidues = []
         # Dataxy = []
 
+        print('self.selectedAbsoluteSpotIndices',self.selectedAbsoluteSpotIndices)
+
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
+                # print('localspotindex',localspotindex)
                 absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
 
                 listofpairs.append(
@@ -1589,32 +1579,21 @@ class Plot_RefineFrame(wx.Frame):
         self.linkIntensity_link = linkIntensity
         self.linkResidues_link = linkResidues
         self.Energy_Exp_spot = Energy_Exp_spot
-        self.fields = [
-            "#Spot Exp",
-            "#Spot Theo",
-            "h",
-            "k",
-            "l",
-            "Intensity",
-            "residues(deg)",
-        ]
+        self.fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues(deg)"]
 
-        print("Nb of links between exp. and theo. spots", len(self.linkedspots_link))
+        print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
 
         # self.Data_X, self.Data_Y = np.transpose(np.array(Dataxy))
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks(
-        self, evt
-    ):  # filter links between spots(after OnAutoLink() )
+    def BuildDataDictAfterLinks( self, evt ):  # filter links between spots(after OnAutoLink() )
         """
         open editor to look at spots links and filter them
-        
-        button Filter Links
-        
-        """
 
+        button Filter Links
+
+        """
         if self.linkedspots_link is not None:
 
             indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int)

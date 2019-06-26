@@ -650,7 +650,7 @@ data_filename = "Ge_test.cor"  # experimental data
 Id = np.eye(3)
 
 if 0:
-    grainSi = CP.Prepare_Grain("Si", OrientMatrix=dict_Rot["Si_001"])
+    grainSi = CP.Prepare_Grain("Si", dict_Rot["Si_001"])
     linestowrite = [[""]]
 
     grainSi[2] = GT.fromEULERangles_toMatrix([20.0, 10.0, 50.0])
@@ -752,13 +752,13 @@ if 1:  # some grains example
 
     dict_Materials["Cu3"] = ["Cu3", [Id, Umat, Id, BmatCu2], "fcc"]  # Da, U, Dc, B
 
-    grainCu2 = CP.Prepare_Grain("Cu2", OrientMatrix=Id)
-    grainCu3 = CP.Prepare_Grain("Cu3", OrientMatrix="ihjiĥiohio")
+    grainCu2 = CP.Prepare_Grain("Cu2", Id)
+    grainCu3 = CP.Prepare_Grain("Cu3", "ihjiĥiohio")
 
-    grainSi1 = CP.Prepare_Grain("Cu", OrientMatrix=Id)
-    grainSi2 = CP.Prepare_Grain("Si", OrientMatrix=dict_Rot["OrientSurf111"])
+    grainSi1 = CP.Prepare_Grain("Cu", Id)
+    grainSi2 = CP.Prepare_Grain("Si", dict_Rot["OrientSurf111"])
 
-    grainAl2o3 = CP.Prepare_Grain("Al2O3", OrientMatrix=Id)
+    grainAl2o3 = CP.Prepare_Grain("Al2O3", Id)
 
     # grains= [grainSi,grainCu3]
     grains = [grainSi1, grainCu3, grainAl2o3]
@@ -850,8 +850,8 @@ if 0:
 
     # overwriting dict_Materials['smallpro']
     dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
-    mygrain = CP.Prepare_Grain("smallpro", OrientMatrix=dict_Rot["mat311c1"])
-    mygrain = CP.Prepare_Grain("smallpro", OrientMatrix=Id)
+    mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
+    mygrain = CP.Prepare_Grain("smallpro", Id)
 
     grains = [mygrain]
 
@@ -883,7 +883,7 @@ if 0:
 
     matmono = np.dot(GT.matRot([1, 0, 0], -1), mat111alongx)
 
-    mygrain = CP.Prepare_Grain("Cu", OrientMatrix=matmono)
+    mygrain = CP.Prepare_Grain("Cu", matmono)
 
     grains = [mygrain]
 
@@ -911,7 +911,7 @@ if 0:
 
     matmono = np.dot(GT.matRot([0, 0, 1], 20), np.eye(3))
 
-    mygrain = CP.Prepare_Grain("Si", OrientMatrix=matmono)
+    mygrain = CP.Prepare_Grain("Si", matmono)
 
     grains = [mygrain]
 
@@ -941,9 +941,9 @@ if 0:
     matmother = np.dot(GT.matRot([0, 0, 1], -5), np.eye(3))
     matmisorient = np.dot(GT.matRot([-1, 1, 1], 0.1), matmother)
 
-    maingrain = CP.Prepare_Grain("Si", OrientMatrix=matmother)
+    maingrain = CP.Prepare_Grain("Si", matmother)
 
-    mygrain = CP.Prepare_Grain("Si", OrientMatrix=matmisorient)
+    mygrain = CP.Prepare_Grain("Si", matmisorient)
 
     grains = [maingrain, mygrain]
 
@@ -973,7 +973,7 @@ if 0:
     matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
     #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
 
-    maingrain = CP.Prepare_Grain("Si", OrientMatrix=matmother)
+    maingrain = CP.Prepare_Grain("Si", matmother)
 
     grains = [maingrain, maingrain]
 
@@ -1003,7 +1003,7 @@ if 0:
     matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
     #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
 
-    maingrain = CP.Prepare_Grain("Si", OrientMatrix=matmother)
+    maingrain = CP.Prepare_Grain("Si", matmother)
 
     grains = [maingrain, maingrain]
 
@@ -1040,12 +1040,9 @@ if 0:
 
     # overwriting dict_Materials['smallpro']
     dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
-    mygrain = CP.Prepare_Grain("smallpro", OrientMatrix=dict_Rot["mat311c1"])
-    mygrain = CP.Prepare_Grain("smallpro", OrientMatrix=Id)
+    mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
+    mygrain = CP.Prepare_Grain("smallpro", Id)
     ResolutionAngstrom = 2.0
-
-    # mygrain = Prepare_Grain('Cu', OrientMatrix=Id)
-    # ResolutionAngstrom = None
 
     grains = [mygrain]
 
@@ -1083,7 +1080,7 @@ if 0:
     ResolutionAngstrom = 2.0
 
     for ori in list(dict_Rot.keys())[2:3]:
-        mygrain = CP.Prepare_Grain("smallpro", OrientMatrix=dict_Rot[ori])
+        mygrain = CP.Prepare_Grain("smallpro", dict_Rot[ori])
 
         grains = [mygrain]
 
@@ -1150,7 +1147,7 @@ if 0:
     ResolutionAngstrom = 0.5
 
     for ori in list(dict_Rot.keys())[2:3]:
-        mygrain = CP.Prepare_Grain("Ni", OrientMatrix=dict_Rot[ori])
+        mygrain = CP.Prepare_Grain("Ni", dict_Rot[ori])
 
         grains = [mygrain]
 
@@ -1247,8 +1244,8 @@ if 0:  # Si 111 in transmission on ID15
         [0.0036229001244100726, 0.5893105150537007, 0.8078985031808321],
         [0.05947899678171664, -0.8066004291012069, 0.5880969279936651],
     ]
-    mygrain = CP.Prepare_Grain("Si", OrientMatrix=dict_Rot["mat111alongx"])
-    mygrain = CP.Prepare_Grain("Si", OrientMatrix=mattrans3)
+    mygrain = CP.Prepare_Grain("Si", dict_Rot["mat111alongx"])
+    mygrain = CP.Prepare_Grain("Si", mattrans3)
 
     grains = [mygrain]
 

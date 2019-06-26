@@ -93,8 +93,8 @@ def Plot_compare_2thetachi(
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+    # PATCH to use correctly getLaueSpots() of lauecore
+    grain = CP.Prepare_Grain(key_material, mymat)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -173,7 +173,7 @@ def Plot_compare_2thetachi_multi(
                 print("mymat", mymat)
 
         # PATCH to use correctly getLaueSpots() of laue6
-        grain = CP.Prepare_Grain(key_material, OrientMatrix=mymat)
+        grain = CP.Prepare_Grain(key_material, mymat)
 
         # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0)
         # of spots exiting the crystal in 2pi steradian (Z>0)

@@ -425,17 +425,16 @@ def getProximity(
     usecython=USE_CYTHON,
 ):
     """
-    TwicethetaChi has two elements: 2theta array and chi array (same length!) (theo. data)
+    TwicethetaChi (simulation or theoretical) has two elements: 2theta array and chi array (same length!) (theo. data)
     data_theta, data_chi : array of theta, array of chi (exp. data) (same length!)
-    
+
     data_theta array of exp spot
     data_chi array of exp spot
 
-    return:
-    if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
+    :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
 
     WARNING: TwicethetaChi contains 2theta instead of data_theta contains theta !
-    
+
     TODO: change this input to 2theta, chi for every arguments
     signchi = 1 fixed old convention
     TODO: remove this option
@@ -454,8 +453,8 @@ def getProximity(
     if not usecython:
         # table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
         import scipy
-        table_dist = scipy.spatial.distance.cdist(sorted_data, theodata)
-        
+        table_dist = scipy.spatial.distance.cdist(sorted_data, theodata).T
+
     else:
         # TODO to be improved by not preparing array?
         array_twthetachi_theo = array([TwicethetaChi[0], TwicethetaChi[1]]).T
@@ -688,7 +687,7 @@ def Angular_residues_np(
     # print "Reference Element or structure label", key_material
 
     # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
+    grain = CP.Prepare_Grain(key_material, test_Matrix)
 
     # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -713,7 +712,6 @@ def Angular_residues_np(
             None,
             onlyXYZ=False,
             HarmonicsRemoval=0,
-            fileOK=0,
             fastcompute=1,
             kf_direction=kf_direction,
             detectordistance=detectordistance,
@@ -746,7 +744,6 @@ def Angular_residues_np(
             None,
             onlyXYZ=True,
             HarmonicsRemoval=0,
-            fileOK=0,
             fastcompute=1,
             kf_direction=kf_direction,
             detectordistance=detectordistance,
@@ -828,7 +825,7 @@ def Angular_residues_np_multimatrices(
     # print "Reference Element or structure label", key_material
     for matindex in list(range(nbmatrices)):
         test_Matrix = ListMatrices[matindex]
-        grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
+        grain = CP.Prepare_Grain(key_material, test_Matrix)
         # array(vec) and array(indices) (here with fastcompute=0 
         # array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
         spots2pi = LAUE.getLaueSpots(
@@ -851,7 +848,6 @@ def Angular_residues_np_multimatrices(
             spots2pi[0][0],
             None,
             HarmonicsRemoval=0,
-            fileOK=0,
             fastcompute=1,
             kf_direction=kf_direction,
             detectordistance=detectordistance,
@@ -917,7 +913,7 @@ def Angular_residues(
     # print "Reference Element or structure label", key_material
 
     # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
+    grain = CP.Prepare_Grain(key_material, test_Matrix)
 
     # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -986,7 +982,7 @@ def getMatchingRate(
     ).T
 
     # simulated data
-    grain = CP.Prepare_Grain(key_material, OrientMatrix=test_Matrix)
+    grain = CP.Prepare_Grain(key_material, test_Matrix)
     (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
         grain,
         emin,

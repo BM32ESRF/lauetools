@@ -22,7 +22,7 @@ NORMAL_TO_SAMPLE_AXIS = np.array([-np.sin(40.0 * DEG), 0, np.cos(40.0 * DEG)])
 
 def hasCubicSymmetry(key_material):
     """
-    return True of material in LaueTools Dictionary has cubic symmetrys
+    return True if material  has cubic symmetrys in LaueTools Dictionary
 
     :param key_material: material or structure label
     :type key_material: string
@@ -108,7 +108,12 @@ def GrainParameter_from_Material(key_material):
 
 def isOrientMatrix(mat):
     """
-    test if matrix determinant != 0
+    test simply if the matrix is inversible
+
+    :param mat: matrix
+    :type mat: numpy.array or list
+
+    :return: boolean
     """
     try:
         val = np.linalg.det(np.array(mat))
@@ -119,17 +124,22 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material, OrientMatrix=None, force_extinction=None):
+def Prepare_Grain(key_material, OrientMatrix, force_extinction=None):
     """
-    interface function to construct the list of parameters of the grain for
-    Laue pattern simulation
+    Constructor of the grain (crystal) parameters for Laue pattern simulation
 
     if in key_material definition (see dict_Materials) orient matrix is missing
     (i.e. only lattice parameter are input)
+
+    :param key_material: material label
+    :type key_material: str
+
     then list parameter will consider the provided value of the optional
     OrientMatrix argument
-    
-    force_extinction  != None  will force grain extinction rule to string "force_extinction" 
+
+    :param force_extinction:  None, use default extinction rules,
+            otherwise use other extinction correspondoing to the label
+    :type force_extinction: str
     """
 
     if key_material not in list(dict_Materials.keys()):
@@ -156,12 +166,15 @@ def Prepare_Grain(key_material, OrientMatrix=None, force_extinction=None):
 
 def AngleBetweenNormals(HKL1s, HKL2s, Gstar):
     """
-    compute angle in degrees between two reflections or lattice plane normals
+    compute pairwise angles (in degrees) between reflections or lattice plane normals
+    of two sets according to unit cell metrics Gstar
 
-    inputs:
-    HKL1,HKL2            :  list of n1 [H1,K1,L1], list of n2 [H2,K2,L2]
-    Gstar            : 3*3 matrix corresponding to reciprocal metric tensor of unit cell
-                    (provided by Gstar_from_directlatticeparams())
+    :param  HKL1s: list of [H1,K1,L1]
+    :param  HKL2s: list of [H2,K2,L2]
+    :param Gstar: 3*3 matrix corresponding to reciprocal metric tensor of unit cell
+    (as provided by Gstar_from_directlatticeparams())
+
+    :return: array of pairwise angles between reflections
     """
     HKL1r = np.array(HKL1s)
     HKL2r = np.array(HKL2s)
@@ -241,42 +254,48 @@ def FilterHarmonics_2(hkl, return_indices_toremove=0):
 
 # ---- -----Unit Cell parameters - Reciprocal and Direct Lattice Parameters  -----
 def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
-    """
-    Calculate B0 matrix (columns = vectors a*,b*,c*) from direct (real) space lattice parameters when directspace=1
-    Calculate B0 matrix (columns = vectors a,b,c) from direct (real) space lattice parameters when directspace=0
+    r"""
+    * Calculate B0 matrix (columns = vectors a*,b*,c*) from direct (real) space lattice parameters (directspace=1)
+    * Calculate a matrix (columns = vectors a,b,c) from direct (real) space lattice parameters (directspace=0)
 
-    directspace=1  converts  (reciprocal) direct lattice parameters to (direct) reciprocal space
-    directspace=0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
+    :math:`\boldsymbol q_{ortho}=B_0 {\bf G^*}` where :math:`{\bf G^*}=h{\bf a^*}+k{\bf b^*}+l{\bf c^*}`
 
 
-    directspace=1 direct space lattice parameters dlat=[a,b,c, alpha, beta, gamma]
-    (angles are in degrees)
-    else: directspace=0 reciprocal space lattice parameters dlat=[a*,b*,c*, alpha*, beta*, gamma*]
-    (angles are in degrees)
+    :param latticeparameters: * [a,b,c, alpha, beta, gamma]    (angles are in degrees) directspace=1
+                            * [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees) directspace=0
+    :param directspace: * 1 (default) converts  (reciprocal) direct lattice parameters to (direct) reciprocal space
+                        calculates "B" matrix in the reciprocal space of input latticeparameters
 
-    Returns B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix:
-    X_ortho=B G* where G*=ha*+kb*+lc*
+                        * 0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
+                        calculates "B" matrix in same space of  input latticeparameters
+
+    :param setvolume: * False, sets direct unit cell volume to the true volume from lattice parameters
+                * 1,      sets direct unit cell volume to 1
+                * 'a**3',  sets direct unit cell volume to a**3
+                * 'b**3', sets direct unit cell volume to b**3
+                * 'c**3',  sets direct unit cell volume to c**3
+
+    :return: B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix
+    :rtype: numpy array
 
     B matrix is used in q=U B G* formula or
         as B0  in q= (UB) B0 G*
 
-    directspace=1 calculates "B" matrix in the reciprocal space of input latticeparameters
-    directspace=0 calculates "B" matrix in same space of  input latticeparameters
-
-
-    setvolume  : False   compute true volume from lattice parameters
-                1       set direct unit cell volume to 1
-                'a**3'  set direct unit cell volume to a**3
-                'b**3'  set direct unit cell volume to b**3
-                'c**3'  set direct unit cell volume to c**3
-
     after Busing Levy, Acta Crysta 22 (1967), p 457
-    (a*  b*cosgam*  c*cosbeta*)
-    (0   b*singam* -c*sinbeta*cosalpha)
-    (0   0          c*sinbeta*sinalpha)
+
+    .. math:: \left( \begin{matrix}
+            a^*  & b^*\cos \gamma^* & c^*\cos beta^*\\
+            0  & b^*\sin \gamma^* &-c^*\sin \beta^*\cos \alpha\\
+            0 &  0    &      c^*\sin \beta^*\sin \alpha\\
+                    \end{matrix} \right)
+
     with
-    cos(alpha)=(cosbeta*cosgam*-cosalpha*)/(sinbeta*singam*)
-    c*sinbeta*sinalpha = 1/c
+
+    .. math :: \cos(\alpha)=(\cos \beta^*\cos \gamma^*-\cos \alpha^*)/(\sin \beta^*\sin \gamma^*)
+
+    and
+
+    .. math :: c^* \sin \beta^* \sin \alpha = 1/c
     """
     B = np.zeros((3, 3), dtype=float)
 
@@ -310,12 +329,6 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
         B[0, 1] = lat[1] * np.cos(lat[5])  # gamma angle
         B[1, 1] = lat[1] * np.sin(lat[5])
-
-        #         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
-        #         latstar = dlat_to_rlat(lat)
-        #         B[1, 2] = -lat[2] * np.sin(lat[4]) * np.cos(latstar[3] * DEG)
-        #         B[2, 2] = lat[2] * np.sin(lat[4]) * np.sin(latstar[3] * DEG)
-
         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
         B[1, 2] = (
             lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4]))
@@ -327,20 +340,32 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
 # ---- ----------------------Strain computations --------------
 def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
+    r"""
+    Computes deviatoric strain and new direct (real) lattice parameters
+    from matrix newUBmat (rotation and deformation)
+    considering that one lattice length is chosen to be constant
+
+    Zero strain corresponds to reference state of input `lattice parameters`
+
+    :param newUBmat: (3x3) matrix operator including rotation and deformation 
+    :param latticeparams: 6 lattice parameters  [a,b,c,:math:`\alpha, \beta, \gamma`] in Angstrom and degrees
+    :param constantlength: 'a','b', or 'c' to set one length according to the value in `latticeparams`
+
+    :returns: * 3x3 deviatoric strain tensor)
+            * lattice_parameter_direct_strain (direct (real) lattice parameters)
+    :rtype: 3x3 numpy array, 6 elements list
+
+    .. note::
+    
+        q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input.
+
+        q = UBstar_s . G*
     """
-    Computes deviatoric strain and new lattice parameter from matrix UB
-    and reference unit cell parameter
-
-    latticeparams    : 6 lattice parameters  [a,b,c,alpga,beta,gamma]   in Angstrom and deg
-    constantlength    : 'a','b','c' to set one length according to the value in latticeparams
-
-    q = newUBmat . B .  G*  where B (triangular up matrix) comes from lattice parameters input 
-    q = UBstar_s . G*
-    """
-
+    # q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input 
+    # q = UBstar_s . G*
     # print "new UBs matrix in q= UBs G"
-    B = calc_B_RR(latticeparams)
-    UBstar_s = np.dot(newUBmat, B)
+    B0 = calc_B_RR(latticeparams)
+    UBstar_s = np.dot(newUBmat, B0)
     # print UBstar_s
 
     lattice_parameter_reciprocal = matrix_to_rlat(UBstar_s)
@@ -393,9 +418,9 @@ def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a"):
     evaluate strain from UBmat matrix    q = UBmat B0 G*
 
     returns:
-    
+
     devstrain, deviatoricstrain_sampleframe, lattice_parameters
-    
+
     """
     # compute new lattice parameters  -----
     latticeparams = dict_Materials[key_material][1]
@@ -423,8 +448,6 @@ def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a"):
     # devstrain_round = np.round(devstrain * 1000, decimals=3)
 
     return devstrain, deviatoricstrain_sampleframe, lattice_parameters
-    
-    
 
 
 def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
@@ -460,6 +483,10 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
 
 
 def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a"):
+    r"""
+    Computes  direct (real) lattice parameters
+    from matrix UBmatrix (rotation and deformation)
+    """
     # starting B0matrix corresponding to the unit cell   -----
     latticeparams = dict_Materials[key_material][1]
     B0matrix = calc_B_RR(latticeparams)
@@ -496,11 +523,20 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a")
 
 def computeDirectUnitCell_from_Bmatrix(Bmatrix):
     """
-    return matrix whose columns are unit cell basis vector a,b,c in absolute Lauetools frame
-    from Bmatrix
+    computes direct space unit cell lattice parameters from Bmatrix
+    (i.e. columns are unit cell basis vector a,b,c in absolute Lauetools frame).
+
+    Computes a,b,c from a*,b*,c*
 
     Corresponds to Matrix from real unit cell frame to reciprocal unit cell frame
-    X)in a*,b*,c* = P * X)in a,b,c
+    V)in a*,b*,c* = P * V)in a,b,c
+
+    :param Bmatrix: Matrix (3x3) whose columns are a*,*b,c* reciprocal unit cell vectors
+    expressed in LaueTools frame
+    :type Bmatrix: numpy array
+
+    :returns: matrix (3x3) whose columns are a,b,c expressed in LaueTools frame
+    :rtype: numpy array
     """
     Bm = np.array(Bmatrix)
     Astar, Bstar, Cstar = Bm.T
@@ -514,7 +550,14 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
 
 
 def mat_to_rlat(matstarlab):
-    """  from odile script
+    """ 
+    Computes reciprocal lattice parameters from orientation and deformation matrix
+    
+    :param matstarlab: 9 elements inline matrix
+    :returns: 6 reciprocal unit cell lattice parameters
+    
+    .. note::
+        from Odile's scripts
     """
 
     rlat = np.zeros(6, float)
@@ -556,13 +599,20 @@ def rlat_to_Bstar(rlat):  # 29May13
     return Bstar
 
 def fromrealframe_to_reciprocalframe(vector, Bmatrix):
-    """
-    convert components of vector expressed in direct (real) unit cell basis vectors to reciprocal ones
+    r"""
+    Computes :math:`{\bf X_{recipr}}` (components of `vector`  in reciprocal unit cell vectors basis)
+        from  `vector` (:math:`{\bf X_{real}}`, expressed in real a,b,c unit cell vectors basis)
+    
+    :param Bmatrix: Matrix whose columns are a*,b*,c* vectors in LaueTools frame
+    :param vector: 3 elements array of components in real unit cell a,b,c vectors basis
 
-    v= ua+vb+wc (real unit cell a,b,c)
-    v= fromrealframe_to_reciprocalframe([u,v,w], UB,Bmatrix) = [h,k,l]   i.e. ha*+kb*+lc*
+    .. note::
 
-    Xrecipr= B-1*P* Xreal
+        v= ua+vb+wc (real unit cell a,b,c)
+
+        [h,k,l] = fromrealframe_to_reciprocalframe([u,v,w], UB,Bmatrix)   i.e. ha*+kb*+lc*
+
+        :math:`{\bf X_{recipr}}= B^{-1} P  {\bf X_{real}}`
     """
     P = computeDirectUnitCell_from_Bmatrix(Bmatrix)
     invBmatrix = np.linalg.inv(Bmatrix)
@@ -571,7 +621,8 @@ def fromrealframe_to_reciprocalframe(vector, Bmatrix):
 
 def fromreciprocalframe_to_realframe(vector, Bmatrix):
     """
-    convert components of vector expressed in reciprocal unit cell basis vectors to  direct (real) ones
+    convert components of vector expressed in reciprocal unit cell basis vectors
+    to direct (real) ones
 
     v= ha*+kb*+lc*
     v= fromreciprocalframe_to_realframe([h,k,l])  = [u,v,w]
@@ -586,7 +637,7 @@ def fromreciprocalframe_to_realframe(vector, Bmatrix):
 
 def DirectUnitCellVectors_from_UB(UB, Bmatrix):
     """
-    return matrix whose columns are unit cell basis vector a,b,c in absolute Lauetools frame
+    returns matrix whose columns are unit cell basis vector a,b,c in absolute Lauetools frame
 
     get a,b,c from  astar=UB Bmatrix (1 0 0)
                     bstar=UB Bmatrix (0 1 0)
@@ -601,7 +652,10 @@ def DirectUnitCellVectors_from_UB(UB, Bmatrix):
 
 def VolumeCell(latticeparameters):
     """
-    unit cell volume from lattice parameters (either real or reciprocal)
+    Computes unit cell volume from lattice parameters (either real or reciprocal)
+
+    :param latticeparameters: 6 lattice parameters
+    :returns: scalar volume
     """
     a, b, c, alpha, beta, gamma = latticeparameters
     Alp = alpha * DEG
@@ -625,19 +679,25 @@ def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
     """
     compute the direct lattice matrix (a,b,c vectors) from the reciprocal matrix (a*,b*,c*)
 
-    matstarlab   : matrix of reciprocal basis vector a*,b*,c* in lab. frame
+    :param matstarlab: matrix of reciprocal basis vector a*,b*,c* in lab. frame
                     (1rst  column is made of components of a* vector in lab. frame bases)
 
-    matdirlab    : matrix of direct (non reciprocal) basis vectors a,b,c in lab. frame
+    :param matdirlab:  matrix of direct (non reciprocal) basis vectors a,b,c in lab. frame
                     (1rst  column is made of components of a vector in lab. frame bases)
 
-#     lab frame is following;
-#                 Odile Robach  y//ki, z towards CCD (in 2theta=90deg geometry), x=y^z
-#                 Lauetools (UBmat and B0 definition):
-#                                 x//ki, z towards CCD (in 2theta=90deg geometry), y=z^x
 
-    vec_in_columns     :  convention to express the 9 elements matrix in line such as
+
+    :param vec_in_columns:  boolean, convention to express the 9 elements matrix in line (False) such as
                             first 3 elements correspond to the first column (when reshaped 3*3)
+
+    :returns: matdirlab, reciprocal_lattice_parameters
+
+    .. note::
+
+        lab frame is following;
+        Odile Robach  y//ki, z towards CCD (in 2theta=90deg geometry), x=y^z
+        Lauetools (UBmat and B0 definition):
+        x//ki, z towards CCD (in 2theta=90deg geometry), y=z^x
     """
     matstarlab = matstarlab[:]
 
@@ -670,13 +730,15 @@ def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
 
 def matrix_to_rlat(mat, angles_in_deg=1):
     """
-    Returns RECIPROCAL lattice parameters of the unit cell
-    ie. [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees)
-    corresponding to mat
+    Returns RECIPROCAL lattice parameters of the unit cell a*,b*,c* in columns of `mat`
 
-    mat        : matrix where columns are respectively a*,b*,c* coordinates in orthonormal frame
+    :param mat: matrix where columns are respectively a*,b*,c* coordinates in orthonormal frame
 
-    ie: reciprocal lattice parameters from UB matrix : q =  UB G*
+    :returns: [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees)
+
+    .. note::
+
+        Reciprocal lattice parameters are contained in UB matrix : q =  mat G*
     """
     rlat = np.zeros(6)
 
@@ -698,16 +760,17 @@ def matrix_to_rlat(mat, angles_in_deg=1):
 
 def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     """
-    Compute RECIPROCAL lattice parameters from DIRECT lattice parameters
-    [a,b,c, alpha, beta, gamma] angles are in degrees
+    Computes RECIPROCAL lattice parameters from DIRECT lattice parameters `dlat`
+    
+    :param dlat: [a,b,c, alpha, beta, gamma] angles are in degrees
+    :param angles_in_deg: 1 when last three parameters are angle in degrees
+    (then results angles are in degrees)
 
-    Returns
-    [a*,b*,c*, alpha*, beta*, gamma*] angles are in degrees
+    :returns: [a*,b*,c*, alpha*, beta*, gamma*] angles are in degrees
 
-    use angles_in_deg = 1: when last three parameters are angle in degrees
-    then results angles are in degrees
+    .. note::
 
-    TIP: dlat stands for direct lattice, rlat for reciprocal lattice 
+        dlat stands for DIRECT (real space) lattice, rlat for RECIPROCAL lattice 
 
     TODO: to remove setvolume
     """
@@ -779,7 +842,9 @@ def vol_cell(dlat, angles_in_deg=1):
     (lengthes in angstrom, angles are in degrees)
     NB: volume is in unit**3 of unit given by the first three elements
 
-    From Odile robach
+    .. note::
+    
+        from O Robach's scripts
     """
     dlat = dlat[:]
 
@@ -812,7 +877,9 @@ def dlat_to_dil(dlat_unstrained, dlat_strained, angles_in_deg=1):
 
     TODO: check if dil formula -1 in inside or outsite the power 1/3.
 
-    From Odile robach
+    .. note::
+    
+        from O Robach's scripts
     """
     volu = vol_cell(dlat_unstrained, angles_in_deg=angles_in_deg)
     vols = vol_cell(dlat_strained, angles_in_deg=angles_in_deg)
@@ -829,7 +896,9 @@ def calc_epsp(dlat):
     calculate deviatoric strain from initially cubic lattice (a=b=c, alpha=beta=gamma=90)
     and from SMALL deformation
 
-    After Odile Robach
+    .. note::
+    
+        from O Robach's scripts
     TODO: to be deleted: not general
     """
 
@@ -1066,6 +1135,13 @@ def hydrostaticStrain(
 
 
 def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # OR
+    """
+    Orthogonlisation of matrix with to a*,b*,c* as columns
+
+    .. note::
+    
+        from O Robach's scripts
+    """
 
     if verbose:
         print("entering CP.matstarlab_to_matstarlabOND")
@@ -1160,12 +1236,14 @@ def matstarlab_to_matdirONDsample(
 
 def directlatticeparameters_fromBmatrix(Bmatrix):
     """
-    compute direct space lattice parameters from Bmatrix (in reciprocal space)
+    computes direct space lattice parameters from Bmatrix (in reciprocal space)
 
     :param Bmatrix: Bmatrix  columns are a*,b*,c* expressed in lauetools frame
     :type Bmatrix: 3x3 Matrix
 
     :returns: lattice parameters   [a,b,c,alpha,beta,gamma]
+
+    #TODO to be merged with functions above
     """
     lattice_parameter_reciprocal = matrix_to_rlat(Bmatrix)
     lattice_parameter_direct = dlat_to_rlat(lattice_parameter_reciprocal)
@@ -1194,19 +1272,9 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True):
     """
     mm = UBmat
 
-    matstarlab = np.array(
-        [
-            -mm[1, 0],
-            mm[0, 0],
-            mm[2, 0],
-            -mm[1, 1],
-            mm[0, 1],
-            mm[2, 1],
-            -mm[1, 2],
-            mm[0, 2],
-            mm[2, 2],
-        ]
-    )
+    matstarlab = np.array([ -mm[1, 0], mm[0, 0], mm[2, 0],
+                            -mm[1, 1], mm[0, 1], mm[2, 1],
+                            -mm[1, 2], mm[0, 2], mm[2, 2]] )
 
     matstarlab = matstarlab / GT.norme_vec(matstarlab[:3])
 
@@ -1364,8 +1432,14 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
 # ---------------------    Metric tensor
 def ComputeMetricTensor(a, b, c, alpha, beta, gamma):
     """
-    compute metric tensor G or G* from lattice parameters
+    computes metric tensor G or G* from lattice parameters
     (either direct or reciprocal * ones)
+
+    :param a,b,c,alpha,beta,gamma: lattice parameters (angles in degrees) 
+
+    :returns: 3x3 metric tensor
+
+    # TODO clarify G or G*
     """
 
     Alpha = alpha * DEG
@@ -1388,12 +1462,11 @@ def Gstar_from_directlatticeparams(a, b, c, alpha, beta, gamma):
 
 def DSpacing(HKL, Gstar):
     """
-    compute dspacing, or interatomic distance between lattice plane),
+    computes dspacing, or interatomic distance between lattice plane),
     or d(hkl)  = 1/d(hkl)* in unit of 1/length in sqrt(Gstar)
 
-    inputs:
-    HKL            :  [H,K,L]
-    Gstar            : 3*3 matrix corresponding to reciprocal metric tensor of unit cell
+    :param HKL: [H,K,L]
+    :param Gstar: 3*3 matrix corresponding to reciprocal metric tensor of unit cell
                     (use Gstar_from_directlatticeparams())
 
     """
@@ -1427,7 +1500,6 @@ def strain_from_metric_difference(Ginit, Gfinal):
 
 
 # ---- S. Tardif Part   copy from dhkl module  -----------
-
 from numpy.linalg.linalg import norm
 
 # import xray_tools as xrt
@@ -1502,14 +1574,14 @@ def dhkl(a, b, c, alpha, beta, gamma, h, k, l):
 
 def E2L(energy):
     """
-    energy (ev) to length in meter !!!
+    energy (ev) to wavelength in meter !!!
     """
     return 12398.0 / energy * 1e-10
 
 
 def L2E(wavel):
     """
-     wavel in meter to energy (ev)
+     wavelength in meter to energy (ev)
     """
     return 12398.0 / wavel * 1e10
 
@@ -1519,8 +1591,10 @@ def calculate_a(fitfile, energy, h, k, l):
     compute lattice parameter from lattice spacing measured from energy for hkl reflection
     and deviatoric strain
 
-    fitfile   object
-    energy  in eV
+    :param fitfile:  fitfile object
+    :param energy: energy  in eV
+
+    :returns: scalar a 
     """
     print("calculate_a function in CrystalParameters")
     # b over a
@@ -1644,6 +1718,10 @@ def calculate_from_UB(UBB0, energy, h, k, l):
 
 
 def calculate_energy_from_UB(UBB0, a0, h, k, l):
+    """
+    calculate energy from UB.B0 matrix, reference a0 direct lattice parameter length
+
+    """
     astar_prime = UBB0[:, 0]
     bstar_prime = UBB0[:, 1]
     cstar_prime = UBB0[:, 2]
@@ -1688,8 +1766,10 @@ def scale_UB(UBB0, energy, h, k, l, a0=5.6575):
 # --- -------------------  Mapping visualization
 def norme(vec1):
     """
-    computes norm of one vector
-    from O Robach
+    computes norm of a single vector
+    
+    .. note::
+        from O Robach
     TODO: use better generaltools module
     """
     nvec = np.sqrt(np.inner(vec1, vec1))
@@ -1699,7 +1779,9 @@ def norme(vec1):
 def calc_Euler_angles(mat3x3):
     """
     Calculates unique 3 euler angles representation of mat3x3
-    from O Robach
+    
+    .. note::
+        from O Robach
     """
     # mat3x3 = matrix "minimized" in LT lab frame
     # see F2TC.find_lowest_Euler_Angles_matrix
@@ -1741,6 +1823,9 @@ def calc_Euler_angles(mat3x3):
 def myRGB_3(mat):
     """
     propose a RGB (red green blue) vector to represent a matrix
+
+    .. note::
+        from O Robach
     """
     allpermu = DictLT.OpSymArray
     allpermudet1 = np.array([kkk for kkk in allpermu if np.linalg.det(kkk) == 1.0])
@@ -1793,8 +1878,10 @@ def getMisorientation(
 
 def Matrix_to_RGB_2(mat):
     """
-    from odile robach
     use unique representation of orientation matrix with its euler angles
+
+    .. note::
+        from O Robach
     """
     normalisation_angles = np.array([180.0, 360, 180.0])
     # normalisation_angles = np.ones(3)

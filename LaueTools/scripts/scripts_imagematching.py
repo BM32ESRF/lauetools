@@ -796,8 +796,6 @@ def test_ImageMatching_twins(database=None):
     #        print orientmat.tolist()
     simul_matrices.append(orientmat)
 
-    #        grain = CP.Prepare_Grain(ELEMENT, OrientMatrix=orientmat)
-    #        print "grain", grain
     grains.append([np.eye(3), EXTINCTION, orientmat, ELEMENT])
 
     grains.append(
