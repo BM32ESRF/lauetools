@@ -1,4 +1,10 @@
-image: alpine
+image: python:3.6-slim
+
+before_script:
+        - python -V # Print out python version for debugging
+
+stages:
+        - test
 
 pages:
   script:
