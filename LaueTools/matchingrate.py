@@ -943,23 +943,21 @@ def getMatchingRate(
     removeharmonics=1,
     detectordiameter=165.0,
 ):
-    """
-    get matching rate for an orientation matrix
+    r"""
+    Gets matching rate for an orientation matrix
                     for all exp. data stored in dictionary indexed_spots_dict
 
     input:
-    indexed_spots_dict    : dict of exp spots (indexed or not)
-    test_Matrix            : orientation matrix (3x3)
-    ang_tol                : angular tolerance below which a pair between
+    :param indexed_spots_dict: dict of exp spots (indexed or not)
+    :param test_Matrix: orientation matrix (3x3)
+    :param ang_tol: angular tolerance below which a pair between
                             exp. and simulated spots is accepted
-    simulparam            : tuple containing:
-                    emin, emax, key_material, detectorparameters
-    removeharmonics        : 0 or 1 to compute respectively without or with harmonics in simulated pattern
+    :param simulparam: tuple containing emin, emax, key_material, detectorparameters
+    :param removeharmonics: 0 or 1 to compute respectively without or with harmonics in simulated pattern
 
-    return:
-    [0]             number of pairs between exp and theo spots
-    [1]            number of theo. spots
-    [2]              matching rate (ratio*100 of the two previous numbers)
+    :returns: * [0], number of pairs between exp and theo spots
+                * [1], number of theo. spots
+                * [2], matching rate (ratio*100 of the two previous numbers)
     """
     emin, emax, key_material, detectorparameters = simulparam
     # TODO to shorten
