@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-#  Core module to compute Laue Pattern in various geometry
-#  J. S. Micha   micha [at] esrf [dot] fr
-# version May 2019
-#  from LaueTools package
-#  http://sourceforge.net/projects/lauetools/  
+Core module to compute Laue Pattern in various geometry
 
+Main author is J. S. Micha:   micha [at] esrf [dot] fr
+
+version May 2019
+from LaueTools package hosted in
+
+http://sourceforge.net/projects/lauetools/ 
+
+or 
+
+https://gitlab.esrf.fr/micha/lauetools
 """
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -43,8 +49,10 @@ DEG = np.pi / 180.0
 
 # --- ---------- Spot class
 class spot:
-    """
-    Laue Spot class
+    r"""
+    Laue Spot class still used...
+
+    .. todo:: To be avoided for greater performance... To be replaced by full numpy computations
     """
     def __init__(self, indice):
         self.Millers = indice
@@ -55,27 +63,27 @@ class spot:
         self.Twicetheta = None
         self.Chi = None
 
-    def __lt__(self, autre):
-        """ renvoie True si la norme de self est plus petite que celle de autre
-        """
-        vvself = np.array(self.Millers)
-        vvautre = np.array(autre.Millers)
-        return np.dot(vvself, vvself) < np.dot(vvautre, vvautre)
+    # def __lt__(self, autre):
+    #     """ renvoie True si la norme de self est plus petite que celle de autre
+    #     """
+    #     vvself = np.array(self.Millers)
+    #     vvautre = np.array(autre.Millers)
+    #     return np.dot(vvself, vvself) < np.dot(vvautre, vvautre)
 
-    def __le__(self, autre):
-        """ renvoie True si la norme de self est plus petite ou egale a celle de autre
-        """
-        vvself = np.array(self.Millers)
-        vvautre = np.array(autre.Millers)
-        return np.dot(vvself, vvself) <= np.dot(vvautre, vvautre)
+    # def __le__(self, autre):
+    #     """ renvoie True si la norme de self est plus petite ou egale a celle de autre
+    #     """
+    #     vvself = np.array(self.Millers)
+    #     vvautre = np.array(autre.Millers)
+    #     return np.dot(vvself, vvself) <= np.dot(vvautre, vvautre)
 
-    def __eq__(self, autre):
-        """ renvoie True si self et autre sont egaux (coordonnees strictement egales)
-        """
-        return self.Millers == autre.Millers
+    # def __eq__(self, autre):
+    #     """ renvoie True si self et autre sont egaux (coordonnees strictement egales)
+    #     """
+    #     return self.Millers == autre.Millers
 
     def __hash__(self):
-        """
+        r"""
         to used indices for defining a key and using set() sorted()  ... object
         comparison
         In our case used for eliminating spots which equal fondamental key
@@ -89,7 +97,7 @@ class spot:
         return listint.__hash__()
 
     def have_fond_indices(self):
-        """
+        r"""
         return prime indices (fondamental direction)
         """
         interlist = [x for x in list(self.Millers) if x != 0]
@@ -100,16 +108,15 @@ class spot:
 
 # --- ---------------   PROCEDURES
 def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose=0):
-    """
-    return 6 indices min and max boundary values for each Miller index h, k, l to probe
-        in order to find h, k, l spots belonging
-        to the largest Ewald Sphere (wavelength min or energy maximum)
+    r"""
+    return 6 indices min and max boundary values for each Miller index h, k, l
+    to be contained in the largest Ewald Sphere.
 
     :param OrientMatrix:  orientation matrix (3*3 matrix)
     :param ReciprocBasisVectors:      list of the three vectors a*,b*,c* in the lab frame
                             before rotation with OrientMatrix
     :param listRSnorm:      : list of the three reciprocal space lengthes of a*,b*,c*
-    :param lambdamin:       : lambdamin corresponding to energy max
+    :param lambdamin:       : lambdamin (in Angstrom) corresponding to energy max
 
     :return: [[hmin,hmax],[kmin,kmax],[lmin,lmax]]
     """
@@ -270,63 +277,63 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
         return None
 
 
-def both_even_or_odd(x, y):
-    """
-    return True is x and y are both even or odd
-    """
-    return ((x - y) % 2) == 0
+# def both_even_or_odd(x, y):
+#     """
+#     return True is x and y are both even or odd
+#     """
+#     return ((x - y) % 2) == 0
 
 
-def iseven(x):
-    """
-    return True is x is even
-    """
-    return (x % 2) == 0
+# def iseven(x):
+#     """
+#     return True is x is even
+#     """
+#     return (x % 2) == 0
 
 
-def isodd(x):
-    """
-    return True is x is odd
-    """
-    return not iseven(x)
+# def isodd(x):
+#     """
+#     return True is x is odd
+#     """
+#     return not iseven(x)
 
 
-def issumeven(x, y, z):
-    """
-    return True is x + y + z is even
-    """
-    return iseven(x + y + z)
+# def issumeven(x, y, z):
+#     """
+#     return True is x + y + z is even
+#     """
+#     return iseven(x + y + z)
 
 
-def is4n(x):
-    """
-    return True if x can be divided by 4 (x = 4n)
-    """
-    return (x % 4) == 0
+# def is4n(x):
+#     """
+#     return True if x can be divided by 4 (x = 4n)
+#     """
+#     return (x % 4) == 0
 
 
-def is4nplus2(x):
-    """
-    return True if the remainder of x divided by 4 is 2 (x = 4n + 2)
-    """
-    return (x % 4) == 2
+# def is4nplus2(x):
+#     """
+#     return True if the remainder of x divided by 4 is 2 (x = 4n + 2)
+#     """
+#     return (x % 4) == 2
 
 
 def genHKL_np(listn, Extinc):
-    """
-    generate all Miller indices from indices limits on h k l
+    r"""
+    Generate all Miller indices hkl from indices limits given  by listn
     and taking into account for systematic exctinctions
 
     :param listn: Miller indices limits (warning: these lists are used in python range (last index is excluded))
     :type listn: [[hmin,hmax],[kmin,kmax],[lmin,lmax]]
 
     :param Extinc: label corresponding to systematic exctinction 
-            rules on h k and l('fcc', 'bcc', 'dia') or 'no' for any rules 
+            rules on h k and l miller indics such as ('fcc', 'bcc', 'dia', ...) or 'no' for any rules 
     :type Extinc: string
 
     :return: array of [h,k,l]
 
-    Note: node [0,0,0] is excluded
+    .. note:: node [0,0,0] is excluded
     """
     if listn is None:
         raise ValueError("hkl ranges are undefined")
@@ -365,8 +372,13 @@ def genHKL_np(listn, Extinc):
 
 
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
-    """
-    apply selection rules to HKL (n,3) ndarray
+    r"""
+    Apply selection rules to hkl reflections to remove forbidden ones
+
+    :param HKL: numpy array (n,3) of [H,K,L]
+    :param Extinc: label for extinction (see genHKL_np())
+
+    :returns: numpy array (n,3) of [H,K,L]
     """
     H, K, L = HKL.T
 
@@ -612,10 +624,10 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
 # --- -----------------------  Main procedures
 def parse_grainparameters(SingleCrystalParams):
-    """
+    r"""
     extract and check type of the 4 elements of SingleCrystalParams
 
-    #TODO not used?
+    .. todo:: to be used
     """
     try:
         Bmatrix, Extinc, Orientmatrix, key_for_dict = SingleCrystalParams
@@ -657,19 +669,18 @@ def getLaueSpots(
     :param crystalsParams:     list of *SingleCrystalParams*, each of them being a list
                         of 4 elements for crystal orientation and strain properties:
 
-                        SingleCrystalParams[0](array): is the B matrix a*,b*,c* vectors are expressed in column
+                        * [0](array): is the B matrix a*,b*,c* vectors are expressed in column
                         in LaueTools frame in reciprocal angstrom units
 
-                        SingleCrystalParams[1](str): peak Extinction rules ('no','fcc','dia', etc...)
+                        * [1](str): peak Extinction rules ('no','fcc','dia', etc...)
 
-                        SingleCrystalParams[2](array): orientation matrix
+                        * [2](array): orientation matrix
 
-                        SingleCrystalParams[3](str): key for material element
+                        * [3](str): key for material element
 
-    :param linestowrite:   list of [string] that can be write in file or display in
-                    stdout. Example: [[""]] or [["**********"],["lauetools"]]
+    
 
-    :param kf_direction:   string defining the average geometry, mean value of
+    :param kf_direction: string defining the average geometry, mean value of
                     exit scattered vector:
                         'Z>0'   top spots
 
@@ -680,27 +691,24 @@ def getLaueSpots(
                         'X>0'   transmission spots
 
                         'X<0'   backreflection spots
-    :param fastcompute:  1 compute reciprocal space (RS) vector
+    :param fastcompute: * 1, compute reciprocal space (RS) vector
                             BUT NOT the Miller indices
-                         0 returns both RS vectors (normalised) and Miller indices
+                        * 0, returns both RS vectors (normalised) and Miller indices
 
-    :param ResolutionAngstrom: smallest interplanar distance ordered in crystal
-                        in angstrom. If None: all reflections will be calculated
+    :param ResolutionAngstrom: * scalar, smallest interplanar distance ordered in crystal
+                        in angstrom.
+                            * None, all reflections will be calculated
                         that can be time-consuming for large unit cell
 
-    :param fileOK: 0 or 1 to write a file
+    :param linestowrite:   list of [string] that can be write in file or display in
+                    stdout. Example: [[""]] or [["**********"],["lauetools"]]
 
-
-    :return: wholelistvecfiltered, wholelistindicesfiltered (fastcompute = 0)
-             wholelistvecfiltered, None                     (fastcompute = 1)
-            where
-            wholelistvecfiltered        : list of array of q 3D vectors corresponding to G* nodes
-                                        (1 array per grain)
-            wholelistindicesfiltered    : list of array of 3 miller indices
-                                        (1 array per grain)
+    :return: * list of [Qx,Qy,Qz]s for each grain, list of [H,K,L]s for each grain (fastcompute = 0)
+             * list of [Qx,Qy,Qz]s for each grain, None  (fastcompute = 1)
 
     .. caution::
-        this method doesn't create spot instances.
+        This method doesn't create spot instances.
+
         This is done in filterLaueSpots with fastcompute = 0
     .. caution::
         finer selection of nodes : on camera , without harmonics can be
@@ -1065,7 +1073,7 @@ def create_spot(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot instance (on top camera geometry)
 
     :param pos_vec: 3D vector
@@ -1077,9 +1085,9 @@ def create_spot(
 
     :return: spot instance
 
-    spot.Qxyz is a vector expressed in lauetools frame
-    X along x-ray and Z towards CCD when CCD on top and
-    y towards experimental hutch door
+    .. note:: spot.Qxyz is a vector expressed in lauetools frame
+
+    X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -1119,7 +1127,7 @@ def create_spot_np(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot instance (on top camera geometry)
 
     :param pos_vec: 3D vector
@@ -1131,9 +1139,9 @@ def create_spot_np(
 
     :return: spot instance
 
-    Qxyz is a vector expressed in lauetools frame
-    X along x-ray and Z towards CCD when CCD on top and
-    y towards experimental hutch door
+    .. note:: spot.Qxyz is a vector expressed in lauetools frame
+
+    X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door
     """
     #     print "Qxyz", Qxyz
     EwaldRadius = np.sum(Qxyz ** 2, axis=1) / (2.0 * np.abs(Qxyz[:, 0]))
@@ -1166,12 +1174,12 @@ def create_spot_4pi(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot scattered in 4pi steradian no camera position
 
-    spot.Qxyz is a vector expressed in lauetools frame
-    X along x-ray Z towards plane defined by CCD frame and
-    y = z ^ x
+    .. note:: spot.Qxyz is a vector expressed in lauetools frame
+
+    X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -1201,7 +1209,7 @@ def create_spot_side_pos(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot on side camera
     """
     spotty = spot(miller)
@@ -1244,9 +1252,10 @@ def create_spot_side_neg(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot on neg side camera
-    TODO: update with dim as other create_spot()
+    
+    .. todo:: Update with dim as other create_spot()
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -1287,7 +1296,7 @@ def create_spot_front(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot on forward direction transmission geometry
     """
     #     print "use create_spot_front"
@@ -1331,7 +1340,7 @@ def create_spot_back(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
 ):
-    """ From reciprocal space position and 3 miller indices
+    r""" From reciprocal space position and 3 miller indices
     create a spot on backward direction back reflection geometry
     """
     spotty = spot(miller)
@@ -1369,21 +1378,22 @@ def filterLaueSpots(
     dim=(2048, 2048),
     linestowrite=[[""]],
 ):
-    """ Calculates list of grains spots on camera and without harmonics
+    r""" Calculates list of grains spots on camera and without harmonics
     and on CCD camera
     from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
 
-    :param vec_and_indices : list of elements corresponding to 1 grain, each element is composed by:
+    :param vec_and_indices: list of elements corresponding to 1 grain, each element is composed by
+
                     * [0] array of vector
                     * [1] array of indices
 
-    :param HarmonicsRemoval: 1 remove harmonics according to their miller indices
+    :param HarmonicsRemoval: 1, removes harmonics according to their miller indices
                             (only for fastcompute = 0)
 
-    :param fastcompute: * 1 output a list for each grain of 2theta spots and a list for each grain of chi spots
+    :param fastcompute: * 1, outputs a list for each grain of 2theta spots and a list for each grain of chi spots
                             (HARMONICS spots are still HERE!)
-                        * 0 output list for each grain of spots with
+                        * 0, outputs list for each grain of spots with
 
 
     :param kf_direction: label for detection geometry (CCD plane with respect to the incoming beam and sample)
@@ -1610,7 +1620,7 @@ def filterLaueSpots_full_np(
     linestowrite=[[""]],
     grainindex=0,
 ):
-    """ Calculates spots data for an individual grain
+    r""" Calculates spots data for an individual grain
     on camera and without harmonics
     and on CCD camera
 
@@ -1635,9 +1645,8 @@ def filterLaueSpots_full_np(
     
                 tuple of lists 2theta, chi          if fastcompute=1
 
-    ..warning ::
+    .. warning::
         NOT USED  (only tentatively on matching rate)
-
     """
     VecX = veccoord[:, 0] * 1.0
     VecY = veccoord[:, 1] * 1.0
@@ -1792,8 +1801,8 @@ def get2ThetaChi_geometry(
     dim=(2048, 2048),
     kf_direction=DEFAULT_TOP_GEOMETRY,
 ):
-    """
-    compute list of spots instances from oncam_vec (q 3D vectors)
+    r"""
+    computes list of spots instances from oncam_vec (q 3D vectors)
     and oncam_HKL (miller indices 3D vectors)
 
     :param oncam_vec: q vectors [qx,qy,qz] (corresponding to kf collected on camera)
@@ -1819,8 +1828,8 @@ def get2ThetaChi_geometry(
         USED in lauecore.filterLaueSpots
 
     .. todo::
-        * to be replaced by something not using spot class
-        * put this function obviously in find2thetachi ?
+        * to be replaced by something else not using spot class
+        * put this function in LaueGeometry module ?
     """
     if len(oncam_vec) != len(oncam_HKL):
         raise ValueError("Wrong input for get2ThetaChi_geometry()")
@@ -1858,9 +1867,9 @@ def get2ThetaChi_geometry_full_np(
     dim=(2048, 2048),
     kf_direction=DEFAULT_TOP_GEOMETRY,
 ):
-    """
-    compute 2theta chi from oncam_vec (q 3D vectors) and oncam_HKL (miller indices 3D vectors)
-    for all spots of one grain
+    r"""
+    computes 2theta chi from oncam_vec (only 3D Q vectors corresponding to reflections on camera)
+    and oncam_HKL (miller indices 3D vectors) for all spots of one grain
 
     :param oncam_vec: q vectors [qx,qy,qz] (corresponding to kf collected on camera)
     :type oncam_vec: array with 3D elements (shape = (n,3))
@@ -1871,7 +1880,7 @@ def get2ThetaChi_geometry_full_np(
     :param detectordistance: approximate distance detector sample
     :param detectordistance: float or integer
 
-    :param: kf_direction : label for detection geometry
+    :param: kf_direction: label for detection geometry
                     (CCD plane with respect to
                     the incoming beam and sample)
     :type: kf_direction: string
@@ -1915,10 +1924,10 @@ def get2ThetaChi_geometry_full_np(
 
 
 def RemoveHarmonics(listspot):
-    """
-    remove harmonics present in listspot (list of objects of spot class)
+    r"""
+    removes harmonics present in listspot (list of objects of spot class)
 
-    # TODO : NOT USED ANYMORE
+    .. todo:: NOT USED ANYMORE!
     """
     _invdict = {}
 
@@ -1956,7 +1965,7 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     with :math:`{\bf G^*} = h{\bf a^*}+k{\bf b^*}+l{\bf c^*}`
 
     .. note::
-        USED in DetectorCalibration...OnWriteResults, and PlotRefineGUI...onWriteFitFile
+        USED in DetectorCalibration.OnWriteResults, and PlotRefineGUI.onWriteFitFile
     """
 
     detectorparam = dictCCD["CCDparam"]
@@ -2004,13 +2013,8 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
 
 
 def emptylists(n):
-    """
-    build a list of empty lists : [[],[],[], ...,[]]
-
-    Warning: [[]]*n  leads to something dangerous in python!!
-    xx=[[]]*2 ; xx[0]=2 => [2,[]]
-    but
-    xx=[[]]*2 ; xx[0].append((2) => [[2],[2]] instead of [[2],[]] !!
+    r"""
+    builds a list of n empty lists : [[],[],[], ...,[]]
     """
     return [[] for k in list(range(n))]
 
@@ -2030,16 +2034,16 @@ def SimulateLaue_merge(
     detectordiameter=None,
 ):
 
-    """
-    simulate Laue pattern full data from a list of grains and concatenate results data 
+    r"""
+    Simulates Laue pattern full data from a list of grains and concatenate results data 
 
     :param grains: list of 4 elements grain parameters
 
-    :param only_2thetachi: True, return only concatenated grains data 2theta and chi,
-                           False, return All_Twicetheta, All_Chi, All_Miller_ind,
+    :param only_2thetachi: * True, return only concatenated grains data 2theta and chi,
+                           * False, return All_Twicetheta, All_Chi, All_Miller_ind,
                                     All_posx, All_posy, All_Energy
 
-    :param output_nb_spots: True, output a second element (in addition to data)
+    :param output_nb_spots: * True, output a second element (in addition to data)
                             with list of partial nb of spots per grain
                             (to know the grain origin of spots)
     """
@@ -2142,18 +2146,16 @@ def SimulateLaue_twins(
     detectordiameter=None,
 ):
 
-    """
-    simulate Laue pattern full data for twinned grain
+    r"""
+    Simulates Laue pattern full data for twinned grain
 
-    params:
+    :param grainparent: list of 4 elements grain parameter
 
-    grainparent
-    twins_operators     : list of 3*3 matrices corresponding of Matrices
+    :param twins_operators: list of 3*3 matrices corresponding of Matrices
 
-    output_nb_spots  : True    output a second element with list of partial nb of spots per grain
+    :param output_nb_spots: True, output a second element with list of partial nb of spots per grain
 
-    USED in detectorCalibration...simulate_theo  to simulate 2 twinned crystals
-
+    .. note:: USED in test only in detectorCalibration...simulate_theo  to simulate 2 twinned crystals
     """
     nb_twins = len(twins_operators)
 
@@ -2194,7 +2196,7 @@ def SimulateLaue(
     detectordiameter=None,
     force_extinction=None,
 ):
-    """Compute Laue Pattern spots positions, scattering angles, miller indices
+    r"""Computes Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal
 
     :param grain: crystal parameters made of 4 elements list
@@ -2203,12 +2205,13 @@ def SimulateLaue(
 
     :param removeharmonics: * 1, removes harmonics spots and keep fondamental spots (or reciprocal direction)
                             (with lowest Miller indices)
+
                             * 0 keep all spots (including harmonics)
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
     .. todo::
-        TODO: to update to accept kf_direction not only in reflection geometry
+        To update to accept kf_direction not only in reflection geometry
 
     .. note::
         USED in detectorCalibration...simulate_theo  for non routine geometry (ie except Z>0 (reflection top) X>0 (transmission)
@@ -2292,10 +2295,10 @@ def SimulateLaue_full_np(
     detectordiameter=None,
     force_extinction=None,
 ):
-    """Compute Laue Pattern spots positions, scattering angles, miller indices
+    r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
-    :param grain:        : crystal parameters : 4 elements list
+    :param grain:    crystal parameters in a 4 elements list
     :param emin: minimum bandpass energy (keV)
     :param emax: maximum bandpass energy (keV)
 
@@ -2381,16 +2384,15 @@ def SimulateLaue_full_np(
 def SimulateResult(
     grain, emin, emax, simulparameters, fastcompute=1, ResolutionAngstrom=False
 ):
-    """Simulate 2theta chi of Laue Pattern spots for ONE SINGLE grain
+    r"""Simulates 2theta chi of Laue Pattern spots for ONE SINGLE grain
 
-    :param grain:        : crystal parameters : 4 elements list
+    :param grain: crystal parameters in a 4 elements list
     :param emin: minimum bandpass energy (keV)
     :param emax: maximum bandpass energy (keV)
 
     :return: 2theta, chi
 
-    Need of approximate detector distance and diameter
-    to restrict simulation to a limited solid angle
+    .. warning:: Need of approximate detector distance and diameter to restrict simulation to a limited solid angle
 
     .. note::
         * USED: in AutoindexationGUI.OnStart, LaueToolsGUI.OnCheckOrientationMatrix
@@ -2476,41 +2478,20 @@ def StructureFactorUO2(h, k, l, qvector):
 
 def atomicformfactor(q, element="Ge"):
     """
-    Compute x-ray atomic scattering factor
+    Computes x-ray atomic scattering factor following
+    http://lampx.tugraz.at/~hadley/ss1/crystaldiffraction/atomicformfactors/formfactors.php
 
     :param q: q vector norm in Angst-1
+    :returns: scalar, f(q)
 
-    http://lampx.tugraz.at/~hadley/ss1/crystaldiffraction/atomicformfactors/formfactors.php
     """
     if element == "Ge":
         p = (16.0816, 2.8509, 6.3747, 0.2516, 3.7068, 11.4468, 3.683, 54.7625, 2.1313)
 
-    elif element == "U":
-        p = (
-            5.3715,
-            0.516598,
-            22.5326,
-            3.05053,
-            12.0291,
-            12.5723,
-            4.79840,
-            23.4582,
-            13.2671,
-        )
+    elif element == "U": p = ( 5.3715, 0.516598, 22.5326, 3.05053, 12.0291, 12.5723, 4.79840, 23.4582, 13.2671, )
 
-    elif element == "O":
-        p = (
-            3.04850,
-            13.2771,
-            2.28680,
-            5.70110,
-            1.54630,
-            0.323900,
-            0.867000,
-            32.9089,
-            0.250800,
-        )
-
+    elif element == "O": p = ( 3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800, )
+    
     val = 0
     for k in list(range(4)):
         val += p[2 * k] * np.exp(-p[2 * k + 1] * (q / 4 / np.pi) ** 2)
@@ -2533,8 +2514,7 @@ def simulatepurepattern_np(
     HarmonicsRemoval=1,
 ):
     """
-    .. warning::
-        NOT USED !!???
+    .. warning:: In test. NOT USED anywhere !!???
     """
 
     vecind = getLaueSpots(

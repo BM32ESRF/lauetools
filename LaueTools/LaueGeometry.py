@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
-"""
+r"""
 Module of lauetools project to compute Laue spots position on CCD camera.
 It handles detection and source geometry. 
 
@@ -41,10 +39,16 @@ with wavelength and Energy of the corresponding bragg's reflections.
 I is the point from which calibration parameters (CCD position) are deduced (from a perfectly known crystal structure Laue pattern) 
 Iprime is an other source of emission (posI or offset in functions)
 
-2theta is the scattering angle between **ui** and **uf**: :math:`cos(2\the)=ui.uf`
+:math:`2 \theta` is the scattering angle between **ui** and **uf**, i.e.
+    
+:math:` \cos(2 \theta)=u_i.u_f`
 
-**kf**=( -sin 2theta sin chi,cos 2theta  , sin 2theta cos chi)
-**ki** = ( 0, 1, 0)
+.. math::
+
+{\bf k_f}=( -\sin 2\theta \sin \chi, \cos 2\theta  , \sin 2\theta \cos \chi)
+
+{\bf k_i} = ( 0, 1, 0)
+
 Energy= 12.398*  q**2/(2* **q**.**ui**)=12.398 * q**2/ (-2 sin theta) 
 
 *Calibration paramters (CCD position and detection geometry)*
@@ -61,6 +65,8 @@ Energy= 12.398*  q**2/(2* **q**.**ui**)=12.398 * q**2/ (-2 sin theta)
 Origin is I and unit frame vectors (**is**,**js**,**ks**) are derived
 from absolute frame by the rotation (axis= -i, angle= wo) where wo is the angle between **js** and **j**
 """
+from __future__ import print_function
+
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision$"
@@ -95,7 +101,7 @@ norme = GT.norme_vec
 def calc_uflab(
     xcam,
     ycam,
-    CCDcalibrationparameters,
+    detectorplaneparameters,
     offset=0,
     returnAngles=1,
     verbose=0,
@@ -105,7 +111,8 @@ def calc_uflab(
     kf_direction="Z>0",
 ):
     r"""
-    compute unit vector of scattered beam (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
+    Computes unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame of scattered beam :math:`k_f`
+    (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
 
     Unit vector uf correspond to normalized kf vector: q = kf - ki
     from lists of X and Y Laue spots pixels positions on detector
@@ -114,17 +121,17 @@ def calc_uflab(
     :type xcam: list of floats
     :param ycam: list of pixel Y position
     :type ycam: list of floats
-    :param calib: list of 5 calibration parameters
-    
+    :param detectorplaneparameters: list of 5 calibration parameters
+
     :param offset: float, offset in position along incoming beam of source of scattered rays
                 if positive: offset in sample depth
                 units: mm
 
     :returns:
-        - if returnAngles=1   : twicetheta, chi   *(default)*
-        - if returnAngles!=1  : uflab, IMlab
+        * if returnAngles=1   : twicetheta, chi   *(default)*
+        * if returnAngles!=1  : uflab, IMlab
     """
-    calib = CCDcalibrationparameters[:5]
+    calib = detectorplaneparameters[:5]
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
     #    print "pixelsize in calc_uflab ", pixelsize
 
@@ -247,7 +254,7 @@ def calc_uflab_trans(
     :returns:
         - if returnAngles=1   : twicetheta, chi   *(default)*
         - if returnAngles!=1  : uflab, IMlab
-        
+
     # TODO: add offset like in reflection geometry
     """
     print("transmission GEOMETRY")
@@ -318,7 +325,7 @@ def calc_uflab_trans(
 
 
 def OM_from_uf(uflab, calib, signgam=SIGN_OF_GAMMA, energy=0, offset=None, verbose=0):
-    """
+    r"""
     2D vector position of point OM in detector frame plane in pixels
     alias function to calc_xycam
     """
@@ -328,7 +335,7 @@ def OM_from_uf(uflab, calib, signgam=SIGN_OF_GAMMA, energy=0, offset=None, verbo
 
 
 def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
-    """
+    r"""
     from:
     uflab
     posI= IIprime = position (3elemts vector) of source with respect to I (calibrated emission source) in millimeter
@@ -361,7 +368,7 @@ def calc_xycam(
     rectpix=RECTPIX,
 ):
     r"""
-    compute Laue spots position x and y in pixels units in CCD frame
+    Computes Laue spots position x and y in pixels units in CCD frame
     from unit scattered vector uf expressed in Lab. frame
 
     computes coordinates of point M on CCD from point source and **uflab**.
@@ -509,8 +516,8 @@ def calc_xycam_transmission(
     dim=(2048, 2048),
     rectpix=RECTPIX,
 ):
-    """
-    Compute Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
+    r"""
+    Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
 
     As calc_xycam() but in TRANSMISSION geometry
     """
@@ -674,20 +681,14 @@ def calc_xycam_from2thetachi(
 
 def uflab_from2thetachi(twicetheta, chi, verbose=0):
     r"""
-    Compute **uf** vectors coordinates in lauetools LT2 frame
-    from **kf** scattering angles 2theta and chi angles
-    
-    :param twicetheta: (list) 2theta angle(s) ( in degree)
-    :param chi: (list) chi angle(s) ( in degree)
-    
-    :return: (list) [uf_x,uf_y,uf_z]
-    
-    chi convention: (XMAS convention)
-    y along Xray horizontal
-    x towards wall behind horizontal
-    z vertical up
+    Computes :math:`{\bf u_f}` vectors coordinates in lauetools LT2 frame
+    from :math:`{\bf k_f}` scattering angles :math:`2 \theta` and :math:`2 \chi` angles
 
-    kf=( - sin 2theta sin chi, cos 2theta  , sin 2theta cos chi)
+    :param twicetheta: (list) :math:`2 \theta` angle(s) ( in degree)
+    :param chi: (list) :math:`2 \chi` angle(s) ( in degree)
+
+    :returns: list of `{\bf u_f}` =  [:math:`uf_x,uf_y,uf_z`]
+    :rtype: list
     """
 
     ctw = np.cos(np.array(twicetheta) * DEG)
@@ -708,11 +709,12 @@ def uflab_from2thetachi(twicetheta, chi, verbose=0):
 
 
 def q_unit_XYZ(twicetheta, chi):
-    """
-    from kf angles return unit vector of q
+    r"""
+    Computes unit vector of :math:`{\bf q}` (scattering transfer moment) :math:`{\bf u_q}`
+    from scattered :math:`{\bf k_f}` angles  
     # TODO: useful ? check with from_twchi_to_qunit()
     lauetools frame 
-    #in deg
+    #in degrees
     """
     THETA = twicetheta / 2.0 * DEG
     CHI = chi * DEG
@@ -722,8 +724,8 @@ def q_unit_XYZ(twicetheta, chi):
 
 
 def q_unit_2thetachi(vec):
-    """
-    compute kf angles from a vector
+    r"""
+    Computes 2theta and chi scattering angles from a u_q vector expressed in LaueTools frame 
     #result in deg
     # TODO: useful ? check with from_qunit_to_twchi()
     lauetools frame ?
@@ -736,15 +738,14 @@ def q_unit_2thetachi(vec):
 
 
 def from_twchi_to_qunit(Angles):
-
-    """
-    from kf 2theta,chi to q unit in lab frame (xx// ki) q=kf-ki
+    r"""
+    from kf 2theta, chi to q unit in LaueTools frame (xx// ki) q=kf-ki
     returns array = (all x's, all y's, all z's)
-    
+
     Angles in degrees !! 
     Angles[0] 2theta deg values,
     Angles[1] chi values in deg
-    
+
     this is the inverse function of from_qunit_to_twchi(), useful to check it
     """
 
@@ -757,9 +758,8 @@ def from_twchi_to_qunit(Angles):
     return np.array([qx, qy, qz]) / no
 
 def from_twchi_to_q(Angles):
-
-    """
-    from kf 2theta,chi to q (arbitrary lenght) in lab frame (xx// ki) q=kf-ki
+    r"""
+    From kf 2theta,chi to q (arbitrary lenght) in lab frame (xx// ki) q=kf-ki
     returns array = (all qx's, all qy's, all qz's)
     
     Angles in degrees !! 
@@ -776,18 +776,18 @@ def from_twchi_to_q(Angles):
 
 
 def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
-    """
-    from a q unit vector (defining a direction) (-sin the,costhesinchi,costhe coschi)
-    in lab frame (xx// ki) q=kf-ki
-    returns 2the chi 
+    r"""
+    Returns 2theta chi From a q unit vector (defining a direction)
+    (-sin the,costhesinchi,costhe coschi)
+    in LaueTools frame (xx// ki) q=kf-ki
 
-    for kf = (cos2the,sin2the sinchi,sin2the coschi) and
+    for kf = (cos2the, sin2the sinchi,sin2the coschi) and
     q= 2sinthe(-sin the,costhe sinchi,costhe coschi)
 
-    In XMAS Frame   labXMAS=1
-
-    for kf = (-sin2the sinchi,cos2the,sin2the coschi) and
+    In XMAS Frame   labXMAS=1 (LT2 frame ??)
     q= 2sinthe(-costhe sinchi,-sin the,costhe coschi)
+    for kf = (-sin2the sinchi,cos2the,sin2the coschi) and
+    
     """
     X, Y, Z = arrayXYZ
 
@@ -801,12 +801,16 @@ def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
     return np.array([twthe, chi]) / DEG
 
 
-def qvector_from_xy_E(xcamList, ycamList, energy, CCDcalibrationparameters, pixelsize):
-
-    """
-    return q vectors in Lauetools frame given x and y pixel positions on detector
+def qvector_from_xy_E(xcamList, ycamList, energy, detectorplaneparameters, pixelsize):
+    r"""
+    Returns q vectors in Lauetools frame given x and y pixel positions on detector
     for a given Energy (keV)
-    
+
+    :param xcamList: list pixel x postions
+    :param ycamList: list pixel y postions
+    :param energy: list pf energies
+    :param detectorplaneparameters: list of 5 calibration parameters
+    :param pixelsize: pixel size in mm
     """
     # in LT's frame (x// ki)
 
@@ -815,7 +819,7 @@ def qvector_from_xy_E(xcamList, ycamList, energy, CCDcalibrationparameters, pixe
     twtheta, chi = calc_uflab(
         xcamList,
         ycamList,
-        CCDcalibrationparameters,
+        detectorplaneparameters,
         returnAngles=1,
         verbose=0,
         pixelsize=pixelsize,
@@ -847,10 +851,15 @@ def qvector_from_xy_E(xcamList, ycamList, energy, CCDcalibrationparameters, pixe
 
 
 def unit_q(ttheta, chi, frame="lauetools", anglesample=40.0):
-    """
-    returns unit q vector from 2theta,chi coordinates
+    r"""
+    Returns unit q vector from 2theta,chi coordinates
 
-    three possible frames: lauetools , XMASlab, XMASsample
+    :param ttheta: list of 2theta angles (in degrees)
+    :param chi: list of chi angles (in degrees)
+    :param anglesample: incidence angle of beam to surface plane (degrees)
+    :param frame: frame to express vectors in: 'lauetools' , 'XMASlab' (LT2 frame),'XMASsample'
+
+    :returns: list of 3D u_f (unit vector of scattering transfer q)
     """
     thetarad = ttheta * DEG / 2.0
     chirad = chi * DEG
@@ -909,7 +918,7 @@ def unit_q(ttheta, chi, frame="lauetools", anglesample=40.0):
 
 
 def plotXY2thetachi(datX, datY, dat2the, datchi, mostintense=None):
-    """
+    r"""
     old script to combine plot of pixel x,y and 2theta chi plot
     """
     if mostintense is not None and mostintense < len(datX):
@@ -940,7 +949,7 @@ def plotXY2thetachi(datX, datY, dat2the, datchi, mostintense=None):
 
 # ---------------    Frame Matrix conversion
 def matxmas_to_OrientMatrix(satocr, calib):
-    """
+    r"""
     thanks to Odile robach's reverse engineering hard work
 
     From XMAS matrices in IND file to matrix in lauetools frame
@@ -999,7 +1008,7 @@ def matxmas_to_OrientMatrix(satocr, calib):
 
 
 def matstarlabLaueTools_to_matstarlabOR(UBmat):
-    """
+    r"""
     convert matrix from lauetools frame: ki//x, z towards CCD (top), y = z^x
                     to ORobach or XMAS's frame: ki//y, z towards CCD (top), y = z^x
 
@@ -1041,7 +1050,7 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat):
 
 
 def matstarlabOR_to_matstarlabLaueTools(matstarlab):
-    """
+    r"""
     reciprocal function of matstarlabLaueTools_to_matstarlabOR
     """
     mm = matstarlab
@@ -1116,6 +1125,11 @@ def readlt_fit(
     readmore2=False,
 ):
     """
+
+    .. todo::
+
+        to put in IOLauetools
+
     modif 03Aug12 : genfromtxt removed (problem with skip_footer)
     add transfo of HKL's if matmin_LT  == True
     """
@@ -1141,7 +1155,6 @@ def readlt_fit(
     list1 = []
     linestartspot = 10000
     lineendspot = 10000
-
     try:
         for line in f:
             i = i + 1
@@ -1281,6 +1294,11 @@ def readlt_fit(
 
 
 def readall_str(grain_index, filemane_str, returnmatLT=False, min_matLT=False):
+    r"""
+    .. todo::
+
+        to put in IOLauetools
+    """
 
     data_str, matstr, calib, dev_str = IOLT.readfile_str(filemane_str, grain_index)
 
@@ -1309,7 +1327,7 @@ def readall_str(grain_index, filemane_str, returnmatLT=False, min_matLT=False):
 
 
 def matxmas_to_matstarlab(satocr, calib):
-    """
+    r"""
     Original function to correctly use matrix from STR or IND
 
     # modif 04 Mar 2010 xbet en degres au lieu de radians
@@ -1372,8 +1390,8 @@ def Compute_data2thetachi(
     col_isbadspot=None,
     alpha_xray_incidence_correction=None,
 ):
-    """
-    Convert spot positions x,y to scattering angles 2theta, chi from a list of peaks
+    r"""
+    Converts spot positions x,y to scattering angles 2theta, chi from a list of peaks
 
     :param filename: fullpath to peaks list ASCII file
     :type filename: string
@@ -1540,7 +1558,6 @@ def Compute_data2thetachi(
         data_x = xynew[:, 0]
         data_y = xynew[:, 1]
     # -----------------------------------
-
     twicethetaraw, chiraw = calc_uflab(
         data_x,
         data_y,
@@ -1550,7 +1567,6 @@ def Compute_data2thetachi(
         signgam=signgam,
         kf_direction=kf_direction,
     )
-
     # print chi,twicetheta
     if nb_peaks > 1 and sorting_intensity == "yes":
         listsorted = np.argsort(data_I)[::-1]
@@ -1598,9 +1614,9 @@ def convert2corfile(
     pixelsize=165.0 / 2048,
     CCDCalibdict=None,
 ):
-    """
-    create a .cor file (ascii peaks list (2theta chi X Y int ...))
-    from a peak list file (x,y,I,...)
+    r"""
+    From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
+    and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
     :param calibparam: list of 5 CCD cakibration parameters
     (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing

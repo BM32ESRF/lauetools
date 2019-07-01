@@ -1974,8 +1974,6 @@ class spotsset:
             Twicetheta,
             Chi,
             Miller_ind,
-            posx,
-            posy,
             Energy,
             absoluteindex=useabsoluteindex,
         )
@@ -4304,8 +4302,6 @@ def getIndexedSpots(
         Twicetheta,
         Chi,
         Miller_ind,
-        posx,
-        posy,
         Energy,
         absoluteindex=useabsoluteindex,
     )

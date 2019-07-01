@@ -1,15 +1,20 @@
+r"""
+.. module:: matchingrate Documentation
+    :synopsis: module to compute matching figure from two sets of laue spots properties
+    
+.. moduleauthor:: JS Micha, 2019,  micha 'at' esrf 'dot'fr
+"""
+
 from numpy import array, ones, where, argmin, ravel, arange, int32, amin, mean
 import copy
 import numpy as np
+import sklearn.metrics as sm
+import scipy.spatial.distance as ssd
 
-import indexingAnglesLUT as INDEX
 import lauecore as LAUE
 import CrystalParameters as CP
 import generaltools as GT
-
-import sklearn.metrics as sm
 import LaueGeometry as LaueGeo
-import scipy.spatial.distance as ssd
 
 
 # --- ------------ CONSTANTS
@@ -28,15 +33,13 @@ except ImportError:
     print("Using default module")
     USE_CYTHON = False
 
-# USE_CYTHON = False
-
-
+#------ USE_CYTHON= FALSE ----------------  
 def getArgmin(tab_angulardist):
-    """
+    r"""
     temporarly doc
     from matrix of mutual angular distances return index of closest neighbour
 
-    TODO: to explicit documentation as a function of tab_angulardist properties only
+    .. todo:: to explicit documentation as a function of tab_angulardist properties only
     """
     return argmin(tab_angulardist, axis=1)
 
@@ -46,49 +49,65 @@ def SpotLinks(
     chi_exp,
     dataintensity_exp,  # experimental data
     veryclose_angletol,  # tolerance angle
-    twicetheta,
+    twicetheta,  # theoretical angles
     chi,
     Miller_ind,
-    posx,
-    posy,
     energy,  # theoretical data
     absoluteindex=None,
     verbose=0,
 ):
-    """
-    Create automatically links between currently close experimental and theoretical spots
-    in 2theta, chi representation
+    r"""
+    Creates automatically links between close experimental and theoretical spots
+    in 2theta, chi angles (kf) coordinates
 
-    return table of association with theo and exp spots indices.
+    :param twicetheta_exp: list of exp. 2theta angles
+    :param chi_exp: list of exp. chi angles
+    :param dataintensity_exp: list of dataintensity_exp
 
-    if absoluteindex = None    : spots indices and order are those of data
+    :param veryclose_angletol: finest tolerance angle for association in degree
+    
+    :param twicetheta: list of theoretical 2theta angles
+    :param chi: list of theoretical chi angles
+    :param Miller_ind: list of theoretical 3D Miller_ind
+    :param energy: list of theoretical spot energies (keV)
+
+    :param absoluteindex: list of absolute exp. spot index to output in res
+                            (conversion table between relative and absolute exp. spot index)
+                           i.e.  absoluteindex[localindex] = absolute index
+
+    
+                        if absoluteindex = None: spots indices and order are those of data
                                     (twicetheta_exp, chi_exp, dataintensity_exp)
                     = list_of_absolute_indices
                             : list containing the absolute indices
 
+    :returns: * refine_indexed_spots: dict. with key= exp. spotindex and val=[exp. spotindex,h,k,l]
+            * linkedspots_link: list of [absolute exp. spotindex, theo_id]
+            * linkExpMiller_link: list of [absolute exp. spotindex, h,k,l]
+            * linkIntensity_link: list of [exp. spot intensity]
+            * linkResidues_link: list of [absolute exp. spotindex, theo. spotindex, angular pair distance (degrees)]
+            * linkEnergy_link: list of [absolute exp. spotindex, theo. spotindex, theo. spot energy (keV)]
+            * fields: ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues (deg)"]
 
-    veryclose_angletol     :    max tolerance angle for association in degree
-    absoluteindex        : list of absolute exp spot index to output in res
-                            (conversion table between relative and absolute index)
-                           i.e.  absoluteindex[localindex] = absolute index
+            linkResidues.append([absoluteexpspotindex, theo_id, Resi[theo_id]])
+            linkEnergy.append([absoluteexpspotindex, theo_id, Energy_id])
+            linkIntensity.append(dataintensity_exp[exp_id])
 
-    TODO: to improve, always difficult to understand immediately the algorithm :-[
+
+    .. todo:: To improve! , always difficult to understand immediately the algorithm :-[
     """
 
     if verbose:
         print("\n ************** Spots Association ************** \n")
 
-    Resi, ProxTable = getProximity(
-        np.array([twicetheta, chi]),  # warning array(2theta, chi)
-        twicetheta_exp / 2.0,
-        chi_exp,  # warning theta, chi for exp
-        proxtable=1,
-        angtol=veryclose_angletol,
-        verbose=0,
-        signchi=1,
-    )[
-        :2
-    ]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+    Resi, ProxTable = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
+                            twicetheta_exp / 2.0,
+                            chi_exp,  # warning theta, chi for exp
+                            proxtable=1,
+                            angtol=veryclose_angletol,
+                            verbose=0,
+                            signchi=1,
+                        )[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
 
     # ProxTable is table giving the closest exp.spot index for each theo. spot
     # len(Resi) = nb of theo spots
@@ -167,7 +186,7 @@ def SpotLinks(
             Miller_Exp_spot[exp_ind] = None
             Energy_Exp_spot[exp_ind] = 0.0
 
-    # -----------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------
     ProxTablecopy = copy.copy(ProxTable)
     # tag duplicates in ProxTable with negative sign ----------------------
     # ProxTable[index_theo] = index_exp   closest link
@@ -276,10 +295,8 @@ def SpotLinks(
                 absoluteexpspotindex = exp_id
 
             # appending lists of links
-
-            listofpairs.append(
-                [absoluteexpspotindex, theo_id]
-            )  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+            # Exp, Theo,  where -1 for specifying that it came from automatic linking
+            listofpairs.append([absoluteexpspotindex, theo_id])
             linkExpMiller.append(
                 [float(absoluteexpspotindex)] + [float(elem) for elem in Miller_id]
             )  # float(val) for further handling as floats array
@@ -424,21 +441,19 @@ def getProximity(
     signchi=1,
     usecython=USE_CYTHON,
 ):
-    """
-    TwicethetaChi (simulation or theoretical) has two elements: 2theta array and chi array (same length!) (theo. data)
-    data_theta, data_chi : array of theta, array of chi (exp. data) (same length!)
-
-    data_theta array of exp spot
-    data_chi array of exp spot
+    r"""
+    :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
+    :param data_theta: array of theta angles (of experimental spots)
+    :param data_chi: array of chi (same length!)
 
     :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
 
-    WARNING: TwicethetaChi contains 2theta instead of data_theta contains theta !
+    .. warning:: TwicethetaChi contains 2theta instead of data_theta theta contains theta !
 
-    TODO: change this input to 2theta, chi for every arguments
-    signchi = 1 fixed old convention
-    TODO: remove this option
-    TODO: improve documentation
+    .. todo::
+        * change the input with 2theta angles pnly to avoid confusion
+        * remove the option signchi = 1 fixed old convention 
+
     """
     # theo simul data
     theodata = array([TwicethetaChi[0] / 2.0, signchi * TwicethetaChi[1]]).T
@@ -540,18 +555,8 @@ def getProximity_new(
     usecython=USE_CYTHON,
 ):
     """
-    TwicethetaChi is an array made of 2 arrays 2theta and chi
+    see doc of getProximity()
 
-    data_theta array of exp spot
-    data_chi array of exp spot
-
-    WARNING: TwicethetaChi contains 2theta instead of data_theta contains theta !
-    TODO: change this input to 2theta, chi for every arguments
-
-    signchi = 1 fixed old convention
-    TODO: remove this option
-
-    TODO: improve documentation
     """
     # theo simul data
     theodata = array([Twicetheta / 2.0, signchi * Chi]).T
@@ -650,22 +655,27 @@ def Angular_residues_np(
     onlyXYZ=False,
     simthreshold= 0.999
 ):
-
-    """ Simulate Laue pattern (single grain) and
-    Compute angular residues between pairs of close exp. and theo. spots 
+    r"""
+    Computes angular residues between pairs of close exp. and
+    theo. spots simulated according to test_Matrix, within tolerance angle
     
-    USED in manual indexation
-    Used in AutoIndexation module
+    .. note::
+        * used in manual indexation
+        * Used in AutoIndexation module
 
-    inputs: 
-    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
-    test_Matrix                : orientation matrix
-    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
+    :param twicetheta_data: experimental 2theta angles of scattered beams or spots (kf vectors)
+    :type twicetheta_data: array
+    :param chi_data: experimental chi angles of scattered beams or spots (kf vectors)
+    :param test_Matrix: Orientation matrix
+    :type test_Matrix: 3x3 array
+    :param ang_tol: angular tolerance in degrees to accept or reject a exp. and theo pair
+    :type ang_tol: scalar
 
-    detectorparameters  : dictionary of detector parameters (key, value)
+    :param detectorparameters: Dictionary of detector parameters (key, value) that must constain:
                             'kf_direction' , general position of detector plane
                             'detectordistance', detector distance (mm)
                             'detectordiameter', detector diameter (mm)
+                            'pixelsize' and 'dim'
     """
     if detectorparameters is None:
         # use default parameter
@@ -753,7 +763,7 @@ def Angular_residues_np(
         )
 
         # Y should be Q vectors corresponding to exp. twicetheta_data and chi_data
-        Y=LaueGeo.from_twchi_to_q((twicetheta_data,chi_data)).T
+        Y = LaueGeo.from_twchi_to_q((twicetheta_data, chi_data)).T
 
         # print("Q_XYZ_onCam   theo",Q_XYZ_onCam)
         # print("Y exp.",Y)
@@ -762,12 +772,10 @@ def Angular_residues_np(
         # print("Y exp.  shape",Y.shape)
         # return ssd.cosine(Q_XYZ_onCam, Y)
         # return np.arccos(1-sm.pairwise.cosine_similarity(Q_XYZ_onCam, Y, dense_output=True))*180./np.pi
-        smMat=sm.pairwise.cosine_similarity(Q_XYZ_onCam, Y, dense_output=True)
+        smMat = sm.pairwise.cosine_similarity(Q_XYZ_onCam, Y, dense_output=True)
         SIMILRATYTHRESHOLD = simthreshold
-        nb_in_res = getNbMatches(smMat,SIMILRATYTHRESHOLD)
+        nb_in_res = getNbMatches(smMat, SIMILRATYTHRESHOLD)
         return nb_in_res
-
-
 
 
 def Angular_residues_np_multimatrices(
@@ -782,21 +790,8 @@ def Angular_residues_np_multimatrices(
     detectorparameters=None,
 ):
 
-    """ Simulate Laue pattern (single grain) and
-    Compute angular residues between pairs of close exp. and theo. spots 
-    
-    USED in manual indexation
-    Used in AutoIndexation module
+    """ See doc of Angular_residues_np()
 
-    inputs: 
-    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
-    test_Matrix                : orientation matrix
-    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
-
-    detectorparameters  : dictionary of detector parameters (key, value)
-                            'kf_direction' , general position of detector plane
-                            'detectordistance', detector distance (mm)
-                            'detectordiameter', detector diameter (mm)
     """
     NBMAXPEAKS = 1700
 
@@ -863,9 +858,11 @@ def Angular_residues_np_multimatrices(
         #     return None
 
     # no particular gain...?
-    return getProximity_multimatrices(
-        Arr_Theo2Theta, Arr_TheoChi,twicetheta_data / 2.0, chi_data, angtol=ang_tol, proxtable=0
-    )
+    return getProximity_multimatrices( Arr_Theo2Theta,
+                                    Arr_TheoChi,twicetheta_data / 2.0,
+                                    chi_data,
+                                    angtol=ang_tol,
+                                    proxtable=0 )
 
 
 def Angular_residues(
@@ -880,18 +877,8 @@ def Angular_residues(
     detectorparameters=None,
 ):
 
-    """ Simulate Laue pattern and
-    Compute angular residues between pairs of close exp. and theo. spots 
+    """ see doc of Angular_residues_np()
 
-    inputs: 
-    twicetheta_data, chi_data  : experimental coordinates of scattered beams or spots (kf vectors)
-    test_Matrix                : orientation matrix
-    ang_tol                    : angular tolerance in deg to accept or reject a exp. and theo pair
-
-    detectorparameters  : dictionary of detector parameters (key, value)
-                            'kf_direction' , general position of detector plane
-                            'detectordistance', detector distance (mm)
-                            'detectordiameter', detector diameter (mm)
     """
     if detectorparameters is None:
         # use default parameter
@@ -1003,8 +990,6 @@ def getMatchingRate(
         Twicetheta,
         Chi,
         Miller_ind,
-        posx,
-        posy,
         Energy,
         absoluteindex=None,
     )
@@ -1038,7 +1023,7 @@ def getStatsOnMatching(
     return matching rate in terms of nb of close pairs of spots (exp. and simul. ones)
     within angular tolerance
     (simulated pattern contains harmonics)
-     
+
     :param List_of_Angles: list of 3 angles (EULER angles)
     :type List_of_Angles: list of 3 floats
     :param twicetheta_data, chi_data: experimental spots angles coordinates (kf vectors)
@@ -1090,7 +1075,6 @@ def getStatsOnMatching(
 
 if __name__ == "__main__":
     import time
-    import numpy
 
     npoints1 = 60  # theo
     npoints2 = 120  # exp
