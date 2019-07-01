@@ -336,7 +336,7 @@ def getProximity_multimatrices(
     """
     WARNING: ArrTheo2theta   contains 2theta instead of data_theta contains theta !
     """
-    nbpeaksbunches=len(Arr_Theo2Theta)
+    nbpeaksbunches = len(Arr_Theo2Theta)
     # theo simul data
     # theodata = array([np.ravel(Arr_Theo2Theta)/2.0, signchi *np.ravel(Arr_TheoChi)]).T
     # # exp data
@@ -392,7 +392,7 @@ def getProximity_multimatrices(
     #     allresidues = ravel(table_dist)[pos_closest_1d]
 
     allresidues = amin(table_dist, axis=1)
-    taballresidues = allresidues.reshape((nbpeaksbunches,len(allresidues)//nbpeaksbunches))
+    taballresidues = allresidues.reshape((nbpeaksbunches, len(allresidues)//nbpeaksbunches))
 
     #     print "allresidues", allresidues
     # len(allresidues)  = len(theo)
@@ -401,13 +401,11 @@ def getProximity_multimatrices(
     #     print 'len(allresidues)', len(allresidues)
     if proxtable == 0:
         SIMILRATYTHRESHOLD = 0.9999
-        nb_in_res = getNbMatches(taballresidues,SIMILRATYTHRESHOLD)
-        
+        nb_in_res = getNbMatches(taballresidues, SIMILRATYTHRESHOLD)
 
         # taballresiduesM=np.ma.masked_greater_equal(taballresidues,angtol)
         # meanres = np.mean(taballresiduesM,axis=1)
         # maxi = np.amax(taballresiduesM,axis=1)
-        
 
         # res = allresidues[cond]
         # longueur_res = len(cond[0])
@@ -422,7 +420,7 @@ def getProximity_multimatrices(
         # return taballresidues, taballresidues[0], nb_in_res, len(allresidues), meanres, maxi
 
 
-def getNbMatches(residues,thresholdsimilarity):
+def getNbMatches(residues, thresholdsimilarity):
     cond = where(residues > thresholdsimilarity)
     return len(cond[0])
     # unique_elements, counts_elements = np.unique(cond[0], return_counts=True)
@@ -452,7 +450,7 @@ def getProximity(
 
     .. todo::
         * change the input with 2theta angles pnly to avoid confusion
-        * remove the option signchi = 1 fixed old convention 
+        * remove the option signchi = 1 fixed old convention
 
     """
     # theo simul data
@@ -487,7 +485,7 @@ def getProximity(
     #     print "table_dist_new", table_dist[-5:, -5:]
     #     print "table_dist_new", table_dist.shape
 
-    if proxtable==1:
+    if proxtable == 1:
         prox_table = getArgmin(table_dist)
     # print "shape table_dist",shape(table_dist)
     # table_dist has shape (len(theo),len(exp))
@@ -495,7 +493,8 @@ def getProximity(
     # tab[i] with i index of theo spot contains all distance from theo spot #i and all the exprimental spots
     # prox_table has len(theo) elements
     # prox_table[i] is the index of the exp. spot closest to theo spot (index i)
-    # table_dist[i][prox_table[i]] is the minimum angular distance separating theo spot i from a exp spot of index prox_table[i]
+    # table_dist[i][prox_table[i]] is the minimum angular distance
+    # separating theo spot i from a exp spot of index prox_table[i]
 
     if verbose:
         #        print "/0", np.where(table_dist[:, 0] < 1.)
