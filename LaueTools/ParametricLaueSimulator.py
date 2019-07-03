@@ -6,7 +6,6 @@ import string
 import numpy as np
 import wx
 import wx.lib.scrolledpanel as scrolled
-import ProportionalSplitter as PropSplit
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
@@ -28,6 +27,8 @@ if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import LaueGeometry as F2TC
     from . import CrystalParameters as CP
+    from . import ProportionalSplitter as PropSplit
+
 else:
     import dict_LaueTools as DictLT
     from SimulFrame import SimulationPlotFrame
@@ -35,6 +36,8 @@ else:
     import lauecore as LAUE
     import LaueGeometry as F2TC
     import CrystalParameters as CP
+    import ProportionalSplitter as PropSplit
+
 
 DEG = np.pi / 180.0
 
