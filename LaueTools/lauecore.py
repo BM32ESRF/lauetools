@@ -20,7 +20,6 @@ __version__ = "$Revision: 1717$"
 import time, math, pickle, sys
 import builtins
 
-# import annot
 import numpy as np
 
 np.set_printoptions(precision=15)
@@ -33,7 +32,7 @@ if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
     from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
-                                DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
+                    DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
 
     from . import LaueGeometry as LTGeo
 else:

@@ -24,7 +24,7 @@ try:
 except:
     print("module Image / PIL is not installed")
 import pylab as p
-from annot import AnnoteFinder
+
 
 import numpy as np
 
@@ -41,6 +41,7 @@ if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT
+    from . annot import AnnoteFinder
 else:
     import lauecore as LAUE
     import CrystalParameters as CP
@@ -49,6 +50,7 @@ else:
     import generaltools as GT
     import readmccd as RMCCD
     import IOLaueTools as IOLT
+    from annot import AnnoteFinder
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
