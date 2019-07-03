@@ -6778,7 +6778,7 @@ if WXPYTHON4:
             # pick a splash image file you have in the working folder
 
             image_file = os.path.join(
-                DictLT.LAUETOOLSFOLDER, "icons", "transmissionLaue_fcc_111.png"
+                LaueToolsProjectFolder, "icons", "transmissionLaue_fcc_111.png"
             )
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
