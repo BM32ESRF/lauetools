@@ -12,6 +12,8 @@ if sys.version_info.major == 3:
     from . import IOLaueTools as IOLT
     from . import generaltools as GT
     from . import dict_LaueTools as DictLT
+    from . PlotRefineGUI import Plot_RefineFrame
+
 else:
     import lauecore as LT
     import CrystalParameters as CP
@@ -21,10 +23,11 @@ else:
     import IOLaueTools as IOLT
     import generaltools as GT
     import dict_LaueTools as DictLT
+    from PlotRefineGUI import Plot_RefineFrame
+
 
 SIZE_PLOTTOOLS = (8, 6)
 
-from PlotRefineGUI import Plot_RefineFrame
 
 # --- ----------------   Classical Indexation Board
 class DistanceScreeningIndexationBoard(wx.Frame):
