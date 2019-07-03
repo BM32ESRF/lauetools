@@ -2043,6 +2043,159 @@ def readfile_str(filename, grain_index):
     return data_str, matstr, calib, dev_str
 
 
+def Read_indexationfile(filename, grainindex_mat=0):
+    r"""
+    Read indexation file created by lauetools with extension .idx
+
+    Return arrays of all colums [spot# 2theta chi pixX pixY intensity h k l energy grainindex]
+    TODO: seems to be OBSOLETE or useless?
+
+    """
+    nb_lines_header = 4
+
+    try:
+        data_millerExy = np.genfromtxt(
+            filename, skip_header=nb_lines_header, comments="#"
+        )
+    except NameError:
+        data_millerExy = np.loadtxt(filename, skiprows=nb_lines_header, comments="#")
+
+    twicetheta = np.array(data_millerExy[:, 1])  # target values
+    chi = np.array(data_millerExy[:, 2])  # target values
+    pixX = np.array(data_millerExy[:, 3])
+    pixY = np.array(data_millerExy[:, 4])
+    Intensity = np.array(data_millerExy[:, 5])
+    miller = np.array(data_millerExy[:, 6:9])
+    energy = np.array(data_millerExy[:, 9])
+
+    Grain_index = np.array(data_millerExy[:, 10])
+
+    # removing spots that were in ambiguous positions to be indexed (energy set to 0)
+    pos = np.where(energy != 0)[0]
+
+    twicetheta = np.take(twicetheta, pos, axis=0)
+    chi = np.take(chi, pos, axis=0)
+    pixX = np.take(pixX, pos, axis=0)
+    pixY = np.take(pixY, pos, axis=0)
+    Intensity = np.take(Intensity, pos, axis=0)
+    miller = np.take(miller, pos, axis=0)
+    energy = np.take(energy, pos, axis=0)
+    Grain_index = np.take(Grain_index, pos, axis=0)
+
+    f = open(filename, "r")
+    accum_mat = 0  # U matrix
+    lineaccum = 0
+    mat_index = 0
+    datamat = {}
+
+    accum_B = 0  # B matrix
+    lineaccum_B = 0
+    mat_index_B = 0
+    datamat_B = {}
+
+    accum_E = 0  # E Matrix (deviatoric strain)
+    lineaccum_E = 0
+    mat_index_E = 0
+    datamat_E = {}
+
+    accum_param = 0
+    lineaccum_param = 0
+    detector_param = {}
+
+    for line in f.readlines():
+        if accum_mat == 1 and lineaccum < 3:  # collect orientation matrix elements
+            tru = line.split()[1:]
+            datamat[grainindex_mat].append(tru)
+            lineaccum += 1
+        if accum_B == 1 and lineaccum_B < 3:  # collect Bmatrix elements
+            tru = line.split()[1:]
+            datamat_B[grainindex_mat].append(tru)
+            lineaccum_B += 1
+        if accum_E == 1 and lineaccum_E < 3:  # collect Ematrix elements
+            tru = line.split()[1:]
+            datamat_E[grainindex_mat].append(tru)
+            lineaccum_E += 1
+        if (
+            accum_param == 1 and lineaccum_param < 5
+        ):  # collect calibration parameters elements
+            tru = line.split()
+            variable = tru[1]
+            value = float(tru[3])
+            detector_param[variable] = value
+            lineaccum_param += 1
+
+        if accum_mat == 1 and lineaccum == 3:
+            accum_mat = 0
+            mat_index += 1
+        if accum_B == 1 and lineaccum_B == 3:
+            accum_B = 0
+            mat_index_B += 1
+        if accum_E == 1 and lineaccum_E == 3:
+            accum_E = 0
+            mat_index_E += 1
+
+        if line[:4] == "#Ori":
+            datatype = "orientation"
+        if line[:4] == "#BMa":
+            datatype = "Bmatrix"
+        if line[:4] == "#EMa":
+            datatype = "Ematrix"
+        if line[:2] == "#G":  # Grain matrix orientation start
+            tra = line.split(" ")[1]
+            # print "tra",tra
+            grainindex_mat = tra.split(":")[0]
+            # print "datatype",datatype
+            if datatype == "orientation":
+                accum_mat = 1
+                lineaccum = 0
+                datamat[grainindex_mat] = []
+            if datatype == "Bmatrix":
+                accum_B = 1
+                lineaccum_B = 0
+                datamat_B[grainindex_mat] = []
+            if datatype == "Ematrix":
+                accum_E = 1
+                lineaccum_E = 0
+                datamat_E[grainindex_mat] = []
+        if line[:4] == "#Cal":  # calibration parameter start
+            accum_param = 1
+            lineaccum_param = 0
+
+    f.close()
+
+    for key, val in datamat.items():
+        datamat[key] = np.array(datamat[key], dtype=float)
+    # print "datamat",datamat
+
+    for key, val in datamat_B.items():
+        datamat_B[key] = np.array(datamat_B[key], dtype=float)
+    # print "datamat_B",datamat_B
+
+    for key, val in datamat_E.items():
+        datamat_E[key] = np.array(datamat_E[key], dtype=float)
+    # print "datamat_E",datamat_E
+
+    calib = []
+    if detector_param:
+        calib = []
+        for key in ["dd", "xcen", "ycen", "xbet", "xgam"]:
+            calib.append(detector_param[key])
+
+    return (
+        twicetheta,
+        chi,
+        pixX,
+        pixY,
+        Intensity,
+        miller,
+        energy,
+        Grain_index,
+        datamat,
+        datamat_B,
+        datamat_E,
+        calib,
+    )
+
 def getpeaks_fromfit2d(filename):
     """
     read peaks list created by fit2d peak search
