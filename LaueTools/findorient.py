@@ -27,7 +27,7 @@ from numpy import linalg as LA
 
 import sys
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import LaueGeometry as LTGeo
     from . import generaltools as GT

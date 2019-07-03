@@ -33,7 +33,7 @@ try:
 except ImportError:
     import PIL.ImageFilter as ImageFilter
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import CrystalParameters as CP
     from . import LaueGeometry as F2TC

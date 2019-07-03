@@ -62,7 +62,7 @@ import pylab as pp
 from warning import deprecated
 
 # lauetools modules
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import fit2Dintensity as fit2d
     from . import fit2Dintensity_Lorentz as fit2d_l
     from . import generaltools as GT

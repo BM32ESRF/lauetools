@@ -20,7 +20,7 @@ import numpy as np
 np.set_printoptions(precision=15)
 from scipy.linalg import qr
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import LaueGeometry as F2TC
     from . import generaltools as GT
     from . import CrystalParameters as CP

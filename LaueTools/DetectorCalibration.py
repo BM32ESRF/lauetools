@@ -28,7 +28,7 @@ from matplotlib.backends.backend_wxagg import (
 
 from matplotlib.figure import Figure
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
     from . import LaueGeometry as F2TC
     from . import indexingAnglesLUT as INDEX

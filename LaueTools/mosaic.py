@@ -56,7 +56,7 @@ import matplotlib.cm as mplcm
 from pylab import cm as pcm
 
 # LaueTools modules
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
     from . import generaltools as GT
     from . import readmccd as RMCCD

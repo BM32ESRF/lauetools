@@ -3,7 +3,7 @@ import time, os
 import copy
 import sys
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
 else:
     import dict_LaueTools as DictLT

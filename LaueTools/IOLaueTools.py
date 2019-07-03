@@ -25,7 +25,7 @@ from copy import deepcopy
 import copy
 import re
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
 else:
     from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS

@@ -18,7 +18,7 @@ except ImportError:
     SCIKITLEARN=False
 
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
 
     from . import lauecore as LAUE
     from . import CrystalParameters as CP
@@ -33,7 +33,7 @@ else:
     from dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
 
 try:
-    if 0: #sys.version_info.major == 3:
+    if sys.version_info.major == 3:
         from . import angulardist
     else:
         import angulardist

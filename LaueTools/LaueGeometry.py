@@ -75,7 +75,7 @@ import os, sys
 import numpy as np
 import pylab as P
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import findorient as FindO
     from . import generaltools as GT
     from . import IOLaueTools as IOLT

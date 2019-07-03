@@ -44,7 +44,7 @@ from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
 import matplotlib
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import IOLaueTools as IOLT
     from . import generaltools as GT

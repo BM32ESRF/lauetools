@@ -29,7 +29,7 @@ DEG = np.pi / 180.0
 
 IDENTITYMATRIX = np.eye(3)
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import IOLaueTools as IOLT
 else:
     import IOLaueTools as IOLT

@@ -59,7 +59,7 @@ except ImportError:
     ObjectListView_Present = False
 
 # LaueTools modules
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import dragpoints as DGP
     from . import mosaic as MOS
     from . import SpotModel

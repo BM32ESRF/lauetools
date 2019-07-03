@@ -21,7 +21,7 @@ else:
 
     wx.ListCtrl.SetStringItem = setitem
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
     from . SimulFrame import SimulationPlotFrame
     from . import generaltools as GT

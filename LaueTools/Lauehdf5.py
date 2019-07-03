@@ -11,7 +11,7 @@ if Tab.__version__ >= "3.4.3":
     Tab.File.createTable = Tab.File.create_table
     Tab.File.createArray = Tab.File.create_array
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT

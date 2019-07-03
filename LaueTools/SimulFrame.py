@@ -19,7 +19,7 @@ from matplotlib.backends.backend_wxagg import (
 
 from matplotlib.figure import Figure
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import generaltools as GT
 else:
     import generaltools as GT
@@ -954,7 +954,7 @@ class SimulationPlotFrame(wx.Frame):
 
             from matplotlib.collections import LineCollection
             import matplotlib.patches as patches
-            if 0: #sys.version_info.major == 3:
+            if sys.version_info.major == 3:
                 from . import rectangle as rect
             else:
                 import rectangle as rect

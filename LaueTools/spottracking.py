@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
 else:

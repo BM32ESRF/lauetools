@@ -19,13 +19,13 @@ except:
 
 from matplotlib.ticker import FuncFormatter
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import generaltools as GT
 else:
     import generaltools as GT
 
 try:
-    if 0: #sys.version_info.major == 3:
+    if sys.version_info.major == 3:
         from . import gaussian2D
     else:
         import gaussian2D
@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     center_pixel = peak_1
 
-    if 0: #sys.version_info.major == 3:
+    if sys.version_info.major == 3:
         from . import readmccd as RMCCD
     else:
         import readmccd as RMCCD

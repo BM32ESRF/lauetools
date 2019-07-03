@@ -3,7 +3,7 @@ import numpy as np
 import copy
 import sys
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import lauecore as LT
     from . import CrystalParameters as CP
     from . import indexingSpotsSet as ISS

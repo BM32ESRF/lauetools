@@ -24,7 +24,7 @@ except ImportError:
     )
     print("***********************************************************\n")
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import findorient as FO
     from . import indexingAnglesLUT as INDEX
     from . import generaltools as GT

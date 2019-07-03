@@ -21,7 +21,7 @@ import sys
 import pylab as p
 import numpy as np
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import CrystalParameters as CP
     from . import findorient as FindO
@@ -41,7 +41,7 @@ else:
     import matchingrate
 
 try:
-    if 0: #sys.version_info.major == 3:
+    if sys.version_info.major == 3:
         from . import angulardist
     else:
         import angulardist

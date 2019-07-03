@@ -16,7 +16,7 @@ from pylab import figure, scatter, show, subplot, title
 import multiprocessing
 import configparser as CONF
 
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import CrystalParameters as CP
     from . import lauecore as LAUE
@@ -5128,7 +5128,7 @@ def indexing_multiprocessing(
 
     if build_hdf5:
         try:
-            if 0: #sys.version_info.major == 3:
+            if sys.version_info.major == 3:
                 from . import Lauehdf5 as LaueHDF5
             else:
                 import Lauehdf5 as LaueHDF5
@@ -5721,7 +5721,7 @@ def index_fileseries_3(
     #         logfile.write(outputdict_filename)
 
     if build_hdf5:
-        if 0: #sys.version_info.major == 3:
+        if sys.version_info.major == 3:
             from . import Lauehdf5 as LaueHDF5
         else:
             import Lauehdf5 as LaueHDF5

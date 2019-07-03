@@ -28,7 +28,7 @@ from pylab import figure, show, connect, title
 from matplotlib.transforms import offset_copy as offset
 
 # LaueTools modules
-if 0: #sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
