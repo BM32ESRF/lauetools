@@ -48,7 +48,7 @@ else:
 import webbrowser
 
 # TODO restrict imports to only used functions
-if 0:#sys.version_info.major == 3:
+if sys.version_info.major == 3:
     from . import indexingAnglesLUT as INDEX
     from . import indexingImageMatching as IIM
     from . import indexingSpotsSet as ISS
