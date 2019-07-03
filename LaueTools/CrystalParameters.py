@@ -10,7 +10,7 @@ import sys
 import numpy as np
 from numpy.linalg import inv
 
-if 0: #sys.version_info.major==3:
+if sys.version_info.major == 3:
     from . dict_LaueTools import dict_Materials, dict_Stiffness
     from . import generaltools as GT
 else:
