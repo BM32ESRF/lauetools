@@ -5361,8 +5361,6 @@ def merge_2Peaklist(
     XY1 = data_peak_1[:, 0:2]
     XY2 = data_peak_2[:, 0:2]
 
-    import generaltools as GT
-
     XY, ind_delele_1, ind_delele_2 = GT.mergelistofPoints(
         XY1, XY2, dist_tolerance=dist_tolerance, verbose=verbose
     )

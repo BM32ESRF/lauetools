@@ -5,7 +5,6 @@ import lauecore as LAUE
 import dict_LaueTools as DictLT
 import indexingSpotsSet as ISS
 import matchingrate
-import generaltools as GT
 
 import indexingImageMatching as IMM
 

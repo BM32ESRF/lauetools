@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+
 from pylab import *
 from numpy import *
 from scipy import optimize, stats
@@ -10,7 +12,12 @@ except:
     print("module Image / PIL is not installed")
 
 from matplotlib.ticker import *
-import generaltools as GT
+
+
+if sys.version_info.major == 3:
+    from . import generaltools as GT
+else:
+    import generaltools as GT
 
 
 def stringint(k, n):
