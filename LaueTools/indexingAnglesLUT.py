@@ -16,25 +16,35 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision$"
 
 import os
+import sys
 
 import pylab as p
-
 import numpy as np
 
-import lauecore as LAUE
-import CrystalParameters as CP
-import findorient as FindO
-
-import dict_LaueTools as DictLT
-import generaltools as GT
-import IOLaueTools as IOLT
-
-import indexingSpotsSet as ISS  # for test only
-import matchingrate
+if 0: #sys.version_info.major == 3:
+    from . import lauecore as LAUE
+    from . import CrystalParameters as CP
+    from . import findorient as FindO
+    from . import dict_LaueTools as DictLT
+    from . import generaltools as GT
+    from . import IOLaueTools as IOLT
+    from . import indexingSpotsSet as ISS  # for test only
+    from . import matchingrate
+else:
+    import lauecore as LAUE
+    import CrystalParameters as CP
+    import findorient as FindO
+    import dict_LaueTools as DictLT
+    import generaltools as GT
+    import IOLaueTools as IOLT
+    import indexingSpotsSet as ISS  # for test only
+    import matchingrate
 
 try:
-    import angulardist
-
+    if 0: #sys.version_info.major == 3:
+        from . import angulardist
+    else:
+        import angulardist
     USE_CYTHON = True
 except ImportError:
     print(
@@ -1710,8 +1720,6 @@ def getOrientMatrices(
     print("LUT_tol_angle", LUT_tol_angle)
 
     if gauge:
-        import wx
-
         gaugecount = 0
         gauge.SetValue(gaugecount)
 

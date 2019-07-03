@@ -17,7 +17,7 @@ https://gitlab.esrf.fr/micha/lauetools
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision: 1717$"
 
-import time, math, pickle
+import time, math, pickle, sys
 import builtins
 
 # import annot
@@ -28,14 +28,23 @@ from pylab import figure, show, connect, title
 from matplotlib.transforms import offset_copy as offset
 
 # LaueTools modules
-import CrystalParameters as CP
-import generaltools as GT
-import IOLaueTools as IOLT
-from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
-                            DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
+if 0: #sys.version_info.major == 3:
+    from . import CrystalParameters as CP
+    from . import generaltools as GT
+    from . import IOLaueTools as IOLT
+    from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
+                                DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
 
-# TODO: LTGeo to be removed
-import LaueGeometry as LTGeo
+    from . import LaueGeometry as LTGeo
+else:
+    import CrystalParameters as CP
+    import generaltools as GT
+    import IOLaueTools as IOLT
+    from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
+                                DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
+
+    # TODO: LTGeo to be removed
+    import LaueGeometry as LTGeo
 
 try:
     import generatehkl
@@ -1959,6 +1968,8 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     :param dictCCD: dictionnary of CCD properties (with key 'CCDparam', 'pixelsize','dim')
     for 'ccdparam' 5 CCD calibration parameters [dd,xcen,ycen,xbet,xgam], pixelsize in mm, and (dim1, dim2)
     :param dictCCD: dict object
+
+    :returns: list of arrays H, K, L, Qx, Qy, Qz, X, Y, twthe, chi, Energy
 
     Fundamental equation
     :math:`{\bf q} = UB*B0 * {\bf G^*}`

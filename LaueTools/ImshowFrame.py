@@ -1,4 +1,7 @@
-# --- ------------  2D imshow plot class
+""" 2D imshow plot class
+
+"""
+import sys
 import wx
 
 import numpy as np
@@ -12,8 +15,10 @@ from matplotlib.backends.backend_wxagg import (
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import FuncFormatter
 
-
-import generaltools as GT
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+else:
+    import generaltools as GT
 
 
 class ImshowFrame(wx.Frame):
@@ -34,7 +39,6 @@ class ImshowFrame(wx.Frame):
         fitresults=None,
         **kwds
     ):
-
         wx.Frame.__init__(self, parent, _id, title, size=(500, 500))
 
         self.dpi = 100
@@ -56,7 +60,8 @@ class ImshowFrame(wx.Frame):
         self.init_figure_draw()
 
     def create_main_panel(self):
-        """ 
+        """
+
         """
         self.panel = wx.Panel(self)
 

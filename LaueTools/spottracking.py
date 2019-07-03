@@ -1,6 +1,12 @@
+import sys
 import numpy as np
-import generaltools as GT
-import IOLaueTools as IOLT
+
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+    from . import IOLaueTools as IOLT
+else:
+    import generaltools as GT
+    import IOLaueTools as IOLT
 
 
 def getspotindex(

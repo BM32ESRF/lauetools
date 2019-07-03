@@ -1,18 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-LaueToolsGUI.py is (still) a big GUI code for microdiffraction Laue Pattern analysis
+from __future__ import absolute_import
+r"""
+LaueToolsGUI.py is a (big) central GUI for microdiffraction Laue Pattern analysis
 and simulation
 
 This module belongs to the open source LaueTools project
-with a free code repository at https://sourceforge.net/projects/lauetools/
+with a free code repository at at gitlab.esrf.fr
 
-J. S. Micha May 2018
-mailto: micha at esrf dot fr
+(former version with python 2.7 at https://sourceforge.net/projects/lauetools/)
+
+J. S. Micha July 2019
+mailto: micha --+at-+- esrf --+dot-+- fr
 """
 __version__ = "$Revision: 2349 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
-import time
+
+import time, sys
 import copy
 import os.path
 
@@ -26,14 +29,6 @@ from matplotlib.backends.backend_wxagg import (
     FigureCanvasWxAgg as FigCanvas,
     NavigationToolbar2WxAgg as NavigationToolbar,
 )
-
-from matplotlib.figure import Figure
-
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar,
-)
-
 
 from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
@@ -53,35 +48,46 @@ else:
 import webbrowser
 
 # TODO restrict imports to only used functions
-import indexingAnglesLUT as INDEX
-import indexingImageMatching as IIM
-import indexingSpotsSet as ISS
-import lauecore as LAUE
-
-import graingraph as GraGra
-import LaueGeometry as F2TC
-
-# import fromxmastolauetools as FXL
-import LaueSpotsEditor as LSEditor
-import ParametricLaueSimulator as ParamLS
-import CrystalParameters as CP
-import IOLaueTools as IOLT
-import generaltools as GT
-import dict_LaueTools as DictLT
-import PeakSearchGUI
-import DetectorParameters as DP
-import DetectorCalibration as DC
-import CCDFileParametersGUI as CCDParamGUI
-import dragpoints as DGP
-
-import matchingrate
-
-# from PlotRefineGUI import Plot_RefineFrame
-
-from AutoindexationGUI import (
-    RecognitionResultCheckBox,
-    DistanceScreeningIndexationBoard,
-)
+if 0:#sys.version_info.major == 3:
+    from . import indexingAnglesLUT as INDEX
+    from . import indexingImageMatching as IIM
+    from . import indexingSpotsSet as ISS
+    from . import lauecore as LAUE
+    from . import graingraph as GraGra
+    from . import LaueGeometry as F2TC
+    from . import LaueSpotsEditor as LSEditor
+    from . import ParametricLaueSimulator as ParamLS
+    from . import CrystalParameters as CP
+    from . import IOLaueTools as IOLT
+    from . import generaltools as GT
+    from . import dict_LaueTools as DictLT
+    from . import PeakSearchGUI
+    from . import DetectorParameters as DP
+    from . import DetectorCalibration as DC
+    from . import CCDFileParametersGUI as CCDParamGUI
+    from . import dragpoints as DGP
+    from . import matchingrate
+    from . AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+else:
+    import indexingAnglesLUT as INDEX
+    import indexingImageMatching as IIM
+    import indexingSpotsSet as ISS
+    import lauecore as LAUE
+    import graingraph as GraGra
+    import LaueGeometry as F2TC
+    import LaueSpotsEditor as LSEditor
+    import ParametricLaueSimulator as ParamLS
+    import CrystalParameters as CP
+    import IOLaueTools as IOLT
+    import generaltools as GT
+    import dict_LaueTools as DictLT
+    import PeakSearchGUI
+    import DetectorParameters as DP
+    import DetectorCalibration as DC
+    import CCDFileParametersGUI as CCDParamGUI
+    import dragpoints as DGP
+    import matchingrate
+    from AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
@@ -269,66 +275,12 @@ class MainWindow(wx.Frame):
         )  # additional matrix of rotation enter as 3 angles / elemntary rotations applied in left of UB
 
         # make a list of safe functions
-        self.safe_list = [
-            "math",
-            "acos",
-            "asin",
-            "atan",
-            "atan2",
-            "ceil",
-            "cos",
-            "cosh",
-            "degrees",
-            "e",
-            "exp",
-            "fabs",
-            "floor",
-            "fmod",
-            "frexp",
-            "hypot",
-            "ldexp",
-            "log",
-            "log10",
-            "modf",
-            "pi",
-            "pow",
-            "radians",
-            "sin",
-            "sinh",
-            "sqrt",
-            "tan",
-            "tanh",
-        ]
+        self.safe_list = [ "math", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "degrees", "e", "exp", "fabs", "floor",
+            "fmod", "frexp", "hypot", "ldexp", "log", "log10", "modf", "pi", "pow", "radians", "sin", "sinh", "sqrt", "tan", "tanh", ]
         # use the list to filter the local namespace
         self.safe_dict = dict([(k, locals().get(k, None)) for k in self.safe_list])
         # add any needed builtins back in.
         self.safe_dict["abs"] = abs
-
-    #     def CreateInteriorWindowComponents(self):
-    #         '''
-    #         Create "interior" window components. In this case it is just a
-    #             simple multiline text control.
-    #         '''
-    #         self.datapanel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER,
-    #                                   size=(990, 600),
-    #                                   pos=(5, 5))
-    #         self.control = wx.TextCtrl(self.datapanel,
-    #                                    style=wx.TE_MULTILINE | wx.TE_READONLY,
-    #                                    size=(980, 590), pos=(5, 5))
-
-    #     def CreateConsoleWindowComponents(self):
-    #         '''
-    #         console
-    #         '''
-    #         self.consolepanel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER,
-    #                                      size=(990, 200),
-    #                                      pos=(5, 600))
-    #         self.console = wx.TextCtrl(self.consolepanel,
-    #                                    style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL,
-    #                                    size=(980, 190), pos=(5, 5))
-    #         # self.log = wx.TextCtrl(panel, -1, size =(500, 400), style = wx.TE_MULTILINE|wx.TE_READONLY| wx.HSCROLL)
-    #         redir = RedirectText(self.console)
-    #         sys.stdout = redir
 
     def CreateExteriorWindowComponents(self):
         """
@@ -934,8 +886,9 @@ class MainWindow(wx.Frame):
 
     # --- ------------ Indexation Functions
     def OnCheckOrientationMatrix(self, event):
-        """
-        Check if user input matrix can match the current experimental list of spots
+        r"""
+        Check if user input matrix, material parameters can produce a Laue pattern that matches
+        the current experimental list of spots
         """
         if 0:
             if self.data_theta is None:
@@ -6838,7 +6791,6 @@ if WXPYTHON4:
                 wx.ID_ANY,
             )
 
-
 else:
 
     class MySplash(wx.SplashScreen):
@@ -6850,7 +6802,7 @@ else:
             # pick a splash image file you have in the working folder
 
             image_file = os.path.join(
-                DictLT.LAUETOOLSFOLDER,
+                LaueToolsProjectFolder,
                 os.path.join("icons", "transmissionLaue_fcc_111.png"),
             )
             print("image_file", image_file)
@@ -6883,7 +6835,7 @@ class RedirectText:
         self.out.WriteText(Somestring)
 
 
-def start_func():
+def start():
     LaueToolsGUIApp = wx.App()
     LaueToolsframe = MainWindow(
         None,
@@ -6899,4 +6851,4 @@ def start_func():
 
 
 if __name__ == "__main__":
-    start_func()
+    start()

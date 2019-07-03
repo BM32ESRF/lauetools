@@ -12,6 +12,8 @@ import copy
 import pickle
 import numpy as np
 import multiprocessing
+import sys
+
 
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
@@ -27,8 +29,10 @@ DEG = np.pi / 180.0
 
 IDENTITYMATRIX = np.eye(3)
 
-import IOLaueTools as IOLT
-
+if 0: #sys.version_info.major == 3:
+    from . import IOLaueTools as IOLT
+else:
+    import IOLaueTools as IOLT
 
 # --- --------------  Vectors
 def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):

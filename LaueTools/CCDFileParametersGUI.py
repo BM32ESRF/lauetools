@@ -1,6 +1,17 @@
+"""
+GUI Module of LaueTools package for choosing Detector File Parameters 
+"""
+
+import sys
+
 import wx
-import dict_LaueTools as DictLT
-import generaltools as GT
+
+if 0: #sys.version_info.major == 3:
+    from . import dict_LaueTools as DictLT
+    from . import generaltools as GT
+else:
+    import dict_LaueTools as DictLT
+    import generaltools as GT
 
 
 # --- ---------------  Binary image File parameters

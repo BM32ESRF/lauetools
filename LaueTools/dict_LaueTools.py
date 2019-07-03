@@ -30,8 +30,6 @@ DEFAULT_TOP_GEOMETRY = "Z>0"
 
 #############   2D DETECTOR ##############
 
-
-
 LAUEIMAGING_DATA_FORMAT = "uint16"  # 'uint8'
 LAUEIMAGING_FRAME_DIM = (1290, 1970)  # (645, 985)
 

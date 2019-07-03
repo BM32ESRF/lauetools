@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import time
-import copy
+import copy, sys
 import math
 
 import wx
@@ -28,26 +28,38 @@ from matplotlib.backends.backend_wxagg import (
 
 from matplotlib.figure import Figure
 
-import dict_LaueTools as DictLT
-import LaueGeometry as F2TC
+if 0: #sys.version_info.major == 3:
+    from . import dict_LaueTools as DictLT
+    from . import LaueGeometry as F2TC
+    from . import indexingAnglesLUT as INDEX
+    from . import indexingImageMatching as IIM
+    from . import matchingrate
+    from . import lauecore as LAUE
+    from . import findorient as FindO
+    from . import FitOrient as FitO
+    from . import spotslinkeditor as SLE
+    from . import LaueSpotsEditor as LSEditor
+    from . import generaltools as GT
+    from . import IOLaueTools as IOLT
+    from . import CrystalParameters as CP
+    from . import DetectorParameters as DP
 
-import indexingAnglesLUT as INDEX
-import indexingImageMatching as IIM
-import matchingrate
-import lauecore as LAUE
-import findorient as FindO
-import FitOrient as FitO
-import spotslinkeditor as SLE
+else:
 
-
-import LaueSpotsEditor as LSEditor
-
-import generaltools as GT
-import IOLaueTools as IOLT
-import CrystalParameters as CP
-
-
-import DetectorParameters as DP
+    import dict_LaueTools as DictLT
+    import LaueGeometry as F2TC
+    import indexingAnglesLUT as INDEX
+    import indexingImageMatching as IIM
+    import matchingrate
+    import lauecore as LAUE
+    import findorient as FindO
+    import FitOrient as FitO
+    import spotslinkeditor as SLE
+    import LaueSpotsEditor as LSEditor
+    import generaltools as GT
+    import IOLaueTools as IOLT
+    import CrystalParameters as CP
+    import DetectorParameters as DP
 
 DEG = DictLT.DEG
 PI = DictLT.PI

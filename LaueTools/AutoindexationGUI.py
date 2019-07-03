@@ -1,16 +1,26 @@
 import wx
 import numpy as np
 import copy
+import sys
 
-import lauecore as LT
-import CrystalParameters as CP
-import indexingSpotsSet as ISS
-import indexingAnglesLUT as INDEX
-import matchingrate
-
-import IOLaueTools as IOLT
-import generaltools as GT
-import dict_LaueTools as DictLT
+if 0: #sys.version_info.major == 3:
+    from . import lauecore as LT
+    from . import CrystalParameters as CP
+    from . import indexingSpotsSet as ISS
+    from . import indexingAnglesLUT as INDEX
+    from . import matchingrate
+    from . import IOLaueTools as IOLT
+    from . import generaltools as GT
+    from . import dict_LaueTools as DictLT
+else:
+    import lauecore as LT
+    import CrystalParameters as CP
+    import indexingSpotsSet as ISS
+    import indexingAnglesLUT as INDEX
+    import matchingrate
+    import IOLaueTools as IOLT
+    import generaltools as GT
+    import dict_LaueTools as DictLT
 
 SIZE_PLOTTOOLS = (8, 6)
 

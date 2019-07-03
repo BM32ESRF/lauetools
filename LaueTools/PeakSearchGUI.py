@@ -6,7 +6,6 @@ import time
 import copy
 
 import numpy as np
-
 import wx
 
 if wx.__version__ < "4.":
@@ -60,22 +59,36 @@ except ImportError:
     ObjectListView_Present = False
 
 # LaueTools modules
-import dragpoints as DGP
-import mosaic as MOS
-import SpotModel
-
-import dict_LaueTools as DictLT
-import readmccd as RMCCD
-import fit2Dintensity as fit2d
-import LaueGeometry as F2TC
-import peaklistfit2d as plf2d
-import Plot1DFrame as PLOT1D
-import HistogramPlot as HISTOPLOT
-
-import ImshowFrame as IMSHOW
-import generaltools as GT
-import CCDFileParametersGUI as CCDParamGUI
-import IOLaueTools as IOLT
+if 0: #sys.version_info.major == 3:
+    from . import dragpoints as DGP
+    from . import mosaic as MOS
+    from . import SpotModel
+    from . import dict_LaueTools as DictLT
+    from . import readmccd as RMCCD
+    from . import fit2Dintensity as fit2d
+    from . import LaueGeometry as F2TC
+    from . import peaklistfit2d as plf2d
+    from . import Plot1DFrame as PLOT1D
+    from . import HistogramPlot as HISTOPLOT
+    from . import ImshowFrame as IMSHOW
+    from . import generaltools as GT
+    from . import CCDFileParametersGUI as CCDParamGUI
+    from . import IOLaueTools as IOLT
+else:
+    import dragpoints as DGP
+    import mosaic as MOS
+    import SpotModel
+    import dict_LaueTools as DictLT
+    import readmccd as RMCCD
+    import fit2Dintensity as fit2d
+    import LaueGeometry as F2TC
+    import peaklistfit2d as plf2d
+    import Plot1DFrame as PLOT1D
+    import HistogramPlot as HISTOPLOT
+    import ImshowFrame as IMSHOW
+    import generaltools as GT
+    import CCDFileParametersGUI as CCDParamGUI
+    import IOLaueTools as IOLT
 
 # sign of CCD camera angle =1 to mimic XMAS convention
 SIGN_OF_GAMMA = 1

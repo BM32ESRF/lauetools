@@ -19,15 +19,16 @@ import string
 
 import numpy as np
 
-
 np.set_printoptions(precision=15)
 
 from copy import deepcopy
 import copy
 import re
 
-
-from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
+if 0: #sys.version_info.major == 3:
+    from . dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
+else:
+    from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
 
 DEFAULT_CCDLABEL = 'sCMOS'
 

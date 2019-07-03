@@ -15,7 +15,6 @@ From two identified planes, calculation of orientation matrix U can be done
 There is no refinement of U according to other spots
 
 TODO: generalise to other structure and include symetry considerations in selecting part of the lookuptable
-
 """
 __version__ = "$Revision$"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -26,15 +25,23 @@ import numpy as np
 from scipy.linalg.basic import lstsq
 from numpy import linalg as LA
 
-import CrystalParameters as CP
-import LaueGeometry as LTGeo
-import generaltools as GT
+import sys
 
-from dict_LaueTools import dict_Materials
+if 0: #sys.version_info.major == 3:
+    from . import CrystalParameters as CP
+    from . import LaueGeometry as LTGeo
+    from . import generaltools as GT
+    from . dict_LaueTools import dict_Materials
+    from . import dict_LaueTools as DictLT
+else:
+    import CrystalParameters as CP
+    import LaueGeometry as LTGeo
+    import generaltools as GT
+    from dict_LaueTools import dict_Materials
+    import dict_LaueTools as DictLT
 
 # --- ---------  CONSTANTS
 DEG = np.pi / 180.0
-
 
 # --- ------ Cubic ANGULAR DISTANCE
 DICOPLANE = {100: 0, 110: 1, 111: 2, 210: 3, 211: 4, 221: 5, 310: 6, 311: 7, 321: 8}
@@ -1303,8 +1310,6 @@ def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    import dict_LaueTools as DictLT
-
     latticeparams = DictLT.dict_Materials[key_material][1]
 
     return buildLUT_fromLatticeParams(
@@ -1325,8 +1330,6 @@ def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    import dict_LaueTools as DictLT
-
     latticeparams = DictLT.dict_Materials[key_material][1]
 
     restrictLUT = False
@@ -1389,8 +1392,6 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material):
 
     latticeparams_or_material  : either string key for material or list of 6 lattice parameters
     """
-    import dict_LaueTools as DictLT
-
     if isinstance(latticeparams_or_material, str):
         latticeparams = DictLT.dict_Materials[latticeparams_or_material][1]
     else:
@@ -1880,9 +1881,8 @@ def HKL2string(hkl):
 
 
 def HKLs2strings(hkls):
-    """
+    r"""
     convert a list a hkl into string using HKL2string()
-
     """
     res = []
     if np.shape(np.array(hkls)) == (3,):
@@ -1894,9 +1894,11 @@ def HKLs2strings(hkls):
 
 
 def FilterEquivalentPairsHKL(pairs_hkl):
-    """
+    r"""
     remove pairs of hkls that are equivalent by inversion
     [h,k,l]1 [h,k,l]2  and [-h,-k,-l]1 [-h,-k,-l]2  are equivalent
+
+    .. note:: in dev
     """
 
     if pairs_hkl is None:

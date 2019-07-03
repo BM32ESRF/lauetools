@@ -17,14 +17,11 @@ import os
 import copy
 import time as ttt
 import struct
-
 import math
 
 # third party modules
 
 import scipy.interpolate as sci
-
-# import scipy.io
 import scipy.ndimage as ndimage
 import scipy.signal
 import scipy.spatial.distance as ssd
@@ -38,11 +35,6 @@ except ImportError:
         "Missing fabio module. Please install it if you need open some tiff images from the sCMOS camera"
     )
     FABIO_EXISTS = False
-
-# try:
-#    import Image as II
-# except:
-#    print "module Image / PIL is not installed"
 
 try:
     from libtiff import TIFF, libtiff_ctypes
@@ -70,11 +62,18 @@ import pylab as pp
 from warning import deprecated
 
 # lauetools modules
-import fit2Dintensity as fit2d
-import fit2Dintensity_Lorentz as fit2d_l
-import generaltools as GT
-import IOLaueTools as IOLT
-import dict_LaueTools as DictLT
+if 0: #sys.version_info.major == 3:
+    from . import fit2Dintensity as fit2d
+    from . import fit2Dintensity_Lorentz as fit2d_l
+    from . import generaltools as GT
+    from . import IOLaueTools as IOLT
+    from . import dict_LaueTools as DictLT
+else:
+    import fit2Dintensity as fit2d
+    import fit2Dintensity_Lorentz as fit2d_l
+    import generaltools as GT
+    import IOLaueTools as IOLT
+    import dict_LaueTools as DictLT
 
 listfile = os.listdir(os.curdir)
 
@@ -103,7 +102,7 @@ PEAKSEARCHDICT_Convolve = {
 
 
 def stringint(k, n):
-    """ returns string of integer k with n zeros padding
+    r""" returns string of integer k with n zeros padding
     (by placing zeros before to have n characters)
 
     :param k: integer to convert
@@ -126,7 +125,7 @@ def stringint(k, n):
 
 @deprecated
 def Read_indexationfile(filename, grainindex_mat=0):
-    """
+    r"""
     Read indexation file created by lauetools with extension .idx
 
     Return arrays of all colums [spot# 2theta chi pixX pixY intensity h k l energy grainindex]
@@ -281,7 +280,7 @@ def Read_indexationfile(filename, grainindex_mat=0):
 
 # --- ---------------- read images functions
 def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
-    """
+    r"""
     reconstruct filename string from imagefilename and update filename index with imageindex
 
     :param imagefilename: filename string (full path or not)

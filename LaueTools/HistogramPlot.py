@@ -1,7 +1,6 @@
 # --- ------------  1D bar plot class
 import wx
 
-
 import numpy as np
 
 from matplotlib.figure import Figure
@@ -12,7 +11,6 @@ class HistogramPlot(wx.Frame):
     """
 
     """
-
     def __init__(
         self,
         parent,

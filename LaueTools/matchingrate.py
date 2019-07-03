@@ -1,29 +1,42 @@
 r"""
 .. module:: matchingrate Documentation
     :synopsis: module to compute matching figure from two sets of laue spots properties
-    
+
 .. moduleauthor:: JS Micha, 2019,  micha 'at' esrf 'dot'fr
 """
 
 from numpy import array, ones, where, argmin, ravel, arange, int32, amin, mean
-import copy
+import copy, sys
 import numpy as np
-import sklearn.metrics as sm
 import scipy.spatial.distance as ssd
 
-import lauecore as LAUE
-import CrystalParameters as CP
-import generaltools as GT
-import LaueGeometry as LaueGeo
+SCIKITLEARN=True
+try:
+    import sklearn.metrics as sm
+except ImportError:
+    print("sklearn.metrics is not installed !! ")
+    SCIKITLEARN=False
 
 
-# --- ------------ CONSTANTS
-DEG = np.pi / 180.0
-from dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
+if 0: #sys.version_info.major == 3:
 
+    from . import lauecore as LAUE
+    from . import CrystalParameters as CP
+    from . import generaltools as GT
+    from . import LaueGeometry as LaueGeo
+    from . dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
+else:
+    import lauecore as LAUE
+    import CrystalParameters as CP
+    import generaltools as GT
+    import LaueGeometry as LaueGeo
+    from dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
 
 try:
-    import angulardist
+    if 0: #sys.version_info.major == 3:
+        from . import angulardist
+    else:
+        import angulardist
 
     USE_CYTHON = True
 except ImportError:
@@ -32,6 +45,10 @@ except ImportError:
     )
     print("Using default module")
     USE_CYTHON = False
+
+
+# --- ------------ CONSTANTS
+DEG = np.pi / 180.0
 
 #------ USE_CYTHON= FALSE ----------------  
 def getArgmin(tab_angulardist):
@@ -711,7 +728,7 @@ def Angular_residues_np(
         ResolutionAngstrom=ResolutionAngstrom,
     )
 
-    if not onlyXYZ:
+    if not SCIKITLEARN or not onlyXYZ:
         # 2theta,chi of spot which are on camera (with harmonics)
         # None because no need of hkl vectors
         # TwicethetaChi without energy calculations and hkl selection

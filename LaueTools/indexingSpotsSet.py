@@ -8,7 +8,7 @@ JS micha May 2019
 
 import copy
 import pickle
-import os
+import os, sys
 import time
 
 import numpy as np
@@ -16,19 +16,36 @@ from pylab import figure, scatter, show, subplot, title
 import multiprocessing
 import configparser as CONF
 
-import generaltools as GT
-import CrystalParameters as CP
-import lauecore as LAUE
-import indexingAnglesLUT as INDEX
-import matchingrate
-import dict_LaueTools as DictLT
-import FitOrient as FitO
-import LaueGeometry as F2TC
-import findorient as FO
-import indexingImageMatching as IMM
-import IOLaueTools as IOLT
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+    from . import CrystalParameters as CP
+    from . import lauecore as LAUE
+    from . import indexingAnglesLUT as INDEX
+    from . import matchingrate
+    from . import dict_LaueTools as DictLT
+    from . import FitOrient as FitO
+    from . import LaueGeometry as F2TC
+    from . import findorient as FO
+    from . import indexingImageMatching as IMM
+    from . import IOLaueTools as IOLT
+    from . generaltools import printred, printgreen, printcyan
+    from . import spottracking as SpTra
 
-from generaltools import printred, printgreen, printcyan
+else:
+    import generaltools as GT
+    import CrystalParameters as CP
+    import lauecore as LAUE
+    import indexingAnglesLUT as INDEX
+    import matchingrate
+    import dict_LaueTools as DictLT
+    import FitOrient as FitO
+    import LaueGeometry as F2TC
+    import findorient as FO
+    import indexingImageMatching as IMM
+    import IOLaueTools as IOLT
+    from generaltools import printred, printgreen, printcyan
+    import spottracking as SpTra
+
 
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
 
@@ -269,7 +286,6 @@ class spotsset:
             return False
 
         if sortSpots_from_refenceList not in (None, "None"):
-            import spottracking as SpTra
 
             (
                 data_theta,
@@ -4490,7 +4506,6 @@ def refineUBSpotsFamily(
     arr_indexvaryingparameters = np.arange(5, 13)
     # print "\nInitial error--------------------------------------\n"
     print("initial_matrix", initial_matrix)
-    import FitOrient as FitO
 
     residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
         initial_values,
@@ -5113,7 +5128,10 @@ def indexing_multiprocessing(
 
     if build_hdf5:
         try:
-            import Lauehdf5 as LaueHDF5
+            if 0: #sys.version_info.major == 3:
+                from . import Lauehdf5 as LaueHDF5
+            else:
+                import Lauehdf5 as LaueHDF5
 
             print("Building hdf5 file")
         except ImportError:
@@ -5703,8 +5721,10 @@ def index_fileseries_3(
     #         logfile.write(outputdict_filename)
 
     if build_hdf5:
-
-        import Lauehdf5 as LaueHDF5
+        if 0: #sys.version_info.major == 3:
+            from . import Lauehdf5 as LaueHDF5
+        else:
+            import Lauehdf5 as LaueHDF5
 
         LaueHDF5.build_hdf5(
             outputdict_filename,

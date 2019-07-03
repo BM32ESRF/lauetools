@@ -4,8 +4,7 @@ Created on Wed Feb  8 10:16:17 2012
 
 @author: micha
 """
-import os
-
+import os, sys
 import wx
 import numpy as np
 import pylab
@@ -20,7 +19,11 @@ from matplotlib.backends.backend_wxagg import (
 
 from matplotlib.figure import Figure
 
-import generaltools as GT
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+else:
+    import generaltools as GT
+
 
 SIZE_PLOTTOOLS = (6, 6)
 DEG = np.pi / 180.0
@@ -29,7 +32,7 @@ SA = np.sin(40.0 * DEG)
 
 
 class SimulationPlotFrame(wx.Frame):
-    """
+    r"""
     class to plot simulated Laue pattern of one or several grains
     """
 
@@ -376,7 +379,9 @@ class SimulationPlotFrame(wx.Frame):
                 self.Annotate(event)
 
     def onMotion_ToolTip_fromplotrefine(self, event):
-        """tool tip to show data when mouse hovers on plot
+        r"""tool tip to show data when mouse hovers on plot
+
+        .. todo:: to delete or in dev?
         """
         return
 
@@ -949,7 +954,10 @@ class SimulationPlotFrame(wx.Frame):
 
             from matplotlib.collections import LineCollection
             import matplotlib.patches as patches
-            import rectangle as rect
+            if 0: #sys.version_info.major == 3:
+                from . import rectangle as rect
+            else:
+                import rectangle as rect
 
             w_nbsteps = 40
             h_nbsteps = 15

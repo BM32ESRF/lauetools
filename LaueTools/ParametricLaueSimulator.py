@@ -1,9 +1,9 @@
-import numpy as np
-import os
 
-import time
+import os
+import time, sys
 import string
 
+import numpy as np
 import wx
 import wx.lib.scrolledpanel as scrolled
 import ProportionalSplitter as PropSplit
@@ -21,15 +21,20 @@ else:
 
     wx.ListCtrl.SetStringItem = setitem
 
-import dict_LaueTools as DictLT
-
-# from LaueToolsGUI import SimulationPlotFrame
-from SimulFrame import SimulationPlotFrame
-
-import generaltools as GT
-import lauecore as LAUE
-import LaueGeometry as F2TC
-import CrystalParameters as CP
+if 0: #sys.version_info.major == 3:
+    from . import dict_LaueTools as DictLT
+    from . SimulFrame import SimulationPlotFrame
+    from . import generaltools as GT
+    from . import lauecore as LAUE
+    from . import LaueGeometry as F2TC
+    from . import CrystalParameters as CP
+else:
+    import dict_LaueTools as DictLT
+    from SimulFrame import SimulationPlotFrame
+    import generaltools as GT
+    import lauecore as LAUE
+    import LaueGeometry as F2TC
+    import CrystalParameters as CP
 
 DEG = np.pi / 180.0
 

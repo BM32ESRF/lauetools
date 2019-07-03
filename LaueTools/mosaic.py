@@ -56,15 +56,22 @@ import matplotlib.cm as mplcm
 from pylab import cm as pcm
 
 # LaueTools modules
-import dict_LaueTools as DictLT
-import generaltools as GT
-import readmccd as RMCCD
-import Plot1DFrame as PLOT1D
-import plotmeshspecGUI as PMSG
+if 0: #sys.version_info.major == 3:
+    from . import dict_LaueTools as DictLT
+    from . import generaltools as GT
+    from . import readmccd as RMCCD
+    from . import Plot1DFrame as PLOT1D
+    from . import plotmeshspecGUI as PMSG
+else:
+    import dict_LaueTools as DictLT
+    import generaltools as GT
+    import readmccd as RMCCD
+    import Plot1DFrame as PLOT1D
+    import plotmeshspecGUI as PMSG
 
 
 class ImshowFrameNew(wx.Frame):
-    """
+    r"""
     Class to show 2D array intensity data
     """
     def __init__(
@@ -89,7 +96,7 @@ class ImshowFrameNew(wx.Frame):
         Size=(4, 3),
         **kwds
     ):
-        """
+        r"""
         plot 2D plot of dataarray
 
         posarray_twomotors  =  additional info to show in status bar when hovering on plot
@@ -135,7 +142,7 @@ class ImshowFrameNew(wx.Frame):
         self.clear_axes_create_imshow()
 
     def create_main_panel(self):
-        """ create main GUI panel of ImshowFrameNew class
+        r""" create main GUI panel of ImshowFrameNew class
         """
         # # Set up the MenuBar
         MenuBar = wx.MenuBar()
@@ -4330,7 +4337,6 @@ def usage():
 
 
 if __name__ == "__main__":
-    import sys
 
     if len(sys.argv) > 1:
         # print sys.argv

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 module of lauetools project to init a subprocess running fit2d peak search
 
 BEFORE using this macro, it is absolutely needed to set the peak search parameters 

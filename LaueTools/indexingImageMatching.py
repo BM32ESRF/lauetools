@@ -14,8 +14,7 @@ js micha March 2012
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision$"
 
-import os, time, copy
-import pickle
+import os, time, copy,sys
 import pickle
 
 import scipy.ndimage as NDI
@@ -34,17 +33,22 @@ try:
 except ImportError:
     import PIL.ImageFilter as ImageFilter
 
-import lauecore as LAUE
-import CrystalParameters as CP
-import LaueGeometry as F2TC
-
-import dict_LaueTools as DictLT
-import generaltools as GT
-
-import readmccd as RMCCD
-import IOLaueTools as IOLT
-
-# import indexingSpotsSet as ISS
+if 0: #sys.version_info.major == 3:
+    from . import lauecore as LAUE
+    from . import CrystalParameters as CP
+    from . import LaueGeometry as F2TC
+    from . import dict_LaueTools as DictLT
+    from . import generaltools as GT
+    from . import readmccd as RMCCD
+    from . import IOLaueTools as IOLT
+else:
+    import lauecore as LAUE
+    import CrystalParameters as CP
+    import LaueGeometry as F2TC
+    import dict_LaueTools as DictLT
+    import generaltools as GT
+    import readmccd as RMCCD
+    import IOLaueTools as IOLT
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0

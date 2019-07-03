@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-gui class to connect spots from two sets
+r"""
+GUI class to connect spots from two sets
 """
 import wx
 

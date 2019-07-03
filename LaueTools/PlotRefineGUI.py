@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
 This module belongs to the open source LaueTools project with a free code repository at https://sourceforge.net/projects/lauetools/
@@ -33,19 +33,6 @@ import numpy as np
 
 np.set_printoptions(precision=15)
 
-import CrystalParameters as CP
-import IOLaueTools as IOLT
-import generaltools as GT
-import dict_LaueTools as DictLT
-import lauecore as LAUE
-import FitOrient as FitO
-import LaueGeometry as F2TC
-import LaueSpotsEditor as LSEditor
-import indexingAnglesLUT as INDEX
-import indexingSpotsSet as ISS
-import matchingrate
-import dict_LaueTools as DictLT
-
 # Plot & Tools Frame Class
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import (
@@ -56,6 +43,34 @@ from matplotlib.backends.backend_wxagg import (
 from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
 import matplotlib
+
+if 0: #sys.version_info.major == 3:
+    from . import CrystalParameters as CP
+    from . import IOLaueTools as IOLT
+    from . import generaltools as GT
+    from . import dict_LaueTools as DictLT
+    from . import lauecore as LAUE
+    from . import FitOrient as FitO
+    from . import LaueGeometry as F2TC
+    from . import LaueSpotsEditor as LSEditor
+    from . import indexingAnglesLUT as INDEX
+    from . import indexingSpotsSet as ISS
+    from . import matchingrate
+    from . import dict_LaueTools as DictLT
+else:
+    import CrystalParameters as CP
+    import IOLaueTools as IOLT
+    import generaltools as GT
+    import dict_LaueTools as DictLT
+    import lauecore as LAUE
+    import FitOrient as FitO
+    import LaueGeometry as F2TC
+    import LaueSpotsEditor as LSEditor
+    import indexingAnglesLUT as INDEX
+    import indexingSpotsSet as ISS
+    import matchingrate
+    import dict_LaueTools as DictLT
+
 
 SIZE_PLOTTOOLS = (8, 6)
 SIGN_OF_GAMMA = DictLT.SIGN_OF_GAMMA

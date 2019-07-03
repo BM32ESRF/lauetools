@@ -12,20 +12,28 @@ http://sourceforge.net/projects/lauetools/
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision$"
 
+import sys
+
 from scipy.optimize import leastsq
 import numpy as np
 
 np.set_printoptions(precision=15)
 from scipy.linalg import qr
 
-import LaueGeometry as F2TC
-import generaltools as GT
+if 0: #sys.version_info.major == 3:
+    from . import LaueGeometry as F2TC
+    from . import generaltools as GT
+    from . import CrystalParameters as CP
+    from . import dict_LaueTools as DictLT
+    from . dict_LaueTools import SIGN_OF_GAMMA, DEG
+else:
+    import LaueGeometry as F2TC
+    import generaltools as GT
+    import CrystalParameters as CP
+    import dict_LaueTools as DictLT
 
-import CrystalParameters as CP
-import dict_LaueTools as DictLT
-
-#  sign of CCD camera angle =1 to mimic XMAS conventionSIGN_OF_GAMMA = 1
-from dict_LaueTools import SIGN_OF_GAMMA, DEG
+    #  sign of CCD camera angle =1 to mimic XMAS conventionSIGN_OF_GAMMA = 1
+    from dict_LaueTools import SIGN_OF_GAMMA, DEG
 
 RAD = 1.0 / DEG
 IDENTITYMATRIX = np.eye(3)

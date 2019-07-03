@@ -4,13 +4,18 @@ This module belong to LaueTools package. It gathers procedures to define crystal
 
 Main authors are JS Micha, O. Robach, S. Tardif June 2019
 """
+import copy
+import sys
 
 import numpy as np
 from numpy.linalg import inv
-import copy
 
-from dict_LaueTools import dict_Materials, dict_Stiffness
-import generaltools as GT
+if 0: #sys.version_info.major==3:
+    from . dict_LaueTools import dict_Materials, dict_Stiffness
+    from . import generaltools as GT
+else:
+    from dict_LaueTools import dict_Materials, dict_Stiffness
+    import generaltools as GT
 
 DEG = np.pi / 180.0
 RAD = 1 / DEG
@@ -1063,7 +1068,11 @@ def hydrostaticStrain(
     #     invtransformmatrix = np.linalg.inv(transformmatrix)
     #     transformmatrix = np.eye(3)
 
-    import elasticity as el
+    try:
+        import elasticity as el
+    except:
+        raise ImportError("Please download elasticity module ...")
+        return None
 
     C_sampleframe = el.rotate_cubic_elastic_constants(c11, c12, c44, transformmatrix)
 
@@ -1762,23 +1771,26 @@ def scale_UB(UBB0, energy, h, k, l, a0=5.6575):
 
 # --- -------------------  Mapping visualization
 def norme(vec1):
-    """
+    r"""
     computes norm of a single vector
     
     .. note::
         from O Robach
-    TODO: use better generaltools module
+
+    .. todo:: use better generaltools module
     """
     nvec = np.sqrt(np.inner(vec1, vec1))
     return nvec
 
 
 def calc_Euler_angles(mat3x3):
-    """
+    r"""
     Calculates unique 3 euler angles representation of mat3x3
     
     .. note::
         from O Robach
+
+    .. todo:: to be placed in generaltools
     """
     # mat3x3 = matrix "minimized" in LT lab frame
     # see F2TC.find_lowest_Euler_Angles_matrix
@@ -1818,16 +1830,18 @@ def calc_Euler_angles(mat3x3):
 
 
 def myRGB_3(mat):
-    """
+    r"""
     propose a RGB (red green blue) vector to represent a matrix
 
     .. note::
         from O Robach
+
+    .. todo:: to be placed in generaltools
     """
     allpermu = DictLT.OpSymArray
     allpermudet1 = np.array([kkk for kkk in allpermu if np.linalg.det(kkk) == 1.0])
 
-    vec = F2TC.vec_normalTosurface(mat)
+    vec = LaueGeo.vec_normalTosurface(mat)
     # allvec = np.dot(allpermudet1,vec)
     # allposvec = allvec[np.all(allvec>=0,axis=1)]
     # # pos of row in allposvec where last element is the higher element of each row
@@ -1856,10 +1870,13 @@ def myRGB_3(mat):
 def getMisorientation(
     mat, refAxis=NORMAL_TO_SAMPLE_AXIS, followVector=np.array([0, 0, 1])
 ):
-    """
+    r"""
     compute an angle of a reflection / an axis
 
     # default axis normal to surface tilted by  40 degrees from horizontal
+
+    .. todo:: to be placed in generaltools
+
     """
 
     # angle between mat.G* and refAxis
@@ -1874,11 +1891,13 @@ def getMisorientation(
 
 
 def Matrix_to_RGB_2(mat):
-    """
+    r"""
     use unique representation of orientation matrix with its euler angles
 
     .. note::
         from O Robach
+
+    .. todo:: to be placed in generaltools
     """
     normalisation_angles = np.array([180.0, 360, 180.0])
     # normalisation_angles = np.ones(3)

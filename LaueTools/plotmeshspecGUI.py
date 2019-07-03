@@ -2,6 +2,10 @@
 
 # plotmeshspecGUI.py
 
+import os, sys
+import time
+
+
 import wx
 
 if wx.__version__ < "4.":
@@ -16,8 +20,6 @@ else:
     wx.Window.SetToolTipString = sttip
 
 import numpy as np
-import os
-import time
 
 import matplotlib
 
@@ -35,9 +37,12 @@ from matplotlib.ticker import FuncFormatter
 import matplotlib as mpl
 from pylab import cm as pcm
 
-import generaltools as GT
-
-from IOLaueTools import ReadSpec
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+    from . IOLaueTools import ReadSpec
+else:
+    import generaltools as GT
+    from IOLaueTools import ReadSpec
 
 
 class TreePanel(wx.Panel):

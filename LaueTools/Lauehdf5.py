@@ -1,22 +1,27 @@
-import os
+import os, sys
 import pickle
 import numpy as np
 import pylab as pp
 import scipy.ndimage as SCI
 
-
-import generaltools as GT
-import readmccd as RMCCD
-import IOLaueTools as IOLT
-import dict_LaueTools as DictLT
-
 import tables as Tab
-
 if Tab.__version__ >= "3.4.3":
     Tab.openFile = Tab.open_file
     Tab.File.createGroup = Tab.File.create_group
     Tab.File.createTable = Tab.File.create_table
     Tab.File.createArray = Tab.File.create_array
+
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+    from . import readmccd as RMCCD
+    from . import IOLaueTools as IOLT
+    from . import dict_LaueTools as DictLT
+else:
+
+    import generaltools as GT
+    import readmccd as RMCCD
+    import IOLaueTools as IOLT
+    import dict_LaueTools as DictLT
 
 
 MAX_NUMBER_GRAINS = 3

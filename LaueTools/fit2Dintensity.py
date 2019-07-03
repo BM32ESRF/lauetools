@@ -6,6 +6,7 @@ still in development for fit of multiple peaks in ROI
 """
 
 import os
+import sys
 import pylab as p
 import numpy as np
 
@@ -17,10 +18,17 @@ except:
     print("module Image / PIL is not installed")
 
 from matplotlib.ticker import FuncFormatter
-import generaltools as GT
+
+if 0: #sys.version_info.major == 3:
+    from . import generaltools as GT
+else:
+    import generaltools as GT
 
 try:
-    import gaussian2D
+    if 0: #sys.version_info.major == 3:
+        from . import gaussian2D
+    else:
+        import gaussian2D
 
     USE_CYTHON = True
 except ImportError:
@@ -508,8 +516,6 @@ def create2Dgaussiandata():
 
 if __name__ == "__main__":
 
-    import os
-
     if 0:
         # Create the gaussian data
         # -----------------------------------------------------
@@ -565,7 +571,10 @@ if __name__ == "__main__":
 
     center_pixel = peak_1
 
-    import readmccd as RMCCD
+    if 0: #sys.version_info.major == 3:
+        from . import readmccd as RMCCD
+    else:
+        import readmccd as RMCCD
 
     dat = RMCCD.readoneimage_crop(
         fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname
