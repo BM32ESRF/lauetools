@@ -68,6 +68,7 @@ if sys.version_info.major == 3:
     from . import dragpoints as DGP
     from . import matchingrate
     from . AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    from . import threadGUI2 as TG
 else:
     import indexingAnglesLUT as INDEX
     import indexingImageMatching as IIM
@@ -88,6 +89,7 @@ else:
     import dragpoints as DGP
     import matchingrate
     from AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    import threadGUI2 as TG
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
@@ -6354,7 +6356,7 @@ class ManualIndexFrame(wx.Frame):
         USETHREAD = 1
         if USETHREAD:
             # with a thread 2----------------------------------------
-            import threadGUI2 as TG
+            
 
             self.UBs_MRs = None
             fctparams = [

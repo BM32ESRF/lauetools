@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # -*- coding: utf-8 -*-
 """
 #  scripts and example Laue Pattern simulation based on lauecore.py  (new name of laue6.py)
@@ -7,17 +8,27 @@
 #  http://sourceforge.net/projects/lauetools/
 
 """
-
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 __version__ = "$Revision: 1717$"
 import sys, os
 
-sys.path.insert(1, os.path.join(sys.path[0], ".."))
+# # workaround to launch this script with modules in parent folder
+# # whatever the folder it is launched in 
+# LTpath = os.path.dirname(os.path.abspath(__file__))
+# while not LTpath.endswith('LaueTools'):
+#     LTpath = os.path.dirname(LTpath)
+# LTpath = os.path.dirname(LTpath)
+# if LTpath not in sys.path:
+#     sys.path.append(LTpath)
 
 import numpy as np
 import time
-import CrystalParameters as CP
-from dict_LaueTools import (
+
+import LaueTools
+print("Using LaueToolsFolder: ", os.path.abspath(LaueTools.__file__))
+
+import LaueTools.CrystalParameters as CP
+from LaueTools.dict_LaueTools import (
     dict_Rot,
     dict_Materials,
     dict_Vect,
@@ -25,13 +36,13 @@ from dict_LaueTools import (
     CST_ENERGYKEV,
     SIGN_OF_GAMMA,
 )
-import generaltools as GT
 
-import lauecore as LT
-import IOLaueTools as IOLT
-import LaueGeometry as LTGeo
+import LaueTools.generaltools as GT
+import LaueTools.lauecore as LT
+import LaueTools.IOLaueTools as IOLT
+import LaueTools.LaueGeometry as LTGeo
 
-
+DEFAULT_TOP_GEOMETRY = LT.DEFAULT_TOP_GEOMETRY
 DEFAULT_DETECTOR_DISTANCE = LT.DEFAULT_DETECTOR_DISTANCE
 # --- -------------------  TESTS & EXAMPLES
 def test_simulation():
@@ -765,7 +776,7 @@ if 1:  # some grains example
 
     print(grains)
 
-    LT.simulatepattern(
+    simulatepattern(
         grains,
         emin,
         emax,
