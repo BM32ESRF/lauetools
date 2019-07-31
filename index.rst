@@ -1,7 +1,7 @@
 Welcome to LaueTools's documentation!
 =====================================
 
-.. include:: LaueTools/Documentation/source/index.rst
+.. include:: ./LaueTools/Documentation/source/index.rst
 
 PPPPPPPPPPPPPPPP
 
@@ -78,38 +78,3 @@ With pip installation, LaueTools package will be included to python packages. Th
 In jupyter-notebook, it is also simple:
 
 	.. image:: notebook0.jpg
-
-3- Mathematics and Conventions
-**************************************
-
-
-4- Graphical User Interfaces
-**************************************
-
-The main steps of analysis are Laue peaks search, Laue Pattern indexation and unit Cell Refinement. Detector geometry calibration (DetectorCalibrationBoard) and Laue Pattern of Polycrystals (LaueSimulatorGUI) are also available.
-
-4a- Peak Search (PeaksearchGUI)
-----------------------------------
-
-4b- Indexation (LaueToolsGUI)
----------------------------------------
-
-4c- Crystal unit cell refinement (LaueToolsGUI)
----------------------------------------------------
-
-4d- Detector Geometry Calibration (DetectorCalibrationBoard)
------------------------------------------------------------------
-
-4e- Laue pattern simulation of assembly of crystals (LaueSimulatorGUI)
----------------------------------------------------------------------------
-
-
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
