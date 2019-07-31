@@ -1,0 +1,14 @@
+image: python:3.6-alpine
+
+pages:
+  script:
+  - apk --no-cache add py2-pip python-dev
+  - pip install sphinx
+  - pip install sphinx_rtd_theme
+  - sphinx-build -d _build/doctrees . _build/html
+  - mv _build/html public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master

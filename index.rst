@@ -1,5 +1,14 @@
-Welcome to LaueTools's DOCUMENTATION!
+Welcome to LaueTools's documentation!
 =====================================
+
+.. include:: ./LaueTools/Documentation/source/index.rst
+
+PPPPPPPPPPPPPPPP
+
+Synopsis
+*****************
+
+LaueTools is a package of python modules (with scripts and wxpython-based Graphical interface) for Laue pattern analysis, and particularly dedicated to synchrotron Laue microdiffraction data analysis from CRG-IF BM32 beamline @ ESRF, Grenoble, France
 
 1- Download LaueTools code
 ***************************
@@ -68,43 +77,4 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple:
 
-	.. image:: Images/notebook0.jpg
-
-3- Mathematics and Conventions
-**************************************
-
-
-4- Graphical User Interfaces
-**************************************
-
-The main steps of analysis are Laue peaks search, Laue Pattern indexation and unit Cell Refinement. Detector geometry calibration (DetectorCalibrationBoard) and Laue Pattern of Polycrystals (LaueSimulatorGUI) are also available.
-
-4a- Peak Search (PeaksearchGUI)
-----------------------------------
-
-4b- Indexation (LaueToolsGUI)
----------------------------------------
-
-4c- Crystal unit cell refinement (LaueToolsGUI)
----------------------------------------------------
-
-4d- Detector Geometry Calibration (DetectorCalibrationBoard)
------------------------------------------------------------------
-
-4e- Laue pattern simulation of assembly of crystals (LaueSimulatorGUI)
----------------------------------------------------------------------------
-
-
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-
-   Simulation_Module.rst
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+	.. image:: notebook0.jpg
