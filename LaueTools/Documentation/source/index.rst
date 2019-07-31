@@ -1,4 +1,4 @@
-Welcome to LaueTools's documentation!
+Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
 1- Download LaueTools code
