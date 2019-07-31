@@ -1,6 +1,11 @@
 Welcome to LaueTools's documentation!
 =====================================
 
+Synopsis
+*****************
+
+LaueTools is a package of python modules (with scripts and wxpython-based Graphical interface) for Laue pattern analysis, and particularly dedicated to synchrotron Laue microdiffraction data analysis from CRG-IF BM32 beamline @ ESRF, Grenoble, France
+
 1- Download LaueTools code
 ***************************
 
