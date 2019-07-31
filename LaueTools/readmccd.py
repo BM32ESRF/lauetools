@@ -5,7 +5,7 @@ readmccd module is made for reading data contained in binary image file
  It can process a peak or blob search by various methods
  and refine the peak by a gaussian or lorentzian 2D model
 
- More tools can be found in LaueTools package at sourceforge.net
+ More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
 """
 
 __version__ = "$Revision: 975 $"
@@ -305,7 +305,7 @@ def docstringsexample():
         detail, e.g. ``(N,) ndarray`` or ``array_like``.
     Long_variable_name : {'hi', 'ho'}, optional
         Choices in brackets, default first when optional.
-    
+
     Returns
     -------
     type
@@ -380,19 +380,19 @@ def getwildcardstring(CCDlabel):
     ----------
     CCDlabel : string
         label defining the CCD type
-    
+
     Returns
     -------
     wildcard_extensions : string
-        string from concatenated strings to be used in wxpython open file dialog box 
+        string from concatenated strings to be used in wxpython open file dialog box
 
     See Also
     ----------
-    
+
     :func:`getIndex_fromfilename`
-    
+
     LaueToolsGUI.AskUserfilename
-    
+
     wx.FileDialog
 
     Examples
@@ -447,7 +447,7 @@ def getpixelValue(filename, x, y, ccdtypegeometry="edf"):
     if ccdtypegeometry == "edf":
         # frelon camera as mounted on BM32 Oct2012
         y = 2047 - y
-    if ccdtypegeometry in ("mccd"):
+    if ccdtypegeometry in ("mccd",):
         pass
 
     f = open(filename, "rb")
@@ -462,7 +462,6 @@ def readheader(filename, offset=4096, CCDLabel="MARCCD165"):
     return header in a raw format
 
     default offset for marccd image
-
     """
     if CCDLabel.startswith("sCMOS"):
         filesize = os.path.getsize(filename)
@@ -482,7 +481,6 @@ def read_header_marccd(filename):
 
     - print allsentences  displays the header
     - use allsentences.split('\n') to get a list
-
     """
     f = open(filename, "rb")
     f.seek(2048)
@@ -967,16 +965,16 @@ def readoneimage_crop_fast(
     if dirname == None:
         dirname = os.curdir
 
-    if formatdata in ("uint16",):
-        nbBytesPerElement = 2
-    if formatdata in ("uint32",):
-        nbBytesPerElement = 4
+    # if formatdata in ("uint16",):
+    #     nbBytesPerElement = 2
+    # if formatdata in ("uint32",):
+    #     nbBytesPerElement = 4
 
     dataimage2D = np.zeros(framedim)
 
-    colFirstElemIndex = firstElemIndex % framedim[1]
+    # colFirstElemIndex = firstElemIndex % framedim[1]
     lineFirstElemIndex = firstElemIndex // framedim[1]
-    colLastElemIndex = lastElemIndex % framedim[1]
+    # colLastElemIndex = lastElemIndex % framedim[1]
     lineLastElemIndex = lastElemIndex // framedim[1]
 
     band1D = readoneimage_band(
@@ -1230,11 +1228,11 @@ def readoneimage_manycrops(
     #                            use_data_corrected
     #                            )
 
-    if isinstance(boxsize, (int, float)):
-        if boxsize > 0.0:
-            xboxsize, yboxsize = int(boxsize), int(boxsize)
-    else:
-        xboxsize, yboxsize = boxsize
+    # if isinstance(boxsize, (int, float)):
+    #     if boxsize > 0.0:
+    #         xboxsize, yboxsize = int(boxsize), int(boxsize)
+    # else:
+    #     xboxsize, yboxsize = boxsize
 
     # use alternate data  (for instance for data from filename without background)
     if use_data_corrected is not None:
@@ -2337,7 +2335,8 @@ def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
         boxsize = (boxsize, boxsize)
     #    print "framedim in minmax", framedim
     #    print "D_array.shape", D_array.shape
-    halfbox = int(boxsize / 2)
+
+    # halfbox = int(boxsize / 2)
 
     #    xc, yc = center
     #    imin, imax, jmin, jmax = max(0, yc - halfbox), \
@@ -2509,7 +2508,7 @@ def getIntegratedIntensity(
 
 def getMinMax(data2d, center, boxsize, framedim):
     r"""
-    return min and max values in ROI 
+    return min and max values in ROI
 
     Parameters:
     --------------
@@ -2539,7 +2538,7 @@ def minmax_fast(D_array, centers, boxsize=(25, 25)):
 
 def get_imagesize(framedim, nbbits_per_pixel, headersize_bytes):
     """
-    return size of image in byte (= 1 octet = 8 bits) 
+    return size of image in byte (= 1 octet = 8 bits)
     """
     return (framedim[0] * framedim[1] * nbbits_per_pixel + headersize_bytes * 8) // 8
 

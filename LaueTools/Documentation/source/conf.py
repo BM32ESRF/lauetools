@@ -15,18 +15,22 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, '/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_static')
-sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_templates')
-sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools')
-sys.path.insert(0,os.path.abspath('../../..'))
+sys.path.insert(0, os.path.abspath('../'))
+#sys.path.insert(0, '/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_static')
+#sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_templates')
+#sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools')
+#sys.path.insert(0, os.path.abspath('..'))
+#sys.path.insert(0, os.path.abspath('../..'))
+#sys.path.insert(0,os.path.abspath('../../..'))
 sys.setrecursionlimit(1500)
 
+print('in conf.py sys.path',sys.path)
 
 # -- Project information -----------------------------------------------------
 
 project = 'LaueTools'
-copyright = '2019, JS Micha, O. Robach.,. S. Tardif'
-author = 'JS Micha, O. Robach.,. S. Tardif'
+copyright = '2019, J.S. Micha, O. Robach., S. Tardif'
+author = 'JS Micha, O. Robach.,S. Tardif'
 
 # The short X.Y version
 version = ''
@@ -92,7 +96,7 @@ autodoc_member_order = 'bysource'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic' #'alabaster'
+html_theme = 'sphinx-glpi-theme' #'classic' #'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -114,6 +118,11 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+import sphinx_glpi_theme
+
+html_theme = "glpi"
+
+html_theme_path = sphinx_glpi_theme.get_html_themes_path()
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -139,7 +148,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'LaueTools.tex', 'LaueTools Documentation',
-     'JS Micha, O. Robach.,. S. Tardif', 'manual'),
+     'JS Micha, O. Robach. S. Tardif', 'manual'),
 ]
 
 

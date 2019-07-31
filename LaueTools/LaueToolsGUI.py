@@ -8,6 +8,10 @@ with a free code repository at at gitlab.esrf.fr
 
 (former version with python 2.7 at https://sourceforge.net/projects/lauetools/)
 
+or for python3 and 2 in
+
+https://gitlab.esrf.fr/micha/lauetools
+
 J. S. Micha July 2019
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
@@ -56,7 +60,7 @@ if sys.version_info.major == 3:
     from . import graingraph as GraGra
     from . import LaueGeometry as F2TC
     from . import LaueSpotsEditor as LSEditor
-    from . import ParametricLaueSimulator as ParamLS
+    from . import LaueSimulatorGUI as LSGUI
     from . import CrystalParameters as CP
     from . import IOLaueTools as IOLT
     from . import generaltools as GT
@@ -67,7 +71,7 @@ if sys.version_info.major == 3:
     from . import CCDFileParametersGUI as CCDParamGUI
     from . import dragpoints as DGP
     from . import matchingrate
-    from . AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    from . AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
     from . import threadGUI2 as TG
 else:
     import indexingAnglesLUT as INDEX
@@ -77,7 +81,7 @@ else:
     import graingraph as GraGra
     import LaueGeometry as F2TC
     import LaueSpotsEditor as LSEditor
-    import ParametricLaueSimulator as ParamLS
+    import LaueSimulatorGUI as LSGUI
     import CrystalParameters as CP
     import IOLaueTools as IOLT
     import generaltools as GT
@@ -88,7 +92,7 @@ else:
     import CCDFileParametersGUI as CCDParamGUI
     import dragpoints as DGP
     import matchingrate
-    from AutoindexationGUI import ( RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    from AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
     import threadGUI2 as TG
 
 SIZE_PLOTTOOLS = (8, 6)
@@ -2136,7 +2140,7 @@ class MainWindow(wx.Frame):
         initialParameters["framedim"] = self.framedim
 
         print("initialParameters", initialParameters)
-        self.CurrentdialogGrainCreation_cont = ParamLS.parametric_Grain_Dialog3(
+        self.CurrentdialogGrainCreation_cont = LSGUI.parametric_Grain_Dialog3(
             self,
             -1,
             "Polygrains parametric definition for Laue Simulation",
@@ -2613,29 +2617,29 @@ class MainWindow(wx.Frame):
 
         print("list_indexspot in Update_DataToIndex_Dict", list_indexspot)
 
-        AllDataToIndex = self.indexation_parameters["AllDataToIndex"]
-        DataToIndex = self.indexation_parameters["DataToIndex"]
+        # AllDataToIndex = self.indexation_parameters["AllDataToIndex"]
+        # DataToIndex = self.indexation_parameters["DataToIndex"]
 
         return
 
-        #         self.indexation_parameters['AllDataToIndex']['IndexedFlag']
+        # #         self.indexation_parameters['AllDataToIndex']['IndexedFlag']
 
-        # updating exp spot dict.
-        singleindices = []
+        # # updating exp spot dict.
+        # singleindices = []
 
-        for k in range(len(list_indexspot)):
+        # for k in range(len(list_indexspot)):
 
-            absoluteindex = self.current_exp_spot_index_list[list_indexspot[k]]
-            if not singleindices.count(list_indexspot[k]):
-                singleindices.append(list_indexspot[k])
-                #                 spotenergy = data_Energy[k] # wrong
-                if self.DataSet.indexed_spots_dict[absoluteindex][-1] == 1:
-                    # spot belong to the grain grain_index
-                    spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][7]
+        #     absoluteindex = self.current_exp_spot_index_list[list_indexspot[k]]
+        #     if not singleindices.count(list_indexspot[k]):
+        #         singleindices.append(list_indexspot[k])
+        #         #                 spotenergy = data_Energy[k] # wrong
+        #         if self.DataSet.indexed_spots_dict[absoluteindex][-1] == 1:
+        #             # spot belong to the grain grain_index
+        #             spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][7]
 
-                self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][
-                    :-1
-                ] + [data_Miller[k], spotenergy, grain_index, 1]
+        #         self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][
+        #             :-1
+        #         ] + [data_Miller[k], spotenergy, grain_index, 1]
 
     def Update_DB_fromIndexation(self, data_list):
         """ 

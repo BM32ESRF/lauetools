@@ -1,11 +1,16 @@
-#! python
-"""
-This module belong to LaueTools package. It gathers procedures to define crystal lattice parameters and strain calculations
+r"""
+This module belong to LaueTools package. It gathers procedures to define crystal
+lattice parameters and strain calculations
 
 Main authors are JS Micha, O. Robach, S. Tardif June 2019
 """
 import copy
-import sys
+import sys, os
+
+# sys.path.insert(0, os.path.abspath('../..'))
+# print('sys.path in CrystalParameters', sys.path)
+
+print('Entering CrystalParameters ******---***************************\n\n')
 
 import numpy as np
 from numpy.linalg import inv
@@ -174,8 +179,7 @@ def AngleBetweenNormals(HKL1s, HKL2s, Gstar):
 
     :param  HKL1s: list of [H1,K1,L1]
     :param  HKL2s: list of [H2,K2,L2]
-    :param Gstar: 3*3 matrix corresponding to reciprocal metric tensor of unit cell
-    (as provided by Gstar_from_directlatticeparams())
+    :param Gstar: 3*3 matrix corresponding to reciprocal metric tensor of unit cell (as provided by Gstar_from_directlatticeparams())
 
     :return: array of pairwise angles between reflections
     """
@@ -262,20 +266,21 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
     :math:`\boldsymbol q_{ortho}=B_0 {\bf G^*}` where :math:`{\bf G^*}=h{\bf a^*}+k{\bf b^*}+l{\bf c^*}`
 
+    :param latticeparameters:
+        * [a,b,c, alpha, beta, gamma]    (angles are in degrees) if directspace=1
+        * [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees) if directspace=0
+    :param directspace:
+        * 1 (default) converts  (reciprocal) direct lattice parameters
+            to (direct) reciprocal space calculates "B" matrix in the reciprocal space of input latticeparameters
+        * 0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
+            calculates "B" matrix in same space of  input latticeparameters
 
-    :param latticeparameters: * [a,b,c, alpha, beta, gamma]    (angles are in degrees) directspace=1
-                            * [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees) directspace=0
-    :param directspace: * 1 (default) converts  (reciprocal) direct lattice parameters to (direct) reciprocal space
-                        calculates "B" matrix in the reciprocal space of input latticeparameters
-
-                        * 0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
-                        calculates "B" matrix in same space of  input latticeparameters
-
-    :param setvolume: * False, sets direct unit cell volume to the true volume from lattice parameters
-                * 1,      sets direct unit cell volume to 1
-                * 'a**3',  sets direct unit cell volume to a**3
-                * 'b**3', sets direct unit cell volume to b**3
-                * 'c**3',  sets direct unit cell volume to c**3
+    :param setvolume:
+        * False, sets direct unit cell volume to the true volume from lattice parameters
+        * 1,      sets direct unit cell volume to 1
+        * 'a**3',  sets direct unit cell volume to a**3
+        * 'b**3', sets direct unit cell volume to b**3
+        * 'c**3',  sets direct unit cell volume to c**3
 
     :return: B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix
     :rtype: numpy array
@@ -1009,7 +1014,6 @@ def hydrostaticStrain(
     Computes full strain & stress from deviatoricStrain (voigt notation in crystal frame), material
     and mechanical assumtion
 
-
     C a*b*c* = (UB-1P)**2 C sample (P-1 UB)**2
     qxyzLT = P qsample
     qxyzLT=UB qcrystal(a*b*c*)
@@ -1050,17 +1054,12 @@ def hydrostaticStrain(
 
     print("c11, c12, c44", c11, c12, c44)
 
-    Cmatrix = np.array(
-        [
-            [c11, c12, c12, 0, 0, 0],
+    Cmatrix = np.array( [ [c11, c12, c12, 0, 0, 0],
             [c12, c11, c12, 0, 0, 0],
             [c12, c12, c11, 0, 0, 0],
             [0, 0, 0, c44, 0, 0],
             [0, 0, 0, 0, c44, 0],
-            [0, 0, 0, 0, 0, c44],
-        ],
-        dtype=np.float,
-    )
+            [0, 0, 0, 0, 0, c44], ], dtype=np.float, )
 
     P = GT.matRot([0, 1, 0], -sampletilt)
 
@@ -1114,9 +1113,7 @@ def hydrostaticStrain(
 
     print("hydrostatic strain", hydrostrain)
 
-    fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.0 * np.eye(
-        3
-    )
+    fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.0 * np.eye( 3 )
 
     fullstrain_voigt_sampleframe = (
         devstrain_voigt_sampleframe + hydrostrain / 3.0 * np.array([1, 1, 1, 0, 0, 0])
@@ -1140,7 +1137,7 @@ def hydrostaticStrain(
 
 def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # OR
     r"""
-    Orthogonplisation of matrix with to a*,b*,c* as columns
+    Orthonormalisation of matrix with to a*,b*,c* as columns
 
     .. note::
     
@@ -1332,14 +1329,10 @@ def matstarlab_to_matstarsample3x3(
     matstarlab,
     omega=None,  # 40.
     mat_from_lab_to_sample_frame=np.array(
-        [
-            [1.0, 0.0, 0.0],
+        [ [1.0, 0.0, 0.0],
             [0.0, 0.766044443118978, 0.642787609686539],
-            [0.0, -0.642787609686539, 0.766044443118978],
-        ]
-    ),
+            [0.0, -0.642787609686539, 0.766044443118978], ] ),
 ):
-
     matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
 
     if (omega is not None) & (
@@ -1348,12 +1341,9 @@ def matstarlab_to_matstarsample3x3(
         omega = omega * DEG
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
         mat_from_lab_to_sample_frame = np.array(
-            [
-                [1.0, 0.0, 0.0],
+            [ [1.0, 0.0, 0.0],
                 [0.0, np.cos(omega), np.sin(omega)],
-                [0.0, -np.sin(omega), np.cos(omega)],
-            ]
-        )
+                [0.0, -np.sin(omega), np.cos(omega)], ] )
 
     matstarsample3x3 = np.dot(mat_from_lab_to_sample_frame, matstarlab3x3)
 
@@ -1370,9 +1360,31 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
     results_in_LT_frames=0,
     sampletilt=40.0,  #
 ):
+    """Compute HKLs which are parallel to xyz axis of sample frame and lab frame.
+    
+    One of the two optional arguments (matstarlab or UBmat) must be input.
 
-    # warning  here  UBmat stands for UBB0  (i.e. UB times B0)
+    :param matstarlab: ORs matrix, defaults to None
+    :type matstarlab: list or array (3x3), optional
+    :param UBmat: UB.B0 matrix , defaults to None
+    :type UBmat: list or array (3x3), optional
+    :param omega: tilt of sample surface, defaults to None
+    :type omega: scalar, optional
+    :param mat_from_lab_to_sample_frame: [description], defaults to None
+    :type mat_from_lab_to_sample_frame: [type], optional
+    :param results_in_OR_frames: [description], defaults to 1
+    :type results_in_OR_frames: int, optional
+    :param results_in_LT_frames: [description], defaults to 0
+    :type results_in_LT_frames: int, optional
+    :param sampletilt: [description], defaults to 40.0
+    :type sampletilt: float, optional
+    :return: [description]
+    :rtype: [type]
 
+    .. warning::
+        UBmat stands for UBB0  (i.e. UB times B0)
+
+    """
     if UBmat is not None:
         matstarlab = matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True)
 

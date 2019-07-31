@@ -10,9 +10,6 @@ this module gathers functions to read and write ASCII file corresponding
 to various data
 """
 
-__author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
-
 import os, sys
 import time as ttt
 import string

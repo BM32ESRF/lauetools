@@ -1,77 +1,84 @@
 # -*- coding: utf-8 -*-
 r"""
 Module of lauetools project to compute Laue spots position on CCD camera.
-It handles detection and source geometry. 
+It handles detection and source geometry.
+
+.. warning::
+    The frame (LT2) considered in this package (with y axis parallel to the incoming beam) in not the LaueTools frame (for which x is parallel to the incoming beam)
 
 JS Micha June 2019
 
-http://sourceforge.net/projects/lauetools/
-
-*Outgoing scattered beam  computations*
-    - **q** momentum transfer vector from resp. incoming and outgoing wave vector **ki** and **kf**:
-    :math:`q=kf-ki`
+* Vectors Definitions
+    - **q** momentum transfer vector from resp. incoming and outgoing wave vector **ki** and **kf**, :math:`q=kf-ki`
 
     - When a Laue spot exists, **q** is equal to the one node of the reciprocal lattice given by **G*** vector
-    **G*** is perpendicular to atomic planes defined by the three Miller indices h,k,l such as:
-    **G***=h**a*** + k**b*** +l**c*** where **a***, **b***, and **c*** are the unit cell lattice basis vectors.
 
-    - **kf**: scattering vector whose corresponding unit vector is **uf**
+    - **G*** is perpendicular to atomic planes defined by the three Miller indices h,k,l
+        such as **G***=h**a*** + k**b*** +l**c*** where **a***, **b***, and **c*** are the unit cell lattice basis vectors.
+
+    - **kf**: scattered beam vector whose corresponding unit vector is **uf**
+
     - **ki** incoming beam vector, **ui** corresponding unit vector
 
-* Laboratory Frame LT2:
+* Laboratory Frame LT2
     - I: origin
+
     - z vertical up perpendicular to CCD plane (top camera geometry)
+
     - y along X-ray horizontal
+
     - x towards wall behind horizontal
+
     - O: origin of pixel CCD frame in detecting plane
+
     - **j** // **ui** incoming beam unit vector
+
     - z axis is defined by the CCD camera position. z axis is perpendicular to CCD plane
-    such as IO belongs to the plane Iyz
+        such as IO belongs to the plane Iyz
     - bet: angle between **IO** and **k**
+
     - **i**= **j**^**k** (when entering the BM32 hutch **i** is approximately towards the wall
-    (in CCD on top geometry and beam coming from the right)
+        (in CCD on top geometry and beam coming from the right)
     - M: point lying in CCD plane corresponding to Laue spot
+
     - **uf** is the unit vector relative to vector **IM**
 
 **kf** is also a vector collinear to **IM** with a length of R=1/wavelength=E/12.398 [keV]
 with wavelength and Energy of the corresponding bragg's reflections.
 
-I is the point from which calibration parameters (CCD position) are deduced (from a perfectly known crystal structure Laue pattern) 
+I is the point from which calibration parameters (CCD position) are deduced (from a perfectly known crystal structure Laue pattern)
 Iprime is an other source of emission (posI or offset in functions)
 
 :math:`2 \theta` is the scattering angle between **ui** and **uf**, i.e.
-    
-:math:` \cos(2 \theta)=u_i.u_f`
+
+:math:`\cos(2 \theta)=u_i.u_f`
 
 .. math::
 
-{\bf k_f}=( -\sin 2\theta \sin \chi, \cos 2\theta  , \sin 2\theta \cos \chi)
+    {\bf k_f} = ( -\sin 2 \theta \sin \chi, \cos 2\theta, \sin 2\theta \cos \chi)
 
-{\bf k_i} = ( 0, 1, 0)
+    {\bf k_i} = (0, 1, 0)
 
-Energy= 12.398*  q**2/(2* **q**.**ui**)=12.398 * q**2/ (-2 sin theta) 
+Energy= 12.398*  q**2/(2* **q**.**ui**)=12.398 * q**2/ (-2 sin theta)
 
-*Calibration paramters (CCD position and detection geometry)*
+*Calibration parameters (CCD position and detection geometry)*
     - calib: list of the 5 calibration parameters [dd,xcen,ycen,xbet,xgam]
     - dd: norm of **IO**  [mm]
     - xcen,ycen [pixel unit]: pixels values in CCD frame of point O with respect to Oprime where
-    Oprime is the origin of CCD pixels frame (at a corner of the CCD array)
+        Oprime is the origin of CCD pixels frame (at a corner of the CCD array)
     - xbet: angle between **IO** and **k** [degree]
     - xgam: azimutal rotation angle around z axis. Angle between CCD array axes
-    and (**i**,**j**) after rotation by xbet [degree].
+        and (**i**,**j**) after rotation by xbet [degree].
 
 *sample frame*
 
-Origin is I and unit frame vectors (**is**,**js**,**ks**) are derived
-from absolute frame by the rotation (axis= -i, angle= wo) where wo is the angle between **js** and **j**
+Origin is I and unit frame vectors (**is**, **js**, **ks**) are derived
+from absolute frame by the rotation (axis= - **i**, angle= wo) where wo is the angle between **js** and **j**
 """
 from __future__ import print_function
 
-
-__author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
-
-import os, sys
+import os
+import sys
 import numpy as np
 import pylab as P
 
@@ -246,7 +253,7 @@ def calc_uflab_trans(
     rectpix=RECTPIX,
 ):
     r"""
-    compute 2theta and chi scattering angles or uf and kf vectors
+    compute :math:`2 \theta` and :math:`\chi` scattering angles or **uf** and **kf** vectors
     from lists of X and Y Laue spots positions
     in TRANSMISSION geometry
 
@@ -344,7 +351,7 @@ def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
     from:
     uflab
     posI= IIprime = position (3elemts vector) of source with respect to I (calibrated emission source) in millimeter
-    
+
     returns:
     IprimeM vector joining shifted source emission to point M lying on CCD
     """
@@ -403,9 +410,9 @@ def calc_xycam(
         - ycam: list of pixel Y coordinates
         - theta: list half scattering angle "theta" (in degree)
 
-        - optionally energy=1: add in output list of spot energies (in keV) 
+        - optionally energy=1: add in output list of spot energies (in keV)
 
-        - if returnIpM and offset not None: return list of vectors **IprimeM** 
+        - if returnIpM and offset not None: return list of vectors **IprimeM**
     """
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
@@ -650,12 +657,12 @@ def calc_xycam_from2thetachi(
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
-    
+
     :param offset: offset (in mm) in the scattering source (origin of Laue spots)
-            position with respect to the position which has been used
-            for the calibration of  the CCD detector plane. Offset is positive when in the same
-            direction as incident beam (i.e. in sample depth)
-            (incident beam direction remains constant)
+        position with respect to the position which has been used
+        for the calibration of  the CCD detector plane. Offset is positive when in the same
+        direction as incident beam (i.e. in sample depth)
+        (incident beam direction remains constant)
     :type offset: list of floats ([x,y,z])
     """
     # scattered vector not in Lauetools frame (y//ki)
@@ -730,7 +737,7 @@ def q_unit_XYZ(twicetheta, chi):
 
 def q_unit_2thetachi(vec):
     r"""
-    Computes 2theta and chi scattering angles from a u_q vector expressed in LaueTools frame 
+    Computes 2theta and chi scattering angles from a u_q vector expressed in LaueTools frame
     #result in deg
     # TODO: useful ? check with from_qunit_to_twchi()
     lauetools frame ?
@@ -747,7 +754,7 @@ def from_twchi_to_qunit(Angles):
     from kf 2theta, chi to q unit in LaueTools frame (xx// ki) q=kf-ki
     returns array = (all x's, all y's, all z's)
 
-    Angles in degrees !! 
+    Angles in degrees !!
     Angles[0] 2theta deg values,
     Angles[1] chi values in deg
 
@@ -766,8 +773,8 @@ def from_twchi_to_q(Angles):
     r"""
     From kf 2theta,chi to q (arbitrary lenght) in lab frame (xx// ki) q=kf-ki
     returns array = (all qx's, all qy's, all qz's)
-    
-    Angles in degrees !! 
+
+    Angles in degrees !!
     Angles[0] 2theta deg values,
     Angles[1] chi values in deg
     """
@@ -782,17 +789,39 @@ def from_twchi_to_q(Angles):
 
 def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
     r"""
-    Returns 2theta chi From a q unit vector (defining a direction)
-    (-sin the,costhesinchi,costhe coschi)
-    in LaueTools frame (xx// ki) q=kf-ki
+    Returns 2theta chi from a q unit vector (defining a direction) expressed in LaueTools frame (**xx**// **ki**) **q=kf-ki**
 
-    for kf = (cos2the, sin2the sinchi,sin2the coschi) and
-    q= 2sinthe(-sin the,costhe sinchi,costhe coschi)
+    .. math:: \left [ \begin{matrix}
+        -\sin \theta \\ \cos \theta \sin \chi \\ \cos \theta \cos \chi
+        \end{matrix}
+        \right ]
 
-    In XMAS Frame   labXMAS=1 (LT2 frame ??)
-    q= 2sinthe(-costhe sinchi,-sin the,costhe coschi)
-    for kf = (-sin2the sinchi,cos2the,sin2the coschi) and
-    
+    .. note::
+        in LaueTools frame
+        
+        .. math::
+            kf = \left [ \begin{matrix}
+            \cos 2\theta \\ \sin 2\theta \sin \chi \\ \sin 2\theta \cos \chi
+            \end{matrix}
+            \right ]
+
+            q = 2 \sin \theta \left [ \begin{matrix}
+            -\sin \theta \\ \cos \theta \sin \chi \\ \cos \theta \cos \chi
+            \end{matrix}
+            \right ]
+
+        In LT2 Frame   labXMAS=1
+
+        .. math::
+            kf = \left [ \begin{matrix}
+            \sin 2\theta \sin \chi \\ \cos 2\theta \\ \sin 2\theta \cos \chi
+            \end{matrix}
+            \right ]
+
+            q = 2 \sin \theta \left [ \begin{matrix}
+            \cos \theta \sin \chi \\ -\sin \theta \\ \cos \theta \cos \chi
+            \end{matrix}
+            \right ]
     """
     X, Y, Z = arrayXYZ
 
@@ -1401,11 +1430,10 @@ def Compute_data2thetachi(
     :param filename: fullpath to peaks list ASCII file
     :type filename: string
 
-    :param tuple_column_X_Y_I: tuple with column indices of spots X, Y (pixels on CCD) and intensity  
+    :param tuple_column_X_Y_I: tuple with column indices of spots X, Y (pixels on CCD) and intensity
     :type tuple_column_X_Y_I: 3 elements
 
-    :param _nblines_headertoskip: nb of line to skip before reading
-    an array of data in ascii file
+    :param _nblines_headertoskip: nb of line to skip before reading an array of data in ascii file
 
     :param param: list of CCD calibration parameters [det, xcen, ycen, xbet, xgam]
     :param pixelsize: pixelsize in mm
@@ -1623,12 +1651,12 @@ def convert2corfile(
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
-    :param calibparam: list of 5 CCD cakibration parameters
-    (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing
-    :param pixelsize: CCD pixelsize (in mm)
-    (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
+    :param calibparam: list of 5 CCD cakibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
+
+    :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
 
     :param CCDCalibdict: dictionary of CCD file and calibration parameters
+
     """
     if dirname_in != None:
         filename_in = os.path.join(dirname_in, filename)
@@ -1710,15 +1738,15 @@ def convert2corfile_fileseries(
     pixelsize=165.0 / 2048,
     fliprot="no",
 ):
-    """
-    convert a serie of peaks list ascii files to .cor files (adding scattering angles)
-    
-    filename is decomposed as following for incrementing file index in ####:
+    r"""
+    convert a serie of peaks list ascii files to .cor files (adding scattering angles).
+
+    Filename is decomposed as following for incrementing file index in ####:
     prefix####suffix
     example: myimage_0025.myccd => prefix=myimage_ nbdigits=4 suffix=.myccd
-    
+
     :param nbdigits: nb of digits of file index in filename (with zero padding)
-    (example: for myimage_0002.ccd nbdigits = 4
+        (example: for myimage_0002.ccd nbdigits = 4
     
     :param calibparam: list of 5 CCD cakibration parameters
     """
@@ -1826,7 +1854,7 @@ def fromlab_tosample(UB, anglesample_deg=40):  # in deg
 
 
 def vec_normalTosurface(mat_labframe):
-    """
+    r"""
     solve Mat * X = (0,0,1) for X
     for pure rotation invMat = transpose(Mat)
 
@@ -1837,7 +1865,7 @@ def vec_normalTosurface(mat_labframe):
 
 
 def vec_onsurface_alongys(mat_labframe):
-    """
+    r"""
     solve Mat * X = (0,1,0) for X
     for pure rotation invMat = transpose(Mat)
     """
@@ -1851,9 +1879,8 @@ def vec_onsurface_alongys(mat_labframe):
 
 # Following functions are for dealing with in depth  x-ray emission source
 
-
 def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.0):
-    """
+    r"""
     from vector IM in absolute frame  I origin, M point in CCD plane
     uf: unit vector in absolute frame joining Iprime (source) and M
     depth_z: in microns known vertical offset
@@ -1887,8 +1914,8 @@ def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.0):
 
 
 def IMlab_from_xycam(xcam, ycam, calib, verbose=0, signgam=SIGN_OF_GAMMA):
-    """
-    returns list of vector position of M (on CCD camera) in absolute frame 
+    r"""
+    returns list of vector position of M (on CCD camera) in absolute frame
     from pixels position vector in CCD frame
     """
     uflab_not_used, IMlab = calc_uflab(
@@ -1902,7 +1929,7 @@ def IMlab_from_xycam(xcam, ycam, calib, verbose=0, signgam=SIGN_OF_GAMMA):
 
 
 def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40.0, anglewire=40.0):
-    """
+    r"""
     from:
     II': single vector II' (2 elements= y,z) source position in absolute frame
     IM: array of vectors IM (3 elements= x,y,z) point on CCD in absolute frame
@@ -1938,7 +1965,7 @@ def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40.0, anglewire=40
 
 
 def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.0):
-    """
+    r"""
     TODO : MAY BE FALSE
     from:
     II': array of  vectors II' (2 elements= y,z) source position in absolute frame
@@ -1965,7 +1992,7 @@ def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.0):
 
 
 def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.0):
-    """
+    r"""
     from:
     OM: list of vectors OM (2 elements) in CCD plane in CCD frame (pixels unit)
     uf: list of unit vectors (3 elements) in absolute frame
@@ -1990,10 +2017,10 @@ def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.0):
 
 def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
     """
-    from:
+    rfrom:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
     IWs: array of 2 position vectors (2 elements= [y,z]) in absolute frame of wire (which is parallel to Ox): array([IW1,IW2]
-    
+
     returns:
     y,z position of source of emission (hypothesis x=0)
     """
@@ -2028,7 +2055,7 @@ def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
 def find_yzsource_from_2xycam_2yzwire_version2(
     OMs, IWs, calib, anglesample=40.0, verbose=0
 ):
-    """
+    r"""
     from:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
     IWs: array of 2 position vectors (2 elements= [y,z]) in absolute frame of wire (which is parallel to Ox): array([IW1,IW2]
@@ -2061,7 +2088,7 @@ def find_yzsource_from_2xycam_2yzwire_version2(
 def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
     OMs, Wire_abscissae, calib, anglesample=40.0, wire_height=0.3, verbose=0
 ):
-    """
+    r"""
     from:
     OMs: array of n vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2, ..., OMn])
     IWs: array of n wire abscissae of wire (which is parallel to Ox): array([W1,W2,...,Wn]
@@ -2109,7 +2136,7 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
 
 
 def IW_from_wireabscissa(abscissa, wire_height, anglesample=40.0):
-    """
+    r"""
     from:
     abscissa of wire and wire height from sample surface inclined by anglesample (deg)
 
@@ -2125,7 +2152,7 @@ def IW_from_wireabscissa(abscissa, wire_height, anglesample=40.0):
 
 
 def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.0):
-    """
+    r"""
     from:
     absolute coordinate of wire (hypothesis x is undetermined)
     wire height from sample surface inclined by anglesample (deg)
@@ -2149,7 +2176,7 @@ def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.0):
 
 
 def twotheta_from_wire_and_source(ysource, Height_wire, Abscissa_wire, anglesample=40):
-    """
+    r"""
     point moving parallel to sample surface in Oyz plane
 
     ysource= II'  abscissa of spots emission (I') from calibration origin source (I)
@@ -2173,11 +2200,11 @@ def twotheta_from_wire_and_source(ysource, Height_wire, Abscissa_wire, anglesamp
 
 
 def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_GAMMA):
-    """
+    r"""
     From x,y on CCD camera (OMs) and source shift (IIprime)
     compute modified x,y values for the SAME calibration (calib)(for further analysis)
-    
-    return new value of x,y 
+
+    return new value of x,y
     """
     xcam, ycam = OMs.T
     uflab, IM = calc_uflab(
@@ -2259,25 +2286,27 @@ def absorbprofile(x, R, mu, x0):
 
 
 def lengthInSample(depth, twtheta, chi, omega):
-    """ compute geometrical lengthes in sample from impact point (I) at the surface to a point (B) where xray are scattered
-    (or fluorescence is emitted) and finally to a point (C) lying at the sample surface
+    r""" compute geometrical lengthes in sample from impact point (I) at the surface to a point (B)
+    where xray are scattered (or fluorescence is emitted) and finally to a point (C) lying at the sample surface
     (intersection of line with unit vector u with sample surface plane tilted by omega)
-    
-    WARNING:
-    twtheta and chi can be misleading. they correspond simply to angles defining a direction
-    like kf is the unit vector describing the scattered direction
-    Assumption ius made that angles of unit vector from B to C (or to detector frame pixel) are 2theta and chi
-    For large depth D, unit vector direction is not given by 2theta and chi angles
-    as they are used for describing the scattering direction from point I and a given detector frame position
-    (you should then compute the two angles correction , actually chi is unchanged, and is 2theta change is approx
-    d/ distance .i.e. 3 10-4 for d=20 µm and CCD at 70 mm)
-    
-    (incoming beam coming from the right positive x direction
-    IB = (-D,0,0)
-    BC =(xc+D,yc,zc)
-    
-    legnth BC is proportional to the depth D
-    
+
+    .. warning::
+
+        twtheta and chi angles can be misleading.
+        Assumption is made that angles of unit vector from B to C (or to detector frame pixel) are
+        :math:`2 \theta` and :math:`\chi`.
+        For large depth D, unit vector scattered beam direction is not given by :math:`2 \theta` and :math:`\chi` angles
+        as they are used for describing the scattering direction from point I and a given detector frame position
+        (you should then compute the two angles correction , actually :math:`\chi` is unchanged, and the :math:`2 \theta` change is approx
+        d/ distance .i.e. 3 10-4 for d=20 µm and CCD at 70 mm)
+
+    .. note::
+
+        incoming beam coming from the right positive x direction with 
+            - IB = (-D,0,0)
+            - BC =(xc+D,yc,zc)
+            - and length BC is proportional to the depth D
+
     """
     D = depth * 1.0
     c2theta = np.cos(twtheta * DEG)

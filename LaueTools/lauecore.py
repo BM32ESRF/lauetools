@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
+r"""
 Core module to compute Laue Pattern in various geometry
 
 Main author is J. S. Micha:   micha [at] esrf [dot] fr
 
-version May 2019
+version July 2019
 from LaueTools package hosted in
 
 http://sourceforge.net/projects/lauetools/ 
@@ -14,17 +13,12 @@ or
 https://gitlab.esrf.fr/micha/lauetools
 """
 
-__author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision: 1717$"
-
-import time, math, pickle, sys
+import math, sys
 import builtins
 
 import numpy as np
 
 np.set_printoptions(precision=15)
-from pylab import figure, show, connect, title
-from matplotlib.transforms import offset_copy as offset
 
 # LaueTools modules
 if sys.version_info.major == 3:
@@ -32,7 +26,7 @@ if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
     from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
-                    DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
+            DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
 
     from . import LaueGeometry as LTGeo
 else:
@@ -40,7 +34,7 @@ else:
     import generaltools as GT
     import IOLaueTools as IOLT
     from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
-                                DEFAULT_DETECTOR_DISTANCE,DEFAULT_DETECTOR_DIAMETER,DEFAULT_TOP_GEOMETRY)
+            DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
 
     # TODO: LTGeo to be removed
     import LaueGeometry as LTGeo
@@ -130,12 +124,12 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     """
     #     print "OrientMatrix in Quicklist", OrientMatrix
 
-    assert lambdamin>0,"lambdamin in Quicklist is not positive! %s"%str(lambdamin)
+    assert lambdamin > 0,"lambdamin in Quicklist is not positive! %s"%str(lambdamin)
 
     if isinstance(OrientMatrix, list):
-        OrientMatrix= np.array(OrientMatrix)
-            
-    if len(OrientMatrix)!=3:
+        OrientMatrix = np.array(OrientMatrix)
+
+    if len(OrientMatrix) != 3:
         raise ValueError("Matrix is not 3*3 array !!!%s"%str(OrientMatrix))
 
     if 0. in listRSnorm or 0 in listRSnorm:
@@ -335,8 +329,8 @@ def genHKL_np(listn, Extinc):
     :param listn: Miller indices limits (warning: these lists are used in python range (last index is excluded))
     :type listn: [[hmin,hmax],[kmin,kmax],[lmin,lmax]]
 
-    :param Extinc: label corresponding to systematic exctinction 
-            rules on h k and l miller indics such as ('fcc', 'bcc', 'dia', ...) or 'no' for any rules 
+    :param Extinc: label corresponding to systematic exctinction
+        rules on h k and l miller indics such as ('fcc', 'bcc', 'dia', ...) or 'no' for any rules 
     :type Extinc: string
 
     :return: array of [h,k,l]
@@ -345,7 +339,6 @@ def genHKL_np(listn, Extinc):
     """
     if listn is None:
         raise ValueError("hkl ranges are undefined")
-        return None
 
     #    print "inside genHKL_np"
     if isinstance(listn, list) and len(listn) == 3:
@@ -355,18 +348,15 @@ def genHKL_np(listn, Extinc):
             n_l_min, n_l_max = listn[2]
         except:
             raise TypeError("arg #1 has not the shape (3, 2)")
-            return None
     else:
         raise TypeError("arg #1 is not a list or has not 3 elements")
-        return None
 
     nbelements = (n_h_max - n_h_min) * (n_k_max - n_k_min) * (n_l_max - n_l_min)
 
-    assert nbelements>0 
+    assert nbelements > 0 
 
     if (not isinstance(nbelements, int)) or nbelements <= 0.0:
         raise ValueError("Needs (3,2) list of sorted integers")
-        return None
 
     if Extinc not in list(dict_Extinc.values()):
         raise ValueError('Could not understand extinction code: " %s " ' % str(Extinc))
@@ -674,45 +664,45 @@ def getLaueSpots(
     :param wavelmin:   smallest wavelength in Angstrom
     :param wavelmax:  largest wavelength in Angstrom
 
-    :param crystalsParams:     list of *SingleCrystalParams*, each of them being a list
-                        of 4 elements for crystal orientation and strain properties:
+    :param crystalsParams: list of *SingleCrystalParams*, each of them being a list
+        of 4 elements for crystal orientation and strain properties:
 
-                        * [0](array): is the B matrix a*,b*,c* vectors are expressed in column
-                        in LaueTools frame in reciprocal angstrom units
+        * [0](array): is the B matrix a*,b*,c* vectors are expressed in column
+            in LaueTools frame in reciprocal angstrom units
 
-                        * [1](str): peak Extinction rules ('no','fcc','dia', etc...)
+        * [1](str): peak Extinction rules ('no','fcc','dia', etc...)
 
-                        * [2](array): orientation matrix
+        * [2](array): orientation matrix
 
-                        * [3](str): key for material element
+        * [3](str): key for material element
 
-    
+    :param kf_direction: string defining the average geometry, mean value of exit scattered vector:
+        'Z>0'   top spots
 
-    :param kf_direction: string defining the average geometry, mean value of
-                    exit scattered vector:
-                        'Z>0'   top spots
+        'Y>0'   one side spots (towards hutch door)
 
-                        'Y>0'   one side spots (towards hutch door)
+        'Y<0'   other side spots
 
-                        'Y<0'   other side spots
+        'X>0'   transmission spots
 
-                        'X>0'   transmission spots
+        'X<0'   backreflection spots
+    :param fastcompute:
+        * 1, compute reciprocal space (RS) vector BUT NOT the Miller indices
 
-                        'X<0'   backreflection spots
-    :param fastcompute: * 1, compute reciprocal space (RS) vector
-                            BUT NOT the Miller indices
-                        * 0, returns both RS vectors (normalised) and Miller indices
+        * 0, returns both RS vectors (normalised) and Miller indices
 
-    :param ResolutionAngstrom: * scalar, smallest interplanar distance ordered in crystal
-                        in angstrom.
-                            * None, all reflections will be calculated
-                        that can be time-consuming for large unit cell
+    :param ResolutionAngstrom:
+        * scalar, smallest interplanar distance ordered in crystal in angstrom.
+        
+        * None, all reflections will be calculated that can be time-consuming for large unit cell
 
-    :param linestowrite:   list of [string] that can be write in file or display in
-                    stdout. Example: [[""]] or [["**********"],["lauetools"]]
+    :param linestowrite: list of [string] that can be write in file or display in
+        stdout. Example: [[""]] or [["**********"],["lauetools"]]
 
-    :return: * list of [Qx,Qy,Qz]s for each grain, list of [H,K,L]s for each grain (fastcompute = 0)
-             * list of [Qx,Qy,Qz]s for each grain, None  (fastcompute = 1)
+    :return:
+        * list of [Qx,Qy,Qz]s for each grain, list of [H,K,L]s for each grain (fastcompute = 0)
+            
+        * list of [Qx,Qy,Qz]s for each grain, None  (fastcompute = 1)
 
     .. caution::
         This method doesn't create spot instances.
@@ -748,7 +738,7 @@ def getLaueSpots(
     ):
         raise ValueError("Missing list of string")
 
-    if not isinstance(crystalsParams,list):
+    if not isinstance(crystalsParams, list):
         raise ValueError("Grains parameters list is not correct. It Must be: [grain] for 1 grain or [grain1, grain2] for 2 grains...")
 
     nb_of_grains = len(crystalsParams)
@@ -771,9 +761,9 @@ def getLaueSpots(
             print(" crystal parameters:", crystalsParams[i])
         if fileOK:
             linestowrite.append(["%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"])
-            linestowrite.append( ["grain no ", str(i), " made of ", Elem,
+            linestowrite.append(["grain no ", str(i), " made of ", Elem,
                                 " default lattice parameter ",
-                                str(dict_Materials[crystalsParams[i][3]][1]),] )
+                                str(dict_Materials[crystalsParams[i][3]][1]),])
             linestowrite.append(
                 [
             "(vec* basis in lab. frame, real lattice lengthes expansion, orientation matrix, atomic number):"
@@ -792,8 +782,8 @@ def getLaueSpots(
         linestowrite.append(
             ["************------------------------------------***************"]
         )
-        linestowrite.append( [ "energy range: ", str(CST_ENERGYKEV / wlM), " - ",
-                                        str(CST_ENERGYKEV / wlm), " keV", ] )
+        linestowrite.append( ["energy range: ", str(CST_ENERGYKEV / wlM), " - ",
+                                        str(CST_ENERGYKEV / wlm), " keV",])
 
     wholelistvecfiltered = []
     wholelistindicesfiltered = []
@@ -894,10 +884,10 @@ def getLaueSpots(
             KF_condit = listrotvec_Y < 0
         # x > -R transmission 2theta = 0
         elif kf_direction == "X>0":
-            KF_condit = ( listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0 )
+            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0 )
         # x < -R back reflection 2theta = 180
         elif kf_direction == "X<0":
-            KF_condit = ( listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0 )
+            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0 )
         #   all spots inside the two ewald's sphere with scattered beams in any direction'
         elif kf_direction == "4PI":
             KF_condit = np.ones_like(listrotvec_X) * True
@@ -906,7 +896,7 @@ def getLaueSpots(
         elif isinstance(kf_direction, (builtins.list, np.array)):
             print("\nUSING user defined LauePattern Region\n")
             if len(kf_direction) != 2:
-                raise ValueError( "kf_direction must be defined by a list of two angles !" )
+                raise ValueError("kf_direction must be defined by a list of two angles !" )
             else:
                 kf_2theta, kf_chi = kf_direction
                 kf_2theta, kf_chi = kf_2theta * DEG, kf_chi * DEG
@@ -1262,7 +1252,7 @@ def create_spot_side_neg(
 ):
     r""" From reciprocal space position and 3 miller indices
     create a spot on neg side camera
-    
+
     .. todo:: Update with dim as other create_spot()
     """
     spotty = spot(miller)
@@ -1335,7 +1325,7 @@ def create_spot_front(
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
         return spotty
-    
+
     else:
         return None
 
@@ -1387,35 +1377,38 @@ def filterLaueSpots(
     linestowrite=[[""]],
 ):
     r""" Calculates list of grains spots on camera and without harmonics
-    and on CCD camera
-    from [[spots grain 0],[spots grain 1],etc] =>
+    and on CCD camera from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
 
     :param vec_and_indices: list of elements corresponding to 1 grain, each element is composed by
+        * [0] array of vector
 
-                    * [0] array of vector
-                    * [1] array of indices
+        * [1] array of indices
 
     :param HarmonicsRemoval: 1, removes harmonics according to their miller indices
-                            (only for fastcompute = 0)
+        (only for fastcompute = 0)
 
-    :param fastcompute: * 1, outputs a list for each grain of 2theta spots and a list for each grain of chi spots
-                            (HARMONICS spots are still HERE!)
-                        * 0, outputs list for each grain of spots with
-
+    :param fastcompute:
+        * 1, outputs a list for each grain of 2theta spots and a list for each grain of chi spots
+            (HARMONICS spots are still HERE!)
+        * 0, outputs list for each grain of spots with
 
     :param kf_direction: label for detection geometry (CCD plane with respect to the incoming beam and sample)
     :type kf_direction: string
 
-    :return:    * list of spot instances if fastcompute=0
-                * 2theta, chi          if fastcompute=1
+    :return:
+        * list of spot instances if fastcompute=0
+
+        * 2theta, chi          if fastcompute=1
 
     .. note::
         * USED IMPORTANTLY in lauecore.SimulateResults  lauecore.SimulateLaue
         * USED in matchingrate.AngularResidues
         * USED in ParametricLaueSimulator.dosimulation_parametric
         * USED in AutoindexationGUI.OnSimulate_S3, DetectorCalibration.Reckon_2pts, and others
-    #TODO: add dim in create_spot in various geometries
+
+    .. todo::
+        add dim in create_spot in various geometries
     """
     # print("filterLaueSpots !!!!!")
     try:
@@ -1650,7 +1643,7 @@ def filterLaueSpots_full_np(
     :type kf_direction: string
 
     :return: tuple of lists of Twtheta Chi Energy Millers if fastcompute=0
-    
+
                 tuple of lists 2theta, chi          if fastcompute=1
 
     .. warning::
@@ -1762,10 +1755,10 @@ def filterLaueSpots_full_np(
                 "Harmonic removal is not implemented and listspot does not exist anymore"
             )
             #                ListSpots_Oncam_wo_harmonics[i] = RemoveHarmonics(listspot)
-            (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(
-                oncam_HKL, return_indices_toremove=1
-            )
-            listspot = np.delete(np.array(listspot), toremove).tolist()
+            # (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(
+            #     oncam_HKL, return_indices_toremove=1
+            # )
+            # listspot = np.delete(np.array(listspot), toremove).tolist()
 
         # print "Number of spot in camera w / o harmonics",len(ListSpots_Oncam_wo_harmonics[i])
 
@@ -1965,7 +1958,7 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     :type HKL: array with shape = (n,3)
 
     :param dictCCD: dictionnary of CCD properties (with key 'CCDparam', 'pixelsize','dim')
-    for 'ccdparam' 5 CCD calibration parameters [dd,xcen,ycen,xbet,xgam], pixelsize in mm, and (dim1, dim2)
+        for 'ccdparam' 5 CCD calibration parameters [dd,xcen,ycen,xbet,xgam], pixelsize in mm, and (dim1, dim2)
     :param dictCCD: dict object
 
     :returns: list of arrays H, K, L, Qx, Qy, Qz, X, Y, twthe, chi, Energy
@@ -2213,10 +2206,11 @@ def SimulateLaue(
     :param emin: minimum bandpass energy (keV)
     :param emax: maximum bandpass energy (keV)
 
-    :param removeharmonics: * 1, removes harmonics spots and keep fondamental spots (or reciprocal direction)
-                            (with lowest Miller indices)
+    :param removeharmonics:
+        * 1, removes harmonics spots and keep fondamental spots (or reciprocal direction)
+            (with lowest Miller indices)
 
-                            * 0 keep all spots (including harmonics)
+        * 0 keep all spots (including harmonics)
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 

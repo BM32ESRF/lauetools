@@ -4,13 +4,12 @@ Created on Wed Feb  8 10:16:17 2012
 
 @author: micha
 """
-import os, sys
+import os
+import sys
 import wx
 import numpy as np
 import pylab
 
-from matplotlib.ticker import FuncFormatter
-import scipy.optimize
 from matplotlib import __version__ as matplotlibversion
 from matplotlib.backends.backend_wxagg import (
     FigureCanvasWxAgg as FigCanvas,
@@ -21,8 +20,10 @@ from matplotlib.figure import Figure
 
 if sys.version_info.major == 3:
     from . import generaltools as GT
+    from . PlotRefineGUI import IntensityScaleBoard
 else:
     import generaltools as GT
+    from PlotRefineGUI import IntensityScaleBoard
 
 
 SIZE_PLOTTOOLS = (6, 6)
@@ -1656,8 +1657,6 @@ class SimulationPlotFrame(wx.Frame):
         """
         open a board to change image scale
         """
-        from PlotRefineGUI import IntensityScaleBoard
-
         IScaleBoard = IntensityScaleBoard(
             self, -1, "Image scale setting Board", self.data_dict
         )

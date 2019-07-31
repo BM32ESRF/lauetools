@@ -1,8 +1,7 @@
 """
 scripts example to be launched from
-
 """
-import os, copy, sys
+import os, copy
 import numpy as np
 
 import LaueTools
