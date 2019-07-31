@@ -1,7 +1,7 @@
 Welcome to LaueTools's documentation!
 =====================================
 
-.. include:: ./LaueTools/Documentation/source/index.rst
+.. include:: /LaueTools/Documentation/source/index.rst
 
 PPPPPPPPPPPPPPPP
 
