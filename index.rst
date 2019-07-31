@@ -1,11 +1,7 @@
 Welcome to LaueTools's documentation!
 =====================================
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-   
-   /LaueTools/Documentation/source/index.rst
+.. include:: ./LaueTools/Documentation/source/index.rst
 
 PPPPPPPPPPPPPPPP
 
