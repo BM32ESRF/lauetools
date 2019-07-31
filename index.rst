@@ -1,9 +1,14 @@
 
-
 Welcome to LaueTools's documentation!
 =====================================
 
-/LaueTools/Documentation/source/index.rst
+.. toctree::
+   :maxdepth: 3
+   :caption: Contents:
+   
+   /LaueTools/Documentation/source/index.rst
+   Simulation_Module.rst
+
 
 PPPPPPPPPPPPPPPP
 
@@ -107,11 +112,7 @@ The main steps of analysis are Laue peaks search, Laue Pattern indexation and un
 
 
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
 
-   Simulation_Module.rst
 
 Indices and tables
 ==================
