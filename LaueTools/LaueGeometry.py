@@ -1053,10 +1053,6 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat):
     """
     mm = UBmat
 
-    astar1 = mm[:, 0]
-    bstar1 = mm[:, 1]
-    cstar1 = mm[:, 2]
-
     # print "check matrix before normalizing"
     # print "normes astar1 bstar1 cstar1 = ", GT.norme_vec(astar1),GT.norme_vec(astar1),GT.norme_vec(astar1)
     # print "inner products astar1.bstar1, bstar1.cstar1, cstar1.astar1 \n",\
@@ -1088,10 +1084,6 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab):
     reciprocal function of matstarlabLaueTools_to_matstarlabOR
     """
     mm = matstarlab
-
-    astar1 = mm[0:3]
-    bstar1 = mm[3:6]
-    cstar1 = mm[6:]
 
     # print "check matrix before normalizing"
     # print "normes astar1 bstar1 cstar1 = ", GT.norme_vec(astar1),GT.norme_vec(astar1),GT.norme_vec(astar1)
@@ -2099,7 +2091,6 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
 
     returns:
     all positions of source of emission from all pairs [spot,Wire_abscissa]
-
     """
 
     IWs = IW_from_wireabscissa(

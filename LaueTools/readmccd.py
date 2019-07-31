@@ -1369,7 +1369,7 @@ def readoneimage_multiROIfit(
     addImax=False,
     use_data_corrected=None,
 ):
-    """
+    r"""
     Fit several peaks in one image
 
     Parameters
