@@ -68,7 +68,7 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple:
 
-	.. image:: Images/notebook0.jpg
+	.. image:: notebook0.jpg
 
 3- Mathematics and Conventions
 **************************************
