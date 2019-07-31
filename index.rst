@@ -1,4 +1,4 @@
-.. LaueTools/Documentation/source/index.rst
+LaueTools/Documentation/source/index.rst
 
 PPPPPPPPPPPPPPPP
 
