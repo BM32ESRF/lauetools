@@ -1,4 +1,3 @@
-
 Welcome to LaueTools's documentation!
 =====================================
 
@@ -7,8 +6,6 @@ Welcome to LaueTools's documentation!
    :caption: Contents:
    
    /LaueTools/Documentation/source/index.rst
-   Simulation_Module.rst
-
 
 PPPPPPPPPPPPPPPP
 
