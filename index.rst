@@ -1,4 +1,4 @@
-.. include::LaueTools/Documentation/source/index.rst
+.. include:: /LaueTools/Documentation/source/index.rst
 
 PPPPPPPPPPPPPPPP
 
