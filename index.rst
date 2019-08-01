@@ -1,6 +1,8 @@
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
+Last revision (1rst August 2019)
+
 1- Download LaueTools code
 ***************************
 
@@ -81,6 +83,12 @@ Documentation can be generated, by installing sphinx and a cool html theme:
 
            pip install sphinx-rtd-theme
 
+You may need:
+
+.. code-block:: python
+
+	   pip install RinohType
+
 Then from /LaueTools/Documentation folder which contain `Makefile` and 2 folders `build` and `source`, build the documentation
 
 .. code-block:: shell
@@ -88,4 +96,3 @@ Then from /LaueTools/Documentation folder which contain `Makefile` and 2 folders
 	   make html
 
 Files in html format can be browsed in /build/html folder. You can start with index.html.
-
