@@ -66,9 +66,28 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
 
-In jupyter-notebook, it is also simple:
+In jupyter-notebook, it is also simple in the same manner:
 
 	.. image:: Images/notebook0.jpg
+
+2c- LaueTools Documentation
+****************************
+
+Documentation can be generated, by installing sphinx and a cool html theme:
+
+.. code-block:: python
+
+	   pip install sphinx
+
+           pip install sphinx-rtd-theme
+
+Then from /LaueTools/Documentation folder which contain `Makefile` and 2 folders `build` and `source`, build the documentation
+
+.. code-block:: shell
+
+	   make html
+
+Files in html format can be browsed in /build/html folder. You can start with index.html.
 
 3- Mathematics and Conventions
 **************************************
@@ -101,6 +120,7 @@ The main steps of analysis are Laue peaks search, Laue Pattern indexation and un
    :caption: Contents:
 
    Simulation_Module.rst
+   Tutorials.rst
 
 Indices and tables
 ==================

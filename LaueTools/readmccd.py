@@ -768,9 +768,10 @@ def readCCDimage(
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
 
         # almost very general case
-        print(
-            "\n\n\n WARNING: A very basic way was used to open image. Image is likely to be not well loaded ...\n\n\n"
-        )
+        if CCDLabel not in ('MARCCD165',):
+            print(
+                "\n\n\n WARNING: A very basic way was used to open image. Image is likely to be not well loaded ...\n\n\n"
+            )
         dataimage = readoneimage(
             filename,
             framedim=framedim,

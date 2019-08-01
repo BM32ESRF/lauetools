@@ -641,8 +641,8 @@ class spotsset:
         # extract data not yet indexed or temporarly indexed
         toindexdata = self.getUnIndexedSpotsallData(exceptgrains=exceptgrains)
 
-        print("toindexdata", toindexdata)
-        print(toindexdata.shape)
+        # print("toindexdata", toindexdata)
+        # print(toindexdata.shape)
 
         absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
         intensity_data = toindexdata[:, 5]
@@ -2464,23 +2464,9 @@ class spotsset:
         latticeparams = DictLT.dict_Materials[self.key_material][1]
         Bmatrix = CP.calc_B_RR(latticeparams)
 
-        print("initial_values, Miller,allparameters, arr_indexvaryingparameters,  etc...")
-        print(initial_values,
-            Miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            sim_indices,
-            posX,
-            posY,
-            initial_matrix,
-            Bmatrix,
-            0,
-            1,
-            self.pixelsize,
-            self.dim,
-            weights,
-            1,
-            self.kf_direction)
+        # print("initial_values, Miller,allparameters, arr_indexvaryingparameters,  etc...")
+        # print(initial_values, Miller, allparameters, arr_indexvaryingparameters, sim_indices, posX, posY, initial_matrix,
+        #     Bmatrix, 0, 1, self.pixelsize, self.dim, weights, 1, self.kf_direction)
 
         residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
             initial_values,
