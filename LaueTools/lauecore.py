@@ -753,16 +753,16 @@ def getLaueSpots(
     # loop over grains
     for i in list(range(nb_of_grains)):
         try:
-            Elem = dictmaterials[crystalsParams[i][3]][0]
+            key_material = dictmaterials[crystalsParams[i][3]][0]
         except (IndexError, TypeError, KeyError):
             smsg = "wrong type of input paramters: must be a list of 4 elements"
             raise ValueError(smsg)
         if verbose:
-            print("# grain:  ", i, " made of ", Elem)
+            print("# grain:  ", i, " made of ", key_material)
             print(" crystal parameters:", crystalsParams[i])
         if fileOK:
             linestowrite.append(["%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"])
-            linestowrite.append(["grain no ", str(i), " made of ", Elem,
+            linestowrite.append(["grain no ", str(i), " made of ", key_material,
                                 " default lattice parameter ",
                                 str(dictmaterials[crystalsParams[i][3]][1]),])
             linestowrite.append(
@@ -794,9 +794,8 @@ def getLaueSpots(
     # loop over grains
     for i in list(range(nb_of_grains)):
 
-        Bmatrix, Extinc, Orientmatrix, key_for_dict = parse_grainparameters(
-            crystalsParams[i]
-        )
+        (Bmatrix, Extinc,
+        Orientmatrix, key_for_dict) = parse_grainparameters(crystalsParams[i])
 
         if verbose:
             print("\nin getLaueSpots()")
@@ -2461,7 +2460,7 @@ def SimulateResult(
 
 def StructureFactorCubic(h, k, l, extinctions="dia"):
     """
-    computes structure factor of cubic 
+    computes structure factor of cubic
     """
     pi = np.pi
     F = (1 + np.exp(-1.0j * pi / 2.0 * (h + k + l))) * (
@@ -2526,22 +2525,16 @@ def simulatepurepattern_np(
     ResolutionAngstrom=False,
     Display_label=1,
     HarmonicsRemoval=1,
+    dictmaterials=dict_Materials
 ):
     """
     .. warning:: In test. NOT USED anywhere !!???
     """
 
-    vecind = getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        grain,
-        1,
-        fileOK=0,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        verbose=verbose,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
+    vecind = getLaueSpots( CST_ENERGYKEV / emax, CST_ENERGYKEV / emin, grain, 1,
+                    fileOK=0, fastcompute=0, kf_direction=kf_direction,
+                    verbose=verbose, ResolutionAngstrom=ResolutionAngstrom,
+                    dictmaterials=dictmaterials)
 
     print("len(vecind[0])", len(vecind[0][0]))
 

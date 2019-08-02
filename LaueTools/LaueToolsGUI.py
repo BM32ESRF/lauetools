@@ -1607,22 +1607,15 @@ class MainWindow(wx.Frame):
         initialParameter["CCDLabel"] = self.CCDLabel
         initialParameter["filename"] = self.CalibrationFile
         initialParameter["dirname"] = "/home/micha/LaueTools/Examples/Ge"
+        initialParameter["dict_Materials"]=self.dict_Materials
 
         print("initialParameter when launching calibration", initialParameter)
 
-        self.calibframe = DC.MainCalibrationFrame(
-            self,
-            -1,
-            "Detector Calibration Board",
-            initialParameter,
-            file_peaks=initialParameter["filename"],
-            pixelsize=self.pixelsize,
-            dim=self.framedim,
-            kf_direction=self.kf_direction,
-            fliprot=self.fliprot,
-            starting_param=initialParameter["CCDParam"],
-        )
-
+        self.calibframe = DC.MainCalibrationFrame( self, -1, "Detector Calibration Board",
+                                    initialParameter, file_peaks=initialParameter["filename"],
+                                    pixelsize=self.pixelsize, dim=self.framedim,
+                                    kf_direction=self.kf_direction, fliprot=self.fliprot,
+                                    starting_param=initialParameter["CCDParam"], )
         self.calibframe.Show(True)
 
     def OnCliquesFinding(self, event):

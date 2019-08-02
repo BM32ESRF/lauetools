@@ -5,12 +5,11 @@ lattice parameters and strain calculations
 Main authors are JS Micha, O. Robach, S. Tardif June 2019
 """
 import copy
-import sys, os
+import sys
+#import os
 
 # sys.path.insert(0, os.path.abspath('../..'))
 # print('sys.path in CrystalParameters', sys.path)
-
-print('Entering CrystalParameters ******---***************************\n\n')
 
 import numpy as np
 from numpy.linalg import inv
@@ -420,14 +419,14 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     return devstrain, lattice_parameter_direct_strain
 
 
-def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", dictmaterials=dict_Materials):
+def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", c=dict_Materials):
     r"""
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
     :returns:   devstrain, deviatoricstrain_sampleframe, lattice_parameters
     """
     # compute new lattice parameters  -----
-    latticeparams = dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
     B0matrix = calc_B_RR(latticeparams)
 
     UBmat = copy.copy(UBmat)
@@ -1054,12 +1053,12 @@ def hydrostaticStrain(
 
     print("c11, c12, c44", c11, c12, c44)
 
-    Cmatrix = np.array( [ [c11, c12, c12, 0, 0, 0],
-            [c12, c11, c12, 0, 0, 0],
-            [c12, c12, c11, 0, 0, 0],
-            [0, 0, 0, c44, 0, 0],
-            [0, 0, 0, 0, c44, 0],
-            [0, 0, 0, 0, 0, c44], ], dtype=np.float, )
+    # Cmatrix = np.array( [ [c11, c12, c12, 0, 0, 0],
+    #         [c12, c11, c12, 0, 0, 0],
+    #         [c12, c12, c11, 0, 0, 0],
+    #         [0, 0, 0, c44, 0, 0],
+    #         [0, 0, 0, 0, c44, 0],
+    #         [0, 0, 0, 0, 0, c44], ], dtype=np.float, )
 
     P = GT.matRot([0, 1, 0], -sampletilt)
 
@@ -1151,7 +1150,7 @@ def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # O
             print("matstarlab = ", matstarlab)
         astar1 = matstarlab[:3]
         bstar1 = matstarlab[3:6]
-        cstar1 = matstarlab[6:]
+        # cstar1 = matstarlab[6:]
 
     elif matLT3x3 is not None:
         if verbose:

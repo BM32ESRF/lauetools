@@ -807,6 +807,7 @@ def Angular_residues_np_multimatrices(
     emax=25,
     ResolutionAngstrom=False,
     detectorparameters=None,
+    dictmaterials=dict_Materials
 ):
 
     """ See doc of Angular_residues_np()
@@ -852,6 +853,7 @@ def Angular_residues_np_multimatrices(
             verbose=0,
             kf_direction=kf_direction,
             ResolutionAngstrom=ResolutionAngstrom,
+            dictmaterials=dictmaterials
         )
 
         # 2theta,chi of spot which are on camera (with harmonics)
@@ -894,6 +896,7 @@ def Angular_residues(
     emax=25,
     ResolutionAngstrom=False,
     detectorparameters=None,
+    dictmaterials=dict_Materials
 ):
 
     """ see doc of Angular_residues_np()
@@ -932,6 +935,7 @@ def Angular_residues(
         verbose=0,
         kf_direction=kf_direction,
         ResolutionAngstrom=ResolutionAngstrom,
+        dictmaterials=dictmaterials
     )
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(

@@ -85,6 +85,7 @@ def Plot_compare_2thetachi(
     emin=5,
     EULER=0,
     exp_spots_list_selection=None,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     plot data and simulation (given by list of 3 angles for orientation)
@@ -104,7 +105,7 @@ def Plot_compare_2thetachi(
         mymat = EULER
 
     # PATCH to use correctly getLaueSpots() of lauecore
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -115,6 +116,7 @@ def Plot_compare_2thetachi(
         fastcompute=1,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
 
     # 2theta,chi of spot which are on camera (with harmonics)
@@ -151,6 +153,7 @@ def Plot_compare_2thetachi_multi(
     title_plot="default",
     figsize=(6, 6),
     dpi=80,
+    dictmaterials=DictLT.dict_Materials
 ):
     """ up to 9
     only for test or development
@@ -183,7 +186,7 @@ def Plot_compare_2thetachi_multi(
                 print("mymat", mymat)
 
         # PATCH to use correctly getLaueSpots() of laue6
-        grain = CP.Prepare_Grain(key_material, mymat)
+        grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
         # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0)
         # of spots exiting the crystal in 2pi steradian (Z>0)
@@ -195,6 +198,7 @@ def Plot_compare_2thetachi_multi(
             fastcompute=1,
             fileOK=0,
             verbose=0,
+            dictmaterials=dictmaterials
         )
         # 2theta,chi of spot which are on camera (with harmonics)
         TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)

@@ -149,7 +149,8 @@ def plotgnomondata(
     p.show()
 
 
-def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14, EULER=0):
+def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14,
+                        EULER=0,dictmaterials=DictLT.dict_Materials):
     """
     plot data and simulation (given by list of 3 angles for orientation) in gnomonic space
     TODO: to update
@@ -166,7 +167,7 @@ def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14, EUL
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -177,6 +178,7 @@ def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14, EUL
         fastcompute=1,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
@@ -249,12 +251,12 @@ def Plot_compare_gnomondata(
     emin=5,
     EULER=0,
     exp_spots_list_selection=None,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     plot data and simulation (given by list of 3 angles for orientation) in 2theta chi space (kf vector angles)
-    
-    """
 
+    """
     angle_X, angle_Y, angle_Z = Angles
     # TODO: branching not clear
     if type(EULER) != type(np.array([1, 2, 3])):
@@ -267,7 +269,7 @@ def Plot_compare_gnomondata(
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -278,6 +280,7 @@ def Plot_compare_gnomondata(
         fastcompute=1,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
 
     # 2theta,chi of spot which are on camera (with harmonics)
@@ -319,6 +322,7 @@ def Plot_compare_2thetachi(
     emin=5,
     EULER=0,
     exp_spots_list_selection=None,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     plot data and simulation (given by list of 3 angles for orientation) in 2theta chi space (kf vector angles)
@@ -337,7 +341,7 @@ def Plot_compare_2thetachi(
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -348,6 +352,7 @@ def Plot_compare_2thetachi(
         fastcompute=1,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
 
     # 2theta,chi of spot which are on camera (with harmonics)
@@ -385,6 +390,7 @@ def Plot_compare_2thetachi_multi(
     title_plot="default",
     figsize=(6, 6),
     dpi=80,
+    dictmaterials=DictLT.dict_Materials
 ):
     """ up to 9
     only for test or development
@@ -417,7 +423,7 @@ def Plot_compare_2thetachi_multi(
                 print("mymat", mymat)
 
         # PATCH to use correctly getLaueSpots() of laue6
-        grain = CP.Prepare_Grain(key_material, mymat)
+        grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
         # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
         spots2pi = LAUE.getLaueSpots(
@@ -428,6 +434,7 @@ def Plot_compare_2thetachi_multi(
             fastcompute=1,
             fileOK=0,
             verbose=0,
+            dictmaterials=dictmaterials
         )
         # 2theta,chi of spot which are on camera (with harmonics)
         TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
@@ -915,6 +922,7 @@ def Hough_peak_position(
     arraysize=(600, 720),
     returnXYgnomonic=0,
     EULER=0,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     peak in seach in Hough space representation of Laue data projected in gnomonic plane
@@ -947,7 +955,7 @@ def Hough_peak_position(
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -958,6 +966,7 @@ def Hough_peak_position(
         fastcompute=1,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
@@ -1167,6 +1176,7 @@ def Hough_peak_position_fast(
     blur_radius=0.5,
     printOrientMatrix=0,
     emax=25,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     Simulate for 3 Euler angles Laue pattern
@@ -1186,7 +1196,7 @@ def Hough_peak_position_fast(
             [angle_X * 1.0, angle_Y * 1.0, angle_Z * 1.0]
         )
 
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     if printOrientMatrix:
         print("grainparameters")
@@ -1203,6 +1213,7 @@ def Hough_peak_position_fast(
             fastcompute=1,
             fileOK=0,
             verbose=0,
+            dictmaterials=dictmaterials
         )
 
         # 2theta,chi of spot which are on camera (BUT with harmonics)
@@ -1640,6 +1651,7 @@ def StickLabel_on_exp_peaks(
     key_material=14,
     arraysize=(600, 720),
     EULER=1,
+    dictmaterials=DictLT.dict_Materials
 ):
 
     """
@@ -1658,7 +1670,7 @@ def StickLabel_on_exp_peaks(
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, mymat)
+    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # fastcompute=0 => array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
@@ -1669,6 +1681,7 @@ def StickLabel_on_exp_peaks(
         fastcompute=0,
         fileOK=0,
         verbose=0,
+        dictmaterials=dictmaterials
     )
 
     # fastcompute=0 => result is list of spot instances which are on camera (with harmonics)

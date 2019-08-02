@@ -155,7 +155,7 @@ class CrystalParamPanel(wx.Panel):
 
         self.UBmatrix = np.eye(3)
 
-        print("self.mainframe in CrystalParamPanel", self.mainframe)
+        # print("self.mainframe in CrystalParamPanel", self.mainframe)
         # widgets layout
         pos6 = 10
         deltaposx = 2
@@ -328,7 +328,7 @@ class CCDParamPanel(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        print("self.mainframe in CCDParamPanel", self.mainframe)
+        # print("self.mainframe in CCDParamPanel", self.mainframe)
 
         self.init_pixelsize = self.mainframe.pixelsize
         self.init_detectordiameter = self.mainframe.detectordiameter
@@ -479,7 +479,7 @@ class MoveCCDandXtal(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        print("self.mainframe in CCDParamPanel", self.mainframe)
+        # print("self.mainframe in CCDParamPanel", self.mainframe)
 
         wx.StaticText(self, -1, "Sample-Detector Distance", (5, 10))
         wx.Button(self, 10, "-", (5, 30), (20, -1))
@@ -610,7 +610,6 @@ class StrainXtal(wx.Panel):
     """
     class panel to strain crystal
     """
-
     def __init__(self, parent):
         """
         """
@@ -618,7 +617,7 @@ class StrainXtal(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        print("self.mainframe in CCDParamPanel", self.mainframe)
+        # print("self.mainframe in CCDParamPanel", self.mainframe)
 
         self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
         self.key_material_initparams_in_dict = copy.copy(
@@ -960,6 +959,8 @@ class MainCalibrationFrame(wx.Frame):
         self.data_theo = data_added
         self.tog = 0
         self.datatype = datatype
+
+        self.dict_Materials=initialParameter["dict_Materials"]
 
         self.points = []  # to store points
         self.selectionPoints = []
@@ -1470,7 +1471,7 @@ class MainCalibrationFrame(wx.Frame):
             #             os.remove(self.initialParameter['filename'])
 
             # update main GUI CCD geomtrical parameters
-            print("self.parent", self.parent)
+            # print("self.parent", self.parent)
 
             self.parent.defaultParam = self.CCDParam
             self.parent.pixelsize = self.pixelsize
@@ -2924,7 +2925,7 @@ class MainCalibrationFrame(wx.Frame):
         self.key_material = self.crystalparampanel.comboElem.GetValue()
 
         Grain = CP.Prepare_Grain(
-            self.key_material, self.crystalparampanel.UBmatrix
+            self.key_material, self.crystalparampanel.UBmatrix, dictmaterials=self.dict_Materials
         )
 
         self.B0matrix = Grain[0]
@@ -2955,6 +2956,7 @@ class MainCalibrationFrame(wx.Frame):
                     dim=self.framedim,
                     detectordiameter=diameter_for_simulation * 1.25,
                     force_extinction=self.Extinctions,
+                    dictmaterials=self.dict_Materials
                 )
             else:
                 ResSimul = LAUE.SimulateLaue(
@@ -2969,6 +2971,7 @@ class MainCalibrationFrame(wx.Frame):
                     dim=self.framedim,
                     detectordiameter=diameter_for_simulation * 1.25,
                     force_extinction=self.Extinctions,
+                    dictmaterials=self.dict_Materials
                 )
 
             #             print "ResSimul", ResSimul[2]
@@ -3168,12 +3171,6 @@ class MainCalibrationFrame(wx.Frame):
                 c=self.Data_I / 50.0,
                 alpha=0.5,
             )
-            #            if self.CCDLabel in ('VHR_small', 'VHR_diamond', 'VHR_diamond_Mar13'):
-            #                xlim = (90, 160)  # for vhr at 2theta at 118 deg  Jun12
-            #                ylim = (-60, 60)
-            #            else:
-            #                xlim = (40, 140)
-            #                ylim = (-40, 40)
 
             if self.init_plot:
                 amp2theta = float(self.plotrangepanel.range2theta.GetValue())
@@ -3653,7 +3650,7 @@ class MainCalibrationFrame(wx.Frame):
 
                     # PATCH: redefinition of grain to simulate any unit cell(not only cubic) ---
                     key_material = grain[3]
-                    grain = CP.Prepare_Grain(key_material, grain[2])
+                    grain = CP.Prepare_Grain(key_material, grain[2],dictmaterials=self.dict_Materials)
                     # -----------------------------------------------------------------------------
 
                     # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
@@ -3665,6 +3662,7 @@ class MainCalibrationFrame(wx.Frame):
                         fastcompute=1,
                         fileOK=0,
                         verbose=0,
+                        dictmaterials=self.dict_Materials
                     )
                     # 2theta, chi of spot which are on camera(with harmonics)
                     TwicethetaChi = LAUE.filterLaueSpots(
@@ -4291,6 +4289,7 @@ if __name__ == "__main__":
     initialParameter["CCDLabel"] = "MARCCD165"
     initialParameter["filename"] = "Ge0001.dat"
     initialParameter["dirname"] = "/home/micha/LaueTools/Examples/Ge"
+    initialParameter["dict_Materials"]=DictLT.dict_Materials
 
     filepathname = os.path.join(
         initialParameter["dirname"], initialParameter["filename"]
