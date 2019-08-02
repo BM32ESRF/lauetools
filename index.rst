@@ -1,14 +1,7 @@
-Welcome to LaueTools's documentation!
+Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-.. include:: ./LaueTools/Documentation/source/index.rst
-
-PPPPPPPPPPPPPPPP
-
-Synopsis
-*****************
-
-LaueTools is a package of python modules (with scripts and wxpython-based Graphical interface) for Laue pattern analysis, and particularly dedicated to synchrotron Laue microdiffraction data analysis from CRG-IF BM32 beamline @ ESRF, Grenoble, France
+Last revision (1rst August 2019)
 
 1- Download LaueTools code
 ***************************
@@ -75,6 +68,31 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
 
-In jupyter-notebook, it is also simple:
+In jupyter-notebook, it is also simple in the same manner:
 
-	.. image:: notebook0.jpg
+	.. image:: Images/notebook0.jpg
+
+2c- LaueTools Documentation
+****************************
+
+Documentation can be generated, by installing sphinx and a cool html theme:
+
+.. code-block:: python
+
+	   pip install sphinx
+
+           pip install sphinx-rtd-theme
+
+You may need:
+
+.. code-block:: python
+
+	   pip install RinohType
+
+Then from /LaueTools/Documentation folder which contain `Makefile` and 2 folders `build` and `source`, build the documentation
+
+.. code-block:: shell
+
+	   make html
+
+Files in html format can be browsed in /build/html folder. You can start with index.html.
