@@ -24,13 +24,15 @@ if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import generaltools as GT
     from . import LaueGeometry as LaueGeo
-    from . dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
+    from . dict_LaueTools import CST_ENERGYKEV
+    from . dict_LaueTools import dict_Materials 
 else:
     import lauecore as LAUE
     import CrystalParameters as CP
     import generaltools as GT
     import LaueGeometry as LaueGeo
-    from dict_LaueTools import CST_ENERGYKEV as CST_ENERGYKEV
+    from dict_LaueTools import CST_ENERGYKEV 
+    from dict_LaueTools import dict_Materials
 
 try:
     if sys.version_info.major == 3:
@@ -669,12 +671,13 @@ def Angular_residues_np(
     ResolutionAngstrom=False,
     detectorparameters=None,
     onlyXYZ=False,
-    simthreshold= 0.999
+    simthreshold=0.999,
+    dictmaterials=dict_Materials
 ):
     r"""
     Computes angular residues between pairs of close exp. and
     theo. spots simulated according to test_Matrix, within tolerance angle
-    
+
     .. note::
         * used in manual indexation
         * Used in AutoIndexation module
@@ -713,20 +716,20 @@ def Angular_residues_np(
     # print "Reference Element or structure label", key_material
 
     # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
-    grain = CP.Prepare_Grain(key_material, test_Matrix)
+    grain = CP.Prepare_Grain(key_material, test_Matrix, dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        [grain],
-        1,
-        fastcompute=1,
-        fileOK=0,
-        verbose=0,
-        kf_direction=kf_direction,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
+    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
+                            CST_ENERGYKEV / emin,
+                            [grain],
+                            1,
+                            fastcompute=1,
+                            fileOK=0,
+                            verbose=0,
+                            kf_direction=kf_direction,
+                            ResolutionAngstrom=ResolutionAngstrom,
+                            dictmaterials=dictmaterials
+                        )
 
     if not SCIKITLEARN or not onlyXYZ:
         # 2theta,chi of spot which are on camera (with harmonics)

@@ -555,6 +555,7 @@ def matrices_from_onespot_hkl(
     LUT=None,
     allow_restrictedLUT=False,
     verbose=1,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     get all possibles UBs from one central spot and given its hkl1 miller indices
@@ -582,7 +583,7 @@ def matrices_from_onespot_hkl(
 
     PPs_list = []
 
-    latticeparams = DictLT.dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
     B = CP.calc_B_RR(latticeparams)
 
     if hkl1 is not None:
@@ -635,6 +636,7 @@ def matrices_from_onespot_hkl(
             onlyclosest=0,
             filterharmonics=1,
             verbose=verbose,
+            dictmaterials=dictmaterials
         )
 
         if hkls is not None and (spot_index != spotindex_2):
@@ -767,6 +769,7 @@ def getUBs_and_MatchingRate(
     verbosedetails=True,
     Minimum_Nb_Matches=6,
     worker=None,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     from two spots only
@@ -792,6 +795,7 @@ def getUBs_and_MatchingRate(
         key_material=key_material,
         MaxRadiusHKL=MaxRadiusHKL,
         verbose=verbose,
+        dictmaterials=dictmaterials
     )
 
     solutions_matorient_index = []
@@ -836,6 +840,7 @@ def getUBs_and_MatchingRate(
             ResolutionAngstrom=ResolutionAngstrom,
             ang_tol=ang_tol_MR,
             detectorparameters=detectorparameters,
+            dictmaterials=dictmaterials
         )
 
         if AngRes is None:
@@ -963,6 +968,7 @@ def UBs_from_twospotsdistance(
     MaxRadiusHKL=False,
     allow_restrictedLUT=True,
     verbose=0,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     returns list of pair of planes and exp pairs of spots that match an angle in a reference LUT.
@@ -1000,7 +1006,7 @@ def UBs_from_twospotsdistance(
                 B,
                 n,
                 MaxRadiusHKL=MaxRadiusHKL,
-                cubicSymmetry=CP.hasCubicSymmetry(key_material),
+                cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials),
             )
         #                                   cubicSymmetry=False)
 
@@ -1013,7 +1019,7 @@ def UBs_from_twospotsdistance(
 
     # when hkl1 is guessed (and set)
     elif set_hkl_1 is not None:
-        latticeparams = DictLT.dict_Materials[key_material][1]
+        latticeparams = dictmaterials[key_material][1]
         B = CP.calc_B_RR(latticeparams)
 
         if allow_restrictedLUT:
@@ -1180,6 +1186,7 @@ def getOrientMatrix_from_onespot(
     MatchingRate_Angle_Tol=None,  # angular tolerance for matching rate calculation
     detectorparameters=None,
     verbose=0,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     TODO: to delete only used in multigrain.py
@@ -1240,6 +1247,7 @@ def getOrientMatrix_from_onespot(
             nbspots_plot="all",  # nb exp spots to display if plot = 1
             addMatrix=None,
             verbose=1,
+            dictmaterials=dictmaterials
         )
 
         print("res_onespot", res_onespot)
@@ -1274,7 +1282,7 @@ def getOrientMatrix_from_onespot(
     if LUT is None:
         print("build LUT in getOrientMatrix_from_onespot()")
         LUT = build_AnglesLUT(
-            B, n, MaxRadiusHKL=False, cubicSymmetry=CP.hasCubicSymmetry(key_material)
+            B, n, MaxRadiusHKL=False, cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials)
         )
 
     # main loop over all distances from central and each spots2
@@ -1597,6 +1605,7 @@ def getOrientMatrices(
     set_central_spots_hkl=None,
     verbosedetails=True,
     gauge=None,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     Return all matrices that have a matching rate Minimum_Nb_Matches.
@@ -1766,10 +1775,7 @@ def getOrientMatrices(
                     % k_centspot_index
                 )
 
-            (
-                (list_orient_matrix, planes, pairspots),
-                hkl2,
-                LUTspecific,
+            ( (list_orient_matrix, planes, pairspots), hkl2, LUTspecific,
             ) = matrices_from_onespot_hkl(
                 spot_index_central,
                 LUT_tol_angle,
@@ -1784,6 +1790,7 @@ def getOrientMatrices(
                 LUT=LUTspecific,
                 allow_restrictedLUT=allow_restrictedLUT,
                 verbose=verbose,
+                dictmaterials=dictmaterials
             )
 
         # hkl for central spots IS NOT defined
@@ -1826,6 +1833,7 @@ def getOrientMatrices(
                     LUT=LUTcubic,
                     allow_restrictedLUT=allow_restrictedLUT,
                     verbose=verbose,
+                    dictmaterials=dictmaterials
                 )
             # general crystallographic case
             else:
@@ -1889,6 +1897,7 @@ def getOrientMatrices(
                 ResolutionAngstrom=ResolutionAngstrom,
                 ang_tol=MR_tol_angle,
                 detectorparameters=detectorparameters,
+                dictmaterials=dictmaterials
             )
 
             if AngRes is None:
@@ -2200,6 +2209,7 @@ def getOrients_AnglesLUT(
     absoluteindex=None,
     detectorparameters=None,
     verbose=1,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     TODO: obsolete not used anymore ?
@@ -2266,7 +2276,7 @@ def getOrients_AnglesLUT(
     # --- building angles reference Look up table (LUT) from B and n
     if LUT is None:
         LUT = build_AnglesLUT(
-            B, n, MaxRadiusHKL=False, cubicSymmetry=CP.hasCubicSymmetry(key_material)
+            B, n, MaxRadiusHKL=False, cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials)
         )
 
     twiceTheta = np.array(TwiceTheta)

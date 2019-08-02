@@ -159,15 +159,8 @@ class MainWindow(wx.Frame):
     class of the main window of LaueTools GUI
     """
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        filename="",
-        consolefile="defaultLTlogfile.log",
-        projectfolder=None,
-    ):
+    def __init__( self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
+            projectfolder=None, ):
 
         screenSize = wx.DisplaySize()
         screenWidth = screenSize[0]
@@ -194,20 +187,10 @@ class MainWindow(wx.Frame):
         self.CreateExteriorWindowComponents()
 
         # peak list editor
-        self.control = wx.TextCtrl(
-            panel,
-            -1,
-            "",
-            size=(700, 400),
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.VSCROLL,
-        )
-        self.console = wx.TextCtrl(
-            panel,
-            -1,
-            "",
-            size=(700, 100),
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL | wx.VSCROLL,
-        )
+        self.control = wx.TextCtrl( panel, -1, "", size=(700, 400),
+                        style=wx.TE_MULTILINE | wx.TE_READONLY | wx.VSCROLL, )
+        self.console = wx.TextCtrl( panel, -1, "", size=(700, 100),
+                        style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL | wx.VSCROLL, )
 
         sizer = wx.FlexGridSizer(cols=1, hgap=6, vgap=6)
 
@@ -387,6 +370,12 @@ class MainWindow(wx.Frame):
                 "&Open Peak List",
                 "Open a data file(peak list)",
                 self.OnOpenPeakList,
+            ),
+            (
+                wx.ID_ANY,
+                "&Reload Materials",
+                "Update or Load Materials (dict_Materials.dat)",
+                self.OnLoadMaterials,
             ),
             (None, None, None, None),
             (
@@ -713,6 +702,40 @@ class MainWindow(wx.Frame):
             self.last_Bmatrix_fromindexation = {}
             self.last_epsil_fromindexation = {}
 
+    def OnLoadMaterials(self, event):
+
+        wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
+        _dir = os.getcwd()
+        open_dlg = wx.FileDialog(
+            self,
+            message="Choose a file",
+            defaultDir=_dir,
+            defaultFile="",
+            wildcard=wcd,
+            style=wx.OPEN
+        )
+        if open_dlg.ShowModal() == wx.ID_OK:
+            path = open_dlg.GetPath()
+
+            try:
+                self.dict_Materials = DictLT.readDict(path)
+
+                DictLT.dict_Materials = self.dict_Materials
+
+            except IOError as error:
+                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
+                dlg.ShowModal()
+
+            except UnicodeDecodeError as error:
+                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
+                dlg.ShowModal()
+
+            except ValueError as error:
+                dlg = wx.MessageDialog(self, "Error opening file: Something went wrong when parsing materials line\n" + str(error))
+                dlg.ShowModal()
+
+        open_dlg.Destroy()
+
     def Launch_DetectorParamBoard(self, event):
         """Board to enter manually detector params
         Launch Entry dialog
@@ -896,83 +919,7 @@ class MainWindow(wx.Frame):
         Check if user input matrix, material parameters can produce a Laue pattern that matches
         the current experimental list of spots
         """
-        if 0:
-            if self.data_theta is None:
-                self.OpenDefaultData()
-
-            #             dialog = wx.MessageDialog(self, 'Please load first a data file with cor extension \n'
-            #             'in File/Open Menu', 'No Data Loaded', wx.OK)
-            #             dialog.ShowModal()
-            #             dialog.Destroy()
-            #             event.Skip()
-            #             return
-
-            self.current_exp_spot_index_list = (
-                self.getAbsoluteIndices_Non_Indexed_Spots_()
-            )
-
-            #         nb_exp_spots_data = len(self.data_theta)
-            #
-            #         index_to_select = np.take(self.current_exp_spot_index_list,
-            #                                       np.arange(nb_exp_spots_data))
-
-            self.select_theta = self.data_theta[self.current_exp_spot_index_list]
-            self.select_chi = self.data_chi[self.current_exp_spot_index_list]
-            self.select_I = self.data_I[self.current_exp_spot_index_list]
-            self.select_dataXY = (
-                self.data_pixX[self.current_exp_spot_index_list],
-                self.data_pixY[self.current_exp_spot_index_list],
-            )
-            #         self.select_dataXY = self.data_XY[index_to_select]
-            #         CCDdetectorparameters
-            #         self.StorageDict=None
-            self.data_pixXY = self.data_pixX, self.data_pixY
-
-            self.data = (
-                2 * self.select_theta,
-                self.select_chi,
-                self.select_I,
-                self.DataPlot_filename,
-            )
-
-            if len(self.current_exp_spot_index_list) == 0:
-                wx.MessageBox(
-                    "There are no more spots left to be indexed now !", "INFO"
-                )
-                return
-
-            #         ClassicalIndexationBoard(self, -1, 'Classical Indexation Board :%s' % self.DataPlot_filename)
-
-            self.indexation_parameters = {}
-            self.indexation_parameters["kf_direction"] = self.kf_direction
-            self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
-            self.indexation_parameters["dict_Materials"] = self.dict_Materials
-
-            self.indexation_parameters["data_theta"] = self.data_theta
-            self.indexation_parameters["data_chi"] = self.data_chi
-            self.indexation_parameters["data_I"] = self.data_I
-            self.indexation_parameters["dataXY"] = self.data_pixXY
-            self.indexation_parameters[
-                "current_exp_spot_index_list"
-            ] = self.current_exp_spot_index_list
-            self.indexation_parameters["ClassicalIndexation_Tabledist"] = None
-            self.indexation_parameters["dict_Rot"] = self.dict_Rot
-            self.indexation_parameters[
-                "current_processedgrain"
-            ] = self.current_processedgrain
-            self.indexation_parameters["detectordiameter"] = self.detectordiameter
-            self.indexation_parameters["pixelsize"] = self.pixelsize
-            self.indexation_parameters["dim"] = self.framedim
-            self.indexation_parameters["detectorparameters"] = self.defaultParam
-            self.indexation_parameters["detectordistance"] = self.defaultParam[0]
-            self.indexation_parameters["CCDLabel"] = self.CCDLabel
-            self.indexation_parameters["flipyaxis"] = True  # CCD MAr 165
-            self.indexation_parameters["Filename"] = self.DataPlot_filename
-            self.indexation_parameters["CCDcalib"] = self.defaultParam
-            self.indexation_parameters["framedim"] = self.framedim
-
-            self.indexation_parameters["mainAppframe"] = self
-
+        
         if self.data_theta is None:
             self.OpenDefaultData()
 
@@ -1002,25 +949,13 @@ class MainWindow(wx.Frame):
         #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename, )
 
         if len(self.current_exp_spot_index_list) == 0:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        #         ClassicalIndexationBoard(self, -1, 'Classical Indexation Board :%s' % self.DataPlot_filename)
-
-        # AllDataToIndex
-        #         self.indexation_parameters['AllDataToIndex'] is already set
-        #         self.indexation_parameters ={}
-        print(
-            "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters
-        )
+        print( "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters )
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -1032,21 +967,15 @@ class MainWindow(wx.Frame):
         self.indexation_parameters["DataToIndex"]["dataXY"] = self.select_dataXY
         self.indexation_parameters["DataToIndex"]["data_X"] = self.select_pixX
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
-        self.indexation_parameters["DataToIndex"][
-            "current_exp_spot_index_list"
-        ] = copy.copy(self.current_exp_spot_index_list)
-        self.indexation_parameters["DataToIndex"][
-            "ClassicalIndexation_Tabledist"
-        ] = None
+        self.indexation_parameters["DataToIndex"][ "current_exp_spot_index_list" ] = copy.copy(self.current_exp_spot_index_list)
+        self.indexation_parameters["DataToIndex"][ "ClassicalIndexation_Tabledist" ] = None
 
         print(
             "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
             self.indexation_parameters["DataToIndex"]["data_theta"],
         )
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
-        self.indexation_parameters[
-            "current_processedgrain"
-        ] = self.current_processedgrain
+        self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
         self.indexation_parameters["pixelsize"] = self.pixelsize
         self.indexation_parameters["dim"] = self.framedim
@@ -1071,11 +1000,11 @@ class MainWindow(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
+        StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
 
         nbmatrices = self.EnterMatrix(1)
-        self.Enterkey_material()
+        if self.Enterkey_material() is False: return
         self.EnterEnergyMax()
 
         self.DataSet.pixelsize = self.pixelsize
@@ -1101,13 +1030,14 @@ class MainWindow(wx.Frame):
 
             #                 print "self.indexation_parameters", self.indexation_parameters
             TwicethetaChi = LAUE.SimulateResult(
-                grain,
-                5,
-                self.emax,
-                self.indexation_parameters,
-                ResolutionAngstrom=False,
-                fastcompute=1,
-            )
+                                        grain,
+                                        5,
+                                        self.emax,
+                                        self.indexation_parameters,
+                                        ResolutionAngstrom=False,
+                                        fastcompute=1,
+                                        dictmaterials=self.dict_Materials
+                                    )
             self.TwicethetaChi_solution = TwicethetaChi
             paramsimul = (grain, 5, self.emax)
 
@@ -1821,6 +1751,7 @@ class MainWindow(wx.Frame):
         )
 
         _param = "Ge"
+        flag=True
         dlg.SetValue(_param)
         if dlg.ShowModal() == wx.ID_OK:
             key_material = str(dlg.GetValue())
@@ -1828,8 +1759,16 @@ class MainWindow(wx.Frame):
             # check
             if key_material in DictLT.dict_Materials:
                 self.key_material = key_material
+            else:
+                txt = "This material label is unknown. Please check typo or Reload Materials dict"
+                print(txt)
+
+                wx.MessageBox(txt, "INFO")
+                flag=False
 
             dlg.Destroy()
+
+        return flag
 
     def EnterEnergyMax(self):
         helptstr = "Enter maximum energy of polychromatic beam"
@@ -1863,6 +1802,7 @@ class MainWindow(wx.Frame):
             ResolutionAngstrom=RESOLUTIONANGSTROM,
             ang_tol=ANGLETOLERANCE,
             detectorparameters=self.indexation_parameters,
+            dictmaterials=self.dict_Materials
         )
 
         print("AngRes", AngRes)
@@ -1883,27 +1823,7 @@ class MainWindow(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
-
-        #         RecognitionResultCheckBox(self, -1,
-        #                                               'Classical Indexation Solutions',
-        #                                                 stats_properformat,
-        #                                                 self.data,
-        #                                                 self.rough_tolangle,
-        #                                                 self.fine_tolangle,
-        #                                                 key_material=self.key_material,
-        #                                                 emax=self.energy_max,
-        #                                                 ResolutionAngstrom=self.ResolutionAngstrom,
-        #                                                 kf_direction=self.kf_direction,
-        #                                                 datatype=datatype,
-        #                                                 data_2thetachi=self.data_2thetachi,
-        #                                                 data_XY=self.data_XY,
-        #                                                 ImageArray=self.ImageArray,
-        #                                                 CCDdetectorparameters=self.indexation_parameters,
-        #                                                 IndexationParameters=self.indexation_parameters,
-        #                                                 StorageDict=self.StorageDict,
-        #                                                 DataSetObject=self.DataSet
-        #                                                 )
+        StorageDict["dict_Materials"] = self.dict_Materials
 
         # display "statistical" results
         RRCBClassical = RecognitionResultCheckBox(
@@ -1946,33 +1866,9 @@ class MainWindow(wx.Frame):
 
         Data = self.getSummaryallData()
 
-        (
-            spotindex,
-            grain_index,
-            tth,
-            chi,
-            posX,
-            posY,
-            intensity,
-            H,
-            K,
-            L,
-            Energy,
-        ) = Data.T
+        (spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy,) = Data.T
 
-        Columns = [
-            spotindex,
-            grain_index,
-            tth,
-            chi,
-            posX,
-            posY,
-            intensity,
-            H,
-            K,
-            L,
-            Energy,
-        ]
+        Columns = [spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy,]
 
         nbspots = len(spotindex)
 
@@ -4726,6 +4622,7 @@ class ManualIndexFrame(wx.Frame):
             [0, 0, 1],
         ]  # means: columns are a*,b*,c* in xyz frame
         self.key_material = element
+        self.dict_Materials=self.indexation_parameters['dict_Materials']
         self.detectordistance = None
 
         self.DRTA = DRTA
@@ -6339,7 +6236,7 @@ class ManualIndexFrame(wx.Frame):
 
         # restrict LUT if allowed and if crystal is cubic
         if restrictLUT_cubicSymmetry:
-            restrictLUT_cubicSymmetry = CP.hasCubicSymmetry(self.key_material)
+            restrictLUT_cubicSymmetry = CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials)
 
         print("set_central_spots_hkl", set_central_spots_hkl)
         print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
@@ -6390,6 +6287,7 @@ class ManualIndexFrame(wx.Frame):
                     "verbosedetails": verbosedetails,
                     "Minimum_Nb_Matches": Nb_criterium,
                     "worker": None,
+                    "dictmaterials":self.dict_Materials
                 },
             ]
 
@@ -6444,6 +6342,7 @@ class ManualIndexFrame(wx.Frame):
                 verbosedetails=verbosedetails,
                 Minimum_Nb_Matches=Nb_criterium,
                 worker=self.worker,
+                dictmaterials=self.dict_Materials
             )
 
             self.bestmat, stats_res = self.UBs_MRs
@@ -6522,6 +6421,7 @@ class ManualIndexFrame(wx.Frame):
                 # ------------------------------------------------------------------
 
                 #                 print "self.indexation_parameters.keys()", self.indexation_parameters.keys()
+                #                 print "self.indexation_parameters.keys()", self.indexation_parameters.keys()
                 #                 print "self.indexation_parameters['detectordiameter']", self.indexation_parameters['detectordiameter']
                 TwicethetaChi = LAUE.SimulateResult(
                     grain,
@@ -6530,6 +6430,7 @@ class ManualIndexFrame(wx.Frame):
                     self.indexation_parameters,
                     ResolutionAngstrom=self.ResolutionAngstrom,
                     fastcompute=1,
+                    dictmaterials=self.dict_Materials
                 )
                 self.TwicethetaChi_solution[p] = TwicethetaChi
                 paramsimul.append((grain, 5, self.energy_max))

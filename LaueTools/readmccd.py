@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 readmccd module is made for reading data contained in binary image file
- fully or partially.
- It can process a peak or blob search by various methods
- and refine the peak by a gaussian or lorentzian 2D model
+fully or partially.
+It can process a peak or blob search by various methods
+and refine the peak by a gaussian or lorentzian 2D model
 
- More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
+More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
 """
 
 __version__ = "$Revision: 975 $"
@@ -130,7 +130,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
     :type imageindex: string
 
     :return filename: input filename with index replaced by input imageindex
-    :rtype filename: string
+    :rtype: string
     """
 
     #     print "imagefilename",imagefilename
@@ -142,13 +142,13 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 
     elif CCDLabel in ("sCMOS", "sCMOS_fliplr"):
         #default file extension for sCMOS camera
-        ext= "tif"
+        ext = "tif"
         lenext = 4 #length of extension including '.'
         if imagefilename.endswith("tiff"):
             ext = "tiff"
-            lenext = 5 
+            lenext = 5
         # zero padded index for filename
-        
+
         if nbdigits is not None:
             if imagefilename.endswith(ext):
                 imagefilename = imagefilename[: -(lenext + nbdigits)] + "{:04d}.{}".format(
@@ -157,16 +157,16 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
             elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[
                     : -(lenext+3 + nbdigits)
-                ] + "{:04d}.{}.gz".format(imageindex,ext)
+                ] + "{:04d}.{}.gz".format(imageindex, ext)
         # no zero padded index for filename
         else:
             if imagefilename.endswith(ext):
                 prefix, extension = imagefilename.split(".")
                 prefix0 = prefix.split("_")[0]
                 if imageindex > 9999:
-                    imagefilename = prefix0 + "_{}.{}".format(imageindex,ext)
+                    imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
                 else:
-                    imagefilename = prefix0 + "_{:04d}.{}".format(imageindex,ext)
+                    imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
 
     elif CCDLabel in ("EIGER_4Mstack",):
         # only stackimageindex is changed not imagefilename
@@ -193,7 +193,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 
     # special case for image id15 frelon corrected form distorsion
     elif imagefilename.endswith((".tif", ".edf")):
-        if CCDLabel in ("ImageStar_raw"):
+        if CCDLabel in ("ImageStar_raw", ):
             prefixwihtindex = imagefilename[:-4]
             prefixwithindex_list = list(prefixwihtindex)
             indexnodigit = 0
@@ -236,7 +236,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
 
 
 def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimageindex=-1):
-    """
+    r"""
     get integer index from imagefilename string
 
     :param imagefilename: filename string (full path or not)
@@ -246,12 +246,11 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     #     print "CCDLabel",CCDLabel
     #     print "imagefilename",imagefilename
 
-    
     if CCDLabel in ("sCMOS", "sCMOS_fliplr"):
         #default file extension for sCMOS camera
-        ext= "tif"
+        ext = "tif"
         lenext = 4 #length of extension including '.'
-        
+
         if imagefilename.endswith("tiff"):
             ext = "tiff"
             lenext = 5
@@ -289,121 +288,26 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     return imageindex
 
 
-def docstringsexample():
-    r"""
-    docstrings format such as use numpydoc extension in conf.py of sphinx
-
-    Parameters
-    ----------
-    var1 : array_like
-        Array_like means all those objects -- lists, nested lists, etc. --
-        that can be converted to an array. We can also refer to
-        variables like `var1`.
-    var2 : int
-        The type above can either refer to an actual Python type
-        (e.g. ``int``), or describe the type of the variable in more
-        detail, e.g. ``(N,) ndarray`` or ``array_like``.
-    Long_variable_name : {'hi', 'ho'}, optional
-        Choices in brackets, default first when optional.
-
-    Returns
-    -------
-    type
-        Explanation of anonymous return value of type ``type``.
-    describe : type
-        Explanation of return value named `describe`.
-    out : type
-        Explanation of `out`.
-
-    Other Parameters
-    ----------------
-    only_seldom_used_keywords : type
-        Explanation
-    common_parameters_listed_above : type
-        Explanation
-
-    Raises
-    ------
-    BadException
-        Because you shouldn't have done that.
-
-    See Also
-    --------
-    otherfunc : relationship (optional)
-    newfunc :   Relationship (optional), which could be fairly long, in which
-                case the line wraps here.
-    thirdfunc, fourthfunc, fifthfunc
-
-    Notes
-    -----
-    Notes about the implementation algorithm (if needed).
-
-    This can have multiple paragraphs.
-
-    You may include some math:
-
-    .. math:: X(e^{j\omega } ) = x(n)e^{ - j\omega n}
-
-    And even use a greek symbol like :math:`omega` inline.
-
-    References
-    ----------
-    Cite the relevant literature, e.g. [1]_. You may also cite these
-    references in the notes section above.
-    .. [1] O. McNoleg, "The integration of GIS, remote sensing,
-       expert systems and adaptive co-kriging for environmental habitat
-       modelling of the Highland Haggis using object-oriented, fuzzy-logic
-       and neural-network techniques," Computers & Geosciences, vol. 22,
-       pp. 585-588, 1996.
-
-    Examples
-    --------
-    These are written in doctest format, and should illustrate how to
-    use the function.
-
-    >>> a=[1,2,3]
-    >>> print [x + 3 for x in a]
-    [4, 5, 6]
-    >>> print "a\n\nb"
-    a
-    b
-
-    """
-    pass
-
-
 def getwildcardstring(CCDlabel):
-    r"""
-    return smart wildcard to open binary CCD image file with priority of CCD type of CCDlabel
+    """  return smart wildcard to open binary CCD image file with priority of CCD type of CCDlabel
 
-    Parameters
-    ----------
-    CCDlabel : string
-        label defining the CCD type
-
-    Returns
-    -------
-    wildcard_extensions : string
-        string from concatenated strings to be used in wxpython open file dialog box
-
-    See Also
-    ----------
-
-    :func:`getIndex_fromfilename`
-
-    LaueToolsGUI.AskUserfilename
-
-    wx.FileDialog
-
-    Examples
-    --------
-    These are written in doctest format, and should illustrate how to
-    use the function.
     
-    >>> from readmccd import getwildcardstring
-    >>> getwildcardstring('MARCCD165')
-    'MARCCD, ROPER(*.mccd)|*mccd|mar tif(*.tif)|*_mar.tiff|tiff(*.tiff)|*tiff|Princeton(*.spe)|*spe|Frelon(*.edf)|*edf|tif(*.tif)|*tif|All files(*)|*'
+    :param CCDlabel: string label defining the CCD type
+    :type CCDlabel: str
+    :return: string from concatenated strings to be used in wxpython open file dialog box
+    :rtype: str
 
+    .. see also::
+        - :func:`getIndex_fromfilename`
+
+        - LaueToolsGUI.AskUserfilename
+
+        - wx.FileDialog
+
+    .. example::
+        >>> from readmccd import getwildcardstring
+        >>> getwildcardstring('MARCCD165')
+        'MARCCD, ROPER(*.mccd)|*mccd|mar tif(*.tif)|*_mar.tiff|tiff(*.tiff)|*tiff|Princeton(*.spe)|*spe|Frelon(*.edf)|*edf|tif(*.tif)|*tif|All files(*)|*'
     """
     ALL_EXTENSIONS = ["mccd", "_mar.tiff", "tiff", "spe", "edf", "tif", "h5", ""]
     INFO_EXTENSIONS = [
@@ -439,10 +343,21 @@ def getwildcardstring(CCDlabel):
 
 
 def getpixelValue(filename, x, y, ccdtypegeometry="edf"):
-    """
-    x,y on display mapcanvas of lauetools are swaped by respect to array = d[y,x]
+    """return pixel value at x,y
 
-    for .edf file there is 2047-y on top of that
+    .. warning::
+        Very old function. To be checked. Use better readpixelvalue in plotdip.py
+
+    :param filename: path to image file
+    :type filename: str
+    :param x: x pixel value
+    :type x: int
+    :param y: y pixel value
+    :type y: int
+    :param ccdtypegeometry: CCD label, defaults to "edf"
+    :type ccdtypegeometry: str, optional
+    :return: pixel intensity
+    :rtype: int
     """
     if ccdtypegeometry == "edf":
         # frelon camera as mounted on BM32 Oct2012
@@ -458,7 +373,7 @@ def getpixelValue(filename, x, y, ccdtypegeometry="edf"):
 
 
 def readheader(filename, offset=4096, CCDLabel="MARCCD165"):
-    """
+    r"""
     return header in a raw format
 
     default offset for marccd image
@@ -476,7 +391,7 @@ def readheader(filename, offset=4096, CCDLabel="MARCCD165"):
 
 
 def read_header_marccd(filename):
-    """
+    r"""
     return string of parameters found in header in marccd image file .mccd
 
     - print allsentences  displays the header
@@ -503,7 +418,7 @@ def read_header_marccd(filename):
 
 
 def read_header_marccd2(filename):
-    """
+    r"""
     return string of parameters comments and exposure time
     found in header in marccd image file .mccd
 
@@ -527,7 +442,7 @@ def read_header_marccd2(filename):
 
 
 def read_header_scmos(filename):
-    """
+    r"""
     return string of parameters comments and exposure time
     found in header in scmis image file .tif
 
@@ -613,27 +528,28 @@ def readoneimage_full(filename, frametype="mccd", dirname=None):
 
 
 def readCCDimage(
-    filename, CCDLabel="PRINCETON", dirname=None, stackimageindex=-1, verbose=0
+    filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-1, verbose=0
 ):
-    """
-    read raw data image file and return pixel intensity 2D array
+    r"""read raw data image file and return pixel intensity 2D array
     such as to fit the data (2theta, chi) scattering angles representation convention
-
-    Parameters
-    -------------
-    filename : string
-               path to image file (fullpath if `dirname`=None)
-
-    Returns
-    ----------
-    dataimage : 2D array
-                image data pixel intensity properly oriented
-    framedim : iterable of 2 integers
-               shape of dataimage
-    fliprot : string
-              key for CCD frame transform to orient image
+    
+    :param filename: path to image file (fullpath if `dirname`=None)
+    :type filename: str
+    :param CCDLabel: label, defaults to "MARCCD165"
+    :type CCDLabel: str, optional
+    :param dirname: folder path, defaults to None
+    :type dirname: str, optional
+    :param stackimageindex: index of images bunch, defaults to -1
+    :type stackimageindex: int, optional
+    :param verbose: 0 or 1, defaults to 0
+    :type verbose: int, optional
+    :raises ValueError: if data format and CCD parameters from label are not compatible
+    :return: 
+        - dataimage, 2D array image data pixel intensity properly oriented
+        - framedim, iterable of 2 integers shape of dataimage
+        - fliprot : string, key for CCD frame transform to orient image
+    :rtype: tuple of 3 elements
     """
-
     (
         framedim,
         pixelsize,
@@ -837,25 +753,22 @@ def readCCDimage(
 def readoneimage(
     filename, framedim=(2048, 2048), dirname=None, offset=4096, formatdata="uint16"
 ):
-    """
-    returns a 1d array of integers from a binary image file (full data)
+    r""" returns a 1d array of integers from a binary image file (full data)
 
-    Parameters
-    -------------
-    filename : string
-               path to image file (fullpath if `dirname`=None)
-    offset : integer
-             nb of file header bytes
-    framedim : iterable of 2 integers
-               shape of expected 2D data
-    formatdata : string
-                 key for numpy dtype to decode binary file
-
-    Returns
-    ----------
-    dataimage : 1D array
-                image data pixel intensity
+    :param filename: image file name (full path if dirname=0)
+    :type filename: str
+    :param framedim: detector dimensions, defaults to (2048, 2048)
+    :type framedim: tuple of 2 integers, optional
+    :param dirname: folder path, defaults to None
+    :type dirname: str, optional
+    :param offset: file header in byte (octet), defaults to 4096
+    :type offset: int, optional
+    :param formatdata: numpy format of raw binary image pixel value, defaults to "uint16"
+    :type formatdata: str, optional
+    :return: dataimage : image data pixel intensity
+    :rtype: 1D array
     """
+    
     nb_elem = framedim[0] * framedim[1]
 
     if dirname == None:
@@ -899,7 +812,7 @@ def readoneimage_band(
     dataimage : 1D array
                 image data pixel intensity
     """
-    if dirname == None:
+    if dirname is None:
         dirname = os.curdir
 
     if formatdata in ("uint16",):
@@ -928,7 +841,7 @@ def readoneimage_crop_fast(
     filename, dirname=None, CCDLabel="MARCCD165", firstElemIndex=0, lastElemIndex=2047
 ):
     """
-    returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
+    rreturns a 2d array of integers from a binary image file. Data are taken only from a rectangle
     with respect to firstElemIndex
     and lastElemIndex
 
@@ -1009,11 +922,10 @@ def readrectangle_in_image(
     CCDLabel="MARCCD165",
     verbose=True,
 ):
-    """
+    r"""
     returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
-    centered on pixx, pixy 
+    centered on pixx, pixy
 
-    
     Returns
    -------
     dataimage : 2D array
@@ -1119,7 +1031,7 @@ def readoneimage_crop(
 ):
     """
     return a cropped array of data read in an image file
-    
+
     Parameters
     -------------
     filename : string
@@ -1128,12 +1040,12 @@ def readoneimage_crop(
              (x,y) pixel coordinates
     halfboxsize : integer or iterable of 2 integers
                   ROI half size in both directions
-    
+
     Returns
     ----------
     dataimage : 1D array
                 image data pixel intensity
-                
+
     #TODO: useless?
     """
     if dirname == None:
@@ -1160,33 +1072,6 @@ def readoneimage_crop(
     return None, dataimage[y1:y2, x1:x2]
 
 
-def readoneimage_multi_barycenters(filename, centers, boxsize, offsetposition=0):
-    """
-    SLOW !!
-    TODO :   clip data if intensity is below 0.05*(max-min) in ROI
-    TODO : too slow use numpy instead of PIL
-    """
-
-    Images, Data = readoneimage_manycrops_old(filename, centers, boxsize)
-
-    BoxSize = np.ones((len(Images), 2)) * boxsize
-    TabCentroid = []
-    shapy = Data[0].shape
-    for iii, dd in enumerate(Data):
-        max_in_roi, min_in_roi = np.amax(dd), np.amin(dd)
-        # print max_in_roi,min_in_roi
-        # print centers[iii]
-
-        # flat background approximation for small ROI
-        bkg = min_in_roi * np.ones(shapy)
-        clipped_dd = np.clip(dd - bkg, 0.5 * (max_in_roi - min_in_roi), max_in_roi * 2)
-        # imean,jmean = scipy.ndimage.measurements.center_of_mass(dd-bkg)
-        imean, jmean = ndimage.measurements.center_of_mass(clipped_dd)
-        TabCentroid.append([imean + centers[iii][0], jmean + centers[iii][1]])
-
-    return np.array(TabCentroid) - BoxSize
-
-
 def readoneimage_manycrops(
     filename,
     centers,
@@ -1199,7 +1084,7 @@ def readoneimage_manycrops(
     """
     reads 1 image and extract many regions
     centered on center_pixel with xyboxsize dimensions in pixel unit
-    
+
     Parameters
     -------------
     filename : string
@@ -1290,65 +1175,6 @@ def readoneimage_manycrops(
         return Data, Imax
     else:
         return Data
-
-
-def readoneimage_manycrops_old(filename, centers, boxsize):
-    """
-    !! SLOW !!
-    old  and slow version retrieving data with PIL module
-
-    reads 1 image in marCCD format and extract many regions
-    centered on center_pixel with xyboxsizedimensions in pixel unit
-
-    returns:
-    PILimage: list image objects of PIL module
-    arrayofdata: list of 2D array of intensity
-
-    TODO: to be deleted
-    """
-    dimMCCD = (2047, 2047)  # MarCCD max value in two directions in array index unit
-    dim = dimMCCD
-
-    if isinstance(boxsize, (float, int)):
-        xboxsize, yboxsize = int(boxsize), int(boxsize)
-    else:
-        xboxsize, yboxsize = boxsize
-
-    f = Image.open(filename)  # file is only opened once
-
-    if type(boxsize) == type(5):
-        boxsizex, boxsizey = boxsize, boxsize
-    elif type(boxsize) == type((10, 20)):
-        boxsizex, boxsizey = boxsize
-
-    xpic, ypic = np.array(centers).T
-
-    x1 = np.maximum(0, xpic - boxsizex)
-    x2 = np.minimum(dim[0], xpic + boxsizex)
-    y1 = np.maximum(0, ypic - boxsizey)
-    y2 = np.minimum(dim[1], ypic + boxsizey)
-
-    Images = []
-    Data = []
-    for box in zip(x1, y1, x2, y2):
-        _x1, _y1, _x2, _y2 = box
-        cf = f.crop(box)
-        Images.append(cf)
-        ravdata = np.array(cf.getdata())
-        Data.append(np.reshape(ravdata, (_y2 - _y1, _x2 - _x1)))
-    return Images, Data
-
-
-def LoadMARfile(filename):
-    """
-    load marCCD file and create a 1d array
-    TODO: obsolete use readoneimage() directly
-    """
-    d = readoneimage(
-        filename, framedim=(2048, 2048), dirname=None, offset=4096, formatdata="uint16"
-    )
-
-    return d
 
 
 def readoneimage_multiROIfit(
@@ -1750,17 +1576,8 @@ def fitPeakMultiROIs(
     #                                    start_sigma1, start_sigma2,
     #                                    start_anglerot)
 
-    startingparams_zip = np.array(
-        [
-            start_baseline,
-            start_amplitude,
-            start_j,
-            start_i,
-            start_sigma1,
-            start_sigma2,
-            start_anglerot,
-        ]
-    )
+    startingparams_zip = np.array( [ start_baseline, start_amplitude, start_j, start_i,
+                            start_sigma1, start_sigma2, start_anglerot, ] )
 
     RES_params = []
     RES_cov = []
@@ -1893,34 +1710,6 @@ def fitPeakMultiROIs(
         k_image += 1
 
     return RES_params, RES_cov, RES_infodict, RES_errmsg, start_baseline
-
-
-def crop_fit2d(PILimage, fit2dlimits, plot=0, returndata=0):
-    """
-    old function to crop image read by PIL and
-    boundaries given by fit2d display
-    #TODO: to delete
-    """
-    xmin, ymin, xmax, ymax = fit2dlimits
-    ymin_PIL = 2048 - ymax
-    ymax_PIL = 2048 - ymin
-    xmin_PIL = xmin
-    xmax_PIL = xmax
-    tuppy = xmin_PIL, ymin_PIL, xmax_PIL, ymax_PIL
-    print(tuppy)
-
-    PILcropimage = PILimage.crop(tuppy)
-    if plot:
-        PILcropimage.show()
-    if returndata:  # in fit2d convention
-        rawdata = np.array(PILcropimage.getdata())
-        rraw = np.reshape(rawdata, (ymax_PIL - ymin_PIL, xmax_PIL - xmin_PIL))
-        newdata_fit2d = np.transpose(np.flipud(rraw))
-        # newdata[0,0] = fit2data [xmin+1,ymin+1]
-
-        return PILcropimage, newdata_fit2d
-    else:
-        return None
 
 
 def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False):
@@ -2128,7 +1917,7 @@ def Add_Images2(
     average=True,
 ):
     """
-
+    in dev
 
     """
     suffixname = "." + DictLT.dict_CCD[CCDLabel][-1]
@@ -2169,6 +1958,9 @@ def Add_Images2(
 def Add_Images(prefixname, ind_start, ind_end, plot=0, writefilename=None):
     """
     Add continuous sequence of images
+
+    .. note::
+        Add_Images2 exists
 
     Parameters
     ----------
@@ -2224,56 +2016,6 @@ def Add_Images(prefixname, ind_start, ind_end, plot=0, writefilename=None):
     return datastart
 
 
-def rebin(a, *args):
-    """rebin ndarray data into a smaller ndarray of the same rank whose dimensions
-    are factors of the original dimensions. eg. An array with 6 columns and 4 rows
-    can be reduced to have 6,3,2 or 1 columns and 4,2 or 1 rows.
-    example usages:
-
-    Examples
-    -----------
-
-    >>> a=rand(6,4); b=rebin(a,3,2)
-    >>> a=rand(6); b=rebin(a,2)
-    """
-    shape = a.shape
-    lenShape = len(shape)
-    factor = np.asarray(shape) // np.asarray(args)
-    evList = (
-        ["a.reshape("]
-        + ["args[{:d}],factor[{:d}],".format(i, i) for i in list(range(lenShape))]
-        + [")"]
-        + [".sum({:d})".format(i + 1) for i in list(range(lenShape))]
-        + ["/factor[{:d}]".format(i) for i in list(range(lenShape))]
-    )
-    return (
-        a.reshape(args[0], factor[0], args[1], factor[1]).sum(1).sum(2)
-        / factor[0]
-        / factor[1]
-    )
-    return eval("".join(evList))
-
-
-def fromfit2D_to_array(peaklist):
-    """ pixel frame conversion from fit2d to numpy
-    #TODO(JSM): to be deleted
-    """
-    x, y = peaklist.T
-    i = 2048 - y
-    j = x - 1
-    return np.array([i, j]).T
-
-
-def fromarray_to_fit2d(peaklist):
-    """ pixel frame conversion from numpy to fit2d
-    """
-    # i slow index, j fast index
-    i, j = peaklist.T
-    y = 2048 - i
-    x = j + 1
-    return np.array([x, y]).T
-
-
 # --- -------------  getting data from images or ROI
 def diff_pix(pix, array_pix, radius=1):
     """
@@ -2292,23 +2034,11 @@ def diff_pix(pix, array_pix, radius=1):
             return None
 
 
-def mean_index(data):
-    """
-    returns barycenter of weights in data
-    (slow index mean position, fast index mean position)
-    mean(i) =  sum (i,j) data(i,j)i  / sum(i,j) data(i,j)
-    mean(j) =  sum (i,j) dyata(i,j)j  / sum(i,j) data(i,j)
-
-    #TODO: to BE replaced by : scipy.ndimage.measurements.center_of_mass(data)
-    """
-    SLow, Fast = np.indices(data.shape)
-    total_I = 1.0 * np.sum(data)
-    return np.array([np.sum(SLow * data), np.sum(Fast * data)]) / total_I
-
-
 def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
     """
     extract min and max from a 2d array in a ROI
+
+    Obsolete? Still used in LocalMaxima_ShiftArrays()
 
     Parameters
     -----------
@@ -2462,10 +2192,8 @@ def getIntegratedIntensities(
 def getIntegratedIntensity(
     data2d, center, boxsize, framedim, thresholdlevel=0.2, flipxycenter=True
 ):
-    """
+    r"""
     return  crude estimate of integrated intensity of peak above a given relative threshold
-    
-    # TODO: center is a only a single center, need to extend to several centers...  
 
     Parameters
     ------------
@@ -2730,6 +2458,8 @@ def LocalMaxima_ndimage(
     returns (float) i,j positions in array of each blob
     (peak, spot, assembly of hot pixels or whatever)
 
+    .. note:: used only in LocalMaxima_KernelConvolution
+
     input:
 
     peakVal, boxsize, central_radius    :
@@ -2842,6 +2572,7 @@ def LocalMaxima_KernelConvolution(
     r"""
     return local maxima (blobs) position and amplitude in Data by using
     convolution with a mexican hat like kernel.
+
     Two Thresholds are used sequently:
         - thresholdConvolve : level under which intensity of kernel-convolved array is discarded
         - IntensityThreshold : level under which blob whose local intensity amplitude in raw array is discarded  
@@ -3318,141 +3049,6 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400):
     return meanpos
 
 
-def shiftarrays(Data_array, n, dimensions=1):
-    """
-    1D
-    returns 3 arrays corresponding to shifted arrays by n in two directions and original one
-    2D
-    returns 5 arrays corresponding to shifted arrays by n in two directions and original one
-
-    these arrays are ready for comparison with eg np.greater
-    """
-    if n > 0:
-        if dimensions == 2:
-            shift_zero = Data_array[n:-n, n:-n]
-
-            shift_left = Data_array[: -2 * n, n:-n]
-            shift_right = Data_array[2 * n :, n:-n]
-            shift_up = Data_array[n:-n, : -2 * n]
-            shift_down = Data_array[n:-n, 2 * n :]
-
-            return shift_zero, shift_left, shift_right, shift_up, shift_down
-
-        if dimensions == 1:
-            shift_zero = Data_array[n:-n]
-
-            shift_left = Data_array[: -2 * n]
-            shift_right = Data_array[2 * n :]
-
-            return shift_zero, shift_left, shift_right
-
-
-def shiftarrays_accum(Data_array, n, dimensions=1, diags=0):
-    """
-    idem than shiftarrays() but with all intermediate shifted arrays
-    1D
-    returns 3 arrays corresponding to shifted arrays
-    by n in two directions and original one
-    2D
-    returns 5 arrays corresponding to shifted arrays
-    by n in two directions and original one
-
-    these arrays are ready for comparison with eg np.greater
-
-    Data_array must have shape (slowdim,fastdim) so that
-    slowdim-2*n>=1 and fastdim-2*n>=1
-    (ie central array with zero shift has some elements)
-
-    TODO: replace append by a pre allocated array
-    """
-    if n <= 0:
-        raise ValueError("shift value must be positive")
-
-    if dimensions == 2:
-        if diags:
-            shift_zero = Data_array[n:-n, n:-n]
-
-            allleft = []
-            allright = []
-            allup = []
-            alldown = []
-            alldiagleftdown = []  # diag "y=x"
-            alldiagrightup = []  # diag "y=x"
-            alldiagrightdown = []  #  diah "y=-x"
-            alldiagleftup = []  #  diah "y=-x"
-
-            for k in np.arange(1, n + 1)[::-1]:
-
-                allleft.append(Data_array[n - k : -(n + k), n:-n])
-                alldown.append(Data_array[n:-n, n - k : -(n + k)])
-                alldiagrightdown.append(Data_array[n - k : -(n + k), n - k : -(n + k)])
-
-                if (n - k) != 0:
-                    allright.append(Data_array[k + n : -(n - k), n:-n])
-                    allup.append(Data_array[n:-n, k + n : -(n - k)])
-                    alldiagleftdown.append(
-                        Data_array[k + n : -(n - k), n - k : -(n + k)]
-                    )
-                    alldiagleftup.append(Data_array[k + n : -(n - k), k + n : -(n - k)])
-                    alldiagrightup.append(
-                        Data_array[n - k : -(n + k), k + n : -(n - k)]
-                    )
-
-                else:  # correct python array slicing at the end :   a[n:0]  would mean a[n:]
-
-                    allright.append(Data_array[k + n :, n:-n])
-                    allup.append(Data_array[n:-n, k + n :])
-                    alldiagleftdown.append(Data_array[k + n :, n - k : -(n + k)])
-                    alldiagleftup.append(Data_array[k + n :, k + n :])
-                    alldiagrightup.append(Data_array[n - k : -(n + k), k + n :])
-
-            return (
-                shift_zero,
-                allleft,
-                allright,
-                alldown,
-                allup,
-                alldiagleftdown,
-                alldiagrightup,
-                alldiagrightdown,
-                alldiagleftup,
-            )
-
-        else:
-            shift_zero = Data_array[n:-n, n:-n]
-
-            allleft = []
-            allright = []
-            allup = []
-            alldown = []
-
-            allleft.append(Data_array[: -2 * n, n:-n])
-            alldown.append(Data_array[n:-n, : -2 * n])
-
-            for k in np.arange(1, n)[::-1]:
-                allleft.append(Data_array[n - k : -(n + k), n:-n])
-                allright.append(Data_array[k + n : -(n - k), n:-n])
-                alldown.append(Data_array[n:-n, n - k : -(n + k)])
-                allup.append(Data_array[n:-n, k + n : -(n - k)])
-
-            allright.append(Data_array[2 * n :, n:-n])
-            allup.append(Data_array[n:-n, 2 * n :])
-
-            return shift_zero, allleft, allright, alldown, allup
-
-    elif dimensions == 1:
-        shift_zero = Data_array[n:-n]
-        allleft = []
-        allright = []
-        allleft.append(Data_array[: -2 * n])
-        for k in np.arange(1, n)[::-1]:
-            allright.append(Data_array[k + n : -(n - k)])
-            allleft.append(Data_array[n - k : -(n + k)])
-        allright.append(Data_array[2 * n :])
-
-        return shift_zero, allleft, allright
-
-
 def localmaxima(DataArray, n, diags=1, verbose=0):
     """
     from DataArray 2D  returns (array([i1,i2,...,ip]),array([j1,j2,...,jp]))
@@ -3611,6 +3207,8 @@ def fitoneimage_manypeaks(
                         must be a tuple of 3 elements:
                         fulldata, framedim, fliprot
                         where fulldata  ndarray
+
+    .. note:: used in PeakSearchGUI
     
     """
 
@@ -3782,20 +3380,8 @@ def fitoneimage_manypeaks(
         pass
 
     # all peaks list building
-    tabpeak = np.array(
-        [
-            peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            Ipixmax,
-        ]
-    ).T
+    tabpeak = np.array( [ peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                        Xdev, Ydev, peak_bkg, Ipixmax, ] ).T
 
     # print("Results of all fits in tabpeak", tabpeak)
 
@@ -4631,7 +4217,7 @@ def readPeakSearchConfigFile(filename):
 def read_background_flag(background_flag):
     """
     interpret the background flag (field used in FileSeries/Peak_Search.py)
-    
+
     return two values to put in dict_param of peaksearch_series
     """
     formulaexpression = "A-B"
@@ -4677,6 +4263,8 @@ def read_blacklist_filepath(blacklistpeaklist):
 def plot_image_markers(image, markerpos, position_definition=1):
     """
     plot 2D array (image) with markers at first two columns of (markerpos)
+
+    .. note:: used in LaueHDF5. Could be better implementation in some notebooks
 
     """
     fig = pp.figure()
@@ -5332,6 +4920,8 @@ def removePeaks_inPeakList(
     """
     read peaks PeakListfilename and remove those in BlackListed_PeakListfilename
     and write a new peak list file
+
+    .. note:: Not used ??
     """
     data_peak_blacklisted = IOLT.read_Peaklist(
         BlackListed_PeakListfilename, dirname=dirname

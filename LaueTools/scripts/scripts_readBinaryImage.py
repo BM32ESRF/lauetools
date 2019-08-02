@@ -453,6 +453,145 @@ def test_filtereffect():
     im4.save("im4.TIFF")
 
 
+def shiftarrays(Data_array, n, dimensions=1):
+    """
+    1D
+    returns 3 arrays corresponding to shifted arrays by n in two directions and original one
+    2D
+    returns 5 arrays corresponding to shifted arrays by n in two directions and original one
+
+    these arrays are ready for comparison with eg np.greater
+
+    .. note:: readmccd.localmaxima is better
+    """
+    if n > 0:
+        if dimensions == 2:
+            shift_zero = Data_array[n:-n, n:-n]
+
+            shift_left = Data_array[: -2 * n, n:-n]
+            shift_right = Data_array[2 * n :, n:-n]
+            shift_up = Data_array[n:-n, : -2 * n]
+            shift_down = Data_array[n:-n, 2 * n :]
+
+            return shift_zero, shift_left, shift_right, shift_up, shift_down
+
+        if dimensions == 1:
+            shift_zero = Data_array[n:-n]
+
+            shift_left = Data_array[: -2 * n]
+            shift_right = Data_array[2 * n :]
+
+            return shift_zero, shift_left, shift_right
+
+
+def shiftarrays_accum(Data_array, n, dimensions=1, diags=0):
+    """
+    idem than shiftarrays() but with all intermediate shifted arrays
+    1D
+    returns 3 arrays corresponding to shifted arrays
+    by n in two directions and original one
+    2D
+    returns 5 arrays corresponding to shifted arrays
+    by n in two directions and original one
+
+    these arrays are ready for comparison with eg np.greater
+
+    Data_array must have shape (slowdim,fastdim) so that
+    slowdim-2*n>=1 and fastdim-2*n>=1
+    (ie central array with zero shift has some elements)
+
+    TODO: replace append by a pre allocated array
+
+    .. note:: readmccd.localmaxima is better
+
+    """
+    if n <= 0:
+        raise ValueError("shift value must be positive")
+
+    if dimensions == 2:
+        if diags:
+            shift_zero = Data_array[n:-n, n:-n]
+
+            allleft = []
+            allright = []
+            allup = []
+            alldown = []
+            alldiagleftdown = []  # diag "y=x"
+            alldiagrightup = []  # diag "y=x"
+            alldiagrightdown = []  #  diah "y=-x"
+            alldiagleftup = []  #  diah "y=-x"
+
+            for k in np.arange(1, n + 1)[::-1]:
+
+                allleft.append(Data_array[n - k : -(n + k), n:-n])
+                alldown.append(Data_array[n:-n, n - k : -(n + k)])
+                alldiagrightdown.append(Data_array[n - k : -(n + k), n - k : -(n + k)])
+
+                if (n - k) != 0:
+                    allright.append(Data_array[k + n : -(n - k), n:-n])
+                    allup.append(Data_array[n:-n, k + n : -(n - k)])
+                    alldiagleftdown.append(
+                        Data_array[k + n : -(n - k), n - k : -(n + k)]
+                    )
+                    alldiagleftup.append(Data_array[k + n : -(n - k), k + n : -(n - k)])
+                    alldiagrightup.append(
+                        Data_array[n - k : -(n + k), k + n : -(n - k)]
+                    )
+
+                else:  # correct python array slicing at the end :   a[n:0]  would mean a[n:]
+
+                    allright.append(Data_array[k + n :, n:-n])
+                    allup.append(Data_array[n:-n, k + n :])
+                    alldiagleftdown.append(Data_array[k + n :, n - k : -(n + k)])
+                    alldiagleftup.append(Data_array[k + n :, k + n :])
+                    alldiagrightup.append(Data_array[n - k : -(n + k), k + n :])
+
+            return (
+                shift_zero,
+                allleft,
+                allright,
+                alldown,
+                allup,
+                alldiagleftdown,
+                alldiagrightup,
+                alldiagrightdown,
+                alldiagleftup,
+            )
+
+        else:
+            shift_zero = Data_array[n:-n, n:-n]
+
+            allleft = []
+            allright = []
+            allup = []
+            alldown = []
+
+            allleft.append(Data_array[: -2 * n, n:-n])
+            alldown.append(Data_array[n:-n, : -2 * n])
+
+            for k in np.arange(1, n)[::-1]:
+                allleft.append(Data_array[n - k : -(n + k), n:-n])
+                allright.append(Data_array[k + n : -(n - k), n:-n])
+                alldown.append(Data_array[n:-n, n - k : -(n + k)])
+                allup.append(Data_array[n:-n, k + n : -(n - k)])
+
+            allright.append(Data_array[2 * n :, n:-n])
+            allup.append(Data_array[n:-n, 2 * n :])
+
+            return shift_zero, allleft, allright, alldown, allup
+
+    elif dimensions == 1:
+        shift_zero = Data_array[n:-n]
+        allleft = []
+        allright = []
+        allleft.append(Data_array[: -2 * n])
+        for k in np.arange(1, n)[::-1]:
+            allright.append(Data_array[k + n : -(n - k)])
+            allleft.append(Data_array[n - k : -(n + k)])
+        allright.append(Data_array[2 * n :])
+
+        return shift_zero, allleft, allright
+
 def test_localmaxima():
     bb = np.array(
         [

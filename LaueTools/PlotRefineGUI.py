@@ -491,8 +491,6 @@ class Plot_RefineFrame(wx.Frame):
         )
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.EnterComboElem)
 
-        #         for k, key_material in enumerate(list_Materials):
-        #             self.comboElem.SetString(k, str(LaueToolsframe.dict_Materials[key_material]))
         self.txtmatrix = wx.StaticText(self.panel, -1, "Orientation Matrix (UB)")
 
         self.comboUBmatrix = wx.ComboBox(
@@ -1781,7 +1779,7 @@ class Plot_RefineFrame(wx.Frame):
             # -------------------------------------------------------
 
             # starting B0matrix corresponding to the unit cell   -----
-            latticeparams = DictLT.dict_Materials[self.key_material][1]
+            latticeparams = self.dict_Materials[self.key_material][1]
             self.B0matrix = CP.calc_B_RR(latticeparams)
             # -------------------------------------------------------
 
@@ -1975,7 +1973,7 @@ class Plot_RefineFrame(wx.Frame):
         if 0:
             # TODO : redo the button checks for parameters in selectFittingParameters()
             # starting B0matrix corresponding to the unit cell   -----
-            latticeparams = DictLT.dict_Materials[self.key_material][1]
+            latticeparams = self.dict_Materials[self.key_material][1]
             self.B0matrix = CP.calc_B_RR(latticeparams)
             # -------------------------------------------------------
             # compute self.fitting_parameters_keys and self.fitting_parameters_values
@@ -2000,7 +1998,7 @@ class Plot_RefineFrame(wx.Frame):
             # --------------------------------------------
             # new allparameters format
             #   see test_fitgeneralfunction -------- in FitOrient.py -------
-            latticeparameters = DictLT.dict_Materials["Cu"][1]
+            latticeparameters = self.dict_Materials["Cu"][1]
 
             transformparameters = [ 0, 0, 0,  # 3 misorientation / initial UB matrix
                                     1.0, 0, -0.0, -0.223145, 1.01, 0, 0, -0.0, 1,  # Tc
@@ -2191,7 +2189,7 @@ class Plot_RefineFrame(wx.Frame):
         evaluate strain and display fitting results
         """
         # compute new lattice parameters  -----
-        latticeparams = DictLT.dict_Materials[key_material][1]
+        latticeparams = self.dict_Materials[key_material][1]
         B0matrix = CP.calc_B_RR(latticeparams)
 
         UBmat = copy.copy(newUBmat)
@@ -2201,7 +2199,7 @@ class Plot_RefineFrame(wx.Frame):
         )
         # overwrite and rescale possibly lattice lengthes
         lattice_parameter_direct_strain = CP.computeLatticeParameters_from_UB(
-            UBmat, key_material, constantlength
+            UBmat, key_material, constantlength, dictmaterials=self.dict_Materials
         )
 
         print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
@@ -2734,7 +2732,7 @@ class Plot_RefineFrame(wx.Frame):
         TransformParameters = [1, 0, 0, 1, 0, 1.0]
         # corresponding to Identity matrix
 
-        latticeparameters = DictLT.dict_Materials[key_material][1]
+        latticeparameters = self.dict_Materials[key_material][1]
         self.B0matrix = CP.calc_B_RR(latticeparameters)
 
         self.allparameters = np.array(self.CCDcalib + [0, 0, 0] + TransformParameters)
@@ -2789,7 +2787,7 @@ class Plot_RefineFrame(wx.Frame):
 
     def selectFittingLatticeParameters(self, key_material):
         # fixed parameters (must be an array)
-        latticeparameters = DictLT.dict_Materials[key_material][1]
+        latticeparameters = self.dict_Materials[key_material][1]
         self.B0matrix = CP.calc_B_RR(latticeparameters)
         self.allparameters = np.array(self.CCDcalib + [0, 0, 0] + latticeparameters)
 
@@ -2841,40 +2839,10 @@ class Plot_RefineFrame(wx.Frame):
     def selectFittingParameters(self):
         # fixed parameters (must be an array)
         self.allparameters = np.array(
-            self.CCDcalib
-            + [
-                0.0,
-                0,
-                0,  # 3 misorientation / initial UB matrix
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,  # Tc
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,  # T
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-            ]
-        )  # Ts
+            self.CCDcalib + [ 0.0, 0, 0,  # 3 misorientation / initial UB matrix
+            1, 0, 0, 0, 1, 0, 0, 0, 1,  # Tc
+            1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+            1, 0, 0, 0, 1, 0, 0, 0, 1, ] )  # Ts
 
         #         all_keys = ['anglex', 'angley', 'anglez',
         #         'Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22',
@@ -3015,27 +2983,8 @@ class Plot_RefineFrame(wx.Frame):
             Xexp = AllDataToIndex["data_pixX"][indExp]
             Yexp = AllDataToIndex["data_pixY"][indExp]
 
-            Columns = [
-                indExp,
-                intens,
-                _h,
-                _k,
-                _l,
-                residues,
-                Energytheo,
-                Xexp,
-                Yexp,
-                twtheexp,
-                chiexp,
-                Xtheo,
-                Ytheo,
-                twthetheo,
-                chitheo,
-                Qx,
-                Qy,
-                Qz,
-            ]
-
+            Columns = [ indExp, intens, _h, _k, _l, residues, Energytheo, Xexp, Yexp, twtheexp,
+                                        chiexp, Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz, ]
             columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
 
         else:  # old only 5 columns in .fit file
@@ -3162,6 +3111,7 @@ class Plot_RefineFrame(wx.Frame):
                 dim=self.framedim,
                 ResolutionAngstrom=self.ResolutionAngstrom,
                 detectordiameter=diameter_for_simulation * 1.25,
+                dictmaterials=self.dict_Materials
             )
 
             self.data_theo = [Twicetheta, Chi, Miller_ind, posx, posy, energy]

@@ -28,7 +28,7 @@ IDENTITYMATRIX = np.eye(3)
 NORMAL_TO_SAMPLE_AXIS = np.array([-np.sin(40.0 * DEG), 0, np.cos(40.0 * DEG)])
 
 
-def hasCubicSymmetry(key_material):
+def hasCubicSymmetry(key_material, dictmaterials=dict_Materials):
     r"""
     return True if material  has cubic symmetrys in LaueTools Dictionary
 
@@ -37,7 +37,7 @@ def hasCubicSymmetry(key_material):
 
     :return: True or False
     """
-    latticeparams = dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
     return isCubic(latticeparams)
 
 
@@ -67,7 +67,7 @@ def isCubic(latticeparams):
     return Cubic
 
 
-def GrainParameter_from_Material(key_material):
+def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     r"""
     create grain parameters list for the Laue pattern simulation
 
@@ -79,7 +79,7 @@ def GrainParameter_from_Material(key_material):
     :return: grain (4 elements list),  contains_U (boolean)
     """
     try:
-        elem_key, unitCellparameters, Structure_extinction = dict_Materials[
+        elem_key, unitCellparameters, Structure_extinction = dictmaterials[
             key_material
         ]
     except KeyError:
@@ -132,7 +132,7 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material, OrientMatrix, force_extinction=None):
+def Prepare_Grain(key_material, OrientMatrix, force_extinction=None, dictmaterials=dict_Materials):
     r"""
     Constructor of the grain (crystal) parameters for Laue pattern simulation
 
@@ -150,13 +150,13 @@ def Prepare_Grain(key_material, OrientMatrix, force_extinction=None):
     :type force_extinction: str
     """
 
-    if key_material not in list(dict_Materials.keys()):
+    if key_material not in list(dictmaterials.keys()):
         raise KeyError(
             "%s is unknown! You need to create before using"
             " Prepare_Grain." % key_material
         )
 
-    grain, contains_U = GrainParameter_from_Material(key_material)
+    grain, contains_U = GrainParameter_from_Material(key_material, dictmaterials)
 
     if force_extinction is not None:
         grain[1] = force_extinction
@@ -420,7 +420,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     return devstrain, lattice_parameter_direct_strain
 
 
-def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a"):
+def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", dictmaterials=dict_Materials):
     r"""
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
@@ -486,13 +486,13 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
     return devstrain, lattice_parameter_direct_strain
 
 
-def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a"):
+def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a", dictmaterials=dict_Materials):
     r"""
     Computes  direct (real) lattice parameters
     from matrix UBmatrix (rotation and deformation)
     """
     # starting B0matrix corresponding to the unit cell   -----
-    latticeparams = dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
     B0matrix = calc_B_RR(latticeparams)
 
     UBmat = copy.copy(UBmatrix)

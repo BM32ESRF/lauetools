@@ -1189,14 +1189,14 @@ def GenerateLookUpTable(hkl_all, Gstar):
     return sorted_ind, sorted_angles, indy, tab_side_size, hkl_all
 
 
-def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0):
+def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0, dictmaterials=DictLT.dict_Materials):
     """
     Generate Look Up Table of angles between hkl1 and hkl2 directions
     for an unit cell defined in dict_LaueTools.py in material dictionnary
 
     see doc of GenerateLookUpTable_from2sets()
     """
-    latticeparams = dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
     Gstar = CP.Gstar_from_directlatticeparams(*latticeparams)
 
     return GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=verbose)
@@ -1298,7 +1298,7 @@ def QueryLUT(LUT, query_angle, tolerance_angle, verbose=0):
     return planes_pairs, angles_close
 
 
-def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True):
+def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True, dictmaterials=DictLT.dict_Materials):
     """
     build reference angles LUT from all mutual angular distances
     between hkls of two different sets
@@ -1310,14 +1310,14 @@ def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    latticeparams = DictLT.dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
 
     return buildLUT_fromLatticeParams(
         latticeparams, n, CheckAndUseCubicSymmetry=CheckAndUseCubicSymmetry
     )
 
 
-def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
+def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True, dictmaterials=DictLT.dict_Materials):
     """
     build reference angles LUT from all mutual angular distances
     between hkls of two different sets
@@ -1330,7 +1330,7 @@ def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True):
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
     """
-    latticeparams = DictLT.dict_Materials[key_material][1]
+    latticeparams = dictmaterials[key_material][1]
 
     restrictLUT = False
     if CheckAndUseCubicSymmetry:
@@ -1384,7 +1384,7 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
     return LUT
 
 
-def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material):
+def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=DictLT.dict_Materials):
     """
     Return hlk couples and corresponding angle that match the input angle within the tolerance angle
 
@@ -1393,7 +1393,7 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material):
     latticeparams_or_material  : either string key for material or list of 6 lattice parameters
     """
     if isinstance(latticeparams_or_material, str):
-        latticeparams = DictLT.dict_Materials[latticeparams_or_material][1]
+        latticeparams = dictmaterials[latticeparams_or_material][1]
     else:
         latticeparams = latticeparams_or_material
 
@@ -1665,6 +1665,7 @@ def PlanePairs_from2sets(
     filterharmonics=1,
     LUT=None,
     verbose=0,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     Generate a particular LUT from hkl1 and hkl2
@@ -1709,7 +1710,7 @@ def PlanePairs_from2sets(
     if LUT is None:
         # GenerateLookUpTable
         print("Calculating LUT in PlanePairs_from2sets()")
-        LUT = Generate_selectedLUT(hkl1, hkl2, key_material)
+        LUT = Generate_selectedLUT(hkl1, hkl2, key_material, 0, dictmaterials)
 
     (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
 

@@ -656,6 +656,7 @@ def getLaueSpots(
     ResolutionAngstrom=False,
     fileOK=1,
     verbose=1,
+    dictmaterials=dict_Materials
 ):
     r"""
     Compute Qxyz vectors and corresponding HKL miller indices for nodes in recicprocal space that can be measured
@@ -752,7 +753,7 @@ def getLaueSpots(
     # loop over grains
     for i in list(range(nb_of_grains)):
         try:
-            Elem = dict_Materials[crystalsParams[i][3]][0]
+            Elem = dictmaterials[crystalsParams[i][3]][0]
         except (IndexError, TypeError, KeyError):
             smsg = "wrong type of input paramters: must be a list of 4 elements"
             raise ValueError(smsg)
@@ -763,7 +764,7 @@ def getLaueSpots(
             linestowrite.append(["%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"])
             linestowrite.append(["grain no ", str(i), " made of ", Elem,
                                 " default lattice parameter ",
-                                str(dict_Materials[crystalsParams[i][3]][1]),])
+                                str(dictmaterials[crystalsParams[i][3]][1]),])
             linestowrite.append(
                 [
             "(vec* basis in lab. frame, real lattice lengthes expansion, orientation matrix, atomic number):"
@@ -776,7 +777,7 @@ def getLaueSpots(
             )
             for elem in crystalsParams[i]:
                 linestowrite.append([str(elem)])
-        # print dict_Materials[crystalsParams[i][3]]
+        # print dictmaterials[crystalsParams[i][3]]
 
     if fileOK:
         linestowrite.append(
@@ -2035,6 +2036,7 @@ def SimulateLaue_merge(
     pixelsize=165 / 2048.0,
     dim=(2048, 2048),
     detectordiameter=None,
+    dictmaterials=dict_Materials
 ):
 
     r"""
@@ -2072,6 +2074,7 @@ def SimulateLaue_merge(
                 pixelsize=pixelsize,
                 dim=dim,
                 detectordiameter=detectordiameter,
+                dictmaterials=dictmaterials
             )
             nb_spots = len(Twicetheta)
 
@@ -2117,6 +2120,7 @@ def SimulateLaue_merge(
                 simulparameters,
                 fastcompute=1,
                 ResolutionAngstrom=False,
+                dictmaterials=dictmaterials
             )
             nb_spots = len(TwicethetaChi[0])
 
@@ -2147,6 +2151,7 @@ def SimulateLaue_twins(
     pixelsize=165 / 2048.0,
     dim=(2048, 2048),
     detectordiameter=None,
+    dictmaterials=dict_Materials
 ):
 
     r"""
@@ -2183,6 +2188,7 @@ def SimulateLaue_twins(
         pixelsize=pixelsize,
         dim=dim,
         detectordiameter=detectordiameter,
+        dictmaterials=dictmaterials
     )
 
 
@@ -2198,6 +2204,7 @@ def SimulateLaue(
     dim=(2048, 2048),
     detectordiameter=None,
     force_extinction=None,
+    dictmaterials=dict_Materials
 ):
     r"""Computes Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal
@@ -2232,7 +2239,7 @@ def SimulateLaue(
     key_material = grain[3]
 
     grain = CP.Prepare_Grain(
-        key_material, grain[2], force_extinction=force_extinction
+        key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials
     )
 
     #     print "grain", grain
@@ -2249,6 +2256,7 @@ def SimulateLaue(
         verbose=0,
         kf_direction=kf_direction,
         ResolutionAngstrom=ResolutionAngstrom,
+        dictmaterials=dictmaterials
     )
 
     #     print "len Spots2pi", len(Spots2pi[0][0])
@@ -2298,7 +2306,7 @@ def SimulateLaue_full_np(
     dim=(2048, 2048),
     detectordiameter=None,
     force_extinction=None,
-):
+    dictmaterials=dict_Materials):
     r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
@@ -2326,7 +2334,7 @@ def SimulateLaue_full_np(
 
     key_material = grain[3]
     grain = CP.Prepare_Grain(
-        key_material, grain[2], force_extinction=force_extinction
+        key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials
     )
 
     print("grain in SimulateResult()", grain)
@@ -2341,6 +2349,7 @@ def SimulateLaue_full_np(
         verbose=0,
         kf_direction=kf_direction,
         ResolutionAngstrom=ResolutionAngstrom,
+        dictmaterials=dictmaterials
     )
 
     #     print "Qxyz", Qxyz
@@ -2386,7 +2395,7 @@ def SimulateLaue_full_np(
 
 
 def SimulateResult(
-    grain, emin, emax, simulparameters, fastcompute=1, ResolutionAngstrom=False
+    grain, emin, emax, simulparameters, fastcompute=1, ResolutionAngstrom=False, dictmaterials=dict_Materials
 ):
     r"""Simulates 2theta chi of Laue Pattern spots for ONE SINGLE grain
 
@@ -2410,7 +2419,7 @@ def SimulateResult(
 
     # PATCH: redefinition of grain to simulate any unit cell(not only cubic)
     key_material = grain[3]
-    grain = CP.Prepare_Grain(key_material, grain[2])
+    grain = CP.Prepare_Grain(key_material, grain[2], dictmaterials=dictmaterials)
     # -----------------------------------------------------------------------------
 
     # print "grain in SimulateResult()",grain
@@ -2425,6 +2434,7 @@ def SimulateResult(
         fileOK=0,
         verbose=0,
         kf_direction=kf_direction,
+        dictmaterials=dictmaterials
     )
     # ---------------------------------------------------------------------------
 

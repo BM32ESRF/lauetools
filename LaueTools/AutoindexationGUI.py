@@ -1,3 +1,13 @@
+r"""
+GUI module to refine orientation and strain from Laue spots lists
+
+Main author is J. S. Micha:   micha [at] esrf [dot] fr
+
+version Aug 2019
+from LaueTools package hosted in
+
+https://gitlab.esrf.fr/micha/lauetools
+"""
 import wx
 import numpy as np
 import copy
@@ -60,6 +70,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.kf_direction = indexation_parameters["kf_direction"]
         self.DataPlot_filename = indexation_parameters["DataPlot_filename"]
+        self.key_material = None
         self.dict_Materials = indexation_parameters["dict_Materials"]
         self.dict_Rot = indexation_parameters["dict_Rot"]
 
@@ -347,7 +358,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         item = event.GetSelection()
         self.key_material = self.list_materials[item]
-        self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material))
+        self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
 
         self.sb.SetStatusText(
             "Selected material: %s" % str(self.dict_Materials[self.key_material])
@@ -611,7 +622,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # restrict LUT if allowed and if crystal is cubic
         restrictLUT_cubicSymmetry = restrictLUT_cubicSymmetry and CP.hasCubicSymmetry(
-            self.key_material
+            self.key_material, dictmaterials=self.dict_Materials
         )
 
         print("set_central_spots_hkl", set_central_spots_hkl)
@@ -619,8 +630,6 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.getparams_for_irpfile()
         self.Save_irp_configfile(outputfile=self.output_irp.GetValue())
-
-        verbosedetails = self.verbose.GetValue()
 
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
@@ -656,6 +665,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #         return
 
         # indexation procedure
+        print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
         self.bestmatrices, stats_res = INDEX.getOrientMatrices(
             spot_index_central,
             energy_max,
@@ -679,6 +689,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             set_central_spots_hkl=set_central_spots_hkl,
             verbosedetails=1,  # verbosedetails,
             gauge=self.gauge,
+            dictmaterials=self.IndexationParameters['dict_Materials']
         )
         # when nbbestplot is very high  self.bestmatrices contain all matrices
         # with matching rate above Minimum_MatchesNb
@@ -766,14 +777,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     # ------------------------------------------------------------------
 
                     # normally in this method fastcompute = 1, gives 2theta, chi
-                    TwicethetaChi = LT.SimulateResult(
-                        grain,
-                        5,
-                        float(self.emax.GetValue()),
-                        simulparameters,
-                        ResolutionAngstrom=ResolutionAngstrom,
-                        fastcompute=1,
-                    )
+                    TwicethetaChi = LT.SimulateResult(grain,
+                                                        5,
+                                                        float(self.emax.GetValue()),
+                                                        simulparameters,
+                                                        ResolutionAngstrom=ResolutionAngstrom,
+                                                        fastcompute=1,
+                                                        dictmaterials=self.IndexationParameters['dict_Materials']
+                                                    )
                     self.TwicethetaChi_solution[k_solution] = TwicethetaChi
 
                     paramsimul.append((grain, 5, emax))
@@ -792,26 +803,25 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                             % (spot_index_central, k_solution)
                         )
 
-                        plotresult = Plot_RefineFrame(
-                            self,
-                            -1,
-                            title,
-                            data=self.data,
-                            datatype="2thetachi",
-                            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-                            data_XY=self.select_dataXY,
-                            key_material=self.key_material,
-                            kf_direction=self.kf_direction,
-                            Params_to_simulPattern=(grain, 5, energy_max),
-                            ResolutionAngstrom=ResolutionAngstrom,
-                            DRTA=rough_tolangle,
-                            MATR=fine_tolangle,
-                            CCDdetectorparameters=self.CCDdetectorparameters,
-                            IndexationParameters=self.IndexationParameters,
-                            StorageDict=self.StorageDict,
-                            mainframe="billframe2",  # self.parent
-                            DataSetObject=self.DataSet,
-                        )
+                        plotresult = Plot_RefineFrame( self,
+                                            -1,
+                                            title,
+                                            data=self.data,
+                                            datatype="2thetachi",
+                                            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
+                                            data_XY=self.select_dataXY,
+                                            key_material=self.key_material,
+                                            kf_direction=self.kf_direction,
+                                            Params_to_simulPattern=(grain, 5, energy_max),
+                                            ResolutionAngstrom=ResolutionAngstrom,
+                                            DRTA=rough_tolangle,
+                                            MATR=fine_tolangle,
+                                            CCDdetectorparameters=self.CCDdetectorparameters,
+                                            IndexationParameters=self.IndexationParameters,
+                                            StorageDict=self.StorageDict,
+                                            mainframe="billframe2",  # self.parent
+                                            DataSetObject=self.DataSet,
+                                        )
 
                         plotresult.Show(True)
 
@@ -1047,17 +1057,8 @@ class RecognitionResultCheckBox(wx.Frame):
         print("stats_residues in RecognitionResultCheckBox", self.stats_residues)
         self.cb = []
         for k in range(self.nbPotentialSolutions):
-            self.cb.append(
-                wx.CheckBox(
-                    panel,
-                    -1,
-                    "     "
-                    + str(k)
-                    + "                      %d                                 %d                                   %.3f"
-                    % tuple(self.stats_residues[k][:3]),
-                    (10, 35 + 20 * k),
-                )
-            )
+            self.cb.append( wx.CheckBox( panel, -1,
+                "     " + str(k) + "                      %d                                 %d                                   %.3f" % tuple(self.stats_residues[k][:3]), (10, 35 + 20 * k), ) )
             self.cb[k].SetValue(False)
 
             # wx.EVT_CHECKBOX(self, self.cb.GetId(), self.Select(k))
@@ -1065,28 +1066,12 @@ class RecognitionResultCheckBox(wx.Frame):
         wx.StaticText(
             panel, -1, "Energy min: ", (15, 35 + 20 * self.nbPotentialSolutions + 30)
         )
-        self.SCmin = wx.SpinCtrl(
-            panel,
-            -1,
-            "5",
-            (95, 35 + 20 * self.nbPotentialSolutions + 30),
-            (60, -1),
-            min=5,
-            max=150,
-        )
+        self.SCmin = wx.SpinCtrl( panel, -1, "5", (95, 35 + 20 * self.nbPotentialSolutions + 30), (60, -1), min=5, max=150, )
 
         wx.StaticText(
             panel, -1, "Energy max: ", (180, 35 + 20 * self.nbPotentialSolutions + 30)
         )
-        self.SCmax = wx.SpinCtrl(
-            panel,
-            -1,
-            str(int(self.emax)),
-            (260, 35 + 20 * self.nbPotentialSolutions + 30),
-            (60, -1),
-            min=6,
-            max=150,
-        )
+        self.SCmax = wx.SpinCtrl( panel, -1, str(int(self.emax)), (260, 35 + 20 * self.nbPotentialSolutions + 30), (60, -1), min=6, max=150, )
 
         wx.Button(panel, 1, "Plot", (40, 35 + 20 * self.nbPotentialSolutions + 60))
         self.Bind(wx.EVT_BUTTON, self.OnPlot, id=1)
@@ -1249,7 +1234,8 @@ class RecognitionResultCheckBox(wx.Frame):
 
             # PATCH: redefinition of grain to simulate any unit cell (not only cubic) ---
             key_material = grain[3]
-            grain = CP.Prepare_Grain(key_material, Equivalent_matrix)
+            grain = CP.Prepare_Grain(key_material, Equivalent_matrix,
+                                dictmaterials=self.IndexationParameters['dict_Materials'])
 
             # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
             spots2pi = LT.getLaueSpots(
@@ -1261,6 +1247,7 @@ class RecognitionResultCheckBox(wx.Frame):
                 ResolutionAngstrom=self.ResolutionAngstrom,
                 fileOK=0,
                 verbose=0,
+                dictmaterials=self.StorageDict['dict_Materials']
             )
 
             # # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)

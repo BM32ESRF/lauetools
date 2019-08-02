@@ -8,7 +8,8 @@ JS micha May 2019
 
 import copy
 import pickle
-import os, sys
+import os
+import sys
 import time
 
 import numpy as np
@@ -113,6 +114,16 @@ class spotsset:
         self.detectordiameter = None
         self.CCDLabel = None
 
+        self.emin = 5
+        self.emax = 23
+
+        #materials
+        self.key_material = None
+        self.dict_Materials = DictLT.dict_Materials
+
+        # LUT
+        self.LUT = None
+
         # total number of exp. spots
         self.nbspots = None
 
@@ -130,7 +141,7 @@ class spotsset:
     #         self.updateSimulParameters()
 
     def setSimulParameters(
-        self, key_material, emin, emax, detectorparameters, pixelsize, dim
+        self, key_material, emin, emax, detectorparameters, pixelsize, dim, dictmaterials=DictLT.dict_Materials
     ):
         """
         set simulation parameters
@@ -149,7 +160,9 @@ class spotsset:
         :param dim: CCD nb of pixels 2 elements (dim1,dim2)
         :type dim: list, tuple, array of integers
         """
-        self.key_material = key_material
+
+        self.setMaterial(key_material, dictmaterials=dictmaterials)
+
         self.emin = emin
         self.emax = emax
         self.detectorparameters = detectorparameters
@@ -168,13 +181,14 @@ class spotsset:
         self.dict_IMM = dict_IMM
         self.IMMdatabase = database
 
-    def setMaterial(self, key_material):
+    def setMaterial(self, key_material, dictmaterials=DictLT.dict_Materials):
         """
-        set material for indexing
+        set material and dict of Materials for indexing
         :param key_material: material or element key (see dict_Lauetools)
         :type key_material: string
         """
         self.key_material = key_material
+        self.dict_Materials = dictmaterials
 
     def setEnergyBand(self, emin, emax):
         """
@@ -925,6 +939,7 @@ class spotsset:
             set_central_spots_hkl=set_central_spots_hkl,
             detectorparameters=simulparameters,
             verbosedetails=False,  # not CP.isCubic(key_material)
+            dictmaterials=self.dict_Materials
         )
         # when nbbestplot is very high  self.bestmat contain all matrices
         # with matching rate above Minimum_Nb_Matches
@@ -1666,7 +1681,8 @@ class spotsset:
                             self.indexedgrains.append(grain_index)
 
                             # find single representation of UB and reset h,k,l accordingly
-                            if set_central_spots_hkl is None and CP.hasCubicSymmetry(self.key_material):
+                            if set_central_spots_hkl is None and CP.hasCubicSymmetry(self.key_material,
+                                                                        dictmaterials=self.dict_Materials):
 
                                 #                                 matrix = self.dict_grain_matrix[grain_index]
                                 matrix = self.refinedUBmatrix
@@ -1966,7 +1982,8 @@ class spotsset:
         #         print "self.dim in getSpotsLinks()", self.dim, type(self.dim)
         print("UBOrientMatrix", UBOrientMatrix)
         # simulated data
-        grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix)
+        grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix, dictmaterials=self.dict_Materials)
+
         (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
             grain,
             self.emin,
@@ -2138,20 +2155,20 @@ class spotsset:
 
         return self.table_angdist
 
-    def computeLUT(self):
+    def computeLUT(self, dictmaterials=DictLT.dict_Materials):
         """
         compute look_up_table angular distances between reciprocal nodes of a known structure
 
         Consider self.key_material, self.n_LUT
         """
         print("Compute LUT for indexing %s spots in LauePattern " % self.key_material)
-        latticeparams = DictLT.dict_Materials[self.key_material][1]
+        latticeparams = dictmaterials[self.key_material][1]
         self.B_LUT = CP.calc_B_RR(latticeparams)
         self.LUT = INDEX.build_AnglesLUT(
             self.B_LUT,
             self.n_LUT,
             MaxRadiusHKL=self.ResolutionAngstromLUT,
-            cubicSymmetry=CP.hasCubicSymmetry(self.key_material),
+            cubicSymmetry=CP.hasCubicSymmetry(self.key_material, dictmaterials=dictmaterials),
         )
 
     def setAnglesLUTmatchingParameters(self, LUT=None, n_LUT=3, B_LUT=np.eye(3)):
@@ -4270,6 +4287,7 @@ def getIndexedSpots(
     emax=25,
     detectordiameter=None,
     verbose=0,
+    dictmaterials=DictLT.dict_Materials
 ):
     """
     return links between experimental and theoretical spots
@@ -4284,7 +4302,7 @@ def getIndexedSpots(
     twicetheta_data, chi_data, dataI = exp_data
 
     # simulated data
-    grain = CP.Prepare_Grain(key_material, OrientMatrix)
+    grain = CP.Prepare_Grain(key_material, OrientMatrix,dictmaterials=dictmaterials)
     (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
         grain,
         emin,
