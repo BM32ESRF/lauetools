@@ -791,7 +791,7 @@ class SimulationPanel(wx.Panel):
 
 class parametric_Grain_Dialog3(wx.Frame):
     """
-    in development new board of parametric 
+    board of parametric 
     Laue Simulation with tabs for ergonomic GUI
     """
 
@@ -1743,6 +1743,7 @@ class parametric_Grain_Dialog3(wx.Frame):
             SelectGrains=self.SelectGrains,
             pixelsize=self.pixelsize,
             framedim=self.framedim,
+            dictmaterials=self.parent.dict_Materials
         )
 
         (

@@ -19,14 +19,14 @@ if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
     from . import generaltools as GT
     from . import lauecore as LAUE
-    from . import LaueGeometry as F2TC
+    from . import LaueGeometry as LTGeo
     from . import CrystalParameters as CP
 
 else:
     import dict_LaueTools as DictLT
     import generaltools as GT
     import lauecore as LAUE
-    import LaueGeometry as F2TC
+    import LaueGeometry as LTGeo
     import CrystalParameters as CP
 
 try:
@@ -96,6 +96,7 @@ def dosimulation_parametric(
     kf_direction="Z>0",
     pixelsize=165.0 / 2048,
     framedim=(2048, 2048),
+    dictmaterials=DictLT.dict_Materials
 ):
     r"""
     Simulation of orientation or deformation gradient.
@@ -186,7 +187,7 @@ def dosimulation_parametric(
         # then compute B matrix)
         elif key_material != "inputB":
 
-            grain = CP.Prepare_Grain(key_material, np.eye(3))
+            grain = CP.Prepare_Grain(key_material, np.eye(3), dictmaterials=dictmaterials)
 
             # print "grain in dosimulation_parametric() input Element",grain
 
@@ -217,6 +218,7 @@ def dosimulation_parametric(
             fileOK=0,
             verbose=0,
             kf_direction=kf_direction,
+            dictmaterials=dictmaterials
         )
 
         # q vectors in lauetools frame, miller indices
@@ -511,7 +513,7 @@ def dosimulation_parametric(
                     print("pixelsize", pixelsize)
                     print("framedim", framedim)
 
-                    posx, posy = F2TC.calc_xycam_from2thetachi(
+                    posx, posy = LTGeo.calc_xycam_from2thetachi(
                         twicetheta,
                         chi,
                         calib,
@@ -520,7 +522,7 @@ def dosimulation_parametric(
                         dim=framedim,
                         kf_direction=kf_direction,
                     )[:2]
-                    # posx, posy, theta0 = F2TC.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
 
                     #                    vecRR = [spot.Qxyz for spot in Laue_spot_list[0]] #uf_lab in JSM LaueTools frame
 
@@ -577,7 +579,7 @@ def dosimulation_parametric(
                         cameraAngles[1],
                     ]
 
-                    posx, posy = F2TC.calc_xycam_from2thetachi(
+                    posx, posy = LTGeo.calc_xycam_from2thetachi(
                         twicetheta,
                         chi,
                         calib,
@@ -585,7 +587,7 @@ def dosimulation_parametric(
                         signgam=DictLT.SIGN_OF_GAMMA,
                         kf_direction=kf_direction,
                     )[:2]
-                    # posx, posy, theta0 = F2TC.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
 
                     posx = [spot.Xcam for spot in Laue_spot_list[0]]
                     posy = [spot.Ycam for spot in Laue_spot_list[0]]
@@ -647,7 +649,7 @@ def dosimulation_parametric(
                         cameraAngles[1],
                     ]
 
-                    posx, posy = F2TC.calc_xycam_from2thetachi(
+                    posx, posy = LTGeo.calc_xycam_from2thetachi(
                         twicetheta,
                         chi,
                         calib,
@@ -658,7 +660,7 @@ def dosimulation_parametric(
 
                     posx = posx.tolist()
                     posy = posy.tolist()
-                    # posx, posy, theta0 = F2TC.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
 
                     #                     posx = [spot.Xcam for spot in  Laue_spot_list[0]]
                     #                     posy = [spot.Ycam for spot in  Laue_spot_list[0]]
