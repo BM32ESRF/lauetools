@@ -240,9 +240,7 @@ class CrystalParamPanel(wx.Panel):
         self.eminC.Bind(wx.EVT_SPINCTRL, self.mainframe.OnCheckEminValue)
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeElement)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeBMatrix, id=2424)
-        self.btn_mergeUB.Bind(
-            wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix
-        )
+        self.btn_mergeUB.Bind( wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix )
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeMatrix, id=2525)
         self.Bind(wx.EVT_BUTTON, self.mainframe.EnterMatrix, id=1010)
         btn_sortUBsname.Bind(wx.EVT_BUTTON, self.onSortUBsname)
@@ -356,7 +354,6 @@ class CrystalParamPanel(wx.Panel):
 
         open_dlg.Destroy()
 
-
         self.mainframe.dict_Materials = loadedmaterials
         self.comboElem.Clear()
         elements_keys = sorted(loadedmaterials.keys())
@@ -433,25 +430,25 @@ class DetectorParametersDisplayPanel(wx.Panel):
     def __init__(self, parent):
         """
         """
-        panel = wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent=parent.GetParent()
+        self.granparent = parent.GetParent()
 
         self.CCDParam = self.granparent.CCDParam
 
         sizetxtctrl = wx.Size(70, -1)
 
         # current values
-        self.act_distance = wx.TextCtrl( self, -1, str(self.CCDParam[0]), size=sizetxtctrl,
-                                                style = wx.TE_PROCESS_ENTER )
+        self.act_distance = wx.TextCtrl(self, -1, str(self.CCDParam[0]), size=sizetxtctrl,
+                                                style=wx.TE_PROCESS_ENTER)
         self.act_Xcen = wx.TextCtrl(self, -1, str(self.CCDParam[1]), size=sizetxtctrl,
-                                                style = wx.TE_PROCESS_ENTER)
+                                                style=wx.TE_PROCESS_ENTER)
         self.act_Ycen = wx.TextCtrl(self, -1, str(self.CCDParam[2]), size=sizetxtctrl,
-                                                style = wx.TE_PROCESS_ENTER)
+                                                style=wx.TE_PROCESS_ENTER)
         self.act_Ang1 = wx.TextCtrl(self, -1, str(self.CCDParam[3]), size=sizetxtctrl,
-                                                style = wx.TE_PROCESS_ENTER)
+                                                style=wx.TE_PROCESS_ENTER)
         self.act_Ang2 = wx.TextCtrl(self, -1, str(self.CCDParam[4]), size=sizetxtctrl,
-                                                style = wx.TE_PROCESS_ENTER)
+                                                style=wx.TE_PROCESS_ENTER)
 
         self.act_distance.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
         self.act_Xcen.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
@@ -1392,15 +1389,15 @@ class MainCalibrationFrame(wx.Frame):
         #             for k in range(len(data_x)):
         #                 print k, data_x[k], data_y[k], twicetheta[k], twicetheta[k] / 2., chi[k]
 
-        elif extension in ("cor"):
+        elif extension in ("cor",):
             (
-                alldata,
+                _,
                 data_theta,
                 chi,
                 data_x,
                 data_y,
                 dataintensity,
-                detParam,
+                _,
             ) = IOLT.readfile_cor(self.filename)
             twicetheta = 2 * data_theta
 
@@ -1434,7 +1431,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return IIM.ComputeGnomon_2(dataselected)
 
-    def OnSaveCalib(self, event):
+    def OnSaveCalib(self, evt):
         """
         Save  calibration parameters in .det file
         """
@@ -1528,7 +1525,7 @@ class MainCalibrationFrame(wx.Frame):
             self.parent.pixelsize = self.pixelsize
             self.parent.kf_direction = self.kf_direction
 
-    def OnStoreMatrix(self, event):
+    def OnStoreMatrix(self, evt):
         """
         Store the current UBmatrix in the orientation UBmatrix dictionnary
         """
@@ -1608,14 +1605,14 @@ class MainCalibrationFrame(wx.Frame):
         self.linkIntensity = ArrayReturn[:, 5]
         self.linkResidues = ArrayReturn[:, 6]
 
-    def OnLinkSpotsAutomatic(self, event):
+    def OnLinkSpotsAutomatic(self, evt):
         """ create automatically links between currently close experimental
         and theoretical spots in 2theta chi representation
         """
         veryclose_angletol = float(self.AngleMatchingTolerance.GetValue())  # in degrees
 
         # theoretical data
-        twicetheta, chi, Miller_ind, posx, posy, Energy = self.simulate_theo(
+        twicetheta, chi, Miller_ind, posx, posy, _ = self.simulate_theo(
             removeharmonics=1
         )
         # experimental data (set exp. spots attributes)
@@ -1794,7 +1791,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return calib_indexed_spots
 
-    def OnLinkSpots(self, event):  # manual links
+    def OnLinkSpots(self, evt):  # manual links
         """
         open an editor to link manually spots(exp, theo) for the next fitting procedure
         """
@@ -2178,7 +2175,7 @@ class MainCalibrationFrame(wx.Frame):
             kf_direction=self.kf_direction,
         )
 
-        dirname, filename = os.path.split(fullpathfilename)
+        filename = os.path.split(fullpathfilename)[1]
         #         print "dirname,filename",dirname,filename
 
         prefix = filename.split(".")[0]
@@ -2228,9 +2225,9 @@ class MainCalibrationFrame(wx.Frame):
         intens = self.linkIntensityAfterFit
         residues_calibFit = self.residues_fitAfterFit
 
-        elem = self.crystalparampanel.comboElem.GetValue()
+        # elem = self.crystalparampanel.comboElem.GetValue()
 
-        latticeparam = DictLT.dict_Materials[str(elem)][1][0] * 1.0
+        # latticeparam = DictLT.dict_Materials[str(elem)][1][0] * 1.0
         Data_Q = np.array(self.linkExpMillerAfterFit)[:, 1:]
 
         dictCCD = {}
@@ -2242,8 +2239,8 @@ class MainCalibrationFrame(wx.Frame):
         spotsProps = LAUE.calcSpots_fromHKLlist(
             self.UBmatrix, self.B0matrix, Data_Q, dictCCD
         )
-
-        H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthe, chi, Energy = spotsProps
+        # H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthe, chi, Energy = spotsProps
+        Xtheo, Ytheo, twthe, chi, Energy = spotsProps[-5:]
 
         data_peak = IOLT.read_Peaklist(self.initialParameter["filename"])
 
@@ -2420,7 +2417,7 @@ class MainCalibrationFrame(wx.Frame):
         self.act_residues.SetValue(str(np.round(dataresults[8], decimals=2)))
         self.nbspots_in_fit.SetValue(str(dataresults[9]))
 
-    def close(self, event):
+    def close(self, evt):
         self.Close(True)
 
     def OnSetCCDParams(self, event):
@@ -2854,6 +2851,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def OnCheckEmaxValue(self, evt):
         emax = float(self.crystalparampanel.emaxC.GetValue())
+        pass
 
     #         if emax > 50:
     #             dlg = wx.MessageDialog(parent=self, message="This high energy limit emax=%s will be time-consumming!\nAre you sure?" % emax,
@@ -2865,6 +2863,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def OnCheckEminValue(self, evt):
         emin = float(self.crystalparampanel.eminC.GetValue())
+        pass
 
     #         if emin > 50:
     #             dlg = wx.MessageDialog(parent=self, message="This high energy limit emin=%s will be time-consumming!" % emin,
@@ -2912,16 +2911,14 @@ class MainCalibrationFrame(wx.Frame):
     def simulate_theo(self, removeharmonics=0):
         """
         in MainCalibrationFrame
-        
+
         Simulate theoretical Laue spots properties
-        
+
         removeharmonics:  1  keep only lowest hkl (fondamental) for each harmonics spots family
                           0  consider all spots (fond. + harmonics)
-        
+
         return:
         twicetheta, chi, self.Miller_ind, posx, posy, Energy
-        
-        
         """
         # print "self.UBmatrix",self.UBmatrix
         # print "misorientation UBmatrix",self.deltamatrix
@@ -2960,9 +2957,6 @@ class MainCalibrationFrame(wx.Frame):
             print("self.UBmatrix", self.crystalparampanel.UBmatrix)
             print("misorientation UBmatrix", self.deltamatrix)
 
-        detectordistance = self.CCDParam[0]
-        # detectordiameter = self.framedim[0] * self.pixelsize * 1.2
-        detectordiameter = self.detectordiameter
         pixelsize = self.pixelsize
 
         #         print "pixelsize in simulate_theo", pixelsize
@@ -3074,7 +3068,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return twicetheta, chi, self.Miller_ind, posx, posy, Energy
 
-    def _replot(self, event):  # in MainCalibrationFrame
+    def _replot(self, evt):  # in MainCalibrationFrame
         """
         in MainCalibrationFrame
         Plot simulated spots only in 2theta, chi space

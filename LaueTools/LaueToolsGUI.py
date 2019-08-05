@@ -19,9 +19,11 @@ __version__ = "$Revision: 2349 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 
-import time, sys
+import time
+import sys
 import copy
 import os.path
+import re
 
 import matplotlib
 
@@ -73,6 +75,7 @@ if sys.version_info.major == 3:
     from . import matchingrate
     from . AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
     from . import threadGUI2 as TG
+    from . import B0matrixLatticeEditor as B0Editor
 else:
     import indexingAnglesLUT as INDEX
     import indexingImageMatching as IIM
@@ -94,6 +97,7 @@ else:
     import matchingrate
     from AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
     import threadGUI2 as TG
+    import B0matrixLatticeEditor as B0Editor
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
@@ -163,8 +167,6 @@ class LaueToolsGUImainframe(wx.Frame):
             projectfolder=None, ):
 
         screenSize = wx.DisplaySize()
-        screenWidth = screenSize[0]
-        screenHeight = screenSize[1]
         # super(LaueToolsGUImainframe, self).__init__(None, size =(1000, 800))
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
@@ -545,7 +547,7 @@ class LaueToolsGUImainframe(wx.Frame):
         )
 
     # --- -------- Main FUNCTIONS called from MENU and submenus
-    def OnOpenImage(self, event):
+    def OnOpenImage(self, evt):
         """
         ask user to select folder and file
         and launch the peak search board(class PeakSearchFrame)
@@ -610,7 +612,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
     #                    self.DataPlot_filename = ploimage.peaks_filename
 
-    def OnOpenPeakList(self, event):
+    def OnOpenPeakList(self, evt):
         """
         Load Peak list data (dat or cor)
         """
@@ -626,7 +628,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
             if file_extension in ("dat", "DAT"):
                 # need 4 columns !!
-                self.Launch_DetectorParamBoard(event)
+                self.Launch_DetectorParamBoard(evt)
                 LaueGeomBoard = SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
                 LaueGeomBoard.ShowModal()
                 LaueGeomBoard.Destroy()
@@ -702,7 +704,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.last_Bmatrix_fromindexation = {}
             self.last_epsil_fromindexation = {}
 
-    def OnLoadMaterials(self, event):
+    def OnLoadMaterials(self, evt):
 
         wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
         _dir = os.getcwd()
@@ -736,7 +738,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         open_dlg.Destroy()
 
-    def Launch_DetectorParamBoard(self, event):
+    def Launch_DetectorParamBoard(self, evt):
         """Board to enter manually detector params
         Launch Entry dialog
         """
@@ -838,7 +840,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.last_Bmatrix_fromindexation = {}
         self.last_epsil_fromindexation = {}
 
-    def OnSetFileCCDParam(self, event):
+    def OnSetFileCCDParam(self, evt):
         """Enter manually CCD file params
         Launch Entry dialog
         """
@@ -849,7 +851,7 @@ class LaueToolsGUImainframe(wx.Frame):
         DPBoard.ShowModal()
         DPBoard.Destroy()
 
-    def OnFileResultsSaveAs(self, event):
+    def OnFileResultsSaveAs(self, evt):
         dlg = wx.TextEntryDialog(
             self,
             "Enter Indexation filename(*.res):",
@@ -867,8 +869,6 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         check if all CCD parameters are read from file .cor
         """
-        missing_parameters = []
-
         ccp = DictLT.CCD_CALIBRATION_PARAMETERS
 
         sorted_list_parameters = [ccp[7], ccp[10]]
@@ -897,13 +897,13 @@ class LaueToolsGUImainframe(wx.Frame):
                     DPBoard.ShowModal()
                     DPBoard.Destroy()
 
-    def OnSetLaueDetectorGeometry(self, event):
+    def OnSetLaueDetectorGeometry(self, evt):
         LaueGeomBoard = SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
         #         LaueGeomBoard.Show(True)
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
 
-    def OnPreferences(self, event):
+    def OnPreferences(self, evt):
         """
         call the board to define destination folder to  write files        
         """
@@ -914,7 +914,7 @@ class LaueToolsGUImainframe(wx.Frame):
         print("New write folder", self.writefolder)
 
     # --- ------------ Indexation Functions
-    def OnCheckOrientationMatrix(self, event):
+    def OnCheckOrientationMatrix(self, evt):
         r"""
         Check if user input matrix, material parameters can produce a Laue pattern that matches
         the current experimental list of spots
@@ -1003,7 +1003,6 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
 
-        nbmatrices = self.EnterMatrix(1)
         if self.Enterkey_material() is False: return
         self.EnterEnergyMax()
 
@@ -1051,7 +1050,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.PlotandRefineSolution()
 
-    def OnClassicalIndexation(self, event):
+    def OnClassicalIndexation(self, evt):
         """
         Call the ClassicalIndexationBoard Class with current non indexed spots list
         
@@ -1065,7 +1064,7 @@ class LaueToolsGUImainframe(wx.Frame):
         #             'in File/Open Menu', 'No Data Loaded', wx.OK)
         #             dialog.ShowModal()
         #             dialog.Destroy()
-        #             event.Skip()
+        #             evt.Skip()
         #             return
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
@@ -1174,7 +1173,7 @@ class LaueToolsGUImainframe(wx.Frame):
             DataSetObject=self.DataSet,
         )
 
-    def OnHoughMatching(self, event):
+    def OnHoughMatching(self, evt):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n" "in wxPython",
@@ -1184,7 +1183,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnRadialRecognition(self, event):
+    def OnRadialRecognition(self, evt):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n" "in wxPython",
@@ -1194,7 +1193,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnPlot_2ThetaChi(self, event):
+    def OnPlot_2ThetaChi(self, evt):
         """
         Plot 2theta-chi representation of data peaks list for manual indexation
         """
@@ -1317,7 +1316,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.picky.Show(True)
 
-    def OnPlot_Gnomon(self, event):
+    def OnPlot_Gnomon(self, evt):
         """
         Plot gnomonic representation of data peaks list for manual indexation
         """
@@ -1447,7 +1446,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.picky.Show(True)
 
-    def OnPlot_Pixels(self, event):
+    def OnPlot_Pixels(self, evt):
         """
         Plot detector X,Y pixel representation of data peaks list for manual indexation
         """
@@ -1575,11 +1574,11 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.picky.Show(True)
 
-    def OnDetectorCalibration(self, event):
+    def OnDetectorCalibration(self, evt):
         """
         Method launching Calibration Board
         """
-        self.OnOpenPeakList(event)
+        self.OnOpenPeakList(evt)
 
         print("self.DataPlot_filename", self.DataPlot_filename)
         # CalibrationFile = 'Cu_near_28May08_0259.peaks'
@@ -1618,7 +1617,7 @@ class LaueToolsGUImainframe(wx.Frame):
                                     starting_param=initialParameter["CCDParam"])
         self.calibframe.Show(True)
 
-    def OnCliquesFinding(self, event):
+    def OnCliquesFinding(self, evt):
         """
         Method launching Cliques Finding  Board
 
@@ -1649,17 +1648,17 @@ class LaueToolsGUImainframe(wx.Frame):
             None, -1, "Cliques Finding Board :%s" % self.DataPlot_filename
         )
 
-    def OnRecognitionParam(self, event):
+    def OnRecognitionParam(self, evt):
         return True
 
-    def OnEditMatrix(self, event):
+    def OnEditMatrix(self, evt):
         self.MatrixEditor = MatrixEditor_Dialog(
             self, -1, "Create/Read/Save/Load/Convert Orientation Matrix"
         )
         self.MatrixEditor.Show(True)
 
-    def OnEditUBMatrix(self, event):
-        self.UBMatrixEditor = UBMatrixEditor_Dialog(
+    def OnEditUBMatrix(self, evt):
+        self.UBMatrixEditor = B0Editor.B0MatrixEditor(
             self, -1, "UB Matrix Editor and Board"
         )
         self.UBMatrixEditor.Show(True)
@@ -1674,7 +1673,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self, helptstr, "Orientation Matrix elements Entry for Matching Check"
         )
 
-        _param = "[[1.,0,0],[0, 1,0],[0, 0,1]]"
+        _param = "[[1.,0,0],[0,1,0],[0,0,1]]"
         dlg.SetValue(_param)
 
         # OR
@@ -1682,7 +1681,6 @@ class LaueToolsGUImainframe(wx.Frame):
 
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
-            import re
 
             listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             #             print "listval", listval
@@ -1718,7 +1716,6 @@ class LaueToolsGUImainframe(wx.Frame):
             # default name
             inputmatrixname = "InputMat_"
 
-            initlength = len(DictLT.dict_Rot)
             for k, mat in enumerate(ListMatrices):
                 mname = inputmatrixname + "%d" % k
                 DictLT.dict_Rot[mname] = mat
@@ -1921,7 +1918,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         outputfile.close()
 
-    def OnSaveIndexationResultsfile(self, event, filename=None):
+    def OnSaveIndexationResultsfile(self, evt, filename=None):
         """
         Save results of indexation and refinement procedures
         .res  :  summary file
@@ -1995,7 +1992,7 @@ class LaueToolsGUImainframe(wx.Frame):
         )
 
     # --- ---------------- Simulation Functions
-    def Creating_Grains_parametric(self, event):
+    def Creating_Grains_parametric(self, evt):
         """
         Method launching polycrystal simulation Board
 
@@ -2166,7 +2163,7 @@ class LaueToolsGUImainframe(wx.Frame):
     def SaveFileCorNonIndexedSpots(self, outputfilename=None):
         if outputfilename is None:
             outputfilename
-            pre, ext = self.DataPlot_filename.strip(".")
+            pre = self.DataPlot_filename.strip(".")[0]
             outputfilename = pre + "nonindexed"
 
         # get data
@@ -2186,8 +2183,6 @@ class LaueToolsGUImainframe(wx.Frame):
         dataintensity = self.data_I[current_exp_spot_index_list]
         posx = self.data_pixX[current_exp_spot_index_list]
         posy = self.data_pixY[current_exp_spot_index_list]
-
-        detectorparameters = []
 
         # comment
         strgrains = ["Remaining Non indexed spots of %s" % self.DataPlot_filename]
@@ -2319,7 +2314,7 @@ class LaueToolsGUImainframe(wx.Frame):
             kf_direction=self.kf_direction,
         )
 
-        prefix, extension = self.DataPlot_filename.rsplit(".", 1)
+        prefix = self.DataPlot_filename.rsplit(".", 1)[0]
 
         prefixfilename_corfile = prefix
 
@@ -2504,7 +2499,9 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         #         print "************ \n\n self.indexation_parameters",self.indexation_parameters
 
-        data_Miller, data_Energy, list_indexspot = data_list
+        # data_Miller, data_Energy, list_indexspot = data_list
+        list_indexspot = data_list[2]
+
 
         print("list_indexspot in Update_DataToIndex_Dict", list_indexspot)
 
@@ -2704,7 +2701,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.Destroy()
         return userProvidedFilename
 
-    def OnDocumentationpdf(self, event):
+    def OnDocumentationpdf(self, evt):
 
         LaueToolsProjectFolder = os.path.abspath(os.curdir)
 
@@ -2716,19 +2713,15 @@ class LaueToolsGUImainframe(wx.Frame):
 
         webbrowser.open(pdffile_adress)
 
-    def OnDocumentationhtml(self, event):
-
-        LaueToolsProjectFolder = os.path.abspath(os.curdir)
-
-        #         print "LaueToolsProjectFolder", LaueToolsProjectFolder
+    def OnDocumentationhtml(self, evt):
 
         html_file_address = "file://%s" % os.path.join(
-            LaueToolsProjectFolder, "Documentation", "html", "index.html"
+            LaueToolsProjectFolder, "Documentation", "build","html", "index.html"
         )
 
         webbrowser.open(html_file_address)
 
-    def OnTutorial(self, event):
+    def OnTutorial(self, evt):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n"
@@ -2739,21 +2732,21 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnSerieIndexation(self, event):
+    def OnSerieIndexation(self, evt):
         dialog = wx.MessageDialog(
             self, "Not yet implemented \n" "in wxPython", "OnSerieIndexation", wx.OK
         )
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnMapAnalysis(self, event):
+    def OnMapAnalysis(self, evt):
         dialog = wx.MessageDialog(
             self, "Not yet implemented \n" "in wxPython", "OnMapAnalysis", wx.OK
         )
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnAbout(self, event):
+    def OnAbout(self, evt):
         """
         about lauetools and license
         """
@@ -2798,7 +2791,7 @@ class LaueToolsGUImainframe(wx.Frame):
         info.AddTranslator("Jean-Sebastien Micha")
         wx.AboutBox(info)
 
-    def OnExit(self, event):
+    def OnExit(self, evt):
         """
         exit
         """
@@ -3004,7 +2997,7 @@ class CliquesFindingBoard(wx.Frame):
         self.Show(True)
         self.Centre()
 
-    def OnSearch(self, event):
+    def OnSearch(self, evt):
 
         spot_list = self.spotlist.GetValue()
 
@@ -3045,7 +3038,7 @@ class CliquesFindingBoard(wx.Frame):
         print(res_cliques)
         print("***************************")
 
-    def OnQuit(self, event):
+    def OnQuit(self, evt):
         self.Close()
 
 
@@ -3154,12 +3147,8 @@ class MatrixEditor_Dialog(wx.Frame):
         buttonload = wx.Button(panel, 104, "Load", pos=(20, 420), size=(60, 25))
         # buttonload.SetFont(font3)
         buttonload.Bind(wx.EVT_BUTTON, self.OnOpenMatrixFile, id=104)
-        wx.StaticText(
-            panel,
-            -1,
-            "Matrix from saved file in simple ASCII text editor format",
-            (100, 425),
-        )
+        wx.StaticText( panel, -1,
+                "Matrix from saved file in simple ASCII text editor format", (100, 425), )
 
         buttonXMASload = wx.Button(
             panel, 105, "Read XMAS", pos=(20, 460), size=(100, 25)
@@ -3193,18 +3182,18 @@ class MatrixEditor_Dialog(wx.Frame):
         self.statusbar.SetFieldsCount(3)
         self.statusbar.SetStatusWidths([-5, -2, -1])
 
-    def ToggleStatusBar(self, event):
+    def ToggleStatusBar(self, evt):
         if self.statusbar.IsShown():
             self.statusbar.Hide()
         else:
             self.statusbar.Show()
 
-    def OnTextChanged(self, event):
+    def OnTextChanged(self, evt):
         self.modify = True
-        event.Skip()
+        evt.Skip()
 
-    def OnKeyDown(self, event):
-        keycode = event.GetKeyCode()
+    def OnKeyDown(self, evt):
+        keycode = evt.GetKeyCode()
         if keycode == wx.WXK_INSERT:
             if not self.replace:
                 self.statusbar.SetStatusText("INS", 2)
@@ -3212,7 +3201,7 @@ class MatrixEditor_Dialog(wx.Frame):
             else:
                 self.statusbar.SetStatusText("", 2)
                 self.replace = False
-        event.Skip()
+        evt.Skip()
 
     def OnComputeMatrix_axisangles(self, evt):
         longitude = float(self.longitude.GetValue())
@@ -3256,7 +3245,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.mat_a33.SetValue(str(matrix[2][2]))
         self.text.SetValue(str(matrix.tolist()))
 
-    def OnSaveFile(self, event):
+    def OnSaveFile(self, evt):
         """
         Saves the matrix in ASCII editor or 9 entried elements on Hard Disk
         """
@@ -3265,13 +3254,14 @@ class MatrixEditor_Dialog(wx.Frame):
         if self.last_name_saved:
 
             try:
+                # radio button on text ascii editor
                 if self.rbeditor.GetValue():
                     f = open(self.last_name_saved, "w")
                     text = self.text.GetValue()
                     f.write(text)
                     f.close()
+                # 9 elements txtctrl editors
                 else:
-
                     m11 = float(self.mat_a11.GetValue())
                     m12 = float(self.mat_a12.GetValue())
                     m13 = float(self.mat_a13.GetValue())
@@ -3308,7 +3298,7 @@ class MatrixEditor_Dialog(wx.Frame):
         else:
             print("No name input")
 
-    def OnStoreMatrix(self, event):
+    def OnStoreMatrix(self, evt):
         r"""
         Stores the matrix from the ASCII editor or the 9 entried elements
         in main list of orientation matrix for further simulation
@@ -3317,7 +3307,8 @@ class MatrixEditor_Dialog(wx.Frame):
 
         if self.last_name_stored:
 
-            if not self.rbeditor.GetValue():  # read 9 elements
+            # read 9 elements
+            if not self.rbeditor.GetValue():
                 m11 = float(self.mat_a11.GetValue())
                 m12 = float(self.mat_a12.GetValue())
                 m13 = float(self.mat_a13.GetValue())
@@ -3336,12 +3327,39 @@ class MatrixEditor_Dialog(wx.Frame):
                     [m31, m32, m33],
                 ]
 
-            else:  # read ASCII editor
-                text = str(self.text.GetValue())
-                tu = text.replace("[", "").replace("]", "")
-                ta = tu.split(",")
-                to = [float(elem) for elem in ta]
-                self.parent.dict_Rot[self.last_name_stored] = [to[:3], to[3:6], to[6:]]
+            # read ASCII editor
+            else:
+                paramraw = str(self.text.GetValue())
+
+                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                #             print "listval", listval
+                listelem = []
+                for elem in listval:
+                    try:
+                        val = float(elem)
+                        listelem.append(val)
+                    except ValueError:
+                        continue
+
+                nbval = len(listelem)
+                if nbval != 9:
+                    txt = "Something wrong, I can't read this matrix %s \n."
+                    txt += "It doesn't contain 9 elements with float type ..."%paramraw
+                    print(txt)
+
+                    wx.MessageBox(txt, "VALUE ERROR")
+                    return
+
+                mat = np.zeros((3, 3))
+                ind_elem = 0
+                for i in range(3):
+                    for j in range(3):
+                        floatval = listelem[ind_elem]
+                        mat[i][j] = floatval
+                        ind_elem += 1
+
+
+                self.parent.dict_Rot[self.last_name_stored] = mat
 
             self.statusbar.SetStatusText(
                 os.path.basename(self.last_name_stored) + " stored", 0
@@ -3350,7 +3368,7 @@ class MatrixEditor_Dialog(wx.Frame):
         else:
             print("No name input")
 
-    def OnOpenMatrixFile(self, event):
+    def OnOpenMatrixFile(self, evt):
         wcd = "All files(*)|*|Matrix files(*.mat)|*.mat"
         _dir = os.getcwd()
         open_dlg = wx.FileDialog(
@@ -3366,15 +3384,37 @@ class MatrixEditor_Dialog(wx.Frame):
 
             try:
                 _file = open(path, "r")
-                text = _file.readlines()
+                paramraw = _file.read()
                 _file.close()
 
-                if self.text.GetLastPosition():
-                    self.text.Clear()
-                strmat = ""
-                for line in text:
-                    strmat += line[:-1]
-                self.text.WriteText(strmat + "]")
+                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listelem = []
+                for elem in listval:
+                    try:
+                        val = float(elem)
+                        listelem.append(val)
+                    except ValueError:
+                        continue
+
+                nbval = len(listelem)
+                if nbval != 9:
+                    txt = "Something wrong, I can't read this matrix %s \n."
+                    txt += "It doesn't contain 9 elements with float type ..."%paramraw
+                    print(txt)
+
+                    wx.MessageBox(txt, "VALUE ERROR")
+                    return
+
+                mat = np.zeros((3, 3))
+                ind_elem = 0
+                for i in range(3):
+                    for j in range(3):
+                        floatval = listelem[ind_elem]
+                        mat[i][j] = floatval
+                        ind_elem += 1
+
+                self.text.Clear()
+                self.text.WriteText(str(mat))
                 self.last_name_saved = path
                 self.statusbar.SetStatusText("", 1)
                 self.modify = False
@@ -3389,15 +3429,15 @@ class MatrixEditor_Dialog(wx.Frame):
 
         open_dlg.Destroy()
 
-    def EnterComboRot(self, event):
+    def EnterComboRot(self, evt):
         """
         in matrix editor
         """
-        item = event.GetSelection()
+        item = evt.GetSelection()
         self.CurrentMat = self.list_of_Rot[item]
-        event.Skip()
+        evt.Skip()
 
-    def OnLookMatrix(self, event):
+    def OnLookMatrix(self, evt):
         matrix = self.parent.dict_Rot[self.CurrentMat]
         print("%s is :" % self.CurrentMat)
         print(matrix)
@@ -3413,7 +3453,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.mat_a33.SetValue(str(matrix[2][2]))
         self.text.SetValue(str(matrix))
 
-    def OnLoadXMAS_INDfile(self, event):
+    def OnLoadXMAS_INDfile(self, evt):
         """
         old and may be obsolete indexation file reading procedure ?!
         """
@@ -3518,7 +3558,7 @@ class MatrixEditor_Dialog(wx.Frame):
 
         open_dlg.Destroy()
 
-    def OnConvert(self, event):
+    def OnConvert(self, evt):
         """
         #TODO: to check, obsolete ?
         """
@@ -3535,7 +3575,7 @@ class MatrixEditor_Dialog(wx.Frame):
         )
         if dlg.ShowModal() == wx.ID_OK:
 
-            event.Skip()
+            evt.Skip()
 
             # newmatrix = F2TC.matxmas_to_OrientMatrix(matrix, LaueToolsframe.defaultParam)
             newmatrix = FXL.convert_fromXMAS_toLaueTools(
@@ -3552,7 +3592,7 @@ class MatrixEditor_Dialog(wx.Frame):
             self.text.SetValue(str(newmatrix.tolist()))
         else:
             # TODO: advise how to set new calibration parameter(in calibration menu ?)
-            event.Skip()
+            evt.Skip()
 
     def OnConvertlabtosample(self, evt):
         """
@@ -3605,852 +3645,17 @@ class MatrixEditor_Dialog(wx.Frame):
         self.rbeditor.SetValue(True)
         self.text.SetValue(str(UBs.tolist()))
 
-    def OnQuit(self, event):
+    def OnQuit(self, evt):
         dlg = wx.MessageDialog(
             self,
             'To use stored Matrices in simulation boards that do not appear, click on "refresh choices" button before.',
         )
         if dlg.ShowModal() == wx.ID_OK:
             self.Close()
-            event.Skip()
+            evt.Skip()
         else:
-            event.Skip()
+            evt.Skip()
 
-
-# --- ---------------------   UB Matrix Editor
-class UBMatrixEditor_Dialog(wx.Frame):
-    def __init__(self, parent, _id, title):
-
-        wx.Frame.__init__(self, parent, _id, title, size=(720, 1000))
-
-        self.dirname = os.getcwd()
-        self.parent = parent
-        # variables
-        self.modify = False
-        self.last_name_saved = ""
-        self.last_name_stored = ""
-        self.replace = False
-
-        self.CurrentMat = "Default"
-        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-
-        self.panel = wx.Panel(
-            self, -1, style=wx.SIMPLE_BORDER, size=(715, 995), pos=(5, 5)
-        )
-
-        dr = wx.StaticText(self.panel, -1, "Direct Space", (60, 10))
-        dr.SetFont(font3)
-
-        self.rbeditor = wx.RadioButton(
-            self.panel, -1, "Text Editor Input", (25, 40), style=wx.RB_GROUP
-        )
-        wx.StaticText(self.panel, -1, "[[#,#,#],[#,#,#],[#,#,#]]", (25, 60))
-        self.text = wx.TextCtrl(
-            self.panel,
-            1000,
-            "",
-            pos=(25, 85),
-            size=(250, 90),
-            style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER,
-        )
-        self.text.SetFocus()
-        self.text.Bind(wx.EVT_TEXT, self.OnTextChanged, id=1000)
-        self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-        self.rbelem = wx.RadioButton(self.panel, -1, "Matrix Elements Input", (25, 190))
-
-        self.mat_a11 = wx.TextCtrl(self.panel, -1, "1", (20, 220), size=(80, -1))
-        self.mat_a12 = wx.TextCtrl(self.panel, -1, "0", (120, 220), size=(80, -1))
-        self.mat_a13 = wx.TextCtrl(self.panel, -1, "0", (220, 220), size=(80, -1))
-        self.mat_a21 = wx.TextCtrl(self.panel, -1, "0", (20, 250), size=(80, -1))
-        self.mat_a22 = wx.TextCtrl(self.panel, -1, "1", (120, 250), size=(80, -1))
-        self.mat_a23 = wx.TextCtrl(self.panel, -1, "0", (220, 250), size=(80, -1))
-        self.mat_a31 = wx.TextCtrl(self.panel, -1, "0", (20, 280), size=(80, -1))
-        self.mat_a32 = wx.TextCtrl(self.panel, -1, "0", (120, 280), size=(80, -1))
-        self.mat_a33 = wx.TextCtrl(self.panel, -1, "1", (220, 280), size=(80, -1))
-
-        self.rblatticeparam_direct = wx.RadioButton(
-            self.panel, -1, "Lattice parameter Input", (25, 320)
-        )
-        wx.StaticText(self.panel, -1, "a", (40, 350))
-        self.a = wx.TextCtrl(self.panel, -1, "1", (20, 380), size=(60, -1))
-        wx.StaticText(self.panel, -1, "b", (120, 350))
-        self.b = wx.TextCtrl(self.panel, -1, "1", (100, 380), size=(60, -1))
-        wx.StaticText(self.panel, -1, "c", (200, 350))
-        self.c = wx.TextCtrl(self.panel, -1, "1", (180, 380), size=(60, -1))
-        wx.StaticText(self.panel, -1, "Angst.", (260, 385))
-        wx.StaticText(self.panel, -1, "alpha", (20, 410))
-        self.alpha = wx.TextCtrl(self.panel, -1, "90", (20, 440), size=(60, -1))
-        wx.StaticText(self.panel, -1, "beta", (100, 410))
-        self.beta = wx.TextCtrl(self.panel, -1, "90", (100, 440), size=(60, -1))
-        wx.StaticText(self.panel, -1, "gamma", (180, 410))
-        self.gamma = wx.TextCtrl(self.panel, -1, "90", (180, 440), size=(60, -1))
-        wx.StaticText(self.panel, -1, "deg.", (260, 445))
-
-        # reciprocal part
-
-        hshift = 350
-        drs = wx.StaticText(self.panel, -1, "Reciprocal Space", (hshift + 60, 10))
-        drs.SetFont(font3)
-
-        self.rbeditors = wx.RadioButton(
-            self.panel, -1, "Text Editor Input Bmatrix", (hshift + 25, 40)
-        )
-        wx.StaticText(self.panel, -1, "[[#,#,#],[#,#,#],[#,#,#]]", (hshift + 25, 60))
-        self.texts = wx.TextCtrl(
-            self.panel,
-            1003,
-            "",
-            pos=(hshift + 25, 85),
-            size=(250, 90),
-            style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER,
-        )
-        self.texts.SetFocus()
-        self.texts.Bind(wx.EVT_TEXT, self.OnTextChanged, id=1003)
-        self.texts.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-        self.rbelems = wx.RadioButton(
-            self.panel, -1, "BMatrix Elements Input", (hshift + 25, 190)
-        )
-
-        self.mat_a11s = wx.TextCtrl(
-            self.panel, -1, "1", (hshift + 20, 220), size=(80, -1)
-        )
-        self.mat_a12s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 120, 220), size=(80, -1)
-        )
-        self.mat_a13s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 220, 220), size=(80, -1)
-        )
-        self.mat_a21s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 20, 250), size=(80, -1)
-        )
-        self.mat_a22s = wx.TextCtrl(
-            self.panel, -1, "1", (hshift + 120, 250), size=(80, -1)
-        )
-        self.mat_a23s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 220, 250), size=(80, -1)
-        )
-        self.mat_a31s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 20, 280), size=(80, -1)
-        )
-        self.mat_a32s = wx.TextCtrl(
-            self.panel, -1, "0", (hshift + 120, 280), size=(80, -1)
-        )
-        self.mat_a33s = wx.TextCtrl(
-            self.panel, -1, "1", (hshift + 220, 280), size=(80, -1)
-        )
-
-        self.rblatticeparam_reciprocal = wx.RadioButton(
-            self.panel, -1, "Lattice parameter Input", (hshift + 25, 320)
-        )
-        wx.StaticText(self.panel, -1, "a*", (hshift + 40, 350))
-        self.astar = wx.TextCtrl(self.panel, -1, "1", (hshift + 20, 380), size=(60, -1))
-        wx.StaticText(self.panel, -1, "b*", (hshift + 120, 350))
-        self.bstar = wx.TextCtrl(
-            self.panel, -1, "1", (hshift + 100, 380), size=(60, -1)
-        )
-        wx.StaticText(self.panel, -1, "c*", (hshift + 200, 350))
-        self.cstar = wx.TextCtrl(
-            self.panel, -1, "1", (hshift + 180, 380), size=(60, -1)
-        )
-        wx.StaticText(self.panel, -1, "1/Angst.", (hshift + 260, 385))
-        wx.StaticText(self.panel, -1, "alpha*", (hshift + 20, 410))
-        self.alphastar = wx.TextCtrl(
-            self.panel, -1, "90", (hshift + 20, 440), size=(60, -1)
-        )
-        wx.StaticText(self.panel, -1, "beta*", (hshift + 100, 410))
-        self.betastar = wx.TextCtrl(
-            self.panel, -1, "90", (hshift + 100, 440), size=(60, -1)
-        )
-        wx.StaticText(self.panel, -1, "gamma*", (hshift + 180, 410))
-        self.gammastar = wx.TextCtrl(
-            self.panel, -1, "90", (hshift + 180, 440), size=(60, -1)
-        )
-        wx.StaticText(self.panel, -1, "deg.", (hshift + 260, 445))
-
-        self.rbeditors.SetValue(True)
-
-        buttonConvert = wx.Button(
-            self.panel, 105, "Convert", pos=(150, 480), size=(400, 50)
-        )
-        # buttonload.SetFont(font3)
-        buttonConvert.Bind(wx.EVT_BUTTON, self.OnConvert, id=105)
-
-        wx.StaticText(self.panel, -1, "_" * 90, (25, 530))
-
-        self.Build_list_of_B()
-        vshift = 80
-        buttonread = wx.Button(
-            self.panel, 101, "Look", pos=(20, vshift + 500), size=(60, 25)
-        )
-        # buttonread.SetFont(font3)
-        buttonread.Bind(wx.EVT_BUTTON, self.OnLookMatrix, id=101)
-        self.comboRot = wx.ComboBox(
-            self.panel, 6, "Identity", (100, vshift + 500), choices=self.list_of_Vect
-        )
-        self.comboRot.Bind(wx.EVT_COMBOBOX, self.EnterComboRot, id=6)
-        wx.StaticText(self.panel, -1, "in Bmatrix", (300, vshift + 500 + 5))
-
-        buttonsave = wx.Button(
-            self.panel, 102, "Save", pos=(20, vshift + 540), size=(60, 25)
-        )
-        # buttonsave.SetFont(font3)
-        buttonsave.Bind(wx.EVT_BUTTON, self.OnSaveFile, id=102)
-        wx.StaticText(self.panel, -1, "Bmatrix in", (110, vshift + 545))
-        self.filenamesave = wx.TextCtrl(
-            self.panel, -1, "*.mat", (200, vshift + 540), size=(100, 25)
-        )
-        wx.StaticText(self.panel, -1, "(on hard disk)", (300, vshift + 545))
-
-        buttonstore = wx.Button(
-            self.panel, 103, "Store", pos=(20, vshift + 580), size=(60, 25)
-        )
-        # buttonstore.SetFont(font3)
-        buttonstore.Bind(wx.EVT_BUTTON, self.OnStoreFile, id=103)
-        wx.StaticText(self.panel, -1, "Bmatrix in", (110, vshift + 585))
-        self.filenamestore = wx.TextCtrl(
-            self.panel, -1, "", (200, vshift + 580), size=(100, 25)
-        )
-        wx.StaticText(
-            self.panel,
-            -1,
-            "(will appear in a*,b*,c* simulation menu)",
-            (300, vshift + 585),
-        )
-
-        buttonload = wx.Button(
-            self.panel, 104, "Load", pos=(20, vshift + 620), size=(60, 25)
-        )
-        # buttonload.SetFont(font3)
-        buttonload.Bind(wx.EVT_BUTTON, self.DoOpenFile, id=104)
-        wx.StaticText(
-            self.panel,
-            -1,
-            "Matrix from saved file in simple ASCII text editor format",
-            (100, vshift + 625),
-        )
-
-        self.vshift2 = vshift + 535 + 60
-
-        wx.StaticText(self.panel, -1, "_" * 90, (25, self.vshift2 + 50))
-
-        st000 = wx.StaticText(
-            self.panel, -1, "Crystal Unit Cell", (250, self.vshift2 + 70)
-        )
-        st000.SetFont(font3)
-
-        """
-        q =   Da U Dc B  G*
-        Da deformation in lab frame(or compute from D expressed in sample frame):  Da = I + strain_a
-        strain_a is general strain neither symetric nor antisymetric, contain pure strain + pure rigid body rotation
-
-        Dc deformation in crystal frame  a*,b*,c* Dc = I + strain_c
-        strain_c is general strain neither symetric nor antisymetric, contain pure strain + pure rigid body rotation
-
-        U is orient matrix in lab frame
-        B is Bmatrix whose each colum is a*,b*,c* expressed in lab frame. Bmatrix can contain rotation part
-        ( can different from triangular up matrix)
-        """
-
-        self.stepx = 120
-        postext = 90
-        pos0x = 70
-
-        wx.StaticText(self.panel, -1, "q   = ", (10, self.vshift2 + postext))
-        wx.StaticText(self.panel, -1, "Da       .", (pos0x, self.vshift2 + postext))
-        wx.StaticText(
-            self.panel,
-            -1,
-            "U        .",
-            (pos0x + 1 * self.stepx, self.vshift2 + postext),
-        )
-        wx.StaticText(
-            self.panel,
-            -1,
-            "B        .",
-            (pos0x + 2 * self.stepx, self.vshift2 + postext),
-        )
-        wx.StaticText(
-            self.panel,
-            -1,
-            "Dc       .",
-            (pos0x + 3 * self.stepx, self.vshift2 + postext),
-        )
-        wx.StaticText(
-            self.panel, -1, "G*", (pos0x + 3 * self.stepx + 100, self.vshift2 + postext)
-        )
-        wx.StaticText(
-            self.panel,
-            -1,
-            "Extinc",
-            (pos0x + 3 * self.stepx + 150, self.vshift2 + postext),
-        )
-
-        self.poscombos = 120
-
-        # combos of unit cell reference parameters
-        self.DisplayCombosUnitCell()
-
-        posv = (self.poscombos + self.vshift2) + 40
-
-        butstoreCell = wx.Button(
-            self.panel, -1, "Store Cell", pos=(20, posv), size=(80, 25)
-        )
-        butstoreCell.Bind(wx.EVT_BUTTON, self.OnStoreRefCell)
-        wx.StaticText(self.panel, -1, "in", (110, posv + 5))
-        self.namestore = wx.TextCtrl(self.panel, -1, "", (150, posv), size=(100, 25))
-        wx.StaticText(
-            self.panel,
-            -1,
-            "(Will appear in Elem list for classical indexation)",
-            (280, posv + 5),
-        )
-
-        buttonquit = wx.Button(
-            self.panel, -1, "Quit", (575, self.vshift2 + 180), size=(120, 100)
-        )
-        buttonquit.Bind(wx.EVT_BUTTON, self.OnQuit)
-
-        self.StatusBar()
-
-    def Build_list_of_B(self):
-        # building list of choices of B matrix
-
-        List_Vect_name = list(self.parent.dict_Vect.keys())
-        List_Vect_name.remove("Default")
-        List_Vect_name.sort()
-
-        self.list_of_Vect = ["Default"] + List_Vect_name
-
-    def DisplayCombosUnitCell(self):
-
-        self.Build_list_of_B()
-
-        List_U_name = list(self.parent.dict_Rot.keys())
-        List_U_name.remove("Identity")
-        List_U_name.sort()
-
-        self.list_of_Rot = ["Identity"] + List_U_name
-
-        List_Transform_name = list(self.parent.dict_Transforms.keys())
-        List_Transform_name.remove("Identity")
-        List_Transform_name.sort()
-
-        self.list_of_Strain = ["Identity"] + List_Transform_name
-
-        self.comboDa = wx.ComboBox(
-            self.panel,
-            -1,
-            "Identity",
-            (50, self.vshift2 + self.poscombos),
-            choices=self.list_of_Strain,
-            size=(100, -1),
-        )
-
-        self.comboU = wx.ComboBox(
-            self.panel,
-            -1,
-            "Identity",
-            (50 + self.stepx, self.vshift2 + self.poscombos),
-            choices=self.list_of_Rot,
-            size=(100, -1),
-        )
-
-        self.comboB = wx.ComboBox(
-            self.panel,
-            -1,
-            "Identity",
-            (50 + 2 * self.stepx, self.vshift2 + self.poscombos),
-            choices=self.list_of_Vect,
-            size=(100, -1),
-        )
-
-        self.comboDc = wx.ComboBox(
-            self.panel,
-            -1,
-            "Identity",
-            (50 + 3 * self.stepx, self.vshift2 + self.poscombos),
-            choices=self.list_of_Strain,
-            size=(100, -1),
-        )
-
-        self.comboExtinc = wx.ComboBox(
-            self.panel,
-            -1,
-            "NoExtinction",
-            (50 + 4 * self.stepx + 40, self.vshift2 + self.poscombos),
-            choices=list(self.parent.dict_Extinc.keys()),
-            size=(100, -1),
-        )
-
-    def OnStoreRefCell(self, evt):
-        key_material = str(self.namestore.GetValue())
-
-        # factor structure peak extinction
-        struct_extinc = self.parent.dict_Extinc[self.comboExtinc.GetValue()]
-
-        # UnitCellParameters is either [a,b,c,alpha,beta,gamma] or list of 4 matrices [Da,U,Dc,B]
-        Da = self.parent.dict_Transforms[self.comboDa.GetValue()]
-        U = self.parent.dict_Rot[self.comboU.GetValue()]
-        B = self.parent.dict_Vect[self.comboB.GetValue()]
-        Dc = self.parent.dict_Transforms[self.comboDc.GetValue()]
-
-        UnitCellParameters = [Da, U, B, Dc]
-        print("UnitCellParameters", UnitCellParameters)
-        print("Stored key_material", [key_material, UnitCellParameters, struct_extinc])
-        self.parent.dict_Materials[key_material] = [
-            key_material,
-            UnitCellParameters,
-            struct_extinc,
-        ]
-
-    def StatusBar(self):
-        self.statusbar = self.CreateStatusBar()
-        self.statusbar.SetFieldsCount(3)
-        self.statusbar.SetStatusWidths([-5, -2, -1])
-
-    def ToggleStatusBar(self, event):
-        if self.statusbar.IsShown():
-            self.statusbar.Hide()
-        else:
-            self.statusbar.Show()
-
-    def OnTextChanged(self, event):
-        self.modify = True
-        event.Skip()
-
-    def OnKeyDown(self, event):
-        keycode = event.GetKeyCode()
-        if keycode == wx.WXK_INSERT:
-            if not self.replace:
-                self.statusbar.SetStatusText("INS", 2)
-                self.replace = True
-            else:
-                self.statusbar.SetStatusText("", 2)
-                self.replace = False
-        event.Skip()
-
-    def OnSaveFile(self, event):
-        """
-        Saves the matrix in ASCII editor or 9 entried elements on Hard Disk
-        """
-        self.last_name_saved = self.filenamesave.GetValue()
-
-        if self.last_name_saved:
-
-            try:
-                if self.rbeditor.GetValue():
-                    _file = open(self.last_name_saved, "w")
-                    text = self.texts.GetValue()
-                    _file.write(text)
-                    _file.close()
-                else:
-
-                    m11 = float(self.mat_a11s.GetValue())
-                    m12 = float(self.mat_a12s.GetValue())
-                    m13 = float(self.mat_a13s.GetValue())
-
-                    m21 = float(self.mat_a21s.GetValue())
-                    m22 = float(self.mat_a22s.GetValue())
-                    m23 = float(self.mat_a23s.GetValue())
-
-                    m31 = float(self.mat_a31s.GetValue())
-                    m32 = float(self.mat_a32s.GetValue())
-                    m33 = float(self.mat_a33s.GetValue())
-
-                    allm = (m11, m12, m13, m21, m22, m23, m31, m32, m33)
-
-                    f = open(self.last_name_saved, "w")
-                    text = (
-                        "[[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f]]"
-                        % allm
-                    )
-                    f.write(text)
-                    f.close()
-
-                self.statusbar.SetStatusText(
-                    os.path.basename(self.last_name_saved) + " saved", 0
-                )
-                self.modify = False
-                self.statusbar.SetStatusText("", 1)
-
-                fullname = os.path.join(os.getcwd(), self.last_name_saved)
-                wx.MessageBox("Matrix saved in %s" % fullname, "INFO")
-
-            except IOError as error:
-
-                dlg = wx.MessageDialog(self, "Error saving file\n" + str(error))
-                dlg.ShowModal()
-        else:
-            print("No name input!!")
-
-    def OnStoreFile(self, event):
-        """
-        Stores the matrix from the ASCII editor or the 9 entried elements in main list of orientation matrix for further simulation
-        """
-        self.last_name_stored = self.filenamestore.GetValue()
-
-        if self.last_name_stored:
-
-            if not self.rbeditor.GetValue():  # read 9 elements
-                m11 = float(self.mat_a11s.GetValue())
-                m12 = float(self.mat_a12s.GetValue())
-                m13 = float(self.mat_a13s.GetValue())
-
-                m21 = float(self.mat_a21s.GetValue())
-                m22 = float(self.mat_a22s.GetValue())
-                m23 = float(self.mat_a23s.GetValue())
-
-                m31 = float(self.mat_a31s.GetValue())
-                m32 = float(self.mat_a32s.GetValue())
-                m33 = float(self.mat_a33s.GetValue())
-
-                self.parent.dict_Vect[self.last_name_stored] = [
-                    [m11, m12, m13],
-                    [m21, m22, m23],
-                    [m31, m32, m33],
-                ]
-
-            else:  # read ASCII editor
-                text = str(self.texts.GetValue())
-                tu = text.replace("[", "").replace("]", "")
-                ta = tu.split(",")
-                to = [float(elem) for elem in ta]
-                self.parent.dict_Rot[self.last_name_stored] = [to[:3], to[3:6], to[6:]]
-
-            self.statusbar.SetStatusText(
-                os.path.basename(self.last_name_stored) + " stored", 0
-            )
-            self.DisplayCombosUnitCell()
-
-        else:
-            print("No name input !!!")
-
-    def DoOpenFile(self, event):
-        wcd = "All files(*)|*|Matrix files(*.mat)|*.mat"
-        _dir = os.getcwd()
-        open_dlg = wx.FileDialog(
-            self,
-            message="Choose a file",
-            defaultDir=_dir,
-            defaultFile="",
-            wildcard=wcd,
-            style=wx.OPEN | wx.CHANGE_DIR,
-        )
-        if open_dlg.ShowModal() == wx.ID_OK:
-            path = open_dlg.GetPath()
-
-            try:
-                _file = open(path, "r")
-                text = _file.readlines()
-                _file.close()
-
-                if self.texts.GetLastPosition():
-                    self.texts.Clear()
-                strmat = ""
-                for line in text:
-                    strmat += line[:-1]
-                self.text.WriteText(strmat + "]")
-                self.last_name_saved = path
-                self.statusbar.SetStatusText("", 1)
-                self.modify = False
-
-            except IOError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except UnicodeDecodeError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-        open_dlg.Destroy()
-
-    def EnterComboRot(self, event):
-        """
-        in UB matrix editor
-        """
-        item = event.GetSelection()
-        self.CurrentMat = self.list_of_Rot[item]
-        event.Skip()
-
-    # def EnterComboDa(self, event):
-    # """
-    # in UB matrix editor
-
-    # """
-    # item = event.GetSelection()
-    # self.CurrentMat = self.list_of_Rot[item]
-    # event.Skip()
-
-    # def EnterComboU(self, event):
-    # """
-    # in UB matrix editor
-
-    # """
-    # item = event.GetSelection()
-    # self.CurrentMat = self.list_of_Rot[item]
-    # event.Skip()
-
-    # def EnterComboDc(self, event):
-    # """
-    # in UB matrix editor
-
-    # """
-    # item = event.GetSelection()
-    # self.CurrentMat = self.list_of_Rot[item]
-    # event.Skip()
-
-    # def EnterComboB(self, event):
-    # """
-    # in UB matrix editor
-
-    # """
-    # item = event.GetSelection()
-    # self.CurrentMat = self.list_of_Rot[item]
-    # event.Skip()
-
-    # def EntercomboExtinc(self, event):
-    # """
-    # in UB matrix editor
-
-    # """
-    # item = event.GetSelection()
-    # self.CurrentMat = self.list_of_Rot[item]
-    # event.Skip()
-
-    def OnLookMatrix(self, event):
-        matrix = self.parent.dict_Vect[self.CurrentMat]
-        print("%s is :" % self.CurrentMat)
-        print(matrix)
-
-        self.mat_a11s.SetValue(str(matrix[0][0]))
-        self.mat_a12s.SetValue(str(matrix[0][1]))
-        self.mat_a13s.SetValue(str(matrix[0][2]))
-        self.mat_a21s.SetValue(str(matrix[1][0]))
-        self.mat_a22s.SetValue(str(matrix[1][1]))
-        self.mat_a23s.SetValue(str(matrix[1][2]))
-        self.mat_a31s.SetValue(str(matrix[2][0]))
-        self.mat_a32s.SetValue(str(matrix[2][1]))
-        self.mat_a33s.SetValue(str(matrix[2][2]))
-
-        self.texts.SetValue(str(matrix))
-
-    def Matrix_from_texteditor(self, texteditor):
-        """
-        read matrix element from text editor in [[#,#,#],[#,#,#],[#,#,#]] format
-        return matrix(array type)
-        """
-
-        text = str(texteditor.GetValue())
-        tu = text.replace("[", "").replace("]", "")
-        ta = tu.split(",")
-        try:
-            to = [float(elem) for elem in ta]
-        except ValueError:
-            wx.MessageBox(
-                "Text Editor input Bmatrix seems empty. Fill it or Fill others fields and select the associated button, and then click on Convert",
-                "INFO",
-            )
-            return None
-        matrix = np.array([to[:3], to[3:6], to[6:]])
-        return matrix
-
-    def Set_lattice_parameter(self, sixvalues, sixtextctrl):
-        """
-        from six lattice parameters fill the six txtctrls of sixtextctrl
-        """
-        for k, val in enumerate(sixvalues):
-            sixtextctrl[k].SetValue(str(val))
-
-    def Set_matrix_parameter(self, ninevalues, ninetextctrl):
-        """
-        from nine matrix elements fill the nine txtctrls of ninetextctrl
-        """
-        for k, val in enumerate(ninevalues):
-            ninetextctrl[k].SetValue(str(val))
-
-    def Read_matrix_parameter(self, ninetextctrl):
-        """
-        read nine matrix elements from ninetextctrl
-        """
-        mat = []
-        for txtcontrol in ninetextctrl:
-            mat.append(float(txtcontrol.GetValue()))
-        return np.reshape(np.array(mat), (3, 3))
-
-    def Read_lattice_parameter(self, sixtextctrl):
-        """
-        read six lattice parameters from sixtextctrl
-        """
-        mat = []
-        for txtcontrol in sixtextctrl:
-            mat.append(float(txtcontrol.GetValue()))
-        return np.array(mat, dtype=float)
-
-    def OnConvert(self, event):
-        """
-        compute matrices and lattice parameters both in direct and reciprocical
-        spaces from data input
-        """
-        rbuttons = [
-            self.rbeditor,
-            self.rbelem,
-            self.rblatticeparam_direct,
-            self.rbeditors,
-            self.rbelems,
-            self.rblatticeparam_reciprocal,
-        ]
-
-        txtctrl_lattice_reciprocal = [
-            self.astar,
-            self.bstar,
-            self.cstar,
-            self.alphastar,
-            self.betastar,
-            self.gammastar,
-        ]
-        txtctrl_lattice_direct = [
-            self.a,
-            self.b,
-            self.c,
-            self.alpha,
-            self.beta,
-            self.gamma,
-        ]
-
-        txtctrl_matdirect = [
-            self.mat_a11,
-            self.mat_a12,
-            self.mat_a13,
-            self.mat_a21,
-            self.mat_a22,
-            self.mat_a23,
-            self.mat_a31,
-            self.mat_a32,
-            self.mat_a33,
-        ]
-        txtctrl_matrecip = [
-            self.mat_a11s,
-            self.mat_a12s,
-            self.mat_a13s,
-            self.mat_a21s,
-            self.mat_a22s,
-            self.mat_a23s,
-            self.mat_a31s,
-            self.mat_a32s,
-            self.mat_a33s,
-        ]
-
-        # rbuttons_state = [elem.GetValue() for elem in rbuttons]
-
-        if rbuttons[0].GetValue():  # self.rbeditor
-
-            BMatrix_direct = self.Matrix_from_texteditor(self.text)
-            # strange need of this line otherwise :
-            # UnboundLocalError: local variable 'Bmatrix_direct' referenced before assignment
-            machin = BMatrix_direct
-            truc = np.ravel(machin)
-            self.Set_matrix_parameter(truc, txtctrl_matdirect)
-            lattice_parameter_direct = CP.matrix_to_rlat(BMatrix_direct)
-            self.Set_lattice_parameter(lattice_parameter_direct, txtctrl_lattice_direct)
-            # reciprocal space
-            Bmatrix = CP.calc_B_RR(lattice_parameter_direct, directspace=1)
-            self.texts.SetValue(str(Bmatrix.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix), txtctrl_matrecip)
-            lattice_parameter_reciprocal = CP.matrix_to_rlat(Bmatrix)
-            self.Set_lattice_parameter(
-                lattice_parameter_reciprocal, txtctrl_lattice_reciprocal
-            )
-
-        elif rbuttons[1].GetValue():  # self.rbelem
-
-            BMatrix_direct = self.Read_matrix_parameter(txtctrl_matdirect)
-            # strange need of this line otherwise :
-            # UnboundLocalError: local variable 'Bmatrix_direct' referenced before assignment
-            truc = str(BMatrix_direct.tolist())
-            self.text.SetValue(truc)
-            lattice_parameter_direct = CP.matrix_to_rlat(BMatrix_direct)
-            self.Set_lattice_parameter(lattice_parameter_direct, txtctrl_lattice_direct)
-            # reciprocal space
-            Bmatrix = CP.calc_B_RR(lattice_parameter_direct, directspace=1)
-            self.texts.SetValue(str(Bmatrix.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix), txtctrl_matrecip)
-            lattice_parameter_reciprocal = CP.matrix_to_rlat(Bmatrix)
-            self.Set_lattice_parameter(
-                lattice_parameter_reciprocal, txtctrl_lattice_reciprocal
-            )
-
-        elif rbuttons[2].GetValue():  # self.rblatticeparam_direct
-            # TODO limitations in angle to have a direct triedral ? 15 90 160 deg => Nan!!
-            lattice_parameter_direct = self.Read_lattice_parameter(
-                txtctrl_lattice_direct
-            )
-            Bmatrix_direct = CP.calc_B_RR(lattice_parameter_direct, directspace=0)
-            self.text.SetValue(str(Bmatrix_direct.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix_direct), txtctrl_matdirect)
-            # reciprocal space
-            Bmatrix = CP.calc_B_RR(lattice_parameter_direct, directspace=1)
-            self.texts.SetValue(str(Bmatrix.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix), txtctrl_matrecip)
-            lattice_parameter_reciprocal = CP.matrix_to_rlat(Bmatrix)
-            self.Set_lattice_parameter(
-                lattice_parameter_reciprocal, txtctrl_lattice_reciprocal
-            )
-
-        elif rbuttons[3].GetValue():  # self.rbeditors
-            # start from list(3*3 elements) of B matrix in RS
-            Bmatrix = self.Matrix_from_texteditor(self.texts)
-            self.Set_matrix_parameter(np.ravel(Bmatrix), txtctrl_matrecip)
-            lattice_parameter_reciprocal = CP.matrix_to_rlat(Bmatrix)
-            self.Set_lattice_parameter(
-                lattice_parameter_reciprocal, txtctrl_lattice_reciprocal
-            )
-            # direct space
-            lattice_parameter_direct = CP.dlat_to_rlat(lattice_parameter_reciprocal)
-            self.Set_lattice_parameter(lattice_parameter_direct, txtctrl_lattice_direct)
-            Bmatrix_direct = CP.calc_B_RR(lattice_parameter_direct, directspace=0)
-            self.text.SetValue(str(Bmatrix_direct.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix_direct), txtctrl_matdirect)
-
-        elif rbuttons[4].GetValue():  # self.rbelems
-            # start from 9 entered elements of B matrix in RS
-            BMatrix = self.Read_matrix_parameter(txtctrl_matrecip)
-            self.texts.SetValue(str(BMatrix.tolist()))
-            lattice_parameter_reciprocal = CP.matrix_to_rlat(BMatrix)
-            self.Set_lattice_parameter(
-                lattice_parameter_reciprocal, txtctrl_lattice_reciprocal
-            )
-            # direct space
-            lattice_parameter_direct = CP.dlat_to_rlat(lattice_parameter_reciprocal)
-            self.Set_lattice_parameter(lattice_parameter_direct, txtctrl_lattice_direct)
-            Bmatrix_direct = CP.calc_B_RR(lattice_parameter_direct, directspace=0)
-            self.text.SetValue(str(Bmatrix_direct.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix_direct), txtctrl_matdirect)
-
-        elif rbuttons[5].GetValue():  # self.rblatticeparam_reciprocal
-            lattice_parameter_reciprocal = self.Read_lattice_parameter(
-                txtctrl_lattice_reciprocal
-            )
-            Bmatrix = CP.calc_B_RR(lattice_parameter_reciprocal, directspace=0)
-            self.texts.SetValue(str(Bmatrix.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix), txtctrl_matrecip)
-            # direct space
-            lattice_parameter_direct = CP.dlat_to_rlat(lattice_parameter_reciprocal)
-            self.Set_lattice_parameter(lattice_parameter_direct, txtctrl_lattice_direct)
-            Bmatrix_direct = CP.calc_B_RR(lattice_parameter_direct, directspace=0)
-            self.text.SetValue(str(Bmatrix_direct.tolist()))
-            self.Set_matrix_parameter(np.ravel(Bmatrix_direct), txtctrl_matdirect)
-
-    def OnQuit(self, event):
-        dlg = wx.MessageDialog(
-            self, 'To use stored UB Matrices, click on "refresh choices" button before.'
-        )
-        if dlg.ShowModal() == wx.ID_OK:
-            self.Close()
-            event.Skip()
-        else:
-            event.Skip()
 
 
 # --- ---------------  Manual indexation Frame
@@ -4936,14 +4141,14 @@ class ManualIndexFrame(wx.Frame):
         sizerH.Fit(self)
         self.Layout()
 
-    def sliderUpdate_exp(self, event):
+    def sliderUpdate_exp(self, evt):
         print("sliderUpdate_exp")
         self.factorsize = int(self.slider_exp.GetValue())
         self.getlimitsfromplot = True
         self._replot()
         print("factor spot size = %f " % self.factorsize)
 
-    def sliderUpdate_ps(self, event):
+    def sliderUpdate_ps(self, evt):
         print("sliderUpdate_ps", self.slider_ps.GetValue())
         # ps from -5 5
         ps = (int(self.slider_ps.GetValue()) - 50) / 10.0
@@ -5213,7 +4418,7 @@ class ManualIndexFrame(wx.Frame):
 
         self._replot()
 
-    def onMotion_ToolTip(self, event):
+    def onMotion_ToolTip(self, evt):
         """tool tip to show data when mouse hovers on plot
         """
         if len(self.data[0]) == 0:
@@ -5235,10 +4440,10 @@ class ManualIndexFrame(wx.Frame):
 
         #         print "DATA:    \n\n\n", xdata[:5], ydata[:5], annotes
 
-        if event.xdata is not None and event.ydata is not None:
+        if evt.xdata is not None and evt.ydata is not None:
 
-            clickX = event.xdata
-            clickY = event.ydata
+            clickX = evt.xdata
+            clickY = evt.ydata
 
             #             print 'clickX,clickY in onMotion_ToolTip', clickX, clickY
 
@@ -5572,7 +4777,7 @@ class ManualIndexFrame(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
 
-    def onClick(self, event):
+    def onClick(self, evt):
         """ onclick
         """
         #         if self.dr is not None:
@@ -5580,14 +4785,14 @@ class ManualIndexFrame(wx.Frame):
 
         res = None
         #        print 'clicked on mouse'
-        if event.inaxes:
-            #            print("inaxes", event)
-            print(("inaxes x,y", event.x, event.y))
-            print(("inaxes  xdata, ydata", event.xdata, event.ydata))
-            self.centerx, self.centery = event.xdata, event.ydata
+        if evt.inaxes:
+            #            print("inaxes", evt)
+            print(("inaxes x,y", evt.x, evt.y))
+            print(("inaxes  xdata, ydata", evt.xdata, evt.ydata))
+            self.centerx, self.centery = evt.xdata, evt.ydata
 
             if self.pointButton6.GetValue():
-                self.Annotate_exp(event)
+                self.Annotate_exp(evt)
 
             if self.pickdistbtn.GetValue():
                 self.nbclick_dist += 1
@@ -5595,25 +4800,25 @@ class ManualIndexFrame(wx.Frame):
 
                 if self.nbclick_dist == 1:
                     if self.UCEP.GetValue():
-                        closestExpSpot = self.Annotate_exp(event)
+                        closestExpSpot = self.Annotate_exp(evt)
                         if closestExpSpot is not None:
                             x, y = closestExpSpot[:2]
                         else:
-                            x, y = event.xdata, event.ydata
+                            x, y = evt.xdata, evt.ydata
                     else:
-                        x, y = event.xdata, event.ydata
+                        x, y = evt.xdata, evt.ydata
 
                     self.twopoints = [(x, y)]
 
                 if self.nbclick_dist == 2:
                     if self.UCEP.GetValue():
-                        closestExpSpot = self.Annotate_exp(event)
+                        closestExpSpot = self.Annotate_exp(evt)
                         if closestExpSpot is not None:
                             x, y = closestExpSpot[:2]
                         else:
-                            x, y = event.xdata, event.ydata
+                            x, y = evt.xdata, evt.ydata
                     else:
-                        x, y = event.xdata, event.ydata
+                        x, y = evt.xdata, evt.ydata
 
                     self.twopoints.append((x, y))
 
@@ -5674,44 +4879,44 @@ class ManualIndexFrame(wx.Frame):
 
                 if self.nbclick_dist == 1:
                     if self.UCEP.GetValue():
-                        closestExpSpot = self.Annotate_exp(event)
+                        closestExpSpot = self.Annotate_exp(evt)
                         if closestExpSpot is not None:
                             x, y = closestExpSpot[:2]
                         else:
-                            x, y = event.xdata, event.ydata
+                            x, y = evt.xdata, evt.ydata
                     else:
-                        x, y = event.xdata, event.ydata
+                        x, y = evt.xdata, evt.ydata
 
                     self.twospots = [(x, y)]
 
                 if self.nbclick_dist == 2:
                     if self.UCEP.GetValue():
-                        closestExpSpot = self.Annotate_exp(event)
+                        closestExpSpot = self.Annotate_exp(evt)
                         if closestExpSpot is not None:
                             x, y = closestExpSpot[:2]
                         else:
-                            x, y = event.xdata, event.ydata
+                            x, y = evt.xdata, evt.ydata
                     else:
-                        x, y = event.xdata, event.ydata
+                        x, y = evt.xdata, evt.ydata
 
                     self.twospots.append((x, y))
 
-                    #                     self.Reckon_2pts(event)
-                    self.Reckon_2pts_new(event)
+                    #                     self.Reckon_2pts(evt)
+                    self.Reckon_2pts_new(evt)
         else:
             print("outside!! axes object")
 
-    def EnterCombokeymaterial(self, event):
+    def EnterCombokeymaterial(self, evt):
         """
         in ManualIndexFrame
         """
-        item = event.GetSelection()
+        item = evt.GetSelection()
         self.key_material = self.list_materials[item]
 
         self.sb.SetStatusText(
             "Selected material: %s" % str(self.parent.dict_Materials[self.key_material])
         )
-        event.Skip()
+        evt.Skip()
 
     def store_pts(self, evt):
         self.points.append((evt.xdata, evt.ydata))
@@ -5757,7 +4962,7 @@ class ManualIndexFrame(wx.Frame):
         for x, y, a in annotesToDraw:
             self.drawAnnote_exp(self.axes, x, y, a)
 
-    def Annotate_exp(self, event):
+    def Annotate_exp(self, evt):
         """
         ManualIndexFrame
         """
@@ -5785,8 +4990,8 @@ class ManualIndexFrame(wx.Frame):
         # print annotes
         self._dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
-        clickX = event.xdata
-        clickY = event.ydata
+        clickX = evt.xdata
+        clickY = evt.ydata
 
         print("in Annotate_exp", clickX, clickY)
 
@@ -5869,7 +5074,7 @@ class ManualIndexFrame(wx.Frame):
             Rectangle((X - hsize, Y - hsize), size, size, fill=False, color="r")
         )
 
-    def close(self, event):
+    def close(self, evt):
         self.Close(True)
 
     def all_reds(self):

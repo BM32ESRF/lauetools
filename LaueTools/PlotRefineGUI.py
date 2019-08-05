@@ -3914,11 +3914,8 @@ class Plot_RefineFrame(wx.Frame):
 
         if self.datatype == "2thetachi":
             # 2theta, chi, (miller posx posy energy)
-            xdata, ydata, annotes = (
-                self.data_theo[0],
-                self.data_theo[1],
-                self.data_theo[2:],
-            )
+            annotes = self.data_theo[2:]
+            
         if self.datatype == "pixels":
             # x, y, (miller 2theta chi energy)
             xdata, ydata, annotes = (

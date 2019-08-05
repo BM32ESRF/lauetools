@@ -544,9 +544,9 @@ class spotsset:
 
         return np.array(data)
 
-    def getallIndexedSpotsallData(self, onlywithMiller=1):
+    def getallIndexedSpotsallData(self):
         """
-        return all data of experimental spots for all indexed grains
+        return all indexed spots properties for all indexed grains
         """
         DataGraindict = {}
         for grainindex in self.indexedgrains:
@@ -3823,8 +3823,8 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
 
     resflag = np.all(flagdiff.reshape(Shape[0], ny), axis=1)
 
-    print("resflag",resflag)
-    print("np.any(resflag)",np.any(resflag))
+    # print("resflag",resflag)
+    # print("np.any(resflag)",np.any(resflag))
 
     return np.any(resflag), resflag
 

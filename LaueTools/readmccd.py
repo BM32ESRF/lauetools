@@ -532,7 +532,7 @@ def readCCDimage(
 ):
     r"""read raw data image file and return pixel intensity 2D array
     such as to fit the data (2theta, chi) scattering angles representation convention
-    
+
     :param filename: path to image file (fullpath if `dirname`=None)
     :type filename: str
     :param CCDLabel: label, defaults to "MARCCD165"
@@ -544,7 +544,7 @@ def readCCDimage(
     :param verbose: 0 or 1, defaults to 0
     :type verbose: int, optional
     :raises ValueError: if data format and CCD parameters from label are not compatible
-    :return: 
+    :return:
         - dataimage, 2D array image data pixel intensity properly oriented
         - framedim, iterable of 2 integers shape of dataimage
         - fliprot : string, key for CCD frame transform to orient image

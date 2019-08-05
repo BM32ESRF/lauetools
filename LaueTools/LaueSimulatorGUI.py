@@ -21,7 +21,6 @@ import sys
 
 import numpy as np
 import wx
-import wx.lib.scrolledpanel as scrolled
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
@@ -572,7 +571,7 @@ class SlipSystemPanel(wx.Panel):
 
         misanglemin = -0.2
         misanglemax = 0.2
-        nbsteps = 5
+        nbsteps = 11
 
         angle_rot = np.linspace(misanglemin, misanglemax, num=nbsteps)
         nb_angles = len(angle_rot)
@@ -811,7 +810,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         except AttributeError:
             self.CCDLabel = self.initialParameters["CCDLabel"]
 
-        current_param = self.initialParameters["CalibrationParameters"]
+        # current_param = self.initialParameters["CalibrationParameters"]
         self.pixelsize = self.initialParameters["pixelsize"]
         self.framedim = self.initialParameters["framedim"]
 
@@ -829,7 +828,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.dict_grain_created = {}
         self.SelectGrains = {}
 
-        self.CurrentGrain = [ "Cu", "FaceCenteredCubic", "Identity",
+        self.CurrentGrain = ["Cu", "FaceCenteredCubic", "Identity",
                             "Identity", "Identity", "Identity", "Grain_0", "", ]
 
         self.create_leftpanel()
@@ -875,18 +874,14 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.Layout()
 
     def OnTabChange_nb0(self, event):
-
         #        print 'tab changed'
         selected_tab = self.nb0.GetSelection()
         print("selected tab:", selected_tab)
         print(self.nb0.GetPage(self.nb0.GetSelection()))
         print(self.nb0.GetPage(self.nb0.GetSelection()).GetName())
-
         event.Skip()  # patch for windows to update the tab display
 
     def create_leftpanel(self):
-
-        #         self.panel.SetBackgroundColour('pink')
 
         titlegrain = wx.StaticText(self.panel, -1, "Grain Definition")
         titlegrain.SetFont(self.font3)
@@ -900,28 +895,15 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.RefreshCombosChoices()
 
-        self.comboElem = wx.ComboBox(
-            self.panel, -1, "Cu", choices=self.list_of_Elem, style=wx.CB_READONLY
-        )
-        self.comboExtinc = wx.ComboBox(
-            self.panel,
-            -1,
-            "FaceCenteredCubic",
-            choices=self.list_of_Extinc,
-            style=wx.CB_READONLY,
-        )
-        self.comboStrain_a = wx.ComboBox(
-            self.panel, -1, "Identity", choices=self.list_of_Strain_a
-        )
-        self.comboRot = wx.ComboBox(
-            self.panel, -1, "Identity", choices=self.list_of_Rot
-        )
-        self.comboVect = wx.ComboBox(
-            self.panel, -1, "Identity", choices=self.list_of_Vect
-        )
-        self.comboStrain_c = wx.ComboBox(
-            self.panel, -1, "Identity", choices=self.list_of_Strain_c
-        )
+        self.comboElem = wx.ComboBox(self.panel, -1, "Cu",
+                                choices=self.list_of_Elem, style=wx.CB_READONLY)
+        self.comboExtinc = wx.ComboBox(self.panel, -1, "FaceCenteredCubic",
+                                choices=self.list_of_Extinc, style=wx.CB_READONLY)
+        self.comboStrain_a = wx.ComboBox(self.panel, -1, "Identity",
+                                choices=self.list_of_Strain_a)
+        self.comboRot = wx.ComboBox(self.panel, -1, "Identity", choices=self.list_of_Rot)
+        self.comboVect = wx.ComboBox(self.panel, -1, "Identity", choices=self.list_of_Vect)
+        self.comboStrain_c = wx.ComboBox(self.panel, -1, "Identity", choices=self.list_of_Strain_c)
 
         buttonrefresh = wx.Button(self.panel, -1, "Refresh choices")
         buttonrefresh.Bind(wx.EVT_BUTTON, self.updatecombosmenus)
@@ -1169,14 +1151,14 @@ class parametric_Grain_Dialog3(wx.Frame):
         )
         return self.String_Info
 
-    def OnTextChanged(self, event):
+    def OnTextChanged(self, evt):
         self.modify = True
-        event.Skip()
+        evt.Skip()
 
     def OnKeyDown(self, event):
         event.Skip()
 
-    def showCurrentDir(self, event):
+    def showCurrentDir(self, evt):
         dlg = wx.MessageDialog(
             self,
             "Current directory :%s" % self.dirname,
@@ -1293,8 +1275,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         strc = self.comboStrain_c.GetValue()
 
         # out them in self.CurrentGrain
-
         for k, val in enumerate([elem, extinc, stra, rot, B, strc]):
+            print('k,val',k,val)
             self.CurrentGrain[k] = val
 
         # inserting parameters in listctrl
@@ -1450,7 +1432,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         wholestring = Edit_String_SimulData(data).splitlines()
         print('wholestring',wholestring)
         # header = '2theta  chi   x   y   I'
-        headerarray = np.array(["2theta", " chi", "   x", "   y", "   I"], dtype="|S11")
+        # headerarray = np.array(["2theta", " chi", "   x", "   y", "   I"], dtype="|S11")
 
         nbgrains = int(wholestring[1].split()[-1])
         print("nbgrains", nbgrains)
@@ -1529,7 +1511,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         corfileobj.close()
 
-    def OnSave(self, event, data_res):
+    def OnSave(self, evt, data_res):
 
         textfile = open(os.path.join(self.dirname, self.simul_filename), "w")
 
@@ -1540,7 +1522,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         fullname = os.path.join(self.dirname, self.simul_filename)
         wx.MessageBox("File saved in %s" % fullname, "INFO")
 
-    def opendir(self, event):
+    def opendir(self, evt):
         dlg = wx.DirDialog(
             self,
             "Choose a directory:self.control.SetValue(str(self.indexed_spots).replace('],',']\n'))",
@@ -1553,27 +1535,20 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         dlg.Destroy()
 
-    def OnQuit(self, event):
+    def OnQuit(self, evt):
         #        print "Current selected grains ", self.SelectGrains
         self.Close()
 
-    def OnSimulate(self, event):
+    def OnSimulate(self, evt):
         """
         in parametric transformation simulation parametric_Grain_Dialog3
         """
         # select all created grain and build dict self.SelectGrains
-        self.Select_AllGrain(event)
+        self.Select_AllGrain(evt)
         # list of parameters for parent and child grains
         list_param = multigrainsSimulator.Construct_GrainsParameters_parametric(self.SelectGrains)
 
-        if 0:
-            print("list_param in parametric", list_param)
-            print("nb grains", len(list_param))
-            print(
-                "\n******************\ndict transform\n*************\n",
-                self.dict_transform,
-            )
-            print("self.SelectGrains", self.SelectGrains)
+        print('list_param',list_param)
 
         if len(list_param) == 0:
             dlg = wx.MessageDialog(
@@ -1635,7 +1610,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # show 2D pixel intensity from image file
         ImageArray = None
         if showExperimentalImage:
-            
+
             fullpathimagename = str(self.rightpanel.expimagetxtctrl.GetValue())
             if not os.path.isfile(fullpathimagename):
                 dlg = wx.MessageDialog(
@@ -1648,9 +1623,7 @@ class parametric_Grain_Dialog3(wx.Frame):
                 dlg.Destroy()
                 return
 
-            ImageArray, framedim, fliprot = RMCCD.readCCDimage(
-                fullpathimagename, self.CCDLabel, dirname=None
-            )
+            ImageArray = RMCCD.readCCDimage(fullpathimagename, self.CCDLabel, dirname=None)[0]
 
             self.rightpanel.pt_XYCCD.SetValue(True)
 

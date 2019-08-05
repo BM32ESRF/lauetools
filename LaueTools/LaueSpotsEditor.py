@@ -352,7 +352,7 @@ class SpotsEditor(wx.Frame):
         #         self.tcnb.SetValue(str(filternbspots))
         self.tcnb.SetLabel(str(filternbspots))
 
-    def OnPlot(self, event):
+    def OnPlot(self, evt):
         data = self.ReadSortedData()
         columdata = data[:, -1]
 
@@ -366,7 +366,7 @@ class SpotsEditor(wx.Frame):
         )
         barplt.Show(True)
 
-    def OnRemove(self, event):
+    def OnRemove(self, evt):
         index = self.listcontrol.GetFocusedItem()
         self.listcontrol.DeleteItem(index)
         #         oldnb = int(self.tcnb.GetValue())
@@ -387,7 +387,7 @@ class SpotsEditor(wx.Frame):
         self.toreturn = np.array(self.toreturn, dtype=np.float)
         return self.toreturn
 
-    def OnAcceptQuit(self, event):
+    def OnAcceptQuit(self, evt):
 
         self.toreturn = self.ReadSortedData()
 
@@ -406,7 +406,7 @@ class SpotsEditor(wx.Frame):
 
         self.Close()
 
-    def OnClear(self, event):
+    def OnClear(self, evt):
         self.listcontrol.DeleteAllItems()
 
 
