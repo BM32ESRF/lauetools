@@ -985,12 +985,7 @@ class Plot_RefineFrame(wx.Frame):
                 self.comboUBmatrix.Append(mname)
             print("len dict", len(DictLT.dict_Rot))
 
-            # or combo.Clear  combo.Appenditems(dict.rot)
-            #             listrot = DictLT.dict_Rot.keys()
-            #             sorted(listrot)
-            #             self.crystalparampanel.comboMatrix.choices = listrot
             self.comboUBmatrix.SetSelection(initlength)
-            #             self.crystalparampanel.comboMatrix.SetValue(inputmatrixname + '0')
 
             dlg.Destroy()
 

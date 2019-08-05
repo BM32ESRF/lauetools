@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 GUI Module to simulate Laue Patterns from several crystals in various geometry
 
 Main author is J. S. Micha:   micha [at] esrf [dot] fr
@@ -16,7 +16,8 @@ https://gitlab.esrf.fr/micha/lauetools
 To be launched (to deal with relative imports)
 > python -m LaueTools.LaueSimulatorGUI
 """
-import os,sys
+import os
+import sys
 
 import numpy as np
 import wx
@@ -50,10 +51,11 @@ else:
     import readmccd as RMCCD
 
 
-DEG = np.pi / 180.0
-
-
 class TransformPanel(wx.Panel):
+    """
+    GUI class to set parameters to define a set of geometrical transforms (strain, orientatio)
+    and store it in dict_transform to be used by the simulator
+    """
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -259,20 +261,18 @@ class TransformPanel(wx.Panel):
             self.rb_strainId.SetValue(True)
 
     def ReadTransform(self):
-        """
+        r"""
+        core function of this GUI panel
         reads toggle radio button and rotation and strain parameter
-        returns parametric matrix rotation and strain
+        returns a list of matrix rotation and strain
         """
+        DEG = np.pi / 180.0
         anglesample = DictLT.SAMPLETILT * DEG
         # transform matrix from xs, ys, zs sample frame to x, y,z absolute frame
         # vec / abs = R * vec / sample
-        matrot_sample = np.array(
-            [
-                [np.cos(anglesample), 0, -np.sin(anglesample)],
-                [0, 1, 0],
-                [np.sin(anglesample), 0, np.cos(anglesample)],
-            ]
-        )
+        matrot_sample = np.array( [ [np.cos(anglesample), 0, -np.sin(anglesample)],
+                                    [0, 1, 0],
+                                    [np.sin(anglesample), 0, np.cos(anglesample)], ] )
         inv_matrot_sample = np.linalg.inv(matrot_sample)
 
         # no transform
@@ -335,8 +335,7 @@ class TransformPanel(wx.Panel):
                 except:
                     sentence = 'Expression for t variation in ROTATION axis not understood! Check if there are "," and "]" '
                     dlg = wx.MessageDialog(
-                        self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR
-                    )
+                        self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
                     dlg.ShowModal()
                     dlg.Destroy()
                     return
@@ -360,11 +359,7 @@ class TransformPanel(wx.Panel):
                     # tag for transform , array of angle
                     # NOTE: array of axis  coordinates change is done later
                     # according to the orientation
-                    return (
-                        "r_axis_%s" % framerot,
-                        evalangle_rot,
-                        np.array(evalaxisrot).T,
-                    )
+                    return ( "r_axis_%s" % framerot, evalangle_rot, np.array(evalaxisrot).T)
 
             # general transform given by input of a matrix and a frame
             if self.rb_rotmatrix.GetValue():
@@ -533,6 +528,8 @@ class TransformPanel(wx.Panel):
 
 
 class SlipSystemPanel(wx.Panel):
+    """GUI class to set slip systems to be simulated to interpret Laue spots elongation
+    """
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -568,7 +565,7 @@ class SlipSystemPanel(wx.Panel):
 
     def ReadTransform(self):
         """
-        
+        build lists of parameters for the simulation of set of grains 
         """
         print("ReadTransform  slipsystem")
         Bmatrix = self.granparent.Bmatrix_current
@@ -806,6 +803,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         # self.dirname = LaueToolsframe.dirname
         self.initialParameters = initialParameters
 
+        self.dict_Materials = initialParameters['dict_Materials']
+
         # self.dirname = '.'
         try:
             self.CCDLabel = self.parent.CCDLabel
@@ -818,11 +817,9 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
-        self.initialParameters = initialParameters
         if initialParameters["ExperimentalData"] is not None:
 
-            (
-                self.data_2theta,
+            (self.data_2theta,
                 self.data_chi,
                 self.data_pixX,
                 self.data_pixY,
@@ -832,16 +829,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.dict_grain_created = {}
         self.SelectGrains = {}
 
-        self.CurrentGrain = [
-            "Cu",
-            "FaceCenteredCubic",
-            "Identity",
-            "Identity",
-            "Identity",
-            "Identity",
-            "Grain_0",
-            "",
-        ]
+        self.CurrentGrain = [ "Cu", "FaceCenteredCubic", "Identity",
+                            "Identity", "Identity", "Identity", "Grain_0", "", ]
 
         self.create_leftpanel()
 
@@ -902,14 +891,14 @@ class parametric_Grain_Dialog3(wx.Frame):
         titlegrain = wx.StaticText(self.panel, -1, "Grain Definition")
         titlegrain.SetFont(self.font3)
 
-        self.RefreshCombos(1)
-
         txt1 = wx.StaticText(self.panel, -1, "Material")
         txt2 = wx.StaticText(self.panel, -1, "Extinctions")
         txt3 = wx.StaticText(self.panel, -1, "Transform_a")
         txt4 = wx.StaticText(self.panel, -1, "Rot. Matrix")
         txt5 = wx.StaticText(self.panel, -1, "B matrix")
         txt6 = wx.StaticText(self.panel, -1, "Transform_c")
+
+        self.RefreshCombosChoices()
 
         self.comboElem = wx.ComboBox(
             self.panel, -1, "Cu", choices=self.list_of_Elem, style=wx.CB_READONLY
@@ -935,7 +924,10 @@ class parametric_Grain_Dialog3(wx.Frame):
         )
 
         buttonrefresh = wx.Button(self.panel, -1, "Refresh choices")
-        buttonrefresh.Bind(wx.EVT_BUTTON, self.RefreshCombos)
+        buttonrefresh.Bind(wx.EVT_BUTTON, self.updatecombosmenus)
+
+        loadMaterialsbtn = wx.Button(self.panel, -1, "Reload Materials")
+        loadMaterialsbtn.Bind(wx.EVT_BUTTON, self.onLoadMaterials)
 
         addgrainbtn = wx.Button(self.panel, -1, "Add Grain")
         addgrainbtn.SetFont(self.font3)
@@ -1042,6 +1034,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.buttonshoriz2Sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.buttonshoriz2Sizer.Add(addgrainbtn, 1)
         self.buttonshoriz2Sizer.Add(buttonrefresh, 1)
+        self.buttonshoriz2Sizer.Add(loadMaterialsbtn, 1)
 
         horizbtnsizers = wx.BoxSizer(wx.HORIZONTAL)
         horizbtnsizers.Add(deletebutton, 0)
@@ -1193,60 +1186,33 @@ class parametric_Grain_Dialog3(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def Display_combos(self):
+    def onLoadMaterials(self, evt):
+        self.parent.OnLoadMaterials(1)
+        self.updatecombosmenus(1)
 
-        self.comboElem = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "Cu",
-            (10, 30),
-            size=(60, -1),
-            choices=self.list_of_Elem,
-            style=wx.CB_READONLY,
-        )
-        self.comboExtinc = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "FaceCenteredCubic",
-            (100, 30),
-            size=(60, -1),
-            choices=self.list_of_Extinc,
-            style=wx.CB_READONLY,
-        )
-        self.comboStrain_a = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "Identity",
-            (190, 30),
-            size=(80, -1),
-            choices=self.list_of_Strain_a,
-        )
-        self.comboRot = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "Identity",
-            (300, 30),
-            size=(80, -1),
-            choices=self.list_of_Rot,
-        )
-        self.comboVect = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "Identity",
-            (410, 30),
-            size=(80, -1),
-            choices=self.list_of_Vect,
-        )
-        self.comboStrain_c = wx.ComboBox(
-            self.toppanel,
-            -1,
-            "Identity",
-            (520, 30),
-            size=(80, -1),
-            choices=self.list_of_Strain_c,
-        )
+    def updatecombosmenus(self,evt):
 
-    def RefreshCombos(self, event):
+        self.RefreshCombosChoices()
+
+        self.comboElem.Clear()
+        self.comboElem.AppendItems(self.list_of_Elem)
+
+        self.comboExtinc.Clear()
+        self.comboExtinc.AppendItems(self.list_of_Extinc)
+
+        self.comboStrain_a.Clear()
+        self.comboStrain_a.AppendItems(self.list_of_Strain_a)
+
+        self.comboRot.Clear()
+        self.comboRot.AppendItems(self.list_of_Rot)
+
+        self.comboVect.Clear()
+        self.comboVect.AppendItems(self.list_of_Vect)
+
+        self.comboStrain_c.Clear()
+        self.comboStrain_c.AppendItems(self.list_of_Strain_c)
+
+    def RefreshCombosChoices(self):
         # order list element for clarity
         List_Extinc_name = list(DictLT.dict_Extinc.keys())
         List_Extinc_name.remove("NoExtinction")
@@ -1260,7 +1226,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         List_Vect_name.remove("Identity")
         List_Vect_name.sort()
 
-        List_Elem_name = list(DictLT.dict_Materials.keys())
+        # List_Elem_name = list(DictLT.dict_Materials.keys())
+        List_Elem_name = list(self.parent.dict_Materials.keys())
         List_Elem_name.remove("inputB")
         List_Elem_name.sort()
 
@@ -1274,8 +1241,6 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.list_of_Rot = ["Identity"] + List_Rot_name
         self.list_of_Vect = ["Identity"] + List_Vect_name
         self.list_of_Strain_c = ["Identity"] + List_Transform_name
-
-    #        self.Display_combos()
 
     def EnterComboElem(self, event):
         item = event.GetSelection()
@@ -1963,6 +1928,7 @@ def start():
     initialParameters["pixelsize"] = 165 / 2048.0
     initialParameters["framedim"] = (2048, 2048)
     initialParameters["CCDLabel"] = "MARCCD165"
+    initialParameters["dict_Materials"] = DictLT.dict_Materials
 
     GUIApp = wx.App()
     GUIframe = parametric_Grain_Dialog3(None, -1, title, initialParameters)

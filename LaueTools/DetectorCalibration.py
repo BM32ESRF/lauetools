@@ -224,15 +224,13 @@ class CrystalParamPanel(wx.Panel):
             self, 1010, "Enter UB", (deltaposx, pos7d + vertical_shift), (100, 40)
         )
         b2 = wx.Button(
-            self, 1011, "Store UB", (deltaposx + 150, pos7d + vertical_shift), (100, 40)
+            self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40)
         )
-        btn_sortUBsname = wx.Button(
-            self,
-            1011,
-            "sort UBs name",
-            (deltaposx + 300, pos7d + vertical_shift),
-            (100, 40),
-        )
+        btn_sortUBsname = wx.Button( self, 1011, "sort UBs name",
+                                    (deltaposx + 240, pos7d + vertical_shift), (120, 40))
+        
+        btnReloadMaterials = wx.Button( self, -1, "Reload Materials",
+                                    (deltaposx + 370, pos7d + vertical_shift), (120, 40))
 
         # warning button id =52 is common with an other button
         b3 = wx.Button(self, 52, "Replot Simul.", (deltaposx, pos7d + 60), (400, 40))
@@ -248,6 +246,8 @@ class CrystalParamPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeMatrix, id=2525)
         self.Bind(wx.EVT_BUTTON, self.mainframe.EnterMatrix, id=1010)
         btn_sortUBsname.Bind(wx.EVT_BUTTON, self.onSortUBsname)
+
+        btnReloadMaterials.Bind(wx.EVT_BUTTON, self.OnLoadMaterials)
 
         # tootips
         tp1 = "Energy minimum and maximum for simulated Laue Pattern spots"
@@ -308,11 +308,62 @@ class CrystalParamPanel(wx.Panel):
 
         self.btn_mergeUB.SetToolTipString(tpsetub)
 
+        tipsportUBs = 'Sort Orientation Matrix name by alphabetical order'
+        btn_sortUBsname.SetToolTipString(tipsportUBs)
+
+        tipreloadMat = 'Reload Materials from dict_Materials file'
+        btnReloadMaterials.SetToolTipString(tipreloadMat)
+
     def onSortUBsname(self, evt):
         listrot = list(DictLT.dict_Rot.keys())
         listrot = sorted(listrot, key=str.lower)
         self.comboMatrix.Clear()
         self.comboMatrix.AppendItems(listrot)
+
+    def OnLoadMaterials(self,evt):
+        # self.mainframe.GetParent().OnLoadMaterials(1)
+        # loadedmaterials = self.mainframe.GetParent().dict_Materials
+
+        wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
+        _dir = os.getcwd()
+        open_dlg = wx.FileDialog(
+            self,
+            message="Choose a file",
+            defaultDir=_dir,
+            defaultFile="",
+            wildcard=wcd,
+            style=wx.OPEN
+        )
+        if open_dlg.ShowModal() == wx.ID_OK:
+            path = open_dlg.GetPath()
+
+            try:
+                loadedmaterials = DictLT.readDict(path)
+
+                DictLT.dict_Materials = loadedmaterials
+
+            except IOError as error:
+                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
+                dlg.ShowModal()
+
+            except UnicodeDecodeError as error:
+                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
+                dlg.ShowModal()
+
+            except ValueError as error:
+                dlg = wx.MessageDialog(self, "Error opening file: Something went wrong when parsing materials line\n" + str(error))
+                dlg.ShowModal()
+
+        open_dlg.Destroy()
+
+
+        self.mainframe.dict_Materials = loadedmaterials
+        self.comboElem.Clear()
+        elements_keys = sorted(loadedmaterials.keys())
+        self.comboElem.AppendItems(elements_keys)
+
+        if self.mainframe.GetParent():
+            self.mainframe.GetParent().dict_Materials = loadedmaterials
 
 
 class CCDParamPanel(wx.Panel):
@@ -374,7 +425,7 @@ class CCDParamPanel(wx.Panel):
         self.mainframe._replot(evt)
 
 
-class ParametersDisplayPanel(wx.Panel):
+class DetectorParametersDisplayPanel(wx.Panel):
     """
     class panel to display and modify CCD parameters
     """
@@ -384,22 +435,32 @@ class ParametersDisplayPanel(wx.Panel):
         """
         panel = wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.CCDParam = parent.GetParent().CCDParam
+        self.granparent=parent.GetParent()
+
+        self.CCDParam = self.granparent.CCDParam
 
         sizetxtctrl = wx.Size(70, -1)
 
         # current values
-        self.act_distance = wx.TextCtrl(
-            self, -1, str(self.CCDParam[0]), size=sizetxtctrl
-        )
-        self.act_Xcen = wx.TextCtrl(self, -1, str(self.CCDParam[1]), size=sizetxtctrl)
-        self.act_Ycen = wx.TextCtrl(self, -1, str(self.CCDParam[2]), size=sizetxtctrl)
-        self.act_Ang1 = wx.TextCtrl(self, -1, str(self.CCDParam[3]), size=sizetxtctrl)
-        self.act_Ang2 = wx.TextCtrl(self, -1, str(self.CCDParam[4]), size=sizetxtctrl)
+        self.act_distance = wx.TextCtrl( self, -1, str(self.CCDParam[0]), size=sizetxtctrl,
+                                                style = wx.TE_PROCESS_ENTER )
+        self.act_Xcen = wx.TextCtrl(self, -1, str(self.CCDParam[1]), size=sizetxtctrl,
+                                                style = wx.TE_PROCESS_ENTER)
+        self.act_Ycen = wx.TextCtrl(self, -1, str(self.CCDParam[2]), size=sizetxtctrl,
+                                                style = wx.TE_PROCESS_ENTER)
+        self.act_Ang1 = wx.TextCtrl(self, -1, str(self.CCDParam[3]), size=sizetxtctrl,
+                                                style = wx.TE_PROCESS_ENTER)
+        self.act_Ang2 = wx.TextCtrl(self, -1, str(self.CCDParam[4]), size=sizetxtctrl,
+                                                style = wx.TE_PROCESS_ENTER)
 
-        acceptbtn = wx.Button(self, 159, "Accept", size=(80, 30))
-        resultstxt = wx.StaticText(self, -1, "Results")
-        currenttxt = wx.StaticText(self, -1, "Current")
+        self.act_distance.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
+        self.act_Xcen.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
+        self.act_Ycen.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
+        self.act_Ang1.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
+        self.act_Ang2.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnSetCCDParams)
+
+        resultstxt = wx.StaticText(self, -1, "Refined Value")
+        currenttxt = wx.StaticText(self, -1, "Current&Set Value")
 
         # values resulting from model refinement
         self.act_distance_r = wx.TextCtrl(
@@ -419,14 +480,13 @@ class ParametersDisplayPanel(wx.Panel):
         )
 
         if WXPYTHON4:
-            grid = wx.GridSizer(7, 10, 10)
+            grid = wx.GridSizer(6, 2, 2)
         else:
-            grid = wx.GridSizer(3, 7)
+            grid = wx.GridSizer(3, 6)
 
         grid.Add(wx.StaticText(self, -1, ""))
         for txt in DictLT.CCD_CALIBRATION_PARAMETERS[:5]:
-            grid.Add(wx.StaticText(self, -1, txt), 0)
-        grid.Add(wx.StaticText(self, -1, ""))
+            grid.Add(wx.StaticText(self, -1, txt), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
 
         grid.Add(currenttxt)
         for txtctrl in [
@@ -436,10 +496,9 @@ class ParametersDisplayPanel(wx.Panel):
             self.act_Ang1,
             self.act_Ang2,
         ]:
-            grid.Add(txtctrl, 0)
-            txtctrl.SetToolTipString("Current value")
+            grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
+            txtctrl.SetToolTipString("Current and Set new value (press enter)")
             txtctrl.SetSize(sizetxtctrl)
-        grid.Add(acceptbtn)
 
         grid.Add(resultstxt)
         for txtctrl in [
@@ -449,15 +508,12 @@ class ParametersDisplayPanel(wx.Panel):
             self.act_Ang1_r,
             self.act_Ang2_r,
         ]:
-            grid.Add(txtctrl)
+            grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Fit result value")
-
-        grid.Add(wx.StaticText(self, -1, ""))
 
         self.SetSizer(grid)
 
         # tooltips
-        acceptbtn.SetToolTipString('Accept entered CCD parameters in "current" fields')
         resultstxt.SetToolTipString(
             "CCD detector plane parameters resulting from the best refined model"
         )
@@ -921,7 +977,6 @@ class MainCalibrationFrame(wx.Frame):
     """
     Class to display calibration tools on data
     """
-
     def __init__(
         self,
         parent,
@@ -936,8 +991,6 @@ class MainCalibrationFrame(wx.Frame):
         kf_direction="Z>0",
         fliprot="no",
         data_added=None,
-        Size=(7, 5),
-        **kwds
     ):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1200, 830))
@@ -1086,9 +1139,8 @@ class MainCalibrationFrame(wx.Frame):
         )  # ,(950, 200), )
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
-        self.Bind(
-            wx.EVT_BUTTON, self._replot, id=52
-        )  # replot simul button (one button in two panels)
+        # replot simul button (one button in two panels)
+        self.Bind( wx.EVT_BUTTON, self._replot, id=52)
 
         self.Bind(wx.EVT_BUTTON, self.OnDecreaseDistance, id=10)
         self.Bind(wx.EVT_BUTTON, self.OnIncreaseDistance, id=11)
@@ -1142,7 +1194,7 @@ class MainCalibrationFrame(wx.Frame):
         self.Bind(wx.EVT_TOGGLEBUTTON, self.ToggleLabelExp, id=104)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.ToggleLabelSimul, id=106)
 
-        self.parametersdisplaypanel = ParametersDisplayPanel(self.panel)
+        self.parametersdisplaypanel = DetectorParametersDisplayPanel(self.panel)
         self.Bind(wx.EVT_BUTTON, self.OnSetCCDParams, id=159)
 
         self.txtresidues = wx.StaticText(self.panel, -1, "Mean Residues (pix)   ")
@@ -1153,11 +1205,9 @@ class MainCalibrationFrame(wx.Frame):
         self.incrementfile = wx.CheckBox(
             self.panel, -1, "increment saved filenameindex"
         )
-        #         self.incrementfile.Disable()
 
         self.layout()
 
-        #         self.define_kf_direction()
         self.ReadExperimentData()
         self._replot(wx.EVT_IDLE)
         self.display_current()
@@ -1285,6 +1335,7 @@ class MainCalibrationFrame(wx.Frame):
         self.vbox2.Add(hboxlabel, 0, wx.ALL, 0)
         self.vbox2.Add(self.nb, 0, wx.EXPAND, 0)
         self.vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
+        self.vbox2.Add(wx.StaticLine(self.panel, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
         self.vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
         self.vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 
@@ -4310,7 +4361,6 @@ if __name__ == "__main__":
         dim=(2048, 2048),
         fliprot="no",
         data_added=None,
-        Size=(7, 5),
     )
 
     CalibGUIFrame.Show()

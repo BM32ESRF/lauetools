@@ -154,18 +154,18 @@ REV = __version__.split()[-2]
 
 
 # --- ------------  MAIN GUI WINDOW
-class MainWindow(wx.Frame):
+class LaueToolsGUImainframe(wx.Frame):
     """
     class of the main window of LaueTools GUI
     """
 
-    def __init__( self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
+    def __init__(self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
             projectfolder=None, ):
 
         screenSize = wx.DisplaySize()
         screenWidth = screenSize[0]
         screenHeight = screenSize[1]
-        # super(MainWindow, self).__init__(None, size =(1000, 800))
+        # super(LaueToolsGUImainframe, self).__init__(None, size =(1000, 800))
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
 
@@ -538,9 +538,9 @@ class MainWindow(wx.Frame):
         """
         title of main lauetools GUI window
         """
-        # MainWindow.SetTitle overrides wx.Frame.SetTitle, so we have to
+        # LaueToolsGUImainframe.SetTitle overrides wx.Frame.SetTitle, so we have to
         # call it using super:
-        super(MainWindow, self).SetTitle(
+        super(LaueToolsGUImainframe, self).SetTitle(
             "LaueToolsGUI    Simulation & Indexation Program         %s" % self.filename
         )
 
@@ -1615,7 +1615,7 @@ class MainWindow(wx.Frame):
                                     initialParameter, file_peaks=initialParameter["filename"],
                                     pixelsize=self.pixelsize, dim=self.framedim,
                                     kf_direction=self.kf_direction, fliprot=self.fliprot,
-                                    starting_param=initialParameter["CCDParam"], )
+                                    starting_param=initialParameter["CCDParam"])
         self.calibframe.Show(True)
 
     def OnCliquesFinding(self, event):
@@ -2027,6 +2027,8 @@ class MainWindow(wx.Frame):
             )
         initialParameters["pixelsize"] = self.pixelsize
         initialParameters["framedim"] = self.framedim
+
+        initialParameters["dict_Materials"] = self.dict_Materials
 
         print("initialParameters", initialParameters)
         self.CurrentdialogGrainCreation_cont = LSGUI.parametric_Grain_Dialog3(
@@ -3307,8 +3309,9 @@ class MatrixEditor_Dialog(wx.Frame):
             print("No name input")
 
     def OnStoreMatrix(self, event):
-        """
-        Stores the matrix from the ASCII editor or the 9 entried elements in main list of orientation matrix for further simulation
+        r"""
+        Stores the matrix from the ASCII editor or the 9 entried elements
+        in main list of orientation matrix for further simulation
         """
         self.last_name_stored = self.filenamestore.GetValue()
 
@@ -6737,7 +6740,7 @@ class RedirectText:
 
 def start():
     LaueToolsGUIApp = wx.App()
-    LaueToolsframe = MainWindow(
+    LaueToolsframe = LaueToolsGUImainframe(
         None,
         -1,
         "Image Viewer and PeakSearch Board",
