@@ -544,7 +544,7 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
     Bm = np.array(Bmatrix)
     Astar, Bstar, Cstar = Bm.T
     volumestar = 1.0 * np.dot(np.cross(Astar, Bstar), Cstar)
-    print("volumestar", volumestar)
+    # print("volumestar", volumestar)
     a = np.cross(Bstar, Cstar) / volumestar
     b = np.cross(Cstar, Astar) / volumestar
     c = np.cross(Astar, Bstar) / volumestar

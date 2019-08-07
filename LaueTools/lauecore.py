@@ -1363,6 +1363,83 @@ def create_spot_back(
 
     return spotty
 
+def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf_direction='Z>0'):
+    Qvectors_list, HKLs_list = vec_and_indices
+    Qx = Qvectors_list[0][:, 0] * 1.0
+    Qy = Qvectors_list[0][:, 1] * 1.0
+    Qz = Qvectors_list[0][:, 2] * 1.0
+
+    indi_H = HKLs_list[0][:, 0]
+    indi_K = HKLs_list[0][:, 1]
+    indi_L = HKLs_list[0][:, 2]
+
+    Qsquare = Qx ** 2 + Qy ** 2 + Qz ** 2
+
+    # (proportional to photons Energy)
+    Rewald = Qsquare / 2.0 / np.abs(Qx)
+
+    # Kf direction selection
+    if kf_direction == "Z>0":  # top reflection geometry
+        ratiod = detectordistance / Qz
+        Ycam = ratiod * (Qx + Rewald)
+        Xcam = ratiod * (Qy)
+    elif (
+        kf_direction == "Y>0"
+    ):  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
+        ratiod = detectordistance / Qy
+        Xcam = ratiod * (Qx + Rewald)
+        Ycam = ratiod * (Qz)
+
+    elif kf_direction == "Y<0":  # other side reflection
+        ratiod = detectordistance / np.abs(Qy)
+        Xcam = -ratiod * (Qx + Rewald)
+        Ycam = ratiod * (Qz)
+    elif kf_direction == "X>0":  # transmission geometry
+        ratiod = detectordistance / np.abs(Qx + Rewald)
+        Xcam = -1.0 * ratiod * (Qy)
+        Ycam = -ratiod * (Qz)
+    elif kf_direction == "X<0":  # back reflection geometry
+        ratiod = detectordistance / np.abs(Qx + Rewald)
+        Xcam = ratiod * (Qy)
+        Ycam = ratiod * (Qz)
+    elif kf_direction == "4PI":  # to keep all scattered spots
+        Xcam = np.zeros_like(Qy)
+        Ycam = np.zeros_like(Qy)
+
+    elif isinstance(kf_direction, (list, np.array)):
+        if len(kf_direction) != 2:
+            raise ValueError(
+                "kf_direction must be defined by a list of two angles !"
+            )
+        else:
+            Xcam = np.zeros_like(Qy)
+            Ycam = np.zeros_like(Qy)
+    else:
+        raise ValueError("Unknown laue geometry code for kf_direction parameter")
+
+    # print "Xcam, Ycam",Xcam
+    # print Ycam
+    # print "******************"
+    # On camera filter
+    # print "detectordiameter", detectordiameter
+    halfCamdiametersquare = (detectordiameter / 2.0) ** 2
+    # TODO: should contain Xcam-Xcamcen (mm) and Ycam-Ycamcen with Xcamcen, Ycamcen
+    # given by user
+    onCam_cond = Xcam ** 2 + Ycam ** 2 <= halfCamdiametersquare
+    # resulting arrays
+    oncam_Qx = np.compress(onCam_cond, Qx)
+    oncam_Qy = np.compress(onCam_cond, Qy)
+    oncam_Qz = np.compress(onCam_cond, Qz)
+
+    oncam_vec = np.array([oncam_Qx, oncam_Qy, oncam_Qz]).T
+
+    oncam_H = np.compress(onCam_cond, indi_H)
+    oncam_K = np.compress(onCam_cond, indi_K)
+    oncam_L = np.compress(onCam_cond, indi_L)
+    oncam_HKL = np.transpose(np.array([oncam_H, oncam_K, oncam_L]))
+
+    return [oncam_vec], [oncam_HKL]
+
 
 def filterLaueSpots(
     vec_and_indices,

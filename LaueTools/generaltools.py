@@ -2527,7 +2527,6 @@ def prodquat(quat1, quat2):
         ]
     ]
 
-
 # ----- ------------  plot tools: colormap
 
 COPPER = mplcm.get_cmap("copper")

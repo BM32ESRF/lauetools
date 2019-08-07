@@ -2013,27 +2013,19 @@ class LaueToolsGUImainframe(wx.Frame):
         initialParameters["CalibrationParameters"] = self.defaultParam
         initialParameters["prefixfilenamesimul"] = "dummy_"
         initialParameters["indexsimulation"] = self.indexsimulation
-        initialParameters["ExperimentalData"] = None
-        if self.data_theta is not None:
-            initialParameters["ExperimentalData"] = (
-                2 * self.data_theta,
-                self.data_chi,
-                self.data_pixX,
-                self.data_pixY,
-                self.data_I,
-            )
         initialParameters["pixelsize"] = self.pixelsize
         initialParameters["framedim"] = self.framedim
-
         initialParameters["dict_Materials"] = self.dict_Materials
+        initialParameters["ExperimentalData"] = None
+        if self.data_theta is not None:
+            initialParameters["ExperimentalData"] = (2 * self.data_theta, self.data_chi,
+                                                        self.data_pixX, self.data_pixY,
+                                                        self.data_I)
 
-        print("initialParameters", initialParameters)
+        # print("initialParameters", initialParameters)
         self.CurrentdialogGrainCreation_cont = LSGUI.parametric_Grain_Dialog3(
-            self,
-            -1,
-            "Polygrains parametric definition for Laue Simulation",
-            initialParameters,
-        )
+                        self, -1, "Polygrains parametric definition for Laue Simulation",
+                        initialParameters)
 
         self.SelectGrains_parametric = self.CurrentdialogGrainCreation_cont.SelectGrains
         self.CurrentdialogGrainCreation_cont.Show(True)

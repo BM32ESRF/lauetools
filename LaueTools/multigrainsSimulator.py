@@ -50,17 +50,8 @@ def Read_GrainListparameter(param):
     B_matrix = DictLT.dict_Vect[Bmatrix]
     Transform_crystalframe = DictLT.dict_Transforms[Transf_c]
 
-    return (
-        [
-            key_material,
-            Extinctions,
-            Transform_labframe,
-            orientMatrix,
-            B_matrix,
-            Transform_crystalframe,
-        ],
-        GrainName,
-    )
+    return ([key_material, Extinctions, Transform_labframe, orientMatrix, B_matrix, Transform_crystalframe],
+            GrainName, )
 
 
 def Construct_GrainsParameters_parametric(SelectGrains_parametric):
@@ -70,7 +61,7 @@ def Construct_GrainsParameters_parametric(SelectGrains_parametric):
     list_selectgrains_param = []
     # keys from dialogs were in reverse order
     # self.SelectGrains_parametric  == parametric_Grain_Dialog().SelectGrains
-    for key_grain in list(SelectGrains_parametric.keys())[::-1]:
+    for key_grain in sorted(SelectGrains_parametric.keys()):
         # print "self.SelectGrains_parametric[key_grain]",self.SelectGrains_parametric[key_grain]
         list_selectgrains_param.append(
             Read_GrainListparameter(SelectGrains_parametric[key_grain])
@@ -89,10 +80,7 @@ def dosimulation_parametric(
     detectordiameter=165.0,
     posCEN=(1024.0, 1024.0),
     cameraAngles=(0.0, 0.0),
-    showplot=True,
-    showExperimenalData=False,
     gauge=None,
-    plottype="2thetachi",
     kf_direction="Z>0",
     pixelsize=165.0 / 2048,
     framedim=(2048, 2048),
@@ -134,7 +122,7 @@ def dosimulation_parametric(
         ParentGrainName_list.append(_grainname)
 
     #            print "ListParam in dosimulation_parametric", ListParam
-    #            print "ParentGrainName_list", ParentGrainName_list
+    print("ParentGrainName_list", ParentGrainName_list)
 
     # Calculating Laue spots of each parent grain ----------------------------
 
@@ -225,7 +213,13 @@ def dosimulation_parametric(
         # print "spots2pi",spots2pi
 
         # ---------  [list of 3D vectors],[list of corresponding Miller indices]
-        Qvectors_ParentGrain, HKLs_ParentGrain = spots2pi
+
+        # remove Parent Grain Laue spots too close from detector border vicinity
+        Qvectors_ParentGrain, HKLs_ParentGrain = LAUE.filterQandHKLvectors(spots2pi,
+                                                                    detectordistance,
+                                                                    detectordiameter,kf_direction)
+
+        # Qvectors_ParentGrain, HKLs_ParentGrain = spots2pi
 
         if gauge and WXPYTHON:
             gaugecount += 100
@@ -285,7 +279,7 @@ def dosimulation_parametric(
 
             elif Transform_listparam[0] in ("r_axis_d", "r_axis_d_slipsystem"):
                 axis_list = Transform_listparam[2]
-                #                 print "axis_list before orientation in d frame", axis_list
+                # print "axis_list before orientation in d frame", axis_list
                 angle_list = Transform_listparam[1]
                 nb_transforms = len(angle_list)
                 # axis coordinate change from abc frame(direct crystal) to a*b*c* frame( reciprocal crystal)
@@ -295,7 +289,7 @@ def dosimulation_parametric(
                         for ax in axis_list
                     ]
                 )
-                #                 print "axis_list_c", axis_list_c
+                #  print "axis_list_c", axis_list_c
                 # axis coordinate change from a*b*c* frame(crystal) to absolute frame
                 axis_list = np.dot(matOrient, axis_list_c.T).T
             #                 print "axis_list in absolute frame from d frame", axis_list
@@ -375,12 +369,7 @@ def dosimulation_parametric(
             # loop over reciprocal lattice vectors is done with numpy array functions
 
             # for rotation around axis expressed in any frame
-            if Transform_listparam[0] in (
-                "r_axis",
-                "r_axis_c",
-                "r_axis_d",
-                "r_axis_d_slipsystem",
-            ):
+            if Transform_listparam[0] in ("r_axis", "r_axis_c", "r_axis_d", "r_axis_d_slipsystem"):
                 # print "angle, axis",angle_list[ChildGrain_index],axis_list[ChildGrain_index]
                 qvectors_ChildGrain = GT.rotate_around_u(
                     Qvectors_ParentGrain[0],
@@ -392,12 +381,10 @@ def dosimulation_parametric(
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
             # for general transform expressed in any frame
-            elif (
-                Transform_listparam[0] == "r_mat"
-                or Transform_listparam[0] in ("r_mat_c", "r_mat_d")
-                or Transform_listparam == ""
-                or Transform_listparam == [""]
-            ):
+            elif (Transform_listparam[0] == "r_mat" or
+                            Transform_listparam[0] in ("r_mat_c", "r_mat_d") or
+                            Transform_listparam == "" or
+                            Transform_listparam == [""]):
 
                 # general transformation is applied to q vector
                 # expressed in lauetools absolute frame
@@ -465,7 +452,7 @@ def dosimulation_parametric(
             # ---------------------------------
             # filter spots to keep those in camera, filter harmonics
             try:
-                print("kf_direction = ", kf_direction)
+                # print("kf_direction = (in dosimulationparametric)", kf_direction)
                 if kf_direction == "Z>0" or isinstance(
                     kf_direction, list
                 ):  # or isinstance(kf_direction, np.array):
@@ -474,7 +461,7 @@ def dosimulation_parametric(
                         fileOK=0,
                         fastcompute=0,
                         detectordistance=detectordistance,
-                        detectordiameter=detectordiameter,  # * 1.2, # avoid losing some spots in large transformation
+                        detectordiameter=detectordiameter*1.2,  # * 1.2, # avoid losing some spots in large transformation
                         kf_direction=kf_direction,
                         HarmonicsRemoval=1,
                         pixelsize=pixelsize,
@@ -492,26 +479,18 @@ def dosimulation_parametric(
                         wx.Yield()
                         # print "ChildGrain_index 900%nb_transforms",ChildGrain_index, gaugecount
 
-                    twicetheta = [spot.Twicetheta for spot in Laue_spot_list[0]]
-                    chi = [spot.Chi for spot in Laue_spot_list[0]]
-                    energy = [
-                        spot.EwaldRadius * DictLT.CST_ENERGYKEV
-                        for spot in Laue_spot_list[0]
-                    ]
-                    Miller_ind = [list(spot.Millers) for spot in Laue_spot_list[0]]
+                    Listspots=Laue_spot_list[0]
+                    twicetheta = [spot.Twicetheta for spot in Listspots]
+                    chi = [spot.Chi for spot in Listspots]
+                    energy = [spot.EwaldRadius * DictLT.CST_ENERGYKEV for spot in Listspots]
+                    Miller_ind = [list(spot.Millers) for spot in Listspots]                  
 
-                    calib = [
-                        detectordistance,
-                        posCEN[0],
-                        posCEN[1],
-                        cameraAngles[0],
-                        cameraAngles[1],
-                    ]
+                    calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
 
-                    print("calib parameters in dosimulation_parametric")
-                    print(calib)
-                    print("pixelsize", pixelsize)
-                    print("framedim", framedim)
+                    # print("calib parameters in dosimulation_parametric")
+                    # print(calib)
+                    # print("pixelsize", pixelsize)
+                    # print("framedim", framedim)
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(
                         twicetheta,
@@ -579,14 +558,9 @@ def dosimulation_parametric(
                         cameraAngles[1],
                     ]
 
-                    posx, posy = LTGeo.calc_xycam_from2thetachi(
-                        twicetheta,
-                        chi,
-                        calib,
-                        pixelsize=pixelsize,
-                        signgam=DictLT.SIGN_OF_GAMMA,
-                        kf_direction=kf_direction,
-                    )[:2]
+                    posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
+                                        pixelsize=pixelsize, signgam=DictLT.SIGN_OF_GAMMA,
+                                        kf_direction=kf_direction)[:2]
                     # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
 
                     posx = [spot.Xcam for spot in Laue_spot_list[0]]
@@ -616,7 +590,7 @@ def dosimulation_parametric(
                         fileOK=0,
                         fastcompute=0,
                         detectordistance=detectordistance,
-                        detectordiameter=detectordiameter,  # * 1.2, # avoid losing some spots in large transformation
+                        detectordiameter=detectordiameter*1.2,  # * 1.2, # avoid losing some spots in large transformation
                         kf_direction=kf_direction,
                         HarmonicsRemoval=1,
                         pixelsize=pixelsize,
@@ -635,29 +609,14 @@ def dosimulation_parametric(
 
                     twicetheta = [spot.Twicetheta for spot in Laue_spot_list[0]]
                     chi = [spot.Chi for spot in Laue_spot_list[0]]
-                    energy = [
-                        spot.EwaldRadius * DictLT.CST_ENERGYKEV
-                        for spot in Laue_spot_list[0]
-                    ]
+                    energy = [spot.EwaldRadius * DictLT.CST_ENERGYKEV for spot in Laue_spot_list[0]]
                     Miller_ind = [list(spot.Millers) for spot in Laue_spot_list[0]]
 
-                    calib = [
-                        detectordistance,
-                        posCEN[0],
-                        posCEN[1],
-                        cameraAngles[0],
-                        cameraAngles[1],
-                    ]
+                    calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
 
-                    posx, posy = LTGeo.calc_xycam_from2thetachi(
-                        twicetheta,
-                        chi,
-                        calib,
-                        pixelsize=pixelsize,
-                        signgam=DictLT.SIGN_OF_GAMMA,
-                        kf_direction=kf_direction,
-                    )[:2]
-
+                    posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
+                                        pixelsize=pixelsize, signgam=DictLT.SIGN_OF_GAMMA,
+                                        kf_direction=kf_direction, )[:2]
                     posx = posx.tolist()
                     posy = posy.tolist()
                     # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
@@ -698,13 +657,12 @@ def dosimulation_parametric(
             # end of loop over transforms(or children grains)
 
         transform_type = "parametric"
-        print("Transform_listparam", Transform_listparam)
-        for elem in Transform_listparam[0]:
-            if elem.endswith("slipsystem"):
-                transform_type = "slipsystem"
-        list_ParentGrain_transforms.append(
-            [parentgrain_index, nb_transforms, transform_type]
-        )
+        print("Transform_listparam in dosimultiondoudou", Transform_listparam)
+        
+        if Transform_listparam[0].endswith("slipsystem"):
+            transform_type = "slipsystem"
+
+        list_ParentGrain_transforms.append([parentgrain_index, nb_transforms, transform_type])
         total_nb_grains += nb_transforms
 
         if gauge and WXPYTHON:
@@ -713,9 +671,9 @@ def dosimulation_parametric(
             wx.Yield()
             # print "(parentgrain_index+1)*1000",gaugecount
 
-    # end of loop over parent grains
+    # end of loop over parent grains-------------------------------
 
-    print("total_nb_grains", total_nb_grains)
+    print("total_nb_grains (cumulated from single and grains assembly):", total_nb_grains)
 
     # 1 grain data lists are listed i.e. use list_twicetheta[0] etc.
     # polygrain use list_twicetheta
@@ -723,6 +681,7 @@ def dosimulation_parametric(
     print("List of Grain Name", ParentGrainName_list)
     print("Number_ParentGrains of parent grains", Number_ParentGrains)
     print("Number_ParentGrains of spots in grain0", len(list_twicetheta[0]))
+    print('list_ParentGrain_transforms',list_ParentGrain_transforms)
 
     data = (
         list_twicetheta,

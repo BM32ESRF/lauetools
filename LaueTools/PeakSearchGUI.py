@@ -679,7 +679,7 @@ class FilterBackGroundPanel(wx.Panel):
 
         self.BImageFilename = self.granparent.BImageFilename
 
-        print("granparent of FilterBackGroundPanel", self.granparent)
+        # print("granparent of FilterBackGroundPanel", self.granparent)
 
         self.ComputeBlurredImage = wx.Button(self, -1, "Blur Image", (5, 5))
         self.blurimage = None
@@ -919,7 +919,7 @@ class BrowseCropPanel(wx.Panel):
 
         self.granparent = parent.GetParent().GetParent()  # layout2()
 
-        print("granparent of BrowseCropPanel", self.granparent)
+        # print("granparent of BrowseCropPanel", self.granparent)
 
         self.toggleBtnCrop = wx.Button(self, -1, "CropData")
         self.toggleBtnCrop.Bind(wx.EVT_BUTTON, self.granparent.onToggleCrop)

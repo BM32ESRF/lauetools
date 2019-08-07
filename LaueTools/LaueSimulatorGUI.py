@@ -37,14 +37,14 @@ else:
 
 if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
-    from . SimulFrame import SimulationPlotFrame
+    from . SimulFrame import SimulationPlotFrame, getindices_StreakingData
     from . import CrystalParameters as CP
     from . import multigrainsSimulator
     from . import readmccd as RMCCD
 
 else:
     import dict_LaueTools as DictLT
-    from SimulFrame import SimulationPlotFrame
+    from SimulFrame import SimulationPlotFrame, getindices_StreakingData
     import CrystalParameters as CP
     import multigrainsSimulator
     import readmccd as RMCCD
@@ -61,7 +61,7 @@ class TransformPanel(wx.Panel):
 
         self.granparent = parent.GetParent().GetParent()
 
-        print("granparent of TransformPanel", self.granparent)
+        # print("granparent of TransformPanel", self.granparent)
 
         self.SelectGrains = {}
 
@@ -535,7 +535,7 @@ class SlipSystemPanel(wx.Panel):
 
         self.granparent = parent.GetParent().GetParent()
 
-        print("granparent of TransformPanel", self.granparent)
+        # print("granparent of TransformPanel", self.granparent)
 
         self.SelectGrains = {}
         self.Bmatrices = {}
@@ -569,14 +569,17 @@ class SlipSystemPanel(wx.Panel):
         print("ReadTransform  slipsystem")
         Bmatrix = self.granparent.Bmatrix_current
 
-        misanglemin = -0.2
-        misanglemax = 0.2
+        # slip system settings
+        misorientationangleMAX=0.5
         nbsteps = 11
 
+        misanglemin = -misorientationangleMAX
+        misanglemax = misorientationangleMAX
+        
         angle_rot = np.linspace(misanglemin, misanglemax, num=nbsteps)
         nb_angles = len(angle_rot)
 
-        slipsystemsfcc = np.array(DictLT.SLIPSYSTEMS_FCC).reshape((12, 2, 3))
+        slipsystemsfcc = DictLT.SLIPSYSTEMS_FCC
 
         nbsystems = len(slipsystemsfcc)
         axisrot_list = []
@@ -607,7 +610,7 @@ class SimulationPanel(wx.Panel):
 
         self.granparent = parent.GetParent().GetParent()
 
-        print("granparent of SimulationPanel", self.granparent)
+        # print("granparent of SimulationPanel", self.granparent)
 
         self.SetBackgroundColour("cyan")
 
@@ -632,8 +635,6 @@ class SimulationPanel(wx.Panel):
         title25 = wx.StaticText(self, -1, "Detector Parameters")
         title25.SetFont(self.granparent.font3)
 
-        self.showplotBox = wx.CheckBox(self, -1, "Show Plot")
-        self.showplotBox.SetValue(True)
         self.rbtop = wx.RadioButton(self, 200, "Reflection mode top", style=wx.RB_GROUP)
         self.rbside = wx.RadioButton(self, 200, "Reflection mode side +")
         self.rbsideneg = wx.RadioButton(self, 200, "Reflection mode side -")
@@ -641,8 +642,33 @@ class SimulationPanel(wx.Panel):
 
         self.rbtop.SetValue(True)
 
+        current_param = self.granparent.initialParameters["CalibrationParameters"]
+
+        txtdd = wx.StaticText(self, -1, "Det.Dist. (mm): ")
+        self.detdist = wx.TextCtrl(self, -1, str(current_param[0]), size=(75, -1))
+        txtdiam = wx.StaticText(self, -1, "Det. Diam. (mm): ")
+        self.detdiam = wx.TextCtrl(self, -1, "165", size=(40, -1))
+        txtxcen = wx.StaticText(self, -1, "xcen (pix): ")
+        self.xcen = wx.TextCtrl(self, -1, str(current_param[1]), size=(75, -1))
+        txtycen = wx.StaticText(self, -1, "ycen (pix): ")
+        self.ycen = wx.TextCtrl(self, -1, str(current_param[2]), size=(75, -1))
+        txtxbet = wx.StaticText(self, -1, "xbet (deg): ")
+        self.xbet = wx.TextCtrl(self, -1, str(current_param[3]), size=(75, -1))
+        txtxgam = wx.StaticText(self, -1, "xgam (deg): ")
+        self.xgam = wx.TextCtrl(self, -1, str(current_param[4]), size=(75, -1))
+        txtpixelsize = wx.StaticText(self, -1, "pixelsize (mm): ")
+        self.ctrlpixelsize = wx.TextCtrl(
+            self, -1, str(self.granparent.pixelsize), size=(75, -1)
+        )
+
+        title4 = wx.StaticText(self, -1, "Display Parameters")
+        title4.SetFont(self.granparent.font3)
+
         self.checkshowExperimenalData = wx.CheckBox(self, -1, "Show Exp. Data")
         self.checkshowExperimenalData.SetValue(False)
+
+        self.checkshowFluoFrame = wx.CheckBox(self, -1, "Show Fluo. Det. Frame")
+        self.checkshowFluoFrame.SetValue(False)
 
         self.checkExperimenalImage = wx.CheckBox(self, -1, "Show Exp. Image")
         self.checkExperimenalImage.SetValue(False)
@@ -652,31 +678,11 @@ class SimulationPanel(wx.Panel):
 
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.onSelectImageFile)
 
-        current_param = self.granparent.initialParameters["CalibrationParameters"]
-
-        txtdd = wx.StaticText(self, -1, "Det.Dist.(mm): ")
-        self.detdist = wx.TextCtrl(self, -1, str(current_param[0]), size=(75, -1))
-        txtdiam = wx.StaticText(self, -1, "Det. Diam.(mm): ")
-        self.detdiam = wx.TextCtrl(self, -1, "165", size=(40, -1))
-        txtxcen = wx.StaticText(self, -1, "xcen(pix): ")
-        self.xcen = wx.TextCtrl(self, -1, str(current_param[1]), size=(75, -1))
-        txtycen = wx.StaticText(self, -1, "ycen(pix): ")
-        self.ycen = wx.TextCtrl(self, -1, str(current_param[2]), size=(75, -1))
-        txtxbet = wx.StaticText(self, -1, "xbet(deg): ")
-        self.xbet = wx.TextCtrl(self, -1, str(current_param[3]), size=(75, -1))
-        txtxgam = wx.StaticText(self, -1, "xgam(deg): ")
-        self.xgam = wx.TextCtrl(self, -1, str(current_param[4]), size=(75, -1))
-        txtpixelsize = wx.StaticText(self, -1, "pixelsize(mm): ")
-        self.ctrlpixelsize = wx.TextCtrl(
-            self, -1, str(self.granparent.pixelsize), size=(75, -1)
-        )
-
         self.pt_2thetachi = wx.RadioButton(self, 100, "2ThetaChi", style=wx.RB_GROUP)
         self.pt_XYCCD = wx.RadioButton(self, 300, "XYPixel")
-        self.pt_XYfit2d = wx.RadioButton(self, 300, "XYfit2d")
         self.pt_2thetachi.SetValue(True)
 
-        # set tooltips
+        # set tooltips--------------------------
         self.rbtop.SetToolTipString("Camera at 2theta=90 deg on top of sample")
         self.rbside.SetToolTipString("Camera at 2theta=90 deg on side of sample")
         self.rbsideneg.SetToolTipString("Camera at 90 deg on other side of sample")
@@ -686,66 +692,61 @@ class SimulationPanel(wx.Panel):
             "Plot markers for current experimental peak list"
         )
         self.checkExperimenalImage.SetToolTipString("Display Laue pattern (2D image)")
-        self.expimagetxtctrl.SetToolTipString(
-            "Full path for Laue pattern to be superimposed to simulated peaks"
-        )
-        self.expimagebrowsebtn.SetToolTipString(
-            "Browse and select Laue Pattern image file"
-        )
+        self.expimagetxtctrl.SetToolTipString("Full path for Laue pattern to be superimposed to simulated peaks")
+        self.expimagebrowsebtn.SetToolTipString("Browse and select Laue Pattern image file")
 
-        self.pt_2thetachi.SetToolTipString(
-            "Peaks Coordinates in scattering angles: 2theta and Chi"
-        )
+        self.pt_2thetachi.SetToolTipString("Peaks Coordinates in scattering angles: 2theta and Chi")
         self.pt_XYCCD.SetToolTipString("Peaks Coordinates in detector frame pixels")
-        self.pt_XYfit2d.SetToolTipString(
-            "Peaks Coordinates in detector frame pixels (fit2D convention)"
-        )
 
-        # set widgets layout
-        gridSizer2 = wx.GridSizer(rows=11, cols=3, hgap=1, vgap=1)
+        # set widgets layout---------------------------
+        gridSizer2 = wx.GridSizer(rows=13, cols=3, hgap=1, vgap=1)
 
         gridSizer2.Add(title2, 0, wx.ALIGN_CENTER | wx.ALIGN_CENTER)
-        # Set the TextCtrl to expand on resize
         gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.EXPAND)
         gridSizer2.Add(title25, 0, wx.EXPAND)
 
-        gridSizer2.Add(self.showplotBox, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
-        # Set the TextCtrl to expand on resize
-        gridSizer2.Add(txtdd, 0, wx.EXPAND)
+        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.EXPAND)
+        gridSizer2.Add(txtdd, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.detdist, 0, wx.EXPAND)
 
         gridSizer2.Add(self.rbtop, 0, wx.ALIGN_LEFT)
-        gridSizer2.Add(txtdiam, 0, wx.EXPAND)
+        gridSizer2.Add(txtdiam, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.detdiam, 0, wx.EXPAND)
 
         gridSizer2.Add(self.rbside, 1, wx.ALIGN_LEFT)
-        gridSizer2.Add(txtxcen, 0, wx.EXPAND)
+        gridSizer2.Add(txtxcen, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.xcen, 0, wx.EXPAND)
 
         gridSizer2.Add(self.rbsideneg, 0, wx.ALIGN_LEFT)
-        gridSizer2.Add(txtycen, 0, wx.EXPAND)
+        gridSizer2.Add(txtycen, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.ycen, 0, wx.EXPAND)
 
         gridSizer2.Add(self.rbtransmission, 0, wx.ALIGN_LEFT)
-        gridSizer2.Add(txtxbet, 0, wx.EXPAND)
+        gridSizer2.Add(txtxbet, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.xbet, 0, wx.EXPAND)
 
         gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
-        gridSizer2.Add(txtxgam, 0, wx.EXPAND)
+        gridSizer2.Add(txtxgam, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.xgam, 0, wx.EXPAND)
 
         gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
-        gridSizer2.Add(txtpixelsize, 0, wx.EXPAND)
+        gridSizer2.Add(txtpixelsize, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.ctrlpixelsize, 0, wx.EXPAND)
+
+        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+
+        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        gridSizer2.Add(title4, 0, wx.EXPAND)
+        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
 
         gridSizer2.Add(self.pt_2thetachi, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
         gridSizer2.Add(self.pt_XYCCD, 0, wx.EXPAND)
-        gridSizer2.Add(self.pt_XYfit2d, 0, wx.EXPAND)
+        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER)
 
-        gridSizer2.Add(
-            self.checkshowExperimenalData, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER
-        )
-        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.EXPAND)
+        gridSizer2.Add(self.checkshowExperimenalData, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        gridSizer2.Add(self.checkshowFluoFrame, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
         gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.EXPAND)
 
         gridSizer2.Add(self.checkExperimenalImage, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
@@ -753,7 +754,7 @@ class SimulationPanel(wx.Panel):
         gridSizer2.Add(self.expimagebrowsebtn, 0, wx.EXPAND)
 
         self.spSizer = wx.BoxSizer(wx.VERTICAL)
-        self.spSizer.Add(title1, 0)
+        self.spSizer.Add(title1, 0, wx.ALIGN_CENTER)
         self.spSizer.AddSpacer(10)
         self.spSizer.Add(gridSizer, 0)
         self.spSizer.Add(gridSizer2, 0)
@@ -1035,7 +1036,6 @@ class parametric_Grain_Dialog3(wx.Frame):
         """
         fill self.hboxbottom = wx.BoxSizer(wx.HORIZONTAL)
         """
-
         title3 = wx.StaticText(self.panel, -1, "File Parameters")
         title3.SetFont(self.font3)
 
@@ -1384,8 +1384,12 @@ class parametric_Grain_Dialog3(wx.Frame):
         # force CCD pixel plot
         self.rightpanel.pt_XYCCD.SetValue(True)
 
-        grainindex = self.LC.GetItemText(self.LC.GetFocusedItem())
         num_items = self.LC.GetItemCount()
+
+        if num_items < 1:
+            wx.MessageBox("You must select a grain before calculating some geometrical transforms!", "ERROR")
+
+        grainindex = self.LC.GetItemText(self.LC.GetFocusedItem())
         selectitem = self.LC.GetFocusedItem()
         print(" OnApplytransformname", grainindex)
         print("total num_items", num_items)
@@ -1593,6 +1597,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         showExperimenalData = self.rightpanel.checkshowExperimenalData.GetValue()
         showExperimentalImage = self.rightpanel.checkExperimenalImage.GetValue()
+        showFluoFrame = self.rightpanel.checkshowFluoFrame.GetValue()
 
         # show markers experimental list of peaks
         if showExperimenalData:
@@ -1613,12 +1618,8 @@ class parametric_Grain_Dialog3(wx.Frame):
 
             fullpathimagename = str(self.rightpanel.expimagetxtctrl.GetValue())
             if not os.path.isfile(fullpathimagename):
-                dlg = wx.MessageDialog(
-                    self,
-                    "Image file : %s\n\ndoes not exist!!" % fullpathimagename,
-                    "error",
-                    wx.OK | wx.ICON_ERROR,
-                )
+                dlg = wx.MessageDialog( self, "Image file : %s\n\ndoes not exist!!" % fullpathimagename,
+                    "FILE ERROR", wx.OK | wx.ICON_ERROR, )
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
@@ -1632,7 +1633,10 @@ class parametric_Grain_Dialog3(wx.Frame):
         elif self.rightpanel.pt_XYCCD.GetValue():
             plottype = "XYmar"
         else:
-            plottype = "XYfit2d"
+            raise ValueError('plottype "%s" in OnSimulate() is unknown...!'%plottype)
+
+        if showFluoFrame:
+            plottype = "XYmar_fluo"
 
         self.textprocess.SetLabel("Processing Laue Simulation")
         self.gauge.SetRange(len(list_param) * 10000)
@@ -1644,9 +1648,6 @@ class parametric_Grain_Dialog3(wx.Frame):
             list_param,
             emax=self.emax,
             emin=self.emin,
-            showplot=self.rightpanel.showplotBox.GetValue(),
-            showExperimenalData=showExperimenalData,
-            plottype=plottype,
             detectordistance=self.Det_distance,
             detectordiameter=self.Det_diameter,
             posCEN=(self.Xcen, self.Ycen),
@@ -1660,109 +1661,92 @@ class parametric_Grain_Dialog3(wx.Frame):
             dictmaterials=self.parent.dict_Materials
         )
 
-        ( list_twicetheta, list_chi, list_energy, list_Miller,
-        list_posX, list_posY, ListName, nb_g_t, calib, total_nb_grains, ) = data_res
+        (list_twicetheta, list_chi, list_energy, list_Miller,
+        list_posX, list_posY, ListName, nb_g_t, calib, total_nb_grains) = data_res
 
         print("len(list_posX)", len(list_posX))
         print("len(list_posY)", len(list_posY))
         print("len(list_posX[0])", len(list_posX[0]))
 
-        # find transform for slip systems
-        print("\n\ndata_res[7]", nb_g_t)
+        # for subgrainposX in list_posX:
+        #     print('len(subgrainposX)',len(subgrainposX))
+
+        #-----  slip system handling ------------------
+
+        GrainParent_list = []
+        TransformType_list = []
+        Nbspots_list = []
+        SpotIndexAccum_list = [] # list of last spot index belonging to the subgrain
+        subgrainindex=0
+        accumNb = -1
+        for par in nb_g_t:
+            parGrainIndex, nbtransfroms, transform_type = par
+            for _ in range(nbtransfroms):
+                GrainParent_list.append(parGrainIndex)
+                TransformType_list.append(transform_type)
+                nbLaueSpots = len(list_posX[subgrainindex])
+                accumNb += nbLaueSpots
+                Nbspots_list.append(nbLaueSpots)
+                SpotIndexAccum_list.append(accumNb)
+                subgrainindex += 1
+
+        print('SpotIndexAccum_list',SpotIndexAccum_list)
+        print('GrainParent_list',GrainParent_list)
+        print('TransformType_list',TransformType_list)
+ 
+        # ------  setting StreakingData   for grains distribution or slips system or single crystals
+        # StreakingData = data_res, SpotIndexAccum_list, GrainParent_list, TransformType_list, slipsystemsfcc
+        # -------------------------------------------------------
+        print("\n\ndata_res[7]  nb_g_t", nb_g_t)
         StreakingData = None
+        slipsystemsfcc = None
         for elem in nb_g_t:
             grainindex, nb_transforms, transformtype = elem
-            if transformtype in ("slipsystem",):
+            print('transformtype', transformtype)
+            print('elem transform', elem)
+            if 'slip' in transformtype:
                 print("there is a slipsystem simulation")
-                StreakingData = data_res
+                slipsystemsfcc = DictLT.SLIPSYSTEMS_FCC
+                plottype += 'XYmar_SlipsSystem'
+        
+        StreakingData = data_res, SpotIndexAccum_list, GrainParent_list, TransformType_list, slipsystemsfcc
+
+        print('StreakingData[1]',StreakingData[1])
+
         # ------------------------------------------------
         # plot results --------------------------------------
-        if self.rightpanel.showplotBox.GetValue():
-            # experimental data
-            if showExperimenalData:
-                experimentaldata_2thetachi = (
-                    self.data_2theta,
-                    self.data_chi,
-                    self.data_I,
-                )
-                experimentaldata_XYMAR = self.data_pixX, self.data_pixY, self.data_I
-                experimentaldata_XYfit2D = (
-                    self.data_pixX,
-                    self.initialParameters["framedim"][1] - self.data_pixY,
-                    self.data_I,
-                )  # TODO: to be checked
-            else:
-                experimentaldata_2thetachi = None
-                experimentaldata_XYMAR = None
-                experimentaldata_XYfit2D = None
+        #---------------------------------------------------
+        # experimental data
+        if showExperimenalData:
+            experimentaldata_2thetachi = (
+                self.data_2theta,
+                self.data_chi,
+                self.data_I,
+            )
+            experimentaldata_XYMAR = self.data_pixX, self.data_pixY, self.data_I
+        else:
+            experimentaldata_2thetachi = None
+            experimentaldata_XYMAR = None
 
-            # theoretical data
-            if plottype == "2thetachi":
-                simulframe = SimulationPlotFrame(
-                    self,
-                    -1,
-                    "LAUE Pattern simulation visualisation frame",
-                    data=(
-                        list_twicetheta,
-                        list_chi,
-                        list_energy,
-                        list_Miller,
-                        total_nb_grains,
-                        plottype,
-                        experimentaldata_2thetachi,
-                    ),
-                    GrainName_for_Streaking=None,
-                    list_grains_transforms=nb_g_t,
-                    Size=(6, 4),
-                    CCDLabel=self.CCDLabel,
-                )
-            elif plottype == "XYmar":
-                simulframe = SimulationPlotFrame(
-                    self,
-                    -1,
-                    "LAUE Pattern simulation visualisation frame",
-                    data=(
-                        list_posX,
-                        list_posY,
-                        list_energy,
-                        list_Miller,
-                        total_nb_grains,
-                        "XYMar",
-                        experimentaldata_XYMAR,
-                    ),
-                    ImageArray=ImageArray,
-                    GrainName_for_Streaking=StreakingData,
-                    list_grains_transforms=nb_g_t,
-                    Size=(6, 4),
-                    CCDLabel=self.CCDLabel,
-                )
-
-            elif plottype == "XYfit2d":
-                newlist_posY = [
-                    [
-                        self.initialParameters["framedim"][1] - positionY
-                        for positionY in childlistY
-                    ]
-                    for childlistY in list_posY
-                ]
-                simulframe = SimulationPlotFrame(
-                    self,
-                    -1,
-                    "LAUE Pattern simulation visualisation frame",
-                    data=(
-                        list_posX,
-                        newlist_posY,
-                        list_energy,
-                        list_Miller,
-                        total_nb_grains,
-                        "pixels",
-                        experimentaldata_XYfit2D,
-                    ),
-                    Size=(6, 4),
-                    CCDLabel=self.CCDLabel,
-                )
-
-            simulframe.Show(True)
+        # theoretical data
+        print('plottype in LaueSimulatorGUI : %s  \n\n'%plottype)
+        if plottype == "2thetachi":
+            simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
+                            data=(list_twicetheta, list_chi, list_energy, list_Miller,
+                            total_nb_grains, plottype, experimentaldata_2thetachi,),
+                            StreakingData=StreakingData,
+                            list_grains_transforms=nb_g_t,
+                            CCDLabel=self.CCDLabel)
+        elif "XYmar" in plottype:
+            simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
+                        data=(list_posX, list_posY, list_energy, list_Miller,
+                        total_nb_grains, plottype, experimentaldata_XYMAR,),
+                        ImageArray=ImageArray,
+                        StreakingData=StreakingData,
+                        list_grains_transforms=nb_g_t,
+                        CCDLabel=self.CCDLabel, )
+        
+        simulframe.Show(True)
 
         self.textprocess.SetLabel("Laue Simulation Completed")
 

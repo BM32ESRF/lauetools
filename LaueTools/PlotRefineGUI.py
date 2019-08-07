@@ -57,6 +57,7 @@ if sys.version_info.major == 3:
     from . import indexingSpotsSet as ISS
     from . import matchingrate
     from . import dict_LaueTools as DictLT
+    from . import readmccd as RMCCD
 else:
     import CrystalParameters as CP
     import IOLaueTools as IOLT
@@ -70,6 +71,7 @@ else:
     import indexingSpotsSet as ISS
     import matchingrate
     import dict_LaueTools as DictLT
+    import readmccd as RMCCD
 
 
 SIZE_PLOTTOOLS = (8, 6)
@@ -3915,7 +3917,7 @@ class Plot_RefineFrame(wx.Frame):
         if self.datatype == "2thetachi":
             # 2theta, chi, (miller posx posy energy)
             annotes = self.data_theo[2:]
-            
+
         if self.datatype == "pixels":
             # x, y, (miller 2theta chi energy)
             xdata, ydata, annotes = (
@@ -4376,7 +4378,6 @@ class IntensityScaleBoard(wx.Dialog):
             pass
 
     def readnewimage(self):
-        import readmccd as RMCCD
 
         folder = str(self.folderexpimagetxtctrl.GetValue())
         imagename = str(self.expimagetxtctrl.GetValue())
