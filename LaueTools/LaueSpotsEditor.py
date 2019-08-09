@@ -35,31 +35,15 @@ from matplotlib.backends.backend_wxagg import (
     NavigationToolbar2WxAgg as NavigationToolbar,
 )
 
-fields = [
-    "spot index",
-    "h",
-    "k",
-    "l",
-    "Energy",
-    "2theta",
-    "chi",
-    "X",
-    "Y",
-    "Intensity",
-    "deviation",
-]
+fields = ["spot index", "h", "k", "l", "Energy", "2theta", "chi", "X", "Y", "Intensity", "deviation"]
 
 
 class SpotsEditor(wx.Frame):
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        dict_spots_data,
-        func_to_call=None,
-        field_name_and_order=fields,
-    ):
+    """ GUI class for Spot properties edition and selection
+  
+    """
+    def __init__(self, parent, _id, title, dict_spots_data,
+                    func_to_call=None, field_name_and_order=fields):
         """
         dictionnary of data is as following:
         dict_spots_data = { 'spot index':[0,1,3,6,9,10],
@@ -73,7 +57,7 @@ class SpotsEditor(wx.Frame):
         #        wx.Dialog.__init__(self, parent, _id, title, size=(1100, 500), style=wx.OK)
         wx.Frame.__init__(self, parent, _id, title, size=(600, 500))
 
-        print(("parent", parent))
+        # print(("parent", parent))
         self.parent = parent
 
         self.func_to_call = func_to_call
@@ -108,9 +92,7 @@ class SpotsEditor(wx.Frame):
 
         self.listcontrol = MyListCtrl(self, self.field_name, dict_spots_data)
 
-        wx.lib.mixins.listctrl.ColumnSorterMixin.__init__(
-            self.listcontrol, len(self.field_name) + 1
-        )
+        wx.lib.mixins.listctrl.ColumnSorterMixin.__init__(self.listcontrol, len(self.field_name) + 1)
 
         self.listcontrol.Bind(wx.EVT_KEY_DOWN, self.onKeypressed)
 
@@ -125,34 +107,16 @@ class SpotsEditor(wx.Frame):
 
         list_tcs = [self.tc1, self.tc2, self.tc3]
 
-        self.f1 = wx.ComboBox(
-            pnl1,
-            700,
-            self.field_name[0],
-            choices=self.field_name,
-            style=wx.CB_READONLY,
-            size=(120, -1),
-        )
+        self.f1 = wx.ComboBox(pnl1, 700, self.field_name[0], choices=self.field_name,
+                                style=wx.CB_READONLY, size=(120, -1))
         self.f1.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn1, id=700)
 
-        self.f2 = wx.ComboBox(
-            pnl1,
-            701,
-            self.field_name[1],
-            choices=self.field_name,
-            style=wx.CB_READONLY,
-            size=(120, -1),
-        )
+        self.f2 = wx.ComboBox(pnl1, 701, self.field_name[1], choices=self.field_name,
+                                style=wx.CB_READONLY, size=(120, -1))
         self.f2.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn2, id=701)
 
-        self.f3 = wx.ComboBox(
-            pnl1,
-            702,
-            self.field_name[2],
-            choices=self.field_name,
-            style=wx.CB_READONLY,
-            size=(120, -1),
-        )
+        self.f3 = wx.ComboBox(pnl1, 702, self.field_name[2], choices=self.field_name,
+                                style=wx.CB_READONLY, size=(120, -1))
         self.f3.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn3, id=702)
 
         list_fs = [self.f1, self.f2, self.f3]
@@ -207,12 +171,8 @@ class SpotsEditor(wx.Frame):
         vbox4.Add(rlbtn, 0, wx.ALIGN_CENTER | wx.TOP, 5)
         vbox4.Add(rmv1spotbtn, 0, wx.ALIGN_CENTER | wx.TOP, 5)
         vbox4.Add(hbobox, 0, wx.ALIGN_CENTER | wx.TOP, 15)
-        vbox4.Add(
-            wx.Button(pnl2, wx.ID_OK, "Accept and Quit", size=(-1, 60)),
-            0,
-            wx.EXPAND | wx.ALL,
-            5,
-        )
+        vbox4.Add(wx.Button(pnl2, wx.ID_OK, "Accept and Quit",
+                            size=(-1, 60)), 0, wx.EXPAND | wx.ALL, 5)
 
         self.Bind(wx.EVT_BUTTON, self.OnApplyFilter, id=10)
         self.Bind(wx.EVT_BUTTON, self.OnPlot, id=106)
@@ -469,7 +429,7 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             ):  # loop over other fields to fill
                 # print "k,field",k,field
                 self.SetItem(index, k, str(dict_data[field][row]))
-                _content.append(dict_data[field][row])
+                _content.append(float(dict_data[field][row]))
 
             # print "index,row",index, row
             self.SetItemData(index, row)
@@ -486,7 +446,7 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             ):  # loop over other fields to fill
                 # print "k,field",k,field
                 self.SetStringItem(index, k, str(dict_data[field][row]))
-                _content.append(dict_data[field][row])
+                _content.append(float(dict_data[field][row]))
 
             # print "index,row",index, row
             self.SetItemData(index, row)
@@ -618,9 +578,7 @@ if __name__ == "__main__":
 
     class MyApp(wx.App):
         def OnInit(self):
-            dia = SpotsEditor(
-                None, -1, "Spots Editor.py", mySpotData, field_name_and_order=fields
-            )
+            dia = SpotsEditor(None, -1, "Spots Editor.py", mySpotData, field_name_and_order=fields)
             #            dia.Destroy()
             dia.Show(True)
             print("Data Selected")

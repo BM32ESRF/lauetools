@@ -419,7 +419,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     return devstrain, lattice_parameter_direct_strain
 
 
-def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", c=dict_Materials):
+def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", dictmaterials=dict_Materials):
     r"""
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
@@ -496,7 +496,7 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a",
 
     UBmat = copy.copy(UBmatrix)
 
-    (devstrain, lattice_parameter_direct_strain) = compute_deviatoricstrain(
+    (_, lattice_parameter_direct_strain) = compute_deviatoricstrain(
         UBmat, B0matrix, latticeparams
     )
 
@@ -1157,7 +1157,7 @@ def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # O
             print("matLT3x3 = ", matLT3x3)
         astar1 = matLT3x3[:, 0]
         bstar1 = matLT3x3[:, 1]
-        cstar1 = matLT3x3[:, 2]
+        # cstar1 = matLT3x3[:, 2]
 
     astar0 = astar1 / GT.norme_vec(astar1)
     cstar0 = np.cross(astar0, bstar1)

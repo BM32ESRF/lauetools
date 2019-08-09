@@ -247,7 +247,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     # new way of reading CCD calibration parameters
 
     CCDcalib = readCalibParametersInFile(openf)
-    print('CCDcalib in readfile_cor',CCDcalib)
+    print('CCDcalib in readfile_cor', CCDcalib)
 
     if len(CCDcalib) >= 5:
         print("CCD Detector parameters read from .cor file")

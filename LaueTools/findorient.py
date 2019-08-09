@@ -946,11 +946,8 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
 
 
 def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="lauetools"):
-    """
-    Upgrade of just above givematorient()
-    take into account distorted structure by using Gstar (metric tensor of unit cell)
-
-    Returns orientation matrix in chosen frame
+    r"""
+    Returns orientation matrix from two spots from theirs hkls and coordinates
 
     inputs:
     hkl1, hkl2            : two list of hkl Miller indices
@@ -960,6 +957,10 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
 
     PROBLEM: hint: lAUETOOLS use frame = 'lauetools' for recognition from pattern simulated in lauetools frame...
     three possible frames: lauetools , XMASlab, XMASsample
+
+    .. note::
+        Upgrade of just above givematorient()
+        take into account distorted structure by using Gstar (metric tensor of unit cell)
 
     """
     h1, k1, l1 = hkl1
@@ -1359,7 +1360,7 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
 
     n    : highest hkls order
 
-    latticeparams        : 6 [direct space] lattice parameters of 
+    latticeparams        : 6 [direct space] lattice parameters of
                         element, material or structure label
                         [a,b,c,alpha, beta,gamma] (angles in degrees)
 
@@ -1383,6 +1384,34 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
 
     return LUT
 
+    
+def Build_Cubic_shortLUTs():
+
+    nLUT=5
+    lut=buildLUT_fromLatticeParams([5,5,5,90.,90,.90],nLUT)
+    sangles = lut[1]
+    # limitsAngles
+    Anglemin, Anglemax = 19, 90
+    esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
+    # sorted array of angles
+    sortedangles = np.array(sorted(list(set(esangles.tolist()))))
+
+    import pickle
+
+    filename = 'sortedanglesCubic_between_%d_%d.angles'%(Anglemin, Anglemax)
+    with open(filename, "wb") as f:
+        pickle.dump(sortedangles, f)
+
+    Mins, Maxs = [40,45,50,55,60,18,18,10,10],[90,90,90,90,90,45,60,45,60]
+    for Anglemin, Anglemax in zip(Mins, Maxs):
+    
+        esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
+        # sorted array of angles
+        sortedangles = np.array(sorted(list(set(esangles.tolist()))))
+
+        filename = 'sortedanglesCubic_nLut_5_angles_%d_%d.angles'%(Anglemin, Anglemax)
+        with open(filename, "wb") as f:
+            pickle.dump(sortedangles, f)
 
 def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=DictLT.dict_Materials):
     """
@@ -1412,7 +1441,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
     whose mutual angles between normals are the closest to the given query_angle within tolerance
 
     USED in manual indexation
-    
+
     LUT is an input argument !! then main part is the same as in PlanePairs
 
     input:
@@ -1436,6 +1465,8 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
     # if angle_query is a tuple,array,list
     if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
         angle_query = query_angle[0]
+    
+    print('angle_query', angle_query)
 
     # Find matching
 

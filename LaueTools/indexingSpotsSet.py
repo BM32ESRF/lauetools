@@ -703,15 +703,8 @@ class spotsset:
                         key_spot
                     ][:6] + [0]
 
-    def AssignHKL(
-        self,
-        Orientation,
-        grain_index,
-        AngleTol=1.0,
-        use_spots_in_currentselection=True,
-        selectbyspotsindices=None,
-        verbose=1,
-    ):
+    def AssignHKL(self, Orientation, grain_index, AngleTol=1.0,
+                        use_spots_in_currentselection=True, selectbyspotsindices=None, verbose=1):
         """
         Assign hkl to the exp spot data set according to
         the orientation matrix within the tolerance angle
@@ -754,18 +747,7 @@ class spotsset:
 
             # exp data used from refined model
             data_1grain = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
-            (
-                index_r,
-                tth_r,
-                chi_r,
-                posX,
-                posY,
-                intensity_r,
-                H,
-                K,
-                L,
-                Energy,
-            ) = data_1grain.T
+            (index_r, tth_r, chi_r, posX, posY, intensity_r, H, K, L, Energy) = data_1grain.T
 
             self.TwiceTheta_Chi_Int = [tth_r, chi_r, intensity_r]
 
@@ -2712,17 +2694,7 @@ class spotsset:
         List_of_defaultvalues = np.array(CCDcalib + [0, 0, 0] + TransformParameters)
         List_of_checkwidgets = FitOrientParametersFlags + FitTransformParametersFlags
 
-        List_of_keys = [
-            "anglex",
-            "angley",
-            "anglez",
-            "Ts00",
-            "Ts01",
-            "Ts02",
-            "Ts11",
-            "Ts12",
-            "Ts22",
-        ]
+        List_of_keys = ["anglex", "angley", "anglez", "Ts00", "Ts01", "Ts02", "Ts11", "Ts12", "Ts22"]
 
         print("List_of_defaultvalues", List_of_defaultvalues)
 
@@ -3872,7 +3844,7 @@ def AreTwinned(matA, matB, tol=0.001, allpermu=None):
 
 
 def RemoveDuplicatesOrientationMatrix(
-    matrices, scores, tol=0.0001, allpermu=None, OutputMatricesOnly=0
+    matrices, scores, tol=0.0001, allpermu=None, OutputMatricesOnly=0, verbose=False
 ):
     """
     remove duplicates matrix in the sense of comparematrices()
@@ -3907,10 +3879,10 @@ def RemoveDuplicatesOrientationMatrix(
             Return False if m == BSM[0] in the sense of comparematrices()
             """
             boolval = not comparematrices(BSM[0], m, tol=tol, allpermu=allpermu)[0]
-            print("\n*********boolval", boolval)
+            #print("\n*********boolval", boolval)
             return boolval
 
-        print("k,FilteredMatrixList",k,FilteredMatrixList)
+        if verbose: print("k,FilteredMatrixList",k,FilteredMatrixList)
         FilteredMatrixList.append(BSM[0])
         # BSM = [m for m in BSM if Matrixcomparewith(m)]
 
@@ -3965,7 +3937,7 @@ def MergeSortand_RemoveDuplicates(
     # hint: lexsort sort lexicographically starting with last key and then second-to-last key!!
     rank = np.lexsort(keys=(-colres, colnbmatch))[::-1]
 
-    print("sorting according to rank")
+    print("sorting MAtrices according to rank")
     print("rank", rank)
 
     Bestsortedmatrices = np.take(OrientMatrices, rank, axis=0)

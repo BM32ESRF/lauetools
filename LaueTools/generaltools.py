@@ -189,7 +189,7 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
 
     return tab_angulardist
 
-from numba import double
+# from numba import double
 from numba.decorators import njit, autojit
 import math
 
@@ -487,7 +487,7 @@ def Orthonormalization(mat):
 
     TODO : to check 
     """
-    vec1, vec2, vec3 = np.array(mat).T
+    vec1, vec2, _ = np.array(mat).T
 
     new1 = vec1 / np.sqrt(np.dot(vec1, vec1))
 
@@ -1016,7 +1016,7 @@ def Set_dict_frompairs(pairs_index, verbose=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1, XY2, dist_tolerance=0.5, verbose=0):
+def getCommonPts(XY1, XY2, dist_tolerance=0.5):
     """
     return indices in XY1 and in XY2 of common pts (2D)
     
@@ -1179,7 +1179,7 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
 
 
 def removeClosePoints(X, Y, dist_tolerance=0.5):
-    """
+    r"""
     remove very close spots within dist_tolerance (cartesian distance)
     """
     coord = np.array([X, Y]).T
@@ -1277,11 +1277,10 @@ def getCommonSpots(
         print("file %s does not exist" % file2)
         return 0
 
-    nbspots1 = len(data1)
-    nbspots2 = len(data2)
-
-    #         print 'nb peaks in data1',nbspots1
-    #         print 'nb peaks in data2',nbspots2
+    # nbspots1 = len(data1)
+    # nbspots2 = len(data2)
+    # print('nb peaks in data1',nbspots1)
+    # print('nb peaks in data2',nbspots2)
 
     XY1 = data1[:, :2]
     XY2 = data2[:, :2]

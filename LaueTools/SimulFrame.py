@@ -481,6 +481,7 @@ class SimulationPlotFrame(wx.Frame):
 
                 firstindex += lastindex + 1
 
+            # tables containing infos on Laue spots / subgrain
             self.allspotindex = np.arange(len(self.Xdat))
             self.spotindex_in_grain = np.array(self.spotindex_in_grain)
             self.mini = self.spotindex_in_grain[::2]

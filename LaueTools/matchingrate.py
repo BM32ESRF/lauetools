@@ -84,7 +84,7 @@ def SpotLinks(
     :param dataintensity_exp: list of dataintensity_exp
 
     :param veryclose_angletol: finest tolerance angle for association in degree
-    
+
     :param twicetheta: list of theoretical 2theta angles
     :param chi: list of theoretical chi angles
     :param Miller_ind: list of theoretical 3D Miller_ind
@@ -94,7 +94,6 @@ def SpotLinks(
                             (conversion table between relative and absolute exp. spot index)
                            i.e.  absoluteindex[localindex] = absolute index
 
-    
                         if absoluteindex = None: spots indices and order are those of data
                                     (twicetheta_exp, chi_exp, dataintensity_exp)
                     = list_of_absolute_indices

@@ -1531,7 +1531,7 @@ class ROISelection(wx.Panel):
 
     def buildROIsarray(self):
         ROIslist = []
-        for k, roi in self.granparent.ROIs.items():
+        for _, roi in self.granparent.ROIs.items():
             x, y, width, minusheight, rect, Lauetoolsindex, visibleflag = roi
             if visibleflag is "visible":
                 xmin = int(x)
@@ -1655,7 +1655,7 @@ class ROISelection(wx.Panel):
 
     def onDeleteROIs(self, evt):
 
-        for k, rect in self.granparent.ROIs.items():
+        for _, rect in self.granparent.ROIs.items():
 
             rect[4].set_visible(False)
             rect[4].set_picker(None)
@@ -2888,8 +2888,7 @@ class PeakListOLV(wx.Panel):
         if selectitem == -1:
             return
 
-        name = self.myOlv.GetItemText(selectitem)
-
+        # name = self.myOlv.GetItemText(selectitem)
         #        print "hobby", self.myOlv.GetObjectAt(self.myOlv.GetFocusedRow())
         #        print "name", name
         #        print "selectitem", selectitem
@@ -3535,7 +3534,7 @@ class MainPeakSearchFrame(wx.Frame):
         return userProvidedFilename
 
     def OpenImage(self, event):
-        wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
+        # wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
 
         filepath_dlg = wx.FileDialog(
             self,
@@ -3563,11 +3562,6 @@ class MainPeakSearchFrame(wx.Frame):
             self.ImageFilterpanel.UseImage.SetValue(False)
             self.ImageFilterpanel.imageBctrl.SetValue("")
 
-    #             self.BImageFilename = ''
-    #             self.ImageFilterpanel.BImageFilename = ''
-
-    #             self.initialParameter['CCDLabel'] = self.CCDlabel
-
     def OnSetFileCCDParam(self, event):
         """Enter manually CCD file params
         Launch Entry dialog
@@ -3579,9 +3573,7 @@ class MainPeakSearchFrame(wx.Frame):
         DPBoard.Destroy()
 
     def OnFileSeries(self, event):
-        wx.MessageBox(
-            "not implemented yet. Use better FileSeries/peak_search.py", "INFO"
-        )
+        wx.MessageBox("not implemented yet. Use better FileSeries/peak_search.py", "INFO")
 
     def OnFolderPreferences(self, event):
         if self.askUserForDirname():
@@ -3589,19 +3581,17 @@ class MainPeakSearchFrame(wx.Frame):
             print(self.writefolder)
 
     def OnSetPlotSize(self, event):
-        wx.MessageBox(
-            "not implemented yet. Use better FileSeries/peak_search.py", "INFO"
-        )
+        wx.MessageBox("not implemented yet. Use better FileSeries/peak_search.py", "INFO")
         return
 
-        dlg = wx.TextEntryDialog(
-            self, "minimum plot size", "Screen Resolution Settings"
-        )
-        dlg.SetValue("4")
-        if dlg.ShowModal() == wx.ID_OK:
-            self.SetStatusText("You entered: %s\n" % dlg.GetValue())
-            self.figsize = int(dlg.GetValue())
-        dlg.Destroy()
+        # dlg = wx.TextEntryDialog(
+        #     self, "minimum plot size", "Screen Resolution Settings"
+        # )
+        # dlg.SetValue("4")
+        # if dlg.ShowModal() == wx.ID_OK:
+        #     self.SetStatusText("You entered: %s\n" % dlg.GetValue())
+        #     self.figsize = int(dlg.GetValue())
+        # dlg.Destroy()
 
         self.fig.set_size_inches(self.figsize, self.figsize, forward=True)
 
@@ -3836,7 +3826,6 @@ class MainPeakSearchFrame(wx.Frame):
         if self.CropIsOn:
             self.ImagesBrowser.toggleBtnCrop.SetLabel("Crop Data")
             self.CropIsOn = False
-
         else:
             self.ImagesBrowser.toggleBtnCrop.SetLabel("UnCrop Data")
             self.CropIsOn = True

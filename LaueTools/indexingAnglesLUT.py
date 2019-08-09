@@ -398,7 +398,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
 
 def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     """
-    from 1 spot (given by its index as defined in angulardisttable[1])
+    from 1 spot (given by its index as defined in table_angdist[1])
     returns:
     [0] : list of [spots_index_1,spot_index_2]
                     where spot_index_2 is the index spot lying
@@ -409,7 +409,7 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     instead of plane 2 which is an accurate plane type (order and sign is important with respect to the famiiy type 1)
     """
 
-    from_spot = [
+    from_spot1 = [
         Possible_planes(angle, tole=angulartolerance, verbose=0)
         for angle in table_angdist[spot_index_1]
     ]
@@ -417,11 +417,11 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     couples_index = []
     couples_type = []
 
-    for m in list(range(len(from_spot))):
-        nbcouples = len(from_spot[m])
+    for m in list(range(len(from_spot1))):
+        nbcouples = len(from_spot1[m])
         if nbcouples > 0:
             couples_index.append([spot_index_1, m])
-            couples_type.append(from_spot[m])
+            couples_type.append(from_spot1[m])
 
     return couples_index, couples_type
 
@@ -776,6 +776,11 @@ def getUBs_and_MatchingRate(
     dictmaterials=DictLT.dict_Materials
 ):
     """
+
+    angdist   : scalar
+    coords_1   2theta, chi
+    twiceTheta_exp :  all 2theta values (to compute matching rate of Laue Patterns)
+
     from two spots only
     USED in manual indexation
     """
@@ -977,7 +982,7 @@ def UBs_from_twospotsdistance(
     """
     returns list of pair of planes and exp pairs of spots that match an angle in a reference LUT.
     LUT is computed from B (Gstar)
-    
+
     USED in manual indexation
 
 
@@ -995,6 +1000,9 @@ def UBs_from_twospotsdistance(
     orientation matrix is then given with respect the frame in which is expressed B
 
     set_hkl_1     : if not None, [h,k,l] of spot #1
+
+    .. todo::
+        conflict between key_material and B ...
     """
 
     print("using UBs_from_twospotsdistance()")
@@ -1006,17 +1014,11 @@ def UBs_from_twospotsdistance(
 
         if LUT is None:
             print("LUT build in UBs_from_twospotsdistance()")
-            LUT = build_AnglesLUT(
-                B,
-                n,
-                MaxRadiusHKL=MaxRadiusHKL,
-                cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials),
-            )
-        #                                   cubicSymmetry=False)
+            LUT = build_AnglesLUT(B, n, MaxRadiusHKL=MaxRadiusHKL,
+                cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials))
 
-        hkls = FindO.PlanePairs_2(
-            exp_angular_dist, angle_tol, LUT, onlyclosest=0, verbose=verbose
-        )  # LUT is provided !
+        # LUT is provided now for sure!
+        hkls = FindO.PlanePairs_2(exp_angular_dist, angle_tol, LUT, onlyclosest=0, verbose=verbose)
 
     #         print "nb of hkls found in LUT:", len(hkls)
     #         print "hkls:", hkls
@@ -1044,17 +1046,9 @@ def UBs_from_twospotsdistance(
 
             print("new calculated hkl2")
 
-        hkls, LUTspecific = FindO.PlanePairs_from2sets(
-            exp_angular_dist,
-            angle_tol,
-            set_hkl_1,
-            hkl2,
-            key_material,
-            LUT=None,
-            onlyclosest=0,
-            filterharmonics=1,
-            verbose=verbose,
-        )
+        hkls, LUTspecific = FindO.PlanePairs_from2sets(exp_angular_dist, angle_tol, set_hkl_1, hkl2,
+                                                key_material, LUT=None, onlyclosest=0, filterharmonics=1,
+                                                verbose=verbose)
 
         print("found planes pairs")
 
@@ -1062,32 +1056,22 @@ def UBs_from_twospotsdistance(
         nbpairs = len(hkls)
         PPs_list.append([hkls, spot_index_2, nbpairs])
         if verbose:
-            print(
-                "hkls, plane_indices spotindex_2, nbpairs", hkls, spot_index_2, nbpairs
-            )
+            print("hkls, plane_indices spotindex_2, nbpairs", hkls, spot_index_2, nbpairs)
 
     #     print "PPs_list", PPs_list
 
-    return Loop_on_PlanesPairs_and_Get_Matrices(
-        PPs_list,
-        spot_index_1,
-        coords_1,
-        coords_2,
-        B,
-        verbose=verbose,
-        single_coords_2=True,
-    )
+    return Loop_on_PlanesPairs_and_Get_Matrices(PPs_list, spot_index_1, coords_1, coords_2, B,
+                                                        verbose=verbose, single_coords_2=True)
 
 
-def Loop_on_PlanesPairs_and_Get_Matrices(
-    PP_list, spot_index, coord1, coords, B, verbose=0, single_coords_2=False
-):
+def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
+                                                    verbose=0, single_coords_2=False):
     """
     loop on possible planes couples (PP) from recognised distances from a single spot (spotindex)
 
     USED in manual indexation
 
-    coords  :  2theta chi spots coordinates 
+    coords  :  2theta chi spots coordinates
     """
     pairspots = []
     matrix_list = []
@@ -1133,7 +1117,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(
 
             hkl1, hkl2 = planepair
 
-            #             print "hkl1, hkl2 ", hkl1, hkl2
+            # print "hkl1, hkl2 ", hkl1, hkl2
             # print "coord1,coord2", coord1,coord2
             # print "spot_index, spotindex_2",spot_index, spotindex_2
 
@@ -1151,9 +1135,8 @@ def Loop_on_PlanesPairs_and_Get_Matrices(
 
             # ---compute matrix by swaping hkl1 and hkl2
 
-            matrix = FindO.OrientMatrix_from_2hkl(
-                hkl2, coord1, hkl1, coord2, B, verbose="no", frame="lauetools"
-            )
+            matrix = FindO.OrientMatrix_from_2hkl(hkl2, coord1, hkl1, coord2, B,
+                                                        verbose="no", frame="lauetools")
 
             # print "matrix",matrix
 

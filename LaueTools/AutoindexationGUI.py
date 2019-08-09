@@ -806,20 +806,15 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                         plotresult = Plot_RefineFrame( self,
                                             -1,
                                             title,
-                                            data=self.data,
                                             datatype="2thetachi",
-                                            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-                                            data_XY=self.select_dataXY,
                                             key_material=self.key_material,
                                             kf_direction=self.kf_direction,
                                             Params_to_simulPattern=(grain, 5, energy_max),
                                             ResolutionAngstrom=ResolutionAngstrom,
-                                            DRTA=rough_tolangle,
                                             MATR=fine_tolangle,
                                             CCDdetectorparameters=self.CCDdetectorparameters,
                                             IndexationParameters=self.IndexationParameters,
                                             StorageDict=self.StorageDict,
-                                            mainframe="billframe2",  # self.parent
                                             DataSetObject=self.DataSet,
                                         )
 
@@ -873,19 +868,15 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                             self,
                             -1,
                             title,
-                            data=self.data,
                             data_added=[TwicethetaChi[0], -TwicethetaChi[1]],
                             kf_direction=self.kf_direction,
                             datatype="2thetachi",
-                            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-                            data_XY=self.select_dataXY,
                             key_material=self.key_material,
                             Params_to_simulPattern=(grain, 5, self.emax.GetValue()),
                             ResolutionAngstrom=ResolutionAngstrom,
                             CCDdetectorparameters=self.CCDdetectorparameters,
                             IndexationParameters=self.IndexationParameters,
                             StorageDict=self.StorageDict,
-                            mainframe="billframe2b",  # self.parent
                             DataSetObject=self.DataSet,
                         )
 
@@ -1130,11 +1121,8 @@ class RecognitionResultCheckBox(wx.Frame):
                     self,
                     -1,
                     "matrix #%d" % ind,
-                    data=self.data,
                     kf_direction=self.kf_direction,
-                    data_XY=self.data_XY_exp,
                     ImageArray=self.ImageArray,
-                    data_2thetachi=self.data_2thetachi,
                     datatype=self.datatype,
                     key_material=self.key_material,
                     Params_to_simulPattern=Params_to_simulPattern,
@@ -1143,7 +1131,6 @@ class RecognitionResultCheckBox(wx.Frame):
                     CCDdetectorparameters=self.CCDdetectorparameters,
                     IndexationParameters=self.IndexationParameters,
                     StorageDict=self.StorageDict,
-                    mainframe="billframe",  # self.mainframe
                     DataSetObject=self.DataSet,
                 )
 
@@ -1193,11 +1180,8 @@ class RecognitionResultCheckBox(wx.Frame):
             self,
             -1,
             "parent grain matrix #%d" % parent_matrix_index,
-            data=self.data,
             datatype=self.datatype,
-            data_XY=self.data_XY_exp,
             ImageArray=self.ImageArray,
-            data_2thetachi=self.data_2thetachi,
             kf_direction=self.kf_direction,
             key_material=self.key_material,
             Params_to_simulPattern=Params_to_simulPattern,
@@ -1206,7 +1190,6 @@ class RecognitionResultCheckBox(wx.Frame):
             CCDdetectorparameters=self.CCDdetectorparameters,
             IndexationParameters=self.IndexationParameters,
             StorageDict=self.StorageDict,
-            mainframe="billframe",  # self.mainframe
             DataSetObject=self.DataSet,
         )
 
@@ -1288,11 +1271,8 @@ class RecognitionResultCheckBox(wx.Frame):
                 self,
                 -1,
                 "sigma #%d" % k_matsigma,
-                data=self.data,
                 datatype=self.datatype,
-                data_XY=self.data_XY_exp,
                 ImageArray=self.ImageArray,
-                data_2thetachi=self.data_2thetachi,
                 kf_direction=self.kf_direction,
                 key_material=self.key_material,
                 Params_to_simulPattern=(grain, emin, emax),
@@ -1301,7 +1281,6 @@ class RecognitionResultCheckBox(wx.Frame):
                 CCDdetectorparameters=self.CCDdetectorparameters,
                 IndexationParameters=self.IndexationParameters,
                 StorageDict=self.StorageDict,
-                mainframe="billframe",  # self.mainframe
                 DataSetObject=self.DataSet,
             )
 

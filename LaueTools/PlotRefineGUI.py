@@ -143,29 +143,22 @@ class Plot_RefineFrame(wx.Frame):
     """
     Class to implement a window enabling indexation and strain refinement
     """
-
     def __init__(
         self,
         parent,
         _id,
         title,
-        data=(1, 1, 1, 1),
         data_added=None,
-        Size=SIZE_PLOTTOOLS,
         datatype="2thetachi",
-        data_2thetachi=(None, None),
-        data_XY=(None, None),
         ImageArray=None,
         kf_direction="Z>0",
         key_material="Ge",
         Params_to_simulPattern=None,  # Grain, Emin, Emax
         ResolutionAngstrom=False,
-        DRTA=0.5,
         MATR=0.5,
         CCDdetectorparameters=None,
         IndexationParameters=None,
         StorageDict=None,
-        mainframe=None,
         DataSetObject=None,
         **kwds
     ):
@@ -210,27 +203,6 @@ class Plot_RefineFrame(wx.Frame):
         self.sigmanoise = 0
 
         self.datatype = datatype
-
-        #         # save spots data used for indexation (could be part of the whole set of spot data)
-        #         self.IndexationParameters['ExpData_UsedForIndexation']={}
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['data']=data
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_X']=data[0]
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_Y']=data[1]
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['Data_I']=data[2]
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['File_NAME']=data[3]
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['data_XY']=data_XY
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['data_2thetachi']=data_2thetachi
-        #         self.IndexationParameters['ExpData_UsedForIndexation']['absolutespotindex']=IndexationParameters['current_exp_spot_index_list']
-
-        # read exp. data spots properties
-        # WANRING:
-        # depending of datatype self.Data_X, self.Data_Y can be 2theta, chi or gnomonX,gnomonY, or pixelX,pixelY
-        # print "data",data
-        # Data_X, Data_Y, Data_I, File_NAME = data
-        #         self.data = data
-        #         self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-        #         self.data_XY = data_XY
-        #         self.data_2thetachi = data_2thetachi
 
         if IndexationParameters is not None:
             # all data to be indexed in this board
@@ -1622,14 +1594,9 @@ class Plot_RefineFrame(wx.Frame):
             mySpotData = {}
             for k, ff in enumerate(self.fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(
-                None,
-                -1,
-                "Filter spots links Editor",
-                mySpotData,
-                func_to_call=self.readdata_fromEditor_after,
-                field_name_and_order=self.fields,
-            )
+            dia = LSEditor.SpotsEditor(None, -1, "Filter spots links Editor", mySpotData,
+                                    func_to_call=self.readdata_fromEditor_after,
+                                    field_name_and_order=self.fields, )
             dia.Show(True)
 
         else:
@@ -2416,13 +2383,12 @@ class Plot_RefineFrame(wx.Frame):
 
         frb.Destroy()
 
-    def fit_transform_parameters(
-        self, pixX, pixY, hkls, starting_orientmatrix, key_material, weights
-    ):
+    def fit_transform_parameters(self, pixX, pixY, hkls, starting_orientmatrix,
+                                key_material, weights ):
 
         self.selectFittingTransformParameters(key_material)
 
-        pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
+        pureUmatrix, _ = GT.UBdecomposition_RRPP(starting_orientmatrix)
 
         print("self.fitting_parameters_values, self.fitting_parameters_keys")
         print(self.fitting_parameters_values, self.fitting_parameters_keys)
@@ -3590,6 +3556,13 @@ class Plot_RefineFrame(wx.Frame):
             self.listbuttonstate = [0, 0, 0]
             return
 
+        try:
+            if self.linkResidues_fit is not None:
+                pass
+        except AttributeError:
+            wx.MessageBox('You must perform a fitting by for instance making "Automatic Links" then "Refine"!','Info')
+            return
+
         # from refinePicky()
         # self.UBmat = UBmat
         # self.Umat = np.dot(deltamat,starting_orientmatrix)
@@ -3628,9 +3601,7 @@ class Plot_RefineFrame(wx.Frame):
             self.SimulParam = (Grain, emin, emax)
 
         # Generating link automatically
-        self.OnAutoLink(
-            evt
-        )  # inside there is simulatePattern() which uses self.SimulParam
+        self.OnAutoLink(evt)  # inside there is simulatePattern() which uses self.SimulParam
 
         # self.linkedspots_link
         # self.linkExpMiller_link
