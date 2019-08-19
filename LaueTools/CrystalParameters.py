@@ -66,6 +66,257 @@ def isCubic(latticeparams):
     return Cubic
 
 
+def ApplyExtinctionrules(HKL, Extinc, verbose=0):
+    r"""
+    Apply selection rules to hkl reflections to remove forbidden ones
+
+    :param HKL: numpy array (n,3) of [H,K,L]
+    :param Extinc: label for extinction (see genHKL_np())
+
+    :returns: numpy array (m,3) of [H,K,L]  m<=n
+    """
+    H, K, L = HKL.T
+
+    if verbose:
+        print("nb of reflections before extinctions %d" % len(HKL))
+
+    # 'dia' adds selection rules to those of 'fcc'
+    if Extinc in ("fcc", "dia"):
+        cond1 = ((H - K) % 2 == 0) * ((H - L) % 2 == 0)
+        if Extinc == "dia":
+            conddia = ((H + K + L) % 4) != 2
+            cond1 = cond1 * conddia
+
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
+    elif Extinc == "bcc":
+        cond1 = (H + K + L) % 2 == 0
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
+    elif Extinc == "h+k=2n":  # group space 12  I2/m
+        cond1 = (H + K) % 2 == 0
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
+    elif Extinc == "h+k+l=2n":  # group space 139 indium
+        cond1 = (H + K + L) % 2 == 0
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
+    elif Extinc == "Al2O3":
+        cond1 = (-H + K + L) % 3 == 0
+        cond2 = (L) % 2 == 0
+        cond = cond1 * cond2
+        array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
+
+    elif Extinc == "Ti2AlN":
+
+        # wurtzite condition
+        condfirst = (H == K) * ((L % 2) != 0)
+        array_hkl_1 = np.delete(HKL, np.where(condfirst == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+
+        # other conditions due to symmetries
+        cond_lodd = (L) % 2 == 1
+        cond1 = (H - K) % 3 == 0
+
+        cond = cond_lodd * cond1
+        array_hkl = np.delete(array_hkl_1, np.where(cond == True)[0], axis=0)
+
+    elif Extinc == "wurtzite":
+        cond1 = H - K == 0
+        cond2 = (L) % 2 != 0
+        cond = cond1 * cond2
+        array_hkl = np.delete(HKL, np.where(cond == True)[0], axis=0)
+
+    #         H, K, L = array_hkl_1.T
+
+    #         cond3 = ((L) % 2 != 0)
+    #         array_hkl_2 = np.delete(array_hkl_1, np.where(cond3 == True)[0], axis=0)
+    #
+    #         H, K, L = array_hkl_2.T
+
+    #         cond4 = ((L) % 2 == 0)
+    #         cond5 = (((H - K) % 3) != 0)
+    #
+    #         cond6 = cond4 * cond5
+    #
+    #         array_hkl = np.take(array_hkl_1, np.where(cond6 == True)[0], axis=0)
+
+    elif Extinc == "magnetite":  # GS 227
+        # TODO not working ...
+        cond = ((H + K) % 2 == 0) * ((H + L) % 2 == 0) * ((K + L) % 2 == 0)
+
+        array_hkl_1 = np.take(HKL, np.where(cond == True)[0], axis=0)
+
+        print("len", len(array_hkl_1))
+
+        H, K, L = array_hkl_1.T
+
+        cond0kl_1 = ((K) % 2 == 0) * ((L) % 2 == 0) * ((K + L) % 4 != 0)
+        cond0kl_2 = ((H) % 2 == 0) * ((L) % 2 == 0) * ((H + L) % 4 != 0)
+        cond0kl_3 = ((H) % 2 == 0) * ((K) % 2 == 0) * ((H + K) % 4 != 0)
+
+        cond0kl = (H == 0) * cond0kl_1 + (K == 0) * cond0kl_2 + (L == 0) * cond0kl_3
+
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond0kl == True)[0], axis=0)
+
+        print("len", len(array_hkl_2))
+
+        H, K, L = array_hkl_2.T
+
+        condhhl_1 = (H == K) * ((H + L) % 2 != 0)
+        condhhl_2 = (K == L) * ((L + H) % 2 != 0)
+        condhhl_3 = (L == H) * ((H + K) % 2 != 0)
+
+        condhhl = condhhl_1 + condhhl_2 + condhhl_3
+
+        array_hkl_3 = np.delete(array_hkl_2, np.where(condhhl == True)[0], axis=0)
+
+        print("len 3", len(array_hkl_3))
+
+        H, K, L = array_hkl_3.T
+
+        condh00_1 = (K == 0) * (L == 0) * (H % 4 != 0)
+        condh00_2 = (L == 0) * (H == 0) * (K % 4 != 0)
+        condh00_3 = (H == 0) * (K == 0) * (L % 4 != 0)
+
+        condh00 = condh00_1 + condh00_2 + condh00_3
+
+        array_hkl_0 = np.delete(array_hkl_3, np.where(condh00 == True)[0], axis=0)
+
+        print("len f", len(array_hkl_0))
+
+        H, K, L = array_hkl_0.T
+
+        cond8a = ((H % 2 == 1) + (K % 2 == 1) + (L % 2 == 1)) + ((H + K + L) % 4 == 0)
+
+        array_hkl_00 = np.take(array_hkl_0, np.where(cond8a == True)[0], axis=0)
+
+        print("len", len(array_hkl_00))
+
+        H, K, L = array_hkl_00.T
+
+        cond16d = (
+            ((H % 2 == 1) + (K % 2 == 1) + (L % 2 == 1))
+            + ((H % 4 == 2) * (K % 4 == 2) * (L % 4 == 2))
+            + ((H % 4 == 0) * (K % 4 == 0) * (L % 4 == 0))
+        )
+
+        array_hkl = np.take(HKL, np.where(cond16d == True)[0], axis=0)
+
+        print("len", len(array_hkl))
+
+    elif Extinc == "Al2O3_rhombo":
+        cond1 = (H - K) == 0
+        cond2 = (L) % 2 == 0
+        cond3 = (H + K + L) % 2 == 0
+        cond = cond1 * cond2 * cond3
+        array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
+
+    elif Extinc == "VO2_mono":
+        cond1a = K == 0
+        cond1b = (L) % 2 != 0
+        cond1 = cond1a * cond1b
+
+        array_hkl_1 = np.delete(HKL, np.where(cond1 == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+
+        cond2a = H == 0
+        cond2b = L == 0
+        cond2c = (K) % 2 != 0
+
+        cond2 = cond2a * cond2b * cond2c
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        cond3a = H == 0
+        cond3b = K == 0
+        cond3c = (L) % 2 != 0
+        cond3 = cond3a * cond3b * cond3c
+
+        array_hkl = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+    elif Extinc == "VO2_mono2":
+
+        cond1 = (H + K) % 2 != 0
+
+        array_hkl_1 = np.delete(HKL, np.where(cond1 == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+
+        cond2a = K == 0
+        cond2c = (H) % 2 != 0
+
+        cond2 = cond2a * cond2c
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        cond3a = H == 0
+        cond3c = (K) % 2 != 0
+        cond3 = cond3a * cond3c
+
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        cond4a = L == 0
+        cond4c = (H + K) % 2 != 0
+        cond4 = cond4a * cond4c
+
+        array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        cond5a = H == 0
+        cond5b = L == 0
+        cond5c = (K) % 2 != 0
+        cond5 = cond5a * cond5b * cond5c
+
+        array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
+        cond6a = K == 0
+        cond6b = L == 0
+        cond6c = (H) % 2 != 0
+        cond6 = cond6a * cond6b * cond6c
+
+        array_hkl = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
+    elif Extinc == "rutile":
+
+        cond1a = H == 0
+        cond1b = (K + L) % 2 != 0
+        cond1 = cond1a * cond1b
+
+        array_hkl_1 = np.delete(HKL, np.where(cond1 == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+
+        cond2a = H == 0
+        cond2b = K == 0
+        cond2c = (L) % 2 != 0
+
+        cond2 = cond2a * cond2b * cond2c
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        cond3a = K == 0
+        cond3b = L == 0
+        cond3c = (H) % 2 != 0
+        cond3 = cond3a * cond3b * cond3c
+
+        array_hkl = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+    # no extinction rules
+    else:
+        array_hkl = HKL
+
+    # removing the node 000
+    pos000 = np.where(np.all((array_hkl == 0), axis=1) == True)[0]
+    #     print 'pos000', pos000
+    array_hkl = np.delete(array_hkl, pos000, axis=0)
+
+    if verbose:
+        print("nb of reflections after extinctions %d" % len(array_hkl))
+
+    #     print "shape array_hkl", np.shape(array_hkl)
+    #     print array_hkl[:5]
+    return array_hkl
+
+
 def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     r"""
     create grain parameters list for the Laue pattern simulation

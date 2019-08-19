@@ -22,6 +22,233 @@ LAUETOOLSFOLDER = os.path.split(__file__)[0]
 print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
 
 WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
+
+##------------------------------------------------------------------------
+# --- -----------  Element-materials library
+#-------------------------------------------------------------------------
+# label, a,b,c,alpha, beta, gamma  in real space lattice, extinction rules label
+dict_Materials = {
+    "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
+    "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
+    "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
+    "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
+    "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
+    "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
+    "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
+    "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
+    "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
+    "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
+    "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
+    "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
+    "Getest": ["Getest", [5.6575, 5.6575, 5.6574, 90, 90, 90], "dia", ],  # c is slightly lower
+    "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
+    "Ge_s": ["Ge_s", [5.6575, 5.6575, 5.6575, 90, 90, 89.5], "dia", ],  # Ge a bit strained
+    "Ge_compressedhydro": ["Ge_compressedhydro", [5.64, 5.64, 5.64, 90, 90, 90.0], "dia", ],  # Ge compressed hydrostatically
+    "GaAs": ["GaAs", [5.65325, 5.65325, 5.65325, 90, 90, 90], "dia"],  # AsGa
+    "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
+    "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
+    "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
+    "Crocidolite_2_72deg": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 76.4, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
+    "Crocidolite_whittaker_1949": ["Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no", ],
+    "CCDL1949": ["CCDL1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "h+k=2n"],
+    "Crocidolite_small": ["Crocidolite_small", [9.76 / 3, 17.93 / 3, 5.35 / 3, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
+    "Hematite": ["Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
+    "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
+    "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
+    "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
+    "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
+    "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
+    "dummy": ["dummy", [4.0, 8.0, 2.0, 90, 90, 90], "no"],
+    "CdTe": ["CdTe", [6.487, 6.487, 6.487, 90, 90, 90], "fcc"],
+    "CdTeDiagB": ["CdTeDiagB", [4.5721, 7.9191, 11.1993, 90, 90, 90], "no"],
+    "DarinaMolecule": ["DarinaMolecule", [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], "no", ],
+    # 'NbSe3' :['NbSe3',[10.006, 3.48, 15.629],'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
+    "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
+    "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
+    "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
+    "DIA": ["DIA", [5.0, 5.0, 5.0, 90, 90, 90], "dia", ],  #  small lattice Diamond like Structure
+    "DIAs": ["DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
+    "FCC": ["FCC", [5.0, 5.0, 5.0, 90, 90, 90], "fcc"],  # small lattice fcc Structure
+    "SC": ["SC", [1.0, 1.0, 1.0, 90, 90, 90], "no"],  # 1Ang simple cubic Structure
+    "SC5": ["SC5", [5.0, 5.0, 5.0, 90, 90, 90], "no"],  # 5Ang simple cubic Structure
+    "SC7": ["SC7", [7.0, 7.0, 7.0, 90, 90, 90], "no"],  # 7Ang simple cubic Structure
+    "W": ["W", [3.1652, 3.1652, 3.1652, 90, 90, 90], "bcc"],
+    "testindex": ["testindex", [2.0, 1.0, 4.0, 90, 90, 90], "no"],
+    "testindex2": ["testindex2", [2.0, 1.0, 4.0, 75, 90, 120], "no"],
+    "Ti": ["Ti", [2.95, 2.95, 4.68, 90, 90, 120], "no"],
+    "Ti2AlN_w": ["Ti2AlN_w", [2.989, 2.989, 13.624, 90, 90, 120], "wurtzite"],
+    "Ti2AlN": ["Ti2AlN", [2.989, 2.989, 13.624, 90, 90, 120], "Ti2AlN"],
+    "Ti_beta": ["Ti_beta", [3.2587, 3.2587, 3.2587, 90, 90, 90], "bcc"],
+    "Ti_omega": ["Ti_omega", [4.6085, 4.6085, 2.8221, 90, 90, 120], "no"],
+    "alphaQuartz": ["alphaQuartz", [4.9, 4.9, 5.4, 90, 90, 120], "no"],
+    "betaQuartznew": ["betaQuartznew", [4.9, 4.9, 6.685, 90, 90, 120], "no"],
+    "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
+    "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
+    "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
+    "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
+    "InGaN": ["InGaN", [ (3.533 + 3.189) / 2.0, (3.533 + 3.189) / 2.0, (5.693 + 5.185) / 2.0, 90, 90, 120, ], "wurtzite", ],  # wegard's law
+    "Ti_s": ["Ti_s", [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], "no"],  # Ti strained
+    "inputB": ["inputB", [1.0, 1.0, 1.0, 90, 90, 90], "no"],
+    "bigpro": ["bigpro", [112.0, 112.0, 136.0, 90, 90, 90], "no"],  # big protein
+    "smallpro": ["smallpro", [20.0, 4.8, 49.0, 90, 90, 90], "no"],  # small protein
+    "Nd45": ["Nd45", [5.4884, 5.4884, 5.4884, 90, 90, 90], "fcc"],
+    "YAG": ["YAG", [9.2, 9.2, 9.2, 90, 90, 90], "no"],
+    "Cu6Sn5_tetra": ["Cu6Sn5_tetra", [3.608, 3.608, 5.037, 90, 90, 90], "no"],
+    "Cu6Sn5_monoclinic": ["Cu6Sn5_monoclinic", [11.02, 7.28, 9.827, 90, 98.84, 90], "no", ],
+    "Sn": ["Sn", [5.83, 5.83, 3.18, 90, 90, 90], "h+k+l=2n"], # we may add hhl: 2h+l=4n
+    "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
+    "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
+    "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
+    "hexagonal": ["hexagonal", [1.0, 1.0, 3.0, 90, 90, 120.0], "no"],
+    "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
+    "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
+    "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite", ],
+    "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
+    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
+    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
+}
+
+dict_Materials_short = {
+    "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
+    "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
+    "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
+    "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
+    "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
+    "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
+    "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
+    "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
+    "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
+    "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
+    "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
+    "GaAs": ["GaAs", [5.65325, 5.65325, 5.65325, 90, 90, 90], "dia"],  # AsGa
+    "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
+    "Crocidolite_whittaker_1949": [ "Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no", ],
+    "Hematite": [ "Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
+    "Magnetite_fcc": [ "Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
+    "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
+    "Magnetite_sc": [ "Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
+    "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
+    "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
+    "CdTe": ["CdTe", [6.487, 6.487, 6.487, 90, 90, 90], "fcc"],
+    'NbSe3' :['NbSe3',[10.006, 3.48, 15.629],'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
+    "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
+    "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
+    "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
+    "DIAs": [ "DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
+    "W": ["W", [3.1652, 3.1652, 3.1652, 90, 90, 90], "bcc"],
+    "Ti": ["Ti", [2.95, 2.95, 4.68, 90, 90, 120], "no"],
+    "Ti2AlN_w": ["Ti2AlN_w", [2.989, 2.989, 13.624, 90, 90, 120], "wurtzite"],
+    "Ti2AlN": ["Ti2AlN", [2.989, 2.989, 13.624, 90, 90, 120], "Ti2AlN"],
+    "Ti_beta": ["Ti_beta", [3.2587, 3.2587, 3.2587, 90, 90, 90], "bcc"],
+    "Ti_omega": ["Ti_omega", [4.6085, 4.6085, 2.8221, 90, 90, 120], "no"],
+    "alphaQuartz": ["alphaQuartz", [4.9, 4.9, 5.4, 90, 90, 120], "no"],
+    "betaQuartznew": ["betaQuartznew", [4.9, 4.9, 6.685, 90, 90, 120], "no"],
+    "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
+    "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
+    "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
+    "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
+    "InGaN": [ "InGaN", [ (3.533 + 3.189) / 2.0, (3.533 + 3.189) / 2.0, (5.693 + 5.185) / 2.0, 90, 90, 120, ], "wurtzite", ],  # wegard's law
+    "bigpro": ["bigpro", [112.0, 112.0, 136.0, 90, 90, 90], "no"],  # big protein
+    "smallpro": ["smallpro", [20.0, 4.8, 49.0, 90, 90, 90], "no"],  # small protein
+    "Nd45": ["Nd45", [5.4884, 5.4884, 5.4884, 90, 90, 90], "fcc"],
+    "YAG": ["YAG", [9.2, 9.2, 9.2, 90, 90, 90], "no"],
+    "Sn": ["Sn", [5.83, 5.83, 3.18, 90, 90, 90], "h+k+l=2n"], # we may add hhl: 2h+l=4n
+    "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
+    "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
+    "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
+    "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
+    "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
+    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
+    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
+}
+
+def writeDict(dict, filename, writemode='a',sep=', '):
+    """write an ascii file of dict_Materials
+
+    :param dict: dict_Materials (see below)
+    :type dict: dict
+    :param filename: output file path
+    :type filename: str
+    :param writemode: 'a', to append existing file, 'w' to overwrite or create, defaults to 'a'
+    :type writemode: str, optional
+    :param sep: separator, defaults to ', '
+    :type sep: str, optional
+    """
+    with open(filename, writemode) as f:
+        for i in dict.keys():
+            f.write(i + ": " + sep.join([str(x) for x in dict[i]]) + "\n")
+
+def readDict(filename):
+    """read ascii dict written by writeDict()
+
+    :param filename: file path
+    :type filename: str
+    :raises ValueError: if an ascii line cannot be parsed
+    :return: dict of Materials parameters
+    :rtype: dict
+    """
+    with open(filename, "r") as f:
+        dict = {}
+        k = 1
+        for line in f:
+            key, val = readsinglelinedictfile(line)
+            if key in dict:
+                txt = 'In Materials file: %s line %d'%(filename, k)
+                txt += '\n'+line
+                txt += '\nkey_material : "%s" already exists!!!'%key
+                txt += '\nwith parameters: %s'%str(dict[key])
+                txt += '\nPlease find an other name or choose one of them!'
+                raise ValueError(txt)
+            dict[key] = val
+            k += 1
+        return dict
+
+import re
+def readsinglelinedictfile(line):
+    """parse a line of ascii file for dict Materials and return a single material key, value.
+    Value is a list of: key_material (str), list of 6 lattice parameters, extinction rules label (str)
+
+    :param line: line
+    :type line: str
+    :raises ValueError: if an ascii line cannot be parsed
+    :return: key, value
+    :rtype: tuple of 2 elements
+    """
+    listval = re.split("[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
+    #             print "listval", listval
+    liststring = []
+    listfloat = []
+    for elem in listval:
+        if len(elem) == 0:
+            continue
+        try:
+            val = float(elem)
+            listfloat.append(val)
+        except ValueError:
+            liststring.append(elem)
+
+    nbstrings = len(liststring)
+    nbval = len(listfloat)
+    #  print "nbval", nbval
+    # print("liststring",liststring)
+    # print("listfloat",listfloat)
+
+    if nbval != 6 or nbstrings != 3:
+        txt = "Something wrong, I can't parse the line %s!!\n"%line
+        txt += "Each line must look like :\n Cu: Cu, [3.6, 3.6, 3.6, 90, 90, 90], fcc"
+        raise ValueError(txt)
+    keydict = liststring[0]
+    valdict = [liststring[1], listfloat, liststring[2]]
+    return keydict, valdict
+
+dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"]}
+
+
+
+
+
 ######## Geometrey Default  ##############
 # Default constant
 DEFAULT_DETECTOR_DISTANCE = 70.0  # mm
@@ -215,225 +442,6 @@ DICT_LAUE_GEOMETRIES_INFO = {
 }
 
 
-# --- -----------  Element-materials library
-def writeDict(dict, filename, writemode='a',sep=', '):
-    """write an ascii file of dict_Materials
-    
-    :param dict: dict_Materials (see below)
-    :type dict: dict
-    :param filename: output file path
-    :type filename: str
-    :param writemode: 'a', to append existing file, 'w' to overwrite or create, defaults to 'a'
-    :type writemode: str, optional
-    :param sep: separator, defaults to ', '
-    :type sep: str, optional
-    """
-    with open(filename, writemode) as f:
-        for i in dict.keys():
-            f.write(i + ": " + sep.join([str(x) for x in dict[i]]) + "\n")
-
-def readDict(filename):
-    """read ascii dict written by writeDict()
-
-    :param filename: file path
-    :type filename: str
-    :raises ValueError: if an ascii line cannot be parsed
-    :return: dict of Materials parameters
-    :rtype: dict
-    """
-    with open(filename, "r") as f:
-        dict = {}
-        k = 1
-        for line in f:
-            key, val = readsinglelinedictfile(line)
-            if key in dict:
-                txt = 'In Materials file: %s line %d'%(filename, k)
-                txt += '\n'+line
-                txt += '\nkey_material : "%s" already exists!!!'%key
-                txt += '\nwith parameters: %s'%str(dict[key])
-                txt += '\nPlease find an other name or choose one of them!'
-                raise ValueError(txt)
-            dict[key] = val
-            k += 1
-        return dict
-
-import re
-def readsinglelinedictfile(line):
-    """parse a line of ascii file for dict Materials and return a single material key, value.
-    Value is a list of: key_material (str), list of 6 lattice parameters, extinction rules label (str)
-
-    :param line: line
-    :type line: str
-    :raises ValueError: if an ascii line cannot be parsed
-    :return: key, value
-    :rtype: tuple of 2 elements
-    """
-    listval = re.split("[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
-    #             print "listval", listval
-    liststring = []
-    listfloat = []
-    for elem in listval:
-        if len(elem) == 0:
-            continue
-        try:
-            val = float(elem)
-            listfloat.append(val)
-        except ValueError:
-            liststring.append(elem)
-
-    nbstrings = len(liststring)
-    nbval = len(listfloat)
-    #  print "nbval", nbval
-    # print("liststring",liststring)
-    # print("listfloat",listfloat)
-
-    if nbval != 6 or nbstrings != 3:
-        txt = "Something wrong, I can't parse the line %s!!\n"%line
-        txt += "Each line must look like :\n Cu: Cu, [3.6, 3.6, 3.6, 90, 90, 90], fcc"
-        raise ValueError(txt)
-    keydict = liststring[0]
-    valdict = [liststring[1], listfloat, liststring[2]]
-    return keydict, valdict
-
-# label, a,b,c,alpha, beta, gamma  in real space lattice, extinction rules label
-dict_Materials = {
-    "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
-    "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
-    "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
-    "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
-    "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
-    "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
-    "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
-    "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
-    "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
-    "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
-    "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
-    "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
-    "Getest": ["Getest", [5.6575, 5.6575, 5.6574, 90, 90, 90], "dia", ],  # c is slightly lower
-    "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
-    "Ge_s": ["Ge_s", [5.6575, 5.6575, 5.6575, 90, 90, 89.5], "dia", ],  # Ge a bit strained
-    "Ge_compressedhydro": ["Ge_compressedhydro", [5.64, 5.64, 5.64, 90, 90, 90.0], "dia", ],  # Ge compressed hydrostatically
-    "GaAs": ["GaAs", [5.65325, 5.65325, 5.65325, 90, 90, 90], "dia"],  # AsGa
-    "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
-    "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
-    "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
-    "Crocidolite_2_72deg": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 76.4, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
-    "Crocidolite_whittaker_1949": ["Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no", ],
-    "CCDL1949": ["CCDL1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "h+k=2n"],
-    "Crocidolite_small": ["Crocidolite_small", [9.76 / 3, 17.93 / 3, 5.35 / 3, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
-    "Hematite": ["Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
-    "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
-    "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
-    "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
-    "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
-    "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
-    "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
-    "dummy": ["dummy", [4.0, 8.0, 2.0, 90, 90, 90], "no"],
-    "CdTe": ["CdTe", [6.487, 6.487, 6.487, 90, 90, 90], "fcc"],
-    "CdTeDiagB": ["CdTeDiagB", [4.5721, 7.9191, 11.1993, 90, 90, 90], "no"],
-    "DarinaMolecule": ["DarinaMolecule", [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], "no", ],
-    # 'NbSe3' :['NbSe3',[10.006, 3.48, 15.629],'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
-    "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
-    "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
-    "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
-    "DIA": ["DIA", [5.0, 5.0, 5.0, 90, 90, 90], "dia", ],  #  small lattice Diamond like Structure
-    "DIAs": ["DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
-    "FCC": ["FCC", [5.0, 5.0, 5.0, 90, 90, 90], "fcc"],  # small lattice fcc Structure
-    "SC": ["SC", [1.0, 1.0, 1.0, 90, 90, 90], "no"],  # 1Ang simple cubic Structure
-    "SC5": ["SC5", [5.0, 5.0, 5.0, 90, 90, 90], "no"],  # 5Ang simple cubic Structure
-    "SC7": ["SC7", [7.0, 7.0, 7.0, 90, 90, 90], "no"],  # 7Ang simple cubic Structure
-    "W": ["W", [3.1652, 3.1652, 3.1652, 90, 90, 90], "bcc"],
-    "testindex": ["testindex", [2.0, 1.0, 4.0, 90, 90, 90], "no"],
-    "testindex2": ["testindex2", [2.0, 1.0, 4.0, 75, 90, 120], "no"],
-    "Ti": ["Ti", [2.95, 2.95, 4.68, 90, 90, 120], "no"],
-    "Ti2AlN_w": ["Ti2AlN_w", [2.989, 2.989, 13.624, 90, 90, 120], "wurtzite"],
-    "Ti2AlN": ["Ti2AlN", [2.989, 2.989, 13.624, 90, 90, 120], "Ti2AlN"],
-    "Ti_beta": ["Ti_beta", [3.2587, 3.2587, 3.2587, 90, 90, 90], "bcc"],
-    "Ti_omega": ["Ti_omega", [4.6085, 4.6085, 2.8221, 90, 90, 120], "no"],
-    "alphaQuartz": ["alphaQuartz", [4.9, 4.9, 5.4, 90, 90, 120], "no"],
-    "betaQuartznew": ["betaQuartznew", [4.9, 4.9, 6.685, 90, 90, 120], "no"],
-    "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
-    "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
-    "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
-    "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
-    "InGaN": ["InGaN", [ (3.533 + 3.189) / 2.0, (3.533 + 3.189) / 2.0, (5.693 + 5.185) / 2.0, 90, 90, 120, ], "wurtzite", ],  # wegard's law
-    "Ti_s": ["Ti_s", [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], "no"],  # Ti strained
-    "inputB": ["inputB", [1.0, 1.0, 1.0, 90, 90, 90], "no"],
-    "bigpro": ["bigpro", [112.0, 112.0, 136.0, 90, 90, 90], "no"],  # big protein
-    "smallpro": ["smallpro", [20.0, 4.8, 49.0, 90, 90, 90], "no"],  # small protein
-    "Nd45": ["Nd45", [5.4884, 5.4884, 5.4884, 90, 90, 90], "fcc"],
-    "YAG": ["YAG", [9.2, 9.2, 9.2, 90, 90, 90], "no"],
-    "Cu6Sn5_tetra": ["Cu6Sn5_tetra", [3.608, 3.608, 5.037, 90, 90, 90], "no"],
-    "Cu6Sn5_monoclinic": ["Cu6Sn5_monoclinic", [11.02, 7.28, 9.827, 90, 98.84, 90], "no", ],
-    "Sn": ["Sn", [5.83, 5.83, 3.18, 90, 90, 90], "no"],
-    "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
-    "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
-    "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
-    "hexagonal": ["hexagonal", [1.0, 1.0, 3.0, 90, 90, 120.0], "no"],
-    "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
-    "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
-    "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite", ],
-    "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
-    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
-    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
-}
-
-dict_Materials_short = {
-    "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
-    "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
-    "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
-    "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
-    "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
-    "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
-    "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
-    "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
-    "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
-    "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
-    "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
-    "GaAs": ["GaAs", [5.65325, 5.65325, 5.65325, 90, 90, 90], "dia"],  # AsGa
-    "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
-    "Crocidolite_whittaker_1949": [ "Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no", ],
-    "Hematite": [ "Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
-    "Magnetite_fcc": [ "Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
-    "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
-    "Magnetite_sc": [ "Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
-    "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
-    "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
-    "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
-    "CdTe": ["CdTe", [6.487, 6.487, 6.487, 90, 90, 90], "fcc"],
-    'NbSe3' :['NbSe3',[10.006, 3.48, 15.629],'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
-    "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
-    "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
-    "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
-    "DIAs": [ "DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
-    "W": ["W", [3.1652, 3.1652, 3.1652, 90, 90, 90], "bcc"],
-    "Ti": ["Ti", [2.95, 2.95, 4.68, 90, 90, 120], "no"],
-    "Ti2AlN_w": ["Ti2AlN_w", [2.989, 2.989, 13.624, 90, 90, 120], "wurtzite"],
-    "Ti2AlN": ["Ti2AlN", [2.989, 2.989, 13.624, 90, 90, 120], "Ti2AlN"],
-    "Ti_beta": ["Ti_beta", [3.2587, 3.2587, 3.2587, 90, 90, 90], "bcc"],
-    "Ti_omega": ["Ti_omega", [4.6085, 4.6085, 2.8221, 90, 90, 120], "no"],
-    "alphaQuartz": ["alphaQuartz", [4.9, 4.9, 5.4, 90, 90, 120], "no"],
-    "betaQuartznew": ["betaQuartznew", [4.9, 4.9, 6.685, 90, 90, 120], "no"],
-    "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
-    "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
-    "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
-    "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
-    "InGaN": [ "InGaN", [ (3.533 + 3.189) / 2.0, (3.533 + 3.189) / 2.0, (5.693 + 5.185) / 2.0, 90, 90, 120, ], "wurtzite", ],  # wegard's law
-    "bigpro": ["bigpro", [112.0, 112.0, 136.0, 90, 90, 90], "no"],  # big protein
-    "smallpro": ["smallpro", [20.0, 4.8, 49.0, 90, 90, 90], "no"],  # small protein
-    "Nd45": ["Nd45", [5.4884, 5.4884, 5.4884, 90, 90, 90], "fcc"],
-    "YAG": ["YAG", [9.2, 9.2, 9.2, 90, 90, 90], "no"],
-    "Sn": ["Sn", [5.83, 5.83, 3.18, 90, 90, 90], "no"],
-    "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
-    "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
-    "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
-    "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
-    "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
-    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
-    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
-}
-
-dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"]}
 
 # --- -------------- History of Calibration Parameters
 dict_calib = {

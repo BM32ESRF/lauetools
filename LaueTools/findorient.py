@@ -1150,7 +1150,7 @@ def find_lowest_Euler_Angles_matrix(mat):
 
 
 def GenerateLookUpTable(hkl_all, Gstar):
-    """
+    r"""
     Generate Look Up Table of angles between hkl directions
     for an unit cell defined by (reciprocal) metric tensor Gstar
 
@@ -1161,10 +1161,11 @@ def GenerateLookUpTable(hkl_all, Gstar):
 
     outputs:
 
-    sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
     sorted_ind            : array of indices of original indy array when sorting the array of angles
+    sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
     indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
     tab_side_size        : size of the square pairs angles matrix
+    hkl_all    :  input hkls set used 
     """
 
     # compute square matrix containing angles
@@ -1179,10 +1180,7 @@ def GenerateLookUpTable(hkl_all, Gstar):
     # from square interangles matrix (from the same set of hkl)
     tab_side_size = tab_angulardist.shape[0]
     indy = GT.indices_in_flatTriuMatrix(tab_side_size)
-    angles_set = np.take(
-        tab_angulardist, indy
-    )  # 1D array (flatten automatically tab_angulardist)
-
+    angles_set = np.take(tab_angulardist, indy)  # 1D array (flatten automatically tab_angulardist)
     # sort indices (from 1D array) from angle values
     sorted_ind = np.argsort(angles_set)
     sorted_angles = angles_set[sorted_ind]
@@ -1191,7 +1189,7 @@ def GenerateLookUpTable(hkl_all, Gstar):
 
 
 def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0, dictmaterials=DictLT.dict_Materials):
-    """
+    r"""
     Generate Look Up Table of angles between hkl1 and hkl2 directions
     for an unit cell defined in dict_LaueTools.py in material dictionnary
 
@@ -1266,22 +1264,30 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     sorted_ind = np.argsort(angles_set)
     sorted_angles = angles_set[sorted_ind]
 
+    #print('sorted_ind',sorted_ind)
+
     sorted_ind_ij = GT.convert2indices(sorted_ind, tab_angulardist.shape)
     #     print "finished GenerateLookUpTable_from2sets"
     return sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist.shape
 
 
-def QueryLUT(LUT, query_angle, tolerance_angle, verbose=0):
+def QueryLUT(LUT, query_angle, tolerance_angle, LUTfraction=2, verbose=0):
     """
     Query the LUT and return the atomic planes pairs solutions
     ( that form an angle close to query_angle within tolerance_angle)
 
     LUT has been  built from a square interdistance angles from one hkl list with itself
-    """
-    # in sorted angles
-    indices = np.where((np.abs(LUT[1] - query_angle)) < tolerance_angle)[0]
 
-    angles_close = np.take(LUT[1], indices)
+    halfLUT : (int) fraction of LUT angles to be used (to increase speed).
+    Reference angles are comprised from 0 to 180deg. For recognition of Laue Pattern collected 2D detector
+    of even rather large area , only angles from 0 to 90 (fraction =2) are necessary. (even shorter range may be used) 
+    """
+    RefAngles = LUT[1][:len(LUT[1])//LUTfraction]
+
+    # in sorted angles
+    indices = np.where((np.abs(RefAngles - query_angle)) < tolerance_angle)[0]
+
+    angles_close = np.take(RefAngles, indices)
     # in absolute indice in 1d triangular up wo diagonal frame
     index_in_triu = np.take(LUT[0], indices)
     index_in_triu_orig = np.take(LUT[2], index_in_triu)
@@ -1299,61 +1305,7 @@ def QueryLUT(LUT, query_angle, tolerance_angle, verbose=0):
     return planes_pairs, angles_close
 
 
-def buildLUT_fromMaterial(key_material, n, CheckAndUseCubicSymmetry=True, dictmaterials=DictLT.dict_Materials):
-    """
-    build reference angles LUT from all mutual angular distances
-    between hkls of two different sets
-
-    n    : highest hkls order
-
-    key_material        : element, material or structure label (string)
-
-    CheckAndUseCubicSymmetry  : False  to not restrict the LUT
-                                True   to restrict LUT (allowed only for cubic crystal)
-    """
-    latticeparams = dictmaterials[key_material][1]
-
-    return buildLUT_fromLatticeParams(
-        latticeparams, n, CheckAndUseCubicSymmetry=CheckAndUseCubicSymmetry
-    )
-
-
-def buildLUT_fromMaterial_nm(key_material, n, m, CheckAndUseCubicSymmetry=True, dictmaterials=DictLT.dict_Materials):
-    """
-    build reference angles LUT from all mutual angular distances
-    between hkls of two different sets
-
-    n    : highest hkls order of set 1
-    m    : highest hkls order of set 2
-
-    key_material        : element, material or structure label (string)
-
-    CheckAndUseCubicSymmetry  : False  to not restrict the LUT
-                                True   to restrict LUT (allowed only for cubic crystal)
-    """
-    latticeparams = dictmaterials[key_material][1]
-
-    restrictLUT = False
-    if CheckAndUseCubicSymmetry:
-        # LUT restriction given by crystal structure
-        restrictLUT = CP.isCubic(latticeparams)
-
-    hkls_1 = GT.threeindices_up_to(n, remove_negative_l=restrictLUT)
-    hkls_2 = GT.threeindices_up_to(m, remove_negative_l=restrictLUT)
-
-    if 1:  # filterharmonics:
-        #        hkl_all = CP.FilterHarmonics_2(hkl_all)
-        hkls_1 = FilterHarmonics(hkls_1)
-        hkls_2 = FilterHarmonics(hkls_2)
-
-    Gstar_metric = CP.Gstar_from_directlatticeparams(*latticeparams)
-    # GenerateLookUpTable
-    LUT = GenerateLookUpTable_from2sets(hkls_1, hkls_2, Gstar_metric, verbose=0)
-
-    return LUT
-
-
-def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
+def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, applyExtinctionRules=None):
     """
     build reference angles LUT from all mutual angular distances
     between hkls of two different sets
@@ -1366,6 +1318,9 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
 
     CheckAndUseCubicSymmetry  : False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
+
+    .. todo::
+        to be replaced by build_AnglesLUT() of indexingAnglesLUT module
     """
     restrictLUT = False
     if CheckAndUseCubicSymmetry:
@@ -1373,6 +1328,9 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
         restrictLUT = CP.isCubic(latticeparams)
 
     hkl_all = GT.threeindices_up_to(n, remove_negative_l=restrictLUT)
+
+    if applyExtinctionRules is not None:
+        hkl_all = CP.ApplyExtinctionrules(hkl_all,applyExtinctionRules)
 
     if 1:  # filterharmonics:
         #        hkl_all = CP.FilterHarmonics_2(hkl_all)
@@ -1384,11 +1342,12 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True):
 
     return LUT
 
-    
-def Build_Cubic_shortLUTs():
 
-    nLUT=5
-    lut=buildLUT_fromLatticeParams([5,5,5,90.,90,.90],nLUT)
+def Build_Cubic_shortLUTs():
+    """build reference angles in several short range (to be used for cliques search)
+    """
+    nLUT = 5
+    lut = buildLUT_fromLatticeParams([5, 5, 5, 90., 90, .90], nLUT)
     sangles = lut[1]
     # limitsAngles
     Anglemin, Anglemax = 19, 90
@@ -1402,7 +1361,8 @@ def Build_Cubic_shortLUTs():
     with open(filename, "wb") as f:
         pickle.dump(sortedangles, f)
 
-    Mins, Maxs = [40,45,50,55,60,18,18,10,10],[90,90,90,90,90,45,60,45,60]
+    Mins, Maxs = ([40, 45, 50, 55, 60, 18, 18, 10, 10],
+                [90, 90, 90, 90, 90, 45, 60, 45, 60])
     for Anglemin, Anglemax in zip(Mins, Maxs):
     
         esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
@@ -1413,8 +1373,9 @@ def Build_Cubic_shortLUTs():
         with open(filename, "wb") as f:
             pickle.dump(sortedangles, f)
 
+
 def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=DictLT.dict_Materials):
-    """
+    r"""
     Return hlk couples and corresponding angle that match the input angle within the tolerance angle
 
     nLUT   :  order of the LUT
@@ -1435,14 +1396,12 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=Di
     return sol
 
 
-def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
+def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verbose=0):
     """
     return pairs of lattice hkl planes
     whose mutual angles between normals are the closest to the given query_angle within tolerance
 
     USED in manual indexation
-
-    LUT is an input argument !! then main part is the same as in PlanePairs
 
     input:
     query_angle        : angle in deg to look up in the generated angle table
@@ -1455,9 +1414,14 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
+    LUTfraction:   fraction reference angles from 0 to 180 deg to consider. 2 is sufficient (0-90 deg)
+                            for common 2D plane detector geomtery 
+
     TODO: many target angles
     """
     sorted_ind, sorted_angles, indy, tab_side_size, hkl_all = LUT
+
+    RefAngles = sorted_angles[:len(sorted_angles)//LUTfraction]
 
     angular_tolerance_Recognition = angle_tol
     angle_query = query_angle
@@ -1472,18 +1436,19 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
 
     # only planes pairs corresponding to one matched angle are returned
     # taking the first value of angle_target
-    if onlyclosest:
-        closest_index_in_sorted_angles_raw = GT.find_closest(
-            sorted_angles, np.array([angle_query]), angular_tolerance_Recognition
-        )[0]
 
-        closest_angle = sorted_angles[closest_index_in_sorted_angles_raw][0]
+    if onlyclosest:
+        closest_index_in_sorted_angles_raw = GT.find_closest(RefAngles,
+                                            np.array([angle_query]),
+                                            angular_tolerance_Recognition)[0]
+
+        closest_angle = RefAngles[closest_index_in_sorted_angles_raw][0]
         # print "Closest_angle",closest_angle
 
         if abs(closest_angle - angle_query) <= angle_tol:
 
             # in case of many similar angles...
-            close_angles_duplicates = np.where(sorted_angles == closest_angle)[0]
+            close_angles_duplicates = np.where(RefAngles == closest_angle)[0]
 
             if len(close_angles_duplicates) > 1:
 
@@ -1521,7 +1486,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
     # (defined by query_angle and angle_tol) are returned
     else:  # onlyclosest = 0
 
-        condition = np.abs(sorted_angles - angle_query) < angular_tolerance_Recognition
+        condition = np.abs(RefAngles - angle_query) < angular_tolerance_Recognition
         closest_indices_in_sorted_angles_raw = np.where(condition)
 
         if len(closest_indices_in_sorted_angles_raw[0]) > 1:
@@ -1546,7 +1511,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
                         "  ,  ",
                         pair[1],
                         " > = %.6f "
-                        % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]],
+                        % RefAngles[closest_indices_in_sorted_angles_raw[0][k]],
                     )
             return planes_pairs
 
@@ -1554,134 +1519,6 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, verbose=0):
             if angle_query > 0.5:
                 #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
                 #                 print "Nearest angle found is %s deg\n" % str(sorted_ind)
-                pass
-            return None
-
-
-def PlanePairs(
-    query_angle, angle_tol, Gstar, n, onlyclosest=1, filterharmonics=1, verbose=0
-):
-    """
-    return pairs of lattice hkl planes
-    whose angle between normals are the closest to the given query_angle within tolerance
-
-    LUT is computed during the function
-
-    input:
-    query_angle        : angle in deg to look up in the generated angle table
-    angle_tol            : angular tolerance when look up in the generated reference angle table
-
-    Gstar                : metric tensor of the unit cell structure
-    n                    : maximum index for generating reference angle table from Gstar
-
-    onlyclosest            : 1 for considering only one angle value closest to query_angle
-                            (only planes pairs corresponding to one matched angle are returned)
-                        : 0 for considering all angle close to query_angle within angle_tol
-
-    TODO: many target angles
-    """
-    hkl_all = GT.threeindices_up_to(n)
-
-    if filterharmonics:
-        #         hkl_all = FilterHarmonics(hkl_all)
-        hkl_all = CP.FilterHarmonics_2(hkl_all)
-
-    # GenerateLookUpTable
-    LUT = GenerateLookUpTable(hkl_all, Gstar)
-
-    sorted_ind, sorted_angles, indy, tab_side_size, hkl_all = LUT
-
-    angular_tolerance_Recognition = angle_tol
-    angle_query = query_angle
-
-    # if angle_query is a tuple,array,list
-    if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
-        angle_query = query_angle[0]
-
-    # Find matching
-
-    # only planes pairs corresponding to one matched angle are returned
-    # taking the first value of angle_target
-    if onlyclosest:
-
-        closest_index_in_sorted_angles_raw = GT.find_closest(
-            sorted_angles, np.array([angle_query]), angular_tolerance_Recognition
-        )[0]
-        closest_angle = sorted_angles[closest_index_in_sorted_angles_raw][0]
-        # print "Closest_angle",closest_angle
-
-        if abs(closest_angle - angle_query) <= angle_tol:
-
-            # in case of many similar angles...
-            close_angles_duplicates = np.where(sorted_angles == closest_angle)[0]
-
-            if len(close_angles_duplicates) > 1:
-
-                # print "\nThere are several angles in structure from different lattice plane pairs that are equal\n"
-                closest_index_in_sorted_angles_raw = close_angles_duplicates
-
-            # in sorted triu
-            index_in_triu = np.take(sorted_ind, closest_index_in_sorted_angles_raw)
-            # in original trio
-            index_in_triu_orig = np.take(indy, index_in_triu)
-            IJ_indices = GT.indices_in_TriuMatrix(index_in_triu_orig, tab_side_size)
-
-            planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
-
-            if verbose:
-                print(
-                    "\n within %.3f and close to %.9f deg"
-                    % (angular_tolerance_Recognition, angle_query)
-                )
-                for pair in planes_pairs:
-                    print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
-
-            return planes_pairs
-
-        else:
-            if angle_query > 0.5:
-                #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
-                #                 print "Nearest angle found is %.2f deg\n" % closest_angle
-                pass
-            return None
-
-    # planes pairs corresponding to all matched angles in angle range
-    # (defined by query_angle and angle_tol) are returned
-    else:  # onlyclosest = 0
-        closest_indices_in_sorted_angles_raw = np.where(
-            np.abs(sorted_angles - angle_query) < angular_tolerance_Recognition / 2.0
-        )
-
-        if len(closest_indices_in_sorted_angles_raw[0]) > 1:
-
-            # in sorted triu
-            index_in_triu = np.take(sorted_ind, closest_indices_in_sorted_angles_raw[0])
-            # in original trio
-            index_in_triu_orig = np.take(indy, index_in_triu)
-            IJ_indices = GT.indices_in_TriuMatrix(index_in_triu_orig, tab_side_size)
-
-            planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
-
-            if verbose:
-                print(
-                    "\n within %.3f and close to %.9f deg"
-                    % (angular_tolerance_Recognition, angle_query)
-                )
-                for k, pair in enumerate(planes_pairs):
-                    print(
-                        "< ",
-                        pair[0],
-                        "  ,  ",
-                        pair[1],
-                        " > = %.6f "
-                        % sorted_angles[closest_indices_in_sorted_angles_raw[0][k]],
-                    )
-            return planes_pairs
-
-        else:
-            if angle_query > 0.5:
-                #                 print "\nthere is no angle close to %.2f within %.2f deg" % (angle_query, angular_tolerance_Recognition)
-                #                 print "Nearest angle found is %.2f deg\n" % sorted_ind
                 pass
             return None
 
@@ -1713,6 +1550,8 @@ def PlanePairs_from2sets(
     onlyclosest            : 1 for considering only one angle value closest to query_angle
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
+
+    .. note:: used in FileSeries
 
     TODO: many target angles in this function
     """
@@ -1820,27 +1659,16 @@ def PlanePairs_from2sets(
         print("len(plane_1)", len(plane_1))
         print("len(plane_2)", len(plane_2))
         print("planes_pairs", planes_pairs)
-        print(
-            "\n Lattice Planes pairs found within %.3f and close to %.9f deg"
-            % (angular_tolerance_Recognition, angle_query)
-        )
+        print("\n Lattice Planes pairs found within %.3f and close to %.9f deg"
+            % (angular_tolerance_Recognition, angle_query))
         if len(plane_1) > 1:
             for k, pair in enumerate(planes_pairs):
-                print(
-                    "< ",
-                    pair[0],
-                    " , ",
-                    pair[1],
-                    " > = %.2f, AngDev %.2f" % (closest_angles_values[k], AngDev[k]),
-                )
+                print("< ", pair[0], " , ",
+                            pair[1], " > = %.2f, AngDev %.2f" % (closest_angles_values[k],
+                            AngDev[k]))
         else:
-            print(
-                "< ",
-                planes_pairs[0],
-                "  ,  ",
-                planes_pairs[1],
-                " > = %.6f " % closest_angles_values,
-            )
+            print("< ", planes_pairs[0], "  ,  ",
+                        planes_pairs[1], " > = %.6f " % closest_angles_values)
     return planes_pairs, LUT
 
 
@@ -1876,6 +1704,7 @@ def FilterHarmonics(hkl):
     # print "pos_zeros",pos_zeros
 
     if len(pos_zeros) > 0:
+        # print('ind_in_flat_a[pos_zeros]',ind_in_flat_a[pos_zeros])
         hkls_pairs_index = GT.indices_in_TriuMatrix(ind_in_flat_a[pos_zeros], SA[0])
         hkls_pairs = np.take(hkl, hkls_pairs_index, axis=0)
 

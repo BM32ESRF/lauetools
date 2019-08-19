@@ -680,6 +680,7 @@ def Angular_residues_np(
     .. note::
         * used in manual indexation
         * Used in AutoIndexation module
+        * Used in FileSeries
 
     :param twicetheta_data: experimental 2theta angles of scattered beams or spots (kf vectors)
     :type twicetheta_data: array

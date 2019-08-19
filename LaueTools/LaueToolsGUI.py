@@ -1101,8 +1101,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print( "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-                                    self.indexation_parameters["DataToIndex"]["data_theta"])
+        # print( "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
+        #                             self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
         self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
@@ -5400,6 +5400,8 @@ class ManualIndexFrame(wx.Frame):
         self.rough_tolangle = rough_tolangle
         self.fine_tolangle = fine_tolangle
 
+        MaxRadiusHKL = True
+
         USETHREAD = 1
         if USETHREAD:
             # with a thread 2----------------------------------------
@@ -5417,7 +5419,7 @@ class ManualIndexFrame(wx.Frame):
                     "ang_tol_MR": fine_tolangle,
                     "detectorparameters": detectorparameters,
                     "LUT": None,
-                    "MaxRadiusHKL": False,
+                    "MaxRadiusHKL": MaxRadiusHKL,
                     "verbose": 0,
                     "verbosedetails": verbosedetails,
                     "Minimum_Nb_Matches": Nb_criterium,
@@ -5468,7 +5470,7 @@ class ManualIndexFrame(wx.Frame):
                 ang_tol_MR=fine_tolangle,
                 detectorparameters=detectorparameters,
                 LUT=None,
-                MaxRadiusHKL=False,
+                MaxRadiusHKL=MaxRadiusHKL,
                 verbose=0,
                 verbosedetails=verbosedetails,
                 Minimum_Nb_Matches=Nb_criterium,

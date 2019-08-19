@@ -247,16 +247,6 @@ if 1:  # some tests to play with angles LUT
         12.58, 1.0, hkl1, hkl2, "Cu", onlyclosest=1, filterharmonics=1, verbose=1
     )
 
-    # Gstar = np.eye(3)
-    # pp = PlanePairs(56.6, 2, Gstar, 3, onlyclosest = 0, filterharmonics = 0, verbose = 0)
-
-    # test_hkl = GT.Positiveindices_up_to(3)
-    # purgedhkl = FilterHarmonics(test_hkl)
-
-    # Gstar = np.eye(3)
-    # pp = PlanePairs(56.6, 3, Gstar,1, onlyclosest = 1, verbose = 0)
-    # purged_pp = FilterEquivalentPairsHKL(pp)
-
 if 0:  # test of orient matrix from distorted unit cell
 
     from numpy import *

@@ -46,21 +46,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     a single peak list with a single material or structure
     """
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        indexation_parameters,
-        title,
-        StorageDict=None,
-        DataSetObject=None,
-    ):
+    def __init__(self, parent, _id, indexation_parameters, title,
+                                        StorageDict=None, DataSetObject=None):
 
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
 
-        self.panel = wx.Panel(
-            self, -1, style=wx.SIMPLE_BORDER, size=(690, 385), pos=(5, 5)
-        )
+        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(690, 385), pos=(5, 5))
 
         if parent is not None:
             self.parent = parent
@@ -74,18 +65,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.dict_Materials = indexation_parameters["dict_Materials"]
         self.dict_Rot = indexation_parameters["dict_Rot"]
 
-        self.current_exp_spot_index_list = indexation_parameters["DataToIndex"][
-            "current_exp_spot_index_list"
-        ]
+        self.current_exp_spot_index_list = indexation_parameters["DataToIndex"]["current_exp_spot_index_list"]
         #         print "self.current_exp_spot_index_list", self.current_exp_spot_index_list
         self.data_theta = indexation_parameters["DataToIndex"]["data_theta"]
         self.data_chi = indexation_parameters["DataToIndex"]["data_chi"]
         self.data_I = indexation_parameters["DataToIndex"]["data_I"]
         self.dataXY_exp = indexation_parameters["DataToIndex"]["dataXY"]
 
-        self.ClassicalIndexation_Tabledist = indexation_parameters["DataToIndex"][
-            "ClassicalIndexation_Tabledist"
-        ]
+        self.ClassicalIndexation_Tabledist = indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"]
 
         self.defaultParam = indexation_parameters["detectorparameters"]
         self.detectordiameter = indexation_parameters["detectordiameter"]
@@ -97,38 +84,22 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.datatype = "2thetachi"
 
         self.CCDdetectorparameters = {}
-        self.CCDdetectorparameters["CCDcalib"] = indexation_parameters[
-            "detectorparameters"
-        ]
+        self.CCDdetectorparameters["CCDcalib"] = indexation_parameters["detectorparameters"]
         self.CCDdetectorparameters["framedim"] = indexation_parameters["dim"]
         self.CCDdetectorparameters["pixelsize"] = indexation_parameters["pixelsize"]
         self.CCDdetectorparameters["CCDLabel"] = indexation_parameters["CCDLabel"]
-        self.CCDdetectorparameters["detectorparameters"] = indexation_parameters[
-            "detectorparameters"
-        ]
-        self.CCDdetectorparameters["detectordiameter"] = indexation_parameters[
-            "detectordiameter"
-        ]
+        self.CCDdetectorparameters["detectorparameters"] = indexation_parameters["detectorparameters"]
+        self.CCDdetectorparameters["detectordiameter"] = indexation_parameters["detectordiameter"]
 
         self.IndexationParameters = indexation_parameters
-        self.IndexationParameters["Filename"] = indexation_parameters[
-            "DataPlot_filename"
-        ]
-        self.IndexationParameters["DataPlot_filename"] = indexation_parameters[
-            "DataPlot_filename"
-        ]
-        self.IndexationParameters["current_processedgrain"] = indexation_parameters[
-            "current_processedgrain"
-        ]
-        self.IndexationParameters["mainAppframe"] = indexation_parameters[
-            "mainAppframe"
-        ]
+        self.IndexationParameters["Filename"] = indexation_parameters["DataPlot_filename"]
+        self.IndexationParameters["DataPlot_filename"] = indexation_parameters["DataPlot_filename"]
+        self.IndexationParameters["current_processedgrain"] = indexation_parameters["current_processedgrain"]
+        self.IndexationParameters["mainAppframe"] = indexation_parameters["mainAppframe"]
         self.IndexationParameters["indexationframe"] = self
 
-        print(
-            "keys of self.IndexationParameters in DistanceScreeningIndexationBoard",
-            list(self.IndexationParameters.keys()),
-        )
+        # print("keys of self.IndexationParameters in DistanceScreeningIndexationBoard",
+        #                                     list(self.IndexationParameters.keys()))
 
         if self.CCDLabel in ("MARCCD165", "ROPER159", "VHR_PSI"):
             self.IndexationParameters["flipyaxis"] = True
@@ -148,30 +119,20 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.initGUI()
 
     def initGUI(self):
-        # GUI
-
+        """
+        GUI widgets
+        """
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
         title1 = wx.StaticText(self.panel, -1, "Parameters", (15, 15))
         title1.SetFont(font3)
-        wx.StaticText(
-            self.panel,
-            -1,
-            "Current File:        %s" % self.DataPlot_filename,
-            (180, 15),
-        )
+        wx.StaticText(self.panel, -1, "Current File:        %s" % self.DataPlot_filename, (180, 15))
 
         emaxtxt = wx.StaticText(self.panel, -1, "Energy max.: ", (50, 45))
-        self.emax = wx.SpinCtrl(
-            self.panel, -1, "22", (220, 40), (60, -1), min=10, max=150
-        )
+        self.emax = wx.SpinCtrl(self.panel, -1, "22", (220, 40), (60, -1), min=10, max=150)
 
-        resangtxt = wx.StaticText(
-            self.panel, -1, "Min. Resolved Lattice Spacing", (320, 45)
-        )
-        self.ResolutionAngstromctrl = wx.TextCtrl(
-            self.panel, -1, "False", (550, 45), (100, -1)
-        )
+        resangtxt = wx.StaticText(self.panel, -1, "Min. Resolved Lattice Spacing", (320, 45))
+        self.ResolutionAngstromctrl = wx.TextCtrl(self.panel, -1, "False", (550, 45), (100, -1))
 
         elemtxt = wx.StaticText(self.panel, -1, "Materials or Structure: ", (50, 75))
         self.SetMaterialsCombo(0)
@@ -182,26 +143,13 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (540, 75))
         self.nLUT = wx.TextCtrl(self.panel, -1, "3", (620, 70), (30, -1))
 
-        rsstxt = wx.StaticText(
-            self.panel, -1, "Recognition spots set Size(RSSS): ", (15, 115)
-        )
-        self.nbspotmax = wx.SpinCtrl(
-            self.panel, -1, "10", (270, 110), (60, -1), min=1, max=1000
-        )
+        rsstxt = wx.StaticText(self.panel, -1, "Recognition spots set Size(RSSS): ", (15, 115))
+        self.nbspotmax = wx.SpinCtrl(self.panel, -1, "10", (270, 110), (60, -1), min=1, max=1000)
 
         nbspots_in_data = len(self.current_exp_spot_index_list)
-        mssstxt = wx.StaticText(
-            self.panel, -1, "Matching spots set Size(MSSS): ", (370, 115)
-        )
-        self.nbspotmaxformatching = wx.SpinCtrl(
-            self.panel,
-            -1,
-            str(nbspots_in_data),
-            (600, 110),
-            (60, -1),
-            min=3,
-            max=nbspots_in_data,
-        )
+        mssstxt = wx.StaticText(self.panel, -1, "Matching spots set Size(MSSS): ", (370, 115))
+        self.nbspotmaxformatching = wx.SpinCtrl(self.panel, -1, str(nbspots_in_data), (600, 110),
+                                                        (60, -1), min=3, max=nbspots_in_data)
 
         cstxt = wx.StaticText(self.panel, -1, "Central spot(s)", (15, 143))
         cstxt2 = wx.StaticText(self.panel, -1, "ex: 0 or [0,1,2,8] ", (15, 160))
@@ -209,47 +157,30 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         cstxt3 = wx.StaticText(self.panel, -1, "(must be <= RSSS-1)", (15, 177))
 
         self.sethklchck = wx.CheckBox(self.panel, -1, "set hkl", (460, 143))
-        self.sethklcentral = wx.TextCtrl(
-            self.panel, -1, "[1,0,0]", (460, 177), (160, -1)
-        )
+        self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", (460, 177), (160, -1))
 
-        drtatxt = wx.StaticText(
-            self.panel, -1, "Dist. Recogn. Tol. Angle(deg)", (15, 210)
-        )
+        drtatxt = wx.StaticText(self.panel, -1, "Dist. Recogn. Tol. Angle(deg)", (15, 210))
         self.DRTA = wx.TextCtrl(self.panel, -1, "0.5", (250, 205))
 
-        mtatxt = wx.StaticText(
-            self.panel, -1, "Matching Tolerance Angle(deg)", (15, 240)
-        )
+        mtatxt = wx.StaticText(self.panel, -1, "Matching Tolerance Angle(deg)", (15, 240))
         self.MTA = wx.TextCtrl(self.panel, -1, "0.2", (250, 235))
 
-        mnmstxt = wx.StaticText(
-            self.panel, -1, "Minimum Number Matched Spots: ", (15, 270)
-        )
-        self.MNMS = wx.SpinCtrl(
-            self.panel, -1, "15", (250, 265), (60, -1), min=1, max=500
-        )
+        mnmstxt = wx.StaticText(self.panel, -1, "Minimum Number Matched Spots: ", (15, 270))
+        self.MNMS = wx.SpinCtrl(self.panel, -1, "15", (250, 265), (60, -1), min=1, max=500)
 
         self.showplotBox = wx.CheckBox(self.panel, -1, "Plot Best result", (15, 305))
         self.showplotBox.SetValue(False)
 
         wx.StaticText(self.panel, -1, "Max. Nb solutions", (170, 305))
-        self.Max_Nb_Solutions = wx.SpinCtrl(
-            self.panel, -1, "3", (300, 300), (60, -1), min=1, max=20
-        )
+        self.Max_Nb_Solutions = wx.SpinCtrl(self.panel, -1, "3", (300, 300), (60, -1), min=1, max=20)
 
         self.indexation_index = 0
-        self.config_irp_filename = (
-            self.DataPlot_filename[:-4] + "_%d.irp" % self.indexation_index
-        )
+        self.config_irp_filename = (self.DataPlot_filename[:-4] + "_%d.irp" % self.indexation_index)
         wx.StaticText(self.panel, -1, "Saving parameters in config file", (410, 300))
-        self.output_irp = wx.TextCtrl(
-            self.panel, -1, "%s" % self.config_irp_filename, (410, 320), size=(250, -1)
-        )
+        self.output_irp = wx.TextCtrl(self.panel, -1, "%s" % self.config_irp_filename,
+                                    (410, 320), size=(250, -1))
 
-        self.filterMatrix = wx.CheckBox(
-            self.panel, -1, "Remove equivalent Matrices (cubic symmetry)", (15, 340)
-        )
+        self.filterMatrix = wx.CheckBox(self.panel, -1, "Remove equivalent Matrices (cubic symmetry)", (15, 340))
         self.filterMatrix.SetValue(True)
 
         self.StartButton = wx.Button(self.panel, 1, "Start", (25, 380), (200, 60))
@@ -261,9 +192,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.verbose = wx.CheckBox(self.panel, -1, "Print details", (460, 220))
         self.verbose.SetValue(False)
 
-        self.textprocess = wx.StaticText(
-            self.panel, -1, "                     ", (400, 375)
-        )
+        self.textprocess = wx.StaticText(self.panel, -1, "                     ", (400, 375))
         self.gauge = wx.Gauge(self.panel, -1, 1000, (400, 400), size=(250, 25))
 
         self.sb = self.CreateStatusBar()
@@ -286,8 +215,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         elemtxt.SetToolTipString(elemtip)
 
         self.refresh.SetToolTipString(
-            "Refresh the Material list to admit new materials built in other LaueToolsGUI menus."
-        )
+            "Refresh the Material list to admit new materials built in other LaueToolsGUI menus.")
 
         luttip = "Choose the largest hkl index to build the reference angular distance Looking up Table (LUT). Given n, the LUT contains all mutual angles between normals of lattice planes from (0,0,1) to (n,n,n-1) types"
         luttxt.SetToolTipString(luttip)
@@ -340,15 +268,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     def SetMaterialsCombo(self, evt):
         self.list_materials = sorted(self.dict_Materials.keys())
 
-        self.combokeymaterial = wx.ComboBox(
-            self.panel,
-            4,
-            "Ge",
-            (220, 70),
-            size=(150, -1),
-            choices=self.list_materials,
-            style=wx.CB_READONLY,
-        )
+        self.combokeymaterial = wx.ComboBox(self.panel, 4, "Ge", (220, 70), size=(150, -1),
+                                        choices=self.list_materials, style=wx.CB_READONLY)
 
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)
 
@@ -398,28 +319,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         nbSpotsToIndex = 1000
 
-        List_Ctrls = [
-            self.combokeymaterial,
-            1,
-            5.0,
-            self.emax,
-            100.0,
-            self.DRTA,
-            MatchingAngleTol,
-            self.nbspotmax,
-            6,
-            self.spotlist,
-            self.ResolutionAngstromctrl,
-            self.nLUT,
-            sethklcentral,
-            True,
-            nbSpotsToIndex,
-            [MatchingAngleTol, MatchingAngleTol / 2.0],
-            self.spotsorder,
-        ]
-
-        #         for opt, val in zip(List_options, List_Ctrls):
-        #             print "%s =" % opt, val
+        List_Ctrls = [self.combokeymaterial, 1, 5.0, self.emax, 100.0,
+                        self.DRTA, MatchingAngleTol, self.nbspotmax, 6,
+                        self.spotlist, self.ResolutionAngstromctrl, self.nLUT,
+                        sethklcentral, True, nbSpotsToIndex,
+                        [MatchingAngleTol, MatchingAngleTol / 2.0],
+                        self.spotsorder]
 
         self.dict_param = {}
         flag = True
@@ -429,20 +334,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         for kk, option_key in enumerate(List_options):
             if not isinstance(List_Ctrls[kk], (int, str, list, float, bool)):
                 val = str(List_Ctrls[kk].GetValue())
-
-            #                 print "option_key,kk,val", option_key, kk, val
             else:
                 val = List_Ctrls[kk]
-
-            #             if not self.hascorrectvalue(kk, val):
-            #                 flag = False
-            #                 break
 
             self.dict_param[option_key] = val
 
         self.dict_param_list = [self.dict_param]
 
-        print("self.dict_param_list", self.dict_param_list)
+        # print("self.dict_param_list", self.dict_param_list)
 
         return flag
 
@@ -454,8 +353,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
     def OnStart(self, event):
         """
-        starts classical indexation:
-        recognition by the angular distance between two spots from a set of distances
+        starts automatic (classical) indexation:
+        
+        Recognition is based on the angular distance between two spots from a set of distances
         """
         energy_max = int(self.emax.GetValue())
 
@@ -512,12 +412,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             print("Preset Tabledistance is Not implemented !")
             return
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
         self.select_dataXY = (self.select_dataX, self.select_dataY)
 
@@ -567,29 +462,20 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.key_material = str(self.combokeymaterial.GetValue())
         latticeparams = self.dict_Materials[self.key_material][1]
         B = CP.calc_B_RR(latticeparams)
-        # print type(key_material)
-        # print type(nbmax_probed)
-        # print type(energy_max)
 
         # read maximum index of hkl for building angles Look Up Table(LUT)
         nLUT = self.nLUT.GetValue()
         try:
             n = int(nLUT)
             if n > 7:
-                wx.MessageBox(
-                    "! LUT Nmax is too high!\n This value is set to 7 ", "INFO"
-                )
+                wx.MessageBox("! LUT Nmax is too high!\n This value is set to 7 ", "INFO")
             elif n < 1:
-                wx.MessageBox(
-                    "! LUT Nmax is not positive!\n This value is set to 1 ", "INFO"
-                )
+                wx.MessageBox("! LUT Nmax is not positive!\n This value is set to 1 ", "INFO")
             n = min(7, n)
             n = max(1, n)
         except ValueError:
             print("!!  maximum index for building LUT is not an integer   !!!")
-            wx.MessageBox(
-                "! LUT Nmax is not an integer!\n This value is set to 3 ", "INFO"
-            )
+            wx.MessageBox("! LUT Nmax is not an integer!\n This value is set to 3 ", "INFO")
             n = 3
 
         rough_tolangle = float(self.DRTA.GetValue())
@@ -664,33 +550,34 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #
         #         return
 
-        # indexation procedure
-        print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
+        # autoindexation core procedure
+        # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
         self.bestmatrices, stats_res = INDEX.getOrientMatrices(
-            spot_index_central,
-            energy_max,
-            Tabledistance[:nbmax_probed, :nbmax_probed],
-            self.select_theta,
-            self.select_chi,
-            n=n,
-            ResolutionAngstrom=ResolutionAngstrom,
-            B=B,
-            cubicSymmetry=restrictLUT_cubicSymmetry,
-            LUT=None,
-            LUT_tol_angle=rough_tolangle,
-            MR_tol_angle=fine_tolangle,
-            Minimum_Nb_Matches=Minimum_MatchesNb,
-            key_material=self.key_material,
-            plot=0,
-            nbbestplot=nb_of_solutions_per_central_spot,
-            verbose=0,
-            detectorparameters=detectorparameters,
-            addMatrix=None,  # To add a priori good candidates...
-            set_central_spots_hkl=set_central_spots_hkl,
-            verbosedetails=1,  # verbosedetails,
-            gauge=self.gauge,
-            dictmaterials=self.IndexationParameters['dict_Materials']
-        )
+                                                spot_index_central,
+                                                energy_max,
+                                                Tabledistance[:nbmax_probed, :nbmax_probed],
+                                                self.select_theta,
+                                                self.select_chi,
+                                                n=n,
+                                                ResolutionAngstrom=ResolutionAngstrom,
+                                                B=B,
+                                                cubicSymmetry=restrictLUT_cubicSymmetry,
+                                                LUT=None,
+                                                LUT_tol_angle=rough_tolangle,
+                                                MR_tol_angle=fine_tolangle,
+                                                Minimum_Nb_Matches=Minimum_MatchesNb,
+                                                key_material=self.key_material,
+                                                plot=0,
+                                                nbbestplot=nb_of_solutions_per_central_spot,
+                                                verbose=0,
+                                                detectorparameters=detectorparameters,
+                                                addMatrix=None,  # To add a priori good candidates...
+                                                set_central_spots_hkl=set_central_spots_hkl,
+                                                verbosedetails=1,  # verbosedetails,
+                                                gauge=self.gauge,
+                                                dictmaterials=self.IndexationParameters['dict_Materials'],
+                                                MaxRadiusHKL=True
+                                            )
         # when nbbestplot is very high  self.bestmatrices contain all matrices
         # with matching rate above Minimum_MatchesNb
 
@@ -722,12 +609,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             print("Merging matrices")
             print("keep_only_equivalent = %s" % keep_only_equivalent)
             self.bestmatrices, stats_res = ISS.MergeSortand_RemoveDuplicates(
-                self.bestmatrices,
-                stats_res,
-                Minimum_MatchesNb,
-                tol=0.0001,
-                keep_only_equivalent=keep_only_equivalent,
-            )
+                                                        self.bestmatrices,
+                                                        stats_res,
+                                                        Minimum_MatchesNb,
+                                                        tol=0.005,
+                                                        keep_only_equivalent=keep_only_equivalent,
+                                                    )
 
         print("stats_res", stats_res)
         nb_solutions = len(self.bestmatrices)
@@ -888,27 +775,26 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                 "TwicethetaChi_solutions"
             ] = self.TwicethetaChi_solution
             # display "statistical" results
-            RRCBClassical = RecognitionResultCheckBox(
-                self,
-                -1,
-                "Screening Distances Indexation Solutions",
-                stats_properformat,
-                self.data,
-                rough_tolangle,
-                fine_tolangle,
-                key_material=self.key_material,
-                emax=emax,
-                ResolutionAngstrom=ResolutionAngstrom,
-                kf_direction=self.kf_direction,
-                datatype="2thetachi",
-                data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-                data_XY=self.select_dataXY,
-                CCDdetectorparameters=self.CCDdetectorparameters,
-                IndexationParameters=self.IndexationParameters,
-                StorageDict=self.StorageDict,
-                mainframe="billframerc",  # self.mainframe
-                DataSetObject=self.DataSet,
-            )
+            RRCBClassical = RecognitionResultCheckBox(self,
+                                                        -1,
+                                                        "Screening Distances Indexation Solutions",
+                                                        stats_properformat,
+                                                        self.data,
+                                                        rough_tolangle,
+                                                        fine_tolangle,
+                                                        key_material=self.key_material,
+                                                        emax=emax,
+                                                        ResolutionAngstrom=ResolutionAngstrom,
+                                                        kf_direction=self.kf_direction,
+                                                        datatype="2thetachi",
+                                                        data_2thetachi=(2.0 * self.select_theta, self.select_chi),
+                                                        data_XY=self.select_dataXY,
+                                                        CCDdetectorparameters=self.CCDdetectorparameters,
+                                                        IndexationParameters=self.IndexationParameters,
+                                                        StorageDict=self.StorageDict,
+                                                        mainframe="billframerc",  # self.mainframe
+                                                        DataSetObject=self.DataSet,
+                                                    )
 
             RRCBClassical.Show(True)
 

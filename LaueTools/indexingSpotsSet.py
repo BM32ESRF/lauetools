@@ -1300,15 +1300,11 @@ class spotsset:
                     )
 
                     # TODO: test if sigma3 symmetry exist between matrices
-                    (
-                        bestUB,
-                        bestmatchingrates,
-                        nbMatchedSpots,
-                    ) = self.getOrients_ImageMatching(
-                        MatchingRate_Threshold=MatchingRate_Threshold_IMM,
-                        exceptgrains=self.indexedgrains,
-                        verbose=VERBOSE,
-                    )
+                    (bestUB,
+                    bestmatchingrates,
+                    nbMatchedSpots) = self.getOrients_ImageMatching(MatchingRate_Threshold=MatchingRate_Threshold_IMM,
+                                                exceptgrains=self.indexedgrains,
+                                                verbose=VERBOSE)
 
                     fromIMM = True
                 # ---------------------------
@@ -1319,10 +1315,8 @@ class spotsset:
                     print(
                         "providing new set of matrices Using Angles LUT template matching"
                     )
-                    (
-                        self.TwiceTheta_Chi_Int,
-                        self.absolute_index,
-                    ) = self.getSelectedExpSpotsData(exceptgrains=self.indexedgrains)
+                    (self.TwiceTheta_Chi_Int,
+                    self.absolute_index) = self.getSelectedExpSpotsData(exceptgrains=self.indexedgrains)
 
                     nbspots = len(self.TwiceTheta_Chi_Int[0])
                     print("nbspots", nbspots)
@@ -1673,8 +1667,7 @@ class spotsset:
                                 # update matrix
                                 self.dict_grain_matrix[grain_index] = UBsingle
 
-                                (
-                                    index,
+                                (index,
                                     tth,
                                     chi,
                                     posX,
@@ -1691,9 +1684,7 @@ class spotsset:
 
                                 for kspot, exp_spot_index in enumerate(index):
 
-                                    self.indexed_spots_dict[exp_spot_index][6] = hklmin[
-                                        kspot
-                                    ]
+                                    self.indexed_spots_dict[exp_spot_index][6] = hklmin[kspot]
                                 #
                                 print("hkl", hkl)
                                 print("new hkl (min euler angles)", hklmin)
@@ -2145,13 +2136,14 @@ class spotsset:
         """
         print("Compute LUT for indexing %s spots in LauePattern " % self.key_material)
         latticeparams = dictmaterials[self.key_material][1]
+        applyExtinctionRules = dictmaterials[self.key_material][2]
         self.B_LUT = CP.calc_B_RR(latticeparams)
-        self.LUT = INDEX.build_AnglesLUT(
-            self.B_LUT,
-            self.n_LUT,
-            MaxRadiusHKL=self.ResolutionAngstromLUT,
-            cubicSymmetry=CP.hasCubicSymmetry(self.key_material, dictmaterials=dictmaterials),
-        )
+        isCubic = CP.hasCubicSymmetry(self.key_material, dictmaterials=dictmaterials)
+        self.LUT = INDEX.build_AnglesLUT(self.B_LUT,
+                                        self.n_LUT,
+                                        MaxRadiusHKL=self.ResolutionAngstromLUT,
+                                        cubicSymmetry=isCubic,
+                                        applyExtinctionRules=applyExtinctionRules)
 
     def setAnglesLUTmatchingParameters(self, LUT=None, n_LUT=3, B_LUT=np.eye(3)):
         """
@@ -3770,7 +3762,14 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
 
     matA and matB are single matrix
     """
-    if allpermu is None or allpermu == "cubic":
+    if allpermu in ('Id',):
+        diff = matB - matA
+        flagdiff = np.less(np.abs(diff), tol)
+        resflag = np.all(np.ravel(flagdiff))
+        print('for ID: ', resflag)
+        return resflag, resflag
+
+    elif allpermu is None or allpermu == "cubic":
         allpermu = DictLT.OpSymArray
 
     # diff between one matrix and an array of matrices
@@ -3781,7 +3780,7 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
     # print np.transpose(allpermu).shape
     # print np.dot(matB,np.transpose(allpermu)).shape
     diff = np.transpose(np.dot(matB, np.transpose(allpermu)), axes=(2, 0, 1)) - matA
-
+    
     tol = tol * np.ones((3, 3))
 
     flagdiff = np.less(np.abs(diff), tol)
@@ -3843,13 +3842,11 @@ def AreTwinned(matA, matB, tol=0.001, allpermu=None):
     return np.any(resflag), resflag
 
 
-def RemoveDuplicatesOrientationMatrix(
-    matrices, scores, tol=0.0001, allpermu=None, OutputMatricesOnly=0, verbose=False
-):
-    """
+def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
+                            allpermu=None, OutputMatricesOnly=0, verbose=False):
+    r"""
     remove duplicates matrix in the sense of comparematrices()
     """
-
     if len(matrices) == 1:
         return matrices
 
@@ -3886,7 +3883,7 @@ def RemoveDuplicatesOrientationMatrix(
         FilteredMatrixList.append(BSM[0])
         # BSM = [m for m in BSM if Matrixcomparewith(m)]
 
-        BSM = list(filter(lambda m: Matrixcomparewith(m), BSM))
+        BSM = list(filter(lambda m: Matrixcomparewith(np.array(m)), np.array(BSM)))
 
         k += 1
 
@@ -3894,16 +3891,18 @@ def RemoveDuplicatesOrientationMatrix(
         return FilteredMatrixList
     else:
         # updating scores list
+        print("FilteredMatrixList")
+        print(FilteredMatrixList)
         for mat in FilteredMatrixList:
+            if isinstance(mat,(np.ndarray,)): mat=mat.tolist()
             FilteredScoreList.append(scores[list(Dict_mat.values()).index(mat)])
 
         return FilteredMatrixList, FilteredScoreList
 
 
-def MergeSortand_RemoveDuplicates(
-    OrientMatrices, Scores, threshold_matching, tol=0.0001, keep_only_equivalent=True
-):
-    """
+def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
+                        tol=0.0001, keep_only_equivalent=True):
+    r"""
     Returns: Best Sorted Non equivalent orientation matrix (according to matching rate)
 
     1)Merge matrices solution of distance recognition in LUT
@@ -3952,13 +3951,14 @@ def MergeSortand_RemoveDuplicates(
         allpermu = DictLT.OpSymArray
         # remove duplicates
         (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(
-            Bestsortedmatrices, Besthhh, tol=tol, allpermu=allpermu
-        )
+                                Bestsortedmatrices, Besthhh, tol=tol, allpermu=allpermu)
         MATRICES = NonEquivalentMatrices
         SCORES = FilteredScores
     elif keep_only_equivalent in (0, None, False):
-        MATRICES = Bestsortedmatrices
-        SCORES = Besthhh
+        (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(
+                                Bestsortedmatrices, Besthhh, tol=tol, allpermu='Id')
+        MATRICES = NonEquivalentMatrices
+        SCORES = FilteredScores
 
     return MATRICES, SCORES
 

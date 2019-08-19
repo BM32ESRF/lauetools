@@ -288,11 +288,11 @@ def getAngle_2Vectors(vec1, vec2):
 
 def norme_list(listvec):
     """
-    return 1d array of cartesian norms of a array of 3 elements vector
+    return 1d array of cartesian norms of an array of 3 elements vector
 
     """
-    normarray = np.sqrt(np.inner(listvec, listvec))
-    return np.diag(normarray)
+    normarray = np.sqrt(np.diag(np.inner(listvec, listvec)))
+    return normarray
 
 
 def tensile_along_u(v, tensile, u="zsample"):
@@ -1750,13 +1750,14 @@ def indices_in_flatTriuMatrix(n):
 
 def indices_in_TriuMatrix(ar_indices, n):
     """
-    from a square n*n matrix convert 1d triangular up (excluded diagonal) indices
-     in  i,j 2D array indices
+     convert 1d triangular up (excluded diagonal) indices
+     to  i,j 2D array indices of a square n*n M matrix
+
+     :param ar_indices: numpy array witth square shape
 
     ex: [1,2,3,6,7,11] from a 4*4 matrix
     -> i,j indices [0,1] [0,2] [0,3] [1,2] [1,3] [2,3]
-    ( from [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]])
-
+    ( ie M =  [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]]) )
     """
     i = ar_indices // n
     j = ar_indices % n
@@ -1765,10 +1766,23 @@ def indices_in_TriuMatrix(ar_indices, n):
 
 def convert2indices(ar_indices, array_shape):
     """
-    from a array with array_shape convert indices in  i,j 2D array indices
+    convert 1d indices in 2D indices arranged in a 2D array with array_shape convert indices in  i,j 2D array indices
 
-    ex: [1,2,3,6,7,11] from a 4*4 matrix -> i,j indices [0,1] [0,2] [0,3] [1,2] [1,3] [2,3]
-    ( [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]])
+    Ok for non square matrix
+
+    example: for k in range(10):
+                print(k, GT.convert2indices(k,(5,2)))
+
+    0 [0 0]
+    1 [0 1]
+    2 [1 0]
+    3 [1 1]
+    4 [2 0]
+    5 [2 1]
+    6 [3 0]
+    7 [3 1]
+    8 [4 0]
+    9 [4 1]
     """
     slow_dim_i = array_shape[1]
     ar_indices = np.array(ar_indices)
