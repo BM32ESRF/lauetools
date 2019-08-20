@@ -81,9 +81,11 @@ Tabledistance = GT.calculdist_from_thetachi(
 # Building LUT of reference angles
 dictmaterials = DictLT.dict_Materials
 latticeparams = dictmaterials[key_material][1]
+Rules = dictmaterials[key_material][2]
 B = CP.calc_B_RR(latticeparams)
 LUT = IAL.build_AnglesLUT(B, nLUT, MaxRadiusHKL=False,
-            cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials))
+            cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials),
+            ApplyExtinctionRules = Rules)
 
 # ---------   START of INDEXATION  -------------
 bestmatList = []
@@ -107,9 +109,9 @@ for i1, i2 in GT.allpairs_in_set(range(len(selectedspots_ind))):
     coords_2 = All_2thetas[spot_index_2], All_Chis[spot_index_2]
 
     # Table of distances is very small (nb selected spots**2)
-    expdistance_2spots = Tabledistance[i1,i2]
+    expdistance_2spots = Tabledistance[i1, i2]
 
-    print('expdistance_2spots  = ',expdistance_2spots)
+    print('expdistance_2spots  = ', expdistance_2spots)
 
     UBS_MRS = IAL.getUBs_and_MatchingRate(spot_index_1,
                                         spot_index_2,

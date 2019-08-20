@@ -5167,6 +5167,12 @@ class ManualIndexFrame(wx.Frame):
         Need the selection of 2 spots, compute the interplanar angle, find all possibilities in the LUT
         Open the recognitionBox with possible solutions with indexing quality based on matching rate
         """
+        # for LUT
+        # MaxRadiusHKL = True
+        MaxRadiusHKL = False
+
+
+
         if self.twospots is not None:  # two spots are selected
             self.recongnisebtn.SetValue(False)
             self.recongnisebtn.SetBackgroundColour(self.defaultColor)
@@ -5400,7 +5406,6 @@ class ManualIndexFrame(wx.Frame):
         self.rough_tolangle = rough_tolangle
         self.fine_tolangle = fine_tolangle
 
-        MaxRadiusHKL = True
 
         USETHREAD = 1
         if USETHREAD:
@@ -5453,30 +5458,30 @@ class ManualIndexFrame(wx.Frame):
             # ---- indexation in Reckon_2pts_new() in Manualindexframe
             self.worker = None
             self.UBs_MRs = INDEX.getUBs_and_MatchingRate(
-                spot1_ind,
-                spot2_ind,
-                rough_tolangle,
-                _dist,
-                spot1,
-                spot2,
-                nLUT,
-                B,
-                2 * self.select_theta,
-                self.select_chi,
-                set_hkl_1=set_central_spots_hkl,
-                key_material=self.key_material,
-                emax=energy_max,
-                ResolutionAngstrom=ResolutionAngstrom,
-                ang_tol_MR=fine_tolangle,
-                detectorparameters=detectorparameters,
-                LUT=None,
-                MaxRadiusHKL=MaxRadiusHKL,
-                verbose=0,
-                verbosedetails=verbosedetails,
-                Minimum_Nb_Matches=Nb_criterium,
-                worker=self.worker,
-                dictmaterials=self.dict_Materials
-            )
+                                                    spot1_ind,
+                                                    spot2_ind,
+                                                    rough_tolangle,
+                                                    _dist,
+                                                    spot1,
+                                                    spot2,
+                                                    nLUT,
+                                                    B,
+                                                    2 * self.select_theta,
+                                                    self.select_chi,
+                                                    set_hkl_1=set_central_spots_hkl,
+                                                    key_material=self.key_material,
+                                                    emax=energy_max,
+                                                    ResolutionAngstrom=ResolutionAngstrom,
+                                                    ang_tol_MR=fine_tolangle,
+                                                    detectorparameters=detectorparameters,
+                                                    LUT=None,
+                                                    MaxRadiusHKL=MaxRadiusHKL,
+                                                    verbose=0,
+                                                    verbosedetails=verbosedetails,
+                                                    Minimum_Nb_Matches=Nb_criterium,
+                                                    worker=self.worker,
+                                                    dictmaterials=self.dict_Materials
+                                                )
 
             self.bestmat, stats_res = self.UBs_MRs
             # update DataSetObject

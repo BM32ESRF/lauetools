@@ -75,6 +75,9 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
     :returns: numpy array (m,3) of [H,K,L]  m<=n
     """
+    if not isinstance(HKL, (np.ndarray,)):
+        HKL = np.array(HKL)
+
     H, K, L = HKL.T
 
     if verbose:
@@ -82,12 +85,12 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
     # 'dia' adds selection rules to those of 'fcc'
     if Extinc in ("fcc", "dia"):
-        cond1 = ((H - K) % 2 == 0) * ((H - L) % 2 == 0)
+        cond = ((H - K) % 2 == 0) * ((H - L) % 2 == 0)
         if Extinc == "dia":
             conddia = ((H + K + L) % 4) != 2
-            cond1 = cond1 * conddia
+            cond = cond * conddia
 
-        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+        array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
     elif Extinc == "bcc":
         cond1 = (H + K + L) % 2 == 0

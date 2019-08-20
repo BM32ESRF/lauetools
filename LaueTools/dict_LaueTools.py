@@ -246,9 +246,6 @@ def readsinglelinedictfile(line):
 dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"]}
 
 
-
-
-
 ######## Geometrey Default  ##############
 # Default constant
 DEFAULT_DETECTOR_DISTANCE = 70.0  # mm
@@ -440,7 +437,6 @@ DICT_LAUE_GEOMETRIES_INFO = {
     "Top Reflection (2theta=90)": ["Z>0", "top reflection geometry camera on top"],
     "Transmission": ["X>0", "Transmission geometry, camera in direct beam"],
 }
-
 
 
 # --- -------------- History of Calibration Parameters
@@ -692,9 +688,8 @@ dict_Rot = {
     "mat111alongx": [
         [1 / sq3, 1 / sq2, -1 / sq6],
         [1 / sq3, -1 / sq2, -1 / sq6],
-        [1 / sq3, 0, 2.0 / sq6],
-    ],
-}
+        [1 / sq3, 0, 2.0 / sq6]]
+        }
 
 # dictionary of some rotations from a sequence of three elementary rotations
 dict_Eul = {
@@ -724,20 +719,12 @@ SAMPLETILT = 40.0
 
 DEG = np.pi / 180.0
 PI = np.pi
-RotY40 = np.array(
-    [
-        [np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
-        [0, 1, 0],
-        [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
-    ]
-)
-RotYm40 = np.array(
-    [
-        [np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
-        [0, 1, 0],
-        [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
-    ]
-)
+RotY40 = np.array([[np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
+                    [0, 1, 0],
+                    [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
+RotYm40 = np.array( [ [np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
+                        [0, 1, 0],
+                        [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
 
 # planck constant h * 2pi in 1e-16 eV.sec  unit
 hbarrex1em16 = 6.58211899
@@ -746,9 +733,7 @@ ccx1e7 = 29.9792458
 
 E_eV_fois_lambda_nm = np.pi * 2.0 * hbarrex1em16 * ccx1e7
 # print "E_eV_fois_lambda_nm = ", E_eV_fois_lambda_nm
-CST_ENERGYKEV = (
-    12.398
-)  # keV * angstrom  in conversion formula:E (keV) = 12.398 / lambda (angstrom)
+CST_ENERGYKEV = 12.398  # keV * angstrom  in conversion formula:E (keV) = 12.398 / lambda (angstrom)
 
 # --- ----------- cubic permutation operators
 opsymlist = np.zeros((48, 9), float)

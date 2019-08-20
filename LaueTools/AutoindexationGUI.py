@@ -143,18 +143,22 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (540, 75))
         self.nLUT = wx.TextCtrl(self.panel, -1, "3", (620, 70), (30, -1))
 
-        rsstxt = wx.StaticText(self.panel, -1, "Recognition spots set Size(RSSS): ", (15, 115))
-        self.nbspotmax = wx.SpinCtrl(self.panel, -1, "10", (270, 110), (60, -1), min=1, max=1000)
+        self.setAchck = wx.CheckBox(self.panel, -1, "", (15, 143))
+        self.setAchck.SetValue(True)
+
+        cstxt = wx.StaticText(self.panel, -1, "Spots set A", (50, 145))
+        self.spotlistA = wx.TextCtrl(self.panel, -1, "to10", (250, 143), (200, -1))
+
+        self.setBchck = wx.CheckBox(self.panel, -1, "", (15, 173))
+        self.setBchck.SetValue(False)
+
+        rsstxt = wx.StaticText(self.panel, -1, "Spots Set B: ", (50, 175))
+        self.spotlistB = wx.TextCtrl(self.panel, -1, "to20", (250, 173), (200, -1))
 
         nbspots_in_data = len(self.current_exp_spot_index_list)
-        mssstxt = wx.StaticText(self.panel, -1, "Matching spots set Size(MSSS): ", (370, 115))
+        mssstxt = wx.StaticText(self.panel, -1, "Spots set Size", (500, 115))
         self.nbspotmaxformatching = wx.SpinCtrl(self.panel, -1, str(nbspots_in_data), (600, 110),
                                                         (60, -1), min=3, max=nbspots_in_data)
-
-        cstxt = wx.StaticText(self.panel, -1, "Central spot(s)", (15, 143))
-        cstxt2 = wx.StaticText(self.panel, -1, "ex: 0 or [0,1,2,8] ", (15, 160))
-        self.spotlist = wx.TextCtrl(self.panel, -1, "0", (250, 160), (160, -1))
-        cstxt3 = wx.StaticText(self.panel, -1, "(must be <= RSSS-1)", (15, 177))
 
         self.sethklchck = wx.CheckBox(self.panel, -1, "set hkl", (460, 143))
         self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", (460, 177), (160, -1))
@@ -223,7 +227,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         tsstip = "Largest experimental spot index for trying to recognise a distance in reference structure distance LUT from all spots in central spots list."
         rsstxt.SetToolTipString(tsstip)
-        self.nbspotmax.SetToolTipString(tsstip)
+        self.spotlistB.SetToolTipString(tsstip)
 
         mssstip = "Number of experimental spots used find the best matching with the Laue Pattern simulated according to a recognised angle in LUT."
         mssstxt.SetToolTipString(mssstip)
@@ -232,9 +236,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). Angles between each central spot and every spots of "recognition spots set" will calculated and compared to angles in reference LUT.\n'
         cstip += 'List of spots must written in with bracket (e.g. [0,1,2,5,8]). Central spots index must be strictly lower to nb of spots of the "recognition set".'
         cstxt.SetToolTipString(cstip)
-        cstxt2.SetToolTipString(cstip)
-        self.spotlist.SetToolTipString(cstip)
-        cstxt3.SetToolTipString(cstip)
+        self.spotlistA.SetToolTipString(cstip)
 
         drtatip = "Tolerance angle (in degree) within which an experimental angle (between a central and a recognition set spot) must be close to a reference angle in LUT to be used for simulation the Laue pattern (to be matched to the experimenal one)."
         drtatxt.SetToolTipString(drtatip)
@@ -320,8 +322,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         nbSpotsToIndex = 1000
 
         List_Ctrls = [self.combokeymaterial, 1, 5.0, self.emax, 100.0,
-                        self.DRTA, MatchingAngleTol, self.nbspotmax, 6,
-                        self.spotlist, self.ResolutionAngstromctrl, self.nLUT,
+                        self.DRTA, MatchingAngleTol, self.spotlistB, 6,
+                        self.spotlistA, self.ResolutionAngstromctrl, self.nLUT,
                         sethklcentral, True, nbSpotsToIndex,
                         [MatchingAngleTol, MatchingAngleTol / 2.0],
                         self.spotsorder]
@@ -351,10 +353,93 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         ISS.saveIndexRefineConfigFile(self.dict_param_list, outputfilename=outputfile)
 
-    def OnStart(self, event):
+    def readspotssetctrl(self, txtctrl):
+        """read, parse a spotset txtctrl
+        """
+        spot_list = txtctrl.GetValue()
+        israngefromzero = False
+        if spot_list[0] != "-":
+            # print "coucou"
+            # this a list of spots
+            if spot_list.startswith("["):
+                # print "coucou2"
+                spot_index_central = str(spot_list)[1:-1].split(",")
+                # print spot_index_central
+                arr_index = np.array(spot_index_central)
+
+                # print np.array(arr_index, dtype = int)
+                spot_index_central = list(np.array(arr_index, dtype=int))
+                nb_central_spots = len(spot_index_central)
+
+            # this is range from 0 to a spot index
+            elif spot_list.startswith("to"):
+                spot_index_central = list(range(int(spot_list[2:]) + 1))
+                nb_central_spots = len(spot_index_central)
+                israngefromzero = True
+
+            #this is a single spot index (integer)
+            else:
+                spot_index_central = int(spot_list)
+                nb_central_spots = 1
+
+        else:  # minus in front of integer
+            spot_index_central = 0
+            nb_central_spots = 1
+
+        return spot_index_central, nb_central_spots, israngefromzero 
+
+    def parse_spotssetctrls(self):
+        """
+        parse txtctrls of spotsset A and B
+        """
+        #----------   Spots set Selection for mutual angle computation
+        spotsB = None
+
+        spotsA, nbA, _ = self.readspotssetctrl(self.spotlistA)
+
+        if nbA == 1:
+            maxindA = spotsA
+        else:
+            maxindA = max(spotsA)
+
+        #spotB is not checked
+        if not self.setBchck.GetValue():
+            if nbA == 1:
+                wx.MessageBox(
+                "if only spots set A is checked, you must provide a set spots by filling 'to5' or '[5,1,4,3]'",
+                "Error")
+            nbmax_probed = maxindA+1
+            spot_index_central = spotsA
+            nb_central_spots = nbA
+            # this is a range set
+            if (nbA-1) == maxindA:
+                spotssettype = 'rangeset'
+            # this is a list of spots
+            else:
+                spotssettype = 'listsetA'
+
+            spotsB = np.arange(0,nbmax_probed)
+
+        #spotB is checked
+        else:
+            spotsB, nbB, israngeB = self.readspotssetctrl(self.spotlistB)
+            nbmax_probed = nbB
+            spot_index_central = spotsA
+            nb_central_spots = nbA
+            # case of [5,3,6,17] with B = to18
+            if maxindA < nbmax_probed:
+                spotssettype = 'rangeset'
+            # case of [5,3,6,17] with B = to5
+            else:
+                spotssettype = 'listsetAB'
+
+        return spotssettype, spot_index_central, nb_central_spots, nbmax_probed, spotsB
+
+  
+    def OnStart(self, evt):
         """
         starts automatic (classical) indexation:
-        
+
         Recognition is based on the angular distance between two spots from a set of distances
         """
         energy_max = int(self.emax.GetValue())
@@ -365,6 +450,39 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         else:
             ResolutionAngstrom = float(ResolutionAngstrom)
         print("ResolutionAngstrom in OnStart Classical indexation", ResolutionAngstrom)
+
+        self.key_material = str(self.combokeymaterial.GetValue())
+        latticeparams = self.dict_Materials[self.key_material][1]
+        B = CP.calc_B_RR(latticeparams)
+
+        # read maximum index of hkl for building angles Look Up Table(LUT)
+        nLUT = self.nLUT.GetValue()
+        try:
+            n = int(nLUT)
+            if n > 7:
+                wx.MessageBox("! LUT Nmax is too high!\n This value is set to 7 ", "INFO")
+            elif n < 1:
+                wx.MessageBox("! LUT Nmax is not positive!\n This value is set to 1 ", "INFO")
+            n = min(7, n)
+            n = max(1, n)
+        except ValueError:
+            print("!!  maximum index for building LUT is not an integer   !!!")
+            wx.MessageBox("! LUT Nmax is not an integer!\n This value is set to 3 ", "INFO")
+            n = 3
+
+        rough_tolangle = float(self.DRTA.GetValue())
+        fine_tolangle = float(self.MTA.GetValue())
+        Minimum_MatchesNb = int(self.MNMS.GetValue())
+        #         print "Recognition tolerance angle ", rough_tolangle
+        #         print "Matching tolerance angle ", fine_tolangle
+        nb_of_solutions_per_central_spot = int(self.Max_Nb_Solutions.GetValue())
+
+        #----------   Spots set Selection for mutual angle computation
+        (spotssettype, spot_index_central, nb_central_spots,
+                                nbmax_probed, spotsB) = self.parse_spotssetctrls()
+
+        # TODO  spot_index_central and spotsB to be combined to find UBS
+        #------------------------------------------------
 
         # whole exp.data spots dict
         #         self.IndexationParameters['AllDataToIndex']
@@ -398,16 +516,16 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             self.select_dataY = self.dataXY_exp[1][index_to_select]
             # print select_theta
             # print select_chi
+            if spotssettype in ("rangeset", ):
+                listcouple = np.array([self.select_theta, self.select_chi]).T
+                # compute angles between spots
+                Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
 
-            listcouple = np.array([self.select_theta, self.select_chi]).T
-            # compute angles between spots
-            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
-
-        #             # with CYTHON
-        #             import angulardist
-        #             listcouple = np.array([2.*self.select_theta, self.select_chi]).T
-        #             lc = listcouple.copy(order='c')
-        #             Tabledistance = angulardist.calculdist_from_2thetachi(lc, lc)
+            #             # with CYTHON
+            #             import angulardist
+            #             listcouple = np.array([2.*self.select_theta, self.select_chi]).T
+            #             lc = listcouple.copy(order='c')
+            #             Tabledistance = angulardist.calculdist_from_2thetachi(lc, lc)
         else:
             print("Preset Tabledistance is Not implemented !")
             return
@@ -415,75 +533,6 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
         self.select_dataXY = (self.select_dataX, self.select_dataY)
-
-        wrongsets = False
-        # recognition spots set size (RSSS)
-        nbmax_probed = int(self.nbspotmax.GetValue())
-
-        spot_list = self.spotlist.GetValue()
-
-        # classical indexation
-        # print "spot_list in OnLaunch",spot_list
-        if spot_list[0] != "-":
-            # print "coucou"
-            if spot_list.startswith("["):
-                # print "coucou2"
-                spot_index_central = str(spot_list)[1:-1].split(",")
-                # print spot_index_central
-                arr_index = np.array(spot_index_central)
-
-                # print np.array(arr_index, dtype = int)
-                spot_index_central = list(np.array(arr_index, dtype=int))
-                nb_central_spots = len(spot_index_central)
-
-                if max(spot_index_central) >= nbmax_probed:
-                    wrongsets = True
-            elif spot_list.startswith("to"):
-                spot_index_central = list(range(int(spot_list[2:]) + 1))
-                nb_central_spots = len(spot_index_central)
-                if max(spot_index_central) >= nbmax_probed:
-                    wrongsets = True
-            else:
-                spot_index_central = int(spot_list)
-                nb_central_spots = 1
-                if spot_index_central >= nbmax_probed:
-                    wrongsets = True
-
-        else:  # minus in front of integer
-            spot_index_central = 0
-            nb_central_spots = 1
-
-        if wrongsets is True:
-            wx.MessageBox(
-                "Central spots indices must be strictly lower than the size of Recognition spots set",
-                "Error",
-            )
-
-        self.key_material = str(self.combokeymaterial.GetValue())
-        latticeparams = self.dict_Materials[self.key_material][1]
-        B = CP.calc_B_RR(latticeparams)
-
-        # read maximum index of hkl for building angles Look Up Table(LUT)
-        nLUT = self.nLUT.GetValue()
-        try:
-            n = int(nLUT)
-            if n > 7:
-                wx.MessageBox("! LUT Nmax is too high!\n This value is set to 7 ", "INFO")
-            elif n < 1:
-                wx.MessageBox("! LUT Nmax is not positive!\n This value is set to 1 ", "INFO")
-            n = min(7, n)
-            n = max(1, n)
-        except ValueError:
-            print("!!  maximum index for building LUT is not an integer   !!!")
-            wx.MessageBox("! LUT Nmax is not an integer!\n This value is set to 3 ", "INFO")
-            n = 3
-
-        rough_tolangle = float(self.DRTA.GetValue())
-        fine_tolangle = float(self.MTA.GetValue())
-        Minimum_MatchesNb = int(self.MNMS.GetValue())
-        #         print "Recognition tolerance angle ", rough_tolangle
-        #         print "Matching tolerance angle ", fine_tolangle
-        nb_of_solutions_per_central_spot = int(self.Max_Nb_Solutions.GetValue())
 
         # detector geometry
         detectorparameters = {}
@@ -508,8 +557,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # restrict LUT if allowed and if crystal is cubic
         restrictLUT_cubicSymmetry = restrictLUT_cubicSymmetry and CP.hasCubicSymmetry(
-            self.key_material, dictmaterials=self.dict_Materials
-        )
+            self.key_material, dictmaterials=self.dict_Materials)
 
         print("set_central_spots_hkl", set_central_spots_hkl)
         print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
@@ -552,7 +600,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
-        self.bestmatrices, stats_res = INDEX.getOrientMatrices(
+        if spotssettype in ("rangeset"):
+            self.bestmatrices, stats_res = INDEX.getOrientMatrices(
                                                 spot_index_central,
                                                 energy_max,
                                                 Tabledistance[:nbmax_probed, :nbmax_probed],
@@ -576,10 +625,23 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 verbosedetails=1,  # verbosedetails,
                                                 gauge=self.gauge,
                                                 dictmaterials=self.IndexationParameters['dict_Materials'],
-                                                MaxRadiusHKL=True
+                                                MaxRadiusHKL=False,#True could be OK for this workflow
                                             )
-        # when nbbestplot is very high  self.bestmatrices contain all matrices
-        # with matching rate above Minimum_MatchesNb
+        elif spotssettype in ('listsetA',):
+            #wx.MessageBox('Good Luck!To be implemented','INFO')
+            print('spot_index_central for getOrientMatrices_SubSpotsSets', spot_index_central)
+            res = INDEX.getOrientMatrices_SubSpotsSets(spot_index_central, energy_max, self.select_theta,self.select_chi,
+                                                    n, self.key_material, rough_tolangle, detectorparameters)
+            if len(res[0])>0:
+                self.bestmatrices, stats_res =res
+                print('getOrientMatrices_SubSpotsSets found %d solutions',len(res[0]))
+            else:
+                wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots probed in spots sets A and B')
+                return
+
+        elif spotssettype in ('listsetAB',):
+            wx.MessageBox('To be implemented','INFO')
+            return
 
         # Update DataSet Object
         if self.DataSet is None:
@@ -593,7 +655,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.textprocess.SetLabel("Indexation Completed")
 
-        print("stats_res", stats_res)
+        print("General stats_res before filtering and removing duplicates", stats_res)
         nb_solutions = len(self.bestmatrices)
 
         keep_only_equivalent = CP.isCubic(DictLT.dict_Materials[self.key_material][1])
@@ -746,9 +808,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     emax = int(self.emax.GetValue())
                     paramsimul.append((grain, 5, emax))
 
-                    if (
-                        self.showplotBox.GetValue()
-                    ):  # to plot best results selected a priori by user
+                    if self.showplotBox.GetValue():  # to plot best results selected a priori by user
                         title = "Classical Indexation Result Plot"
 
                         plotresult = Plot_RefineFrame(
