@@ -224,11 +224,11 @@ class Plot_RefineFrame(wx.Frame):
             self.File_NAME = self.IndexationParameters["Filename"]
             self.data_XY = DataToIndex["data_X"], DataToIndex["data_Y"]
             self.data_2thetachi = 2 * DataToIndex["data_theta"], DataToIndex["data_chi"]
-            print(
-                "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
-                self.data_2thetachi[0][:5],
-                self.data_2thetachi[1][:5],
-            )
+            # print(
+            #     "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
+            #     self.data_2thetachi[0][:5],
+            #     self.data_2thetachi[1][:5],
+            # )
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
             #             print DataToIndex.keys()
             self.selectedAbsoluteSpotIndices_init = DataToIndex[
@@ -733,39 +733,12 @@ class Plot_RefineFrame(wx.Frame):
             vbox3 = wx.GridSizer(2, 3)
 
         vbox3.AddMany(
-            [
-                (
-                    self.btnautolink,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-                (
-                    self.btnfilterlink,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-                (
-                    self.btnShowResults,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-                (
-                    self.use_forfit1,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-                (
-                    self.use_forfit2,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-                (
-                    self.use_forfit3,
-                    0,
-                    wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
-                ),
-            ]
-        )
+            [(self.btnautolink, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                (self.btnfilterlink, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                (self.btnShowResults, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                (self.use_forfit1, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                (self.use_forfit2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                (self.use_forfit3, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
 
         plotparSizer = wx.BoxSizer(wx.HORIZONTAL)
         plotparSizer.Add(self.btnreplot, 0, wx.ALL)
@@ -1189,8 +1162,8 @@ class Plot_RefineFrame(wx.Frame):
 
                 # if exp. spot is close enough
                 if _distanceexp < closedistance:
-                    print("\nthe nearest exp point is at(%.2f,%.2f)" % (x, y))
-                    print("with info ", annote_exp)
+                    # print("\nthe nearest exp point is at(%.2f,%.2f)" % (x, y))
+                    # print("with info ", annote_exp)
                     tip_exp = "spot index=%d. Intensity=%.1f" % (
                         annote_exp[0],
                         annote_exp[1],
@@ -1208,8 +1181,8 @@ class Plot_RefineFrame(wx.Frame):
 
                 # if theo spot is close enough
                 if _distancetheo < closedistance:
-                    print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
-                    print("with info (hkl, other coordinates, energy)", annote_theo)
+                    # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
+                    # print("with info (hkl, other coordinates, energy)", annote_theo)
 
                     tip_theo = "[h k l]=%s Energy=%.2f keV" % (
                         str(annote_theo[0]),
@@ -3202,7 +3175,7 @@ class Plot_RefineFrame(wx.Frame):
         """
         _replot in Plot_RefineFrame
         """
-        print("_replot")
+        # print("_replot")
 
         # offsets to match imshow and scatter plot coordinates frames
         if self.datatype == "pixels":
@@ -3931,8 +3904,8 @@ class Plot_RefineFrame(wx.Frame):
         if annotes:
             annotes.sort()
             _distance, x, y, annote = annotes[0]  # this the best of annotes
-            print("the nearest theo point is at(%.2f,%.2f)" % (x, y))
-            print("with index %s " % (str(annote)))
+            # print("the nearest theo point is at(%.2f,%.2f)" % (x, y))
+            # print("with index %s " % (str(annote)))
             self.drawAnnote_theo(self.axes, x, y, annote)
             for l in self.links_theo:
                 l.drawSpecificAnnote_theo(annote)

@@ -1381,8 +1381,8 @@ class SimulationPlotFrame(wx.Frame):
         if annotes:
             annotes.sort()
             _distance, x, y, annote = annotes[0]  # this the best of annotes
-            print("the nearest theo point is at(%.2f,%.2f)" % (x, y))
-            print("with index %s " % (str(annote)))
+            # print("the nearest theo point is at(%.2f,%.2f)" % (x, y))
+            # print("with index %s " % (str(annote)))
             self.drawAnnote_theo(self.axes, x, y, annote)
             for l in self.links_theo:
                 l.drawSpecificAnnote_theo(annote)

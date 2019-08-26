@@ -3734,11 +3734,11 @@ class ManualIndexFrame(wx.Frame):
             self.data_XY = DataToIndex["data_X"], DataToIndex["data_Y"]
 
             self.data_2thetachi = 2 * DataToIndex["data_theta"], DataToIndex["data_chi"]
-            print(
-                "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
-                self.data_2thetachi[0][:5],
-                self.data_2thetachi[1][:5],
-            )
+            # print(
+            #     "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
+            #     self.data_2thetachi[0][:5],
+            #     self.data_2thetachi[1][:5],
+            # )
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
             self.alldata = copy.copy(data)
             self.selectedAbsoluteSpotIndices_init = DataToIndex[

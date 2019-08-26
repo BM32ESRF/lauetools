@@ -13,6 +13,19 @@ import numpy as np
 import copy
 import sys
 
+if wx.__version__ < "4.":
+    WXPYTHON4 = False
+else:
+    WXPYTHON4 = True
+    wx.OPEN = wx.FD_OPEN
+    wx.CHANGE_DIR = wx.FD_CHANGE_DIR
+
+    def sttip(argself, strtip):
+        return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
+    wx.Window.SetToolTipString = sttip
+
+
 if sys.version_info.major == 3:
     from . import lauecore as LT
     from . import CrystalParameters as CP
@@ -45,11 +58,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     Class of GUI for the automatic indexation board of
     a single peak list with a single material or structure
     """
-
     def __init__(self, parent, _id, indexation_parameters, title,
                                         StorageDict=None, DataSetObject=None):
 
-        wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
+        wx.Frame.__init__(self, parent, _id, title, size=(700, 550))
 
         self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(690, 385), pos=(5, 5))
 
@@ -124,80 +136,93 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
-        title1 = wx.StaticText(self.panel, -1, "Parameters", (15, 15))
+        title1 = wx.StaticText(self.panel, -1, "Spots Selection", (15, 15))
         title1.SetFont(font3)
         wx.StaticText(self.panel, -1, "Current File:        %s" % self.DataPlot_filename, (180, 15))
 
-        emaxtxt = wx.StaticText(self.panel, -1, "Energy max.: ", (50, 45))
-        self.emax = wx.SpinCtrl(self.panel, -1, "22", (220, 40), (60, -1), min=10, max=150)
-
-        resangtxt = wx.StaticText(self.panel, -1, "Min. Resolved Lattice Spacing", (320, 45))
-        self.ResolutionAngstromctrl = wx.TextCtrl(self.panel, -1, "False", (550, 45), (100, -1))
-
-        elemtxt = wx.StaticText(self.panel, -1, "Materials or Structure: ", (50, 75))
-        self.SetMaterialsCombo(0)
-
-        self.refresh = wx.Button(self.panel, -1, "Refresh", (420, 70))
-        self.refresh.Bind(wx.EVT_BUTTON, self.SetMaterialsCombo)
-
-        luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (540, 75))
-        self.nLUT = wx.TextCtrl(self.panel, -1, "3", (620, 70), (30, -1))
-
-        self.setAchck = wx.CheckBox(self.panel, -1, "", (15, 143))
-        self.setAchck.SetValue(True)
-
-        cstxt = wx.StaticText(self.panel, -1, "Spots set A", (50, 145))
-        self.spotlistA = wx.TextCtrl(self.panel, -1, "to10", (250, 143), (200, -1))
-
-        self.setBchck = wx.CheckBox(self.panel, -1, "", (15, 173))
-        self.setBchck.SetValue(False)
-
-        rsstxt = wx.StaticText(self.panel, -1, "Spots Set B: ", (50, 175))
-        self.spotlistB = wx.TextCtrl(self.panel, -1, "to20", (250, 173), (200, -1))
-
         nbspots_in_data = len(self.current_exp_spot_index_list)
-        mssstxt = wx.StaticText(self.panel, -1, "Spots set Size", (500, 115))
-        self.nbspotmaxformatching = wx.SpinCtrl(self.panel, -1, str(nbspots_in_data), (600, 110),
+        mssstxt = wx.StaticText(self.panel, -1, "Spots set Size", (500, 15))
+        self.nbspotmaxformatching = wx.SpinCtrl(self.panel, -1, str(nbspots_in_data), (600, 10),
                                                         (60, -1), min=3, max=nbspots_in_data)
 
-        self.sethklchck = wx.CheckBox(self.panel, -1, "set hkl", (460, 143))
-        self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", (460, 177), (160, -1))
+        self.setAchck = wx.CheckBox(self.panel, -1, "", (15, 43))
+        self.setAchck.SetValue(True)
 
-        drtatxt = wx.StaticText(self.panel, -1, "Dist. Recogn. Tol. Angle(deg)", (15, 210))
-        self.DRTA = wx.TextCtrl(self.panel, -1, "0.5", (250, 205))
+        cstxt = wx.StaticText(self.panel, -1, "Spots set A", (50, 45))
+        self.spotlistA = wx.TextCtrl(self.panel, -1, "0", (140, 43), (200, -1))
 
-        mtatxt = wx.StaticText(self.panel, -1, "Matching Tolerance Angle(deg)", (15, 240))
-        self.MTA = wx.TextCtrl(self.panel, -1, "0.2", (250, 235))
+        self.sethklchck = wx.CheckBox(self.panel, -1, "set hkl of set A spots", (350, 43))
+        self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", (520, 43), (80, -1))
 
-        mnmstxt = wx.StaticText(self.panel, -1, "Minimum Number Matched Spots: ", (15, 270))
-        self.MNMS = wx.SpinCtrl(self.panel, -1, "15", (250, 265), (60, -1), min=1, max=500)
+        self.setBchck = wx.CheckBox(self.panel, -1, "", (15, 73))
+        self.setBchck.SetValue(True)
 
-        self.showplotBox = wx.CheckBox(self.panel, -1, "Plot Best result", (15, 305))
+        rsstxt = wx.StaticText(self.panel, -1, "Spots Set B: ", (50, 75))
+        self.spotlistB = wx.TextCtrl(self.panel, -1, "to10", (140, 73), (200, -1))
+
+        lutrectxt= wx.StaticText(self.panel, -1, "Angles LUT Recognition", (15, 110))
+        lutrectxt.SetFont(font3)
+
+        drtatxt = wx.StaticText(self.panel, -1, "Recognition Tol. Angle(deg)", (15, 140))
+        self.DRTA = wx.TextCtrl(self.panel, -1, "0.5", (250, 135))
+
+        luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (400, 140))
+        # self.nLUT = wx.TextCtrl(self.panel, -1, "4", (220, 100), (30, -1))
+        self.nLUT = wx.SpinCtrl(self.panel, -1, "3", (500, 135), (50, -1), min=3, max=7)
+
+        elemtxt = wx.StaticText(self.panel, -1, "Materials", (15, 175))
+        self.SetMaterialsCombo(0)
+
+        self.refresh = wx.Button(self.panel, -1, "Refresh", (400, 170))
+        self.refresh.Bind(wx.EVT_BUTTON, self.SetMaterialsCombo)
+
+        matchtxt = wx.StaticText(self.panel, -1, "Matching", (15, 210))
+        matchtxt.SetFont(font3)
+
+        mtatxt = wx.StaticText(self.panel, -1, "Matching Tolerance Angle(deg)", (15, 245))
+        self.MTA = wx.TextCtrl(self.panel, -1, "0.2", (250, 240))
+
+        
+
+        resangtxt = wx.StaticText(self.panel, -1, "Min. Res. Lattice Spacing", (400, 245))
+        self.ResolutionAngstromctrl = wx.TextCtrl(self.panel, -1, "False", (580, 242), (70, -1))
+
+        emaxtxt = wx.StaticText(self.panel, -1, "Energy max.: ", (15, 280))
+        self.emax = wx.SpinCtrl(self.panel, -1, "22", (300, 275), (60, -1), min=10, max=150)
+
+        mnmstxt = wx.StaticText(self.panel, -1, "Min. Nb. Matched Spots: ", (400, 280))
+        self.MNMS = wx.SpinCtrl(self.panel, -1, "15", (580, 275), (60, -1), min=1, max=500)
+
+        pptxt = wx.StaticText(self.panel, -1, "Filtering && Post Processing", (15, 310))
+        pptxt.SetFont(font3)
+
+
+        self.filterMatrix = wx.CheckBox(self.panel, -1, "Remove equivalent Matrices (cubic symmetry)", (15, 345))
+        self.filterMatrix.SetValue(True)
+
+        self.showplotBox = wx.CheckBox(self.panel, -1, "Plot Best result", (15, 380))
         self.showplotBox.SetValue(False)
 
-        wx.StaticText(self.panel, -1, "Max. Nb solutions", (170, 305))
-        self.Max_Nb_Solutions = wx.SpinCtrl(self.panel, -1, "3", (300, 300), (60, -1), min=1, max=20)
+        self.verbose = wx.CheckBox(self.panel, -1, "Print details", (410, 345))
+        self.verbose.SetValue(False)
 
         self.indexation_index = 0
         self.config_irp_filename = (self.DataPlot_filename[:-4] + "_%d.irp" % self.indexation_index)
-        wx.StaticText(self.panel, -1, "Saving parameters in config file", (410, 300))
+        wx.StaticText(self.panel, -1, "Saving parameters in config file", (410, 370))
         self.output_irp = wx.TextCtrl(self.panel, -1, "%s" % self.config_irp_filename,
-                                    (410, 320), size=(250, -1))
+                                    (410, 395), size=(250, -1))
 
-        self.filterMatrix = wx.CheckBox(self.panel, -1, "Remove equivalent Matrices (cubic symmetry)", (15, 340))
-        self.filterMatrix.SetValue(True)
 
-        self.StartButton = wx.Button(self.panel, 1, "Start", (25, 380), (200, 60))
+        self.StartButton = wx.Button(self.panel, 1, "Start", (25, 420), (200, 60))
         self.Bind(wx.EVT_BUTTON, self.OnStart, id=1)
 
-        wx.Button(self.panel, 2, "Quit", (250, 380), (110, 60))
+        wx.Button(self.panel, 2, "Quit", (250, 420), (110, 60))
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
 
-        self.verbose = wx.CheckBox(self.panel, -1, "Print details", (460, 220))
-        self.verbose.SetValue(False)
+        
 
-        self.textprocess = wx.StaticText(self.panel, -1, "                     ", (400, 375))
-        self.gauge = wx.Gauge(self.panel, -1, 1000, (400, 400), size=(250, 25))
+        self.textprocess = wx.StaticText(self.panel, -1, "                     ", (400, 435))
+        self.gauge = wx.Gauge(self.panel, -1, 1000, (400, 455), size=(250, 25))
 
         self.sb = self.CreateStatusBar()
 
@@ -262,15 +287,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.sethklchck.SetToolTipString(sethkltip)
         self.sethklcentral.SetToolTipString(sethkltip)
 
-        maxtip = "Maximum number of solutions per central spots to be kept since the same orientation matrix or equivalent can be found from different experimental pairs.\n"
-        self.Max_Nb_Solutions.SetToolTipString(maxtip)
-
         self.verbose.SetToolTipString("Display details for long indexation procedure")
 
     def SetMaterialsCombo(self, evt):
         self.list_materials = sorted(self.dict_Materials.keys())
 
-        self.combokeymaterial = wx.ComboBox(self.panel, 4, "Ge", (220, 70), size=(150, -1),
+        self.combokeymaterial = wx.ComboBox(self.panel, -1, "Ge", (140, 170), size=(150, -1),
                                         choices=self.list_materials, style=wx.CB_READONLY)
 
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)
@@ -427,7 +449,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             spot_index_central = spotsA
             nb_central_spots = nbA
             # case of [5,3,6,17] with B = to18
-            if maxindA < nbmax_probed:
+            if maxindA < nbmax_probed and israngeB:
                 spotssettype = 'rangeset'
             # case of [5,3,6,17] with B = to5
             else:
@@ -435,7 +457,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         return spotssettype, spot_index_central, nb_central_spots, nbmax_probed, spotsB
 
-  
+
     def OnStart(self, evt):
         """
         starts automatic (classical) indexation:
@@ -475,7 +497,6 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         Minimum_MatchesNb = int(self.MNMS.GetValue())
         #         print "Recognition tolerance angle ", rough_tolangle
         #         print "Matching tolerance angle ", fine_tolangle
-        nb_of_solutions_per_central_spot = int(self.Max_Nb_Solutions.GetValue())
 
         #----------   Spots set Selection for mutual angle computation
         (spotssettype, spot_index_central, nb_central_spots,
@@ -547,6 +568,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         if self.sethklchck.GetValue():
             strhkl = str(self.sethklcentral.GetValue())[1:-1].split(",")
+
+            if not self.spotlistB.GetValue():
+                wx.MessageBox('Please check Spots Set B', 'INFO')
+
             H, K, L = strhkl
             H, K, L = int(H), int(K), int(L)
             # LUT with cubic symmetry does not have negative L
@@ -585,7 +610,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #                                     Minimum_MatchesNb,
         #                                     self.key_material,
         #                                     0,
-        #                                     nb_of_solutions_per_central_spot,
+        #                                     3,
         #                                     0,
         #                                     None,  # addmatrix
         #                                     0,  # verbose
@@ -601,46 +626,46 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
         if spotssettype in ("rangeset"):
-            self.bestmatrices, stats_res = INDEX.getOrientMatrices(
-                                                spot_index_central,
-                                                energy_max,
-                                                Tabledistance[:nbmax_probed, :nbmax_probed],
-                                                self.select_theta,
-                                                self.select_chi,
-                                                n=n,
-                                                ResolutionAngstrom=ResolutionAngstrom,
-                                                B=B,
-                                                cubicSymmetry=restrictLUT_cubicSymmetry,
-                                                LUT=None,
-                                                LUT_tol_angle=rough_tolangle,
-                                                MR_tol_angle=fine_tolangle,
-                                                Minimum_Nb_Matches=Minimum_MatchesNb,
-                                                key_material=self.key_material,
-                                                plot=0,
-                                                nbbestplot=nb_of_solutions_per_central_spot,
-                                                verbose=0,
-                                                detectorparameters=detectorparameters,
-                                                addMatrix=None,  # To add a priori good candidates...
-                                                set_central_spots_hkl=set_central_spots_hkl,
-                                                verbosedetails=1,  # verbosedetails,
-                                                gauge=self.gauge,
-                                                dictmaterials=self.IndexationParameters['dict_Materials'],
-                                                MaxRadiusHKL=False,#True could be OK for this workflow
-                                            )
-        elif spotssettype in ('listsetA',):
-            #wx.MessageBox('Good Luck!To be implemented','INFO')
-            print('spot_index_central for getOrientMatrices_SubSpotsSets', spot_index_central)
-            res = INDEX.getOrientMatrices_SubSpotsSets(spot_index_central, energy_max, self.select_theta,self.select_chi,
-                                                    n, self.key_material, rough_tolangle, detectorparameters)
-            if len(res[0])>0:
-                self.bestmatrices, stats_res =res
-                print('getOrientMatrices_SubSpotsSets found %d solutions',len(res[0]))
-            else:
-                wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots probed in spots sets A and B')
-                return
+            res = INDEX.getOrientMatrices(
+                                    spot_index_central,
+                                    energy_max,
+                                    Tabledistance[:nbmax_probed, :nbmax_probed],
+                                    self.select_theta,
+                                    self.select_chi,
+                                    n=n,
+                                    ResolutionAngstrom=ResolutionAngstrom,
+                                    B=B,
+                                    cubicSymmetry=restrictLUT_cubicSymmetry,
+                                    LUT=None,
+                                    LUT_tol_angle=rough_tolangle,
+                                    MR_tol_angle=fine_tolangle,
+                                    Minimum_Nb_Matches=Minimum_MatchesNb,
+                                    key_material=self.key_material,
+                                    plot=0,
+                                    verbose=0,
+                                    detectorparameters=detectorparameters,
+                                    addMatrix=None,  # To add a priori good candidates...
+                                    set_central_spots_hkl=set_central_spots_hkl,
+                                    verbosedetails=1,  # verbosedetails,
+                                    gauge=self.gauge,
+                                    dictmaterials=self.IndexationParameters['dict_Materials'],
+                                    MaxRadiusHKL=False,#True could be OK for this workflow
+                                )
+        
+        elif spotssettype in ('listsetA','listsetAB',):
+            if spotssettype in ('listsetA',):
+                spotsB = spot_index_central
+            res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
+                                                energy_max, self.select_theta, self.select_chi,
+                                                n, self.key_material, rough_tolangle, 
+                                                detectorparameters,
+                                                minimumNbMatches = Minimum_MatchesNb)
 
-        elif spotssettype in ('listsetAB',):
-            wx.MessageBox('To be implemented','INFO')
+        if len(res[0]) > 0:
+            self.bestmatrices, stats_res = res
+            print('getOrientMatrices_SubSpotsSets found %d solutions', len(res[0]))
+        else:
+            wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots probed in spots sets A and B')
             return
 
         # Update DataSet Object
@@ -663,13 +688,13 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         if set_central_spots_hkl not in (None, [None]):
             keep_only_equivalent = False
 
-        print("self.bestmatrices before")
+        # print("self.bestmatrices before")
         for ra, ub in enumerate(self.bestmatrices):
             print("\nrank : %d" % ra)
             print(ub)
         if nb_solutions > 1:
             print("Merging matrices")
-            print("keep_only_equivalent = %s" % keep_only_equivalent)
+            # print("keep_only_equivalent = %s" % keep_only_equivalent)
             self.bestmatrices, stats_res = ISS.MergeSortand_RemoveDuplicates(
                                                         self.bestmatrices,
                                                         stats_res,
@@ -680,18 +705,18 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         print("stats_res", stats_res)
         nb_solutions = len(self.bestmatrices)
-        print("self.bestmatrices after")
-        for ra, ub in enumerate(self.bestmatrices):
-            print("\nrank : %d" % ra)
-            print(ub)
+        # print("self.bestmatrices after")
+        # for ra, ub in enumerate(self.bestmatrices):
+        #     print("\nrank : %d" % ra)
+        #     print(ub)
 
-        print("Max. Number of Solutions", nb_of_solutions_per_central_spot)
         print("spot_index_central", spot_index_central)
 
         if nb_solutions:
             print("%d matrice(s) found" % nb_solutions)
+            print("self.bestmatrices")
             print(self.bestmatrices)
-            print("Each Matrix is stored in 'MatIndex_#' for further simulation")
+            print("\nEach Matrix is stored in 'MatIndex_#' for further simulation")
             for k in range(nb_solutions):
                 self.dict_Rot["MatIndex_%d" % (k + 1)] = self.bestmatrices[k]
 
@@ -714,6 +739,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                 paramsimul = []
 
                 emax = int(self.emax.GetValue())
+                emin = 5
 
                 for k_solution in range(nb_solutions):
 
@@ -726,9 +752,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     # ------------------------------------------------------------------
 
                     # normally in this method fastcompute = 1, gives 2theta, chi
-                    TwicethetaChi = LT.SimulateResult(grain,
-                                                        5,
-                                                        float(self.emax.GetValue()),
+                    TwicethetaChi = LT.SimulateResult(grain, emin, emax,
                                                         simulparameters,
                                                         ResolutionAngstrom=ResolutionAngstrom,
                                                         fastcompute=1,
@@ -736,14 +760,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                     )
                     self.TwicethetaChi_solution[k_solution] = TwicethetaChi
 
-                    paramsimul.append((grain, 5, emax))
+                    paramsimul.append((grain, emin, emax))
 
                     # to plot best results
                     if self.showplotBox.GetValue():
 
                         print(
                             "Plotting result for emin, emax = %.2f,%.2f"
-                            % (5, int(self.emax.GetValue()))
+                            % (emin, int(self.emax.GetValue()))
                         )
                         print("#central spot: %d" % spot_index_central)
 
@@ -758,7 +782,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                             datatype="2thetachi",
                                             key_material=self.key_material,
                                             kf_direction=self.kf_direction,
-                                            Params_to_simulPattern=(grain, 5, energy_max),
+                                            Params_to_simulPattern=(grain, emin, energy_max),
                                             ResolutionAngstrom=ResolutionAngstrom,
                                             MATR=fine_tolangle,
                                             CCDdetectorparameters=self.CCDdetectorparameters,
@@ -774,9 +798,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
                 nb_to_plot = nb_solutions
 
+                emin = 5
+
                 print(
                     "Plotting result for emin, emax = %.2f,%.2f"
-                    % (5, int(self.emax.GetValue()))
+                    % (emin, int(self.emax.GetValue()))
                 )
                 self.TwicethetaChi_solution = [0 for m in range(nb_to_plot)]
                 paramsimul = []
@@ -806,7 +832,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
                     self.TwicethetaChi_solution[m] = TwicethetaChi
                     emax = int(self.emax.GetValue())
-                    paramsimul.append((grain, 5, emax))
+                    paramsimul.append((grain, emin, emax))
 
                     if self.showplotBox.GetValue():  # to plot best results selected a priori by user
                         title = "Classical Indexation Result Plot"
@@ -819,7 +845,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                             kf_direction=self.kf_direction,
                             datatype="2thetachi",
                             key_material=self.key_material,
-                            Params_to_simulPattern=(grain, 5, self.emax.GetValue()),
+                            Params_to_simulPattern=(grain, emin, self.emax.GetValue()),
                             ResolutionAngstrom=ResolutionAngstrom,
                             CCDdetectorparameters=self.CCDdetectorparameters,
                             IndexationParameters=self.IndexationParameters,
@@ -931,7 +957,7 @@ class RecognitionResultCheckBox(wx.Frame):
         else:
             self.mainframe = parent.parent
 
-        print("RecognitionResultCheckBox my parent is ", self.parent)
+        # print("RecognitionResultCheckBox my parent is ", self.parent)
         #         print "**** \n\nIndexationParameters",IndexationParameters
 
         self.nbPotentialSolutions = len(stats_residues)
@@ -968,64 +994,127 @@ class RecognitionResultCheckBox(wx.Frame):
             self.DataSet.detectordiameter,
         )
 
-        self.init_GUI()
+        self.init_GUI2()
 
-    def init_GUI(self):
-        wx.Frame.__init__(
-            self,
-            self.parent,
-            self._id,
-            self.titlew,
-            size=(600, 50 + 20 * self.nbPotentialSolutions + 120),
-        )
+    def init_GUI2(self):
 
-        panel = wx.Panel(
-            self, -1, size=(400, 50 + 20 * self.nbPotentialSolutions + 120)
-        )
+        import wx.lib.stattext as ST
 
-        wx.StaticText(
-            panel,
-            -1,
-            "   #Matrix     nb. <MTAR = %.2f       nb. <DRTA = %.2f         std. dev. (deg)"
-            % (self.matr_ctrl, self.DRTA),
-            (20, 10),
-        )
+        wx.Frame.__init__(self, self.parent, self._id, self.titlew,
+                        size=(600, 50 + 20 * self.nbPotentialSolutions + 120))
+        panel = wx.Panel(self, -1)
+
+        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+        txt = wx.StaticText(panel, -1, "Select Potential Solutions to Check & Plot & Refine")
+        txt.SetFont(font3)
+
+        if WXPYTHON4:
+            vbox3 = wx.GridSizer(6, 5, 10)
+        else:
+            vbox3 = wx.GridSizer(6, 3)
+
+        txtmatched = wx.StaticText(panel, -1, "Matched")
+        txttheomax = wx.StaticText(panel, -1, "Expected")
+        txtmr = wx.StaticText(panel, -1, "Matching Rate(%)")
+        txtstd = wx.StaticText(panel, -1, "std. dev.(deg)")
+
+        vbox3.AddMany(
+            [(wx.StaticText(panel, -1, "   "), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+            (wx.StaticText(panel, -1, "#Matrix"), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                            (txtmatched, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+        (txttheomax, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+        (txtmr, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+        (txtstd, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
 
         print("stats_residues in RecognitionResultCheckBox", self.stats_residues)
-        self.cb = []
+        self.solutionline = []
+        self.cb =[]
         for k in range(self.nbPotentialSolutions):
-            self.cb.append( wx.CheckBox( panel, -1,
-                "     " + str(k) + "                      %d                                 %d                                   %.3f" % tuple(self.stats_residues[k][:3]), (10, 35 + 20 * k), ) )
+
+            nmatched, nmax, std = self.stats_residues[k][:3]
+            mattchingrate= nmatched/nmax*100
+
+            if mattchingrate >= 50.:
+                color = (158,241,193)
+            else:
+                color = (255,255,255)
+
+            # txtind = wx.StaticText(panel, -1, "%d" % k)
+            txtind = ST.GenStaticText(panel, -1, "   %d   " % k)
+            txtind.SetBackgroundColour(color)
+
+            self.cb.append(wx.CheckBox(panel, -1))
             self.cb[k].SetValue(False)
 
-            # wx.EVT_CHECKBOX(self, self.cb.GetId(), self.Select(k))
+            txtstats = []
+            txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmatched)))
+            txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmax)))
+            txtstats.append(ST.GenStaticText(panel, -1, "%.2f"%float(mattchingrate)))
+            txtstats.append(ST.GenStaticText(panel, -1, "%.2f"%float(std)))
+            for kt in range(4):
+                txtstats[kt].SetBackgroundColour(color)
+            vbox3.AddMany([(self.cb[k], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                                    (txtind, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                                    (txtstats[0], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                                    (txtstats[1], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                                    (txtstats[2], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                                    (txtstats[3], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
 
-        wx.StaticText(
-            panel, -1, "Energy min: ", (15, 35 + 20 * self.nbPotentialSolutions + 30)
-        )
-        self.SCmin = wx.SpinCtrl( panel, -1, "5", (95, 35 + 20 * self.nbPotentialSolutions + 30), (60, -1), min=5, max=150, )
+        emintxt = wx.StaticText(panel, -1, "Energy min: ")
+        self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150, size=(70, -1))
 
-        wx.StaticText(
-            panel, -1, "Energy max: ", (180, 35 + 20 * self.nbPotentialSolutions + 30)
-        )
-        self.SCmax = wx.SpinCtrl( panel, -1, str(int(self.emax)), (260, 35 + 20 * self.nbPotentialSolutions + 30), (60, -1), min=6, max=150, )
+        emaxtxt = wx.StaticText(panel, -1, "Energy max: ")
+        self.SCmax = wx.SpinCtrl(panel, -1, str(int(self.emax)), min=6, max=150, size=(70, -1))
 
-        wx.Button(panel, 1, "Plot", (40, 35 + 20 * self.nbPotentialSolutions + 60))
-        self.Bind(wx.EVT_BUTTON, self.OnPlot, id=1)
+        plotbtn = wx.Button(panel, -1, "Plot", size=(-1, 50))
+        plotbtn.Bind(wx.EVT_BUTTON, self.OnPlot)
 
-        wx.Button(panel, 2, "Simul S3", (130, 35 + 20 * self.nbPotentialSolutions + 60))
-        self.Bind(wx.EVT_BUTTON, self.OnSimulate_S3, id=2)
+        simulbtn = wx.Button(panel, -1, "Simul S3", size=(-1, 50))
+        simulbtn.Bind(wx.EVT_BUTTON, self.OnSimulate_S3)
 
-        wx.Button(panel, 3, "Quit", (220, 35 + 20 * self.nbPotentialSolutions + 60))
-        self.Bind(wx.EVT_BUTTON, self.OnQuit, id=3)
+        quitbtn = wx.Button(panel, -1, "Quit", size=(-1, 50))
+        quitbtn.Bind(wx.EVT_BUTTON, self.OnQuit)
 
-        self.Show(True)
-        self.Centre()
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(plotbtn, 1, wx.ALL)
+        hbox.Add(simulbtn, 1, wx.ALL)
+        hbox.Add(quitbtn, 1, wx.ALL)
 
-    def Select(self, event, index):
+        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox2.Add(emintxt, 0, wx.ALIGN_LEFT)
+        hbox2.Add(self.SCmin,1)
+        hbox3 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox3.Add(emaxtxt, 0, wx.ALIGN_LEFT)
+        hbox3.Add(self.SCmax,1)
+
+        sizerparam = wx.BoxSizer(wx.VERTICAL)
+        sizerparam.Add(txt, 0, wx.ALIGN_CENTER_HORIZONTAL)
+
+        sizerparam.AddSpacer(5)
+
+        sizerparam.Add(vbox3, 0, wx.ALL)
+
+        sizerparam.AddSpacer(10)
+        sizerparam.Add(hbox2, 0)
+        sizerparam.Add(hbox3, 0)
+        sizerparam.Add(hbox, 0, wx.EXPAND)
+
+        panel.SetSizer(sizerparam)
+        sizerparam.Fit(self)
+
+        #---------  tooltip
+        simulbtn.SetToolTipString('Simulate and Plot Laue Pattern of the 4 children of a selected solution according to sigam3 operator')
+        txtmatched.SetToolTipString('Nb of matched reciprocal space directions between exp. and simulated Laue Patterns')
+        tipmaxnb = 'Nb of expected reciprocal space directions in simulated Laue pattern. A direction is counted as many as harmonics reciprocal nodes it contains'
+        tipmaxnb += 'This number varies as a function of orientation matrix, the material and emax'
+        txttheomax.SetToolTipString(tipmaxnb)
+        txtmr.SetToolTipString('Matching rate ratio in percent of nb of matched directions and nb of simulated directions')
+        txtstd.SetToolTipString('Standard deviation of angular residues distribution of the matched directions')
+
+    def Select(self, evt, index):
         print(index, "!!!")
 
-    def OnQuit(self, event):
+    def OnQuit(self, evt):
         # LaueToolsframe.picky.recognition_possible = True
         self.parent.recognition_possible = True
         self.Close()
@@ -1064,21 +1153,21 @@ class RecognitionResultCheckBox(wx.Frame):
                 print("\n****** Params_to_simulPattern", Params_to_simulPattern)
 
                 newplot = Plot_RefineFrame(
-                    self,
-                    -1,
-                    "matrix #%d" % ind,
-                    kf_direction=self.kf_direction,
-                    ImageArray=self.ImageArray,
-                    datatype=self.datatype,
-                    key_material=self.key_material,
-                    Params_to_simulPattern=Params_to_simulPattern,
-                    ResolutionAngstrom=self.ResolutionAngstrom,
-                    MATR=self.matr_ctrl,
-                    CCDdetectorparameters=self.CCDdetectorparameters,
-                    IndexationParameters=self.IndexationParameters,
-                    StorageDict=self.StorageDict,
-                    DataSetObject=self.DataSet,
-                )
+                                            self,
+                                            -1,
+                                            "matrix #%d" % ind,
+                                            kf_direction=self.kf_direction,
+                                            ImageArray=self.ImageArray,
+                                            datatype=self.datatype,
+                                            key_material=self.key_material,
+                                            Params_to_simulPattern=Params_to_simulPattern,
+                                            ResolutionAngstrom=self.ResolutionAngstrom,
+                                            MATR=self.matr_ctrl,
+                                            CCDdetectorparameters=self.CCDdetectorparameters,
+                                            IndexationParameters=self.IndexationParameters,
+                                            StorageDict=self.StorageDict,
+                                            DataSetObject=self.DataSet,
+                                        )
 
                 newplot.Show(True)
 
@@ -1092,8 +1181,8 @@ class RecognitionResultCheckBox(wx.Frame):
                         'sigma3_3':[[-1./3, 2./3,-2./3],[2./3,-1./3,-2./3],[-2./3,-2./3,-1./3]],
                         'sigma3_4':[[-1./3,-2./3,-2./3],[-2./3,-1./3, 2./3],[-2./3, 2./3,-1./3]]
                         }
-                        
-        Quite old function 
+
+        Quite old function
 
         """
         emax = int(self.SCmax.GetValue())

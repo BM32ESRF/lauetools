@@ -47,12 +47,7 @@ class LinkEditor(wx.Frame):
         vbox4.Add(wx.Button(pnl2, 10, "Add"), 0, wx.ALIGN_CENTER | wx.TOP, 45)
         vbox4.Add(wx.Button(pnl2, 11, "Remove"), 0, wx.ALIGN_CENTER | wx.TOP, 15)
         vbox4.Add(wx.Button(pnl2, 12, "Clear All"), 0, wx.ALIGN_CENTER | wx.TOP, 15)
-        vbox4.Add(
-            wx.Button(pnl2, wx.ID_OK, "Accept and Quit"),
-            0,
-            wx.ALIGN_CENTER | wx.TOP,
-            15,
-        )
+        vbox4.Add(wx.Button(pnl2, wx.ID_OK, "Accept and Quit"), 0, wx.ALIGN_CENTER | wx.TOP, 15)
         pnl2.SetSizer(vbox4)
         self.Bind(wx.EVT_BUTTON, self.OnAdd, id=10)
         self.Bind(wx.EVT_BUTTON, self.OnRemove, id=11)

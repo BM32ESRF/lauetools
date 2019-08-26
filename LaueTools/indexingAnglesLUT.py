@@ -831,7 +831,7 @@ def getUBs_and_MatchingRate(
                                         ResolutionAngstrom=ResolutionAngstrom,
                                         ang_tol=ang_tol_MR,
                                         detectorparameters=detectorparameters,
-                                        dictmaterials=dictmaterials
+                                        dictmaterials=dictmaterials,
                                     )
 
         if AngRes is None:
@@ -1540,11 +1540,11 @@ def flatnestedlist(list_of_lists):
     return [y for x in list_of_lists for y in x]
 
 def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, nLUT,
-                                            key_material, LUT_tol_angle,detectorparameters,
+                                            key_material, LUT_tol_angle, detectorparameters,
                                             minimumNbMatches=15):
     """find orientation matrices and scores from the mutual angles recognition
     from two spots Sets
-  
+
                         ResolutionAngstrom=False,
                         B=np.eye(3),  # for cubic
                         cubicSymmetry=False,
@@ -1653,6 +1653,157 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
         print("final stats_res of this pair", stats_res)
         nb_sol = len(bestmat)
         print('final nb of UBs for this pair [%d, %d]'%(spot_index_1, spot_index_2),nb_sol)
+        if nb_sol > 0:
+            bestmatList.append(bestmat)
+            stats_resList.append(stats_res)
+            SolutionsFound = True
+
+
+    if not SolutionsFound:
+        return [], []
+
+    BestMatrices = flatnestedlist(bestmatList)
+    BestStats = flatnestedlist(stats_resList)
+
+    nbsol = len(BestMatrices)
+    print('nb solutions', nbsol)
+
+    if nbsol>1:
+
+        BestMatrices, BestStats = ISS.MergeSortand_RemoveDuplicates(BestMatrices,
+                                                                BestStats,
+                                                                minimumNbMatches,
+                                                                tol=0.0001,
+                                                                keep_only_equivalent=keep_only_equivalent)
+
+    print('final nb solutions', len(BestMatrices))
+    print('BestMatrices\n')
+    print(BestMatrices)
+
+    return BestMatrices, BestStats
+
+
+def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
+                                    emax, Theta_exp, Chi_exp, nLUT,
+                                    key_material, LUT_tol_angle, detectorparameters,
+                                    minimumNbMatches=15):
+    """find orientation matrices and scores from the mutual angles recognition
+    from two spots Sets
+
+                        ResolutionAngstrom=False,
+                        B=np.eye(3),  # for cubic
+                        cubicSymmetry=False,
+                        LUT=None,
+                        LUT_tol_angle=0.5,
+                        MR_tol_angle=0.2,
+                        Minimum_Nb_Matches=15,
+                        key_material="",
+                        plot=0,
+                        nbbestplot=1,
+                        nbspots_plot="all",  # nb exp spots to display if plot = 1
+                        addMatrix=None,
+                        verbose=1,
+                        detectorparameters=None,
+                        set_central_spots_hkl=None,
+                        verbosedetails=True,
+                        gauge=None,
+                        dictmaterials=DictLT.dict_Materials,
+                        MaxRadiusHKL=False,
+    """
+
+    print("\n\n ----------------\n ---  getOrientMatrices_fromTwoSets  --- \n --------------------\n\n")
+
+    # set of mutual distances -------
+    Theta1 = Theta_exp[selectedspots_ind1]
+    Chi1 = Chi_exp[selectedspots_ind1]
+    Theta2 = Theta_exp[selectedspots_ind2]
+    Chi2 = Chi_exp[selectedspots_ind2]
+    sorted_data1 = np.transpose(np.array([Theta1, Chi1]))
+    sorted_data2 = np.transpose(np.array([Theta2, Chi2]))
+
+    print("Calculating all mutual angular distances of selected spots...")
+    Tabledistance = np.transpose(GT.calculdist_from_thetachi(sorted_data1, sorted_data2))
+
+    print("Tabledistance.shape", Tabledistance.shape)
+    #-----------------------
+
+    # Building LUT of reference angles
+    dictmaterials = DictLT.dict_Materials
+    latticeparams = dictmaterials[key_material][1]
+    Rules = dictmaterials[key_material][2]
+    B = CP.calc_B_RR(latticeparams)
+    LUT = build_AnglesLUT(B, nLUT, MaxRadiusHKL=False,
+                cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials),
+                applyExtinctionRules=Rules)
+
+    keep_only_equivalent = CP.isCubic(latticeparams)
+
+    # ---------   START of INDEXATION  -------------
+    bestmatList = []
+    stats_resList = []
+
+    #spot_index 1 and 2  = absolute index
+    # i1,i2 local index to scan selectedspots_ind
+
+    SolutionsFound = False
+    # loop over all possible spots pairs in selected set of spots
+    for i1, i2 in GT.mutualpairs(range(len(selectedspots_ind1)),
+                                range(len(selectedspots_ind2))):
+
+        spot_index_1 = selectedspots_ind1[i1]
+        spot_index_2 = selectedspots_ind2[i2]
+
+        print("\n***\n\ni1,i2, local_spotindex1,local_spotindex2", i1, i2, spot_index_1, spot_index_2)
+
+        All_2thetas = Theta_exp*2.
+        All_Chis = Chi_exp
+
+        coords_1 = All_2thetas[spot_index_1], All_Chis[spot_index_1]
+        coords_2 = All_2thetas[spot_index_2], All_Chis[spot_index_2]
+
+        # Table of distances is very small (nb selected spots**2)
+        expdistance_2spots = Tabledistance[i1, i2]
+
+        print('expdistance_2spots  = ', expdistance_2spots)
+
+        UBS_MRS = getUBs_and_MatchingRate(spot_index_1,
+                                            spot_index_2,
+                                            LUT_tol_angle,
+                                            expdistance_2spots,
+                                            coords_1,
+                                            coords_2,
+                                            nLUT,
+                                            B,
+                                            All_2thetas,
+                                            All_Chis,
+                                            LUT=LUT,
+                                            key_material=key_material,
+                                            emax=emax,
+                                            ang_tol_MR=LUT_tol_angle,
+                                            detectorparameters=detectorparameters,
+                                            Minimum_Nb_Matches=minimumNbMatches,
+                                            verbosedetails=False)
+
+        # print('UBS_MRS',UBS_MRS)
+
+        # no matrices found for this pair i1,i2
+        if len(UBS_MRS[0]) == 0:
+            print('nb of UBs for this pair [%d, %d]: '%(spot_index_1, spot_index_2), len(UBS_MRS[0]))
+            continue
+
+        bestmat, stats_res = UBS_MRS
+
+        print("Merging matrices for this pair")
+        print("keep_only_equivalent = %s" % keep_only_equivalent)
+        bestmat, stats_res = ISS.MergeSortand_RemoveDuplicates(bestmat,
+                                                        stats_res,
+                                                        minimumNbMatches,
+                                                        tol=0.0001,
+                                                        keep_only_equivalent=keep_only_equivalent)
+
+        print("final stats_res of this pair", stats_res)
+        nb_sol = len(bestmat)
+        print('final nb of UBs for this pair [%d, %d]'%(spot_index_1, spot_index_2), nb_sol)
         if nb_sol > 0:
             bestmatList.append(bestmat)
             stats_resList.append(stats_res)

@@ -837,6 +837,23 @@ def find_closest(input_array, target_array, tol):
     return closest_indices, accept_indices, reject_indices
 
 
+def mutualpairs(ind1, ind2):
+    """return all pairs from elements of 2 lists
+
+    .. example::
+        mutualpairs([2,99,5],[8,6])
+        array([[ 2,  8], [99,  8], [ 5,  8], [ 2,  6], [99,  6], [ 5,  6]])
+
+    :param ind1: 1D list of indices (len = n)
+    :type ind1: iterable
+    :param ind2: 1D list of indices (len = m)
+    :type ind2: iterable
+    :return: list of pairs with shape (n*m, 2)
+    :rtype: array
+    """
+    return np.transpose([np.tile(ind1, len(ind2)), np.repeat(ind2, len(ind1))])
+
+
 def pairs_of_indices(n):
     """
     return indice position of non zero and non diagonal elements in triangular up matrix (n*n)
