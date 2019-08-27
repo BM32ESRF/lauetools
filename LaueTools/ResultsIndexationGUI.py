@@ -131,6 +131,7 @@ class RecognitionResultCheckBox(wx.Frame):
         )
 
         self.init_GUI2()
+        self.Show(True)
 
     def init_GUI2(self):
 
@@ -270,6 +271,7 @@ class RecognitionResultCheckBox(wx.Frame):
             Emin = int(self.SCmin.GetValue())
             Emax = int(self.SCmax.GetValue())
 
+            print('self.paramsimul', self.paramsimul)
             # build all selected plots
             for ind in self.toshow:
 
@@ -309,7 +311,6 @@ class RecognitionResultCheckBox(wx.Frame):
                         'sigma3_4':[[-1./3,-2./3,-2./3],[-2./3,-1./3, 2./3],[-2./3, 2./3,-1./3]]
                         }
 
-        Quite old function
         """
         emax = int(self.SCmax.GetValue())
         emin = int(self.SCmin.GetValue())
@@ -327,11 +328,12 @@ class RecognitionResultCheckBox(wx.Frame):
             return
 
         # plotting frame for parent grain
-        print("self.data in OnSimulate_S3", self.data)
+        # print("self.data in OnSimulate_S3", self.data)
         if self.data is None:
             wx.MessageBox("self.data is empty!", "info")
             return
 
+        print(' Choosing matrix solution #%d'%parent_matrix_index)
         grain = self.paramsimul[parent_matrix_index][0]
 
         Params_to_simulPattern = (grain, emin, emax)
@@ -364,7 +366,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
         self.TwicethetaChi_solution = []
         paramsimul = []
-        list_eq_matrix = []
+        list_childmatrices = []
 
         # four sigma 3 operator in listmatsigma
         for k_matsigma, vecteurref in enumerate(listmatsigma):
@@ -373,89 +375,84 @@ class RecognitionResultCheckBox(wx.Frame):
             element = self.key_material
             grain = [vecteurref, [1.0, 1.0, 1.0], parent_grain_matrix, element]
 
-            Equivalent_matrix = np.dot(parent_grain_matrix, vecteurref)
-            list_eq_matrix.append(Equivalent_matrix)
+            ChildMatrix = np.dot(parent_grain_matrix, vecteurref)
+            list_childmatrices.append(ChildMatrix)
 
             # PATCH: redefinition of grain to simulate any unit cell (not only cubic) ---
             key_material = grain[3]
-            grain = CP.Prepare_Grain(key_material, Equivalent_matrix,
+            grain = CP.Prepare_Grain(key_material, ChildMatrix,
                                 dictmaterials=self.IndexationParameters['dict_Materials'])
+
+            print('ChildMatrix  #%d'%k_matsigma, ChildMatrix)
 
             # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
             spots2pi = LT.getLaueSpots(
-                DictLT.CST_ENERGYKEV / float(emax),
-                DictLT.CST_ENERGYKEV / float(emin),
-                [grain],
-                [[""]],
-                fastcompute=1,
-                ResolutionAngstrom=self.ResolutionAngstrom,
-                fileOK=0,
-                verbose=0,
-                dictmaterials=self.StorageDict['dict_Materials']
-            )
+                                        DictLT.CST_ENERGYKEV / float(emax),
+                                        DictLT.CST_ENERGYKEV / float(emin),
+                                        [grain],
+                                        [[""]],
+                                        fastcompute=1,
+                                        ResolutionAngstrom=self.ResolutionAngstrom,
+                                        fileOK=0,
+                                        verbose=0,
+                                        dictmaterials=self.StorageDict['dict_Materials']
+                                    )
 
             # 2theta, chi of spot which are on camera(with harmonics)
             TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
             self.TwicethetaChi_solution.append(TwicethetaChi)
 
-            print("*-**********************")
+            # print("*-**********************")
             # print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-            toutsigma3 = getProximity(
-                TwicethetaChi, np.array(self.data[0]) / 2.0, np.array(self.data[1])
-            )
-            print("calcul residues", toutsigma3[2:])
-            print(vecteurref)
+            toutsigma3 = getProximity(TwicethetaChi,
+                                        np.array(self.data[0]) / 2.0,
+                                        np.array(self.data[1]))
+            # print("calcul residues", toutsigma3[2:])
+            # print(vecteurref)
             res_sigma.append(toutsigma3[2:])
 
-            #             plotsigma = Plot_RefineFrame(self, -1, "sigma #%d" % k_matsigma,
-            #                                 data=self.data,
-            #                                 kf_direction=self.kf_direction,
-            #                                 datatype=self.datatype,
-            #                                 data_2thetachi=self.data_2thetachi,
-            #                                 key_material=self.key_material,
-            #                                 Params_to_simulPattern=(grain, emin, emax),
-            #                                 ResolutionAngstrom=self.ResolutionAngstrom,
-            #                                 CCDdetectorparameters=self.CCDdetectorparameters,
-            #                                 IndexationParameters=self.IndexationParameters,
-            #                                 StorageDict=self.StorageDict,
-            #                                 mainframe='billframe',  # self.mainframe
-            #                                 DataSetObject=self.DataSet
-            #                                 )
-            plotsigma = Plot_RefineFrame(
-                                    self,
-                                    -1,
-                                    "sigma #%d" % k_matsigma,
-                                    datatype=self.datatype,
-                                    ImageArray=self.ImageArray,
-                                    kf_direction=self.kf_direction,
-                                    key_material=self.key_material,
-                                    Params_to_simulPattern=(grain, emin, emax),
-                                    ResolutionAngstrom=self.ResolutionAngstrom,
-                                    MATR=self.matr_ctrl,
-                                    CCDdetectorparameters=self.CCDdetectorparameters,
-                                    IndexationParameters=self.IndexationParameters,
-                                    StorageDict=self.StorageDict,
-                                    DataSetObject=self.DataSet,
-                                )
-
-            plotsigma.current_matrix = Equivalent_matrix
-            plotsigma.current_elem_label = self.key_material
-
-            # this order is very important!!
-            plotsigma.SimulParam = (grain, emin, emax)
-            plotsigma.ResolutionAngstrom = self.ResolutionAngstrom
-            plotsigma.Simulate_Pattern()
             paramsimul.append((grain, emin, emax))
 
-            plotsigma.recognition_possible = True
-            #            plotsigma.plotPanel = wxmpl.PlotPanel(plotsigma, -1, size=(5, 3), autoscaleUnzoom=False)
-            #            wxmpl.EVT_POINT(plotsigma, plotsigma.plotPanel.GetId(), plotsigma._on_point_choice)
-            plotsigma.listbuttonstate = [0] * 3
-            plotsigma._replot()
-            plotsigma.Show(True)
+            if 0:
+                plotsigma = Plot_RefineFrame(
+                                        self,
+                                        -1,
+                                        "sigma #%d" % k_matsigma,
+                                        datatype=self.datatype,
+                                        ImageArray=self.ImageArray,
+                                        kf_direction=self.kf_direction,
+                                        key_material=self.key_material,
+                                        Params_to_simulPattern=(grain, emin, emax),
+                                        ResolutionAngstrom=self.ResolutionAngstrom,
+                                        MATR=self.matr_ctrl,
+                                        CCDdetectorparameters=self.CCDdetectorparameters,
+                                        IndexationParameters=self.IndexationParameters,
+                                        StorageDict=self.StorageDict,
+                                        DataSetObject=self.DataSet,
+                                    )
 
-        RRCB = RecognitionResultCheckBox(
-                                            self,
+                plotsigma.current_matrix = ChildMatrix
+                plotsigma.current_elem_label = self.key_material
+
+                # this order is very important!!
+                plotsigma.SimulParam = (grain, emin, emax)
+                plotsigma.ResolutionAngstrom = self.ResolutionAngstrom
+                plotsigma.Simulate_Pattern()
+                
+
+                plotsigma.recognition_possible = True
+                #            plotsigma.plotPanel = wxmpl.PlotPanel(plotsigma, -1, size=(5, 3), autoscaleUnzoom=False)
+                #            wxmpl.EVT_POINT(plotsigma, plotsigma.plotPanel.GetId(), plotsigma._on_point_choice)
+                plotsigma.listbuttonstate = [0] * 3
+                plotsigma._replot()
+                plotsigma.Show(True)
+
+        print('self.IndexationParameters["paramsimul"]', self.IndexationParameters["paramsimul"])
+        dict_indexationparameters = copy.copy(self.IndexationParameters)
+        dict_indexationparameters["paramsimul"] = paramsimul
+        dict_indexationparameters["bestmatrices"] = list_childmatrices
+        
+        RRCB = RecognitionResultCheckBox(self,
                                             -1,
                                             "Potential Solutions from Sigma3 Simulations",
                                             res_sigma,
@@ -471,16 +468,12 @@ class RecognitionResultCheckBox(wx.Frame):
                                             data_XY=self.data_XY_exp,
                                             #                                          data_XY=self.select_dataXY,
                                             CCDdetectorparameters=self.CCDdetectorparameters,
-                                            IndexationParameters=self.IndexationParameters,
+                                            IndexationParameters=dict_indexationparameters,
                                             StorageDict=self.StorageDict,
                                             mainframe="billframerc",  # self.mainframe
                                             DataSetObject=self.DataSet,
                                         )
 
-        RRCB.key_material = self.key_material
         RRCB.TwicethetaChi_solution = self.TwicethetaChi_solution
-        RRCB.mat_solution = list_eq_matrix
-        RRCB.paramsimul = paramsimul
-        RRCB.ResolutionAngstrom = self.ResolutionAngstrom
 
         return True

@@ -22,6 +22,8 @@ else:
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """alias for wxpython4
+        """
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -755,8 +757,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                         simulparameters,
                                                         ResolutionAngstrom=ResolutionAngstrom,
                                                         fastcompute=1,
-                                                        dictmaterials=self.IndexationParameters['dict_Materials']
-                                                    )
+                                                        dictmaterials=self.IndexationParameters['dict_Materials'])
                     self.TwicethetaChi_solution[k_solution] = TwicethetaChi
 
                     paramsimul.append((grain, emin, emax))
@@ -764,31 +765,26 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     # to plot best results
                     if self.showplotBox.GetValue():
 
-                        print(
-                            "Plotting result for emin, emax = %.2f,%.2f"
-                            % (emin, int(self.emax.GetValue()))
-                        )
+                        print("Plotting result for emin, emax = %.2f,%.2f"
+                            % (emin, int(self.emax.GetValue())))
                         print("#central spot: %d" % spot_index_central)
 
-                        title = (
-                            "Classical Indexation Result Plot :  #central spot: %d  solution # %d"
-                            % (spot_index_central, k_solution)
-                        )
+                        title = ("Classical Indexation Result Plot :  #central spot: %d  solution # %d"
+                            % (spot_index_central, k_solution))
 
                         plotresult = Plot_RefineFrame( self,
-                                            -1,
-                                            title,
-                                            datatype="2thetachi",
-                                            key_material=self.key_material,
-                                            kf_direction=self.kf_direction,
-                                            Params_to_simulPattern=(grain, emin, energy_max),
-                                            ResolutionAngstrom=ResolutionAngstrom,
-                                            MATR=fine_tolangle,
-                                            CCDdetectorparameters=self.CCDdetectorparameters,
-                                            IndexationParameters=self.IndexationParameters,
-                                            StorageDict=self.StorageDict,
-                                            DataSetObject=self.DataSet,
-                                        )
+                                                        -1,
+                                                        title,
+                                                        datatype="2thetachi",
+                                                        key_material=self.key_material,
+                                                        kf_direction=self.kf_direction,
+                                                        Params_to_simulPattern=(grain, emin, energy_max),
+                                                        ResolutionAngstrom=ResolutionAngstrom,
+                                                        MATR=fine_tolangle,
+                                                        CCDdetectorparameters=self.CCDdetectorparameters,
+                                                        IndexationParameters=self.IndexationParameters,
+                                                        StorageDict=self.StorageDict,
+                                                        DataSetObject=self.DataSet)
 
                         plotresult.Show(True)
 
@@ -799,10 +795,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
                 emin = 5
 
-                print(
-                    "Plotting result for emin, emax = %.2f,%.2f"
-                    % (emin, int(self.emax.GetValue()))
-                )
+                print("Plotting result for emin, emax = %.2f,%.2f"
+                    % (emin, int(self.emax.GetValue())))
                 self.TwicethetaChi_solution = [0 for m in range(nb_to_plot)]
                 paramsimul = []
 
@@ -820,14 +814,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     # update of grain definition is done in SimulateResult()
                     # ------------------------------------------------------------------
 
-                    TwicethetaChi = LT.SimulateResult(
-                        grain,
-                        5,
-                        emax,
-                        simulparameters,
-                        ResolutionAngstrom=ResolutionAngstrom,
-                        fastcompute=1,
-                    )
+                    TwicethetaChi = LT.SimulateResult(grain,
+                                                        5,
+                                                        emax,
+                                                        simulparameters,
+                                                        ResolutionAngstrom=ResolutionAngstrom,
+                                                        fastcompute=1)
 
                     self.TwicethetaChi_solution[m] = TwicethetaChi
                     emax = int(self.emax.GetValue())
@@ -849,8 +841,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                             CCDdetectorparameters=self.CCDdetectorparameters,
                             IndexationParameters=self.IndexationParameters,
                             StorageDict=self.StorageDict,
-                            DataSetObject=self.DataSet,
-                        )
+                            DataSetObject=self.DataSet)
 
                         plotresult.Show(True)
 
@@ -887,16 +878,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             pos_ = self.config_irp_filename[::-1].find("_")
             pos_ = len(self.config_irp_filename) - (pos_ + 1)
             self.config_irp_filename = (
-                self.config_irp_filename[:pos_] + "_%d.irp" % self.indexation_index
-            )
+                self.config_irp_filename[:pos_] + "_%d.irp" % self.indexation_index)
             self.output_irp.SetValue(self.config_irp_filename)
 
         else:  # any matrix was found
             print("!!  Nothing found   !!!")
             wx.MessageBox(
                 "! NOTHING FOUND !\nTry to reduce the Minimum Number Matched Spots to catch something!",
-                "INFO",
-            )
+                "INFO")
 
     def OnQuit(self, _):
         """ quit
@@ -906,8 +895,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 if __name__ == "__main__":
     filename = "/home/micha/LaueTools/Examples/Ge/dat_Ge0001.cor"
 
-    (
-        Current_peak_data,
+    (Current_peak_data,
         data_theta,
         data_chi,
         data_pixX,
@@ -927,8 +915,7 @@ if __name__ == "__main__":
     indexation_parameters["DataToIndex"]["dataXY"] = data_pixX, data_pixY
     indexation_parameters["DataToIndex"]["data_I"] = data_I
     indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = np.arange(
-        len(data_theta)
-    )
+        len(data_theta))
     indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
     indexation_parameters["current_processedgrain"] = 0
     indexation_parameters["dict_Rot"] = DictLT.dict_Rot

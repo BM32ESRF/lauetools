@@ -183,7 +183,7 @@ class Plot_RefineFrame(wx.Frame):
             self.indexationframe = "unknown"
 
         #         print "Plot_RefineFramemy parent is ", self.parent
-        print("mainframe of Plot_RefineFrame is ", self.mainframe)
+        # print("mainframe of Plot_RefineFrame is ", self.mainframe)
 
         #         # in dvpt --------------------
         #         import readmccd as RMCCD
@@ -255,7 +255,7 @@ class Plot_RefineFrame(wx.Frame):
         # simulation parameters
         # self.SimulParam =(grain, emin, self.emax.GetValue())
         self.SimulParam = Params_to_simulPattern
-        print("self.SimulParam", self.SimulParam)
+        print("self.SimulParam in Plot_RefineFrame", self.SimulParam)
 
         self.kf_direction = kf_direction
 
@@ -263,10 +263,8 @@ class Plot_RefineFrame(wx.Frame):
             self.DataPlot_filename = IndexationParameters["DataPlot_filename"]
             self.current_processedgrain = IndexationParameters["current_processedgrain"]
 
-            print(
-                "self.current_processedgrain in init () Plot_RefineFrame",
-                self.current_processedgrain,
-            )
+            # print("self.current_processedgrain in init () Plot_RefineFrame",
+            #                     self.current_processedgrain)
         else:
             self.DataPlot_filename = self.mainframe.DataPlot_filename
             self.current_processedgrain = self.mainframe.current_processedgrain

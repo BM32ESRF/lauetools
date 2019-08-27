@@ -43,6 +43,7 @@ if sys.version_info.major == 3:
     from . import IOLaueTools as IOLT
     from . import CrystalParameters as CP
     from . import DetectorParameters as DP
+    from . ResultsIndexationGUI import RecognitionResultCheckBox
 
 else:
 
@@ -60,6 +61,7 @@ else:
     import IOLaueTools as IOLT
     import CrystalParameters as CP
     import DetectorParameters as DP
+    from ResultsIndexationGUI import RecognitionResultCheckBox
 
 DEG = DictLT.DEG
 PI = DictLT.PI
@@ -136,7 +138,7 @@ class PlotRangePanel(wx.Panel):
 
         b3.SetToolTipString(tpb3)
 
-    def set_init_plot_True(self, evt):
+    def set_init_plot_True(self, _):
         print("reset init_plot to True")
         self.mainframe.init_plot = True
 
@@ -312,13 +314,13 @@ class CrystalParamPanel(wx.Panel):
         tipreloadMat = 'Reload Materials from dict_Materials file'
         btnReloadMaterials.SetToolTipString(tipreloadMat)
 
-    def onSortUBsname(self, evt):
+    def onSortUBsname(self, _):
         listrot = list(DictLT.dict_Rot.keys())
         listrot = sorted(listrot, key=str.lower)
         self.comboMatrix.Clear()
         self.comboMatrix.AppendItems(listrot)
 
-    def OnLoadMaterials(self,evt):
+    def OnLoadMaterials(self,_):
         # self.mainframe.GetParent().OnLoadMaterials(1)
         # loadedmaterials = self.mainframe.GetParent().dict_Materials
 
@@ -644,7 +646,7 @@ class MoveCCDandXtal(wx.Panel):
         stepangletxt.SetToolTipString(rottip)
         self.stepanglerot.SetToolTipString(rottip)
 
-    def OnActivateRotation(self, evt):
+    def OnActivateRotation(self, _):
 
         self.mainframe.RotationActivated = not self.mainframe.RotationActivated
 
@@ -881,7 +883,7 @@ class StrainXtal(wx.Panel):
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
 
-    def OnActivateRotation(self, evt):
+    def OnActivateRotation(self, _):
 
         self.mainframe.RotationActivated = not self.mainframe.RotationActivated
 
@@ -941,7 +943,7 @@ class TextFrame(wx.Frame):
         vbox.Add(btnquit)
         panel.SetSizer(vbox)
 
-    def onStore(self, evt):
+    def onStore(self, _):
 
         matrix_name = str(self.storeText.GetValue())
 
@@ -950,7 +952,7 @@ class TextFrame(wx.Frame):
         DictLT.dict_Rot[matrix_name] = UBmatrix
         self.parent.crystalparampanel.comboMatrix.Append(matrix_name)
 
-    def onSave(self, evt):
+    def onSave(self, _):
         matrixfilename = str(self.storeText.GetValue())
 
         UBmatrix = np.array(self.parent.crystalparampanel.UBmatrix)
@@ -965,7 +967,7 @@ class TextFrame(wx.Frame):
         _file.write(text)
         _file.close()
 
-    def onQuit(self, evt):
+    def onQuit(self, _):
         self.Close()
 
 
@@ -1431,7 +1433,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return IIM.ComputeGnomon_2(dataselected)
 
-    def OnSaveCalib(self, evt):
+    def OnSaveCalib(self, _):
         """
         Save  calibration parameters in .det file
         """
@@ -1525,7 +1527,7 @@ class MainCalibrationFrame(wx.Frame):
             self.parent.pixelsize = self.pixelsize
             self.parent.kf_direction = self.kf_direction
 
-    def OnStoreMatrix(self, evt):
+    def OnStoreMatrix(self, _):
         """
         Store the current UBmatrix in the orientation UBmatrix dictionnary
         """
@@ -1565,7 +1567,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return strmat[:-2] + "]"
 
-    def OnShowAndFilter(self, evt):
+    def OnShowAndFilter(self, _):
         fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues"]
         # self.linkedspots = dia.listofpairs
         # self.linkExpMiller = dia.linkExpMiller
@@ -1605,7 +1607,7 @@ class MainCalibrationFrame(wx.Frame):
         self.linkIntensity = ArrayReturn[:, 5]
         self.linkResidues = ArrayReturn[:, 6]
 
-    def OnLinkSpotsAutomatic(self, evt):
+    def OnLinkSpotsAutomatic(self, _):
         """ create automatically links between currently close experimental
         and theoretical spots in 2theta chi representation
         """
@@ -1791,7 +1793,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return calib_indexed_spots
 
-    def OnLinkSpots(self, evt):  # manual links
+    def OnLinkSpots(self, _):  # manual links
         """
         open an editor to link manually spots(exp, theo) for the next fitting procedure
         """
@@ -2195,7 +2197,7 @@ class MainCalibrationFrame(wx.Frame):
         )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
         print("%s has been updated" % (prefix + ".cor"))
 
-    def OnWriteResults(self, evt):
+    def OnWriteResults(self, _):
         """
         write a .fit file of calibration CCD geometry 
         """
@@ -2352,7 +2354,7 @@ class MainCalibrationFrame(wx.Frame):
                 "self.btn_label_expspot.GetValue()", self.btn_label_expspot.GetValue()
             )
 
-    def ToggleLabelExp(self, evt):
+    def ToggleLabelExp(self, _):
         self.show_alltogglestate(0)
 
         if self.p2S == 0:
@@ -2375,7 +2377,7 @@ class MainCalibrationFrame(wx.Frame):
 
             self.p2S = 0
 
-    def ToggleLabelSimul(self, evt):
+    def ToggleLabelSimul(self, _):
         self.show_alltogglestate(0)
         if self.p3S == 0:
             self.btn_label_expspot.SetBackgroundColour("Green")
@@ -2417,7 +2419,7 @@ class MainCalibrationFrame(wx.Frame):
         self.act_residues.SetValue(str(np.round(dataresults[8], decimals=2)))
         self.nbspots_in_fit.SetValue(str(dataresults[9]))
 
-    def close(self, evt):
+    def close(self, _):
         self.Close(True)
 
     def OnSetCCDParams(self, event):
@@ -2849,7 +2851,7 @@ class MainCalibrationFrame(wx.Frame):
         self._replot(event)
         self.display_current()
 
-    def OnCheckEmaxValue(self, evt):
+    def OnCheckEmaxValue(self, _):
         emax = float(self.crystalparampanel.emaxC.GetValue())
         pass
 
@@ -2861,7 +2863,7 @@ class MainCalibrationFrame(wx.Frame):
     #
     #             dlg.Destroy()
 
-    def OnCheckEminValue(self, evt):
+    def OnCheckEminValue(self, _):
         emin = float(self.crystalparampanel.eminC.GetValue())
         pass
 
@@ -2900,7 +2902,7 @@ class MainCalibrationFrame(wx.Frame):
 
     #         print "kf_direction chosen:", self.kf_direction
 
-    def onSetOrientMatrix_with_BMatrix(self, evt):
+    def onSetOrientMatrix_with_BMatrix(self, _):
         print("reset orientmatrix by integrating B matrix: OrientMatrix=OrientMatrix*B")
         self.crystalparampanel.UBmatrix = np.dot(
             self.crystalparampanel.UBmatrix, self.Bmatrix
@@ -3068,7 +3070,7 @@ class MainCalibrationFrame(wx.Frame):
 
         return twicetheta, chi, self.Miller_ind, posx, posy, Energy
 
-    def _replot(self, evt):  # in MainCalibrationFrame
+    def _replot(self, _):  # in MainCalibrationFrame
         """
         in MainCalibrationFrame
         Plot simulated spots only in 2theta, chi space
@@ -3601,7 +3603,8 @@ class MainCalibrationFrame(wx.Frame):
     def Reckon_2pts(self, evt):  # Recognise distance
         """
         in MainCalibrationFrame
-        TODO: May be useful to integrate back to the calibration board
+        .. todo::
+            May be useful to integrate back to the calibration board
         """
         twospots = self.select_2pts(evt)
 

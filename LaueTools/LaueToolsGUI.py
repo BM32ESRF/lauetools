@@ -73,9 +73,10 @@ if sys.version_info.major == 3:
     from . import CCDFileParametersGUI as CCDParamGUI
     from . import dragpoints as DGP
     from . import matchingrate
-    from . AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    from . AutoindexationGUI import DistanceScreeningIndexationBoard
     from . import threadGUI2 as TG
     from . import B0matrixLatticeEditor as B0Editor
+    from . ResultsIndexationGUI import RecognitionResultCheckBox
 else:
     import indexingAnglesLUT as INDEX
     import indexingImageMatching as IIM
@@ -95,7 +96,8 @@ else:
     import CCDFileParametersGUI as CCDParamGUI
     import dragpoints as DGP
     import matchingrate
-    from AutoindexationGUI import (RecognitionResultCheckBox, DistanceScreeningIndexationBoard, )
+    from AutoindexationGUI import DistanceScreeningIndexationBoard
+    from ResultsIndexationGUI import RecognitionResultCheckBox
     import threadGUI2 as TG
     import B0matrixLatticeEditor as B0Editor
 
