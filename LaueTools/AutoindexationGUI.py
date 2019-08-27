@@ -164,7 +164,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         rsstxt = wx.StaticText(self.panel, -1, "Spots Set B: ", (50, 75))
         self.spotlistB = wx.TextCtrl(self.panel, -1, "to10", (140, 73), (200, -1))
 
-        lutrectxt= wx.StaticText(self.panel, -1, "Angles LUT Recognition", (15, 110))
+        lutrectxt = wx.StaticText(self.panel, -1, "Angles LUT Recognition", (15, 110))
         lutrectxt.SetFont(font3)
 
         drtatxt = wx.StaticText(self.panel, -1, "Recognition Tol. Angle(deg)", (15, 140))
@@ -312,6 +312,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         event.Skip()
 
     def getparams_for_irpfile(self):
+        """get indexation and refine parameters to be written in a .irp file
+        
+        :return: boolean for success
+        """
 
         # first element is omitted
         List_options = ISS.LIST_OPTIONS_INDEXREFINE[1:]
@@ -441,7 +445,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             else:
                 spotssettype = 'listsetA'
 
-            spotsB = np.arange(0,nbmax_probed)
+            spotsB = np.arange(0, nbmax_probed)
 
         #spotB is checked
         else:
@@ -626,7 +630,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
-        if spotssettype in ("rangeset"):
+        if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(
                                     spot_index_central,
                                     energy_max,
@@ -652,15 +656,15 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     dictmaterials=self.IndexationParameters['dict_Materials'],
                                     MaxRadiusHKL=False,#True could be OK for this workflow
                                 )
-        
-        elif spotssettype in ('listsetA','listsetAB',):
-            if spotssettype in ('listsetA',):
+
+        elif spotssettype in ('listsetA', 'listsetAB', ):
+            if spotssettype in ('listsetA', ):
                 spotsB = spot_index_central
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
-                                                n, self.key_material, rough_tolangle, 
+                                                n, self.key_material, rough_tolangle,
                                                 detectorparameters,
-                                                minimumNbMatches = Minimum_MatchesNb)
+                                                minimumNbMatches=Minimum_MatchesNb)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res
@@ -772,7 +776,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                         title = ("Classical Indexation Result Plot :  #central spot: %d  solution # %d"
                             % (spot_index_central, k_solution))
 
-                        plotresult = Plot_RefineFrame( self,
+                        plotresult = Plot_RefineFrame(self,
                                                         -1,
                                                         title,
                                                         datatype="2thetachi",
@@ -914,8 +918,7 @@ if __name__ == "__main__":
     indexation_parameters["DataToIndex"]["data_chi"] = data_chi
     indexation_parameters["DataToIndex"]["dataXY"] = data_pixX, data_pixY
     indexation_parameters["DataToIndex"]["data_I"] = data_I
-    indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = np.arange(
-        len(data_theta))
+    indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = np.arange(len(data_theta))
     indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
     indexation_parameters["current_processedgrain"] = 0
     indexation_parameters["dict_Rot"] = DictLT.dict_Rot
@@ -935,13 +938,11 @@ if __name__ == "__main__":
     StorageDict["dict_Materials"] = DictLT.dict_Materials
 
     AIGUIApp = wx.App()
-    AIGUIframe = DistanceScreeningIndexationBoard(
-        None,
-        -1,
-        indexation_parameters,
-        "test automatic indexation",
-        StorageDict=StorageDict,
-        DataSetObject=None,
-    )
+    AIGUIframe = DistanceScreeningIndexationBoard(None,
+                                                    -1,
+                                                    indexation_parameters,
+                                                    "test automatic indexation",
+                                                    StorageDict=StorageDict,
+                                                    DataSetObject=None)
     AIGUIframe.Show()
     AIGUIApp.MainLoop()
