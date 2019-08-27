@@ -131,21 +131,17 @@ class spotsset:
         self.dict_IMM = None
 
         # current spots data for indexation and refinement
-        self.TwiceTheta_Chi_Int = (
-            None
-        )  # two theta and chi scattering angles and intensities array
-        self.absolute_index = (
-            None
-        )  # absolute experimental spot index in the input spot list (.cor)
+        self.TwiceTheta_Chi_Int = None  # two theta and chi scattering angles and intensities array
+        self.absolute_index = None  # absolute experimental spot index in the input spot list (.cor)
 
     #         self.updateSimulParameters()
 
-    def setSimulParameters(
-        self, key_material, emin, emax, detectorparameters, pixelsize, dim, dictmaterials=DictLT.dict_Materials
-    ):
-        """
+    def setSimulParameters(self, key_material, emin, emax, detectorparameters,
+                                    pixelsize, dim, dictmaterials=DictLT.dict_Materials):
+        r"""
         set simulation parameters
-        TODO: should be written in a more elegant way
+
+        .. todo:: should be written in a more elegant way
 
         :param key_material: element or material key
         :type key_material: string
@@ -204,27 +200,23 @@ class spotsset:
 
         TODO: useful ?
         """
-        params = (
-            "key_material",
-            "emin",
-            "emax",
-            "detectorparameters",
-            "pixelsize",
-            "dim",
-            "kf_direction",
-            "detectordiameter",
-        )
+        params = ("key_material",
+                    "emin",
+                    "emax",
+                    "detectorparameters",
+                    "pixelsize",
+                    "dim",
+                    "kf_direction",
+                    "detectordiameter")
         try:
-            values = (
-                self.key_material,
-                self.emin,
-                self.emax,
-                self.detectorparameters,
-                self.pixelsize,
-                self.dim,
-                self.kf_direction,
-                self.detectordiameter,
-            )
+            values = (self.key_material,
+                        self.emin,
+                        self.emax,
+                        self.detectorparameters,
+                        self.pixelsize,
+                        self.dim,
+                        self.kf_direction,
+                        self.detectordiameter)
             self.simulparameter = dict(list(zip(params, values)))
         except AttributeError as emsg:
             print("in updateSimulParameters(): missing parameter in simulparameter")
@@ -237,16 +229,14 @@ class spotsset:
         """
         self.updateSimulParameters()
 
-        for key in (
-            "key_material",
-            "emin",
-            "emax",
-            "detectorparameters",
-            "pixelsize",
-            "dim",
-            "kf_direction",
-            "detectordiameter",
-        ):
+        for key in ("key_material",
+                        "emin",
+                        "emax",
+                        "detectorparameters",
+                        "pixelsize",
+                        "dim",
+                        "kf_direction",
+                        "detectordiameter"):
             print("%s   : %s" % (key, self.simulparameter[key]))
         return self.simulparameter
 
@@ -278,13 +268,11 @@ class spotsset:
         print("after purge self.nbspots", self.nbspots)
 
     def importdatafromfile(
-        self, filename, sortSpots_from_refenceList=None
-    ):
+        self, filename, sortSpots_from_refenceList=None):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list²
         """
-        (
-            data_theta,
+        (data_theta,
             Chi,
             posx,
             posy,
@@ -301,17 +289,15 @@ class spotsset:
 
         if sortSpots_from_refenceList not in (None, "None"):
 
-            (
-                data_theta,
+            (data_theta,
                 Chi,
                 posx,
                 posy,
                 dataintensity,
                 isolatedspots,
                 isolatedspots_ref,
-            ) = SpTra.sortSpotsDataCor(
-                data_theta, Chi, posx, posy, dataintensity, sortSpots_from_refenceList
-            )
+            ) = SpTra.sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity,
+                                                        sortSpots_from_refenceList)
 
             print("isolatedspots", isolatedspots)
             print("isolatedspots_ref", isolatedspots_ref)
@@ -345,10 +331,8 @@ class spotsset:
         if "kf_direction" in self.CCDcalibdict:
             self.kf_direction = self.CCDcalibdict["kf_direction"]
         else:
-            printcyan(
-                "\n\n*******\n warning: use default geometry: \n%s\n*****\n\n"
-                % DEFAULT_KF_DIRECTION
-            )
+            printcyan("\n\n*******\n warning: use default geometry: \n%s\n*****\n\n"
+                                                    % DEFAULT_KF_DIRECTION)
             self.kf_direction = DEFAULT_KF_DIRECTION
 
         self.detectorparameters = detectorparameters
@@ -356,10 +340,7 @@ class spotsset:
         self.filename = filename
 
         if self.detectorparameters is None:
-            printred(
-                "file %s does not contain the 5 detector parameters"
-                % filename
-            )
+            printred("file %s does not contain the 5 detector parameters" % filename)
             return
 
         return True
@@ -372,9 +353,7 @@ class spotsset:
         """
         data = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
-            index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][
-                :6
-            ]
+            index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
             data.append([index, tth, chi, posX, posY, intensity])
 
         self.alldata = np.array(data)
@@ -435,8 +414,7 @@ class spotsset:
             if self.indexed_spots_dict[key_spot][-1] == 1:
                 # spot belong to the grain grain_index
                 if self.indexed_spots_dict[key_spot][-2] == grain_index:
-                    (
-                        index,
+                    (index,
                         tth,
                         chi,
                         posX,
@@ -449,9 +427,7 @@ class spotsset:
                     if onlywithMiller == 1:
                         if Miller is not None:
                             H, K, L = Miller
-                            data.append(
-                                [
-                                    index,
+                            data.append([index,
                                     tth,
                                     chi,
                                     posX,
@@ -460,9 +436,7 @@ class spotsset:
                                     H,
                                     K,
                                     L,
-                                    Energy,
-                                ]
-                            )
+                                    Energy])
 
         return np.array(data)
 
@@ -474,8 +448,7 @@ class spotsset:
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             # spot has been indexed
             if self.indexed_spots_dict[key_spot][-1] == 1:
-                (
-                    spotindex,
+                (spotindex,
                     tth,
                     chi,
                     posX,
@@ -488,9 +461,7 @@ class spotsset:
                 grain_index = self.indexed_spots_dict[key_spot][-2]
                 if Miller is not None:
                     H, K, L = Miller
-                    data.append(
-                        [
-                            spotindex,
+                    data.append([spotindex,
                             grain_index,
                             tth,
                             chi,
@@ -500,15 +471,11 @@ class spotsset:
                             H,
                             K,
                             L,
-                            Energy,
-                        ]
-                    )
+                            Energy])
                 else:
                     # experimental spot is likely belonging to one grain
                     # 10000 is a flag meanwhile waiting for other structure
-                    data.append(
-                        [
-                            spotindex,
+                    data.append([spotindex,
                             grain_index,
                             tth,
                             chi,
@@ -518,29 +485,23 @@ class spotsset:
                             10000,
                             10000,
                             10000,
-                            10000,
-                        ]
-                    )
+                            10000])
             # spot has not been indexed
             else:
                 (spotindex, tth, chi, posX, posY, intensity) = self.indexed_spots_dict[
                     key_spot
                 ][:6]
-                data.append(
-                    [
-                        spotindex,
-                        -1,
-                        tth,
-                        chi,
-                        posX,
-                        posY,
-                        intensity,
-                        10000,
-                        10000,
-                        10000,
-                        10000,
-                    ]
-                )
+                data.append([spotindex,
+                                -1,
+                                tth,
+                                chi,
+                                posX,
+                                posY,
+                                intensity,
+                                10000,
+                                10000,
+                                10000,
+                                10000])
 
         return np.array(data)
 
@@ -593,21 +554,17 @@ class spotsset:
             # spot already indexed, guessed to be indexed or being indexed
             if isinstance(grain_origin, int):
                 if grain_origin not in exceptgrains:
-                    index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[
-                        key_spot
-                    ][:6]
+                    index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
                     data.append([index, tth, chi, posX, posY, intensity])
             # spot not indexed at all
             else:
-                index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[
-                    key_spot
-                ][:6]
+                index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
                 data.append([index, tth, chi, posX, posY, intensity])
 
         return np.array(data)
 
     def getSpotsFromSpotIndices(self, spotindices):
-        """
+        r"""
         return all data of unindexed experimental spots from their index
         and those already indexed but not from grains of index in exceptgrains
 
@@ -616,21 +573,15 @@ class spotsset:
         return:
         array whose columns are: absolute spot index, tth, chi, posX, posY, intensity
         """
-
         data = []
 
         print("self.indexed_spots_dict", self.indexed_spots_dict)
 
         for spot_index in spotindices:
 
-            print(
-                "self.indexed_spots_dict[spot_index]",
-                self.indexed_spots_dict[spot_index],
-            )
+            print("self.indexed_spots_dict[spot_index]", self.indexed_spots_dict[spot_index])
 
-            index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[
-                spot_index
-            ][:6]
+            index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[spot_index][:6]
             data.append([index, tth, chi, posX, posY, intensity])
 
         toindexdata = np.array(data)
@@ -665,7 +616,7 @@ class spotsset:
         return np.array([twicetheta_data, chi_data, intensity_data]), absoluteindex
 
     def setSelectedExpSpotsData(self, exceptgrains=None, fromspotsindices=None):
-        """
+        r"""
         select a set of spots to be refined (set scattering angles and spots indices)
         from unindexed spots and
         selected indexed spots whose grain index does not appear in exceptgrains
@@ -680,13 +631,11 @@ class spotsset:
         exceptgrains    : list of integers or integer
         """
         if fromspotsindices is not None:
-            (
-                self.TwiceTheta_Chi_Int,
+            (self.TwiceTheta_Chi_Int,
                 self.absolute_index,
             ) = self.getSpotsFromSpotIndices(fromspotsindices)
         else:
-            (
-                self.TwiceTheta_Chi_Int,
+            (self.TwiceTheta_Chi_Int,
                 self.absolute_index,
             ) = self.getSelectedExpSpotsData(exceptgrains=exceptgrains)
 
@@ -699,13 +648,11 @@ class spotsset:
             # spot has been indexed
             if self.indexed_spots_dict[key_spot][-1] == 1:
                 if self.indexed_spots_dict[key_spot][-2] == grain_index:
-                    self.indexed_spots_dict[key_spot] = self.indexed_spots_dict[
-                        key_spot
-                    ][:6] + [0]
+                    self.indexed_spots_dict[key_spot] = self.indexed_spots_dict[key_spot][:6] + [0]
 
     def AssignHKL(self, Orientation, grain_index, AngleTol=1.0,
                         use_spots_in_currentselection=True, selectbyspotsindices=None, verbose=1):
-        """
+        r"""
         Assign hkl to the exp spot data set according to
         the orientation matrix within the tolerance angle
 
@@ -759,9 +706,8 @@ class spotsset:
         elif use_spots_in_currentselection is True:
             # all remaining exp spots not already indexed
             # this sets: self.TwiceTheta_Chi_Int and self.absolute_index
-            self.setSelectedExpSpotsData(
-                exceptgrains=self.indexedgrains, fromspotsindices=selectbyspotsindices
-            )
+            self.setSelectedExpSpotsData(exceptgrains=self.indexedgrains,
+                                        fromspotsindices=selectbyspotsindices)
 
             selected_expdata = self.TwiceTheta_Chi_Int
             useabsoluteindex = self.absolute_index
@@ -769,14 +715,13 @@ class spotsset:
         print("***nb of selected spots in AssignHKL*****", len(useabsoluteindex))
 
         AssignationHKL_res, nbtheospots, missingRefs = self.getSpotsLinks(
-            matrix,
-            exp_data=selected_expdata,
-            useabsoluteindex=useabsoluteindex,
-            removeharmonics=1,  # for fast computations
-            ResolutionAngstrom=False,  # 
-            veryclose_angletol=AngleTol,
-            verbose=verbose,
-        )
+                                                                    matrix,
+                                                                    exp_data=selected_expdata,
+                                                                    useabsoluteindex=useabsoluteindex,
+                                                                    removeharmonics=1,  # for fast computations
+                                                                    ResolutionAngstrom=False,  # 
+                                                                    veryclose_angletol=AngleTol,
+                                                                    verbose=verbose)
         # TODO nb of links with getSpotsLinks() larger than nb of links used in previous refinement
         # self.pixelresidues
         #         print "AssignationHKL_res in AssignHKL", AssignationHKL_res
@@ -785,9 +730,7 @@ class spotsset:
             print("missingRefs", missingRefs)
 
         if AssignationHKL_res is not None:
-            nb_updates = self.updateIndexationDict(
-                AssignationHKL_res, grain_index, overwrite=1
-            )
+            nb_updates = self.updateIndexationDict(AssignationHKL_res, grain_index, overwrite=1)
 
             matching_rate = 100.0 * nb_updates / nbtheospots
 
@@ -839,7 +782,8 @@ class spotsset:
 
         call of INDEX.getOrientMatrices in spotsset class
 
-        USED in FileSeries
+        .. note::
+            USED in FileSeries
         """
         emax = self.emax
 
@@ -878,8 +822,7 @@ class spotsset:
         if not Tabledist:
             # select 1rstly spots that have not been indexed and 2ndly reduced list by user
             index_to_select = np.take(
-                current_exp_spot_index_list, np.arange(nbspotmaxformatching)
-            )
+                current_exp_spot_index_list, np.arange(nbspotmaxformatching))
 
             select_theta = 0.5 * tth[index_to_select]
             select_chi = chi[index_to_select]
@@ -888,38 +831,35 @@ class spotsset:
             # print select_chi
             select_thetachi = np.array([select_theta, select_chi]).T
             # compute angles between spots
-            Tabledistance = GT.calculdist_from_thetachi(
-                select_thetachi, select_thetachi
-            )
+            Tabledistance = GT.calculdist_from_thetachi(select_thetachi, select_thetachi)
 
         latticeparams = DictLT.dict_Materials[key_material][1]
         B = CP.calc_B_RR(latticeparams)
 
         # indexation procedure
         bestmat, stats_res = INDEX.getOrientMatrices(
-            spot_index_central,
-            emax,
-            Tabledistance[:nbmax_probed, :nbmax_probed],
-            select_theta,
-            select_chi,
-            n=nLUT,
-            B=B,
-            cubicSymmetry=CP.isCubic(latticeparams),
-            ResolutionAngstrom=ResolutionAngstrom,
-            LUT=LUT,
-            LUT_tol_angle=AngTol_LUTmatching,
-            MR_tol_angle=MatchingRate_Angle_Tol,
-            Minimum_Nb_Matches=Minimum_Nb_Matches,
-            plot=0,
-            key_material=key_material,
-            nbbestplot=nb_of_solutions_per_central_spot,  # nb of solutions per central spot
-            verbose=0,
-            addMatrix=None,  # To add a priori good candidates...
-            set_central_spots_hkl=set_central_spots_hkl,
-            detectorparameters=simulparameters,
-            verbosedetails=False,  # not CP.isCubic(key_material)
-            dictmaterials=self.dict_Materials
-        )
+                                                    spot_index_central,
+                                                    emax,
+                                                    Tabledistance[:nbmax_probed, :nbmax_probed],
+                                                    select_theta,
+                                                    select_chi,
+                                                    n=nLUT,
+                                                    B=B,
+                                                    cubicSymmetry=CP.isCubic(latticeparams),
+                                                    ResolutionAngstrom=ResolutionAngstrom,
+                                                    LUT=LUT,
+                                                    LUT_tol_angle=AngTol_LUTmatching,
+                                                    MR_tol_angle=MatchingRate_Angle_Tol,
+                                                    Minimum_Nb_Matches=Minimum_Nb_Matches,
+                                                    plot=0,
+                                                    key_material=key_material,
+                                                    nbbestplot=nb_of_solutions_per_central_spot,  # nb of solutions per central spot
+                                                    verbose=0,
+                                                    addMatrix=None,  # To add a priori good candidates...
+                                                    set_central_spots_hkl=set_central_spots_hkl,
+                                                    detectorparameters=simulparameters,
+                                                    verbosedetails=False,  # not CP.isCubic(key_material)
+                                                    dictmaterials=self.dict_Materials)
         # when nbbestplot is very high  self.bestmat contain all matrices
         # with matching rate above Minimum_Nb_Matches
 
@@ -942,12 +882,11 @@ class spotsset:
             print("Merging matrices")
             print("keep_only_equivalent = %s" % keep_only_equivalent)
             bestmat, stats_res = MergeSortand_RemoveDuplicates(
-                bestmat,
-                stats_res,
-                Minimum_Nb_Matches,
-                tol=0.0001,
-                keep_only_equivalent=keep_only_equivalent,
-            )
+                                                        bestmat,
+                                                        stats_res,
+                                                        Minimum_Nb_Matches,
+                                                        tol=0.0001,
+                                                        keep_only_equivalent=keep_only_equivalent)
 
         #         print "stats_res", stats_res
 
@@ -992,9 +931,8 @@ class spotsset:
         previousResults=None,
         CheckOrientations=None,
         corfilename=None,
-        dirnameout_fitfile=None,
-    ):
-        """
+        dirnameout_fitfile=None):
+        r"""
         General procedure to index and a set of experimental spots with one grain.
 
         Guessed matrices can checked prior to proceed to indexation from scratch (previous Results)
@@ -2495,7 +2433,7 @@ class spotsset:
                                                                             newUBmat,
                                                                             latticeparams,
                                                                             constantlength="a")
-            print("devstrain1, lattice_parameter_direct_strain1",cdevstrain1, lattice_parameter_direct_strain1)
+            print("devstrain1, lattice_parameter_direct_strain1",devstrain1, lattice_parameter_direct_strain1)
 
             #             devstrain_round = np.round(devstrain * 1000, decimals=2)
 
@@ -4171,19 +4109,6 @@ def getIndexedSpots(
     else:
         return None, None
 
-
-def getUnIndexedSpots(indexed_spots_dict):
-    """
-    read dictionary of spots and return data of spots not yet indexed
-    """
-    unindexed_spots_indices = []
-    for key_spot in sorted(indexed_spots_dict.keys()):
-        if indexed_spots_dict[key_spot][-1] == 0:
-            unindexed_spots_indices.append(key_spot)
-
-    return unindexed_spots_indices
-
-
 def getSpotsFamily(indexed_spots_dict, grain_index):
     """
     return spots that belong to the same grain
@@ -4296,131 +4221,8 @@ def getSpotsFamilyData(indexed_spots_dict, grain_index, onlywithMiller=1):
     return np.array(data)
 
 
-def refineUBSpotsFamily(
-    indexed_spots_dict,
-    grain_index,
-    initial_matrix,
-    key_material,
-    detectorparameters,
-    use_weights=1,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    kf_direction="Z>0",
-):
-    """
-    refine UB matrix of spots family
-    """
-    MINIMUM_LINKS_FOR_FIT = 8
-
-    latticeparams = DictLT.dict_Materials[key_material][1]
-    Bmatrix = CP.calc_B_RR(latticeparams)
-
-    data_1grain = getSpotsFamilyData(indexed_spots_dict, grain_index, onlywithMiller=1)
-
-    #    print "data_1grain.shape", data_1grain.shape
-    if len(data_1grain) >= MINIMUM_LINKS_FOR_FIT:
-        index, tth, chi, posX, posY, intensity, H, K, L, Energy = data_1grain.T
-    else:
-        print("Too few exp. data to fit")
-        return None
-
-    Miller = np.array([H, K, L]).T
-
-    #    print "Miller", Miller
-
-    nb_pairs = len(index)
-    print("Nb of pairs: ", nb_pairs)
-
-    sim_indices = np.arange(nb_pairs)
-
-    if use_weights:
-        weights = intensity
-    else:
-        weights = None
-
-    # fitting procedure for one or many parameters
-    initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0])
-    try:
-        allparameters = np.array(
-            detectorparameters.tolist() + [1, 1, 0, 0, 0] + [0, 0, 0]
-        )
-    except:
-        allparameters = np.array(detectorparameters + [1, 1, 0, 0, 0] + [0, 0, 0])
-
-    arr_indexvaryingparameters = np.arange(5, 13)
-    # print "\nInitial error--------------------------------------\n"
-    print("initial_matrix", initial_matrix)
-
-    residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
-        initial_values,
-        Miller,
-        allparameters,
-        arr_indexvaryingparameters,
-        sim_indices,
-        posX,
-        posY,
-        initrot=initial_matrix,
-        Bmat=Bmatrix,
-        pureRotation=0,
-        verbose=1,
-        pixelsize=pixelsize,
-        dim=dim,
-        weights=weights,
-        signgam=1,
-        kf_direction=kf_direction,
-    )
-    #    print "Initial residues", residues
-    #    print "---------------------------------------------------\n"
-
-    results = FitO.fit_on_demand_strain(
-        initial_values,
-        Miller,
-        allparameters,
-        FitO.error_function_on_demand_strain,
-        arr_indexvaryingparameters,
-        sim_indices,
-        posX,
-        posY,
-        initrot=initial_matrix,
-        Bmat=Bmatrix,
-        pixelsize=pixelsize,
-        dim=dim,
-        verbose=0,
-        weights=weights,
-        signgam=1,
-        kf_direction=kf_direction,
-    )
-
-    #    print "\n********************\n       Results of Fit        \n********************"
-    #    print "results", results
-
-    # print "\nFinal error--------------------------------------\n"
-    residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
-        results,
-        Miller,
-        allparameters,
-        arr_indexvaryingparameters,
-        sim_indices,
-        posX,
-        posY,
-        initrot=initial_matrix,
-        Bmat=Bmatrix,
-        pureRotation=0,
-        verbose=1,
-        pixelsize=pixelsize,
-        dim=dim,
-        weights=weights,
-        signgam=1,
-        kf_direction=kf_direction,
-    )
-
-    print("newmatrix", newmatrix)
-    return newmatrix
-
-
 def proposeEnergyforMatching(
-    indexed_spots_dict, test_Matrix, ang_tol, simulparam, removeharmonics=1
-):
+    indexed_spots_dict, test_Matrix, ang_tol, simulparam, removeharmonics=1):
     """
     return energy for which the matching rate is the highest
 
@@ -4450,79 +4252,6 @@ def proposeEnergyforMatching(
     optim_energy = res[np.argmax(res[:, 3])][0]
 
     return optim_energy
-
-
-def plotgrains_from_indexspots(indexed_spots_dict):
-    """ plot grains spots and data from indexed spots dictionary
-    """
-    isgrain = True
-    grain_index = 0
-
-    # 2theta chi from indexed spots
-    twicethetaChi = [[]]
-    while isgrain:
-        spots = getSpotsFamily(indexed_spots_dict, grain_index)
-        if spots:
-            for key_spot in spots:
-                twicethetaChi[grain_index].append(indexed_spots_dict[key_spot][1:3])
-            grain_index += 1
-            twicethetaChi.append([])
-        else:
-            isgrain = False
-
-    #    print "twicethetaChi", twicethetaChi
-    all_tthchi = getSpotsData(indexed_spots_dict)[:, 1:3]
-    #    print all_tthchi
-    nb_of_orientations = grain_index
-
-    fig = figure()
-
-    print("nb_of_orientations to plot", nb_of_orientations)
-    if nb_of_orientations == 1:
-        codefigure = 111
-    if nb_of_orientations == 2:
-        codefigure = 211
-    if nb_of_orientations in (3, 4):
-        codefigure = 221
-    if nb_of_orientations in (5, 6):
-        codefigure = 321
-    if nb_of_orientations in (7, 8, 9):
-        codefigure = 331
-    index_fig = 0
-
-    #    ax.set_xlim((35, 145))
-    #    ax.set_ylim((-45, 45))
-
-    dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
-    nbcolors = len(dicocolor)
-    # theo spots
-    for i_grain in list(range(nb_of_orientations)):
-        ax = fig.add_subplot(codefigure)
-        # all exp spots
-        scatter(
-            all_tthchi[:, 0],
-            all_tthchi[:, 1],
-            s=40,
-            c="w",
-            marker="o",
-            faceted=True,
-            alpha=0.5,
-        )
-
-        # simul spots
-        tthchi = np.array(twicethetaChi[i_grain])
-        #        print tthchi
-        ax.scatter(
-            tthchi[:, 0],
-            tthchi[:, 1],
-            c=dicocolor[(i_grain + 1) % nbcolors],
-            faceted=False,
-        )
-        if index_fig < nb_of_orientations:
-            index_fig += 1
-            codefigure += 1
-
-    show()
 
 
 def plotgrains(dict_mat, key_material, detectorparameters, emax, exp_data=None):

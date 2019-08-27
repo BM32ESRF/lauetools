@@ -1892,8 +1892,7 @@ def test_old_imagematching(database):
 
             # TODO: getstatsonmatching before updateindexation... ?
             nb_updates = DataSet.updateIndexationDict(
-                indexation_res, grain_index, overwrite=1
-            )
+                indexation_res, grain_index, overwrite=1)
 
             print(
                 "\nnb of indexed spots for this refined matrix: %d / %d"
@@ -1913,37 +1912,33 @@ def test_old_imagematching(database):
 
                     print("\n\n---------------------------------------------")
                     print(
-                        "Use again imagematching on purged data from previously indexed spots"
-                    )
+                        "Use again imagematching on purged data from previously indexed spots")
                     print("---------------------------------------------\n\n")
 
                     #                    print "indexedgrains", indexedgrains
 
                     # extract data not yet indexed or temporarly indexed
                     toindexdata = DataSet.getUnIndexedSpotsallData(
-                        exceptgrains=indexedgrains
-                    )
+                        exceptgrains=indexedgrains)
                     absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
                     intensity_data = toindexdata[:, 5]
 
                     TwiceTheta_Chi_Int = np.array(
-                        [twicetheta_data, chi_data, intensity_data]
-                    )
+                        [twicetheta_data, chi_data, intensity_data])
 
                     # potential orientation solutions from image matching
                     bestEULER2 = IMM.bestorient_from_2thetachi(
-                        TwiceTheta_Chi_Int, database, dictparameters=dictimm
-                    )
+                        TwiceTheta_Chi_Int, database, dictparameters=dictimm)
 
                     bestEULER2, bestmatchingrates2 = filterEulersList(
-                        bestEULER,
-                        TwiceTheta_Chi_Int,
-                        key_material,
-                        emax,
-                        rawAngularmatchingtolerance=firstmatchingtolerance,
-                        MatchingRate_Threshold=MatchingRate_Threshold,
-                        verbose=1,
-                    )
+                                                                bestEULER,
+                                                                TwiceTheta_Chi_Int,
+                                                                key_material,
+                                                                emax,
+                                                                rawAngularmatchingtolerance=firstmatchingtolerance,
+                                                                MatchingRate_Threshold=MatchingRate_Threshold,
+                                                                verbose=1,
+                                                            )
 
                     # overwrite (NOT add in) MatrixPile
                     MatrixPile = bestEULER2.tolist()
@@ -1965,15 +1960,14 @@ def test_old_imagematching(database):
                 # or for the lowest tolerance angle, consider the refinement-indexation is completed
                 DataSet.dict_grain_matrix[grain_index] = refinedMatrix
                 DataSet.dict_grain_matching_rate[grain_index] = [
-                    nb_updates,
-                    Matching_rate,
-                ]
+                                                                nb_updates,
+                                                                Matching_rate,
+                                                            ]
 
                 DataSet.plotgrains(
                     exp_data=DataSet.getSpotsExpData(),
                     titlefig="%d Exp. spots data (/%d), after refinement of grain #%d at step #%d"
-                    % (totalnbspots, totalnbspots, grain_index, k),
-                )
+                    % (totalnbspots, totalnbspots, grain_index, k))
 
                 # if this is the last tolerance step
                 if k == len(AngleTol_List) - 1:
@@ -2069,14 +2063,10 @@ def test(database):
 
         print("\n nb of spots to index  : %d\n" % nb_remaining_spots)
         if nb_remaining_spots < 2:
-            print(
-                "%d spots have been indexed over %d"
-                % (totalnbspots - nb_remaining_spots, totalnbspots)
-            )
-            print(
-                "indexing rate is --- : %.1f percents"
-                % (100.0 * (totalnbspots - nb_remaining_spots) / totalnbspots)
-            )
+            print("%d spots have been indexed over %d"
+                % (totalnbspots - nb_remaining_spots, totalnbspots))
+            print("indexing rate is --- : %.1f percents"
+                % (100.0 * (totalnbspots - nb_remaining_spots) / totalnbspots))
             print("indexation of %s is completed" % DataSet.filename)
             #            self.dict_grain_matching_rate[grain_index] = [0, 0]
             break
@@ -2089,10 +2079,9 @@ def test(database):
             print("providing new set of matrices")
 
             (bestUB, bestmatchingrates, nbspotsIMM) = DataSet.getOrients_ImageMatching(
-                MatchingRate_Threshold=MatchingRate_Threshold,
-                exceptgrains=DataSet.indexedgrains,
-                verbose=VERBOSE,
-            )
+                                                            MatchingRate_Threshold=MatchingRate_Threshold,
+                                                            exceptgrains=DataSet.indexedgrains,
+                                                            verbose=VERBOSE)
 
             print("\n working with a new stack of orientation matrices")
 
@@ -2104,9 +2093,7 @@ def test(database):
                 "%d Matrices are candidates in the Matrix Pile !" % len(DataSet.UBStack)
             )
             if VERBOSE:
-                print(
-                    "\n  -----   Taking a new matrix from the matrices stack  -------"
-                )
+                print("\n  -----   Taking a new matrix from the matrices stack  -------")
             UB = DataSet.UBStack.pop(0)
 
         else:
@@ -2139,24 +2126,19 @@ def test(database):
                 DataSet.plotgrains(
                     exp_data=DataSet.TwiceTheta_Chi_Int,
                     titlefig="%d Exp. spots data (/%d) after raw matching grain #%d"
-                    % (nbspotsIMM, totalnbspots, grain_index),
-                )
+                                    % (nbspotsIMM, totalnbspots, grain_index))
 
-        print(
-            "\n\n---------------refining grain orientation #%d-----------------"
-            % grain_index
-        )
+        print("\n\n---------------refining grain orientation #%d-----------------"
+            % grain_index)
         # TODO: data flow and branching will be improved later
         for k, AngleTol in enumerate(AngleTol_List):
             if VERBOSE:
                 print("\n\n refining grain #%d step -----%d\n" % (grain_index, k))
 
-            refinedMatrix = DataSet.refineUBSpotsFamily(
-                grain_index,
-                DataSet.dict_grain_matrix[grain_index],
-                use_weights=1,
-                verbose=VERBOSE,
-            )
+            refinedMatrix = DataSet.refineUBSpotsFamily(grain_index,
+                                                        DataSet.dict_grain_matrix[grain_index],
+                                                        use_weights=1,
+                                                        verbose=VERBOSE)
 
             if refinedMatrix is not None:
 
@@ -2164,9 +2146,10 @@ def test(database):
                 #            print "UBrefined", UBrefined.matrix
                 DataSet.dict_grain_matrix[grain_index] = UBrefined.matrix
                 # select data, link spots, update spot dictionary, update matrix dictionary
-                Matching_rate, nb_updates, missingRefs = DataSet.AssignHKL(
-                    UBrefined, grain_index, AngleTol, verbose=VERBOSE
-                )
+                Matching_rate, nb_updates, missingRefs = DataSet.AssignHKL(UBrefined,
+                                                                            grain_index,
+                                                                            AngleTol,
+                                                                            verbose=VERBOSE)
 
             if Matching_rate < 50.0 or refinedMatrix is None:
                 # matching rate too low
