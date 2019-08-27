@@ -98,7 +98,7 @@ class SimulationPlotFrame(wx.Frame):
         print("nb_ParentGrains", nb_ParentGrains)
         for parentgrainindex in range(nb_ParentGrains):
             print("self.list_grains_transforms", self.list_grains_transforms[parentgrainindex])
-            ParentGrainIndex, nb_transforms, transform_type = self.list_grains_transforms[parentgrainindex]
+            _, nb_transforms, transform_type = self.list_grains_transforms[parentgrainindex]
             if transform_type in ("slipsystem",):
                 self.ScatterPlot_ParentGrain[parentgrainindex] = False
             else:
@@ -253,7 +253,7 @@ class SimulationPlotFrame(wx.Frame):
         sizer.Fit(self)
         self.Layout()
 
-    def sliderUpdate(self, event):
+    def sliderUpdate(self, _):
         # self.factorsize = np.exp(int(self.slider.GetValue()) / 500.) - 1.
         self.factorsize = 10 ** (
             int(self.slider.GetValue()) / 50.0 - 1.0 + np.log10(self.central_value)
@@ -724,13 +724,13 @@ class SimulationPlotFrame(wx.Frame):
         else:  # log scale
             return factor * np.log(np.clip(val, 0.000000001, 1000000000000)) + offset
 
-    def fromindex_to_pixelpos_x(self, index, pos):
+    def fromindex_to_pixelpos_x(self, index, _):
         """
         x ticks format
         """
         return index
 
-    def fromindex_to_pixelpos_y(self, index, pos):
+    def fromindex_to_pixelpos_y(self, index, _):
         """
         y ticks format
         """
@@ -742,7 +742,7 @@ class SimulationPlotFrame(wx.Frame):
         print("new limits x", self.xlim)
         print("new limits y", self.ylim)
 
-    def OnSideFluoDetector(self, evt):
+    def OnSideFluoDetector(self, _):
         """
         change frame of pixel to be see x ray like side fluorescence detector
         
@@ -755,14 +755,14 @@ class SimulationPlotFrame(wx.Frame):
             self.Y_offsetfluoframe = float(self.offsetYtxtctrl.GetValue())
         self._replot()
 
-    def OnEnterOffsetX(self, evt):
+    def OnEnterOffsetX(self, _):
         """
         set the origin of ydet zdet fluodetector frame in pixel x,y frame
         """
         self.X_offsetfluoframe = float(self.offsetXtxtctrl.GetValue())  # in pixel
         self._replot()
 
-    def OnEnterOffsetY(self, evt):
+    def OnEnterOffsetY(self, _):
         """
         set the origin of ydet zdet fluodetector frame in pixel x,y frame
         """
@@ -1074,7 +1074,7 @@ class SimulationPlotFrame(wx.Frame):
                 break
         return flag
 
-    def OnSavePlot(self, evt):
+    def OnSavePlot(self, _):
         dlg = wx.FileDialog(
             self,
             "Saving in png format. Choose a file",
@@ -1086,7 +1086,7 @@ class SimulationPlotFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             # Open the file for write, write, close
             filename = dlg.GetFilename()
-            dirname = dlg.GetDirectory()
+            # dirname = dlg.GetDirectory()
 
             if len(str(filename).split(".")) > 1:  # filename has a extension
                 Pre, Ext = str(filename).split(".")
@@ -1099,7 +1099,7 @@ class SimulationPlotFrame(wx.Frame):
 
         dlg.Destroy()
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Destroy()
 
     def updateStatusBar(self, x, y, annote, grain_index, local_spot_index):
@@ -1420,7 +1420,7 @@ class SimulationPlotFrame(wx.Frame):
                 1,
             )
 
-    def GetAngularDistance(self, evt):
+    def GetAngularDistance(self, _):
         """
         computes angle (in deg) between the NORMALS of TWO ATOMIC PLANES corresponding of
         the two clicked spots (NOT the angular distance between the spots)
@@ -1437,7 +1437,7 @@ class SimulationPlotFrame(wx.Frame):
 
         return
 
-    def GetCartesianDistance(self, evt):
+    def GetCartesianDistance(self, _):
         """
         computes angle (in deg) between the normals of atomic planes corresponding of
         the two clicked spot
@@ -1451,7 +1451,7 @@ class SimulationPlotFrame(wx.Frame):
 
         return
 
-    def onSetImageScale(self, evt):
+    def onSetImageScale(self, _):
         """
         open a board to change image scale
         """

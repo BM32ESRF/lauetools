@@ -546,7 +546,7 @@ class LaueToolsGUImainframe(wx.Frame):
         )
 
     # --- -------- Main FUNCTIONS called from MENU and submenus
-    def OnOpenImage(self, evt):
+    def OnOpenImage(self, _):
         """
         ask user to select folder and file
         and launch the peak search board(class PeakSearchFrame)
@@ -698,7 +698,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.last_Bmatrix_fromindexation = {}
             self.last_epsil_fromindexation = {}
 
-    def OnLoadMaterials(self, evt):
+    def OnLoadMaterials(self, _):
 
         wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
         _dir = os.getcwd()
@@ -732,7 +732,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         open_dlg.Destroy()
 
-    def Launch_DetectorParamBoard(self, evt):
+    def Launch_DetectorParamBoard(self, _):
         """Board to enter manually detector params
         Launch Entry dialog
         """
@@ -834,7 +834,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.last_Bmatrix_fromindexation = {}
         self.last_epsil_fromindexation = {}
 
-    def OnSetFileCCDParam(self, evt):
+    def OnSetFileCCDParam(self, _):
         """Enter manually CCD file params
         Launch Entry dialog
         """
@@ -855,7 +855,7 @@ class LaueToolsGUImainframe(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetValue())
 
-            self.OnSaveIndexationResultsfile(event, filename=str(filename))
+            self.OnSaveIndexationResultsfile(evt, filename=str(filename))
 
         dlg.Destroy()
 
@@ -891,13 +891,13 @@ class LaueToolsGUImainframe(wx.Frame):
                     DPBoard.ShowModal()
                     DPBoard.Destroy()
 
-    def OnSetLaueDetectorGeometry(self, evt):
+    def OnSetLaueDetectorGeometry(self, _):
         LaueGeomBoard = SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
         #         LaueGeomBoard.Show(True)
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
 
-    def OnPreferences(self, evt):
+    def OnPreferences(self, _):
         """
         call the board to define destination folder to  write files        
         """
@@ -908,7 +908,7 @@ class LaueToolsGUImainframe(wx.Frame):
         print("New write folder", self.writefolder)
 
     # --- ------------ Indexation Functions
-    def OnCheckOrientationMatrix(self, evt):
+    def OnCheckOrientationMatrix(self, _):
         r"""
         Check if user input matrix, material parameters can produce a Laue pattern that matches
         the current experimental list of spots
@@ -1042,7 +1042,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.PlotandRefineSolution()
 
-    def OnClassicalIndexation(self, evt):
+    def OnClassicalIndexation(self, _):
         """
         Call the ClassicalIndexationBoard Class with current non indexed spots list
         
@@ -1130,7 +1130,7 @@ class LaueToolsGUImainframe(wx.Frame):
         DistanceScreeningIndexationBoard(self, -1, self.indexation_parameters, titleboard,
                                         StorageDict=StorageDict, DataSetObject=self.DataSet)
 
-    def OnHoughMatching(self, evt):
+    def OnHoughMatching(self, _):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n" "in wxPython",
@@ -1140,7 +1140,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnRadialRecognition(self, evt):
+    def OnRadialRecognition(self, _):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n" "in wxPython",
@@ -1150,7 +1150,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnPlot_2ThetaChi(self, evt):
+    def OnPlot_2ThetaChi(self, _):
         """
         Plot 2theta-chi representation of data peaks list for manual indexation
         """
@@ -1273,7 +1273,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.picky.Show(True)
 
-    def OnPlot_Gnomon(self, evt):
+    def OnPlot_Gnomon(self, _):
         """
         Plot gnomonic representation of data peaks list for manual indexation
         """
@@ -1403,7 +1403,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.picky.Show(True)
 
-    def OnPlot_Pixels(self, evt):
+    def OnPlot_Pixels(self, _):
         """
         Plot detector X,Y pixel representation of data peaks list for manual indexation
         """
@@ -1574,7 +1574,7 @@ class LaueToolsGUImainframe(wx.Frame):
                                     starting_param=initialParameter["CCDParam"])
         self.calibframe.Show(True)
 
-    def OnCliquesFinding(self, evt):
+    def OnCliquesFinding(self, _):
         """
         Method launching Cliques Finding  Board
         """
@@ -1604,22 +1604,22 @@ class LaueToolsGUImainframe(wx.Frame):
         CliquesFindingBoard(self, -1, "Cliques Finding Board :%s" % self.DataPlot_filename,
                                 indexation_parameters=self.indexation_parameters)
 
-    def OnRecognitionParam(self, evt):
+    def OnRecognitionParam(self, _):
         return True
 
-    def OnEditMatrix(self, evt):
+    def OnEditMatrix(self, _):
         self.MatrixEditor = MatrixEditor_Dialog(
             self, -1, "Create/Read/Save/Load/Convert Orientation Matrix"
         )
         self.MatrixEditor.Show(True)
 
-    def OnEditUBMatrix(self, evt):
+    def OnEditUBMatrix(self, _):
         self.UBMatrixEditor = B0Editor.B0MatrixEditor(
             self, -1, "UB Matrix Editor and Board"
         )
         self.UBMatrixEditor.Show(True)
 
-    def EnterMatrix(self, evt):
+    def EnterMatrix(self, _):
         """
         open matrix entry board in check orientation process
         """
@@ -1874,7 +1874,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         outputfile.close()
 
-    def OnSaveIndexationResultsfile(self, evt, filename=None):
+    def OnSaveIndexationResultsfile(self, _, filename=None):
         """
         Save results of indexation and refinement procedures
         .res  :  summary file
@@ -1948,7 +1948,7 @@ class LaueToolsGUImainframe(wx.Frame):
         )
 
     # --- ---------------- Simulation Functions
-    def Creating_Grains_parametric(self, evt):
+    def Creating_Grains_parametric(self, _):
         """
         Method launching polycrystal simulation Board
 
@@ -2010,7 +2010,7 @@ class LaueToolsGUImainframe(wx.Frame):
         lines += "Total number of grains : %s\n" % int(nb_total_grains)
         lines += "spot# h k l E 2theta chi X Y\n"
         nb = data[7]
-        if type(nb) == type(5):  # multigrains simulations without transformations
+        if isinstance(nb, int):  # multigrains simulations without transformations
             nb_grains = data[7]
             TWT, CHI, ENE, MIL, XX, YY = data[:6]
             NAME = data[6]
@@ -2018,11 +2018,9 @@ class LaueToolsGUImainframe(wx.Frame):
 
             for index_grain in range(nb_grains):
                 nb_of_simulspots = len(TWT[index_grain])
-                startgrain = "#G %d\t%s\t%d\n" % (
-                    index_grain,
-                    NAME[index_grain],
-                    nb_of_simulspots,
-                )
+                startgrain = "#G %d\t%s\t%d\n" % (index_grain,
+                                                NAME[index_grain],
+                                                nb_of_simulspots)
 
                 lines += startgrain
                 # print nb_of_simulspots
@@ -2046,9 +2044,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.control.SetValue(lines)
             return True
 
-        if type(nb) == type(
-            [[0, 5], [1, 10]]
-        ):  # nb= list of [grain index, nb of transforms]
+        elif isinstance(nb, list):
             print("nb in Edit_String_SimulData", nb)
             gen_i = 0
             TWT, CHI, ENE, MIL, XX, YY = data[:6]
@@ -2088,10 +2084,9 @@ class LaueToolsGUImainframe(wx.Frame):
             return True
 
     # --- ------------- spots database
-    def SaveNonIndexedSpots(self, evt):
-        dlg = wx.TextEntryDialog(
-            self, "Enter new filename (*.cor):", "Peaks List .cor Filename Entry"
-        )
+    def SaveNonIndexedSpots(self, _):
+        dlg = wx.TextEntryDialog(self,
+                            "Enter new filename (*.cor):", "Peaks List .cor Filename Entry")
 
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetValue())
@@ -2149,16 +2144,12 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def OpenCorfile(self, filename):
         """
-        .cor file is either:
-        2theta chi I
-        or(better)
-        2theta chi pixX pixY I
+        Read a .cor file with 5 columns 2theta chi pixX pixY I
+        reads detector parameters and set defaultParam according to them
+        returns self.data_theta, self.data_chi, self.data_pixX, self.data_pixY, self.data_I
 
         creates or updates self.Current_peak_data(all columns of .cor file)
         creates or updates self.data_theta, self.data_chi, self.data_I
-
-        reads detector parameters and set defaultParam according to them
-        returns self.data_theta, self.data_chi, self.data_pixX, self.data_pixY, self.data_I
         """
         (
             self.Current_peak_data,
@@ -2199,13 +2190,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("self.DataSet", self.DataSet)
 
-        return (
-            self.data_theta,
-            self.data_chi,
-            self.data_pixX,
-            self.data_pixY,
-            self.data_I,
-        )
+        return (self.data_theta, self.data_chi,
+                self.data_pixX, self.data_pixY, self.data_I)
 
     def setAllDataToIndex_Dict(self):
         self.indexation_parameters = {}
@@ -2217,29 +2203,24 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["AllDataToIndex"]["data_I"] = self.data_I
         self.indexation_parameters["AllDataToIndex"]["data_gnomonX"] = self.data_gnomonx
         self.indexation_parameters["AllDataToIndex"]["data_gnomonY"] = self.data_gnomony
-        self.indexation_parameters["AllDataToIndex"]["data_XY"] = (
-            self.data_pixX,
-            self.data_pixY,
-        )
+        self.indexation_parameters["AllDataToIndex"]["data_XY"] = (self.data_pixX,
+                                                                    self.data_pixY)
         self.indexation_parameters["AllDataToIndex"]["data_2thetachi"] = (
-            2 * self.data_theta,
-            self.data_chi,
-        )
+                                                                2 * self.data_theta,
+                                                                self.data_chi)
 
         nbspotstoindex = len(self.data_theta)
         self.indexation_parameters["AllDataToIndex"]["NbSpotsToindex"] = nbspotstoindex
         self.indexation_parameters["AllDataToIndex"]["IndexedFlag"] = np.zeros(
-            nbspotstoindex
-        )
+                                                                        nbspotstoindex)
         self.indexation_parameters["AllDataToIndex"]["absolutespotindex"] = np.array(
-            np.arange(nbspotstoindex), dtype=np.int
-        )
+                                            np.arange(nbspotstoindex), dtype=np.int)
 
     def create_read_corfile(self):
         """
         create cor file from peaks list .dat file and calibration file .det
         AND read it for further indexation needs
-        
+
         """
 
         print("self.DataPlot_filename", self.DataPlot_filename)
@@ -2247,20 +2228,18 @@ class LaueToolsGUImainframe(wx.Frame):
         if not self.DataPlot_filename.startswith("dat_"):
             wx.MessageBox(
                 'Not implemented yet when filename does not start with "dat_"... Sorry!',
-                "Info",
-            )
+                "Info")
             return
 
         (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
-            self.DataPlot_filename[4:-4] + ".dat",
-            (0, 1, 3),
-            1,  # 2 for centroid intensity, 3 for integrated  intensity
-            sorting_intensity="yes",
-            param=self.defaultParam,
-            signgam=SIGN_OF_GAMMA,
-            pixelsize=self.pixelsize,
-            kf_direction=self.kf_direction,
-        )
+                                                    self.DataPlot_filename[4:-4] + ".dat",
+                                                    (0, 1, 3),
+                                                    1,  # 2 for centroid intensity, 3 for integrated  intensity
+                                                    sorting_intensity="yes",
+                                                    param=self.defaultParam,
+                                                    signgam=SIGN_OF_GAMMA,
+                                                    pixelsize=self.pixelsize,
+                                                    kf_direction=self.kf_direction)
 
         prefix = self.DataPlot_filename.rsplit(".", 1)[0]
 
@@ -2649,7 +2628,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.Destroy()
         return userProvidedFilename
 
-    def OnDocumentationpdf(self, evt):
+    def OnDocumentationpdf(self, _):
 
         LaueToolsProjectFolder = os.path.abspath(os.curdir)
 
@@ -2661,7 +2640,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         webbrowser.open(pdffile_adress)
 
-    def OnDocumentationhtml(self, evt):
+    def OnDocumentationhtml(self, _):
 
         html_file_address = "file://%s" % os.path.join(
             LaueToolsProjectFolder, "Documentation", "build","html", "index.html"
@@ -2669,7 +2648,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         webbrowser.open(html_file_address)
 
-    def OnTutorial(self, evt):
+    def OnTutorial(self, _):
         dialog = wx.MessageDialog(
             self,
             "Not yet implemented \n"
@@ -2680,21 +2659,21 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnSerieIndexation(self, evt):
+    def OnSerieIndexation(self, _):
         dialog = wx.MessageDialog(
             self, "Not yet implemented \n" "in wxPython", "OnSerieIndexation", wx.OK
         )
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnMapAnalysis(self, evt):
+    def OnMapAnalysis(self, _):
         dialog = wx.MessageDialog(
             self, "Not yet implemented \n" "in wxPython", "OnMapAnalysis", wx.OK
         )
         dialog.ShowModal()
         dialog.Destroy()
 
-    def OnAbout(self, evt):
+    def OnAbout(self, _):
         """
         about lauetools and license
         """
@@ -2708,11 +2687,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         Support and help in developing this package:
         https://sourceforge.net/projects/lauetools/
-        """ % (
-            MONTH,
-            YEAR,
-            REV,
-        )
+        """ % (MONTH, YEAR, REV)
         f = open("License", "r")
         lines = f.readlines()
         mylicense = ""
@@ -2739,7 +2714,7 @@ class LaueToolsGUImainframe(wx.Frame):
         info.AddTranslator("Jean-Sebastien Micha")
         wx.AboutBox(info)
 
-    def OnExit(self, evt):
+    def OnExit(self, _):
         """
         exit
         """
@@ -5319,7 +5294,7 @@ class ManualIndexFrame(wx.Frame):
                 index_to_select
             ]
 
-            print("index_to_select", index_to_select)
+            # print("index_to_select", index_to_select)
 
             self.select_dataX = self.indexation_parameters["AllDataToIndex"][
                 "data_pixX"
@@ -5337,15 +5312,12 @@ class ManualIndexFrame(wx.Frame):
         else:
             print(
                 "Reuse computed ClassicalIndexation_Tabledist with size: %d"
-                % len(self.parent.ClassicalIndexation_Tabledist)
-            )
+                % len(self.parent.ClassicalIndexation_Tabledist))
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.parent.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta,
+                    self.select_chi,
+                    self.select_I,
+                    self.parent.DataPlot_filename)
 
         self.key_material = str(self.combokeymaterial.GetValue())
         latticeparams = self.parent.dict_Materials[self.key_material][1]
@@ -5405,7 +5377,6 @@ class ManualIndexFrame(wx.Frame):
         self.nLUT = nLUT
         self.rough_tolangle = rough_tolangle
         self.fine_tolangle = fine_tolangle
-
 
         USETHREAD = 1
         if USETHREAD:

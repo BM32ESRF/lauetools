@@ -1545,25 +1545,7 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
     """find orientation matrices and scores from the mutual angles recognition
     from two spots Sets
 
-                        ResolutionAngstrom=False,
-                        B=np.eye(3),  # for cubic
-                        cubicSymmetry=False,
-                        LUT=None,
-                        LUT_tol_angle=0.5,
-                        MR_tol_angle=0.2,
-                        Minimum_Nb_Matches=15,
-                        key_material="",
-                        plot=0,
-                        nbbestplot=1,
-                        nbspots_plot="all",  # nb exp spots to display if plot = 1
-                        addMatrix=None,
-                        verbose=1,
-                        detectorparameters=None,
-                        set_central_spots_hkl=None,
-                        verbosedetails=True,
-                        gauge=None,
-                        dictmaterials=DictLT.dict_Materials,
-                        MaxRadiusHKL=False,
+             
     """
 
     print("\n\n ----------------\n ---  getOrientMatrices_SubSpotsSets  --- \n --------------------\n\n")
@@ -1669,7 +1651,6 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
     print('nb solutions', nbsol)
 
     if nbsol>1:
-
         BestMatrices, BestStats = ISS.MergeSortand_RemoveDuplicates(BestMatrices,
                                                                 BestStats,
                                                                 minimumNbMatches,
@@ -1688,27 +1669,42 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
                                     key_material, LUT_tol_angle, detectorparameters,
                                     minimumNbMatches=15):
     """find orientation matrices and scores from the mutual angles recognition
-    from two spots Sets
+    from two Sets of spots
 
-                        ResolutionAngstrom=False,
-                        B=np.eye(3),  # for cubic
-                        cubicSymmetry=False,
-                        LUT=None,
-                        LUT_tol_angle=0.5,
-                        MR_tol_angle=0.2,
-                        Minimum_Nb_Matches=15,
-                        key_material="",
-                        plot=0,
-                        nbbestplot=1,
-                        nbspots_plot="all",  # nb exp spots to display if plot = 1
-                        addMatrix=None,
-                        verbose=1,
-                        detectorparameters=None,
-                        set_central_spots_hkl=None,
-                        verbosedetails=True,
-                        gauge=None,
-                        dictmaterials=DictLT.dict_Materials,
-                        MaxRadiusHKL=False,
+    Return all matrices that have a least a 'Minimum_Nb_Matches'.
+    Distances between two spots are compared to a reference
+    angles look up table (LUT).
+
+    .. note::
+        - Used in AutoIndexation module (in LaueToolsGUI.py Classical Angular indexation)
+        - USED in FileSeries
+
+    :param selectedspots_ind1: list of exp. spot indices
+    :param selectedspots_ind2: list of exp. spot indices. Spots indices corresponds to spots data location in Theta_exp and Chi_exp
+    :param emax:    Maximum energy used in simulation of the Laue Pattern (the higher this value the larger
+                                the number of theo. spots)
+    :param Theta_exp: experimental 2theta/2  1D array 
+    :param Chi_exp: experimental chi  1d array
+    :param nLUT:  integer for the maximum index of probed hkl when computing the LUT
+    :param B: Triangular up matrix defining the reciprocal unit cell
+    :param LUT_tol_angle: Angular tolerance (deg) below which exp. distance can be considered as recognised
+                                in reference Look Uo Table
+    MR_tol_angle:                :    Angular tolerance below which one exp spot can be linked to a single theo. spot
+                                from simulation without any ambiguity
+    :param minimumNbMatches: Minimum nb of matches (nb of links between exp and theo spots) above which the corresponding
+                                orientation matrix will be returned as a likely good candidate.
+    :param key_material: Element or structure label to the simulate the proper Laue Pattern (e.g.: 'Cu', 'Ge')
+
+    :param detectorparameters: dictionary of detector parameters (key, value) which must contain
+                            'kf_direction' , general position of detector plane
+                            'detectordistance', sample to detector distance (mm).
+                            (Could be approximate since only used to compute Matchiing Rate)
+                            'detectordiameter', detector diameter (mm)
+
+
+    :return:
+        * [0]  list of potential Orientation Matrices (UB)
+        * [1]  list of corresponding scores (matching rate, nb of theo. Spots, mean angular deviation over exp and theo. links)
     """
 
     print("\n\n ----------------\n ---  getOrientMatrices_fromTwoSets  --- \n --------------------\n\n")
@@ -1920,14 +1916,12 @@ def getOrientMatrices(spot_index_central,
     if max(list_spot_central_indices) > nbofpeaks:
         raise ValueError(
             "Tab_angl_dist of size %d is too small and does not contain distance with spot #%d"
-            % (nbofpeaks, max(list_spot_central_indices))
-        )
+            % (nbofpeaks, max(list_spot_central_indices)))
 
     if key_material == "":
         raise ValueError("Warning! key_material is not defined in getOrientMatrices()")
 
-    BestScores_per_centralspot = [
-        [] for k in list(range(len(list_spot_central_indices)))]
+    BestScores_per_centralspot = [[] for k in list(range(len(list_spot_central_indices)))]
 
     List_UBs = []  # matrix list
     List_Scores = []  # hall of fame BestScores_per_centralspot list
@@ -1941,9 +1935,7 @@ def getOrientMatrices(spot_index_central,
 
     # ---------------------------------
     # filling hkl central spots list
-    set_central_spots_hkl_list = [
-        None for ll in list(range(len(list_spot_central_indices)))
-    ]
+    set_central_spots_hkl_list = [None for ll in list(range(len(list_spot_central_indices)))]
 
     print("set_central_spots_hkl", set_central_spots_hkl)
 

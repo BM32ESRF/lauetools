@@ -3766,7 +3766,7 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
         diff = matB - matA
         flagdiff = np.less(np.abs(diff), tol)
         resflag = np.all(np.ravel(flagdiff))
-        print('for ID: ', resflag)
+        # print('for ID: ', resflag)
         return resflag, resflag
 
     elif allpermu is None or allpermu == "cubic":

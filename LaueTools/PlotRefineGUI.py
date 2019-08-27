@@ -116,10 +116,10 @@ class MessageDataBox(wx.Frame):
 
         self.SetSizer(vbox)
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Close()
 
-    def OnAccept(self, evt):
+    def OnAccept(self, _):
         matrixname = str(self.text2.GetValue())
         self.parent.dict_Rot[matrixname] = self.matrix
         self.parent.selectedName = matrixname
@@ -812,7 +812,7 @@ class Plot_RefineFrame(wx.Frame):
         sizerH.Fit(self)
         self.Layout()
 
-    def Onselectfitparameters_latticeparams(self, evt):
+    def Onselectfitparameters_latticeparams(self, _):
         self.fitTrecip.SetValue(False)
         if (
             self.fita.GetValue()
@@ -832,7 +832,7 @@ class Plot_RefineFrame(wx.Frame):
             ):
                 chck.SetValue(False)
 
-    def Onselectfitparameters_Tsparams(self, evt):
+    def Onselectfitparameters_Tsparams(self, _):
         self.fitTrecip.SetValue(False)
         if (
             self.Ts00chck.GetValue()
@@ -852,7 +852,7 @@ class Plot_RefineFrame(wx.Frame):
             ):
                 chck.SetValue(False)
 
-    def onSetImageScale(self, evt):
+    def onSetImageScale(self, _):
         """
         open a board to change image scale
         """
@@ -867,7 +867,7 @@ class Plot_RefineFrame(wx.Frame):
 
     #         self._replot()
 
-    def onSetNoise(self, evt):
+    def onSetNoise(self, _):
         """
         open a board to add noise in experimental data
         """
@@ -961,7 +961,7 @@ class Plot_RefineFrame(wx.Frame):
                 return (0, 2300), (0, 2300)
             return get2Dlimits(self.pixelX, self.pixelY)
 
-    def OnSwitchCoords(self, evt):
+    def OnSwitchCoords(self, _):
         if self.datatype == "2thetachi":
             print("was 2theta")
             self.datatype = "pixels"
@@ -992,7 +992,7 @@ class Plot_RefineFrame(wx.Frame):
         print("I leave")
         evt.Skip()
 
-    def OnUndoReplot(self, evt):
+    def OnUndoReplot(self, _):
 
         self.UBmat = copy.copy(self.previous_UBmat)
 
@@ -1003,7 +1003,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.UpdateFromRefinement.SetValue(False)
 
-    def OnReplot(self, evt):
+    def OnReplot(self, _):
 
         if self.SimulParam is not None:
             # check element if user needs to change it
@@ -1225,7 +1225,7 @@ class Plot_RefineFrame(wx.Frame):
     #             self.tooltip.Enable(False)
 
     # --- ---------Spot Links Editor
-    def BuildDataDict(self, evt):  # filter Exp Data spots
+    def BuildDataDict(self, _):  # filter Exp Data spots
         """
         in Plot_RefineFrame class
         
@@ -1312,7 +1312,7 @@ class Plot_RefineFrame(wx.Frame):
         # update experimental spots display
         self._replot()
 
-    def OnAutoLink(self, evt):
+    def OnAutoLink(self, _):
         r""" create automatically links between currently DISPLAYED close experimental and
         theoretical spots in 2theta, chi representation
 
@@ -1542,7 +1542,7 @@ class Plot_RefineFrame(wx.Frame):
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks( self, evt ):  # filter links between spots(after OnAutoLink() )
+    def BuildDataDictAfterLinks( self, _):  # filter links between spots(after OnAutoLink() )
         """
         open editor to look at spots links and filter them
 
@@ -1553,9 +1553,7 @@ class Plot_RefineFrame(wx.Frame):
 
             indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int)
             indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int))[
-                1:4
-            ]
+            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int))[1:4]
             intens = self.linkIntensity_link
             if self.linkResidues_link is not None:
                 residues = np.array(self.linkResidues_link)[:, 2]
@@ -1588,7 +1586,7 @@ class Plot_RefineFrame(wx.Frame):
         self.linkResidues = np.take(ArrayReturn, [0, 1, 6], axis=1)
 
     # --- ------------ Fitting functions ----
-    def OnRefine_UB_and_Strain(self, evt):
+    def OnRefine_UB_and_Strain(self, _):
         """
         in plot_RefineFrame
 
@@ -2814,7 +2812,7 @@ class Plot_RefineFrame(wx.Frame):
                 self.fitting_parameters_keys.append(List_of_keys[k])
                 self.fitting_parameters_values.append(List_of_defaultvalues[k])
 
-    def build_FitResults_Dict(self, evt):
+    def build_FitResults_Dict(self, _):
         """
         'button OnShowResults of fit
         
@@ -2872,7 +2870,7 @@ class Plot_RefineFrame(wx.Frame):
         self.linkIntensity_fit = ArrayReturn[:, 5]
         self.linkResidues_fit = np.take(ArrayReturn, [0, 1, 6], axis=1)
 
-    def onWriteFitFile(self, evt):
+    def onWriteFitFile(self, _):
         """
         write a .fit file of indexation results of 1 grain
         """
@@ -3016,17 +3014,15 @@ class Plot_RefineFrame(wx.Frame):
     def Simulate_Pattern(self):
         """
         in plot_RefineFrame
-        
+
         compute
-        
+
         self.data_theo = [Twicetheta, Chi, Miller_ind, posx, posy, energy]
-        
+
         self.data_theo_pixXY = [posx, posy, Miller_ind, Twicetheta, Chi, energy]
         """
-        print(
-            " self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
-            self.detectordiameter,
-        )
+        # print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
+        #     self.detectordiameter)
 
         # for squared detector need to increase a bit
         if self.CCDLabel.startswith("sCMOS"):
@@ -3085,9 +3081,7 @@ class Plot_RefineFrame(wx.Frame):
         event.Skip()
 
     def onSelectUBmatrix(self, event):
-        self.sb.SetStatusText(
-            "Selected Ubmatrix: %s" % str(self.comboUBmatrix.GetValue())
-        )
+        self.sb.SetStatusText("Selected Ubmatrix: %s" % str(self.comboUBmatrix.GetValue()))
         self.UpdateFromRefinement.SetValue(False)
         self.OnReplot(1)
         event.Skip()
@@ -3136,7 +3130,7 @@ class Plot_RefineFrame(wx.Frame):
 
             evt.Skip()
 
-    def T7(self, evt):
+    def T7(self, _):
         self.what_was_pressed(0)
         print(self.GetId())
         if self.listbuttonstate[2] == 0:
@@ -3466,7 +3460,7 @@ class Plot_RefineFrame(wx.Frame):
     #        else:
     #            print "No simulation matrix available!..."
 
-    def OnStoreMatrix(self, evt):
+    def OnStoreMatrix(self, _):
         """
         in Plot_RefineFrame
         """
