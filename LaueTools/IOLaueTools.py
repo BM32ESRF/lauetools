@@ -1176,7 +1176,7 @@ def readfitfile_multigrains(
         print("strain6 = \n", strain6.round(decimals=2))
         print("euler = \n", euler.round(decimals=3))
 
-    if readmore == False:
+    if not readmore:
         toreturn = (
             list_indexedgrains_indices,
             list_nb_indexed_peaks,
@@ -1186,7 +1186,7 @@ def readfitfile_multigrains(
             calibJSM[:, :5],
             pixdev,
         )
-    elif readmore == True:
+    elif readmore:
         toreturn = (
             list_indexedgrains_indices,
             list_nb_indexed_peaks,
@@ -1198,7 +1198,7 @@ def readfitfile_multigrains(
             strain6,
             euler,
         )
-    if return_toreindex is True:
+    if return_toreindex:
         toreturn = (
             list_indexedgrains_indices,
             list_nb_indexed_peaks,

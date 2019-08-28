@@ -197,17 +197,15 @@ def dosimulation_parametric(
         print("GrainSimulParam in dosimulation_parametric() input Element")
         print(GrainSimulParam)
 
-        spots2pi = LAUE.getLaueSpots(
-            DictLT.CST_ENERGYKEV / emax,
-            DictLT.CST_ENERGYKEV / emin,
-            [GrainSimulParam],  # bracket because of a list of one grain
-            [[""]],
-            fastcompute=0,
-            fileOK=0,
-            verbose=0,
-            kf_direction=kf_direction,
-            dictmaterials=dictmaterials
-        )
+        spots2pi = LAUE.getLaueSpots(DictLT.CST_ENERGYKEV / emax,
+                                        DictLT.CST_ENERGYKEV / emin,
+                                        [GrainSimulParam],  # bracket because of a list of one grain
+                                        [[""]],
+                                        fastcompute=0,
+                                        fileOK=0,
+                                        verbose=0,
+                                        kf_direction=kf_direction,
+                                        dictmaterials=dictmaterials)
 
         # q vectors in lauetools frame, miller indices
         # print "spots2pi",spots2pi

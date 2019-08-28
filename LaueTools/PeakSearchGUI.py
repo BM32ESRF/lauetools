@@ -2837,7 +2837,7 @@ class PeakListOLV(wx.Panel):
 
     def updateView(self, evt):
         flag = self.buildlistofspots()
-        if flag == True:
+        if flag:
             self.InitObjectListView()
             #            if not self.showROIpeak.GetValue() and not self.showspecificgrains.GetValue():
             if not self.showROIpeak.GetValue():
@@ -4251,7 +4251,7 @@ class MainPeakSearchFrame(wx.Frame):
         #                                             vmax=self.ImaxDisplayed)
 
         title = self.imagefilename
-        if self.stackedimages == True:
+        if self.stackedimages:
             title += "\nsstack index %d" % self.stackimageindex
         self.axes.set_title(title)
         # self.myplot.set_clim=(1,200)  # work?
@@ -4326,7 +4326,7 @@ class MainPeakSearchFrame(wx.Frame):
             datatype = ""
         titlestring = "%s\n%s" % (self.imagefilename, datatype)
 
-        if self.stackedimages == True:
+        if self.stackedimages:
             titlestring += "\nsstack index %d" % self.stackimageindex
         if 1:  # not self.OnFlyMode:
             if self.peaklistPixels is not None:

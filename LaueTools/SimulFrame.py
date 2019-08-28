@@ -542,11 +542,9 @@ class SimulationPlotFrame(wx.Frame):
             ytol = 50
 
         if ExperimentalSpots:
-            xdata, ydata, _annotes_exp = (
-                self.Data_X,
-                self.Data_Y,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, _annotes_exp = (self.Data_X,
+                                            self.Data_Y,
+                                            list(zip(self.Data_index_expspot, self.Data_I)))
 
         xdata, ydata, infos = self.Xdat, self.Ydat, list(zip(self.Idat, self.Mdat))
         #         print "print xdata", xdata
@@ -635,10 +633,7 @@ class SimulationPlotFrame(wx.Frame):
 
                 # if exp. spot is close enough
                 if _distance < xtol:
-                    tip_exp = "spot index=%d. Intensity=%.1f" % (
-                        annote_exp[0],
-                        annote_exp[1],
-                    )
+                    tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
                     self.updateStatusBar_theo_exp(x, y, annote_exp, spottype="exp")
                 else:
                     self.sb.SetStatusText("", 1)
@@ -650,7 +645,7 @@ class SimulationPlotFrame(wx.Frame):
                     E = annote[0]
                     HKL = annote[1:4]
 
-                    tip_theo = " SPOT @ x= %.2f " % x + "y= %2f " % y + "E=%.3f " % E + "[h,k,l]=%s" % HKL
+                    tip_theo = " SPOT @ x= %.2f y= %2f E= %.3f [h,k,l]=%s" % (x, y, E, HKL)
 
                     subgrainindex, parentgrainindex, transform_type = infostuple
                     #starting subgrains index:
@@ -660,14 +655,15 @@ class SimulationPlotFrame(wx.Frame):
                     tip_theo += " spotindex in grain: %d " % local_spot_index
 
                     if 'Slips' in self.datatype:
+                        # print("Data for slips")
                         # Assuming a single slip system simulation
                         list_ParentGrain_transforms = self.StreakingData[0][7]
+                        # print("list_ParentGrain_transforms",list_ParentGrain_transforms)
 
                         nbsteps = 11
-
                         slipindex = (grain_index - stindex) // nbsteps
 
-                        if list_ParentGrain_transforms[parentgrainindex] == 'slipsystem':
+                        if list_ParentGrain_transforms[parentgrainindex][2] == 'slipsystem':
                             plane, direction = self.StreakingData[4][slipindex]
                             tip_theo += '\nslipsystem infos: index %d' % slipindex
                             tip_theo += ': plane %s, direction %s'%(str(plane), str(direction))
@@ -886,7 +882,7 @@ class SimulationPlotFrame(wx.Frame):
 
             # slip systems ---------------------
             print('grainindex %d , self.ScatterPlot_Grain[grainindex]'%grainindex,self.ScatterPlot_Grain[grainindex])
-            if self.ScatterPlot_Grain[grainindex] is False:
+            if not self.ScatterPlot_Grain[grainindex]:
                 continue
             
             # print "self.Data_X[grainindex] in plot", self.Data_X[grainindex]
@@ -934,7 +930,7 @@ class SimulationPlotFrame(wx.Frame):
                 print('parentgrainindex: %d, self.ScatterPlot_ParentGrain[parentgrainindex]'%parentgrainindex,
                                             self.ScatterPlot_ParentGrain[parentgrainindex])
 
-                if self.ScatterPlot_ParentGrain[parentgrainindex] is True:
+                if self.ScatterPlot_ParentGrain[parentgrainindex]:
                     continue
 
                 allrawX = self.StreakingData[0][4]
@@ -942,7 +938,7 @@ class SimulationPlotFrame(wx.Frame):
 
                 print('len(allrawX)', len(allrawX))
 
-                sindex,findex = dictindicesStreakingData[parentgrainindex]
+                sindex, findex = dictindicesStreakingData[parentgrainindex]
                 rawX = np.array(allrawX[sindex:findex])
                 rawY = np.array(allrawY[sindex:findex])
 

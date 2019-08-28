@@ -246,17 +246,14 @@ class PeaksListBoard(wx.Frame):
         newstate = chckbox.GetValue()
         print("newstate", newstate)
 
-        if newstate is False:
+        if not newstate
             self.scatterplot_list[chckindex].remove()
             self.parent.update_draw(1)
         else:
-            self.plotmarkers(
-                addscatteratindex=chckindex,
-                markerstyle=self.myDataList[chckindex]["marker"],
-                edgecolor=self.convert_to_rgbmatplotlib(
-                    self.myDataList[chckindex]["Color"]
-                ),
-            )
+            self.plotmarkers(addscatteratindex=chckindex,
+                            markerstyle=self.myDataList[chckindex]["marker"],
+                            edgecolor=self.convert_to_rgbmatplotlib(
+                                self.myDataList[chckindex]["Color"]))
 
     def onChangeSize(self, evt, index):
         sizectrl = getattr(self, "sizectrl_%d" % index)
@@ -268,14 +265,11 @@ class PeaksListBoard(wx.Frame):
 
         if self.scatterplot_list is not []:
             self.scatterplot_list[index].remove()
-            self.plotmarkers(
-                addscatteratindex=index,
-                markerstyle=self.myDataList[index]["marker"],
-                edgecolor=self.convert_to_rgbmatplotlib(
-                    self.myDataList[index]["Color"]
-                ),
-                markersize=newsize,
-            )
+            self.plotmarkers(addscatteratindex=index,
+                            markerstyle=self.myDataList[index]["marker"],
+                            edgecolor=self.convert_to_rgbmatplotlib(
+                                self.myDataList[index]["Color"]),
+                            markersize=newsize)
 
             self.myDataList[index]["size"] = newsize
 
@@ -291,13 +285,10 @@ class PeaksListBoard(wx.Frame):
 
         if self.scatterplot_list is not []:
             self.scatterplot_list[comboindex].remove()
-            self.plotmarkers(
-                addscatteratindex=comboindex,
-                markerstyle=self.selectedMarker,
-                edgecolor=self.convert_to_rgbmatplotlib(
-                    self.myDataList[comboindex]["Color"]
-                ),
-            )
+            self.plotmarkers(addscatteratindex=comboindex,
+                            markerstyle=self.selectedMarker,
+                            edgecolor=self.convert_to_rgbmatplotlib(
+                                self.myDataList[comboindex]["Color"]))
 
         event.Skip()
 
@@ -305,12 +296,10 @@ class PeaksListBoard(wx.Frame):
 
         fullpathfilename = str(self.expimagetxtctrl.GetValue())
         if not os.path.isfile(fullpathfilename):
-            dlg = wx.MessageDialog(
-                self,
-                "peak list file : %s\n\ndoes not exist!!" % fullpathfilename,
-                "error",
-                wx.OK | wx.ICON_ERROR,
-            )
+            dlg = wx.MessageDialog(self,
+                                "peak list file : %s\n\ndoes not exist!!" % fullpathfilename,
+                                "error",
+                                wx.OK | wx.ICON_ERROR)
             #                 dlg = wx.MessageDialog(self, 'Detector parameters must be float with dot separator',
             #                                    'Bad Input Parameters',)
             dlg.ShowModal()
@@ -325,9 +314,7 @@ class PeaksListBoard(wx.Frame):
             pl = IOLT.readfile_cor(fullpathfilename)[3:5]
             self.selectedpeaklist = np.array(pl).T
         elif fullpathfilename.endswith(".fit"):
-            res = IOLT.readfitfile_multigrains(
-                fullpathfilename, return_columnheaders=True
-            )
+            res = IOLT.readfitfile_multigrains(fullpathfilename, return_columnheaders=True)
             try:
                 data, colname_dict = res
             except:
@@ -342,9 +329,7 @@ class PeaksListBoard(wx.Frame):
                 col_X = colname_dict["Xexp"]
                 print("column for exp. peaks X position found at index %d" % col_X)
             else:
-                print(
-                    "\n\n!!column for theo. or exp. peaks X position not found...!!\n"
-                )
+                print("\n\n!!column for theo. or exp. peaks X position not found...!!\n")
 
             col_Y = None
             if "Ytheo" in colname_dict:

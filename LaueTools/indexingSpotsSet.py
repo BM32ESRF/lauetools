@@ -59,10 +59,8 @@ DEFAULT_KF_DIRECTION = "Z>0"
 
 # ---  ---------  exp. SPOTS indexing management -------
 class OrientMatrix:
-
     """
     class of orientation matrix which may have several representation
-    TODO: need to add some properties (det = 1, equivalent matrix ...)
     """
 
     def __init__(self, matrix=None, eulers=None):
@@ -82,11 +80,9 @@ class spotsset:
     """
     class for exp. SPOTS indexing management
     """
-
     def __init__(self):
         """
         instantiate the class
-        no argument
         """
         # dict of spots properties
         # (last element is a flag =1 if spot belong to indexed (completed) grain, 0 else)
@@ -129,6 +125,7 @@ class spotsset:
 
         self.filename = None
         self.dict_IMM = None
+        self.IMMdatabase = None
 
         # current spots data for indexation and refinement
         self.TwiceTheta_Chi_Int = None  # two theta and chi scattering angles and intensities array

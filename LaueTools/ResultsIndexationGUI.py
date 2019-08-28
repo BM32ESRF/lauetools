@@ -259,7 +259,7 @@ class RecognitionResultCheckBox(wx.Frame):
         """
         self.toshow = []
         for k in range(self.nbPotentialSolutions):
-            if self.cb[k].GetValue() == True:
+            if self.cb[k].GetValue():
                 self.toshow.append(k)
         # print "self.toshow",self.toshow
         # LaueToolsframe.picky.toshow = self.toshow
@@ -317,7 +317,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
         self.toshow = []
         for k in range(self.nbPotentialSolutions):
-            if self.cb[k].GetValue() == True:
+            if self.cb[k].GetValue():
                 self.toshow.append(k)
 
         # taking the only and lowest index of selected grains matrix after recognition
@@ -386,8 +386,7 @@ class RecognitionResultCheckBox(wx.Frame):
             print('ChildMatrix  #%d'%k_matsigma, ChildMatrix)
 
             # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
-            spots2pi = LT.getLaueSpots(
-                                        DictLT.CST_ENERGYKEV / float(emax),
+            spots2pi = LT.getLaueSpots(DictLT.CST_ENERGYKEV / float(emax),
                                         DictLT.CST_ENERGYKEV / float(emin),
                                         [grain],
                                         [[""]],
@@ -395,8 +394,7 @@ class RecognitionResultCheckBox(wx.Frame):
                                         ResolutionAngstrom=self.ResolutionAngstrom,
                                         fileOK=0,
                                         verbose=0,
-                                        dictmaterials=self.StorageDict['dict_Materials']
-                                    )
+                                        dictmaterials=self.StorageDict['dict_Materials'])
 
             # 2theta, chi of spot which are on camera(with harmonics)
             TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)

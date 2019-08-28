@@ -1127,7 +1127,7 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
 
     matLT3x3 = (GT.matline_to_mat3x3(mat_line)).T
 
-    if min_matLT == True:
+    if min_matLT:
         matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
         matLT3x3 = matmin
 
@@ -1135,7 +1135,7 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
 
     print("matstarlab = \n", matstarlab.round(decimals=6))
 
-    if returnmatLT == False:
+    if not returnmatLT:
         return (calib, matstarlab)
     else:
         return (calib, matstarlab, matLT3x3)
@@ -1263,7 +1263,7 @@ def readlt_fit(
         qm1 = np.dot(matLT3x3, data_fit[-1, 2:5])
         print("qm1 = ", qm1.round(decimals=4))
 
-    if min_matLT == True:
+    if min_matLT:
         matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(
             matLT3x3, verbose=verbose
         )
@@ -1288,32 +1288,28 @@ def readlt_fit(
     if verbose:
         print("matstarlab = \n", matstarlab.round(decimals=6))
 
-    if readmore2 == True:
+    if readmore2:
         readmore = False
 
     # xx yy zz yz xz xy
-    strain6 = np.array(
-        [
-            strain[0, 0],
-            strain[1, 1],
-            strain[2, 2],
-            strain[1, 2],
-            strain[0, 2],
-            strain[0, 1],
-        ]
-    )
+    strain6 = np.array([strain[0, 0],
+                        strain[1, 1],
+                        strain[2, 2],
+                        strain[1, 2],
+                        strain[0, 2],
+                        strain[0, 1]])
 
-    if returnmatLT == False:
-        if readmore == True:
+    if not returnmatLT:
+        if readmore:
             return (matstarlab, data_fit, calib, pixdev)
-        elif readmore2 == True:
+        elif readmore2:
             return (matstarlab, data_fit, calib, pixdev, strain6, euler)
         else:
             return (matstarlab, data_fit)
     else:
-        if readmore == True:
+        if readmore:
             return (matstarlab, data_fit, matLT3x3, calib, pixdev)
-        elif readmore2 == True:
+        elif readmore2:
             return (matstarlab, data_fit, matLT3x3, calib, pixdev, strain6, euler)
         else:
             return (matstarlab, data_fit, matLT3x3)
@@ -1337,7 +1333,7 @@ def readall_str(grain_index, filemane_str, returnmatLT=False, min_matLT=False):
 
     matstarlab = matxmas_to_matstarlab(satocrs, calib)
 
-    if min_matLT == True:
+    if min_matLT:
         matLT3x3 = matstarlabOR_to_matstarlabLaueTools(matstarlab)
         matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
         matLT3x3 = matmin
@@ -1346,7 +1342,7 @@ def readall_str(grain_index, filemane_str, returnmatLT=False, min_matLT=False):
         hklmin = np.dot(transfmat, data_str[:, 2:5].transpose()).T
         data_str[:, 2:5] = hklmin
 
-    if returnmatLT == False:
+    if not returnmatLT:
         return (data_str, matstarlab, calib, dev_str)
     else:
         return (data_str, matstarlab, calib, dev_str, matLT3x3)

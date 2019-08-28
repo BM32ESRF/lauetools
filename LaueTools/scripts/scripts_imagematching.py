@@ -2074,7 +2074,7 @@ def test(database):
         if 1:
             print("start to index grain #%d" % grain_index)
 
-        if provideNewMatrices == True:
+        if provideNewMatrices:
             # potential orientation solutions from image matching
             print("providing new set of matrices")
 
@@ -2161,7 +2161,7 @@ def test(database):
 
                 # there are at least one indexed grain and this dataset has not been already tested with the matrix stack
                 # so remove the corresponding data and restart the imagematching
-                if len(DataSet.indexedgrains) > 0 and indexgraincompleted == True:
+                if len(DataSet.indexedgrains) > 0 and indexgraincompleted:
                     # exit the 'for' loop of refinement and start with other set of spots
                     provideNewMatrices = True
                     indexgraincompleted = False

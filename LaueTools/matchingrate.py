@@ -844,17 +844,17 @@ def Angular_residues_np_multimatrices(
         # array(vec) and array(indices) (here with fastcompute=0 
         # array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
         spots2pi = LAUE.getLaueSpots(
-            CST_ENERGYKEV / emax,
-            CST_ENERGYKEV / emin,
-            [grain],
-            1,
-            fastcompute=1,
-            fileOK=0,
-            verbose=0,
-            kf_direction=kf_direction,
-            ResolutionAngstrom=ResolutionAngstrom,
-            dictmaterials=dictmaterials
-        )
+                                    CST_ENERGYKEV / emax,
+                                    CST_ENERGYKEV / emin,
+                                    [grain],
+                                    1,
+                                    fastcompute=1,
+                                    fileOK=0,
+                                    verbose=0,
+                                    kf_direction=kf_direction,
+                                    ResolutionAngstrom=ResolutionAngstrom,
+                                    dictmaterials=dictmaterials
+                                )
 
         # 2theta,chi of spot which are on camera (with harmonics)
         # None because no need of hkl vectors
@@ -926,17 +926,17 @@ def Angular_residues(
 
     # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        [grain],
-        1,
-        fastcompute=1,
-        fileOK=0,
-        verbose=0,
-        kf_direction=kf_direction,
-        ResolutionAngstrom=ResolutionAngstrom,
-        dictmaterials=dictmaterials
-    )
+                                    CST_ENERGYKEV / emax,
+                                    CST_ENERGYKEV / emin,
+                                    [grain],
+                                    1,
+                                    fastcompute=1,
+                                    fileOK=0,
+                                    verbose=0,
+                                    kf_direction=kf_direction,
+                                    ResolutionAngstrom=ResolutionAngstrom,
+                                    dictmaterials=dictmaterials
+                                )
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(
         spots2pi,

@@ -105,16 +105,14 @@ def Plot_compare_2thetachi(
     grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        [grain],
-        1,
-        fastcompute=1,
-        fileOK=0,
-        verbose=0,
-        dictmaterials=dictmaterials
-    )
+    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
+                                CST_ENERGYKEV / emin,
+                                [grain],
+                                1,
+                                fastcompute=1,
+                                fileOK=0,
+                                verbose=0,
+                                dictmaterials=dictmaterials)
 
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
@@ -187,16 +185,14 @@ def Plot_compare_2thetachi_multi(
 
         # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0)
         # of spots exiting the crystal in 2pi steradian (Z>0)
-        spots2pi = LAUE.getLaueSpots(
-            CST_ENERGYKEV / emax,
-            CST_ENERGYKEV / emin,
-            [grain],
-            1,
-            fastcompute=1,
-            fileOK=0,
-            verbose=0,
-            dictmaterials=dictmaterials
-        )
+        spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
+                                    CST_ENERGYKEV / emin,
+                                    [grain],
+                                    1,
+                                    fastcompute=1,
+                                    fileOK=0,
+                                    verbose=0,
+                                    dictmaterials=dictmaterials)
         # 2theta,chi of spot which are on camera (with harmonics)
         TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
 
@@ -1372,7 +1368,7 @@ def getOrientMatrix_from_onespot(
                     exitloop = True
                     break
 
-            if exitloop == True:
+            if exitloop:
                 break
 
             else:  # several pairs of solutions
@@ -1527,7 +1523,7 @@ def getOrientMatrix_from_onespot(
                         break
 
             # exit the main for loop
-            if exitloop == True:
+            if exitloop:
                 break
 
     return BestRecordedRes
@@ -2611,7 +2607,7 @@ def getOrients_AnglesLUT(
             # continue the for loop if best matching rate is too poor
             pass
 
-    if Threshold_reached == False:
+    if not Threshold_reached:
         ArRes = np.array(AllRes)
         bestres = np.argmax(ArRes[:, 1])
 

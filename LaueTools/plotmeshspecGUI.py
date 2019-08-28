@@ -1152,14 +1152,12 @@ class ImshowPanel(wx.Panel):
                     )
                 )
 
-                command = "mv %s %.5f %s %.5f" % (
-                    self.motor1name,
-                    current_posmotor1,
-                    self.motor2name,
-                    current_posmotor2,
-                )
+                command = "mv %s %.5f %s %.5f" % (self.motor1name,
+                                                current_posmotor1,
+                                                self.motor2name,
+                                                current_posmotor2)
 
-                if msgbox == True:
+                if msgbox:
                     wx.MessageBox(sentence + "\n" + command, "INFO")
 
                 # WARNING could do some instabilities to station ??
@@ -1180,9 +1178,8 @@ class ImshowPanel(wx.Panel):
 
         if key == "escape":
 
-            ret = wx.MessageBox(
-                "Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self
-            )
+            ret = wx.MessageBox("Are you sure to quit?", "Question",
+                                    wx.YES_NO | wx.NO_DEFAULT, self)
 
             if ret == wx.YES:
                 self.Close()

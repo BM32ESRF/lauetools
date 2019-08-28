@@ -153,7 +153,7 @@ def xy_from_Quat(
     Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
 
     twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn, labXMAS=labXMAS)
-    if 0:  # verbose:
+    if verbose:
         print("matfromQuat", matfromQuat)
         print("tDATA_Q", np.transpose(DATA_Q))
         print("Qrot", Qrot)
@@ -682,7 +682,7 @@ def error_function_strain_with_two_orientations(
     #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
 
     TODO: not implemented for transmission geometry (kf_direction='X>0') and backreflection ('X<0')
-    
+
     # TODO: not completed
     """
 
@@ -1629,7 +1629,7 @@ def error_function_on_demand_strain_2grains(
                 "    ********",
             )
     #        print "newmatrix", newmatrix
-    if returnalldata is True:
+    if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
         return alldistances_array, all_deltamatrices, all_newmatrices
 
@@ -1858,14 +1858,14 @@ def error_function_general(
 
     newmatrix = np.dot(Uxyz, initrot)
 
-    if Tc_has_elements is True:
+    if Tc_has_elements:
         newmatrix = np.dot(newmatrix, Tc)
-    elif T_has_elements is True:
+    elif T_has_elements:
         newmatrix = np.dot(T, newmatrix)
-    elif Ts_has_elements is True:
+    elif Ts_has_elements:
         T = np.dot(np.dot(DictLT.RotY40, Ts), DictLT.RotYm40)
         newmatrix = np.dot(T, newmatrix)
-    elif latticeparameters_has_elements is True:
+    elif latticeparameters_has_elements:
         B0matrix = CP.calc_B_RR(latticeparameters, directspace=1, setvolume=False)
     if verbose:
         print("newmatrix", newmatrix)
@@ -1926,7 +1926,7 @@ def error_function_general(
                 "    ********",
             )
     #        print "newmatrix", newmatrix
-    if returnalldata is True:
+    if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
         return alldistances_array, Uxyz, newmatrix, Tc, T, Ts
 
@@ -2441,7 +2441,7 @@ def error_function_latticeparameters(
                 "    ********",
             )
     #        print "newmatrix", newmatrix
-    if returnalldata is True:
+    if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
         return alldistances_array, Uxyz, newmatrix, newB0matrix, latticeparameters
 
@@ -2648,7 +2648,7 @@ def error_function_strain(
                 "    ********",
             )
     #        print "newmatrix", newmatrix
-    if returnalldata is True:
+    if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
         return alldistances_array, Uxyz, newmatrix, Ts, T
 
@@ -3036,7 +3036,7 @@ def error_strain_from_elongation(
                 "    ********",
             )
     #        print "newmatrix", newmatrix
-    if returnalldata is True:
+    if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
         return alldistances_array, Uxyz, newmatrix, Ts, T
 

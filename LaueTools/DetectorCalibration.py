@@ -1857,10 +1857,9 @@ class MainCalibrationFrame(wx.Frame):
         StartFit in calib frame
         """
         if self.linkedspots == []:
-            wx.MessageBox(
-                'You need to create first links between experimental and simulated spots with the "link spots" button.',
-                "INFO",
-            )
+            wx.MessageBox('You need to create first links between experimental and simulated spots '
+                            'with the "link spots" button.',
+                            "INFO")
             event.Skip()
             return
 
@@ -1885,25 +1884,21 @@ class MainCalibrationFrame(wx.Frame):
         print("DataQ from self.linkExpMiller", Data_Q)
 
         # experimental spots selection from self.data_x, self.data_y(loaded when initialising calibFrame)
-        pixX, pixY = (
-            np.take(self.data_x, exp_indices),
-            np.take(self.data_y, exp_indices),
-        )  # pixel coordinates
+        pixX, pixY = (np.take(self.data_x, exp_indices),
+                        np.take(self.data_y, exp_indices))  # pixel coordinates
         # twth, chi = np.take(self.twicetheta, exp_indices),np.take(self.chi, exp_indices)  # 2theta chi coordinates
 
         # initial parameters of calibration and misorientation from the current orientation UBmatrix
         print("detector parameters", self.CCDParam)
 
-        allparameters = np.array(
-            self.CCDParam + [0, 0, 0]
-        )  # 3 last params = 3 quaternion angles not used here
+        allparameters = np.array(self.CCDParam + [0, 0, 0])  # 3 last params = 3 quaternion angles not used here
 
         # select the parameters that must be fitted
         boolctrl = [ctrl.GetValue() for ctrl in self.moveccdandxtal.listofparamfitctrl]
         varyingparameters = []
         init_values = []
         for k, val in enumerate(boolctrl):
-            if val == True:
+            if val:
                 varyingparameters.append(k)
                 init_values.append(allparameters[k])
 
@@ -1911,24 +1906,18 @@ class MainCalibrationFrame(wx.Frame):
             wx.MessageBox("You need to select at least one parameter to fit!!", "INFO")
             return
 
-        listparam = [
-            "distance(mm)",
-            "Xcen(pixel)",
-            "Ycen(pixel)",
-            "Angle1(deg)",
-            "Angle2(deg)",  # detector parameter
-            "theta1(deg)",
-            "theta2(deg)",
-            "theta3(deg)",
-        ]  # misorientation with respect to initial UBmatrix(/ elementary axis rotation)
+        listparam = ["distance(mm)",
+                    "Xcen(pixel)",
+                    "Ycen(pixel)",
+                    "Angle1(deg)",
+                    "Angle2(deg)",  # detector parameter
+                    "theta1(deg)",
+                    "theta2(deg)",
+                    "theta3(deg)"]  # misorientation with respect to initial UBmatrix(/ elementary axis rotation)
 
         # start fit
-        initial_values = np.array(
-            init_values
-        )  # [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
-        arr_indexvaryingparameters = np.array(
-            varyingparameters
-        )  # indices of position of parameters in [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
+        initial_values = np.array(init_values)  # [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
+        arr_indexvaryingparameters = np.array(varyingparameters)  # indices of position of parameters in [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
 
         self.UBmatrix = self.crystalparampanel.UBmatrix
 
@@ -1952,59 +1941,55 @@ class MainCalibrationFrame(wx.Frame):
         # fitting procedure for one or many parameters
         nb_fittingparams = len(arr_indexvaryingparameters)
         if nb_pairs < nb_fittingparams:
-            wx.MessageBox(
-                "You need at least %d spots links to fit these %d parameters."
-                % (nb_fittingparams, nb_fittingparams),
-                "INFO",
-            )
+            wx.MessageBox("You need at least %d spots links to fit these %d parameters."
+                            % (nb_fittingparams, nb_fittingparams),
+                            "INFO")
             event.Skip()
             return
 
         print("Initial error--------------------------------------\n")
         residues, deltamat, newmatrix = FitO.error_function_on_demand_calibration(
-            initial_values,
-            Data_Q,
-            allparameters,
-            arr_indexvaryingparameters,
-            sim_indices,
-            pixX,
-            pixY,
-            initrot=self.UBmatrix,
-            vecteurref=self.B0matrix,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=self.pixelsize,
-            dim=self.framedim,
-            weights=weights,
-            signgam=DictLT.SIGN_OF_GAMMA,
-            kf_direction=self.kf_direction,
-        )
+                                            initial_values,
+                                            Data_Q,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            sim_indices,
+                                            pixX,
+                                            pixY,
+                                            initrot=self.UBmatrix,
+                                            vecteurref=self.B0matrix,
+                                            pureRotation=pureRotation,
+                                            verbose=1,
+                                            pixelsize=self.pixelsize,
+                                            dim=self.framedim,
+                                            weights=weights,
+                                            signgam=DictLT.SIGN_OF_GAMMA,
+                                            kf_direction=self.kf_direction,
+                                        )
         print("Initial residues", residues)
         print("---------------------------------------------------\n")
 
         results = FitO.fit_on_demand_calibration(
-            initial_values,
-            Data_Q,
-            allparameters,
-            FitO.error_function_on_demand_calibration,
-            arr_indexvaryingparameters,
-            sim_indices,
-            pixX,
-            pixY,
-            initrot=self.UBmatrix,
-            vecteurref=self.B0matrix,
-            pureRotation=pureRotation,
-            pixelsize=self.pixelsize,
-            dim=self.framedim,
-            verbose=0,
-            weights=weights,
-            signgam=DictLT.SIGN_OF_GAMMA,
-            kf_direction=self.kf_direction,
-        )
+                                            initial_values,
+                                            Data_Q,
+                                            allparameters,
+                                            FitO.error_function_on_demand_calibration,
+                                            arr_indexvaryingparameters,
+                                            sim_indices,
+                                            pixX,
+                                            pixY,
+                                            initrot=self.UBmatrix,
+                                            vecteurref=self.B0matrix,
+                                            pureRotation=pureRotation,
+                                            pixelsize=self.pixelsize,
+                                            dim=self.framedim,
+                                            verbose=0,
+                                            weights=weights,
+                                            signgam=DictLT.SIGN_OF_GAMMA,
+                                            kf_direction=self.kf_direction,
+                                        )
 
-        print(
-            "\n********************\n       Results of Fit        \n********************"
-        )
+        print("\n********************\n       Results of Fit        \n********************")
         print("results", results)
         allresults = allparameters
 
@@ -2014,43 +1999,43 @@ class MainCalibrationFrame(wx.Frame):
         print("weights = ", weights)
 
         residues, deltamat, newmatrix = FitO.error_function_on_demand_calibration(
-            results,
-            Data_Q,
-            allparameters,
-            arr_indexvaryingparameters,
-            sim_indices,
-            pixX,
-            pixY,
-            initrot=self.UBmatrix,
-            vecteurref=self.B0matrix,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=self.pixelsize,
-            dim=self.framedim,
-            weights=weights,
-            signgam=DictLT.SIGN_OF_GAMMA,
-            kf_direction=self.kf_direction,
-        )
+                                        results,
+                                        Data_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        sim_indices,
+                                        pixX,
+                                        pixY,
+                                        initrot=self.UBmatrix,
+                                        vecteurref=self.B0matrix,
+                                        pureRotation=pureRotation,
+                                        verbose=1,
+                                        pixelsize=self.pixelsize,
+                                        dim=self.framedim,
+                                        weights=weights,
+                                        signgam=DictLT.SIGN_OF_GAMMA,
+                                        kf_direction=self.kf_direction,
+                                    )
 
         residues_nonweighted, _delta, _newmatrix, self.SpotsData = FitO.error_function_on_demand_calibration(
-            results,
-            Data_Q,
-            allparameters,
-            arr_indexvaryingparameters,
-            sim_indices,
-            pixX,
-            pixY,
-            initrot=self.UBmatrix,
-            vecteurref=self.B0matrix,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=self.pixelsize,
-            dim=self.framedim,
-            weights=None,
-            signgam=DictLT.SIGN_OF_GAMMA,
-            allspots_info=1,
-            kf_direction=self.kf_direction,
-        )
+                                                        results,
+                                                        Data_Q,
+                                                        allparameters,
+                                                        arr_indexvaryingparameters,
+                                                        sim_indices,
+                                                        pixX,
+                                                        pixY,
+                                                        initrot=self.UBmatrix,
+                                                        vecteurref=self.B0matrix,
+                                                        pureRotation=pureRotation,
+                                                        verbose=1,
+                                                        pixelsize=self.pixelsize,
+                                                        dim=self.framedim,
+                                                        weights=None,
+                                                        signgam=DictLT.SIGN_OF_GAMMA,
+                                                        allspots_info=1,
+                                                        kf_direction=self.kf_direction,
+                                                    )
 
         print("last pixdev table")
         print(residues_nonweighted)
@@ -2074,18 +2059,14 @@ class MainCalibrationFrame(wx.Frame):
 
         self.residues_fit = residues_nonweighted
         # display fit results
-        dataresults = (
-            allresults.tolist()
-            + [np.mean(self.residues_fit)]
-            + [len(self.residues_fit)]
-        )
+        dataresults = (allresults.tolist()
+                    + [np.mean(self.residues_fit)]
+                    + [len(self.residues_fit)])
         self.display_results(dataresults)
 
         # updating plot of theo. and exp. spots in calibFrame
         if self.cb_gotoresults.GetValue():
-            print(
-                "Updating plot with new CCD parameters and crystal orientation detector"
-            )
+            print("Updating plot with new CCD parameters and crystal orientation detector")
 
             # saving previous results
             self.previous_CCDParam = copy.copy(self.CCDParam)

@@ -878,8 +878,7 @@ class Plot_RefineFrame(wx.Frame):
         helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += " Or list of Matrices"
         dlg = wx.TextEntryDialog(
-            self, helptstr, "Calibration- Orientation Matrix elements Entry"
-        )
+            self, helptstr, "Calibration- Orientation Matrix elements Entry")
 
         _param = "[[1,0,0],[0, 1,0],[0, 0,1]]"
         dlg.SetValue(_param)
@@ -2157,10 +2156,10 @@ class Plot_RefineFrame(wx.Frame):
         print("**********test U ****************************")
         print("U matrix = ")
         print(Umat.round(decimals=9))
-        print("normes :")
+        print("norms :")
         for i in range(3):
             print(i, GT.norme_vec(Umat[:, i]).round(decimals=5))
-        print("produit scalaire")
+        print("scalar products")
         for i in range(3):
             j = np.mod(i + 1, 3)
             print(i, j, np.inner(Umat[:, i], Umat[:, j]).round(decimals=5))
@@ -2175,15 +2174,16 @@ class Plot_RefineFrame(wx.Frame):
         self.Umat2 = Umat
         self.Bmat_tri = Bmat_triang_up
 
-        list_HKL_names, HKL_xyz = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
-            matstarlab=None,  # OR
-            UBmat=self.UBB0mat,  # LT , UBB0 ici
-            omega=None,  # was MG.PAR.omega_sample_frame,
-            mat_from_lab_to_sample_frame=None,
-            results_in_OR_frames=0,
-            results_in_LT_frames=1,
-            sampletilt=40.0,
-        )
+        (list_HKL_names,
+        HKL_xyz) = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
+                                                        matstarlab=None,  # OR
+                                                        UBmat=self.UBB0mat,  # LT , UBB0 ici
+                                                        omega=None,  # was MG.PAR.omega_sample_frame,
+                                                        mat_from_lab_to_sample_frame=None,
+                                                        results_in_OR_frames=0,
+                                                        results_in_LT_frames=1,
+                                                        sampletilt=40.0,
+                                                    )
         self.HKLxyz_names = list_HKL_names
         self.HKLxyz = HKL_xyz
 
@@ -2307,9 +2307,15 @@ class Plot_RefineFrame(wx.Frame):
             txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0matrix[k])
         texts_dict["B0matrix"] = txtB0[:-2] + "]"
 
-        txtHKLxyz_names = "HKL coord. of lab and sample frame axes :\n"
+        txtHKLxyz_names = "                                 HKL frame coordinates\n"
+        listvectors= ["x=[100]_LT :",
+                        "y=[010]_LT :",
+                        "z=[001]_LT :",
+                        "xs=[100]_LTsample :",
+                        "ys=[010]_LTsample :",
+                        "zs=[001]_LTsample :"]
         for k in range(6):
-            txtHKLxyz_names += self.HKLxyz_names[k] + "\t [%.3f, %.3f, %.3f]\n" % tuple(
+            txtHKLxyz_names += listvectors[k] + "\t [%.3f, %.3f, %.3f]\n" % tuple(
                 self.HKLxyz[k])
             texts_dict["HKLxyz_names"] = txtHKLxyz_names
 
@@ -2803,7 +2809,7 @@ class Plot_RefineFrame(wx.Frame):
         """
         write a .fit file of indexation results of 1 grain
         """
-        if self.fitresults is False:
+        if not self.fitresults:
             wx.MessageBox("You must have run once a data refinement!", "INFO")
             return
 
@@ -3290,14 +3296,9 @@ class Plot_RefineFrame(wx.Frame):
         #
         #                     self.xlim = (0, 2048)
 
-        nbspotstoindex = len(
-            self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"]
-        )
+        nbspotstoindex = len(self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"])
 
-        texttitle = "%s %d/%d spots" % (
-                                        self.File_NAME,
-                                        len(self.Data_I),
-                                        nbspotstoindex)
+        texttitle = "%s %d/%d spots" % (self.File_NAME, len(self.Data_I), nbspotstoindex)
         if self.ImageArray is not None:
             if hasattr(self, "fullpathimagefile"):
                 texttitle += "\nImage: %s" % self.fullpathimagefile
@@ -3417,15 +3418,14 @@ class Plot_RefineFrame(wx.Frame):
         Assign Miller indices of exp. spots for simulated spots close to them
         Assumption: undistorted cubic crystal in CCD on top geometry
 
-        matching is done in 2theta, chi in order to take the geometry into account before this Miller assignement
+        matching is done in 2theta, chi in order to take the geometry into account
+        before this Miller assignement
 
         TODO: use other reference crystal with other geometry
         """
         if self.mainframe is None:
-            wx.MessageBox(
-                "This button is useful only for sequential indexation of several grains from LaueToolsGUI",
-                "Info",
-            )
+            wx.MessageBox("This button is useful only for sequential indexation of several "
+                            "grains from LaueToolsGUI", "Info")
             self.pointButton5.SetBackgroundColour(self.defaultColor)
             self.pointButton5.SetValue(False)
             self.listbuttonstate = [0, 0, 0]
@@ -3435,13 +3435,11 @@ class Plot_RefineFrame(wx.Frame):
             if self.linkResidues_fit is not None:
                 pass
         except AttributeError:
-            wx.MessageBox('You must perform a fitting by for instance making "Automatic Links" then "Refine"!','Info')
+            wx.MessageBox('You must perform a fitting by for instance making '
+                            '"Automatic Links" then "Refine"!','Info')
             return
 
-        # from refinePicky()
-        # self.UBmat = UBmat
-        # self.Umat = np.dot(deltamat,starting_orientmatrix)
-        # self.Bmat = Bmat
+
         Grain, emin, emax = self.SimulParam
 
         # Umat = Grain[2]
@@ -4267,7 +4265,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         print("Now logscale is %s" % str(self.data_dict["logscale"]))
 
-        if self.data_dict["logscale"] is True:
+        if self.data_dict["logscale"]:
             positivemin = max(1, int(self.vminctrl.GetValue()))
             self.vminctrl.SetValue(positivemin)
             self.data_dict["vmin"] = positivemin

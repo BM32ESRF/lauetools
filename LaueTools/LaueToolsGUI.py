@@ -997,7 +997,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
         self.EnterMatrix(1)
-        if self.Enterkey_material() is False: return
+        if not self.Enterkey_material(): return
         self.EnterEnergyMax()
 
         self.DataSet.pixelsize = self.pixelsize
@@ -1012,9 +1012,6 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.statsresidues = []
         for orientmatrix in self.UBmatrix_toCheck:
-
-            # self.kf_direction = 'Z>0'
-
             # only orientmatrix, self.key_material are used ----------------------
             vecteurref = np.eye(3)  # means: a* // X, b* // Y, c* //Z
             # old definition of grain
@@ -1022,15 +1019,14 @@ class LaueToolsGUImainframe(wx.Frame):
             # ------------------------------------------------------------------
 
             #                 print "self.indexation_parameters", self.indexation_parameters
-            TwicethetaChi = LAUE.SimulateResult(
-                                        grain,
-                                        5,
-                                        self.emax,
-                                        self.indexation_parameters,
-                                        ResolutionAngstrom=False,
-                                        fastcompute=1,
-                                        dictmaterials=self.dict_Materials
-                                    )
+            TwicethetaChi = LAUE.SimulateResult(grain,
+                                                5,
+                                                self.emax,
+                                                self.indexation_parameters,
+                                                ResolutionAngstrom=False,
+                                                fastcompute=1,
+                                                dictmaterials=self.dict_Materials
+                                            )
             self.TwicethetaChi_solution = TwicethetaChi
             paramsimul = (grain, 5, self.emax)
 

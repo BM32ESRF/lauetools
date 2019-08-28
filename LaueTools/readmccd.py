@@ -3254,7 +3254,7 @@ def fitoneimage_manypeaks(
     )
     print("nb of results: ", len(ResFit[0]))
 
-    if ComputeIpixmax == True:
+    if ComputeIpixmax:
         params, cov, info, message, baseline, Ipixmax = ResFit
     else:
         params, cov, info, message, baseline = ResFit
