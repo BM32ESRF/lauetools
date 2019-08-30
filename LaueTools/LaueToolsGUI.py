@@ -765,7 +765,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
-        if len(self.current_exp_spot_index_list) == 0:
+        if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
@@ -892,7 +892,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename,)
 
-        if len(self.current_exp_spot_index_list) == 0:
+        if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
@@ -1006,7 +1006,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.DataPlot_filename,
         )
 
-        if len(self.current_exp_spot_index_list) == 0:
+        if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
@@ -1072,19 +1072,19 @@ class LaueToolsGUImainframe(wx.Frame):
 
         # Open manual indextion Board
         self.picky = ManualIndexFrame(
-            self,
-            -1,
-            self.DataPlot_filename,
-            data=self.data,
-            data_XY=self.data_XY,
-            data_2thetachi=self.data[:2],
-            kf_direction=self.kf_direction,
-            Size=SIZE_PLOTTOOLS,
-            Params_to_simulPattern=None,
-            indexation_parameters=self.indexation_parameters,
-            StorageDict=StorageDict,
-            DataSetObject=self.DataSet,
-        )
+                                    self,
+                                    -1,
+                                    self.DataPlot_filename,
+                                    data=self.data,
+                                    data_XY=self.data_XY,
+                                    data_2thetachi=self.data[:2],
+                                    kf_direction=self.kf_direction,
+                                    Size=SIZE_PLOTTOOLS,
+                                    Params_to_simulPattern=None,
+                                    indexation_parameters=self.indexation_parameters,
+                                    StorageDict=StorageDict,
+                                    DataSetObject=self.DataSet,
+                                )
 
         self.picky.Show(True)
 
@@ -1132,7 +1132,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.DataPlot_filename,
         )
 
-        if len(self.current_exp_spot_index_list) == 0:
+        if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
@@ -1201,20 +1201,20 @@ class LaueToolsGUImainframe(wx.Frame):
         #         print "self.data_XY", self.data_XY
         # Open manual indextion Board
         self.picky = ManualIndexFrame(
-            self,
-            -1,
-            self.DataPlot_filename,
-            data=self.data,
-            data_XY=self.data_XY,
-            data_2thetachi=self.data[:2],
-            kf_direction=self.kf_direction,
-            datatype="gnomon",
-            Size=SIZE_PLOTTOOLS,
-            Params_to_simulPattern=None,
-            indexation_parameters=self.indexation_parameters,
-            StorageDict=StorageDict,
-            DataSetObject=self.DataSet,
-        )
+                                        self,
+                                        -1,
+                                        self.DataPlot_filename,
+                                        data=self.data,
+                                        data_XY=self.data_XY,
+                                        data_2thetachi=self.data[:2],
+                                        kf_direction=self.kf_direction,
+                                        datatype="gnomon",
+                                        Size=SIZE_PLOTTOOLS,
+                                        Params_to_simulPattern=None,
+                                        indexation_parameters=self.indexation_parameters,
+                                        StorageDict=StorageDict,
+                                        DataSetObject=self.DataSet,
+                                    )
 
         self.picky.Show(True)
 
@@ -1228,10 +1228,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print(
-            "len(self.current_exp_spot_index_list)",
-            len(self.current_exp_spot_index_list),
-        )
+        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         #         nb_exp_spots_data = len(self.data_theta)
         #
@@ -1262,7 +1259,7 @@ class LaueToolsGUImainframe(wx.Frame):
             self.DataPlot_filename,
         )
 
-        if len(self.current_exp_spot_index_list) == 0:
+        if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
@@ -1271,9 +1268,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # AllDataToIndex
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
-        print(
-            "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters
-        )
+        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -2053,7 +2048,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.non_indexed_spots = np.array(self.current_exp_spot_index_list)
 
-        if len(self.non_indexed_spots) == 0:
+        if not self.non_indexed_spots:
             wx.MessageBox("There are no spots to be indexed now !", "INFO")
 
     def set_params_manualindexation(self):
@@ -3175,7 +3170,6 @@ class ManualIndexFrame(wx.Frame):
     """
     Class to implement a window enabling manual indexation
     """
-
     def __init__(self, parent, _id, title, data=(1, 1, 1, 1),
                                             data_added=None,
                                             Size=SIZE_PLOTTOOLS,
@@ -3266,11 +3260,7 @@ class ManualIndexFrame(wx.Frame):
             self.data_XY = DataToIndex["data_X"], DataToIndex["data_Y"]
 
             self.data_2thetachi = 2 * DataToIndex["data_theta"], DataToIndex["data_chi"]
-            # print(
-            #     "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
-            #     self.data_2thetachi[0][:5],
-            #     self.data_2thetachi[1][:5],
-            # )
+
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
             self.alldata = copy.copy(data)
             self.selectedAbsoluteSpotIndices_init = DataToIndex[
@@ -3284,7 +3274,7 @@ class ManualIndexFrame(wx.Frame):
         self.DataSet = DataSetObject
 
         self.kf_direction = kf_direction
-        print("self.kf_direction in ManualIndexFrame", self.kf_direction)
+        # print("self.kf_direction in ManualIndexFrame", self.kf_direction)
 
         self.current_matrix = []
         self.Millerindices = None
@@ -4624,6 +4614,7 @@ class ManualIndexFrame(wx.Frame):
 
     def Reckon_2pts_new(self, evt):
         """ Start indexation from picked spots
+
         Index Laue Pattern by Recognising distance from two user clicked spots
         First press button 'recognise distance' then click on two spots
 
@@ -4702,8 +4693,7 @@ class ManualIndexFrame(wx.Frame):
 
         if (spot1_ind not in self.selectedAbsoluteSpotIndices
             or spot2_ind not in self.selectedAbsoluteSpotIndices):
-            wx.MessageBox(
-                "You must select two spots displayed in the current plot", "info")
+            wx.MessageBox("You must select two spots displayed in the current plot", "info")
             return
 
         if self.COCD.GetValue():
@@ -4765,21 +4755,16 @@ class ManualIndexFrame(wx.Frame):
 
             index_to_select = self.selectedAbsoluteSpotIndices
 
-            self.select_theta = self.indexation_parameters["AllDataToIndex"][
-                "data_theta"
+            self.select_theta = self.indexation_parameters["AllDataToIndex"]["data_theta"
             ][index_to_select]
-            self.select_chi = self.indexation_parameters["AllDataToIndex"]["data_chi"][
-                index_to_select]
-            self.select_I = self.indexation_parameters["AllDataToIndex"]["data_I"][
-                index_to_select]
+            self.select_chi = self.indexation_parameters["AllDataToIndex"]["data_chi"][index_to_select]
+            self.select_I = self.indexation_parameters["AllDataToIndex"]["data_I"][index_to_select]
 
             # print("index_to_select", index_to_select)
 
-            self.select_dataX = self.indexation_parameters["AllDataToIndex"][
-                "data_pixX"
+            self.select_dataX = self.indexation_parameters["AllDataToIndex"]["data_pixX"
             ][index_to_select]
-            self.select_dataY = self.indexation_parameters["AllDataToIndex"][
-                "data_pixY"
+            self.select_dataY = self.indexation_parameters["AllDataToIndex"]["data_pixY"
             ][index_to_select]
             # print select_theta
             # print select_chi
@@ -4900,7 +4885,6 @@ class ManualIndexFrame(wx.Frame):
             self.TGframe.Show(True)
 
             # will set self.UBs_MRs to the output of INDEX.getUBs_and_MatchingRate
-            return
 
         else:
             # case USETHREAD == 0
@@ -4948,11 +4932,12 @@ class ManualIndexFrame(wx.Frame):
 
     def simulateAllResults(self):
 
+        if not self.UBs_MRs[0] or self.UBs_MRs is None:
+            wx.MessageBox('Sorry Nothing found !!','INFO')
+            return
+
         print("Entering simulateAllResults\n\n")
         print("self.UBs_MRs", self.UBs_MRs)
-
-        if self.UBs_MRs is None:
-            return
 
         self.bestmat, stats_res = self.UBs_MRs
 

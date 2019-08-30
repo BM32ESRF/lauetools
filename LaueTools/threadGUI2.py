@@ -110,22 +110,15 @@ class WorkerThread(Thread):
 class ThreadHandlingFrame(wx.Frame):
     """simple Frame Class handling a thread (worker) to started and aborted"""
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        threadFunctionParams=None,
-        parentAttributeName_Result=None,
-        parentNextFunction=None,
-    ):
+    def __init__(self, parent, _id, threadFunctionParams=None,
+                                parentAttributeName_Result=None,
+                                parentNextFunction=None):
         """Create the MainFrame.
         @param threadFunctionParams: threadfunction parameters: list of function name, function arguments, function optional argument (dict)
         @param parentAttributeName_Result: string for attribute name of parent to put the result of the thread function in
         @param parentNextFunction: existing parent method to launch after thread completion or abortion
         """
-        wx.Frame.__init__(
-            self, parent, _id, "Searching for Orientation Matrix", size=(400, 200)
-        )
+        wx.Frame.__init__(self, parent, _id, "Searching for Orientation Matrix", size=(400, 200))
 
         self.threadFunctionParams = threadFunctionParams
         self.parentAttributeName_Result = parentAttributeName_Result
@@ -158,14 +151,14 @@ class ThreadHandlingFrame(wx.Frame):
         vbox.Add(self.status, 0, wx.ALL | wx.EXPAND)
         self.SetSizer(vbox)
 
-    def OnStart(self, event):
+    def OnStart(self, _):
         """Start Computation."""
         # Trigger the worker thread unless it's already busy
         if not self.worker:
             self.status.SetLabel("Computation running... Please Wait.")
             self.worker = WorkerThread(self, self.threadFunctionParams)
 
-    def OnStop(self, event):
+    def OnStop(self, _):
         """Stop Computation."""
         # Flag the worker thread to stop if running
         if self.worker:
@@ -188,9 +181,7 @@ class ThreadHandlingFrame(wx.Frame):
         # In either event, the worker is done
         #         print "self.parent", self.parent
         #         print "self.worker.fctOutputResults", self.worker.fctOutputResults
-        setattr(
-            self.parent, self.parentAttributeName_Result, self.worker.fctOutputResults
-        )
+        setattr(self.parent, self.parentAttributeName_Result, self.worker.fctOutputResults)
         self.parentNextFunction()
         self.worker = None
         #         print "closing two seconds !"

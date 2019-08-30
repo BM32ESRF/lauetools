@@ -160,7 +160,7 @@ def SpotLinks(
     #    print "List_Exp_spot_close", List_Exp_spot_close
     #    print "Miller_Exp_spot", Miller_Exp_spot
 
-    if len(List_Exp_spot_close) == 0:
+    if not List_Exp_spot_close:
         print("Found no pair within tolerance in SpotLinks()")
         return 0
 
@@ -1027,8 +1027,7 @@ def getStatsOnMatching(
     emin=5,
     emax=25,
     intensity_data=None,
-    verbose=0,
-):
+    verbose=0):
     """
     return matching rate in terms of nb of close pairs of spots (exp. and simul. ones)
     within angular tolerance
@@ -1042,6 +1041,8 @@ def getStatsOnMatching(
     :type key_material: string
     :param ang_tol: matching angular tolerance to form pairs
     :type ang_tol: float
+
+    .. note:: USED in filterEulersList()
     """
     kk = 0
     allmatchingrate = []

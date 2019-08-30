@@ -720,16 +720,12 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
     ]
 
     if verbose == "yes":
-        print(
-            "possible ang. dist. between (%s,%s) planes:"
-            % (central_type, neighbour_type)
-        )
+        print("possible ang. dist. between (%s,%s) planes:"
+            % (central_type, neighbour_type))
         print(extractprodtab)
 
     # position in extracprodtab where there is a match
-    winnerindicefound = GT.find_closest(
-        np.array([angle * 1.0]), np.array(extractprodtab), tolerance
-    )[1]
+    winnerindicefound = GT.find_closest(np.array([angle * 1.0]), np.array(extractprodtab), tolerance)[1]
     # matching planes list
     possibleplanes = np.take(extracted, winnerindicefound, axis=0)
     if len(possibleplanes) == 0:
@@ -746,13 +742,9 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
                 " deg",
             )
         return None
-    elif (
-        len(possibleplanes) > 1
-    ):  # very rare case for family with small multiplicity and small ang. tolerance
+    elif (len(possibleplanes) > 1):  # very rare case for family with small multiplicity and small ang. tolerance
         if verbose == "yes":
-            print(
-                "Ambiguity! I found more than two planes! You may reduce the angular tolerance"
-            )
+            print("Ambiguity! I found more than two planes! You may reduce the angular tolerance")
         return possibleplanes
     else:  # matching planes list generally contain 1 solution
         errortheoexp = angle - np.take(extractprodtab, winnerindicefound)[0]
@@ -774,14 +766,12 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
 
 def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose="yes"):
     """
-
     Gives orientation matrix from two points in recogn
 
     recogn: list of [2theta,chi,planetype,spot index in rawdata]
     indpt1,indpt2: index of spots in recogn
-    angulartolerance: angular tolerance between experimental 
+    angulartolerance: angular tolerance between experimental
     distance and distance in lookup table between two known indexed planes
-
     """
     _verbose = verbose
 
@@ -796,12 +786,11 @@ def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose="yes"):
     hkl1 = convplanetypetoindice(recogn[indexpoint1][2])
     # find a matching pair (planetype 1,planetype 2)
     hkl2 = findneighbours(
-        recogn[indexpoint1][2],
-        recogn[indexpoint2][2],
-        didist,
-        angulartolerance,
-        verbose=_verbose,
-    )
+                            recogn[indexpoint1][2],
+                            recogn[indexpoint2][2],
+                            didist,
+                            angulartolerance,
+                            verbose=_verbose)
     # print "hkl2 in findorient",hkl2
     if hkl2:
         return givematorient(hkl1, coord1, hkl2, coord2, verbose=_verbose)
@@ -828,13 +817,9 @@ def constructMat(matrice_P, qq1, qq2, qq3prod):
     secondline = lstsq(matrice_P, Yq)
     thirdline = lstsq(matrice_P, Zq)
 
-    matrixorient = np.array(
-        [
-            firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
+    matrixorient = np.array([firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
             secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
-            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0])),
-        ]
-    )  # second line may be negative because of wrong Y sign chi ???
+            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0]))])  # second line may be negative because of wrong Y sign chi ???
 
     return matrixorient
 
@@ -844,7 +829,6 @@ def constructMat_new(matrice_P, qq1, qq2, qq3prod):
     Construction of rotation matrix from:
     matrice_P  columns = (G1,G2,G1^G2)     in a*,b*,c* frame
     qq1,qq2,qq3prod  respectively three vectors in  x,y,z space
-
     """
     qq3 = qq3prod / np.sqrt(np.dot(qq3prod, qq3prod))
 
@@ -856,13 +840,9 @@ def constructMat_new(matrice_P, qq1, qq2, qq3prod):
     secondline = lstsq(matrice_P, Yq)
     thirdline = lstsq(matrice_P, Zq)
 
-    matrixorient = np.array(
-        [
-            firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
+    matrixorient = np.array([firstline[0] / np.sqrt(np.dot(firstline[0], firstline[0])),
             secondline[0] / np.sqrt(np.dot(secondline[0], secondline[0])),
-            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0])),
-        ]
-    )  # second line may be negative because of wrong Y sign chi ???
+            thirdline[0] / np.sqrt(np.dot(thirdline[0], thirdline[0]))])  # second line may be negative because of wrong Y sign chi ???
 
     # print "matrixorient in constructMat_new()",matrixorient
 
@@ -920,9 +900,7 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     qq1 = LTGeo.unit_q(twicetheta_1, chi_1, frame=frame)
     qq2 = LTGeo.unit_q(twicetheta_2, chi_2, frame=frame)
 
-    qq3prod = np.cross(
-        qq1, qq2
-    )  # can be negative, we want to have finally a matrix with one eigenvalue of +1
+    qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
 
     matou = constructMat(matrice_P, qq1, qq2, qq3prod)
 
@@ -930,8 +908,7 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     # check number of eigen values that are close to 1.0 (+- 0.05)
     # (we want to have finally a matrix with one eigenvalue of +1, corresponding eigen vector is the rotation axis
     if (
-        len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) == 1
-    ):  # we have an axis: OK
+        len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) == 1):  # we have an axis: OK
         matorient = matou
     else:  # matou is not a rotation matrix
         # print "I need to construct an other matrix"
@@ -995,9 +972,7 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
     qq1 = LTGeo.unit_q(twicetheta_1, chi_1, frame=frame)
     qq2 = LTGeo.unit_q(twicetheta_2, chi_2, frame=frame)
 
-    qq3prod = np.cross(
-        qq1, qq2
-    )  # can be negative, we want to have finally a matrix with one eigenvalue of +1
+    qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
     qq3n = np.sqrt(np.dot(qq3prod, qq3prod)) * 1.0
 
     # print "qs",qq1,qq2,qq3prod/qq3n
@@ -1019,10 +994,7 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
 
     # check number of eigen values that are close to 1.0 (+- 0.05)
     # (we want to have finally a matrix with one eigenvalue of +1, corresponding eigen vector is the rotation axis
-    if len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) in (
-        1,
-        3,
-    ):  # we have an axis: OK
+    if len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) in (1, 3):  # we have an axis: OK
         matorient = matou
     else:  # matou is not a rotation matrix
         # print "I need to construct an other matrix"
@@ -1062,9 +1034,7 @@ def find_lowest_Euler_Angles_matrix(mat):
         # mat : gives columns of a* b* c* on x y z
     """
     if LA.det(mat) < 0.0:
-        raise ValueError(
-            "warning : det < 0 in input of find_lowest_Euler_Angles_matrix"
-        )
+        raise ValueError("warning : det < 0 in input of find_lowest_Euler_Angles_matrix")
 
     sign3 = np.ones(3)
     ind6 = np.zeros(6)
@@ -1142,9 +1112,7 @@ def find_lowest_Euler_Angles_matrix(mat):
 
     if LA.det(matfinal) < 0.0:
         # print "warning : det < 0 in output of find_lowest_Euler_Angles_matrix"
-        raise ValueError(
-            "warning : det < 0 in output of find_lowest_Euler_Angles_matrix"
-        )
+        raise ValueError("warning : det < 0 in output of find_lowest_Euler_Angles_matrix")
 
     return matfinal, transfmat
 
@@ -1165,9 +1133,8 @@ def GenerateLookUpTable(hkl_all, Gstar):
     sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
     indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
     tab_side_size        : size of the square pairs angles matrix
-    hkl_all    :  input hkls set used 
+    hkl_all    :  input hkls set used
     """
-
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl_all, hkl_all, Gstar)
 
@@ -1201,20 +1168,8 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0, dictmaterials=Dict
     return GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=verbose)
 
 
-HKL_CUBIC_UP3 = [
-    [1, 0, 0],
-    [1, 1, 0],
-    [1, 1, 1],
-    [2, 1, 0],
-    [2, 1, 1],
-    [2, 2, 1],
-    [3, 1, 0],
-    [3, 1, 1],
-    [3, 2, 1],
-    [3, 2, 2],
-    [3, 3, 1],
-    [3, 3, 2],
-]
+HKL_CUBIC_UP3 = [[1, 0, 0], [1, 1, 0], [1, 1, 1], [2, 1, 0], [2, 1, 1], [2, 2, 1], [3, 1, 0],
+                    [3, 1, 1], [3, 2, 1], [3, 2, 2], [3, 3, 1], [3, 3, 2]]
 
 
 def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):

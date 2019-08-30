@@ -2212,7 +2212,7 @@ def getIntegratedIntensity(
     integrated intensity, minimum absolute intensity, nbpixels used for the summation
 
     """
-    if center is None or len(center) == 0:
+    if not center:
         raise ValueError("center (peak list) in getExtrema is empty")
 
     indicesborders = getindices2cropArray(
@@ -2566,9 +2566,7 @@ def LocalMaxima_KernelConvolution(
     IntensityThreshold=500,
     boxsize_for_probing_minimal_value_background=30,
     return_nb_raw_blobs=0,
-    peakposition_definition="max",
-):  # full side length
-
+    peakposition_definition="max"):  # full side length
     r"""
     return local maxima (blobs) position and amplitude in Data by using
     convolution with a mexican hat like kernel.
@@ -2579,11 +2577,11 @@ def LocalMaxima_KernelConvolution(
 
     Parameters
     ------------
-    
+
     Data : 2D array containing pixel intensities
 
     peakValConvolve, boxsizeConvolve, central_radiusConvolve : convolution kernel parameters
-    
+
     thresholdConvolve : minimum threshold (expressed in unit of convolved array intensity)
                         under which convoluted blob is rejected.It can be zero
                         (all blobs are accepted but time consuming)
@@ -2593,40 +2591,39 @@ def LocalMaxima_KernelConvolution(
                        - 0: star (4 neighbours in vertical and horizontal direction)
 
     IntensityThreshold : minimum local blob amplitude to accept
-    
+
     boxsize_for_probing_minimal_value_background : boxsize to evaluate the background and the blob amplitude 
 
     peakposition_definition : string ('max' or 'center')
                               key to assign to the blob position its hottest pixel position
                               or its center (no weight)
-    
+
     Returns:
     ---------
-    
+
     peakslist : array like (n,2)
                 list of peaks position (pixel)
     Ipixmax : array like (n,1) of integer
              list of highest pixel intensity in the vicinity of each peak
     npeaks : integer
              nb of peaks (if return_nb_raw_blobs =1)
-    
+
     """
     print("framedim in LocalMaxima_KernelConvolution", framedim)
     print("Data.shape", Data.shape)
     dataimage_ROI = Data
 
     peak = LocalMaxima_ndimage(
-        dataimage_ROI,
-        peakVal=peakValConvolve,
-        boxsize=boxsizeConvolve,
-        central_radius=central_radiusConvolve,
-        threshold=thresholdConvolve,
-        connectivity=connectivity,
-        returnfloatmeanpos=0,
-    )
+                                dataimage_ROI,
+                                peakVal=peakValConvolve,
+                                boxsize=boxsizeConvolve,
+                                central_radius=central_radiusConvolve,
+                                threshold=thresholdConvolve,
+                                connectivity=connectivity,
+                                returnfloatmeanpos=0,
+                            )
 
-    #     print "peak in LocalMaxima_KernelConvolution", peak
-    if len(peak) == 0:
+    if not peak:
         return None
 
     peak = (peak[:, 0], peak[:, 1])
@@ -2651,15 +2648,11 @@ def LocalMaxima_KernelConvolution(
 
     # first method ---------------------------
     tabptp = []  # tab of min and max around each peak
-    tabposmax = (
-        []
-    )  # # tab of position of hottest pixel close to that found after convolution
+    tabposmax = []  # # tab of position of hottest pixel close to that found after convolution
     for k in list(range(len(peaklist))):
         #        print "k in LocalMaxima_KernelConvolution", k
         #        print "dataimage_ROI.shape", dataimage_ROI.shape
-        minimaxi, maxpos = minmax(
-            dataimage_ROI, peaklist[k], ptp_boxsize, framedim=framedim, withmaxpos=1
-        )
+        minimaxi, maxpos = minmax(dataimage_ROI, peaklist[k], ptp_boxsize, framedim=framedim, withmaxpos=1)
         tabptp.append(minimaxi)
         #         if minimaxi[1] > 4000:
         #             print "k, peaklist[k]", k, peaklist[k]
@@ -2730,9 +2723,7 @@ def LocalMaxima_KernelConvolution(
 
     print(
         "{} local maxima found after thresholding above {} (amplitude above local background)".format(
-            len(th_ar_amp), threshold_amp
-        )
-    )
+            len(th_ar_amp), threshold_amp))
 
     # NEW --- from method array shift!
     # remove duplicates (close points), the most intense pixel is kept
@@ -2746,11 +2737,8 @@ def LocalMaxima_KernelConvolution(
     purged_ptp = np.delete(th_ar_ptp, index_todelete, axis=0)
 
     #     print 'shape of purged_ptp method conv.', purged_ptp.shape
-    print(
-        "{} local maxima found after removing duplicates (minimum intermaxima distance = {})".format(
-            len(purged_amp), pixeldistance
-        )
-    )
+    print("{} local maxima found after removing duplicates (minimum intermaxima distance = {})".format(
+            len(purged_amp), pixeldistance))
 
     # print "purged_pklist", purged_pklist
     #     print "shape(purged_pklist)", np.shape(purged_pklist)
@@ -2793,8 +2781,7 @@ def LocalMaxima_ShiftArrays(
     boxsize_for_probing_minimal_value_background=30,  # full side length
     nb_of_shift=25,
     pixeldistance_remove_duplicates=25,
-    verbose=0,
-):
+    verbose=0):
 
     try:
         import networkx as NX
@@ -2816,11 +2803,11 @@ def LocalMaxima_ShiftArrays(
 
     # imin,imax,jmin,jmax=2048-ymaxfit2d,2048-yminfit2d,xminfit2d,xmaxfit2d
     imin, imax, jmin, jmax = (
-        framedim[0] - ymaxfit2d,
-        framedim[0] - yminfit2d,
-        xminfit2d - 1,
-        xmaxfit2d - 1,
-    )
+                                framedim[0] - ymaxfit2d,
+                                framedim[0] - yminfit2d,
+                                xminfit2d - 1,
+                                xmaxfit2d - 1,
+                            )
 
     # dataimage_ROI=dataimage[imin:imax,jmin:jmax]# array index   i,j
     # # fit2d index:  X=j Y=2048-i

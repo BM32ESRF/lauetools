@@ -5612,8 +5612,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             # sort by third column = peak amplitude
             self.peaklistPixels = data_current_peaks[
-                np.argsort(data_current_peaks[:, 2])[::-1]
-            ]
+                np.argsort(data_current_peaks[:, 2])[::-1]]
 
         #         print "data_current_peaks"
         #         print self.peaklistPixels

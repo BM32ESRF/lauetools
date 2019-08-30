@@ -766,14 +766,13 @@ class SimulationPanel(wx.Panel):
         self.GetfullpathFile(evt)
         self.expimagetxtctrl.SetValue(self.fullpathimagefile)
 
-    def GetfullpathFile(self, evt):
+    def GetfullpathFile(self, _):
         myFileDialog = wx.FileDialog(
-            self,
-            "Choose an image file",
-            style=wx.OPEN,
-            #                                         defaultDir=self.dirname,
-            wildcard="MAR or Roper images(*.mccd)|*.mccd|All files(*)|*",
-        )
+                                    self,
+                                    "Choose an image file",
+                                    style=wx.OPEN,
+                                    #                                         defaultDir=self.dirname,
+                                    wildcard="MAR or Roper images(*.mccd)|*.mccd|All files(*)|*")
         dlg = myFileDialog
         dlg.SetMessage("Choose an image file")
         if dlg.ShowModal() == wx.ID_OK:
@@ -1276,7 +1275,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         # out them in self.CurrentGrain
         for k, val in enumerate([elem, extinc, stra, rot, B, strc]):
-            print('k,val',k,val)
+            print('k,val', k, val)
             self.CurrentGrain[k] = val
 
         # inserting parameters in listctrl
@@ -1315,9 +1314,7 @@ class parametric_Grain_Dialog3(wx.Frame):
                 self.SelectGrains[name] = self.dict_grain_created[name]
 
             else:
-                print(
-                    "You must select by mouse a least one grain!!"
-                )  # TODO better error catching
+                print("You must select by mouse a least one grain!!")  # TODO better error catching
         # print self.SelectGrains
         event.Skip()
 
@@ -1472,8 +1469,7 @@ class parametric_Grain_Dialog3(wx.Frame):
             # print "array(joineddata.split())",array(joineddata.split())
             array_grain = np.reshape(
                 np.array(np.array(joineddata.split()), dtype=np.float32),
-                (nbpeaks_per_grain[gi], 9),
-            )
+                (nbpeaks_per_grain[gi], 9))
             #            print "array_grain", array_grain
             dataarray.append(array_grain)
             gi += 1
@@ -1488,8 +1484,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # print "intensity",intensity
         # print "xy",xy
         Toedit = np.dstack(
-            (twothetachi[:, 0], twothetachi[:, 1], xy[:, 0], xy[:, 1], intensity)
-        )[0]
+            (twothetachi[:, 0], twothetachi[:, 1], xy[:, 0], xy[:, 1], intensity))[0]
 
         # sort data according to modelled intensity
         # print "Toedit",Toedit[:3]
@@ -1528,10 +1523,9 @@ class parametric_Grain_Dialog3(wx.Frame):
 
     def opendir(self, evt):
         dlg = wx.DirDialog(
-            self,
-            "Choose a directory:self.control.SetValue(str(self.indexed_spots).replace('],',']\n'))",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON,
-        )
+                            self,
+                            "Choose a directory:self.control.SetValue(str(self.indexed_spots).replace('],',']\n'))",
+                            style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
         if dlg.ShowModal() == wx.ID_OK:
             self.dirname = dlg.GetPath()
 
@@ -1554,13 +1548,11 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         print('list_param',list_param)
 
-        if len(list_param) == 0:
-            dlg = wx.MessageDialog(
-                self,
-                "You must create and select at least one grain!",
-                "Empty Grains list",
-                wx.OK | wx.ICON_ERROR,
-            )
+        if not list_param:
+            dlg = wx.MessageDialog(self,
+                                    "You must create and select at least one grain!",
+                                    "Empty Grains list",
+                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
             return True

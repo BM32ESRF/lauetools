@@ -10,11 +10,10 @@ package gathering general tools
 """
 import copy
 import pickle
-import numpy as np
 import multiprocessing
 import sys
 
-
+import numpy as np
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
 
@@ -35,7 +34,7 @@ else:
     import IOLaueTools as IOLT
 
 # --- --------------  Vectors
-def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
+def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX, verbose=False):
     """compute angles between all pairs of vectors from Vectors1 and Vectors2
 
     inputs:
@@ -81,7 +80,7 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX):
 
     outy = np.outer(d1, d2)
 
-    if 0:
+    if verbose:
         print("H1", H1)
         print("H2", H2)
         print("d1", d1)
@@ -529,10 +528,10 @@ http://www.continuummechanics.org/coordxforms.html
 def rotT(T, g):
     """
     rotate tensor of 4th rank
-    
+
     T tensor of 3*3*3*3 numpy array shape
     g rotation transform matrix 3*3 shape
-    
+
     http://stackoverflow.com/questions/4962606/fast-tensor-rotation-with-numpy
     """
     gg = np.outer(g, g)
@@ -545,9 +544,7 @@ def rotT_faster(T, gggg):
     """
     even 2x faster
     """
-
-    return np.dot(
-        gggg.transpose((1, 3, 5, 7, 0, 2, 4, 6)).reshape((81, 81)), T.reshape(81, 1)
+    return np.dot(gggg.transpose((1, 3, 5, 7, 0, 2, 4, 6)).reshape((81, 81)), T.reshape(81, 1)
     ).reshape((3, 3, 3, 3))
 
 
@@ -1036,14 +1033,14 @@ def Set_dict_frompairs(pairs_index, verbose=0):
 def getCommonPts(XY1, XY2, dist_tolerance=0.5):
     """
     return indices in XY1 and in XY2 of common pts (2D)
-    
+
     example:
     pA =  [[0, 0], [0, 1], [1, 2], [10, 3], [1, 20], [5, 3]]
     pB= [[14, 1], [1, 2], [1, 20], [15, 1]]
-    
+
     getCommonPts(pA,pB,0.5)
     => (array([2, 4]), array([1, 2]))
-    
+
     """
     x1, y1 = np.array(XY1).T
 
@@ -1347,20 +1344,13 @@ def computingFunction(fileindexrange, Parameters_dict=None, saveObject=0):
             print("imageindex", imageindex)
         file2 = fileprefix + "%04d" % (imageindex) + ".dat"
         commonspotsnb.append(
-            [
-                imageindex,
-                getCommonSpots(
-                    file1, file2, toldistance, dirname=dirname, data1=dataref
-                ),
-            ]
-        )
+            [imageindex, getCommonSpots(file1, file2, toldistance, dirname=dirname, data1=dataref)])
 
     return commonspotsnb
 
 
 def LaueSpotsCorrelator_multiprocessing(
-    fileindexrange, imageindexref, Parameters_dict=None, saveObject=0, nb_of_cpu=5
-):
+    fileindexrange, imageindexref, Parameters_dict=None, saveObject=0, nb_of_cpu=5):
     """
     launch several processes in parallel
     """
@@ -1369,14 +1359,11 @@ def LaueSpotsCorrelator_multiprocessing(
             print("\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n")
         index_start, index_final = fileindexrange[:2]
     except:
-        raise ValueError(
-            "Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)"
-        )
+        raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
         return
 
     fileindexdivision = getlist_fileindexrange_multiprocessing(
-        index_start, index_final, nb_of_cpu
-    )
+        index_start, index_final, nb_of_cpu)
 
     saveObject = 0
 
@@ -1432,7 +1419,6 @@ def LaueSpotsCorrelator_multiprocessing(
 
 
 def log_result(result):
-
     if len(result) == 2:
         print(
             "********************\n\n\n\n %s \n\n\n\n\n******************" % result[1]
@@ -1652,10 +1638,10 @@ def find_parallel_hkl(HKLs):
 def extract2Dslice(center, halfsizes, inputarray2D):
     """
     extract a rectangular 2D slice array from inputarray2D centered on 'center' (value in inputarray2D)
-    
+
     halfsizes : tuple of 2 integers (half height, half width) ie (half slow axis length, half fast axis length)
 
-    example: 
+    example:
 
     aa= array([[ 0,  1,  2,  3,  4,  5,  6],
        [ 7,  8,  9, 10, 11, 12, 13],
@@ -1856,7 +1842,7 @@ def ShortestDistance(P1, P2, P3, P4):
 def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
     """
     returns list of 2 elements (index_start, index_final) for each cpu
-    
+
     TODO: implement step != 1
     """
     nb_files = index_final - index_start + 1
@@ -1910,11 +1896,9 @@ def matRot(axis, angle):
     )
     angrad = angle * DEG
 
-    return (
-        np.cos(angrad) * IDENTITYMATRIX
+    return (np.cos(angrad) * IDENTITYMATRIX
         + (1 - np.cos(angrad)) * syme
-        + np.sin(angrad) * antisyme
-    )
+        + np.sin(angrad) * antisyme)
 
 
 def getRotationAngleFrom2Matrices(A, B):
@@ -1923,11 +1907,9 @@ def getRotationAngleFrom2Matrices(A, B):
     tr(R)=1+2cos(theta)
     with R = BA-1
     """
-    return (
-        np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1))
+    return (np.arccos(0.5 * (np.trace(np.dot(np.array(B), np.linalg.inv(np.array(A)))) - 1))
         * 180.0
-        / np.pi
-    )
+        / np.pi)
 
 
 def randomRotationMatrix():
@@ -1964,8 +1946,7 @@ def OrientMatrix_fromGL(filename="matrixfromopenGL.dat"):
 
     # result = rotY45_inv.prodmat((extract_rawmatrix_fromGL(extfilename = filename).transpo()).prodmat(rotY45))
     result = np.dot(
-        rotY45_inv, np.dot(extract_rawmatrix_fromGL(extfilename=filename).T, rotY45)
-    )
+        rotY45_inv, np.dot(extract_rawmatrix_fromGL(extfilename=filename).T, rotY45))
     # print "mat3x3fromGL",mat3x3fromGL
 
     return result
@@ -1979,9 +1960,7 @@ def extract_rawmatrix_fromGL(extfilename="matrixfromopenGL.dat"):
     filefrompickle = open(extfilename, "r")
     matfromGL = pickle.load(filefrompickle)  # 4x4 matrix of openGL
     filefrompickle.close()
-    mat3x3fromGLtemp = np.array(
-        matfromGL[:3, :3]
-    )  # extraction of orientation matrix (3x3)
+    mat3x3fromGLtemp = np.array(matfromGL[:3, :3])  # extraction of orientation matrix (3x3)
     return mat3x3fromGLtemp
 
 
@@ -2102,7 +2081,7 @@ def fromEULERangles_toMatrix2(threeangles):
     (Rz is applied first then Rx around the new rotated X,
     then Rz again around a rotated z axis
 
-    following bunge's euler definition 
+    following bunge's euler definition
 
     Orientation is defined by three angles (X, Y, Z)   = phi1, PHI, phi2
 
@@ -2112,7 +2091,7 @@ def fromEULERangles_toMatrix2(threeangles):
     M= transpose([ [EA-CBF  EB+CAF    FD] ,
             [-FA-CBE  -FB+CAE   ED ] ,
             [ DB     -DA    C] ])
-            
+
     """
     thetaX = threeangles[0] * DEG
     thetaY = threeangles[1] * DEG
@@ -2150,7 +2129,7 @@ def matstarlab_to_matstarlabOND(matstarlab):
     (Schmid orthogonalisation procedure)
 
     From O. Robach
-    
+
     TODO: to be moved to generaltools
     """
     astar1 = matstarlab[:3]
@@ -2211,7 +2190,7 @@ def calc_Euler_angles(mat3x3):
 
 def fromMatrix_to_EulerAngles(mat):
     """
-    following bunge's euler definition 
+    following bunge's euler definition
 
     Orientation is defined by three angles (X, Y, Z)   = phi1, PHI, phi2
 
@@ -2223,7 +2202,6 @@ def fromMatrix_to_EulerAngles(mat):
         [EB+CAF  -FB+CAE   -DA ] ,
         [ FD     ED        C] ]
     """
-
     PHI = np.arccos(mat[2, 2]) / DEG
     phi2 = np.arctan(mat[2, 0] / mat[2, 1]) / DEG
     phi1 = np.arctan(-mat[0, 2] / mat[1, 2]) / DEG
@@ -2231,8 +2209,6 @@ def fromMatrix_to_EulerAngles(mat):
     # something strange:
     return -phi2, np.abs(PHI), -phi1
     # would expect to be the inverse function of fromEULERangles_toMatrix!!
-
-
 #    return phi1, PHI, phi2
 
 
@@ -2242,16 +2218,15 @@ def getdirectbasiscosines(
     frame="sample",
     vec1=[1, 0, 0],
     vec2=[0, 1, 0],
-    vec3=[0, 0, 1],
-):
+    vec3=[0, 0, 1]):
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
-    
+
     By default: 3 vectors are  three direction given in direct unstrained unit cell
-    
-    coordinates of vec1 direction 
+
+    coordinates of vec1 direction
     qvec1 =UB.B0.vec1  in LT frame
-    
+
     qsample = RotYm40 qLT
     cos1 = qsample.(100)/norme(qsample)
     cos2 = qsample.(010)/norme(qsample)
@@ -2292,40 +2267,31 @@ def getdirectbasiscosines(
     qvec1s_sample = np.dot(RotYm40, qvec1s.T).T
 
     cosvec1_X = (
-        np.inner(qvec1s_sample, np.array([1, 0, 0])) / normqvec1
-    )  # cosine component along x sample
+        np.inner(qvec1s_sample, np.array([1, 0, 0])) / normqvec1)  # cosine component along x sample
     cosvec1_Y = (
-        np.inner(qvec1s_sample, np.array([0, 1, 0])) / normqvec1
-    )  # cosine component along y sample
+        np.inner(qvec1s_sample, np.array([0, 1, 0])) / normqvec1)  # cosine component along y sample
     cosvec1_Z = (
-        np.inner(qvec1s_sample, np.array([0, 0, 1])) / normqvec1
-    )  # cosine component along z sample
+        np.inner(qvec1s_sample, np.array([0, 0, 1])) / normqvec1)  # cosine component along z sample
 
     normqvec2 = norme_list(qvec2s)
     qvec2s_sample = np.dot(RotYm40, qvec2s.T).T
 
     cosvec2_X = (
-        np.inner(qvec2s_sample, np.array([1, 0, 0])) / normqvec2
-    )  # cosine component along x sample
+        np.inner(qvec2s_sample, np.array([1, 0, 0])) / normqvec2)  # cosine component along x sample
     cosvec2_Y = (
-        np.inner(qvec2s_sample, np.array([0, 1, 0])) / normqvec2
-    )  # cosine component along y sample
+        np.inner(qvec2s_sample, np.array([0, 1, 0])) / normqvec2)  # cosine component along y sample
     cosvec2_Z = (
-        np.inner(qvec2s_sample, np.array([0, 0, 1])) / normqvec2
-    )  # cosine component along z sample
+        np.inner(qvec2s_sample, np.array([0, 0, 1])) / normqvec2)  # cosine component along z sample
 
     normqvec3 = norme_list(qvec3s)
     qvec3s_sample = np.dot(RotYm40, qvec3s.T).T
 
     cosvec3_X = (
-        np.inner(qvec3s_sample, np.array([1, 0, 0])) / normqvec3
-    )  # cosine component along x sample
+        np.inner(qvec3s_sample, np.array([1, 0, 0])) / normqvec3)  # cosine component along x sample
     cosvec3_Y = (
-        np.inner(qvec3s_sample, np.array([0, 1, 0])) / normqvec3
-    )  # cosine component along y sample
+        np.inner(qvec3s_sample, np.array([0, 1, 0])) / normqvec3)  # cosine component along y sample
     cosvec3_Z = (
-        np.inner(qvec3s_sample, np.array([0, 0, 1])) / normqvec3
-    )  # cosine component along z sample
+        np.inner(qvec3s_sample, np.array([0, 0, 1])) / normqvec3)  # cosine component along z sample
 
     cosinesarray = np.array(
         [
@@ -2388,9 +2354,7 @@ def fromQuat_to_MatrixRot(inputquat):
     NewObj[Z][Z] = 1.0 - (xx + yy)
 
     # return NewObj # this function is originally made to produce a matrix read by OpenGL
-    return np.transpose(
-        NewObj
-    )  # transpose to read matrix correctly (OpenGL matrix are transposed of this one)
+    return np.transpose(NewObj)  # transpose to read matrix correctly (OpenGL matrix are transposed of this one)
 
 
 # def fromQuat_to_matrix_2(quat):
@@ -2461,11 +2425,9 @@ def fromvec_to_directionangles(vec):
     finalvec = myvec * 1.0 / norm
 
     if np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2) != 0:
-        lat = (
-            np.arctan(finalvec[2] / (np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2)))
+        lat = (np.arctan(finalvec[2] / (np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2)))
             * 180.0
-            / np.pi
-        )  # latitude
+            / np.pi)  # latitude
     else:
         if finalvec[2] > 0:
             lat = 90.0
@@ -2475,9 +2437,7 @@ def fromvec_to_directionangles(vec):
         if finalvec[0] > 0:
             longit = np.arctan(finalvec[1] / finalvec[0]) * 180.0 / np.pi  # longitude
         else:
-            longit = (
-                180 + np.arctan(finalvec[1] / finalvec[0]) * 180.0 / np.pi
-            )  # longitude
+            longit = (180. + np.arctan(finalvec[1] / finalvec[0]) * 180.0 / np.pi)  # longitude
     else:
         if finalvec[1] > 0:
             longit = 90.0
@@ -2492,9 +2452,10 @@ def from3rotangles_toQuat(listangles):
     from  angle (rotation angle in deg) and 2 angles (in deg) defining a
     unitvector direction quat=[vec, scalar]=[sin angle / 2 (unitvec(x, y, z)),
                                              cos angle / 2]
-    gives Quat
-    
-    Note: take the first 3 elements of listangles
+    :return: Quatuertion
+
+    .. note::
+        take the first 3 elements of listangles
     """
     # print "listangles dans from3rotangles_toQuat",listangles
     rotangle, longit, lat = listangles[:3]
@@ -2558,7 +2519,6 @@ def prodquat(quat1, quat2):
     ]
 
 # ----- ------------  plot tools: colormap
-
 COPPER = mplcm.get_cmap("copper")
 GIST_EARTH_R = mplcm.get_cmap("gist_earth_r")
 JET = mplcm.get_cmap("jet")
@@ -2588,14 +2548,8 @@ class bcolors:
     ENDC = "\033[0m"
 
 
-dictcoloredprint = {
-    "r": bcolors.RED,
-    "g": bcolors.GREEN,
-    "b": bcolors.BLUE,
-    "y": bcolors.YELLOW,
-    "c": bcolors.CYAN,
-}
-
+dictcoloredprint = {"r": bcolors.RED, "g": bcolors.GREEN, "b": bcolors.BLUE, "y": bcolors.YELLOW,
+                            "c": bcolors.CYAN}
 
 def pcolor(message, color="r"):
     if color in dictcoloredprint:
@@ -2622,7 +2576,7 @@ def printcyan(message):
 def put_on_top_list(top_elements_list, raw_list, forceinsertion=False):
     """
     modify and return raw_list with elements of top_elements_list as first elements
-    
+
     forceinsertion: True   insert anyway elements in top_elements_list not present in raw_list
     """
     all_elements = copy.copy(raw_list)
@@ -2705,12 +2659,12 @@ def findfirstnumberpos(s):
         beforedot = s
 
     l = len(beforedot)
-    for k, elem in enumerate(beforedot[::-1]):
+    for _k, elem in enumerate(beforedot[::-1]):
         if elem not in "0123456789":
             break
 
-    nbdigits_found = k
-    indexpos_first_digit = l - k
+    nbdigits_found = _k
+    indexpos_first_digit = l - _k
 
     #     print "len", l
     #     print "nbdigits_found",nbdigits_found
@@ -2721,33 +2675,28 @@ def findfirstnumberpos(s):
 
 def lognorm(x, mu, s):
 
-    return (
-        1.0
+    return (1.0
         / (x * s * np.sqrt(2 * np.pi))
-        * np.exp(-np.log(x / (1.0 * mu)) ** 2 / (2 * s ** 2))
-    )
+        * np.exp(-np.log(x / (1.0 * mu)) ** 2 / (2 * s ** 2)))
 
 
 def CCDintensitymodel(x):
-
-    return np.piecewise(
-        x,
+    """
+    function to model response of CCD
+    """
+    return np.piecewise(x,
         [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
-        [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x],
-    )
-
+        [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x])
 
 def CCDintensitymodel2(x):
-
-    return np.piecewise(
-        x,
+    """
+    function to model response of CCD
+    """
+    return np.piecewise(x,
         [x < 6.0, (x >= 6.0) & (x <= 10.0), x > 10.0],
-        [
-            lambda x: 0.05,
+        [lambda x: 0.05,
             lambda x: 0.95 / 4.0 * x - 5.5 / 4,
-            lambda x: 10.0 / np.power(x, 0.95),
-        ],
-    )
+            lambda x: 10.0 / np.power(x, 0.95)])
 
 
 # -------------------------  IN DEVELOPMENT  ----------------
@@ -2818,13 +2767,14 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.0):
     return list_exp_vers_theo
 
 
-def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
+def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix, verbose=False):
     """compute angles between all pairs of kf vectors corresponding to HKL1s and HKL2s Vectors
 
     inputs:
     HKL1s, HKL2s            :  list of n1 3D vectors, list of n2 3D vectors
     Gstar            : metrics , default np.eye(3)
-    #TODO NOT FINISHED
+    .. todo::
+        NOT FINISHED
                     """
     HKL1r = np.array(HKL1s)
     HKL2r = np.array(HKL2s)
@@ -2845,7 +2795,7 @@ def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix):
     d2 = np.sqrt(dstar_square_2.reshape((n2, 1))) * 1.0
 
     outy = np.outer(d1, d2)
-    if 0:
+    if verbose:
         print("d1", d1)
         print("d2", d2)
         print("len(d1)", len(d1))
@@ -2869,7 +2819,7 @@ def nearestValuesindices(A, B):
     """
     A, B : 1D arrays
     return for each element of B the index of element A closest to B
-    
+
     len(indexInA)=len(B)
     """
     indexInA = np.abs(np.subtract.outer(A, B)).argmin(0)

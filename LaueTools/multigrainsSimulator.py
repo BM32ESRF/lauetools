@@ -281,12 +281,8 @@ def dosimulation_parametric(
                 angle_list = Transform_listparam[1]
                 nb_transforms = len(angle_list)
                 # axis coordinate change from abc frame(direct crystal) to a*b*c* frame( reciprocal crystal)
-                axis_list_c = np.array(
-                    [
-                        CP.fromrealframe_to_reciprocalframe(ax, GrainSimulParam[0])
-                        for ax in axis_list
-                    ]
-                )
+                axis_list_c = np.array([CP.fromrealframe_to_reciprocalframe(ax, GrainSimulParam[0])
+                                                                    for ax in axis_list])
                 #  print "axis_list_c", axis_list_c
                 # axis coordinate change from a*b*c* frame(crystal) to absolute frame
                 axis_list = np.dot(matOrient, axis_list_c.T).T
@@ -310,9 +306,7 @@ def dosimulation_parametric(
                 # general transform expressed in crystal frame
 
             elif Transform_listparam[0] == "r_mat_d":
-                raise ValueError(
-                    "r_mat_d matrix transform with d frame is not implemented yet"
-                )
+                raise ValueError("r_mat_d matrix transform with d frame is not implemented yet")
 
             elif Transform_listparam[0] == "r_mat_c":
                 # print "using r_mat_c"
@@ -321,8 +315,7 @@ def dosimulation_parametric(
                 # then convert transform in absolute lauetools frame
                 for k in range(nb_transforms):
                     matrix_list[k] = np.dot(
-                        matOrient, np.dot(matrix_list[k], np.linalg.inv(matOrient))
-                    )
+                        matOrient, np.dot(matrix_list[k], np.linalg.inv(matOrient)))
                     # matrix_list[k] = np.dot(inv(matOrient),np.dot(matrix_list[k],matOrient))
 
                 # transform is a list of tensile transforms
@@ -344,8 +337,7 @@ def dosimulation_parametric(
                 for mm in range(3):
                     if liststrainframe[mm] == "s_axis_c":
                         axis_list[mm] = np.dot(
-                            matOrient, np.transpose(_axis_list[mm])
-                        ).T
+                            matOrient, np.transpose(_axis_list[mm])).T
                     else:
                         axis_list[mm] = _axis_list[mm]
                 # print "axis_list in a frame",axis_list
@@ -370,10 +362,9 @@ def dosimulation_parametric(
             if Transform_listparam[0] in ("r_axis", "r_axis_c", "r_axis_d", "r_axis_d_slipsystem"):
                 # print "angle, axis",angle_list[ChildGrain_index],axis_list[ChildGrain_index]
                 qvectors_ChildGrain = GT.rotate_around_u(
-                    Qvectors_ParentGrain[0],
-                    angle_list[ChildGrain_index],
-                    u=axis_list[ChildGrain_index],
-                )
+                                                            Qvectors_ParentGrain[0],
+                                                            angle_list[ChildGrain_index],
+                                                            u=axis_list[ChildGrain_index])
                 # list of spot which are on camera(without harmonics)
                 # hkl are common to all child grains
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
@@ -387,14 +378,11 @@ def dosimulation_parametric(
                 # general transformation is applied to q vector
                 # expressed in lauetools absolute frame
                 qvectors_ChildGrain = np.dot(
-                    matrix_list[ChildGrain_index], Qvectors_ParentGrain[0].T
-                ).T
+                    matrix_list[ChildGrain_index], Qvectors_ParentGrain[0].T).T
 
                 if 0:
-                    print(
-                        " 10 first transpose(Qvectors_ParentGrain[0])",
-                        Qvectors_ParentGrain[0].T[:, :10],
-                    )
+                    print(" 10 first transpose(Qvectors_ParentGrain[0])",
+                        Qvectors_ParentGrain[0].T[:, :10])
                     print("%d / %d" % (ChildGrain_index, nb_transforms))
                     print("current matrix", matrix_list[ChildGrain_index])
                     print(np.shape(qvectors_ChildGrain))
@@ -409,18 +397,15 @@ def dosimulation_parametric(
                 first_traction = GT.tensile_along_u(
                     Qvectors_ParentGrain[0],
                     factor_list[0][ChildGrain_index],
-                    u=axis_list[0][ChildGrain_index],
-                )
+                    u=axis_list[0][ChildGrain_index])
                 second_traction = GT.tensile_along_u(
                     first_traction,
                     factor_list[1][ChildGrain_index],
-                    u=axis_list[1][ChildGrain_index],
-                )
+                    u=axis_list[1][ChildGrain_index])
                 qvectors_ChildGrain = GT.tensile_along_u(
                     second_traction,
                     factor_list[2][ChildGrain_index],
-                    u=axis_list[2][ChildGrain_index],
-                )
+                    u=axis_list[2][ChildGrain_index])
                 # list of spots for a child grain (on camera + without harmonics)
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
@@ -440,11 +425,9 @@ def dosimulation_parametric(
 
             # test whether there is at least one Laue spot in the camera
             for elem in spots2pi[0]:
-                if len(elem) == 0:
-                    print(
-                        "There is at least one child grain without peaks on CCD camera for ChildGrain_index= %.3f"
-                        % ChildGrain_index
-                    )
+                if not elem:
+                    print("There is at least one child grain without peaks on CCD camera for ChildGrain_index= %.3f"
+                        % ChildGrain_index)
                     break
 
             # ---------------------------------
@@ -452,18 +435,17 @@ def dosimulation_parametric(
             try:
                 # print("kf_direction = (in dosimulationparametric)", kf_direction)
                 if kf_direction == "Z>0" or isinstance(
-                    kf_direction, list
-                ):  # or isinstance(kf_direction, np.array):
+                    kf_direction, list):  # or isinstance(kf_direction, np.array):
                     Laue_spot_list = LAUE.filterLaueSpots(
-                        spots2pi,
-                        fileOK=0,
-                        fastcompute=0,
-                        detectordistance=detectordistance,
-                        detectordiameter=detectordiameter*1.2,  # * 1.2, # avoid losing some spots in large transformation
-                        kf_direction=kf_direction,
-                        HarmonicsRemoval=1,
-                        pixelsize=pixelsize,
-                    )
+                                                    spots2pi,
+                                                    fileOK=0,
+                                                    fastcompute=0,
+                                                    detectordistance=detectordistance,
+                                                    detectordiameter=detectordiameter*1.2,  # * 1.2, # avoid losing some spots in large transformation
+                                                    kf_direction=kf_direction,
+                                                    HarmonicsRemoval=1,
+                                                    pixelsize=pixelsize,
+                                                )
 
                     # for elem in Laue_spot_list[0][:10]:
                     # print elem

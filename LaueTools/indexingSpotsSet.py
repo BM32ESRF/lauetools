@@ -2216,7 +2216,6 @@ class spotsset:
                 continue
 
             matching_rate = 100.0 * res[2] / res[3]
-            absolute_matching_rate = res[2]
             allmatchingrate.append(matching_rate)
 
             if verbose:
@@ -2225,7 +2224,6 @@ class spotsset:
                     "res for k:%d and angles: [%.1f,%.1f,%.1f]"
                     % (kk, angles_sol[0], angles_sol[1], angles_sol[2])
                 )
-                #        print "res",res[2:]
                 print("Matching rate ----(in %%):                %.2f " % matching_rate)
                 print("Nb of close spot pairs (< %.2f deg) : %d" % (ang_tol, res[2]))
                 print("Nb of simulated spots : %d" % res[3])
