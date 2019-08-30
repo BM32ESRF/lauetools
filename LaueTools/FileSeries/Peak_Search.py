@@ -25,8 +25,14 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
-import readmccd as RMCCD
-import dict_LaueTools as DictLT
+# LaueTools modules
+if sys.version_info.major == 3:
+    from .. import readmccd as RMCCD
+    from .. import dict_LaueTools as DictLT
+
+else:
+    import readmccd as RMCCD
+    import dict_LaueTools as DictLT
 
 dict_CCD = DictLT.dict_CCD
 LIST_OF_CCDS = list(dict_CCD.keys())
@@ -888,48 +894,46 @@ class MainFrame_peaksearch(wx.Frame):
             )
 
 
-LaueToolsProjectFolder = os.path.dirname(os.path.abspath(os.curdir))
-
-print("LaueToolProjectFolder", LaueToolsProjectFolder)
-
-MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
-
-print("MainFolder", MainFolder)
-
-initialparameters = {}
-initialparameters["ImageFolder"] = MainFolder
-initialparameters["Output Folder (Peaklist)"] = os.path.join(MainFolder, "datfiles")
-initialparameters["ImageFilename Prefix"] = "nanox2_400_"
-initialparameters["ImageFilename Suffix"] = ".mccd"
-initialparameters["PeakSearch Parameters File"] = os.path.join(
-    MainFolder, "PeakSearch_nanox2_400_0000_LT_4.psp"
-)
-initialparameters["CCDLabel"] = "MARCCD165"
-initialparameters["BackgroundRemoval"] = "auto"
-initialparameters["BlackListed Peaks File"] = None
-
-list_valueparamPS = [
-    initialparameters["ImageFolder"],
-    initialparameters["Output Folder (Peaklist)"],
-    initialparameters["ImageFilename Prefix"],
-    initialparameters["ImageFilename Suffix"],
-    4,
-    0,
-    5,
-    1,
-    initialparameters["BackgroundRemoval"],
-    initialparameters["BlackListed Peaks File"],
-    initialparameters["PeakSearch Parameters File"],
-]
-
-
 if __name__ == "__main__":
+
+    LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
+    print("LaueToolProjectFolder in main", LaueToolsProjectFolder)
+
+    MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
+
+    print("MainFolder in m ain", MainFolder)
+
+    initialparameters = {}
+    initialparameters["ImageFolder"] = MainFolder
+    initialparameters["Output Folder (Peaklist)"] = os.path.join(MainFolder, "datfiles")
+    initialparameters["ImageFilename Prefix"] = "nanox2_400_"
+    initialparameters["ImageFilename Suffix"] = ".mccd"
+    initialparameters["PeakSearch Parameters File"] = os.path.join(
+        MainFolder, "PeakSearch_nanox2_400_0000_LT_4.psp"
+    )
+    initialparameters["CCDLabel"] = "MARCCD165"
+    initialparameters["BackgroundRemoval"] = "auto"
+    initialparameters["BlackListed Peaks File"] = None
+
+    list_valueparamPS = [
+        initialparameters["ImageFolder"],
+        initialparameters["Output Folder (Peaklist)"],
+        initialparameters["ImageFilename Prefix"],
+        initialparameters["ImageFilename Suffix"],
+        4,
+        0,
+        5,
+        1,
+        initialparameters["BackgroundRemoval"],
+        initialparameters["BlackListed Peaks File"],
+        initialparameters["PeakSearch Parameters File"],
+    ]
+
 
     Stock_PS = Stock_parameters_PeakSearch(LIST_TXTPARAM_FILE_PS, list_valueparamPS)
 
     PeakSearchSeriesApp = wx.App()
     PeakSearchSeries = MainFrame_peaksearch(
-        None, -1, "Peak Search Parameters Board", initialparameters, Stock_PS
-    )
+        None, -1, "Peak Search Parameters Board", initialparameters, Stock_PS)
     PeakSearchSeries.Show(True)
     PeakSearchSeriesApp.MainLoop()

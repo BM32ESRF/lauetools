@@ -3863,8 +3863,7 @@ def PeakSearch(
 
     else:
         raise ValueError(
-            "optional fit_peaks_gaussian value is not understood! Must be 0,1 or 2"
-        )
+            "optional fit_peaks_gaussian value is not understood! Must be 0,1 or 2")
 
     print("\n*****************")
     print("{} local maxima found".format(len(peaklist)))
@@ -3887,27 +3886,27 @@ def PeakSearch(
         Data_to_Fit = None
 
     return fitoneimage_manypeaks(
-        filename,
-        peaklist,
-        boxsize,
-        stackimageindex,
-        CCDLabel=CCDLabel,
-        dirname=None,
-        position_start=position_start,
-        type_of_function=type_of_function,
-        xtol=xtol,
-        FitPixelDev=FitPixelDev,
-        Ipixmax=Ipixmax,
-        MaxIntensity=Saturation_value,
-        MinIntensity=MinIntensity,
-        PeakSizeRange=PeakSizeRange,
-        verbose=verbose,
-        position_definition=position_definition,
-        NumberMaxofFits=NumberMaxofFits,
-        ComputeIpixmax=ComputeIpixmax,
-        use_data_corrected=Data_to_Fit,
-        reject_negative_baseline=reject_negative_baseline,
-    )
+                                filename,
+                                peaklist,
+                                boxsize,
+                                stackimageindex,
+                                CCDLabel=CCDLabel,
+                                dirname=None,
+                                position_start=position_start,
+                                type_of_function=type_of_function,
+                                xtol=xtol,
+                                FitPixelDev=FitPixelDev,
+                                Ipixmax=Ipixmax,
+                                MaxIntensity=Saturation_value,
+                                MinIntensity=MinIntensity,
+                                PeakSizeRange=PeakSizeRange,
+                                verbose=verbose,
+                                position_definition=position_definition,
+                                NumberMaxofFits=NumberMaxofFits,
+                                ComputeIpixmax=ComputeIpixmax,
+                                use_data_corrected=Data_to_Fit,
+                                reject_negative_baseline=reject_negative_baseline,
+                            )
 
 
 def peaksearch_on_Image(
@@ -3996,12 +3995,12 @@ def peaksearch_on_Image(
         psdict_Convolve["Fit_with_Data_for_localMaxima"] = True
 
     Res = PeakSearch(
-        filename_in,
-        CCDLabel=CCDLabel,
-        Saturation_value=DictLT.dict_CCD[CCDLabel][2],
-        Saturation_value_flatpeak=DictLT.dict_CCD[CCDLabel][2],
-        **psdict_Convolve
-    )
+                    filename_in,
+                    CCDLabel=CCDLabel,
+                    Saturation_value=DictLT.dict_CCD[CCDLabel][2],
+                    Saturation_value_flatpeak=DictLT.dict_CCD[CCDLabel][2],
+                    **psdict_Convolve
+                )
 
     if Res in (False, None):
         print("No peak found for image file: ", filename_in)
@@ -4089,15 +4088,12 @@ LIST_OPTIONS_TYPE_PEAKSEARCH = [
 
 LIST_OPTIONS_VALUESPARAMS = [1, 1000, 5000, 15, 10, 1, 0.001, 2.0, 1, 15.0, 0.01, 3.0]
 
-if (
-    len(CONVERTKEY_dict)
+if (len(CONVERTKEY_dict)
     != len(LIST_OPTIONS_PEAKSEARCH)
     != LIST_OPTIONS_TYPE_PEAKSEARCH
-    != LIST_OPTIONS_VALUESPARAMS
-):
+    != LIST_OPTIONS_VALUESPARAMS):
     raise ValueError(
-        "Lists of parameters for config .psp file do not have the same length (readmccd.py)"
-    )
+        "Lists of parameters for config .psp file do not have the same length (readmccd.py)")
 
 
 def savePeakSearchConfigFile(dict_param, outputfilename=None):
@@ -4140,9 +4136,7 @@ def readPeakSearchConfigFile(filename):
     if section not in ("PeakSearch",):
         raise ValueError(
             "wrong section name in config file {}. Must be in {}".format(
-                filename, "IndexRefine"
-            )
-        )
+                filename, "IndexRefine"))
 
     #     print "section", section
 

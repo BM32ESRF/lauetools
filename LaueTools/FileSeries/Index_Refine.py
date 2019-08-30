@@ -37,11 +37,18 @@ try:
 except ImportError:
     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
-import IOLaueTools as IOLT
-import indexingSpotsSet as ISS
+if sys.version_info.major == 3:
+    from .. import IOLaueTools as IOLT
+    from .. import indexingSpotsSet as ISS
+    from .. import dict_LaueTools as dictLT
+else:
+    import IOLaueTools as IOLT
+    import indexingSpotsSet as ISS
+    import dict_LaueTools as dictLT
 
-from dict_LaueTools import LAUETOOLSFOLDER
-LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
+
+LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
+LaueToolsProjectFolder = os.path.abspath(dictLT.LAUETOOLSFOLDER)
 print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 # --- ---- core index and refine parameters
@@ -54,9 +61,7 @@ LIST_VALUESPARAMS = [ "Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
 # check if field position is correct in def hascorrectvalue(self, kk, val):
 # and name does not contain "_"
 
-
 LIST_UNITSPARAMS = ISS.LIST_OPTIONS_TYPE_INDEXREFINE[1:]
-
 
 LIST_TXTPARAM_FILE_INDEXREFINE = [
     "Peak List .dat Folder",

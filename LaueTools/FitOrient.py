@@ -651,7 +651,7 @@ def error_function_strain_with_two_orientations(
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
     # param_strain must contain values of one or many parameters of allparameters
-    #   
+    #
     #   strain = param_strain[:5]
     #   deltaangles = param_strain[5:8]
     #   arr_indexvaryingparameters = array of position of parameters whose values are in param_strain

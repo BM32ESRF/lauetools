@@ -1523,8 +1523,7 @@ class ROISelection(wx.Panel):
         # txt2.SetToolTipString('Set parameters to build list of image indices (2 methods)')
 
         self.ROIfromManualtbtn.SetToolTipString(
-            'Select with mouse a rectangle: Accept with "q", delete with "d"'
-        )
+            'Select with mouse a rectangle: Accept with "q", delete with "d"')
 
     def buildROIsarray(self):
         ROIslist = []
@@ -1722,8 +1721,7 @@ class PlotPeakListPanel(wx.Panel):
 
         luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
         self.comboLUT = wx.ComboBox(
-            self, -1, self.granparent.LastLUT, (70, 5), choices=self.granparent.mapsLUT
-        )  # ,
+            self, -1, self.granparent.LastLUT, (70, 5), choices=self.granparent.mapsLUT)  # ,
         # style=wx.CB_READONLY)
 
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.granparent.OnChangeLUT)
@@ -1736,8 +1734,7 @@ class PlotPeakListPanel(wx.Panel):
             self, -1, "0", pos=(50, posv), size=(80, -1), min=-200, max=100000
         )
         self.Bind(
-            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_IminDisplayed, self.vminctrl
-        )
+            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_IminDisplayed, self.vminctrl)
 
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
@@ -1746,8 +1743,7 @@ class PlotPeakListPanel(wx.Panel):
             self, -1, "1000", pos=(50, posv + 30), size=(80, -1), min=2, max=1000000
         )
         self.Bind(
-            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_ImaxDisplayed, self.vmaxctrl
-        )
+            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_ImaxDisplayed, self.vmaxctrl)
 
         #         self.slider_label = wx.StaticText(self, -1,
         #             "peak tilt (%): ")
@@ -1759,12 +1755,9 @@ class PlotPeakListPanel(wx.Panel):
             value=0,
             minValue=0,
             maxValue=1000,
-            style=wx.SL_AUTOTICKS,
-        )  # | wx.SL_LABELS)
+            style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         self.slider_vmin.SetTickFreq(500, 1)
-        self.slider_vmin.Bind(
-            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_IminDisplayed
-        )
+        self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_IminDisplayed)
 
         # second horizontal band
         #         self.slider_label2 = wx.StaticText(self, -1,
@@ -1777,19 +1770,16 @@ class PlotPeakListPanel(wx.Panel):
             value=1000,
             minValue=1,
             maxValue=1000,
-            style=wx.SL_AUTOTICKS,
-        )  # | wx.SL_LABELS)
+            style=wx.SL_AUTOTICKS,  # | wx.SL_LABELS)
         self.slider_vmax.SetTickFreq(500, 1)
         self.slider_vmax.Bind(
-            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_ImaxDisplayed
-        )
+            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_ImaxDisplayed)
 
         self.Iminvaltxt = wx.StaticText(self, -1, "0", pos=(400, posv + 5))
         self.Imaxvaltxt = wx.StaticText(self, -1, "1000", pos=(400, posv + 35))
 
         self.lineXYprofilechck = wx.CheckBox(
-            self, -1, "Enable X Y profiler", (5, posv + 60)
-        )
+            self, -1, "Enable X Y profiler", (5, posv + 60))
         InitStateXYProfile = False
         self.lineXYprofilechck.SetValue(InitStateXYProfile)
         self.lineXYprofilechck.Bind(wx.EVT_CHECKBOX, self.OnTogglelineXYprofiles)
@@ -1827,9 +1817,7 @@ class PlotPeakListPanel(wx.Panel):
         luttxt.SetToolTipString(tp1)
         self.comboLUT.SetToolTipString(tp1)
 
-        showhisto_btn.SetToolTipString(
-            "Show histogram of pixel intensity distribution of raw image"
-        )
+        showhisto_btn.SetToolTipString("Show histogram of pixel intensity distribution of raw image")
 
         tp2 = "Coarse color scale intensity: min and max"
 
@@ -2956,8 +2944,7 @@ class PeakListOLV(wx.Panel):
             self.mainframe.centerx, self.mainframe.centery = Y, X
             self.mainframe.boxx, self.mainframe.boxy = (
                 int(self.boxsizey.GetValue()),
-                int(self.boxsizex.GetValue()),
-            )
+                int(self.boxsizex.GetValue()))
 
             centeri, centerj = self.mainframe.centerx, self.mainframe.centery
             boxi, boxj = self.mainframe.boxx, self.mainframe.boxy
@@ -2966,13 +2953,11 @@ class PeakListOLV(wx.Panel):
                 centeri - boxi,
                 centeri + boxi,
                 centerj - boxj,
-                centerj + boxj,
-            )
+                centerj + boxj)
 
             # avoid to wrong indices when slicing the data
             imin, imax, jmin, jmax = RMCCD.check_array_indices(
-                imin, imax, jmin, jmax, framedim=self.grangranparent.framedim
-            )
+                imin, imax, jmin, jmax, framedim=self.grangranparent.framedim)
 
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI[
                 imin:imax, jmin:jmax
