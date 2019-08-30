@@ -3471,14 +3471,14 @@ def filterEulersList(
 
     # sort solution by matching rate
     sortedindices, matchingrates = matchingrate.getStatsOnMatching(
-        bestEULER,
-        tth_chi_int[0],
-        tth_chi_int[1],
-        key_material,
-        ang_tol=rawAngularmatchingtolerance,
-        emax=emax,
-        verbose=verbose,
-    )
+                                                                    bestEULER,
+                                                                    tth_chi_int[0],
+                                                                    tth_chi_int[1],
+                                                                    key_material,
+                                                                    ang_tol=rawAngularmatchingtolerance,
+                                                                    emax=emax,
+                                                                    verbose=verbose,
+                                                                )
 
     bestEULER = np.take(bestEULER, sortedindices, axis=0)
     bestmatchingrates = np.take(np.array(matchingrates), sortedindices)

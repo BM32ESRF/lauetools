@@ -1324,20 +1324,20 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = DictLT.dict_Materials
         # Open manual indextion Board
         self.picky = ManualIndexFrame(
-            self,
-            -1,
-            self.DataPlot_filename,
-            data=self.data,
-            data_XY=self.data_XY,
-            data_2thetachi=self.data[:2],
-            kf_direction=self.kf_direction,
-            datatype="pixels",
-            Size=SIZE_PLOTTOOLS,
-            Params_to_simulPattern=None,
-            indexation_parameters=self.indexation_parameters,
-            StorageDict=StorageDict,
-            DataSetObject=self.DataSet,
-        )
+                                        self,
+                                        -1,
+                                        self.DataPlot_filename,
+                                        data=self.data,
+                                        data_XY=self.data_XY,
+                                        data_2thetachi=self.data[:2],
+                                        kf_direction=self.kf_direction,
+                                        datatype="pixels",
+                                        Size=SIZE_PLOTTOOLS,
+                                        Params_to_simulPattern=None,
+                                        indexation_parameters=self.indexation_parameters,
+                                        StorageDict=StorageDict,
+                                        DataSetObject=self.DataSet,
+                                    )
 
         self.picky.Show(True)
 
@@ -1345,38 +1345,25 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Method launching Calibration Board
         """
-        self.OnOpenPeakList(evt)
-
-        print("Selected file ", self.DataPlot_filename)
-
-        # prefix_filename, extension_filename = self.DataPlot_filename.split('.')
-        prefix_filename = self.DataPlot_filename.rsplit(".", 1)[0]
-
-        if prefix_filename.startswith("dat_"):
-            self.CalibrationFile = prefix_filename[4:] + ".dat"
-        else:
-            self.CalibrationFile = self.DataPlot_filename
-
-        print("Calibrating with file: %s" % self.CalibrationFile)
-
-        starting_param = self.defaultParam
+        starting_param = [69.179, 1050.81, 1115.59, 0.104, -0.273]
+        pixelsize = 0.08057
         print("Starting param", starting_param)
 
         initialParameter = {}
         initialParameter["CCDParam"] = starting_param
-        initialParameter["detectordiameter"] = self.detectordiameter
-        initialParameter["CCDLabel"] = self.CCDLabel
-        initialParameter["filename"] = self.CalibrationFile
-        initialParameter["dirname"] = "/home/micha/LaueTools/Examples/Ge"
+        initialParameter["detectordiameter"] = 180
+        initialParameter["CCDLabel"] = 'MARCCD165'
+        initialParameter["filename"] = 'dat_Ge0001.cor'
+        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder,"Examples","Ge")
         initialParameter["dict_Materials"]=self.dict_Materials
 
         print("initialParameter when launching calibration", initialParameter)
 
         self.calibframe = DC.MainCalibrationFrame( self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=initialParameter["filename"],
-                                    pixelsize=self.pixelsize, dim=self.framedim,
-                                    kf_direction=self.kf_direction, fliprot=self.fliprot,
-                                    starting_param=initialParameter["CCDParam"])
+                                    pixelsize=pixelsize, dim=(2048,2048),
+                                    kf_direction='Z>0', fliprot='no',
+                                    starting_param=starting_param)
         self.calibframe.Show(True)
 
     def OnCliquesFinding(self, _):

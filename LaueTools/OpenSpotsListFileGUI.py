@@ -1,16 +1,20 @@
-import os 
+import os
+import sys
 import wx
 import copy
 
-from . import CCDFileParametersGUI as CCDParamGUI
-from . import DetectorParameters as DP
-from . import dict_LaueTools as DictLT
-from . import LaueGeometry as F2TC
-from . import IOLaueTools as IOLT
-
-from . import indexingSpotsSet as ISS
-
-
+if sys.version_info.major == 3:
+    from . import CCDFileParametersGUI as CCDParamGUI
+    from . import DetectorParameters as DP
+    from . import dict_LaueTools as DictLT
+    from . import LaueGeometry as F2TC
+    from . import IOLaueTools as IOLT
+else:
+    import CCDFileParametersGUI as CCDParamGUI
+    import DetectorParameters as DP
+    import dict_LaueTools as DictLT
+    import LaueGeometry as F2TC
+    import IOLaueTools as IOLT
 
 DICT_LAUE_GEOMETRIES = DictLT.DICT_LAUE_GEOMETRIES
 
@@ -69,9 +73,8 @@ def OpenCorfile(filename, parent):
 
     parent must have attributes: kf_direction_from_file, CCDLabel, detectordiameter
     """
-    kf_direction_from_file, CCDLabel, detectordiameter = (parent.kf_direction_from_file,
-                                                            parent.CCDLabel,
-                                                            parent.detectordiameter)
+    kf_direction_from_file, CCDLabel = parent.kf_direction_from_file, parent.CCDLabel
+    
     print('Opening %s'%filename)
     (Current_peak_data,
         data_theta,
@@ -85,9 +88,7 @@ def OpenCorfile(filename, parent):
 
     print("\nCCDCalibDict after readfile_cor ", CCDCalibDict)
 
-    CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, detectordiameter, parent)
-
-    # print("self.detectordiameter", detectordiameter)
+    CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent)
 
     pixelsize_fromfile = IOLT.getpixelsize_from_corfile(filename)
 
@@ -123,9 +124,12 @@ def OpenCorfile(filename, parent):
     return (data_theta, data_chi,
             data_pixX, data_pixY, data_I)
 
-def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, detectordiameter, parent):
+def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent):
     """
     check if all CCD parameters are read from file .cor
+
+    parent must have attributes:
+        - kf_direction
     """
     ccp = DictLT.CCD_CALIBRATION_PARAMETERS
 
@@ -141,7 +145,6 @@ def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, dete
                 LaueGeomBoard.Destroy()
 
             if missing_param == "CCDLabel" or CCDLabel is None:
-                print("self.detectordiameter in CheckCCDCalibParameters", parent.detectordiameter)
                 DPBoard = CCDParamGUI.CCDFileParameters(parent, -1, "CCD File Parameters Board",
                                                     CCDLabel)
                 DPBoard.ShowModal()
@@ -177,7 +180,7 @@ def OnOpenPeakList(parent):
         - framedim
         - detectordiameter
         - kf_direction
-        - kf_direction_from_file 
+        - kf_direction_from_file
         - PeakListDatFileName  .dat file
         - DataPlot_filename
     """
@@ -227,7 +230,7 @@ def OnOpenPeakList(parent):
                             param=parent.defaultParam + [parent.pixelsize],
                             initialfilename=DataPlot_filename,
                         )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
-        
+
         print("%s has been created with defaultparameter" % ("dat_" + prefix + ".cor"))
         print("%s" % str(parent.defaultParam))
 

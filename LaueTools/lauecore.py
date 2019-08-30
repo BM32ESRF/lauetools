@@ -323,7 +323,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
                                             ResolutionAngstrom=False,
                                             fileOK=1,
                                             verbose=1,
-                                            dictmaterials=dict_Materials):
+                                            dictmaterials=None):
     r"""
     Compute Qxyz vectors and corresponding HKL miller indices for nodes in recicprocal space that can be measured
     for the given detection geometry and energy bandpass configuration.
@@ -411,6 +411,9 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
     if verbose:
         print("energy range: %.2f - %.2f keV" % (CST_ENERGYKEV / wlM, CST_ENERGYKEV / wlm))
         print("Number of grains: ", nb_of_grains)
+
+    if dictmaterials is None:
+        dictmaterials=dict_Materials
 
     # loop over grains
     for i in list(range(nb_of_grains)):
@@ -1100,8 +1103,7 @@ def filterLaueSpots(
     detectordiameter=DEFAULT_DETECTOR_DIAMETER,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    linestowrite=[[""]],
-):
+    linestowrite=[[""]]):
     r""" Calculates list of grains spots on camera and without harmonics
     and on CCD camera from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
@@ -1170,9 +1172,7 @@ def filterLaueSpots(
 
         Qsquare = Qx ** 2 + Qy ** 2 + Qz ** 2
 
-        #        print "Qx", Qx
-
-        # correspondinf Ewald sphere radius for each spots
+        # corresponding Ewald sphere radius for each spots
         # (proportional to photons Energy)
         Rewald = Qsquare / 2.0 / np.abs(Qx)
 
@@ -1181,9 +1181,7 @@ def filterLaueSpots(
             ratiod = detectordistance / Qz
             Ycam = ratiod * (Qx + Rewald)
             Xcam = ratiod * (Qy)
-        elif (
-            kf_direction == "Y>0"
-        ):  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
+        elif kf_direction == "Y>0":  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
             ratiod = detectordistance / Qy
             Xcam = ratiod * (Qx + Rewald)
             Ycam = ratiod * (Qz)
@@ -1207,8 +1205,7 @@ def filterLaueSpots(
         elif isinstance(kf_direction, (list, np.array)):
             if len(kf_direction) != 2:
                 raise ValueError(
-                    "kf_direction must be defined by a list of two angles !"
-                )
+                    "kf_direction must be defined by a list of two angles !")
             else:
                 Xcam = np.zeros_like(Qy)
                 Ycam = np.zeros_like(Qy)
@@ -1234,8 +1231,7 @@ def filterLaueSpots(
 
         # compute 2theta, chi
         oncam_2theta = np.arccos(
-            oncam_XplusR / np.sqrt(oncam_XplusR ** 2 + oncam_Qy ** 2 + oncam_Qz ** 2)
-        )
+            oncam_XplusR / np.sqrt(oncam_XplusR ** 2 + oncam_Qy ** 2 + oncam_Qz ** 2))
         # be careful of the of sign
         oncam_chi = np.arctan(1.0 * oncam_Qy / oncam_Qz)
         #         oncam_chi = np.arctan2(1. * oncam_Qy, oncam_Qz)
@@ -1269,33 +1265,28 @@ def filterLaueSpots(
             oncam_HKL = np.transpose(np.array([oncam_H, oncam_K, oncam_L]))
 
             # build list of spot objects
-            listspot = get2ThetaChi_geometry(
-                oncam_vec,
-                oncam_HKL,
-                detectordistance=detectordistance,
-                pixelsize=pixelsize,
-                dim=dim,
-                kf_direction=kf_direction,
-            )
+            listspot = get2ThetaChi_geometry(oncam_vec,
+                                            oncam_HKL,
+                                            detectordistance=detectordistance,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            kf_direction=kf_direction)
 
             #             print "oncam_HKL", oncam_HKL.tolist()
             # Creating list of spot with or without harmonics
             if HarmonicsRemoval and listspot:
                 #                ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
-                (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(
-                    oncam_HKL, return_indices_toremove=1
-                )
+                (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(oncam_HKL,
+                                                                    return_indices_toremove=1)
                 listspot = np.delete(np.array(listspot), toremove).tolist()
 
             # feeding final list of spots
             ListSpots_Oncam_wo_harmonics[grainindex] = listspot
 
             if fileOK:
-                IOLT.Writefile_data_log(
-                    ListSpots_Oncam_wo_harmonics[grainindex],
-                    grainindex,
-                    linestowrite=linestowrite,
-                )
+                IOLT.Writefile_data_log(ListSpots_Oncam_wo_harmonics[grainindex],
+                                        grainindex,
+                                        linestowrite=linestowrite)
 
             # print "Number of spot in camera w / o harmonics",len(ListSpots_Oncam_wo_harmonics[grainindex])
 
@@ -1310,21 +1301,15 @@ def filterLaueSpots(
     if fileOK:
         linestowrite.append(["\n"])
         linestowrite.append(
-            ["--------------------------------------------------------"]
-        )
+            ["--------------------------------------------------------"])
         linestowrite.append(
-            ["------------- Simulation Data --------------------------"]
-        )
+            ["------------- Simulation Data --------------------------"])
         linestowrite.append(
-            ["--------------------------------------------------------"]
-        )
+            ["--------------------------------------------------------"])
         linestowrite.append(["\n"])
         linestowrite.append(
-            [
-                "#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"
-            ]
-        )
-
+            ["#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"
+            ])
     if fastcompute == 0:
         # list of elements which are list of objects of spot class (1 element / grain)
         return ListSpots_Oncam_wo_harmonics
@@ -1345,8 +1330,7 @@ def filterLaueSpots_full_np(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     linestowrite=[[""]],
-    grainindex=0,
-):
+    grainindex=0):
     r""" Calculates spots data for an individual grain
     on camera and without harmonics
     and on CCD camera
@@ -1381,8 +1365,6 @@ def filterLaueSpots_full_np(
 
     Vecsquare = VecX ** 2 + VecY ** 2 + VecZ ** 2
 
-    #        print "VecX", VecX
-
     # correspondinf Ewald sphere radius for each spots
     # (proportional to photons Energy)
     Rewald = Vecsquare / 2.0 / np.abs(VecX)
@@ -1393,9 +1375,7 @@ def filterLaueSpots_full_np(
         ratiod = detectordistance / VecZ
         Ycam = ratiod * (VecX + Rewald)
         Xcam = ratiod * (VecY)
-    elif (
-        kf_direction == "Y>0"
-    ):  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
+    elif (kf_direction == "Y>0"):  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
         ratiod = detectordistance / VecY
         Xcam = ratiod * (VecX + Rewald)
         Ycam = ratiod * (VecZ)
@@ -1466,20 +1446,17 @@ def filterLaueSpots_full_np(
 
         # build list of spot objects
         TwthetaChiEnergyMillers_list_one_grain = get2ThetaChi_geometry_full_np(
-            oncam_vec,
-            oncam_HKL,
-            detectordistance=detectordistance,
-            pixelsize=pixelsize,
-            dim=dim,
-            kf_direction=kf_direction,
-        )
+                                                                oncam_vec,
+                                                                oncam_HKL,
+                                                                detectordistance=detectordistance,
+                                                                pixelsize=pixelsize,
+                                                                dim=dim,
+                                                                kf_direction=kf_direction)
 
         #         print 'TwthetaChiEnergy_list_one_grain', TwthetaChiEnergy_list_one_grain
         # Creating list of spot with or without harmonics
         if HarmonicsRemoval and True:  # listspot:
-            raise ValueError(
-                "Harmonic removal is not implemented and listspot does not exist anymore"
-            )
+            raise ValueError("Harmonic removal is not implemented and listspot does not exist anymore")
             #                ListSpots_Oncam_wo_harmonics[i] = RemoveHarmonics(listspot)
             # (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(
             #     oncam_HKL, return_indices_toremove=1
@@ -1497,12 +1474,8 @@ def filterLaueSpots_full_np(
         oncam_XplusR = oncam_vecX + oncam_R
         # compute 2theta, chi
         oncam_2theta = (
-            np.arccos(
-                oncam_XplusR
-                / np.sqrt(oncam_XplusR ** 2 + oncam_vecY ** 2 + oncam_vecZ ** 2)
-            )
-            / DEG
-        )
+            np.arccos(oncam_XplusR / np.sqrt(oncam_XplusR ** 2 + oncam_vecY ** 2 + oncam_vecZ ** 2))
+            / DEG)
         # be careful of the of sign
         oncam_chi = np.arctan(1.0 * oncam_vecY / oncam_vecZ) / DEG
         #         oncam_chi = np.arctan2(1. * oncam_vecY, oncam_vecZ)
@@ -1526,8 +1499,7 @@ def get2ThetaChi_geometry(
     detectordistance=DEFAULT_DETECTOR_DISTANCE,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-):
+    kf_direction=DEFAULT_TOP_GEOMETRY):
     r"""
     computes list of spots instances from oncam_vec (q 3D vectors)
     and oncam_HKL (miller indices 3D vectors)
@@ -1548,7 +1520,7 @@ def get2ThetaChi_geometry(
 
     :param pixelsize: pixel size in mm
     :type pixelsize: float
-    
+
     :return: list of spot instances
 
     .. note::
@@ -1564,14 +1536,12 @@ def get2ThetaChi_geometry(
     listspot = []
     options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
 
-    dictcase = {
-        "Z>0": create_spot,
-        "Y>0": create_spot_side_pos,
-        "Y<0": create_spot_side_neg,
-        "X>0": create_spot_front,
-        "X<0": create_spot_back,
-        "4PI": create_spot_4pi,
-    }
+    dictcase = {"Z>0": create_spot,
+                "Y>0": create_spot_side_pos,
+                "Y<0": create_spot_side_neg,
+                "X>0": create_spot_front,
+                "X<0": create_spot_back,
+                "4PI": create_spot_4pi}
 
     for position, indices in zip(oncam_vec, oncam_HKL):
         try:
@@ -1592,8 +1562,7 @@ def get2ThetaChi_geometry_full_np(
     detectordistance=DEFAULT_DETECTOR_DISTANCE,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-):
+    kf_direction=DEFAULT_TOP_GEOMETRY):
     r"""
     computes 2theta chi from oncam_vec (only 3D Q vectors corresponding to reflections on camera)
     and oncam_HKL (miller indices 3D vectors) for all spots of one grain
@@ -1630,14 +1599,12 @@ def get2ThetaChi_geometry_full_np(
     TwthetaChiEnergy_list = []
     options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
 
-    dictcase = {
-        "Z>0": create_spot_np,
-        "Y>0": create_spot_side_pos,
-        "Y<0": create_spot_side_neg,
-        "X>0": create_spot_np,
-        "X<0": create_spot_back,
-        "4PI": create_spot_4pi,
-    }
+    dictcase = {"Z>0": create_spot_np,
+                "Y>0": create_spot_side_pos,
+                "Y<0": create_spot_side_neg,
+                "X>0": create_spot_np,
+                "X<0": create_spot_back,
+                "4PI": create_spot_4pi}
 
     try:
         function_create_spot = dictcase[kf_direction]
@@ -1719,16 +1686,14 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
 
     twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
 
-    X, Y, theta = LTGeo.calc_xycam_from2thetachi(
-                                                twthe,
+    X, Y, theta = LTGeo.calc_xycam_from2thetachi(twthe,
                                                 chi,
                                                 detectorparam,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 dim=dim,
                                                 signgam=SIGN_OF_GAMMA,
-                                                kf_direction=kf_direction,
-                                            )
+                                                kf_direction=kf_direction)
 
     # E = (C)*(-q**2/qx/2)
     Energy = (CST_ENERGYKEV) * (-0.5 * Qsquare / tQ[0])
@@ -1763,7 +1728,7 @@ def SimulateLaue_merge(
     dictmaterials=dict_Materials):
 
     r"""
-    Simulates Laue pattern full data from a list of grains and concatenate results data 
+    Simulates Laue pattern full data from a list of grains and concatenate results data
 
     :param grains: list of 4 elements grain parameters
 
@@ -1834,8 +1799,7 @@ def SimulateLaue_merge(
         All_TwicethetaChi = []
         All_nb_spots = []
         for grain in grains:
-            TwicethetaChi = SimulateResult(
-                                            grain,
+            TwicethetaChi = SimulateResult(grain,
                                             emin,
                                             emax,
                                             simulparameters,
@@ -1858,21 +1822,20 @@ def SimulateLaue_merge(
 
 
 def SimulateLaue_twins(
-    grainparent,
-    twins_operators,
-    emin,
-    emax,
-    detectorparameters,
-    only_2thetachi=True,
-    output_nb_spots=False,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    ResolutionAngstrom=False,
-    removeharmonics=0,
-    pixelsize=165 / 2048.0,
-    dim=(2048, 2048),
-    detectordiameter=None,
-    dictmaterials=dict_Materials):
-
+                        grainparent,
+                        twins_operators,
+                        emin,
+                        emax,
+                        detectorparameters,
+                        only_2thetachi=True,
+                        output_nb_spots=False,
+                        kf_direction=DEFAULT_TOP_GEOMETRY,
+                        ResolutionAngstrom=False,
+                        removeharmonics=0,
+                        pixelsize=165 / 2048.0,
+                        dim=(2048, 2048),
+                        detectordiameter=None,
+                        dictmaterials=dict_Materials):
     r"""
     Simulates Laue pattern full data for twinned grain
 
@@ -1884,7 +1847,7 @@ def SimulateLaue_twins(
 
     .. note:: USED in test only in detectorCalibration...simulate_theo  to simulate 2 twinned crystals
     """
-    nb_twins = len(twins_operators)
+    # nb_twins = len(twins_operators)
 
     Bmat, dilat, Umat, extinction = grainparent
 
@@ -1910,22 +1873,22 @@ def SimulateLaue_twins(
 
 
 def SimulateLaue(
-    grain,
-    emin,
-    emax,
-    detectorparameters,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    ResolutionAngstrom=False,
-    removeharmonics=0,
-    pixelsize=165 / 2048.0,
-    dim=(2048, 2048),
-    detectordiameter=None,
-    force_extinction=None,
-    dictmaterials=dict_Materials):
+                grain,
+                emin,
+                emax,
+                detectorparameters,
+                kf_direction=DEFAULT_TOP_GEOMETRY,
+                ResolutionAngstrom=False,
+                removeharmonics=0,
+                pixelsize=165 / 2048.0,
+                dim=(2048, 2048),
+                detectordiameter=None,
+                force_extinction=None,
+                dictmaterials=dict_Materials):
     r"""Computes Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal
 
-    :param grain: crystal parameters made of 4 elements list
+    :param grain: crystal parameters made of a 4 elements list
     :param emin: minimum bandpass energy (keV)
     :param emax: maximum bandpass energy (keV)
 
@@ -1955,8 +1918,7 @@ def SimulateLaue(
     key_material = grain[3]
 
     grain = CP.Prepare_Grain(
-        key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials
-    )
+        key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials)
 
     #     print "grain", grain
 
@@ -2065,15 +2027,14 @@ def SimulateLaue_full_np(
 
     # list of spot which are on camera (with harmonics)
     TwthetaChiEnergyMillers_list_one_grain_wo_harmonics = filterLaueSpots_full_np(
-        Qxyz[0],
-        HKL[0],
-        fastcompute=0,
-        detectordistance=detectorparameters[0],
-        detectordiameter=DETECTORDIAMETER,
-        kf_direction=kf_direction,
-        HarmonicsRemoval=removeharmonics,
-        pixelsize=pixelsize,
-    )
+                                                Qxyz[0],
+                                                HKL[0],
+                                                fastcompute=0,
+                                                detectordistance=detectorparameters[0],
+                                                detectordiameter=DETECTORDIAMETER,
+                                                kf_direction=kf_direction,
+                                                HarmonicsRemoval=removeharmonics,
+                                                pixelsize=pixelsize)
 
     #     print "TwthetaChiEnergyMillers_list_one_grain_wo_harmonics", TwthetaChiEnergyMillers_list_one_grain_wo_harmonics
 
@@ -2094,7 +2055,7 @@ def SimulateLaue_full_np(
                                                 kf_direction=kf_direction,
                                             )[:2]
 
-    print("nb of spots theo. ", len(Twicetheta))
+    # print("nb of spots theo. ", len(Twicetheta))
 
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 

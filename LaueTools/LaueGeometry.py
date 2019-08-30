@@ -341,9 +341,7 @@ def OM_from_uf(uflab, calib, signgam=SIGN_OF_GAMMA, energy=0, offset=None, verbo
     2D vector position of point OM in detector frame plane in pixels
     alias function to calc_xycam
     """
-    return calc_xycam(
-        uflab, calib, signgam=signgam, energy=energy, offset=offset, verbose=verbose
-    )
+    return calc_xycam(uflab, calib, signgam=signgam, energy=energy, offset=offset, verbose=verbose)
 
 
 def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
@@ -377,8 +375,7 @@ def calc_xycam(
     returnIpM=False,
     pixelsize=165.0 / 2048.,
     dim=(2048, 2048),
-    rectpix=RECTPIX,
-):
+    rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units in CCD frame
     from unit scattered vector uf expressed in Lab. frame
@@ -425,13 +422,8 @@ def calc_xycam(
     cosbeta = np.cos(PI / 2.0 - xbet * DEG)
     sinbeta = np.sin(PI / 2.0 - xbet * DEG)
 
-    #    print "cosbeta", cosbeta
-    #    print "sinbeta", sinbeta
-
     # IOlab: vector joining O nearest point of CCD plane and I (origin of lab frame and emission source)
     IOlab = detect * np.array([0.0, cosbeta, sinbeta])
-
-    #    print "IOlab", IOlab
 
     # unitary normal vector of CCD plane
     # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
@@ -449,8 +441,6 @@ def calc_xycam(
     IMlab = uflab * np.reshape(normeIMlab, (len(normeIMlab), 1))
 
     OMlab = IMlab - IOlab
-
-    #    print "OMlab", OMlab
 
     if offset not in (None, 0, 0.0):  # offset input in millimeter
         # OO'=II'-(II'.un)un  # 1 vector
@@ -495,9 +485,6 @@ def calc_xycam(
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
 
-    #    print "xcam1", xcam1
-    #    print "ycam1", ycam1
-
     xcam = xcen + xcam1 / pixelsize
     ycam = ycen + ycam1 / (pixelsize * (1.0 + rectpix))
 
@@ -526,8 +513,7 @@ def calc_xycam_transmission(
     returnIpM=False,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    rectpix=RECTPIX,
-):
+    rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
 

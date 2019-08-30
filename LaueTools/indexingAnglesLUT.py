@@ -885,9 +885,7 @@ def getUBs_and_MatchingRate(
                 BestScores_per_centralspot[:, 2],
                 BestScores_per_centralspot[:, 0]
                 * 1.0
-                / BestScores_per_centralspot[:, 1],
-            )
-        )[::-1]
+                / BestScores_per_centralspot[:, 1]))[::-1]
 
         hall_of_fame = BestScores_per_centralspot[rank]
 

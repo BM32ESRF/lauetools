@@ -1,8 +1,26 @@
-import numpy as np
+from __future__ import absolute_import
+r"""
+DetectorCalibration.py is a GUI for microdiffraction Laue Pattern simulation to help visually
+to match and exp. and theo. Laue patterns for mainly Detector geometry Calibration purpose.
+
+This module belongs to the open source LaueTools project
+with a free code repository at at gitlab.esrf.fr
+
+(former version with python 2.7 at https://sourceforge.net/projects/lauetools/)
+
+or for python3 and 2 in
+
+https://gitlab.esrf.fr/micha/lauetools
+
+J. S. Micha August 2019
+mailto: micha --+at-+- esrf --+dot-+- fr
+"""
 import os
 import time
-import copy, sys
+import copy
+import sys
 import math
+import numpy as np
 
 import wx
 
@@ -44,7 +62,6 @@ if sys.version_info.major == 3:
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import OpenSpotsListFileGUI as OSLFGUI
 
-
 else:
 
     import dict_LaueTools as DictLT
@@ -85,7 +102,7 @@ class PlotRangePanel(wx.Panel):
         print("mainframe in PlotRangePanel", self.mainframe)
 
         openbtn = wx.Button(self, -1, "Import Spots List", (5, 5), (200, 60))
-        openbtn.Bind( wx.EVT_BUTTON, self.opendata)
+        openbtn.Bind(wx.EVT_BUTTON, self.opendata)
 
         pos5b = 75
 
@@ -252,7 +269,7 @@ class CrystalParamPanel(wx.Panel):
         vertical_shift = 7
         b1 = wx.Button(self, 1010, "Enter UB", (deltaposx, pos7d + vertical_shift), (100, 40))
         b2 = wx.Button(self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40))
-        btn_sortUBsname = wx.Button( self, 1011, "sort UBs name",
+        btn_sortUBsname = wx.Button(self, 1011, "sort UBs name",
                                     (deltaposx + 240, pos7d + vertical_shift), (120, 40))
         
         btnReloadMaterials = wx.Button( self, -1, "Reload Materials",
@@ -1032,7 +1049,7 @@ class MainCalibrationFrame(wx.Frame):
         self.nbclick_dist = 1
         self.nbclick_zone = 1
 
-        self.dirname ='.'
+        self.dirname =initialParameter["dirname"]
 
         self.recognition_possible = True
         self.toshow = []
@@ -1321,22 +1338,27 @@ class MainCalibrationFrame(wx.Frame):
 
     def ReadExperimentData(self):
         """
-        set exp. spots attributes:
+        - open self.filename (self.dirname)
+        - take into account:
+        self.CCDParam
+        self.pixelsize
+        self.kf_direction
+
+        - set exp. spots attributes:
         self.twicetheta, self.chi = chi
-        self.Data_I 
-        self.File_NAME 
+        self.Data_I
+        self.File_NAME
         self.data = (self.twicetheta, self.chi, self.Data_I, self.filename)
-        self.Data_index_expspot 
-        self.data_x, self.data_y 
+        self.Data_index_expspot
+        self.data_x, self.data_y
         """
-        # TODO clean up self.starting_param and file_peaks ...
-        # -------------------------------------- Compute data ------------
-        self.colI = 2  # for many formats
         extension = self.filename.split(".")[-1]
 
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
+        filepath = os.path.join(self.dirname, self.filename)
+
         if extension in ("dat", "DAT"):
-            self.colI = 3
+            colI = 3
             col2theta = 0
             colChi = 1
 
@@ -1345,8 +1367,8 @@ class MainCalibrationFrame(wx.Frame):
                 dataintensity,
                 data_x,
                 data_y,
-            ) = F2TC.Compute_data2thetachi(self.filename,
-                                            (col2theta, colChi, self.colI),
+            ) = F2TC.Compute_data2thetachi(filepath,
+                                            (col2theta, colChi, colI),
                                             0,
                                             param=self.CCDParam,
                                             pixelsize=self.pixelsize,
@@ -1361,7 +1383,7 @@ class MainCalibrationFrame(wx.Frame):
                 data_x,
                 data_y,
                 dataintensity,
-                _) = IOLT.readfile_cor(self.filename)
+                _) = IOLT.readfile_cor(filepath)
             twicetheta = 2 * data_theta
 
         self.twicetheta = twicetheta
@@ -3009,15 +3031,6 @@ class MainCalibrationFrame(wx.Frame):
         self.axes.set_autoscale_on(False)  # Otherwise, infinite loop
         #         self.axes.set_autoscale_on(True)
 
-        # store the current zoom limits
-        # for 2theta chi
-        # """
-        # xlim = axes.get_xlim()
-        # ylim = axes.get_ylim()
-        # """
-
-        # self.spotEnergy is updated
-
         # to have the data coordinates when pointing with the mouse
         def fromindex_to_pixelpos_x(index, pos):
             return index
@@ -3032,24 +3045,10 @@ class MainCalibrationFrame(wx.Frame):
         if self.data_theo is not None:  # only in 2theta, chi space
             # self.axes.scatter(self.data_theo[0], self.data_theo[1],s=50, marker='o',alpha=0, edgecolor='r',c='w')
 
-            # laue spot model intensity 1
-            #             # print "miller indices size varying"
-            #             # Kind of law to increase the spot size with its decreasing miller indices
-            #             # TODO: sizespot might better be related to lowest difference or ratio between H,K,L
-            #             Fsquare = np.sum(np.array(self.data_theo[2]) ** 2, axis=1)
-            #             ww = np.where(Fsquare <= 30)
-            #             sizespot = 144 * np.exp(-Fsquare * 1. / 50.)
-            #             sizespot[ww] = 77
-            #             # print "Fsquare",Fsquare
-
             # laue spot model intensity 2
             Energy = self.data_theo[5]
 
-            Polariz = (
-                1
-                - (np.sin(self.data_theo[0] * DEG) * np.sin(self.data_theo[1] * DEG))
-                ** 2
-            )
+            Polariz = (1 - (np.sin(self.data_theo[0] * DEG) * np.sin(self.data_theo[1] * DEG))** 2)
             #
             #             sizespot = 150 * np.exp(-Energy * 1. / 10.)  # * Polariz
             #             print "len(Polariz)", len(Polariz)
@@ -3060,13 +3059,8 @@ class MainCalibrationFrame(wx.Frame):
 
             #             print "Fsquare", Fsquare[:5]
 
-            sizespot = (
-                100
-                * GT.CCDintensitymodel2(Energy)
-                * Fsquare
-                * Polariz
-                * float(self.plotrangepanel.spotsizefactor.GetValue())
-            )
+            sizespot = (100 * GT.CCDintensitymodel2(Energy) * Fsquare * Polariz
+                * float(self.plotrangepanel.spotsizefactor.GetValue()))
 
             #             print "Polariz", Polariz
             #             print "Fsquare", Fsquare
@@ -3075,47 +3069,37 @@ class MainCalibrationFrame(wx.Frame):
                 # dependent of matplotlib and OS see pickyframe...
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s=sizespot, marker='o',alpha=0, edgecolor='r',c='w')  # don't work with linux and matplotlib 0.99.1
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = sizespot, marker='o',alpha=0, edgecolor='r',c='w')
-                self.axes.scatter(
-                    self.data_theo[0],
-                    self.data_theo[1],
-                    s=sizespot,
-                    marker="o",
-                    edgecolor="r",
-                    facecolor="None",
-                )
+                self.axes.scatter(self.data_theo[0],
+                                    self.data_theo[1],
+                                    s=sizespot,
+                                    marker="o",
+                                    edgecolor="r",
+                                    facecolor="None")
 
             elif self.datatype == "gnomon":
                 # compute Gnomonic projection
                 nbofspots = len(self.data_theo[0])
                 sim_dataselected = IOLT.createselecteddata(
-                    (self.data_theo[0], self.data_theo[1], np.ones(nbofspots)),
-                    np.arange(nbofspots),
-                    nbofspots,
-                )[0]
-                self.sim_gnomonx, self.sim_gnomony = IIM.ComputeGnomon_2(
-                    sim_dataselected
-                )
-                self.axes.scatter(
-                    self.sim_gnomonx,
-                    self.sim_gnomony,
-                    s=sizespot,
-                    marker="o",
-                    edgecolor="r",
-                    facecolor="None",
-                )
+                                        (self.data_theo[0], self.data_theo[1], np.ones(nbofspots)),
+                                        np.arange(nbofspots), nbofspots)[0]
+                self.sim_gnomonx, self.sim_gnomony = IIM.ComputeGnomon_2(sim_dataselected)
+                self.axes.scatter(self.sim_gnomonx,
+                                    self.sim_gnomony,
+                                    s=sizespot,
+                                    marker="o",
+                                    edgecolor="r",
+                                    facecolor="None")
 
             elif self.datatype == "pixels":
                 # dependent of matplotlib and OS see pickyframe...
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s=sizespot, marker='o',alpha=0, edgecolor='r',c='w')  # don't work with linux and matplotlib 0.99.1
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s=sizespot, marker='o',alpha=0, edgecolor='r',c='w')
-                self.axes.scatter(
-                    self.data_theo[3],
-                    self.data_theo[4],
-                    s=sizespot,
-                    marker="o",
-                    edgecolor="r",
-                    facecolor="None",
-                )
+                self.axes.scatter(self.data_theo[3],
+                                    self.data_theo[4],
+                                    s=sizespot,
+                                    marker="o",
+                                    edgecolor="r",
+                                    facecolor="None")
 
         # plot EXPERIMENTAL data ----------------------------------------
         if self.datatype == "2thetachi":
@@ -3125,12 +3109,11 @@ class MainCalibrationFrame(wx.Frame):
                 originChi = float(self.plotrangepanel.meanchi.GetValue())
 
             self.axes.scatter(
-                self.twicetheta,
-                self.chi + originChi,
-                s=self.Data_I / np.amax(self.Data_I) * 100.0,
-                c=self.Data_I / 50.0,
-                alpha=0.5,
-            )
+                                self.twicetheta,
+                                self.chi + originChi,
+                                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                                c=self.Data_I / 50.0,
+                                alpha=0.5)
 
             if self.init_plot:
                 amp2theta = float(self.plotrangepanel.range2theta.GetValue())
@@ -3162,16 +3145,13 @@ class MainCalibrationFrame(wx.Frame):
             self.data_gnomonx, self.data_gnomony = self.computeGnomonicExpData()
 
             self.axes.scatter(
-                self.data_gnomonx,
-                self.data_gnomony,
-                s=self.Data_I / np.amax(self.Data_I) * 100.0,
-                c=self.Data_I / 50.0,
-                alpha=0.5,
-            )
+                                self.data_gnomonx,
+                                self.data_gnomony,
+                                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                                c=self.Data_I / 50.0,
+                                alpha=0.5)
 
             if self.init_plot:
-                #            ylim = (-.6, .6)
-                #            xlim = (-.6, 0.6)
                 xmin = np.amin(self.data_gnomonx) - 0.1
                 xmax = np.amax(self.data_gnomonx) + 0.1
                 ymin = np.amin(self.data_gnomony) - 0.1
@@ -3185,19 +3165,18 @@ class MainCalibrationFrame(wx.Frame):
 
         elif self.datatype == "pixels":
             self.axes.scatter(
-                self.data_x,
-                self.data_y,
-                s=self.Data_I / np.amax(self.Data_I) * 100.0,
-                c=self.Data_I / 50.0,
-                alpha=0.5,
-            )
+                            self.data_x,
+                            self.data_y,
+                            s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                            c=self.Data_I / 50.0,
+                            alpha=0.5)
             if self.init_plot:
                 ylim = (-100, self.framedim[0] + 100)
                 xlim = (-100, self.framedim[1] + 100)
             self.axes.set_xlabel("X CCD")
             self.axes.set_ylabel("Y CCD")
 
-        self.axes.set_title("%s %d spots" % (self.File_NAME, len(self.twicetheta)))
+        self.axes.set_title("%s %d spots" % (os.path.split(self.File_NAME)[-1], len(self.twicetheta)))
         self.axes.grid(True)
 
         # restore the zoom limits(unless they're for an empty plot)

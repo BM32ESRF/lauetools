@@ -25,8 +25,7 @@ class CCDFileParameters(wx.Dialog):
         initialize board window
         """
         wx.Dialog.__init__(
-            self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER
-        )
+            self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER)
 
         self.parent = parent
         print("self.parent", self.parent)
@@ -38,9 +37,7 @@ class CCDFileParameters(wx.Dialog):
         txt.SetFont(font)
         txt.SetForegroundColour((255, 0, 0))
 
-        self.panel = wx.Panel(
-            self, -1, style=wx.SIMPLE_BORDER, size=(650, 440), pos=(5, 40)
-        )
+        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(650, 440), pos=(5, 40))
 
         dict_CCD = DictLT.dict_CCD
         self.allCCD_names = list(dict_CCD.keys())
