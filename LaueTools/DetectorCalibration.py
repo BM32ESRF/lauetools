@@ -21,10 +21,8 @@ else:
 from matplotlib.ticker import FuncFormatter
 
 from matplotlib import __version__ as matplotlibversion
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar,
-)
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                NavigationToolbar2WxAgg as NavigationToolbar)
 
 from matplotlib.figure import Figure
 
@@ -44,6 +42,8 @@ if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import DetectorParameters as DP
     from . ResultsIndexationGUI import RecognitionResultCheckBox
+    from . import OpenSpotsListFileGUI as OSLFGUI
+
 
 else:
 
@@ -62,6 +62,8 @@ else:
     import CrystalParameters as CP
     import DetectorParameters as DP
     from ResultsIndexationGUI import RecognitionResultCheckBox
+    import OpenSpotsListFileGUI as OSLFGUI
+
 
 DEG = DictLT.DEG
 PI = DictLT.PI
@@ -72,17 +74,20 @@ class PlotRangePanel(wx.Panel):
     """
     class for panel dealing with plot range and kf_direction
     """
-
     def __init__(self, parent):
         """
         """
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.mainframe = parent.GetParent().GetParent()
+        self.mainframeparent = parent.GetParent().GetParent().GetParent()
 
         print("mainframe in PlotRangePanel", self.mainframe)
 
-        pos5b = 5
+        openbtn = wx.Button(self, -1, "Import Spots List", (5, 5), (200, 60))
+        openbtn.Bind( wx.EVT_BUTTON, self.opendata)
+
+        pos5b = 75
 
         t1 = wx.StaticText(self, -1, "2theta Range:", (2, pos5b))
         t2 = wx.StaticText(self, -1, "Chi Range:", (2, pos5b + 30))
@@ -100,15 +105,14 @@ class PlotRangePanel(wx.Panel):
         self.rangechi.Bind(wx.EVT_TEXT, self.set_init_plot_True)
 
         self.shiftChiOrigin = wx.CheckBox(
-            self, -1, "Shift Chi origin of Exp. Data", (2, pos5b + 60)
-        )
+            self, -1, "Shift Chi origin of Exp. Data", (2, pos5b + 60))
         self.shiftChiOrigin.SetValue(False)
 
-        t5 = wx.StaticText(self, -1, "SpotSize", (2, 90))
-        self.spotsizefactor = wx.TextCtrl(self, -1, "1.", (200, 90))
+        t5 = wx.StaticText(self, -1, "SpotSize", (2, pos5b+90))
+        self.spotsizefactor = wx.TextCtrl(self, -1, "1.", (200, pos5b+90))
 
         # Warning button id is 52
-        b3 = wx.Button(self, 52, "Update Plot", (5, 140), (200, 60))
+        b3 = wx.Button(self, 52, "Update Plot", (5, pos5b+130), (200, 60))
 
         # tooltips
         tp1 = "raw central value (deg) of 2theta on CCD camera (kf scattered vector is defined by 2theta and chi)"
@@ -133,14 +137,42 @@ class PlotRangePanel(wx.Panel):
         self.rangechi.SetToolTipString(tp4)
 
         self.shiftChiOrigin.SetToolTipString(
-            "Check to shift the chi angles of experimental spots by the central chi value"
-        )
+            "Check to shift the chi angles of experimental spots by the central chi value")
 
         b3.SetToolTipString(tpb3)
 
     def set_init_plot_True(self, _):
         print("reset init_plot to True")
         self.mainframe.init_plot = True
+
+    def opendata(self, evt):
+        """import list of spots
+        """
+        OSLFGUI.OnOpenPeakList(self.mainframe)
+
+        selectedFile = self.mainframe.DataPlot_filename
+
+        print("Selected file ", selectedFile)
+
+        # prefix_filename, extension_filename = self.DataPlot_filename.split('.')
+        prefix_filename = selectedFile.rsplit(".", 1)[0]
+
+        # get PeakListDatFileName
+        # cor file have been created from .dat
+        if prefix_filename.startswith("dat_"):
+            CalibrationFile = prefix_filename[4:] + ".dat"
+        else:
+            CalibrationFile = selectedFile
+
+        print("Calibrating with file: %s" % CalibrationFile)
+
+        self.mainframe.filename = CalibrationFile
+
+        self.mainframe.CCDParam = self.mainframe.defaultParam
+        self.mainframe.ccdparampanel.pixelsize_txtctrl.SetValue(str(self.mainframe.pixelsize))
+        self.mainframe.ccdparampanel.detectordiameter_txtctrl.SetValue(str(self.mainframe.detectordiameter))
+
+        self.mainframe.update_data(evt)
 
 
 class CrystalParamPanel(wx.Panel):
@@ -163,71 +195,63 @@ class CrystalParamPanel(wx.Panel):
         deltaposx = 2
         t1 = wx.StaticText(self, -1, "Energy min/max(keV): ", (deltaposx, pos6 - 5))
         self.eminC = wx.SpinCtrl(
-            self, -1, "5", (150 + deltaposx, pos6 - 5), (60, -1), min=5, max=149
-        )
+            self, -1, "5", (150 + deltaposx, pos6 - 5), (60, -1), min=5, max=149)
         self.emaxC = wx.SpinCtrl(
-            self, -1, "22", (180 + deltaposx + 50, pos6 - 5), (60, -1), min=6, max=150
-        )
+            self, -1, "22", (180 + deltaposx + 50, pos6 - 5), (60, -1), min=6, max=150)
 
         pos7 = pos6 + 60
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
         t2 = wx.StaticText(self, -1, "Element", (deltaposx, pos7 - 30))
         self.comboElem = wx.ComboBox(
-            self,
-            -1,
-            "Si",
-            (150 + deltaposx, pos7 - 30),
-            choices=self.listsorted_materials,
-            style=wx.CB_READONLY,
-        )
+                                        self,
+                                        -1,
+                                        "Si",
+                                        (150 + deltaposx, pos7 - 30),
+                                        choices=self.listsorted_materials,
+                                        style=wx.CB_READONLY,
+                                    )
 
         t3 = wx.StaticText(
             self, -1, "Tmatrix", (deltaposx, pos7)
         )  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
         self.comboBmatrix = wx.ComboBox(
-            self,
-            2424,
-            "Identity",
-            (150 + deltaposx, pos7),
-            choices=sorted(DictLT.dict_Transforms.keys()),
-            style=wx.CB_READONLY,
-        )
+                                            self,
+                                            2424,
+                                            "Identity",
+                                            (150 + deltaposx, pos7),
+                                            choices=sorted(DictLT.dict_Transforms.keys()),
+                                            style=wx.CB_READONLY,
+                                        )
 
         pos7b = pos7 + 30
         t4 = wx.StaticText(self, -1, "Orient Matrix (UB)", (deltaposx, pos7b))
         self.comboMatrix = wx.ComboBox(
-            self,
-            2525,
-            "Identity",
-            (150 + deltaposx, pos7b),
-            choices=list(DictLT.dict_Rot.keys()),
-        )
+                                        self,
+                                        2525,
+                                        "Identity",
+                                        (150 + deltaposx, pos7b),
+                                        choices=list(DictLT.dict_Rot.keys()),
+                                    )
 
-        self.btn_mergeUB = wx.Button(
-            self, -1, "set UB with B", (deltaposx + 400, pos7b)
-        )
+        self.btn_mergeUB = wx.Button(self, -1, "set UB with B", (deltaposx + 400, pos7b))
 
         pos7c = pos7 + 65
         t5 = wx.StaticText(self, -1, "Extinctions", (deltaposx, pos7c))
         self.comboExtinctions = wx.ComboBox(
-            self,
-            -1,
-            "Diamond",
-            (150 + deltaposx, pos7c),
-            choices=list(DictLT.dict_Extinc.keys()),
-        )
+                                            self,
+                                            -1,
+                                            "Diamond",
+                                            (150 + deltaposx, pos7c),
+                                            choices=list(DictLT.dict_Extinc.keys()),
+                                        )
 
         self.comboExtinctions.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeExtinc)
         #         self.comboTransforms.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeTransforms)
 
         pos7d = pos7 + 100
         vertical_shift = 7
-        b1 = wx.Button(
-            self, 1010, "Enter UB", (deltaposx, pos7d + vertical_shift), (100, 40)
-        )
-        b2 = wx.Button(
-            self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40)
-        )
+        b1 = wx.Button(self, 1010, "Enter UB", (deltaposx, pos7d + vertical_shift), (100, 40))
+        b2 = wx.Button(self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40))
         btn_sortUBsname = wx.Button( self, 1011, "sort UBs name",
                                     (deltaposx + 240, pos7d + vertical_shift), (120, 40))
         
@@ -242,7 +266,7 @@ class CrystalParamPanel(wx.Panel):
         self.eminC.Bind(wx.EVT_SPINCTRL, self.mainframe.OnCheckEminValue)
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeElement)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeBMatrix, id=2424)
-        self.btn_mergeUB.Bind( wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix )
+        self.btn_mergeUB.Bind( wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeMatrix, id=2525)
         self.Bind(wx.EVT_BUTTON, self.mainframe.EnterMatrix, id=1010)
         btn_sortUBsname.Bind(wx.EVT_BUTTON, self.onSortUBsname)
@@ -320,20 +344,20 @@ class CrystalParamPanel(wx.Panel):
         self.comboMatrix.Clear()
         self.comboMatrix.AppendItems(listrot)
 
-    def OnLoadMaterials(self,_):
+    def OnLoadMaterials(self, _):
         # self.mainframe.GetParent().OnLoadMaterials(1)
         # loadedmaterials = self.mainframe.GetParent().dict_Materials
 
         wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
         _dir = os.getcwd()
         open_dlg = wx.FileDialog(
-            self,
-            message="Choose a file",
-            defaultDir=_dir,
-            defaultFile="",
-            wildcard=wcd,
-            style=wx.OPEN
-        )
+                                self,
+                                message="Choose a file",
+                                defaultDir=_dir,
+                                defaultFile="",
+                                wildcard=wcd,
+                                style=wx.OPEN
+                            )
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
 
@@ -428,7 +452,6 @@ class DetectorParametersDisplayPanel(wx.Panel):
     """
     class panel to display and modify CCD parameters
     """
-
     def __init__(self, parent):
         """
         """
@@ -462,20 +485,15 @@ class DetectorParametersDisplayPanel(wx.Panel):
         currenttxt = wx.StaticText(self, -1, "Current&Set Value")
 
         # values resulting from model refinement
-        self.act_distance_r = wx.TextCtrl(
-            self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
+        self.act_distance_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
         )
-        self.act_Xcen_r = wx.TextCtrl(
-            self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
+        self.act_Xcen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
         )
-        self.act_Ycen_r = wx.TextCtrl(
-            self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
+        self.act_Ycen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
         )
-        self.act_Ang1_r = wx.TextCtrl(
-            self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
+        self.act_Ang1_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
         )
-        self.act_Ang2_r = wx.TextCtrl(
-            self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
+        self.act_Ang2_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
         )
 
         if WXPYTHON4:
@@ -488,36 +506,30 @@ class DetectorParametersDisplayPanel(wx.Panel):
             grid.Add(wx.StaticText(self, -1, txt), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
 
         grid.Add(currenttxt)
-        for txtctrl in [
-            self.act_distance,
-            self.act_Xcen,
-            self.act_Ycen,
-            self.act_Ang1,
-            self.act_Ang2,
-        ]:
+        for txtctrl in [self.act_distance,
+                        self.act_Xcen,
+                        self.act_Ycen,
+                        self.act_Ang1,
+                        self.act_Ang2]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Current and Set new value (press enter)")
             txtctrl.SetSize(sizetxtctrl)
 
         grid.Add(resultstxt)
-        for txtctrl in [
-            self.act_distance_r,
-            self.act_Xcen_r,
-            self.act_Ycen_r,
-            self.act_Ang1_r,
-            self.act_Ang2_r,
-        ]:
+        for txtctrl in [self.act_distance_r,
+                        self.act_Xcen_r,
+                        self.act_Ycen_r,
+                        self.act_Ang1_r,
+                        self.act_Ang2_r]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Fit result value")
 
         self.SetSizer(grid)
 
         # tooltips
-        resultstxt.SetToolTipString(
-            "CCD detector plane parameters resulting from the best refined model"
+        resultstxt.SetToolTipString("CCD detector plane parameters resulting from the best refined model"
         )
-        currenttxt.SetToolTipString(
-            'Current CCD detector plane parameters. New parameters value can be entered in the corresponding field and accepted by pressing the "Accept" button'
+        currenttxt.SetToolTipString('Current CCD detector plane parameters. New parameters value can be entered in the corresponding field and accepted by pressing the "Accept" button'
         )
 
 
@@ -525,7 +537,6 @@ class MoveCCDandXtal(wx.Panel):
     """
     class panel to move CCD camera and crystal
     """
-
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         """
@@ -619,25 +630,23 @@ class MoveCCDandXtal(wx.Panel):
         self.stepanglerot = wx.TextCtrl(self, -1, "10.", (posx + 100, 210), (35, -1))
 
         self.listofparamfitctrl = [
-            self.cb_dd,
-            self.cb_Xcen,
-            self.cb_Ycen,
-            self.cb_angle1,
-            self.cb_angle2,  # detector param
-            self.cb_theta1,
-            self.cb_theta2,
-            self.cb_theta3,
-        ]  # delta angle of orientation
+                                    self.cb_dd,
+                                    self.cb_Xcen,
+                                    self.cb_Ycen,
+                                    self.cb_angle1,
+                                    self.cb_angle2,  # detector param
+                                    self.cb_theta1,
+                                    self.cb_theta2,
+                                    self.cb_theta3,
+                                ]  # delta angle of orientation
 
         # tooltips
         a3.SetToolTipString("Angle 3: angle around z axis")
-        a2.SetToolTipString(
-            "Angle 2: angle around y axis (horizontal and perp. to incoming beam)"
+        a2.SetToolTipString("Angle 2: angle around y axis (horizontal and perp. to incoming beam)"
         )
         a1.SetToolTipString("Angle 1: angle around x axis (// incoming beam")
 
-        rottip = (
-            "Rotate crystal such as rotating the Laue Pattern around a selected axis.\n"
+        rottip = ("Rotate crystal such as rotating the Laue Pattern around a selected axis.\n"
         )
         rottip += 'Click on a point in plot to select an invariant Laue spot by rotation. Then press "+" or "-" keys to rotation the pattern.\n'
         rottip += "Step angle can be adjusted (default 10 degrees).\n"
@@ -675,9 +684,7 @@ class StrainXtal(wx.Panel):
         # print("self.mainframe in CCDParamPanel", self.mainframe)
 
         self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
-        self.key_material_initparams_in_dict = copy.copy(
-            DictLT.dict_Materials[self.key_material]
-        )
+        self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
         self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material][1])
 
         if WXPYTHON4:
@@ -976,21 +983,15 @@ class MainCalibrationFrame(wx.Frame):
     """
     Class to display calibration tools on data
     """
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        initialParameter,
-        file_peaks="Cu_near_28May08_0259.peaks",
-        starting_param=[71, 1039.42, 1095, 0.0085, -0.981],
-        pixelsize=165.0 / 2048,
-        datatype="2thetachi",
-        dim=(2048, 2048),  # for MARCCD 165,
-        kf_direction="Z>0",
-        fliprot="no",
-        data_added=None,
-    ):
+    def __init__(self, parent, _id, title, initialParameter,
+                file_peaks="Cu_near_28May08_0259.peaks",
+                starting_param=[71, 1039.42, 1095, 0.0085, -0.981],
+                pixelsize=165.0 / 2048,
+                datatype="2thetachi",
+                dim=(2048, 2048),  # for MARCCD 165,
+                kf_direction="Z>0",
+                fliprot="no",
+                data_added=None):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1200, 830))
 
@@ -999,11 +1000,18 @@ class MainCalibrationFrame(wx.Frame):
         self.initialParameter = initialParameter
 
         self.starting_param = starting_param
+        # 5 parameters defining Detector Plane and frame
         self.CCDParam = self.initialParameter["CCDParam"]
+        # to interact with LaueToolsGUI
+        self.defaultParam = self.CCDParam
         self.detectordiameter = self.initialParameter["detectordiameter"]
         self.CCDLabel = self.initialParameter["CCDLabel"]
         self.kf_direction = kf_direction
+        self.kf_direction_from_file = kf_direction
         self.filename = file_peaks
+        # to interact with LaueToolsGUI
+        self.DataPlot_filename = self.filename
+
         self.pixelsize = pixelsize
         self.framedim = dim
         self.fliprot = fliprot
@@ -1023,6 +1031,8 @@ class MainCalibrationFrame(wx.Frame):
         self.nbsuccess = 0
         self.nbclick_dist = 1
         self.nbclick_zone = 1
+
+        self.dirname ='.'
 
         self.recognition_possible = True
         self.toshow = []
@@ -1102,40 +1112,26 @@ class MainCalibrationFrame(wx.Frame):
 
         self.cidpress = self.fig.canvas.mpl_connect("button_press_event", self.onClick)
         self.fig.canvas.mpl_connect("key_press_event", self.onKeyPressed)
-        self.cidrelease = self.fig.canvas.mpl_connect(
-            "button_release_event", self.onRelease
-        )
-        self.cidmotion = self.fig.canvas.mpl_connect(
-            "motion_notify_event", self.onMotion
-        )
+        self.cidrelease = self.fig.canvas.mpl_connect("button_release_event", self.onRelease)
+        self.cidmotion = self.fig.canvas.mpl_connect("motion_notify_event", self.onMotion)
 
         self.Bind(wx.EVT_BUTTON, self.OnStoreMatrix, id=1011)  # in crytalparampanel
 
-        self.btnsavecalib = wx.Button(
-            self.panel, 1012, "Save Calib", (1050, 600), (100, 40)
-        )  # calibration parameters + orientation UBmatrix
+        self.btnsavecalib = wx.Button(self.panel, 1012, "Save Calib", (1050, 600), (100, 40))# calibration parameters + orientation UBmatrix
         self.Bind(wx.EVT_BUTTON, self.OnSaveCalib, id=1012)
 
-        self.btnsaveresults = wx.Button(
-            self.panel, 1013, "Save Results", (1050, 700), (100, 40)
-        )  # produces file with results
+        self.btnsaveresults = wx.Button(self.panel, 1013, "Save Results", (1050, 700), (100, 40))  # produces file with results
         self.Bind(wx.EVT_BUTTON, self.OnWriteResults, id=1013)
 
-        self.startfit = wx.Button(
-            self.panel, 505, "Start FIT", size=(150, 60)
-        )  # (950, 200), )
+        self.startfit = wx.Button(self.panel, 505, "Start FIT", size=(150, 60))  # (950, 200), )
         self.Bind(wx.EVT_BUTTON, self.StartFit, id=505)
 
-        self.cb_gotoresults = wx.CheckBox(
-            self.panel, -1, "GOTO fit results"
-        )  # , (970, 280))
+        self.cb_gotoresults = wx.CheckBox(self.panel, -1, "GOTO fit results")  # , (970, 280))
         self.use_weights = wx.CheckBox(self.panel, -1, "use weights")  # , (970, 310))
         self.use_weights.SetValue(False)
         self.cb_gotoresults.SetValue(True)
 
-        self.undogotobtn = wx.Button(
-            self.panel, -1, "Undo\nlast\nGOTO", size=(80, 60)
-        )  # ,(950, 200), )
+        self.undogotobtn = wx.Button(self.panel, -1, "Undo\nlast\nGOTO", size=(80, 60))  # ,(950, 200), )
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
         # replot simul button (one button in two panels)
@@ -1174,16 +1170,10 @@ class MainCalibrationFrame(wx.Frame):
         self.btnswitchspace = wx.Button(self.panel, 102, "Switch Space", size=(150, 40))
         self.Bind(wx.EVT_BUTTON, self.OnSwitchPlot, id=102)
 
-        self.btn_label_theospot = wx.ToggleButton(
-            self.panel, 104, "Label Exp. spot", size=(150, 40)
-        )
-        self.btn_label_expspot = wx.ToggleButton(
-            self.panel, 106, "Label Simul. spot", size=(150, 40)
-        )
+        self.btn_label_theospot = wx.ToggleButton(self.panel, 104, "Label Exp. spot", size=(150, 40))
+        self.btn_label_expspot = wx.ToggleButton(self.panel, 106, "Label Simul. spot", size=(150, 40))
 
-        self.resetAnnotationBtn = wx.Button(
-            self.panel, -1, "Reset Labels", size=(100, 40)
-        )
+        self.resetAnnotationBtn = wx.Button(self.panel, -1, "Reset Labels", size=(100, 40))
         self.resetAnnotationBtn.Bind(wx.EVT_BUTTON, self.OnResetAnnotations)
 
         self.defaultColor = self.GetBackgroundColour()
@@ -1201,9 +1191,7 @@ class MainCalibrationFrame(wx.Frame):
         self.act_residues = wx.TextCtrl(self.panel, -1, "", style=wx.TE_READONLY)
         self.nbspots_in_fit = wx.TextCtrl(self.panel, -1, "", style=wx.TE_READONLY)
 
-        self.incrementfile = wx.CheckBox(
-            self.panel, -1, "increment saved filenameindex"
-        )
+        self.incrementfile = wx.CheckBox(self.panel, -1, "increment saved filenameindex")
 
         self.layout()
 
@@ -1213,45 +1201,33 @@ class MainCalibrationFrame(wx.Frame):
 
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
-        self.moveccdandxtal.SetToolTipString(
-            "Change manually and fit (by checking corresponding boxes) the 5 CCD parameters and rotate the crystal around 3 elementary angles"
-        )
+        self.moveccdandxtal.SetToolTipString("Change manually and fit (by checking corresponding "
+                                        "boxes) the 5 CCD parameters and rotate the crystal "
+                                        "around 3 elementary angles")
         self.crystalparampanel.SetToolTipString(
-            "set crystal parameters for laue spots simulation"
-        )
+            "set crystal parameters for laue spots simulation")
         self.ccdparampanel.SetToolTipString("Set new CCD camera parameters")
 
-        self.btnmanuallinks.SetToolTipString(
-            "Build manually a list of associations or links between close simulated and experimental spots"
-        )
-        self.btnautolinks.SetToolTipString(
-            'Build automatically a list of associations or links between close simulated and experimental spots within "Angle Tolerance"'
-        )
+        self.btnmanuallinks.SetToolTipString("Build manually a list of associations or links "
+                                                "between close simulated and experimental spots")
+        self.btnautolinks.SetToolTipString("Build automatically a list of associations or links "
+                                        "between close simulated and experimental spots "
+                                        "within 'Angle Tolerance'")
 
         tp1 = "Maximum separation angle (degree) to associate (link) automatically pair of spots (exp. and theo)"
         self.txtangletolerance.SetToolTipString(tp1)
         self.AngleMatchingTolerance.SetToolTipString(tp1)
 
-        self.btnshowlinks.SetToolTipString(
-            'Browse and filter links resulting from "Auto. Links"'
-        )
+        self.btnshowlinks.SetToolTipString('Browse and filter links resulting from "Auto. Links"')
 
-        self.btnswitchspace.SetToolTipString(
-            "switch between different spots coordinates: 2theta,chi ; Gnomonic projection coordinates ; X,Y pixel position on Camera"
-        )
-        self.btn_label_theospot.SetToolTipString(
-            "Display on plot data related to selected (by clicking) experimental spot: index, intensity"
-        )
-        self.btn_label_expspot.SetToolTipString(
-            "Display on plot data related to selected (by clicking) theoretical (simulated) spot: #index, hkl miller indices, Energy"
-        )
-        self.resetAnnotationBtn.SetToolTipString(
-            "Reset exp or theo. spot displayed labels on plot"
-        )
+        self.btnswitchspace.SetToolTipString("switch between different spots coordinates: "
+                    "2theta,chi ; Gnomonic projection coordinates ; X,Y pixel position on Camera")
+        self.btn_label_theospot.SetToolTipString("Display on plot data related to selected (by clicking) experimental spot: index, intensity")
+        self.btn_label_expspot.SetToolTipString("Display on plot data related to selected "
+                    "(by clicking) theoretical (simulated) spot: #index, hkl miller indices, Energy")
+        self.resetAnnotationBtn.SetToolTipString("Reset exp or theo. spot displayed labels on plot")
 
-        self.parametersdisplaypanel.SetToolTipString(
-            "View or modifiy current CCD detector plane parameters"
-        )
+        self.parametersdisplaypanel.SetToolTipString("View or modifiy current CCD detector plane parameters")
 
         tpresidues = "Mean residues in pixel over distances between exp. and best refined model spots positions"
         self.txtresidues.SetToolTipString(tpresidues)
@@ -1261,12 +1237,10 @@ class MainCalibrationFrame(wx.Frame):
         self.txtnbspots.SetToolTipString(tpnb)
         self.nbspots_in_fit.SetToolTipString(tpnb)
 
-        self.btnsavecalib.SetToolTipString(
-            "Save .det file containing current CCD parameters and current crystal orientation"
-        )
-        self.btnsaveresults.SetToolTipString(
-            "Save .fit file containing indexed spots used to refine the CCD detector plane and pixel frame parameters."
-        )
+        self.btnsavecalib.SetToolTipString("Save .det file containing current CCD parameters and "
+                            "current crystal orientation")
+        self.btnsaveresults.SetToolTipString("Save .fit file containing indexed spots used to "
+                                "refine the CCD detector plane and pixel frame parameters.")
 
         tpfit = "Start fitting procedure to refine checked parameters related to crystal orientation and CCD detector plane.\n"
         tpfit += "The model predicts the positions of theoretical spots (red hollow circle).\n"
@@ -1275,16 +1249,10 @@ class MainCalibrationFrame(wx.Frame):
 
         self.startfit.SetToolTipString(tpfit)
 
-        self.cb_gotoresults.SetToolTipString(
-            "Update CCD parameters and crystal orientation according to the fit results"
-        )
-        self.use_weights.SetToolTipString(
-            "Refine the model by Weighting each separation distance between exp. and modeled spots positions by experimental intensity"
-        )
+        self.cb_gotoresults.SetToolTipString("Update CCD parameters and crystal orientation according to the fit results")
+        self.use_weights.SetToolTipString("Refine the model by Weighting each separation distance between exp. and modeled spots positions by experimental intensity")
 
-        self.incrementfile.SetToolTipString(
-            "If Checked, increment filename avoiding overwritten file"
-        )
+        self.incrementfile.SetToolTipString("If Checked, increment filename avoiding overwritten file")
 
     def layout(self):
         # LAYOUT
@@ -1334,7 +1302,8 @@ class MainCalibrationFrame(wx.Frame):
         self.vbox2.Add(hboxlabel, 0, wx.ALL, 0)
         self.vbox2.Add(self.nb, 0, wx.EXPAND, 0)
         self.vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
-        self.vbox2.Add(wx.StaticLine(self.panel, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        self.vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1,10), style=wx.LI_HORIZONTAL),
+                                                                0, wx.EXPAND|wx.ALL, 5)
         self.vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
         self.vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 
@@ -1371,36 +1340,28 @@ class MainCalibrationFrame(wx.Frame):
             col2theta = 0
             colChi = 1
 
-            (
-                twicetheta,
+            (twicetheta,
                 chi,
                 dataintensity,
                 data_x,
                 data_y,
-            ) = F2TC.Compute_data2thetachi(
-                self.filename,
-                (col2theta, colChi, self.colI),
-                0,
-                param=self.CCDParam,
-                pixelsize=self.pixelsize,
-                signgam=DictLT.SIGN_OF_GAMMA,
-                kf_direction=self.kf_direction,
-            )
+            ) = F2TC.Compute_data2thetachi(self.filename,
+                                            (col2theta, colChi, self.colI),
+                                            0,
+                                            param=self.CCDParam,
+                                            pixelsize=self.pixelsize,
+                                            signgam=DictLT.SIGN_OF_GAMMA,
+                                            kf_direction=self.kf_direction)
 
-        #             print "Exp : k x, y 2theta, theta, chi "
-        #             for k in range(len(data_x)):
-        #                 print k, data_x[k], data_y[k], twicetheta[k], twicetheta[k] / 2., chi[k]
 
         elif extension in ("cor",):
-            (
-                _,
+            (_,
                 data_theta,
                 chi,
                 data_x,
                 data_y,
                 dataintensity,
-                _,
-            ) = IOLT.readfile_cor(self.filename)
+                _) = IOLT.readfile_cor(self.filename)
             twicetheta = 2 * data_theta
 
         self.twicetheta = twicetheta
@@ -1426,10 +1387,9 @@ class MainCalibrationFrame(wx.Frame):
             originChi = float(self.plotrangepanel.meanchi.GetValue())
 
         dataselected = IOLT.createselecteddata(
-            (twicetheta, chi + originChi, dataintensity),
-            np.arange(nbexpspots),
-            nbexpspots,
-        )[0]
+                                            (twicetheta, chi + originChi, dataintensity),
+                                            np.arange(nbexpspots),
+                                            nbexpspots)[0]
 
         return IIM.ComputeGnomon_2(dataselected)
 
@@ -1440,8 +1400,7 @@ class MainCalibrationFrame(wx.Frame):
         dlg = wx.TextEntryDialog(
             self,
             "Enter Calibration File name : \n Current Detector parameters are: \n %s\n Pixelsize and dimensions : %s"
-            % (
-                str(self.CCDParam),
+            % (str(self.CCDParam),
                 str([self.pixelsize, self.framedim[0], self.framedim[1]]),
             ),
             "Saving Calibration Parameters Entry",
@@ -1451,22 +1410,21 @@ class MainCalibrationFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             self.filenameCalib = str(dlg.GetValue())
             m11, m12, m13, m21, m22, m23, m31, m32, m33 = np.ravel(self.UBmatrix).round(
-                decimals=7
-            )
+                decimals=7)
 
             dd, xcen, ycen, xbet, xgam = self.CCDParam
 
             outputfile = open(self.filenameCalib, "w")
             text = "%.3f, %.2f, %.2f, %.3f, %.3f, %.5f, %.0f, %.0f\n" % (
-                round(dd, 3),
-                round(xcen, 2),
-                round(ycen, 2),
-                round(xbet, 3),
-                round(xgam, 3),
-                self.pixelsize,
-                round(self.framedim[0], 0),
-                round(self.framedim[1], 0),
-            )
+                                                                round(dd, 3),
+                                                                round(xcen, 2),
+                                                                round(ycen, 2),
+                                                                round(xbet, 3),
+                                                                round(xgam, 3),
+                                                                self.pixelsize,
+                                                                round(self.framedim[0], 0),
+                                                                round(self.framedim[1], 0),
+                                                            )
             text += "Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2\n"
             text += "Calibration done with %s at %s with LaueToolsGUI.py\n" % (
                 self.crystalparampanel.comboElem.GetValue(),
@@ -1522,10 +1480,10 @@ class MainCalibrationFrame(wx.Frame):
 
             # update main GUI CCD geomtrical parameters
             # print("self.parent", self.parent)
-
-            self.parent.defaultParam = self.CCDParam
-            self.parent.pixelsize = self.pixelsize
-            self.parent.kf_direction = self.kf_direction
+            if self.parent:
+                self.parent.defaultParam = self.CCDParam
+                self.parent.pixelsize = self.pixelsize
+                self.parent.kf_direction = self.kf_direction
 
     def OnStoreMatrix(self, _):
         """
@@ -1533,11 +1491,11 @@ class MainCalibrationFrame(wx.Frame):
         """
 
         tf = TextFrame(
-            self,
-            -1,
-            self.getstringrep(self.crystalparampanel.UBmatrix),
-            self.storedmatrixindex,
-        )
+                        self,
+                        -1,
+                        self.getstringrep(self.crystalparampanel.UBmatrix),
+                        self.storedmatrixindex,
+                    )
         tf.Show(True)
         self.storedmatrixindex += 1
         return
@@ -1610,40 +1568,30 @@ class MainCalibrationFrame(wx.Frame):
     def OnLinkSpotsAutomatic(self, _):
         """ create automatically links between currently close experimental
         and theoretical spots in 2theta chi representation
+
+        .. todo::
+            use getProximity() ??
         """
         veryclose_angletol = float(self.AngleMatchingTolerance.GetValue())  # in degrees
 
         # theoretical data
-        twicetheta, chi, Miller_ind, posx, posy, _ = self.simulate_theo(
-            removeharmonics=1
-        )
+        twicetheta, chi, Miller_ind, posx, posy, _ = self.simulate_theo(removeharmonics=1)
         # experimental data (set exp. spots attributes)
         self.ReadExperimentData()
 
         print("theo. spots")
         print("k, x, y, 2theta, theta, chi hkl")
         for k in range(len(twicetheta)):
-            print(
-                k,
-                posx[k],
-                posy[k],
-                twicetheta[k],
-                twicetheta[k] / 2,
-                chi[k],
-                Miller_ind[k],
-            )
+            print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
         Resi, ProxTable = matchingrate.getProximity(
-            np.array([twicetheta, chi]),  # warning array(2theta, chi)
-            self.twicetheta / 2.0,
-            self.chi,  # warning theta, chi for exp
-            proxtable=1,
-            angtol=5.0,
-            verbose=0,
-            signchi=1,
-        )[
-            :2
-        ]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+                                        np.array([twicetheta, chi]),  # warning array(2theta, chi)
+                                        self.twicetheta / 2.0,
+                                        self.chi,  # warning theta, chi for exp
+                                        proxtable=1,
+                                        angtol=5.0,
+                                        verbose=0,
+                                        signchi=1)[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
 
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
@@ -1718,9 +1666,7 @@ class MainCalibrationFrame(wx.Frame):
                 # print "closest",closest
                 # print "where_exp_ind[closest]",where_th_ind[closest]
                 # print "Resi[where_th_ind[closest]]", Resi[where_th_ind[closest]]
-                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[
-                    where_th_ind[closest]
-                ]
+                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[where_th_ind[closest]]
 
         # ------------------------------------------------------------------
         # print "ProxTable after duplicate removal tagging"
@@ -1744,26 +1690,20 @@ class MainCalibrationFrame(wx.Frame):
 
                 if len(theo_index) == 1:
                     # fill with expindex,[h,k,l]
-                    calib_indexed_spots[exp_index] = [
-                        exp_index,
-                        theo_index,
-                        Miller_Exp_spot[k],
-                    ]
+                    calib_indexed_spots[exp_index] = [exp_index,
+                                                    theo_index,
+                                                    Miller_Exp_spot[k]]
                 else:  # recent PATCH:
                     print("Resi[theo_index]", Resi[theo_index])
                     closest_theo_ind = np.argmin(Resi[theo_index])
                     # print theo_index[closest_theo_ind]
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
-                        calib_indexed_spots[exp_index] = [
-                            exp_index,
-                            theo_index[closest_theo_ind],
-                            Miller_Exp_spot[k],
-                        ]
+                        calib_indexed_spots[exp_index] = [exp_index,
+                                                        theo_index[closest_theo_ind],
+                                                        Miller_Exp_spot[k]]
             else:
-                print(
-                    "Experimental spot #%d may belong to several theo. spots!"
-                    % exp_index
-                )
+                print("Experimental spot #%d may belong to several theo. spots!"
+                    % exp_index)
 
         # find theo spot linked to exp spot ---------------------------------
 
@@ -1777,12 +1717,8 @@ class MainCalibrationFrame(wx.Frame):
         linkResidues = []
         for val in list(calib_indexed_spots.values()):
             if val[2] is not None:
-                listofpairs.append(
-                    [val[0], val[1]]
-                )  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-                linkExpMiller.append(
-                    [float(val[0])] + [float(elem) for elem in val[2]]
-                )  # float(val) for further handling as floats array
+                listofpairs.append([val[0], val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+                linkExpMiller.append([float(val[0])] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(self.Data_I[val[0]])
                 linkResidues.append([val[0], val[1], Resi[val[1]]])
 
@@ -1799,14 +1735,9 @@ class MainCalibrationFrame(wx.Frame):
         """
         print("self.linkExpMiller", self.linkExpMiller)
 
-        dia = SLE.LinkEditor(
-            None,
-            -1,
-            "Link between spots Editor",
-            self.linkExpMiller,
-            self.Miller_ind,
-            intensitylist=self.Data_I,
-        )
+        dia = SLE.LinkEditor(None, -1, "Link between spots Editor", self.linkExpMiller,
+                                                                    self.Miller_ind,
+                                                                    intensitylist=self.Data_I)
 
         dia.Show(True)
         #         dia.Destroy()
@@ -1902,7 +1833,7 @@ class MainCalibrationFrame(wx.Frame):
                 varyingparameters.append(k)
                 init_values.append(allparameters[k])
 
-        if len(varyingparameters) == 0:
+        if not bool(varyingparameters):
             wx.MessageBox("You need to select at least one parameter to fit!!", "INFO")
             return
 
@@ -2320,10 +2251,11 @@ class MainCalibrationFrame(wx.Frame):
 
         wx.MessageBox("Fit results saved in %s" % fullname, "INFO")
 
-        # update main GUI CCD geomtrical parameters
-        self.parent.defaultParam = self.CCDParam
-        self.parent.pixelsize = self.pixelsize
-        self.parent.kf_direction = self.kf_direction
+        if self.parent:
+            # update main GUI CCD geometrical parameters
+            self.parent.defaultParam = self.CCDParam
+            self.parent.pixelsize = self.pixelsize
+            self.parent.kf_direction = self.kf_direction
 
     def show_alltogglestate(self, flag):
         if flag:
@@ -3683,20 +3615,16 @@ class MainCalibrationFrame(wx.Frame):
                     # -----------------------------------------------------------------------------
 
                     # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
-                    spots2pi = LAUE.getLaueSpots(
-                        DictLT.CST_ENERGYKEV / emax,
-                        DictLT.CST_ENERGYKEV / emin,
-                        [grain],
-                        [[""]],
-                        fastcompute=1,
-                        fileOK=0,
-                        verbose=0,
-                        dictmaterials=self.dict_Materials
-                    )
+                    spots2pi = LAUE.getLaueSpots(DictLT.CST_ENERGYKEV / emax,
+                                                DictLT.CST_ENERGYKEV / emin,
+                                                [grain],
+                                                [[""]],
+                                                fastcompute=1,
+                                                fileOK=0,
+                                                verbose=0,
+                                                dictmaterials=self.dict_Materials)
                     # 2theta, chi of spot which are on camera(with harmonics)
-                    TwicethetaChi = LAUE.filterLaueSpots(
-                        spots2pi, fileOK=0, fastcompute=1
-                    )
+                    TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
                     self.TwicethetaChi_solution[k] = TwicethetaChi
 
                     if self.datatype == "2thetachi":
@@ -4317,29 +4245,27 @@ if __name__ == "__main__":
     initialParameter["detectordiameter"] = 165.0
     initialParameter["CCDLabel"] = "MARCCD165"
     initialParameter["filename"] = "Ge0001.dat"
-    initialParameter["dirname"] = "/home/micha/LaueTools/Examples/Ge"
+    initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
     initialParameter["dict_Materials"]=DictLT.dict_Materials
 
-    filepathname = os.path.join(
-        initialParameter["dirname"], initialParameter["filename"]
-    )
+    filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
     #    initialParameter['imagefilename'] = 'SS_0171.mccd'
     #    initialParameter['dirname'] = '/home/micha/lauetools/trunk'
 
     CalibGUIApp = wx.App()
     CalibGUIFrame = MainCalibrationFrame(
-        None,
-        -1,
-        "Detector Calibration Board",
-        initialParameter,
-        file_peaks=filepathname,
-        starting_param=initialParameter["CCDParam"],
-        pixelsize=165.0 / 2048,
-        datatype="2thetachi",
-        dim=(2048, 2048),
-        fliprot="no",
-        data_added=None,
-    )
+                                            None,
+                                            -1,
+                                            "Detector Calibration Board",
+                                            initialParameter,
+                                            file_peaks=filepathname,
+                                            starting_param=initialParameter["CCDParam"],
+                                            pixelsize=165.0 / 2048,
+                                            datatype="2thetachi",
+                                            dim=(2048, 2048),
+                                            fliprot="no",
+                                            data_added=None,
+                                        )
 
     CalibGUIFrame.Show()
 

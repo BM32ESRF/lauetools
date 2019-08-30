@@ -264,11 +264,13 @@ class spotsset:
 
         print("after purge self.nbspots", self.nbspots)
 
-    def importdatafromfile(
-        self, filename, sortSpots_from_refenceList=None):
+    def importdatafromfile(self, filename, sortSpots_from_refenceList=None):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list²
         """
+        print("Import Data for DATASET indexation porcedure")
+
+        print("filename",filename)
         (data_theta,
             Chi,
             posx,
@@ -521,7 +523,7 @@ class spotsset:
 
         #        print 'alldata', alldata
         #        print 'alldata', type(alldata)
-        if len(alldata) == 0:
+        if not alldata:
             return None
         else:
             ind, tth, chi = (alldata[:, :3]).T
@@ -687,7 +689,7 @@ class spotsset:
 
         # use predefined selection of spots that are
         # already contained in self.TwiceTheta_Chi_Int, self.absolute_index
-        if use_spots_in_currentselection is False:
+        if not use_spots_in_currentselection:
 
             # exp data used from refined model
             data_1grain = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
@@ -700,7 +702,7 @@ class spotsset:
 
         # use general selection of exp spots according to their indexation state
         # (a spot is selected if it does not belong to a grain (already indexed))
-        elif use_spots_in_currentselection is True:
+        elif use_spots_in_currentselection:
             # all remaining exp spots not already indexed
             # this sets: self.TwiceTheta_Chi_Int and self.absolute_index
             self.setSelectedExpSpotsData(exceptgrains=self.indexedgrains,
@@ -1337,7 +1339,7 @@ class spotsset:
             # ----------------------------------------------------------
             # --- ---------   REFINEMENT STEPS
             # ----------------------------------------------------------
-            if ProceedWithRefinement is False:
+            if not ProceedWithRefinement:
                 break
 
             print("\n\n---------------refining grain orientation and strain #%d-----------------"
@@ -1437,7 +1439,7 @@ class spotsset:
                     # there are at least one indexed grain and this dataset
                     # has not been already tested with the matrix stack
                     # so remove the corresponding data and restart the imagematching
-                    if nbgrains_found > 0 and indexgraincompleted == True:
+                    if nbgrains_found > 0 and indexgraincompleted:
 
                         # exit the 'for' loop of refinement and start with other set of spots
                         NeedtoProvideNewMatrices = True
@@ -3753,7 +3755,7 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
 
     # --- we may want to select only matrices above a threshold
     # load list of symetry operators
-    if keep_only_equivalent == True:
+    if keep_only_equivalent:
         print("keep_only_equivalent cubic matrices")
         allpermu = DictLT.OpSymArray
         # remove duplicates
@@ -4233,16 +4235,13 @@ def proposeEnergyforMatching(
     step = 0.5
     RES = []
     for energy in np.linspace(
-        ener_min, ener_max, int((ener_max - ener_min) / step) + 1
-    ):
+        ener_min, ener_max, int((ener_max - ener_min) / step) + 1):
         simulparam[1] = energy
-        res = matchingrate.getMatchingRate(
-            indexed_spots_dict,
-            test_Matrix,
-            0.1,
-            simulparam,
-            removeharmonics=removeharmonics,
-        )
+        res = matchingrate.getMatchingRate(indexed_spots_dict,
+                                            test_Matrix,
+                                            0.1,
+                                            simulparam,
+                                            removeharmonics=removeharmonics)
         RES.append([energy] + list(res))
 
     res = np.array(RES)

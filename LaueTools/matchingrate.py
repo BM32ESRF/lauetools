@@ -26,6 +26,8 @@ if sys.version_info.major == 3:
     from . import LaueGeometry as LaueGeo
     from . dict_LaueTools import CST_ENERGYKEV
     from . dict_LaueTools import dict_Materials 
+    from . import indexingSpotsSet as ISS
+
 else:
     import lauecore as LAUE
     import CrystalParameters as CP
@@ -33,6 +35,8 @@ else:
     import LaueGeometry as LaueGeo
     from dict_LaueTools import CST_ENERGYKEV 
     from dict_LaueTools import dict_Materials
+    import indexingSpotsSet as ISS
+
 
 try:
     if sys.version_info.major == 3:
@@ -161,9 +165,7 @@ def SpotLinks(
         return 0
 
     elif len(List_Exp_spot_close) == 1:
-        print(
-            "Just a single found! Nb of pairs equal to 1  is not implemented yet in SpotLinks()"
-        )
+        print("Just a single found! Nb of pairs equal to 1  is not implemented yet in SpotLinks()")
         return 0
 
     # --------------------------------------------------------------
@@ -256,12 +258,10 @@ def SpotLinks(
 
             # unambiguous pairing
             if len(theo_index) == 1:
-                refine_indexed_spots[exp_index] = [
-                    exp_index,
-                    theo_index,
-                    Miller_Exp_spot[theo_ind],
-                    Energy_Exp_spot[theo_ind],
-                ]
+                refine_indexed_spots[exp_index] = [exp_index,
+                                                    theo_index,
+                                                    Miller_Exp_spot[theo_ind],
+                                                    Energy_Exp_spot[theo_ind]]
 
             # in case of several theo. candidate, keep the closest to exp. spot
             else:
@@ -275,17 +275,14 @@ def SpotLinks(
                         exp_index,
                         theo_index[closest_theo_ind],
                         Miller_Exp_spot[theo_ind],
-                        Energy_Exp_spot[theo_ind],
-                    ]
+                        Energy_Exp_spot[theo_ind]]
 
         # there is already exp_index in singleindices
         else:
             # do not update the dictionary 'refine_indexed_spots'
             if verbose:
-                print(
-                    "Experimental spot #%d may belong to several theo. spots!"
-                    % exp_index
-                )
+                print("Experimental spot #%d may belong to several theo. spots!"
+                    % exp_index)
             pass
     # find theo spot linked to exp spot ---------------------------------
 
@@ -316,8 +313,7 @@ def SpotLinks(
             # Exp, Theo,  where -1 for specifying that it came from automatic linking
             listofpairs.append([absoluteexpspotindex, theo_id])
             linkExpMiller.append(
-                [float(absoluteexpspotindex)] + [float(elem) for elem in Miller_id]
-            )  # float(val) for further handling as floats array
+                [float(absoluteexpspotindex)] + [float(elem) for elem in Miller_id])  # float(val) for further handling as floats array
             linkResidues.append([absoluteexpspotindex, theo_id, Resi[theo_id]])
             linkEnergy.append([absoluteexpspotindex, theo_id, Energy_id])
             linkIntensity.append(dataintensity_exp[exp_id])
@@ -332,15 +328,14 @@ def SpotLinks(
 
     # self.Data_X, self.Data_Y = np.transpose( np.array(Dataxy) )
 
-    return (
-        refine_indexed_spots,
+    return (refine_indexed_spots,
         linkedspots_link,
         linkExpMiller_link,
         linkIntensity_link,
         linkResidues_link,
         linkEnergy_link,
-        fields,
-    )
+        fields)
+
 def getProximity_multimatrices(
     Arr_Theo2Theta, Arr_TheoChi,
     data_theta,
@@ -349,8 +344,7 @@ def getProximity_multimatrices(
     proxtable=0,
     verbose=0,
     signchi=1,
-    usecython=USE_CYTHON,
-):
+    usecython=USE_CYTHON):
     """
     WARNING: ArrTheo2theta   contains 2theta instead of data_theta contains theta !
     """
@@ -371,11 +365,11 @@ def getProximity_multimatrices(
     if not usecython:
         # table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
 
-        table_dist=GT.computeMutualAngles(array([np.ravel(Arr_Theo2Theta), signchi *np.ravel(Arr_TheoChi)]).T,
-                                sorted_data
-                            )
+        table_dist=GT.computeMutualAngles(array([np.ravel(Arr_Theo2Theta),
+                                        signchi *np.ravel(Arr_TheoChi)]).T,
+                                        sorted_data)
 
-        print('table_dist.shape',table_dist.shape)
+        print('table_dist.shape', table_dist.shape)
 
     #         print "table_dist normal", table_dist[:5, :5]
     #     print "table_dist_new", table_dist.shape
@@ -447,16 +441,14 @@ def getNbMatches(residues, thresholdsimilarity):
     # nb_in_res=counts_elements
     # return np.sum(counts_elements)
 
-def getProximity(
-    TwicethetaChi,
-    data_theta,
-    data_chi,
-    angtol=0.5,
-    proxtable=0,
-    verbose=0,
-    signchi=1,
-    usecython=USE_CYTHON,
-):
+def getProximity(TwicethetaChi,
+                    data_theta,
+                    data_chi,
+                    angtol=0.5,
+                    proxtable=0,
+                    verbose=0,
+                    signchi=1,
+                    usecython=USE_CYTHON):
     r"""
     :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
     :param data_theta: array of theta angles (of experimental spots)
@@ -965,8 +957,7 @@ def getMatchingRate(
     ang_tol,
     simulparam,
     removeharmonics=1,
-    detectordiameter=165.0,
-):
+    detectordiameter=165.0):
     r"""
     Gets matching rate for an orientation matrix
                     for all exp. data stored in dictionary indexed_spots_dict
@@ -986,19 +977,17 @@ def getMatchingRate(
     emin, emax, key_material, detectorparameters = simulparam
     # TODO to shorten
     ind, twicetheta_data, chi_data, posx, posy, intensity_data = getSpotsData(
-        indexed_spots_dict
-    ).T
+        indexed_spots_dict).T
 
     # simulated data
     grain = CP.Prepare_Grain(key_material, test_Matrix)
-    (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
-        grain,
-        emin,
-        emax,
-        detectorparameters,
-        removeharmonics=removeharmonics,
-        detectordiameter=detectordiameter * 1.25,
-    )
+    (Twicetheta, Chi, Miller_ind,
+    posx, posy, Energy) = LAUE.SimulateLaue(grain,
+                                            emin,
+                                            emax,
+                                            detectorparameters,
+                                            removeharmonics=removeharmonics,
+                                            detectordiameter=detectordiameter * 1.25)
 
     nb_of_simulated_spots = len(Twicetheta)
 

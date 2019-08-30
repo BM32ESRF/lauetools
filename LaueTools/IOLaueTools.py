@@ -221,7 +221,6 @@ def readfile_cor(filename, output_CCDparamsdict=False):
 
     #    print "Reading detector parameters if exist"
     openf = open(filename, "r")
-    findcalib = False
 
     #     # fancy way to extract detector parameter;
     #     # TODO: to be improved to accept others parameters of Camera
@@ -349,7 +348,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
         CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
 
     if 'CCDLabel' not in CCDcalib:
-        CCDcalib['CCDLabel']=DEFAULT_CCDLABEL
+        CCDcalib['CCDLabel'] = DEFAULT_CCDLABEL
 
     return CCDcalib
 
@@ -368,7 +367,6 @@ def readCalib_det_file(filename_det):
 
     CCDcalib["framedim"] = calibparam[6:8]
     CCDcalib["detectordiameter"] = max(calibparam[6:8]) * calibparam[5]
-    
     CCDcalib["xpixelsize"] = calibparam[5]
     CCDcalib["pixelsize"] = CCDcalib["xpixelsize"]
     CCDcalib["ypixelsize"] = CCDcalib["xpixelsize"]
@@ -376,8 +374,7 @@ def readCalib_det_file(filename_det):
 
     if "dd" in CCDcalib:
         CCDcalib["CCDCalibParameters"] = [
-            CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]
-        ]
+            CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
     else:
         CCDcalib["CCDCalibParameters"] = calibparam
         for key, val in list(zip(CCD_CALIBRATION_PARAMETERS[:5], calibparam)):
@@ -422,8 +419,7 @@ def writefile_Peaklist(
     overwrite=1,
     initialfilename=None,
     comments=None,
-    dirname=None,
-):
+    dirname=None):
     """
     Write .dat file
     
@@ -436,7 +432,7 @@ def writefile_Peaklist(
 
     TODO: should only write things and not compute !! see intensity calculation!
     (peak_I + peak_bkg)
-    
+
     TODO: to simplify to deal with single peak recording 
 
     position_definition    0 no offset ,1 XMAS offset , 2 fit2D offset

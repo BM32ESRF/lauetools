@@ -1645,8 +1645,7 @@ def get2ThetaChi_geometry_full_np(
         function_create_spot = create_spot_4pi
 
     TwthetaChiEnergyMillers_list = function_create_spot(
-        oncam_vec, oncam_HKL, detectordistance, **options_createspot
-    )
+        oncam_vec, oncam_HKL, detectordistance, **options_createspot)
     return TwthetaChiEnergyMillers_list
 
 
@@ -1721,15 +1720,15 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
 
     X, Y, theta = LTGeo.calc_xycam_from2thetachi(
-        twthe,
-        chi,
-        detectorparam,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        signgam=SIGN_OF_GAMMA,
-        kf_direction=kf_direction,
-    )
+                                                twthe,
+                                                chi,
+                                                detectorparam,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                signgam=SIGN_OF_GAMMA,
+                                                kf_direction=kf_direction,
+                                            )
 
     # E = (C)*(-q**2/qx/2)
     Energy = (CST_ENERGYKEV) * (-0.5 * Qsquare / tQ[0])
@@ -1761,8 +1760,7 @@ def SimulateLaue_merge(
     pixelsize=165 / 2048.0,
     dim=(2048, 2048),
     detectordiameter=None,
-    dictmaterials=dict_Materials
-):
+    dictmaterials=dict_Materials):
 
     r"""
     Simulates Laue pattern full data from a list of grains and concatenate results data 
@@ -1799,8 +1797,8 @@ def SimulateLaue_merge(
                 pixelsize=pixelsize,
                 dim=dim,
                 detectordiameter=detectordiameter,
-                dictmaterials=dictmaterials
-            )
+                dictmaterials=dictmaterials)
+
             nb_spots = len(Twicetheta)
 
             All_Twicetheta.append(Twicetheta)
@@ -1818,14 +1816,12 @@ def SimulateLaue_merge(
         All_posy = np.concatenate(All_posy)
         All_Energy = np.concatenate(All_Energy)
 
-        toreturn = (
-            All_Twicetheta,
-            All_Chi,
-            All_Miller_ind,
-            All_posx,
-            All_posy,
-            All_Energy,
-        )
+        toreturn = (All_Twicetheta,
+                    All_Chi,
+                    All_Miller_ind,
+                    All_posx,
+                    All_posy,
+                    All_Energy)
 
     # Use SimulateResult
     else:
@@ -1839,14 +1835,13 @@ def SimulateLaue_merge(
         All_nb_spots = []
         for grain in grains:
             TwicethetaChi = SimulateResult(
-                grain,
-                emin,
-                emax,
-                simulparameters,
-                fastcompute=1,
-                ResolutionAngstrom=False,
-                dictmaterials=dictmaterials
-            )
+                                            grain,
+                                            emin,
+                                            emax,
+                                            simulparameters,
+                                            fastcompute=1,
+                                            ResolutionAngstrom=False,
+                                            dictmaterials=dictmaterials)
             nb_spots = len(TwicethetaChi[0])
 
             All_TwicethetaChi.append(TwicethetaChi)
@@ -1876,8 +1871,7 @@ def SimulateLaue_twins(
     pixelsize=165 / 2048.0,
     dim=(2048, 2048),
     detectordiameter=None,
-    dictmaterials=dict_Materials
-):
+    dictmaterials=dict_Materials):
 
     r"""
     Simulates Laue pattern full data for twinned grain
@@ -1900,21 +1894,19 @@ def SimulateLaue_twins(
         twinUmat = np.dot(Umat, twin_op)
         grains.append([Bmat, dilat, twinUmat, extinction])
 
-    return SimulateLaue_merge(
-        grains,
-        emin,
-        emax,
-        detectorparameters,
-        only_2thetachi=only_2thetachi,
-        output_nb_spots=output_nb_spots,
-        kf_direction=kf_direction,
-        ResolutionAngstrom=ResolutionAngstrom,
-        removeharmonics=removeharmonics,
-        pixelsize=pixelsize,
-        dim=dim,
-        detectordiameter=detectordiameter,
-        dictmaterials=dictmaterials
-    )
+    return SimulateLaue_merge(grains,
+                                emin,
+                                emax,
+                                detectorparameters,
+                                only_2thetachi=only_2thetachi,
+                                output_nb_spots=output_nb_spots,
+                                kf_direction=kf_direction,
+                                ResolutionAngstrom=ResolutionAngstrom,
+                                removeharmonics=removeharmonics,
+                                pixelsize=pixelsize,
+                                dim=dim,
+                                detectordiameter=detectordiameter,
+                                dictmaterials=dictmaterials)
 
 
 def SimulateLaue(
@@ -2055,7 +2047,7 @@ def SimulateLaue_full_np(
     grain = CP.Prepare_Grain(key_material, grain[2],
                                     force_extinction=force_extinction, dictmaterials=dictmaterials)
 
-    print("grain in SimulateResult()", grain)
+    # print("grain in SimulateResult()", grain)
 
     Qxyz, HKL = getLaueSpots(CST_ENERGYKEV / emax,
                             CST_ENERGYKEV / emin,

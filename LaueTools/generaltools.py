@@ -683,7 +683,7 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
 
     isolated_pts_in_ReferencePoints = []
     for k_refpoint, closests_spot_index in enumerate(list_allclose_ind):
-        if len(closests_spot_index) == 0:
+        if not closests_spot_index:
             isolated_pts_in_ReferencePoints.append(k_refpoint)
             continue
 
@@ -2669,9 +2669,9 @@ def read_elems_from_string(strlist, map_function=int, highest_index=0):
         spstrlist = strlist.split(":")
         if len(spstrlist) == 2:
             ss, ff = spstrlist
-            if len(ss) == 0:
+            if not ss:
                 ss = 0
-            if len(ff) == 0:
+            if not ff:
                 ff = map_function(ff)
                 if ss == 0:
                     ff = min(highest_index, ff)

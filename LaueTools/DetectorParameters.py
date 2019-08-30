@@ -12,17 +12,21 @@ else:
 class DetectorParameters(wx.Dialog):
     """
     Class to set the detector parameters
-    """
 
+    parent needs to have following attributes
+    defaultParam (ie "CCDParam")
+    pixelsize
+    framedim
+    detectordiameter
+    kf_direction
+    """
     def __init__(self, parent, _id, title, Parameters_dict):
 
         wx.Dialog.__init__(self, parent, -1, title, size=(600, 600))
 
         self.parent = parent
 
-        self.panel = wx.Panel(
-            self, -1, style=wx.SIMPLE_BORDER, size=(590, 650), pos=(5, 5)
-        )
+        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 650), pos=(5, 5))
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
         self.paramdetector = [
@@ -59,12 +63,12 @@ class DetectorParameters(wx.Dialog):
         if len(self.Parameters_dict["CCDParam"]) == 5:
 
             self.params_values_list = self.Parameters_dict["CCDParam"] + [
-                self.Parameters_dict["pixelsize"],
-                self.Parameters_dict["framedim"][0],
-                self.Parameters_dict["framedim"][1],
-                self.Parameters_dict["detectordiameter"],
-                self.Parameters_dict["kf_direction"],
-            ]
+                                    self.Parameters_dict["pixelsize"],
+                                    self.Parameters_dict["framedim"][0],
+                                    self.Parameters_dict["framedim"][1],
+                                    self.Parameters_dict["detectordiameter"],
+                                    self.Parameters_dict["kf_direction"],
+                                ]
 
         print("self.params_values_list", self.params_values_list)
         print("self.paramdetector", self.paramdetector)
@@ -87,9 +91,7 @@ class DetectorParameters(wx.Dialog):
             wx.StaticText(self.panel, -1, self.paramdetector[kk], (15, 45 + 30 * kk))
             self.controltext.append(
                 wx.TextCtrl(
-                    self.panel, -1, str(paramVal), (150, 40 + 30 * kk), (150, -1)
-                )
-            )
+                    self.panel, -1, str(paramVal), (150, 40 + 30 * kk), (150, -1)))
             wx.StaticText(self.panel, -1, str(paramVal), (340, 45 + 30 * kk))
             wx.StaticText(self.panel, -1, self.units[kk], (540, 45 + 30 * kk))
 
@@ -99,8 +101,7 @@ class DetectorParameters(wx.Dialog):
         com = wx.StaticText(self.panel, -1, "Comments", (5, 340))
         com.SetFont(font3)
         self.comments = wx.TextCtrl(
-            self.panel, style=wx.TE_MULTILINE, size=(590, sizey), pos=(5, 360)
-        )
+            self.panel, style=wx.TE_MULTILINE, size=(590, sizey), pos=(5, 360))
 
         loadbtn = wx.Button(self.panel, 1, "Load", (160, 260 + posbuttons), (100, 40))
         loadbtn.Bind(wx.EVT_BUTTON, self.OnLoadCalib)
@@ -133,8 +134,7 @@ class DetectorParameters(wx.Dialog):
             defaultDir=_dir,
             defaultFile="",
             wildcard=wcd,
-            style=wx.OPEN | wx.CHANGE_DIR,
-        )
+            style=wx.OPEN | wx.CHANGE_DIR)
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
             try:
@@ -201,15 +201,15 @@ class DetectorParameters(wx.Dialog):
 
             _file = open(filenameCalib, "w")
             text = "%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f\n" % (
-                dd,
-                xcen,
-                ycen,
-                xbet,
-                xgam,
-                pixsize,
-                dim1,
-                dim2,
-            )
+                                                                        dd,
+                                                                        xcen,
+                                                                        ycen,
+                                                                        xbet,
+                                                                        xgam,
+                                                                        pixsize,
+                                                                        dim1,
+                                                                        dim2,
+                                                                    )
             text += "Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2 \n"
             text += "Saved at %s with LaueToolsGUI.py\n" % time.asctime()
             text += comments
