@@ -1372,7 +1372,6 @@ class MainCalibrationFrame(wx.Frame):
                                             0,
                                             param=self.CCDParam,
                                             pixelsize=self.pixelsize,
-                                            signgam=DictLT.SIGN_OF_GAMMA,
                                             kf_direction=self.kf_direction)
 
 
@@ -1916,7 +1915,6 @@ class MainCalibrationFrame(wx.Frame):
                                             pixelsize=self.pixelsize,
                                             dim=self.framedim,
                                             weights=weights,
-                                            signgam=DictLT.SIGN_OF_GAMMA,
                                             kf_direction=self.kf_direction,
                                         )
         print("Initial residues", residues)
@@ -1938,7 +1936,6 @@ class MainCalibrationFrame(wx.Frame):
                                             dim=self.framedim,
                                             verbose=0,
                                             weights=weights,
-                                            signgam=DictLT.SIGN_OF_GAMMA,
                                             kf_direction=self.kf_direction,
                                         )
 
@@ -1966,7 +1963,6 @@ class MainCalibrationFrame(wx.Frame):
                                         pixelsize=self.pixelsize,
                                         dim=self.framedim,
                                         weights=weights,
-                                        signgam=DictLT.SIGN_OF_GAMMA,
                                         kf_direction=self.kf_direction,
                                     )
 
@@ -1985,7 +1981,6 @@ class MainCalibrationFrame(wx.Frame):
                                                         pixelsize=self.pixelsize,
                                                         dim=self.framedim,
                                                         weights=None,
-                                                        signgam=DictLT.SIGN_OF_GAMMA,
                                                         allspots_info=1,
                                                         kf_direction=self.kf_direction,
                                                     )
@@ -2101,15 +2096,14 @@ class MainCalibrationFrame(wx.Frame):
         print("fullpathfilename", fullpathfilename)
 
         (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
-            fullpathfilename,
-            (0, 1, 3),
-            1,  # 2 for centroid intensity, 3 for integrated  intensity
-            sorting_intensity="yes",
-            param=self.CCDParam,
-            signgam=1,
-            pixelsize=self.pixelsize,
-            kf_direction=self.kf_direction,
-        )
+                                                            fullpathfilename,
+                                                            (0, 1, 3),
+                                                            1,  
+                                                            sorting_intensity="yes",
+                                                            param=self.CCDParam,
+                                                            pixelsize=self.pixelsize,
+                                                            kf_direction=self.kf_direction,
+                                                        )
 
         filename = os.path.split(fullpathfilename)[1]
         #         print "dirname,filename",dirname,filename
@@ -3812,12 +3806,10 @@ class MainCalibrationFrame(wx.Frame):
 
     def convertpixels2twotheta(self, X, Y):
 
-        tws, chs = F2TC.calc_uflab(
-            np.array([X, X]),
-            np.array([Y, Y]),
-            self.CCDParam[:5],
-            kf_direction=self.kf_direction,
-        )
+        tws, chs = F2TC.calc_uflab(np.array([X, X]),
+                                    np.array([Y, Y]),
+                                    self.CCDParam[:5],
+                                    kf_direction=self.kf_direction)
         return tws[0], chs[0]
 
     def computeRotation(self, twth1, chi1, twth2, chi2):
@@ -3928,9 +3920,7 @@ class MainCalibrationFrame(wx.Frame):
         #         print 'self.datatype', self.datatype
 
         if self.datatype == "gnomon":
-            RES = IIM.Fromgnomon_to_2thetachi(
-                [np.array([twtheta, twtheta]), np.array([chi, chi])], 0
-            )[:2]
+            RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]), np.array([chi, chi])], 0)[:2]
             twtheta = RES[0][0]
             chi = RES[1][0]
         #         elif self.datatype == 'pixels':
@@ -3938,7 +3928,6 @@ class MainCalibrationFrame(wx.Frame):
         #                                          np.array([chi, chi]),
         #                                         self.CCDParam[:5],
         #                                         pixelsize=self.pixelsize,
-        #                                         signgam=DictLT.SIGN_OF_GAMMA,
         #                                         kf_direction=self.kf_direction)
         #             twtheta, chi = twthetas[0], chis[0]
 

@@ -105,9 +105,6 @@ else:
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
-# sign of CCD camera angle =1 to mimic XMAS convention
-SIGN_OF_GAMMA = 1
-
 PI = np.pi
 DEG = PI / 180.0
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
@@ -651,7 +648,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                                     1,
                                                     sorting_intensity="yes",
                                                     param=self.defaultParam,
-                                                    signgam=SIGN_OF_GAMMA,
                                                     pixelsize=self.pixelsize,
                                                     kf_direction=self.kf_direction,
                                                 )

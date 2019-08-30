@@ -477,11 +477,10 @@ def dosimulation_parametric(
                         chi,
                         calib,
                         pixelsize=pixelsize,
-                        signgam=DictLT.SIGN_OF_GAMMA,
                         dim=framedim,
                         kf_direction=kf_direction,
                     )[:2]
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
 
                     #                    vecRR = [spot.Qxyz for spot in Laue_spot_list[0]] #uf_lab in JSM LaueTools frame
 
@@ -539,9 +538,9 @@ def dosimulation_parametric(
                     ]
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
-                                        pixelsize=pixelsize, signgam=DictLT.SIGN_OF_GAMMA,
+                                        pixelsize=pixelsize,
                                         kf_direction=kf_direction)[:2]
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
 
                     posx = [spot.Xcam for spot in Laue_spot_list[0]]
                     posy = [spot.Ycam for spot in Laue_spot_list[0]]
@@ -595,11 +594,11 @@ def dosimulation_parametric(
                     calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
-                                        pixelsize=pixelsize, signgam=DictLT.SIGN_OF_GAMMA,
+                                        pixelsize=pixelsize,
                                         kf_direction=kf_direction, )[:2]
                     posx = posx.tolist()
                     posy = posy.tolist()
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize, signgam = SIGN_OF_GAMMA)
+                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
 
                     #                     posx = [spot.Xcam for spot in  Laue_spot_list[0]]
                     #                     posy = [spot.Ycam for spot in  Laue_spot_list[0]]

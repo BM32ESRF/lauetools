@@ -34,7 +34,6 @@ from LaueTools.dict_LaueTools import (
     dict_Vect,
     dict_Extinc,
     CST_ENERGYKEV,
-    SIGN_OF_GAMMA,
 )
 
 import LaueTools.generaltools as GT
@@ -1121,7 +1120,6 @@ if 0:
 
     calib = [100.0, 1024.0, 1024.0, 90, 0.0]
 
-    SIGN_OF_GAMMA = 1
     xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
         ard[:, 0],
         ard[:, 1],
@@ -1129,7 +1127,6 @@ if 0:
         verbose=0,
         pixelsize=165.0 / 2048,
         dim=(2048, 2048),
-        signgam=SIGN_OF_GAMMA,
         kf_direction=kf_direction,
     )
 
@@ -1195,7 +1192,6 @@ if 0:
     calib = [105.624, 1017.50, 996.62, -0.027, -116.282]
     pixelsize = 0.048
 
-    SIGN_OF_GAMMA = 1
     xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
         ard[:, 0],
         ard[:, 1],
@@ -1203,9 +1199,7 @@ if 0:
         verbose=0,
         pixelsize=pixelsize,
         dim=(2048, 2048),
-        kf_direction=kf_direction,
-        signgam=SIGN_OF_GAMMA,
-    )
+        kf_direction=kf_direction)
 
     X, Y, theta = xyd_fromfind2
 
@@ -1291,7 +1285,6 @@ if 0:  # Si 111 in transmission on ID15
 
     calib = [105.0, 1024.0, 1024.0, 0.0, 0.0]
 
-    SIGN_OF_GAMMA = 1
     xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
         ard[:, 0],
         ard[:, 1],
@@ -1299,9 +1292,7 @@ if 0:  # Si 111 in transmission on ID15
         verbose=0,
         pixelsize=0.048,
         dim=(2048, 2048),
-        signgam=SIGN_OF_GAMMA,
-        kf_direction=kf_direction,
-    )
+        kf_direction=kf_direction)
 
     X, Y, theta = xyd_fromfind2
 

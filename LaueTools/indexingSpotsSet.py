@@ -2334,7 +2334,6 @@ class spotsset:
                                                                         pixelsize=self.pixelsize,
                                                                         dim=self.dim,
                                                                         weights=weights,
-                                                                        signgam=1,
                                                                         kf_direction=self.kf_direction,
                                                                     )
         print("Initial residues", residues)
@@ -2355,7 +2354,6 @@ class spotsset:
                                             dim=self.dim,
                                             verbose=0,
                                             weights=weights,
-                                            signgam=1,
                                             kf_direction=self.kf_direction,
                                         )
 
@@ -2378,7 +2376,6 @@ class spotsset:
                                                                 pixelsize=self.pixelsize,
                                                                 dim=self.dim,
                                                                 weights=None,
-                                                                signgam=1,
                                                                 kf_direction=self.kf_direction,
                                                             )
 
@@ -2573,7 +2570,6 @@ class spotsset:
                 pixelsize=self.pixelsize,
                 dim=self.dim,
                 weights=None,
-                signgam=1,
                 kf_direction=self.kf_direction,
                 returnalldata=True,
             )
@@ -2612,7 +2608,6 @@ class spotsset:
                                             pixelsize=self.pixelsize,
                                             dim=self.dim,
                                             weights=weights,
-                                            signgam=1,
                                             kf_direction=self.kf_direction,
                                         )
 
@@ -2649,7 +2644,6 @@ class spotsset:
                                                                                 pixelsize=self.pixelsize,
                                                                                 dim=self.dim,
                                                                                 weights=weights,
-                                                                                signgam=1,
                                                                                 kf_direction=self.kf_direction,
                                                                                 returnalldata=True,
                                                                             )
@@ -2669,7 +2663,6 @@ class spotsset:
                                                                 pixelsize=self.pixelsize,
                                                                 dim=self.dim,
                                                                 weights=None,
-                                                                signgam=1,
                                                                 kf_direction=self.kf_direction,
                                                                 returnalldata=False,
                                                             )

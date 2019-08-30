@@ -90,9 +90,6 @@ else:
     import CCDFileParametersGUI as CCDParamGUI
     import IOLaueTools as IOLT
 
-# sign of CCD camera angle =1 to mimic XMAS convention
-SIGN_OF_GAMMA = 1
-
 LaueToolsProjectFolder = os.path.split(__file__)[0]
 
 print("LaueToolsProjectFolder", LaueToolsProjectFolder)
@@ -4958,7 +4955,6 @@ class MainPeakSearchFrame(wx.Frame):
             sorting_intensity="yes",
             param=self.parent.defaultParam,
             pixelsize=self.parent.pixelsize,
-            signgam=SIGN_OF_GAMMA,
             dim=self.parent.dim,  # only for peaks coming from fit2d doing an y direction inversion
         )
 

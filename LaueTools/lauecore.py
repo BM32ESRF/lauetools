@@ -25,7 +25,7 @@ if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
-    from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
+    from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV,
             DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
 
     from . import LaueGeometry as LTGeo
@@ -33,7 +33,7 @@ else:
     import CrystalParameters as CP
     import generaltools as GT
     import IOLaueTools as IOLT
-    from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV, SIGN_OF_GAMMA,
+    from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV,
             DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
 
     # TODO: LTGeo to be removed
@@ -1692,7 +1692,6 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 dim=dim,
-                                                signgam=SIGN_OF_GAMMA,
                                                 kf_direction=kf_direction)
 
     # E = (C)*(-q**2/qx/2)
@@ -1958,7 +1957,6 @@ def SimulateLaue(
                                                 Chi,
                                                 detectorparameters,
                                                 verbose=0,
-                                                signgam=LTGeo.SIGN_OF_GAMMA,
                                                 pixelsize=pixelsize,
                                                 dim=dim,
                                                 kf_direction=kf_direction,
@@ -2049,7 +2047,6 @@ def SimulateLaue_full_np(
                                                 Chi,
                                                 detectorparameters,
                                                 verbose=0,
-                                                signgam=LTGeo.SIGN_OF_GAMMA,
                                                 pixelsize=pixelsize,
                                                 dim=dim,
                                                 kf_direction=kf_direction,

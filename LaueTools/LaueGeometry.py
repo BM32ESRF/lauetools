@@ -103,9 +103,6 @@ DEG = PI / 180.0
 
 CST_CONV_LAMBDA_KEV = DictLT.CST_ENERGYKEV
 
-# sign of CCD camera angle =1 to mimic XMAS convention
-SIGN_OF_GAMMA = 1
-
 # --- -----   old function  ---------------
 norme = GT.norme_vec
 
@@ -118,10 +115,8 @@ def calc_uflab(
     returnAngles=1,
     verbose=0,
     pixelsize=165.0 / 2048,
-    signgam=SIGN_OF_GAMMA,
     rectpix=RECTPIX,
-    kf_direction="Z>0",
-):
+    kf_direction="Z>0"):
     r"""
     Computes unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame of scattered beam :math:`k_f`
     (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
@@ -150,15 +145,14 @@ def calc_uflab(
     # transmission geometry
     if kf_direction in ("X>0",):
         return calc_uflab_trans(
-            xcam,
-            ycam,
-            calib,
-            returnAngles=returnAngles,
-            verbose=verbose,
-            pixelsize=pixelsize,
-            signgam=signgam,
-            rectpix=rectpix,
-        )
+                                xcam,
+                                ycam,
+                                calib,
+                                returnAngles=returnAngles,
+                                verbose=verbose,
+                                pixelsize=pixelsize,
+                                rectpix=rectpix,
+                            )
     # 2theta=90 deg reflection geometry (top side+ and side -)
     elif kf_direction in ("Z>0", "Y>0", "Y<0"):
         cosbeta = np.cos(PI / 2.0 - xbet * DEG)
@@ -169,8 +163,8 @@ def calc_uflab(
             "kf_direction = %s not implemented in calc_uflab" % str(kf_direction)
         )
 
-    cosgam = np.cos(-signgam * xgam * DEG)
-    singam = np.sin(-signgam * xgam * DEG)
+    cosgam = np.cos(- xgam * DEG)
+    singam = np.sin(- xgam * DEG)
 
     xcam1 = (np.array(xcam) - xcen) * pixelsize
     ycam1 = (np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)
@@ -249,9 +243,7 @@ def calc_uflab_trans(
     returnAngles=1,
     verbose=0,
     pixelsize=165.0 / 2048,
-    signgam=SIGN_OF_GAMMA,
-    rectpix=RECTPIX,
-):
+    rectpix=RECTPIX):
     r"""
     compute :math:`2 \theta` and :math:`\chi` scattering angles or **uf** and **kf** vectors
     from lists of X and Y Laue spots positions
@@ -276,8 +268,8 @@ def calc_uflab_trans(
     cosbeta = np.cos(-xbet * DEG)
     sinbeta = np.sin(-xbet * DEG)
 
-    cosgam = np.cos(-signgam * xgam * DEG)
-    singam = np.sin(-signgam * xgam * DEG)
+    cosgam = np.cos(- xgam * DEG)
+    singam = np.sin(- xgam * DEG)
 
     xcam1 = (np.array(xcam) - xcen) * pixelsize
     ycam1 = (np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)
@@ -336,15 +328,15 @@ def calc_uflab_trans(
         return twicetheta, chi
 
 
-def OM_from_uf(uflab, calib, signgam=SIGN_OF_GAMMA, energy=0, offset=None, verbose=0):
+def OM_from_uf(uflab, calib, energy=0, offset=None, verbose=0):
     r"""
     2D vector position of point OM in detector frame plane in pixels
     alias function to calc_xycam
     """
-    return calc_xycam(uflab, calib, signgam=signgam, energy=energy, offset=offset, verbose=verbose)
+    return calc_xycam(uflab, calib, energy=energy, offset=offset, verbose=verbose)
 
 
-def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
+def IprimeM_from_uf(uflab, posI, calib, verbose=0):
     r"""
     from:
     uflab
@@ -357,7 +349,6 @@ def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
     return calc_xycam(
         uflab,
         calib,
-        signgam=signgam,
         energy=0,
         offset=posI,
         verbose=verbose,
@@ -368,7 +359,6 @@ def IprimeM_from_uf(uflab, posI, calib, signgam=SIGN_OF_GAMMA, verbose=0):
 def calc_xycam(
     uflab,
     calib,
-    signgam=SIGN_OF_GAMMA,
     energy=0,
     offset=None,
     verbose=0,
@@ -479,8 +469,8 @@ def calc_xycam(
         yca0 = -OMlab[:, 2] / cosbeta
     # zca0 = 0
 
-    cosgam = np.cos(-signgam * xgam * DEG)
-    singam = np.sin(-signgam * xgam * DEG)
+    cosgam = np.cos(- xgam * DEG)
+    singam = np.sin(- xgam * DEG)
 
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
@@ -506,7 +496,6 @@ def calc_xycam(
 def calc_xycam_transmission(
     uflab,
     calib,
-    signgam=SIGN_OF_GAMMA,
     energy=0,
     offset=None,
     verbose=0,
@@ -602,8 +591,8 @@ def calc_xycam_transmission(
         yca0 = -OMlab[:, 2] / cosbeta
     # zca0 = 0
 
-    cosgam = np.cos(-signgam * xgam * DEG)
-    singam = np.sin(-signgam * xgam * DEG)
+    cosgam = np.cos(-xgam * DEG)
+    singam = np.sin(-xgam * DEG)
 
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
@@ -637,9 +626,7 @@ def calc_xycam_from2thetachi(
     verbose=0,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    signgam=SIGN_OF_GAMMA,
-    kf_direction="Z>0",
-):
+    kf_direction="Z>0"):
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
@@ -658,19 +645,14 @@ def calc_xycam_from2thetachi(
         print("uflab", uflab)
 
     if kf_direction in ("Z>0",):  # , '[90.0, 45.0]'):
-        return calc_xycam(
-            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
-        )
+        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
     elif kf_direction in ("Y>0", "Y<0"):
         print("CAUTION: not checked yet")
         # TODO raise ValueError, print "not checked yet"
-        return calc_xycam(
-            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
-        )
+        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
     elif kf_direction in ("X>0",):  # transmission
         return calc_xycam_transmission(
-            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim, signgam=signgam
-        )
+            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
     else:
         sentence = "kf_direction = %s is not implemented yet " % kf_direction
         sentence += "in calc_xycam_from2thetachi() in find2thetachi"
@@ -837,16 +819,14 @@ def qvector_from_xy_E(xcamList, ycamList, energy, detectorplaneparameters, pixel
     #     print "xcamList",xcamList
     #     print "ycamList",ycamList
     twtheta, chi = calc_uflab(
-        xcamList,
-        ycamList,
-        detectorplaneparameters,
-        returnAngles=1,
-        verbose=0,
-        pixelsize=pixelsize,
-        signgam=SIGN_OF_GAMMA,
-        rectpix=RECTPIX,
-        kf_direction="Z>0",
-    )
+                            xcamList,
+                            ycamList,
+                            detectorplaneparameters,
+                            returnAngles=1,
+                            verbose=0,
+                            pixelsize=pixelsize,
+                            rectpix=RECTPIX,
+                            kf_direction="Z>0")
 
     thetarad = twtheta * DEG / 2.0
     chirad = chi * DEG
@@ -1390,14 +1370,12 @@ def Compute_data2thetachi(
     param=None,
     kf_direction="Z>0",
     verbose=1,
-    signgam=SIGN_OF_GAMMA,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
     saturation=0,
     forceextension_lines_to_extract=None,
     col_isbadspot=None,
-    alpha_xray_incidence_correction=None,
-):
+    alpha_xray_incidence_correction=None):
     r"""
     Converts spot positions x,y to scattering angles 2theta, chi from a list of peaks
 
@@ -1566,14 +1544,13 @@ def Compute_data2thetachi(
         data_y = xynew[:, 1]
     # -----------------------------------
     twicethetaraw, chiraw = calc_uflab(
-        data_x,
-        data_y,
-        param_det[:5],
-        returnAngles=1,
-        pixelsize=pixelsize,
-        signgam=signgam,
-        kf_direction=kf_direction,
-    )
+                                        data_x,
+                                        data_y,
+                                        param_det[:5],
+                                        returnAngles=1,
+                                        pixelsize=pixelsize,
+                                        kf_direction=kf_direction,
+                                    )
     # print chi,twicetheta
     if nb_peaks > 1 and sorting_intensity == "yes":
         listsorted = np.argsort(data_I)[::-1]
@@ -1612,15 +1589,10 @@ def Compute_data2thetachi(
             return twicetheta, chi, dataintensity, data_x, data_y
 
 
-def convert2corfile(
-    filename,
-    calibparam,
-    dirname_in=None,
-    dirname_out=None,
-    signgam=SIGN_OF_GAMMA,
-    pixelsize=165.0 / 2048,
-    CCDCalibdict=None,
-):
+def convert2corfile(filename, calibparam, dirname_in=None,
+                                        dirname_out=None,
+                                        pixelsize=165.0 / 2048,
+                                        CCDCalibdict=None):
     r"""
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
@@ -1630,7 +1602,6 @@ def convert2corfile(
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
 
     :param CCDCalibdict: dictionary of CCD file and calibration parameters
-
     """
     if dirname_in != None:
         filename_in = os.path.join(dirname_in, filename)
@@ -1645,14 +1616,12 @@ def convert2corfile(
             pixelsize = CCDCalibdict["xpixelsize"]
 
     (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(
-        filename_in,
-        (0, 1, 3),
-        1,  # 2 for centroid intensity, 3 for integrated  intensity
-        sorting_intensity="yes",
-        param=calibparam,
-        signgam=signgam,
-        pixelsize=pixelsize,
-    )
+                                                    filename_in,
+                                                    (0, 1, 3),
+                                                    1,
+                                                    sorting_intensity="yes",
+                                                    param=calibparam,
+                                                    pixelsize=pixelsize)
 
     # TODO: handle windowsOS path syntax
     filename_wo_path = filename.split("/")[-1]
@@ -1687,16 +1656,15 @@ def convert2corfile(
         param = calibparam + [pixelsize]
 
     IOLT.writefile_cor(
-        filename_out,
-        twicetheta,
-        chi,
-        data_x,
-        data_y,
-        dataintensity,
-        sortedexit=0,
-        param=param,
-        initialfilename=filename,
-    )
+                        filename_out,
+                        twicetheta,
+                        chi,
+                        data_x,
+                        data_y,
+                        dataintensity,
+                        sortedexit=0,
+                        param=param,
+                        initialfilename=filename)
 
 
 def convert2corfile_fileseries(
@@ -1708,10 +1676,8 @@ def convert2corfile_fileseries(
     dirname_in=None,
     outputname=None,
     dirname_out=None,
-    signgam=SIGN_OF_GAMMA,
     pixelsize=165.0 / 2048,
-    fliprot="no",
-):
+    fliprot="no"):
     r"""
     convert a serie of peaks list ascii files to .cor files (adding scattering angles).
 
@@ -1721,7 +1687,7 @@ def convert2corfile_fileseries(
 
     :param nbdigits: nb of digits of file index in filename (with zero padding)
         (example: for myimage_0002.ccd nbdigits = 4
-    
+
     :param calibparam: list of 5 CCD cakibration parameters
     """
     encodingdigits = "%%0%dd" % nbdigits
@@ -1738,7 +1704,6 @@ def convert2corfile_fileseries(
             dirname_in=dirname_in,
             outputname=outputname,
             dirname_out=dirname_out,
-            signgam=signgam,
             pixelsize=pixelsize,
         )
 
@@ -1752,7 +1717,6 @@ def convert2corfile_multiprocessing(
     nbdigits=4,
     outputname=None,
     dirname_out=None,
-    signgam=SIGN_OF_GAMMA,
     pixelsize=165.0 / 2048,
     fliprot="no",
     nb_of_cpu=6,
@@ -1788,7 +1752,6 @@ def convert2corfile_multiprocessing(
                 dirname_in,
                 outputname,
                 dirname_out,
-                signgam,
                 pixelsize,
             ),
         )
@@ -1887,14 +1850,12 @@ def find_yzsource_from_IM_uf(IM, uf, depth_z=0, anglesample=40.0):
     return IIprime, IIprime_s
 
 
-def IMlab_from_xycam(xcam, ycam, calib, verbose=0, signgam=SIGN_OF_GAMMA):
+def IMlab_from_xycam(xcam, ycam, calib, verbose=0):
     r"""
     returns list of vector position of M (on CCD camera) in absolute frame
     from pixels position vector in CCD frame
     """
-    uflab_not_used, IMlab = calc_uflab(
-        xcam, ycam, calib, returnAngles="uflab", signgam=signgam
-    )
+    uflab_not_used, IMlab = calc_uflab(xcam, ycam, calib, returnAngles="uflab")
 
     if verbose:
         print("IMlab", IMlab)
@@ -2172,7 +2133,7 @@ def twotheta_from_wire_and_source(ysource, Height_wire, Abscissa_wire, anglesamp
     )
 
 
-def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_GAMMA):
+def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0):
     r"""
     From x,y on CCD camera (OMs) and source shift (IIprime)
     compute modified x,y values for the SAME calibration (calib)(for further analysis)
@@ -2187,14 +2148,12 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_G
         returnAngles=0,
         verbose=0,
         pixelsize=165.0 / 2048,
-        signgam=signgam,
     )  # IM normalized
     # IM vectors
     # IM=IprimeM_from_uf(uflab,array([0,0,0]),calib,verbose=0)
     OM = calc_xycam(
         uflab,
         calib,
-        signgam=signgam,
         energy=1,
         offset=None,
         verbose=0,
@@ -2210,7 +2169,6 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0, signgam=SIGN_OF_G
     OpMp = calc_xycam(
         ufp,
         calib,
-        signgam=signgam,
         energy=1,
         offset=None,
         verbose=0,

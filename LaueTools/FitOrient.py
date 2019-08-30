@@ -25,19 +25,17 @@ if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import CrystalParameters as CP
     from . import dict_LaueTools as DictLT
-    from . dict_LaueTools import SIGN_OF_GAMMA, DEG
+    from . dict_LaueTools import DEG
 else:
     import LaueGeometry as F2TC
     import generaltools as GT
     import CrystalParameters as CP
     import dict_LaueTools as DictLT
 
-    #  sign of CCD camera angle =1 to mimic XMAS conventionSIGN_OF_GAMMA = 1
-    from dict_LaueTools import SIGN_OF_GAMMA, DEG
+    from dict_LaueTools import DEG
 
 RAD = 1.0 / DEG
 IDENTITYMATRIX = np.eye(3)
-
 
 def remove_harmonic(hkl, uflab, yz):
 
@@ -82,9 +80,7 @@ def xy_from_Quat(
     verbose=0,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    signgam=SIGN_OF_GAMMA,
-    kf_direction="Z>0",
-):
+    kf_direction="Z>0"):
     """
     compute x and y pixel positions of Laue spots given hkl list
 
@@ -162,15 +158,13 @@ def xy_from_Quat(
         print("twthe,chi", twthe, chi)
 
     X, Y, theta = F2TC.calc_xycam_from2thetachi(
-        twthe,
-        chi,
-        calibration_parameters,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        signgam=signgam,
-        kf_direction=kf_direction,
-    )
+                                                twthe,
+                                                chi,
+                                                calibration_parameters,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                kf_direction=kf_direction)
 
     return X, Y, theta, R
 
@@ -187,9 +181,7 @@ def calc_XY_pixelpositions(
     verbose=0,
     pixelsize=0.079,
     dim=(2048, 2048),
-    signgam=SIGN_OF_GAMMA,
-    kf_direction="Z>0",
-):
+    kf_direction="Z>0"):
     """
     
     must: len(varying_parameter_values)=len(varying_parameter_indices)
@@ -236,16 +228,14 @@ def calc_XY_pixelpositions(
         print("twthe,chi", twthe, chi)
 
     X, Y, theta = F2TC.calc_xycam_from2thetachi(
-        twthe,
-        chi,
-        calibration_parameters,
-        offset=offset,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        signgam=signgam,
-        kf_direction=kf_direction,
-    )
+                                            twthe,
+                                            chi,
+                                            calibration_parameters,
+                                            offset=offset,
+                                            verbose=0,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            kf_direction=kf_direction)
 
     return X, Y, theta, R
 
@@ -265,7 +255,6 @@ def error_function_on_demand_calibration(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     allspots_info=0,
     kf_direction="Z>0",
 ):
@@ -327,7 +316,6 @@ def error_function_on_demand_calibration(
         verbose=verbose,
         pixelsize=pixelsize,
         dim=dim,
-        signgam=signgam,
         kf_direction=kf_direction,
     )
 
@@ -387,10 +375,8 @@ def fit_on_demand_calibration(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
-    **kwd
-):
+    **kwd):
     """
     #All miller indices must be entered in miller,
     selection is done in xy_from_Quat with nspots (array of indices)
@@ -430,9 +416,7 @@ def fit_on_demand_calibration(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
-            kf_direction=kf_direction,
-        )
+            kf_direction=kf_direction)
 
         print(
             "\n\n***************************\nFitting parameters:  ",
@@ -451,7 +435,6 @@ def fit_on_demand_calibration(
         pixelsize,
         dim,
         weights,
-        signgam,
         0,
         kf_direction,
     )
@@ -486,7 +469,6 @@ def fit_on_demand_calibration(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
             )
         return calib_sol[0]  # 5 detector parameters + deltaangles
@@ -509,7 +491,6 @@ def error_function_on_demand_strain(
     pixelsize=165.0 / 2048.,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
 ):
     """
@@ -596,21 +577,20 @@ def error_function_on_demand_strain(
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
     X, Y, theta, R = xy_from_Quat(
-        allparameters[:5],
-        DATA_Q,
-        nspots,
-        np.arange(5),
-        ally,
-        initrot=newmatrix,
-        vecteurref=Bmat,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        signgam=signgam,
-        kf_direction=kf_direction,
-    )
+                                allparameters[:5],
+                                DATA_Q,
+                                nspots,
+                                np.arange(5),
+                                ally,
+                                initrot=newmatrix,
+                                vecteurref=Bmat,
+                                pureRotation=0,
+                                labXMAS=0,
+                                verbose=0,
+                                pixelsize=pixelsize,
+                                dim=dim,
+                                kf_direction=kf_direction,
+                            )
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -666,9 +646,7 @@ def error_function_strain_with_two_orientations(
     verbose=0,
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
-    weights=None,
-    signgam=SIGN_OF_GAMMA,
-):
+    weights=None):
     """
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
@@ -818,9 +796,7 @@ def error_function_strain_with_two_orientations(
         labXMAS=0,
         verbose=0,
         pixelsize=pixelsize,
-        dim=dim,
-        signgam=signgam,
-    )
+        dim=dim)
 
     distanceterm1 = np.sqrt((X1 - pixX) ** 2 + (Y1 - pixY) ** 2)
 
@@ -840,9 +816,7 @@ def error_function_strain_with_two_orientations(
         labXMAS=0,
         verbose=0,
         pixelsize=pixelsize,
-        dim=dim,
-        signgam=signgam,
-    )
+        dim=dim)
 
     distanceterm2 = np.sqrt((X2 - pixX) ** 2 + (Y2 - pixY) ** 2)
 
@@ -900,7 +874,6 @@ def fit_on_demand_strain(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     **kwd
 ):
@@ -953,7 +926,6 @@ def fit_on_demand_strain(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
             kf_direction=kf_direction,
         )
 
@@ -974,7 +946,6 @@ def fit_on_demand_strain(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
     )
 
@@ -1026,7 +997,6 @@ def fit_on_demand_strain(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
             )
         return strain_sol
@@ -1049,7 +1019,6 @@ def plot_refinement_oneparameter(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     **kwd
 ):
@@ -1083,7 +1052,6 @@ def plot_refinement_oneparameter(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
     )
 
@@ -1104,7 +1072,6 @@ def plot_refinement_oneparameter(
             verbose=0,
             pixelsize=pixelsize,
             weights=weights,
-            signgam=signgam,
             kf_direction=kf_direction,
         )
         # print "mean(residues)",mean(residues)
@@ -1123,9 +1090,7 @@ def error_function_XCEN(
     initrot=IDENTITYMATRIX,
     pureRotation=1,
     verbose=0,
-    pixelsize=165.0 / 2048,
-    signgam=SIGN_OF_GAMMA,
-):
+    pixelsize=165.0 / 2048):
     """
     seems to be useless ?
     """
@@ -1142,9 +1107,7 @@ def error_function_XCEN(
         pureRotation=pureRotation,
         labXMAS=0,
         verbose=verbose,
-        pixelsize=pixelsize,
-        signgam=signgam,
-    )
+        pixelsize=pixelsize)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -1179,9 +1142,7 @@ def fitXCEN(
     pureRotation=1,
     verbose=0,
     pixelsize=165.0 / 2048,
-    signgam=SIGN_OF_GAMMA,
-    **kwd
-):
+    **kwd):
     """
     #All miller indices must be entered in miller, 
     selection is done in xy_from_Quat with nspots (array of indices)
@@ -1202,9 +1163,7 @@ def fitXCEN(
             initrot=initrot,
             pureRotation=pureRotation,
             verbose=1,
-            pixelsize=pixelsize,
-            signgam=signgam,
-        )
+            pixelsize=pixelsize)
 
         print(
             "\n\n***************************\nFitting XCEN ...\n\n***************************\n"
@@ -1213,7 +1172,7 @@ def fitXCEN(
         print("Starting parameters", param_calib_0)
 
     # setting  keywords of _error_function_XCEN during the fitting because leastsq handle only *args but not **kwds
-    _error_function_XCEN.__defaults__ = (initrot, pureRotation, 0, pixelsize, signgam)
+    _error_function_XCEN.__defaults__ = (initrot, pureRotation, 0, pixelsize)
 
     calib_sol = leastsq(
         _error_function_XCEN,
@@ -1238,9 +1197,7 @@ def fitXCEN(
                 initrot=initrot,
                 pureRotation=pureRotation,
                 verbose=verbose,
-                pixelsize=pixelsize,
-                signgam=signgam,
-            )
+                pixelsize=pixelsize)
         return calib_sol[0]  # 5 detector parameters
     else:
         return None
@@ -1263,7 +1220,6 @@ def fit_on_demand_strain_2grains(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     **kwd
 ):
@@ -1314,9 +1270,7 @@ def fit_on_demand_strain_2grains(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
-            kf_direction=kf_direction,
-        )
+            kf_direction=kf_direction)
 
         print(
             "\n\n***************************\nFitting parameters:  ",
@@ -1336,7 +1290,6 @@ def fit_on_demand_strain_2grains(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
         False,
     )
@@ -1394,7 +1347,6 @@ def fit_on_demand_strain_2grains(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
                 returnalldata=True,
             )
@@ -1417,7 +1369,6 @@ def error_function_on_demand_strain_2grains(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     returnalldata=False,
 ):
@@ -1566,7 +1517,6 @@ def error_function_on_demand_strain_2grains(
             verbose=0,
             pixelsize=pixelsize,
             dim=dim,
-            signgam=signgam,
             kf_direction=kf_direction,
         )
 
@@ -1652,7 +1602,6 @@ def error_function_general(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     returnalldata=False,
 ):
@@ -1883,7 +1832,6 @@ def error_function_general(
         verbose=0,
         pixelsize=pixelsize,
         dim=dim,
-        signgam=signgam,
         kf_direction=kf_direction,
     )
 
@@ -1950,10 +1898,8 @@ def fit_function_general(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
-    **kwd
-):
+    **kwd):
     """
     
     """
@@ -1980,10 +1926,7 @@ def fit_function_general(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
-            kf_direction=kf_direction,
-        )
-
+            kf_direction=kf_direction)
         print(
             "\n\n********************\nFitting parameters:  ",
             varying_parameters_keys,
@@ -2000,7 +1943,6 @@ def fit_function_general(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
         False,
     )
@@ -2055,7 +1997,6 @@ def fit_function_general(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
                 returnalldata=True,
             )
@@ -2100,10 +2041,8 @@ def fit_function_latticeparameters(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
-    **kwd
-):
+    **kwd):
     """
     fit direct (real) unit cell lattice parameters  (in refinedB0)
     and orientation 
@@ -2139,7 +2078,6 @@ def fit_function_latticeparameters(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
             kf_direction=kf_direction,
         )
 
@@ -2162,7 +2100,6 @@ def fit_function_latticeparameters(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
         False,
     )
@@ -2216,7 +2153,6 @@ def fit_function_latticeparameters(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
                 returnalldata=True,
             )
@@ -2259,7 +2195,6 @@ def error_function_latticeparameters(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     returnalldata=False,
 ):
@@ -2393,7 +2328,6 @@ def error_function_latticeparameters(
         verbose=0,
         pixelsize=pixelsize,
         dim=dim,
-        signgam=signgam,
         kf_direction=kf_direction,
     )
  
@@ -2464,7 +2398,6 @@ def error_function_strain(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     returnalldata=False,
 ):
@@ -2605,7 +2538,6 @@ def error_function_strain(
         verbose=0,
         pixelsize=pixelsize,
         dim=dim,
-        signgam=signgam,
         kf_direction=kf_direction,
     )
 
@@ -2672,10 +2604,8 @@ def fit_function_strain(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
-    **kwd
-):
+    **kwd):
     """
     fit strain components in sample frame
     and orientation 
@@ -2711,7 +2641,6 @@ def fit_function_strain(
             pixelsize=pixelsize,
             dim=dim,
             weights=weights,
-            signgam=signgam,
             kf_direction=kf_direction,
         )
 
@@ -2735,7 +2664,6 @@ def fit_function_strain(
         pixelsize,
         dim,
         weights,
-        signgam,
         kf_direction,
         False,
     )
@@ -2791,7 +2719,6 @@ def fit_function_strain(
                 pixelsize=pixelsize,
                 dim=dim,
                 weights=weights,
-                signgam=signgam,
                 kf_direction=kf_direction,
                 returnalldata=True,
             )
@@ -2834,7 +2761,6 @@ def error_strain_from_elongation(
     pixelsize=165.0 / 2048,
     dim=(2048, 2048),
     weights=None,
-    signgam=SIGN_OF_GAMMA,
     kf_direction="Z>0",
     returnalldata=False,
 ):
@@ -2993,7 +2919,6 @@ def error_strain_from_elongation(
         verbose=0,
         pixelsize=pixelsize,
         dim=dim,
-        signgam=signgam,
         kf_direction=kf_direction,
     )
 
@@ -3263,7 +3188,6 @@ def test_generalfitfunction():
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         kf_direction="Z>0",
     )
 

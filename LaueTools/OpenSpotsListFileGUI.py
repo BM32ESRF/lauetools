@@ -19,9 +19,6 @@ else:
 DICT_LAUE_GEOMETRIES = DictLT.DICT_LAUE_GEOMETRIES
 
 DICT_LAUE_GEOMETRIES_INFO = DictLT.DICT_LAUE_GEOMETRIES_INFO
-# sign of CCD camera angle =1 to mimic XMAS convention
-SIGN_OF_GAMMA = 1
-
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
@@ -74,7 +71,7 @@ def OpenCorfile(filename, parent):
     parent must have attributes: kf_direction_from_file, CCDLabel, detectordiameter
     """
     kf_direction_from_file, CCDLabel = parent.kf_direction_from_file, parent.CCDLabel
-    
+
     print('Opening %s'%filename)
     (Current_peak_data,
         data_theta,
@@ -216,7 +213,6 @@ def OnOpenPeakList(parent):
                                                 1,
                                                 sorting_intensity="yes",
                                                 param=parent.defaultParam,
-                                                signgam=SIGN_OF_GAMMA,
                                                 pixelsize=parent.pixelsize,
                                                 kf_direction=parent.kf_direction)
         # write .cor file

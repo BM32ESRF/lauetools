@@ -75,8 +75,6 @@ else:
 
 
 SIZE_PLOTTOOLS = (8, 6)
-SIGN_OF_GAMMA = DictLT.SIGN_OF_GAMMA
-
 
 # class MessageDataBox(wx.Dialog):
 #     def __init__(self, parent, _id, title, matrix, defaultname):
@@ -1332,7 +1330,6 @@ class Plot_RefineFrame(wx.Frame):
         # 0,
         # param = self.paramDet,
         # pixelsize = self.pixelsize,
-        # signgam = SIGN_OF_GAMMA,
         # framedim = self.framedim # only for peaks coming from fit2d doing an y direction inversion
         # )[:3]
 
@@ -1666,7 +1663,6 @@ class Plot_RefineFrame(wx.Frame):
         #                                         verbose=0,
         #                                         pixelsize=self.pixelsize,
         #                                         dim=self.framedim,
-        #                                         signgam=SIGN_OF_GAMMA,
         #                                         kf_direction=self.kf_direction)
 
         pixX = np.take(AllData["data_pixX"], exp_indices)
@@ -1739,7 +1735,6 @@ class Plot_RefineFrame(wx.Frame):
                 self.pixelsize,
                 self.framedim,
                 weights,
-                SIGN_OF_GAMMA,
                 self.kf_direction)
 
 
@@ -1758,7 +1753,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=weights,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
             )
 
@@ -1780,7 +1774,6 @@ class Plot_RefineFrame(wx.Frame):
                 dim=self.framedim,
                 verbose=0,
                 weights=weights,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
             )
 
@@ -1812,7 +1805,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=weights,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
             )
 
@@ -1831,9 +1823,7 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=None,
-                signgam=SIGN_OF_GAMMA,
-                kf_direction=self.kf_direction,
-            )[0]
+                kf_direction=self.kf_direction)[0]
 
             print("Final residues", residues)
             print("---------------------------------------------------\n")
@@ -1955,7 +1945,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=None,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
                 returnalldata=False,
             )
@@ -1978,7 +1967,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=weights,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
             )
 
@@ -2013,7 +2001,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=weights,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
                 returnalldata=True,
             )
@@ -2033,7 +2020,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=None,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
                 returnalldata=False,
             )
@@ -2367,7 +2353,6 @@ class Plot_RefineFrame(wx.Frame):
                                 pixelsize=self.pixelsize,
                                 dim=self.framedim,
                                 weights=None,
-                                signgam=SIGN_OF_GAMMA,
                                 kf_direction=self.kf_direction,
                                 returnalldata=True,
                             ))
@@ -2403,7 +2388,6 @@ class Plot_RefineFrame(wx.Frame):
                                             pixelsize=self.pixelsize,
                                             dim=self.framedim,
                                             weights=weights,
-                                            signgam=SIGN_OF_GAMMA,
                                             kf_direction=self.kf_direction,
                                         )
 
@@ -2439,7 +2423,6 @@ class Plot_RefineFrame(wx.Frame):
                                                                     pixelsize=self.pixelsize,
                                                                     dim=self.framedim,
                                                                     weights=weights,
-                                                                    signgam=SIGN_OF_GAMMA,
                                                                     kf_direction=self.kf_direction,
                                                                     returnalldata=True,
                                                                 )
@@ -2459,7 +2442,6 @@ class Plot_RefineFrame(wx.Frame):
                                                                 pixelsize=self.pixelsize,
                                                                 dim=self.framedim,
                                                                 weights=None,
-                                                                signgam=SIGN_OF_GAMMA,
                                                                 kf_direction=self.kf_direction,
                                                                 returnalldata=False,
                                                             )
@@ -2528,7 +2510,6 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=None,
-                signgam=SIGN_OF_GAMMA,
                 kf_direction=self.kf_direction,
                 returnalldata=True,
             )
@@ -2550,7 +2531,6 @@ class Plot_RefineFrame(wx.Frame):
                                                         pixelsize=self.pixelsize,
                                                         dim=self.framedim,
                                                         weights=weights,
-                                                        signgam=SIGN_OF_GAMMA,
                                                         kf_direction=self.kf_direction,
                                                     )
 
@@ -2590,7 +2570,6 @@ class Plot_RefineFrame(wx.Frame):
                                                 pixelsize=self.pixelsize,
                                                 dim=self.framedim,
                                                 weights=weights,
-                                                signgam=SIGN_OF_GAMMA,
                                                 kf_direction=self.kf_direction,
                                                 returnalldata=True,
                                             )
@@ -2609,7 +2588,6 @@ class Plot_RefineFrame(wx.Frame):
                                                                             pixelsize=self.pixelsize,
                                                                             dim=self.framedim,
                                                                             weights=None,
-                                                                            signgam=SIGN_OF_GAMMA,
                                                                             kf_direction=self.kf_direction,
                                                                             returnalldata=False,
                                                                         )

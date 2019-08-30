@@ -7,8 +7,6 @@ import numpy as np
 import generaltools as GT
 import dict_LaueTools as DictLT
 
-SIGN_OF_GAMMA = 1
-
 if 1:
     res = FitO.test_generalfitfunction()
 
@@ -204,7 +202,6 @@ if 0:
             pixelsize=pixelsize,
             dim=(2048, 2048),
             weights=None,
-            signgam=SIGN_OF_GAMMA,
             returnalldata=True,
         )
     )
@@ -225,7 +222,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
     )
 
 
@@ -378,7 +374,6 @@ if 0:  # Ge example unstrained
     #                                                 pixelsize=pixelsize,
     #                                                 dim=(2048, 2048),
     #                                                 weights=None,
-    #                                                 signgam=SIGN_OF_GAMMA,
     #                                                 returnalldata=False)
 
     FitO.fit_function_latticeparameters(
@@ -396,7 +391,6 @@ if 0:  # Ge example unstrained
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
     )
 
 
@@ -610,7 +604,6 @@ if 0:  # cu example unstrained
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         returnalldata=False,
     )
 
@@ -630,7 +623,6 @@ if 0:  # cu example unstrained
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
     )
 
 
@@ -812,7 +804,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         returnalldata=True,
     )
 
@@ -835,7 +826,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
     )
 
     print("\n\n\n\nStrain refinement completed !!! \n\n\n\n")
@@ -856,7 +846,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         returnalldata=True,
     )
 
@@ -1118,7 +1107,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         returnalldata=True,
     )
 
@@ -1141,7 +1129,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
     )
 
     print("\n\n\n\nStrain refinement completed !!! \n\n\n\n")
@@ -1162,7 +1149,6 @@ if 0:
         pixelsize=pixelsize,
         dim=(2048, 2048),
         weights=None,
-        signgam=SIGN_OF_GAMMA,
         returnalldata=True,
     )
 
