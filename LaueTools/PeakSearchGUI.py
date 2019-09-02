@@ -1770,10 +1770,10 @@ class PlotPeakListPanel(wx.Panel):
             value=1000,
             minValue=1,
             maxValue=1000,
-            style=wx.SL_AUTOTICKS,  # | wx.SL_LABELS)
+            style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         self.slider_vmax.SetTickFreq(500, 1)
-        self.slider_vmax.Bind(
-            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_ImaxDisplayed)
+        self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
+                            self.granparent.on_slider_ImaxDisplayed)
 
         self.Iminvaltxt = wx.StaticText(self, -1, "0", pos=(400, posv + 5))
         self.Imaxvaltxt = wx.StaticText(self, -1, "1000", pos=(400, posv + 35))
