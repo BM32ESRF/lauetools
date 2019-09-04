@@ -158,8 +158,7 @@ class Plot_RefineFrame(wx.Frame):
         IndexationParameters=None,
         StorageDict=None,
         DataSetObject=None,
-        **kwds
-    ):
+        **kwds):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
         # wxmpl.PlotFrame(self, -1,'fdgf', size =(600, 400),dpi = 96)
@@ -209,8 +208,7 @@ class Plot_RefineFrame(wx.Frame):
             DataToIndex = self.IndexationParameters["DataToIndex"]
             print(
                 "\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
-                len(DataToIndex["data_theta"]),
-            )
+                len(DataToIndex["data_theta"]))
             if self.datatype is "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
                 self.Data_Y = DataToIndex["data_chi"]
@@ -229,12 +227,8 @@ class Plot_RefineFrame(wx.Frame):
             # )
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
             #             print DataToIndex.keys()
-            self.selectedAbsoluteSpotIndices_init = DataToIndex[
-                "current_exp_spot_index_list"
-            ]
-            self.selectedAbsoluteSpotIndices = copy.copy(
-                self.selectedAbsoluteSpotIndices_init
-            )
+            self.selectedAbsoluteSpotIndices_init = DataToIndex["current_exp_spot_index_list"]
+            self.selectedAbsoluteSpotIndices = copy.copy(self.selectedAbsoluteSpotIndices_init)
 
         self.setDatacoordinates()
 
@@ -315,11 +309,9 @@ class Plot_RefineFrame(wx.Frame):
         self.onlyclosest = 1
 
         # defaut value for Miller attribution
-        self.B0matrix = [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-        ]  # means: columns are a*,b*,c* in xyz frame
+        self.B0matrix = [[1, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 1]]  # means: columns are a*,b*,c* in xyz frame
         self.key_material = key_material
         self.detectordistance = None
 
@@ -347,6 +339,7 @@ class Plot_RefineFrame(wx.Frame):
         self.Bmat_tri = None
 
         self.UBmat = self.SimulParam[0][2]
+        print('self.UBmat: ', self.UBmat)
         self.current_matrix = self.UBmat
         # saving previous unit cell strain and orientation
         self.previous_UBmat = self.UBmat
@@ -360,10 +353,7 @@ class Plot_RefineFrame(wx.Frame):
         DictLT.dict_Rot["Input UBmatrix"] = copy.copy(self.UBmat)
 
         self.DataSet = DataSetObject
-        print(
-            "self.DataSet.detectordiameter in init plot refine frame",
-            self.DataSet.detectordiameter,
-        )
+        print("self.DataSet.detectordiameter in init plot refine frame", self.DataSet.detectordiameter)
 
         self.initGUI()
 
@@ -378,8 +368,7 @@ class Plot_RefineFrame(wx.Frame):
         self.dpi = 100
         self.figsizex, self.figsizey = 4, 3
         self.fig = Figure(
-            (self.figsizex, self.figsizey), dpi=self.dpi, facecolor=tuple(colourb_bkg)
-        )
+            (self.figsizex, self.figsizey), dpi=self.dpi, facecolor=tuple(colourb_bkg))
         self.fig.set_size_inches(self.figsizex, self.figsizey, forward=True)
         self.canvas = FigCanvas(self.panel, -1, self.fig)
         self.init_plot = True
@@ -463,13 +452,8 @@ class Plot_RefineFrame(wx.Frame):
 
         self.txtmatrix = wx.StaticText(self.panel, -1, "Orientation Matrix (UB)")
 
-        self.comboUBmatrix = wx.ComboBox(
-            self.panel,
-            -1,
-            "Input UBmatrix",
-            choices=list(DictLT.dict_Rot.keys()),
-            style=wx.CB_READONLY,
-        )
+        self.comboUBmatrix = wx.ComboBox(self.panel, -1, "Input UBmatrix",
+                                        choices=list(DictLT.dict_Rot.keys()), style=wx.CB_READONLY)
         self.comboUBmatrix.Bind(wx.EVT_COMBOBOX, self.onSelectUBmatrix)
 
         self.btnreplot = wx.Button(self.panel, -1, "Replot")
@@ -1315,8 +1299,7 @@ class Plot_RefineFrame(wx.Frame):
         if self.SimulParam is None:
             wx.MessageBox(
                 "There is not simulated data to plot and match with experimental data !!",
-                "INFO",
-            )
+                "INFO")
             return
         print("\n ******  Matching Theo. and Exp. spots ***********\n")
 
@@ -1362,13 +1345,12 @@ class Plot_RefineFrame(wx.Frame):
                             proxtable=1,
                             angtol=5.0,
                             verbose=0,
-                            signchi=1,
-                        )[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+                            signchi=1)[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
 
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
         # ProxTable[index_theo]  = index_exp   closest link
-        # print("Resi",Resi)
+        print("Resi",Resi)
         # print("ProxTable",ProxTable)
         # print("Nb of theo spots", len(ProxTable))
 
@@ -1393,7 +1375,7 @@ class Plot_RefineFrame(wx.Frame):
 
         if List_Exp_spot_close == []:
             wx.MessageBox("No links have been found for tolerance angle : %.2f deg" % veryclose_angletol,
-                                    "INFO", )
+                                    "INFO")
             return
 
         # removing exp spot which appears many times(close to several simulated spots of one grain)--------------
@@ -1415,8 +1397,7 @@ class Plot_RefineFrame(wx.Frame):
         if len(toremoveindex) > 0:
             # index of exp spot in arrayLESC that are duplicated
             ambiguous_exp_ind = GT.find_closest(
-                np.array(sorted_LESC[toremoveindex], dtype=float), arrayLESC, 0.1
-            )[1]
+                np.array(sorted_LESC[toremoveindex], dtype=float), arrayLESC, 0.1)[1]
             # print "ambiguous_exp_ind", ambiguous_exp_ind
 
             # marking exp spots(belonging ambiguously to several simulated grains)
@@ -1443,9 +1424,7 @@ class Plot_RefineFrame(wx.Frame):
                 # print "closest",closest
                 # print "where_exp_ind[closest]",where_th_ind[closest]
                 # print "Resi[where_th_ind[closest]]", Resi[where_th_ind[closest]]
-                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[
-                    where_th_ind[closest]
-                ]
+                ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[where_th_ind[closest]]
         # ------------------------------------------------------------------
         # print "ProxTable after duplicate removal tagging"
         # print ProxTablecopy
@@ -1473,7 +1452,7 @@ class Plot_RefineFrame(wx.Frame):
                     # print "add in dict refine_indexed_spots\n"
                     refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index,
-                                                        Miller_Exp_spot[k], ]
+                                                        Miller_Exp_spot[k]]
                 # else:  # test whether all theo spots are harmonics
                 # ar_miller = np.take(Miller_ind, theo_index, axis =0)
                 # print "ar_miller",ar_miller
@@ -1494,7 +1473,7 @@ class Plot_RefineFrame(wx.Frame):
         # find theo spot linked to exp spot ---------------------------------
 
         # refine_indexed_spots is a dictionary:
-        # key is experimental spot index and value is [experimental spot index,h,k,l]
+        # key is experimental spot index and value is [exp. spotindex, h, k, l]
         # print "refine_indexed_spots",refine_indexed_spots
 
         listofpairs = []
@@ -1504,6 +1483,7 @@ class Plot_RefineFrame(wx.Frame):
         # Dataxy = []
 
         print('self.selectedAbsoluteSpotIndices',self.selectedAbsoluteSpotIndices)
+        print('refine_indexed_spots', refine_indexed_spots)
 
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
@@ -1511,12 +1491,8 @@ class Plot_RefineFrame(wx.Frame):
                 # print('localspotindex',localspotindex)
                 absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
 
-                listofpairs.append(
-                    [absolute_spot_index, val[1]]
-                )  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-                linkExpMiller.append(
-                    [float(absolute_spot_index)] + [float(elem) for elem in val[2]]
-                )  # float(val) for further handling as floats array
+                listofpairs.append([absolute_spot_index, val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+                linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(dataintensity_exp[localspotindex])
                 linkResidues.append([absolute_spot_index, val[1], Resi[val[1]]])
                 # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
@@ -1583,8 +1559,7 @@ class Plot_RefineFrame(wx.Frame):
         in plot_RefineFrame
 
         Note: only strain and orientation simultaneously
-        # TODO: fit only a set of parameters, useful ?
-        
+        # TODO: fit only a set of parameters, useful
         NOTE: refine strained and oriented crystal by minimizing peaks positions (pixels).
         NOTE: experimental peaks pixel positions are reevaluated from 2theta and chi angles 
         """
@@ -1593,16 +1568,14 @@ class Plot_RefineFrame(wx.Frame):
             if self.linkedspots_link is None:
                 wx.MessageBox(
                     'There are not existing links between simulated and experimental data for the refinement!! Click on "Auto Links" button ',
-                    "INFO",
-                )
+                    "INFO")
                 return
 
             if len(self.linkedspots_link) < 8:
                 wx.MessageBox(
                     "You have only %d over the 8 links needed between exp. and theo. spots to refine orientation and strain"
                     % len(self.linkedspots_link),
-                    "INFO",
-                )
+                    "INFO")
                 return
             self.linkedspots_fit = self.linkedspots_link
             self.linkExpMiller_fit = self.linkExpMiller_link
@@ -1619,14 +1592,11 @@ class Plot_RefineFrame(wx.Frame):
             self.linkIntensity_fit = self.linkIntensity
             self.linkResidues_fit = None
         elif self.use_forfit3.GetValue():
-            print(
-                "I will use for the refinement the(filtered) results of the previous fit"
-            )
+            print("I will use for the refinement the(filtered) results of the previous fit")
             if self.linkedspots_fit is None:
                 wx.MessageBox(
                     "You need to refine once for starting the refinement from previous fit(filtered) results",
-                    "INFO",
-                )
+                    "INFO")
                 return
 
         print("\nStarting fit of strain and orientation from spots links ...\n")
@@ -1647,17 +1617,13 @@ class Plot_RefineFrame(wx.Frame):
 
         # print "self.linkExpMiller",self.linkExpMiller
         Data_Q = np.array(self.linkExpMiller_fit)[:, 1:]
-        sim_indices = np.arange(
-            nb_pairs
-        )  # for fitting function this must be an arange...
+        sim_indices = np.arange(nb_pairs)  # for fitting function this must be an arange...
         #         print "DataQ from self.linkExpMiller", Data_Q
 
         # experimental spots selection -------------------------------------
         AllData = self.IndexationParameters["AllDataToIndex"]
-        _twth, _chi = (
-            np.take(2.0 * AllData["data_theta"], exp_indices),
-            np.take(AllData["data_chi"], exp_indices),
-        )  # 2theta chi coordinates
+        _twth, _chi = (np.take(2.0 * AllData["data_theta"], exp_indices),
+                        np.take(AllData["data_chi"], exp_indices))  # 2theta chi coordinates
         # experimental spots pixel coordinates
         #         pixX, pixY, _th = F2TC.calc_xycam_from2thetachi(_twth, _chi, self.CCDcalib,
         #                                         verbose=0,
@@ -1682,7 +1648,7 @@ class Plot_RefineFrame(wx.Frame):
         # print "nb_pairs",nb_pairs
         # print "indices of simulated spots(selection in whole Data_Q list)",sim_indices
         # print "Experimental pixX, pixY",pixX, pixY
-        # print "starting_orientmatrix",starting_orientmatrix
+        print("starting_orientmatrix",starting_orientmatrix)
 
         if self.use_weights.GetValue():
             weights = self.linkIntensity_fit
@@ -1721,65 +1687,48 @@ class Plot_RefineFrame(wx.Frame):
             print("\nInitial error--------------------------------------\n")
 
             print("initial_values, Data_Q, allparameters, arr_indexvaryingparameters,etc")
-            print(initial_values,
-                Data_Q,
-                allparameters,
-                arr_indexvaryingparameters,
-                sim_indices,
-                pixX,
-                pixY,
-                starting_orientmatrix,
-                self.B0matrix,
-                0,
-                1,
-                self.pixelsize,
-                self.framedim,
-                weights,
-                self.kf_direction)
-
+            print(initial_values, Data_Q, allparameters, arr_indexvaryingparameters,
+                    sim_indices, pixX, pixY, starting_orientmatrix, self.B0matrix,
+                    0, 1, self.pixelsize, self.framedim, weights, self.kf_direction)
 
             residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
-                initial_values,
-                Data_Q,
-                allparameters,
-                arr_indexvaryingparameters,
-                sim_indices,
-                pixX,
-                pixY,
-                initrot=starting_orientmatrix,
-                Bmat=self.B0matrix,
-                pureRotation=0,
-                verbose=1,
-                pixelsize=self.pixelsize,
-                dim=self.framedim,
-                weights=weights,
-                kf_direction=self.kf_direction,
-            )
+                                                        initial_values,
+                                                        Data_Q,
+                                                        allparameters,
+                                                        arr_indexvaryingparameters,
+                                                        sim_indices,
+                                                        pixX,
+                                                        pixY,
+                                                        initrot=starting_orientmatrix,
+                                                        Bmat=self.B0matrix,
+                                                        pureRotation=0,
+                                                        verbose=1,
+                                                        pixelsize=self.pixelsize,
+                                                        dim=self.framedim,
+                                                        weights=weights,
+                                                        kf_direction=self.kf_direction)
 
             print("Initial residues", residues)
             print("---------------------------------------------------\n")
 
             results = FitO.fit_on_demand_strain(
-                initial_values,
-                Data_Q,
-                allparameters,
-                FitO.error_function_on_demand_strain,
-                arr_indexvaryingparameters,
-                sim_indices,
-                pixX,
-                pixY,
-                initrot=starting_orientmatrix,
-                Bmat=self.B0matrix,
-                pixelsize=self.pixelsize,
-                dim=self.framedim,
-                verbose=0,
-                weights=weights,
-                kf_direction=self.kf_direction,
-            )
+                                        initial_values,
+                                        Data_Q,
+                                        allparameters,
+                                        FitO.error_function_on_demand_strain,
+                                        arr_indexvaryingparameters,
+                                        sim_indices,
+                                        pixX,
+                                        pixY,
+                                        initrot=starting_orientmatrix,
+                                        Bmat=self.B0matrix,
+                                        pixelsize=self.pixelsize,
+                                        dim=self.framedim,
+                                        verbose=0,
+                                        weights=weights,
+                                        kf_direction=self.kf_direction)
 
-            print(
-                "\n********************\n       Results of Fit        \n********************"
-            )
+            print("\n********************\n       Results of Fit        \n********************")
             print("results", results)
 
             self.fit_completed = False
@@ -1805,25 +1754,24 @@ class Plot_RefineFrame(wx.Frame):
                 pixelsize=self.pixelsize,
                 dim=self.framedim,
                 weights=weights,
-                kf_direction=self.kf_direction,
-            )
+                kf_direction=self.kf_direction)
 
             self.residues_non_weighted = FitO.error_function_on_demand_strain(
-                results,
-                Data_Q,
-                allparameters,
-                arr_indexvaryingparameters,
-                sim_indices,
-                pixX,
-                pixY,
-                initrot=starting_orientmatrix,
-                Bmat=self.B0matrix,
-                pureRotation=0,
-                verbose=1,
-                pixelsize=self.pixelsize,
-                dim=self.framedim,
-                weights=None,
-                kf_direction=self.kf_direction)[0]
+                                                                results,
+                                                                Data_Q,
+                                                                allparameters,
+                                                                arr_indexvaryingparameters,
+                                                                sim_indices,
+                                                                pixX,
+                                                                pixY,
+                                                                initrot=starting_orientmatrix,
+                                                                Bmat=self.B0matrix,
+                                                                pureRotation=0,
+                                                                verbose=1,
+                                                                pixelsize=self.pixelsize,
+                                                                dim=self.framedim,
+                                                                weights=None,
+                                                                kf_direction=self.kf_direction)[0]
 
             print("Final residues", residues)
             print("---------------------------------------------------\n")
@@ -2084,8 +2032,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # update dictionnary of UB matrices
         DictLT.dict_Rot["Last Refined UB matrix %d" % self.fitcounterindex] = copy.copy(
-            self.newUBmat
-        )
+            self.newUBmat)
         self.comboUBmatrix.Append("Last Refined UB matrix %d" % self.fitcounterindex)
 
         self.fitcounterindex += 1
@@ -2354,8 +2301,7 @@ class Plot_RefineFrame(wx.Frame):
                                 dim=self.framedim,
                                 weights=None,
                                 kf_direction=self.kf_direction,
-                                returnalldata=True,
-                            ))
+                                returnalldata=True))
 
         print("\n\n*** fit_transform_parameters (PlotRefineGUI.py) *****\n")
         print("fitting_parameters_values", self.fitting_parameters_values)
@@ -3459,6 +3405,7 @@ class Plot_RefineFrame(wx.Frame):
         # self.linkIntensity_link
         # self.linkResidues_link
         # self.Energy_Exp_spot
+        print('self.linkExpMiller_link', self.linkExpMiller_link)
 
         Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int)[:, 1:4]
         List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int)

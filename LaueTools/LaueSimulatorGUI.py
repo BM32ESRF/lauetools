@@ -18,6 +18,7 @@ To be launched (to deal with relative imports)
 """
 import os
 import sys
+import time
 
 import numpy as np
 import wx
@@ -1533,7 +1534,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         dlg.Destroy()
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         #        print "Current selected grains ", self.SelectGrains
         self.Close()
 
@@ -1711,10 +1712,9 @@ class parametric_Grain_Dialog3(wx.Frame):
         # experimental data
         if showExperimenalData:
             experimentaldata_2thetachi = (
-                self.data_2theta,
-                self.data_chi,
-                self.data_I,
-            )
+                                        self.data_2theta,
+                                        self.data_chi,
+                                        self.data_I)
             experimentaldata_XYMAR = self.data_pixX, self.data_pixY, self.data_I
         else:
             experimentaldata_2thetachi = None
@@ -1746,17 +1746,15 @@ class parametric_Grain_Dialog3(wx.Frame):
             if self.rb1.GetValue():
                 file_name = self.textcontrolfilemanual.GetValue() + ".sim"
             else:
-                file_name = (
-                    self.textcontrolfileauto.GetValue()
-                    + str(self.initialParameters["indexsimulation"])
-                    + ".sim"
-                )
+                file_name = (self.textcontrolfileauto.GetValue()
+                            + str(self.initialParameters["indexsimulation"])
+                            + ".sim")
                 self.initialParameters["indexsimulation"] += 1
                 print("Next index is %s" % self.initialParameters["indexsimulation"])
 
             self.simul_filename = file_name
             print("Simulation file saved in %s " % self.simul_filename)
-            self.OnSave(event, data_res)
+            self.OnSave(evt, data_res)
 
         if self.corfileBox.GetValue():
 

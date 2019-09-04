@@ -778,17 +778,13 @@ def find_closest(input_array, target_array, tol):
     from stats.py
     """
     input_array_len = len(input_array)
-    closest_indices = np.searchsorted(
-        input_array, target_array
-    )  # determine the locations of target_array in input_array
+    closest_indices = np.searchsorted(input_array, target_array)  # determine the locations of target_array in input_array
     acc_rej_indices = [-1] * len(target_array)
     curr_tol = [tol] * len(target_array)
 
     est_tol = 0.0
     for i in list(range(len(target_array))):
-        best_off = (
-            0
-        )  # used to adjust closest_indices[i] for best approximating element in input_array
+        best_off = 0  # used to adjust closest_indices[i] for best approximating element in input_array
 
         if closest_indices[i] >= input_array_len:
             # the value target_array[i] is >= all elements in input_array so check whether it is within tolerance of the last element
@@ -828,8 +824,7 @@ def find_closest(input_array, target_array, tol):
 
     accept_indices = np.compress(np.greater(acc_rej_indices, -1), acc_rej_indices)
     reject_indices = np.compress(
-        np.equal(acc_rej_indices, -1), np.arange(len(acc_rej_indices))
-    )
+        np.equal(acc_rej_indices, -1), np.arange(len(acc_rej_indices)))
 
     return closest_indices, accept_indices, reject_indices
 

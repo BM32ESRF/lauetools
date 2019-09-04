@@ -32,8 +32,7 @@ try:
         filter_peaks,
         index_refine_calib_one_image,
         serial_index_refine_multigrain,
-        serial_index_refine_multigrain_v2,
-    )
+        serial_index_refine_multigrain_v2)
 except ImportError:
     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
@@ -210,7 +209,7 @@ class IndexRefineParameters(wx.Frame):
     def OnTabChange_PeakSearchMethod(self, evt):
         pass
 
-    def OnSaveConfigFile(self, evt):
+    def OnSaveConfigFile(self, _):
 
         if not self.getParams():
             return
@@ -222,19 +221,17 @@ class IndexRefineParameters(wx.Frame):
             defaultdir = os.getcwd()
 
         file = wx.FileDialog(
-            self,
-            "Save irp File",
-            defaultDir=defaultdir,
-            wildcard=wcd,
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        )
+                            self,
+                            "Save irp File",
+                            defaultDir=defaultdir,
+                            wildcard=wcd,
+                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if file.ShowModal() == wx.ID_OK:
 
             outputfile = file.GetPath()
 
             outputfilename = ISS.saveIndexRefineConfigFile(
-                self.dict_param_list, outputfilename=outputfile
-            )
+                self.dict_param_list, outputfilename=outputfile)
 
             # outputfilename has .irp extension
             self.parent.list_txtctrl[12].SetValue(outputfilename)
@@ -243,10 +240,9 @@ class IndexRefineParameters(wx.Frame):
 
     def OnLoad(self, evt):
         irpfile = wx.FileDialog(
-            self,
-            "Open Index Refine Parameters",
-            wildcard="IndexRefine Param.(*.irp)|*.irp|All files(*)|*",
-        )
+                                self,
+                                "Open Index Refine Parameters",
+                                wildcard="IndexRefine Param.(*.irp)|*.irp|All files(*)|*")
         if irpfile.ShowModal() == wx.ID_OK:
 
             fileirp = irpfile.GetPath()
@@ -266,9 +262,7 @@ class IndexRefineParameters(wx.Frame):
             for k_page, pagematerial in enumerate(self.materialpages_list):
                 for kk, _key in enumerate(LIST_TXTPARAMS):
                     if _key in list(self.dict_param_list[k_page].keys()):
-                        pagematerial.list_valueparamIR[kk] = self.dict_param_list[
-                            k_page
-                        ][_key]
+                        pagematerial.list_valueparamIR[kk] = self.dict_param_list[k_page][_key]
 
                 pagematerial.setParams()
 
@@ -288,7 +282,7 @@ class IndexRefineParameters(wx.Frame):
 
         return flag
 
-    def OnLoadDefault(self, evt):
+    def OnLoadDefault(self, _):
         print("reset")
         self.list_valueparamIR = LIST_VALUESPARAMS
         self.setParams()
@@ -362,51 +356,23 @@ class PageMaterialPanel(wx.Panel):
         self.tips_dict[2] += "Minimum energy bandpass (keV)"
         self.tips_dict[3] += "Maximum energy bandpass (keV)"
 
-        self.tips_dict[
-            4
-        ] += "Minimum matching rate to stop the loop over mutual spots angular distance recognition."
-        self.tips_dict[
-            4
-        ] += "Then the corresponding unit cell orientation matrix and strain will be refined.\n"
-        self.tips_dict[
-            4
-        ] += "100.0 implies that all mutual spots distances will be checked"
+        self.tips_dict[4] += "Minimum matching rate to stop the loop over mutual spots angular distance recognition."
+        self.tips_dict[4] += "Then the corresponding unit cell orientation matrix and strain will be refined.\n"
+        self.tips_dict[4] += "100.0 implies that all mutual spots distances will be checked"
 
-        self.tips_dict[
-            5
-        ] += "Angular tolerance (deg) for looking up a distance in the reference distances database (LUT)"
-        self.tips_dict[
-            6
-        ] += "Maximum angle separating two spots forming a pair (1 exp. and 1 theo.) to compute the number of spots matches (or matching rate)."
-        self.tips_dict[
-            7
-        ] += "Number of the most intense spots from which angular distances with central spots will be tested for recognition."
-        self.tips_dict[
-            8
-        ] += "Minimum number of spots matches for a indexation solution to be stored"
+        self.tips_dict[5] += "Angular tolerance (deg) for looking up a distance in the reference distances database (LUT)"
+        self.tips_dict[6] += "Maximum angle separating two spots forming a pair (1 exp. and 1 theo.) to compute the number of spots matches (or matching rate)."
+        self.tips_dict[7] += "Number of the most intense spots from which angular distances with central spots will be tested for recognition."
+        self.tips_dict[8] += "Minimum number of spots matches for a indexation solution to be stored"
 
-        self.tips_dict[
-            9
-        ] += "Central spot or list of spot indices: e.g.\n[1,2,3,5]\n[0]\n5\n8:20\n:10"
-        self.tips_dict[
-            10
-        ] += "if not False, minimum lattice spacing (for cubic structure) of spot to be simulated for matching with experimental spots data."
-        self.tips_dict[
-            11
-        ] += "highest miller indices order to calculate the reference mutual angular distances table (LUT)."
-        self.tips_dict[
-            12
-        ] += "if not None, [h,k,l] miller indices of all central spots used for recognition."
+        self.tips_dict[9] += "Central spot or list of spot indices: e.g.\n[1,2,3,5]\n[0]\n5\n8:20\n:10"
+        self.tips_dict[10] += "if not False, minimum lattice spacing (for cubic structure) of spot to be simulated for matching with experimental spots data."
+        self.tips_dict[11] += "highest miller indices order to calculate the reference mutual angular distances table (LUT)."
+        self.tips_dict[12] += "if not None, [h,k,l] miller indices of all central spots used for recognition."
 
-        self.tips_dict[
-            13
-        ] += "maximum number of spots to be used for refined (first ones in the list)"
-        self.tips_dict[
-            14
-        ] += "True/False to use or not the experimental spot intensities as a weight in the refinement (minimization of distances between matched spots)"
-        self.tips_dict[
-            15
-        ] += "list of angular tolerance used at each step after the refinement procedure to link exp. and modeled spots"
+        self.tips_dict[13] += "maximum number of spots to be used for refined (first ones in the list)"
+        self.tips_dict[14] += "True/False to use or not the experimental spot intensities as a weight in the refinement (minimization of distances between matched spots)"
+        self.tips_dict[15] += "list of angular tolerance used at each step after the refinement procedure to link exp. and modeled spots"
 
     def hascorrectvalue(self, kk, val):
 
@@ -441,13 +407,13 @@ class PageMaterialPanel(wx.Panel):
         return flag
 
     def setParams(self):
-        for kk, elem in enumerate(self.list_txtparamIR):
+        for kk, _ in enumerate(self.list_txtparamIR):
             self.list_txtctrl[kk].SetValue(str(self.list_valueparamIR[kk]))
 
     def getParams(self):
         self.dict_param_list = {}
         flag = True
-        for kk, elem in enumerate(self.list_txtparamIR):
+        for kk, _ in enumerate(self.list_txtparamIR):
             val = self.list_txtctrl[kk].GetValue()
 
             print("kk,val", kk, val)
@@ -481,8 +447,7 @@ class MainFrame_indexrefine(wx.Frame):
 
     def __init__(self, parent, _id, title, _initialparameters, objet_IR):
         wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650)
-        )
+            self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650))
 
         self.initialparameters = _initialparameters
 
@@ -536,18 +501,15 @@ class MainFrame_indexrefine(wx.Frame):
                 elif kk == 3:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filedat)
                     btnbrowse.SetToolTipString(
-                        "Select one .dat or .cor file to get (and guess) the generic prefix of all peaks list filenames"
-                    )
+                        "Select one .dat or .cor file to get (and guess) the generic prefix of all peaks list filenames")
                 elif kk == 9:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filedet)
                     btnbrowse.SetToolTipString(
-                        "Select detector calibration parameters .det file"
-                    )
+                        "Select detector calibration parameters .det file")
                 elif kk == 10:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_matsfile)
                     btnbrowse.SetToolTipString(
-                        "Select list of guessed UB matrices or check orientation parameters (.mat,.mats or .ubs) file"
-                    )
+                        "Select list of guessed UB matrices or check orientation parameters (.mat,.mats or .ubs) file")
                 elif kk == 12:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_irpfile)
                     btnbrowse.SetToolTipString("Select index and refine .irp file")
@@ -568,9 +530,7 @@ class MainFrame_indexrefine(wx.Frame):
         txt_cpus = wx.StaticText(self.panel, -1, "nb CPU(s)")
         self.txtctrl_cpus = wx.TextCtrl(self.panel, -1, "1")
 
-        self.chck_renanalyse = wx.CheckBox(
-            self.panel, -1, "(Re)Analyse (overwrite results)"
-        )
+        self.chck_renanalyse = wx.CheckBox(self.panel, -1, "(Re)Analyse (overwrite results)")
         self.chck_renanalyse.SetValue(True)
 
         self.updatefitfiles = wx.CheckBox(self.panel, -1, "Update preexisting results")
@@ -603,19 +563,15 @@ class MainFrame_indexrefine(wx.Frame):
         sentencereanaylse += "If checked, indexation will be (re)performed and overwrite all .fit and .res files (if any)."
         self.chck_renanalyse.SetToolTipString(sentencereanaylse)
 
-        sentenceupdate = (
-            "If checked, indexation and refinement will be performed again\n"
-        )
+        sentenceupdate = ("If checked, indexation and refinement will be performed again\n")
         sentenceupdate += "by checking first the orientation already existing in corresponding fit file\n"
         sentenceupdate += '(matching rate of checked matrix must be higher than the above "Minimum Matching Rate").'
         self.updatefitfiles.SetToolTipString(sentenceupdate)
 
         Createcfgbtn.SetToolTipString(
-            "Create .irp file containing parameters to index & refine peaks list"
-        )
+            "Create .irp file containing parameters to index & refine peaks list")
         self.previousreschk.SetToolTipString(
-            "If checked, prior to indexation from scratch (according to .irp file)first if  orientation matrix of image n-1 is a good guess for indexing the current image n"
-        )
+            "If checked, prior to indexation from scratch (according to .irp file)first if  orientation matrix of image n-1 is a good guess for indexing the current image n")
         tipcpus = "nb of cores to use to index&refine all peaks list files"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
@@ -638,26 +594,24 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[2].SetValue(os.path.join(projectpath, "fitfiles"))
             self.list_txtctrl[1].SetValue(os.path.join(projectpath, "corfiles"))
 
-    def OnbtnBrowse_filepathout_fit(self, event):
+    def OnbtnBrowse_filepathout_fit(self, _):
         folder = wx.DirDialog(
-            self, "Select folder for indexed and refined peaklist .fit files"
-        )
+            self, "Select folder for indexed and refined peaklist .fit files")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[2].SetValue(folder.GetPath())
 
-    def OnbtnBrowse_filepathout_cor(self, event):
+    def OnbtnBrowse_filepathout_cor(self, _):
         folder = wx.DirDialog(self, "Select folder for peaklist .cor files")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[1].SetValue(folder.GetPath())
 
-    def OnbtnBrowse_filedat(self, event):
+    def OnbtnBrowse_filedat(self, _):
         folder = wx.FileDialog(
             self,
             "Select Peaklist File .dat (or .cor)",
-            wildcard="PeakList (*.dat)|*.dat|PeakList (*.cor)|*.cor|All files(*)|*",
-        )
+            wildcard="PeakList (*.dat)|*.dat|PeakList (*.cor)|*.cor|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
 
             abspath = folder.GetPath()
@@ -673,12 +627,11 @@ class MainFrame_indexrefine(wx.Frame):
             nbdigits = int(self.list_txtctrl[5].GetValue())
             self.list_txtctrl[3].SetValue(intension[:-nbdigits])
 
-    def OnbtnBrowse_filedet(self, event):
+    def OnbtnBrowse_filedet(self, _):
         folder = wx.FileDialog(
-            self,
-            "Select CCD Calibration Parameters file .det",
-            wildcard="Detector Parameters File (*.det)|*.det|All files(*)|*",
-        )
+                                self,
+                                "Select CCD Calibration Parameters file .det",
+                                wildcard="Detector Parameters File (*.det)|*.det|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[9].SetValue(folder.GetPath())
@@ -690,31 +643,29 @@ class MainFrame_indexrefine(wx.Frame):
     #
     #             self.list_txtctrl[10].SetValue(folder.GetPath())
 
-    def OnbtnBrowse_matsfile(self, evt):
+    def OnbtnBrowse_matsfile(self, _):
         print("OnbtnBrowse_matsfile")
 
         matsfile = wx.FileDialog(
-            self,
-            "Select Guessed Matrices File or check orientation parameters file (.ubs)",
-            wildcard="Guessed Matrices (*.mat;*.mats;*.ubs)|*.mat;*.mats;*.ubs|All files(*)|*",
-        )
+                    self,
+                    "Select Guessed Matrices File or check orientation parameters file (.ubs)",
+                    wildcard="Guessed Matrices (*.mat;*.mats;*.ubs)|*.mat;*.mats;*.ubs|All files(*)|*")
         if matsfile.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[10].SetValue(matsfile.GetPath())
 
-    def OnbtnBrowse_irpfile(self, evt):
+    def OnbtnBrowse_irpfile(self, _):
         print("OnbtnBrowse_irpfile")
 
         irpfile = wx.FileDialog(
-            self,
-            "Select Index Refine Parameters File",
-            wildcard="Index Refine Param.(*.irp)|*.irp|All files(*)|*",
-        )
+                                self,
+                                "Select Index Refine Parameters File",
+                                wildcard="Index Refine Param.(*.irp)|*.irp|All files(*)|*")
         if irpfile.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[12].SetValue(irpfile.GetPath())
 
-    def OnCreateIRP(self, event):
+    def OnCreateIRP(self, _):
         print("OnCreateIRP")
 
         fileirp = str(self.list_txtctrl[12].GetValue())
@@ -741,11 +692,10 @@ class MainFrame_indexrefine(wx.Frame):
         #        print "listvals", listvals
 
         IRPboard = IndexRefineParameters(
-            self,
-            -1,
-            "Index and Refine Parameters",
-            (LIST_TXTPARAMS, LIST_VALUESPARAMS, LIST_UNITSPARAMS),
-        )
+                                        self,
+                                        -1,
+                                        "Index and Refine Parameters",
+                                        (LIST_TXTPARAMS, LIST_VALUESPARAMS, LIST_UNITSPARAMS))
         IRPboard.Show(True)
 
     def calcCalibrationfitFile(self):
@@ -754,35 +704,26 @@ class MainFrame_indexrefine(wx.Frame):
         """
         # needs to remove bad shaped spots for calibration refinement
         if self.initialparameters["filter_peaks_index_refine_calib"]:
-            filedet = self.list_txtctrl[
-                9
-            ].GetValue()  # to guess the initial CCD parameters
+            filedet = self.list_txtctrl[9].GetValue()  # to guess the initial CCD parameters
             #             referencefiledat_init = self.list_txtctrl[10].GetValue()
             referencefiledat_init = None
 
             if referencefiledat_init is not None:
                 MAXPIXDEV_CALIBRATIONREFINEMENT = self.initialparameters[
-                    "maxpixdev_filter_peaks_index_refine_calib"
-                ]
+                    "maxpixdev_filter_peaks_index_refine_calib"]
                 self.referencefiledat_purged = filter_peaks(
-                    referencefiledat_init, maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT
-                )
-                (
-                    calib_fitfilename,
+                    referencefiledat_init, maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
+                (calib_fitfilename,
                     npeaks_LT,
                     pixdev_LT,
-                ) = index_refine_calib_one_image(
-                    self.referencefiledat_purged, filedet=filedet
-                )
+                ) = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
             else:
                 raise ValueError(
-                    "filter_peaks_index_refine_calib=1 without .dat file of peaks used for calibration is no more used in Index_refine()"
-                )
+                    "filter_peaks_index_refine_calib=1 without .dat file of peaks used for calibration is no more used in Index_refine()")
 
         else:
             (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image(
-                self.referencefiledat_purged, filedet=filedet
-            )
+                self.referencefiledat_purged, filedet=filedet)
 
         self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
         print("CCDcalibrationReference .fit file : %s" % calib_fitfilename)
@@ -797,9 +738,7 @@ class MainFrame_indexrefine(wx.Frame):
                 return True
             except IOError:
                 wx.MessageBox(
-                    "Can not create %s to contain peaks list .fit files !" % fitfolder,
-                    "Error",
-                )
+                    "Can not create %s to contain peaks list .fit files !" % fitfolder, "Error")
                 return False
 
         return True
@@ -812,9 +751,7 @@ class MainFrame_indexrefine(wx.Frame):
                 return True
             except IOError:
                 wx.MessageBox(
-                    "Can not create %s to contain peaks list .cor files !" % corfolder,
-                    "Error",
-                )
+                    "Can not create %s to contain peaks list .cor files !" % corfolder, "Error")
                 return False
 
         return True
@@ -822,9 +759,7 @@ class MainFrame_indexrefine(wx.Frame):
     def datFolderExists(self):
         datfolder = str(self.list_txtctrl[0].GetValue())
         if not os.path.isdir(datfolder):
-            wx.MessageBox(
-                "Can not see %s containing peak list .dat files !" % datfolder, "Error"
-            )
+            wx.MessageBox("Can not see %s containing peak list .dat files !" % datfolder, "Error")
             return False
 
         return True
@@ -833,9 +768,7 @@ class MainFrame_indexrefine(wx.Frame):
         corfolder = self.list_txtctrl[1].GetValue()
 
         if not os.path.isdir(corfolder):
-            wx.MessageBox(
-                "Can not find %s containing peaklist .cor file!" % corfolder, "Error"
-            )
+            wx.MessageBox("Can not find %s containing peaklist .cor file!" % corfolder, "Error")
             return False
 
         return True
@@ -848,17 +781,13 @@ class MainFrame_indexrefine(wx.Frame):
         print("read index refine parameters in:")
 
         if not os.path.exists(fileirp):
-            wx.MessageBox(
-                "Index_refine config file %s does not exist!\n" % fileirp, "Error"
-            )
+            wx.MessageBox("Index_refine config file %s does not exist!\n" % fileirp, "Error")
             return
 
         try:
             self.dict_param_list = ISS.readIndexRefineConfigFile(fileirp)
         except IndexError:
-            wx.MessageBox(
-                "Can't read properly index_refine config file %s\n" % fileirp, "Error"
-            )
+            wx.MessageBox("Can't read properly index_refine config file %s\n" % fileirp, "Error" )
             return
 
         print("dict_param_list in OnStart", self.dict_param_list)
@@ -870,8 +799,7 @@ class MainFrame_indexrefine(wx.Frame):
         if (
             not self.fitFolderExists()
             or not self.corFolderExists()
-            or not self.datFolderExists()
-        ):
+            or not self.datFolderExists()):
             print("some folder missing ")
             return
 
@@ -899,12 +827,10 @@ class MainFrame_indexrefine(wx.Frame):
             )
 
             serial_index_refine_multigrain(
-                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout
-            )
+                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
 
             serial_index_refine_multigrain_v2(
-                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout
-            )
+                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
 
         if 1:  # Lauetools ISS way
 
@@ -923,9 +849,7 @@ class MainFrame_indexrefine(wx.Frame):
             nbfiles = len(listfiles)
             print("nb of files", nbfiles)
             if nbfiles == 0:
-                wx.MessageBox(
-                    "Apparently the folder %s is empty!" % filepathdat, "ERROR"
-                )
+                wx.MessageBox("Apparently the folder %s is empty!" % filepathdat, "ERROR")
                 return
 
             indexfile = 0
@@ -936,11 +860,9 @@ class MainFrame_indexrefine(wx.Frame):
                     if listfiles[indexfile].startswith(fileprefix):
                         break
                 if indexfile == nbfiles - 1:
-                    wx.MessageBox(
-                        "No peaklist filename %s starting with\n%s\nin folder\n%s"
+                    wx.MessageBox("No peaklist filename %s starting with\n%s\nin folder\n%s"
                         % (filesuffix, fileprefix, filepathdat),
-                        "ERROR",
-                    )
+                        "ERROR")
                     FileNotFound = False
                 indexfile += 1
 
@@ -980,9 +902,7 @@ class MainFrame_indexrefine(wx.Frame):
                 finalindex = int(self.list_txtctrl[7].GetValue())
                 stepindex = int(self.list_txtctrl[8].GetValue())
             except:
-                wx.MessageBox(
-                    "You should enter integer values for images index fields", "ERROR"
-                )
+                wx.MessageBox("You should enter integer values for images index fields", "ERROR")
                 return
 
             fileindexrange = (startindex, finalindex, stepindex)

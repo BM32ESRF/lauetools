@@ -80,6 +80,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.key_material = None
         self.dict_Materials = indexation_parameters["dict_Materials"]
         self.dict_Rot = indexation_parameters["dict_Rot"]
+        self.list_of_cliques = indexation_parameters["Cliques"]
 
         self.current_exp_spot_index_list = indexation_parameters["DataToIndex"]["current_exp_spot_index_list"]
         #         print "self.current_exp_spot_index_list", self.current_exp_spot_index_list
@@ -223,6 +224,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.gauge = wx.Gauge(self.panel, -1, 1000, (400, 455), size=(250, 25))
 
         self.sb = self.CreateStatusBar()
+
+        #-----  use input of cliques
+        cliqueindex=0
+        if self.list_of_cliques is not None:
+            self.spotlistA.SetValue(str(self.list_of_cliques[cliqueindex].tolist()))
+            self.setBchck.SetValue(False)
 
         self.Show(True)
         self.Centre()

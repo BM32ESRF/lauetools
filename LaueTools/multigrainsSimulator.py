@@ -410,10 +410,8 @@ def dosimulation_parametric(
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
                 if 1:
-                    print(
-                        " 10 first transpose(Qvectors_ParentGrain[0])",
-                        Qvectors_ParentGrain[0][:10],
-                    )
+                    print(" 10 first transpose(Qvectors_ParentGrain[0])",
+                        Qvectors_ParentGrain[0][:10])
                     print(np.shape(qvectors_ChildGrain))
                     print("GrainSimulParam", GrainSimulParam)
                     print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
@@ -425,7 +423,7 @@ def dosimulation_parametric(
 
             # test whether there is at least one Laue spot in the camera
             for elem in spots2pi[0]:
-                if not elem:
+                if len(elem) == 0:
                     print("There is at least one child grain without peaks on CCD camera for ChildGrain_index= %.3f"
                         % ChildGrain_index)
                     break

@@ -576,8 +576,7 @@ def error_function_on_demand_strain(
     ally = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X, Y, theta, R = xy_from_Quat(
-                                allparameters[:5],
+    X, Y, theta, R = xy_from_Quat(allparameters[:5],
                                 DATA_Q,
                                 nspots,
                                 np.arange(5),
@@ -589,8 +588,7 @@ def error_function_on_demand_strain(
                                 verbose=0,
                                 pixelsize=pixelsize,
                                 dim=dim,
-                                kf_direction=kf_direction,
-                            )
+                                kf_direction=kf_direction)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -617,14 +615,12 @@ def error_function_on_demand_strain(
             print(
                 "***********mean weighted pixel deviation   ",
                 np.mean(distanceterm),
-                "    ********",
-            )
+                "    ********")
         else:
             print(
                 "***********mean pixel deviation   ",
                 np.mean(distanceterm),
-                "    ********",
-            )
+                "    ********")
         #        print "newmatrix", newmatrix
         return distanceterm, deltamat, newmatrix
 

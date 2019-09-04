@@ -222,6 +222,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.Matrix_Store = []
         self.mat_store_ind = 0
+        self.list_of_cliques = None
 
         self.ClassicalIndexation_Tabledist = None
 
@@ -922,6 +923,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["detectorparameters"] = self.defaultParam
         self.indexation_parameters["CCDLabel"] = self.CCDLabel
         self.indexation_parameters["mainAppframe"] = self
+        self.indexation_parameters["Cliques"] = self.list_of_cliques
 
         # update DataSetObject
         self.DataSet.dim = self.indexation_parameters["dim"]
@@ -2448,12 +2450,10 @@ class CliquesFindingBoard(wx.Frame):
 
         wx.Frame.__init__(self, parent, _id, title, size=(400, 330))
 
-        self.panel = wx.Panel(
-            self, -1, style=wx.SIMPLE_BORDER, size=(590, 390), pos=(5, 5)
-        )
+        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 390), pos=(5, 5))
 
-        self.indexation_parameters=indexation_parameters
-        self.parent=parent
+        self.indexation_parameters = indexation_parameters
+        self.parent = parent
         self.LUTfilename = None
 
         DataPlot_filename = 'toto'
@@ -2553,6 +2553,8 @@ class CliquesFindingBoard(wx.Frame):
         print("BEST CLIQUES **************")
         print(DisplayCliques)
         print("***************************")
+
+        self.parent.list_of_cliques = res_cliques
 
         wx.MessageBox('Following spot indices are likely to belong to the same grain:\n %s'%DisplayCliques,
                             'CLIQUES RESULTS')
