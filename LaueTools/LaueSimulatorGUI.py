@@ -38,16 +38,16 @@ else:
 
 if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
-    from . SimulFrame import SimulationPlotFrame, getindices_StreakingData
+    from . SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     from . import CrystalParameters as CP
-    from . import multigrainsSimulator
+    from . import multigrainsSimulator as MGS
     from . import readmccd as RMCCD
 
 else:
     import dict_LaueTools as DictLT
-    from SimulFrame import SimulationPlotFrame, getindices_StreakingData
+    from SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     import CrystalParameters as CP
-    import multigrainsSimulator
+    import multigrainsSimulator as MGS
     import readmccd as RMCCD
 
 
@@ -252,11 +252,11 @@ class TransformPanel(wx.Panel):
 
         self.rb_rotId.SetToolTipString("No rotation (default)")
 
-    def onEnableStrain(self, evt):
+    def onEnableStrain(self, _):
         if self.rb_strainaxes.GetValue():
             self.rb_rotId.SetValue(True)
 
-    def onEnableRotation(self, evt):
+    def onEnableRotation(self, _):
         if self.rb_rotaxis.GetValue() or self.rb_rotmatrix.GetValue():
             self.rb_strainId.SetValue(True)
 
@@ -1158,7 +1158,7 @@ class parametric_Grain_Dialog3(wx.Frame):
     def OnKeyDown(self, event):
         event.Skip()
 
-    def showCurrentDir(self, evt):
+    def showCurrentDir(self, _):
         dlg = wx.MessageDialog(
             self,
             "Current directory :%s" % self.dirname,
@@ -1168,11 +1168,11 @@ class parametric_Grain_Dialog3(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def onLoadMaterials(self, evt):
+    def onLoadMaterials(self, _):
         self.parent.OnLoadMaterials(1)
         self.updatecombosmenus(1)
 
-    def updatecombosmenus(self,evt):
+    def updatecombosmenus(self, _):
 
         self.RefreshCombosChoices()
 
@@ -1511,7 +1511,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         corfileobj.close()
 
-    def OnSave(self, evt, data_res):
+    def OnSave(self, _, data_res):
 
         textfile = open(os.path.join(self.dirname, self.simul_filename), "w")
 
@@ -1522,7 +1522,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         fullname = os.path.join(self.dirname, self.simul_filename)
         wx.MessageBox("File saved in %s" % fullname, "INFO")
 
-    def opendir(self, evt):
+    def opendir(self, _):
         dlg = wx.DirDialog(
                             self,
                             "Choose a directory:self.control.SetValue(str(self.indexed_spots).replace('],',']\n'))",
@@ -1545,7 +1545,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # select all created grain and build dict self.SelectGrains
         self.Select_AllGrain(evt)
         # list of parameters for parent and child grains
-        list_param = multigrainsSimulator.Construct_GrainsParameters_parametric(self.SelectGrains)
+        list_param = MGS.Construct_GrainsParameters_parametric(self.SelectGrains)
 
         print('list_param',list_param)
 
@@ -1637,24 +1637,23 @@ class parametric_Grain_Dialog3(wx.Frame):
         # simulation in class parametric_Grain_Dialog3
 
         self.calib = [self.Det_distance, self.Xcen, self.Ycen, self.Xbet, self.Xgam]
-        data_res = multigrainsSimulator.dosimulation_parametric(
-            list_param,
-            emax=self.emax,
-            emin=self.emin,
-            detectordistance=self.Det_distance,
-            detectordiameter=self.Det_diameter,
-            posCEN=(self.Xcen, self.Ycen),
-            cameraAngles=(self.Xbet, self.Xgam),
-            gauge=self.gauge,
-            kf_direction=cameraposition,
-            Transform_params=self.dict_transform,
-            SelectGrains=self.SelectGrains,
-            pixelsize=self.pixelsize,
-            framedim=self.framedim,
-            dictmaterials=self.parent.dict_Materials
-        )
+        data_res = MGS.dosimulation_parametric(list_param,
+                                                emax=self.emax,
+                                                emin=self.emin,
+                                                detectordistance=self.Det_distance,
+                                                detectordiameter=self.Det_diameter,
+                                                posCEN=(self.Xcen, self.Ycen),
+                                                cameraAngles=(self.Xbet, self.Xgam),
+                                                gauge=self.gauge,
+                                                kf_direction=cameraposition,
+                                                Transform_params=self.dict_transform,
+                                                SelectGrains=self.SelectGrains,
+                                                pixelsize=self.pixelsize,
+                                                framedim=self.framedim,
+                                                dictmaterials=self.parent.dict_Materials)
 
-        (list_twicetheta, list_chi, list_energy, list_Miller,
+        (list_twicetheta, list_chi,
+        list_energy, list_Miller,
         list_posX, list_posY, ListName, nb_g_t, calib, total_nb_grains) = data_res
 
         print("len(list_posX)", len(list_posX))
@@ -1670,7 +1669,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         TransformType_list = []
         Nbspots_list = []
         SpotIndexAccum_list = [] # list of last spot index belonging to the subgrain
-        subgrainindex=0
+        subgrainindex = 0
         accumNb = -1
         for par in nb_g_t:
             parGrainIndex, nbtransfroms, transform_type = par
@@ -1683,9 +1682,9 @@ class parametric_Grain_Dialog3(wx.Frame):
                 SpotIndexAccum_list.append(accumNb)
                 subgrainindex += 1
 
-        print('SpotIndexAccum_list',SpotIndexAccum_list)
-        print('GrainParent_list',GrainParent_list)
-        print('TransformType_list',TransformType_list)
+        print('SpotIndexAccum_list', SpotIndexAccum_list)
+        print('GrainParent_list', GrainParent_list)
+        print('TransformType_list', TransformType_list)
  
         # ------  setting StreakingData   for grains distribution or slips system or single crystals
         # StreakingData = data_res, SpotIndexAccum_list, GrainParent_list, TransformType_list, slipsystemsfcc
@@ -1701,10 +1700,10 @@ class parametric_Grain_Dialog3(wx.Frame):
                 print("there is a slipsystem simulation")
                 slipsystemsfcc = DictLT.SLIPSYSTEMS_FCC
                 plottype += 'XYmar_SlipsSystem'
-        
+
         StreakingData = data_res, SpotIndexAccum_list, GrainParent_list, TransformType_list, slipsystemsfcc
 
-        print('StreakingData[1]',StreakingData[1])
+        print('StreakingData[1]', StreakingData[1])
 
         # ------------------------------------------------
         # plot results --------------------------------------
@@ -1736,8 +1735,8 @@ class parametric_Grain_Dialog3(wx.Frame):
                         ImageArray=ImageArray,
                         StreakingData=StreakingData,
                         list_grains_transforms=nb_g_t,
-                        CCDLabel=self.CCDLabel, )
-        
+                        CCDLabel=self.CCDLabel)
+
         simulframe.Show(True)
 
         self.textprocess.SetLabel("Laue Simulation Completed")
@@ -1776,7 +1775,7 @@ def Edit_String_SimulData(data):
 
     params:
 
-    data tuple of spots properties    
+    data tuple of spots properties
     data =(list_twicetheta, list_chi, list_energy, list_Miller, list_posX, list_posY,
            ListName, nb of(parent) grains,
             calibration parameters list, total nb of grains)
@@ -1812,8 +1811,7 @@ def Edit_String_SimulData(data):
                     TWT[index_grain][data_index],
                     CHI[index_grain][data_index],
                     XX[index_grain][data_index],
-                    YY[index_grain][data_index],
-                )
+                    YY[index_grain][data_index])
                 lines += linedata
         lines += "#calibration parameters\n"
         for param in calib:
@@ -1822,9 +1820,7 @@ def Edit_String_SimulData(data):
         #        self.control.SetValue(lines)
         return lines
 
-    if type(nb) == type(
-        [[0, 5], [1, 10]]
-    ):  # nb= list of [grain index, nb of transforms]
+    if isinstance(nb, list):  # nb= list of [grain index, nb of transforms]
         print("nb in Edit_String_SimulData", nb)
         gen_i = 0
         TWT, CHI, ENE, MIL, XX, YY = data[:6]
@@ -1833,12 +1829,10 @@ def Edit_String_SimulData(data):
         for grain_ind in range(len(nb)):  # loop over parent grains
             for tt in range(nb[grain_ind][1]):
                 nb_of_simulspots = len(TWT[gen_i])
-                startgrain = "#G %d\t%s\t%d\t%d\n" % (
-                    grain_ind,
-                    NAME[grain_ind],
-                    tt,
-                    nb_of_simulspots,
-                )
+                startgrain = "#G %d\t%s\t%d\t%d\n" % (grain_ind,
+                                                        NAME[grain_ind],
+                                                        tt,
+                                                        nb_of_simulspots)
 
                 lines += startgrain
                 for data_index in range(nb_of_simulspots):

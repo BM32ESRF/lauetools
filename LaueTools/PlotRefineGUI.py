@@ -1305,7 +1305,8 @@ class Plot_RefineFrame(wx.Frame):
 
         veryclose_angletol = float(self.matr_ctrl.GetValue())  # in degrees
         # ---------  theoretical data
-        (twicetheta, chi, Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
+        # (twicetheta, chi, Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
+        (twicetheta, chi, Miller_ind, _, _, energy) = self.Simulate_Pattern()
 
         # whole experimental data
         # twicetheta_exp, chi_exp, dataintensity_exp = F2TC.Compute_data2thetachi(self.filename,
@@ -2502,8 +2503,7 @@ class Plot_RefineFrame(wx.Frame):
             newUmat,
             newB0matrix,
             newlatticeparameters,
-        ) = FitO.error_function_latticeparameters(
-                                                results,
+        ) = FitO.error_function_latticeparameters(results,
                                                 self.fitting_parameters_keys,
                                                 hkls,
                                                 self.allparameters,
@@ -2517,11 +2517,9 @@ class Plot_RefineFrame(wx.Frame):
                                                 dim=self.framedim,
                                                 weights=weights,
                                                 kf_direction=self.kf_direction,
-                                                returnalldata=True,
-                                            )
+                                                returnalldata=True)
 
-        self.residues_non_weighted = FitO.error_function_latticeparameters(
-                                                                            results,
+        self.residues_non_weighted = FitO.error_function_latticeparameters(results,
                                                                             self.fitting_parameters_keys,
                                                                             hkls,
                                                                             self.allparameters,
@@ -2535,8 +2533,7 @@ class Plot_RefineFrame(wx.Frame):
                                                                             dim=self.framedim,
                                                                             weights=None,
                                                                             kf_direction=self.kf_direction,
-                                                                            returnalldata=False,
-                                                                        )
+                                                                            returnalldata=False)
 
         print("Final pixel all residues", residues)
         print("---------------------------------------------------\n")
@@ -2710,9 +2707,7 @@ class Plot_RefineFrame(wx.Frame):
             mySpotData = {}
             for k, ff in enumerate(fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(None,
-                                        -1,
-                                        "Show and Filter fit results Spots Editor ",
+            dia = LSEditor.SpotsEditor(None,-1, "Show and Filter fit results Spots Editor ",
                                         mySpotData,
                                         func_to_call=self.readdata_fromEditor_Res,
                                         field_name_and_order=fields)
@@ -2751,7 +2746,7 @@ class Plot_RefineFrame(wx.Frame):
         residues = np.array(self.linkResidues_fit)[:, 2]
 
         fullresults = 1
-        addCCDparams = 1
+        # addCCDparams = 1
 
         if fullresults:
             # theoretical spots properties
@@ -2763,7 +2758,8 @@ class Plot_RefineFrame(wx.Frame):
             SpotsProperties = LAUE.calcSpots_fromHKLlist(self.UBmat, self.B0matrix,
                                                             np.array([_h, _k, _l]).T,
                                                             dictCCD)
-            (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
+            # (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties                       
+            (_, _, _, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
 
             # self.Data_2theta, self.Data_chi, self.Data_I, self.File_NAME = self.data
 
@@ -2774,8 +2770,8 @@ class Plot_RefineFrame(wx.Frame):
             Xexp = AllDataToIndex["data_pixX"][indExp]
             Yexp = AllDataToIndex["data_pixY"][indExp]
 
-            Columns = [ indExp, intens, _h, _k, _l, residues, Energytheo, Xexp, Yexp, twtheexp,
-                                        chiexp, Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz, ]
+            Columns = [indExp, intens, _h, _k, _l, residues, Energytheo, Xexp, Yexp, twtheexp,
+                                        chiexp, Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz]
             columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
 
         else:  # old only 5 columns in .fit file
@@ -2812,9 +2808,8 @@ class Plot_RefineFrame(wx.Frame):
         if self.Tsresults is not None:
             dict_matrices["Ts"] = self.Tsresults
 
-        dlg = wx.TextEntryDialog(
-            self, "Enter fit File name : \n", "Saving Calibration Parameters Entry"
-        )
+        dlg = wx.TextEntryDialog(self, "Enter fit File name : \n",
+                                                            "Saving Calibration Parameters Entry")
         dlg.SetValue("%s" % outputfilename)
         filenamefit = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -2887,19 +2882,20 @@ class Plot_RefineFrame(wx.Frame):
         if self.SimulParam != None:
             # print "self.SimulParam in Plot_RefineFrame.Annotate_theo()",self.SimulParam
             Grain, Emin, Emax = self.SimulParam
-            (Twicetheta, Chi, Miller_ind, posx, posy, energy) = LAUE.SimulateLaue(
-                                                        Grain,
-                                                        Emin,
-                                                        Emax,
-                                                        self.CCDcalib,
-                                                        kf_direction=self.kf_direction,
-                                                        removeharmonics=1,
-                                                        pixelsize=self.pixelsize,
-                                                        dim=self.framedim,
-                                                        ResolutionAngstrom=self.ResolutionAngstrom,
-                                                        detectordiameter=diameter_for_simulation * 1.25,
-                                                        dictmaterials=self.dict_Materials
-                                                    )
+            (Twicetheta, Chi,
+            Miller_ind,
+            posx, posy,
+            energy) = LAUE.SimulateLaue(Grain,
+                                        Emin,
+                                        Emax,
+                                        self.CCDcalib,
+                                        kf_direction=self.kf_direction,
+                                        removeharmonics=1,
+                                        pixelsize=self.pixelsize,
+                                        dim=self.framedim,
+                                        ResolutionAngstrom=self.ResolutionAngstrom,
+                                        detectordiameter=diameter_for_simulation * 1.25,
+                                        dictmaterials=self.dict_Materials)
 
             self.data_theo = [Twicetheta, Chi, Miller_ind, posx, posy, energy]
 
@@ -2957,9 +2953,7 @@ class Plot_RefineFrame(wx.Frame):
             self.pointButton5.SetValue(True)
             self.pointButton5.SetBackgroundColour("Green")
             self.listbuttonstate = [1, 0, 0]
-            print(
-                "\n\n********************\nAccepting Matching...\n********************\n\n"
-            )
+            print("\n\n********************\nAccepting Matching...\n********************\n\n")
             self.Spot_MillerAttribution(evt)
         else:
             self.pointButton5.SetBackgroundColour(self.defaultColor)
@@ -2997,7 +2991,7 @@ class Plot_RefineFrame(wx.Frame):
             self.pointButton7.SetValue(False)
             self.listbuttonstate = [0, 0, 0]
 
-    def close(self, event):
+    def close(self, _):
         self.Close(True)
 
     # --- ---------Plot  functions
@@ -3049,13 +3043,13 @@ class Plot_RefineFrame(wx.Frame):
         # clear the axes and replot everything
         #        self.axes.cla()
 
-        def fromindex_to_pixelpos_x(index, pos):
+        def fromindex_to_pixelpos_x(index, _):
             if self.datatype == "pixels":
                 return int(index)
             else:
                 return index
 
-        def fromindex_to_pixelpos_y(index, pos):
+        def fromindex_to_pixelpos_y(index, _):
             if self.datatype == "pixels":
                 return int(index)
             else:
@@ -3103,36 +3097,30 @@ class Plot_RefineFrame(wx.Frame):
             except KeyError:
                 # print "No acces to this key is os.environ ??!!"
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = 50, marker = 'o',facecolor = 'None',edgecolor = 'r',alpha = 1.)  # ok for window, matplotlib 0.99.1.1
-                self.axes.scatter(
-                    self.data_theo_displayed[0],
-                    self.data_theo_displayed[1],
-                    s=50,
-                    marker=markerstyle,
-                    edgecolor="r",
-                    facecolors="None",
-                )
+                self.axes.scatter(self.data_theo_displayed[0],
+                                        self.data_theo_displayed[1],
+                                        s=50,
+                                        marker=markerstyle,
+                                        edgecolor="r",
+                                        facecolors="None")
                 if matplotlibversion == "0.99.1":  # ok linux with matplotlib 0.99.1
                     # print "matplotlibversion  ==  '0.99.1'"
-                    self.axes.scatter(
-                        self.data_theo_displayed[0],
-                        self.data_theo_displayed[1],
-                        s=50,
-                        marker=markerstyle,
-                        edgecolor="r",
-                        facecolor="None",
-                    )
+                    self.axes.scatter(self.data_theo_displayed[0],
+                                        self.data_theo_displayed[1],
+                                        s=50,
+                                        marker=markerstyle,
+                                        edgecolor="r",
+                                        facecolor="None")
 
             else:
                 print("else of KeyError")
                 # ok for windows matplotlib 0.99.1
-                self.axes.scatter(
-                    self.data_theo_displayed[0],
-                    self.data_theo_displayed[1],
-                    s=50,
-                    marker=markerstyle,
-                    facecolor="None",
-                    edgecolor="r",
-                )
+                self.axes.scatter(self.data_theo_displayed[0],
+                                    self.data_theo_displayed[1],
+                                    s=50,
+                                    marker=markerstyle,
+                                    facecolor="None",
+                                    edgecolor="r")
         # with size varying according to F**2 = self.Millerindices**2
         # print "self.Millerindices",self.Millerindices
         # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = np.sum(self.Millerindices**2, axis = 1),marker = 'o',alpha = 0, edgecolor = 'r',c = 'w')
@@ -3156,21 +3144,18 @@ class Plot_RefineFrame(wx.Frame):
 
             # background image
             if self.ImageArray is not None:
-                kwords = {
-                    "marker": "o",
-                    "facecolor": "None",
-                    "edgecolor": self.data_dict["markercolor"]}
+                kwords = {"marker": "o",
+                            "facecolor": "None",
+                            "edgecolor": self.data_dict["markercolor"]}
             else:
                 #                 self.axes.set_xbound(self.currentbounds[0])
                 #                 self.axes.set_ybound(self.currentbounds[1])
 
-                kwords = {
-                    "edgecolor": "None",
-                    "facecolor": self.data_dict["markercolor"]}
+                kwords = {"edgecolor": "None",
+                            "facecolor": self.data_dict["markercolor"]}
 
             #             print "experimental spots self.pixelX,self.pixelY", self.pixelX[:5], self.pixelY[:5]
-            self.axes.scatter(
-                            self.pixelX - X_offset,
+            self.axes.scatter(self.pixelX - X_offset,
                             self.pixelY - Y_offset,
                             s=self.Data_I / np.amax(self.Data_I) * 100.0,
                             alpha=0.5,
@@ -3184,42 +3169,7 @@ class Plot_RefineFrame(wx.Frame):
         elif self.datatype == "pixels":
             self.axes.set_xlabel("X pixel")
             self.axes.set_ylabel("Y pixel")
-
-        # limits of plots
-        #         if self.datatype == '2thetachi':
-        #             if self.kf_direction == 'Z>0':
-        #                 if self.init_plot or self.datatype_unchanged is False:
-        #                     if self.xlim is None and self.ylim is None:
-        #                         self.xlim = (34, 146)
-        #                         self.ylim = (-50, 50)
-        #
-        #             elif self.kf_direction == 'X>0':
-        #                 if self.init_plot or self.datatype_unchanged is False:
-        #                     if self.xlim is None and self.ylim is None:
-        #                         self.xlim = (-1, 25)
-        #                         self.ylim = (-180, 180)
-        #
-        # #         elif self.datatype == 'gnomon':
-        # #             if self.init_plot or self.datatype_unchanged is False:
-        # #                 if self.xlim is None and self.ylim is None:
-        # #                     self.ylim = (-.6, .6)
-        # #                     self.xlim = (-.6, 0.6)
-        # #             self.axes.set_xlabel('X gnomon')
-        # #             self.axes.set_ylabel('Y gnomon')
-        #
-        #         elif self.datatype == 'pixels':
-        #
-        # #             ylim = (-100, 2150)
-        #             if self.init_plot or self.datatype_unchanged is False:
-        #                 # marccd and roper convention flipyaxis= True
-        #                 if self.xlim is None and self.ylim is None:
-        #                     if self.flipyaxis:
-        #                         self.ylim = (2048, 0)
-        #                     else:
-        #                         self.ylim = (0, 2048)
-        #
-        #                     self.xlim = (0, 2048)
-
+        
         nbspotstoindex = len(self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"])
 
         texttitle = "%s %d/%d spots" % (self.File_NAME, len(self.Data_I), nbspotstoindex)
@@ -3683,21 +3633,17 @@ class Plot_RefineFrame(wx.Frame):
 
         if self.datatype == "pixels":
             # x, y, (miller 2theta chi energy)
-            xdata, ydata, annotes = (
-                self.data_theo_pixXY[0],
-                self.data_theo_pixXY[1],
-                self.data_theo_pixXY[2:],
-            )
+            _, _, annotes = (self.data_theo_pixXY[0],
+                                    self.data_theo_pixXY[1],
+                                    self.data_theo_pixXY[2:])
 
         #         elif self.datatype == 'gnomon':
         #             xdata, ydata, annotes = self.data_theo  # sim_gnomonx, sim_gnomony, Miller_ind
 
         #         self._dataANNOTE_theo = zip(xdata, ydata, annotes)
-        xdata_theo, ydata_theo, _annotes_theo = (
-            self.data_theo[0],
-            self.data_theo[1],
-            list(zip(*self.data_theo[2:])),
-        )
+        xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
+                                                self.data_theo[1],
+                                                list(zip(*self.data_theo[2:])))
 
         clickX = event.xdata
         clickY = event.ydata
@@ -3711,8 +3657,7 @@ class Plot_RefineFrame(wx.Frame):
 
         annotes = []
         for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
-            if (clickX - xtol < x < clickX + xtol) and (
-                clickY - ytol < y < clickY + ytol):
+            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
 
                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo))
 
@@ -3738,21 +3683,18 @@ class Plot_RefineFrame(wx.Frame):
 
         if spottype == "theo":
             self.sb.SetStatusText(
-                ("%s= %.2f " % (Xplot, x)
-                    + " %s= %.2f " % (Yplot, y)
-                    + "  HKL=%s " % str(annote[0])
-                    + "E=%.2f keV" % annote[3]),
-                0)
+                                    ("%s= %.2f " % (Xplot, x)
+                                        + " %s= %.2f " % (Yplot, y)
+                                        + "  HKL=%s " % str(annote[0])
+                                        + "E=%.2f keV" % annote[3]), 0)
 
         elif spottype == "exp":
 
             self.sb.SetStatusText(
-                ("%s= %.2f " % (Xplot, x)
-                    + " %s= %.2f " % (Yplot, y)
-                    + "   Spotindex=%d " % annote[0]
-                    + "   Intensity=%.2f" % annote[1]
-                ),
-                1)
+                                    ("%s= %.2f " % (Xplot, x)
+                                        + " %s= %.2f " % (Yplot, y)
+                                        + "   Spotindex=%d " % annote[0]
+                                        + "   Intensity=%.2f" % annote[1]), 1)
 
 
 # --- ---------Results of fitting Dialog class ------------------
@@ -3779,9 +3721,7 @@ class FitResultsBoard(wx.Dialog):
         textHKLxyz = data_dict["HKLxyz"]
 
 
-        wx.Dialog.__init__(
-            self, parent, -1, title=title, pos=(200, 200), size=(810, 660)
-        )
+        wx.Dialog.__init__(self, parent, -1, title=title, pos=(200, 200), size=(810, 660))
 
         # Start of sizers and widgets contained within.
         self.background = self  # wx.Panel(self)

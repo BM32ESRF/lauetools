@@ -1,13 +1,12 @@
 from __future__ import print_function
-
 """
 module of lauetools project
 
 JS Micha May 2019
 
 package gathering general tools
-
 """
+
 import copy
 import pickle
 import multiprocessing
@@ -136,10 +135,10 @@ def distfrom2thetachi(points1, points2):
     returns angular distance (deg) from two single spots
     defined by kf=(2theta,chi) between corresponding q vectors
     (ie corresponding to the two atomic planes normals)
-    
+
     q = kf - ki
 
-    points1, points2 must be two elements array: [2theta_1, chi_1], [2theta_2, chi_2]  
+    points1, points2 must be two elements array: [2theta_1, chi_1], [2theta_2, chi_2]
     """
 
     longdata1 = points1[0] * DEG / 2.0  # theta
@@ -150,8 +149,7 @@ def distfrom2thetachi(points1, points2):
 
     deltalat = latdata1 - latdata2
     cosang = np.sin(longdata1) * np.sin(longdata2) + np.cos(longdata1) * np.cos(
-        longdata2
-    ) * np.cos(deltalat)
+                                                                    longdata2) * np.cos(deltalat)
 
     return np.arccos(cosang) / DEG
 
@@ -222,7 +220,7 @@ def pairwise_mutualangles(XY1, XY2):
     for i in range(M1):
         #print("XY1[i]",XY1[i])
         for j in range(M2):
-            D[i,j] = mycalcangle(XY1[i], XY2[j])
+            D[i, j] = mycalcangle(XY1[i], XY2[j])
             #k+=1
     return D
 
@@ -297,17 +295,16 @@ def norme_list(listvec):
 def tensile_along_u(v, tensile, u="zsample"):
     """
     from list of vectors of q vectors expressed in absolute frame,
-    transform them so that to expand or compress the q vector component along u axis by factor 'tensile'. 
-    
+    transform them so that to expand or compress the q vector component along u axis by factor 'tensile'.
+
     result is an array of 3 elements vectors
-    
+
     v*_in = v*_in_plane+v*_in_along_u
     v*_out = v*_in_plane+factor * v*_in_along_u
     v*_in_along_u = (v*_in.u) u   (along u)
     v*_out = v*_in+(factor-1)(v_in.u) u
     (or v*_in_plane= (u ^ v)^u)
 
-    
     example: 1.02 means real expansion of 2% i.e. 1/1.02 of variation of reciprocal vector component along u
     """
     # print "lolo",v # all v vectors
@@ -322,9 +319,7 @@ def tensile_along_u(v, tensile, u="zsample"):
         # normalized axis vector u
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
-        direction_traction = (
-            np.array(UU) / nUU
-        )  # u direction traction in q space in absolute frame
+        direction_traction = np.array(UU) / nUU # u direction traction in q space in absolute frame
 
     # u must be normalized
     scalaruv = np.inner(v, direction_traction)  # array of all scalar product (u, v)
@@ -332,12 +327,10 @@ def tensile_along_u(v, tensile, u="zsample"):
 
     # crossuvu = cross(cross(direction_traction, wholelistvecfiltered[0]),direction_traction)
     # wholelistvecfiltered = [crossuvu+1./real_expansion_coef*np.reshape(scalaruv,(len(scalaruv),1))*direction_traction]
-    wholelistvecfiltered = (
-        v
-        + (1.0 / real_expansion_coef - 1)
-        * np.reshape(scalaruv, (len(scalaruv), 1))
-        * direction_traction
-    )
+    wholelistvecfiltered = (v
+                            + (1.0 / real_expansion_coef - 1)
+                            * np.reshape(scalaruv, (len(scalaruv), 1))
+                            * direction_traction)
     # print "lala",wholelistvecfiltered
 
     return wholelistvecfiltered
@@ -379,7 +372,7 @@ def reflect_on_u(v, u):
 
 def strain_along_u(v, alpha, u="zsample", anglesample=40):
     """
-    from list of vectors of v in absolute frame, 
+    from list of vectors of v in absolute frame,
     /alpha expand or contract one vector component along u
     alpha in real space
     1/alpha in reciprocal space
@@ -388,16 +381,13 @@ def strain_along_u(v, alpha, u="zsample", anglesample=40):
     omegasurfacesample = anglesample * DEG  # 40 deg sample inclination
     if u == "zsample":
         direction_traction = np.array(
-            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)]
-        )  # u direction traction in q space in absolute frame
+            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  # u direction traction in q space in absolute frame
     else:
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
         direction_traction = np.array(UU) / nUU  # u direction traction in q space
 
-    mat = np.eye(3) + (1.0 / alpha - 1) * np.outer(
-        direction_traction, direction_traction
-    )
+    mat = np.eye(3) + (1.0 / alpha - 1) * np.outer(direction_traction, direction_traction)
 
     wholelistvecfiltered = np.dot(mat, v.T).T
 
@@ -429,14 +419,12 @@ def mat3x3_to_matline(mat):
 
 def epsline_to_epsmat(epsline):
     """
-    Arrange the 6 elements in line in symetric deviatoric strain matrix (3x3) 
+    Arrange the 6 elements in line in symetric deviatoric strain matrix (3x3)
 
     NOTE: # deviatoric strain 11 22 33 -dalf 23, -dbet 13, -dgam 12
     """
     if len(epsline) != 6:
-        raise ValueError(
-            "%s argument in epsline_to_epsmat has not 6 elements" % epsline
-        )
+        raise ValueError("%s argument in epsline_to_epsmat has not 6 elements" % epsline)
 
     epsmat = np.identity(3, float)
 
@@ -458,7 +446,7 @@ def epsline_to_epsmat(epsline):
 def epsmat_to_epsline(epsmat):
     """
     Arrange matrix elements of symetric deviatoric strain (6 independent elements)
-    in a row matrix 
+    in a row matrix
 
     From Odile robach
     """
@@ -484,7 +472,7 @@ def Orthonormalization(mat):
 
     first vector is considered as the first vector of the new basis
 
-    TODO : to check 
+    TODO : to check
     """
     vec1, vec2, _ = np.array(mat).T
 
@@ -507,7 +495,7 @@ def UBdecomposition_RRPP(UBmat):
     # polar decomposition from singular value decomposition
     # see http://en.wikipedia.org/wiki/Polar_decomposition and np.svd() help
     U, ss, Vc = np.linalg.svd(UBmat)
-    # TODO: SS is unused !
+
     SS = np.zeros_like(UBmat)
     SS = np.diag(ss)
     RR = np.dot(U, Vc)  # rotation matrix
@@ -520,10 +508,8 @@ def UBdecomposition_RRPP(UBmat):
 
 
 # ---- ------------------  TENSORS -------
-"""
-http://www.continuummechanics.org/coordxforms.html
-"""
-
+##http://www.continuummechanics.org/coordxforms.html
+#
 
 def rotT(T, g):
     """
@@ -1000,13 +986,13 @@ def Set_dict_frompairs(pairs_index, verbose=0):
         if len(pairs) > 1:
             classmembers = [elem] + pairs.tolist()
             set_min = set()
-            for elem in classmembers:
-                if elem in res_dict:
-                    set_min = set_min.union(res_dict[elem])
+            for _elem in classmembers:
+                if _elem in res_dict:
+                    set_min = set_min.union(res_dict[_elem])
                 else:
-                    set_min.add(elem)
+                    set_min.add(_elem)
 
-                res_dict[elem] = set_min
+                res_dict[_elem] = set_min
 
     if verbose:
         print("res_dict", res_dict)
@@ -1074,8 +1060,6 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
 
     print("coord12", coord12)
 
-    import scipy.spatial.distance as ssd
-
     tabdist = ssd.squareform(ssd.pdist(coord12, metric="euclidean"))
 
     close_pos1 = np.where(tabdist < dist_tolerance)
@@ -1117,13 +1101,13 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
 def mergelistofPoints(XY1, XY2, dist_tolerance=0.5, verbose=0):
     """
     merge two list of points (concatenate) and without duplicates
-    
+
     keeping one spot from XY1 when two spots from XY1 and XY2 are closer than dist_tolerance
     keeping the first spot (in the list) from XY1 when two spots from XY1 are closer than dist_tolerance
-    
+
     XY1 : array([[x1,x2,...],[y1,y2,...]])
     XY2 : array([[x1,x2,...],[y1,y2,...]])
-    
+
     return merged list XY, list spot index of XY1 to delete, list spot index of XY2 to delete
     """
 
@@ -1221,9 +1205,7 @@ def purgeClosePoints(peaklist, dist_tolerance=0.5):
     """
     remove points in peaklist that are too close one to the other within dist_tolerance
     """
-    X, Y, tokeep = removeClosePoints(
-        peaklist[:, 0], peaklist[:, 1], dist_tolerance=dist_tolerance
-    )
+    X, Y, _ = removeClosePoints(peaklist[:, 0], peaklist[:, 1], dist_tolerance=dist_tolerance)
 
     return np.array([X, Y]).T
 
@@ -1273,9 +1255,9 @@ def getCommonSpots(
 ):
     """
     return nb of spots in common in two list of peaks file1 and file2
-    
+
     if data1 is provided, file1 is not read
-    
+
     """
     if data1 is None:
         data1 = IOLT.read_Peaklist(file1, dirname)
@@ -1322,8 +1304,6 @@ def computingFunction(fileindexrange, Parameters_dict=None, saveObject=0):
     """
     Core procedure to compute common spots over a list of peaks list files
     """
-    import multiprocessing
-
     p = multiprocessing.current_process()
     print("Starting:", p.name, p.pid)
 
@@ -1365,7 +1345,7 @@ def LaueSpotsCorrelator_multiprocessing(
     print("fileindexdivision", fileindexdivision)
 
     nbimagesperline = Parameters_dict["nbimagesperline"]
-    prefixfortitle = Parameters_dict["prefixfilename"]
+    # prefixfortitle = Parameters_dict["prefixfilename"]
     prefixfilename = Parameters_dict["prefixfilename"]
     dirname = Parameters_dict["dirname"]
 
@@ -1382,11 +1362,9 @@ def LaueSpotsCorrelator_multiprocessing(
     results = []
     for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
         print("ii", ii)
-        results.append(
-            pool.apply_async(
-                computingFunction, args=(fileindexdivision[ii],), callback=log_result
-            )  # make our results with a map call
-        )
+        # make our results with a map call
+        results.append(pool.apply_async(
+            computingFunction, args=(fileindexdivision[ii],), callback=log_result))
 
     pool.close()
     pool.join()
@@ -1415,9 +1393,7 @@ def LaueSpotsCorrelator_multiprocessing(
 
 def log_result(result):
     if len(result) == 2:
-        print(
-            "********************\n\n\n\n %s \n\n\n\n\n******************" % result[1]
-        )
+        print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
         list_produced_files.append(str(result[1]))
 
     print("mylog print")
@@ -1435,9 +1411,7 @@ def threeindices_up_to_old(n):
 
             nbpos = n + 1
 
-            gripos = np.mgrid[
-                0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j
-            ]
+            gripos = np.mgrid[0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j]
             majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
 
             majorindices_neg = -majorindices_pos
@@ -1481,7 +1455,6 @@ def twoindices_up_to(n):
     """
     if not isinstance(n, int) or n <= 0:
         raise ValueError("%s is not a positive integer" % str(n))
-        return None
 
     nbpos = 2 * n + 1
 
@@ -1815,7 +1788,7 @@ def ShortestLine(P1, P2, P3, P4):
     C2 = np.dot(C, C)
     B2 = np.dot(B, B)
     # TODO: error? why A2 is unused ?
-    A2 = np.dot(A, A)
+    # A2 = np.dot(A, A)
 
     ma = 1.0 * (dCB * dAC - dAB * C2) / (B2 * C2 - dCB ** 2)
     mb = 1.0 * (dAB + ma * B2) / (dCB)
@@ -1849,7 +1822,7 @@ def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
     fileindexdivision = []
     st_ind = index_start
     fi_ind = index_start + step - 1
-    for k in list(range(nb_of_cpu)):
+    for _ in list(range(nb_of_cpu)):
         fileindexdivision.append([st_ind, fi_ind])
         st_ind += step
         fi_ind += step
@@ -2230,21 +2203,13 @@ def getdirectbasiscosines(
     SAMPLETILT = 40.0
 
     DEG = np.pi / 180.0
-    PI = np.pi
-    RotY40 = np.array(
-        [
-            [np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
-            [0, 1, 0],
-            [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
-        ]
-    )
-    RotYm40 = np.array(
-        [
+    # RotY40 = np.array([[np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
+    #         [0, 1, 0],
+    #         [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
+    RotYm40 = np.array([
             [np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
             [0, 1, 0],
-            [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)],
-        ]
-    )
+            [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
 
     vecs = np.array([vec1, vec2, vec3]).T
 
@@ -2768,11 +2733,13 @@ def AngleBetweenKfVectors(HKL1s, HKL2s, B0, UBmatrix, verbose=False):
     inputs:
     HKL1s, HKL2s            :  list of n1 3D vectors, list of n2 3D vectors
     Gstar            : metrics , default np.eye(3)
-    .. todo::
+    .. warning::
         NOT FINISHED
                     """
     HKL1r = np.array(HKL1s)
     HKL2r = np.array(HKL2s)
+
+    metrics = None # TO BE DEFINED
 
     if HKL1r.shape[0] == 1:
         pass

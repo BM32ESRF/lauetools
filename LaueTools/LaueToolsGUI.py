@@ -510,8 +510,7 @@ class LaueToolsGUImainframe(wx.Frame):
         ask user to select folder and file
         and launch the peak search board(class PeakSearchFrame)
         """
-        if self.askUserForFilename(
-            style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
+        if OSLFGUI.askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
 
             # print "Current directory",self.dirname
             #            self.lauetoolsrootdirectory = os.curdir
@@ -566,7 +565,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
     #                    self.DataPlot_filename = ploimage.peaks_filename
 
-    def OnOpenPeakList(self, evt):
+    def OnOpenPeakList(self, _):
 
         # read peak list and detector calibration parameters
         OSLFGUI.OnOpenPeakList(self)
@@ -878,10 +877,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_I = self.data_I[self.current_exp_spot_index_list]
         self.select_pixX = self.data_pixX[self.current_exp_spot_index_list]
         self.select_pixY = self.data_pixY[self.current_exp_spot_index_list]
-        self.select_dataXY = (
-            self.data_pixX[self.current_exp_spot_index_list],
-            self.data_pixY[self.current_exp_spot_index_list],
-        )
+        self.select_dataXY = (self.data_pixX[self.current_exp_spot_index_list],
+                                self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
         #         self.StorageDict=None
@@ -1334,12 +1331,11 @@ class LaueToolsGUImainframe(wx.Frame):
                                         Params_to_simulPattern=None,
                                         indexation_parameters=self.indexation_parameters,
                                         StorageDict=StorageDict,
-                                        DataSetObject=self.DataSet,
-                                    )
+                                        DataSetObject=self.DataSet)
 
         self.picky.Show(True)
 
-    def OnDetectorCalibration(self, evt):
+    def OnDetectorCalibration(self, _):
         """
         Method launching Calibration Board
         """
@@ -1545,8 +1541,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         if AngRes is None:
             return
-
-        (allres, resclose, nbclose, nballres, mean_residue, max_residue) = AngRes
+        #(allres, resclose, nbclose, nballres, mean_residue, max_residue) = AngRes
+        (allres, _, nbclose, nballres, _, _) = AngRes
 
         stats_properformat = [nbclose, nballres, np.std(allres)]
 
@@ -1838,12 +1834,7 @@ class LaueToolsGUImainframe(wx.Frame):
             for grain_ind in range(len(nb)):  # loop over parent grains
                 for tt in range(nb[grain_ind][1]):
                     nb_of_simulspots = len(TWT[gen_i])
-                    startgrain = "#G %d\t%s\t%d\t%d\n" % (
-                        grain_ind,
-                        NAME[grain_ind],
-                        tt,
-                        nb_of_simulspots,
-                    )
+                    startgrain = "#G %d\t%s\t%d\t%d\n" % (grain_ind, NAME[grain_ind], tt, nb_of_simulspots)
 
                     lines += startgrain
                     for data_index in range(nb_of_simulspots):
@@ -2152,7 +2143,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         #         print "************ \n\n self.indexation_parameters",self.indexation_parameters
 
-        data_Miller, data_Energy, list_indexspot = data_list
+        # data_Miller, data_Energy, list_indexspot = data_list
+        data_Miller, _, list_indexspot = data_list
 
         # print "data_Miller",data_Miller
         # print "data_Energy",data_Energy
@@ -2461,6 +2453,10 @@ class CliquesFindingBoard(wx.Frame):
         print('Inside CliquesFindingBoard', self.indexation_parameters["AllDataToIndex"].keys())
         DataToIndex = self.indexation_parameters["AllDataToIndex"]
 
+        MaxNbSpots = len(DataToIndex["data_theta"])
+        print('MaxNbSpots: ', MaxNbSpots)
+        
+
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
         wx.StaticText(self.panel, -1, "Current File: %s" % self.parent.DataPlot_filename, (130, 15))
@@ -2473,7 +2469,8 @@ class CliquesFindingBoard(wx.Frame):
         wx.StaticText(self.panel, -1, "(for distance recognition): ", (15, 60))
 
         wx.StaticText(self.panel, -1, "Size of spots set: ", (15, 90))
-        self.nbspotmax = wx.SpinCtrl(self.panel, -1, "100", (200, 85), (60, -1), min=3, max=200)
+        self.nbspotmax = wx.SpinCtrl(self.panel, -1, str(MaxNbSpots),
+                                                    (200, 85), (60, -1), min=3, max=MaxNbSpots)
 
         wx.StaticText(self.panel, -1, "List of spots index", (15, 125))
         self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
@@ -2483,7 +2480,7 @@ class CliquesFindingBoard(wx.Frame):
         loadanglesbtn=wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
 
-        self.indexchkbox = wx.CheckBox(self.panel, -1, "Proceed with indexation", (15, 215))
+        self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 215))
         self.indexchkbox.SetValue(False)
 
         wx.Button(self.panel, 1, "Search", (40, 245), (110, 40))
@@ -2545,7 +2542,9 @@ class CliquesFindingBoard(wx.Frame):
 
         if isinstance(Nodes, int):
             DisplayCliques = res_cliques.tolist()
+            self.parent.list_of_cliques = [res_cliques,]
         else:
+            self.parent.list_of_cliques = res_cliques
             DisplayCliques = ''
             for cliq in res_cliques:
                 DisplayCliques += '%s\n'%str(cliq.tolist())
@@ -2554,10 +2553,11 @@ class CliquesFindingBoard(wx.Frame):
         print(DisplayCliques)
         print("***************************")
 
-        self.parent.list_of_cliques = res_cliques
-
         wx.MessageBox('Following spot indices are likely to belong to the same grain:\n %s'%DisplayCliques,
                             'CLIQUES RESULTS')
+
+        if not self.indexchkbox.GetValue():
+            self.parent.list_of_cliques = None
 
     def OnQuit(self, evt):
         self.Close()

@@ -13,6 +13,8 @@ __version__ = "$Revision: 1717$"
 
 import copy
 import os
+import re
+
 import numpy as np
 
 # LAUETOOLSFOLDER = os.getcwd()
@@ -205,7 +207,6 @@ def readDict(filename):
             k += 1
         return _dict
 
-import re
 def readsinglelinedictfile(line):
     """parse a line of ascii file for dict Materials and return a single material key, value.
     Value is a list of: key_material (str), list of 6 lattice parameters, extinction rules label (str)

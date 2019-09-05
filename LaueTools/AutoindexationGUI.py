@@ -226,8 +226,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.sb = self.CreateStatusBar()
 
         #-----  use input of cliques
-        cliqueindex=0
         if self.list_of_cliques is not None:
+            cliqueindex = 0
             self.spotlistA.SetValue(str(self.list_of_cliques[cliqueindex].tolist()))
             self.setBchck.SetValue(False)
 
@@ -320,7 +320,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
     def getparams_for_irpfile(self):
         """get indexation and refine parameters to be written in a .irp file
-        
+
         :return: boolean for success
         """
 
@@ -420,7 +420,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             spot_index_central = 0
             nb_central_spots = 1
 
-        return spot_index_central, nb_central_spots, israngefromzero 
+        return spot_index_central, nb_central_spots, israngefromzero
 
     def parse_spotssetctrls(self):
         """

@@ -1477,17 +1477,10 @@ class spotsset:
                                 # update matrix
                                 self.dict_grain_matrix[grain_index] = UBsingle
 
-                                (index,
-                                    tth,
-                                    chi,
-                                    posX,
-                                    posY,
-                                    intensity,
-                                    H,
-                                    K,
-                                    L,
-                                    Energy,
-                                ) = self.getSpotsFamilyallData(grain_index, onlywithMiller=1).T
+                                (index, tth, chi, posX, posY,
+                                intensity,
+                                H, K, L,
+                                Energy) = self.getSpotsFamilyallData(grain_index, onlywithMiller=1).T
 
                                 hkl = np.array([H, K, L]).T
                                 hklmin = np.dot(transfmat, hkl.T).T
@@ -3149,7 +3142,7 @@ class spotsset:
                 print("matrix for key_matrix%d" % key_matrix)
                 print(self.dict_grain_matrix[key_matrix].tolist())
 
-            (Twicetheta, Chi, Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(
+            (Twicetheta, Chi, _, _, _, _) = LAUE.SimulateLaue(
                                                                             grain,
                                                                             self.emin,
                                                                             self.emax,

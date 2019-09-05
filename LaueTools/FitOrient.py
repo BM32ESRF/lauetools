@@ -169,26 +169,22 @@ def xy_from_Quat(
     return X, Y, theta, R
 
 
-def calc_XY_pixelpositions(
-    calibration_parameters,
-    DATA_Q,
-    nspots,
-    UBmatrix=None,
-    B0matrix=IDENTITYMATRIX,
-    offset=0,
-    pureRotation=0,
-    labXMAS=0,
-    verbose=0,
-    pixelsize=0.079,
-    dim=(2048, 2048),
-    kf_direction="Z>0"):
+def calc_XY_pixelpositions(calibration_parameters, DATA_Q, nspots, UBmatrix=None,
+                                                            B0matrix=IDENTITYMATRIX,
+                                                            offset=0,
+                                                            pureRotation=0,
+                                                            labXMAS=0,
+                                                            verbose=0,
+                                                            pixelsize=0.079,
+                                                            dim=(2048, 2048),
+                                                            kf_direction="Z>0"):
     """
-    
+
     must: len(varying_parameter_values)=len(varying_parameter_indices)
 
     DATA_Q: array of all 3 elements miller indices
     nspots: indices of selected spots of DATA_Q
-    UBmatrix: 
+    UBmatrix:
 
     WARNING: All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat
     returns:
@@ -220,7 +216,7 @@ def calc_XY_pixelpositions(
 
     #     print "twthe, chi", twthe, chi
 
-    if 0:  # verbose:
+    if verbose:
         print("tDATA_Q", np.transpose(DATA_Q))
         print("Qrot", Qrot)
         print("Qrotn", Qrotn)
@@ -497,14 +493,14 @@ def error_function_on_demand_strain(
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
     # param_strain must contain values of one or many parameters of allparameters
-    #   
+    #
     #   strain = param_strain[:5]
     #   deltaangles = param_strain[5:8]
     #   arr_indexvaryingparameters = array of position of parameters whose values are in param_strain
     #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit strain without orientation refinement
     #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12]) for strain AND orientation refinement
     #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
-    Bmat=  B0 matrix 
+    Bmat=  B0 matrix
 
     """
 
@@ -541,24 +537,21 @@ def error_function_on_demand_strain(
 
     if index_of_rot_in_arr_indexvaryingparameters[2] in arr_indexvaryingparameters:
         ind3 = np.where(
-            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[2]
-        )[0][0]
+            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[2])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a3 = param_strain[ind3] * DEG
         else:
             a3 = param_strain[0] * DEG
-        mat3 = np.array(
-            [[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]]
-        )
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                            [np.sin(a3), np.cos(a3), 0],
+                            [0, 0, 1]])
 
     deltamat = np.dot(mat3, np.dot(mat2, mat1))
 
     # building B mat
-    varyingstrain = np.array(
-        [ [1.0, param_strain[2], param_strain[3]],
-        [0, param_strain[0], param_strain[4]],
-        [0, 0, param_strain[1]], ]
-    )
+    varyingstrain = np.array([[1.0, param_strain[2], param_strain[3]],
+                                [0, param_strain[0], param_strain[4]],
+                                [0, 0, param_strain[1]]])
 
     newmatrix = np.dot(np.dot(deltamat, initrot), varyingstrain)
 
@@ -628,21 +621,15 @@ def error_function_on_demand_strain(
         return distanceterm
 
 
-def error_function_strain_with_two_orientations(
-    param_strain,
-    DATA_Q,
-    allparameters,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    Bmat=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None):
+def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparameters,
+                                                    arr_indexvaryingparameters, nspots, pixX, pixY,
+                                                initrot=IDENTITYMATRIX,
+                                                Bmat=IDENTITYMATRIX,
+                                                pureRotation=0,
+                                                verbose=0,
+                                                pixelsize=165.0 / 2048,
+                                                dim=(2048, 2048),
+                                                weights=None):
     """
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
@@ -657,7 +644,8 @@ def error_function_strain_with_two_orientations(
 
     TODO: not implemented for transmission geometry (kf_direction='X>0') and backreflection ('X<0')
 
-    # TODO: not completed
+    .. warning::
+        not completed  !
     """
 
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
@@ -676,9 +664,9 @@ def error_function_strain_with_two_orientations(
         else:
             a1 = param_strain[0] * DEG
         # print "a1 (rad)= ",a1
-        mat1 = np.array(
-            [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]]
-        )
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
 
     if index_of_rot_in_arr_indexvaryingparameters_1[1] in arr_indexvaryingparameters:
         ind2 = np.where(
@@ -690,22 +678,19 @@ def error_function_strain_with_two_orientations(
         else:
             a2 = param_strain[0] * DEG
         # print "a2 (rad)= ",a2
-        mat2 = np.array(
-            [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]]
-        )
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
 
     if index_of_rot_in_arr_indexvaryingparameters_1[2] in arr_indexvaryingparameters:
-        ind3 = np.where(
-            arr_indexvaryingparameters
-            == index_of_rot_in_arr_indexvaryingparameters_1[2]
-        )[0][0]
+        ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[2])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a3 = param_strain[ind3] * DEG
         else:
             a3 = param_strain[0] * DEG
-        mat3 = np.array(
-            [[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]]
-        )
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                            [np.sin(a3), np.cos(a3), 0],
+                            [0, 0, 1]])
 
     deltamat_1 = np.dot(mat3, np.dot(mat2, mat1))
 
@@ -719,9 +704,9 @@ def error_function_strain_with_two_orientations(
         else:
             a1 = param_strain[0] * DEG
         # print "a1 (rad)= ",a1
-        mat1 = np.array(
-            [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]]
-        )
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],
+                        [0, 1, 0],
+                        [-np.sin(a1), 0, np.cos(a1)]])
 
     if index_of_rot_in_arr_indexvaryingparameters_2[1] in arr_indexvaryingparameters:
         ind2 = np.where(
@@ -733,33 +718,27 @@ def error_function_strain_with_two_orientations(
         else:
             a2 = param_strain[0] * DEG
         # print "a2 (rad)= ",a2
-        mat2 = np.array(
-            [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]]
-        )
+        mat2 = np.array([[1, 0, 0],
+                            [0, np.cos(a2), np.sin(a2)],
+                            [0, np.sin(-a2), np.cos(a2)]])
 
     if index_of_rot_in_arr_indexvaryingparameters_2[2] in arr_indexvaryingparameters:
         ind3 = np.where(
             arr_indexvaryingparameters
-            == index_of_rot_in_arr_indexvaryingparameters_2[2]
-        )[0][0]
+            == index_of_rot_in_arr_indexvaryingparameters_2[2])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a3 = param_strain[ind3] * DEG
         else:
             a3 = param_strain[0] * DEG
-        mat3 = np.array(
-            [[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]]
-        )
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]])
 
     deltamat_2 = np.dot(mat3, np.dot(mat2, mat1))
 
     # building B mat
     varyingstrain = np.array(
-        [
-            [1.0, param_strain[2], param_strain[3]],
+        [[1.0, param_strain[2], param_strain[3]],
             [0, param_strain[0], param_strain[4]],
-            [0, 0, param_strain[1]],
-        ]
-    )
+            [0, 0, param_strain[1]]])
 
     newmatrix_1 = np.dot(np.dot(deltamat_1, initrot), varyingstrain)
 
@@ -780,19 +759,18 @@ def error_function_strain_with_two_orientations(
     ally_1 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X1, Y1, theta1, R1 = xy_from_Quat(
-        allparameters[:5],
-        DATA_Q,
-        nspots,
-        np.arange(5),
-        ally_1,
-        initrot=newmatrix_1,
-        vecteurref=Bmat,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim)
+    X1, Y1, theta1, R1 = xy_from_Quat(allparameters[:5],
+                                        DATA_Q,
+                                        nspots,
+                                        np.arange(5),
+                                        ally_1,
+                                        initrot=newmatrix_1,
+                                        vecteurref=Bmat,
+                                        pureRotation=0,
+                                        labXMAS=0,
+                                        verbose=0,
+                                        pixelsize=pixelsize,
+                                        dim=dim)
 
     distanceterm1 = np.sqrt((X1 - pixX) ** 2 + (Y1 - pixY) ** 2)
 
@@ -800,19 +778,18 @@ def error_function_strain_with_two_orientations(
     ally_2 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X2, Y2, theta2, R2 = xy_from_Quat(
-        allparameters[:5],
-        DATA_Q,
-        nspots,
-        np.arange(5),
-        ally_2,
-        initrot=newmatrix_2,
-        vecteurref=Bmat,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim)
+    X2, Y2, theta2, R2 = xy_from_Quat(allparameters[:5],
+                                    DATA_Q,
+                                    nspots,
+                                    np.arange(5),
+                                    ally_2,
+                                    initrot=newmatrix_2,
+                                    vecteurref=Bmat,
+                                    pureRotation=0,
+                                    labXMAS=0,
+                                    verbose=0,
+                                    pixelsize=pixelsize,
+                                    dim=dim)
 
     distanceterm2 = np.sqrt((X2 - pixX) ** 2 + (Y2 - pixY) ** 2)
 
@@ -836,19 +813,11 @@ def error_function_strain_with_two_orientations(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(distanceterm),
-                "    ********",
-            )
+            print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
         else:
             print(
-                "***********mean pixel deviation   ",
-                np.mean(distanceterm),
-                "    ********",
-            )
-        #        print "newmatrix", newmatrix
-        return distanceterm2, deltamat, newmatrix
+                "***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
+        return distanceterm2, (deltamat_1, deltamat_2), (newmatrix_1, newmatrix_2)
 
     else:
         return distanceterm
@@ -1140,7 +1109,7 @@ def fitXCEN(
     pixelsize=165.0 / 2048,
     **kwd):
     """
-    #All miller indices must be entered in miller, 
+    #All miller indices must be entered in miller,
     selection is done in xy_from_Quat with nspots (array of indices)
     """
     param_calib_0 = starting_param
@@ -1221,14 +1190,14 @@ def fit_on_demand_strain_2grains(
 ):
     """
     Fit a model of two grains of the same material
-    Initial orientation matrices are the same (only strain state differs) 
-    
+    Initial orientation matrices are the same (only strain state differs)
+
     To use it:
     allparameters = 5calibdetectorparams + fivestrainparameters_g1 + 3deltaangles_g1 of orientations
                     + fivestrainparameters_g2 + 3deltaangles_g2 of orientations
     starting_param = [fivestrainparameter + 3deltaangles of orientations] = [1,1,0,0,0,0,0,0]+[1,1,0,0,0,0,0,0]  typically
     arr_indexvaryingparameters = range(5,21)
-    
+
     B0matrix   : B0 matrix defining a*,b*,c* basis vectors (in columns) in initial orientation / LT frame
     """
     # All miller indices must be entered in miller
@@ -1371,14 +1340,14 @@ def error_function_on_demand_strain_2grains(
     """
     compute array of errors of weight*((Xtheo-pixX)**2+(Ytheo-pixY)**2) for each pears
     Xtheo, Ytheo derived from kf and q vector: q = UB Bmat B0 G* where G* =[h ,k, l] vector
-    
+
     Bmat is the displacements matrix   strain = Bmat-Id
-    
+
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with absolutespotsindices (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters_g1 of strain + 3 angles_g1 of elementary rotation
     #                             + 5 parameters_g2 of strain
     # varying_parameters_values must contain values of one or many parameters of allparameters
-    #   
+    #
     #   strain_g1 = varying_parameters_values[:5]
         strain_g2 = varying_parameters_values[8:13]
     #   deltaangles_g1 = varying_parameters_values[5:8]
@@ -1395,8 +1364,8 @@ def error_function_on_demand_strain_2grains(
     weights    None or [weights g1, weight g2]
     initrot   = guessed UB orientation matrix
     B0matrix    B0 matrix defining a*,b*,c* basis vectors (in columns) in initial orientation / LT frame
-    
-    
+
+
     TODO: ?? not implemented for transmission geometry (kf_direction='X>0') ? and backreflection ('X<0')
     """
 
@@ -1602,41 +1571,40 @@ def error_function_general(
     returnalldata=False,
 ):
     """
-    
     q = T_LT  UzUyUz Ustart  T_c B0 G*
-    
+
     Interface error function to return array of pair (exp. - model) distances
     Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
-    
+
     q = T_LT  UzUyUz Ustart  T_c B0 G*
-    
+
     B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
             i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
-     
+
     possible keys for parameters to be refined are:
-      
+
     five detector frame calibration parameters:
     detectordistance,xcen,ycen,beta, gamma
-    
+
     three misorientation angles with respect to LT orthonormal frame (x, y, z) matrices Ux, Uy,Uz:
     anglex,angley,anglez   
-    
-    5 independent elements of a distortion operator 
-    
+
+    5 independent elements of a distortion operator
+
     -[[Tc00,Tc01,Tc02],[Tc10,Tc11,Tc12],[Tc20,Tc21,Tc22]]
     each column is the transformed reciprocal unit cell vector a*',b*' or c*' expressed in a*,b*,c* frame (reference reciprocal unit cell)
-    
+
     Usually Tc11, Tc22, Tc01,Tc02,Tc12  with Tc00=1 and the all others = 0 (matrix triangular up)
-    
+
     # TODO :- [[Td00,Td01,Td02],[Td10,Td11,Td12],[Td20,Td21,Td22]]
     #
     #each column is the transformed direct crystal unit cell vector a',b' or c' expressed in a,b,c frame (reference unit cell)
-    
+
     -[[T00,T01,T02],[T10,T11,T12],[T20,T21,T22]]
     each column is the transformed LT frame vector x',y' or z' expressed in x,y,z frame
-    
+
     -[[Ts00,Ts01,Ts02],[Ts10,Ts11,Ts12],[Ts20,Ts21,Ts22]]
     each column is the transformed sample frame vector xs',ys' or zs' expressed in xs,ys,zs frame
     """
@@ -2041,17 +2009,16 @@ def fit_function_latticeparameters(
     **kwd):
     """
     fit direct (real) unit cell lattice parameters  (in refinedB0)
-    and orientation 
-    
+    and orientation
+
     q =   refinedUzUyUz Ustart   refinedB0 G*
-    
+
     with error function to return array of pair (exp. - model) distances
     Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
 
-    
-    
+
     """
     if verbose:
         print(
@@ -2195,30 +2162,29 @@ def error_function_latticeparameters(
     returnalldata=False,
 ):
     """
-    
     q =   UzUyUz Ustart   B0 G*
-    
+
     Interface error function to return array of pair (exp. - model) distances
     Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
 
     q =   refinedUzUyUz Ustart   refinedB0 G*
-    
+
     B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
             i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
-            
+
     refinedB0 is obtained by refining the 5 /6  lattice parameters
-     
+
     possible keys for parameters to be refined are:
-      
+
     five detector frame calibration parameters:
     det_distance,det_xcen,det_ycen,det_beta, det_gamma
-    
+
     three misorientation angles with respect to LT orthonormal frame (x, y, z) matrices Ux, Uy,Uz:
-    anglex,angley,anglez   
-    
-    5 lattice parameters among 6 (a,b,c,alpha, beta,gamma) 
+    anglex,angley,anglez
+
+    5 lattice parameters among 6 (a,b,c,alpha, beta,gamma)
 
     """
     # reading default parameters
@@ -2400,21 +2366,20 @@ def error_function_strain(
     """
     q =   refinedStrain refinedUzUyUz Ustart   B0 G*
 
-    
     Interface error function to return array of pair (exp. - model) distances
     Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
 
 
     B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
             i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
-            
+
     Strain of reciprocal vectors   : 6 compenents of triangular up matrix ( T00  T01 T02)
                                                                           ( 0    T11 T12)
                                                                          ( 0    0   T22)
                 one must be set (usually T00 = 1)
-                
+
     Algebra:
     X=PX'        e'1    e'2    e'3
                   |      |      |
@@ -2422,16 +2387,16 @@ def error_function_strain(
             e1 (  .      .      .  )
         P=  e2 (  .      .      .  )
             e3 (  .      .      .  )
-            
+
     If A  transform expressed in (e1,e2,e3) basis
     and A' same transform but expressed in (e'1,e'2,e'3) basis
     then  A'=P-1 A P
-    
+
     X_LT=P X_sample
     P=(cos40, 0 -sin40)
       (0      1    0  )
       (sin40  0  cos40)
-      
+
     Strain_sample=P-1 Strain_LT P
     Strain_LT    = P  Strain_Sample P-1
 
@@ -2604,15 +2569,15 @@ def fit_function_strain(
     **kwd):
     """
     fit strain components in sample frame
-    and orientation 
-    
+    and orientation
+
     q =   refinedT refinedUzUyUz Ustart   refinedB0 G*
-    
+
     with error function to return array of pair (exp. - model) distances
     Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
-    
+
     where T comes from Ts
     """
     if verbose:
@@ -2762,41 +2727,40 @@ def error_strain_from_elongation(
 ):
     """
     calculate array of the sum of 3 distances from aligned points composing one single Laue spot
-    
+
     Each elongated spot is composed by 3 points: P1 Pc P2 (Pc at the center et P1, P2 at the ends)
-    
+
     error = sum (P1-P1exp)**2 +  (P2-P2exp)**2 +(Pc-Pcexp)**2
-    
+
     But since P1exp end could be wrongly assign to simulated P2 end
-    
+
     error = sum (P1-P1exp)**2 +  (P1-P2exp)**2 -P1P2exp**2 +
                   (P2-P2exp)**2 + (P2-P1exp)**2 -P1P2exp**2 
-                  +(Pc-Pcexp)**2
-                  
-    
+                  +(Pc-Pcexp)**2          
+
     strain axis in sample frame:
     axis_angle_1, axis_angle_2,minstrainamplitude,zerostrain,maxstrainamplitude
     example: minstrainamplitude=0.98, maxstrainamplitude=1.05, zerostrain=1
-    
+
     u= (cos angle1, sin angle 1 cos angle 2, sin angle1 sin angle 2)
-    
+
     X1Model, Y1Model, XcModel,YcModel
     tensile_along_u(v, tensile, u='zsample')
-    
-    
+
+
     q =   refinedStrain refinedUzUyUz Ustart   B0 G*
-    
+
     Xmodel,Ymodel comes from G*=ha*+kb*+lc*
 
 
     B0   reference structure reciprocal space frame (a*,b*,c*) a* // ki  b* perp to a*  and perp to z (z belongs to the plane of ki and detector normal vector n)
             i.e.   columns of B0 are components of a*,b* and c*   expressed in x,y,z LT frame
-            
+
     Strain   : 6 compenents of triangular up matrix ( T00  T01 T02)
                                                    ( 0    T11 T12)
                                                    ( 0    0   T22)
                 one must be set (usually T00 = 1)
-                
+
     Algebra:
     X=PX'        e'1    e'2    e'3
                   |      |      |
@@ -2804,16 +2768,16 @@ def error_strain_from_elongation(
             e1 (  .      .      .  )
         P=  e2 (  .      .      .  )
             e3 (  .      .      .  )
-            
+
     If A  transform expressed in (e1,e2,e3) basis
     and A' same transform but expressed in (e'1,e'2,e'3) basis
     then  A'=P-1 A P
-    
+
     X_LT=P X_sample
     P=(cos40, 0 -sin40)
       (0      1    0  )
       (sin40  0  cos40)
-      
+
     Strain_sample=P-1 Strain_LT P
     Strain_LT    = P  Strain_Sample P-1
 
@@ -2970,106 +2934,12 @@ def error_strain_from_elongation(
 
 def test_generalfitfunction():
     # Ge example unstrained
-    pixX = np.array(
-        [
-            1027.1099965580365,
-            1379.1700028337193,
-            1288.1100055910788,
-            926.219994375393,
-            595.4599989710869,
-            1183.2699986884652,
-            1672.670001029018,
-            1497.400007802548,
-            780.2700069727559,
-            819.9099991880139,
-            873.5600007021501,
-            1579.39000403102,
-            1216.4900044928474,
-            1481.199997684615,
-            399.87000836895436,
-            548.2499911593322,
-            1352.760007116035,
-            702.5200057620646,
-            383.7700117705855,
-            707.2000052800154,
-            1140.9300043834062,
-            1730.3299981313016,
-            289.68999155533413,
-            1274.8600008806216,
-            1063.2499947675371,
-            1660.8600022917144,
-            1426.670005812432,
-        ]
-    )
-    pixY = np.array(
-        [
-            1293.2799953573963,
-            1553.5800003037994,
-            1460.1599988550274,
-            872.0599978043742,
-            876.4400033114814,
-            598.9200007214372,
-            1258.6199918206175,
-            1224.7000037967478,
-            1242.530005349013,
-            552.8399954684833,
-            706.9700021553684,
-            754.63000554209,
-            1042.2800069222762,
-            364.8400055136739,
-            1297.1899933698528,
-            1260.320007366279,
-            568.0299942819768,
-            949.8800073732916,
-            754.580011319991,
-            261.1099917270594,
-            748.3999917806088,
-            1063.319998717625,
-            945.9700059216573,
-            306.9500110237749,
-            497.7900029269757,
-            706.310001700921,
-            858.780004244009,
-        ]
-    )
-    miller_indices = np.array(
-        [
-            [3.0, 3.0, 3.0],
-            [2.0, 4.0, 2.0],
-            [3.0, 5.0, 3.0],
-            [5.0, 3.0, 3.0],
-            [6.0, 2.0, 4.0],
-            [6.0, 4.0, 2.0],
-            [3.0, 5.0, 1.0],
-            [4.0, 6.0, 2.0],
-            [5.0, 3.0, 5.0],
-            [7.0, 3.0, 3.0],
-            [4.0, 2.0, 2.0],
-            [5.0, 5.0, 1.0],
-            [5.0, 5.0, 3.0],
-            [7.0, 5.0, 1.0],
-            [5.0, 1.0, 5.0],
-            [3.0, 1.0, 3.0],
-            [8.0, 6.0, 2.0],
-            [7.0, 3.0, 5.0],
-            [5.0, 1.0, 3.0],
-            [9.0, 3.0, 3.0],
-            [7.0, 5.0, 3.0],
-            [5.0, 7.0, 1.0],
-            [7.0, 1.0, 5.0],
-            [5.0, 3.0, 1.0],
-            [9.0, 5.0, 3.0],
-            [7.0, 7.0, 1.0],
-            [3.0, 3.0, 1.0],
-        ]
-    )
-    starting_orientmatrix = np.array(
-        [
-            [-0.9727538909589738, -0.21247913537718385, 0.09274958034159074],
+    pixX = np.array([ 1027.1099965580365, 1379.1700028337193, 1288.1100055910788, 926.219994375393, 595.4599989710869, 1183.2699986884652, 1672.670001029018, 1497.400007802548, 780.2700069727559, 819.9099991880139, 873.5600007021501, 1579.39000403102, 1216.4900044928474, 1481.199997684615, 399.87000836895436, 548.2499911593322, 1352.760007116035, 702.5200057620646, 383.7700117705855, 707.2000052800154, 1140.9300043834062, 1730.3299981313016, 289.68999155533413, 1274.8600008806216, 1063.2499947675371, 1660.8600022917144, 1426.670005812432])
+    pixY = np.array([ 1293.2799953573963, 1553.5800003037994, 1460.1599988550274, 872.0599978043742, 876.4400033114814, 598.9200007214372, 1258.6199918206175, 1224.7000037967478, 1242.530005349013, 552.8399954684833, 706.9700021553684, 754.63000554209, 1042.2800069222762, 364.8400055136739, 1297.1899933698528, 1260.320007366279, 568.0299942819768, 949.8800073732916, 754.580011319991, 261.1099917270594, 748.3999917806088, 1063.319998717625, 945.9700059216573, 306.9500110237749, 497.7900029269757, 706.310001700921, 858.780004244009, ])
+    miller_indices = np.array([[3.0, 3.0, 3.0], [2.0, 4.0, 2.0], [3.0, 5.0, 3.0], [5.0, 3.0, 3.0], [6.0, 2.0, 4.0], [6.0, 4.0, 2.0], [3.0, 5.0, 1.0], [4.0, 6.0, 2.0], [5.0, 3.0, 5.0], [7.0, 3.0, 3.0], [4.0, 2.0, 2.0], [5.0, 5.0, 1.0], [5.0, 5.0, 3.0], [7.0, 5.0, 1.0], [5.0, 1.0, 5.0], [3.0, 1.0, 3.0], [8.0, 6.0, 2.0], [7.0, 3.0, 5.0], [5.0, 1.0, 3.0], [9.0, 3.0, 3.0], [7.0, 5.0, 3.0], [5.0, 7.0, 1.0], [7.0, 1.0, 5.0], [5.0, 3.0, 1.0], [9.0, 5.0, 3.0], [7.0, 7.0, 1.0], [3.0, 3.0, 1.0]])
+    starting_orientmatrix = np.array([[-0.9727538909589738, -0.21247913537718385, 0.09274958034159074],
             [0.22567394392094073, -0.7761682018781203, 0.5887564805829774],
-            [-0.053107604650232926, 0.593645098498364, 0.8029726516869564],
-        ]
-    )
+            [-0.053107604650232926, 0.593645098498364, 0.8029726516869564]])
     #         B0matrix = np.array([[0.17675651789659746, -2.8424615990749217e-17, -2.8424615990749217e-17],
     #                            [0.0, 0.17675651789659746, -1.0823215193524997e-17],
     #                            [0.0, 0.0, 0.17675651789659746]])
@@ -3078,28 +2948,8 @@ def test_generalfitfunction():
 
     absolutespotsindices = np.arange(len(pixY))
     #
-    varying_parameters_keys = [
-        "anglex",
-        "angley",
-        "anglez",
-        "a",
-        "b",
-        "alpha",
-        "beta",
-        "gamma",
-        "depth",
-    ]
-    varying_parameters_values_array = [
-        0.0,
-        -0,
-        0.0,
-        5.678,
-        5.59,
-        89.999,
-        90,
-        90.0001,
-        0.02,
-    ]
+    varying_parameters_keys = ["anglex", "angley", "anglez", "a", "b", "alpha", "beta", "gamma", "depth"]
+    varying_parameters_values_array = [0.0, -0, 0.0, 5.678, 5.59, 89.999, 90, 90.0001, 0.02]
 
     #     varying_parameters_keys = ['distance','xcen','ycen','beta','gamma',
     #                                'anglex', 'angley', 'anglez',
@@ -3125,42 +2975,12 @@ def test_generalfitfunction():
     latticeparameters = DictLT.dict_Materials["Ge"][1]
     B0 = CP.calc_B_RR(latticeparameters)
 
-    transformparameters = [
-        0,
-        0,
-        0,  # 3 misorientation / initial UB matrix
-        1.0,
-        0,
-        0,
-        0,
-        1.0,
-        0,
-        0,
-        -0.0,
-        1,  # Tc
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,  # T
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-    ]  # Ts
+    transformparameters = [0, 0, 0,  # 3 misorientation / initial UB matrix
+                            1.0, 0, 0, 0, 1.0, 0, 0, -0.0, 1,  # Tc
+                            1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+                            1, 0, 0, 0, 1, 0, 0, 0, 1, ]  # Ts
     sourcedepth = [0]
-    allparameters = (
-        calibparameters + transformparameters + latticeparameters + sourcedepth
-    )
+    allparameters = (calibparameters + transformparameters + latticeparameters + sourcedepth)
 
     pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
 
@@ -3168,24 +2988,22 @@ def test_generalfitfunction():
     print("starting_orientmatrix", starting_orientmatrix)
     print("pureUmatrix", pureUmatrix)
 
-    refined_values = fit_function_general(
-        varying_parameters_values_array,
-        varying_parameters_keys,
-        miller_indices,
-        allparameters,
-        absolutespotsindices,
-        pixX,
-        pixY,
-        UBmatrix_start=pureUmatrix,
-        B0matrix=B0,
-        nb_grains=1,
-        pureRotation=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=(2048, 2048),
-        weights=None,
-        kf_direction="Z>0",
-    )
+    refined_values = fit_function_general(varying_parameters_values_array,
+                                        varying_parameters_keys,
+                                        miller_indices,
+                                        allparameters,
+                                        absolutespotsindices,
+                                        pixX,
+                                        pixY,
+                                        UBmatrix_start=pureUmatrix,
+                                        B0matrix=B0,
+                                        nb_grains=1,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=pixelsize,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        kf_direction="Z>0")
 
     dictRes = {}
     print("\n****** Refined Values *********\n")

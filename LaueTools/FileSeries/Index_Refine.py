@@ -171,7 +171,7 @@ class IndexRefineParameters(wx.Frame):
         vbox.Fit(self)
         self.Layout()
 
-    def OnChangeNbMaterial(self, evt):
+    def OnChangeNbMaterial(self, _):
         self.nb_of_materials_new = int(self.nbmaterialctrl.GetValue())
 
         print("use now %d materials" % self.nb_of_materials_new)
@@ -238,7 +238,7 @@ class IndexRefineParameters(wx.Frame):
 
         self.Close()
 
-    def OnLoad(self, evt):
+    def OnLoad(self, _):
         irpfile = wx.FileDialog(
                                 self,
                                 "Open Index Refine Parameters",
@@ -288,7 +288,7 @@ class IndexRefineParameters(wx.Frame):
         self.setParams()
             #             print "i add"
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Close()
 
 
@@ -578,7 +578,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         btnStart.SetToolTipString("Start indexing & refining all the peaks list files")
 
-    def OnbtnBrowse_filepathdat(self, event):
+    def OnbtnBrowse_filepathdat(self, _):
         folder = wx.DirDialog(self, "Select folder for peaklist files")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -773,7 +773,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         return True
 
-    def OnStart(self, event):
+    def OnStart(self, _):
         print("OnStart in index_Refine.py MainFrame class")
 
         # read .irp file ---------------------------
@@ -871,9 +871,9 @@ class MainFrame_indexrefine(wx.Frame):
                 return
 
             #             CCDparams, calibmatrix = IOLT.readfile_det(filedet, nbCCDparameters=8)
-            
+
             CCDCalibdict = None
-            if filesuffix in ('.dat'):
+            if filesuffix in ('.dat',):
                 CCDCalibdict = IOLT.readCalib_det_file(filedet)
 
             Index_Refine_Parameters_dict = {}

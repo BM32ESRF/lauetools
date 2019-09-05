@@ -22,7 +22,10 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import string
 
 import numpy as np
-from scipy.linalg.basic import lstsq
+try:
+    from scipy.linalg.basic import lstsq
+except ImportError:
+    from scipy.linalg import lstsq
 from numpy import linalg as LA
 
 import sys
@@ -1235,7 +1238,8 @@ def QueryLUT(LUT, query_angle, tolerance_angle, LUTfraction=2, verbose=0):
 
     halfLUT : (int) fraction of LUT angles to be used (to increase speed).
     Reference angles are comprised from 0 to 180deg. For recognition of Laue Pattern collected 2D detector
-    of even rather large area , only angles from 0 to 90 (fraction =2) are necessary. (even shorter range may be used) 
+    of even rather large area , only angles from 0 to 90 (fraction =2) are necessary.
+    (even shorter range may be used) 
     """
     RefAngles = LUT[1][:len(LUT[1])//LUTfraction]
 
@@ -1298,11 +1302,10 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, 
     return LUT
 
 
-def Build_Cubic_shortLUTs():
+def Build_Cubic_shortLUTs(latticeparameters, nLUT=5, applyExtinctionRules=None):
     """build reference angles in several short range (to be used for cliques search)
     """
-    nLUT = 5
-    lut = buildLUT_fromLatticeParams([5, 5, 5, 90., 90, .90], nLUT)
+    lut = buildLUT_fromLatticeParams(latticeparameters, nLUT, applyExtinctionRules)
     sangles = lut[1]
     # limitsAngles
     Anglemin, Anglemax = 19, 90
@@ -1316,15 +1319,15 @@ def Build_Cubic_shortLUTs():
     with open(filename, "wb") as f:
         pickle.dump(sortedangles, f)
 
-    Mins, Maxs = ([40, 45, 50, 55, 60, 18, 18, 10, 10],
-                [90, 90, 90, 90, 90, 45, 60, 45, 60])
+    Mins, Maxs = ([5, 40, 45, 50, 55, 60, 18, 18, 10, 10],
+                [90, 90, 90, 90, 90, 90, 45, 60, 45, 60])
     for Anglemin, Anglemax in zip(Mins, Maxs):
     
         esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
         # sorted array of angles
         sortedangles = np.array(sorted(list(set(esangles.tolist()))))
 
-        filename = 'sortedanglesCubic_nLut_5_angles_%d_%d.angles'%(Anglemin, Anglemax)
+        filename = 'sortedanglesCubic_nLut_%d_angles_%d_%d.angles'%(nLUT, Anglemin, Anglemax)
         with open(filename, "wb") as f:
             pickle.dump(sortedangles, f)
 
@@ -1739,16 +1742,14 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         # i,j position of
         truepos_ij = np.array([truepos[0], truepos[1]]).T
 
-        dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(
-            truepos_ij, verbose=0
-        )
+        dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(truepos_ij, verbose=0)
 
         toremove_pairs = []
         for key, val in list(dictsets_pairs.items()):
             toremove_pairs += sorted(val)[1:]
         toremove_pairs.sort()
 
-        purged_pp = np.delete(pp, toremove_pairs, axis=0)
+        purged_pp = np.delete(pairs_hkl, toremove_pairs, axis=0)
 
         return purged_pp
     else:
