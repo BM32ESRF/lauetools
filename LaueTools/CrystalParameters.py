@@ -199,11 +199,9 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
         H, K, L = array_hkl_00.T
 
-        cond16d = (
-            ((H % 2 == 1) + (K % 2 == 1) + (L % 2 == 1))
+        cond16d = (((H % 2 == 1) + (K % 2 == 1) + (L % 2 == 1))
             + ((H % 4 == 2) * (K % 4 == 2) * (L % 4 == 2))
-            + ((H % 4 == 0) * (K % 4 == 0) * (L % 4 == 0))
-        )
+            + ((H % 4 == 0) * (K % 4 == 0) * (L % 4 == 0)))
 
         array_hkl = np.take(HKL, np.where(cond16d == True)[0], axis=0)
 
@@ -360,9 +358,7 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
         contains_U = True
 
     else:
-        raise TypeError(
-            "Something is wrong in the material definition in dict_Materials"
-        )
+        raise TypeError("Something is wrong in the material definition in dict_Materials")
 
     return grain, contains_U
 
@@ -404,10 +400,8 @@ def Prepare_Grain(key_material, OrientMatrix, force_extinction=None, dictmateria
     """
 
     if key_material not in list(dictmaterials.keys()):
-        raise KeyError(
-            "%s is unknown! You need to create before using"
-            " Prepare_Grain." % key_material
-        )
+        raise KeyError("%s is unknown! You need to create before using"
+            " Prepare_Grain." % key_material)
 
     grain, contains_U = GrainParameter_from_Material(key_material, dictmaterials)
 
@@ -590,9 +584,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
         B[0, 1] = lat[1] * np.cos(lat[5])  # gamma angle
         B[1, 1] = lat[1] * np.sin(lat[5])
         B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
-        B[1, 2] = (
-            lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4]))
-        )
+        B[1, 2] = (lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4])))
         B[2, 2] = lat[2] * np.sqrt(1.0 - B[0, 2] ** 2 - B[1, 2] ** 2)
 
         return B
@@ -656,14 +648,10 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     if constantlength == "c":
         index_constant_length = 2
 
-    print(
-        "For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
-        % (constantlength, latticeparams[index_constant_length])
-    )
-    ratio = (
-        latticeparams[index_constant_length]
-        / lattice_parameter_direct_strain[index_constant_length]
-    )
+    print("For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
+        % (constantlength, latticeparams[index_constant_length]))
+    ratio = (latticeparams[index_constant_length]
+        / lattice_parameter_direct_strain[index_constant_length])
     lattice_parameter_direct_strain[0] *= ratio
     lattice_parameter_direct_strain[1] *= ratio
     lattice_parameter_direct_strain[2] *= ratio
@@ -685,19 +673,13 @@ def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", dictmateria
 
     UBmat = copy.copy(UBmat)
 
-    (devstrain, lattice_parameters) = compute_deviatoricstrain(
-        UBmat, B0matrix, latticeparams
-    )
+    (devstrain, lattice_parameters) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
     # overwrite and rescale possibly lattice lengthes
-    lattice_parameters = computeLatticeParameters_from_UB(
-        UBmat, key_material, constantlength
-    )
+    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength)
 
     print("final lattice_parameters", lattice_parameters)
 
-    deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(
-        devstrain, UBmat
-    )
+    deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(devstrain, UBmat)
 
     # devstrain_sampleframe_round = np.round(
     #     deviatoricstrain_sampleframe * 1000, decimals=3
@@ -739,7 +721,8 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
     return devstrain, lattice_parameter_direct_strain
 
 
-def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a", dictmaterials=dict_Materials):
+def computeLatticeParameters_from_UB(UBmatrix, key_material,
+                                            constantlength="a", dictmaterials=dict_Materials):
     r"""
     Computes  direct (real) lattice parameters
     from matrix UBmatrix (rotation and deformation)
@@ -750,9 +733,7 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a",
 
     UBmat = copy.copy(UBmatrix)
 
-    (_, lattice_parameter_direct_strain) = compute_deviatoricstrain(
-        UBmat, B0matrix, latticeparams
-    )
+    (_, lattice_parameter_direct_strain) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
 
     if constantlength == "a":
         index_constant_length = 0
@@ -763,12 +744,9 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material, constantlength="a",
 
     print(
         "For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
-        % (constantlength, latticeparams[index_constant_length])
-    )
-    ratio = (
-        latticeparams[index_constant_length]
-        / lattice_parameter_direct_strain[index_constant_length]
-    )
+        % (constantlength, latticeparams[index_constant_length]))
+    ratio = (latticeparams[index_constant_length]
+        / lattice_parameter_direct_strain[index_constant_length])
     lattice_parameter_direct_strain[0] *= ratio
     lattice_parameter_direct_strain[1] *= ratio
     lattice_parameter_direct_strain[2] *= ratio
@@ -917,18 +895,8 @@ def VolumeCell(latticeparameters):
     Alp = alpha * DEG
     Bet = beta * DEG
     Gam = gamma * DEG
-    return (
-        a
-        * b
-        * c
-        * np.sqrt(
-            1
-            - np.cos(Alp) ** 2
-            - np.cos(Bet) ** 2
-            - np.cos(Gam) ** 2
-            + 2 * np.cos(Alp) * np.cos(Bet) * np.cos(Gam)
-        )
-    )
+    return (a * b * c * np.sqrt(1 - np.cos(Alp) ** 2 - np.cos(Bet) ** 2 - np.cos(Gam) ** 2
+                                + 2 * np.cos(Alp) * np.cos(Bet) * np.cos(Gam)))
 
 
 def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
@@ -962,9 +930,7 @@ def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
         if vec_in_columns:
             matstarlab = matstarlab.T
 
-    reciprocal_lattice_parameters = matrix_to_rlat(
-        matstarlab, angles_in_deg=angles_in_deg
-    )
+    reciprocal_lattice_parameters = matrix_to_rlat(matstarlab, angles_in_deg=angles_in_deg)
     # print reciprocal_lattice_parameters
     vol = vol_cell(reciprocal_lattice_parameters, angles_in_deg=angles_in_deg)
 
@@ -1001,9 +967,7 @@ def matrix_to_rlat(mat, angles_in_deg=1):
     rlat[1] = np.sqrt(np.inner(mat[:, 1], mat[:, 1]))  # B
     rlat[2] = np.sqrt(np.inner(mat[:, 2], mat[:, 2]))  # C
 
-    rlat[3] = np.arccos(
-        np.inner(mat[:, 1], mat[:, 2]) / (rlat[1] * rlat[2])
-    )  # cos-1 (B,C)/(B,C)
+    rlat[3] = np.arccos(np.inner(mat[:, 1], mat[:, 2]) / (rlat[1] * rlat[2]))  # cos-1 (B,C)/(B,C)
     rlat[4] = np.arccos(np.inner(mat[:, 2], mat[:, 0]) / (rlat[2] * rlat[0]))
     rlat[5] = np.arccos(np.inner(mat[:, 0], mat[:, 1]) / (rlat[0] * rlat[1]))
 
@@ -1044,16 +1008,11 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     #     print 'dlat[:6]', dlat[:6]
 
     if not setvolume:
-        dvolume = (dlat[0]
-                    * dlat[1]
-                    * dlat[2]
-                    * np.sqrt(
-                        1
+        dvolume = (dlat[0] * dlat[1] * dlat[2] * np.sqrt(1
                         + 2 * np.cos(dlat[3]) * np.cos(dlat[4]) * np.cos(dlat[5])
                         - np.cos(dlat[3]) * np.cos(dlat[3])
                         - np.cos(dlat[4]) * np.cos(dlat[4])
-                        - np.cos(dlat[5]) * np.cos(dlat[5]))
-                )
+                        - np.cos(dlat[5]) * np.cos(dlat[5])))
     elif setvolume == 1:
         dvolume = 1
     elif setvolume == "a**3":
@@ -1068,18 +1027,12 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     rlat[0] = dlat[1] * dlat[2] * np.sin(dlat[3]) / dvolume
     rlat[1] = dlat[0] * dlat[2] * np.sin(dlat[4]) / dvolume
     rlat[2] = dlat[0] * dlat[1] * np.sin(dlat[5]) / dvolume
-    rlat[3] = np.arccos(
-                        (np.cos(dlat[4]) * np.cos(dlat[5]) - np.cos(dlat[3]))
-                        / (np.sin(dlat[4]) * np.sin(dlat[5]))
-                    )
-    rlat[4] = np.arccos(
-                        (np.cos(dlat[3]) * np.cos(dlat[5]) - np.cos(dlat[4]))
-                        / (np.sin(dlat[3]) * np.sin(dlat[5]))
-                    )
-    rlat[5] = np.arccos(
-                        (np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5]))
-                        / (np.sin(dlat[3]) * np.sin(dlat[4]))
-                    )
+    rlat[3] = np.arccos((np.cos(dlat[4]) * np.cos(dlat[5]) - np.cos(dlat[3]))
+                        / (np.sin(dlat[4]) * np.sin(dlat[5])))
+    rlat[4] = np.arccos((np.cos(dlat[3]) * np.cos(dlat[5]) - np.cos(dlat[4]))
+                        / (np.sin(dlat[3]) * np.sin(dlat[5])))
+    rlat[5] = np.arccos((np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5]))
+                        / (np.sin(dlat[3]) * np.sin(dlat[4])))
 
     if angles_in_deg:
         rlat[3:] *= RAD
@@ -1104,17 +1057,11 @@ def vol_cell(dlat, angles_in_deg=1):
     if angles_in_deg:
         dlat[3:] *= DEG
 
-    volume = (
-                dlat[0]
-                * dlat[1]
-                * dlat[2]
-                * np.sqrt(
-                    1
+    volume = (dlat[0] * dlat[1] * dlat[2] * np.sqrt(1
                     + 2 * np.cos(dlat[3]) * np.cos(dlat[4]) * np.cos(dlat[5])
                     - np.cos(dlat[3]) * np.cos(dlat[3])
                     - np.cos(dlat[4]) * np.cos(dlat[4])
-                    - np.cos(dlat[5]) * np.cos(dlat[5]))
-                )
+                    - np.cos(dlat[5]) * np.cos(dlat[5])))
 
     if angles_in_deg:
         dlat[3:] *= RAD

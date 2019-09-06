@@ -10,8 +10,7 @@ from dict_LaueTools import dict_Materials
 
 
 def Test_Build_and_Query_LUT(
-    angle=69, tol=1, n=3, latticeparams=(2, 1, 4, 75, 90, 120)
-):
+    angle=69, tol=1, n=3, latticeparams=(2, 1, 4, 75, 90, 120)):
     """
     Test_Build_and_Query_LUT
     """
@@ -24,7 +23,7 @@ def Test_Build_and_Query_LUT(
 
     Gstar_metric = CP.Gstar_from_directlatticeparams(*latticeparams)
     # GenerateLookUpTable
-    LUT = GenerateLookUpTable(hkl_all, Gstar_metric)
+    LUT = FO.GenerateLookUpTable(hkl_all, Gstar_metric)
 
     sol69 = FO.QueryLUT(LUT, angle, tol)
 

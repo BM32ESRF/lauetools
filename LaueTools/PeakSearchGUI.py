@@ -2919,26 +2919,19 @@ class PeakListOLV(wx.Panel):
             #            self.mainframe.toggleBtnCrop.SetLabel("UnCrop Data")
             self.mainframe.CropIsOn = True
             self.mainframe.centerx, self.mainframe.centery = Y, X
-            self.mainframe.boxx, self.mainframe.boxy = (
-                int(self.boxsizey.GetValue()),
-                int(self.boxsizex.GetValue()))
+            self.mainframe.boxx, self.mainframe.boxy = (int(self.boxsizey.GetValue()),
+                                                        int(self.boxsizex.GetValue()))
 
             centeri, centerj = self.mainframe.centerx, self.mainframe.centery
             boxi, boxj = self.mainframe.boxx, self.mainframe.boxy
 
-            imin, imax, jmin, jmax = (
-                centeri - boxi,
-                centeri + boxi,
-                centerj - boxj,
-                centerj + boxj)
+            imin, imax, jmin, jmax = (centeri - boxi, centeri + boxi, centerj - boxj, centerj + boxj)
 
             # avoid to wrong indices when slicing the data
             imin, imax, jmin, jmax = RMCCD.check_array_indices(
                 imin, imax, jmin, jmax, framedim=self.grangranparent.framedim)
 
-            self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI[
-                imin:imax, jmin:jmax
-            ]
+            self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI[imin:imax, jmin:jmax]
             self.mainframe.reinit_aftercrop_draw()
 
             self.mainframe.updatePlotTitle()
