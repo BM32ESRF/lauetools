@@ -638,8 +638,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
         if spotssettype in ("rangeset", ):
-            res = INDEX.getOrientMatrices(
-                                    spot_index_central,
+            res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
                                     Tabledistance[:nbmax_probed, :nbmax_probed],
                                     self.select_theta,
