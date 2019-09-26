@@ -679,20 +679,17 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
 
     print("select points index in TestPoints", selected_testpoints_indices)
 
-    selected_testpoints_indices = prepend_in_list(
-        list(list(range(len(TestPoints)))), selected_testpoints_indices
-    )
+    selected_testpoints_indices = prepend_in_list(list(list(range(len(TestPoints)))),
+                                                    selected_testpoints_indices)
 
     print("select points index in TestPoints", selected_testpoints_indices)
 
     #     return list_closest_ind, list_allclose_ind, list_all_dist, list_mindist
     selected_testpoints = np.take(TestPoints, selected_testpoints_indices, axis=0)
 
-    return (
-        selected_testpoints,
+    return (selected_testpoints,
         selected_testpoints_indices,
-        isolated_pts_in_ReferencePoints,
-    )
+        isolated_pts_in_ReferencePoints)
 
 
 def prepend_in_list(list_to_modify, elems):
@@ -713,16 +710,12 @@ def prepend_in_list(list_to_modify, elems):
 
     for el in list_to_modify:
         if list_to_modify.count(el) > 1:
-            raise ValueError(
-                "%s (input list to modify) contains duplicates!!" % str(list_to_modify)
-            )
+            raise ValueError("%s (input list to modify) contains duplicates!!" % str(list_to_modify))
 
     todelete = []
     for k in elems:
         if elems.count(k) > 1:
-            raise ValueError(
-                "%s (elements list to prepend) contains duplicates!!" % elems
-            )
+            raise ValueError("%s (elements list to prepend) contains duplicates!!" % elems)
 
         nb_occurences = list_to_modify.count(k)
         if nb_occurences == 0:
@@ -927,8 +920,7 @@ def getSets(pairs):
     except ImportError:
         print("\n***********************************************************")
         print(
-            "networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/"
-        )
+            "networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/")
         print("***********************************************************\n")
         return None
 
@@ -1250,9 +1242,7 @@ def purgeClosePoints2(peaklist, pixeldistance_remove_duplicates, verbose=0):
     return purged_pklist, index_todelete
 
 
-def getCommonSpots(
-    file1, file2, toldistance, dirname=None, data1=None, fulloutput=False
-):
+def getCommonSpots(file1, file2, toldistance, dirname=None, data1=None, fulloutput=False):
     """
     return nb of spots in common in two list of peaks file1 and file2
 
@@ -1434,9 +1424,7 @@ def threeindices_up_to(n, remove_negative_l=False):
 
             nbpos = 2 * n + 1
 
-            gripos = np.mgrid[
-                -n : n : nbpos * 1j, -n : n : nbpos * 1j, -n : n : nbpos * 1j
-            ]
+            gripos = np.mgrid[-n : n : nbpos * 1j, -n : n : nbpos * 1j, -n : n : nbpos * 1j]
             majorindices = np.reshape(gripos.T, (nbpos ** 3, 3))
 
             nbelem = len(majorindices)
@@ -1687,9 +1675,7 @@ def Positiveindices_up_to(n):
 
             nbpos = n + 1
 
-            gripos = np.mgrid[
-                0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j
-            ]
+            gripos = np.mgrid[0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j]
             majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
 
             return majorindices_pos
@@ -1867,6 +1853,29 @@ def matRot(axis, angle):
     return (np.cos(angrad) * IDENTITYMATRIX
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
+        
+def propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False):
+    """
+    propose one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta, chi =0)
+
+    .. note:: tested for cubic lattice
+    """
+    hkl_central = np.array(HKL)
+
+    qdir = np.array([-np.sin(target2theta / 2. * DEG), 0, np.cos(target2theta / 2. * DEG)])
+    # print('qdir',qdir)
+
+    n_hklcentral = np.sqrt(np.sum(hkl_central**2))
+    axrot1 = np.cross(hkl_central,np.array([-1, 0, 0]))
+    angrot1 = np.arccos(np.dot(hkl_central, np.array([-1, 0, 0])) / n_hklcentral) / DEG
+    matrot1 = matRot(axrot1, angrot1)
+    matrot2 = matRot([0, 1, 0], 90. - target2theta / 2.)  # positive angle between qdir and -x
+    matrot3 = np.eye(3)
+    # random rotation around qdir
+    if randomrotation:
+        matrot3 = matRot(qdir, np.random.random() * 360 - 180)
+
+    return np.dot(matrot3, np.dot(matrot2, matrot1))
 
 
 def getRotationAngleFrom2Matrices(A, B):
