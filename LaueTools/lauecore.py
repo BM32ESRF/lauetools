@@ -2135,18 +2135,15 @@ def StructureFactorCubic(h, k, l, extinctions="dia"):
 
 def StructureFactorUO2(h, k, l, qvector):
     """
-    computes structure factor of CaF2 flurine type structure 
+    computes structure factor of CaF2 flurine type structure
     """
     # CaF2 structure
     pi = np.pi
     fu = atomicformfactor(qvector, "U")
     fo = atomicformfactor(qvector, "O")
-    F = (fu + 2 * fo * np.cos(pi / (2 * (h + k + l)))) * (
-        1
-        + np.exp(-1.0j * pi * (k + l))
-        + np.exp(-1.0j * pi * (l + h))
-        + np.exp(-1.0j * pi * (h + k))
-    )
+    F = (fu + 2 * fo * np.cos(pi / (2 * (h + k + l)))) * (1 + np.exp(-1.0j * pi * (k + l))
+                                                        + np.exp(-1.0j * pi * (l + h))
+                                                        + np.exp(-1.0j * pi * (h + k)))
     return F
 
 
@@ -2162,9 +2159,9 @@ def atomicformfactor(q, element="Ge"):
     if element == "Ge":
         p = (16.0816, 2.8509, 6.3747, 0.2516, 3.7068, 11.4468, 3.683, 54.7625, 2.1313)
 
-    elif element == "U": p = ( 5.3715, 0.516598, 22.5326, 3.05053, 12.0291, 12.5723, 4.79840, 23.4582, 13.2671, )
+    elif element == "U": p = (5.3715, 0.516598, 22.5326, 3.05053, 12.0291, 12.5723, 4.79840, 23.4582, 13.2671)
 
-    elif element == "O": p = ( 3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800, )
+    elif element == "O": p = (3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800)
     
     val = 0
     for k in list(range(4)):

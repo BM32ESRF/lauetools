@@ -31,6 +31,7 @@ if sys.version_info.major == 3:
     from . import IOLaueTools as IOLT
     from . generaltools import printred, printgreen, printcyan
     from . import spottracking as SpTra
+    from . import orientations as ORI
 
 else:
     import generaltools as GT
@@ -46,6 +47,7 @@ else:
     import IOLaueTools as IOLT
     from generaltools import printred, printgreen, printcyan
     import spottracking as SpTra
+    import orientations as ORI
 
 
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
@@ -2830,7 +2832,7 @@ class spotsset:
             dict_matrices["B0"] = self.B0matrix
             #         dict_matrices['UBB0'] = self.UBB0mat
             UBB0 = np.dot(dict_matrices["UBmat"], dict_matrices["B0"])
-            euler_angles = GT.calc_Euler_angles(UBB0).round(decimals=3)
+            euler_angles = ORI.calc_Euler_angles(UBB0).round(decimals=3)
             dict_matrices["euler_angles"] = euler_angles
 
             dict_matrices["devstrain_crystal"] = self.deviatoricstrain
@@ -4266,9 +4268,9 @@ def plotindexingMap_rgbs(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
     for k in list(dmat.keys()):
         if type(dmat[k][0]) != type(0) and dmr[k][0] > 20.0 and dnb[k][0] >= 6.0:
             # rgbs[k-minindex] = Matrix_to_RGB( Allres[0][k][0] )[0]
-            # rgbs[k-minindex] = myRGB_3(Allres[0][k][0])
+            # rgbs[k-minindex] = ORI.myRGB_3(Allres[0][k][0])
             #            rgbs[k - startindex] = Matrix_to_RGB_2(dmat[k][0])
-            rgbs[k - startindex] = myRGB_3(dmat[k][0])
+            rgbs[k - startindex] = ORI.myRGB_3(dmat[k][0])
 
     tabindex = np.arange(nbcol * nblines).reshape((nbcol, nblines))
     tabindex.resize((nblines, nbcol), refcheck=False)
@@ -4334,9 +4336,8 @@ def getallMisorientation(dmat, dmr, dnb):
     zvalue = [np.NaN] * len(dmat)
     listkeys = sorted(dmat.keys())
     for k in listkeys:
-        zvalue[k - listkeys[0]] = getMisorientation(
-            dmat[k][0], followVector=np.array([0, 0, -1])
-        )
+        zvalue[k - listkeys[0]] = ORI.getMisorientation(dmat[k][0],
+                                                    followVector=np.array([0, 0, -1]))
 
     return zvalue
 
@@ -4347,7 +4348,7 @@ def plotindexingMap_scalar(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
 
     default values for CuVia Jul 11
 
-    in dvpt
+    .. warning:: in dvpt
     """
 
     nbcol, nblines = mapshape
@@ -4397,11 +4398,10 @@ def plotindexingMap_scalar(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
             dmr[Imageindex + startindex]
 
             return "z=%1.3f, MatchingRate=%.1f, Nbpeaks=%d, ImageIndex: %d" % (
-                zz,
-                dmr[Imageindex + startindex][0],
-                dnb[Imageindex + startindex][0],
-                Imageindex + startindex,
-            )
+                                                                zz,
+                                                                dmr[Imageindex + startindex][0],
+                                                                dnb[Imageindex + startindex][0],
+                                                                Imageindex + startindex,)
         else:
             return ""
 
@@ -4463,9 +4463,7 @@ list_produced_files = []
 def log_result(result):
 
     if len(result) == 2:
-        print(
-            "********************\n\n\n\n %s \n\n\n\n\n******************" % result[1]
-        )
+        print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
         list_produced_files.append(str(result[1]))
 
     print("mylog print")
@@ -4493,14 +4491,10 @@ def indexing_multiprocessing(
             print("\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n")
         index_start, index_final = fileindexrange[:2]
     except:
-        raise ValueError(
-            "Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)"
-        )
+        raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
         return
 
-    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(
-        index_start, index_final, nb_of_cpu
-    )
+    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
     saveObject = 0
 
@@ -4523,17 +4517,16 @@ def indexing_multiprocessing(
     #
     # #     jobs[-1].join()
 
-    index_fileseries_3.__defaults__ = (
-        Index_Refine_Parameters_dict,
-        saveObject,
-        verbose,
-        nb_materials,
-        False,
-        prefixfortitle,
-        reanalyse,
-        use_previous_results,
-        updatefitfiles,
-        CCDCalibdict)
+    index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
+                                        saveObject,
+                                        verbose,
+                                        nb_materials,
+                                        False,
+                                        prefixfortitle,
+                                        reanalyse,
+                                        use_previous_results,
+                                        updatefitfiles,
+                                        CCDCalibdict)
 
     print("fileindexdivision", fileindexdivision)
 
@@ -4555,11 +4548,7 @@ def indexing_multiprocessing(
     #     list_files = f.readlines()
     #     f.close()
 
-    output_mergeddicts_filename = "%s_dict_%04d_%04d" % (
-        prefixfortitle,
-        index_start,
-        index_final,
-    )
+    output_mergeddicts_filename = "%s_dict_%04d_%04d" % (prefixfortitle, index_start, index_final)
 
     list_produced_files = []
     for elem in fileindexdivision:
@@ -4570,18 +4559,14 @@ def indexing_multiprocessing(
     flag_completed_HDF5 = False
     try:
         print("intermediate dict_files", list_produced_files)
-        mergeDictRes(
-            list_produced_files,
-            outputfilename=output_mergeddicts_filename,
-            dirname=dirname_dictRes,
-        )
+        mergeDictRes(list_produced_files, outputfilename=output_mergeddicts_filename,
+                                                                        dirname=dirname_dictRes)
 
         flag_completed = True
     except IOError:
         print("\n******************\n")
-        print(
-            "An error should have occured during at least one thread.\nCheck the error by using only one CPU!"
-        )
+        print("An error should have occured during at least one thread.\nCheck the error "
+            "by using only one CPU!")
         print("\n******************\n")
 
         return flag_completed, flag_completed_HDF5
@@ -4602,30 +4587,25 @@ def indexing_multiprocessing(
             print("folder where hdf5 will be written is None!")
             return flag_completed, flag_completed_HDF5
 
-        flag_completed_HDF5 = LaueHDF5.build_hdf5(
-            output_mergeddicts_filename,
-            dirname_dictRes=dirname_dictRes,
-            output_hdf5_filename="dictSUMMARY_%s%04d_%04d.h5"
-            % (prefixfortitle, index_start, index_final),
-            output_dirname=dirname_dictRes,
-        )
+        flag_completed_HDF5 = LaueHDF5.build_hdf5(output_mergeddicts_filename,
+                                                dirname_dictRes=dirname_dictRes,
+                                                output_hdf5_filename="dictSUMMARY_%s%04d_%04d.h5"
+                                                % (prefixfortitle, index_start, index_final),
+                                                output_dirname=dirname_dictRes)
 
         return flag_completed, flag_completed_HDF5
 
 
-def index_fileseries_3(
-    fileindexrange,
-    Index_Refine_Parameters_dict=None,
-    saveObject=0,
-    verbose=0,
-    nb_materials=None,
-    build_hdf5=False,
-    prefixfortitle="",
-    reanalyse=True,
-    use_previous_results=True,
-    updatefitfiles=False,
-    CCDCalibdict=None,
-):
+def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
+                                        saveObject=0,
+                                        verbose=0,
+                                        nb_materials=None,
+                                        build_hdf5=False,
+                                        prefixfortitle="",
+                                        reanalyse=True,
+                                        use_previous_results=True,
+                                        updatefitfiles=False,
+                                        CCDCalibdict=None):
     """
     Core procedure to index and refine a serie of peaks list
 
