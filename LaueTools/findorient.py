@@ -1177,10 +1177,9 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
     if isinstance(hkl2, list):
         hkl2 = np.array(hkl2)
 
-    print( "hkl1", hkl1)
-    print( "hkl2", hkl2)
-
-    
+    # print('in PlanePairs_from2sets')
+    # print("hkl1", hkl1)
+    # print("hkl2", hkl2)
 
     if LUT is None:
         # GenerateLookUpTable

@@ -35,10 +35,8 @@ np.set_printoptions(precision=15)
 
 # Plot & Tools Frame Class
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar,
-)
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                    NavigationToolbar2WxAgg as NavigationToolbar)
 
 from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
@@ -58,6 +56,7 @@ if sys.version_info.major == 3:
     from . import matchingrate
     from . import dict_LaueTools as DictLT
     from . import readmccd as RMCCD
+    from . import orientations as ORI
 else:
     import CrystalParameters as CP
     import IOLaueTools as IOLT
@@ -72,6 +71,7 @@ else:
     import matchingrate
     import dict_LaueTools as DictLT
     import readmccd as RMCCD
+    import orientations as ORI
 
 
 SIZE_PLOTTOOLS = (8, 6)
@@ -2799,7 +2799,7 @@ class Plot_RefineFrame(wx.Frame):
         dict_matrices["framedim"] = self.framedim
         dict_matrices["kf_direction"] = self.kf_direction
 
-        euler_angles = GT.calc_Euler_angles(self.UBB0mat).round(decimals=3)
+        euler_angles = ORI.calc_Euler_angles(self.UBB0mat).round(decimals=3)
         dict_matrices["euler_angles"] = euler_angles
 
         if self.new_latticeparameters is not None:
