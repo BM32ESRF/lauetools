@@ -61,6 +61,7 @@ if sys.version_info.major == 3:
     from . import DetectorParameters as DP
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import OpenSpotsListFileGUI as OSLFGUI
+    from . import orientations as ORI
 
 else:
 
@@ -80,6 +81,7 @@ else:
     import DetectorParameters as DP
     from ResultsIndexationGUI import RecognitionResultCheckBox
     import OpenSpotsListFileGUI as OSLFGUI
+    import orientations as ORI
 
 
 DEG = DictLT.DEG
@@ -1511,12 +1513,8 @@ class MainCalibrationFrame(wx.Frame):
         Store the current UBmatrix in the orientation UBmatrix dictionnary
         """
 
-        tf = TextFrame(
-                        self,
-                        -1,
-                        self.getstringrep(self.crystalparampanel.UBmatrix),
-                        self.storedmatrixindex,
-                    )
+        tf = TextFrame(self, -1, self.getstringrep(self.crystalparampanel.UBmatrix),
+                        self.storedmatrixindex)
         tf.Show(True)
         self.storedmatrixindex += 1
         return
@@ -2102,8 +2100,7 @@ class MainCalibrationFrame(wx.Frame):
                                                             sorting_intensity="yes",
                                                             param=self.CCDParam,
                                                             pixelsize=self.pixelsize,
-                                                            kf_direction=self.kf_direction,
-                                                        )
+                                                            kf_direction=self.kf_direction)
 
         filename = os.path.split(fullpathfilename)[1]
         #         print "dirname,filename",dirname,filename
@@ -2144,14 +2141,10 @@ class MainCalibrationFrame(wx.Frame):
             self.savedindex += 1
             suffix = "_%d" % self.savedindex
 
-        outputfilename = (
-            self.initialParameter["filename"].split(".")[0] + suffix + ".fit"
-        )
+        outputfilename = (self.initialParameter["filename"].split(".")[0] + suffix + ".fit")
 
         indExp = np.array(self.linkedspotsAfterFit[:, 0], dtype=np.int)
-        _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int))[
-            1:4
-        ]
+        _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int))[1:4]
         intens = self.linkIntensityAfterFit
         residues_calibFit = self.residues_fitAfterFit
 
@@ -2166,9 +2159,7 @@ class MainCalibrationFrame(wx.Frame):
         dictCCD["pixelsize"] = self.pixelsize
         dictCCD["kf_direction"] = self.kf_direction
 
-        spotsProps = LAUE.calcSpots_fromHKLlist(
-            self.UBmatrix, self.B0matrix, Data_Q, dictCCD
-        )
+        spotsProps = LAUE.calcSpots_fromHKLlist(self.UBmatrix, self.B0matrix, Data_Q, dictCCD)
         # H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthe, chi, Energy = spotsProps
         Xtheo, Ytheo, twthe, chi, Energy = spotsProps[-5:]
 
@@ -2176,8 +2167,7 @@ class MainCalibrationFrame(wx.Frame):
 
         selected_data_peak = np.take(data_peak, indExp, axis=0)
 
-        (
-            Xexp,
+        (Xexp,
             Yexp,
             totalIntensity,
             peakAmplitude,
@@ -2192,31 +2182,21 @@ class MainCalibrationFrame(wx.Frame):
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
 
-        Columns = [
-            indExp,
-            intens,
-            _h,
-            _k,
-            _l,
-            Xtheo,
-            Ytheo,
-            Xexp,
-            Yexp,
-            Xdev_calibFit,
-            Ydev_calibFit,
-            residues_calibFit,
-            twthe,
-            chi,
-            Energy,
-            peakAmplitude,
-            IntensityMax,
-            peak_bkg,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev_peakFit,
-            Ydev_peakFit,
-        ]
+        Columns = [indExp, intens, _h, _k, _l, Xtheo, Ytheo, Xexp, Yexp,
+                                                            Xdev_calibFit,
+                                                            Ydev_calibFit,
+                                                            residues_calibFit,
+                                                            twthe,
+                                                            chi,
+                                                            Energy,
+                                                            peakAmplitude,
+                                                            IntensityMax,
+                                                            peak_bkg,
+                                                            peak_fwaxmaj,
+                                                            peak_fwaxmin,
+                                                            peak_inclination,
+                                                            Xdev_peakFit,
+                                                            Ydev_peakFit]
 
         datatooutput = np.transpose(np.array(Columns))
         datatooutput = np.round(datatooutput, decimals=5)
@@ -2230,7 +2210,7 @@ class MainCalibrationFrame(wx.Frame):
         #         dict_matrices['devstrain'] = self.deviatoricstrain
 
         UBB0_v2 = np.dot(dict_matrices["UBmat"], dict_matrices["B0"])
-        euler_angles = GT.calc_Euler_angles(UBB0_v2).round(decimals=3)
+        euler_angles = ORI.calc_Euler_angles(UBB0_v2).round(decimals=3)
         dict_matrices["euler_angles"] = euler_angles
 
         # OR
@@ -2239,8 +2219,7 @@ class MainCalibrationFrame(wx.Frame):
         dict_matrices["Bmat_tri"] = self.Bmat_tri
         dict_matrices["HKLxyz_names"] = self.HKLxyz_names
         dict_matrices["HKLxyz"] = self.HKLxyz
-        toto = np.array(self.CCDParam).round(decimals=3)
-        dict_matrices["detectorparameters"] = list(toto)
+        dict_matrices["detectorparameters"] = list(np.array(self.CCDParam).round(decimals=3))
         dict_matrices["pixelsize"] = self.pixelsize
         dict_matrices["framedim"] = self.framedim
         dict_matrices["CCDLabel"] = self.CCDLabel
@@ -2251,8 +2230,7 @@ class MainCalibrationFrame(wx.Frame):
 
         meanresidues = np.mean(residues_calibFit)
 
-        IOLT.writefitfile(
-            outputfilename,
+        IOLT.writefitfile(outputfilename,
             datatooutput,
             len(indExp),
             dict_matrices=dict_matrices,
@@ -2260,8 +2238,7 @@ class MainCalibrationFrame(wx.Frame):
             PeakListFilename=self.initialParameter["filename"],
             columnsname=columnsname,
             modulecaller="DetectorCalibration.py",
-            refinementtype="CCD Geometry",
-        )
+            refinementtype="CCD Geometry")
 
         fullname = os.path.join(os.getcwd(), outputfilename)
 
@@ -2276,12 +2253,8 @@ class MainCalibrationFrame(wx.Frame):
     def show_alltogglestate(self, flag):
         if flag:
             # print "self.pointButton.GetValue()",self.pointButton.GetValue()
-            print(
-                "self.btn_label_theospot.GetValue()", self.btn_label_theospot.GetValue()
-            )
-            print(
-                "self.btn_label_expspot.GetValue()", self.btn_label_expspot.GetValue()
-            )
+            print("self.btn_label_theospot.GetValue()", self.btn_label_theospot.GetValue())
+            print("self.btn_label_expspot.GetValue()", self.btn_label_expspot.GetValue())
 
     def ToggleLabelExp(self, _):
         self.show_alltogglestate(0)
@@ -2857,15 +2830,13 @@ class MainCalibrationFrame(wx.Frame):
         ResolutionAngstrom = None
 
         self.Extinctions = DictLT.dict_Extinc[
-            self.crystalparampanel.comboExtinctions.GetValue()
-        ]
+            self.crystalparampanel.comboExtinctions.GetValue()]
 
         # default
         # (deltamatrix can be updated step by step by buttons)
         if self.manualmatrixinput is None:
             self.crystalparampanel.UBmatrix = np.dot(
-                self.deltamatrix, self.crystalparampanel.UBmatrix
-            )
+                self.deltamatrix, self.crystalparampanel.UBmatrix)
             # reset deltamatrix
             self.deltamatrix = np.eye(3)
 
@@ -2873,8 +2844,7 @@ class MainCalibrationFrame(wx.Frame):
         elif self.manualmatrixinput == 0:
             # self.UBmatrix = np.dot(self.deltamatrix, LaueToolsframe.dict_Rot[self.comboMatrix.GetValue()])
             self.crystalparampanel.UBmatrix = DictLT.dict_Rot[
-                self.crystalparampanel.comboMatrix.GetValue()
-            ]
+                self.crystalparampanel.comboMatrix.GetValue()]
             # to keep self.UBmatrix unchanged at this step
             self.manualmatrixinput = None
 
@@ -2900,9 +2870,7 @@ class MainCalibrationFrame(wx.Frame):
 
         self.key_material = self.crystalparampanel.comboElem.GetValue()
 
-        Grain = CP.Prepare_Grain(
-            self.key_material, self.crystalparampanel.UBmatrix, dictmaterials=self.dict_Materials
-        )
+        Grain = CP.Prepare_Grain(self.key_material, self.crystalparampanel.UBmatrix, dictmaterials=self.dict_Materials)
 
         self.B0matrix = Grain[0]
 
@@ -2920,35 +2888,31 @@ class MainCalibrationFrame(wx.Frame):
         if SINGLEGRAIN:  # for single grain simulation
             if self.kf_direction in ("Z>0", "X>0") and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
-                ResSimul = LAUE.SimulateLaue_full_np(
-                    Grain,
-                    self.emin,
-                    self.emax,
-                    self.CCDParam[:5],
-                    kf_direction=self.kf_direction,
-                    ResolutionAngstrom=False,
-                    removeharmonics=removeharmonics,
-                    pixelsize=pixelsize,
-                    dim=self.framedim,
-                    detectordiameter=diameter_for_simulation * 1.25,
-                    force_extinction=self.Extinctions,
-                    dictmaterials=self.dict_Materials
-                )
+                ResSimul = LAUE.SimulateLaue_full_np(Grain,
+                                                    self.emin,
+                                                    self.emax,
+                                                    self.CCDParam[:5],
+                                                    kf_direction=self.kf_direction,
+                                                    ResolutionAngstrom=False,
+                                                    removeharmonics=removeharmonics,
+                                                    pixelsize=pixelsize,
+                                                    dim=self.framedim,
+                                                    detectordiameter=diameter_for_simulation * 1.25,
+                                                    force_extinction=self.Extinctions,
+                                                    dictmaterials=self.dict_Materials)
             else:
-                ResSimul = LAUE.SimulateLaue(
-                    Grain,
-                    self.emin,
-                    self.emax,
-                    self.CCDParam[:5],
-                    kf_direction=self.kf_direction,
-                    ResolutionAngstrom=ResolutionAngstrom,
-                    removeharmonics=removeharmonics,
-                    pixelsize=pixelsize,
-                    dim=self.framedim,
-                    detectordiameter=diameter_for_simulation * 1.25,
-                    force_extinction=self.Extinctions,
-                    dictmaterials=self.dict_Materials
-                )
+                ResSimul = LAUE.SimulateLaue(Grain,
+                                            self.emin,
+                                            self.emax,
+                                            self.CCDParam[:5],
+                                            kf_direction=self.kf_direction,
+                                            ResolutionAngstrom=ResolutionAngstrom,
+                                            removeharmonics=removeharmonics,
+                                            pixelsize=pixelsize,
+                                            dim=self.framedim,
+                                            detectordiameter=diameter_for_simulation * 1.25,
+                                            force_extinction=self.Extinctions,
+                                            dictmaterials=self.dict_Materials)
 
             #             print "ResSimul", ResSimul[2]
             #             print 'len ResSimul[2]', len(ResSimul[2])
