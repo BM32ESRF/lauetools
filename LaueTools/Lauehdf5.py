@@ -16,12 +16,14 @@ if sys.version_info.major == 3:
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT
     from . import dict_LaueTools as DictLT
+    from . import orientations as ORI
 else:
 
     import generaltools as GT
     import readmccd as RMCCD
     import IOLaueTools as IOLT
     import dict_LaueTools as DictLT
+    import orientations as ORI
 
 
 MAX_NUMBER_GRAINS = 3
@@ -1652,7 +1654,7 @@ class TableMap:
             if Nbindexed >= 0.0:
                 UB = np.array(self.getUB(fileindex, grainindex))
                 if convertionmethod == 0:
-                    UBarray[k] = ISS.myRGB_3(UB)
+                    UBarray[k] = ORI.myRGB_3(UB)
                 else:
                     print("UB", UB)
                     qv = np.dot(UB, qvector)

@@ -413,16 +413,13 @@ def readStringOfIterable(striter):
     return listvals
 
 
-def writefile_Peaklist(
-    outputprefixfilename,
-    Data_array,
-    overwrite=1,
-    initialfilename=None,
-    comments=None,
-    dirname=None):
+def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
+                                                        initialfilename=None,
+                                                        comments=None,
+                                                        dirname=None):
     """
     Write .dat file
-    
+
     containing data
     one line   of header
     next lines of data
@@ -468,8 +465,7 @@ def writefile_Peaklist(
     #         print "nbcolumns", nbcolumns
 
     if nbcolumns == 10:
-        (
-            peak_X,
+        (peak_X,
             peak_Y,
             peak_I,
             peak_fwaxmaj,
@@ -482,8 +478,7 @@ def writefile_Peaklist(
         ) = Data_array.T
 
     elif nbcolumns == 11:
-        (
-            peak_X,
+        (peak_X,
             peak_Y,
             peak_Itot,
             peak_I,
@@ -507,8 +502,7 @@ def writefile_Peaklist(
 
         outputfile.write(
             "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-            % (
-                np.round(peak_X[0], decimals=2),
+            % (np.round(peak_X[0], decimals=2),
                 np.round(peak_Y[0], decimals=2),
                 np.round(peak_I[0] + peak_bkg[0], decimals=2),
                 np.round(peak_I[0], decimals=2),
@@ -518,8 +512,7 @@ def writefile_Peaklist(
                 np.round(Xdev[0], decimals=2),
                 np.round(Ydev[0], decimals=2),
                 np.round(peak_bkg[0], decimals=2),
-                int(Ipixmax[0]),
-            )
+                int(Ipixmax[0]))
         )
 
         nbpeaks = 1
@@ -528,12 +521,10 @@ def writefile_Peaklist(
 
         outputfile.write(
             "\n".join(
-                [
-                    "%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
+                ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
                     % tuple(
                         list(
-                            zip(
-                                peak_X.round(decimals=2),
+                            zip(peak_X.round(decimals=2),
                                 peak_Y.round(decimals=2),
                                 (peak_I + peak_bkg).round(decimals=2),
                                 peak_I.round(decimals=2),
@@ -543,8 +534,7 @@ def writefile_Peaklist(
                                 Xdev.round(decimals=2),
                                 Ydev.round(decimals=2),
                                 peak_bkg.round(decimals=2),
-                                Ipixmax,
-                            )
+                                Ipixmax)
                         )[i]
                     )
                     for i in list(range(longueur))
@@ -563,17 +553,14 @@ def writefile_Peaklist(
 
     outputfile.close()
 
-    print(
-        "table of %d peak(s) with %d columns has been written in \n%s"
-        % (longueur, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename))
-    )
+    print("table of %d peak(s) with %d columns has been written in \n%s"
+        % (longueur, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
 
     return os.path.join(os.path.abspath(dirname), outputfilename)
 
 
 def addPeaks_in_Peaklist(
-    filename_in, data_new_peaks, filename_out=None, dirname_in=None, dirname_out=None
-):
+    filename_in, data_new_peaks, filename_out=None, dirname_in=None, dirname_out=None):
     """
     create or update peak list according to a new peaks data
     """
@@ -633,14 +620,12 @@ def addPeaks_in_Peaklist(
         if dirname_out is not None:
             filename_out = os.path.join(dirname_out, filename_out)
 
-    writefile_Peaklist(
-        filename_out,
-        merged_data,  # last column is computed inside functions
-        overwrite=1,
-        initialfilename=None,
-        comments=comments,
-        dirname=dirname_out,
-    )
+    writefile_Peaklist(filename_out,
+                        merged_data,  # last column is computed inside functions
+                        overwrite=1,
+                        initialfilename=None,
+                        comments=comments,
+                        dirname=dirname_out)
 
     #    filename_out = os.path.join(dirname_out, 'tototest')
     #    fout = open(filename_out, 'w')
@@ -847,15 +832,11 @@ def ReadASCIIfile(_filename_data, col_2theta=0, col_chi=1, col_Int=-1, nblineski
     return (_data_theta, _data_chi, _data_I)
 
 
-def readfitfile_multigrains(
-    fitfilename,
-    verbose=0,
-    readmore=False,
-    fileextensionmarker=(".fit", ".cor", ".dat"),
-    returnUnindexedSpots=False,
-    return_columnheaders=False,
-    return_toreindex=False,
-):
+def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
+                                        fileextensionmarker=(".fit", ".cor", ".dat"),
+                                        returnUnindexedSpots=False,
+                                        return_columnheaders=False,
+                                        return_toreindex=False):
     """
     JSM version of multigrain.readlt_fit_mg()
     read a single .fit file containing data for several grains
@@ -873,7 +854,7 @@ def readfitfile_multigrains(
 
                where   list_indexedgrains_indices   : list of indices of indexed grains
                        list_nb_indexed_peaks        : list of numbers of indexed peaks for each grain
-                       list_starting_rows_in_data    : list of starting rows in spotsdata for reading grain's spots data 
+                       list_starting_rows_in_data    : list of starting rows in spotsdata for reading grain's spots data
 
                         all_UBmats_flat           : all 1D 9 elements UBmat matrix
                                                 in q = UBmat B0 G* in Lauetools Frame (ki//x)
@@ -887,10 +868,7 @@ def readfitfile_multigrains(
                         euler                    : list of 3 Euler Angles for each grain
 
     """
-    print(
-        "reading fit file %s by readfitfile_multigrains.py of readwriteASCII: "
-        % fitfilename
-    )
+    print("reading fit file %s by readfitfile_multigrains.py of readwriteASCII: " % fitfilename)
 
     columns_headers = []
 
@@ -909,8 +887,7 @@ def readfitfile_multigrains(
             #             print _line.endswith(fileextensionmarker)
             #             print _line.startswith('# Unindexed and unrefined')
             if _line.endswith(fileextensionmarker) and not _line.startswith(
-                "# Unindexed and unrefined"
-            ):
+                "# Unindexed and unrefined"):
                 nbgrains += 1
                 linepos_grain_list.append(lineindex)
             lineindex += 1
@@ -1018,8 +995,7 @@ def readfitfile_multigrains(
                         line = f.readline()
                         iline += 1
                         dataspots.append(
-                            line.rstrip("\n").replace("[", "").replace("]", "").split()
-                        )
+                            line.rstrip("\n").replace("[", "").replace("]", "").split())
 
                     dataspots = np.array(dataspots, dtype=np.float)
                 #                     print "got dataspots!"
@@ -1034,8 +1010,7 @@ def readfitfile_multigrains(
                         line = f.readline()
                         iline += 1
                         dataspots_Unindexed.append(
-                            line.rstrip("\n").replace("[", "").replace("]", "").split()
-                        )
+                            line.rstrip("\n").replace("[", "").replace("]", "").split())
 
                     dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float)
             #                     print "got dataspots_Unindexed!"
@@ -1072,9 +1047,7 @@ def readfitfile_multigrains(
                 for jline_matrix in list(range(3)):
                     line = f.readline()
                     #                     print "line in matrix", line
-                    lineval = (
-                        line.rstrip("\n").replace("[", "").replace("]", "").split()
-                    )
+                    lineval = (line.rstrip("\n").replace("[", "").replace("]", "").split())
                     # print toto
                     UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -1084,9 +1057,7 @@ def readfitfile_multigrains(
                 for jline_matrix in list(range(3)):
                     line = f.readline()
                     #                     print "line in matrix", line
-                    lineval = (
-                        line.rstrip("\n").replace("[", "").replace("]", "").split()
-                    )
+                    lineval = (line.rstrip("\n").replace("[", "").replace("]", "").split())
                     # print toto
                     strain[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -1136,16 +1107,12 @@ def readfitfile_multigrains(
 
         # xx yy zz yz xz xy
         # voigt notation
-        strain6[grain_index, :] = np.array(
-            [
-                strain[0, 0],
-                strain[1, 1],
-                strain[2, 2],
-                strain[1, 2],
-                strain[0, 2],
-                strain[0, 1],
-            ]
-        )
+        strain6[grain_index, :] = np.array([strain[0, 0],
+                                            strain[1, 1],
+                                            strain[2, 2],
+                                            strain[1, 2],
+                                            strain[0, 2],
+                                            strain[0, 1]])
 
         if grain_index == 0:
             allgrains_spotsdata = dataspots * 1.0
@@ -1155,10 +1122,8 @@ def readfitfile_multigrains(
     f.close()
 
     for grain_index in list(range(1, nbgrains)):
-        list_starting_rows_in_data[grain_index] = (
-            list_starting_rows_in_data[grain_index - 1]
-            + list_nb_indexed_peaks[grain_index - 1]
-        )
+        list_starting_rows_in_data[grain_index] = (list_starting_rows_in_data[grain_index - 1]
+                                                    + list_nb_indexed_peaks[grain_index - 1])
 
     pixdev = np.array(PixDev_list, dtype=np.float)
 
@@ -1173,36 +1138,30 @@ def readfitfile_multigrains(
         print("euler = \n", euler.round(decimals=3))
 
     if not readmore:
-        toreturn = (
-            list_indexedgrains_indices,
-            list_nb_indexed_peaks,
-            list_starting_rows_in_data,
-            all_UBmats_flat,
-            allgrains_spotsdata,
-            calibJSM[:, :5],
-            pixdev,
-        )
+        toreturn = (list_indexedgrains_indices,
+                    list_nb_indexed_peaks,
+                    list_starting_rows_in_data,
+                    all_UBmats_flat,
+                    allgrains_spotsdata,
+                    calibJSM[:, :5],
+                    pixdev)
     elif readmore:
-        toreturn = (
-            list_indexedgrains_indices,
-            list_nb_indexed_peaks,
-            list_starting_rows_in_data,
-            all_UBmats_flat,
-            allgrains_spotsdata,
-            calibJSM[:, :5],
-            pixdev,
-            strain6,
-            euler,
-        )
+        toreturn = (list_indexedgrains_indices,
+                    list_nb_indexed_peaks,
+                    list_starting_rows_in_data,
+                    all_UBmats_flat,
+                    allgrains_spotsdata,
+                    calibJSM[:, :5],
+                    pixdev,
+                    strain6,
+                    euler)
     if return_toreindex:
-        toreturn = (
-            list_indexedgrains_indices,
-            list_nb_indexed_peaks,
-            pixdev,
-            Material_list,
-            all_UBmats_flat,
-            calibJSM[:, :5],
-        )
+        toreturn = (list_indexedgrains_indices,
+                    list_nb_indexed_peaks,
+                    pixdev,
+                    Material_list,
+                    all_UBmats_flat,
+                    calibJSM[:, :5])
 
     if columns_headers is not []:
         dict_column_header = {}

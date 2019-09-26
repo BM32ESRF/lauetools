@@ -3128,9 +3128,7 @@ def unpickle_2databases():
     return np.concatenate((np.array(tabdata_0), np.array(tabdata_1)))
 
 
-def unpickle_part_databases(
-    data_index, prefixname="FCC_pos_25keV_", databasefolder="."
-):
+def unpickle_part_databases(data_index, prefixname="FCC_pos_25keV_", databasefolder="."):
     """
     -high resolution databank (1 deg step) in EULER angles
     with 35 featuring indices per orientation
@@ -3139,9 +3137,7 @@ def unpickle_part_databases(
     """
     Globalname = prefixname + str(data_index) + ".dat"
     # binary mode , data were created with cPickle.dum(...,...,protocol=2
-    frou = open(
-        os.path.join(databasefolder, Globalname), "rb"
-    )  # could be 'r' only instead of 'rb' !!
+    frou = open(os.path.join(databasefolder, Globalname), "rb")  # could be 'r' only instead of 'rb' !!
     tabdata = pickle.load(frou)
     frou.close()
     return np.array(tabdata)
@@ -3158,10 +3154,7 @@ def create_database_step1deg(short="No", singleindex=1, databasefolder="."):
     for k in wholerange:
         print("loading databank #%d/12" % k)
         toreturn.append(
-            unpickle_part_databases(
-                k, prefixname="FCC_pos_25keV_", databasefolder=databasefolder
-            )
-        )
+            unpickle_part_databases(k, prefixname="FCC_pos_25keV_", databasefolder=databasefolder))
     # print "Databank is now in list called: databankHoughIndices"
     return np.concatenate(toreturn)
 
@@ -3198,17 +3191,15 @@ def BuildDataBaseImageMatching():
             print("  angY", angY)
             for angX in np.arange(0.0, 90.0, 1.0):
                 # if (angX%30)==0: print "angX",angX
-                nb, pos = Hough_peak_position(
-                    [angX, angY, angZ],
-                    key_material="Si",
-                    returnXYgnomonic=0,
-                    arraysize=(300, 360),
-                    verbose=0,
-                    EULER=1,
-                    saveimages=0,
-                    saveposition=0,
-                    prefixname="Ref_H_FCC_",
-                )
+                nb, pos = Hough_peak_position([angX, angY, angZ],
+                                                key_material="Si",
+                                                returnXYgnomonic=0,
+                                                arraysize=(300, 360),
+                                                verbose=0,
+                                                EULER=1,
+                                                saveimages=0,
+                                                saveposition=0,
+                                                prefixname="Ref_H_FCC_")
                 largeRefFCCpos.append(pos)
                 largeRefFCCnb.append(nb)
                 index_ += 1
@@ -3317,9 +3308,7 @@ def Read_One_DataBaseImageMatching(
     """
     fullname = prefixname + "%d" % file_index
     # binary mode , data were created with cPickle.dum(...,...,protocol=2
-    f = open(
-        os.path.join(databasefolder, fullname), "rb"
-    )  # could be 'r' only instead of 'rb' !!
+    f = open(os.path.join(databasefolder, fullname), "rb")  # could be 'r' only instead of 'rb' !!
     tabdata = np.array(pickle.load(f))
     f.close()
     print(tabdata.shape)
