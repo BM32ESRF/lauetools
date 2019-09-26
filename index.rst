@@ -18,7 +18,11 @@ Last revision (1rst August 2019)
 
 	.. code-block:: python
 
-	   pip install lauetools 
+	   pip install lauetools
+
+- Former LaueTools package written for python 2.7 only (up to June 2019) is no longer maintained and can be found on sourceforge:
+	
+	https://sourceforge.net/projects/lauetools/version
 
 
 
