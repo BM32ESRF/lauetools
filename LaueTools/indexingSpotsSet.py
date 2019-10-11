@@ -3638,8 +3638,8 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
     # hint: lexsort sort lexicographically starting with last key and then second-to-last key!!
     rank = np.lexsort(keys=(-colres, colnbmatch))[::-1]
 
-    print("sorting MAtrices according to rank")
-    print("rank", rank)
+    # print("sorting MAtrices according to rank")
+    # print("rank", rank)
 
     Bestsortedmatrices = np.take(OrientMatrices, rank, axis=0)
     Besthhh = np.take(ar_hhh, rank, axis=0)
@@ -3649,7 +3649,7 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
     # --- we may want to select only matrices above a threshold
     # load list of symetry operators
     if keep_only_equivalent:
-        print("keep_only_equivalent cubic matrices")
+        # print("keep_only_equivalent cubic matrices")
         allpermu = DictLT.OpSymArray
         # remove duplicates
         (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(

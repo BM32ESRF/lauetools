@@ -92,17 +92,7 @@ LISTNEIGHBORS_221 = [[1, 0, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, 0, -1], [1,
 [3, 1, 1], [3, 1, -1], [3, -1, 1], [3, -1, -1], [1, 1, -3], [3, 2, 1], [3, 1, 2], [3, 2, -1],
 [3, 1, -2], [2, -1, 3], [3, -2, 1], [3, -1, -2], [3, -2, -1]]
 LISTCUT221 = [0, 2, 6, 9, 15, 21, 26, 31, 36, 44]
-SLICING221 = [
-    [0, 2],
-    [2, 6],
-    [6, 9],
-    [9, 15],
-    [15, 21],
-    [21, 26],
-    [26, 31],
-    [31, 36],
-    [36, 44],
-]
+SLICING221 = [ [0, 2], [2, 6], [6, 9], [9, 15], [15, 21], [21, 26], [26, 31], [31, 36], [36, 44]]
 
 LISTNEIGHBORS_310 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, -1, 0], [0, 1, 1],
 [1, 1, 1], [1, -1, 1], [2, 1, 0], [2, 0, 1], [1, 2, 0], [1, 0, 2], [0, 2, 1], [0, 1, 2], [2, 1, 1],
@@ -111,17 +101,7 @@ LISTNEIGHBORS_310 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, 
 [3, -1, 1], [1, 3, 1], [1, 1, 3], [1, -1, 3], [1, -3, 1], [3, 2, 1], [3, 1, 2], [2, 3, 1],
 [3, -1, 2], [3, -2, 1], [1, 3, 2], [2, -1, 3], [2, -3, 1], [1, -2, 3], [1, -3, 2], ]
 LISTCUT310 = [0, 3, 7, 9, 15, 20, 25, 31, 37, 47]
-SLICING310 = [
-    [0, 3],
-    [3, 7],
-    [7, 9],
-    [9, 15],
-    [15, 20],
-    [20, 25],
-    [25, 31],
-    [31, 37],
-    [37, 47],
-]
+SLICING310 = [[0, 3], [3, 7], [7, 9], [9, 15], [15, 20], [20, 25], [25, 31], [31, 37], [37, 47]]
 
 LISTNEIGHBORS_311 = [[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 1, 1], [0, 1, -1], [1, 1, 1],
 [1, -1, 1], [1, -1, -1], [2, 1, 0], [1, 2, 0], [0, 1, 2], [0, -1, 2], [2, 1, 1], [2, 1, -1],
@@ -129,17 +109,7 @@ LISTNEIGHBORS_311 = [[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 1, 1], [0, 1, -1], [1,
 [3, 1, 0], [3, -1, 0], [1, 3, 0], [0, 1, 3], [0, -1, 3], [-1, 3, 0], [3, 1, -1], [3, -1, -1],
 [1, 3, -1], [1, -3, 1], [3, 2, 1], [3, 2, -1], [3, -2, 1], [3, -2, -1], [2, -3, 1], [2, -3, -1]]
 LISTCUT311 = [0, 2, 5, 8, 12, 17, 22, 28, 32, 38]
-SLICING311 = [
-    [0, 2],
-    [2, 5],
-    [5, 8],
-    [8, 12],
-    [12, 17],
-    [17, 22],
-    [22, 28],
-    [28, 32],
-    [32, 38],
-]
+SLICING311 = [[0, 2], [2, 5], [5, 8], [8, 12], [12, 17], [17, 22], [22, 28], [28, 32], [32, 38]]
 
 LISTNEIGHBORS_321 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, -1],
 [1, -1, 0], [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [2, 1, 0], [1, 2, 0], [1, 0, 2],
@@ -150,60 +120,43 @@ LISTNEIGHBORS_321 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 
 [3, -1, 1], [3, -1, -1], [-1, 3, 1], [-1, 3, -1], [3, 1, 2], [3, 2, -1], [3, 1, -2], [1, 2, 3],
 [3, -1, 2], [2, -1, 3], [3, -2, 1], [3, -1, -2], [3, -2, -1], [1, -2, 3], [2, -3, 1], ]
 LISTCUT321 = [0, 3, 8, 12, 19, 27, 35, 45, 51, 62]
-SLICING321 = [
-    [0, 3],
-    [3, 8],
-    [8, 12],
-    [12, 19],
-    [19, 27],
-    [27, 35],
-    [35, 45],
-    [45, 51],
-    [51, 62],
-]
+SLICING321 = [[0, 3], [3, 8], [8, 12], [12, 19], [19, 27], [27, 35], [35, 45], [45, 51], [51, 62]]
 
-DICOLISTNEIGHBOURS = {
-    100: LISTNEIGHBORS_100,
-    110: LISTNEIGHBORS_110,
-    111: LISTNEIGHBORS_111,
-    210: LISTNEIGHBORS_210,
-    211: LISTNEIGHBORS_211,
-    221: LISTNEIGHBORS_221,
-    310: LISTNEIGHBORS_310,
-    311: LISTNEIGHBORS_311,
-    321: LISTNEIGHBORS_321,
-}
+DICOLISTNEIGHBOURS = {100: LISTNEIGHBORS_100,
+                        110: LISTNEIGHBORS_110,
+                        111: LISTNEIGHBORS_111,
+                        210: LISTNEIGHBORS_210,
+                        211: LISTNEIGHBORS_211,
+                        221: LISTNEIGHBORS_221,
+                        310: LISTNEIGHBORS_310,
+                        311: LISTNEIGHBORS_311,
+                        321: LISTNEIGHBORS_321}
 
-DICOSLICING = {
-    100: SLICING100,
-    110: SLICING110,
-    111: SLICING111,
-    210: SLICING210,
-    211: SLICING211,
-    221: SLICING221,
-    310: SLICING310,
-    311: SLICING311,
-    321: SLICING321,
-}
+DICOSLICING = {100: SLICING100,
+                110: SLICING110,
+                111: SLICING111,
+                210: SLICING210,
+                211: SLICING211,
+                221: SLICING221,
+                310: SLICING310,
+                311: SLICING311,
+                321: SLICING321}
 
-DICOINDICE = {
-    100: [1, 0, 0],
-    110: [1, 1, 0],
-    111: [1, 1, 1],
-    210: [2, 1, 0],
-    211: [2, 1, 1],
-    221: [2, 2, 1],
-    310: [3, 1, 0],
-    311: [3, 1, 1],
-    321: [3, 2, 1],
-}
+DICOINDICE = {100: [1, 0, 0],
+                110: [1, 1, 0],
+                111: [1, 1, 1],
+                210: [2, 1, 0],
+                211: [2, 1, 1],
+                221: [2, 2, 1],
+                310: [3, 1, 0],
+                311: [3, 1, 1],
+                321: [3, 2, 1]}
 
 
 # --- ------------------  END of tables and dictionnaries
 def anglebetween(lista, listb):
     """
     Returns angle (deg) between two 3-elements lists
-
     """
     veca = np.array(lista)
     vecb = np.array(listb)
@@ -215,7 +168,6 @@ def anglebetween(lista, listb):
 def prodtab_100():
     """
     produces angular distance from [1,0,0] plane with other planes up to (321) type
-
     """
     listangles_100 = [anglebetween([1, 0, 0], elemref) for elemref in LISTNEIGHBORS_100]
     return np.array(listangles_100)
@@ -224,7 +176,6 @@ def prodtab_100():
 def prodtab_110():
     """
     produces angular distance from [1,1,0] plane with other planes up to (321) type
-
     """
     listangles_110 = [anglebetween([1, 1, 0], elemref) for elemref in LISTNEIGHBORS_110]
     return np.array(listangles_110)
@@ -233,7 +184,6 @@ def prodtab_110():
 def prodtab_111():
     """
     produces angular distance from [1,1,1] plane with other planes up to (321) type
-
     """
     listangles_111 = [anglebetween([1, 1, 1], elemref) for elemref in LISTNEIGHBORS_111]
     return np.array(listangles_111)
@@ -242,7 +192,6 @@ def prodtab_111():
 def prodtab_210():
     """
     produces angular distance from [2,1,0] plane with other planes up to (321) type
-
     """
     listangles_210 = [anglebetween([2, 1, 0], elemref) for elemref in LISTNEIGHBORS_210]
     return np.array(listangles_210)
@@ -251,7 +200,6 @@ def prodtab_210():
 def prodtab_211():
     """
     produces angular distance from [2,1,1] plane with other planes up to (321) type
-
     """
     listangles_211 = [anglebetween([2, 1, 1], elemref) for elemref in LISTNEIGHBORS_211]
     return np.array(listangles_211)
@@ -260,7 +208,6 @@ def prodtab_211():
 def prodtab_221():
     """
     produces angular distance from [2,2,1] plane with other planes up to (321) type
-
     """
     listangles_221 = [anglebetween([2, 2, 1], elemref) for elemref in LISTNEIGHBORS_221]
     return np.array(listangles_221)
@@ -269,7 +216,6 @@ def prodtab_221():
 def prodtab_310():
     """
     produces angular distance from [3,1,0] plane with other planes up to (321) type
-
     """
     listangles_310 = [anglebetween([3, 1, 0], elemref) for elemref in LISTNEIGHBORS_310]
     return np.array(listangles_310)
@@ -278,7 +224,6 @@ def prodtab_310():
 def prodtab_311():
     """
     produces angular distance from [3,1,1] plane with other planes up to (321) type
-
     """
     listangles_311 = [anglebetween([3, 1, 1], elemref) for elemref in LISTNEIGHBORS_311]
     return np.array(listangles_311)
@@ -287,24 +232,21 @@ def prodtab_311():
 def prodtab_321():
     """
     produces angular distance from [3,2,2] plane with other planes up to (321) type
-
     """
     listangles_321 = [anglebetween([3, 2, 1], elemref) for elemref in LISTNEIGHBORS_321]
     return np.array(listangles_321)
 
 
 # --- --------------  LUT for Cubic
-LUT_MAIN_CUBIC = [
-    prodtab_100(),
-    prodtab_110(),
-    prodtab_111(),
-    prodtab_210(),
-    prodtab_211(),
-    prodtab_221(),
-    prodtab_310(),
-    prodtab_311(),
-    prodtab_321(),
-]
+LUT_MAIN_CUBIC = [prodtab_100(),
+                    prodtab_110(),
+                    prodtab_111(),
+                    prodtab_210(),
+                    prodtab_211(),
+                    prodtab_221(),
+                    prodtab_310(),
+                    prodtab_311(),
+                    prodtab_321()]
 
 
 # --- ----------   FUNCTIONS
@@ -328,11 +270,9 @@ def convindicetoplanetype(listindice):
     """
     listpositiveinteger = [abs(elem) for elem in listindice]
     listpositiveinteger.sort(reverse=True)
-    resint = (
-        100 * listpositiveinteger[0]
-        + 10 * listpositiveinteger[1]
-        + 1 * listpositiveinteger[2]
-    )
+    resint = (100 * listpositiveinteger[0]
+                + 10 * listpositiveinteger[1]
+                + 1 * listpositiveinteger[2])
     return resint
 
 
@@ -347,13 +287,9 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
     extractindiceplane = DICOPLANE[neighbour_type]
 
     # select all equivalent neighbours planes of the family given by  neighbour_type in lookuptable
-    extracted = investigatedlistneighbours[
-        slicing[extractindiceplane][0] : slicing[extractindiceplane][1]
-    ]
+    extracted = investigatedlistneighbours[slicing[extractindiceplane][0] : slicing[extractindiceplane][1]]
     # compute the distance matrix from central plane and just above selected planes
-    extractprodtab = [
-        anglebetween(DICOINDICE[central_type], elemref) for elemref in extracted
-    ]
+    extractprodtab = [anglebetween(DICOINDICE[central_type], elemref) for elemref in extracted]
 
     if verbose == "yes":
         print("possible ang. dist. between (%s,%s) planes:"
@@ -366,17 +302,8 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
     possibleplanes = np.take(extracted, winnerindicefound, axis=0)
     if len(possibleplanes) == 0:
         if verbose == "yes":
-            print(
-                "No planes of type ",
-                str(neighbour_type),
-                " is found around ",
-                str(central_type),
-                " at ",
-                angle,
-                " within ",
-                tolerance,
-                " deg",
-            )
+            print("No planes of type ", str(neighbour_type), " is found around ",
+                    str(central_type), " at ", angle, " within ", tolerance, " deg")
         return None
     elif (len(possibleplanes) > 1):  # very rare case for family with small multiplicity and small ang. tolerance
         if verbose == "yes":
@@ -389,13 +316,11 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
             print("-------************-------------*************-------")
             print("Excellent! I've found an unique solution")
             print("First plane is ", convplanetypetoindice(central_type))
-            print(
-                "Second plane is ",
+            print("Second plane is ",
                 listindicesecondplane,
                 " (ang. error of ",
                 errortheoexp,
-                " deg.)",
-            )
+                " deg.)")
             print("------------------")
         return listindicesecondplane
 
@@ -421,8 +346,7 @@ def proposematrix(indpt1, indpt2, recogn, angulartolerance, verbose="yes"):
 
     hkl1 = convplanetypetoindice(recogn[indexpoint1][2])
     # find a matching pair (planetype 1,planetype 2)
-    hkl2 = findneighbours(
-                            recogn[indexpoint1][2],
+    hkl2 = findneighbours(recogn[indexpoint1][2],
                             recogn[indexpoint2][2],
                             didist,
                             angulartolerance,
@@ -563,7 +487,7 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
     Returns orientation matrix from two spots from theirs hkls and coordinates
 
     inputs:
-    hkl1, hkl2            : two list of hkl Miller indices
+    hkl1, hkl2            : [h1, k1, l1] and [h2,k2,l2] Miller indices
     coord                : [2theta, chi] coordinates of spot
 
     B            : triangular up matrix B = CP.calc_B_RR([direct lattice parameters])
@@ -1087,10 +1011,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print(
-                    "\n within %.3f and close to %.9f deg"
-                    % (angular_tolerance_Recognition, angle_query)
-                )
+                print("\n within %.3f and close to %.9f deg" % (angular_tolerance_Recognition, angle_query))
                 for pair in planes_pairs:
                     print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
 
@@ -1098,10 +1019,8 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
 
         else:
             if angle_query > 0.5:
-                print(
-                    "\nthere is no angle close to %.2f within %.2f deg"
-                    % (angle_query, angular_tolerance_Recognition)
-                )
+                print("\nthere is no angle close to %.2f within %.2f deg"
+                    % (angle_query, angular_tolerance_Recognition))
                 print("Nearest angle found is %.2f deg\n" % closest_angle)
             return None
 
@@ -1123,19 +1042,15 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
             if verbose:
-                print(
-                    "\n within %.3f and close to %.9f deg"
-                    % (angular_tolerance_Recognition, angle_query)
-                )
+                print("\n within %.3f and close to %.9f deg"
+                    % (angular_tolerance_Recognition, angle_query))
                 for k, pair in enumerate(planes_pairs):
-                    print(
-                        "< ",
+                    print("< ",
                         pair[0],
                         "  ,  ",
                         pair[1],
                         " > = %.6f "
-                        % RefAngles[closest_indices_in_sorted_angles_raw[0][k]],
-                    )
+                        % RefAngles[closest_indices_in_sorted_angles_raw[0][k]])
             return planes_pairs
 
         else:
@@ -1168,7 +1083,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
-    .. note:: used in FileSeries
+    .. note:: used in FileSeries, and AutoIndexation for some cases
 
     TODO: many target angles in this function
     """
@@ -1183,7 +1098,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
 
     if LUT is None:
         # GenerateLookUpTable
-        print("Calculating LUT in PlanePairs_from2sets()")
+        if verbose: print("Calculating LUT in PlanePairs_from2sets()")
         rules = (None, dictmaterials[key_material][2])
         LUT = Generate_selectedLUT(hkl1, hkl2, key_material, 0, dictmaterials, True, rules)
 
@@ -1240,8 +1155,8 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
     plane_1 = np.take(hkl1, IJ_indices[:, 0], axis=0)
     plane_2 = np.take(hkl2, IJ_indices[:, 1], axis=0)
 
-    #     print "plane_1", plane_1
-    #     print "plane_2", plane_2
+    # print("plane_1", plane_1)
+    # print("plane_2", plane_2)
 
     if len(plane_1) > 1:
         #         print 'nb sol >1'
