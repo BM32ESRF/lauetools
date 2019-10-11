@@ -100,7 +100,7 @@ for i1, i2 in GT.allpairs_in_set(range(len(selectedspots_ind))):
     spot_index_1 = selectedspots_ind[i1]
     spot_index_2 = selectedspots_ind[i2]
 
-    print("\n***\n\ni1,i2, local_spotindex1,local_spotindex2", i1, i2, spot_index_1, spot_index_2)
+    print("\n* test script **\n\ni1,i2, local_spotindex1,local_spotindex2", i1, i2, spot_index_1, spot_index_2)
 
     All_2thetas = data_theta*2.
     All_Chis = data_chi

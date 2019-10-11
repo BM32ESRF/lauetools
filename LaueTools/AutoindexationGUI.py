@@ -10,6 +10,7 @@ https://gitlab.esrf.fr/micha/lauetools
 """
 
 import sys
+import time
 
 import wx
 import numpy as np
@@ -476,6 +477,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         Recognition is based on the angular distance between two spots from a set of distances
         """
+        t0 = time.time()
+
         energy_max = int(self.emax.GetValue())
 
         ResolutionAngstrom = self.ResolutionAngstromctrl.GetValue()
@@ -513,8 +516,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #----------   Spots set Selection for mutual angle computation
         (spotssettype, spot_index_central, nb_central_spots,
                                 nbmax_probed, spotsB) = self.parse_spotssetctrls()
+        print("----#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
 
-        # TODO  spot_index_central and spotsB to be combined to find UBS
+        # TODO spot_index_central and spotsB to be combined to find UBS
         #------------------------------------------------
 
         # whole exp.data spots dict
@@ -522,10 +526,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.data_theta = self.IndexationParameters["AllDataToIndex"]["data_theta"]
         self.data_chi = self.IndexationParameters["AllDataToIndex"]["data_chi"]
         self.data_I = self.IndexationParameters["AllDataToIndex"]["data_I"]
-        self.dataXY_exp = (
-            self.IndexationParameters["AllDataToIndex"]["data_pixX"],
-            self.IndexationParameters["AllDataToIndex"]["data_pixY"],
-        )
+        self.dataXY_exp = (self.IndexationParameters["AllDataToIndex"]["data_pixX"],
+                            self.IndexationParameters["AllDataToIndex"]["data_pixY"])
 
         # there is no precomputed angular distances between spots
         if not self.ClassicalIndexation_Tabledist:
@@ -534,16 +536,15 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             MatchingSpotSetSize = int(self.nbspotmaxformatching.GetValue())
 
             # select 1rstly spots that have not been indexed and 2ndly reduced list by user
-            index_to_select = np.take(
-                self.current_exp_spot_index_list, np.arange(MatchingSpotSetSize)
-            )
+            index_to_select = np.take(self.current_exp_spot_index_list,
+                                        np.arange(MatchingSpotSetSize))
 
             self.select_theta = self.data_theta[index_to_select]
             self.select_chi = self.data_chi[index_to_select]
             self.select_I = self.data_I[index_to_select]
 
-            print("index_to_select", index_to_select)
-            print("len self.dataXY_exp[0]", len(self.dataXY_exp[0]))
+            # print("index_to_select", index_to_select)
+            # print("len self.dataXY_exp[0]", len(self.dataXY_exp[0]))
 
             self.select_dataX = self.dataXY_exp[0][index_to_select]
             self.select_dataY = self.dataXY_exp[1][index_to_select]
@@ -720,6 +721,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         # for ra, ub in enumerate(self.bestmatrices):
         #     print("\nrank : %d" % ra)
         #     print(ub)
+        computingtime=time.time()-t0
+        print('Computing time ===> %.2f'%computingtime)
 
         print("spot_index_central", spot_index_central)
 
@@ -857,30 +860,26 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
             self.IndexationParameters["paramsimul"] = paramsimul
             self.IndexationParameters["bestmatrices"] = self.bestmatrices
-            self.IndexationParameters[
-                "TwicethetaChi_solutions"
-            ] = self.TwicethetaChi_solution
+            self.IndexationParameters["TwicethetaChi_solutions"] = self.TwicethetaChi_solution
             # display "statistical" results
-            RRCBClassical = RecognitionResultCheckBox(self,
-                                                        -1,
-                                                        "Screening Distances Indexation Solutions",
-                                                        stats_properformat,
-                                                        self.data,
-                                                        rough_tolangle,
-                                                        fine_tolangle,
-                                                        key_material=self.key_material,
-                                                        emax=emax,
-                                                        ResolutionAngstrom=ResolutionAngstrom,
-                                                        kf_direction=self.kf_direction,
-                                                        datatype="2thetachi",
-                                                        data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-                                                        data_XY=self.select_dataXY,
-                                                        CCDdetectorparameters=self.CCDdetectorparameters,
-                                                        IndexationParameters=self.IndexationParameters,
-                                                        StorageDict=self.StorageDict,
-                                                        mainframe="billframerc",  # self.mainframe
-                                                        DataSetObject=self.DataSet,
-                                                    )
+            RRCBClassical = RecognitionResultCheckBox(self, -1,
+                                                    "Screening Distances Indexation Solutions",
+                                                    stats_properformat,
+                                                    self.data,
+                                                    rough_tolangle,
+                                                    fine_tolangle,
+                                                    key_material=self.key_material,
+                                                    emax=emax,
+                                                    ResolutionAngstrom=ResolutionAngstrom,
+                                                    kf_direction=self.kf_direction,
+                                                    datatype="2thetachi",
+                                                    data_2thetachi=(2.0 * self.select_theta, self.select_chi),
+                                                    data_XY=self.select_dataXY,
+                                                    CCDdetectorparameters=self.CCDdetectorparameters,
+                                                    IndexationParameters=self.IndexationParameters,
+                                                    StorageDict=self.StorageDict,
+                                                    mainframe="billframerc",  # self.mainframe
+                                                    DataSetObject=self.DataSet)
 
             RRCBClassical.Show(True)
 

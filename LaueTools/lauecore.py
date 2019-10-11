@@ -1093,17 +1093,15 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
     return [oncam_vec], [oncam_HKL]
 
 
-def filterLaueSpots(
-    vec_and_indices,
-    HarmonicsRemoval=1,
-    fastcompute=0,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    fileOK=0,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    detectordiameter=DEFAULT_DETECTOR_DIAMETER,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    linestowrite=[[""]]):
+def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
+                                    fastcompute=0,
+                                    kf_direction=DEFAULT_TOP_GEOMETRY,
+                                    fileOK=0,
+                                    detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                    detectordiameter=DEFAULT_DETECTOR_DIAMETER,
+                                    pixelsize=165.0 / 2048,
+                                    dim=(2048, 2048),
+                                    linestowrite=[[""]]):
     r""" Calculates list of grains spots on camera and without harmonics
     and on CCD camera from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
@@ -1820,21 +1818,16 @@ def SimulateLaue_merge(
         return toreturn
 
 
-def SimulateLaue_twins(
-                        grainparent,
-                        twins_operators,
-                        emin,
-                        emax,
-                        detectorparameters,
-                        only_2thetachi=True,
-                        output_nb_spots=False,
-                        kf_direction=DEFAULT_TOP_GEOMETRY,
-                        ResolutionAngstrom=False,
-                        removeharmonics=0,
-                        pixelsize=165 / 2048.0,
-                        dim=(2048, 2048),
-                        detectordiameter=None,
-                        dictmaterials=dict_Materials):
+def SimulateLaue_twins(grainparent, twins_operators, emin, emax, detectorparameters,
+                                                                only_2thetachi=True,
+                                                                output_nb_spots=False,
+                                                                kf_direction=DEFAULT_TOP_GEOMETRY,
+                                                                ResolutionAngstrom=False,
+                                                                removeharmonics=0,
+                                                                pixelsize=165 / 2048.0,
+                                                                dim=(2048, 2048),
+                                                                detectordiameter=None,
+                                                                dictmaterials=dict_Materials):
     r"""
     Simulates Laue pattern full data for twinned grain
 
@@ -1856,34 +1849,25 @@ def SimulateLaue_twins(
         twinUmat = np.dot(Umat, twin_op)
         grains.append([Bmat, dilat, twinUmat, extinction])
 
-    return SimulateLaue_merge(grains,
-                                emin,
-                                emax,
-                                detectorparameters,
-                                only_2thetachi=only_2thetachi,
-                                output_nb_spots=output_nb_spots,
-                                kf_direction=kf_direction,
-                                ResolutionAngstrom=ResolutionAngstrom,
-                                removeharmonics=removeharmonics,
-                                pixelsize=pixelsize,
-                                dim=dim,
-                                detectordiameter=detectordiameter,
-                                dictmaterials=dictmaterials)
+    return SimulateLaue_merge(grains, emin, emax, detectorparameters, only_2thetachi=only_2thetachi,
+                                                            output_nb_spots=output_nb_spots,
+                                                            kf_direction=kf_direction,
+                                                            ResolutionAngstrom=ResolutionAngstrom,
+                                                            removeharmonics=removeharmonics,
+                                                            pixelsize=pixelsize,
+                                                            dim=dim,
+                                                            detectordiameter=detectordiameter,
+                                                            dictmaterials=dictmaterials)
 
 
-def SimulateLaue(
-                grain,
-                emin,
-                emax,
-                detectorparameters,
-                kf_direction=DEFAULT_TOP_GEOMETRY,
-                ResolutionAngstrom=False,
-                removeharmonics=0,
-                pixelsize=165 / 2048.0,
-                dim=(2048, 2048),
-                detectordiameter=None,
-                force_extinction=None,
-                dictmaterials=dict_Materials):
+def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP_GEOMETRY,
+                                                            ResolutionAngstrom=False,
+                                                            removeharmonics=0,
+                                                            pixelsize=165 / 2048.0,
+                                                            dim=(2048, 2048),
+                                                            detectordiameter=None,
+                                                            force_extinction=None,
+                                                            dictmaterials=dict_Materials):
     r"""Computes Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal
 
@@ -1920,7 +1904,6 @@ def SimulateLaue(
         key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials)
 
     #     print "grain", grain
-
     #     print "grain in SimulateResult()", grain
 
     Spots2pi = getLaueSpots(CST_ENERGYKEV / emax,
@@ -1965,19 +1948,14 @@ def SimulateLaue(
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
 
-def SimulateLaue_full_np(
-    grain,
-    emin,
-    emax,
-    detectorparameters,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    ResolutionAngstrom=False,
-    removeharmonics=0,
-    pixelsize=165 / 2048.0,
-    dim=(2048, 2048),
-    detectordiameter=None,
-    force_extinction=None,
-    dictmaterials=dict_Materials):
+def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP_GEOMETRY,
+                                                                ResolutionAngstrom=False,
+                                                                removeharmonics=0,
+                                                                pixelsize=165 / 2048.0,
+                                                                dim=(2048, 2048),
+                                                                detectordiameter=None,
+                                                                force_extinction=None,
+                                                                dictmaterials=dict_Materials):
     r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
@@ -2106,15 +2084,13 @@ def SimulateResult(grain, emin, emax, simulparameters,
     # fastcompute = fastcompute, fileOK = 0, verbose = 0, kf_direction = 'Z>0')
 
     # 2theta, chi of spot which are on camera(without harmonics)
-    TwicethetaChi = filterLaueSpots(
-        spots2pi,
-        fileOK=0,
-        fastcompute=fastcompute,
-        detectordistance=detectordistance,
-        detectordiameter=detectordiameter * 1.2,
-        kf_direction=kf_direction,
-        pixelsize=pixelsize,
-    )
+    TwicethetaChi = filterLaueSpots(spots2pi,
+                                    fileOK=0,
+                                    fastcompute=fastcompute,
+                                    detectordistance=detectordistance,
+                                    detectordiameter=detectordiameter * 1.2,
+                                    kf_direction=kf_direction,
+                                    pixelsize=pixelsize)
 
     return TwicethetaChi
 

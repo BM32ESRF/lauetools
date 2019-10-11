@@ -60,25 +60,13 @@ def create_tabdist(pickle_it=0, picklefilename="CubicDistanceList.dat"):
 
     # print np.sort(array(whole_interdistance_list))
 
-    ar_distances = np.sort(
-        np.array(
-            np.array(
-                list(
+    ar_distances = np.sort(np.array(np.array(list(
                     set(
                         list(
                             np.array(
                                 np.sort(np.array(whole_interdistance_list)).round(
                                     decimals=3
-                                ),
-                                dtype="|S6",
-                            )
-                        )
-                    )
-                )
-            ),
-            dtype=np.float32,
-        )
-    )
+                                ), dtype="|S6"))))), dtype=np.float32))
     print("Table of distances")
     print(ar_distances)
 

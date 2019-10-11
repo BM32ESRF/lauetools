@@ -1247,9 +1247,7 @@ if 0:
     filename_idx = "Custrained_1.idx"  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
     filename_idx = "Cu_3.idx"  # 'Ge_run41_1_0003.idx'#'testrotCu.idx'
     # TODO
-    twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = RMCCD.Read_indexationfile(
-        filename_idx
-    )
+    twthe, chi, pixX, pixY, Intensity, miller, energy, grainindex, grainUmatrix, grainBmatrix, grainEmatrix, detectorparam = RMCCD.read_indexationfile(filename_idx)
 
     if detectorparam:
         calibration_parameter = detectorparam

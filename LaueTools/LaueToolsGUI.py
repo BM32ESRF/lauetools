@@ -31,9 +31,8 @@ matplotlib.use("WXAgg")
 
 from matplotlib.figure import Figure
 
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar)
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                NavigationToolbar2WxAgg as NavigationToolbar)
 
 from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
@@ -77,7 +76,6 @@ if sys.version_info.major == 3:
     from . import B0matrixLatticeEditor as B0Editor
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import OpenSpotsListFileGUI as OSLFGUI
-
 else:
     import indexingAnglesLUT as INDEX
     import indexingImageMatching as IIM
@@ -146,7 +144,6 @@ except:
     DAY, MONTH, YEAR = "FromDistribution", "", "2019"
 
 REV = __version__.split()[-2]
-
 
 # --- ------------  MAIN GUI WINDOW
 class LaueToolsGUImainframe(wx.Frame):
@@ -270,37 +267,30 @@ class LaueToolsGUImainframe(wx.Frame):
             (wx.ID_ANY,
                 "&Set CCD File Parameters",
                 "CCD ImageFile reading parameters dialog",
-                self.OnSetFileCCDParam,
-            ),
+                self.OnSetFileCCDParam),
             (wx.ID_ANY,
                 "&Set Laue Geometry",
                 "Set general CCD position for Laue experiment",
-                self.OnSetLaueDetectorGeometry,
-            ),
+                self.OnSetLaueDetectorGeometry),
             (None, None, None, None),
             (wx.ID_OPEN,
                 "&Open Image && PeakSearch",
                 "View Image & Peak Search",
-                self.OnOpenImage,
-            ),
+                self.OnOpenImage),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Detector Calibration",
                 "Detector Calibration from a known reference crystal",
-                self.OnDetectorCalibration,
-            ),
+                self.OnDetectorCalibration),
             (5151,
                 "&Set or Reset Detector Parameters",
                 "Open detector parameters board. Set or Reset calibration parameters dialog, compute Laue spots scattering angles",
-                self.recomputeScatteringAngles,
-            ),
+                self.recomputeScatteringAngles),
             (None, None, None, None),
             (wx.ID_ANY,
                 "Folder Preferences",
                 "Define where to write files",
-                self.OnPreferences,
-            ),
-        ]:
+                self.OnPreferences)]:
 
             #             print '_id', _id
             if _id is None:
@@ -316,19 +306,15 @@ class LaueToolsGUImainframe(wx.Frame):
             (wx.ID_ANY,
                 "&2thetaChi",
                 "Selection and recognition Tools in(2theta, chi) coordinates",
-                self.OnPlot_2ThetaChi,
-            ),
+                self.OnPlot_2ThetaChi),
             (wx.ID_ANY,
                 "&Gnomon.",
                 "Selection and recognition Tools in gnomonic plane coordinates",
-                self.OnPlot_Gnomon,
-            ),
+                self.OnPlot_Gnomon),
             (wx.ID_ANY,
                 "&CCD Pixel",
                 "Selection and recognition Tools in CCD pixels coordinates",
-                self.OnPlot_Pixels,
-            ),
-        ]:
+                self.OnPlot_Pixels)]:
             if _id is None:
                 ManualIndexation_SubMenu.AppendSeparator()
             else:
@@ -344,54 +330,44 @@ class LaueToolsGUImainframe(wx.Frame):
             (wx.ID_ANY,
                 "&Reload Materials",
                 "Update or Load Materials (dict_Materials.dat)",
-                self.OnLoadMaterials,
-            ),
+                self.OnLoadMaterials),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Check Orientation",
                 "Enter Orientation matrix, Material and check Matching with the current experimental Laue Pattern spots list",
-                self.OnCheckOrientationMatrix,
-            ),
+                self.OnCheckOrientationMatrix),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Find Spots family",
                 "Find cliques of spots for which all mutual angular distances are found in reference crsytal LUT",
-                self.OnCliquesFinding,
-            ),
+                self.OnCliquesFinding),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Automatic Indexation",
                 "Indexation by recognition of mutual lattice planes normals angles calculated from pairs of Laue spots",
-                self.OnClassicalIndexation,
-            ),
+                self.OnClassicalIndexation),
             (5050,
                 "&Image Matching",
                 "Spots position matching with Databank(in Hough Space)",
-                self.OnHoughMatching,
-            ),
+                self.OnHoughMatching),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Manual Indexation",
                 "Plot Data and Manual indexation (Angles Recognition)",
-                ManualIndexation_SubMenu,
-            ),
+                ManualIndexation_SubMenu),
             (None, None, None, None),
             (wx.ID_SAVE,
                 "&Save Indexation Results",
                 "Save indexation results viewed in control in *.idx file",
-                self.OnSaveIndexationResultsfile,
-            ),
+                self.OnSaveIndexationResultsfile),
             (wx.ID_SAVEAS,
                 "Save &As Indexation Results",
                 "Save indexation results viewed in control in *.idx file",
-                self.OnFileResultsSaveAs,
-            ),
+                self.OnFileResultsSaveAs),
             (wx.ID_ANY,
                 "Save Non &Indexed .cor file",
                 "Save non indexed spots in a .cor file",
-                self.SaveNonIndexedSpots,
-            ),
-        ]:
+                self.SaveNonIndexedSpots)]:
             #             print("handler",type(handler))
             if _id is None:
                 #                 print "None Menu"
@@ -402,8 +378,7 @@ class LaueToolsGUImainframe(wx.Frame):
                     item = IndexationMenu.AppendSubMenu(handler, label, helpText)
                 else:
                     item = IndexationMenu.AppendMenu(
-                        wx.ID_ANY, label, handler, helpText
-                    )
+                        wx.ID_ANY, label, handler, helpText)
             else:
                 #                 print 'default menu'
                 item = IndexationMenu.Append(_id, label, helpText)
@@ -411,54 +386,26 @@ class LaueToolsGUImainframe(wx.Frame):
 
         IndexationMenu.Enable(id=5050, enable=False)
 
-        # FileSequenceMenu = wx.Menu()
-        # for _id, label, helpText, handler in \
-        # [(wx.ID_ANY, '&Indexation', 'Files serie indexation',
-        # self.OnSerieIndexation),
-        # (wx.ID_ANY, '&Postprocessing', 'File serie indexation results postprocessing', self.OnMapAnalysis)
-        # ]:
-        # if _id  ==  None:
-        # FileSequenceMenu.AppendSeparator()
-        # else:
-        # item = FileSequenceMenu.Append(_id, label, helpText)
-        # self.Bind(wx.EVT_MENU, handler, item)
-
         SimulationMenu = wx.Menu()
         for _id, label, helpText, handler in [
             (wx.ID_ANY,
                 "&PolyGrains Simulation",
                 "Polycrystal selection & simulation",
-                self.Creating_Grains_parametric,
-            ),
+                self.Creating_Grains_parametric),
             (None, None, None, None),
             (wx.ID_ANY,
                 "&Edit Matrix",
                 "Edit or Load Orientation Matrix",
-                self.OnEditMatrix,
-            ),
+                self.OnEditMatrix),
             (wx.ID_ANY,
                 "&Edit UB, B, Crystal",
                 "Edit B or UB Matrix and unit cell structure and extinctions",
-                self.OnEditUBMatrix),
-        ]:
+                self.OnEditUBMatrix)]:
             if _id is None:
                 SimulationMenu.AppendSeparator()
             else:
                 item = SimulationMenu.Append(_id, label, helpText)
                 self.Bind(wx.EVT_MENU, handler, item)
-
-        #        DefaultParametersMenu = wx.Menu()
-        #        for _id, label, helpText, handler in \
-        #            [(wx.ID_ANY, '&Analysis', 'Analysis parameters(Crystal, threshold, display,...)',
-        #                self.OnAnalysisParameter),
-        #           (wx.ID_ANY, '&Simulation', 'Simulation parameters(Crystals, display,...)',
-        #                self.OnRecognitionParam)
-        #            ]:
-        #            if _id  ==  None:
-        #                DefaultParametersMenu.AppendSeparator()
-        #            else:
-        #                item = DefaultParametersMenu.Append(_id, label, helpText)
-        #                self.Bind(wx.EVT_MENU, handler, item)
 
         HelpMenu = wx.Menu()
         for _id, label, helpText, handler in [
@@ -483,9 +430,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExit, quitsubmenu)
 
         menuBar = wx.MenuBar()
-        menuBar.Append(
-            ReadImageMenu, "&ReadImage"
-        )  # Add the ReadImageMenu to the MenuBar
+        menuBar.Append(ReadImageMenu, "&ReadImage")  # Add the ReadImageMenu to the MenuBar
         menuBar.Append(IndexationMenu, "&Indexation")
         # menuBar.Append(RefinementMenu, '&Refinement')
         # menuBar.Append(FileSequenceMenu, '&Sequence')
@@ -559,8 +504,8 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = 20
 
-                peakserchframe = PeakSearchGUI.MainPeakSearchFrame(
-                    self, -1, initialParameter, "peaksearch Board")
+                peakserchframe = PeakSearchGUI.MainPeakSearchFrame(self, -1, initialParameter,
+                                                                        "peaksearch Board")
                 peakserchframe.Show(True)
 
     #                    self.DataPlot_filename = ploimage.peaks_filename
@@ -642,18 +587,15 @@ class LaueToolsGUImainframe(wx.Frame):
         print("self.defaultParam after", self.defaultParam)
 
         (twicetheta, chi, dataintensity,
-        data_x, data_y) = F2TC.Compute_data2thetachi(
-                                                    fullpathfile,
+        data_x, data_y) = F2TC.Compute_data2thetachi(fullpathfile,
                                                     (0, 1, 3),
                                                     1,
                                                     sorting_intensity="yes",
                                                     param=self.defaultParam,
                                                     pixelsize=self.pixelsize,
-                                                    kf_direction=self.kf_direction,
-                                                )
+                                                    kf_direction=self.kf_direction)
 
-        IOLT.writefile_cor(
-                            "update_" + prefix,
+        IOLT.writefile_cor("update_" + prefix,
                             twicetheta,
                             chi,
                             data_x,
@@ -662,8 +604,7 @@ class LaueToolsGUImainframe(wx.Frame):
                             sortedexit=0,
                             param=self.defaultParam + [self.pixelsize],
                             initialfilename=self.PeakListDatFileName,
-                            dirname_output=self.dirname,
-                        )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+                            dirname_output=self.dirname)  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
         print("%s has been created" % ("update_" + prefix + ".cor"))
         print("%s" % str(self.defaultParam))
         self.kf_direction_from_file = self.kf_direction
@@ -721,7 +662,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def OnPreferences(self, _):
         """
-        call the board to define destination folder to  write files        
+        call the board to define destination folder to  write files
         """
         PB = PreferencesBoard(self, -1, "Folder Preferences Board")
         PB.ShowModal()
@@ -865,7 +806,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list),)
+        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         #         nb_exp_spots_data = len(self.data_theta)
         #
@@ -941,22 +882,15 @@ class LaueToolsGUImainframe(wx.Frame):
                                         StorageDict=StorageDict, DataSetObject=self.DataSet)
 
     def OnHoughMatching(self, _):
-        dialog = wx.MessageDialog(
-            self,
-            "Not yet implemented \n" "in wxPython",
-            "Classical Indexation Method",
-            wx.OK,
-        )
+        dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
+                                                    "Classical Indexation Method",
+                                                    wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnRadialRecognition(self, _):
-        dialog = wx.MessageDialog(
-            self,
-            "Not yet implemented \n" "in wxPython",
-            "Radial Recognition Method",
-            wx.OK,
-        )
+        dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
+                                                            "Radial Recognition Method", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
@@ -970,10 +904,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print(
-            "len(self.current_exp_spot_index_list)",
-            len(self.current_exp_spot_index_list),
-        )
+        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         #         nb_exp_spots_data = len(self.data_theta)
         #
@@ -985,21 +916,14 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_I = self.data_I[self.current_exp_spot_index_list]
         self.select_pixX = self.data_pixX[self.current_exp_spot_index_list]
         self.select_pixY = self.data_pixY[self.current_exp_spot_index_list]
-        self.select_dataXY = (
-            self.data_pixX[self.current_exp_spot_index_list],
-            self.data_pixY[self.current_exp_spot_index_list],
-        )
+        self.select_dataXY = (self.data_pixX[self.current_exp_spot_index_list],
+                                    self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
         #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
         if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
@@ -1010,9 +934,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # AllDataToIndex
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
-        print(
-            "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters
-        )
+        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -1024,21 +946,13 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["dataXY"] = self.select_dataXY
         self.indexation_parameters["DataToIndex"]["data_X"] = self.select_pixX
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
-        self.indexation_parameters["DataToIndex"][
-            "current_exp_spot_index_list"
-        ] = copy.copy(self.current_exp_spot_index_list)
-        self.indexation_parameters["DataToIndex"][
-            "ClassicalIndexation_Tabledist"
-        ] = None
+        self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
+        self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print(
-            "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-            self.indexation_parameters["DataToIndex"]["data_theta"],
-        )
+        print("self.indexation_parameters['DataToIndex']['data_theta']",
+            self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
-        self.indexation_parameters[
-            "current_processedgrain"
-        ] = self.current_processedgrain
+        self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
         self.indexation_parameters["pixelsize"] = self.pixelsize
         self.indexation_parameters["dim"] = self.framedim
@@ -1066,20 +980,15 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = DictLT.dict_Materials
 
         # Open manual indextion Board
-        self.picky = ManualIndexFrame(
-                                    self,
-                                    -1,
-                                    self.DataPlot_filename,
-                                    data=self.data,
-                                    data_XY=self.data_XY,
-                                    data_2thetachi=self.data[:2],
-                                    kf_direction=self.kf_direction,
-                                    Size=SIZE_PLOTTOOLS,
-                                    Params_to_simulPattern=None,
-                                    indexation_parameters=self.indexation_parameters,
-                                    StorageDict=StorageDict,
-                                    DataSetObject=self.DataSet,
-                                )
+        self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
+                                            data_XY=self.data_XY,
+                                            data_2thetachi=self.data[:2],
+                                            kf_direction=self.kf_direction,
+                                            Size=SIZE_PLOTTOOLS,
+                                            Params_to_simulPattern=None,
+                                            indexation_parameters=self.indexation_parameters,
+                                            StorageDict=StorageDict,
+                                            DataSetObject=self.DataSet)
 
         self.picky.Show(True)
 
@@ -1093,10 +1002,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print(
-            "len(self.current_exp_spot_index_list)",
-            len(self.current_exp_spot_index_list),
-        )
+        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         #         nb_exp_spots_data = len(self.data_theta)
         #
@@ -1108,10 +1014,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_I = self.data_I[self.current_exp_spot_index_list]
         self.select_pixX = self.data_pixX[self.current_exp_spot_index_list]
         self.select_pixY = self.data_pixY[self.current_exp_spot_index_list]
-        self.select_dataXY = (
-            self.data_pixX[self.current_exp_spot_index_list],
-            self.data_pixY[self.current_exp_spot_index_list],
-        )
+        self.select_dataXY = (self.data_pixX[self.current_exp_spot_index_list],
+                            self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
         #         self.StorageDict=None
@@ -1120,12 +1024,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_gnomonx = self.data_gnomonx[self.current_exp_spot_index_list]
         self.select_gnomony = self.data_gnomony[self.current_exp_spot_index_list]
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
         if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
@@ -1136,9 +1035,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # AllDataToIndex
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
-        print(
-            "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters
-        )
+        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -1152,21 +1049,13 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
         self.indexation_parameters["DataToIndex"]["data_gnomonX"] = self.select_gnomonx
         self.indexation_parameters["DataToIndex"]["data_gnomonY"] = self.select_gnomony
-        self.indexation_parameters["DataToIndex"][
-            "current_exp_spot_index_list"
-        ] = copy.copy(self.current_exp_spot_index_list)
-        self.indexation_parameters["DataToIndex"][
-            "ClassicalIndexation_Tabledist"
-        ] = None
+        self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
+        self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print(
-            "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-            self.indexation_parameters["DataToIndex"]["data_theta"],
-        )
+        print("self.indexation_parameters['DataToIndex']['data_theta']",
+                                            self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
-        self.indexation_parameters[
-            "current_processedgrain"
-        ] = self.current_processedgrain
+        self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
         self.indexation_parameters["pixelsize"] = self.pixelsize
         self.indexation_parameters["dim"] = self.framedim
@@ -1195,8 +1084,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         #         print "self.data_XY", self.data_XY
         # Open manual indextion Board
-        self.picky = ManualIndexFrame(
-                                        self,
+        self.picky = ManualIndexFrame(self,
                                         -1,
                                         self.DataPlot_filename,
                                         data=self.data,
@@ -1208,8 +1096,7 @@ class LaueToolsGUImainframe(wx.Frame):
                                         Params_to_simulPattern=None,
                                         indexation_parameters=self.indexation_parameters,
                                         StorageDict=StorageDict,
-                                        DataSetObject=self.DataSet,
-                                    )
+                                        DataSetObject=self.DataSet)
 
         self.picky.Show(True)
 
@@ -1235,10 +1122,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_I = self.data_I[self.current_exp_spot_index_list]
         self.select_pixX = self.data_pixX[self.current_exp_spot_index_list]
         self.select_pixY = self.data_pixY[self.current_exp_spot_index_list]
-        self.select_dataXY = (
-            self.data_pixX[self.current_exp_spot_index_list],
-            self.data_pixY[self.current_exp_spot_index_list],
-        )
+        self.select_dataXY = (self.data_pixX[self.current_exp_spot_index_list],
+                                self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
         #         self.StorageDict=None
@@ -1247,12 +1132,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.select_gnomonx = self.data_gnomonx[self.current_exp_spot_index_list]
         self.select_gnomony = self.data_gnomony[self.current_exp_spot_index_list]
 
-        self.data = (
-            2 * self.select_theta,
-            self.select_chi,
-            self.select_I,
-            self.DataPlot_filename,
-        )
+        self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
 
         if not self.current_exp_spot_index_list:
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
@@ -1277,12 +1157,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
         #         self.indexation_parameters['DataToIndex']['data_gnomonX'] = self.select_gnomonx
         #         self.indexation_parameters['DataToIndex']['data_gnomonY'] = self.select_gnomony
-        self.indexation_parameters["DataToIndex"][
-            "current_exp_spot_index_list"
-        ] = copy.copy(self.current_exp_spot_index_list)
-        self.indexation_parameters["DataToIndex"][
-            "ClassicalIndexation_Tabledist"
-        ] = None
+        self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"]=copy.copy(self.current_exp_spot_index_list)
+        self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
         print(
             "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
@@ -1318,8 +1194,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Rot"] = DictLT.dict_Rot
         StorageDict["dict_Materials"] = DictLT.dict_Materials
         # Open manual indextion Board
-        self.picky = ManualIndexFrame(
-                                        self,
+        self.picky = ManualIndexFrame(self,
                                         -1,
                                         self.DataPlot_filename,
                                         data=self.data,
@@ -1372,9 +1247,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 self.CreateSpotDB()
 
             if 1:
-                self.current_exp_spot_index_list = (
-                    self.getAbsoluteIndices_Non_Indexed_Spots_()
-                )
+                self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())
             else:
                 self.current_exp_spot_index_list = np.arange(len(self.data_theta))
 
@@ -1388,21 +1261,17 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print('self.indexation_parameters',self.indexation_parameters)
         CliquesFindingBoard(self, -1, "Cliques Finding Board :%s" % self.DataPlot_filename,
-                                indexation_parameters=self.indexation_parameters)
+                                                    indexation_parameters=self.indexation_parameters)
 
     def OnRecognitionParam(self, _):
         return True
 
     def OnEditMatrix(self, _):
-        self.MatrixEditor = MatrixEditor_Dialog(
-            self, -1, "Create/Read/Save/Load/Convert Orientation Matrix"
-        )
+        self.MatrixEditor = MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
         self.MatrixEditor.Show(True)
 
     def OnEditUBMatrix(self, _):
-        self.UBMatrixEditor = B0Editor.B0MatrixEditor(
-            self, -1, "UB Matrix Editor and Board"
-        )
+        self.UBMatrixEditor = B0Editor.B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
         self.UBMatrixEditor.Show(True)
 
     def EnterMatrix(self, _):
@@ -1411,9 +1280,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += " Or list of Matrices"
-        dlg = wx.TextEntryDialog(
-            self, helptstr, "Orientation Matrix elements Entry for Matching Check"
-        )
+        dlg = wx.TextEntryDialog(self, helptstr, "Orientation Matrix elements Entry for Matching Check")
 
         _param = "[[1.,0,0],[0,1,0],[0,0,1]]"
         dlg.SetValue(_param)
@@ -1478,9 +1345,7 @@ class LaueToolsGUImainframe(wx.Frame):
     def Enterkey_material(self):
         helptstr = "Enter Material, structure or Element Label (example: Cu, UO2,)"
 
-        dlg = wx.TextEntryDialog(
-            self, helptstr, "Material and Crystallographic Structure Entry"
-        )
+        dlg = wx.TextEntryDialog(self, helptstr, "Material and Crystallographic Structure Entry")
 
         _param = "Ge"
         flag=True
@@ -1525,17 +1390,15 @@ class LaueToolsGUImainframe(wx.Frame):
         ANGLETOLERANCE = 0.5
         RESOLUTIONANGSTROM = False
 
-        AngRes = matchingrate.Angular_residues_np(
-            UBmatrix_toCheck,
-            2.0 * self.select_theta,
-            self.select_chi,
-            key_material=self.key_material,
-            emax=self.emax,
-            ResolutionAngstrom=RESOLUTIONANGSTROM,
-            ang_tol=ANGLETOLERANCE,
-            detectorparameters=self.indexation_parameters,
-            dictmaterials=self.dict_Materials
-        )
+        AngRes = matchingrate.Angular_residues_np(UBmatrix_toCheck,
+                                                2.0 * self.select_theta,
+                                                self.select_chi,
+                                                key_material=self.key_material,
+                                                emax=self.emax,
+                                                ResolutionAngstrom=RESOLUTIONANGSTROM,
+                                                ang_tol=ANGLETOLERANCE,
+                                                detectorparameters=self.indexation_parameters,
+                                                dictmaterials=self.dict_Materials)
 
         print("AngRes", AngRes)
 
@@ -1558,27 +1421,25 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = self.dict_Materials
 
         # display "statistical" results
-        RRCBClassical = RecognitionResultCheckBox(
-            self,
-            -1,
-            "Screening Distances Indexation Solutions",
-            self.statsresidues,
-            self.data,
-            0.5,
-            0.2,
-            key_material=self.key_material,
-            emax=self.emax,
-            ResolutionAngstrom=False,
-            kf_direction=self.kf_direction,
-            datatype="2thetachi",
-            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
-            data_XY=self.select_dataXY,
-            CCDdetectorparameters=self.indexation_parameters,
-            IndexationParameters=self.indexation_parameters,
-            StorageDict=StorageDict,
-            mainframe="billframerc",  # self.mainframe
-            DataSetObject=self.DataSet,
-        )
+        RRCBClassical = RecognitionResultCheckBox(self,
+                                            -1,
+                                            "Screening Distances Indexation Solutions",
+                                            self.statsresidues,
+                                            self.data,
+                                            0.5,
+                                            0.2,
+                                            key_material=self.key_material,
+                                            emax=self.emax,
+                                            ResolutionAngstrom=False,
+                                            kf_direction=self.kf_direction,
+                                            datatype="2thetachi",
+                                            data_2thetachi=(2.0 * self.select_theta, self.select_chi),
+                                            data_XY=self.select_dataXY,
+                                            CCDdetectorparameters=self.indexation_parameters,
+                                            IndexationParameters=self.indexation_parameters,
+                                            StorageDict=StorageDict,
+                                            mainframe="billframerc",  # self.mainframe
+                                            DataSetObject=self.DataSet)
 
         RRCBClassical.Show(True)
 
@@ -1613,9 +1474,7 @@ class LaueToolsGUImainframe(wx.Frame):
         #         header += '# Number of unindexed spots: %d\n' % nbunindexedspots
         header += "# Number of spots: %d\n" % nbspots
 
-        header += (
-            "#spot_index grain_index 2theta Chi Xexp Yexp intensity h k l Energy\n"
-        )
+        header += ("#spot_index grain_index 2theta Chi Xexp Yexp intensity h k l Energy\n")
         outputfile = open(outputfilename, "w")
 
         outputfile.write(header)
@@ -1669,52 +1528,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         if filename is None:
             filename = self.DataPlot_filename
-        #
-        #         header += '#  File created at %s with LaueToolsGUI.py\n' % (time.asctime())
-        #
-        #         comments_to_add = ''
-        #         comments = 0
-        #         nb_of_spots = 0
-        #         data = ''
-        #         for line in str(self.control.GetValue()).splitlines()[2:]:  # two lines header
-        #
-        #             if line[0] != '#' and comments == 0:  # line is made of data
-        #                 listdata = line.split(',')
-        #                 expindex = int(listdata[0])
-        #                 twtheta = float(listdata[1])
-        #                 chi = float(listdata[2])
-        #                 pixX = float(listdata[3])
-        #                 pixY = float(listdata[4])
-        #                 intens = float(listdata[5])
-        #                 # indexed spots case
-        #                 if len(listdata) == 12:
-        #                     nb_of_spots += 1
-        #                     energy = float(listdata[9])
-        #                     h = int(listdata[6])
-        #                     k = int(listdata[7])
-        #                     l = int(listdata[8])
-        #                     Grain_index = int(listdata[10])
-        #
-        #                     data += '%d   %.06f   %.06f   %.06f   %.06f   %.06f   %s   %s   %s   %.06f  %d\n' % (expindex,
-        #                                                                                                 twtheta, chi,
-        #                                                                                                 pixX, pixY, intens,
-        #                                                                                                 h, k, l, energy, Grain_index)
-        #             # line is made of comments
-        #             else:
-        #                 comments = 1
-        #                 comments_to_add = comments_to_add + line + '\n'
-        #
-        #         header += '#  Total Spots Number: %d\n' % nb_of_spots
-        #         header += '#  Spot#    2theta    chi    pixX    pixY   intensity h k l energy grainindex\n'
-        #
-        #         textfile.write(header)
-        #         textfile.write(data)
-        #         textfile.write(comments_to_add)
-        #
-        #         textfile.close()
 
-        wx.MessageBox(
-            "Fit results have been written in folder %s" % self.dirname, "INFO")
+        wx.MessageBox("Fit results have been written in folder %s" % self.dirname, "INFO")
 
         self.DataSet.writeFileSummary(filename, self.dirname)
 
@@ -1727,8 +1542,7 @@ class LaueToolsGUImainframe(wx.Frame):
         filename = prefixfilename + ".cor"
 
         print("self.DataSet.pixelsize", self.DataSet.pixelsize)
-        self.DataSet.writecorFile_unindexedSpots(
-            corfilename=filename, dirname=self.dirname)
+        self.DataSet.writecorFile_unindexedSpots(corfilename=filename, dirname=self.dirname)
 
     # --- ---------------- Simulation Functions
     def Creating_Grains_parametric(self, _):
@@ -1807,16 +1621,15 @@ class LaueToolsGUImainframe(wx.Frame):
                 # print nb_of_simulspots
                 for data_index in range(nb_of_simulspots):
                     linedata = "%d\t%d\t%d\t%d\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n" % (
-                        data_index,
-                        MIL[index_grain][data_index][0],
-                        MIL[index_grain][data_index][1],
-                        MIL[index_grain][data_index][2],
-                        ENE[index_grain][data_index],
-                        TWT[index_grain][data_index],
-                        CHI[index_grain][data_index],
-                        XX[index_grain][data_index],
-                        YY[index_grain][data_index],
-                    )
+                                                            data_index,
+                                                            MIL[index_grain][data_index][0],
+                                                            MIL[index_grain][data_index][1],
+                                                            MIL[index_grain][data_index][2],
+                                                            ENE[index_grain][data_index],
+                                                            TWT[index_grain][data_index],
+                                                            CHI[index_grain][data_index],
+                                                            XX[index_grain][data_index],
+                                                            YY[index_grain][data_index])
                     lines += linedata
             lines += "#calibration parameters\n"
             for param in calib:
@@ -1839,16 +1652,15 @@ class LaueToolsGUImainframe(wx.Frame):
                     lines += startgrain
                     for data_index in range(nb_of_simulspots):
                         linedata = "%d\t%d\t%d\t%d\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n" % (
-                            data_index,
-                            MIL[gen_i][data_index][0],
-                            MIL[gen_i][data_index][1],
-                            MIL[gen_i][data_index][2],
-                            ENE[gen_i][data_index],
-                            TWT[gen_i][data_index],
-                            CHI[gen_i][data_index],
-                            XX[gen_i][data_index],
-                            YY[gen_i][data_index],
-                        )
+                                                            data_index,
+                                                            MIL[gen_i][data_index][0],
+                                                            MIL[gen_i][data_index][1],
+                                                            MIL[gen_i][data_index][2],
+                                                            ENE[gen_i][data_index],
+                                                            TWT[gen_i][data_index],
+                                                            CHI[gen_i][data_index],
+                                                            XX[gen_i][data_index],
+                                                            YY[gen_i][data_index])
                         lines += linedata
                     gen_i += 1
 
@@ -1906,17 +1718,15 @@ class LaueToolsGUImainframe(wx.Frame):
         # comment
         strgrains = ["Remaining Non indexed spots of %s" % self.DataPlot_filename]
 
-        IOLT.writefile_cor(
-            outputfilename,
-            Twicetheta,
-            Chi,
-            posx,
-            posy,
-            dataintensity,
-            param=self.defaultParam + [self.pixelsize],
-            initialfilename=self.DataPlot_filename,
-            comments=strgrains,
-        )
+        IOLT.writefile_cor(outputfilename,
+                            Twicetheta,
+                            Chi,
+                            posx,
+                            posy,
+                            dataintensity,
+                            param=self.defaultParam + [self.pixelsize],
+                            initialfilename=self.DataPlot_filename,
+                            comments=strgrains)
 
     def setAllDataToIndex_Dict(self):
         """  set dictionnary self.indexation_parameters
@@ -1932,9 +1742,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["AllDataToIndex"]["data_gnomonY"] = self.data_gnomony
         self.indexation_parameters["AllDataToIndex"]["data_XY"] = (self.data_pixX,
                                                                     self.data_pixY)
-        self.indexation_parameters["AllDataToIndex"]["data_2thetachi"] = (
-                                                                2 * self.data_theta,
-                                                                self.data_chi)
+        self.indexation_parameters["AllDataToIndex"]["data_2thetachi"] = (2 * self.data_theta,
+                                                                            self.data_chi)
 
         nbspotstoindex = len(self.data_theta)
         self.indexation_parameters["AllDataToIndex"]["NbSpotsToindex"] = nbspotstoindex
@@ -2001,8 +1810,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                         len(self.data_theta))[0]
         self.data_gnomonx, self.data_gnomony = IIM.ComputeGnomon_2(dataselected)
 
-
-
     def select_exp_spots(self):
         """
         select spots to be indexed
@@ -2014,13 +1821,9 @@ class LaueToolsGUImainframe(wx.Frame):
             self.OpenDefaultData()
 
         if 1:
-            self.current_exp_spot_index_list = (
-                self.getAbsoluteIndices_Non_Indexed_Spots_()
-            )  # plot non indexed spots
+            self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())  # plot non indexed spots
         else:
-            self.current_exp_spot_index_list = np.arange(
-                len(self.data_theta)
-            )  # plot whole data
+            self.current_exp_spot_index_list = np.arange(len(self.data_theta))  # plot whole data
 
         self.non_indexed_spots = np.array(self.current_exp_spot_index_list)
 
@@ -2079,8 +1882,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         # dictionary of exp spots
         for k in range(len(self.data_theta)):
-            self.indexed_spots[k] = [
-                                        k,  # index of experimental spot in .cor file
+            self.indexed_spots[k] = [k,  # index of experimental spot in .cor file
                                         self.data_theta[k] * 2.0,
                                         self.data_chi[k],  # 2theta, chi coordinates
                                         self.data_pixX[k],
@@ -2118,31 +1920,10 @@ class LaueToolsGUImainframe(wx.Frame):
 
         return
 
-        # #         self.indexation_parameters['AllDataToIndex']['IndexedFlag']
-
-        # # updating exp spot dict.
-        # singleindices = []
-
-        # for k in range(len(list_indexspot)):
-
-        #     absoluteindex = self.current_exp_spot_index_list[list_indexspot[k]]
-        #     if not singleindices.count(list_indexspot[k]):
-        #         singleindices.append(list_indexspot[k])
-        #         #                 spotenergy = data_Energy[k] # wrong
-        #         if self.DataSet.indexed_spots_dict[absoluteindex][-1] == 1:
-        #             # spot belong to the grain grain_index
-        #             spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][7]
-
-        #         self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][
-        #             :-1
-        #         ] + [data_Miller[k], spotenergy, grain_index, 1]
-
     def Update_DB_fromIndexation(self, data_list):
         """ 
         udpate dictionary of exp. spots taking into account data_list values(indexation results)
         """
-        #         print "************ \n\n self.indexation_parameters",self.indexation_parameters
-
         # data_Miller, data_Energy, list_indexspot = data_list
         data_Miller, _, list_indexspot = data_list
 
@@ -2155,7 +1936,6 @@ class LaueToolsGUImainframe(wx.Frame):
         singleindices = []
 
         for k in range(len(list_indexspot)):
-
             #             absoluteindex = self.current_exp_spot_index_list[list_indexspot[k]]
             absoluteindex = list_indexspot[k]
             if not singleindices.count(list_indexspot[k]):
@@ -2165,9 +1945,8 @@ class LaueToolsGUImainframe(wx.Frame):
                     # spot belong to the grain grain_index
                     spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][7]
 
-                self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][
-                    :-1
-                ] + [data_Miller[k], spotenergy, self.current_processedgrain, 1]
+                self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][:-1] + [
+                                                data_Miller[k], spotenergy, self.current_processedgrain, 1]
 
             else:
                 print("this experimental spot #%d is too ambiguous" % absoluteindex)
@@ -2184,19 +1963,13 @@ class LaueToolsGUImainframe(wx.Frame):
 
             if len(self.indexed_spots[k]) == 7:
                 val = self.indexed_spots[k]
-                texttoshow += (
-                    "%d,  %.06f ,%.06f,  %.06f ,%.06f,  %.06f,  %d \n" % tuple(val)
-                )
+                texttoshow += ("%d,  %.06f ,%.06f,  %.06f ,%.06f,  %.06f,  %d \n" % tuple(val))
             elif len(self.indexed_spots[k]) == 10:
-                val = (
-                    self.indexed_spots[k][:6]
+                val = (self.indexed_spots[k][:6]
                     + self.indexed_spots[k][6].tolist()
-                    + self.indexed_spots[k][7:]
-                )
-                texttoshow += (
-                    "%d,  %.06f ,%.06f,  %.06f ,%.06f,  %.06f,  %d, %d, %d,  %.06f, %d, %d \n"
-                    % tuple(val)
-                )
+                    + self.indexed_spots[k][7:])
+                texttoshow += ("%d,  %.06f ,%.06f,  %.06f ,%.06f,  %.06f,  %d, %d, "
+                                        "%d,  %.06f, %d, %d \n" % tuple(val))
 
         texttoshow += "#Orientation matrix(ces)\n"
         for key, val in self.last_orientmatrix_fromindexation.items():
@@ -2217,9 +1990,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 texttoshow += "#   %.06f     %.06f    %.06f\n" % tuple(val[i])
 
         texttoshow += "#Calibration Parameters\n"
-        for par, value in zip(
-            ["dd", "xcen", "ycen", "xbet", "xgam"], self.defaultParam
-        ):
+        for par, value in zip(["dd", "xcen", "ycen", "xbet", "xgam"], self.defaultParam):
             texttoshow += "# %s     :   %s\n" % (par, value)
 
         self.control.SetValue(texttoshow)  # writing the control with
@@ -2236,24 +2007,19 @@ class LaueToolsGUImainframe(wx.Frame):
         TWT, CHI, ENE, MIL, NAME = data[:5]
         for index_grain in range(nb_grains):
             nb_of_simulspots = len(TWT[index_grain])
-            startgrain = "#G %d\t%s\t%d\n" % (
-                index_grain,
-                NAME[index_grain],
-                nb_of_simulspots,
-            )
+            startgrain = "#G %d\t%s\t%d\n" % (index_grain, NAME[index_grain], nb_of_simulspots)
 
             lines += startgrain
             print(nb_of_simulspots)
             for data_index in range(nb_of_simulspots):
                 linedata = "%d\t%d\t%d\t%d\t%.3f\t%.4f\t%.4f\n" % (
-                    data_index,
-                    MIL[index_grain][data_index][0],
-                    MIL[index_grain][data_index][1],
-                    MIL[index_grain][data_index][2],
-                    ENE[index_grain][data_index],
-                    TWT[index_grain][data_index],
-                    CHI[index_grain][data_index],
-                )
+                                                                data_index,
+                                                                MIL[index_grain][data_index][0],
+                                                                MIL[index_grain][data_index][1],
+                                                                MIL[index_grain][data_index][2],
+                                                                ENE[index_grain][data_index],
+                                                                TWT[index_grain][data_index],
+                                                                CHI[index_grain][data_index])
                 lines += linedata
         # print "in edit",lines
         self.control.SetValue(lines)
@@ -2292,42 +2058,33 @@ class LaueToolsGUImainframe(wx.Frame):
 
         #         print "LaueToolsProjectFolder", LaueToolsProjectFolder
 
-        pdffile_adress = "file://%s" % os.path.join(
-            LaueToolsProjectFolder, "Documentation", "latex", "LaueTools.pdf"
-        )
+        pdffile_adress = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation", "latex",                                                                                           "LaueTools.pdf")
 
         webbrowser.open(pdffile_adress)
 
     def OnDocumentationhtml(self, _):
 
-        html_file_address = "file://%s" % os.path.join(
-            LaueToolsProjectFolder, "Documentation", "build","html", "index.html"
-        )
+        html_file_address = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation",
+                                                            "build","html", "index.html")
 
         webbrowser.open(html_file_address)
 
     def OnTutorial(self, _):
-        dialog = wx.MessageDialog(
-            self,
-            "Not yet implemented \n"
+        dialog = wx.MessageDialog(self, "Not yet implemented \n"
             "in wxPython\n\n See \nhttps://sourceforge.net/userapps/mediawiki/jsmicha/index.php?title=Main_Page",
-            "Tutorial",
-            wx.OK,
-        )
+            "Tutorial", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnSerieIndexation(self, _):
-        dialog = wx.MessageDialog(
-            self, "Not yet implemented \n" "in wxPython", "OnSerieIndexation", wx.OK
-        )
+        dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
+                                                            "OnSerieIndexation", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnMapAnalysis(self, _):
-        dialog = wx.MessageDialog(
-            self, "Not yet implemented \n" "in wxPython", "OnMapAnalysis", wx.OK
-        )
+        dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
+                                                            "OnMapAnalysis", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
@@ -2335,7 +2092,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         about lauetools and license
         """
-        description = """LaueTools is toolkit for white beam x-ray microdiffraction 
+        description = """LaueTools is toolkit for white beam x-ray microdiffraction
         Laue Pattern analysis. It allows Simulation & Indexation procedures written 
         in python by Jean-Sebastien MICHA \n  micha@esrf.fr\n\n and Odile Robach at the French CRG-IF beamline
          \n at BM32(European Synchrotron Radiation Facility).
@@ -2345,6 +2102,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         Support and help in developing this package:
         https://sourceforge.net/projects/lauetools/
+        https://gitlab.esrf.fr/micha/lauetools
         """ % (MONTH, YEAR, REV)
         f = open("License", "r")
         lines = f.readlines()
@@ -2355,15 +2113,11 @@ class LaueToolsGUImainframe(wx.Frame):
 
         info = wx.AboutDialogInfo()
 
-        info.SetIcon(
-            wx.Icon(os.path.join("icons", "transmissionLaue.png"), wx.BITMAP_TYPE_PNG)
-        )
+        info.SetIcon(wx.Icon(os.path.join("icons", "transmissionLaue.png"), wx.BITMAP_TYPE_PNG))
         info.SetName("LaueTools")
-        info.SetVersion(
-            "%s %s %s\nRevision Number (subversion): %s" % (DAY, MONTH, YEAR, REV)
-        )
+        info.SetVersion("%s %s %s\nRevision Number (subversion): %s" % (DAY, MONTH, YEAR, REV))
         info.SetDescription(description)
-        info.SetCopyright("(C) 2009-%s Jean-Sebastien Micha" % YEAR)
+        info.SetCopyright("(C) 2019-%s Jean-Sebastien Micha" % YEAR)
         info.SetWebSite("http://www.esrf.eu/UsersAndScience/Experiments/CRG/BM32/")
         info.SetLicence(mylicense)
         info.AddDeveloper("Jean-Sebastien Micha")
@@ -2400,12 +2154,8 @@ class PreferencesBoard(wx.Dialog):
         self.userdefinedabsfolder = wx.RadioButton(panel, -1, "absolute path", (25, 95))
         self.samefolder.SetValue(True)
 
-        self.relativepathname = wx.TextCtrl(
-            panel, -1, "./analysis", (250, 50), (340, -1)
-        )
-        self.abspathname = wx.TextCtrl(
-            panel, -1, "/myhome/myfolder", (250, 90), (340, -1)
-        )
+        self.relativepathname = wx.TextCtrl(panel, -1, "./analysis", (250, 50), (340, -1))
+        self.abspathname = wx.TextCtrl(panel, -1, "/myhome/myfolder", (250, 90), (340, -1))
 
         wx.Button(panel, 1, "Accept", (15, 150), (90, 40))
         self.Bind(wx.EVT_BUTTON, self.OnAccept, id=1)
@@ -2417,9 +2167,8 @@ class PreferencesBoard(wx.Dialog):
         if self.samefolder.GetValue():
             self.writefolder = "."
         elif self.userdefinedrelfolder.GetValue():
-            self.writefolder = os.path.join(
-                DictLT.LAUETOOLSFOLDER, str(self.relativepathname.GetValue())[2:]
-            )
+            self.writefolder = os.path.join(DictLT.LAUETOOLSFOLDER,
+                                            str(self.relativepathname.GetValue())[2:])
         elif self.userdefinedabsfolder.GetValue():
             self.writefolder = str(self.abspathname.GetValue())
 
@@ -2501,7 +2250,9 @@ class CliquesFindingBoard(wx.Frame):
 
         wcd = "AnglesLUT file (*.angles)|*.angles|All files(*)|*"
         open_dlg = wx.FileDialog(self, message="Choose a file", defaultDir=defaultFolderAnglesFile,
-                        defaultFile="", wildcard=wcd, style=wx.OPEN | wx.CHANGE_DIR)
+                                                                defaultFile="",
+                                                                wildcard=wcd,
+                                                                style=wx.OPEN | wx.CHANGE_DIR)
         if open_dlg.ShowModal() == wx.ID_OK:
             self.LUTfilename = open_dlg.GetPath()
         open_dlg.Destroy()
@@ -2536,9 +2287,9 @@ class CliquesFindingBoard(wx.Frame):
         fullpath = os.path.join(self.parent.dirname, self.parent.DataPlot_filename,)
 
         res_cliques = GraGra.give_bestclique(fullpath, nbmax_probed, ang_tol,
-                                nodes=Nodes, col_Int=-1,
-                                LUTfilename = self.LUTfilename,
-                                verbose=1)
+                                                    nodes=Nodes, col_Int=-1,
+                                                    LUTfilename = self.LUTfilename,
+                                                    verbose=1)
 
         if isinstance(Nodes, int):
             DisplayCliques = res_cliques.tolist()
@@ -2589,14 +2340,10 @@ class MatrixEditor_Dialog(wx.Frame):
                                                                                 style=wx.RB_GROUP)
         wx.StaticText(panel, -1, "[[#,#,#],[#,#,#],[#,#,#]]", (40, 25))
 
-        self.text = wx.TextCtrl(panel,
-                                    1000,
-                                    "",
-                                    pos=(50, 45),
-                                    size=(250, 85),
-                                    style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
+        self.text = wx.TextCtrl(panel, -1, "", pos=(50, 45), size=(250, 85),
+                                                    style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
         self.text.SetFocus()
-        self.text.Bind(wx.EVT_TEXT, self.OnTextChanged, id=1000)
+        self.text.Bind(wx.EVT_TEXT, self.OnTextChanged)
         self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
         self.rbelem = wx.RadioButton(panel, -1, "Matrix Elements Input", (25, 150))
@@ -2837,7 +2584,6 @@ class MatrixEditor_Dialog(wx.Frame):
                 paramraw = str(self.text.GetValue())
 
                 listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
-                #             print "listval", listval
                 listelem = []
                 for elem in listval:
                     try:
@@ -3155,8 +2901,7 @@ class ManualIndexFrame(wx.Frame):
     """
     Class to implement a window enabling manual indexation
     """
-    def __init__(self, parent, _id, title, data=(1, 1, 1, 1),
-                                            data_added=None,
+    def __init__(self, parent, _id, title, data=(1, 1, 1, 1), data_added=None,
                                             Size=SIZE_PLOTTOOLS,
                                             datatype="2thetachi",
                                             kf_direction="Z>0",
@@ -3712,15 +3457,13 @@ class ManualIndexFrame(wx.Frame):
         if self.datatype == "2thetachi":
             fields = ["Spot index", "2Theta", "Chi", "Intensity"]
             # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-            to_put_in_dict = (
-                                np.arange(len(self.data[0])),
+            to_put_in_dict = (np.arange(len(self.data[0])),
                                 self.data[0],
                                 self.data[1],
                                 self.data[2])
 
         elif self.datatype == "gnomon":
-            fields = [
-                        "Spot index",
+            fields = ["Spot index",
                         "X_gmonon",
                         "Y_gmonon",
                         "Intensity",
@@ -3748,14 +3491,9 @@ class ManualIndexFrame(wx.Frame):
         mySpotData = {}
         for k, ff in enumerate(fields):
             mySpotData[ff] = to_put_in_dict[k]
-        dia = LSEditor.SpotsEditor(
-                                    self,
-                                    -1,
-                                    "Filter Experimental Spots Data",
-                                    mySpotData,
+        dia = LSEditor.SpotsEditor(self, -1, "Filter Experimental Spots Data", mySpotData,
                                     func_to_call=self.readdata_fromEditor,
-                                    field_name_and_order=fields,
-                                )
+                                    field_name_and_order=fields)
         dia.Show(True)
 
     def BuildDataDict(self, evt):  # filter Exp Data spots
@@ -3800,11 +3538,7 @@ class ManualIndexFrame(wx.Frame):
         mySpotData = {}
         for k, ff in enumerate(fields):
             mySpotData[ff] = to_put_in_dict[k]
-        dia = LSEditor.SpotsEditor(
-                                    None,
-                                    -1,
-                                    "Filter Experimental Spots Data",
-                                    mySpotData,
+        dia = LSEditor.SpotsEditor(None, -1, "Filter Experimental Spots Data", mySpotData,
                                     func_to_call=self.readdata_fromEditor,
                                     field_name_and_order=fields)
         dia.Show(True)
@@ -3853,12 +3587,8 @@ class ManualIndexFrame(wx.Frame):
             self.data_2thetachi = col1, col2
             self.tth, self.chi = col1, col2
             self.Data_I = col3
-            self.gnomonX, self.gnomonY = (
-                self.indexation_parameters["AllDataToIndex"]["data_gnomonX"][
-                    self.selectedAbsoluteSpotIndices
-                ], self.indexation_parameters["AllDataToIndex"]["data_gnomonY"][
-                    self.selectedAbsoluteSpotIndices])
-
+            self.gnomonX = self.indexation_parameters["AllDataToIndex"]["data_gnomonX"][self.selectedAbsoluteSpotIndices]
+            self.gnomonY = self.indexation_parameters["AllDataToIndex"]["data_gnomonY"][self.selectedAbsoluteSpotIndices]
         self._replot()
 
     def onMotion_ToolTip(self, evt):
@@ -3872,13 +3602,8 @@ class ManualIndexFrame(wx.Frame):
         xtol = 20
         ytol = 20
 
-        # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-        # self.Data_index_expspot = np.arange(len(self.Data_X))
-        # """
-        xdata, ydata, _annotes = (
-            self.Data_X,
-            self.Data_Y,
-            list(zip(self.Data_index_expspot, self.Data_I)))
+        xdata, ydata, _annotes = (self.Data_X, self.Data_Y, list(zip(self.Data_index_expspot,
+                                                                    self.Data_I)))
 
         #         print "DATA:    \n\n\n", xdata[:5], ydata[:5], annotes
 
@@ -3891,10 +3616,8 @@ class ManualIndexFrame(wx.Frame):
 
             annotes = []
             for x, y, a in zip(xdata, ydata, _annotes):
-                if (clickX - xtol < x < clickX + xtol) and (
-                    clickY - ytol < y < clickY + ytol):
-                    annotes.append(
-                        (GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
+                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+                    annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
             #             print 'annotes', annotes
 
@@ -3923,12 +3646,6 @@ class ManualIndexFrame(wx.Frame):
         wx.MessageBox("To be implemented", "info")
         pass
 
-    #         data_dict = {}
-    #         PlotLismitsBoard = PlotLimitsBoard(self, -1, 'Spot size Board',
-    #                                                 data_dict)
-    #
-    #         PlotLismitsBoard.Show(True)
-
     def SetPlotLimits(self, evt):
         """
         open a board to change plot limits
@@ -3949,11 +3666,6 @@ class ManualIndexFrame(wx.Frame):
             self, -1, "Data Plot limits Board", data_dict)
 
         PlotLismitsBoard.Show(True)
-
-    #         PlotLismitsBoard.ShowModal()
-    #         PlotLismitsBoard.Destroy()
-
-    #         self._replot()
 
     def initplotlimits(self):
         if self.datatype == "2thetachi":
@@ -4074,19 +3786,13 @@ class ManualIndexFrame(wx.Frame):
                             "facecolor": "None",
                             "edgecolor": self.data_dict["markercolor"]}
             else:
-                #                 self.axes.set_xbound(self.currentbounds[0])
-                #                 self.axes.set_ybound(self.currentbounds[1])
-
                 kwords = {"edgecolor": "None", "facecolor": self.data_dict["markercolor"]}
 
-            self.axes.scatter(
-                self.pixelX - X_offset,
-                self.pixelY - Y_offset,
-                #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
-                s=self.factorsize
-                * self.func_size_peakintensity(
-                    np.array(self.Data_I), params_spotsize, lin=spotsizescale
-                ), alpha=1.0, **kwords)
+            self.axes.scatter(self.pixelX - X_offset,self.pixelY - Y_offset, s=self.factorsize
+                * self.func_size_peakintensity(np.array(self.Data_I), params_spotsize,
+                                                            lin=spotsizescale),
+                                                            alpha=1.0,
+                                                            **kwords)
 
         elif self.datatype == "2thetachi":
             self.axes.scatter(
@@ -4094,8 +3800,9 @@ class ManualIndexFrame(wx.Frame):
                 self.data_2thetachi[1],
                 #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
                 s=self.factorsize
-                * self.func_size_peakintensity(
-                    np.array(self.Data_I), params_spotsize, lin=spotsizescale))
+                * self.func_size_peakintensity(np.array(self.Data_I),
+                                                        params_spotsize,
+                                                        lin=spotsizescale))
             # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
         elif self.datatype == "gnomon":
             self.axes.scatter(
@@ -4103,8 +3810,9 @@ class ManualIndexFrame(wx.Frame):
                 self.gnomonY - Y_offset,
                 #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
                 s=self.factorsize
-                * self.func_size_peakintensity(
-                    np.array(self.Data_I), params_spotsize, lin=spotsizescale))
+                * self.func_size_peakintensity(np.array(self.Data_I),
+                                                params_spotsize,
+                                                lin=spotsizescale))
 
         # axes labels
         if self.datatype == "2thetachi":
@@ -4134,23 +3842,20 @@ class ManualIndexFrame(wx.Frame):
             pt2 = [0.5, 0.5]
             ptcenter = DGP.center_pts(pt1, pt2)
 
-            circles = [
-                DGP.patches.Circle(pt1, 0.03, fc="r", alpha=0.5),
-                DGP.patches.Circle(ptcenter, 0.03, fc="r", alpha=0.5),
-                DGP.patches.Circle(pt2, 0.03, fc="r", alpha=0.5)]
+            circles = [DGP.patches.Circle(pt1, 0.03, fc="r", alpha=0.5),
+                        DGP.patches.Circle(ptcenter, 0.03, fc="r", alpha=0.5),
+                        DGP.patches.Circle(pt2, 0.03, fc="r", alpha=0.5)]
 
-            line, = self.axes.plot(
-                [pt1[0], ptcenter[0], pt2[0]],
-                [pt1[1], ptcenter[1], pt2[1]],
-                picker=0.03,
-                c="r")
+            line, = self.axes.plot([pt1[0], ptcenter[0], pt2[0]], [pt1[1], ptcenter[1], pt2[1]],
+                                                                                picker=0.03,
+                                                                                c="r")
 
             for circ in circles:
                 self.axes.add_patch(circ)
 
-            self.dragLines.append(
-                DGP.DraggableLine(
-                    circles, line, tolerance=0.03, parent=self, datatype=self.datatype))
+            self.dragLines.append(DGP.DraggableLine(circles, line, tolerance=0.03,
+                                                                    parent=self, 
+                                                                    datatype=self.datatype))
             self.addlines = False
 
         self.init_plot = False
@@ -4178,8 +3883,7 @@ class ManualIndexFrame(wx.Frame):
 
         elif lin == 2:
             s0, s_at_Imax, powerscale, smin, smax = params
-            s = np.clip(
-                (smax - s0) * (intensity / s_at_Imax) ** powerscale + s0, smin, smax)
+            s = np.clip((smax - s0) * (intensity / s_at_Imax) ** powerscale + s0, smin, smax)
 
         return s
 
@@ -4187,23 +3891,17 @@ class ManualIndexFrame(wx.Frame):
 
         nlut = int(self.nlut.GetValue())
         if nlut > 7:
-            dlg = wx.MessageDialog(
-                self,
-                "nlut must be reasonnably less or equal to 7",
-                "warning",
-                wx.OK | wx.ICON_WARNING,
-            )
+            dlg = wx.MessageDialog(self, "nlut must be reasonnably less or equal to 7",
+                                                                    "warning",
+                                                                    wx.OK | wx.ICON_WARNING)
             dlg.ShowModal()
             dlg.Destroy()
 
     def onClick(self, evt):
-        """ onclick
+        """ onclick with mouse
         """
-        #         if self.dr is not None:
-        #             print "self.dr exists"
 
         res = None
-        #        print 'clicked on mouse'
         if evt.inaxes:
             #            print("inaxes", evt)
             print(("inaxes x,y", evt.x, evt.y))
@@ -4281,10 +3979,7 @@ class ManualIndexFrame(wx.Frame):
                     sentence = "Corresponding lattice planes angular distance"
                     sentence += "\n between two scattered directions : %.2f " % _dist
                     self.txtctrldistance.SetLabel(
-                        "==> %s deg" % str(np.round(_dist, decimals=3))
-                    )
-                    # DOES NOT WORK !!
-            #                    wx.MessageBox(sentence, 'INFO')
+                        "==> %s deg" % str(np.round(_dist, decimals=3)))
 
             if self.recongnisebtn.GetValue():
                 self.nbclick_dist += 1
@@ -4326,9 +4021,7 @@ class ManualIndexFrame(wx.Frame):
         item = evt.GetSelection()
         self.key_material = self.list_materials[item]
 
-        self.sb.SetStatusText(
-            "Selected material: %s" % str(self.parent.dict_Materials[self.key_material])
-        )
+        self.sb.SetStatusText("Selected material: %s" % str(self.parent.dict_Materials[self.key_material]))
         evt.Skip()
 
     def store_pts(self, evt):
@@ -4437,7 +4130,7 @@ class ManualIndexFrame(wx.Frame):
         if spottype == "exp":
             self.sb.SetStatusText(( "%s= %.2f " % (Xplot, x) + " %s= %.2f " % (Yplot, y) +
                                     "   Spotindex=%d " % annote[0] +
-                                    "   Intensity=%.2f" % annote[1] ), 0, )
+                                    "   Intensity=%.2f" % annote[1] ), 0)
 
     def locateSpot(self, evt):
         if self.findspotchck.GetValue():
@@ -4463,9 +4156,7 @@ class ManualIndexFrame(wx.Frame):
 
     def addPatchRectangle(self, X, Y, size=50):
         hsize = size / 2.0
-        self.axes.add_patch(
-            Rectangle((X - hsize, Y - hsize), size, size, fill=False, color="r")
-        )
+        self.axes.add_patch(Rectangle((X - hsize, Y - hsize), size, size, fill=False, color="r"))
 
     def close(self, evt):
         self.Close(True)
@@ -4747,10 +4438,8 @@ class ManualIndexFrame(wx.Frame):
 
             # print("index_to_select", index_to_select)
 
-            self.select_dataX = self.indexation_parameters["AllDataToIndex"]["data_pixX"
-            ][index_to_select]
-            self.select_dataY = self.indexation_parameters["AllDataToIndex"]["data_pixY"
-            ][index_to_select]
+            self.select_dataX = self.indexation_parameters["AllDataToIndex"]["data_pixX"][index_to_select]
+            self.select_dataY = self.indexation_parameters["AllDataToIndex"]["data_pixY"][index_to_select]
             # print select_theta
             # print select_chi
 
@@ -4760,7 +4449,7 @@ class ManualIndexFrame(wx.Frame):
 
         else:
             print("Reuse computed ClassicalIndexation_Tabledist with size: %d"
-                % len(self.parent.ClassicalIndexation_Tabledist))
+                                    % len(self.parent.ClassicalIndexation_Tabledist))
 
         self.data = (2 * self.select_theta,
                     self.select_chi,
@@ -4808,7 +4497,8 @@ class ManualIndexFrame(wx.Frame):
 
         # restrict LUT if allowed and if crystal is cubic
         if restrictLUT_cubicSymmetry:
-            restrictLUT_cubicSymmetry = CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials)
+            restrictLUT_cubicSymmetry = CP.hasCubicSymmetry(self.key_material,
+                                            dictmaterials=self.dict_Materials)
 
         print("set_central_spots_hkl", set_central_spots_hkl)
         print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
@@ -4835,8 +4525,7 @@ class ManualIndexFrame(wx.Frame):
             fctparams = [INDEX.getUBs_and_MatchingRate,
                     (spot1_ind, spot2_ind, rough_tolangle, _dist,
                     spot1, spot2, nLUT, B, 2 * self.select_theta, self.select_chi),
-                {
-                    "set_hkl_1": set_central_spots_hkl,
+                {"set_hkl_1": set_central_spots_hkl,
                     "key_material": self.key_material,
                     "emax": energy_max,
                     "ResolutionAngstrom": ResolutionAngstrom,
@@ -4848,8 +4537,7 @@ class ManualIndexFrame(wx.Frame):
                     "verbosedetails": verbosedetails,
                     "Minimum_Nb_Matches": Nb_criterium,
                     "worker": None,
-                    "dictmaterials":self.dict_Materials
-                },
+                    "dictmaterials":self.dict_Materials},
             ]
 
             # update DataSetObject
@@ -4864,8 +4552,8 @@ class ManualIndexFrame(wx.Frame):
             print("self.DataSet.detectordiameter", self.DataSet.detectordiameter)
 
             self.TGframe = TG.ThreadHandlingFrame(self, -1, threadFunctionParams=fctparams,
-                                            parentAttributeName_Result="UBs_MRs",
-                                            parentNextFunction=self.simulateAllResults)
+                                                        parentAttributeName_Result="UBs_MRs",
+                                                        parentNextFunction=self.simulateAllResults)
             self.TGframe.OnStart(1)
             self.TGframe.Show(True)
 
@@ -4875,17 +4563,9 @@ class ManualIndexFrame(wx.Frame):
             # case USETHREAD == 0
             # ---- indexation in Reckon_2pts_new() in Manualindexframe
             self.worker = None
-            self.UBs_MRs = INDEX.getUBs_and_MatchingRate(
-                                                    spot1_ind,
-                                                    spot2_ind,
-                                                    rough_tolangle,
-                                                    _dist,
-                                                    spot1,
-                                                    spot2,
-                                                    nLUT,
-                                                    B,
-                                                    2 * self.select_theta,
-                                                    self.select_chi,
+            self.UBs_MRs = INDEX.getUBs_and_MatchingRate(spot1_ind, spot2_ind, rough_tolangle,
+                                                    _dist, spot1, spot2, nLUT, B,
+                                                    2 * self.select_theta, self.select_chi,
                                                     set_hkl_1=set_central_spots_hkl,
                                                     key_material=self.key_material,
                                                     emax=energy_max,
@@ -4898,8 +4578,7 @@ class ManualIndexFrame(wx.Frame):
                                                     verbosedetails=verbosedetails,
                                                     Minimum_Nb_Matches=Nb_criterium,
                                                     worker=self.worker,
-                                                    dictmaterials=self.dict_Materials
-                                                )
+                                                    dictmaterials=self.dict_Materials)
 
             self.bestmat, stats_res = self.UBs_MRs
             # update DataSetObject
@@ -4979,10 +4658,7 @@ class ManualIndexFrame(wx.Frame):
                 #                 print "self.indexation_parameters.keys()", self.indexation_parameters.keys()
                 #                 print "self.indexation_parameters.keys()", self.indexation_parameters.keys()
                 #                 print "self.indexation_parameters['detectordiameter']", self.indexation_parameters['detectordiameter']
-                TwicethetaChi = LAUE.SimulateResult(grain,
-                                                        5,
-                                                        self.energy_max,
-                                                        self.indexation_parameters,
+                TwicethetaChi = LAUE.SimulateResult(grain, 5, self.energy_max, self.indexation_parameters,
                                                         ResolutionAngstrom=self.ResolutionAngstrom,
                                                         fastcompute=1,
                                                         dictmaterials=self.dict_Materials)
@@ -5002,9 +4678,7 @@ class ManualIndexFrame(wx.Frame):
                 print("plot results in 2thetachi coordinates")
                 datatype = "2thetachi"
 
-            RRCBClassical = RecognitionResultCheckBox(self,
-                                                        -1,
-                                                        "Classical Indexation Solutions",
+            RRCBClassical = RecognitionResultCheckBox(self, -1, "Classical Indexation Solutions",
                                                         stats_properformat,
                                                         self.data,
                                                         self.rough_tolangle,
@@ -5220,11 +4894,10 @@ if WXPYTHON4:
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
-            wxadv.SplashScreen(bmp,
-                                wxadv.SPLASH_CENTRE_ON_PARENT | wxadv.SPLASH_TIMEOUT,
-                                duration,
-                                parent,
-                                wx.ID_ANY)
+            wxadv.SplashScreen(bmp, wxadv.SPLASH_CENTRE_ON_PARENT | wxadv.SPLASH_TIMEOUT,
+                                                                        duration,
+                                                                        parent,
+                                                                        wx.ID_ANY)
 
 else:
 
@@ -5241,11 +4914,9 @@ else:
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
-            wx.SplashScreen(bmp,
-                            wx.SPLASH_CENTRE_ON_PARENT | wx.SPLASH_TIMEOUT,
-                            duration,
-                            parent,
-                            wx.ID_ANY)
+            wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_PARENT | wx.SPLASH_TIMEOUT, duration,
+                                                                                parent,
+                                                                                wx.ID_ANY)
 
 
 # --- ---------   REDIRECT STDOUT in WX.TEXTCTRL
@@ -5268,9 +4939,7 @@ class RedirectText:
 
 def start():
     LaueToolsGUIApp = wx.App()
-    LaueToolsframe = LaueToolsGUImainframe(None,
-                                            -1,
-                                            "Image Viewer and PeakSearch Board",
+    LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
                                             projectfolder=LaueToolsProjectFolder)
     LaueToolsframe.Show()
 

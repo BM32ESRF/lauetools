@@ -58,13 +58,11 @@ fileindexrange = (0, 41 * nblines - 1)
 #     imageindexref = 41*16+20
 imageindexref = 41 * 2 + 20
 
-myc, cor1, cor2 = GT.LaueSpotsCorrelator_multiprocessing(
-    fileindexrange,
-    imageindexref,
-    Parameters_dict=Parameters_dict,
-    saveObject=0,
-    nb_of_cpu=7,
-)
+myc, cor1, cor2 = GT.LaueSpotsCorrelator_multiprocessing(fileindexrange,
+                                                        imageindexref,
+                                                        Parameters_dict=Parameters_dict,
+                                                        saveObject=0,
+                                                        nb_of_cpu=7)
 
 import pylab as p
 
