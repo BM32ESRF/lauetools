@@ -45,6 +45,7 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX, verbose=Fals
 
     if HKL1r.shape == (3,):
         H1 = np.array([HKL1r])
+        n1 = 1
     elif HKL1r.shape == (1, 3):
         H1 = HKL1r
         n1 = 1
@@ -54,6 +55,7 @@ def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX, verbose=Fals
 
     if HKL2r.shape == (3,):
         H2 = np.array([HKL2r])
+        n2 = 1
     elif HKL2r.shape == (1, 3):
         H2 = HKL2r
         n2 = 1
@@ -1005,16 +1007,17 @@ def Set_dict_frompairs(pairs_index, verbose=0):
 
 def getCommonPts(XY1, XY2, dist_tolerance=0.5):
     """
-    return indices in XY1 and in XY2 of common pts (2D)
+    return indices in XY1 and in XY2 of common pts (2D) and
+    a flag is closest distances are below dist_tolerance
 
     example:
     pA =  [[0, 0], [0, 1], [1, 2], [10, 3], [1, 20], [5, 3]]
     pB= [[14, 1], [1, 2], [1, 20], [15, 1]]
 
     getCommonPts(pA,pB,0.5)
-    => (array([2, 4]), array([1, 2]))
-
+    => (array([2, 4]), array([1, 2]), True)
     """
+    WITHINTOLERANCE = True
     x1, y1 = np.array(XY1).T
 
     x2, y2 = np.array(XY2).T
@@ -1024,11 +1027,65 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5):
 
     dist = np.hypot(diffx, diffy)
 
-    ind_XY1, ind_XY2 = np.where(dist <= dist_tolerance)
+    # print('dist.shape', dist.shape)
+    n1, n2 = dist.shape
 
-    # closedistances = dist[(ind_XY1,ind_XY2)]
+    resmin = np.where(dist <= dist_tolerance)
 
-    return ind_XY1, ind_XY2
+
+    # closest distance beyond tolerance distance
+    #print('resmin in getCommonPts', resmin)
+    if len(resmin[0]) == 0:
+        posmin = np.argmin(dist)
+        ind_XY1, ind_XY2 = posmin // n2, posmin % n2
+        # print('closest distance:', dist[ind_XY1, ind_XY2])
+        WITHINTOLERANCE = False
+    else:
+        ind_XY1, ind_XY2 = resmin[0][0], resmin[1][0]
+
+    return ind_XY1, ind_XY2, WITHINTOLERANCE
+
+
+def sortclosestpoints(pt0, pts):
+    """return pt index in pts sorted by increasing distance from pt0
+
+    cartesian metrics
+    """
+    x1, y1 = pt0
+
+    x2, y2 = np.array(pts).T
+
+    diffx = x1 - x2
+    diffy = y1 - y2
+
+    dist = np.hypot(diffx, diffy)
+
+    sortedindices = np.argsort(dist)
+    sortedistances = dist[sortedindices]
+
+    return sortedindices, sortedistances
+    
+def sortclosestspots(kf0, kfs, dist_tolerance):
+    """return spot or scattered vector kf (2theta, chi) index in kfs sorted by increasing angular distance from kf0
+
+    kf0 and kfs    2theta and chi coordinates in degrees
+    """
+
+    tth0, chi0 = kf0
+
+    tths, chis = np.array(kfs).T
+
+    ar1 = np.array([[tth0/2., chi0]])
+    ar2 = np.array([tths/2., chis]).T
+
+    angletab = calculdist_from_thetachi(ar1, ar2)[:, 0]
+
+    #print('angletab',angletab)
+
+    sortedindices = np.argsort(angletab)
+    sortedistances = angletab[sortedindices]
+
+    return sortedindices, sortedistances
 
 
 def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
