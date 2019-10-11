@@ -30,22 +30,14 @@ else:
 DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
-def writefile_cor(
-    prefixfilename,
-    twicetheta,
-    chi,
-    data_x,
-    data_y,
-    dataintensity,
-    param=None,
-    initialfilename=None,
-    comments=None,
-    sortedexit=0,
-    overwrite=1,
-    data_sat=None,
-    rectpix=0,  # RECTPIX
-    dirname_output=None,
-):
+def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity, param=None,
+                                                                            initialfilename=None,
+                                                                            comments=None,
+                                                                            sortedexit=0,
+                                                                            overwrite=1,
+                                                                            data_sat=None,
+                                                                            rectpix=0,  # RECTPIX
+                                                                            dirname_output=None):
     """
     Write .cor file containing data
     one line   of header
@@ -99,15 +91,9 @@ def writefile_cor(
         list_of_data = sortedarray.T
 
     outputfile.write(firstline)
-    outputfile.write(
-        "\n".join(
-            [
-                format_string
+    outputfile.write("\n".join([format_string
                 % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
-                for i in list(range(longueur))
-            ]
-        )
-    )
+                for i in list(range(longueur))]))
 
     outputfile.write("\n# File created at %s with readwriteASCII.py" % (ttt.asctime()))
 
@@ -173,10 +159,10 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     f.close()
 
     if sys.version.split()[0] < "2.6.1":
-        mike = open(filename, "r")
-        # self.alldata = scipy.io.array_import.read_array(mike, lines = (1,-1))
-        alldata = np.loadtxt(mike, skiprows=SKIPROWS)
-        mike.close()
+        f = open(filename, "r")
+        # self.alldata = scipy.io.array_import.read_array(f, lines = (1,-1))
+        alldata = np.loadtxt(f, skiprows=SKIPROWS)
+        f.close()
     else:
         #         print "python version", sys.version.split()[0]
         # self.alldata = scipy.io.array_import.read_array(filename, lines = (1,-1))
@@ -222,27 +208,6 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     #    print "Reading detector parameters if exist"
     openf = open(filename, "r")
 
-    #     # fancy way to extract detector parameter;
-    #     # TODO: to be improved to accept others parameters of Camera
-    #     # (CCDlabel, xpixelsize, ypixelsize,geometry)
-    #     detParam = None
-    #     lineparam = 0
-    #     calib = []
-    #     for line in mike:
-    #         # print "lineparam %d"%lineparam
-    #         if lineparam >= 1 and lineparam < 6:
-    #             calib.append(float(line.split()[-1]))
-    #             lineparam += 1
-    #         if line.startswith('# Calibration'):
-    #             calib = []
-    #             lineparam = 1
-    #         if lineparam == 6:
-    #             print "Detector parameters read from file"
-    #             findcalib = True
-    #             break
-    #     if findcalib:
-    #         detParam = calib
-
     # new way of reading CCD calibration parameters
 
     CCDcalib = readCalibParametersInFile(openf)
@@ -255,8 +220,8 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     openf.close()
 
     if output_CCDparamsdict:
-        return ( alldata, data_theta, data_chi,
-                    data_pixX, data_pixY, data_I, detParam, CCDcalib, )
+        return (alldata, data_theta, data_chi,
+                    data_pixX, data_pixY, data_I, detParam, CCDcalib)
     else:
         return (alldata, data_theta, data_chi,
                     data_pixX, data_pixY, data_I, detParam)
@@ -430,7 +395,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     TODO: should only write things and not compute !! see intensity calculation!
     (peak_I + peak_bkg)
 
-    TODO: to simplify to deal with single peak recording 
+    TODO: to simplify to deal with single peak recording
 
     position_definition    0 no offset ,1 XMAS offset , 2 fit2D offset
     (see peaksearch)
@@ -653,26 +618,21 @@ def read_Peaklist(filename_in, dirname=None):
     return data_peak
 
 
-def writefitfile(
-    outputfilename,
-    datatooutput,
-    nb_of_indexedSpots,
-    dict_matrices=None,
-    meanresidues=None,
-    PeakListFilename=None,
-    columnsname=None,
-    modulecaller=None,
-    refinementtype="Strain and Orientation",
-):
+def writefitfile(outputfilename,
+                datatooutput,
+                nb_of_indexedSpots,
+                dict_matrices=None,
+                meanresidues=None,
+                PeakListFilename=None,
+                columnsname=None,
+                modulecaller=None,
+                refinementtype="Strain and Orientation"):
     """
     write a .fit file:
     """
     import time
 
-    header = "# %s Refinement from experimental file: %s\n" % (
-        refinementtype,
-        PeakListFilename,
-    )
+    header = "# %s Refinement from experimental file: %s\n" % (refinementtype, PeakListFilename)
     modulecallerstr = ""
     if modulecaller is not None:
         modulecallerstr = " with %s" % modulecaller
@@ -723,13 +683,11 @@ def writefitfile(
     if ("HKLxyz_names" in dict_matrices) and ("HKLxyz" in dict_matrices):
         outputfile.write("#HKL coord. of lab and sample frame axes :\n")
         for k in list(range(6)):
-            str1 = (
-                "#"
-                + dict_matrices["HKLxyz_names"][k]
-                + "\t"
-                + str(dict_matrices["HKLxyz"][k].round(decimals=3))
-                + "\n"
-            )
+            str1 = ("#"
+                        + dict_matrices["HKLxyz_names"][k]
+                        + "\t"
+                        + str(dict_matrices["HKLxyz"][k].round(decimals=3))
+                        + "\n")
             outputfile.write(str1)
 
     # end OR
@@ -740,8 +698,7 @@ def writefitfile(
 
     if "UBB0" in dict_matrices:
         outputfile.write(
-            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)\n"
-        )
+            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)\n")
         outputfile.write(str(dict_matrices["UBB0"].round(decimals=8)) + "\n")
 
     if "euler_angles" in dict_matrices:
@@ -750,32 +707,24 @@ def writefitfile(
 
     if "mastarlab" in dict_matrices:
         outputfile.write(
-            "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] ,bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"
-        )
+            "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] ,bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n")
         outputfile.write(str(dict_matrices["matstarlab"].round(decimals=7)) + "\n")
 
     if "matstarsample" in dict_matrices:
         outputfile.write(
-            "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] ,bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
-        )
+            "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] ,bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n")
         outputfile.write(str(dict_matrices["matstarsample"].round(decimals=8)) + "\n")
 
     if "devstrain_crystal" in dict_matrices:
         outputfile.write("#deviatoric strain in direct crystal frame (10-3 unit)\n")
-        outputfile.write(
-            str((dict_matrices["devstrain_crystal"] * 1000.0).round(decimals=2)) + "\n"
-        )
+        outputfile.write(str((dict_matrices["devstrain_crystal"] * 1000.0).round(decimals=2)) + "\n")
 
     if "devstrain_sample" in dict_matrices:
         outputfile.write("#deviatoric strain in sample2 frame (10-3 unit)\n")
-        outputfile.write(
-            str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n"
-        )
+        outputfile.write(str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n")
     if "LatticeParameters" in dict_matrices:
         outputfile.write("#new lattice parameters\n")
-        outputfile.write(
-            str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n"
-        )
+        outputfile.write(str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n")
     if "CCDLabel" in dict_matrices:
         outputfile.write("#CCDLabel\n")
         outputfile.write(str(dict_matrices["CCDLabel"]) + "\n")
@@ -794,9 +743,7 @@ def writefitfile(
 
     if "Ts" in dict_matrices:
         if dict_matrices["Ts"] is not None:
-            outputfile.write(
-                "#Refined T transform elements in %s\n" % dict_matrices["Ts"][1]
-            )
+            outputfile.write("#Refined T transform elements in %s\n" % dict_matrices["Ts"][1])
             outputfile.write(str(dict_matrices["Ts"][2]) + "\n")
 
     outputfile.close()
@@ -868,7 +815,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         euler                    : list of 3 Euler Angles for each grain
 
     """
-    print("reading fit file %s by readfitfile_multigrains.py of readwriteASCII: " % fitfilename)
+    print("reading fit file %s by readfitfile_multigrains.py of IOLaueTools (formerly readwriteASCII): " % fitfilename)
 
     columns_headers = []
 
@@ -1246,7 +1193,7 @@ def readCheckOrientationsFile(fullpathtoFile):
         [0] fileindices ROI infos
         [1] Material for indexation
         [2] Energy max and minimum matching rate threshold (nb of coincidence / nb of theo. spots)
-        [3] nb of matrices to be tested 
+        [3] nb of matrices to be tested
         [4] matrix or list of matrices
 
     # design of .mats file aiming at giving infos of guesses UB matrix solutions
@@ -1273,7 +1220,7 @@ def readCheckOrientationsFile(fullpathtoFile):
                     ---  ...
 
     When using this file, current fileindex will be searched among the  Fileindex3 sets.
-    If found, guessed Material and matrices will be then tested before indexation from scratch              
+    If found, guessed Material and matrices will be then tested before indexation from scratch
 
     return:
 
@@ -1285,7 +1232,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     - Material
     - Energy Max
     - MatchingThreshold
-    - Matrix(ces) 
+    - Matrix(ces)
 
 
     example.ubs--------
@@ -1418,27 +1365,21 @@ def readCheckOrientationsFile(fullpathtoFile):
                 lineindex += 1
             elif line.startswith("$Matrix"):
                 nbMatrices, matrices, nblines, posfile = readdataasmatrices(f)
-                print(
-                    "nbMatrices,matrices, nblines, posfile",
+                print("nbMatrices,matrices, nblines, posfile",
                     nbMatrices,
                     matrices,
                     nblines,
-                    posfile,
-                )
+                    posfile)
 
                 Current_CheckOrientationParameters[5] = matrices
                 known_values[5] = True
                 List_posMatrices.append(lineindex)
 
-                print(
-                    "Current_CheckOrientationParameters",
-                    Current_CheckOrientationParameters,
-                )
+                print("Current_CheckOrientationParameters",
+                    Current_CheckOrientationParameters)
                 print("known_values", known_values)
 
-                List_CheckOrientations.append(
-                    copy.copy(Current_CheckOrientationParameters)
-                )
+                List_CheckOrientations.append(copy.copy(Current_CheckOrientationParameters))
 
                 if posfile != -1:
                     f.seek(posfile)
@@ -1520,26 +1461,20 @@ def writefile_log(output_logfile_name="lauepattern.log", linestowrite=[[""]]):
     filou.close()
 
 
-def Writefile_data_log(
-    grainspot, index_of_grain, linestowrite=[[""]], cst_energykev=CST_ENERGYKEV
-):
+def Writefile_data_log(grainspot, index_of_grain, linestowrite=[[""]], cst_energykev=CST_ENERGYKEV):
     """
     write a log data file of simulation
     """
     for elem in grainspot:
-        linestowrite.append(
-            [
-                str(index_of_grain),
-                str(elem.Millers[0]),
-                str(elem.Millers[1]),
-                str(elem.Millers[2]),
-                str(elem.EwaldRadius * cst_energykev),
-                str(elem.Twicetheta),
-                str(elem.Chi),
-                str(elem.Xcam),
-                str(elem.Ycam),
-            ]
-        )
+        linestowrite.append([str(index_of_grain),
+                            str(elem.Millers[0]),
+                            str(elem.Millers[1]),
+                            str(elem.Millers[2]),
+                            str(elem.EwaldRadius * cst_energykev),
+                            str(elem.Twicetheta),
+                            str(elem.Chi),
+                            str(elem.Xcam),
+                            str(elem.Ycam)])
 
 
 def writefilegnomon(gnomonx, gnomony, outputfilename, dataselected):
@@ -1550,16 +1485,12 @@ def writefilegnomon(gnomonx, gnomony, outputfilename, dataselected):
     linestowrite.append(["gnomonx gnomony 2theta chi I #spot"])
     longueur = len(gnomonx)
     for i in list(range(longueur)):
-        linestowrite.append(
-            [
-                str(gnomonx[i]),
-                str(gnomony[i]),
-                str(2.0 * dataselected[0][i]),
-                str(dataselected[1][i]),
-                str(dataselected[2][i]),
-                str(i),
-            ]
-        )
+        linestowrite.append([str(gnomonx[i]),
+                            str(gnomony[i]),
+                            str(2.0 * dataselected[0][i]),
+                            str(dataselected[1][i]),
+                            str(dataselected[2][i]),
+                            str(i)])
 
     naname = outputfilename + ".gno"
     outputfile = open(naname, "w")
@@ -1593,9 +1524,7 @@ def ReadSummaryFile(filename, dirname=None):
         list_column_names.append(elem)
         dict_column_names[elem] = k
 
-    data = np.loadtxt(
-        f, dtype=np.float
-    )  # , comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
+    data = np.loadtxt(f, dtype=np.float)  # , comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
 
     f.close()
 
@@ -1841,7 +1770,6 @@ def read_cri(filecri):
                     else:
                         uc[j] = float(line.split()[j])
                 # print uc
-
             if i == 3:
                 if VERBOSE:
                     print("number of atoms in asymmetric unit : ", line[:-1])
@@ -1995,36 +1923,47 @@ def readfile_str(filename, grain_index):
     return data_str, matstr, calib, dev_str
 
 
-def Read_indexationfile(filename, grainindex_mat=0):
+def read_indexationfile(filename, grainindex_mat=0):
     r"""
-    Read indexation file created by lauetools with extension .idx
+    Read indexation file created by lauetools with extension .res
 
-    Return arrays of all colums [spot# 2theta chi pixX pixY intensity h k l energy grainindex]
-    TODO: seems to be OBSOLETE or useless?
+    Return arrays of all colums [spot# grainindex 2theta chi pixX pixY intensity h k l energy]
 
     """
+    with open(filename, 'r') as f:
+        while True:
+            line = f.readline()
+            if line.startswith('# Number of spots:'):
+                nbspots = int(line.split(':')[1])
+                break
+
     nb_lines_header = 4
 
-    try:
-        data_millerExy = np.genfromtxt(
-            filename, skip_header=nb_lines_header, comments="#"
-        )
-    except NameError:
-        data_millerExy = np.loadtxt(filename, skiprows=nb_lines_header, comments="#")
+    f = open(filename, 'r')
+    for _ in range(nb_lines_header):
+        f.readline()
 
-    twicetheta = np.array(data_millerExy[:, 1])  # target values
-    chi = np.array(data_millerExy[:, 2])  # target values
-    pixX = np.array(data_millerExy[:, 3])
-    pixY = np.array(data_millerExy[:, 4])
-    Intensity = np.array(data_millerExy[:, 5])
-    miller = np.array(data_millerExy[:, 6:9])
-    energy = np.array(data_millerExy[:, 9])
+    dat = np.fromfile(f, dtype=float, sep=" ")
+    nbelems = len(dat)
+    f.close()
 
-    Grain_index = np.array(data_millerExy[:, 10])
+    data_millerExy = dat.reshape((nbspots, nbelems//nbspots))
+
+    spotindex = np.array(data_millerExy[:, 0])
+    twicetheta = np.array(data_millerExy[:, 2])  # target values
+    chi = np.array(data_millerExy[:, 3])  # target values
+    pixX = np.array(data_millerExy[:, 4])
+    pixY = np.array(data_millerExy[:, 5])
+    Intensity = np.array(data_millerExy[:, 6])
+    miller = np.array(data_millerExy[:, 7:10])
+    energy = np.array(data_millerExy[:, 10])
+
+    Grain_index = np.array(data_millerExy[:, 1])
 
     # removing spots that were in ambiguous positions to be indexed (energy set to 0)
-    pos = np.where(energy != 0)[0]
+    pos = np.where(energy != 10000.)[0]
 
+    spotindex = np.take(spotindex, pos, axis=0)
     twicetheta = np.take(twicetheta, pos, axis=0)
     chi = np.take(chi, pos, axis=0)
     pixX = np.take(pixX, pos, axis=0)
@@ -2067,9 +2006,7 @@ def Read_indexationfile(filename, grainindex_mat=0):
             tru = line.split()[1:]
             datamat_E[grainindex_mat].append(tru)
             lineaccum_E += 1
-        if (
-            accum_param == 1 and lineaccum_param < 5
-        ):  # collect calibration parameters elements
+        if (accum_param == 1 and lineaccum_param < 5):  # collect calibration parameters elements
             tru = line.split()
             variable = tru[1]
             value = float(tru[3])
@@ -2133,20 +2070,8 @@ def Read_indexationfile(filename, grainindex_mat=0):
         for key in ["dd", "xcen", "ycen", "xbet", "xgam"]:
             calib.append(detector_param[key])
 
-    return (
-        twicetheta,
-        chi,
-        pixX,
-        pixY,
-        Intensity,
-        miller,
-        energy,
-        Grain_index,
-        datamat,
-        datamat_B,
-        datamat_E,
-        calib,
-    )
+    return (spotindex, twicetheta, chi, pixX, pixY, Intensity, miller, energy,
+                Grain_index, datamat, datamat_B, datamat_E, calib)
 
 def getpeaks_fromfit2d(filename):
     """
