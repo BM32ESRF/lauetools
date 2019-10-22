@@ -619,133 +619,141 @@ def read_Peaklist(filename_in, dirname=None):
 
 
 def writefitfile(outputfilename,
-                datatooutput,
-                nb_of_indexedSpots,
-                dict_matrices=None,
-                meanresidues=None,
-                PeakListFilename=None,
-                columnsname=None,
-                modulecaller=None,
-                refinementtype="Strain and Orientation"):
+                 datatooutput,
+                 nb_of_indexedSpots,
+                 dict_matrices=None,
+                 meanresidues=None,
+                 PeakListFilename=None,
+                 columnsname=None,
+                 modulecaller=None,
+                 refinementtype="Strain and Orientation",
+):
     """
     write a .fit file:
     """
     import time
 
-    header = "# %s Refinement from experimental file: %s\n" % (refinementtype, PeakListFilename)
+    # HEADER
+    header = "%s Refinement from experimental file: %s\n" % (
+        refinementtype,
+        PeakListFilename,
+    )
     modulecallerstr = ""
     if modulecaller is not None:
         modulecallerstr = " with %s" % modulecaller
-    header += "# File created at %s%s\n" % (time.asctime(), modulecallerstr)
-    header += "# Number of indexed spots: %d\n" % nb_of_indexedSpots
+    header += "File created at %s%s\n" % (time.asctime(), modulecallerstr)
+    header += "Number of indexed spots: %d\n" % nb_of_indexedSpots
 
     if "Element" in dict_matrices:
-        header += "#Element\n"
+        header += "Element\n"
         header += "%s\n" % str(dict_matrices["Element"])
+    
     if "grainIndex" in dict_matrices:
-        header += "#grainIndex\n"
+        header += "grainIndex\n"
         header += "G_%d\n" % dict_matrices["grainIndex"]
 
     if meanresidues is not None:
-        header += "# Mean Deviation(pixel): %.3f\n" % meanresidues
+        header += "Mean Deviation(pixel): %.3f\n" % meanresidues
 
     if columnsname:
-        header += columnsname
+        # header += columnsname #introduces a blank line before data 
+        header += columnsname.rstrip()
+        
     else:
-        header += "#spot_index : !!columns name missing !!\n"
-
-    outputfile = open(outputfilename, "w")
-    outputfile.write(header)
-    np.savetxt(outputfile, datatooutput, fmt="%.6f")
-
+        #header += "spot_index : !!columns name missing !!\n "#introduces a blank line before data 
+        header += "spot_index : !!columns name missing !!"
+        
+        
+    
+    # FOOTER
+    footer = ""
+    
     if "UBmat" in dict_matrices:
-        outputfile.write("#UB matrix in q= (UB) B0 G* \n")
+        footer += "UB matrix in q= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        outputfile.write(str(dict_matrices["UBmat"].round(decimals=9)) + "\n")
+        footer += str(dict_matrices["UBmat"].round(decimals=9)) + "\n"
 
     # OR
 
     if "Umat2" in dict_matrices:
-        outputfile.write("#Umatrix in q_lab= (UB) B0 G* \n")
+        footer += "Umatrix in q_lab= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        outputfile.write(str(dict_matrices["Umat2"].round(decimals=9)) + "\n")
+        footer += str(dict_matrices["Umat2"].round(decimals=9)) + "\n"
 
     if "Bmat_tri" in dict_matrices:
-        outputfile.write("#Bmatrix in q_lab= (UB) B0 G* \n")
+        footer += "Bmatrix in q_lab= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        outputfile.write(str(dict_matrices["Bmat_tri"].round(decimals=9)) + "\n")
+        footer += str(dict_matrices["Bmat_tri"].round(decimals=9)) + "\n"
 
-        outputfile.write("#(B-I)*1000 \n")
+        footer += "(B-I)*1000 \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
         toto = (dict_matrices["Bmat_tri"] - np.eye(3)) * 1000.0
-        outputfile.write(str(toto.round(decimals=3)) + "\n")
+        footer += str(toto.round(decimals=3)) + "\n"
 
     if ("HKLxyz_names" in dict_matrices) and ("HKLxyz" in dict_matrices):
-        outputfile.write("#HKL coord. of lab and sample frame axes :\n")
+        footer += "HKL coord. of lab and sample frame axes :\n"
         for k in list(range(6)):
-            str1 = ("#"
-                        + dict_matrices["HKLxyz_names"][k]
-                        + "\t"
-                        + str(dict_matrices["HKLxyz"][k].round(decimals=3))
-                        + "\n")
-            outputfile.write(str1)
+            footer += dict_matrices["HKLxyz_names"][k] + "\t" 
+            footer += str(dict_matrices["HKLxyz"][k].round(decimals=3)) + "\n"
 
     # end OR
 
     if "B0" in dict_matrices:
-        outputfile.write("#B0 matrix in q= UB (B0) G*\n")
-        outputfile.write(str(dict_matrices["B0"].round(decimals=8)) + "\n")
+        footer += "B0 matrix in q= UB (B0) G*\n"
+        footer += str(dict_matrices["B0"].round(decimals=8)) + "\n"
 
     if "UBB0" in dict_matrices:
-        outputfile.write(
-            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)\n")
-        outputfile.write(str(dict_matrices["UBB0"].round(decimals=8)) + "\n")
+        footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)\n"
+        footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
 
     if "euler_angles" in dict_matrices:
-        outputfile.write("#Euler angles phi theta psi (deg)\n")
-        outputfile.write(str(dict_matrices["euler_angles"]) + "\n")
+        footer += "Euler angles phi theta psi (deg)\n"
+        footer += str(dict_matrices["euler_angles"]) + "\n"
 
     if "mastarlab" in dict_matrices:
-        outputfile.write(
-            "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] ,bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n")
-        outputfile.write(str(dict_matrices["matstarlab"].round(decimals=7)) + "\n")
+        footer += "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] ,bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"   
+        footer += str(dict_matrices["matstarlab"].round(decimals=7)) + "\n"
 
     if "matstarsample" in dict_matrices:
-        outputfile.write(
-            "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] ,bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n")
-        outputfile.write(str(dict_matrices["matstarsample"].round(decimals=8)) + "\n")
+        footer += "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] ,bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
+        footer += str(dict_matrices["matstarsample"].round(decimals=8)) + "\n"
 
     if "devstrain_crystal" in dict_matrices:
-        outputfile.write("#deviatoric strain in direct crystal frame (10-3 unit)\n")
-        outputfile.write(str((dict_matrices["devstrain_crystal"] * 1000.0).round(decimals=2)) + "\n")
+        footer += "deviatoric strain in direct crystal frame (10-3 unit)\n"
+        footer += str((dict_matrices["devstrain_crystal"] * 1000.0).round(decimals=2)) + "\n"
 
     if "devstrain_sample" in dict_matrices:
-        outputfile.write("#deviatoric strain in sample2 frame (10-3 unit)\n")
-        outputfile.write(str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n")
+        footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
+        footer += str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n"
+            
     if "LatticeParameters" in dict_matrices:
-        outputfile.write("#new lattice parameters\n")
-        outputfile.write(str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n")
+        footer += "new lattice parameters\n"
+        footer += str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n"
+            
     if "CCDLabel" in dict_matrices:
-        outputfile.write("#CCDLabel\n")
-        outputfile.write(str(dict_matrices["CCDLabel"]) + "\n")
+        footer += "CCDLabel\n"
+        footer += str(dict_matrices["CCDLabel"]) + "\n"
 
     if "detectorparameters" in dict_matrices:
-        outputfile.write("#DetectorParameters\n")
-        outputfile.write(str(dict_matrices["detectorparameters"]) + "\n")
+        footer += "DetectorParameters\n"
+        footer += str(dict_matrices["detectorparameters"]) + "\n"
 
     if "pixelsize" in dict_matrices:
-        outputfile.write("#pixelsize\n")
-        outputfile.write(str(dict_matrices["pixelsize"]) + "\n")
+        footer += "pixelsize\n"
+        footer += str(dict_matrices["pixelsize"]) + "\n"
 
     if "framedim" in dict_matrices:
-        outputfile.write("#Frame dimensions\n")
-        outputfile.write(str(dict_matrices["framedim"]) + "\n")
+        footer += "Frame dimensions\n"
+        footer += str(dict_matrices["framedim"]) + "\n"
 
     if "Ts" in dict_matrices:
         if dict_matrices["Ts"] is not None:
-            outputfile.write("#Refined T transform elements in %s\n" % dict_matrices["Ts"][1])
-            outputfile.write(str(dict_matrices["Ts"][2]) + "\n")
-
+            footer += "Refined T transform elements in %s\n" % dict_matrices["Ts"][1]
+            footer += str(dict_matrices["Ts"][2]) + "\n"
+    
+    outputfile = open(outputfilename, "wb")
+    np.savetxt(outputfilename, datatooutput, fmt="%.6f", 
+               header=header, footer=footer, comments="#")    
     outputfile.close()
 
 
