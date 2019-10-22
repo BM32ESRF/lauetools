@@ -2009,7 +2009,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 detectordistance=detectorparameters[0],
                                                 detectordiameter=DETECTORDIAMETER,
                                                 kf_direction=kf_direction,
-                                                HarmonicsRemoval=removeharmonics,
+                                                HarmonicsRemoval=0,
                                                 pixelsize=pixelsize)
 
     #     print "TwthetaChiEnergyMillers_list_one_grain_wo_harmonics", TwthetaChiEnergyMillers_list_one_grain_wo_harmonics
@@ -2027,12 +2027,23 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 dim=dim,
-                                                kf_direction=kf_direction,
-                                            )[:2]
+                                                kf_direction=kf_direction)[:2]
 
-    # print("nb of spots theo. ", len(Twicetheta))
 
-    return Twicetheta, Chi, Miller_ind, posx, posy, Energy
+    if removeharmonics:
+        # remove harmonics:
+        _, _, tokeep = GT.removeClosePoints(posx,posy,0.05)
+        #print('tokeep',tokeep)
+
+        s_tth = Twicetheta[tokeep]
+        s_chi = Chi[tokeep]
+        s_miller_ind = Miller_ind[tokeep]
+        s_posx = posx[tokeep]
+        s_posy = posy[tokeep]
+        s_E = Energy[tokeep]
+        return s_tth, s_chi, s_miller_ind, s_posx, s_posy, s_E
+    else:
+        return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
 
 def SimulateResult(grain, emin, emax, simulparameters,

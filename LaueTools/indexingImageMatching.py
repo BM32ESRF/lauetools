@@ -254,7 +254,7 @@ def Plot_compare_gnomondata(Angles,
             print("Using orientation Matrix for plotting")
         mymat = EULER
 
-    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
+    grain = CP.Prepare_Grain(key_material, mymat, dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) (here with fastcompute=1 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
@@ -694,7 +694,7 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
                                             lowresolution=0):
     """ Compute hough transform from gnomonic data with tangent plane
     at lat=45 deg anf longit=0 deg
-    
+
     Returns three arrays:
 
     rho and theta of straight line equation are digitized into bins
@@ -740,20 +740,14 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
     # plot(t,arrayrho[:,0],t,arrayrho[:,6])
 
     if Intensity_table is None:
-        bibins = np.concatenate(
-            (np.arange(-1.0 + 0.4, 1.0 - 0.4, steprho), np.array([10]))
-        )
+        bibins = np.concatenate((np.arange(-1.0 + 0.4, 1.0 - 0.4, steprho), np.array([10])))
         # print "bibins",bibins[:20],bibins[-5:]
         # print "len(bibins)",len(bibins)
         def bincountatfixedangle(_tablerho_line):
             """
             bincount for _tablerho_line
             """
-            return np.bincount(
-                np.concatenate(
-                    (np.digitize(_tablerho_line, bibins), np.arange(len(bibins)))
-                )
-            )
+            return np.bincount(np.concatenate((np.digitize(_tablerho_line, bibins), np.arange(len(bibins)))))
 
         resus = np.array(list(map(bincountatfixedangle, arrayrho)))
 
@@ -782,7 +776,7 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
         def accum_one_point(col_arrayrho, _pointintensity):
             """
             compute the sinogram in hough space for one spot taking into account its intensity
-            
+
             uses bibins
             """
 
@@ -797,13 +791,10 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
             # print "onepointcontribution_list_index",onepointcontribution_list_index
 
             if np.__version__ < "1.3.0":
-                np.put(
-                    intermediate_accum, onepointcontribution_list_index, _pointintensity
-                )
+                np.put(intermediate_accum, onepointcontribution_list_index, _pointintensity)
             else:
-                intermediate_accum[
-                    onepointcontribution_list_index
-                ] = _pointintensity * np.ones(len(onepointcontribution_list_index))
+                va = _pointintensity * np.ones(len(onepointcontribution_list_index))
+                intermediate_accum[onepointcontribution_list_index] = va
 
             # print "binned rho",len(binnedrho)
             # print "_pointintensity",_pointintensity
@@ -822,9 +813,7 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
             """
             # print "pointcoordinate",pointcoordinate
             # print "arraydeg",arraydeg
-            ptx = np.ones(len(arraydeg)) * (
-                pointcoordinate[0] - centerProjection[0]
-            )  # be careful of the offsets
+            ptx = np.ones(len(arraydeg)) * (pointcoordinate[0] - centerProjection[0])  # be careful of the offsets
             pty = np.ones(len(arraydeg)) * (pointcoordinate[1] - centerProjection[1])
 
             np.multiply(ptx, np.cos(arraydeg), ptx)
@@ -841,9 +830,7 @@ def ComputeHough(_datagnomonx, _datagnomony, Intensity_table=None,
             # print "tra",tra[k]
             # print "intiti",Intensity_table[k]
             # print "%d/%d"%(k,len(_datagnomonx)-1)
-            accumHough = accumHough + accum_one_point(
-                rhotable_from_one_point(tra[k]), Intensity_table[k]
-            )
+            accumHough = accumHough + accum_one_point(rhotable_from_one_point(tra[k]), Intensity_table[k])
         # ---TOO LONG !!! -
 
         # print "rho digitized for point #0",np.where(onepointcontri!=0)
@@ -873,42 +860,33 @@ def InverseHough(rhotheta, halfsemiaxes=(1.2, 0.6), centerofproj=(0.0, 0.0)):
     pass
 
 
-def Hough_peak_position(
-    Angles,
-    verbose=1,
-    saveimages=1,
-    saveposition=1,
-    prefixname="tata",
-    key_material=14,
-    PlotOK=0,
-    arraysize=(600, 720),
-    returnXYgnomonic=0,
-    EULER=0,
-    dictmaterials=DictLT.dict_Materials
-):
+def Hough_peak_position(Angles,
+                        verbose=1,
+                        saveimages=1,
+                        saveposition=1,
+                        prefixname="tata",
+                        key_material=14,
+                        PlotOK=0,
+                        arraysize=(600, 720),
+                        returnXYgnomonic=0,
+                        EULER=0,
+                        dictmaterials=DictLT.dict_Materials):
     """
     peak in seach in Hough space representation of Laue data projected in gnomonic plane
-    WARNING: need to retrieve a filter called JSM contained in ImageFilter of PIL Image module 
-    
+    WARNING: need to retrieve a filter called JSM contained in ImageFilter of PIL Image module
+
     TODO: use numerical filter of ndimage rather than PIL. Should be faster
-    
+
     TODO: to be removed soon
     """
     emax = 25
     emin = 5
-    nb_of_peaks = (
-        35
-    )  # nb of hough pixel featuring the laue pattern information in hough space
+    nb_of_peaks = 35 # nb of hough pixel featuring the laue pattern information in hough space
 
     angle_X, angle_Y, angle_Z = Angles
     nn = 1  # nn-1= number of digits in angles to put in the outputfilename
 
-    fullname = (
-        prefixname
-        + str(int(nn * angle_Z))
-        + str(int(nn * angle_Y))
-        + str(int(nn * angle_X))
-    )
+    fullname = (prefixname + str(int(nn * angle_Z)) + str(int(nn * angle_Y)) + str(int(nn * angle_X)))
     # print fullname
 
     if EULER == 0:
@@ -920,16 +898,14 @@ def Hough_peak_position(
     grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        [grain],
-        1,
-        fastcompute=1,
-        fileOK=0,
-        verbose=0,
-        dictmaterials=dictmaterials
-    )
+    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
+                                CST_ENERGYKEV / emin,
+                                [grain],
+                                1,
+                                fastcompute=1,
+                                fileOK=0,
+                                verbose=0,
+                                dictmaterials=dictmaterials)
     # 2theta,chi of spot which are on camera (with harmonics)
     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
 
@@ -938,18 +914,14 @@ def Hough_peak_position(
     lon = len(TwicethetaChi[0])
     # print "nb spots for harmonics filtering",lon
 
-    toextract = np.where(
-        np.ravel(np.triu(np.fromfunction(GT.fct_j, (lon, lon)), k=1)) != 0
-    )[0]
+    toextract = np.where(np.ravel(np.triu(np.fromfunction(GT.fct_j, (lon, lon)), k=1)) != 0)[0]
     distancetolere = 0.0002
     xxtab = TwicethetaChi[0]
     yytab = TwicethetaChi[1]
     x_ind = np.where(
-        abs(np.ravel(xxtab - np.reshape(xxtab, (lon, 1)))[toextract]) < distancetolere
-    )
+        abs(np.ravel(xxtab - np.reshape(xxtab, (lon, 1)))[toextract]) < distancetolere)
     y_ind = np.where(
-        abs(np.ravel(yytab - np.reshape(yytab, (lon, 1)))[toextract]) < distancetolere
-    )
+        abs(np.ravel(yytab - np.reshape(yytab, (lon, 1)))[toextract]) < distancetolere)
     ravx_dup = toextract[x_ind]
     ravy_dup = toextract[y_ind]
     X_dup_I, X_dup_J = ravx_dup / lon, ravx_dup % lon
@@ -985,23 +957,19 @@ def Hough_peak_position(
     # scatter(xgnomon,ygnomon)
     # show()
     if verbose:
-        print(
-            "Computing %d selected MARCCD pixels in Gnomonic space for Hough transform"
-            % len(xgnomon)
-        )
+        print("Computing %d selected MARCCD pixels in Gnomonic space for Hough transform"
+            % len(xgnomon))
         print("Now all pixels are considered to have the same intensity")
 
     tagreso = 0
     if arraysize == (300, 360):
         tagreso = 1
-    bigHoughcollector = ComputeHough(
-        xgnomon,
-        ygnomon,
-        Intensity_table=None,
-        stepdeg=0.5,
-        steprho=0.002,
-        lowresolution=tagreso,
-    )
+    bigHoughcollector = ComputeHough(xgnomon,
+                                    ygnomon,
+                                    Intensity_table=None,
+                                    stepdeg=0.5,
+                                    steprho=0.002,
+                                    lowresolution=tagreso)
     # argsort(ravel(bigHoughcollector))[-30:] for taking the first 30 most intense peak
 
     # some filtering to extract main peaks
@@ -1071,10 +1039,10 @@ def Hough_peak_position(
 def removeClosePoints(Twicetheta, Chi, dist_tolerance=0.0002):
     """
     remove very close spots within dist_tolerance
-    
+
     dist_tolerance (in deg) is a crude criterium since angular distance are computed
     as if 2theta,chi coordinates where cartesian ones !
-    
+
     NOTE: this can be used for harmonics removal (harmonics enhance too much some sinusoids and
     leads to artefact when searching zone axes by gnomonic-hough transform
     and digital image processing methods)
@@ -1088,13 +1056,9 @@ def removeClosePoints(Twicetheta, Chi, dist_tolerance=0.0002):
 
     toextract = GT.indices_in_flatTriuMatrix(lon)
 
-    x_ind = np.where(
-        abs(np.ravel(Twicetheta - np.reshape(Twicetheta, (lon, 1)))[toextract])
-        < dist_tolerance
-    )
-    y_ind = np.where(
-        abs(np.ravel(Chi - np.reshape(Chi, (lon, 1)))[toextract]) < dist_tolerance
-    )
+    x_ind = np.where(abs(np.ravel(Twicetheta - np.reshape(Twicetheta, (lon, 1)))[toextract])
+        < dist_tolerance)
+    y_ind = np.where(abs(np.ravel(Chi - np.reshape(Chi, (lon, 1)))[toextract]) < dist_tolerance)
     ravx_dup = toextract[x_ind]
     ravy_dup = toextract[y_ind]
     X_dup_I, X_dup_J = ravx_dup / lon, ravx_dup % lon
@@ -1125,21 +1089,19 @@ def removeClosePoints(Twicetheta, Chi, dist_tolerance=0.0002):
     return TTH, CHI, tokeep
 
 
-def Hough_peak_position_fast(
-    Angles,
-    Nb=50,
-    verbose=1,
-    pos2D=0,
-    removedges=2,
-    key_material="Si",
-    returnfilterarray=0,
-    arraysize=(300, 360),
-    EULER=0,
-    blur_radius=0.5,
-    printOrientMatrix=0,
-    emax=25,
-    dictmaterials=DictLT.dict_Materials
-):
+def Hough_peak_position_fast(Angles,
+                            Nb=50,
+                            verbose=1,
+                            pos2D=0,
+                            removedges=2,
+                            key_material="Si",
+                            returnfilterarray=0,
+                            arraysize=(300, 360),
+                            EULER=0,
+                            blur_radius=0.5,
+                            printOrientMatrix=0,
+                            emax=25,
+                            dictmaterials=DictLT.dict_Materials):
     """
     Simulate for 3 Euler angles Laue pattern
     peak search in Hough space representation of Laue data projected in gnomonic plane
@@ -1158,7 +1120,7 @@ def Hough_peak_position_fast(
             [angle_X * 1.0, angle_Y * 1.0, angle_Z * 1.0]
         )
 
-    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
+    grain = CP.Prepare_Grain(key_material, mymat, dictmaterials=dictmaterials)
 
     if printOrientMatrix:
         print("grainparameters")
@@ -1402,9 +1364,7 @@ def meanfilter(data_array, removedges=2, n=3):
     return newarray
 
 
-def getblobCOM(
-    data_array, threshold=0, connectivity=1, returnfloatmeanpos=0, removedges=0
-):
+def getblobCOM(data_array, threshold=0, connectivity=1, returnfloatmeanpos=0, removedges=0):
     """
     return center of mass of blob in data_array
     blobs are sorted regarding their intensity
@@ -1455,9 +1415,7 @@ def enhancefilter2(data_array, removedges=2):
     apply a filter to array without edges
     """
     nbrow, nbcol = data_array.shape
-    clipdata_array = data_array[
-        removedges : nbrow - removedges, removedges : nbcol - removedges
-    ]
+    clipdata_array = data_array[removedges : nbrow - removedges, removedges : nbcol - removedges]
 
     #    kernel = np.array([[0, 1, 1, 1, 0],
     #                       [-2, 1, 1, 1, -2],
@@ -1518,15 +1476,15 @@ def convertindices1Dto2D(data_array_shape, indices1D, removedges=0):
 
 def convertindices1Dto3D(data_array_shape, indices1D):
     """
-    convert indices from 1D raveled array 
-    coming from an array ((data_array_shape) which edges have been removed 
+    convert indices from 1D raveled array
+    coming from an array ((data_array_shape) which edges have been removed
     
     in corresponding indices of 2d array
     example:
-    
+
     from indices in [[[1,2,3,4],[4,5,6,7],[8,9,10,11]],[[12,13,14,15],[16,17,18,19],[20,21,22,23]]]
     return i,j,k:
-    
+
     4 -> 0,1,0
     13 -> 1,0,1
     23 -> 1,2,3
@@ -1644,9 +1602,7 @@ def StickLabel_on_exp_peaks(Angles,
                 # p_d_d[cle_theo]=list_dist_neighbors
 
                 # sort for selecting only the nearest theoritical spot
-                Nearest_ind = list_ind_neighbors[
-                    np.argmin(np.array(list_dist_neighbors))
-                ]
+                Nearest_ind = list_ind_neighbors[np.argmin(np.array(list_dist_neighbors))]
                 Nearest_dist = min(list_dist_neighbors)
                 # p_d_i[cle_theo]=Nearest_ind
                 # p_d_d[cle_theo]=Nearest_dist
@@ -2193,7 +2149,7 @@ def give_best_orientations_new(filename_data,
     High resolution (1 deg step)
     DataBase_array is the databank: huge array containing indices to pick up in transformed data p
     """
-    TwiceTheta_Chi_Int = readnselectdata(filename_data, nbofpeaks_max, 
+    TwiceTheta_Chi_Int = readnselectdata(filename_data, nbofpeaks_max,
                                             dirname=dirname, verbose=verbose)
 
     if addnoise:
@@ -2289,9 +2245,7 @@ def getOrientationfromDatabase(TwiceTheta_Chi,
         print("histogram bigHoughcollector", np.histogram(bigHoughcollector))
         #    print bigHoughcollector
         print("bigHoughcollector.shape", bigHoughcollector.shape)
-        print(
-            "nb of indices in pattern fingerprint", DataBase_array[100].shape
-        )  # nb of fingerprint indices
+        print("nb of indices in pattern fingerprint", DataBase_array[100].shape)  # nb of fingerprint indices
 
     # experimental data pre processing
     #    minimum_number_per_zone_axis = 2
@@ -2357,9 +2311,7 @@ def Houghcorrel_3D(exp_1d_data, database_array, maxindex=40, verbose=0):
     return correl3D
 
 
-def findGrain_in_orientSpace_new_3D(
-    CorrelIntensTab, rank_n=20, sigmagaussian=(1.0, 1.0, 1), verbose=0
-):
+def findGrain_in_orientSpace_new_3D(CorrelIntensTab, rank_n=20, sigmagaussian=(1.0, 1.0, 1), verbose=0):
     """ from a 2d intensity table
     locate local maxima in correlation intensity space
 
@@ -2376,9 +2328,7 @@ def findGrain_in_orientSpace_new_3D(
     RANK_N = rank_n
     SIGMA_FOR_GAUSSIAN = sigmagaussian
 
-    CorrelIntensTab = NDI.filters.gaussian_filter(
-        CorrelIntensTab, sigma=SIGMA_FOR_GAUSSIAN
-    )
+    CorrelIntensTab = NDI.filters.gaussian_filter(CorrelIntensTab, sigma=SIGMA_FOR_GAUSSIAN)
 
     if verbose:
         print("in findGrain_in_orientSpace_new_3D() --------------------")
@@ -2403,15 +2353,11 @@ def findGrain_in_orientSpace_new_3D(
     maxtab = NDI.filters.maximum_filter(thraa, size=3)
     ll, nf = NDI.label(maxtab)
 
-    maxpos = np.array(
-        NDI.measurements.maximum_position(maxtab, ll, np.arange(1, nf + 1)),
-        dtype=np.float,
-    )
+    maxpos = np.array(NDI.measurements.maximum_position(maxtab, ll, np.arange(1, nf + 1)),
+        dtype=np.float)
 
-    meanpos = np.array(
-        NDI.measurements.center_of_mass(maxtab, ll, np.arange(1, nf + 1)),
-        dtype=np.float,
-    )
+    meanpos = np.array(NDI.measurements.center_of_mass(maxtab, ll, np.arange(1, nf + 1)),
+        dtype=np.float)
 
     #
 
@@ -2425,10 +2371,8 @@ def findGrain_in_orientSpace_new_3D(
     #                                                    np.arange(1, nf + 1)),
     #                                                    dtype=np.float)
 
-    maximumvalues = np.array(
-        NDI.measurements.maximum(CorrelIntensTab, ll, np.arange(1, nf + 1)),
-        dtype=np.float,
-    )
+    maximumvalues = np.array(NDI.measurements.maximum(CorrelIntensTab, ll, np.arange(1, nf + 1)),
+        dtype=np.float)
 
     #    minimumvalues = np.array(NDI.measurements.minimum(CorrelIntensTab,
     #                                                      ll,
@@ -2461,14 +2405,14 @@ def findGrain_in_orientSpace_new_3D(
     return SortedOrients
 
 
-def best_orientations_new_3D(
-    Database, bigHoughcollector, maxindex=40, rank_n=20, sigmagaussian=(1.0, 1.0, 1.0)
-):
+def best_orientations_new_3D(Database, bigHoughcollector, maxindex=40,
+                                                            rank_n=20,
+                                                            sigmagaussian=(1.0, 1.0, 1.0)):
     """
     from Database and experimental data (bigHoughcollector)
     return array of the "nb_orientations" best orientations
     (1 Orientation = 3 angles)
-    
+
     """
 
     #    print "bigHoughcollector.shape", bigHoughcollector.shape
@@ -2482,9 +2426,7 @@ def best_orientations_new_3D(
     #    print "rara.shape", rara.shape
     #    print "argrara.shape", argrara.shape
 
-    bestindices = findGrain_in_orientSpace_new_3D(
-        Correl3D, rank_n=rank_n, sigmagaussian=sigmagaussian
-    )
+    bestindices = findGrain_in_orientSpace_new_3D(Correl3D, rank_n=rank_n, sigmagaussian=sigmagaussian)
     #    print "bestindices", bestindices
 
     if len(bestindices) == 0:
@@ -2504,7 +2446,7 @@ def best_orientations_new_3D(
 def plotHough_Exp(prefixname, file_index, nbofpeaks_max, dirname="."):
     """
     read peak list
-    
+
     High resolution (1 deg step)
     """
     filename_data = prefixname + stringint(file_index, 4) + ".cor"
@@ -2518,9 +2460,7 @@ def plotHough_Exp(prefixname, file_index, nbofpeaks_max, dirname="."):
     nb_to_extract = min(nbofpeaks_max, length_of_data)
     listofselectedpts = np.arange(nb_to_extract)
     # selection of points in the three arrays in first argument
-    dataselected, nbmax = IOLT.createselecteddata(
-        (mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1
-    )
+    dataselected, nbmax = IOLT.createselecteddata((mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1)
 
     # compute gnomonic coordinnates of a discrete number of peak
     # (from 2theta,chi coordinates)
@@ -2529,16 +2469,12 @@ def plotHough_Exp(prefixname, file_index, nbofpeaks_max, dirname="."):
     #    print len(gnomonx)
 
     # lowresolution=1  : stepdeg=1,steprho=0.004
-    bigHoughcollector = ComputeHough(
-        gnomonx, gnomony, Intensity_table=None, lowresolution=1
-    )
+    bigHoughcollector = ComputeHough(gnomonx, gnomony, Intensity_table=None, lowresolution=1)
     print(bigHoughcollector)
     print(np.shape(bigHoughcollector))
     print(np.histogram(bigHoughcollector))
 
-    bigHoughcollectorfiltered = np.where(
-        bigHoughcollector < 3, -10, 10 * bigHoughcollector
-    )
+    bigHoughcollectorfiltered = np.where(bigHoughcollector < 3, -10, 10 * bigHoughcollector)
 
     p.subplot(121)
     p.title("raw")
@@ -2553,24 +2489,20 @@ def plotHough_Exp(prefixname, file_index, nbofpeaks_max, dirname="."):
     return bigHoughcollector
 
 
-def plotHough_Simul(
-    Angles, showplot=1, blur_radius=0.5, emax=25, NB=60, pos2D=0, removedges=2
-):
+def plotHough_Simul(Angles, showplot=1, blur_radius=0.5, emax=25, NB=60, pos2D=0, removedges=2):
     t0 = time.time()
 
-    poshighest1D, Houghfiltered, rawHough = Hough_peak_position_fast(
-        Angles,
-        Nb=NB,
-        pos2D=pos2D,
-        removedges=removedges,
-        verbose=0,
-        key_material="Si",
-        EULER=1,
-        arraysize=(300, 360),
-        returnfilterarray=2,
-        blur_radius=blur_radius,
-        emax=emax,
-    )
+    poshighest1D, Houghfiltered, rawHough = Hough_peak_position_fast(Angles,
+                                                                    Nb=NB,
+                                                                    pos2D=pos2D,
+                                                                    removedges=removedges,
+                                                                    verbose=0,
+                                                                    key_material="Si",
+                                                                    EULER=1,
+                                                                    arraysize=(300, 360),
+                                                                    returnfilterarray=2,
+                                                                    blur_radius=blur_radius,
+                                                                    emax=emax)
 
     print("histo", np.histogram(rawHough))
 
@@ -2607,22 +2539,20 @@ def plotHough_Simul(
 def plotHough_compare(Angles, filename_data, nbofpeaks_max, dirname=".", EULER=0):
     """
     plot exp. hough data and simulated ones for Euler angles set
-    
+
     see plotHough_Exp()
     """
     POS2D = 0
     REMOVEDGES = 2
-    poshighest1D, datafiltered, rawsimulHough = Hough_peak_position_fast(
-        Angles,
-        Nb=60,
-        pos2D=POS2D,
-        removedges=REMOVEDGES,
-        verbose=0,
-        key_material="Si",
-        EULER=EULER,
-        arraysize=(300, 360),
-        returnfilterarray=2,
-    )
+    poshighest1D, datafiltered, rawsimulHough = Hough_peak_position_fast(Angles,
+                                                                        Nb=60,
+                                                                        pos2D=POS2D,
+                                                                        removedges=REMOVEDGES,
+                                                                        verbose=0,
+                                                                        key_material="Si",
+                                                                        EULER=EULER,
+                                                                        arraysize=(300, 360),
+                                                                        returnfilterarray=2)
 
     #  experimental data
     mydata = IOLT.ReadASCIIfile(os.path.join(dirname, filename_data))
@@ -2633,9 +2563,7 @@ def plotHough_compare(Angles, filename_data, nbofpeaks_max, dirname=".", EULER=0
     nb_to_extract = min(nbofpeaks_max, length_of_data)
     listofselectedpts = np.arange(nb_to_extract)
     # selection of points in the three arrays in first argument
-    dataselected, nbmax = IOLT.createselecteddata(
-        (mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1
-    )
+    dataselected, nbmax = IOLT.createselecteddata((mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1)
 
     # compute gnomonic coordinnates of a discrete number of peak
     # (from 2theta,chi coordinates)
@@ -2644,9 +2572,7 @@ def plotHough_compare(Angles, filename_data, nbofpeaks_max, dirname=".", EULER=0
     #    print len(gnomonx)
 
     # lowresolution=1  : stepdeg=1,steprho=0.004
-    bigHoughcollector = ComputeHough(
-        gnomonx, gnomony, Intensity_table=None, lowresolution=1
-    )
+    bigHoughcollector = ComputeHough(gnomonx, gnomony, Intensity_table=None, lowresolution=1)
     print(bigHoughcollector)
     print(np.shape(bigHoughcollector))
 
@@ -2673,7 +2599,7 @@ def plotHough_compare(Angles, filename_data, nbofpeaks_max, dirname=".", EULER=0
 def BrowseHoughCorrel(Database, filename_data, nbofpeaks_max, dirname="."):
     """
     read peak list, transform it into hough space, make correlation with Database
-    
+
     High resolution (1 deg step)
     """
     mydata = IOLT.ReadASCIIfile(os.path.join(dirname, filename_data))
@@ -2685,9 +2611,7 @@ def BrowseHoughCorrel(Database, filename_data, nbofpeaks_max, dirname="."):
     nb_to_extract = min(nbofpeaks_max, length_of_data)
     listofselectedpts = np.arange(nb_to_extract)
     # selection of points in the three arrays in first argument
-    dataselected, nbmax = IOLT.createselecteddata(
-        (mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1
-    )
+    dataselected, nbmax = IOLT.createselecteddata((mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1)
 
     # compute gnomonic coordinnates of a discrete number of peak
     # (from 2theta,chi coordinates)
@@ -2696,9 +2620,7 @@ def BrowseHoughCorrel(Database, filename_data, nbofpeaks_max, dirname="."):
     #    print len(gnomonx)
 
     # lowresolution=1  : stepdeg=1,steprho=0.004
-    bigHoughcollector = ComputeHough(
-        gnomonx, gnomony, Intensity_table=None, lowresolution=1
-    )
+    bigHoughcollector = ComputeHough(gnomonx, gnomony, Intensity_table=None, lowresolution=1)
 
     #    rara, argrara = Houghcorrel(np.ravel(np.reshape(bigHoughcollector, (300, 360))), Database)
     nd1, nd2, nd3 = 90, 180, 90
@@ -2711,9 +2633,7 @@ def BrowseHoughCorrel(Database, filename_data, nbofpeaks_max, dirname="."):
     print("simul_database.shape", Database.shape)
 
     # integration of all intensities picked up in exp_1d_data
-    listint = np.reshape(
-        np.sum(rav_bigHoughcollector[Database], axis=1), (nd1 * nd2, nd3)
-    )
+    listint = np.reshape(np.sum(rav_bigHoughcollector[Database], axis=1), (nd1 * nd2, nd3))
 
     # shape of listint must be (90*180,90)
     print("listint.shape", listint.shape)
@@ -2725,12 +2645,10 @@ def BrowseHoughCorrel(Database, filename_data, nbofpeaks_max, dirname="."):
     return listint, listarg
 
 
-def plotHoughCorrel(
-    Database, filename_data, nbofpeaks_max, dirname=".", returnCorrelArray=0
-):
+def plotHoughCorrel(Database, filename_data, nbofpeaks_max, dirname=".", returnCorrelArray=0):
     """
     read peak list, transform it into hough space, make correlation with Database
-    
+
     High resolution (1 deg step)
     """
     mydata = IOLT.ReadASCIIfile(os.path.join(dirname, filename_data))

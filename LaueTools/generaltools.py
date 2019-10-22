@@ -1090,7 +1090,8 @@ def sortclosestspots(kf0, kfs, dist_tolerance):
 
 def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
     """
-    remove in XY1 spots those present in XY2 within the cartesian distance dist_tolerance
+    remove in XY1 spots list , the spots which are present in XY2 spots list
+    within the cartesian distance dist_tolerance
 
     XY1 : array([[x1,x2,...],[y1,y2,...]])
     XY2 : array([[x1,x2,...],[y1,y2,...]])
@@ -1107,7 +1108,7 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
     #    print "coord_1", coord_1
     #    print "coord_2", coord_2
 
-    print("coord12", coord12)
+    # print("coord12", coord12)
 
     tabdist = ssd.squareform(ssd.pdist(coord12, metric="euclidean"))
 
@@ -1165,9 +1166,7 @@ def mergelistofPoints(XY1, XY2, dist_tolerance=0.5, verbose=0):
     n1 = len(XY1)
     n2 = len(XY2)
     # then purged from duplicates with localisation of them
-    purged_c12, index_todelete_in_c12 = purgeClosePoints2(
-        c12, dist_tolerance, verbose=verbose
-    )
+    purged_c12, index_todelete_in_c12 = purgeClosePoints2(c12, dist_tolerance, verbose=verbose)
     print("c12", c12)
     print("purged_c12", purged_c12)
     print("index_todelete_in_c12", index_todelete_in_c12)
@@ -2750,9 +2749,7 @@ def removeduplicate2(listindice, tabangledist, ang_tol=1.0):
         #
         # print "nbrevoisinsupp",nbrevoisinsupp
         # CLAUSE A SUPPRIMER ?
-        if (
-            0
-        ):  # nbrevoisinsupp > 0: # il existe plusieurs point exp ayant en premier voisin le meme pt theo
+        if 0:  # nbrevoisinsupp > 0: # il existe plusieurs point exp ayant en premier voisin le meme pt theo
             if verbose:
                 print("spot theo d'indice j= ", listindice[i])
 

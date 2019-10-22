@@ -44,9 +44,7 @@ try:
         import angulardist
     USE_CYTHON = True
 except ImportError:
-    print(
-        "Cython compiled module for fast computation of angular distance is not installed!"
-    )
+    print("Cython compiled module for fast computation of angular distance is not installed!")
     USE_CYTHON = False
 
 try:
@@ -72,18 +70,16 @@ def stringint(k, n):
     return res
 
 
-def Plot_compare_2thetachi(
-    Angles,
-    twicetheta_data,
-    chi_data,
-    verbose=1,
-    key_material=14,
-    emax=25,
-    emin=5,
-    EULER=0,
-    exp_spots_list_selection=None,
-    dictmaterials=DictLT.dict_Materials
-):
+def Plot_compare_2thetachi(Angles,
+                        twicetheta_data,
+                        chi_data,
+                        verbose=1,
+                        key_material=14,
+                        emax=25,
+                        emin=5,
+                        EULER=0,
+                        exp_spots_list_selection=None,
+                        dictmaterials=DictLT.dict_Materials):
     """
     plot data and simulation (given by list of 3 angles for orientation)
     in 2theta chi space (kf vector angles)
@@ -127,29 +123,25 @@ def Plot_compare_2thetachi(
     if exp_spots_list_selection is not None:
         p.scatter(sel_2theta, sel_chi, s=40, c="w", marker="o", faceted=True, alpha=0.5)
     else:
-        p.scatter(
-            twicetheta_data, chi_data, s=40, c="w", marker="o", faceted=True, alpha=0.5
-        )
+        p.scatter(twicetheta_data, chi_data, s=40, c="w", marker="o", faceted=True, alpha=0.5)
     p.scatter(TwicethetaChi[0], TwicethetaChi[1], c="r", faceted=False)
 
     p.show()
 
 
-def Plot_compare_2thetachi_multi(
-    list_Angles,
-    twicetheta_data,
-    chi_data,
-    verbose=1,
-    emax=25,
-    emin=5,
-    key_material=14,
-    EULER=0,
-    exp_spots_list_selection=None,
-    title_plot="default",
-    figsize=(6, 6),
-    dpi=80,
-    dictmaterials=DictLT.dict_Materials
-):
+def Plot_compare_2thetachi_multi(list_Angles,
+                                twicetheta_data,
+                                chi_data,
+                                verbose=1,
+                                emax=25,
+                                emin=5,
+                                key_material=14,
+                                EULER=0,
+                                exp_spots_list_selection=None,
+                                title_plot="default",
+                                figsize=(6, 6),
+                                dpi=80,
+                                dictmaterials=DictLT.dict_Materials):
     """ up to 9
     only for test or development
     Warning: blindly corrected
@@ -215,19 +207,14 @@ def Plot_compare_2thetachi_multi(
         else:
             if type(EULER) != type(np.array([1, 2, 3])):
                 if EULER == 1:
-                    p.title(
-                        "Euler Angles [%.1f,%.1f,%.1f]"
-                        % (tuple(list_Angles[orient_index]))
-                    )
+                    p.title("Euler Angles [%.1f,%.1f,%.1f]" % (tuple(list_Angles[orient_index])))
             else:
                 p.title("Orientation Matrix #%d" % orient_index)
 
         ax.set_xlim((35, 145))
         ax.set_ylim((-45, 45))
         # exp spots
-        ax.scatter(
-            sel_2theta, sel_chi, s=40, c="w", marker="o", faceted=True, alpha=0.5
-        )
+        ax.scatter(sel_2theta, sel_chi, s=40, c="w", marker="o", faceted=True, alpha=0.5)
         # theo spots
         ax.scatter(TwicethetaChi[0], TwicethetaChi[1], c="r", faceted=False)
         if index_fig < nb_of_orientations:
@@ -315,14 +302,11 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
         # print len(LUT_MAIN_CUBIC[k])
         # print len(ind_sorted_LUT_MAIN_CUBIC[k])
         sorted_table_angle.append(
-            (FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]]
-        )
+            (FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]])
 
     if onlyclosest:
-        one_value = [
-            GT.find_closest(np.array(elem), np.array([angles_value]), tole)[:2]
-            for elem in sorted_table_angle
-        ]
+        one_value = [GT.find_closest(np.array(elem), np.array([angles_value]), tole)[:2]
+            for elem in sorted_table_angle]
         # print "gjhgjh",one_value
 
         sol_one_value = []
@@ -330,9 +314,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
             if return_index(one_value[k]):
                 if verbose:
                     print("k", k, "  sortedindex ", one_value[k][0][0])
-                sol_one_value.append(
-                    [k, ind_sorted_LUT_MAIN_CUBIC[k][one_value[k][0][0]]]
-                )
+                sol_one_value.append([k, ind_sorted_LUT_MAIN_CUBIC[k][one_value[k][0][0]]])
         # LUT_MAIN_CUBIC[a,b] donne l'angle avec sol_one_value=[[a,b],[a2,b2],...]
         # a est l'indice du plan central, b est l'indice du plan
 
@@ -340,12 +322,9 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
         # print sol_one_value
         planes_sol = []
         for m in list(range(len(sol_one_value))):
-            first_plane_sol = FindO.convplanetypetoindice(
-                FindO.INVDICOPLANE[sol_one_value[m][0]]
-            )
+            first_plane_sol = FindO.convplanetypetoindice(FindO.INVDICOPLANE[sol_one_value[m][0]])
             second_plane_sol = FindO.DICOLISTNEIGHBOURS[
-                FindO.INVDICOPLANE[sol_one_value[m][0]]
-            ][sol_one_value[m][1]]
+                FindO.INVDICOPLANE[sol_one_value[m][0]]][sol_one_value[m][1]]
             if verbose:
                 print("----------------------------------------")
                 print("sol", sol_one_value[m])
@@ -358,10 +337,8 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
 
     else:  # Not only closest angle in LUT is found but many distances can be found within tolerance
 
-        values = [
-            findInArray1D(np.array(elem), angles_value, tole)
-            for elem in sorted_table_angle
-        ]
+        values = [findInArray1D(np.array(elem), angles_value, tole)
+            for elem in sorted_table_angle]
         sol_one_value = []
         for k in list(range(len(values))):
             if len(values[k]):
@@ -370,9 +347,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
 
         planes_sol = []
         for m in list(range(len(sol_one_value))):
-            first_plane_sol = FindO.convplanetypetoindice(
-                FindO.INVDICOPLANE[sol_one_value[m][0]]
-            )
+            first_plane_sol = FindO.convplanetypetoindice(FindO.INVDICOPLANE[sol_one_value[m][0]])
             second_plane_sol = FindO.DICOLISTNEIGHBOURS[
                 FindO.INVDICOPLANE[sol_one_value[m][0]]
             ][sol_one_value[m][1]]
@@ -404,8 +379,7 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
 
     from_spot1 = [
         Possible_planes(angle, tole=angulartolerance, verbose=0)
-        for angle in table_angdist[spot_index_1]
-    ]
+        for angle in table_angdist[spot_index_1]]
 
     couples_index = []
     couples_type = []
@@ -419,9 +393,7 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     return couples_index, couples_type
 
 
-def plane_type_attribution_twospots(
-    spot_index_1, spot_index_2, angulartolerance, table_angdist
-):
+def plane_type_attribution_twospots(spot_index_1, spot_index_2, angulartolerance, table_angdist):
     """
     from 2 spots (given by their index as defined in angulardisttable[1])
     returns:
@@ -463,9 +435,7 @@ def twospots_recognition(spot_1, spot_2, angulartolerance, onlyclosest=1):
     """
     listspot = np.array([spot_1, spot_2])
     angle = GT.calculdist_from_thetachi(listspot, listspot)[0, 1]
-    from_spot = Possible_planes(
-        angle, tole=angulartolerance, verbose=1, onlyclosest=onlyclosest
-    )
+    from_spot = Possible_planes(angle, tole=angulartolerance, verbose=1, onlyclosest=onlyclosest)
     couples_type = []
     for m in list(range(len(from_spot))):
         nbcouples = len(from_spot[m])
@@ -491,9 +461,8 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
     matrix_list = []
     pairplanes = []
 
-    possible_couplespots, possible_coupleplanes = plane_type_attribution(
-        spot_index, ang_tol, table_angdist
-    )
+    possible_couplespots, possible_coupleplanes = plane_type_attribution(spot_index, ang_tol,
+                                                                                table_angdist)
     # print possible_couplespots
     # print possible_coupleplanes
 
@@ -512,13 +481,11 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
 
             plane_1 = possible_coupleplanes[cs_index][pp_index][0]
             plane_2 = possible_coupleplanes[cs_index][pp_index][1]
-            matrix = FindO.givematorient(
-                plane_1,
-                [2 * Theta[spot_index], Chi[spot_index]],
-                plane_2,
-                [2 * Theta[spot_index_2], Chi[spot_index_2]],
-                verbose=0,
-            )
+            matrix = FindO.givematorient(plane_1,
+                                            [2 * Theta[spot_index], Chi[spot_index]],
+                                            plane_2,
+                                            [2 * Theta[spot_index_2], Chi[spot_index_2]],
+                                            verbose=0)
 
             matrix_list.append(matrix)
             pairplanes.append([plane_1, plane_2])
@@ -528,10 +495,8 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
                 print("in matrices_from_onespot")
                 print("pp_index", pp_index)
                 print("couple planes ", plane_1, plane_2)
-                print(
-                    [2 * Theta[spot_index], Chi[spot_index]],
-                    [2 * Theta[spot_index_2], Chi[spot_index_2]],
-                )
+                print([2 * Theta[spot_index], Chi[spot_index]],
+                    [2 * Theta[spot_index_2], Chi[spot_index_2]])
                 print("spot_index_2", spot_index_2)
                 print("matrix", matrix)
 
@@ -540,7 +505,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
 
 def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
                             n, key_material, MaxRadiusHKL=False,
-                                            hkl1=FindO.HKL_CUBIC_UP3,
+                                            hkl1=None,#FindO.HKL_CUBIC_UP3,
                                             hkl2=None,
                                             LUT=None,
                                             allow_restrictedLUT=False,
@@ -570,8 +535,17 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
 
     .. note::
         * Used in FileSeries
-        * Used in AutoIndexation
+        * Used in AutoIndexation  (if max setA < max setB)
     """
+    if 1:
+        print('\n\n***  in matrices_from_onespot_hkl\n\n')
+        print("LUT_tol_angle",LUT_tol_angle)
+        print('table_angdist.shape', table_angdist.shape)
+        print('n',n)
+        print('hkl1',hkl1)
+        print('hkl2',hkl2)
+        print('LUT',LUT)
+
     Distances_from_central_spot = table_angdist[spot_index]
 
     PPs_list = []
@@ -600,10 +574,10 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
                 hkl_all = FindO.FilterHarmonics(hkl_all)
 
             hkl2 = hkl_all
+    # default LUT or entered LUT as argument in function call
     else:
         # LUT will be used in next calculations and not recomputed
         print("Using specific LUT in matrices_from_onespot_hkl()")
-        pass
 
     # in case of hkl is a single 3D vector
     if len(hkl1.shape) == 1:
@@ -620,6 +594,7 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
         # print('hkl1', hkl1)
         # print('hkl2', hkl2)
 
+        # during the loop LUT is calculated just once
         (hkls, angles), LUT = FindO.PlanePairs_from2sets(query_angle,
                                             LUT_tol_angle,
                                             hkl1,
@@ -646,6 +621,8 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     Matrices_Res = Loop_on_PlanesPairs_and_Get_Matrices(PPs_list, spot_index,
                                                             coord_central_spot, coords_exp, B,
                                                             verbose=verbose)
+    if 1:#sverbose:
+        print('LUT in matrices_from_onespot_hkl', LUT)
 
     return Matrices_Res, hkl2, LUT
 
@@ -767,10 +744,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
 
     if verbose:
         print("len(list_orient_matrix)", len(list_orient_matrix))
-        print(
-            "#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
-            % (ang_tol_MR)
-        )
+        print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
+            % (ang_tol_MR))
 
     WORKEREXIST = 0
     if worker is not None:
@@ -786,10 +761,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                 worker.callbackfct(None)
                 return
         if (mat_ind % 20) == 0:
-            print(
-                "Calculating matching with exp. data for matrix #%d / %d"
-                % (mat_ind, nb_UB_matrices)
-            )
+            print("Calculating matching with exp. data for matrix #%d / %d"
+                % (mat_ind, nb_UB_matrices))
         # compute matching rate and store if high
         AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                     twiceTheta_exp,
@@ -884,7 +857,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     else:
         print(
             "No orientation matrix found with nb of matches larger than the given threshold 'Minimum_Nb_Matches' = %d" % Minimum_Nb_Matches)
-        
+
     if WORKEREXIST:
         worker.fctOutputResults = List_UBs, List_Scores
 
@@ -895,12 +868,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     return List_UBs, List_Scores
 
 
-def UBs_from_twospotsdistance(spot_index_1,
-                                spot_index_2,
-                                angle_tol,
-                                exp_angular_dist,
-                                coords_1,
-                                coords_2,
+def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular_dist,
+                                coords_1, coords_2,
                                 n,
                                 B,
                                 LUT=None,
@@ -1464,6 +1433,8 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
                                             minimumNbMatches=15):
     """find orientation matrices and scores from the mutual angles recognition
     from two spots Sets
+
+    .. note:: used in Autoindexation  if max setA > max setB
     """
 
     print("\n\n ----------------\n ---  getOrientMatrices_SubSpotsSets  --- \n --------------------\n\n")
@@ -1926,7 +1897,7 @@ def getOrientMatrices(spot_index_central,
         if set_central_spots_hkl_list is not None:
             hkl = set_central_spots_hkl_list[k_centspot_index]
 
-        # hkl for central spots IS defined
+        # if hkl for central spots IS defined
         print("hkl in getOrientMatrices", hkl, type(hkl))
         if hkl is "None":
             hkl = None
@@ -1961,7 +1932,7 @@ def getOrientMatrices(spot_index_central,
                                                         verbose=verbose,
                                                         dictmaterials=dictmaterials)
 
-        # hkl for central spots IS NOT defined
+        # if hkl for central spots IS NOT defined
         else:
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:
@@ -1975,6 +1946,14 @@ def getOrientMatrices(spot_index_central,
 
                 if n == 3:
                     hkl1 = FindO.HKL_CUBIC_UP3
+                elif n == 4:
+                    hkl1 = FindO.HKL_CUBIC_UP4
+                elif n == 5:
+                    hkl1 = FindO.HKL_CUBIC_UP5
+                elif n == 6:
+                    hkl1 = FindO.HKL_CUBIC_UP6
+                elif n == 7:
+                    hkl1 = FindO.HKL_CUBIC_UP7
                 else:
                     hkl1 = GT.threeindicesfamily(n)
 
@@ -2254,8 +2233,7 @@ def getOrientMatrices(spot_index_central,
             else:
                 _nbspots_plot = nbspots_plot
 
-            Plot_compare_2thetachi_multi(
-                                            np.arange(min(nbmatrixfound, 9)),
+            Plot_compare_2thetachi_multi(np.arange(min(nbmatrixfound, 9)),
                                             2 * Theta_exp,
                                             Chi_exp,
                                             key_material=key_material,
@@ -2263,8 +2241,7 @@ def getOrientMatrices(spot_index_central,
                                             verbose=0,
                                             EULER=MATOS,
                                             exp_spots_list_selection=_nbspots_plot,
-                                            title_plot=list(HF),
-                                        )
+                                            title_plot=list(HF))
             # savefig('spot_'+str(spot_index_central[0])+'.png')
 
         # returned results for several central spots
@@ -2313,8 +2290,8 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
     Gstar_metric = CP.Gstar_from_directlatticeparams(a, b, c, AA, BB, CC)
 
     # compute LUT outside loop:
-    # hkl_all = GT.threeindices_up_to(n, remove_negative_l=cubicSymmetry)
-    hkl_all = GT.threeindices_up_to(n)
+    hkl_all = GT.threeindices_up_to(n, remove_negative_l=cubicSymmetry)
+    #hkl_all = GT.threeindices_up_to(n)
 
 
     if applyExtinctionRules is not None:
