@@ -1098,7 +1098,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
-    .. note:: used in FileSeries, and AutoIndexation for some cases
+    .. note:: used in FileSeries, and AutoIndexation for some cases, Manual indexation
 
     TODO: many target angles in this function
     """
@@ -1170,9 +1170,10 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
     plane_1 = np.take(hkl1, IJ_indices[:, 0], axis=0)
     plane_2 = np.take(hkl2, IJ_indices[:, 1], axis=0)
 
-    # print("plane_1", plane_1)
-    # print("plane_2", plane_2)
-
+    print("plane_1", plane_1, plane_1.shape)
+    print("plane_2", plane_2, plane_2.shape)
+    if len(plane_1.shape)==1:
+        plane_1 = [plane_1]
     if len(plane_1) > 1:
         #         print 'nb sol >1'
         planes_pairs = np.hstack((plane_1, plane_2)).reshape((len(plane_1), 2, 3))
