@@ -3669,6 +3669,13 @@ def PeakSearch(filename,
 
         return tabpeak, peaklist, peaklist, lastelem
 
+    if (peaklist is None
+        or peaklist is []
+        or peaklist is np.array([])
+        or (len(peaklist) == 0)):
+        print("No local maxima found, no peaks to fit !!!")
+        return None
+
     # ----  ---------------FITTING ----------------------------
     # gaussian fitdata
     elif fit_peaks_gaussian == 1:

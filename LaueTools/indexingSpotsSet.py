@@ -4755,8 +4755,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             detectorparameters,
             CCDcalibdict) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
 
-            # TODO add wrtie refile
-            IOLT.writefile_cor((self.refpositionfilepath[:-4],
+            # TODO add write refposfile
+            IOLT.writefile_cor(self.refpositionfilepath[:-4],
                             2*data_theta, Chi, posx, posy, dataintensity,
                             param=detectorparameters,
                             overwrite=1)
