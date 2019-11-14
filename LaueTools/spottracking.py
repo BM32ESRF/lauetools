@@ -1,3 +1,12 @@
+from __future__ import print_function
+"""
+module of lauetools project
+
+JS Micha November 2019
+
+spot tracking allows to follow pixel positions of spot in peaks list file
+"""
+
 import sys
 import numpy as np
 
@@ -9,31 +18,29 @@ else:
     import IOLaueTools as IOLT
 
 
-def getspotindex(
-    XY,
-    spotslist_XY,
-    maxdistancetolerance=5,
-    minimum_seconddistance=10,
-    predictedshift_X=None,
-    predictedshift_Y=None,
-):
+def getspotindex(XY,
+                spotslist_XY,
+                maxdistancetolerance=5,
+                minimum_seconddistance=10,
+                predictedshift_X=None,
+                predictedshift_Y=None):
     """
     get spot index of spot in the spot list located closest to target XY=[X,Y]
-    
+
     maxdistancetolerance: largest acceptable distance to consider the spots association
     minimum_seconddistance : minimum distance for a second spot in spotslist_XY close to the spot
     at target_XY to validate the association. Otherwise the association is ambiguous.
-    
+
     if predictedshift_X and predictedshift_Y are given in pixels
     then target XY is shifted accordingly allowing a finer tolerance in maxdistancetolerance
-    
-    
+
+
     return None:
         if closest spot is farther than 'maxdistancetolerance' from target XY
         or
         if second closest is at least at 'minimum_seconddistance' from target XY
-        
-    
+
+
     """
     target_XY = XY
 
@@ -42,7 +49,7 @@ def getspotindex(
 
     indices, distances = GT.FindTwoClosestPoints(spotslist_XY, target_XY)
 
-    first, second = indices
+    first, _ = indices
     first_dist, second_dist = distances
 
     if first_dist > maxdistancetolerance:
@@ -53,30 +60,28 @@ def getspotindex(
     return first, first_dist
 
 
-def getSpotsAssociations(
-    spotlist_XY,
-    ref_list_XY,
-    maxdistancetolerance=5,
-    minimum_seconddistance=10,
-    list_predictedshift_X=None,
-    list_predictedshift_Y=None,
-):
+def getSpotsAssociations(spotlist_XY,
+                            ref_list_XY,
+                            maxdistancetolerance=5,
+                            minimum_seconddistance=10,
+                            list_predictedshift_X=None,
+                            list_predictedshift_Y=None):
     """
     return spot association list from spots in two lists
-    
+
     input:
     spotlist_XY: list of [X,Y]
     ref_list_XY: list of [X,Y]
-    
+
     maxdistancetolerance: largest acceptable distance to consider the spots association
     minimum_seconddistance : minimum distance for a second spot in ref_list_XY close to a spot
     in spotlist_XY to validate the association. Otherwise the association is ambiguous.
-    
+
     list_predictedshift_X,list_predictedshift_Y
         list of guessed shift in X and Y spot wise for spot in spotlist_XY
         allowing a finer tolerance in maxdistancetolerance
-    
-    
+
+
     return:
     list of correspondences
     [index in spotlist_XY, index in ref_list_XY,pixel distance between associated spots]
@@ -94,14 +99,12 @@ def getSpotsAssociations(
 
         XY = spotlist_XY[kk]
 
-        res = getspotindex(
-            XY,
-            ref_list_XY,
-            maxdistancetolerance=maxdistancetolerance,
-            minimum_seconddistance=minimum_seconddistance,
-            predictedshift_X=predictedshift_X,
-            predictedshift_Y=predictedshift_Y,
-        )
+        res = getspotindex(XY,
+                            ref_list_XY,
+                            maxdistancetolerance=maxdistancetolerance,
+                            minimum_seconddistance=minimum_seconddistance,
+                            predictedshift_X=predictedshift_X,
+                            predictedshift_Y=predictedshift_Y)
         if res == None:
             nocorrespondence.append(kk)
         else:
@@ -112,39 +115,38 @@ def getSpotsAssociations(
     return correspondence, nocorrespondence
 
 
-def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, refenceList):
+def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList):
     """
     change order of spots data (data_theta, Chi, posx, posy, dataintensity)
-    according their position in  refenceList
-    
-    refenceList = list or array of [X,Y]  or string for full path to file .cor
-    
+    according their pixel position (posx, posy) in  referenceList
+
+    referenceList = list or array of [X,Y]  or string for full path to file .cor
+
+    #TODO accept also .dat
+
     return:
-    - rearranged 5 elements of data,
-    - indices of spot in data without association,
-    - indices of spot in refenceList without association
-    
+    - rearranged 5 elements of data, nb of elements = nb of common pts 
+    - isolated_spots_in_spotlist: indices of spot in data without association,
+    - isolated_spots_in_reflist: indices of spot in referenceList without association
     """
-    if isinstance(refenceList, str):
+    if isinstance(referenceList, str):
         # file path to ref peaklist
-        data_ref = IOLT.readfile_cor(refenceList)
+        data_ref = IOLT.readfile_cor(referenceList)
 
         posx_ref, posy_ref = data_ref[3:5]
 
-        refenceList = np.array([posx_ref, posy_ref]).T
+        referenceList = np.array([posx_ref, posy_ref]).T
 
-    if isinstance(refenceList, (np.ndarray, list)):
+    if isinstance(referenceList, (np.ndarray, list)):
 
         spotlist_XY = np.array([posx, posy]).T
 
-        corresp, isolated_spots_in_spotlist = getSpotsAssociations(
-            spotlist_XY,
-            refenceList,
-            maxdistancetolerance=5,
-            minimum_seconddistance=10,
-            list_predictedshift_X=None,
-            list_predictedshift_Y=None,
-        )
+        corresp, isolated_spots_in_spotlist = getSpotsAssociations(spotlist_XY,
+                                                                    referenceList,
+                                                                    maxdistancetolerance=5,
+                                                                    minimum_seconddistance=10,
+                                                                    list_predictedshift_X=None,
+                                                                    list_predictedshift_Y=None)
 
         print("corresp", corresp)
         # isolated spots in spotlist
@@ -175,12 +177,7 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, refenceList):
 
     (data_theta, Chi, posx, posy, dataintensity) = resorted_data.T
 
-    return (
-        data_theta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        isolated_spots_in_spotlist,
-        isolated_spots_in_reflist,
-    )
+    return (data_theta, Chi, posx, posy, dataintensity,
+            isolated_spots_in_spotlist,
+            isolated_spots_in_reflist)
+

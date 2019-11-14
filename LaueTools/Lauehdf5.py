@@ -377,7 +377,7 @@ def build_hdf5(
         tableUB.flush()
         # -------------------------------------
 
-    # test # TODO to check compatibility with max_nb_grains indexError ?
+    # TODO to check compatibility with max_nb_grains indexError ?
     if 1:  # Class Matrices_array
         #        # Create a new group under "/" (root)
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
@@ -394,9 +394,13 @@ def build_hdf5(
             #            print "key_image", key_image
             for grainindex in range(max_nb_grains):
                 UBmatrix = np.zeros(9)
-                exp_mat = dictMat[key_image][grainindex]
-                if not isinstance(exp_mat, int):
-                    indexedUB_ar["UB%d" % grainindex] = exp_mat
+                # TODO better find nbgrains for each solution than try except ?
+                try:
+                    exp_mat = dictMat[key_image][grainindex]
+                    if not isinstance(exp_mat, int):
+                        indexedUB_ar["UB%d" % grainindex] = exp_mat
+                except IndexError:
+                    continue
 
             # Insert a new particle record
             indexedUB_ar.append()

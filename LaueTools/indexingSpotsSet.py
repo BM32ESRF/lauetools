@@ -265,9 +265,25 @@ class spotsset:
 
         print("after purge self.nbspots", self.nbspots)
 
-    def importdatafromfile(self, filename, sortSpots_from_refenceList=None):
+    def importdatafromfile(self, filename, refpositionfilepath=None):
         """
-        Read .cor file and initialize spots indexation dictionary from peaks list²
+        Read .cor file and initialize spots indexation dictionary from peaks list:
+        ie self.indexed_spots_dict 
+
+        :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
+        will be aranged according to this reference list
+
+        sets  spots data set, namely:
+        self.nbspots
+        self.indexed_spots_dict  from calling self.importdata()
+        calibration and geometry parameters:
+            - self.pixelsize
+            - self.dim
+            - self.CCDLabel
+            - self.detectordiameter
+            - self.kf_direction
+            - ...
+
         """
         print("Import Data for DATASET indexation porcedure")
 
@@ -286,20 +302,18 @@ class spotsset:
             self.nbspots = nb_spots
             return False
 
-        if sortSpots_from_refenceList not in (None, "None"):
-
-            (data_theta,
-                Chi,
-                posx,
-                posy,
-                dataintensity,
-                isolatedspots,
-                isolatedspots_ref,
+        if refpositionfilepath not in (None, "None"):
+            (data_theta, Chi,
+            posx, posy, dataintensity,
+            isolatedspots,
+            isolatedspots_ref,
             ) = SpTra.sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity,
-                                                        sortSpots_from_refenceList)
+                                                        refpositionfilepath)
 
             print("isolatedspots", isolatedspots)
             print("isolatedspots_ref", isolatedspots_ref)
+
+            self.refpositionfilepath=refpositionfilepath
 
         nb_spots = len(data_theta)
 
@@ -310,22 +324,24 @@ class spotsset:
         self.importdata([Twicetheta, Chi, dataintensity, posx, posy])
 
         self.CCDcalibdict = CCDcalibdict
-        self.CCDLabel=self.CCDcalibdict['CCDLabel']
+        self.CCDLabel = self.CCDcalibdict['CCDLabel']
         
-        self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
-        for key in ('pixelsize','xpixelsize','ypixelsize'):
-            if key in self.CCDcalibdict:
-                self.pixelsize = self.CCDcalibdict[key]
-                break
+        if self.CCDLabel not in (None, 'None'):
+            self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
+        else:
+            for key in ('pixelsize', 'xpixelsize', 'ypixelsize'):
+                if key in self.CCDcalibdict:
+                    self.pixelsize = self.CCDcalibdict[key]
+                    break
         if 'framedim' in self.CCDcalibdict:
             self.dim = self.CCDcalibdict["framedim"]
         else:
-            self.dim=DictLT.dict_CCD[self.CCDLabel][0]
+            self.dim = DictLT.dict_CCD[self.CCDLabel][0]
 
         if "detectordiameter" in self.CCDcalibdict:
             self.detectordiameter = self.CCDcalibdict["detectordiameter"]
         else:
-            self.detectordiameter = max(self.dim)*self.pixelsize
+            self.detectordiameter = max(self.dim) * self.pixelsize
 
         if "kf_direction" in self.CCDcalibdict:
             self.kf_direction = self.CCDcalibdict["kf_direction"]
@@ -859,31 +875,30 @@ class spotsset:
 
         return bestmat, stats_properformat
 
-    def IndexSpotsSet(
-        self,
-        file_to_index,
-        key_material,
-        emin,
-        emax,
-        dict_parameters,
-        database,
-        starting_grainindex=0,
-        use_file=1,
-        verbose=0,
-        plotintermediateresults=0,
-        IMM=True,
-        nbGrainstoFind="max",
-        LUT=None,
-        n_LUT=3,
-        set_central_spots_hkl=None,
-        ResolutionAngstrom=False,
-        MatchingRate_List=[50, 60, 80],
-        angletol_list=[0.5, 0.2, 0.1],
-        checkSigma3=False,
-        previousResults=None,
-        CheckOrientations=None,
-        corfilename=None,
-        dirnameout_fitfile=None):
+    def IndexSpotsSet(self,
+                        file_to_index,
+                        key_material,
+                        emin,
+                        emax,
+                        dict_parameters,
+                        database,
+                        starting_grainindex=0,
+                        use_file=1,
+                        verbose=0,
+                        plotintermediateresults=0,
+                        IMM=True,
+                        nbGrainstoFind="max",
+                        LUT=None,
+                        n_LUT=3,
+                        set_central_spots_hkl=None,
+                        ResolutionAngstrom=False,
+                        MatchingRate_List=[50, 60, 80],
+                        angletol_list=[0.5, 0.2, 0.1],
+                        checkSigma3=False,
+                        previousResults=None,
+                        CheckOrientations=None,
+                        corfilename=None,
+                        dirnameout_fitfile=None):
         r"""
         General procedure to index and a set of experimental spots with one grain.
 
@@ -1068,23 +1083,18 @@ class spotsset:
             if nb_remaining_spots <= MINIMUM_NB_SPOTS_FOR_INDEXING or (
                 isinstance(nbGrainstoFind, int) and nbgrains_found == nbGrainstoFind):
                 print("%d spots have been indexed over %d"
-                    % (totalnbspots - nb_remaining_spots, totalnbspots)
-                )
+                    % (totalnbspots - nb_remaining_spots, totalnbspots))
                 print("indexing rate is --- : %.1f percents"
                     % (100.0 * (totalnbspots - nb_remaining_spots) / totalnbspots))
                 print("indexation of %s is completed" % self.filename)
                 if isinstance(nbGrainstoFind, int):
-                    print(
-                        "for the %d grain(s) that has(ve) been indexed as requested"
+                    print("for the %d grain(s) that has(ve) been indexed as requested"
                         % nbGrainstoFind)
                     print("Leaving Index and Refine procedures...")
                 break
 
             print("\n ******")
-            print(
-                "start to index grain #%d of Material: %s \n"
-                % (grain_index, key_material)
-            )
+            print("start to index grain #%d of Material: %s \n" % (grain_index, key_material))
             print("******\n")
 
             # now there should be matrices from previous results
@@ -1132,8 +1142,7 @@ class spotsset:
                                                             grain_index,
                                                             AngleTol=AngleTol_0,
                                                             use_spots_in_currentselection=True,
-                                                            verbose=VERBOSE,
-                                                        )
+                                                            verbose=VERBOSE)
 
                 #                 print "MatchRate,nblinks",MatchRate,nblinks
 
@@ -2240,8 +2249,8 @@ class spotsset:
                                                                         weights=weights,
                                                                         kf_direction=self.kf_direction,
                                                                     )
-        print("Initial residues", residues)
-        print("---------------------------------------------------\n")
+        #print("Initial residues", residues)
+        #print("---------------------------------------------------\n")
 
         results = FitO.fit_on_demand_strain(
                                             initial_values,
@@ -3511,13 +3520,9 @@ def AreTwinned(matA, matB, tol=0.001, allpermu=None):
     """
     if allpermu in (None, "sigma3"):
         dictVect = DictLT.dict_Vect
-        allpermu = np.array(
-            [
-                dictVect[key_operator]
+        allpermu = np.array([dictVect[key_operator]
                 for key_operator in list(dictVect.keys())
-                if key_operator[:6] == "sigma3"
-            ]
-        )
+                if key_operator[:6] == "sigma3"])
 
     # diff between one matrix and an array of matrices
     # print "matA",matA
@@ -3596,7 +3601,7 @@ def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
         print("FilteredMatrixList")
         print(FilteredMatrixList)
         for mat in FilteredMatrixList:
-            if isinstance(mat,(np.ndarray,)): mat=mat.tolist()
+            if isinstance(mat,(np.ndarray,)): mat = mat.tolist()
             FilteredScoreList.append(scores[list(Dict_mat.values()).index(mat)])
 
         return FilteredMatrixList, FilteredScoreList
@@ -3618,10 +3623,12 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
     keep_only_equivalent         : True all permutation of axes,
                                 0, None or False    all matrices even duplicates
     """
-    ar_hhh = []
+    print('Scores',Scores)
+
+    _hhh = []
     for elem in Scores:
-        ar_hhh.append(elem[:3])
-    ar_hhh = np.array(ar_hhh)
+        _hhh.append(elem[:3])
+    ar_hhh = np.array(_hhh)
 
     # threshold
     ind_sup = np.where(ar_hhh[:, 0] >= threshold_matching)[0]
@@ -4716,48 +4723,86 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
     dict_LUT_material = {}
 
+
+    # -------------------------------------------------
+    # optionally: spots tracking
+    # select sort spots order according to the order in a file
+    # set self.mapshape
+    # write reflist.cor file that will evolve during the loop over images
+    # located in dict_param_SingleGrain['Spots Order Reference File']
+    sortSpots_from_refenceList = None
+    self.mapshape = None
+    self.refpositionfilepath = None
+    if "Spots Order Reference File" in dict_param_SingleGrain:
+        sortSpots_from_refenceList = dict_param_SingleGrain["Spots Order Reference File"]
+        # file path of spots to be only considered for refinement + shape or map (2D, 3D)
+        # reffilepathsortSpots_from_refenceList  =  filepaht, dim1, dim2, [dim3 ...]
+        if sortSpots_from_refenceList not in ('None', "None", None):
+            param = sortSpots_from_refenceList.split(',')
+            self.mapshape = []
+            for dimstr in range(len(param[-1:])):
+                self.mapshape.append(int(dimstr))
+            
+            firstrefpositionfilepath = param[0]
+            self.refpositionfilepath = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
+            'SpotsReference.cor')
+
+            (data_theta,
+            Chi,
+            posx,
+            posy,
+            dataintensity,
+            detectorparameters,
+            CCDcalibdict) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
+
+            # TODO add wrtie refile
+            IOLT.writefile_cor((self.refpositionfilepath[:-4],
+                            2*data_theta, Chi, posx, posy, dataintensity,
+                            param=detectorparameters,
+                            overwrite=1)
+
+
+    # -------------------------------------------
     # --- Loop over images ----------------------
+    # -------------------------------------------
     lastindex = nstart
-    for imageindex in list(range(fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2])):
+    mapfirstimage = fileindexrange[0]
+    firstindex = fileindexrange[0]
+
+
+    for imageindex in list(range(firstindex, fileindexrange[1] + 1, fileindexrange[2])):
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + ".res"
             if resfilename in list_resfiles_in_folder:
-                printcyan(
-                    "file %s exists, corresponding .dat or .cor file is already indexed !!"
-                    % resfilename
-                )
+                printcyan("file %s exists, corresponding .dat or .cor file is already indexed !!"
+                    % resfilename)
                 continue
 
         if suffixfilename.endswith(".dat"):
-            print("CCDCalibdict eeeeee.dat",CCDCalibdict)
+            print("CCDCalibdict eeeeee.dat", CCDCalibdict)
             datfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
 
             dirname_in = Index_Refine_Parameters_dict["PeakList Folder"]
 
-            if imageindex == fileindexrange[0]:
+            if imageindex == firstindex:
                 fullpath = os.path.join(dirname_in, datfilename)
                 if not os.path.exists(fullpath):
-                    printred(
-                        "\n\n*******\nSomething wrong with the filename: %s. Please check carefully the filename!"
-                        % fullpath
-                    )
+                    printred("\n\n*******\nSomething wrong with the filename: %s. Please check carefully the filename!"
+                        % fullpath)
                     return
 
             if not os.path.exists(os.path.join(dirname_in, datfilename)):
                 printcyan("Missing file : %s\n Keep on scanning files\n" % datfilename)
                 continue
-
             
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
             print("build .cor file")
             print("in %s" % Index_Refine_Parameters_dict["PeakListCor Folder"])
-            F2TC.convert2corfile(
-                datfilename,
-                calibparam,
-                dirname_in=dirname_in,
-                dirname_out=Index_Refine_Parameters_dict["PeakListCor Folder"],
-                CCDCalibdict=CCDCalibdict,
-            )
+            F2TC.convert2corfile(datfilename,
+                                calibparam,
+                                dirname_in=dirname_in,
+                                dirname_out=Index_Refine_Parameters_dict["PeakListCor Folder"],
+                                CCDCalibdict=CCDCalibdict)
 
             corfilename = datfilename.split(".")[0] + ".cor"
 
@@ -4770,9 +4815,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 printcyan("Missing file : %s\n Keep on scanning files\n" % corfilename)
                 continue
 
-        file_to_index = os.path.join(
-            Index_Refine_Parameters_dict["PeakListCor Folder"], corfilename
-        )
+        file_to_index = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
+                                                    corfilename)
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
@@ -4792,11 +4836,14 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         dictNB[imageindex] = [-1 for kk in list(range(totalnb_grains))]
         dictstrain[imageindex] = [0 for kk in list(range(totalnb_grains))]
 
+        # ----------------------------------------------
         # --- Loop over materials ----------------------
+        # ----------------------------------------------
         for material_index in list(range(nb_materials)):
 
             dict_param_SingleGrain = dict_params_list[material_index]
 
+            # no data to load if grainindex > 0
             if len(DataSet.indexedgrains) > 0:
                 starting_grainindex = DataSet.indexedgrains[-1] + 1
 
@@ -4805,30 +4852,26 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 print("starting_grainindex = 0")
                 starting_grainindex = 0
 
-                # sort optionally according to the order in a file
-                # located in dict_param_SingleGrain['Spots Order Reference File']
-                sortSpots_from_refenceList = None
-                if "Spots Order Reference File" in dict_param_SingleGrain:
-                    sortSpots_from_refenceList = dict_param_SingleGrain[
-                        "Spots Order Reference File"
-                    ]
-                # read data and calibration parameters
+
+
+                #---------------------------------------------------------------
+                # read data and calibration parameters from .cor file
+                #---------------------------------------------------------------
+
                 DataSet.importdatafromfile(file_to_index,
-                        sortSpots_from_refenceList=sortSpots_from_refenceList)
-                print("CCDCalibdict after import fffffff.cor",CCDCalibdict)
-                print("CCDCalibdict after import fffffff.cor",DataSet.CCDcalibdict)
+                        sortSpots_from_refenceList=refpositionfilepath)
+
+
+
+                print("CCDCalibdict after import fffffff.cor", CCDCalibdict)
+                print("CCDCalibdict after import fffffff.cor", DataSet.CCDcalibdict)
 
                 if DataSet.nbspots < 3:
                     print("%d spot(s) are too few to be indexed" % DataSet.nbspots)
                     DataSet.LUT = None
                     continue
-
-                
             
-            print(
-                "\n ########### starting_grainindex %d ###########\n"
-                % starting_grainindex
-            )
+            print("\n ########### starting_grainindex %d ###########\n" % starting_grainindex)
             print("dataset.pixelsize  ee",DataSet.pixelsize)
             key_material = dict_param_SingleGrain["key material"]
             emin = dict_param_SingleGrain["emin"]
@@ -4836,57 +4879,40 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             nbGrainstoFind = dict_param_SingleGrain["nbGrainstoFind"]
 
             try:
-                set_central_spots_hkl = GT.fromstringtolist(
-                    dict_param_SingleGrain["setCentralSpotsHKL"]
-                )
+                set_central_spots_hkl = GT.fromstringtolist(dict_param_SingleGrain["setCentralSpotsHKL"])
             except ValueError:
-                printred(
-                    "Can't understand '%s' as a list like [h,k,l] for 'setCentralSpotsHKL' parameter in .irp file"
-                    % dict_param_SingleGrain["setCentralSpotsHKL"]
-                )
+                printred("Can't understand '%s' as a list like [h,k,l] for 'setCentralSpotsHKL' parameter in .irp file"
+                    % dict_param_SingleGrain["setCentralSpotsHKL"])
                 return
 
             try:
-                central_spots_list = GT.read_elems_from_string(
-                    dict_param_SingleGrain["central spots indices"]
-                )
+                central_spots_list = GT.read_elems_from_string(dict_param_SingleGrain["central spots indices"])
             except ValueError:
                 printred(
                     "Can't understand '%s' as a list of spot indices for 'central spots indices' parameter in .irp file"
-                    % dict_param_SingleGrain["central spots indices"]
-                )
+                    % dict_param_SingleGrain["central spots indices"])
                 return
 
             try:
                 List_Matching_Tol_Angles = GT.read_elems_from_string(
-                    dict_param_SingleGrain["List Matching Tol Angles"],
-                    map_function=float,
-                )
+                    dict_param_SingleGrain["List Matching Tol Angles"], map_function=float)
             except ValueError:
-                printred(
-                    "Can't understand '%s' as a list of spot indices for 'List Matching Tol Angles' parameter in .irp file"
-                    % dict_param_SingleGrain["List Matching Tol Angles"]
-                )
+                printred("Can't understand '%s' as a list of spot indices for 'List Matching Tol Angles' parameter in .irp file"
+                    % dict_param_SingleGrain["List Matching Tol Angles"])
                 return
 
             print("with material: %s\n" % key_material)
             print("dataset.pixelsize  ff",DataSet.pixelsize)
             t0_2 = time.time()
 
-            dict_loop = {
-                "MATCHINGRATE_THRESHOLD_IAL": dict_param_SingleGrain[
-                    "MATCHINGRATE THRESHOLD IAL"
-                ],
-                "MATCHINGRATE_ANGLE_TOL": dict_param_SingleGrain[
-                    "MATCHINGRATE ANGLE TOL"
-                ],
-                "NBMAXPROBED": dict_param_SingleGrain["NBMAXPROBED"],
-                "central spots indices": central_spots_list,
-                "AngleTolLUT": dict_param_SingleGrain["AngleTolLUT"],
-                "UseIntensityWeights": dict_param_SingleGrain["UseIntensityWeights"],
-                "MinimumNumberMatches": dict_param_SingleGrain["MinimumNumberMatches"],
-                "MinimumMatchingRate": MinimumMatchingRate,
-            }
+            dict_loop = {"MATCHINGRATE_THRESHOLD_IAL": dict_param_SingleGrain["MATCHINGRATE THRESHOLD IAL"],
+                        "MATCHINGRATE_ANGLE_TOL": dict_param_SingleGrain["MATCHINGRATE ANGLE TOL"],
+                        "NBMAXPROBED": dict_param_SingleGrain["NBMAXPROBED"],
+                        "central spots indices": central_spots_list,
+                        "AngleTolLUT": dict_param_SingleGrain["AngleTolLUT"],
+                        "UseIntensityWeights": dict_param_SingleGrain["UseIntensityWeights"],
+                        "MinimumNumberMatches": dict_param_SingleGrain["MinimumNumberMatches"],
+                        "MinimumMatchingRate": MinimumMatchingRate}
             if "nbSpotsToIndex" not in dict_param_SingleGrain:
                 dict_param_SingleGrain["nbSpotsToIndex"] = 1000
 
@@ -4931,9 +4957,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     try:
                         nLUTmax = int(nLUTmax)
                     except ValueError:
-                        printred(
-                            "nLUTmax can not be converted to integer !!\nPlease check the irp file"
-                        )
+                        printred("nLUTmax can not be converted to integer !!\nPlease check the irp file")
                         return
 
             #             if dataSubstrate is not None:
@@ -4956,12 +4980,10 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     if GuessedUBMatrices is 0:  # TODO: to BE REMOVED
                         previousResults = None
                     else:
-                        previousResults = (
-                            nbAddMatrices,
-                            addMatrices,
-                            dictMR[lastindex][0],
-                            dictNB[lastindex][0],
-                        )
+                        previousResults = (nbAddMatrices,
+                                        addMatrices,
+                                        dictMR[lastindex][0],
+                                        dictNB[lastindex][0])
 
                     print("previousResults", previousResults)
 
@@ -4980,7 +5002,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                         print("yaouuh")
                         CheckOrientationParams = [UBsparams]
                         break
-            # from previous results already written in corresponding fit file
+            # from previous results already written in corresponding .fit file
             elif updatefitfiles:
                 # read orientation matrix, material from _g#.fit file
                 # warning: since the loop is made over material_index,
@@ -4995,22 +5017,16 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 # this threshold comes from the GUI index_Refine.py
                 MINIMUM_MATCHING_RATE = MinimumMatchingRate
 
-                fitfilename = (
-                    prefixfilename
-                    + encodingdigits % imageindex
-                    + "_g%d.fit" % material_index
-                )
+                fitfilename = (prefixfilename + encodingdigits % imageindex
+                    + "_g%d.fit" % material_index)
 
-                (
-                    list_indexedgrains_indices,
-                    list_nb_indexed_peaks,
-                    pixdev,
-                    Material_list,
-                    all_UBmats_flat,
-                    CCDcalib,
-                ) = IOLT.readfitfile_multigrains(
-                    os.path.join(fitfile_folder, fitfilename), return_toreindex=True
-                )
+                (list_indexedgrains_indices,
+                list_nb_indexed_peaks,
+                pixdev,
+                Material_list,
+                all_UBmats_flat,
+                CCDcalib) = IOLT.readfitfile_multigrains(os.path.join(fitfile_folder, fitfilename),
+                                                            return_toreindex=True)
 
                 nbindexedgrains = len(list_indexedgrains_indices)
 
@@ -5022,16 +5038,12 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     # - Energy Max
                     # - MatchingThreshold
                     # - Matrix(ces)
-                    CheckOrientationParams.append(
-                        [
-                            imageindex,
-                            gindex,
-                            Material_list[gindex],
-                            EMAX,
-                            MINIMUM_MATCHING_RATE,
-                            all_UBmats_flat.reshape((nbindexedgrains, 3, 3)),
-                        ]
-                    )
+                    CheckOrientationParams.append([imageindex,
+                                                    gindex,
+                                                    Material_list[gindex],
+                                                    EMAX,
+                                                    MINIMUM_MATCHING_RATE,
+                                                    all_UBmats_flat.reshape((nbindexedgrains, 3, 3))])
 
                     print("CheckOrientationParams", CheckOrientationParams)
 
@@ -5044,29 +5056,30 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             print("dataset.pixelsize",DataSet.pixelsize)
             #             print "current unindexed spot absolute index", DataSet.getUnIndexedSpots()
-            DataSet.IndexSpotsSet(
-                file_to_index,
-                key_material,
-                emin,
-                emax,
-                dict_loop,
-                None,
-                starting_grainindex=starting_grainindex,
-                use_file=0,
-                IMM=False,
-                n_LUT=nLUTmax,
-                LUT=LUT,
-                set_central_spots_hkl=set_central_spots_hkl,
-                ResolutionAngstrom=ResolutionAngstrom,
-                angletol_list=List_Matching_Tol_Angles,
-                MatchingRate_List=[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ],  # 10 steps of refinements is highly reasonable
-                nbGrainstoFind=nbGrainstoFind,
-                verbose=0,
-                corfilename=corfilename,
-                dirnameout_fitfile=fitfile_folder,
-                previousResults=previousResults,
-                CheckOrientations=CheckOrientationParams,
-            )
+            # ----------------------------------------------------------
+            # index spots data set with IndexSpotsSet method
+            # -----------------------------------------
+            DataSet.IndexSpotsSet(file_to_index,
+                                    key_material,
+                                    emin,
+                                    emax,
+                                    dict_loop,
+                                    None,
+                                    starting_grainindex=starting_grainindex,
+                                    use_file=0,
+                                    IMM=False,
+                                    n_LUT=nLUTmax,
+                                    LUT=LUT,
+                                    set_central_spots_hkl=set_central_spots_hkl,
+                                    ResolutionAngstrom=ResolutionAngstrom,
+                                    angletol_list=List_Matching_Tol_Angles,
+                                    MatchingRate_List=[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ],  # 10 steps of refinements is highly reasonable
+                                    nbGrainstoFind=nbGrainstoFind,
+                                    verbose=0,
+                                    corfilename=corfilename,
+                                    dirnameout_fitfile=fitfile_folder,
+                                    previousResults=previousResults,
+                                    CheckOrientations=CheckOrientationParams)
 
             dict_LUT_material[key_material] = DataSet.LUT
 
@@ -5074,20 +5087,16 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             print("DataSet.indexedgrains_material", DataSet.dict_indexedgrains_material)
             nbgrains_indexed = len(DataSet.indexedgrains)
 
-            DataSet.writecorFile_unindexedSpots(
-                corfilename=corfilename,
-                dirname=fitfile_folder,
-                filename_nbdigits=nbdigits,
-            )
+            DataSet.writecorFile_unindexedSpots(corfilename=corfilename,
+                                                dirname=fitfile_folder,
+                                                filename_nbdigits=nbdigits)
 
             print("nb indexed grains", nbgrains_indexed)
-            DataSet.merge_fitfiles(
-                nbgrains_indexed,
-                corfilename=corfilename,
-                dirname=fitfile_folder,
-                removefiles=0,
-                add_unindexed_spotslist=True,
-            )
+            DataSet.merge_fitfiles(nbgrains_indexed,
+                                    corfilename=corfilename,
+                                    dirname=fitfile_folder,
+                                    removefiles=0,
+                                    add_unindexed_spotslist=True)
 
             DataSet.writeFileSummary(corfilename=corfilename, dirname=fitfile_folder)
 
@@ -5099,19 +5108,11 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # filling dicts with indexation results
         for grainindex in list(range(totalnb_grains)):
             if grainindex in DataSet.indexedgrains:
-                dictMaterial[imageindex][
-                    grainindex
-                ] = DataSet.dict_indexedgrains_material[grainindex]
+                dictMaterial[imageindex][grainindex] = DataSet.dict_indexedgrains_material[grainindex]
                 dictMat[imageindex][grainindex] = DataSet.dict_grain_matrix[grainindex]
-                dictMR[imageindex][grainindex] = DataSet.dict_grain_matching_rate[
-                    grainindex
-                ][1]
-                dictNB[imageindex][grainindex] = DataSet.dict_grain_matching_rate[
-                    grainindex
-                ][0]
-                dictstrain[imageindex][grainindex] = DataSet.dict_grain_devstrain[
-                    grainindex
-                ]
+                dictMR[imageindex][grainindex] = DataSet.dict_grain_matching_rate[grainindex][1]
+                dictNB[imageindex][grainindex] = DataSet.dict_grain_matching_rate[grainindex][0]
+                dictstrain[imageindex][grainindex] = DataSet.dict_grain_devstrain[grainindex]
 
         if 1:  # verbose:
             print("dictMaterial", dictMaterial)
@@ -5150,12 +5151,10 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
     #        DataSet.plotallgrains()
 
-    print(
-        "************************\n\n\n\n\n\n\nCompleted process for %s:"
+    print("************************\n\n\n\n\n\n\nCompleted process for %s:"
         % str([fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2]]),
         p.name,
-        p.pid,
-    )
+        p.pid)
 
     #     with open(os.path.join(ResultsFolder, 'indexrefine.log'), 'a') as logfile:
     #         logfile.write(outputdict_filename)
@@ -5166,12 +5165,10 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         else:
             import Lauehdf5 as LaueHDF5
 
-        LaueHDF5.build_hdf5(
-            outputdict_filename,
-            dirname_dictRes=ResultsFolder,
-            output_hdf5_filename="dict_Res_%s.h5" % prefixfortitle,
-            output_dirname=ResultsFolder,
-        )
+        LaueHDF5.build_hdf5(outputdict_filename,
+                            dirname_dictRes=ResultsFolder,
+                            output_hdf5_filename="dict_Res_%s.h5" % prefixfortitle,
+                            output_dirname=ResultsFolder)
 
     return todump, outputdict_filename
 
@@ -5294,10 +5291,8 @@ def readIndexRefineConfigFile(filename):
     section = config.sections()[0]
 
     if section not in ("IndexRefine",):
-        raise ValueError(
-            "wrong section name in config file %s. Must be in %s"
-            % (filename, "IndexRefine")
-        )
+        raise ValueError("wrong section name in config file %s. Must be in %s"
+            % (filename, "IndexRefine"))
 
     print("section", section)
 
@@ -5328,9 +5323,7 @@ def readIndexRefineConfigFile(filename):
             continue
 
         print("\n option, matindex\n", option, matindex)
-        for option_ref, option_type in zip(
-            LIST_OPTIONS_INDEXREFINE, LIST_OPTIONS_TYPE_INDEXREFINE
-        ):
+        for option_ref, option_type in zip(LIST_OPTIONS_INDEXREFINE, LIST_OPTIONS_TYPE_INDEXREFINE):
 
             #             print "option_ref, option_type", option_ref, option_type
 

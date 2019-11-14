@@ -4335,8 +4335,7 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="",
     #    t00 = ttt.time()
     jobs = []
     for ii in list(range(nb_of_cpu)):
-        proc = multiprocessing.Process(
-                                        target=peaksearch_fileseries,
+        proc = multiprocessing.Process(target=peaksearch_fileseries,
                                         args=(fileindexdivision[ii],
                                             filenameprefix,
                                             suffix,
@@ -4346,8 +4345,7 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="",
                                             dirname_out,
                                             CCDLABEL,
                                             KF_DIRECTION,
-                                            dictPeakSearch),
-        )
+                                            dictPeakSearch))
         jobs.append(proc)
         proc.start()
 

@@ -260,7 +260,7 @@ LAUEIMAGING_FRAME_DIM = (1290, 1970)  # (645, 985)
 
 CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam",
                                 "xpixelsize", "ypixelsize", "CCDLabel",
-                                "framedim", "detectordiameter", "kf_direction", ]
+                                "framedim", "detectordiameter", "kf_direction"]
 
 # --- ---  CCD Read Image Parameters
 # CCDlabel,

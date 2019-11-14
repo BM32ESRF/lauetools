@@ -107,16 +107,12 @@ CST_CONV_LAMBDA_KEV = DictLT.CST_ENERGYKEV
 norme = GT.norme_vec
 
 # --- -------- geometrical functions relating 2theta, chi, pixel X, pixel Y, detector plane ----
-def calc_uflab(
-    xcam,
-    ycam,
-    detectorplaneparameters,
-    offset=0,
-    returnAngles=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    rectpix=RECTPIX,
-    kf_direction="Z>0"):
+def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0,
+                                                    returnAngles=1,
+                                                    verbose=0,
+                                                    pixelsize=165.0 / 2048,
+                                                    rectpix=RECTPIX,
+                                                    kf_direction="Z>0"):
     r"""
     Computes unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame of scattered beam :math:`k_f`
     (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
@@ -159,9 +155,7 @@ def calc_uflab(
         sinbeta = np.sin(PI / 2.0 - xbet * DEG)
 
     else:
-        raise ValueError(
-            "kf_direction = %s not implemented in calc_uflab" % str(kf_direction)
-        )
+        raise ValueError("kf_direction = %s not implemented in calc_uflab" % str(kf_direction))
 
     cosgam = np.cos(- xgam * DEG)
     singam = np.sin(- xgam * DEG)
@@ -236,14 +230,10 @@ def calc_uflab(
         return twicetheta, chi
 
 
-def calc_uflab_trans(
-    xcam,
-    ycam,
-    calib,
-    returnAngles=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    rectpix=RECTPIX):
+def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048,
+                                        rectpix=RECTPIX):
     r"""
     compute :math:`2 \theta` and :math:`\chi` scattering angles or **uf** and **kf** vectors
     from lists of X and Y Laue spots positions
@@ -346,26 +336,15 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
     IprimeM vector joining shifted source emission to point M lying on CCD
     """
 
-    return calc_xycam(
-        uflab,
-        calib,
-        energy=0,
-        offset=posI,
-        verbose=verbose,
-        returnIpM=True,
-    )
+    return calc_xycam(uflab, calib, energy=0, offset=posI, verbose=verbose, returnIpM=True)
 
 
-def calc_xycam(
-    uflab,
-    calib,
-    energy=0,
-    offset=None,
-    verbose=0,
-    returnIpM=False,
-    pixelsize=165.0 / 2048.,
-    dim=(2048, 2048),
-    rectpix=RECTPIX):
+def calc_xycam( uflab, calib, energy=0, offset=None,
+                                        verbose=0,
+                                        returnIpM=False,
+                                        pixelsize=165.0 / 2048.,
+                                        dim=(2048, 2048),
+                                        rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units in CCD frame
     from unit scattered vector uf expressed in Lab. frame
@@ -493,16 +472,12 @@ def calc_xycam(
         return xcam, ycam, th0
 
 
-def calc_xycam_transmission(
-    uflab,
-    calib,
-    energy=0,
-    offset=None,
-    verbose=0,
-    returnIpM=False,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    rectpix=RECTPIX):
+def calc_xycam_transmission( uflab, calib, energy=0, offset=None,
+                                                    verbose=0,
+                                                    returnIpM=False,
+                                                    pixelsize=165.0 / 2048,
+                                                    dim=(2048, 2048),
+                                                    rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
 
@@ -618,15 +593,11 @@ def calc_xycam_transmission(
         return xcam, ycam, th0
 
 
-def calc_xycam_from2thetachi(
-    twicetheta,
-    chi,
-    calib,
-    offset=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    kf_direction="Z>0"):
+def calc_xycam_from2thetachi( twicetheta, chi, calib, offset=0,
+                                                        verbose=0,
+                                                        pixelsize=165.0 / 2048,
+                                                        dim=(2048, 2048),
+                                                        kf_direction="Z>0"):
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
@@ -698,9 +669,9 @@ def q_unit_XYZ(twicetheta, chi):
     """
     THETA = twicetheta / 2.0 * DEG
     CHI = chi * DEG
-    return np.array(
-        [-np.sin(THETA), np.cos(THETA) * np.sin(CHI), np.cos(THETA) * np.cos(CHI)]
-    )
+    return np.array([-np.sin(THETA),
+                    np.cos(THETA) * np.sin(CHI),
+                    np.cos(THETA) * np.cos(CHI)])
 
 
 def q_unit_2thetachi(vec):
@@ -818,15 +789,11 @@ def qvector_from_xy_E(xcamList, ycamList, energy, detectorplaneparameters, pixel
 
     #     print "xcamList",xcamList
     #     print "ycamList",ycamList
-    twtheta, chi = calc_uflab(
-                            xcamList,
-                            ycamList,
-                            detectorplaneparameters,
-                            returnAngles=1,
-                            verbose=0,
-                            pixelsize=pixelsize,
-                            rectpix=RECTPIX,
-                            kf_direction="Z>0")
+    twtheta, chi = calc_uflab(xcamList, ycamList, detectorplaneparameters, returnAngles=1,
+                                                                        verbose=0,
+                                                                        pixelsize=pixelsize,
+                                                                        rectpix=RECTPIX,
+                                                                        kf_direction="Z>0")
 
     thetarad = twtheta * DEG / 2.0
     chirad = chi * DEG
@@ -957,7 +924,7 @@ def matxmas_to_OrientMatrix(satocr, calib):
 
     - calib with last angles in degrees
 
-    - satocrs = transposee de la matrice numero 2 du .STR :   matrice UB 
+    - satocrs = transposee de la matrice numero 2 du .STR :   matrice UB
     "coordinates of a*, b*, c* in X, Y, Z"
     - satocru = matrice numero 2 du .IND :   matrice U
     "matrix hkl => XYZ"
@@ -974,13 +941,9 @@ def matxmas_to_OrientMatrix(satocr, calib):
     # print "omega" , omega*180.0/np.pi
 
     # rotation de omega autour de l'axe x pour repasser dans Rlab
-    matrot = np.array(
-        [
-            [1.0, 0.0, 0.0],
+    matrot = np.array([[1.0, 0.0, 0.0],
             [0.0, np.cos(omega), np.sin(omega)],
-            [0.0, -np.sin(omega), np.cos(omega)],
-        ]
-    )
+            [0.0, -np.sin(omega), np.cos(omega)]])
     # print "matrot \n" , matrot
 
     labtocr = np.dot(matrot, satocrnorm)
@@ -998,9 +961,9 @@ def matxmas_to_OrientMatrix(satocr, calib):
     mm = matstarlab2
 
     # matstarlabLaueTools= array([[mm[1],-mm[4],-mm[7]],[mm[0],-mm[6],-mm[3]],[-mm[2],mm[5],mm[8]]])
-    matstarlabLaueTools = np.array(
-        [[mm[1], mm[4], mm[7]], [-mm[0], -mm[3], -mm[6]], [mm[2], mm[5], mm[8]]]
-    )
+    matstarlabLaueTools = np.array([[mm[1], mm[4], mm[7]],
+                                    [-mm[0], -mm[3], -mm[6]],
+                                    [mm[2], mm[5], mm[8]]])
 
     # resulting matrix contains orientation + strain
 
@@ -1026,19 +989,15 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat):
     # print "cross products sign(astar1xbstar1).cstar1", sign(inner(cross(astar1,bstar1),cstar1))
 
     # matstarlab = array([-mm[1,0],mm[0,0],mm[2,0],mm[1,1],-mm[0,1],-mm[2,1],mm[1,2],-mm[0,2],-mm[2,2]])
-    matstarlab = np.array(
-        [
-            -mm[1, 0],
-            mm[0, 0],
-            mm[2, 0],
-            -mm[1, 1],
-            mm[0, 1],
-            mm[2, 1],
-            -mm[1, 2],
-            mm[0, 2],
-            mm[2, 2],
-        ]
-    )
+    matstarlab = np.array([-mm[1, 0],
+                            mm[0, 0],
+                            mm[2, 0],
+                            -mm[1, 1],
+                            mm[0, 1],
+                            mm[2, 1],
+                            -mm[1, 2],
+                            mm[0, 2],
+                            mm[2, 2]])
 
     matstarlab = matstarlab / GT.norme_vec(matstarlab[:3])
 
@@ -1057,9 +1016,7 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab):
     #      inner(astar1,bstar1), inner(bstar1,cstar1), inner(cstar1,astar1)
     # print "cross products sign(astar1xbstar1).cstar1", sign(inner(cross(astar1,bstar1),cstar1))
 
-    UBmat = np.array(
-        [[mm[1], mm[4], mm[7]], [-mm[0], -mm[3], -mm[6]], [mm[2], mm[5], mm[8]]]
-    )
+    UBmat = np.array([[mm[1], mm[4], mm[7]], [-mm[0], -mm[3], -mm[6]], [mm[2], mm[5], mm[8]]])
 
     return UBmat
 
@@ -1107,17 +1064,9 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
         return (calib, matstarlab, matLT3x3)
 
 
-def readlt_fit(
-    filefit,
-    returnmatLT=False,
-    min_matLT=False,
-    readmore=False,
-    verbose=1,
-    verbose2=0,
-    readmore2=False,
-):
+def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verbose=1, verbose2=0,
+                                                                                readmore2=False):
     """
-
     .. todo::
 
         to put in IOLauetools
@@ -1194,17 +1143,13 @@ def readlt_fit(
                 calib = np.array(line.split(",")[:5], dtype=float)
                 # print "calib = ", calib
             if eulerfound & (i == lineeuler):
-                euler = np.array(
-                    line.replace("[", "").replace("]", "").split()[:3], dtype=float
-                )
+                euler = np.array(line.replace("[", "").replace("]", "").split()[:3], dtype=float)
                 # print "euler = ", euler
             if pixdevfound & (i == linepixdev):
                 pixdev = float(line.rstrip("\n"))
                 # print "pixdev = ", pixdev
             if (i >= linestartspot) & (i < lineendspot):
-                list1.append(
-                    line.rstrip("\n").replace("[", "").replace("]", "").split()
-                )
+                list1.append(line.rstrip("\n").replace("[", "").replace("]", "").split())
     finally:
         f.close()
         linetot = i
@@ -1341,13 +1286,9 @@ def matxmas_to_matstarlab(satocr, calib):
     # print "omega" , omega*180.0/np.pi
 
     # rotation de omega autour de l'axe x pour repasser dans Rlab
-    matrot = np.array(
-        [
-            [1.0, 0.0, 0.0],
+    matrot = np.array([[1.0, 0.0, 0.0],
             [0.0, np.cos(omega), np.sin(omega)],
-            [0.0, -np.sin(omega), np.cos(omega)],
-        ]
-    )
+            [0.0, -np.sin(omega), np.cos(omega)]])
     # print "matrot \n" , matrot
 
     labtocr = np.dot(matrot, satocrnorm)
@@ -1362,20 +1303,17 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi(
-    filename,
-    tuple_column_X_Y_I,
-    _nblines_headertoskip,
-    sorting_intensity="yes",
-    param=None,
-    kf_direction="Z>0",
-    verbose=1,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
-    saturation=0,
-    forceextension_lines_to_extract=None,
-    col_isbadspot=None,
-    alpha_xray_incidence_correction=None):
+def Compute_data2thetachi( filename, tuple_column_X_Y_I, _nblines_headertoskip,
+                                                        sorting_intensity="yes",
+                                                        param=None,
+                                                        kf_direction="Z>0",
+                                                        verbose=1,
+                                                        pixelsize=165.0 / 2048,
+                                                        dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
+                                                        saturation=0,
+                                                        forceextension_lines_to_extract=None,
+                                                        col_isbadspot=None,
+                                                        alpha_xray_incidence_correction=None):
     r"""
     Converts spot positions x,y to scattering angles 2theta, chi from a list of peaks
 
@@ -1463,9 +1401,7 @@ def Compute_data2thetachi(
         nb_peaks = sha[0]
 
     if param is None:
-        raise ValueError(
-            "Missing param arg in Compute_data2thetachi() of find2thetachi module"
-        )
+        raise ValueError("Missing param arg in Compute_data2thetachi() of find2thetachi module")
     else:
         param_det = param
 
@@ -1481,9 +1417,7 @@ def Compute_data2thetachi(
 
     if filename.split(".")[-1] in ("pik", "peaks"):
         data_x = data_xyI[:, 0]  # + 0.5  # 0.5 for being closer to XMAS peaks position
-        data_y = (
-            dim[1] - data_xyI[:, 1]
-        )  # + 0.5 # 0.5 for being closer to XMAS peaks position
+        data_y = (dim[1] - data_xyI[:, 1])  # + 0.5 # 0.5 for being closer to XMAS peaks position
         data_I = data_xyI[:, 2]  # for fit2d pixels convention
 
     elif filename.split(".")[-1] in ("dat", "DAT"):
@@ -1504,9 +1438,7 @@ def Compute_data2thetachi(
     # 21Jul14  O. Robach---------------
     if alpha_xray_incidence_correction != None:
 
-        print(
-            "Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction
-        )
+        print("Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction)
         xystart = np.column_stack((data_x, data_y))
         #        print "xystart = ", xystart
         npics = np.shape(xystart)[0]
@@ -1525,20 +1457,16 @@ def Compute_data2thetachi(
         #        print "pixelsize = ", pixelsize
         #        print "scale_factor = ", scale_factor
         for i in list(range(npics)):
-            xynew[i, :] = (
-                xystart[i, :]
-                + alpha_xray_incidence_correction
-                * scale_factor
-                * dxy[i, :]
-                * dxynorm[i]
-            )
+            xynew[i, :] = (xystart[i, :]
+                                + alpha_xray_incidence_correction
+                                * scale_factor
+                                * dxy[i, :]
+                                * dxynorm[i])
 
         delta_xy = xynew - xystart
         #        print "delta_xy = ", delta_xy
-        print(
-            "maximum spot displacement |dx| |dy| : ",
-            (abs(delta_xy)).max(axis=0).round(decimals=3),
-        )
+        print("maximum spot displacement |dx| |dy| : ",
+            (abs(delta_xy)).max(axis=0).round(decimals=3))
 
         data_x = xynew[:, 0]
         data_y = xynew[:, 1]
@@ -1655,8 +1583,7 @@ def convert2corfile(filename, calibparam, dirname_in=None,
     else:
         param = calibparam + [pixelsize]
 
-    IOLT.writefile_cor(
-                        filename_out,
+    IOLT.writefile_cor(filename_out,
                         twicetheta,
                         chi,
                         data_x,
@@ -1667,17 +1594,13 @@ def convert2corfile(filename, calibparam, dirname_in=None,
                         initialfilename=filename)
 
 
-def convert2corfile_fileseries(
-    fileindexrange,
-    filenameprefix,
-    calibparam,
-    suffix="",
-    nbdigits=4,
-    dirname_in=None,
-    outputname=None,
-    dirname_out=None,
-    pixelsize=165.0 / 2048,
-    fliprot="no"):
+def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffix="",
+                                                                            nbdigits=4,
+                                                                            dirname_in=None,
+                                                                            outputname=None,
+                                                                            dirname_out=None,
+                                                                            pixelsize=165.0 / 2048,
+                                                                            fliprot="no"):
     r"""
     convert a serie of peaks list ascii files to .cor files (adding scattering angles).
 
@@ -1698,29 +1621,25 @@ def convert2corfile_fileseries(
     for fileindex in list(range(fileindexrange[0], fileindexrange[1] + 1)):
         filename_in = filenameprefix + encodingdigits % fileindex + suffix
         print("filename_in", filename_in)
-        convert2corfile(
-            filename_in,
-            calibparam,
-            dirname_in=dirname_in,
-            outputname=outputname,
-            dirname_out=dirname_out,
-            pixelsize=pixelsize,
-        )
+        convert2corfile(filename_in,
+                        calibparam,
+                        dirname_in=dirname_in,
+                        outputname=outputname,
+                        dirname_out=dirname_out,
+                        pixelsize=pixelsize)
 
 
-def convert2corfile_multiprocessing(
-    fileindexrange,
-    filenameprefix,
-    calibparam,
-    dirname_in=None,
-    suffix="",
-    nbdigits=4,
-    outputname=None,
-    dirname_out=None,
-    pixelsize=165.0 / 2048,
-    fliprot="no",
-    nb_of_cpu=6,
-):
+def convert2corfile_multiprocessing(fileindexrange,
+                                    filenameprefix,
+                                    calibparam,
+                                    dirname_in=None,
+                                    suffix="",
+                                    nbdigits=4,
+                                    outputname=None,
+                                    dirname_out=None,
+                                    pixelsize=165.0 / 2048,
+                                    fliprot="no",
+                                    nb_of_cpu=6):
     """
     launch several processes in parallel to convert .dat file to .cor file
     """
@@ -1770,19 +1689,15 @@ def fromlab_tosample(UB, anglesample_deg=40):  # in deg
     qs = UBs G   with G =ha*+kb*+lc* a*,b*,c* are aligned with lab frame x,y,z
     qs is q in sample frame deduced from lab by a 40* rotation around y (lauetools convention)
 
-    lauetools convention: x // ki ie. ki = 2pi/lambda(1,0,0), z perpendicular to x and contained 
+    lauetools convention: x // ki ie. ki = 2pi/lambda(1,0,0), z perpendicular to x and contained
     in the plane defined by x and dd* u where u is a unit vector normal to the CCD plane
     and dd is the shortest distance between the CCD plane and the emission source of scattered beams
 
     """
     anglesample = anglesample_deg * DEG  # in rad
-    Rot = np.array(
-        [
-            [np.cos(anglesample), 0, np.sin(anglesample)],
-            [0, 1, 0],
-            [-np.sin(anglesample), 0, np.cos(anglesample)],
-        ]
-    )
+    Rot = np.array([[np.cos(anglesample), 0, np.sin(anglesample)],
+                            [0, 1, 0],
+                            [-np.sin(anglesample), 0, np.cos(anglesample)]])
 
     # = GT.matRot([0,1,0], 40)
     # invRot = np.linalg.inv(Rot)
@@ -1855,7 +1770,7 @@ def IMlab_from_xycam(xcam, ycam, calib, verbose=0):
     returns list of vector position of M (on CCD camera) in absolute frame
     from pixels position vector in CCD frame
     """
-    uflab_not_used, IMlab = calc_uflab(xcam, ycam, calib, returnAngles="uflab")
+    _, IMlab = calc_uflab(xcam, ycam, calib, returnAngles="uflab")
 
     if verbose:
         print("IMlab", IMlab)
@@ -1945,9 +1860,7 @@ def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.0):
 
     IMlab_yz = IMlab[:, 1:]
 
-    return find_yzsource_from_IM_uf(
-        IMlab_yz, uf, depth_z=depth_z, anglesample=anglesample
-    )
+    return find_yzsource_from_IM_uf(IMlab_yz, uf, depth_z=depth_z, anglesample=anglesample)
 
 
 def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
@@ -1987,9 +1900,7 @@ def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
     return np.array([ysource, zsource])
 
 
-def find_yzsource_from_2xycam_2yzwire_version2(
-    OMs, IWs, calib, anglesample=40.0, verbose=0
-):
+def find_yzsource_from_2xycam_2yzwire_version2(OMs, IWs, calib, anglesample=40.0, verbose=0):
     r"""
     from:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
@@ -2020,9 +1931,10 @@ def find_yzsource_from_2xycam_2yzwire_version2(
     return (A + B) / 2.0
 
 
-def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
-    OMs, Wire_abscissae, calib, anglesample=40.0, wire_height=0.3, verbose=0
-):
+def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae, calib,
+                                                                                anglesample=40.0,
+                                                                                wire_height=0.3,
+                                                                                verbose=0):
     r"""
     from:
     OMs: array of n vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2, ..., OMn])
@@ -2036,9 +1948,7 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
     all positions of source of emission from all pairs [spot,Wire_abscissa]
     """
 
-    IWs = IW_from_wireabscissa(
-        Wire_abscissae, wire_height, anglesample=anglesample
-    )  # array of [y,z]
+    IWs = IW_from_wireabscissa(Wire_abscissae, wire_height, anglesample=anglesample)  # array of [y,z]
     IWs = IWs.T
     pairs = GT.pairs_of_indices(len(IWs))
 
@@ -2057,14 +1967,11 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(
             print("iws", np.take(IWs, p, axis=0))
 
         results.append(
-            find_yzsource_from_2xycam_2yzwire_version2(
-                np.take(OMs, p, axis=0),
-                np.take(IWs, p, axis=0),
-                calib,
-                anglesample=anglesample,
-                verbose=0,
-            )
-        )
+            find_yzsource_from_2xycam_2yzwire_version2(np.take(OMs, p, axis=0),
+                                                        np.take(IWs, p, axis=0),
+                                                        calib,
+                                                        anglesample=anglesample,
+                                                        verbose=0))
 
     return np.array(results)
 
@@ -2125,12 +2032,8 @@ def twotheta_from_wire_and_source(ysource, Height_wire, Abscissa_wire, anglesamp
     coslambda = np.cos(lambda_angle * DEG)
     yprime = ysource * 1.0 / Abscissa_wire
 
-    return (
-        np.arccos(
-            (coslambda - yprime) / np.sqrt(1 + yprime ** 2 - 2 * yprime * coslambda)
-        )
-        / DEG
-    )
+    return (np.arccos((coslambda - yprime) / np.sqrt(1 + yprime ** 2 - 2 * yprime * coslambda)
+        ) / DEG)
 
 
 def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0):
@@ -2141,40 +2044,19 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0):
     return new value of x,y
     """
     xcam, ycam = OMs.T
-    uflab, IM = calc_uflab(
-        xcam,
-        ycam,
-        calib,
-        returnAngles=0,
-        verbose=0,
-        pixelsize=165.0 / 2048,
-    )  # IM normalized
+    uflab, IM = calc_uflab(xcam, ycam, calib, returnAngles=0, verbose=0, pixelsize=165.0 / 2048)  # IM normalized
     # IM vectors
     # IM=IprimeM_from_uf(uflab,array([0,0,0]),calib,verbose=0)
-    OM = calc_xycam(
-        uflab,
-        calib,
-        energy=1,
-        offset=None,
-        verbose=0,
-        returnIpM=False,
-        pixelsize=165.0 / 2048,
-    )
+    OM = calc_xycam(uflab, calib, energy=1, offset=None, verbose=0, returnIpM=False,
+                                                                pixelsize=165.0 / 2048)
     x0cam, y0cam, th0, E0 = OM
     # IpM=IpI + IM= IM-IIP
     IpM = IM - IIp
     nor = np.sqrt(np.sum(IpM ** 2, axis=1))
     # new uf prime
     ufp = IpM * 1.0 / np.reshape(nor, (len(nor), 1))
-    OpMp = calc_xycam(
-        ufp,
-        calib,
-        energy=1,
-        offset=None,
-        verbose=0,
-        returnIpM=False,
-        pixelsize=165.0 / 2048,
-    )
+    OpMp = calc_xycam(ufp, calib, energy=1, offset=None, verbose=0, returnIpM=False,
+                                                                pixelsize=165.0 / 2048)
     xpcam, ypcam, thp, Ep = OpMp
 
     if verbose:
@@ -2233,7 +2115,7 @@ def lengthInSample(depth, twtheta, chi, omega):
 
     .. note::
 
-        incoming beam coming from the right positive x direction with 
+        incoming beam coming from the right positive x direction with
             - IB = (-D,0,0)
             - BC =(xc+D,yc,zc)
             - and length BC is proportional to the depth D

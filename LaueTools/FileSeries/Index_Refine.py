@@ -54,7 +54,7 @@ print("LaueToolProjectFolder", LaueToolsProjectFolder)
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
 LIST_VALUESPARAMS = [ "Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
-                    False, 3, None, True, 1000, [1, 1], None, ]
+                    False, 3, None, True, 1000, [1, 1], None]
 
 # WARNING when adding parameters above:
 # check if field position is correct in def hascorrectvalue(self, kk, val):
@@ -122,7 +122,7 @@ class IndexRefineParameters(wx.Frame):
         self.list_unitsparams = _list_unitsparams
 
         self.nb_of_materials = nb_of_materials
-        self.dict_param_list
+        self.dict_param_list = []
 
         # GUI widgets
 
@@ -239,6 +239,8 @@ class IndexRefineParameters(wx.Frame):
         self.Close()
 
     def OnLoad(self, _):
+        """read irp.file containing indexation and refinement parameters 
+        """
         irpfile = wx.FileDialog(
                                 self,
                                 "Open Index Refine Parameters",
@@ -259,12 +261,12 @@ class IndexRefineParameters(wx.Frame):
 
             self.InitTabs()
 
-            for k_page, pagematerial in enumerate(self.materialpages_list):
+            for k_page, pagematerialpanel in enumerate(self.materialpages_list):
                 for kk, _key in enumerate(LIST_TXTPARAMS):
                     if _key in list(self.dict_param_list[k_page].keys()):
-                        pagematerial.list_valueparamIR[kk] = self.dict_param_list[k_page][_key]
+                        pagematerialpanel.list_valueparamIR[kk] = self.dict_param_list[k_page][_key]
 
-                pagematerial.setParams()
+                pagematerialpanel.setParams()
 
     def setParams(self):
         for materialpage in self.materialpages_list:
@@ -304,11 +306,9 @@ class PageMaterialPanel(wx.Panel):
 
         self.dict_param_list = {}
 
-        (
-            self.list_txtparamIR,
+        (self.list_txtparamIR,
             self.list_valueparamIR,
-            self.list_unitsparams,
-        ) = self.granparent.listParameters
+            self.list_unitsparams) = self.granparent.listParameters
 
         print("self.granparent.listParameters")
         print(self.granparent.listParameters)
@@ -382,11 +382,9 @@ class PageMaterialPanel(wx.Panel):
             try:
                 v = int(val)
             except ValueError:
-                wx.MessageBox(
-                    "Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be integer"
+                wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be integer"
                     % self.list_txtparamIR[kk],
-                    "Error",
-                )
+                    "Error")
                 flag = False
 
         if kk == 12:
@@ -400,8 +398,7 @@ class PageMaterialPanel(wx.Panel):
                 wx.MessageBox(
                     "Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be list of 3 integers"
                     % self.list_txtparamIR[kk],
-                    "Error",
-                )
+                    "Error")
                 flag = False
 
         return flag
@@ -411,6 +408,13 @@ class PageMaterialPanel(wx.Panel):
             self.list_txtctrl[kk].SetValue(str(self.list_valueparamIR[kk]))
 
     def getParams(self):
+        """
+        read parameters from text controllers self.list_txtctrl
+        and set self.dict_param_list
+        
+        :return: [description]
+        :rtype: [type]
+        """
         self.dict_param_list = {}
         flag = True
         for kk, _ in enumerate(self.list_txtparamIR):
@@ -434,7 +438,6 @@ class PageMaterialPanel(wx.Panel):
 class Stock_parameters_IndexRefine:
     """ class to stock parameters
     """
-
     def __init__(self, list_txtparamIR, _list_valueparamIR):
         self.list_txtparamIR = list_txtparamIR
         self.list_valueparamIR = _list_valueparamIR
@@ -446,8 +449,7 @@ class MainFrame_indexrefine(wx.Frame):
     """
 
     def __init__(self, parent, _id, title, _initialparameters, objet_IR):
-        wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650))
+        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650))
 
         self.initialparameters = _initialparameters
 
@@ -774,6 +776,8 @@ class MainFrame_indexrefine(wx.Frame):
         return True
 
     def OnStart(self, _):
+        """Start indexation and refinement of a series of files
+        """
         print("OnStart in index_Refine.py MainFrame class")
 
         # read .irp file ---------------------------
@@ -818,13 +822,9 @@ class MainFrame_indexrefine(wx.Frame):
             # TODO correct multigrain to use os.path.join
             filepathdat = self.list_txtctrl[0].GetValue() + "/"
 
-            indimg = list(
-                range(
-                    int(self.list_txtctrl[6].GetValue()),
+            indimg = list(range(int(self.list_txtctrl[6].GetValue()),
                     int(self.list_txtctrl[7].GetValue()) + 1,
-                    int(self.list_txtctrl[8].GetValue()),
-                )
-            )
+                    int(self.list_txtctrl[8].GetValue())))
 
             serial_index_refine_multigrain(
                 filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
@@ -919,34 +919,23 @@ class MainFrame_indexrefine(wx.Frame):
 
             # corresponding minimum matching rate -----------------------------------------------
             MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
-            print(
-                "MinimumMatchingRate to avoid starting general indexation is ",
-                MinimumMatchingRate,
-            )
+            print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
             if guessedMatricesFile not in ("None", "none"):
                 print("Reading general file for guessed UB solutions")
 
                 # read list or single matrix (ces) in GUI field
                 if not guessedMatricesFile.endswith(".ubs"):
-                    nbguesses, guessedSolutions = IOLT.readListofMatrices(
-                        guessedMatricesFile
-                    )
+                    nbguesses, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
 
                     print("guessedmatrix", guessedSolutions)
                     Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
                 # read .ubs file
                 else:
-                    Index_Refine_Parameters_dict[
-                        "CheckOrientation"
-                    ] = guessedMatricesFile
+                    Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
 
-                Index_Refine_Parameters_dict[
-                    "MinimumMatchingRate"
-                ] = MinimumMatchingRate
+                Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
             elif updatefitfiles:
-                Index_Refine_Parameters_dict[
-                    "MinimumMatchingRate"
-                ] = MinimumMatchingRate
+                Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
             else:
                 # we are sure to be less than that!
                 Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
@@ -955,17 +944,11 @@ class MainFrame_indexrefine(wx.Frame):
             if self.parent is not None:
                 object_to_set = self.parent  # IR
 
-                print(
-                    "object_to_set.initialparameters", object_to_set.initialparameters
-                )
+                print("object_to_set.initialparameters", object_to_set.initialparameters)
 
-                object_to_set.initialparameters[
-                    "IndexRefine PeakList Folder"
-                ] = filepathout
+                object_to_set.initialparameters["IndexRefine PeakList Folder"] = filepathout
                 object_to_set.initialparameters["file xyz"] = "None"
-                object_to_set.initialparameters[
-                    "IndexRefine PeakList Prefix"
-                ] = fileprefix
+                object_to_set.initialparameters["IndexRefine PeakList Prefix"] = fileprefix
                 object_to_set.initialparameters["IndexRefine PeakList Suffix"] = ".fit"
                 object_to_set.initialparameters["stiffness file"] = None
                 object_to_set.initialparameters["Map shape"] = (0, 0)
@@ -978,9 +961,11 @@ class MainFrame_indexrefine(wx.Frame):
                 object_to_set.initialparameters["stepindex"] = stepindex
 
             print("start indexing multifiles")
-            NB_MATERIALS = 2
+            #NB_MATERIALS = 2
 
             NB_MATERIALS = len(self.dict_param_list)
+
+            print('self.dict_param_list',self.dict_param_list)
 
             try:
                 nb_cpus = int(self.txtctrl_cpus.GetValue())
@@ -993,56 +978,46 @@ class MainFrame_indexrefine(wx.Frame):
 
             flagcompleted = True
             if nb_cpus == 1:
-                output_index_fileseries_3 = ISS.index_fileseries_3(
-                    fileindexrange,
-                    Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                    saveObject=0,
-                    verbose=0,
-                    nb_materials=NB_MATERIALS,
-                    build_hdf5=True,
-                    prefixfortitle=fileprefix,
-                    reanalyse=reanalyse,
-                    use_previous_results=use_previous_results,
-                    updatefitfiles=updatefitfiles,
-                    CCDCalibdict=CCDCalibdict,
-                )
+                output_index_fileseries_3 = ISS.index_fileseries_3(fileindexrange,
+                                                        Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
+                                                        saveObject=0,
+                                                        verbose=0,
+                                                        nb_materials=NB_MATERIALS,
+                                                        build_hdf5=True,
+                                                        prefixfortitle=fileprefix,
+                                                        reanalyse=reanalyse,
+                                                        use_previous_results=use_previous_results,
+                                                        updatefitfiles=updatefitfiles,
+                                                        CCDCalibdict=CCDCalibdict)
 
                 if output_index_fileseries_3 is not None:
                     dictRes, outputdict_filename = output_index_fileseries_3
                 else:
-                    wx.MessageBox(
-                        "Indexation and Refinement not completed.\n An error occured during the procedure\n"
-                        + "See stdout or terminal window for details.",
-                        "INFO",
-                    )
+                    wx.MessageBox("Indexation and Refinement not completed.\n An error occured during the procedure\n"
+                        + "See stdout or terminal window for details.", "INFO")
 
             elif nb_cpus > 1:
                 print("Using %d processors" % nb_cpus)
-                flagcompleted = ISS.indexing_multiprocessing(
-                    fileindexrange,
-                    dirname_dictRes=filepathout,
-                    Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                    saveObject=0,
-                    verbose=0,
-                    nb_materials=NB_MATERIALS,
-                    nb_of_cpu=nb_cpus,
-                    build_hdf5=True,
-                    prefixfortitle=fileprefix,
-                    reanalyse=reanalyse,
-                    use_previous_results=use_previous_results,
-                    updatefitfiles=updatefitfiles,
-                    CCDCalibdict=CCDCalibdict,
-                )
+                flagcompleted = ISS.indexing_multiprocessing(fileindexrange,
+                                            dirname_dictRes=filepathout,
+                                            Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
+                                            saveObject=0,
+                                            verbose=0,
+                                            nb_materials=NB_MATERIALS,
+                                            nb_of_cpu=nb_cpus,
+                                            build_hdf5=True,
+                                            prefixfortitle=fileprefix,
+                                            reanalyse=reanalyse,
+                                            use_previous_results=use_previous_results,
+                                            updatefitfiles=updatefitfiles,
+                                            CCDCalibdict=CCDCalibdict)
 
                 print("flagcompleted", flagcompleted)
                 if not flagcompleted:
-                    print(
-                        "\n\n ****** \nIndexation and Refinement not completed\n***********\n\n"
-                    )
+                    print("\n\n ****** \nIndexation and Refinement not completed\n***********\n\n")
                 wx.MessageBox(
                     "Indexation and Refinement not completed.\n Check the prefixfilename of .dat file! Launch the task with only one CPU",
-                    "INFO",
-                )
+                    "INFO")
 
         return
 
@@ -1051,21 +1026,19 @@ def fill_list_valueparamIR(initialparameters):
     """
     return a list of default value for index_refine board from a dict initialparameters
     """
-    list_valueparamIR = [
-        initialparameters["PeakList Folder"],
-        initialparameters["PeakListCor Folder"],
-        initialparameters["IndexRefine PeakList Folder"],
-        initialparameters["PeakList Filename Prefix"],
-        initialparameters["PeakList Filename Suffix"],
-        initialparameters["nbdigits"],
-        initialparameters["startingindex"],
-        initialparameters["finalindex"],
-        initialparameters["stepindex"],
-        initialparameters["Detector Calibration File .det"],
-        initialparameters["GuessedUBMatrix"],
-        initialparameters["MinimumMatchingRate"],
-        initialparameters["IndexRefine Parameters File"],
-    ]
+    list_valueparamIR = [initialparameters["PeakList Folder"],
+                        initialparameters["PeakListCor Folder"],
+                        initialparameters["IndexRefine PeakList Folder"],
+                        initialparameters["PeakList Filename Prefix"],
+                        initialparameters["PeakList Filename Suffix"],
+                        initialparameters["nbdigits"],
+                        initialparameters["startingindex"],
+                        initialparameters["finalindex"],
+                        initialparameters["stepindex"],
+                        initialparameters["Detector Calibration File .det"],
+                        initialparameters["GuessedUBMatrix"],
+                        initialparameters["MinimumMatchingRate"],
+                        initialparameters["IndexRefine Parameters File"]]
 
     return list_valueparamIR
 
@@ -1083,11 +1056,9 @@ initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
 initialparameters["PeakList Filename Prefix"] = "orig_nanox2_400_"
 initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "GeGaN.irp")
 initialparameters["Detector Calibration File .det"] = os.path.join(
-    MainFolder, "calibGe_nanowMARCCD165.det"
-)
+    MainFolder, "calibGe_nanowMARCCD165.det")
 initialparameters["Detector Calibration File (.dat)"] = os.path.join(
-    MainFolder, "nanox2_400_0000_LT_1.dat"
-)
+    MainFolder, "nanox2_400_0000_LT_1.dat")
 initialparameters["PeakList Filename Suffix"] = ".dat"
 
 initialparameters["nbdigits"] = 0
@@ -1134,15 +1105,12 @@ if __name__ == "__main__":
 
     # -----------------------------------------------------------
 
-    Stock_INDEXREFINE = Stock_parameters_IndexRefine(
-        LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR
-    )
+    Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
 
     print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)
     print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_valueparamIR)
     IndexRefineSeriesApp = wx.App()
-    IndexRefineSeries = MainFrame_indexrefine(
-        None, -1, "Index Refine Parameters Board", initialparameters, Stock_INDEXREFINE
-    )
+    IndexRefineSeries = MainFrame_indexrefine(None, -1, "Index Refine Parameters Board",
+                                                    initialparameters, Stock_INDEXREFINE)
     IndexRefineSeries.Show(True)
     IndexRefineSeriesApp.MainLoop()

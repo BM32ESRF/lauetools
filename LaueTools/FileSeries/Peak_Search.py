@@ -764,17 +764,13 @@ class MainFrame_peaksearch(wx.Frame):
 
         # set parameter for background removal
         background_flag = str(self.list_txtctrl[8].GetValue())
-        Data_for_localMaxima, formulaexpression = RMCCD.read_background_flag(
-            background_flag
-        )
+        Data_for_localMaxima, formulaexpression = RMCCD.read_background_flag(background_flag)
         dict_param["Data_for_localMaxima"] = Data_for_localMaxima
         dict_param["formulaexpression"] = formulaexpression
 
         # set parameter  for blacklisted peaks
         blacklistpeaklist = self.list_txtctrl[9].GetValue()
-        dict_param["Remove_BlackListedPeaks_fromfile"] = RMCCD.read_blacklist_filepath(
-            blacklistpeaklist
-        )
+        dict_param["Remove_BlackListedPeaks_fromfile"] = RMCCD.read_blacklist_filepath(blacklistpeaklist)
         try:
             nb_cpus = int(self.txtctrl_cpus.GetValue())
         except ValueError:
@@ -785,7 +781,6 @@ class MainFrame_peaksearch(wx.Frame):
             return
 
         # check the first imagefile to read:
-
         #         print "dict_param in file series", dict_param
         if nb_cpus == 1:
             RMCCD.peaksearch_fileseries(

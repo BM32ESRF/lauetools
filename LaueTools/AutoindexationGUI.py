@@ -430,7 +430,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #----------   Spots set Selection for mutual angle computation
         spotsB = None
 
-        spotsA, nbA, _ = self.readspotssetctrl(self.spotlistA)
+        spotsA, nbA, israngeA = self.readspotssetctrl(self.spotlistA)
 
         if nbA == 1:
             maxindA = spotsA
@@ -440,9 +440,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #spotB is not checked
         if not self.setBchck.GetValue():
             if nbA == 1:
-                wx.MessageBox(
-                "if only spots set A is checked, you must provide a set spots by filling 'to5' or '[5,1,4,3]'",
-                "Error")
+                wx.MessageBox("if only spots set A is checked, you must provide a set of spots "
+                "by filling 'to5' or '[5,1,4,3]'", "Error")
+
             nbmax_probed = maxindA+1
             spot_index_central = spotsA
             nb_central_spots = nbA
@@ -516,7 +516,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #----------   Spots set Selection for mutual angle computation
         (spotssettype, spot_index_central, nb_central_spots,
                                 nbmax_probed, spotsB) = self.parse_spotssetctrls()
-        print("----#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
+        print("--spotssettype --#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
 
         # TODO spot_index_central and spotsB to be combined to find UBS
         #------------------------------------------------
@@ -665,19 +665,22 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                 )
 
         elif spotssettype in ('listsetA', 'listsetAB', ):
+            # and spotsB is checked
             if spotssettype in ('listsetA', ):
                 spotsB = spot_index_central
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
                                                 n, self.key_material, rough_tolangle,
                                                 detectorparameters,
+                                                set_hkl_1=set_central_spots_hkl,
                                                 minimumNbMatches=Minimum_MatchesNb)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res
             print('getOrientMatrices_SubSpotsSets found %d solutions', len(res[0]))
         else:
-            wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots probed in spots sets A and B')
+            wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots '
+                                                            'probed in spots sets A and B')
             return
 
         # Update DataSet Object

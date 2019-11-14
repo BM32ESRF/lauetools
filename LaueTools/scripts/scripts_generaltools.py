@@ -162,6 +162,4 @@ if 0:
     pts = datapeak2[:, :2]
     print("nb exp points", len(pts))
 
-    xkept, ykept, tab = GT.removeClosePoints_two_sets(
-        pts.T, pts_black.T, dist_tolerance=0.5, verbose=1
-    )
+    xkept, ykept, tab = GT.removeClosePoints_two_sets(pts.T, pts_black.T, dist_tolerance=0.5, verbose=1)

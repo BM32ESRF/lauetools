@@ -148,7 +148,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             data_I,                            # intensity
             detector parameters
 
-    TODO: output 2theta ?
+    #TODO: output 2theta ?
     """
     SKIPROWS = 1
     # read first line

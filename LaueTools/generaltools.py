@@ -314,14 +314,14 @@ def tensile_along_u(v, tensile, u="zsample"):
     omegasurfacesample = 40 * DEG  # 40 deg sample inclination
     real_expansion_coef = tensile
     if u == "zsample":
-        direction_traction = np.array(
-            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)]
-        )  # u direction traction in q space in absolute frame
+        # u direction traction in q space in absolute frame
+        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  
     else:
         # normalized axis vector u
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
-        direction_traction = np.array(UU) / nUU # u direction traction in q space in absolute frame
+        # u direction traction in q space in absolute frame
+        direction_traction = np.array(UU) / nUU 
 
     # u must be normalized
     scalaruv = np.inner(v, direction_traction)  # array of all scalar product (u, v)
@@ -382,12 +382,13 @@ def strain_along_u(v, alpha, u="zsample", anglesample=40):
     """
     omegasurfacesample = anglesample * DEG  # 40 deg sample inclination
     if u == "zsample":
-        direction_traction = np.array(
-            [-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  # u direction traction in q space in absolute frame
+        # u direction traction in q space in absolute frame
+        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  
     else:
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
-        direction_traction = np.array(UU) / nUU  # u direction traction in q space
+        # u direction traction in q space
+        direction_traction = np.array(UU) / nUU  
 
     mat = np.eye(3) + (1.0 / alpha - 1) * np.outer(direction_traction, direction_traction)
 
@@ -611,9 +612,7 @@ def FindTwoClosestPoints(arraypts, XY):
     arraypts = [[x1,y1],[x2,y2],...]
     """
     if arraypts.shape[0] <= 2:
-        raise ValueError(
-            "arraypts does not contain more than 2 elements: %s" % str(arraypts)
-        )
+        raise ValueError("arraypts does not contain more than 2 elements: %s" % str(arraypts))
     dist = np.array(arraypts) - XY
     indclose = np.argsort(np.hypot(dist[:, 0], dist[:, 1]))[:2]
 
@@ -649,9 +648,7 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
     list_mindist = []
 
     for XY_Ref in ReferencePoints:
-        indclose_XY_Ref, distances_to_XY_Ref = FindClosestPoint(
-            TestPoints, XY_Ref, returndist=1
-        )
+        indclose_XY_Ref, distances_to_XY_Ref = FindClosestPoint(TestPoints, XY_Ref, returndist=1)
 
         list_closest_ind.append(indclose_XY_Ref)
 
@@ -698,11 +695,11 @@ def prepend_in_list(list_to_modify, elems):
     """
     move elements of list_to_modify those that are at the beginning of list_to_modify
 
-    example:
+    .. example::
     prepend_in_list(range(10),[6,2,5])
     [6, 2, 5, 0, 1, 3, 4, 7, 8, 9]
 
-    warning: in each list, elements must appear once
+    .. warning:: in each list, elements must appear once
     """
     if isinstance(list_to_modify, np.ndarray):
         list_to_modify = list_to_modify.tolist()
@@ -1116,7 +1113,7 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
 
     i1, j1 = close_pos1
 
-    ionly = i1[np.logical_and(i1 != j1, i1 < nb_pts1 - 1)]
+    ionly = i1[np.logical_and(i1 != j1, i1 < nb_pts1)]
 
     toremove = ionly
 

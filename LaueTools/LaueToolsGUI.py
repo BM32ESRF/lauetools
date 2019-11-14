@@ -4486,6 +4486,7 @@ class ManualIndexFrame(wx.Frame):
         set_central_spots_hkl = None
 
         if self.sethklchck.GetValue():
+            # could be advised for cubic symmetry to have positive H K L sorted by decreasing order
             strhkl = str(self.sethklcentral.GetValue())[1:-1].split(",")
             H, K, L = strhkl
             H, K, L = int(H), int(K), int(L)
@@ -4493,7 +4494,7 @@ class ManualIndexFrame(wx.Frame):
             if L < 0:
                 restrictLUT_cubicSymmetry = False
 
-            set_central_spots_hkl = [int(H), int(K), int(L)]
+            set_central_spots_hkl = [[int(H), int(K), int(L)]]
 
         # restrict LUT if allowed and if crystal is cubic
         if restrictLUT_cubicSymmetry:
@@ -4519,9 +4520,8 @@ class ManualIndexFrame(wx.Frame):
         USETHREAD = 1
         if USETHREAD:
             # with a thread 2----------------------------------------
-            
 
-            self.UBs_MRs = None
+            self.resindexation = None
             fctparams = [INDEX.getUBs_and_MatchingRate,
                     (spot1_ind, spot2_ind, rough_tolangle, _dist,
                     spot1, spot2, nLUT, B, 2 * self.select_theta, self.select_chi),
@@ -4537,8 +4537,7 @@ class ManualIndexFrame(wx.Frame):
                     "verbosedetails": verbosedetails,
                     "Minimum_Nb_Matches": Nb_criterium,
                     "worker": None,
-                    "dictmaterials":self.dict_Materials},
-            ]
+                    "dictmaterials":self.dict_Materials}]
 
             # update DataSetObject
             self.DataSet.dim = detectorparameters["dim"]
@@ -4552,7 +4551,7 @@ class ManualIndexFrame(wx.Frame):
             print("self.DataSet.detectordiameter", self.DataSet.detectordiameter)
 
             self.TGframe = TG.ThreadHandlingFrame(self, -1, threadFunctionParams=fctparams,
-                                                        parentAttributeName_Result="UBs_MRs",
+                                                        parentAttributeName_Result="resindexation",
                                                         parentNextFunction=self.simulateAllResults)
             self.TGframe.OnStart(1)
             self.TGframe.Show(True)
@@ -4563,7 +4562,7 @@ class ManualIndexFrame(wx.Frame):
             # case USETHREAD == 0
             # ---- indexation in Reckon_2pts_new() in Manualindexframe
             self.worker = None
-            self.UBs_MRs = INDEX.getUBs_and_MatchingRate(spot1_ind, spot2_ind, rough_tolangle,
+            self.resindexation = INDEX.getUBs_and_MatchingRate(spot1_ind, spot2_ind, rough_tolangle,
                                                     _dist, spot1, spot2, nLUT, B,
                                                     2 * self.select_theta, self.select_chi,
                                                     set_hkl_1=set_central_spots_hkl,
@@ -4579,7 +4578,7 @@ class ManualIndexFrame(wx.Frame):
                                                     Minimum_Nb_Matches=Nb_criterium,
                                                     worker=self.worker,
                                                     dictmaterials=self.dict_Materials)
-
+            self.UBs_MRs, _ = self.resindexation
             self.bestmat, stats_res = self.UBs_MRs
             # update DataSetObject
             self.DataSet.dim = detectorparameters["dim"]
@@ -4595,6 +4594,11 @@ class ManualIndexFrame(wx.Frame):
             self.simulateAllResults()
 
     def simulateAllResults(self):
+
+        print('self.resindexation',self.resindexation)
+        print('len self.resindexation',len(self.resindexation))
+
+        self.UBs_MRs, _ = self.resindexation
 
         if not self.UBs_MRs[0] or self.UBs_MRs is None:
             wx.MessageBox('Sorry Nothing found !!','INFO')
