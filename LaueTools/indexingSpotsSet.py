@@ -268,10 +268,12 @@ class spotsset:
     def importdatafromfile(self, filename, refpositionfilepath=None):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list:
-        ie self.indexed_spots_dict 
+        ie self.indexed_spots_dict
 
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
-        will be aranged according to this reference list
+        will be selected and aranged according to this reference list. A 'REF_*******.cor' is also written
+        enabling spots tracking (by position [posx,posy]) over a set of files.
+        This file is self.refpositionfilepath
 
         sets  spots data set, namely:
         self.nbspots
@@ -287,7 +289,7 @@ class spotsset:
         """
         print("Import Data for DATASET indexation porcedure")
 
-        print("filename",filename)
+        print("filename", filename)
         (data_theta,
             Chi,
             posx,
@@ -312,8 +314,17 @@ class spotsset:
 
             print("isolatedspots", isolatedspots)
             print("isolatedspots_ref", isolatedspots_ref)
+                        
+            # write refposfile  .cor file     'REF_------.cor
+            dir_reffile, file_reffile = os.path.split(filename)
+            refposfileprefix = os.path.join(dir_reffile,'REF_' + file_reffile[:-4])
+            IOLT.writefile_cor(refposfileprefix,
+                            2*data_theta, Chi, posx, posy, dataintensity,
+                            param=detectorparameters,
+                            overwrite=1)
+            refposfile = refposfileprefix + '.cor'
 
-            self.refpositionfilepath=refpositionfilepath
+            self.refpositionfilepath=refposfile
 
         nb_spots = len(data_theta)
 
@@ -4731,20 +4742,23 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     # write reflist.cor file that will evolve during the loop over images
     # located in dict_param_SingleGrain['Spots Order Reference File']
     sortSpots_from_refenceList = None
-    self.mapshape = None
-    self.refpositionfilepath = None
+    mapshape = None
+    refpositionfilepath = None
+    refposfile = None
+
     if "Spots Order Reference File" in dict_param_SingleGrain:
         sortSpots_from_refenceList = dict_param_SingleGrain["Spots Order Reference File"]
         # file path of spots to be only considered for refinement + shape or map (2D, 3D)
         # reffilepathsortSpots_from_refenceList  =  filepaht, dim1, dim2, [dim3 ...]
         if sortSpots_from_refenceList not in ('None', "None", None):
             param = sortSpots_from_refenceList.split(',')
-            self.mapshape = []
-            for dimstr in range(len(param[-1:])):
-                self.mapshape.append(int(dimstr))
-            
+            print('param:', param)
+            mapshape = []
+            for dimstr in param[1:]:
+                mapshape.append(int(dimstr))
+
             firstrefpositionfilepath = param[0]
-            self.refpositionfilepath = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
+            refpositionfilepath = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
             'SpotsReference.cor')
 
             (data_theta,
@@ -4755,22 +4769,35 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             detectorparameters,
             CCDcalibdict) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
 
-            # TODO add write refposfile
-            IOLT.writefile_cor(self.refpositionfilepath[:-4],
+            # write refposfile  .cor file     'REF_------.cor
+            dir_reffile, file_reffile = os.path.split(refpositionfilepath)
+            refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
+            IOLT.writefile_cor(refposfileprefix,
                             2*data_theta, Chi, posx, posy, dataintensity,
                             param=detectorparameters,
                             overwrite=1)
-
+            refposfile = refposfileprefix + '.cor'
 
     # -------------------------------------------
     # --- Loop over images ----------------------
     # -------------------------------------------
     lastindex = nstart
-    mapfirstimage = fileindexrange[0]
+
     firstindex = fileindexrange[0]
+    lastindex  = fileindexrange[1]
+    indexstep = fileindexrange[2]
+    # image index rearrangment parameters
+    # mapshape
+    # initial index can differ from firstindex used to scan some data images
+    mapfirstimageindex = fileindexrange[0]
+    # dict of refposfile at the beginning of each line (nb of lines = mapshape[0])
+    refposfiles = {}
+    print('mapshape',mapshape)
+    dim1, dim2 = mapshape # slow , fast axes
+    maptableindices = np.arange(dim1 * dim2).reshape((dim1, dim2))
 
 
-    for imageindex in list(range(firstindex, fileindexrange[1] + 1, fileindexrange[2])):
+    for imageindex in list(range(firstindex, lastindex + 1, indexstep)):
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + ".res"
             if resfilename in list_resfiles_in_folder:
@@ -4794,7 +4821,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             if not os.path.exists(os.path.join(dirname_in, datfilename)):
                 printcyan("Missing file : %s\n Keep on scanning files\n" % datfilename)
                 continue
-            
+
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
             print("build .cor file")
             print("in %s" % Index_Refine_Parameters_dict["PeakListCor Folder"])
@@ -4807,7 +4834,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             corfilename = datfilename.split(".")[0] + ".cor"
 
         elif suffixfilename == ".cor":
-            print("CCDCalibdict fffffff.cor",CCDCalibdict)
+            print("CCDCalibdict fffffff.cor", CCDCalibdict)
             corfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
             dirname_in = Index_Refine_Parameters_dict["PeakListCor Folder"]
 
@@ -4852,19 +4879,38 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 print("starting_grainindex = 0")
                 starting_grainindex = 0
 
-
-
+                # we may consider only spots present in refposfile (same number and ordered spots)
+                if refpositionfilepath is not None:
+                
+                    #  finding the closest in sample map
+                    if imageindex != firstindex:
+                        i,j = np.where(maptableindices == imageindex)
+                        (iprior,jprior), imageindexprior, _ = GT.best_prior_array_element(i,j, mapshape,
+                                                        maxdist=indexstep*2,  # to get some condidates
+                                                        startingindex=mapfirstimageindex,
+                                                        existingabsindices = refposfiles.keys())
+                        print('best located refpositions for imageindex = %d'%imageindexprior)
+                
+                        refposfile = refposfiles[imageindexprior]
+                        
+                    else:
+                        refposfiles[imageindex]= refposfile
+                 
                 #---------------------------------------------------------------
                 # read data and calibration parameters from .cor file
                 #---------------------------------------------------------------
-
                 DataSet.importdatafromfile(file_to_index,
-                        sortSpots_from_refenceList=refpositionfilepath)
+                        refpositionfilepath=refposfile)
+
+                #print("CCDCalibdict after import fffffff.cor", CCDCalibdict)
+                #print("CCDCalibdict after import fffffff.cor", DataSet.CCDcalibdict)
+
+                if refpositionfilepath is not None:
+                    # update refposfile at each change of imageindex
+                    #'.cor file generated by DataSet.importdatafromfile()  above'
+                    refposfiles[imageindex] = DataSet.refpositionfilepath
 
 
-
-                print("CCDCalibdict after import fffffff.cor", CCDCalibdict)
-                print("CCDCalibdict after import fffffff.cor", DataSet.CCDcalibdict)
 
                 if DataSet.nbspots < 3:
                     print("%d spot(s) are too few to be indexed" % DataSet.nbspots)

@@ -383,12 +383,12 @@ def strain_along_u(v, alpha, u="zsample", anglesample=40):
     omegasurfacesample = anglesample * DEG  # 40 deg sample inclination
     if u == "zsample":
         # u direction traction in q space in absolute frame
-        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  
+        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])
     else:
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
         # u direction traction in q space
-        direction_traction = np.array(UU) / nUU  
+        direction_traction = np.array(UU) / nUU
 
     mat = np.eye(3) + (1.0 / alpha - 1) * np.outer(direction_traction, direction_traction)
 
@@ -1520,6 +1520,69 @@ def twoindices_positive_up_to(n, m):
     indices_pos = np.reshape(gripos.T, (nbpos_n * nbpos_m, 2))
 
     return indices_pos
+
+
+def closest_array_elements(i, j, array2Dshape, maxdist=1, startingindex=0):
+    """find closest (in position) other element in 2D array around element at i, j
+
+    :param i:  int or even float
+    :param j:  int or even float
+
+    returns solution:
+        - closeelem_ij: (array of i, array of j)
+        - correponding list of indices of 1D range indices rearranged in 2D array
+
+    example:
+    >>>GT.closest_array_element(5,12,(7,23))
+    out: ((array([4, 5, 5, 6]), array([12, 11, 13, 12])),
+    array([104, 126, 128, 150]))
+    """
+    n1, n2 = array2Dshape
+    ii, jj = np.indices(array2Dshape)
+    distfrom_ij = np.hypot(ii - i, jj - j)
+    cond = np.logical_and(distfrom_ij <= maxdist,distfrom_ij > 0 )
+    closeelem_ij = np.where(cond)
+
+    tabindices = np.arange(startingindex, startingindex + n1*n2).reshape((n1, n2))
+    return closeelem_ij, tabindices[closeelem_ij], distfrom_ij[closeelem_ij]
+    
+def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, existingabsindices=None):
+    """ find closest and prior element of 2D array from given i,j
+
+    prior in the sense of a raster scan
+
+    :return:
+         indices i,j and  absolute index of elem
+
+    example:
+    >>>GT.best_prior_array_element(5,1,(7,23))
+    out: ([4, 1], 93)
+
+    """
+    (_cli, _clj), _absoluteindices, _dist = closest_array_elements(i, j, array2Dshape, maxdist, startingindex)
+
+    # filter if asked
+    # check if surrounding elements in absoluteindices are available in existingabsindices
+    if bool(existingabsindices):
+        absoluteindices= []
+        cli = []
+        clj = []
+        dist=[]
+        for k, abselem in enumerate(_absoluteindices):
+            if abselem in existingabsindices:
+                absoluteindices.append(abselem)
+                cli.append(_cli[k])
+                clj.append(_clj[k])
+                dist.append(_dist[k])
+
+        close_ij = (cli, clj)
+    else:
+        absoluteindices, dist = _absoluteindices, _dist
+        close_ij = (_cli, _clj)
+
+    ic, jc = close_ij
+    b = np.argmin(dist)
+    return [ic[b], jc[b]], absoluteindices[b], dist[b]
 
 
 def GCD(ar_hkl, verbose=0):

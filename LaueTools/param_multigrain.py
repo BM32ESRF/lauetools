@@ -21,9 +21,9 @@ import numpy as np
 if omega_sample_frame != None:
     omega = omega_sample_frame * pi / 180.0
     # rotation de -omega autour de l'axe x pour repasser dans Rsample
-    mat_from_lab_to_sample_frame = np.array(
-        [[1.0, 0.0, 0.0], [0.0, cos(omega), sin(omega)], [0.0, -sin(omega), cos(omega)]]
-    )
+    mat_from_lab_to_sample_frame = np.array([[1.0, 0.0, 0.0],
+                                            [0.0, cos(omega), sin(omega)],
+                                            [0.0, -sin(omega), cos(omega)]])
 else:
     mat_from_lab_to_sample_frame = np.eye(3)  # put
 
