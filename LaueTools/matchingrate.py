@@ -552,17 +552,10 @@ def getProximity(TwicethetaChi,
         return allresidues, prox_table, table_dist
 
 
-def getProximity_new(
-    Twicetheta,
-    Chi,
-    data_theta,
-    data_chi,
-    angtol=0.5,
-    proxtable=0,
-    verbose=0,
-    signchi=1,
-    usecython=USE_CYTHON,
-):
+def getProximity_new(Twicetheta, Chi, data_theta, data_chi,
+                                                    angtol=0.5, proxtable=0,
+                                                    verbose=0, signchi=1,
+                                                    usecython=USE_CYTHON):
     """
     see doc of getProximity()
 
