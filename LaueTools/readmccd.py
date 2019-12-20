@@ -529,29 +529,34 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         formatdata,
         comments,
         extension) = DictLT.dict_CCD[CCDLabel]
+        
+    USE_RAW_METHOD = False
 
-    #     print "CCDLabel in readCCDimage", CCDLabel
+    print("CCDLabel in readCCDimage", CCDLabel)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if (CCDLabel in ("EDF", "EIGER_4M", "EIGER_1M", "sCMOS_fliplr",
-                                            "sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS")
-        and FABIO_EXISTS):
-        print('using fabio ... to open %s\n'%filename)
-        # warning import Image  # for well read of header only
+    if FABIO_EXISTS:
+        print('----> Using fabio ... to open %s\n'%filename)
+        if CCDLabel in ("EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr",
+                                            "sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
+            
+            # warning import Image  # for well read of header only
 
-        if dirname is not None:
-            img = fabio.open(os.path.join(dirname, filename))
+            if dirname is not None:
+                img = fabio.open(os.path.join(dirname, filename))
+            else:
+                img = fabio.open(filename)
+
+            dataimage = img.data
+            framedim = dataimage.shape
+
+            # pythonic way to change immutable tuple...
+            initframedim = list(DictLT.dict_CCD[CCDLabel][0])
+            initframedim[0] = framedim[0]
+            initframedim[1] = framedim[1]
+            initframedim = tuple(initframedim)
         else:
-            img = fabio.open(filename)
-
-        dataimage = img.data
-        framedim = dataimage.shape
-
-        # pythonic way to change immutable tuple...
-        initframedim = list(DictLT.dict_CCD[CCDLabel][0])
-        initframedim[0] = framedim[0]
-        initframedim[1] = framedim[1]
-        initframedim = tuple(initframedim)
+            USE_RAW_METHOD = True
 
     elif CCDLabel in ("EIGER_4Mstack", ):
 
@@ -575,10 +580,12 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif CCDLabel in ("sCMOS","TIFF Format", "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
+    elif LIBTIFF_EXISTS:
+        print("----> Using libtiff...")
+        if CCDLabel in ("sCMOS","TIFF Format", "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
                                                             "MARCCD225", "Andrea", "pnCCD_Tuba"):
-        if LIBTIFF_EXISTS and CCDLabel not in ("Andrea",):
-            print("using libtiff...")
+        
+            
             #         print "tiff format", CCDLabel
             #             print "dirname, filename", dirname, filename
             if dirname is not None:
@@ -591,44 +598,29 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         int(tifimage.GetField("ImageWidth")))
             if tifimage.IsByteSwapped():
                 dataimage = dataimage.byteswap()
-        
-        elif CCDLabel in ("sCMOS",):
-            print("not using libtiff, raw method ...")
-            # offsetheader may change ...
-            filesize = os.path.getsize(os.path.join(dirname, filename))
-            offsetheader = filesize - 2016*2018 * 2
-
-            dataimage = readoneimage(filename,
-                                framedim=framedim,
-                                dirname=dirname,
-                                offset=offsetheader,
-                                formatdata=formatdata)
-
         else:
-            print("not using libtiff")
-            if CCDLabel in ("FRELONID15_corrected",):
-                # TODO robust with dirname =None or?
-                dataimage = readoneimage(filename,
-                                    framedim=framedim,
-                                    dirname=dirname,
-                                    offset=offsetheader,
-                                    formatdata=formatdata)
+            USE_RAW_METHOD = True
 
-                dataimage = dataimage.byteswap()
-            if (CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba")
-                and PIL_EXISTS):
-                # data are compressed!
-                print("using PIL's module Image")
+    elif PIL_EXISTS:
+        print("using PIL's module Image")
+        if CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
+            # data are compressed!
+            
 
-                if dirname is not None:
-                    fullpath = os.path.join(dirname, filename)
-                else:
-                    fullpath = filename
+            if dirname is not None:
+                fullpath = os.path.join(dirname, filename)
+            else:
+                fullpath = filename
 
-                im = Image.open(fullpath, "r")
-                dataimage = np.array(im.getdata()).reshape(framedim)
+            im = Image.open(fullpath, "r")
+            dataimage = np.array(im.getdata()).reshape(framedim)
 
-    else:
+        if CCDLabel in ("sCMOS",):
+            USE_RAW_METHOD = True
+    
+    # RAW method knowing or deducing offsetheader and dataformat
+    if USE_RAW_METHOD:
+        print("----> not using libtiff, nor fabio, nor PIL!!!  ")
         # offset header varying
         if CCDLabel.startswith("ImageStar_raw"):
             filesize = os.path.getsize(os.path.join(dirname, filename))
@@ -641,15 +633,22 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 nbpixels = 1528
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
 
-        # almost very general case
-        if CCDLabel not in ('MARCCD165',):
-            print(
-                "\n\n\n WARNING: A very basic way was used to open image. Image is likely to be not well loaded ...\n\n\n")
+        
+        elif CCDLabel in ("sCMOS",):
+            print("for sCMOS not using libtiff, raw method ...")
+            # offsetheader may change ...
+            filesize = os.path.getsize(os.path.join(dirname, filename))
+            offsetheader = filesize - 2016*2018 * 2
+
         dataimage = readoneimage(filename,
                                 framedim=framedim,
                                 dirname=dirname,
                                 offset=offsetheader,
                                 formatdata=formatdata)
+        
+        if CCDLabel in ("FRELONID15_corrected",):
+
+            dataimage = dataimage.byteswap()
 
         if CCDLabel in ("EIGER_4Munstacked",):
             print("framedim", framedim)
