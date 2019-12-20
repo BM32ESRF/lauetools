@@ -418,21 +418,42 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
 
     def add_row(self, row, dict_data):
 
+        # if 0: wxpython 4.0.1
+        #     index = self.InsertItem(
+        #         sys.maxsize, str(dict_data[self.field_name[0]][row])
+        #     )  # ,    self.img_list[content.nature])
+        #     _content = []
+
+        #     for k, field in enumerate(
+        #         self.field_name
+        #     ):  # loop over other fields to fill
+        #         # print "k,field",k,field
+        #         self.SetItem(index, k, str(dict_data[field][row]))
+        #         _content.append(float(dict_data[field][row]))
+
+        #     # print "index,row",index, row
+        #     self.SetItemData(index, row)
+        #     self.itemDataMap[row] = _content
+            
         if WXPYTHON4:
-            index = self.InsertItem(
-                sys.maxsize, str(dict_data[self.field_name[0]][row])
-            )  # ,    self.img_list[content.nature])
+            item = wx.ListItem()
+            item.SetId(row)
+            self.InsertItem(item)
+
+#            index = self.InsertItem(
+#                sys.maxsize, str(dict_data[self.field_name[0]][row]))
+#            # ,    self.img_list[content.nature])
             _content = []
 
             for k, field in enumerate(
                 self.field_name
             ):  # loop over other fields to fill
                 # print "k,field",k,field
-                self.SetItem(index, k, str(dict_data[field][row]))
+                self.SetStringItem(row, k, str(dict_data[field][row]))
                 _content.append(float(dict_data[field][row]))
 
             # print "index,row",index, row
-            self.SetItemData(index, row)
+            self.SetItemData(row, row)
             self.itemDataMap[row] = _content
         else:
 
