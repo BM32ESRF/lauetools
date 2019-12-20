@@ -845,28 +845,21 @@ def create_spot_4pi(
     vecres = np.array(pos_vec)
     spotty.EwaldRadius = np.dot(vecres, vecres) / (2.0 * math.fabs(vecres[0]))
 
-    normkout = math.sqrt(
-        (spotty.Qxyz[0] + spotty.EwaldRadius) ** 2
+    normkout = math.sqrt((spotty.Qxyz[0] + spotty.EwaldRadius) ** 2
         + spotty.Qxyz[1] ** 2
-        + spotty.Qxyz[2] ** 2
-    )
+        + spotty.Qxyz[2] ** 2)
 
-    spotty.Twicetheta = (
-        math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-    )
+    spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
     #    spotty.Chi = math.atan(spotty.Qxyz[1] * 1. / spotty.Qxyz[2]) / DEG
     spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
     return spotty
 
 
-def create_spot_side_pos(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048)):
+def create_spot_side_pos(pos_vec, miller, detectordistance,
+                                        allattributes=0,
+                                        pixelsize=165.0 / 2048,
+                                        dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on side camera
     """
@@ -881,33 +874,25 @@ def create_spot_side_pos(
             + spotty.Qxyz[2] ** 2)
 
         if not allattributes:
-            X = (
-                detectordistance
-                * (spotty.Qxyz[0] + spotty.EwaldRadius)
-                / spotty.Qxyz[1]
-            )
+            X = (detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius)
+                / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             #             spotty.Xcam = X / pixelsize + dim[0] / 2
             #             spotty.Ycam = Y / pixelsize + dim[1] / 2
             spotty.Xcam = X / pixelsize
             spotty.Ycam = Y / pixelsize
 
-        spotty.Twicetheta = (
-            math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-        )
+        spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
         # spotty.Chi = math.atan(spotty.Qxyz[1]*1. / spotty.Qxyz[2])/DEG
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
     return spotty
 
 
-def create_spot_side_neg(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048)):
+def create_spot_side_neg( pos_vec, miller, detectordistance,
+                                            allattributes=0,
+                                            pixelsize=165.0 / 2048,
+                                            dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on neg side camera
 
@@ -925,31 +910,22 @@ def create_spot_side_neg(
             + spotty.Qxyz[2] ** 2)
 
         if not allattributes:
-            X = (
-                -detectordistance
-                * (spotty.Qxyz[0] + spotty.EwaldRadius)
-                / spotty.Qxyz[1]
-            )
+            X = (-detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius)
+                / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             spotty.Xcam = X / pixelsize + dim[0] / 2.0
             spotty.Ycam = Y / pixelsize + dim[1] / 2.0
 
-        spotty.Twicetheta = (
-            math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-        )
+        spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
         # spotty.Chi = math.atan(spotty.Qxyz[1]*1. / spotty.Qxyz[2])/DEG
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
     return spotty
 
 
-def create_spot_front(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048)):
+def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
+                                                        pixelsize=165.0 / 2048,
+                                                        dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on forward direction transmission geometry
     """
@@ -964,19 +940,19 @@ def create_spot_front(
         return None
 
     if spotty.Qxyz[0] < 0.0:
+        #print('good reflection for transmission')
         abskx = math.fabs(spotty.Qxyz[0] + spotty.EwaldRadius)
-        normkout = 1.0 * math.sqrt( abskx ** 2 + spotty.Qxyz[1] ** 2 + spotty.Qxyz[2] ** 2 )
+        normkout = 1.0 * math.sqrt(abskx ** 2 + spotty.Qxyz[1] ** 2 + spotty.Qxyz[2] ** 2)
 
-        if abskx >=0.: return None
-        if not allattributes:
-            X = -detectordistance * (spotty.Qxyz[1]) / abskx
-            Y = -detectordistance * (spotty.Qxyz[2]) / abskx
-            spotty.Xcam = X / pixelsize + dim[0] / 2.0
-            spotty.Ycam = Y / pixelsize + dim[1] / 2.0
+        # if qx < -R   no spot in transmission mode (qx is <0)
+        if spotty.Qxyz[0] + spotty.EwaldRadius <= 0.: return None
+        
+        X = -detectordistance * (spotty.Qxyz[1]) / abskx
+        Y = -detectordistance * (spotty.Qxyz[2]) / abskx
+        spotty.Xcam = X / pixelsize + dim[0] / 2.0
+        spotty.Ycam = Y / pixelsize + dim[1] / 2.0
 
-        spotty.Twicetheta = (
-            math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-        )
+        spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
         # spotty.Chi = math.atan(spotty.Qxyz[1]*1. / spotty.Qxyz[2])/DEG
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
@@ -986,13 +962,10 @@ def create_spot_front(
         return None
 
 
-def create_spot_back(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048)):
+def create_spot_back( pos_vec, miller, detectordistance,
+                                        allattributes=0,
+                                        pixelsize=165.0 / 2048,
+                                        dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on backward direction back reflection geometry
     """
@@ -1010,9 +983,7 @@ def create_spot_back(
             spotty.Xcam = X / pixelsize + dim[0] / 2.0
             spotty.Ycam = Y / pixelsize + dim[1] / 2.0
 
-        spotty.Twicetheta = (
-            math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-        )
+        spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
         # spotty.Chi = math.atan(spotty.Qxyz[1]*1. / spotty.Qxyz[2])/DEG
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
@@ -1158,6 +1129,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         Oncamchi = emptylists(nbofgrains)
 
     # loop over grains
+    totalnbspots = 0
     for grainindex in list(range(nbofgrains)):
         try:
             Qx = Qvectors_list[grainindex][:, 0] * 1.0
@@ -1257,6 +1229,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             oncam_vec = np.array([oncam_Qx, oncam_Qy, oncam_Qz]).T
 
+            print('onCam_cond', onCam_cond)
             oncam_H = np.compress(onCam_cond, indi_H)
             oncam_K = np.compress(onCam_cond, indi_K)
             oncam_L = np.compress(onCam_cond, indi_L)
@@ -1269,8 +1242,8 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             kf_direction=kf_direction)
-
-            #             print "oncam_HKL", oncam_HKL.tolist()
+            print("listspot",listspot)
+            print("oncam_HKL", oncam_HKL.tolist())
             # Creating list of spot with or without harmonics
             if HarmonicsRemoval and listspot:
                 #                ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
@@ -1280,6 +1253,9 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             # feeding final list of spots
             ListSpots_Oncam_wo_harmonics[grainindex] = listspot
+                
+            if listspot is not None:
+                totalnbspots += len(listspot)
 
             if fileOK:
                 IOLT.Writefile_data_log(ListSpots_Oncam_wo_harmonics[grainindex],
@@ -1295,6 +1271,9 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
             Oncam2theta[grainindex] = oncam_2theta
             Oncamchi[grainindex] = oncam_chi
 
+    print('total number of spots for the %d grain(s):  '%nbofgrains,totalnbspots)
+    if totalnbspots==0:
+        return
     # outputs and returns
     if fileOK:
         linestowrite.append(["\n"])
