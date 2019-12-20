@@ -356,6 +356,7 @@ def dosimulation_parametric(_list_param,
         #         print "nb_transforms", nb_transforms
         #         print "Transform_listparam[0]", Transform_listparam[0]
 
+        calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
         # -----------------------------------------------------
         # loop over child grains derived from transformation of a single parent grain
         for ChildGrain_index in range(nb_transforms):
@@ -557,6 +558,8 @@ def dosimulation_parametric(_list_param,
 
                 elif kf_direction in ("X>0",):  # transmission mode
                     print("\n*****\nSimulation in transmission mode\n*****\n")
+                        
+                    # print("spots2pi",spots2pi)
 
                     Laue_spot_list = LAUE.filterLaueSpots(spots2pi,
                                                     fileOK=0,
@@ -567,8 +570,18 @@ def dosimulation_parametric(_list_param,
                                                     HarmonicsRemoval=1,
                                                     pixelsize=pixelsize)
 
-                    # for elem in Laue_spot_list[0][:10]:
-                    # print elem
+                    if Laue_spot_list is None:
+                        list_twicetheta.append([])
+                        list_chi.append([])
+                        list_energy.append([])
+                        list_Miller.append([])
+                        list_posX.append([])
+                        list_posY.append([])
+                        continue
+
+                    # print("Laue_spot_list",Laue_spot_list)
+                    # for elem in Laue_spot_list[0]:
+                    #     print('transmission spots',elem)
 
                     # print "Laue_spot_list[0][0].Twicetheta"
                     # print Laue_spot_list[0][0].Twicetheta
@@ -583,7 +596,7 @@ def dosimulation_parametric(_list_param,
                     energy = [spot.EwaldRadius * DictLT.CST_ENERGYKEV for spot in Laue_spot_list[0]]
                     Miller_ind = [list(spot.Millers) for spot in Laue_spot_list[0]]
 
-                    calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
+                    
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
                                         pixelsize=pixelsize,
@@ -628,8 +641,9 @@ def dosimulation_parametric(_list_param,
         transform_type = "parametric"
         print("Transform_listparam in dosimultiondoudou", Transform_listparam)
 
-        if Transform_listparam[0].endswith("slipsystem"):
-            transform_type = "slipsystem"
+        if not isinstance(Transform_listparam[0],list):
+            if Transform_listparam[0].endswith("slipsystem"):
+                transform_type = "slipsystem"
 
         list_ParentGrain_transforms.append([parentgrain_index, nb_transforms, transform_type])
         total_nb_grains += nb_transforms
