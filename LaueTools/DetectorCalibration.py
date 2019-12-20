@@ -173,6 +173,9 @@ class PlotRangePanel(wx.Panel):
 
         print("Selected file ", selectedFile)
 
+        self.mainframe.initialParameter["dirname"] = self.mainframe.dirname
+        self.mainframe.initialParameter["filename"] = selectedFile
+
         # prefix_filename, extension_filename = self.DataPlot_filename.split('.')
         prefix_filename = selectedFile.rsplit(".", 1)[0]
 
@@ -1734,12 +1737,25 @@ class MainCalibrationFrame(wx.Frame):
         linkExpMiller = []
         linkIntensity = []
         linkResidues = []
+        # for val in list(calib_indexed_spots.values()):
+        #     if val[2] is not None:
+        #         listofpairs.append([val[0], val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+        #         linkExpMiller.append([float(val[0])] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
+        #         linkIntensity.append(self.Data_I[val[0]])
+        #         linkResidues.append([val[0], val[1], Resi[val[1]]])
+        
         for val in list(calib_indexed_spots.values()):
             if val[2] is not None:
-                listofpairs.append([val[0], val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+                if not isinstance(val[1],(list, np.ndarray)):
+                    closetheoindex = val[1]
+                else:
+                    closetheoindex = val[1][0]
+
+                listofpairs.append([val[0], closetheoindex])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
                 linkExpMiller.append([float(val[0])] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(self.Data_I[val[0]])
-                linkResidues.append([val[0], val[1], Resi[val[1]]])
+                linkResidues.append([val[0], closetheoindex, Resi[closetheoindex]])
+
 
         self.linkedspots = np.array(listofpairs)
         self.linkExpMiller = linkExpMiller
@@ -2090,7 +2106,8 @@ class MainCalibrationFrame(wx.Frame):
 
         # update .cor file
         print("self.defaultParam after refinement", self.CCDParam)
-        fullpathfilename = self.initialParameter["filename"]
+        fullpathfilename = os.path.join(self.initialParameter["dirname"],
+                                        self.initialParameter["filename"])
         print("fullpathfilename", fullpathfilename)
 
         (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
@@ -3663,7 +3680,7 @@ class MainCalibrationFrame(wx.Frame):
             #            print("inaxes", event)
             #             print("inaxes x,y", event.x, event.y)
             #             print("inaxes xdata, ydata", event.xdata, event.ydata)
-            if event.button is 1:
+            if event.button == 1:
                 self.centerx, self.centery = event.xdata, event.ydata
 
             # rotation  around self.centerx, self.centery triggered by button
@@ -3699,7 +3716,7 @@ class MainCalibrationFrame(wx.Frame):
         if self.press is None:
             return
 
-        if event.button is 1:
+        if event.button == 1:
             self.centerx, self.centery = self.press
 
             # define rotation axis from self.centerx, self.centery
@@ -3748,7 +3765,7 @@ class MainCalibrationFrame(wx.Frame):
         #         print "twth2, chi2", twth2, chi2
 
         # left mouse button
-        if event.button is 1:
+        if event.button == 1:
             # drag a spot
             self.SelectedRotationAxis, angle = self.computeRotation(
                 twth1, chi1, twth2, chi2

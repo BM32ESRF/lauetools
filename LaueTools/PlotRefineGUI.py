@@ -1486,18 +1486,35 @@ class Plot_RefineFrame(wx.Frame):
         print('self.selectedAbsoluteSpotIndices',self.selectedAbsoluteSpotIndices)
         print('refine_indexed_spots', refine_indexed_spots)
 
+        # for val in list(refine_indexed_spots.values()):
+        #     if val[2] is not None:
+        #         localspotindex = val[0]
+        #         # print('localspotindex',localspotindex)
+        #         absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
+
+        #         listofpairs.append([absolute_spot_index, val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+        #         linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
+        #         linkIntensity.append(dataintensity_exp[localspotindex])
+        #         linkResidues.append([absolute_spot_index, val[1], Resi[val[1]]])
+        #         # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
+
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
+                if not isinstance(val[1], (list, np.ndarray)):
+                    closetheoindex = val[1]
+                else:
+                    closetheoindex = val[1][0]
                 # print('localspotindex',localspotindex)
                 absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
 
-                listofpairs.append([absolute_spot_index, val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
+                listofpairs.append([absolute_spot_index, closetheoindex])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
                 linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(dataintensity_exp[localspotindex])
-                linkResidues.append([absolute_spot_index, val[1], Resi[val[1]]])
+                linkResidues.append([absolute_spot_index, closetheoindex, Resi[closetheoindex]])
                 # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
 
+        
         self.linkedspots_link = np.array(listofpairs)
         self.linkExpMiller_link = linkExpMiller
         self.linkIntensity_link = linkIntensity

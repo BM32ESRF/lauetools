@@ -1807,11 +1807,21 @@ class spotsset:
         else:
             # Missing reflections:
             # ie theo (simulated) spots that have not been paired with an experimental spot
-
+            
             # theo. pairs spot index
-            tps = list(res[1][:, 1])
+            tps=[]
+            for elem in res[1]:
+                if not isinstance(elem[1],(list, np.ndarray)):
+                    theoindex = elem[1]
+                else:
+                    theoindex = elem[1][0]
+                tps.append(theoindex)
+           
+            print('tps',tps)
+            print('nb_of_simulated_spots',list(range(nb_of_simulated_spots)))
 
-            missing_refs = list(set(range(nb_of_simulated_spots)) - set(tps))
+            missing_refs = set(range(nb_of_simulated_spots))- set(tps)
+
 
             if verbose:
                 #        print "theo paired spots indexed", tps
@@ -1829,9 +1839,9 @@ class spotsset:
             # Twicetheta, Chi, posx, posy, Miller_ind, Energy
             ar_data = np.array([Twicetheta, Chi, posx, posy])
 
-            Missing_Reflections_Pos = np.take(ar_data, missing_refs, axis=1)
-            Missing_Reflections_Miller = np.take(Miller_ind, missing_refs, axis=0)
-            Missing_Reflections_Energy = Energy[missing_refs]
+            Missing_Reflections_Pos = np.take(ar_data, tuple(missing_refs), axis=1)
+            Missing_Reflections_Miller = np.take(Miller_ind, tuple(missing_refs), axis=0)
+            Missing_Reflections_Energy = Energy[list(missing_refs)]
 
             #        print "Missing_Reflections_Pos", Missing_Reflections_Pos
             #        print "Missing_Reflections_Miller", Missing_Reflections_Miller
@@ -2668,30 +2678,9 @@ class spotsset:
 
         Data = self.getSummaryallData()
 
-        (spotindex,
-            grain_index,
-            tth,
-            chi,
-            posX,
-            posY,
-            intensity,
-            H,
-            K,
-            L,
-            Energy,
-        ) = Data.T
+        (spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy) = Data.T
 
-        Columns = [spotindex,
-                    grain_index,
-                    tth,
-                    chi,
-                    posX,
-                    posY,
-                    intensity,
-                    H,
-                    K,
-                    L,
-                    Energy]
+        Columns = [spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy]
 
         nbspots = len(spotindex)
 
@@ -2747,15 +2736,14 @@ class spotsset:
 
         outputfile.close()
 
-    def writeFitFile(
-        self,
-        grain_index,
-        corfilename=None,
-        dirname=None,
-        addpixdev=False,
-        verbose=0,
-        add_strain_sampleframe=False,
-        add_grainindex_in_outputfilename=True):
+    
+
+
+    def writeFitFile( self, grain_index, corfilename=None, dirname=None,
+                                            addpixdev=False,
+                                            verbose=0,
+                                            add_strain_sampleframe=False,
+                                            add_grainindex_in_outputfilename=True):
         r"""
         write a .fit file
         list of spots belonging to a single grain
@@ -2829,10 +2817,10 @@ class spotsset:
             nbindexedspots = len(index)
             # grain_index * np.ones(nbindexedspots)
 
-            Columns = [ index, intensity, H, K, L,
+            Columns = [index, intensity, H, K, L,
                         tth, chi, posX, posY, Energy,
                         grain_index * np.ones(nbindexedspots),
-                        pixeldevarray, ]
+                        pixeldevarray]
         else:
             Columns = [index, intensity, H, K, L, tth, chi, posX, posY, Energy]
             nbindexedspots = len(index)
@@ -2879,16 +2867,14 @@ class spotsset:
             columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy\n"
 
         currentfolder = os.path.abspath(os.curdir)
-        IOLT.writefitfile(
-                            outputfilename,
+        IOLT.writefitfile(outputfilename,
                             datatooutput,
                             nbindexedspots,
                             dict_matrices=dict_matrices,
                             meanresidues=meanresidues,
                             PeakListFilename=self.filename,
                             columnsname=columnsname,
-                            modulecaller="indexingSpotsSet.py",
-                        )
+                            modulecaller="indexingSpotsSet.py")
         print("File : %s written in %s" % (outputfilename, currentfolder))
 
     def writecorFile_unindexedSpots(
@@ -3299,6 +3285,37 @@ class spotsset:
 
 
 # --- -------  PROCEDURES -------------------
+def writeEmptyFileSummary(filenamepattern, dirname=None):
+    r"""
+    write .res file in case of no results (no peaks to refine ...)
+    
+    """
+    outputfilename = filenamepattern.split(".")[0] + ".res"
+    if dirname is not None:
+        outputfilename = os.path.join(dirname, outputfilename)
+
+    print("Saving EMPTY Summary file: %s" % outputfilename)
+
+    # (spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy) = Data.T
+
+    # Columns = [spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy]
+
+    nbspots = 0
+
+    # datatooutput = np.transpose(np.array(Columns))
+    # datatooutput = np.round(datatooutput, decimals=7)
+
+    header = "# Spots Summary of missing or empty: %s\n" % filenamepattern
+    header += "# File created at %s with indexingSpotsSet.py\n" % (time.asctime())
+    #         header += '# Number of indexed spots: %d\n' % nbindexedspots
+    #         header += '# Number of unindexed spots: %d\n' % nbunindexedspots
+    header += "# Number of spots: %d\n" % nbspots
+
+    header += ("#spot_index grain_index 2theta Chi Xexp Yexp intensity h k l Energy\n")
+    outputfile = open(outputfilename, "w")
+    outputfile.write(header)
+    outputfile.close()
+
 def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
     """
     remove undesirable spots in exp_data that listed in
@@ -4813,13 +4830,16 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             if imageindex == firstindex:
                 fullpath = os.path.join(dirname_in, datfilename)
+                writeEmptyFileSummary(datfilename, dirname= fitfile_folder )
                 if not os.path.exists(fullpath):
-                    printred("\n\n*******\nSomething wrong with the filename: %s. Please check carefully the filename!"
+                    printred("\n\n*******\nSomething wrong with the first filename: %s. Please check carefully the filename!"
                         % fullpath)
-                    return
+                    #return
 
             if not os.path.exists(os.path.join(dirname_in, datfilename)):
                 printcyan("Missing file : %s\n Keep on scanning files\n" % datfilename)
+                    
+                writeEmptyFileSummary(datfilename, dirname= fitfile_folder )
                 continue
 
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
