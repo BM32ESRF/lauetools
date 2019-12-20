@@ -8,7 +8,7 @@ import time
 
 import wx
 
-if wx.__version__ < "4.":
+if wx.__version__ < "4.0.2":
     WXPYTHON4 = False
 else:
     WXPYTHON4 = True
@@ -1672,8 +1672,8 @@ class ImshowPanel(wx.Panel):
 
         nby, nbx = self.posmotors.shape[:2]
 
-        self.poscenter_motor1 = self.posmotor1[nbx / 2]
-        self.poscenter_motor2 = self.posmotor2[nby / 2]
+        self.poscenter_motor1 = self.posmotor1[nbx // 2]
+        self.poscenter_motor2 = self.posmotor2[nby // 2]
 
         #         print "center motor1", self.poscenter_motor1
         #         print "center motor2", self.poscenter_motor2
