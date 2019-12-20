@@ -531,10 +531,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         extension) = DictLT.dict_CCD[CCDLabel]
 
     #     print "CCDLabel in readCCDimage", CCDLabel
-
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if (CCDLabel in ("EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr",
+    if (CCDLabel in ("EDF", "EIGER_4M", "EIGER_1M", "sCMOS_fliplr",
                                             "sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS")
         and FABIO_EXISTS):
         print('using fabio ... to open %s\n'%filename)
@@ -576,7 +575,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif CCDLabel in ("TIFF Format", "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
+    elif CCDLabel in ("sCMOS","TIFF Format", "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
                                                             "MARCCD225", "Andrea", "pnCCD_Tuba"):
         if LIBTIFF_EXISTS and CCDLabel not in ("Andrea",):
             print("using libtiff...")
@@ -592,6 +591,19 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         int(tifimage.GetField("ImageWidth")))
             if tifimage.IsByteSwapped():
                 dataimage = dataimage.byteswap()
+        
+        elif CCDLabel in ("sCMOS",):
+            print("not using libtiff, raw method ...")
+            # offsetheader may change ...
+            filesize = os.path.getsize(os.path.join(dirname, filename))
+            offsetheader = filesize - 2016*2018 * 2
+
+            dataimage = readoneimage(filename,
+                                framedim=framedim,
+                                dirname=dirname,
+                                offset=offsetheader,
+                                formatdata=formatdata)
+
         else:
             print("not using libtiff")
             if CCDLabel in ("FRELONID15_corrected",):
