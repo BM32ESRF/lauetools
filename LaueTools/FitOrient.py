@@ -414,81 +414,68 @@ def fit_on_demand_calibration(
             weights=weights,
             kf_direction=kf_direction)
 
-        print(
-            "\n\n***************************\nFitting parameters:  ",
-            parameters_being_fitted,
-            "\n\n***************************\n",
-        )
+        print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted,
+            "\n\n***************************\n")
         # NEEDS AT LEAST 5 spots (len of nspots)
         print("With initial values", param_calib_0)
 
     # setting  keywords of _error_function_on_demand_calibration during the fitting because leastsq handle only *args but not **kwds
-    _error_function_on_demand_calibration.__defaults__ = (
-        initrot,
-        vecteurref,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        0,
-        kf_direction,
-    )
+    _error_function_on_demand_calibration.__defaults__ = (initrot,
+                                                        vecteurref,
+                                                        pureRotation,
+                                                        0,
+                                                        pixelsize,
+                                                        dim,
+                                                        weights,
+                                                        0,
+                                                        kf_direction)
 
     # LEASTSQUARE
-    calib_sol = leastsq(
-        _error_function_on_demand_calibration,
-        param_calib_0,
-        args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
-        maxfev=5000,
-        **kwd
-    )  # args=(rre,ertetr,) last , is important!
+    calib_sol = leastsq(_error_function_on_demand_calibration,
+                            param_calib_0,
+                            args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
+                            maxfev=5000,
+                            **kwd)  # args=(rre,ertetr,) last , is important!
 
     # print "calib_sol",calib_sol
 
     if calib_sol[-1] in (1, 2, 3, 4, 5):
         if verbose:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors  ****************** \n\n"
-            )
-            _error_function_on_demand_calibration(
-                calib_sol[0],
-                miller,
-                allparameters,
-                arr_indexvaryingparameters,
-                nspots,
-                pixX,
-                pixY,
-                initrot=initrot,
-                pureRotation=pureRotation,
-                verbose=verbose,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-            )
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_calibration(calib_sol[0],
+                                                    miller,
+                                                    allparameters,
+                                                    arr_indexvaryingparameters,
+                                                    nspots,
+                                                    pixX,
+                                                    pixY,
+                                                    initrot=initrot,
+                                                    pureRotation=pureRotation,
+                                                    verbose=verbose,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    kf_direction=kf_direction)
         return calib_sol[0]  # 5 detector parameters + deltaangles
     else:
         return None
 
 
-def error_function_on_demand_strain(
-    param_strain,
-    DATA_Q,
-    allparameters,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    Bmat=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048.,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-):
+def error_function_on_demand_strain(param_strain,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots,
+                                        pixX,
+                                        pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        Bmat=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048.,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        kf_direction="Z>0"):
     """
     #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
@@ -518,22 +505,16 @@ def error_function_on_demand_strain(
         else:
             a1 = param_strain[0] * DEG
         # print "a1 (rad)= ",a1
-        mat1 = np.array(
-            [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]]
-        )
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]])
 
     if index_of_rot_in_arr_indexvaryingparameters[1] in arr_indexvaryingparameters:
-        ind2 = np.where(
-            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[1]
-        )[0][0]
+        ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[1])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a2 = param_strain[ind2] * DEG
         else:
             a2 = param_strain[0] * DEG
         # print "a2 (rad)= ",a2
-        mat2 = np.array(
-            [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]]
-        )
+        mat2 = np.array([[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]])
 
     if index_of_rot_in_arr_indexvaryingparameters[2] in arr_indexvaryingparameters:
         ind3 = np.where(
@@ -605,15 +586,9 @@ def error_function_on_demand_strain(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(distanceterm),
-                "    ********")
+            print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ",
-                np.mean(distanceterm),
-                "    ********")
+            print("***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
         #        print "newmatrix", newmatrix
         return distanceterm, deltamat, newmatrix
 
@@ -815,33 +790,30 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
         if weights is not None:
             print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
+            print("***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
         return distanceterm2, (deltamat_1, deltamat_2), (newmatrix_1, newmatrix_2)
 
     else:
         return distanceterm
 
 
-def fit_on_demand_strain(
-    starting_param,
-    miller,
-    allparameters,
-    _error_function_on_demand_strain,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    Bmat=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd
-):
+def fit_on_demand_strain(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_strain,
+                                arr_indexvaryingparameters,
+                                nspots,
+                                pixX,
+                                pixY,
+                                initrot=IDENTITYMATRIX,
+                                Bmat=IDENTITYMATRIX,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                **kwd):
     """
     To use it:
     allparameters = 5calibdetectorparams + fivestrainparameter + 3deltaangles of orientations
@@ -850,85 +822,62 @@ def fit_on_demand_strain(
     """
 
     # All miller indices must be entered in miller, selection is done in xy_from_Quat with nspots (array of indices)
-    parameters = [
-        "dd",
-        "xcen",
-        "ycen",
-        "angle1",
-        "angle2",
-        "b/a",
-        "c/a",
-        "a12",
-        "a13",
-        "a23",
-        "theta1",
-        "theta2",
-        "theta3",
-    ]
+    parameters = [ "dd", "xcen", "ycen", "angle1", "angle2", "b/a", "c/a",
+                        "a12", "a13", "a23", "theta1", "theta2", "theta3", ]
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     param_strain_0 = starting_param
     if 1:#verbose:
-        print(
-            "\n\n***************************\nfirst error with initial values of:",
+        print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted,
-            " \n\n***************************\n",
-        )
+            " \n\n***************************\n")
 
-        _error_function_on_demand_strain(
-            param_strain_0,
-            miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            nspots,
-            pixX,
-            pixY,
-            initrot=initrot,
-            Bmat=Bmat,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction,
-        )
+        _error_function_on_demand_strain(param_strain_0,
+                                        miller,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots,
+                                        pixX,
+                                        pixY,
+                                        initrot=initrot,
+                                        Bmat=Bmat,
+                                        pureRotation=pureRotation,
+                                        verbose=1,
+                                        pixelsize=pixelsize,
+                                        dim=dim,
+                                        weights=weights,
+                                        kf_direction=kf_direction)
 
-        print(
-            "\n\n***************************\nFitting parameters:  ",
+        print("\n\n***************************\nFitting parameters:  ",
             parameters_being_fitted,
-            "\n\n***************************\n",
-        )
+            "\n\n***************************\n")
         # NEEDS AT LEAST 5 spots (len of nspots)
         print("With initial values", param_strain_0)
 
     # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
-    _error_function_on_demand_strain.__defaults__ = (
-        initrot,
-        Bmat,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-    )
+    _error_function_on_demand_strain.__defaults__ = (initrot,
+                                                    Bmat,
+                                                    pureRotation,
+                                                    0,
+                                                    pixelsize,
+                                                    dim,
+                                                    weights,
+                                                    kf_direction)
 
     #     print "_error_function_on_demand_strain.func_defaults", _error_function_on_demand_strain.func_defaults
 
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(
-        _error_function_on_demand_strain,
-        param_strain_0,
-        args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
-        maxfev=5000,
-        full_output=1,
-        xtol=1.0e-11,
-        epsfcn=0.0,
-        **kwd
-    )  # args=(rre,ertetr,) last , is important!
+    res = leastsq(_error_function_on_demand_strain,
+                    param_strain_0,
+                    args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
+                    maxfev=5000,
+                    full_output=1,
+                    xtol=1.0e-11,
+                    epsfcn=0.0,
+                    **kwd)  # args=(rre,ertetr,) last , is important!
 
     strain_sol = res[0]
 
@@ -944,64 +893,50 @@ def fit_on_demand_strain(
         return None
     else:
         if 1:#verbose:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors  ****************** \n\n"
-            )
-            _error_function_on_demand_strain(
-                strain_sol,
-                miller,
-                allparameters,
-                arr_indexvaryingparameters,
-                nspots,
-                pixX,
-                pixY,
-                initrot=initrot,
-                Bmat=Bmat,
-                pureRotation=pureRotation,
-                verbose=verbose,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-            )
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_strain(strain_sol,
+                                            miller,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            nspots,
+                                            pixX,
+                                            pixY,
+                                            initrot=initrot,
+                                            Bmat=Bmat,
+                                            pureRotation=pureRotation,
+                                            verbose=verbose,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            weights=weights,
+                                            kf_direction=kf_direction)
         return strain_sol
 
 
-def plot_refinement_oneparameter(
-    starting_param,
-    miller,
-    allparameters,
-    _error_function_on_demand_calibration,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    param_range,
-    initrot=IDENTITYMATRIX,
-    vecteurref=IDENTITYMATRIX,
-    pureRotation=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd
-):
+def plot_refinement_oneparameter(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_calibration,
+                                arr_indexvaryingparameters,
+                                nspots,
+                                pixX,
+                                pixY,
+                                param_range,
+                                initrot=IDENTITYMATRIX,
+                                vecteurref=IDENTITYMATRIX,
+                                pureRotation=1,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                **kwd):
 
     """
     All miller indices must be entered in miller, 
     selection is done in xy_from_Quat with nspots (array of indices)
     """
-    parameters = [
-        "distance (mm)",
-        "Xcen (pixel)",
-        "Ycen (pixel)",
-        "Angle1 (deg)",
-        "Angle2 (deg)",
-        "theta1",
-        "theta2",
-        "theta3",
-    ]
+    parameters = ["distance (mm)", "Xcen (pixel)", "Ycen (pixel)",
+                    "Angle1 (deg)", "Angle2 (deg)", "theta1", "theta2", "theta3", ]
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
     param_calib_0 = starting_param
@@ -1114,80 +1049,68 @@ def fitXCEN(
     """
     param_calib_0 = starting_param
     if verbose:
-        print(
-            "\n\n***************************\nfirst error XCEN************************\n"
-        )
+        print("\n\n***************************\nfirst error XCEN************************\n")
 
-        _error_function_XCEN(
-            param_calib_0,
-            miller,
-            allparameters,
-            nspots,
-            pixX,
-            pixY,
-            initrot=initrot,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize)
+        _error_function_XCEN(param_calib_0,
+                            miller,
+                            allparameters,
+                            nspots,
+                            pixX,
+                            pixY,
+                            initrot=initrot,
+                            pureRotation=pureRotation,
+                            verbose=1,
+                            pixelsize=pixelsize)
 
-        print(
-            "\n\n***************************\nFitting XCEN ...\n\n***************************\n"
-        )
+        print("\n\n***************************\nFitting XCEN ...\n\n***************************\n")
 
         print("Starting parameters", param_calib_0)
 
     # setting  keywords of _error_function_XCEN during the fitting because leastsq handle only *args but not **kwds
     _error_function_XCEN.__defaults__ = (initrot, pureRotation, 0, pixelsize)
 
-    calib_sol = leastsq(
-        _error_function_XCEN,
-        param_calib_0,
-        args=(miller, allparameters, nspots, pixX, pixY),
-        **kwd
-    )  # args=(rre,ertetr,) last , is important!
+    calib_sol = leastsq(_error_function_XCEN,
+                        param_calib_0,
+                        args=(miller, allparameters, nspots, pixX, pixY),
+                        **kwd)  # args=(rre,ertetr,) last , is important!
 
     print("calib_sol", calib_sol)
     if calib_sol[-1] in (1, 2, 3, 4, 5):
         if verbose:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors  ****************** \n\n"
-            )
-            _error_function_XCEN(
-                calib_sol[0],
-                miller,
-                allparameters,
-                nspots,
-                pixX,
-                pixY,
-                initrot=initrot,
-                pureRotation=pureRotation,
-                verbose=verbose,
-                pixelsize=pixelsize)
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_XCEN(calib_sol[0],
+                                    miller,
+                                    allparameters,
+                                    nspots,
+                                    pixX,
+                                    pixY,
+                                    initrot=initrot,
+                                    pureRotation=pureRotation,
+                                    verbose=verbose,
+                                    pixelsize=pixelsize)
         return calib_sol[0]  # 5 detector parameters
     else:
         return None
 
 
-def fit_on_demand_strain_2grains(
-    starting_param,
-    miller,
-    allparameters,
-    _error_function_on_demand_strain_2grains,
-    arr_indexvaryingparameters,
-    absolutespotsindices,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    nb_grains=1,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd
-):
+def fit_on_demand_strain_2grains(starting_param,
+                                miller,
+                                allparameters,
+                                _error_function_on_demand_strain_2grains,
+                                arr_indexvaryingparameters,
+                                absolutespotsindices,
+                                pixX,
+                                pixY,
+                                initrot=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                **kwd):
     """
     Fit a model of two grains of the same material
     Initial orientation matrices are the same (only strain state differs)
@@ -1213,57 +1136,47 @@ def fit_on_demand_strain_2grains(
 
     init_strain_values = starting_param
     if 1:  # verbose:
-        print(
-            "\n\n***************************\nfirst error with initial values of:",
-            parameters_being_fitted,
-            " \n\n***************************\n",
-        )
+        print("\n\n***************************\nfirst error with initial values of:",
+            parameters_being_fitted, " \n\n***************************\n")
 
-        _error_function_on_demand_strain_2grains(
-            init_strain_values,
-            miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            absolutespotsindices,
-            pixX,
-            pixY,
-            initrot=initrot,
-            B0matrix=B0matrix,
-            nb_grains=nb_grains,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction)
+        _error_function_on_demand_strain_2grains(init_strain_values,
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                absolutespotsindices,
+                                                pixX,
+                                                pixY,
+                                                initrot=initrot,
+                                                B0matrix=B0matrix,
+                                                nb_grains=nb_grains,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                kf_direction=kf_direction)
 
-        print(
-            "\n\n***************************\nFitting parameters:  ",
-            parameters_being_fitted,
-            "\n\n***************************\n",
-        )
+        print("\n\n***************************\nFitting parameters:  ",
+            parameters_being_fitted, "\n\n***************************\n")
         # NEEDS AT LEAST 5 spots (len of nspots)
         print("With initial values", init_strain_values)
 
     # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
-    _error_function_on_demand_strain_2grains.__defaults__ = (
-        initrot,
-        B0matrix,
-        nb_grains,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-        False,
-    )
+    _error_function_on_demand_strain_2grains.__defaults__ = (initrot,
+                                                            B0matrix,
+                                                            nb_grains,
+                                                            pureRotation,
+                                                            0,
+                                                            pixelsize,
+                                                            dim,
+                                                            weights,
+                                                            kf_direction,
+                                                            False)
 
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(
-        _error_function_on_demand_strain_2grains,
+    res = leastsq(_error_function_on_demand_strain_2grains,
         init_strain_values,
         args=(
             miller,
@@ -1277,8 +1190,7 @@ def fit_on_demand_strain_2grains(
         full_output=1,
         xtol=1.0e-11,
         epsfcn=0.0,
-        **kwd
-    )
+        **kwd)
 
     strain_sol = res[0]
 
@@ -1293,50 +1205,44 @@ def fit_on_demand_strain_2grains(
         return None
     else:
         if 1:  # verbose:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors  ****************** \n\n"
-            )
-            _error_function_on_demand_strain_2grains(
-                strain_sol,
-                miller,
-                allparameters,
-                arr_indexvaryingparameters,
-                absolutespotsindices,
-                pixX,
-                pixY,
-                initrot=initrot,
-                B0matrix=B0matrix,
-                nb_grains=nb_grains,
-                pureRotation=pureRotation,
-                verbose=verbose,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-                returnalldata=True,
-            )
+            print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
+            _error_function_on_demand_strain_2grains(strain_sol,
+                                                    miller,
+                                                    allparameters,
+                                                    arr_indexvaryingparameters,
+                                                    absolutespotsindices,
+                                                    pixX,
+                                                    pixY,
+                                                    initrot=initrot,
+                                                    B0matrix=B0matrix,
+                                                    nb_grains=nb_grains,
+                                                    pureRotation=pureRotation,
+                                                    verbose=verbose,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    kf_direction=kf_direction,
+                                                    returnalldata=True)
         return strain_sol
 
 
-def error_function_on_demand_strain_2grains(
-    varying_parameters_values,
-    DATA_Q,
-    allparameters,
-    arr_indexvaryingparameters,
-    absolutespotsindices,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    nb_grains=1,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    returnalldata=False,
-):
+def error_function_on_demand_strain_2grains(varying_parameters_values,
+                                            DATA_Q,
+                                            allparameters,
+                                            arr_indexvaryingparameters,
+                                            absolutespotsindices,
+                                            pixX,
+                                            pixY,
+                                            initrot=IDENTITYMATRIX,
+                                            B0matrix=IDENTITYMATRIX,
+                                            nb_grains=1,
+                                            pureRotation=0,
+                                            verbose=0,
+                                            pixelsize=165.0 / 2048,
+                                            dim=(2048, 2048),
+                                            weights=None,
+                                            kf_direction="Z>0",
+                                            returnalldata=False):
     """
     compute array of errors of weight*((Xtheo-pixX)**2+(Ytheo-pixY)**2) for each pears
     Xtheo, Ytheo derived from kf and q vector: q = UB Bmat B0 G* where G* =[h ,k, l] vector
@@ -1387,50 +1293,35 @@ def error_function_on_demand_strain_2grains(
         mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
 
         # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last fro roatation
-        index_of_rot_in_arr_indexvaryingparameters = rotationselements_indices[
-            grain_index
-        ]
+        index_of_rot_in_arr_indexvaryingparameters = rotationselements_indices[grain_index]
 
         if index_of_rot_in_arr_indexvaryingparameters[0] in arr_indexvaryingparameters:
-            ind1 = np.where(
-                arr_indexvaryingparameters
-                == index_of_rot_in_arr_indexvaryingparameters[0]
-            )[0][0]
+            ind1 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[0])[0][0]
             if len(arr_indexvaryingparameters) > 1:
                 a1 = varying_parameters_values[ind1] * DEG
             else:
                 a1 = varying_parameters_values[0] * DEG
             # print "a1 (rad)= ",a1
             mat1 = np.array(
-                [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]]
-            )
+                [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]])
 
         if index_of_rot_in_arr_indexvaryingparameters[1] in arr_indexvaryingparameters:
-            ind2 = np.where(
-                arr_indexvaryingparameters
-                == index_of_rot_in_arr_indexvaryingparameters[1]
-            )[0][0]
+            ind2 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[1])[0][0]
             if len(arr_indexvaryingparameters) > 1:
                 a2 = varying_parameters_values[ind2] * DEG
             else:
                 a2 = varying_parameters_values[0] * DEG
             # print "a2 (rad)= ",a2
             mat2 = np.array(
-                [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]]
-            )
+                [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]])
 
         if index_of_rot_in_arr_indexvaryingparameters[2] in arr_indexvaryingparameters:
-            ind3 = np.where(
-                arr_indexvaryingparameters
-                == index_of_rot_in_arr_indexvaryingparameters[2]
-            )[0][0]
+            ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters[2])[0][0]
             if len(arr_indexvaryingparameters) > 1:
                 a3 = varying_parameters_values[ind3] * DEG
             else:
                 a3 = varying_parameters_values[0] * DEG
-            mat3 = np.array(
-                [[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]]
-            )
+            mat3 = np.array([[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]])
 
         deltamat = np.dot(mat3, np.dot(mat2, mat1))
 
@@ -1439,9 +1330,7 @@ def error_function_on_demand_strain_2grains(
         print("all_deltamatrices", all_deltamatrices)
 
         # building Bmat ------------(triangular up matrix)
-        index_of_strain_in_arr_indexvaryingparameters = strainelements_indices[
-            grain_index
-        ]
+        index_of_strain_in_arr_indexvaryingparameters = strainelements_indices[grain_index]
 
         print("arr_indexvaryingparameters", arr_indexvaryingparameters)
         print("varying_parameters_values", varying_parameters_values)
@@ -1451,8 +1340,7 @@ def error_function_on_demand_strain_2grains(
         for s_index in list(range(5)):
             if (
                 index_of_strain_in_arr_indexvaryingparameters[s_index]
-                in arr_indexvaryingparameters
-            ):
+                in arr_indexvaryingparameters):
                 ind1 = np.where(
                     arr_indexvaryingparameters
                     == index_of_strain_in_arr_indexvaryingparameters[s_index]
@@ -1471,19 +1359,17 @@ def error_function_on_demand_strain_2grains(
         #         print "varyingstrain", varyingstrain
         #         print 'all_newmatrices', all_newmatrices
 
-        Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(
-            calibrationparameters,
-            DATA_Q,
-            absolutespotsindices[grain_index],
-            UBmatrix=newmatrix,
-            B0matrix=B0matrix,
-            pureRotation=0,
-            labXMAS=0,
-            verbose=0,
-            pixelsize=pixelsize,
-            dim=dim,
-            kf_direction=kf_direction,
-        )
+        Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                            DATA_Q,
+                                                            absolutespotsindices[grain_index],
+                                                            UBmatrix=newmatrix,
+                                                            B0matrix=B0matrix,
+                                                            pureRotation=0,
+                                                            labXMAS=0,
+                                                            verbose=0,
+                                                            pixelsize=pixelsize,
+                                                            dim=dim,
+                                                            kf_direction=kf_direction)
 
 
         Xexp = pixX[grain_index]
@@ -1496,25 +1382,19 @@ def error_function_on_demand_strain_2grains(
             distanceterm = distanceterm * weights[grain_index] / allweights
 
         if verbose:
-            print(
-                "**   grain %d   distance residues = " % grain_index,
+            print("**   grain %d   distance residues = " % grain_index,
                 distanceterm,
-                "    ********",
-            )
-            print(
-                "**   grain %d   mean distance residue = " % grain_index,
+                "    ********")
+            print("**   grain %d   mean distance residue = " % grain_index,
                 np.mean(distanceterm),
-                "    ********",
-            )
+                "    ********")
         #             print "twthe, chi", twthe, chi
         distances_vector_list.append(distanceterm)
 
     #     print 'len(distances_vector_list)', len(distances_vector_list)
 
     if nb_grains == 2:
-        alldistances_array = np.hstack(
-            (distances_vector_list[0], distances_vector_list[1])
-        )
+        alldistances_array = np.hstack((distances_vector_list[0], distances_vector_list[1]))
     if nb_grains == 1:
         alldistances_array = distances_vector_list[0]
 
@@ -1532,17 +1412,13 @@ def error_function_on_demand_strain_2grains(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
+            print("***********mean weighted pixel deviation   ",
                 np.mean(alldistances_array),
-                "    ********",
-            )
+                "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ",
+            print("***********mean pixel deviation   ",
                 np.mean(alldistances_array),
-                "    ********",
-            )
+                "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
@@ -1552,24 +1428,22 @@ def error_function_on_demand_strain_2grains(
         return alldistances_array
 
 
-def error_function_general(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    initrot=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    returnalldata=False,
-):
+def error_function_general(varying_parameters_values_array,
+                            varying_parameters_keys,
+                            Miller_indices,
+                            allparameters,
+                            absolutespotsindices,
+                            Xexp,
+                            Yexp,
+                            initrot=IDENTITYMATRIX,
+                            B0matrix=IDENTITYMATRIX,
+                            pureRotation=0,
+                            verbose=0,
+                            pixelsize=165.0 / 2048,
+                            dim=(2048, 2048),
+                            weights=None,
+                            kf_direction="Z>0",
+                            returnalldata=False):
     """
     q = T_LT  UzUyUz Ustart  T_c B0 G*
 
@@ -1638,9 +1512,7 @@ def error_function_general(
         if parameter_name in ("anglex", "angley", "anglez"):
             #             print "got angles!"
             if nb_varying_parameters > 1:
-                anglevalue = (
-                    varying_parameters_values_array[varying_parameter_index] * DEG
-                )
+                anglevalue = (varying_parameters_values_array[varying_parameter_index] * DEG)
             else:
                 anglevalue = varying_parameters_values_array[0] * DEG
             # print "anglevalue (rad)= ",anglevalue
@@ -1666,9 +1538,7 @@ def error_function_general(
                     if parameter_name == "Tc%d%d" % (i, j):
                         #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:
-                            Tc[i, j] = varying_parameters_values_array[
-                                varying_parameter_index
-                            ]
+                            Tc[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
                             Tc[i, j] = varying_parameters_values_array[0]
                         Tc_has_elements = True
@@ -1677,15 +1547,12 @@ def error_function_general(
             not Tc_has_elements
             and not Ts_has_elements
             and parameter_name
-            in ("T00", "T01", "T02", "T10", "T11", "T12", "T20", "T21", "T22")
-        ):
+            in ("T00", "T01", "T02", "T10", "T11", "T12", "T20", "T21", "T22")):
             for i in list(range(3)):
                 for j in list(range(3)):
                     if parameter_name is "T%d%d" % (i, j):
                         if nb_varying_parameters > 1:
-                            T[i, j] = varying_parameters_values_array[
-                                varying_parameter_index
-                            ]
+                            T[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
                             T[i, j] = varying_parameters_values_array[0]
                         T_has_elements = True
@@ -1694,15 +1561,12 @@ def error_function_general(
             not Tc_has_elements
             and not T_has_elements
             and parameter_name
-            in ("Ts00", "Ts01", "Ts02", "Ts10", "Ts11", "Ts12", "Ts20", "Ts21", "Ts22")
-        ):
+            in ("Ts00", "Ts01", "Ts02", "Ts10", "Ts11", "Ts12", "Ts20", "Ts21", "Ts22")):
             for i in list(range(3)):
                 for j in list(range(3)):
                     if parameter_name is "Ts%d%d" % (i, j):
                         if nb_varying_parameters > 1:
-                            Ts[i, j] = varying_parameters_values_array[
-                                varying_parameter_index
-                            ]
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
                             Ts[i, j] = varying_parameters_values_array[0]
                         Ts_has_elements = True

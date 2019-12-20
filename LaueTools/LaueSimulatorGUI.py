@@ -1578,12 +1578,10 @@ class parametric_Grain_Dialog3(wx.Frame):
             self.Xgam = float(self.rightpanel.xgam.GetValue())
             self.pixelsize = float(self.rightpanel.ctrlpixelsize.GetValue())
         except ValueError:
-            dlg = wx.MessageDialog(
-                self,
-                "Detector parameters must be float with dot separator",
-                "Bad Input Parameters",
-                wx.OK | wx.ICON_ERROR,
-            )
+            dlg = wx.MessageDialog(self,
+                                        "Detector parameters must be float with dot separator",
+                                        "Bad Input Parameters",
+                                        wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
             return True
@@ -1595,12 +1593,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         # show markers experimental list of peaks
         if showExperimenalData:
             if self.initialParameters["ExperimentalData"] is None:
-                dlg = wx.MessageDialog(
-                    self,
-                    "You must load experimental data(File/Open Menu) before or uncheck Show Exp. Data box",
-                    "Experimental Data Missing!",
-                    wx.OK | wx.ICON_ERROR,
-                )
+                dlg = wx.MessageDialog(self,
+                    "You must load experimental data(File/Open Menu) before or uncheck Show Exp. Data box", "Experimental Data Missing!", wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
                 return True
@@ -1708,6 +1702,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # ------------------------------------------------
         # plot results --------------------------------------
         #---------------------------------------------------
+        
         # experimental data
         if showExperimenalData:
             experimentaldata_2thetachi = (
@@ -1722,6 +1717,10 @@ class parametric_Grain_Dialog3(wx.Frame):
         # theoretical data
         print('plottype in LaueSimulatorGUI : %s  \n\n'%plottype)
         if plottype == "2thetachi":
+            totalnbspots = 0
+            for slist in list_twicetheta:
+                totalnbspots+=len(slist)
+            if totalnbspots == 0: wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!','Info')
             simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
                             data=(list_twicetheta, list_chi, list_energy, list_Miller,
                             total_nb_grains, plottype, experimentaldata_2thetachi,),
@@ -1729,6 +1728,10 @@ class parametric_Grain_Dialog3(wx.Frame):
                             list_grains_transforms=nb_g_t,
                             CCDLabel=self.CCDLabel)
         elif "XYmar" in plottype:
+            totalnbspots = 0
+            for slist in list_posX:
+                totalnbspots+=len(slist)
+            if totalnbspots == 0: wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!','Info')
             simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
                         data=(list_posX, list_posY, list_energy, list_Miller,
                         total_nb_grains, plottype, experimentaldata_XYMAR,),

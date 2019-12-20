@@ -166,8 +166,7 @@ def Launch_DetectorParamBoard(parent):
 
 def OnOpenPeakList(parent):
     """
-    Load Peak list data (dat or cor)
-
+    Load Peak list data (.dat or .cor)
 
     set parent attributes:
         - dirname
@@ -276,8 +275,7 @@ class SetGeneralLaueGeometry(wx.Dialog):
             str(initialGeo),
             size=(-1, 40),
             choices=["Top Reflection (2theta=90)", "Transmission"],
-            style=wx.CB_READONLY,
-        )
+            style=wx.CB_READONLY)
 
         self.combogeo.Bind(wx.EVT_COMBOBOX, self.OnChangeGeom)
 
