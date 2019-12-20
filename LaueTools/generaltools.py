@@ -32,6 +32,14 @@ if sys.version_info.major == 3:
 else:
     import IOLaueTools as IOLT
 
+try:
+    # from numba import double
+    from numba.decorators import njit, autojit
+    import math
+    NUMBAINSTALLED = True
+except ImportError:
+    NUMBAINSTALLED = False
+
 # --- --------------  Vectors
 def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX, verbose=False):
     """compute angles between all pairs of vectors from Vectors1 and Vectors2
@@ -188,22 +196,21 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
 
     return tab_angulardist
 
-# from numba import double
-from numba.decorators import njit, autojit
-import math
 
-@njit(fastmath=True, parallel=True)
-def mycalcangle(a,b):
+if NUMBAINSTALLED:
 
-    Lo1 = a[0]*DEG / 2.0
-    Lo2 = b[0]*DEG / 2.0
+    @njit(fastmath=True, parallel=True)
+    def mycalcangle(a,b):
 
-    La1 = a[1]*DEG
-    La2 = b[1]*DEG
-    delta = La1 - La2
-    cang = math.sin(Lo1)*math.sin(Lo2) + math.cos(Lo1)*math.cos(Lo2)*math.cos(delta)
+        Lo1 = a[0]*DEG / 2.0
+        Lo2 = b[0]*DEG / 2.0
 
-    return math.acos(cang)/DEG
+        La1 = a[1]*DEG
+        La2 = b[1]*DEG
+        delta = La1 - La2
+        cang = math.sin(Lo1)*math.sin(Lo2) + math.cos(Lo1)*math.cos(Lo2)*math.cos(delta)
+
+        return math.acos(cang)/DEG
 
 def pairwise_mutualangles(XY1, XY2):
     """
@@ -247,12 +254,13 @@ def pairwise_mutualangles_1D(XY1, XY2):
             k += 1
     return D
 
-def computeMutualAngles(listpoints1, listpoints2, TwicethetaInput=True):
+if NUMBAINSTALLED:
+    def computeMutualAngles(listpoints1, listpoints2, TwicethetaInput=True):
 
-    if TwicethetaInput:
-        pairwiseangles_numba = autojit(pairwise_mutualangles)
+        if TwicethetaInput:
+            pairwiseangles_numba = autojit(pairwise_mutualangles)
 
-    return pairwiseangles_numba(listpoints1, listpoints2)
+        return pairwiseangles_numba(listpoints1, listpoints2)
 
 def cartesiandistance(x1, x2, y1, y2):
     """
