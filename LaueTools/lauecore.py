@@ -1229,7 +1229,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             oncam_vec = np.array([oncam_Qx, oncam_Qy, oncam_Qz]).T
 
-            print('onCam_cond', onCam_cond)
+            # print('onCam_cond', onCam_cond)
             oncam_H = np.compress(onCam_cond, indi_H)
             oncam_K = np.compress(onCam_cond, indi_K)
             oncam_L = np.compress(onCam_cond, indi_L)
@@ -1242,8 +1242,8 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             kf_direction=kf_direction)
-            print("listspot",listspot)
-            print("oncam_HKL", oncam_HKL.tolist())
+            # print("listspot", listspot)
+            # print("oncam_HKL", oncam_HKL.tolist())
             # Creating list of spot with or without harmonics
             if HarmonicsRemoval and listspot:
                 #                ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
@@ -1253,7 +1253,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             # feeding final list of spots
             ListSpots_Oncam_wo_harmonics[grainindex] = listspot
-                
+
             if listspot is not None:
                 totalnbspots += len(listspot)
 
@@ -2125,9 +2125,11 @@ def atomicformfactor(q, element="Ge"):
     if element == "Ge":
         p = (16.0816, 2.8509, 6.3747, 0.2516, 3.7068, 11.4468, 3.683, 54.7625, 2.1313)
 
-    elif element == "U": p = (5.3715, 0.516598, 22.5326, 3.05053, 12.0291, 12.5723, 4.79840, 23.4582, 13.2671)
+    elif element == "U":
+        p = (5.3715, 0.516598, 22.5326, 3.05053, 12.0291, 12.5723, 4.79840, 23.4582, 13.2671)
 
-    elif element == "O": p = (3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800)
+    elif element == "O":
+        p = (3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800)
     
     val = 0
     for k in list(range(4)):

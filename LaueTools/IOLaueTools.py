@@ -312,8 +312,15 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
     if 'xpixelsize' in CCDcalib:
         CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
 
-    if 'CCDLabel' not in CCDcalib:
-        CCDcalib['CCDLabel'] = DEFAULT_CCDLABEL
+    if 'CCDLabel' not in CCDcalib:  #will recognise from pixelsize...
+        CCDcalib['CCDLabel'] = None# DEFAULT_CCDLABEL
+        if 'pixelsize' in CCDcalib:
+            ps = CCDcalib['pixelsize']
+            if abs(ps-0.0795) < 0.004:
+                ccdlabel = 'MARCCD165'
+            elif abs(ps-0.073) <= 0.002:
+                ccdlabel = 'sCMOS'
+            CCDcalib['CCDLabel']=ccdlabel
 
     return CCDcalib
 
@@ -915,15 +922,15 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
             line = f.readline()
             #             print "iline =%d line" % iline, line
-            if line.startswith("# Number of indexed spots"):
+            if line.startswith(("# Number of indexed spots", "#Number of indexed spots" )):
                 nb_indexed_spots = int(line.split(":")[-1])
             #                 print "nb_indexed_spots", nb_indexed_spots
 
-            elif line.startswith("# Number of unindexed spots"):
+            elif line.startswith(("# Number of unindexed spots","#Number of unindexed spots")):
                 nb_indexed_spots = 0
                 nb_UNindexed_spots = int(line.split(":")[-1])
 
-            elif line.startswith("# Mean Pixel Deviation"):
+            elif line.startswith(("# Mean Pixel Deviation","#Mean Deviation","#Mean Pixel Deviation")):
                 meanpixdev = float(line.split(":")[-1])
                 #                 print "meanpixdev", meanpixdev
                 PixDev_list.append(meanpixdev)
@@ -939,8 +946,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 #                 print "GrainName_list", GrainName_list
 
                 iline += 1
-            elif line.startswith(("spot#", "#spot")):
-                columns_headers = line.split()
+            elif line.startswith(("spot#", "#spot", "##spot")):
+                columns_headers = line.replace("#", "").split()
                 if nb_indexed_spots > 0:
                     #                     print "nb of indexed spots", nb_indexed_spots
                     nbspots = nb_indexed_spots
@@ -950,7 +957,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         line = f.readline()
                         iline += 1
                         dataspots.append(
-                            line.rstrip("\n").replace("[", "").replace("]", "").split())
+                            line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
                     dataspots = np.array(dataspots, dtype=np.float)
                 #                     print "got dataspots!"
@@ -965,7 +972,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         line = f.readline()
                         iline += 1
                         dataspots_Unindexed.append(
-                            line.rstrip("\n").replace("[", "").replace("]", "").split())
+                            line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
                     dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float)
             #                     print "got dataspots_Unindexed!"
@@ -1002,7 +1009,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 for jline_matrix in list(range(3)):
                     line = f.readline()
                     #                     print "line in matrix", line
-                    lineval = (line.rstrip("\n").replace("[", "").replace("]", "").split())
+                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
                     # print toto
                     UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -1012,7 +1019,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 for jline_matrix in list(range(3)):
                     line = f.readline()
                     #                     print "line in matrix", line
-                    lineval = (line.rstrip("\n").replace("[", "").replace("]", "").split())
+                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
                     # print toto
                     strain[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -1036,7 +1043,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 # print "calib = ", calib[grain_index,:]
             if eulerfound & (iline == lineeuler):
                 euler[grain_index, :] = np.array(
-                    line.replace("[", "").replace("]", "").split()[:3], dtype=float
+                    line.replace("[", "").replace("#", "").replace("]", "").split()[:3], dtype=float
                 )
                 # print "euler = ", euler[grain_index,:]
             if pixdevfound & (iline == linepixdev):

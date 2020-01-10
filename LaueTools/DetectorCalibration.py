@@ -1030,7 +1030,7 @@ class MainCalibrationFrame(wx.Frame):
         self.CCDLabel = self.initialParameter["CCDLabel"]
         self.kf_direction = kf_direction
         self.kf_direction_from_file = kf_direction
-        self.filename = file_peaks
+        self.filename = file_peaks # could be .dat or .cor file
         # to interact with LaueToolsGUI
         self.DataPlot_filename = self.filename
 
@@ -1352,7 +1352,7 @@ class MainCalibrationFrame(wx.Frame):
         - set exp. spots attributes:
         self.twicetheta, self.chi = chi
         self.Data_I
-        self.File_NAME
+        self.filename
         self.data = (self.twicetheta, self.chi, self.Data_I, self.filename)
         self.Data_index_expspot
         self.data_x, self.data_y
@@ -1378,6 +1378,7 @@ class MainCalibrationFrame(wx.Frame):
                                             param=self.CCDParam,
                                             pixelsize=self.pixelsize,
                                             kf_direction=self.kf_direction)
+            self.initialParameter['filename.cor'] = None
 
 
         elif extension in ("cor",):
@@ -1389,11 +1390,11 @@ class MainCalibrationFrame(wx.Frame):
                 dataintensity,
                 _) = IOLT.readfile_cor(filepath)
             twicetheta = 2 * data_theta
+            self.initialParameter['filename.cor'] = self.filename
 
         self.twicetheta = twicetheta
         self.chi = chi
-        self.Data_I = dataintensity
-        self.File_NAME = self.filename
+        self.Data_I = dataintensity        
 
         self.data = (self.twicetheta, self.chi, self.Data_I, self.filename)
         # starting X,Y data to plot (2theta , chi)
@@ -1929,29 +1930,26 @@ class MainCalibrationFrame(wx.Frame):
                                             pixelsize=self.pixelsize,
                                             dim=self.framedim,
                                             weights=weights,
-                                            kf_direction=self.kf_direction,
-                                        )
+                                            kf_direction=self.kf_direction)
         print("Initial residues", residues)
         print("---------------------------------------------------\n")
 
-        results = FitO.fit_on_demand_calibration(
-                                            initial_values,
-                                            Data_Q,
-                                            allparameters,
-                                            FitO.error_function_on_demand_calibration,
-                                            arr_indexvaryingparameters,
-                                            sim_indices,
-                                            pixX,
-                                            pixY,
-                                            initrot=self.UBmatrix,
-                                            vecteurref=self.B0matrix,
-                                            pureRotation=pureRotation,
-                                            pixelsize=self.pixelsize,
-                                            dim=self.framedim,
-                                            verbose=0,
-                                            weights=weights,
-                                            kf_direction=self.kf_direction,
-                                        )
+        results = FitO.fit_on_demand_calibration(initial_values,
+                                                Data_Q,
+                                                allparameters,
+                                                FitO.error_function_on_demand_calibration,
+                                                arr_indexvaryingparameters,
+                                                sim_indices,
+                                                pixX,
+                                                pixY,
+                                                initrot=self.UBmatrix,
+                                                vecteurref=self.B0matrix,
+                                                pureRotation=pureRotation,
+                                                pixelsize=self.pixelsize,
+                                                dim=self.framedim,
+                                                verbose=0,
+                                                weights=weights,
+                                                kf_direction=self.kf_direction)
 
         print("\n********************\n       Results of Fit        \n********************")
         print("results", results)
@@ -1977,27 +1975,24 @@ class MainCalibrationFrame(wx.Frame):
                                         pixelsize=self.pixelsize,
                                         dim=self.framedim,
                                         weights=weights,
-                                        kf_direction=self.kf_direction,
-                                    )
+                                        kf_direction=self.kf_direction)
 
-        residues_nonweighted, _delta, _newmatrix, self.SpotsData = FitO.error_function_on_demand_calibration(
-                                                        results,
-                                                        Data_Q,
-                                                        allparameters,
-                                                        arr_indexvaryingparameters,
-                                                        sim_indices,
-                                                        pixX,
-                                                        pixY,
-                                                        initrot=self.UBmatrix,
-                                                        vecteurref=self.B0matrix,
-                                                        pureRotation=pureRotation,
-                                                        verbose=1,
-                                                        pixelsize=self.pixelsize,
-                                                        dim=self.framedim,
-                                                        weights=None,
-                                                        allspots_info=1,
-                                                        kf_direction=self.kf_direction,
-                                                    )
+        residues_nonweighted, _delta, _newmatrix, self.SpotsData = FitO.error_function_on_demand_calibration(results,
+                                                Data_Q,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                sim_indices,
+                                                pixX,
+                                                pixY,
+                                                initrot=self.UBmatrix,
+                                                vecteurref=self.B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=self.pixelsize,
+                                                dim=self.framedim,
+                                                weights=None,
+                                                allspots_info=1,
+                                                kf_direction=self.kf_direction)
 
         print("last pixdev table")
         print(residues_nonweighted)
@@ -2055,9 +2050,7 @@ class MainCalibrationFrame(wx.Frame):
             # OR
             UBB0 = np.dot(self.UBmatrix, self.B0matrix)
 
-            Umat = CP.matstarlab_to_matstarlabOND(
-                matstarlab=None, matLT3x3=self.UBmatrix
-            )
+            Umat = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=self.UBmatrix)
 
             print("**********test U ****************************")
             print("U matrix = ")
@@ -2088,8 +2081,7 @@ class MainCalibrationFrame(wx.Frame):
                 mat_from_lab_to_sample_frame=None,
                 results_in_OR_frames=0,
                 results_in_LT_frames=1,
-                sampletilt=40.0,
-            )
+                sampletilt=40.0)
             self.HKLxyz_names = list_HKL_names
             self.HKLxyz = HKL_xyz
 
@@ -2104,16 +2096,16 @@ class MainCalibrationFrame(wx.Frame):
             self.linkIntensityAfterFit = copy.copy(self.linkIntensity)
             self.residues_fitAfterFit = copy.copy(self.residues_fit)
 
-        # update .cor file
+        # update .cor file  self.initialParameter["filename.cor"]
         print("self.defaultParam after refinement", self.CCDParam)
         fullpathfilename = os.path.join(self.initialParameter["dirname"],
-                                        self.initialParameter["filename"])
+                                        self.filename)
         print("fullpathfilename", fullpathfilename)
 
         (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
                                                             fullpathfilename,
                                                             (0, 1, 3),
-                                                            1,  
+                                                            1,
                                                             sorting_intensity="yes",
                                                             param=self.CCDParam,
                                                             pixelsize=self.pixelsize,
@@ -2125,23 +2117,22 @@ class MainCalibrationFrame(wx.Frame):
         prefix = filename.split(".")[0]
         #         print 'prefix',prefix
 
-        IOLT.writefile_cor(
-            prefix,
-            twicetheta,
-            chi,
-            data_x,
-            data_y,
-            dataintensity,
-            sortedexit=0,
-            param=self.CCDParam + [self.pixelsize],
-            initialfilename=self.filename,
-            dirname_output=os.getcwd(),
-        )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+        IOLT.writefile_cor(prefix,
+                        twicetheta,
+                        chi,
+                        data_x,
+                        data_y,
+                        dataintensity,
+                        sortedexit=0,
+                        param=self.CCDParam + [self.pixelsize],
+                        initialfilename=self.filename,
+                        dirname_output=os.getcwd())  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
         print("%s has been updated" % (prefix + ".cor"))
+        self.initialParameter["filename.cor"] = prefix + ".cor"
 
     def OnWriteResults(self, _):
         """
-        write a .fit file of calibration CCD geometry 
+        write a .fit file from refined orientation and detector calibration CCD geometry
         """
         print("self.linkedspots in OnWriteResults()", self.linkedspots)
 
@@ -2158,7 +2149,7 @@ class MainCalibrationFrame(wx.Frame):
             self.savedindex += 1
             suffix = "_%d" % self.savedindex
 
-        outputfilename = (self.initialParameter["filename"].split(".")[0] + suffix + ".fit")
+        outputfilename = (self.filename.split(".")[0] + suffix + ".fit")
 
         indExp = np.array(self.linkedspotsAfterFit[:, 0], dtype=np.int)
         _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int))[1:4]
@@ -2180,43 +2171,51 @@ class MainCalibrationFrame(wx.Frame):
         # H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthe, chi, Energy = spotsProps
         Xtheo, Ytheo, twthe, chi, Energy = spotsProps[-5:]
 
-        data_peak = IOLT.read_Peaklist(self.initialParameter["filename"])
+        print('self.initialParameter["filename.cor"] in OnWriteResults',
+                self.initialParameter["filename.cor"])
+        
+        initialdatfile = self.filename #self.initialParameter["filename.cor"]
+        print('initialdatfile  :',initialdatfile)
+
+        data_peak = IOLT.read_Peaklist(initialdatfile)
 
         selected_data_peak = np.take(data_peak, indExp, axis=0)
 
-        (Xexp,
-            Yexp,
-            totalIntensity,
-            peakAmplitude,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev_peakFit,
-            Ydev_peakFit,
-            peak_bkg,
-            IntensityMax,
-        ) = selected_data_peak.T
+        if initialdatfile.endswith('.dat'):
+            (Xexp, Yexp, totalIntensity, peakAmplitude,
+            peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+            Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
+
+        elif initialdatfile.endswith('.cor'):
+            (_,_,Xexp, Yexp, peakAmplitude) = selected_data_peak.T
+            totalIntensity= peakAmplitude
+            unknowns=np.zeros(len(Xexp))
+            peak_fwaxmaj = unknowns
+            peak_fwaxmin = unknowns
+            peak_inclination = unknowns
+            Xdev_peakFit = unknowns
+            Ydev_peakFit, peak_bkg, IntensityMax = unknowns,unknowns,unknowns
+
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
 
+        # #spot index, peakamplitude, h,k,l, Xtheo, Ytheo, Xexp, Yexp, Xdev,
+        # Xdev_calibFit, Ydev_calibFit, sqrt(Xdev_calibFit**2+Ydev_calibFit**2)
+        # 2thetaTheo, chiTheo, EnergyTheo, peakamplitude, hottestintensity, localintensitybackground
+        # peak_fullwidth_axisminor, peak_fullwidth_axismahor, peak elongation direction angle,
+        # Xdev_peakfit, Ydev_peakfit (fit by gaussian 2D shape for example)
         Columns = [indExp, intens, _h, _k, _l, Xtheo, Ytheo, Xexp, Yexp,
-                                                            Xdev_calibFit,
-                                                            Ydev_calibFit,
-                                                            residues_calibFit,
-                                                            twthe,
-                                                            chi,
-                                                            Energy,
-                                                            peakAmplitude,
-                                                            IntensityMax,
-                                                            peak_bkg,
-                                                            peak_fwaxmaj,
-                                                            peak_fwaxmin,
-                                                            peak_inclination,
-                                                            Xdev_peakFit,
-                                                            Ydev_peakFit]
+                Xdev_calibFit, Ydev_calibFit, residues_calibFit,
+                twthe, chi, Energy,
+                peakAmplitude, IntensityMax, peak_bkg,
+                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                Xdev_peakFit, Ydev_peakFit]
 
         datatooutput = np.transpose(np.array(Columns))
         datatooutput = np.round(datatooutput, decimals=5)
+
+        # sort by decreasing intensity
+        data = datatooutput[np.argsort(datatooutput[:,1])[::-1]]
 
         dict_matrices = {}
         dict_matrices["Element"] = self.key_material
@@ -2230,7 +2229,7 @@ class MainCalibrationFrame(wx.Frame):
         euler_angles = ORI.calc_Euler_angles(UBB0_v2).round(decimals=3)
         dict_matrices["euler_angles"] = euler_angles
 
-        # OR
+        # Odile Robach's addition
         dict_matrices["UBB0"] = UBB0_v2
         dict_matrices["Umat2"] = self.Umat2
         dict_matrices["Bmat_tri"] = self.Bmat_tri
@@ -2241,21 +2240,21 @@ class MainCalibrationFrame(wx.Frame):
         dict_matrices["framedim"] = self.framedim
         dict_matrices["CCDLabel"] = self.CCDLabel
 
-        columnsname = "#spot_index Itot h k l Xtheo Ytheo Xexp Yexp XdevCalib YdevCalib pixDevCalib "
+        columnsname = "spot_index Itot h k l Xtheo Ytheo Xexp Yexp XdevCalib YdevCalib pixDevCalib "
         columnsname += "2theta_theo chi_theo Energy PeakAmplitude Imax PeakBkg "
         columnsname += "PeakFwhm1 PeakFwhm2 PeakTilt XdevPeakFit YdevPeakFit\n"
 
         meanresidues = np.mean(residues_calibFit)
 
         IOLT.writefitfile(outputfilename,
-            datatooutput,
-            len(indExp),
-            dict_matrices=dict_matrices,
-            meanresidues=meanresidues,
-            PeakListFilename=self.initialParameter["filename"],
-            columnsname=columnsname,
-            modulecaller="DetectorCalibration.py",
-            refinementtype="CCD Geometry")
+                        data,
+                        len(indExp),
+                        dict_matrices=dict_matrices,
+                        meanresidues=meanresidues,
+                        PeakListFilename=initialdatfile,
+                        columnsname=columnsname,
+                        modulecaller="DetectorCalibration.py",
+                        refinementtype="CCD Geometry")
 
         fullname = os.path.join(os.getcwd(), outputfilename)
 
@@ -2283,9 +2282,7 @@ class MainCalibrationFrame(wx.Frame):
 
             #             print "Disable Rotation around axis"
             self.SelectedRotationAxis = None
-            self.moveccdandxtal.rotatebtn.SetLabel(
-                self.moveccdandxtal.EnableRotationLabel
-            )
+            self.moveccdandxtal.rotatebtn.SetLabel(self.moveccdandxtal.EnableRotationLabel)
             self.RotationActivated = False
 
             self.p2S = 1
@@ -2305,9 +2302,7 @@ class MainCalibrationFrame(wx.Frame):
 
             #             print "Disable Rotation around axis"
             self.SelectedRotationAxis = None
-            self.moveccdandxtal.rotatebtn.SetLabel(
-                self.moveccdandxtal.EnableRotationLabel
-            )
+            self.moveccdandxtal.rotatebtn.SetLabel(self.moveccdandxtal.EnableRotationLabel)
             self.RotationActivated = False
 
             self.p3S = 1
@@ -2346,26 +2341,19 @@ class MainCalibrationFrame(wx.Frame):
         called by goto current button according to CCD parameters value
         """
         try:
-            self.CCDParam = [
-                float(self.parametersdisplaypanel.act_distance.GetValue()),
-                float(self.parametersdisplaypanel.act_Xcen.GetValue()),
-                float(self.parametersdisplaypanel.act_Ycen.GetValue()),
-                float(self.parametersdisplaypanel.act_Ang1.GetValue()),
-                float(self.parametersdisplaypanel.act_Ang2.GetValue()),
-            ]
-            print(
-                "Actual detector parameters are now default parameters", self.CCDParam
-            )
+            self.CCDParam = [float(self.parametersdisplaypanel.act_distance.GetValue()),
+                            float(self.parametersdisplaypanel.act_Xcen.GetValue()),
+                            float(self.parametersdisplaypanel.act_Ycen.GetValue()),
+                            float(self.parametersdisplaypanel.act_Ang1.GetValue()),
+                            float(self.parametersdisplaypanel.act_Ang2.GetValue())]
+            print("Actual detector parameters are now default parameters", self.CCDParam)
             self.initialParameter["CCDParam"] = self.CCDParam
 
             self.update_data(event)
         except ValueError:
-            dlg = wx.MessageDialog(
-                self,
-                "Detector Parameters in entry field are not float values! ",
-                "Incorr",
-                wx.OK | wx.ICON_ERROR,
-            )
+            dlg = wx.MessageDialog(self, "Detector Parameters in entry field are not float values! ",
+                                    "Incorr",
+                                    wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
 
@@ -2383,24 +2371,16 @@ class MainCalibrationFrame(wx.Frame):
 
         print("before\n\n", self.initialParameter)
 
-        DPBoard = DP.DetectorParameters(
-            self, -1, "Detector parameters Board", self.initialParameter
-        )
+        DPBoard = DP.DetectorParameters(self, -1, "Detector parameters Board", self.initialParameter)
 
         DPBoard.ShowModal()
         DPBoard.Destroy()
 
-        print(
-            "new param",
-            self.CCDParam
-            + [
-                self.pixelsize,
-                self.framedim[0],
-                self.framedim[1],
-                self.detectordiameter,
-                self.kf_direction,
-            ],
-        )
+        print("new param", self.CCDParam + [self.pixelsize,
+                                            self.framedim[0],
+                                            self.framedim[1],
+                                            self.detectordiameter,
+                                            self.kf_direction])
 
         self.display_current()
         self.update_data(event)
@@ -2448,9 +2428,7 @@ class MainCalibrationFrame(wx.Frame):
 
         helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += "Or list of Matrices"
-        dlg = wx.TextEntryDialog(
-            self, helptstr, "Calibration- Orientation Matrix elements Entry"
-        )
+        dlg = wx.TextEntryDialog(self, helptstr, "Calibration- Orientation Matrix elements Entry")
 
         _param = "[[1,0,0],[0, 1,0],[0, 0,1]]"
         dlg.SetValue(_param)
@@ -2547,9 +2525,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def OnChangeElement(self, event):
         key_material = self.crystalparampanel.comboElem.GetValue()
-        self.sb.SetStatusText(
-            "Selected Material: %s" % str(DictLT.dict_Materials[key_material])
-        )
+        self.sb.SetStatusText("Selected Material: %s" % str(DictLT.dict_Materials[key_material]))
 
         print("I change element to %s" % key_material)
 
@@ -2667,13 +2643,9 @@ class MainCalibrationFrame(wx.Frame):
         # Xjsm =y Xmas  Yjsm = -Xxmas Zjsm = Zxmas
         a1 = float(self.moveccdandxtal.angle1.GetValue()) * DEG
 
-        mat = np.array(
-            [
-                [math.cos(a1), 0, -math.sin(a1)],
-                [0, 1, 0],
-                [math.sin(a1), 0, math.cos(a1)],
-            ]
-        )  # in XMAS and fitOrient
+        mat = np.array([[math.cos(a1), 0, -math.sin(a1)],
+                        [0, 1, 0],
+                        [math.sin(a1), 0, math.cos(a1)]])  # in XMAS and fitOrient
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2682,13 +2654,9 @@ class MainCalibrationFrame(wx.Frame):
     def OnIncreaseAngle1(self, event):
 
         a1 = float(self.moveccdandxtal.angle1.GetValue()) * DEG
-        mat = np.array(
-            [
-                [math.cos(a1), 0, math.sin(a1)],
-                [0, 1, 0],
-                [-math.sin(a1), 0, math.cos(a1)],
-            ]
-        )  # in XMAS and fitOrient
+        mat = np.array([[math.cos(a1), 0, math.sin(a1)],
+                        [0, 1, 0],
+                        [-math.sin(a1), 0, math.cos(a1)]])  # in XMAS and fitOrient
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2698,13 +2666,9 @@ class MainCalibrationFrame(wx.Frame):
 
         a2 = float(self.moveccdandxtal.angle2.GetValue()) * DEG
         # mat = np.array([[math.cos(a2),0, math.sin(-a2)],[0, 1,0],[math.sin(a2),0, math.cos(a2)]])  #in LaueTools Frame
-        mat = np.array(
-            [
-                [1, 0, 0],
-                [0, math.cos(a2), -math.sin(a2)],
-                [0, math.sin(a2), math.cos(a2)],
-            ]
-        )  # in XMAS and fitOrient
+        mat = np.array([[1, 0, 0],
+                        [0, math.cos(a2), -math.sin(a2)],
+                        [0, math.sin(a2), math.cos(a2)]])  # in XMAS and fitOrient
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2714,13 +2678,9 @@ class MainCalibrationFrame(wx.Frame):
 
         a2 = float(self.moveccdandxtal.angle2.GetValue()) * DEG
         # mat = np.array([[math.cos(a2),0, math.sin(a2)],[0, 1,0],[-math.sin(a2),0, math.cos(a2)]]) in LaueTools Frame
-        mat = np.array(
-            [
-                [1, 0, 0],
-                [0, math.cos(a2), math.sin(a2)],
-                [0, math.sin(-a2), math.cos(a2)],
-            ]
-        )  # in XMAS and fitOrient
+        mat = np.array([[1, 0, 0],
+                        [0, math.cos(a2), math.sin(a2)],
+                        [0, math.sin(-a2), math.cos(a2)]])  # in XMAS and fitOrient
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2729,13 +2689,9 @@ class MainCalibrationFrame(wx.Frame):
     def OnDecreaseAngle3(self, event):
 
         a3 = float(self.moveccdandxtal.angle3.GetValue()) * DEG
-        mat = np.array(
-            [
-                [math.cos(a3), math.sin(a3), 0],
-                [math.sin(-a3), math.cos(a3), 0],
-                [0.0, 0, 1],
-            ]
-        )  # XMAS and LaueTools are similar
+        mat = np.array([[math.cos(a3), math.sin(a3), 0],
+                        [math.sin(-a3), math.cos(a3), 0],
+                        [0.0, 0, 1]])  # XMAS and LaueTools are similar
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2744,13 +2700,9 @@ class MainCalibrationFrame(wx.Frame):
     def OnIncreaseAngle3(self, event):
 
         a3 = float(self.moveccdandxtal.angle3.GetValue()) * DEG
-        mat = np.array(
-            [
-                [math.cos(a3), -math.sin(a3), 0],
-                [math.sin(a3), math.cos(a3), 0],
-                [0, 0, 1],
-            ]
-        )
+        mat = np.array([[math.cos(a3), -math.sin(a3), 0],
+                        [math.sin(a3), math.cos(a3), 0],
+                        [0, 0, 1]])
         self.deltamatrix = mat
 
         self._replot(event)
@@ -2954,27 +2906,23 @@ class MainCalibrationFrame(wx.Frame):
             #             rot180 = GT.matRot(axisrot, 180.)
             #             twins_operators = [rot180]
 
-            (
-                twicetheta,
+            (twicetheta,
                 chi,
                 self.Miller_ind,
                 posx,
                 posy,
-                Energy,
-            ) = LAUE.SimulateLaue_twins(
-                Grainparent,
-                twins_operators,
-                self.emin,
-                self.emax,
-                self.CCDParam[:5],
-                only_2thetachi=False,
-                kf_direction=self.kf_direction,
-                ResolutionAngstrom=False,
-                removeharmonics=1,
-                pixelsize=pixelsize,
-                dim=self.framedim,
-                detectordiameter=diameter_for_simulation * 1.25,
-            )
+                Energy) = LAUE.SimulateLaue_twins(Grainparent,
+                                                twins_operators,
+                                                self.emin,
+                                                self.emax,
+                                                self.CCDParam[:5],
+                                                only_2thetachi=False,
+                                                kf_direction=self.kf_direction,
+                                                ResolutionAngstrom=False,
+                                                removeharmonics=1,
+                                                pixelsize=pixelsize,
+                                                dim=self.framedim,
+                                                detectordiameter=diameter_for_simulation * 1.25)
 
             print("nb of spots", len(twicetheta))
 
@@ -3119,8 +3067,7 @@ class MainCalibrationFrame(wx.Frame):
 
             self.data_gnomonx, self.data_gnomony = self.computeGnomonicExpData()
 
-            self.axes.scatter(
-                                self.data_gnomonx,
+            self.axes.scatter(self.data_gnomonx,
                                 self.data_gnomony,
                                 s=self.Data_I / np.amax(self.Data_I) * 100.0,
                                 c=self.Data_I / 50.0,
@@ -3151,7 +3098,7 @@ class MainCalibrationFrame(wx.Frame):
             self.axes.set_xlabel("X CCD")
             self.axes.set_ylabel("Y CCD")
 
-        self.axes.set_title("%s %d spots" % (os.path.split(self.File_NAME)[-1], len(self.twicetheta)))
+        self.axes.set_title("%s %d spots" % (os.path.split(self.filename)[-1], len(self.twicetheta)))
         self.axes.grid(True)
 
         # restore the zoom limits(unless they're for an empty plot)
@@ -3177,14 +3124,11 @@ class MainCalibrationFrame(wx.Frame):
         xtol = 20
         ytol = 20.0
         """
-        self.twicetheta, self.chi, self.Data_I, self.File_NAME = self.data
+        self.twicetheta, self.chi, self.Data_I, self.filename = self.data
         self.Data_index_expspot = np.arange(len(self.twicetheta))
         """
-        xdata, ydata, annotes = (
-            self.twicetheta,
-            self.chi,
-            list(zip(self.Data_index_expspot, self.Data_I)),
-        )
+        xdata, ydata, annotes = (self.twicetheta, self.chi,
+                                    list(zip(self.Data_index_expspot, self.Data_I)))
 
         _dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
@@ -3195,9 +3139,7 @@ class MainCalibrationFrame(wx.Frame):
 
         annotes = []
         for x, y, a in _dataANNOTE_exp:
-            if (clickX - xtol < x < clickX + xtol) and (
-                clickY - ytol < y < clickY + ytol
-            ):
+            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
         if annotes:
@@ -3227,14 +3169,11 @@ class MainCalibrationFrame(wx.Frame):
             xtol = 0.5
             ytol = 0.5
             """
-            self.twicetheta, self.chi, self.Data_I, self.File_NAME = self.data
+            self.twicetheta, self.chi, self.Data_I, self.filename = self.data
             self.Data_index_expspot = np.arange(len(self.twicetheta))
             """
-            xdata, ydata, annotes = (
-                self.twicetheta,
-                self.chi,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, annotes = (self.twicetheta, self.chi,
+                                        list(zip(self.Data_index_expspot, self.Data_I)))
 
             _dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
@@ -3243,12 +3182,8 @@ class MainCalibrationFrame(wx.Frame):
             # print clickX, clickY
             annotes = []
             for x, y, a in _dataANNOTE_exp:
-                if (clickX - xtol < x < clickX + xtol) and (
-                    clickY - ytol < y < clickY + ytol
-                ):
-                    annotes.append(
-                        (GT.cartesiandistance(x, clickX, y, clickY), x, y, a)
-                    )
+                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+                    annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
             if annotes:
                 annotes.sort()
@@ -3279,14 +3214,11 @@ class MainCalibrationFrame(wx.Frame):
             xtol = 2.0
             ytol = 2.0
             """
-            self.twicetheta, self.chi, self.Data_I, self.File_NAME = self.data
+            self.twicetheta, self.chi, self.Data_I, self.filename = self.data
             self.Data_index_expspot = np.arange(len(self.twicetheta))
             """
-            xdata, ydata, annotes = (
-                self.twicetheta,
-                self.chi,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, annotes = (self.twicetheta, self.chi,
+                                                list(zip(self.Data_index_expspot, self.Data_I)))
 
             _dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
@@ -3297,12 +3229,8 @@ class MainCalibrationFrame(wx.Frame):
 
             annotes = []
             for x, y, a in _dataANNOTE_exp:
-                if (clickX - xtol < x < clickX + xtol) and (
-                    clickY - ytol < y < clickY + ytol
-                ):
-                    annotes.append(
-                        (GT.cartesiandistance(x, clickX, y, clickY), x, y, a)
-                    )
+                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+                    annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
             print("# selected points", self.nbclick_zone)
             if annotes:
@@ -3334,9 +3262,7 @@ class MainCalibrationFrame(wx.Frame):
         in MainCalibrationFrame
         TODO: use better SetDetectorParam() of frame
         """
-        dlg = wx.TextEntryDialog(
-            self, "Enter Miller indices: [h, k,l]", "Miller indices entry"
-        )
+        dlg = wx.TextEntryDialog(self, "Enter Miller indices: [h, k,l]", "Miller indices entry")
         dlg.SetValue("[0, 0,1]")
         if dlg.ShowModal() == wx.ID_OK:
             miller = dlg.GetValue()
@@ -3369,31 +3295,18 @@ class MainCalibrationFrame(wx.Frame):
             print(mil1)
             mil2 = self.textentry()
             print(mil2)
-            tdist = (
-                np.arccos(
-                    np.dot(mil1, mil2)
-                    / np.sqrt(np.dot(mil1, mil1) * np.dot(mil2, mil2))
-                )
-                * 180.0
-                / np.pi
-            )
+            tdist = (np.arccos(np.dot(mil1, mil2) / np.sqrt(np.dot(mil1, mil1) * np.dot(mil2, mil2)))
+                * 180.0 / np.pi)
             print("Theoretical distance", tdist)
-            _dist = GT.distfrom2thetachi(
-                np.array(self.twopoints[0]), np.array(self.twopoints[1])
-            )
+            _dist = GT.distfrom2thetachi(np.array(self.twopoints[0]), np.array(self.twopoints[1]))
             print("Experimental distance: %.3f deg " % _dist)
             if _dist < 0.0000001:
-                print(
-                    "You may have selected the same theoretical spot ... So the distance is 0!"
-                )
+                print("You may have selected the same theoretical spot ... So the distance is 0!")
 
             self.nbsuccess = 0
 
-            wx.MessageBox(
-                "selected # exp.spot:%d @(%.3f ,%.3f)\nselected # exp.spot:%d @(%.3f ,%.3f)\nTheoretical distance %.3f\nExperimental distance %.3f"
-                % (index1, X1, Y1, index2, X2, Y2, tdist, _dist),
-                "Results",
-            )
+            wx.MessageBox("selected # exp.spot:%d @(%.3f ,%.3f)\nselected # exp.spot:%d @(%.3f ,%.3f)\nTheoretical distance %.3f\nExperimental distance %.3f"
+                % (index1, X1, Y1, index2, X2, Y2, tdist, _dist), "Results")
 
     def allbuttons_off(self):
         """
@@ -3448,15 +3361,10 @@ class MainCalibrationFrame(wx.Frame):
                     print("angular distance :  %.3f deg " % _dist)
                 if self.datatype == "gnomon":
                     tw, ch = IIM.Fromgnomon_to_2thetachi(
-                        [
-                            np.array([spot1[0], spot2[0]]),
-                            np.array([spot1[1], spot2[1]]),
-                        ],
-                        0,
-                    )[:2]
-                    _dist = GT.distfrom2thetachi(
-                        np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]])
-                    )
+                        [np.array([spot1[0], spot2[0]]),
+                            np.array([spot1[1], spot2[1]])],
+                        0,)[:2]
+                    _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))
                     print("angular distance :  %.3f deg " % _dist)
                 toreturn = self.twopoints
                 self.nbclick_dist = 0
@@ -3489,9 +3397,7 @@ class MainCalibrationFrame(wx.Frame):
                 tw, ch = IIM.Fromgnomon_to_2thetachi(
                     [np.array([spot1[0], spot2[0]]), np.array([spot1[1], spot2[1]])], 0
                 )[:2]
-                _dist = GT.distfrom2thetachi(
-                    np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]])
-                )
+                _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))
                 spot1 = [tw[0], ch[0]]
                 spot2 = [tw[1], ch[1]]
 
@@ -3504,48 +3410,30 @@ class MainCalibrationFrame(wx.Frame):
             # residues matching angle -------------------------
             ang_match = 5.0
 
-            ind_sorted_LUT_MAIN_CUBIC = [
-                np.argsort(elem) for elem in FindO.LUT_MAIN_CUBIC
-            ]
+            ind_sorted_LUT_MAIN_CUBIC = [np.argsort(elem) for elem in FindO.LUT_MAIN_CUBIC]
             sorted_table_angle = []
             for k in range(len(ind_sorted_LUT_MAIN_CUBIC)):
                 # print len(LUT_MAIN_CUBIC[k])
                 # print len(ind_sorted_LUT_MAIN_CUBIC[k])
-                sorted_table_angle.append(
-                    (FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]]
-                )
+                sorted_table_angle.append((FindO.LUT_MAIN_CUBIC[k])[ind_sorted_LUT_MAIN_CUBIC[k]])
 
-            sol = INDEX.twospots_recognition(
-                [spot1[0] / 2.0, spot1[1]], [spot2[0] / 2.0, spot2[1]], ang_tol
-            )
+            sol = INDEX.twospots_recognition([spot1[0] / 2.0, spot1[1]],
+                                                [spot2[0] / 2.0, spot2[1]], ang_tol)
             print("sol = ", sol)
 
             print("\n")
             print("---Planes Recognition---")
             if type(sol) == type(np.array([1, 2])):
-                print(
-                    "planes found ------ for angle %.3f within %.2f deg"
-                    % (_dist, ang_tol)
-                )
+                print("planes found ------ for angle %.3f within %.2f deg"% (_dist, ang_tol))
                 print("spot 1          spot 2           theo. value(deg)")
                 for k in range(len(sol[0])):
-                    theodist = (
-                        np.arccos(
-                            np.dot(sol[0][k], sol[1][k])
-                            / np.sqrt(
-                                np.dot(sol[0][k], sol[0][k])
-                                * np.dot(sol[1][k], sol[1][k])
-                            )
-                        )
-                        * 180.0
-                        / np.pi
-                    )
+                    theodist = (np.arccos(np.dot(sol[0][k], sol[1][k])
+                            / np.sqrt(np.dot(sol[0][k], sol[0][k])* np.dot(sol[1][k], sol[1][k])
+                            ))
+                        * 180.0 / np.pi)
                     # print sol[0][k]
                     # print sol[1][k]
-                    print(
-                        " %s          %s           %.3f"
-                        % (str(sol[0][k]), str(sol[1][k]), theodist)
-                    )
+                    print(" %s          %s           %.3f" % (str(sol[0][k]), str(sol[1][k]), theodist))
 
                 res = []
                 self.mat_solution = [[] for k in range(len(sol[0]))]
@@ -3554,9 +3442,7 @@ class MainCalibrationFrame(wx.Frame):
                 print("datatype", self.datatype)
 
                 for k in range(len(sol[0])):
-                    mymat = FindO.givematorient(
-                        sol[0][k], spot1, sol[1][k], spot2, verbose=0
-                    )
+                    mymat = FindO.givematorient(sol[0][k], spot1, sol[1][k], spot2, verbose=0)
                     self.mat_solution[k] = mymat
                     emax = 25
                     emin = 5
@@ -3582,23 +3468,19 @@ class MainCalibrationFrame(wx.Frame):
                     self.TwicethetaChi_solution[k] = TwicethetaChi
 
                     if self.datatype == "2thetachi":
-                        tout = matchingrate.getProximity(
-                            TwicethetaChi,
-                            np.array(self.data[0]) / 2.0,
-                            np.array(self.data[1]),
-                            angtol=ang_match,
-                        )
+                        tout = matchingrate.getProximity(TwicethetaChi,
+                                                        np.array(self.data[0]) / 2.0,
+                                                        np.array(self.data[1]),
+                                                        angtol=ang_match)
                     elif self.datatype == "gnomon":
                         # print "self.data in reckon 2pts",self.data[0][:10]
                         TW, CH = IIM.Fromgnomon_to_2thetachi(self.data[:2], 0)[:2]
                         # print "TW in reckon 2pst",TW[:10]
                         # LaueToolsframe.control.SetValue(str(array(TW, dtype = '|S8'))+'\n'+str(array(CH, dtype = '|S8')))
-                        tout = matchingrate.getProximity(
-                            TwicethetaChi,
-                            np.array(TW) / 2.0,
-                            np.array(CH),
-                            angtol=ang_match,
-                        )
+                        tout = matchingrate.getProximity(TwicethetaChi,
+                                                        np.array(TW) / 2.0,
+                                                        np.array(CH),
+                                                        angtol=ang_match)
 
                     # print "calcul residues",tout[2:]
                     # print mymat
@@ -3607,22 +3489,15 @@ class MainCalibrationFrame(wx.Frame):
 
                 # Display results
                 if self.datatype == "gnomon":
-                    self.data_fromGnomon = (TW, CH, self.Data_I, self.File_NAME)
+                    self.data_fromGnomon = (TW, CH, self.Data_I, self.filename)
                     self.RecBox = RecognitionResultCheckBox(
-                        self,
-                        -1,
-                        "Potential solutions",
-                        res,
-                        self.data_fromGnomon,
-                        emax=emax,
-                    )
+                        self, -1, "Potential solutions", res, self.data_fromGnomon, emax=emax)
                     self.RecBox = str(self.crystalparampanel.comboElem.GetValue())
                     self.RecBox.TwicethetaChi_solution = self.TwicethetaChi_solution
                     self.RecBox.mat_solution = self.mat_solution
                 else:  # default 2theta, chi
                     self.RecBox = RecognitionResultCheckBox(
-                        self, -1, "Potential solutions", res, self.data, emax=emax
-                    )
+                        self, -1, "Potential solutions", res, self.data, emax=emax)
                     self.RecBox = str(self.crystalparampanel.comboElem.GetValue())
                     self.RecBox.TwicethetaChi_solution = self.TwicethetaChi_solution
                     self.RecBox.mat_solution = self.mat_solution
@@ -3630,16 +3505,9 @@ class MainCalibrationFrame(wx.Frame):
                 self.recognition_possible = False
 
             elif sol == []:
-                print(
-                    "Sorry! No planes found for this angle within angular tolerance %.2f"
-                    % ang_tol
-                )
-                print(
-                    "Try to: increase the angular tolerance or be more accurate in clicking!"
-                )
-                print(
-                    "Try to extend the number of possible planes probed in recognition, ask the programmer!"
-                )
+                print("Sorry! No planes found for this angle within angular tolerance %.2f"% ang_tol)
+                print("Try to: increase the angular tolerance or be more accurate in clicking!")
+                print("Try to extend the number of possible planes probed in recognition, ask the programmer!")
             # distance recognition -------------------------
 
             self._replot(evt)
@@ -3658,9 +3526,7 @@ class MainCalibrationFrame(wx.Frame):
         key = event.key
         #         print "key", key
         if key == "escape":
-            ret = wx.MessageBox(
-                "Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self
-            )
+            ret = wx.MessageBox("Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self)
 
             if ret == wx.YES:
                 self.Close()
@@ -3692,15 +3558,10 @@ class MainCalibrationFrame(wx.Frame):
                 #                     self.RotateAroundAxis()
                 # axis must be defined
                 else:
-                    self.SelectedRotationAxis = self.selectrotationaxis(
-                        event.xdata, event.ydata
-                    )
+                    self.SelectedRotationAxis = self.selectrotationaxis(event.xdata, event.ydata)
 
             elif self.toolbar.mode != "":
-                print(
-                    "You clicked on something, but toolbar is in mode %s."
-                    % str(self.toolbar.mode)
-                )
+                print("You clicked on something, but toolbar is in mode %s."% str(self.toolbar.mode))
 
             elif self.btn_label_theospot.GetValue():
                 self.Annotate_exp(event)
@@ -3720,9 +3581,7 @@ class MainCalibrationFrame(wx.Frame):
             self.centerx, self.centery = self.press
 
             # define rotation axis from self.centerx, self.centery
-            self.SelectedRotationAxis = self.selectrotationaxis(
-                self.centerx, self.centery
-            )
+            self.SelectedRotationAxis = self.selectrotationaxis(self.centerx, self.centery)
             self._replot(event)
 
         self.press = None
@@ -3755,9 +3614,7 @@ class MainCalibrationFrame(wx.Frame):
             #             print 'twth1, chi1', twth1, chi1
             twth2, chi2 = self.convertpixels2twotheta(X2, Y2)
             #             print 'twth2, chi2', twth2, chi2
-            axis2theta, axischi = self.convertpixels2twotheta(
-                self.centerx, self.centery
-            )
+            axis2theta, axischi = self.convertpixels2twotheta(self.centerx, self.centery)
         else:
             return
 
@@ -3767,15 +3624,13 @@ class MainCalibrationFrame(wx.Frame):
         # left mouse button
         if event.button == 1:
             # drag a spot
-            self.SelectedRotationAxis, angle = self.computeRotation(
-                twth1, chi1, twth2, chi2
-            )
+            self.SelectedRotationAxis, angle = self.computeRotation(twth1, chi1, twth2, chi2)
         # right mouse button
         else:
             # rotate around a spot
-            (self.SelectedRotationAxis, angle) = self.computeRotation_aroundaxis(
-                axis2theta, axischi, twth1, chi1, twth2, chi2
-            )
+            (self.SelectedRotationAxis,
+                angle) = self.computeRotation_aroundaxis(axis2theta, axischi,
+                                                        twth1, chi1, twth2, chi2)
 
         #         print "self.SelectedRotationAxis, angle", self.SelectedRotationAxis, angle
         self.RotateAroundAxis(angle)
@@ -3801,20 +3656,12 @@ class MainCalibrationFrame(wx.Frame):
         rotation axis : q1unit^q2unit
         cos anglerot = q1unit.q2unit
         """
-        q1 = np.array(
-            [
-                -np.sin(twth1 / 2.0 * DEG),
+        q1 = np.array([-np.sin(twth1 / 2.0 * DEG),
                 np.cos(twth1 / 2.0 * DEG) * np.sin(chi1 * DEG),
-                np.cos(twth1 / 2.0 * DEG) * np.cos(chi1 * DEG),
-            ]
-        )
-        q2 = np.array(
-            [
-                -np.sin(twth2 / 2.0 * DEG),
+                np.cos(twth1 / 2.0 * DEG) * np.cos(chi1 * DEG)])
+        q2 = np.array([-np.sin(twth2 / 2.0 * DEG),
                 np.cos(twth2 / 2.0 * DEG) * np.sin(chi2 * DEG),
-                np.cos(twth2 / 2.0 * DEG) * np.cos(chi2 * DEG),
-            ]
-        )
+                np.cos(twth2 / 2.0 * DEG) * np.cos(chi2 * DEG)])
 
         qaxis = np.cross(q1, q2)
         angle = np.arccos(np.dot(q1, q2)) / DEG
@@ -3875,19 +3722,8 @@ class MainCalibrationFrame(wx.Frame):
         if nq1tilted_perp <= 0.0001:
             angle = 0
         else:
-            angle = (
-                1
-                / DEG
-                * np.arcsin(
-                    np.dot(
-                        qaxis,
-                        np.cross(
-                            q1tilted_perp / nq1tilted_perp,
-                            q2tilted_perp / nq1tilted_perp,
-                        ),
-                    )
-                )
-            )
+            angle = (1 / DEG * np.arcsin(np.dot( qaxis, np.cross(q1tilted_perp / nq1tilted_perp,
+                                                    q2tilted_perp / nq1tilted_perp))))
 
         #         print 'angle', angle
         #         print "nq1tilted_perp", nq1tilted_perp
@@ -3901,7 +3737,8 @@ class MainCalibrationFrame(wx.Frame):
         #         print 'self.datatype', self.datatype
 
         if self.datatype == "gnomon":
-            RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]), np.array([chi, chi])], 0)[:2]
+            RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]),
+                                                    np.array([chi, chi])], 0)[:2]
             twtheta = RES[0][0]
             chi = RES[1][0]
         #         elif self.datatype == 'pixels':
@@ -3919,11 +3756,9 @@ class MainCalibrationFrame(wx.Frame):
         costheta = np.cos(theta * DEG)
 
         # q axis
-        SelectedRotationAxis = [
-            -sintheta,
-            costheta * np.sin(chi * DEG),
-            costheta * np.cos(chi * DEG),
-        ]
+        SelectedRotationAxis = [-sintheta,
+                                costheta * np.sin(chi * DEG),
+                                costheta * np.cos(chi * DEG)]
 
         return SelectedRotationAxis
 
@@ -3963,13 +3798,9 @@ class MainCalibrationFrame(wx.Frame):
                 t2 = axis.text(x + 50, y - 50, "%.1f" % (annote[1]), size=8)
 
             if matplotlibversion < "0.99.1":
-                m = axis.scatter(
-                    [x], [y], s=1, marker="d", c="r", zorder=100, faceted=False
-                )
+                m = axis.scatter([x], [y], s=1, marker="d", c="r", zorder=100, faceted=False)
             else:
-                m = axis.scatter(
-                    [x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None"
-                )  # matplotlib 0.99.1.1
+                m = axis.scatter([x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None")  # matplotlib 0.99.1.1
 
             self.drawnAnnotations_exp[(x, y)] = (t1, t2, m)
             # self.axis.figure.canvas.draw()
@@ -3987,29 +3818,22 @@ class MainCalibrationFrame(wx.Frame):
         if self.datatype == "2thetachi":
             xtol = 20
             ytol = 20
-            xdata, ydata, annotes = (
-                self.twicetheta,
-                self.chi,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, annotes = (self.twicetheta,
+                                        self.chi,
+                                        list(zip(self.Data_index_expspot, self.Data_I)))
 
         elif self.datatype == "gnomon":
             xtol = 0.05
             ytol = 0.05
-            xdata, ydata, annotes = (
-                self.data_gnomonx,
-                self.data_gnomony,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, annotes = (self.data_gnomonx,
+                                    self.data_gnomony,
+                                    list(zip(self.Data_index_expspot, self.Data_I)))
 
         elif self.datatype == "pixels":
             xtol = 100
             ytol = 100
-            xdata, ydata, annotes = (
-                self.data_x,
-                self.data_y,
-                list(zip(self.Data_index_expspot, self.Data_I)),
-            )
+            xdata, ydata, annotes = (self.data_x, self.data_y,
+                                     list(zip(self.Data_index_expspot, self.Data_I)))
 
         self._dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
@@ -4020,9 +3844,7 @@ class MainCalibrationFrame(wx.Frame):
 
         annotes = []
         for x, y, a in self._dataANNOTE_exp:
-            if (clickX - xtol < x < clickX + xtol) and (
-                clickY - ytol < y < clickY + ytol
-            ):
+            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
         if annotes:
@@ -4050,35 +3872,22 @@ class MainCalibrationFrame(wx.Frame):
         else:
             # t = axis.text(x, y, "(%3.2f, %3.2f) - %s"%(x, y,annote), )  # par defaut
             if self.datatype == "2thetachi":
-                t1 = axis.text(
-                    x + 1,
-                    y + 1,
+                t1 = axis.text(x + 1, y + 1,
                     "#%d hkl=%s\nE=%.3f keV" % (annote[0], str(annote[1]), annote[2]),
-                    size=8,
-                )
+                    size=8)
             elif self.datatype == "gnomon":
-                t1 = axis.text(
-                    x + 0.02,
-                    y + 0.02,
+                t1 = axis.text(x + 0.02, y + 0.02,
                     "#%d hkl=%s\nE=%.3f keV" % (annote[0], str(annote[1]), annote[2]),
-                    size=8,
-                )
+                    size=8)
             elif self.datatype == "pixels":
-                t1 = axis.text(
-                    x + 50,
-                    y + 50,
+                t1 = axis.text(x + 50, y + 50,
                     "#%d hkl=%s\nE=%.3f keV" % (annote[0], str(annote[1]), annote[2]),
-                    size=8,
-                )
+                    size=8)
 
             if matplotlibversion < "0.99.1":
-                m = axis.scatter(
-                    [x], [y], s=1, marker="d", c="r", zorder=100, faceted=False
-                )
+                m = axis.scatter([x], [y], s=1, marker="d", c="r", zorder=100, faceted=False)
             else:
-                m = axis.scatter(
-                    [x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None"
-                )  # matplotlib 0.99.1.1
+                m = axis.scatter([x], [y], s=1, marker="d", c="r", zorder=100, edgecolors="None")  # matplotlib 0.99.1.1
 
             self.drawnAnnotations_theo[(x, y)] = (t1, m)
             # self.axis.figure.canvas.draw()
@@ -4096,47 +3905,26 @@ class MainCalibrationFrame(wx.Frame):
         if self.datatype == "2thetachi":
             xtol = 20
             ytol = 20
-            xdata, ydata, annotes = (
-                self.data_theo[0],
-                self.data_theo[1],
-                list(
-                    zip(
-                        np.arange(len(self.data_theo[0])),
+            xdata, ydata, annotes = (self.data_theo[0], self.data_theo[1],
+                list(zip(np.arange(len(self.data_theo[0])),
                         self.data_theo[2],
-                        self.data_theo[-1],
-                    )
-                ),
-            )
+                        self.data_theo[-1])))
 
         elif self.datatype == "gnomon":
             xtol = 0.05
             ytol = 0.05
-            xdata, ydata, annotes = (
-                self.sim_gnomonx,
-                self.sim_gnomony,
-                list(
-                    zip(
-                        np.arange(len(self.data_theo[0])),
+            xdata, ydata, annotes = (self.sim_gnomonx, self.sim_gnomony,
+                list(zip(np.arange(len(self.data_theo[0])),
                         self.data_theo[2],
-                        self.data_theo[-1],
-                    )
-                ),
-            )
+                        self.data_theo[-1])))
 
         elif self.datatype == "pixels":
             xtol = 100
             ytol = 100
-            xdata, ydata, annotes = (
-                self.data_theo[3],
-                self.data_theo[4],
-                list(
-                    zip(
-                        np.arange(len(self.data_theo[0])),
+            xdata, ydata, annotes = (self.data_theo[3], self.data_theo[4],
+                list(zip(np.arange(len(self.data_theo[0])),
                         self.data_theo[2],
-                        self.data_theo[-1],
-                    )
-                ),
-            )
+                        self.data_theo[-1])))
 
         self._dataANNOTE_theo = list(zip(xdata, ydata, annotes))
 
@@ -4147,9 +3935,7 @@ class MainCalibrationFrame(wx.Frame):
 
         annotes = []
         for x, y, a in self._dataANNOTE_theo:
-            if (clickX - xtol < x < clickX + xtol) and (
-                clickY - ytol < y < clickY + ytol
-            ):
+            if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
         if annotes:
@@ -4202,8 +3988,7 @@ if __name__ == "__main__":
     #    initialParameter['dirname'] = '/home/micha/lauetools/trunk'
 
     CalibGUIApp = wx.App()
-    CalibGUIFrame = MainCalibrationFrame(
-                                            None,
+    CalibGUIFrame = MainCalibrationFrame(None,
                                             -1,
                                             "Detector Calibration Board",
                                             initialParameter,
@@ -4213,8 +3998,7 @@ if __name__ == "__main__":
                                             datatype="2thetachi",
                                             dim=(2048, 2048),
                                             fliprot="no",
-                                            data_added=None,
-                                        )
+                                            data_added=None)
 
     CalibGUIFrame.Show()
 
