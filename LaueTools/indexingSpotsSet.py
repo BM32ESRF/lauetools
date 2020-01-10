@@ -336,7 +336,7 @@ class spotsset:
 
         self.CCDcalibdict = CCDcalibdict
         self.CCDLabel = self.CCDcalibdict['CCDLabel']
-        
+
         if self.CCDLabel not in (None, 'None'):
             self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
         else:
@@ -911,7 +911,7 @@ class spotsset:
                         corfilename=None,
                         dirnameout_fitfile=None):
         r"""
-        General procedure to index and a set of experimental spots with one grain.
+        General procedure to index the current set of experimental spots.
 
         Guessed matrices can checked prior to proceed to indexation from scratch (previous Results)
 
@@ -1156,7 +1156,8 @@ class spotsset:
                                                             verbose=VERBOSE)
 
                 #                 print "MatchRate,nblinks",MatchRate,nblinks
-
+                if MatchRate is None:
+                    MatchRate = 0
                 if MatchRate > MATCHINGRATE_FOR_PREVIOUSRESULTS:
                     MatchingRateUBStackTooLow = False
                     NeedtoProvideNewMatrices = False
@@ -1511,10 +1512,10 @@ class spotsset:
 
                                     self.indexed_spots_dict[exp_spot_index][6] = hklmin[kspot]
                                 #
-                                print("hkl", hkl)
-                                print("new hkl (min euler angles)", hklmin)
-                                print("UB before", matrix)
-                                print("new UB (min euler angles)", UBsingle)
+                                # print("hkl", hkl)
+                                # print("new hkl (min euler angles)", hklmin)
+                                # print("UB before", matrix)
+                                # print("new UB (min euler angles)", UBsingle)
 
                             # write fit file for one grain
                             print("writing fit file -------------------------")
