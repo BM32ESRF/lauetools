@@ -2100,7 +2100,7 @@ def absorbprofile(x, R, mu, x0):
 
 def lengthInSample(depth, twtheta, chi, omega):
     r""" compute geometrical lengthes in sample from impact point (I) at the surface to a point (B)
-    where xray are scattered (or fluorescence is emitted) and finally to a point (C) lying at the sample surface
+    where xray are scattered (or fluorescence is emitted) and finally escape from inside at point (C) lying at the sample surface
     (intersection of line with unit vector u with sample surface plane tilted by omega)
 
     .. warning::
