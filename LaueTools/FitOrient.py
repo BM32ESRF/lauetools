@@ -936,7 +936,7 @@ def plot_refinement_oneparameter(starting_param,
     selection is done in xy_from_Quat with nspots (array of indices)
     """
     parameters = ["distance (mm)", "Xcen (pixel)", "Ycen (pixel)",
-                    "Angle1 (deg)", "Angle2 (deg)", "theta1", "theta2", "theta3", ]
+                    "Angle1 (deg)", "Angle2 (deg)", "theta1", "theta2", "theta3"]
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
     param_calib_0 = starting_param
@@ -944,16 +944,14 @@ def plot_refinement_oneparameter(starting_param,
     mini, maxi, nbsteps = param_range
 
     # setting  keywords of _error_function_on_demand_calibration during the fitting because leastsq handle only *args but not **kwds
-    _error_function_on_demand_calibration.__defaults__ = (
-        initrot,
-        vecteurref,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-    )
+    _error_function_on_demand_calibration.__defaults__ = (initrot,
+                                                        vecteurref,
+                                                        pureRotation,
+                                                        0,
+                                                        pixelsize,
+                                                        dim,
+                                                        weights,
+                                                        kf_direction)
 
     # designed for rotation angle
     res = []
