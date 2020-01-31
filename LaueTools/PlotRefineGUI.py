@@ -141,24 +141,22 @@ class Plot_RefineFrame(wx.Frame):
     """
     Class to implement a window enabling indexation and strain refinement
     """
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        data_added=None,
-        datatype="2thetachi",
-        ImageArray=None,
-        kf_direction="Z>0",
-        key_material="Ge",
-        Params_to_simulPattern=None,  # Grain, Emin, Emax
-        ResolutionAngstrom=False,
-        MATR=0.5,
-        CCDdetectorparameters=None,
-        IndexationParameters=None,
-        StorageDict=None,
-        DataSetObject=None,
-        **kwds):
+    def __init__(self, parent,
+                        _id,
+                        title,
+                        data_added=None,
+                        datatype="2thetachi",
+                        ImageArray=None,
+                        kf_direction="Z>0",
+                        key_material="Ge",
+                        Params_to_simulPattern=None,  # Grain, Emin, Emax
+                        ResolutionAngstrom=False,
+                        MATR=0.5,
+                        CCDdetectorparameters=None,
+                        IndexationParameters=None,
+                        StorageDict=None,
+                        DataSetObject=None,
+                        **kwds):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
         # wxmpl.PlotFrame(self, -1,'fdgf', size =(600, 400),dpi = 96)
@@ -263,6 +261,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # initial parameters of calibration ----------------------*
         if CCDdetectorparameters is not None:
+            print('CCDdetectorparameters is known in __init__ of Plot_RefineFrame')
             self.CCDcalib = CCDdetectorparameters["CCDcalib"]
             self.framedim = CCDdetectorparameters["framedim"]
             self.pixelsize = CCDdetectorparameters["pixelsize"]

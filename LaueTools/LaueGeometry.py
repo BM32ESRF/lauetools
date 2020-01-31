@@ -2098,7 +2098,7 @@ def absorbprofile(x, R, mu, x0):
     return y
 
 
-def lengthInSample(depth, twtheta, chi, omega):
+def lengthInSample(depth, twtheta, chi, omega, verbose=False):
     r""" compute geometrical lengthes in sample from impact point (I) at the surface to a point (B)
     where xray are scattered (or fluorescence is emitted) and finally escape from inside at point (C) lying at the sample surface
     (intersection of line with unit vector u with sample surface plane tilted by omega)
@@ -2136,8 +2136,9 @@ def lengthInSample(depth, twtheta, chi, omega):
 
     BC = np.sqrt((xc + D) ** 2 + yc ** 2 + zc ** 2)
 
-    print("[x,y,z] of BC")
-    print(np.array([twtheta, chi, xc, yc, zc]).T)
+    if verbose:
+        print("[x,y,z] of BC")
+        print(np.array([twtheta, chi, xc, yc, zc]).T)
 
     Ratio_BC_over_D = BC / D
 

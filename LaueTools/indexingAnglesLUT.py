@@ -847,7 +847,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
         worker.fctOutputResults = (List_UBs, List_Scores), LUT
 
         print("finished!")
-        print("setting worker.fctOutputResults to", worker.fctOutputResults)
+        #print("setting worker.fctOutputResults to", worker.fctOutputResults)
         worker.callbackfct("COMPLETED")
 
     return (List_UBs, List_Scores), LUT

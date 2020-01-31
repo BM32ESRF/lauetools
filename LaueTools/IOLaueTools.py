@@ -10,17 +10,17 @@ this module gathers functions to read and write ASCII file corresponding
 to various data
 """
 
-import os, sys
-import time as ttt
+import os
+import sys
+import time
 import string
+import copy
+from copy import deepcopy
+import re
 
 import numpy as np
 
 np.set_printoptions(precision=15)
-
-from copy import deepcopy
-import copy
-import re
 
 if sys.version_info.major == 3:
     from . dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
@@ -47,7 +47,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
     + comments at the end for calibration CCD parameters that have been used for calculating
     2theta and chi for each peak (in addition to X,Y pixel position)
 
-    sortedexit    : 1 sort peaks by intensity for the outputfile 
+    sortedexit    : 1 sort peaks by intensity for the outputfile
                     0 sorting not needed (e.g. sorting already done in input file)
 
     overwrite        : 1 overwrite existing file
@@ -95,7 +95,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                 % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
                 for i in list(range(longueur))]))
 
-    outputfile.write("\n# File created at %s with readwriteASCII.py" % (ttt.asctime()))
+    outputfile.write("\n# File created at %s with readwriteASCII.py" % (time.asctime()))
 
     if initialfilename:
         outputfile.write("\n# From: %s" % initialfilename)
@@ -189,7 +189,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             (data_chi, data_pixX, data_pixY, data_I) = alldata.T[1:]
         # case of unindexed file .cor
         elif nbcolumns == 6:
-            data_index, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T
+            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T
             data_theta = data_2theta / 2.0
     elif nb_peaks == 1:
         if nbcolumns == 3:
@@ -202,7 +202,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             (data_chi, data_pixX, data_pixY, data_I) = alldata[1:]
         # case of unindexed file .cor
         elif nbcolumns == 6:
-            data_index, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata
+            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata
             data_theta = data_2theta / 2.0
 
     #    print "Reading detector parameters if exist"
@@ -239,7 +239,6 @@ def getpixelsize_from_corfile(filename):
     find_ypixelsize = False
 
     for line in f:
-
         if line.startswith("# xpixelsize"):
             find_xpixelsize = True
             xpixelsize = float(line.split(":")[-1])
@@ -273,8 +272,8 @@ def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
                 if verbose:
                     print("calib = ", calib)
             if i == 6:
-                toto = line.replace("[", "").replace("]", "").split(",")
-                mat_line = np.array(toto, dtype=float)
+                pline = line.replace("[", "").replace("]", "").split(",")
+                mat_line = np.array(pline, dtype=float)
                 if verbose:
                     print("matrix = ", mat_line.round(decimals=6))
     finally:
@@ -320,7 +319,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
                 ccdlabel = 'MARCCD165'
             elif abs(ps-0.073) <= 0.002:
                 ccdlabel = 'sCMOS'
-            CCDcalib['CCDLabel']=ccdlabel
+            CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib
 
@@ -375,10 +374,10 @@ def readStringOfIterable(striter):
     for elem in vals:
         try:
             val = int(elem)
-        except:
+        except ValueError:
             try:
                 val = float(elem)
-            except:
+            except ValueError:
                 return striter.strip()
         listvals.append(val)
 
@@ -433,8 +432,6 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     if longueur == 1:
         Data_array = np.array([Data_array, Data_array])
 
-    #         print "Data_array", Data_array
-    #         print "nbcolumns", nbcolumns
 
     if nbcolumns == 10:
         (peak_X,
@@ -452,7 +449,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     elif nbcolumns == 11:
         (peak_X,
             peak_Y,
-            peak_Itot,
+            _,
             peak_I,
             peak_fwaxmaj,
             peak_fwaxmin,
@@ -465,9 +462,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
     outputfile = open(os.path.join(dirname, outputfilename), "w")
 
-    outputfile.write(
-        "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin peak_inclination Xdev Ydev peak_bkg Ipixmax\n"
-    )
+    outputfile.write("peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
+                                                "peak_inclination Xdev Ydev peak_bkg Ipixmax\n")
 
     if longueur == 1:
         print("nbcolumns", nbcolumns)
@@ -484,8 +480,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                 np.round(Xdev[0], decimals=2),
                 np.round(Ydev[0], decimals=2),
                 np.round(peak_bkg[0], decimals=2),
-                int(Ipixmax[0]))
-        )
+                int(Ipixmax[0])))
 
         nbpeaks = 1
 
@@ -494,9 +489,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         outputfile.write(
             "\n".join(
                 ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-                    % tuple(
-                        list(
-                            zip(peak_X.round(decimals=2),
+                    % tuple(list(zip(peak_X.round(decimals=2),
                                 peak_Y.round(decimals=2),
                                 (peak_I + peak_bkg).round(decimals=2),
                                 peak_I.round(decimals=2),
@@ -506,16 +499,11 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                                 Xdev.round(decimals=2),
                                 Ydev.round(decimals=2),
                                 peak_bkg.round(decimals=2),
-                                Ipixmax)
-                        )[i]
-                    )
-                    for i in list(range(longueur))
-                ]
-            )
-        )
+                                Ipixmax))[i]
+                    ) for i in list(range(longueur))]))
         nbpeaks = len(peak_X)
 
-    outputfile.write("\n# File created at %s with readwriteASCII.py" % (ttt.asctime()))
+    outputfile.write("\n# File created at %s with readwriteASCII.py" % (time.asctime()))
     if initialfilename:
         outputfile.write("\n# From: %s" % initialfilename)
 
@@ -537,20 +525,10 @@ def addPeaks_in_Peaklist(
     create or update peak list according to a new peaks data
     """
 
-    #    filename_in = 'TSVCU_1708.dat'
-    #    dirname_in = '/home/micha/LaueProjects/CuVia/Carto'
-
     data_current_peaks = read_Peaklist(filename_in, dirname=dirname_in)
-
-    #    print data_current_peaks
-    # to test
-    #    dirname_out = '/home/micha/lauetools/trunk'
-    #    data_new_peaks = 20000.*np.ones((1, 11))
-    #    data_new_peaks = np.r_[[np.arange(10000, 100000, 10000)] * 11].T
 
     if data_new_peaks.shape[1] != data_current_peaks.shape[1]:
         raise ValueError("Data to be merged have not the same number of columns")
-        return
 
     # merge data
     raw_merged_data = np.concatenate((data_new_peaks, data_current_peaks), axis=0)
@@ -573,16 +551,10 @@ def addPeaks_in_Peaklist(
             incomments = True
             print(line)
             comments += line
-            position_comments = f.tell()
 
         elif incomments:
             break
     f.close()
-
-    #    comments += '# # Comments: nb of peaks %d' % len(merged_data)
-    #    print "position_comments", position_comments
-    #    print "comments"
-    #    print comments
 
     print(merged_data.shape)
 
@@ -598,11 +570,6 @@ def addPeaks_in_Peaklist(
                         initialfilename=None,
                         comments=comments,
                         dirname=dirname_out)
-
-    #    filename_out = os.path.join(dirname_out, 'tototest')
-    #    fout = open(filename_out, 'w')
-    #    fout.writelines(comments)
-    #    fout.close()
 
     return merged_data
 
@@ -633,18 +600,12 @@ def writefitfile(outputfilename,
                  PeakListFilename=None,
                  columnsname=None,
                  modulecaller=None,
-                 refinementtype="Strain and Orientation",
-):
+                 refinementtype="Strain and Orientation"):
     """
     write a .fit file:
     """
-    import time
-
     # HEADER
-    header = "%s Refinement from experimental file: %s\n" % (
-        refinementtype,
-        PeakListFilename,
-    )
+    header = "%s Refinement from experimental file: %s\n" % (refinementtype, PeakListFilename)
     modulecallerstr = ""
     if modulecaller is not None:
         modulecallerstr = " with %s" % modulecaller
@@ -654,7 +615,7 @@ def writefitfile(outputfilename,
     if "Element" in dict_matrices:
         header += "Element\n"
         header += "%s\n" % str(dict_matrices["Element"])
-    
+
     if "grainIndex" in dict_matrices:
         header += "grainIndex\n"
         header += "G_%d\n" % dict_matrices["grainIndex"]
@@ -663,25 +624,20 @@ def writefitfile(outputfilename,
         header += "Mean Deviation(pixel): %.3f\n" % meanresidues
 
     if columnsname:
-        # header += columnsname #introduces a blank line before data 
         header += columnsname.rstrip()
-        
+
     else:
-        #header += "spot_index : !!columns name missing !!\n "#introduces a blank line before data 
         header += "spot_index : !!columns name missing !!"
-        
-        
-    
+
     # FOOTER
     footer = ""
-    
+
     if "UBmat" in dict_matrices:
         footer += "UB matrix in q= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
         footer += str(dict_matrices["UBmat"].round(decimals=9)) + "\n"
 
-    # OR
-
+    # added by OR-------------------------
     if "Umat2" in dict_matrices:
         footer += "Umatrix in q_lab= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
@@ -694,23 +650,25 @@ def writefitfile(outputfilename,
 
         footer += "(B-I)*1000 \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        toto = (dict_matrices["Bmat_tri"] - np.eye(3)) * 1000.0
-        footer += str(toto.round(decimals=3)) + "\n"
+        smattri = (dict_matrices["Bmat_tri"] - np.eye(3)) * 1000.0
+        footer += str(smattri.round(decimals=3)) + "\n"
 
     if ("HKLxyz_names" in dict_matrices) and ("HKLxyz" in dict_matrices):
         footer += "HKL coord. of lab and sample frame axes :\n"
         for k in list(range(6)):
-            footer += dict_matrices["HKLxyz_names"][k] + "\t" 
+            footer += dict_matrices["HKLxyz_names"][k] + "\t"
             footer += str(dict_matrices["HKLxyz"][k].round(decimals=3)) + "\n"
 
-    # end OR
+    # ---------- end OR
 
     if "B0" in dict_matrices:
         footer += "B0 matrix in q= UB (B0) G*\n"
         footer += str(dict_matrices["B0"].round(decimals=8)) + "\n"
 
     if "UBB0" in dict_matrices:
-        footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)\n"
+        footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: "
+        "astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, "
+        "xlab1 = ui, ui = unit vector along incident beam)\n"
         footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
 
     if "euler_angles" in dict_matrices:
@@ -718,11 +676,14 @@ def writefitfile(outputfilename,
         footer += str(dict_matrices["euler_angles"]) + "\n"
 
     if "mastarlab" in dict_matrices:
-        footer += "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] ,bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"   
+        footer += "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] "
+        ",bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"
         footer += str(dict_matrices["matstarlab"].round(decimals=7)) + "\n"
 
     if "matstarsample" in dict_matrices:
-        footer += "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] ,bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
+        footer += "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 "
+        "by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] "
+        ",bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
         footer += str(dict_matrices["matstarsample"].round(decimals=8)) + "\n"
 
     if "devstrain_crystal" in dict_matrices:
@@ -732,11 +693,11 @@ def writefitfile(outputfilename,
     if "devstrain_sample" in dict_matrices:
         footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
         footer += str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n"
-            
+
     if "LatticeParameters" in dict_matrices:
         footer += "new lattice parameters\n"
         footer += str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n"
-            
+
     if "CCDLabel" in dict_matrices:
         footer += "CCDLabel\n"
         footer += str(dict_matrices["CCDLabel"]) + "\n"
@@ -757,10 +718,10 @@ def writefitfile(outputfilename,
         if dict_matrices["Ts"] is not None:
             footer += "Refined T transform elements in %s\n" % dict_matrices["Ts"][1]
             footer += str(dict_matrices["Ts"][2]) + "\n"
-    
+
     outputfile = open(outputfilename, "wb")
-    np.savetxt(outputfilename, datatooutput, fmt="%.6f", 
-               header=header, footer=footer, comments="#")    
+    np.savetxt(outputfilename, datatooutput, fmt="%.6f",
+               header=header, footer=footer, comments="#")
     outputfile.close()
 
 
@@ -902,14 +863,14 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     eulerfound = 0
     linecalib = 0
     linepixdev = 0
-    linestrain = 0
+    #linestrain = 0
     lineeuler = 0
-    list1 = []
-    linestartspot = 10000
-    lineendspot = 10000
+    #list1 = []
+    #linestartspot = 10000
+    #lineendspot = 10000
 
     f = open(fitfilename, "r")
-
+    unindexedspots = False
     for grain_index in list(range(nbgrains)):
         #         print "read data for grain_index %d" % grain_index
         #         print linepos_grain_list[grain_index + 1]
@@ -922,38 +883,40 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
             line = f.readline()
             #             print "iline =%d line" % iline, line
-            if line.startswith(("# Number of indexed spots", "#Number of indexed spots" )):
-                nb_indexed_spots = int(line.split(":")[-1])
-            #                 print "nb_indexed_spots", nb_indexed_spots
+            if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
+                print("iline =%d line" % iline, line)
+                try:
+                    nb_indexed_spots = int(line.split(":")[-1])
+                except ValueError:
+                    print("number of indexed should places after ':' ")
 
-            elif line.startswith(("# Number of unindexed spots","#Number of unindexed spots")):
+            elif line.startswith(("# Number of unindexed spots", "#Number of unindexed spots")):
                 nb_indexed_spots = 0
                 nb_UNindexed_spots = int(line.split(":")[-1])
+                unindexedspots = True
 
-            elif line.startswith(("# Mean Pixel Deviation","#Mean Deviation","#Mean Pixel Deviation")):
+            elif line.startswith(("# Mean Pixel Deviation", "#Mean Deviation", "#Mean Pixel Deviation")):
                 meanpixdev = float(line.split(":")[-1])
-                #                 print "meanpixdev", meanpixdev
                 PixDev_list.append(meanpixdev)
 
             elif line.startswith("#Element"):
                 line = f.readline()
                 Material_list.append(line.rstrip("\n"))
-                #                 print "Material_list", Material_list
                 iline += 1
             elif line.startswith("#grainIndex"):
                 line = f.readline()
                 GrainName_list.append(line.rstrip("\n"))
-                #                 print "GrainName_list", GrainName_list
 
                 iline += 1
             elif line.startswith(("spot#", "#spot", "##spot")):
-                columns_headers = line.replace("#", "").split()
+                if not unindexedspots:
+                    columns_headers = line.replace("#", "").split()
+
                 if nb_indexed_spots > 0:
-                    #                     print "nb of indexed spots", nb_indexed_spots
                     nbspots = nb_indexed_spots
 
                     dataspots = []
-                    for kline in list(range(nbspots)):
+                    for _ in list(range(nbspots)):
                         line = f.readline()
                         iline += 1
                         dataspots.append(
@@ -961,14 +924,12 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
                     dataspots = np.array(dataspots, dtype=np.float)
                 #                     print "got dataspots!"
-                #                     print "shape", dataspots.shape
 
                 elif nb_UNindexed_spots > 0:
-                    #                     print "nb of UNindexed spots", nb_UNindexed_spots
                     nbspots = nb_UNindexed_spots
 
                     dataspots_Unindexed = []
-                    for kline in list(range(nbspots)):
+                    for _ in list(range(nbspots)):
                         line = f.readline()
                         iline += 1
                         dataspots_Unindexed.append(
@@ -976,32 +937,25 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
                     dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float)
             #                     print "got dataspots_Unindexed!"
-            #                     print "shape", dataspots_Unindexed.shape
 
             elif line.startswith("#UB"):
                 matrixfound = 1
 
-                lineendspot = iline - 1
-
+                #lineendspot = iline - 1
                 # print "matrix found"
             elif line.startswith("#Sample"):
-                # print line
                 calibfound = 1
                 linecalib = iline + 1
             elif line.startswith(("# Calibration", "#Calibration")):
-                # print line
                 calibfoundJSM = 1
                 linecalib = iline + 1
             elif line.startswith("#pixdev"):
-                # print line
                 pixdevfound = 1
                 linepixdev = iline + 1
             elif line.startswith("#deviatoric"):
-                # print line
                 strainfound = 1
 
             elif line.startswith("#Euler"):
-                # print line
                 eulerfound = 1
                 lineeuler = iline + 1
 
@@ -1010,7 +964,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     line = f.readline()
                     #                     print "line in matrix", line
                     lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-                    # print toto
                     UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
                 #                 print "got UB matrix:", UBmat
@@ -1020,18 +973,16 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     line = f.readline()
                     #                     print "line in matrix", line
                     lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-                    # print toto
                     strain[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
                 #                 print "got strain matrix:", strain
                 strainfound = 0
             if calibfoundJSM:
                 calibparam = []
-                for jline_calib in list(range(7)):
+                for _ in list(range(7)):
                     line = f.readline()
                     #                     print "line in matrix", line
                     val = float(line.split(":")[-1])
-                    # print toto
                     calibparam.append(val)
                     iline += 1
                 #                 print "got calibration parameters:", calibparam
@@ -1043,15 +994,11 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 # print "calib = ", calib[grain_index,:]
             if eulerfound & (iline == lineeuler):
                 euler[grain_index, :] = np.array(
-                    line.replace("[", "").replace("#", "").replace("]", "").split()[:3], dtype=float
-                )
+                    line.replace("[", "").replace("#", "").replace("]", "").split()[:3], dtype=float)
                 # print "euler = ", euler[grain_index,:]
             if pixdevfound & (iline == linepixdev):
                 pixdev[grain_index] = float(line.rstrip("\n"))
                 # print "pixdev = ", pixdev[grain_index]
-            #             if (iline >= linestartspot) & (iline < lineendspot):
-            # #                 print line, iline
-            #                 list1.append(line.rstrip('\n').replace('[', '').replace(']', '').split())
 
             iline += 1
 
@@ -1134,14 +1081,14 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             raise ValueError("problem reading columns name")
 
     if returnUnindexedSpots:
-        res = toreturn, dataspots_Unindexed
+        _res = toreturn, dataspots_Unindexed
     else:
-        res = toreturn
+        _res = toreturn
 
     if return_columnheaders:
-        return res, dict_column_header
+        return _res, dict_column_header
     else:
-        return res
+        return _res
 
 
 def read3linesasMatrix(fileobject):
@@ -1171,6 +1118,14 @@ def read3linesasMatrix(fileobject):
 
 
 def readListofMatrices(fullpathtoFile):
+    """ Read ASCII file containing n matrices elements. Must be 9*n float numbers
+
+    :param fullpathtoFile: full path
+    :type fullpathtoFile: str
+    :raises ValueError: if number of floats is not a multiple of 9
+    :return: nb of matrices found, list of matrices
+    :rtype: (int, list)
+    """
 
     fileobject = open(fullpathtoFile, "r")
 
@@ -1188,11 +1143,9 @@ def readListofMatrices(fullpathtoFile):
                 listelem.append(val)
                 nbElements += 1
 
-    #         print 'listelem', listelem
-
     if (nbElements % 9) != 0:
         raise ValueError("Number of elements is not a multiple of 9")
-        return None
+
     nbMatrices = nbElements / 9
     matrices = np.array(listelem, dtype=float).reshape((nbMatrices, 3, 3))
     return nbMatrices, matrices
@@ -1321,7 +1274,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     [[0.8885165,0.0000165,-.777795165],
     [0.100003198951498,-74440.148979,0.155242423126],
     [-.54264896,.99999654128,-.572785747]]
-    END   
+    END
     """
 
     List_posImageIndex = []
@@ -1398,7 +1351,7 @@ def readCheckOrientationsFile(fullpathtoFile):
 
                 if posfile != -1:
                     f.seek(posfile)
-                    for k in list(range(nblines)):
+                    for _ in list(range(nblines)):
                         f.readline()
                         lineindex += 1
                 else:
@@ -1420,7 +1373,8 @@ def getfileindex(str_expression):
 
 
 def readdataasmatrices(fileobject):
-
+    """ read matrices in ubs file?
+    """
     posfile = fileobject.tell()
 
     nbElements = 0
@@ -1456,7 +1410,7 @@ def readdataasmatrices(fileobject):
 
     if (nbElements % 9) != 0:
         raise ValueError("Number of elements is not a multiple of 9")
-        return None
+
     nbMatrices = nbElements / 9
     matrices = np.array(listelem, dtype=float).reshape((nbMatrices, 3, 3))
 
@@ -1574,9 +1528,7 @@ def createselecteddata(tupledata_theta_chi_I, _listofselectedpts, _indicespotmax
         _dataselected[2] = _data_I
     else:
         # _dataselected=np.array(zeros((3,len(cutlistofselectedpts)),'float'))
-        _dataselected = np.array(
-            np.zeros((3, len(cutlistofselectedpts)), dtype=np.float)
-        )
+        _dataselected = np.array(np.zeros((3, len(cutlistofselectedpts)), dtype=np.float))
         _dataselected[0] = np.take(_data_theta, cutlistofselectedpts)
         _dataselected[1] = np.take(_data_chi, cutlistofselectedpts)
         _dataselected[2] = np.take(_data_I, cutlistofselectedpts)
@@ -1647,9 +1599,7 @@ def ReadSpec(fname, scan):
             # fist line has its first element = '@A'
             if ii % 10 == 0:
                 print("%d" % ii)
-            for k in list(
-                range(1, 127)
-            ):  # first and last line off , each line contains 16 integers
+            for k in list(range(1, 127)):  # first and last line off , each line contains 16 integers
                 l = f.readline()
 
                 l = l.split()
@@ -1731,14 +1681,14 @@ def readxy_XMASind(filename):
     """
     f = open(filename, "r")
 
-    filename_mccd = f.readline()
+    _ = f.readline()  #filename_mccd
     f.readline()
     f.readline()
     l = f.readline()
     nb_peaks = int(l.split()[-1])
     f.readline()
     datalines = []
-    for k in list(range(nb_peaks)):
+    for _ in list(range(nb_peaks)):
         datalines.append(f.readline().split())
 
     return np.array(datalines, dtype=float)
@@ -1759,7 +1709,7 @@ def read_cri(filecri):
 
     uc = np.zeros(6, dtype=np.float)
     element_name = []
-    sg_num = 0
+    #sg_num = 0
 
     VERBOSE = 0
 
@@ -1773,7 +1723,7 @@ def read_cri(filecri):
             if i == 1:
                 if VERBOSE:
                     print("space group number : ", line[:-1])
-                sg_num = int(line.split()[0])
+                #sg_num = int(line.split()[0])
                 # print sg_num
             if i == 2:
                 if VERBOSE:
@@ -1802,17 +1752,14 @@ def read_cri(filecri):
             i = i + 1
 
     finally:
-        linetot = i
+        #linetot = i
         f.close()
 
     linestart = 4
-    lineend = num_at + 4
+    #lineend = num_at + 4
 
-    # TODO: to use loadtxt ...
-    # element_coord_and_occ = scipy.io.array_import.read_array(filecri,columns=(1,2,3,4),lines=(linestart,(linestart+1,lineend)))
-    element_coord_and_occ = np.genfromtxt(
-        filecri, usecols=(1, 2, 3, 4), skiprows=linestart
-    )  # skiprows could be replaced bt skip_header
+    # to use loadtxt ?...
+    element_coord_and_occ = np.genfromtxt(filecri, usecols=(1, 2, 3, 4), skip_header=linestart)
 
     if VERBOSE:
         print("element_coord_and_occ = \n", element_coord_and_occ)
@@ -1834,7 +1781,7 @@ def readfile_str(filename, grain_index):
     read XMAS .str file
 
     return for one grain (WARNING: grain_index  starting from 1)
-    data_str: 
+    data_str:
     matstr
     calib
     dev_str
@@ -1900,12 +1847,10 @@ def readfile_str(filename, grain_index):
     #    matstr = scipy.io.array_import.read_array(filestr, columns=(0, 1, 2),
     #                                              lines = (linemat, linemat + 1, linemat + 2))
     #    print "linemat", linemat
-    matstr = np.genfromtxt(
-        filename,
-        usecols=(0, 1, 2),
-        skip_header=linemat,
-        skip_footer=linetot - (linemat + 3),
-    )
+    matstr = np.genfromtxt(filename,
+                            usecols=(0, 1, 2),
+                            skip_header=linemat,
+                            skip_footer=linetot - (linemat + 3))
 
     print("matstr", matstr)
 
@@ -1916,15 +1861,13 @@ def readfile_str(filename, grain_index):
     #                                              lines = (linestart, (linestart + 1, lineend)))
     #    print "linestart", linestart
     #    print "linetot - lineend", linetot - lineend
-    data_ = np.genfromtxt(
-        filename,
-        dtype=None,
-        delimiter="\n",
-        names=True,
-        #                                 usecols=tuple(range(5)),
-        skip_header=linestart,
-        skip_footer=linetot - lineend,
-    )
+    data_ = np.genfromtxt(filename,
+                            dtype=None,
+                            delimiter="\n",
+                            names=True,
+                            #                                 usecols=tuple(range(5)),
+                            skip_header=linestart,
+                            skip_footer=linetot - lineend)
 
     data_str = np.array([elem[0].split() for elem in data_], dtype=np.float)[:, :11]
 
@@ -2067,17 +2010,14 @@ def read_indexationfile(filename, grainindex_mat=0):
 
     f.close()
 
-    for key, val in datamat.items():
+    for key, _ in datamat.items():
         datamat[key] = np.array(datamat[key], dtype=float)
-    # print "datamat",datamat
 
-    for key, val in datamat_B.items():
+    for key, _ in datamat_B.items():
         datamat_B[key] = np.array(datamat_B[key], dtype=float)
-    # print "datamat_B",datamat_B
 
     for key, val in datamat_E.items():
         datamat_E[key] = np.array(datamat_E[key], dtype=float)
-    # print "datamat_E",datamat_E
 
     calib = []
     if detector_param:
@@ -2113,7 +2053,7 @@ def start_func():
     print("main of readwriteASCII.py")
     print("numpy version", np.__version__)
 
-    print("print current", ttt.asctime())
+    print("print current", time.asctime())
 
     for k in list(range(20)):
         print("k=%d, k**2=%d" % (k, k ** 2))
@@ -2214,13 +2154,9 @@ class LT_fitfile:
         ubb021, ubb022, ubb023 = float(l[0]), float(l[1]), float(l[2])
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
         ubb031, ubb032, ubb033 = float(l[0]), float(l[1]), float(l[2])
-        self.UBB0 = np.array(
-            [
-                [ubb011, ubb012, ubb013],
-                [ubb021, ubb022, ubb023],
-                [ubb031, ubb032, ubb033],
-            ]
-        )
+        self.UBB0 = np.array([[ubb011, ubb012, ubb013],
+                            [ubb021, ubb022, ubb023],
+                            [ubb031, ubb032, ubb033]])
 
     def __devCrystal__(self, f, l):
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
@@ -2229,38 +2165,28 @@ class LT_fitfile:
         ep22, ep23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
         ep33 = float(l[2]) * 1e-3
-        self.deviatoric = np.array(
-            [[ep11, ep12, ep13], [ep12, ep22, ep23], [ep13, ep23, ep33]]
-        )
+        self.deviatoric = np.array([[ep11, ep12, ep13], [ep12, ep22, ep23], [ep13, ep23, ep33]])
 
     def __devSample__(self, f, l):
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep_sample11, ep_sample12, ep_sample13 = (
-            float(l[0]) * 1e-3,
-            float(l[1]) * 1e-3,
-            float(l[2]) * 1e-3,
-        )
+        ep_sample11, ep_sample12, ep_sample13 = (float(l[0]) * 1e-3,
+                                                float(l[1]) * 1e-3,
+                                                float(l[2]) * 1e-3)
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
         ep_sample22, ep_sample23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
         l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
         ep_sample33 = float(l[2]) * 1e-3
-        self.dev_sample = np.array(
-            [
-                [ep_sample11, ep_sample12, ep_sample13],
-                [ep_sample12, ep_sample22, ep_sample23],
-                [ep_sample13, ep_sample23, ep_sample33],
-            ]
-        )
+        self.dev_sample = np.array([[ep_sample11, ep_sample12, ep_sample13],
+                                    [ep_sample12, ep_sample22, ep_sample23],
+                                    [ep_sample13, ep_sample23, ep_sample33]])
 
     def __DetectorParameters__(self, f, l):
-        l = (
-            f.readline()
+        l = (f.readline()
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
-            .split(",")
-        )
+            .split(","))
         self.dd = float(l[0])
         self.xcen = float(l[1])
         self.ycen = float(l[2])
@@ -2269,14 +2195,12 @@ class LT_fitfile:
         self.DetectorParameters = [self.dd, self.xcen, self.ycen, self.xbet, self.xgam]
 
     def __PixelSize__(self, f, l):
-        l = (
-            f.readline()
+        l = (f.readline()
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
-            .split(",")
-        )
+            .split(","))
         self.PixelSize = float(l[0])
 
     def __FrameDimension__(self, f, l):
@@ -2288,47 +2212,37 @@ class LT_fitfile:
         self.FrameDimension = [float(l[0]), float(l[1])]
 
     def __CCDLabel__(self, f, l):
-        l = (
-            f.readline()
+        l = (f.readline()
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
-            .split(",")
-        )
+            .split(","))
         self.CCDLabel = l[0]
 
     def __Element__(self, f, l):
-        l = (
-            f.readline()
+        l = (f.readline()
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
-            .split(",")
-        )
+            .split(","))
         self.Element = l[0]
 
     def __GrainIndex__(self, f, l):
-        l = (
-            f.readline()
+        l = (f.readline()
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
-            .split(",")
-        )
+            .split(","))
         self.GrainIndex = l[0]
 
     def __Peaks__(self, f, l):
         self.peak = {}
-        for iii in list(range(self.NumberOfIndexedSpots)):
+        for _ in list(range(self.NumberOfIndexedSpots)):
             l = f.readline().split()
-            self.peak[
-                "{:d} {:d} {:d}".format(
-                    int(float(l[2])), int(float(l[3])), int(float(l[4]))
-                )
-            ] = Peak(l)
+            self.peak["{:d} {:d} {:d}".format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
 
     def __NumberIndexedSpots__(self, f, l):
         self.NumberOfIndexedSpots = int(l.split(" ")[-1])
@@ -2346,9 +2260,7 @@ class LT_fitfile:
                 self.corfile = l.split(" ")[-1]
 
                 l = f.readline()
-                self.timestamp, self.software = l.lstrip("# File created at ").split(
-                    " with "
-                )
+                self.timestamp, self.software = l.lstrip("# File created at ").split(" with ")
 
                 # read the footer
                 l = f.readline().replace("\n", "")
@@ -2380,63 +2292,33 @@ class LT_fitfile:
                     self.bstar_prime = self.UBB0[:, 1]
                     self.cstar_prime = self.UBB0[:, 2]
 
-                    self.a_prime = np.cross(
-                        self.bstar_prime, self.cstar_prime
-                    ) / np.dot(
-                        self.astar_prime, np.cross(self.bstar_prime, self.cstar_prime)
-                    )
-                    self.b_prime = np.cross(
-                        self.cstar_prime, self.astar_prime
-                    ) / np.dot(
-                        self.bstar_prime, np.cross(self.cstar_prime, self.astar_prime)
-                    )
-                    self.c_prime = np.cross(
-                        self.astar_prime, self.bstar_prime
-                    ) / np.dot(
-                        self.cstar_prime, np.cross(self.astar_prime, self.bstar_prime)
-                    )
+                    self.a_prime = np.cross(self.bstar_prime, self.cstar_prime
+                    ) / np.dot(self.astar_prime, np.cross(self.bstar_prime, self.cstar_prime))
+                    self.b_prime = np.cross(self.cstar_prime, self.astar_prime
+                    ) / np.dot(self.bstar_prime, np.cross(self.cstar_prime, self.astar_prime))
+                    self.c_prime = np.cross(self.astar_prime, self.bstar_prime
+                    ) / np.dot(self.cstar_prime, np.cross(self.astar_prime, self.bstar_prime))
 
-                    self.boa = np.linalg.linalg.norm(
-                        self.b_prime
+                    self.boa = np.linalg.linalg.norm(self.b_prime
                     ) / np.linalg.linalg.norm(self.a_prime)
-                    self.coa = np.linalg.linalg.norm(
-                        self.c_prime
+                    self.coa = np.linalg.linalg.norm(self.c_prime
                     ) / np.linalg.linalg.norm(self.a_prime)
 
-                    self.alpha = (
-                        np.arccos(
-                            np.dot(self.b_prime, self.c_prime)
+                    self.alpha = (np.arccos(np.dot(self.b_prime, self.c_prime)
                             / np.linalg.linalg.norm(self.b_prime)
+                            / np.linalg.linalg.norm(self.c_prime)) * 180.0 / np.pi)
+                    self.beta = (np.arccos(np.dot(self.c_prime, self.a_prime)
                             / np.linalg.linalg.norm(self.c_prime)
-                        )
-                        * 180.0
-                        / np.pi
-                    )
-                    self.beta = (
-                        np.arccos(
-                            np.dot(self.c_prime, self.a_prime)
-                            / np.linalg.linalg.norm(self.c_prime)
+                            / np.linalg.linalg.norm(self.a_prime)) * 180.0 / np.pi)
+                    self.gamma = (np.arccos(np.dot(self.a_prime, self.b_prime)
                             / np.linalg.linalg.norm(self.a_prime)
-                        )
-                        * 180.0
-                        / np.pi
-                    )
-                    self.gamma = (
-                        np.arccos(
-                            np.dot(self.a_prime, self.b_prime)
-                            / np.linalg.linalg.norm(self.a_prime)
-                            / np.linalg.linalg.norm(self.b_prime)
-                        )
-                        * 180.0
-                        / np.pi
-                    )
+                            / np.linalg.linalg.norm(self.b_prime)) * 180.0 / np.pi)
 
                 except ValueError:
                     print("could not compute the reciprocal space from the UBB0")
 
         except IOError:
             print("file {} not found! or problem of reading it!".format(filename))
-            pass
 
 
 if __name__ == "__main__":

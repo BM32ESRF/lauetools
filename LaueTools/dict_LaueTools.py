@@ -195,15 +195,15 @@ def readDict(filename):
         _dict = {}
         k = 1
         for line in f:
-            key, val = readsinglelinedictfile(line)
-            if key in _dict:
+            _key, val = readsinglelinedictfile(line)
+            if _key in _dict:
                 txt = 'In Materials file: %s line %d'%(filename, k)
                 txt += '\n'+line
-                txt += '\nkey_material : "%s" already exists!!!'%key
-                txt += '\nwith parameters: %s'%str(_dict[key])
+                txt += '\nkey_material : "%s" already exists!!!'%_key
+                txt += '\nwith parameters: %s'%str(_dict[_key])
                 txt += '\nPlease find an other name or choose one of them!'
                 raise ValueError(txt)
-            _dict[key] = val
+            _dict[_key] = val
             k += 1
         return _dict
 
