@@ -932,7 +932,7 @@ def plot_refinement_oneparameter(starting_param,
                                 **kwd):
 
     """
-    All miller indices must be entered in miller, 
+    All miller indices must be entered in miller,
     selection is done in xy_from_Quat with nspots (array of indices)
     """
     parameters = ["distance (mm)", "Xcen (pixel)", "Ycen (pixel)",
@@ -1278,10 +1278,7 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
     else:
         calibrationparameters = allparameters[:5]
 
-    rotationselements_indices = [
-        [10, 11, 12],
-        [18, 19, 20],
-    ]  # with counting 5 calib parameters
+    rotationselements_indices = [[10, 11, 12],[18, 19, 20]]  # with counting 5 calib parameters
     strainelements_indices = [[5, 6, 7, 8, 9], [13, 14, 15, 16, 17]]
 
     distances_vector_list = []
@@ -1411,12 +1408,10 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
         # print "distanceterm",distanceterm
         if weights is not None:
             print("***********mean weighted pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********")
+                np.mean(alldistances_array), "    ********")
         else:
             print("***********mean pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********")
+                np.mean(alldistances_array), "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
@@ -1461,7 +1456,7 @@ def error_function_general(varying_parameters_values_array,
     detectordistance,xcen,ycen,beta, gamma
 
     three misorientation angles with respect to LT orthonormal frame (x, y, z) matrices Ux, Uy,Uz:
-    anglex,angley,anglez   
+    anglex,angley,anglez
 
     5 independent elements of a distortion operator
 
@@ -1524,12 +1519,8 @@ def error_function_general(varying_parameters_values_array,
             elif parameter_name is "anglez":
                 Uz = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1.0]])
 
-        elif (
-            (not T_has_elements)
-            and (not Ts_has_elements)
-            and parameter_name
-            in ("Tc00", "Tc01", "Tc02", "Tc10", "Tc11", "Tc12", "Tc20", "Tc21", "Tc22")
-        ):
+        elif ((not T_has_elements) and (not Ts_has_elements) and parameter_name
+            in ("Tc00", "Tc01", "Tc02", "Tc10", "Tc11", "Tc12", "Tc20", "Tc21", "Tc22")):
             #             print 'got Tc elements: ', parameter_name
             for i in list(range(3)):
                 for j in list(range(3)):
@@ -1541,10 +1532,7 @@ def error_function_general(varying_parameters_values_array,
                             Tc[i, j] = varying_parameters_values_array[0]
                         Tc_has_elements = True
 
-        elif (
-            not Tc_has_elements
-            and not Ts_has_elements
-            and parameter_name
+        elif (not Tc_has_elements and not Ts_has_elements and parameter_name
             in ("T00", "T01", "T02", "T10", "T11", "T12", "T20", "T21", "T22")):
             for i in list(range(3)):
                 for j in list(range(3)):
@@ -1555,10 +1543,7 @@ def error_function_general(varying_parameters_values_array,
                             T[i, j] = varying_parameters_values_array[0]
                         T_has_elements = True
 
-        elif (
-            not Tc_has_elements
-            and not T_has_elements
-            and parameter_name
+        elif (not Tc_has_elements and not T_has_elements and parameter_name
             in ("Ts00", "Ts01", "Ts02", "Ts10", "Ts11", "Ts12", "Ts20", "Ts21", "Ts22")):
             for i in list(range(3)):
                 for j in list(range(3)):
@@ -1578,33 +1563,21 @@ def error_function_general(varying_parameters_values_array,
             #                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[0] / factorscale)
 
             if nb_varying_parameters > 1:
-                latticeparameters[indparam] = varying_parameters_values_array[
-                    varying_parameter_index
-                ]
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index]
             else:
                 latticeparameters[indparam] = varying_parameters_values_array[0]
             latticeparameters_has_elements = True
 
         elif parameter_name in ("distance",):
-            calibrationparameters[0] = varying_parameters_values_array[
-                varying_parameter_index
-            ]
+            calibrationparameters[0] = varying_parameters_values_array[varying_parameter_index]
         elif parameter_name in ("xcen",):
-            calibrationparameters[1] = varying_parameters_values_array[
-                varying_parameter_index
-            ]
+            calibrationparameters[1] = varying_parameters_values_array[varying_parameter_index]
         elif parameter_name in ("ycen",):
-            calibrationparameters[2] = varying_parameters_values_array[
-                varying_parameter_index
-            ]
+            calibrationparameters[2] = varying_parameters_values_array[varying_parameter_index]
         elif parameter_name in ("beta",):
-            calibrationparameters[3] = varying_parameters_values_array[
-                varying_parameter_index
-            ]
+            calibrationparameters[3] = varying_parameters_values_array[varying_parameter_index]
         elif parameter_name in ("gamma",):
-            calibrationparameters[4] = varying_parameters_values_array[
-                varying_parameter_index
-            ]
+            calibrationparameters[4] = varying_parameters_values_array[varying_parameter_index]
 
         elif parameter_name in ("depth",):
             sourcedepth = varying_parameters_values_array[varying_parameter_index]
@@ -1646,20 +1619,18 @@ def error_function_general(varying_parameters_values_array,
         print("newmatrix", newmatrix)
         print("B0matrix", B0matrix)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(
-        calibrationparameters,
-        Miller_indices,
-        absolutespotsindices,
-        UBmatrix=newmatrix,
-        B0matrix=B0matrix,
-        offset=sourcedepth,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        kf_direction=kf_direction,
-    )
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                        Miller_indices,
+                                                        absolutespotsindices,
+                                                        UBmatrix=newmatrix,
+                                                        B0matrix=B0matrix,
+                                                        offset=sourcedepth,
+                                                        pureRotation=0,
+                                                        labXMAS=0,
+                                                        verbose=0,
+                                                        pixelsize=pixelsize,
+                                                        dim=dim,
+                                                        kf_direction=kf_direction)
 
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
@@ -1688,17 +1659,10 @@ def error_function_general(varying_parameters_values_array,
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean weighted pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean pixel deviation   ", np.mean(alldistances_array), "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.B0matrix matrices
@@ -1708,91 +1672,79 @@ def error_function_general(varying_parameters_values_array,
         return alldistances_array
 
 
-def fit_function_general(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    UBmatrix_start=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    nb_grains=1,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd):
+def fit_function_general(varying_parameters_values_array,
+                                varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices,
+                                Xexp,
+                                Yexp,
+                                UBmatrix_start=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                nb_grains=1,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                **kwd):
     """
     
     """
 
     if 1:  # verbose:
-        print(
-            "\n\n******************\nfirst error with initial values of:",
-            varying_parameters_keys,
-            " \n\n***************************\n",
-        )
+        print("\n\n******************\nfirst error with initial values of:",
+            varying_parameters_keys, " \n\n***************************\n")
 
-        error_function_general(
-            varying_parameters_values_array,
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-            initrot=UBmatrix_start,
-            B0matrix=B0matrix,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction)
-        print(
-            "\n\n********************\nFitting parameters:  ",
-            varying_parameters_keys,
-            "\n\n***************************\n",
-        )
+        error_function_general(varying_parameters_values_array,
+                                varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices,
+                                Xexp,
+                                Yexp,
+                                initrot=UBmatrix_start,
+                                B0matrix=B0matrix,
+                                pureRotation=pureRotation,
+                                verbose=1,
+                                pixelsize=pixelsize,
+                                dim=dim,
+                                weights=weights,
+                                kf_direction=kf_direction)
+        print("\n\n********************\nFitting parameters:  ",
+            varying_parameters_keys, "\n\n***************************\n")
         print("With initial values", varying_parameters_values_array)
 
     # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
-    error_function_general.__defaults__ = (
-        UBmatrix_start,
-        B0matrix,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-        False,
-    )
+    error_function_general.__defaults__ = (UBmatrix_start,
+                                            B0matrix,
+                                            pureRotation,
+                                            0,
+                                            pixelsize,
+                                            dim,
+                                            weights,
+                                            kf_direction,
+                                            False)
 
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(
-        error_function_general,
-        varying_parameters_values_array,
-        args=(
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-        ),  # args=(rre,ertetr,) last , is important!
-        maxfev=5000,
-        full_output=1,
-        xtol=1.0e-11,
-        epsfcn=0.0,
-        **kwd
-    )
+    res = leastsq(error_function_general,
+                    varying_parameters_values_array,
+                    args=(
+                        varying_parameters_keys,
+                        Miller_indices,
+                        allparameters,
+                        absolutespotsindices,
+                        Xexp,
+                        Yexp,
+                    ),  # args=(rre,ertetr,) last , is important!
+                    maxfev=5000,
+                    full_output=1,
+                    xtol=1.0e-11,
+                    epsfcn=0.0,
+                    **kwd)
 
     refined_values = res[0]
 
@@ -1808,43 +1760,35 @@ def fit_function_general(
             print(
                 "\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
             )
-            alldata = error_function_general(
-                refined_values,
-                varying_parameters_keys,
-                Miller_indices,
-                allparameters,
-                absolutespotsindices,
-                Xexp,
-                Yexp,
-                initrot=UBmatrix_start,
-                B0matrix=B0matrix,
-                pureRotation=pureRotation,
-                verbose=1,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-                returnalldata=True,
-            )
+            alldata = error_function_general(refined_values,
+                                                varying_parameters_keys,
+                                                Miller_indices,
+                                                allparameters,
+                                                absolutespotsindices,
+                                                Xexp,
+                                                Yexp,
+                                                initrot=UBmatrix_start,
+                                                B0matrix=B0matrix,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                kf_direction=kf_direction,
+                                                returnalldata=True)
 
             # alldistances_array, Uxyz, newmatrix, Tc, T, Ts
-            alldistances_array, Uxyz, refinedUB, refinedTc, refinedT, refinedTs = (
-                alldata
-            )
+            alldistances_array, Uxyz, refinedUB, refinedTc, refinedT, refinedTs = alldata
 
             for k, param_key in enumerate(varying_parameters_keys):
-                print(
-                    "%s  : start %.4f   --->   refined %.4f"
-                    % (param_key, varying_parameters_values_array[k], refined_values[k])
-                )
+                print("%s  : start %.4f   --->   refined %.4f"
+                    % (param_key, varying_parameters_values_array[k], refined_values[k]))
             print("results:\n q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
             print("refined UBmatrix", refinedUB)
             print("Uxyz", Uxyz)
             print("refinedTc, refinedT, refinedTs", refinedTc, refinedT, refinedTs)
-            print(
-                "final mean pixel residues : %f with %d spots"
-                % (np.mean(alldistances_array), len(absolutespotsindices))
-            )
+            print("final mean pixel residues : %f with %d spots"
+                % (np.mean(alldistances_array), len(absolutespotsindices)))
 
         return refined_values
 
@@ -1852,23 +1796,22 @@ def fit_function_general(
 dict_lattice_parameters = {"a": 0, "b": 1, "c": 2, "alpha": 3, "beta": 4, "gamma": 5}
 
 
-def fit_function_latticeparameters(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    UBmatrix_start=IDENTITYMATRIX,
-    nb_grains=1,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd):
+def fit_function_latticeparameters(varying_parameters_values_array,
+                                    varying_parameters_keys,
+                                    Miller_indices,
+                                    allparameters,
+                                    absolutespotsindices,
+                                    Xexp,
+                                    Yexp,
+                                    UBmatrix_start=IDENTITYMATRIX,
+                                    nb_grains=1,
+                                    pureRotation=0,
+                                    verbose=0,
+                                    pixelsize=165.0 / 2048,
+                                    dim=(2048, 2048),
+                                    weights=None,
+                                    kf_direction="Z>0",
+                                    **kwd):
     """
     fit direct (real) unit cell lattice parameters  (in refinedB0)
     and orientation
@@ -1883,34 +1826,26 @@ def fit_function_latticeparameters(
 
     """
     if verbose:
-        print(
-            "\n\n******************\nfirst error with initial values of:",
-            varying_parameters_keys,
-            " \n\n***************************\n",
-        )
+        print("\n\n******************\nfirst error with initial values of:",
+            varying_parameters_keys, " \n\n***************************\n",)
 
-        error_function_latticeparameters(
-            varying_parameters_values_array,
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-            initrot=UBmatrix_start,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction,
-        )
+        error_function_latticeparameters(varying_parameters_values_array,
+                                        varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices,
+                                        Xexp,
+                                        Yexp,
+                                        initrot=UBmatrix_start,
+                                        pureRotation=pureRotation,
+                                        verbose=1,
+                                        pixelsize=pixelsize,
+                                        dim=dim,
+                                        weights=weights,
+                                        kf_direction=kf_direction)
 
-        print(
-            "\n\n********************\nFitting parameters:  ",
-            varying_parameters_keys,
-            "\n\n***************************\n",
-        )
+        print("\n\n********************\nFitting parameters:  ",
+            varying_parameters_keys, "\n\n***************************\n")
         print("With initial values", varying_parameters_values_array)
 
     #     print '*************** UBmatrix_start before fit************'
@@ -1918,37 +1853,33 @@ def fit_function_latticeparameters(
     #     print '*******************************************'
 
     # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
-    error_function_latticeparameters.__defaults__ = (
-        UBmatrix_start,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-        False,
-    )
+    error_function_latticeparameters.__defaults__ = (UBmatrix_start,
+                                                    pureRotation,
+                                                    0,
+                                                    pixelsize,
+                                                    dim,
+                                                    weights,
+                                                    kf_direction,
+                                                    False)
 
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(
-        error_function_latticeparameters,
-        varying_parameters_values_array,
-        args=(
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-        ),  # args=(rre,ertetr,) last , is important!
-        maxfev=5000,
-        full_output=1,
-        xtol=1.0e-11,
-        epsfcn=0.0,
-        **kwd
-    )
+    res = leastsq(error_function_latticeparameters,
+                        varying_parameters_values_array,
+                        args=(
+                            varying_parameters_keys,
+                            Miller_indices,
+                            allparameters,
+                            absolutespotsindices,
+                            Xexp,
+                            Yexp,
+                        ),  # args=(rre,ertetr,) last , is important!
+                        maxfev=5000,
+                        full_output=1,
+                        xtol=1.0e-11,
+                        epsfcn=0.0,
+                        **kwd)
 
     refined_values = res[0]
 
@@ -1964,65 +1895,56 @@ def fit_function_latticeparameters(
             print(
                 "\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
             )
-            alldata = error_function_latticeparameters(
-                refined_values,
-                varying_parameters_keys,
-                Miller_indices,
-                allparameters,
-                absolutespotsindices,
-                Xexp,
-                Yexp,
-                initrot=UBmatrix_start,
-                pureRotation=pureRotation,
-                verbose=1,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-                returnalldata=True,
-            )
+            alldata = error_function_latticeparameters(refined_values,
+                                                    varying_parameters_keys,
+                                                    Miller_indices,
+                                                    allparameters,
+                                                    absolutespotsindices,
+                                                    Xexp,
+                                                    Yexp,
+                                                    initrot=UBmatrix_start,
+                                                    pureRotation=pureRotation,
+                                                    verbose=1,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    weights=weights,
+                                                    kf_direction=kf_direction,
+                                                    returnalldata=True)
 
             # alldistances_array, Uxyz, newmatrix, Tc, T, Ts
             alldistances_array, Uxyz, refinedUB, refinedB0matrix, refinedLatticeparameters = (
-                alldata
-            )
+                alldata)
 
             print("\n--------------------\nresults:\n------------------")
             for k, param_key in enumerate(varying_parameters_keys):
-                print(
-                    "%s  : start %f   --->   refined %f"
-                    % (param_key, varying_parameters_values_array[k], refined_values[k])
-                )
+                print("%s  : start %f   --->   refined %f"
+                    % (param_key, varying_parameters_values_array[k], refined_values[k]))
             print("q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
             print("refined UBmatrix", refinedUB.tolist())
             print("Uxyz", Uxyz.tolist())
             print("refinedB0matrix", refinedB0matrix.tolist())
             print("refinedLatticeparameters", refinedLatticeparameters)
-            print(
-                "final mean pixel residues : %f with %d spots"
-                % (np.mean(alldistances_array), len(absolutespotsindices))
-            )
+            print("final mean pixel residues : %f with %d spots"
+                % (np.mean(alldistances_array), len(absolutespotsindices)))
 
         return refined_values
 
 
-def error_function_latticeparameters(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    initrot=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    returnalldata=False,
-):
+def error_function_latticeparameters(varying_parameters_values_array,
+                                        varying_parameters_keys,
+                                        Miller_indices,
+                                        allparameters,
+                                        absolutespotsindices,
+                                        Xexp,
+                                        Yexp,
+                                        initrot=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        kf_direction="Z>0",
+                                        returnalldata=False):
     """
     q =   UzUyUz Ustart   B0 G*
 
@@ -2071,9 +1993,7 @@ def error_function_latticeparameters(
         if parameter_name in ("anglex", "angley", "anglez"):
             #             print "got angles!"
             if nb_varying_parameters > 1:
-                anglevalue = (
-                    varying_parameters_values_array[varying_parameter_index] * DEG
-                )
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
             else:
                 anglevalue = varying_parameters_values_array[0] * DEG
             # print "anglevalue (rad)= ",anglevalue
@@ -2096,9 +2016,7 @@ def error_function_latticeparameters(
             #                 latticeparameters[indparam] = latticeparameters[3] * np.exp(varying_parameters_values_array[0] / factorscale)
 
             if nb_varying_parameters > 1:
-                latticeparameters[indparam] = varying_parameters_values_array[
-                    varying_parameter_index
-                ]
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index]
             else:
                 latticeparameters[indparam] = varying_parameters_values_array[0]
 
@@ -2112,9 +2030,7 @@ def error_function_latticeparameters(
             #                 latticeparameters[indparam] = latticeparameters[0] * np.exp(varying_parameters_values_array[0] / factorscale)
 
             if nb_varying_parameters > 1:
-                latticeparameters[indparam] = varying_parameters_values_array[
-                    varying_parameter_index
-                ]
+                latticeparameters[indparam] = varying_parameters_values_array[varying_parameter_index]
             else:
                 latticeparameters[indparam] = varying_parameters_values_array[0]
 
@@ -2141,19 +2057,17 @@ def error_function_latticeparameters(
         print("initrot", initrot)
         print("newmatrix", newmatrix)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(
-        calibrationparameters,
-        Miller_indices,
-        absolutespotsindices,
-        UBmatrix=newmatrix,
-        B0matrix=newB0matrix,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        kf_direction=kf_direction,
-    )
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                    Miller_indices,
+                                                    absolutespotsindices,
+                                                    UBmatrix=newmatrix,
+                                                    B0matrix=newB0matrix,
+                                                    pureRotation=0,
+                                                    labXMAS=0,
+                                                    verbose=0,
+                                                    pixelsize=pixelsize,
+                                                    dim=dim,
+                                                    kf_direction=kf_direction)
  
 
     if 0:  # verbose:
@@ -2187,17 +2101,12 @@ def error_function_latticeparameters(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean weighted pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
         else:
             print(
-                "***********mean pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+                "***********mean pixel deviation   ", np.mean(alldistances_array),
+                "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
@@ -2207,24 +2116,22 @@ def error_function_latticeparameters(
         return alldistances_array
 
 
-def error_function_strain(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    initrot=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    returnalldata=False,
-):
+def error_function_strain(varying_parameters_values_array,
+                        varying_parameters_keys,
+                        Miller_indices,
+                        allparameters,
+                        absolutespotsindices,
+                        Xexp,
+                        Yexp,
+                        initrot=IDENTITYMATRIX,
+                        B0matrix=IDENTITYMATRIX,
+                        pureRotation=0,
+                        verbose=0,
+                        pixelsize=165.0 / 2048,
+                        dim=(2048, 2048),
+                        weights=None,
+                        kf_direction="Z>0",
+                        returnalldata=False):
     """
     q =   refinedStrain refinedUzUyUz Ustart   B0 G*
 
@@ -2276,13 +2183,9 @@ def error_function_strain(
 
     straincomponents = np.array(allparameters[8:14])
 
-    Ts = np.array(
-        [
-            straincomponents[:3],
+    Ts = np.array([straincomponents[:3],
             [0.0, straincomponents[3], straincomponents[4]],
-            [0, 0, straincomponents[5]],
-        ]
-    )
+            [0, 0, straincomponents[5]]])
 
     #     print 'Ts before', Ts
 
@@ -2294,9 +2197,7 @@ def error_function_strain(
         if parameter_name in ("anglex", "angley", "anglez"):
             #             print "got angles!"
             if nb_varying_parameters > 1:
-                anglevalue = (
-                    varying_parameters_values_array[varying_parameter_index] * DEG
-                )
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
             else:
                 anglevalue = varying_parameters_values_array[0] * DEG
             # print "anglevalue (rad)= ",anglevalue
@@ -2316,9 +2217,7 @@ def error_function_strain(
                     if parameter_name == "Ts%d%d" % (i, j):
                         #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:
-                            Ts[i, j] = varying_parameters_values_array[
-                                varying_parameter_index
-                            ]
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
                             Ts[i, j] = varying_parameters_values_array[0]
 
@@ -2350,19 +2249,17 @@ def error_function_strain(
         print("Miller_indices", Miller_indices)
         print("absolutespotsindices", absolutespotsindices)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(
-        calibrationparameters,
-        Miller_indices,
-        absolutespotsindices,
-        UBmatrix=newmatrix,
-        B0matrix=B0matrix,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        kf_direction=kf_direction,
-    )
+    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+                                                        Miller_indices,
+                                                        absolutespotsindices,
+                                                        UBmatrix=newmatrix,
+                                                        B0matrix=B0matrix,
+                                                        pureRotation=0,
+                                                        labXMAS=0,
+                                                        verbose=0,
+                                                        pixelsize=pixelsize,
+                                                        dim=dim,
+                                                        kf_direction=kf_direction)
 
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
@@ -2391,17 +2288,11 @@ def error_function_strain(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean weighted pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
@@ -2411,24 +2302,23 @@ def error_function_strain(
         return alldistances_array
 
 
-def fit_function_strain(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    UBmatrix_start=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    nb_grains=1,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd):
+def fit_function_strain(varying_parameters_values_array,
+                    varying_parameters_keys,
+                    Miller_indices,
+                    allparameters,
+                    absolutespotsindices,
+                    Xexp,
+                    Yexp,
+                    UBmatrix_start=IDENTITYMATRIX,
+                    B0matrix=IDENTITYMATRIX,
+                    nb_grains=1,
+                    pureRotation=0,
+                    verbose=0,
+                    pixelsize=165.0 / 2048,
+                    dim=(2048, 2048),
+                    weights=None,
+                    kf_direction="Z>0",
+                    **kwd):
     """
     fit strain components in sample frame
     and orientation
@@ -2443,35 +2333,27 @@ def fit_function_strain(
     where T comes from Ts
     """
     if verbose:
-        print(
-            "\n\n******************\nfirst error with initial values of:",
-            varying_parameters_keys,
-            " \n\n***************************\n",
-        )
+        print("\n\n******************\nfirst error with initial values of:",
+            varying_parameters_keys, " \n\n***************************\n")
 
-        error_function_strain(
-            varying_parameters_values_array,
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-            initrot=UBmatrix_start,
-            B0matrix=B0matrix,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction,
-        )
+        error_function_strain(varying_parameters_values_array,
+                            varying_parameters_keys,
+                            Miller_indices,
+                            allparameters,
+                            absolutespotsindices,
+                            Xexp,
+                            Yexp,
+                            initrot=UBmatrix_start,
+                            B0matrix=B0matrix,
+                            pureRotation=pureRotation,
+                            verbose=1,
+                            pixelsize=pixelsize,
+                            dim=dim,
+                            weights=weights,
+                            kf_direction=kf_direction)
 
-        print(
-            "\n\n********************\nFitting parameters:  ",
-            varying_parameters_keys,
-            "\n\n***************************\n",
-        )
+        print("\n\n********************\nFitting parameters:  ",
+            varying_parameters_keys, "\n\n***************************\n")
         print("With initial values", varying_parameters_values_array)
 
     #     print '*************** UBmatrix_start before fit************'
@@ -2479,38 +2361,34 @@ def fit_function_strain(
     #     print '*******************************************'
 
     # setting  keywords of _error_function_on_demand_strain during the fitting because leastsq handle only *args but not **kwds
-    error_function_strain.__defaults__ = (
-        UBmatrix_start,
-        B0matrix,
-        pureRotation,
-        0,
-        pixelsize,
-        dim,
-        weights,
-        kf_direction,
-        False,
-    )
+    error_function_strain.__defaults__ = (UBmatrix_start,
+                                        B0matrix,
+                                        pureRotation,
+                                        0,
+                                        pixelsize,
+                                        dim,
+                                        weights,
+                                        kf_direction,
+                                        False)
 
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(
-        error_function_strain,
-        varying_parameters_values_array,
-        args=(
-            varying_parameters_keys,
-            Miller_indices,
-            allparameters,
-            absolutespotsindices,
-            Xexp,
-            Yexp,
-        ),  # args=(rre,ertetr,) last , is important!
-        maxfev=5000,
-        full_output=1,
-        xtol=1.0e-11,
-        epsfcn=0.0,
-        **kwd
-    )
+    res = leastsq(error_function_strain,
+                varying_parameters_values_array,
+                args=(
+                    varying_parameters_keys,
+                    Miller_indices,
+                    allparameters,
+                    absolutespotsindices,
+                    Xexp,
+                    Yexp,
+                ),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)
 
     refined_values = res[0]
 
@@ -2524,69 +2402,59 @@ def fit_function_strain(
         return None
     else:
         if 1:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
-            )
-            alldata = error_function_strain(
-                refined_values,
-                varying_parameters_keys,
-                Miller_indices,
-                allparameters,
-                absolutespotsindices,
-                Xexp,
-                Yexp,
-                initrot=UBmatrix_start,
-                B0matrix=B0matrix,
-                pureRotation=pureRotation,
-                verbose=0,
-                pixelsize=pixelsize,
-                dim=dim,
-                weights=weights,
-                kf_direction=kf_direction,
-                returnalldata=True,
-            )
+            print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n")
+            alldata = error_function_strain(refined_values,
+                                            varying_parameters_keys,
+                                            Miller_indices,
+                                            allparameters,
+                                            absolutespotsindices,
+                                            Xexp,
+                                            Yexp,
+                                            initrot=UBmatrix_start,
+                                            B0matrix=B0matrix,
+                                            pureRotation=pureRotation,
+                                            verbose=0,
+                                            pixelsize=pixelsize,
+                                            dim=dim,
+                                            weights=weights,
+                                            kf_direction=kf_direction,
+                                            returnalldata=True)
 
             # alldistances_array, Uxyz, newmatrix, Ts, T
             alldistances_array, Uxyz, newmatrix, refinedTs, refinedT = alldata
 
             print("\n--------------------\nresults:\n------------------")
             for k, param_key in enumerate(varying_parameters_keys):
-                print(
-                    "%s  : start %f   --->   refined %f"
-                    % (param_key, varying_parameters_values_array[k], refined_values[k])
-                )
+                print("%s  : start %f   --->   refined %f"
+                    % (param_key, varying_parameters_values_array[k], refined_values[k]))
             print("q= refinedT UBstart B0 G*\nq = refinedUB B0 G*")
             print("refined UBmatrix", newmatrix.tolist())
             print("Uxyz", Uxyz.tolist())
             print("refinedT", refinedT.tolist())
             print("refinedTs", refinedTs.tolist())
             print("refined_values", refined_values)
-            print(
-                "final mean pixel residues : %f with %d spots"
-                % (np.mean(alldistances_array), len(absolutespotsindices))
-            )
+            print("final mean pixel residues : %f with %d spots"
+                % (np.mean(alldistances_array), len(absolutespotsindices)))
 
         return refined_values
 
 
-def error_strain_from_elongation(
-    varying_parameters_values_array,
-    varying_parameters_keys,
-    Miller_indices,
-    allparameters,
-    absolutespotsindices,
-    Xexp,
-    Yexp,
-    initrot=IDENTITYMATRIX,
-    B0matrix=IDENTITYMATRIX,
-    pureRotation=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    returnalldata=False,
-):
+def error_strain_from_elongation(varying_parameters_values_array,
+                                varying_parameters_keys,
+                                Miller_indices,
+                                allparameters,
+                                absolutespotsindices,
+                                Xexp,
+                                Yexp,
+                                initrot=IDENTITYMATRIX,
+                                B0matrix=IDENTITYMATRIX,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                returnalldata=False):
     """
     calculate array of the sum of 3 distances from aligned points composing one single Laue spot
 
@@ -2597,8 +2465,8 @@ def error_strain_from_elongation(
     But since P1exp end could be wrongly assign to simulated P2 end
 
     error = sum (P1-P1exp)**2 +  (P1-P2exp)**2 -P1P2exp**2 +
-                  (P2-P2exp)**2 + (P2-P1exp)**2 -P1P2exp**2 
-                  +(Pc-Pcexp)**2          
+                  (P2-P2exp)**2 + (P2-P1exp)**2 -P1P2exp**2
+                  +(Pc-Pcexp)**2
 
     strain axis in sample frame:
     axis_angle_1, axis_angle_2,minstrainamplitude,zerostrain,maxstrainamplitude
@@ -2657,13 +2525,9 @@ def error_strain_from_elongation(
 
     straincomponents = np.array(allparameters[8:14])
 
-    Ts = np.array(
-        [
-            straincomponents[:3],
+    Ts = np.array([straincomponents[:3],
             [0.0, straincomponents[3], straincomponents[4]],
-            [0, 0, straincomponents[5]],
-        ]
-    )
+            [0, 0, straincomponents[5]]])
 
     #     print 'Ts before', Ts
 
@@ -2675,9 +2539,7 @@ def error_strain_from_elongation(
         if parameter_name in ("anglex", "angley", "anglez"):
             #             print "got angles!"
             if nb_varying_parameters > 1:
-                anglevalue = (
-                    varying_parameters_values_array[varying_parameter_index] * DEG
-                )
+                anglevalue = varying_parameters_values_array[varying_parameter_index] * DEG
             else:
                 anglevalue = varying_parameters_values_array[0] * DEG
             # print "anglevalue (rad)= ",anglevalue
@@ -2697,9 +2559,7 @@ def error_strain_from_elongation(
                     if parameter_name == "Ts%d%d" % (i, j):
                         #                         print "got parameter_name", parameter_name
                         if nb_varying_parameters > 1:
-                            Ts[i, j] = varying_parameters_values_array[
-                                varying_parameter_index
-                            ]
+                            Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
                             Ts[i, j] = varying_parameters_values_array[0]
 
@@ -2730,19 +2590,17 @@ def error_strain_from_elongation(
         print("Miller_indices", Miller_indices)
         print("absolutespotsindices", absolutespotsindices)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(
-        calibrationparameters,
-        Miller_indices,
-        absolutespotsindices,
-        UBmatrix=newmatrix,
-        B0matrix=B0matrix,
-        pureRotation=0,
-        labXMAS=0,
-        verbose=0,
-        pixelsize=pixelsize,
-        dim=dim,
-        kf_direction=kf_direction,
-    )
+    Xmodel, Ymodel, _, _ = calc_XY_pixelpositions(calibrationparameters,
+                                                Miller_indices,
+                                                absolutespotsindices,
+                                                UBmatrix=newmatrix,
+                                                B0matrix=B0matrix,
+                                                pureRotation=0,
+                                                labXMAS=0,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                kf_direction=kf_direction)
 
 
     distanceterm = np.sqrt((Xmodel - Xexp) ** 2 + (Ymodel - Yexp) ** 2)
@@ -2771,17 +2629,11 @@ def error_strain_from_elongation(
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print(
-                "***********mean weighted pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean weighted pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
         else:
-            print(
-                "***********mean pixel deviation   ",
-                np.mean(alldistances_array),
-                "    ********",
-            )
+            print("***********mean pixel deviation   ",
+                np.mean(alldistances_array), "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
         # concatenated all pairs distances, all UB matrices, all UB.newB0matrix matrices
