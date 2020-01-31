@@ -990,6 +990,21 @@ def create_spot_back( pos_vec, miller, detectordistance,
     return spotty
 
 def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf_direction='Z>0'):
+    """filter vector Q and HKL in vec_and_indices
+
+    :param vec_and_indices: arrays of vectors Q and HKL
+    :type vec_and_indices: [Qs, HKLs]   
+    :param detectordistance: distance detector sample (mm) 
+    :type detectordistance: float
+    :param detectordiameter: detector diameter (mm)
+    :type detectordiameter: float
+    :param kf_direction: geometry of detection label or two angles giving 2theta chi direction of detector, defaults to 'Z>0'
+    :type kf_direction: str or 2 floats, optional
+    :raises ValueError: [description]
+    :raises ValueError: [description]
+    :return: [oncam_vec], [oncam_HKL]
+    :rtype: [np.array of 3 elements, np.array of 3 elements]
+    """
     Qvectors_list, HKLs_list = vec_and_indices
     Qx = Qvectors_list[0][:, 0] * 1.0
     Qy = Qvectors_list[0][:, 1] * 1.0
@@ -1182,7 +1197,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         else:
             raise ValueError("Unknown laue geometry code for kf_direction parameter")
 
-        # print "Xcam, Ycam",Xcam
+        #print("Xcam, Ycam",Xcam,Ycam)
         # print Ycam
         # print "******************"
         # On camera filter
@@ -1191,6 +1206,9 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         # TODO: should contain Xcam-Xcamcen (mm) and Ycam-Ycamcen with Xcamcen, Ycamcen
         # given by user
         onCam_cond = Xcam ** 2 + Ycam ** 2 <= halfCamdiametersquare
+
+        #print('onCam_cond',onCam_cond)
+        #print('onCam_cond   true',np.where(onCam_cond==True))
         # resulting arrays
         oncam_Qx = np.compress(onCam_cond, Qx)
         oncam_Qy = np.compress(onCam_cond, Qy)
@@ -1199,9 +1217,10 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         oncam_R = np.compress(onCam_cond, Rewald)
         oncam_XplusR = oncam_Qx + oncam_R
 
-        # compute 2theta, chi
-        oncam_2theta = np.arccos(
-            oncam_XplusR / np.sqrt(oncam_XplusR ** 2 + oncam_Qy ** 2 + oncam_Qz ** 2))
+        # compute 2theta, chi  (in radians)
+        oncam_2theta = np.arccos(oncam_XplusR / np.sqrt(oncam_XplusR ** 2 + oncam_Qy ** 2 + oncam_Qz ** 2))
+
+        #print('oncam_2theta',oncam_2theta)
         # be careful of the of sign
         oncam_chi = np.arctan(1.0 * oncam_Qy / oncam_Qz)
         #         oncam_chi = np.arctan2(1. * oncam_Qy, oncam_Qz)
@@ -1242,13 +1261,14 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             kf_direction=kf_direction)
-            # print("listspot", listspot)
+            #print("listspot", listspot)
             # print("oncam_HKL", oncam_HKL.tolist())
             # Creating list of spot with or without harmonics
             if HarmonicsRemoval and listspot:
-                #                ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
+                # ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
                 (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(oncam_HKL,
                                                                     return_indices_toremove=1)
+                #print('toremove',toremove)
                 listspot = np.delete(np.array(listspot), toremove).tolist()
 
             # feeding final list of spots
@@ -1271,8 +1291,10 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
             Oncam2theta[grainindex] = oncam_2theta
             Oncamchi[grainindex] = oncam_chi
 
-    print('total number of spots for the %d grain(s):  '%nbofgrains,totalnbspots)
-    if totalnbspots==0:
+            totalnbspots += len(oncam_2theta)
+
+    print('total number of spots for all the %d grain(s):  '%nbofgrains, totalnbspots)
+    if totalnbspots == 0:
         return
     # outputs and returns
     if fileOK:
@@ -1352,7 +1374,7 @@ def filterLaueSpots_full_np(
         ratiod = detectordistance / VecZ
         Ycam = ratiod * (VecX + Rewald)
         Xcam = ratiod * (VecY)
-    elif (kf_direction == "Y>0"):  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
+    elif kf_direction == "Y>0":  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
         ratiod = detectordistance / VecY
         Xcam = ratiod * (VecX + Rewald)
         Ycam = ratiod * (VecZ)
@@ -1401,7 +1423,7 @@ def filterLaueSpots_full_np(
     oncam_vecZ = np.compress(onCam_cond, VecZ)
 
     if onlyXYZ:
-        return np.array([oncam_vecX,oncam_vecY,oncam_vecZ]).T
+        return np.array([oncam_vecX, oncam_vecY, oncam_vecZ]).T
 
     # creates spot instances which takes some times...
     # will compute spots on the camera
@@ -1560,14 +1582,14 @@ def get2ThetaChi_geometry_full_np(
 
     :param pixelsize: pixel size in mm
     :type pixelsize: float
-    
+
     :return: list of spot
 
     .. note::
         * USED in lauecore.filterLaueSpots_full_np
 
     .. todo::
-        * Only geometry Z>0 (top reflection) and X>0 (transmission) are vectorized by numpy 
+        * Only geometry Z>0 (top reflection) and X>0 (transmission) are vectorized by numpy
         * TODO: put this function obviously in find2thetachi ?
     """
     if len(oncam_vec) != len(oncam_HKL):
@@ -1702,7 +1724,6 @@ def SimulateLaue_merge(
     dim=(2048, 2048),
     detectordiameter=None,
     dictmaterials=dict_Materials):
-
     r"""
     Simulates Laue pattern full data from a list of grains and concatenate results data
 
@@ -2011,7 +2032,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
 
     if removeharmonics:
         # remove harmonics:
-        _, _, tokeep = GT.removeClosePoints(posx,posy,0.05)
+        _, _, tokeep = GT.removeClosePoints(posx, posy, 0.05)
         #print('tokeep',tokeep)
 
         s_tth = Twicetheta[tokeep]
@@ -2084,32 +2105,40 @@ def SimulateResult(grain, emin, emax, simulparameters,
 
     return TwicethetaChi
 
+def B_DebyeWaller(U):
+    """ compute B term of exp Debye waller factor
+    exp - B  (sintheta/lambda)
+    with U mean square displacement
+    """
+    return 8 * np.pi**2 * U
+
 
 def StructureFactorCubic(h, k, l, extinctions="dia"):
     """
     computes structure factor of cubic
     """
     pi = np.pi
-    F = (1 + np.exp(-1.0j * pi / 2.0 * (h + k + l))) * (
-        1
-        + np.exp(-1.0j * pi * (k + l))
-        + np.exp(-1.0j * pi * (h + l))
-        + np.exp(-1.0j * pi * (h + k))
-    )
+    F = (1 + np.exp(-1.0j * pi / 2.0 * (h + k + l))) * (1 + np.exp(-1.0j * pi * (k + l))
+                                                        + np.exp(-1.0j * pi * (h + l))
+                                                        + np.exp(-1.0j * pi * (h + k)))
     return F
 
 
-def StructureFactorUO2(h, k, l, qvector):
+def StructureFactorUO2(h, k, l, qvector, U_U, U_O):
     """
-    computes structure factor of CaF2 flurine type structure
+    computes structure factor of CaF2 flurine type structure  SG 225 Fm-3m
     """
     # CaF2 structure
     pi = np.pi
-    fu = atomicformfactor(qvector, "U")
-    fo = atomicformfactor(qvector, "O")
-    F = (fu + 2 * fo * np.cos(pi / (2 * (h + k + l)))) * (1 + np.exp(-1.0j * pi * (k + l))
-                                                        + np.exp(-1.0j * pi * (l + h))
-                                                        + np.exp(-1.0j * pi * (h + k)))
+    # q = 4pi*sintheta/lambda
+    sol = qvector/(4*pi)
+    B_U = B_DebyeWaller(U_U)
+    B_O = B_DebyeWaller(U_O)
+    fu = atomicformfactor(qvector, "U")*np.exp(-B_U * sol**2)
+    fo = atomicformfactor(qvector, "O")*np.exp(-B_O * sol**2)
+    F = 4*(fu + 2 * fo * np.cos(pi / 2*((h + k + l)))) * (1 + np.exp(1.0j * pi * (k + l))
+                                                        + np.exp(1.0j * pi * (l + h))
+                                                        + np.exp(1.0j * pi * (h + k)))
     return F
 
 
@@ -2130,7 +2159,7 @@ def atomicformfactor(q, element="Ge"):
 
     elif element == "O":
         p = (3.04850, 13.2771, 2.28680, 5.70110, 1.54630, 0.323900, 0.867000, 32.9089, 0.250800)
-    
+
     val = 0
     for k in list(range(4)):
         val += p[2 * k] * np.exp(-p[2 * k + 1] * (q / 4 / np.pi) ** 2)
@@ -2138,25 +2167,24 @@ def atomicformfactor(q, element="Ge"):
     return val
 
 
-def simulatepurepattern_np(
-    grain,
-    emin,
-    emax,
-    kf_direction,
-    data_filename,
-    PlotLaueDiagram=1,
-    Plot_Data=0,
-    verbose=0,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    ResolutionAngstrom=False,
-    Display_label=1,
-    HarmonicsRemoval=1,
-    dictmaterials=dict_Materials):
+def simulatepurepattern_np(grain,
+                            emin,
+                            emax,
+                            kf_direction,
+                            data_filename,
+                            PlotLaueDiagram=1,
+                            Plot_Data=0,
+                            verbose=0,
+                            detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                            ResolutionAngstrom=False,
+                            Display_label=1,
+                            HarmonicsRemoval=1,
+                            dictmaterials=dict_Materials):
     """
     .. warning:: In test. NOT USED anywhere !!???
     """
 
-    vecind = getLaueSpots( CST_ENERGYKEV / emax, CST_ENERGYKEV / emin, grain, 1,
+    vecind = getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin, grain, 1,
                     fileOK=0, fastcompute=0, kf_direction=kf_direction,
                     verbose=verbose, ResolutionAngstrom=ResolutionAngstrom,
                     dictmaterials=dictmaterials)
@@ -2169,7 +2197,6 @@ def simulatepurepattern_np(
                                         fastcompute=0,
                                         kf_direction=kf_direction,
                                         detectordistance=detectordistance,
-                                        HarmonicsRemoval=HarmonicsRemoval,
-                                    )
+                                        HarmonicsRemoval=HarmonicsRemoval)
 
     return True
