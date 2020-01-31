@@ -185,7 +185,9 @@ class PlotRangePanel(wx.Panel):
             CalibrationFile = prefix_filename[4:] + ".dat"
 
             if not CalibrationFile in os.listdir(self.mainframe.dirname):
-                raise ValueError('%s corresponding to .dat file of %s is missing. Change the name o'%(CalibrationFile,selectedFile)) 
+                wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of %s is missing. \nPlease, change the name of %s (remove "dat_" for instance) to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile),'Info')
+                raise ValueError('%s corresponding to .dat file of %s is missing. Change the name of %s (remove "dat_" for instance)'%(CalibrationFile,selectedFile,selectedFile))
+
         else:
             CalibrationFile = selectedFile
 
