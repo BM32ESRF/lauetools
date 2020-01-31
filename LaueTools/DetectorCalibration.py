@@ -180,9 +180,12 @@ class PlotRangePanel(wx.Panel):
         prefix_filename = selectedFile.rsplit(".", 1)[0]
 
         # get PeakListDatFileName
-        # cor file have been created from .dat
+        # cor file have been created from .dat  if name is dat_#######.cor
         if prefix_filename.startswith("dat_"):
             CalibrationFile = prefix_filename[4:] + ".dat"
+
+            if not CalibrationFile in os.listdir(self.mainframe.dirname):
+                raise ValueError('%s corresponding to .dat file of %s is missing. Change the name o'%(CalibrationFile,selectedFile)) 
         else:
             CalibrationFile = selectedFile
 
@@ -224,48 +227,35 @@ class CrystalParamPanel(wx.Panel):
         pos7 = pos6 + 60
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
         t2 = wx.StaticText(self, -1, "Element", (deltaposx, pos7 - 30))
-        self.comboElem = wx.ComboBox(
-                                        self,
-                                        -1,
-                                        "Si",
-                                        (150 + deltaposx, pos7 - 30),
+        self.comboElem = wx.ComboBox(self, -1, "Si", (150 + deltaposx, pos7 - 30),
                                         choices=self.listsorted_materials,
-                                        style=wx.CB_READONLY,
-                                    )
+                                        style=wx.CB_READONLY)
 
-        t3 = wx.StaticText(
-            self, -1, "Tmatrix", (deltaposx, pos7)
-        )  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
-        self.comboBmatrix = wx.ComboBox(
-                                            self,
+        t3 = wx.StaticText(self, -1, "Tmatrix", (deltaposx, pos7))  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
+        self.comboBmatrix = wx.ComboBox(self,
                                             2424,
                                             "Identity",
                                             (150 + deltaposx, pos7),
                                             choices=sorted(DictLT.dict_Transforms.keys()),
-                                            style=wx.CB_READONLY,
-                                        )
+                                            style=wx.CB_READONLY)
 
         pos7b = pos7 + 30
         t4 = wx.StaticText(self, -1, "Orient Matrix (UB)", (deltaposx, pos7b))
-        self.comboMatrix = wx.ComboBox(
-                                        self,
+        self.comboMatrix = wx.ComboBox(self,
                                         2525,
                                         "Identity",
                                         (150 + deltaposx, pos7b),
-                                        choices=list(DictLT.dict_Rot.keys()),
-                                    )
+                                        choices=list(DictLT.dict_Rot.keys()))
 
         self.btn_mergeUB = wx.Button(self, -1, "set UB with B", (deltaposx + 400, pos7b))
 
         pos7c = pos7 + 65
         t5 = wx.StaticText(self, -1, "Extinctions", (deltaposx, pos7c))
-        self.comboExtinctions = wx.ComboBox(
-                                            self,
+        self.comboExtinctions = wx.ComboBox(self,
                                             -1,
                                             "Diamond",
                                             (150 + deltaposx, pos7c),
-                                            choices=list(DictLT.dict_Extinc.keys()),
-                                        )
+                                            choices=list(DictLT.dict_Extinc.keys()))
 
         self.comboExtinctions.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeExtinc)
         #         self.comboTransforms.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeTransforms)
@@ -742,13 +732,8 @@ class StrainXtal(wx.Panel):
             fitchckbox = wx.CheckBox(self, -1, "fit")
             fitchckbox.SetValue(True)
             fitchckbox.Disable()
-            currentctrl = wx.TextCtrl(
-                self,
-                -1,
-                str(self.lattice_parameters_dict[key_param]),
-                size=(60, -1),
-                style=wx.TE_PROCESS_ENTER,
-            )
+            currentctrl = wx.TextCtrl(self, -1, str(self.lattice_parameters_dict[key_param]),
+                size=(60, -1), style=wx.TE_PROCESS_ENTER)
 
             setattr(self, "minusbtn_%s" % key_param, minusbtn)
             setattr(self, "plusbtn_%s" % key_param, plusbtn)
@@ -756,15 +741,9 @@ class StrainXtal(wx.Panel):
             setattr(self, "fitchckbox_%s" % key_param, fitchckbox)
             setattr(self, "currentctrl_%s" % key_param, currentctrl)
 
-            getattr(self, "minusbtn_%s" % key_param, minusbtn).myname = (
-                "minusbtn_%s" % key_param
-            )
-            getattr(self, "plusbtn_%s" % key_param, plusbtn).myname = (
-                "minusbtn_%s" % key_param
-            )
-            getattr(self, "currentctrl_%s" % key_param, currentctrl).myname = (
-                "currentctrl_%s" % key_param
-            )
+            getattr(self, "minusbtn_%s" % key_param, minusbtn).myname = ("minusbtn_%s" % key_param)
+            getattr(self, "plusbtn_%s" % key_param, plusbtn).myname = ("minusbtn_%s" % key_param)
+            getattr(self, "currentctrl_%s" % key_param, currentctrl).myname = ("currentctrl_%s" % key_param)
 
             grid.Add(wx.StaticText(self, -1, key_param), 0)
             grid.Add(currentctrl, 0)
@@ -779,14 +758,11 @@ class StrainXtal(wx.Panel):
             #             print getattr(self, 'minusbtn_%s' % key_param)
 
             getattr(self, "plusbtn_%s" % key_param).Bind(
-                wx.EVT_BUTTON, lambda event: self.ModifyLatticeParamsStep(event, "+")
-            )
+                wx.EVT_BUTTON, lambda event: self.ModifyLatticeParamsStep(event, "+"))
             getattr(self, "minusbtn_%s" % key_param).Bind(
-                wx.EVT_BUTTON, lambda event: self.ModifyLatticeParamsStep(event, "-")
-            )
-            getattr(self, "currentctrl_%s" % key_param).Bind(
-                wx.EVT_TEXT_ENTER, self.ModifyLatticeParams
-            )
+                wx.EVT_BUTTON, lambda event: self.ModifyLatticeParamsStep(event, "-"))
+            getattr(self, "currentctrl_%s" % key_param).Bind(wx.EVT_TEXT_ENTER,
+                                                            self.ModifyLatticeParams)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(wx.StaticText(self, -1, "Crystal Lattice Parameters"), 0, wx.EXPAND)
@@ -797,16 +773,12 @@ class StrainXtal(wx.Panel):
     def update_latticeparameters(self):
 
         self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
-        self.key_material_initparams_in_dict = copy.copy(
-            DictLT.dict_Materials[self.key_material]
-        )
+        self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
         self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material][1])
 
         for k, key_param in enumerate(self.lattice_parameters_key):
             self.lattice_parameters_dict[key_param] = self.lattice_parameters[k]
-            getattr(self, "currentctrl_%s" % key_param).SetValue(
-                str(self.lattice_parameters[k])
-            )
+            getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters[k]))
 
     def ModifyLatticeParamsStep(self, event, sign_of_step):
         """
@@ -819,9 +791,8 @@ class StrainXtal(wx.Panel):
 
         key_param = name.split("_")[-1]
 
-        self.lattice_parameters_dict[key_param] = float(
-            getattr(self, "currentctrl_%s" % key_param).GetValue()
-        )
+        self.lattice_parameters_dict[key_param] = float(getattr(self,
+                                                        "currentctrl_%s" % key_param).GetValue())
 
         if sign_of_step == "+":
             stepsign = 1.0
@@ -829,8 +800,8 @@ class StrainXtal(wx.Panel):
             stepsign = -1.0
 
         #         print "modify lattice parameter: %s and initial value: %.2f" % (key_param, self.lattice_parameters_dict[key_param])
-        self.lattice_parameters_dict[key_param] += stepsign * float(
-            getattr(self, "stepctrl_%s" % key_param).GetValue()
+        self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self,
+                                                            "stepctrl_%s" % key_param).GetValue()
         )
 
         # now building or updating an element in dict_Materials
@@ -843,10 +814,7 @@ class StrainXtal(wx.Panel):
         # update label
         DictLT.dict_Materials[new_key_material][0] = new_key_material
 
-        if (
-            self.mainframe.crystalparampanel.comboElem.FindString(new_key_material)
-            == -1
-        ):
+        if (self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1):
             print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
@@ -861,9 +829,8 @@ class StrainXtal(wx.Panel):
         print("new lattice parameters", new_lattice_params)
         print("for material: %s" % new_key_material)
 
-        getattr(self, "currentctrl_%s" % key_param).SetValue(
-            str(self.lattice_parameters_dict[key_param])
-        )
+        getattr(self,
+                "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
 
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
@@ -877,9 +844,8 @@ class StrainXtal(wx.Panel):
 
         key_param = name.split("_")[-1]
 
-        self.lattice_parameters_dict[key_param] = float(
-            getattr(self, "currentctrl_%s" % key_param).GetValue()
-        )
+        self.lattice_parameters_dict[key_param] = float(getattr(self,
+                                                        "currentctrl_%s" % key_param).GetValue())
 
         if "strained" not in self.key_material:
             new_key_material = "strained_%s" % self.key_material
@@ -889,10 +855,7 @@ class StrainXtal(wx.Panel):
         DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
         DictLT.dict_Materials[new_key_material][0] = new_key_material
 
-        if (
-            self.mainframe.crystalparampanel.comboElem.FindString(new_key_material)
-            == -1
-        ):
+        if (self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1):
             print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
@@ -905,9 +868,7 @@ class StrainXtal(wx.Panel):
         print("new lattice parameters", new_lattice_params)
         print("for material: %s" % new_key_material)
 
-        getattr(self, "currentctrl_%s" % key_param).SetValue(
-            str(self.lattice_parameters_dict[key_param])
-        )
+        getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
 
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
@@ -933,13 +894,8 @@ class TextFrame(wx.Frame):
         #         print "my parent is ", parent
         panel = wx.Panel(self, -1)
         matrixLabel = wx.StaticText(panel, -1, "Matrix Elements:")
-        matrixText = wx.TextCtrl(
-            panel,
-            -1,
-            strexpression,
-            size=(490, 100),
-            style=wx.TE_MULTILINE | wx.TE_READONLY,
-        )
+        matrixText = wx.TextCtrl( panel, -1, strexpression, size=(490, 100),
+                                                        style=wx.TE_MULTILINE | wx.TE_READONLY)
         #         matrixText.SetInsertionPoint(0)
 
         storeLabel = wx.StaticText(panel, -1, "Stored Matrix name: ")
@@ -948,9 +904,7 @@ class TextFrame(wx.Frame):
         )
 
         saveLabel = wx.StaticText(panel, -1, "Save Matrix filename: ")
-        self.saveText = wx.TextCtrl(
-            panel, -1, "SavedMatrix_%d" % self.index, size=(175, -1)
-        )
+        self.saveText = wx.TextCtrl(panel, -1, "SavedMatrix_%d" % self.index, size=(175, -1))
 
         btnstore = wx.Button(panel, -1, "Store (in GUI)")
         btnsave = wx.Button(panel, -1, "Save (on Hard Disk)")
@@ -961,9 +915,7 @@ class TextFrame(wx.Frame):
         btnquit.Bind(wx.EVT_BUTTON, self.onQuit)
 
         sizer6 = wx.FlexGridSizer(cols=3, hgap=6, vgap=6)
-        sizer6.AddMany(
-            [storeLabel, self.storeText, btnstore, saveLabel, self.saveText, btnsave]
-        )
+        sizer6.AddMany([storeLabel, self.storeText, btnstore, saveLabel, self.saveText, btnsave])
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(matrixLabel)
@@ -989,10 +941,8 @@ class TextFrame(wx.Frame):
         np.savetxt(matrixfilename, UBmatrix, delimiter=",")
 
         _file = open(matrixfilename + "_list", "w")
-        text = (
-            "[[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f]]"
-            % tuple(np.ravel(UBmatrix).tolist())
-        )
+        text = ("[[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f]]"
+            % tuple(np.ravel(UBmatrix).tolist()))
         _file.write(text)
         _file.close()
 
@@ -1042,7 +992,7 @@ class MainCalibrationFrame(wx.Frame):
         self.tog = 0
         self.datatype = datatype
 
-        self.dict_Materials=initialParameter["dict_Materials"]
+        self.dict_Materials = initialParameter["dict_Materials"]
 
         self.points = []  # to store points
         self.selectionPoints = []
@@ -1054,7 +1004,7 @@ class MainCalibrationFrame(wx.Frame):
         self.nbclick_dist = 1
         self.nbclick_zone = 1
 
-        self.dirname =initialParameter["dirname"]
+        self.dirname = initialParameter["dirname"]
 
         self.recognition_possible = True
         self.toshow = []
@@ -1157,7 +1107,7 @@ class MainCalibrationFrame(wx.Frame):
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
         # replot simul button (one button in two panels)
-        self.Bind( wx.EVT_BUTTON, self._replot, id=52)
+        self.Bind(wx.EVT_BUTTON, self._replot, id=52)
 
         self.Bind(wx.EVT_BUTTON, self.OnDecreaseDistance, id=10)
         self.Bind(wx.EVT_BUTTON, self.OnIncreaseDistance, id=11)
@@ -1320,25 +1270,25 @@ class MainCalibrationFrame(wx.Frame):
         hboxfit2.Add(wx.StaticText(self.panel, -1, "              "), 0, wx.EXPAND)
         hboxfit2.Add(self.incrementfile, 0, wx.ALL, 0)
 
-        self.vbox2 = wx.BoxSizer(wx.VERTICAL)
-        self.vbox2.Add(hboxlabel, 0, wx.ALL, 0)
-        self.vbox2.Add(self.nb, 0, wx.EXPAND, 0)
-        self.vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
-        self.vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1,10), style=wx.LI_HORIZONTAL),
+        vbox2 = wx.BoxSizer(wx.VERTICAL)
+        vbox2.Add(hboxlabel, 0, wx.ALL, 0)
+        vbox2.Add(self.nb, 0, wx.EXPAND, 0)
+        vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
+        vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1,10), style=wx.LI_HORIZONTAL),
                                                                 0, wx.EXPAND|wx.ALL, 5)
-        self.vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
-        self.vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
+        vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
+        vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 
         self.hbox = wx.BoxSizer(wx.HORIZONTAL)
         self.hbox.Add(self.vbox, 1, wx.EXPAND)
-        self.hbox.Add(self.vbox2, 1, wx.EXPAND)
+        self.hbox.Add(vbox2, 1, wx.EXPAND)
 
-        self.vboxgeneral = wx.BoxSizer(wx.VERTICAL)
-        self.vboxgeneral.Add(self.hbox, 1, wx.EXPAND)
-        self.vboxgeneral.Add(btnSizer, 0, wx.EXPAND)
+        vboxgeneral = wx.BoxSizer(wx.VERTICAL)
+        vboxgeneral.Add(self.hbox, 1, wx.EXPAND)
+        vboxgeneral.Add(btnSizer, 0, wx.EXPAND)
 
-        self.panel.SetSizer(self.vboxgeneral)
-        self.vboxgeneral.Fit(self)
+        self.panel.SetSizer(vboxgeneral)
+        vboxgeneral.Fit(self)
         self.Layout()
 
     def ReadExperimentData(self):
@@ -1361,6 +1311,7 @@ class MainCalibrationFrame(wx.Frame):
 
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
+        print('filepath',filepath)
 
         if extension in ("dat", "DAT"):
             colI = 3
@@ -1382,8 +1333,7 @@ class MainCalibrationFrame(wx.Frame):
 
 
         elif extension in ("cor",):
-            (_,
-                data_theta,
+            (_, data_theta,
                 chi,
                 data_x,
                 data_y,
@@ -1424,14 +1374,10 @@ class MainCalibrationFrame(wx.Frame):
         """
         Save  calibration parameters in .det file
         """
-        dlg = wx.TextEntryDialog(
-            self,
+        dlg = wx.TextEntryDialog(self,
             "Enter Calibration File name : \n Current Detector parameters are: \n %s\n Pixelsize and dimensions : %s"
-            % (str(self.CCDParam),
-                str([self.pixelsize, self.framedim[0], self.framedim[1]]),
-            ),
-            "Saving Calibration Parameters Entry",
-        )
+            % (str(self.CCDParam), str([self.pixelsize, self.framedim[0], self.framedim[1]]),
+            ), "Saving Calibration Parameters Entry")
         dlg.SetValue("*.det")
         self.filenameCalib = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -1460,32 +1406,14 @@ class MainCalibrationFrame(wx.Frame):
             text += "Experimental Data file: %s\n" % self.filename
             text += "Orientation Matrix:\n"
             text += "[[%.7f,%.7f,%.7f],[%.7f,%.7f,%.7f],[%.7f,%.7f,%.7f]]\n" % (
-                m11,
-                m12,
-                m13,
-                m21,
-                m22,
-                m23,
-                m31,
-                m32,
-                m33,
-            )
+                                                    m11, m12, m13, m21, m22, m23, m31, m32, m33)
             #             CCD_CALIBRATION_PARAMETERS = ['dd', 'xcen', 'ycen', 'xbet', 'xgam',
             #                       'xpixelsize', 'ypixelsize', 'CCDLabel',
             #                       'framedim', 'detectordiameter', 'kf_direction']
-            vals_list = [
-                round(dd, 3),
-                round(xcen, 2),
-                round(ycen, 2),
-                round(xbet, 3),
-                round(xgam, 3),
-                self.pixelsize,
-                self.pixelsize,
-                self.CCDLabel,
-                self.framedim,
-                self.detectordiameter,
-                self.kf_direction,
-            ]
+            vals_list = [round(dd, 3), round(xcen, 2), round(ycen, 2),
+                        round(xbet, 3), round(xgam, 3),
+                        self.pixelsize, self.pixelsize, self.CCDLabel,
+                        self.framedim, self.detectordiameter, self.kf_direction]
 
             key_material = str(self.crystalparampanel.comboElem.GetValue())
 
@@ -1568,14 +1496,10 @@ class MainCalibrationFrame(wx.Frame):
         mySpotData = {}
         for k, ff in enumerate(fields):
             mySpotData[ff] = to_put_in_dict[k]
-        dia = LSEditor.SpotsEditor(
-            None,
-            -1,
-            "Spots Editor in Calibration Board",
-            mySpotData,
-            func_to_call=self.readdata_fromEditor_Filter,
-            field_name_and_order=fields,
-        )
+        dia = LSEditor.SpotsEditor(None, -1, "Spots Editor in Calibration Board",
+                                    mySpotData,
+                                    func_to_call=self.readdata_fromEditor_Filter,
+                                    field_name_and_order=fields)
 
         dia.Show(True)
 
@@ -1607,8 +1531,7 @@ class MainCalibrationFrame(wx.Frame):
         for k in range(len(twicetheta)):
             print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
-        Resi, ProxTable = matchingrate.getProximity(
-                                        np.array([twicetheta, chi]),  # warning array(2theta, chi)
+        Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                         self.twicetheta / 2.0,
                                         self.chi,  # warning theta, chi for exp
                                         proxtable=1,
@@ -1744,10 +1667,10 @@ class MainCalibrationFrame(wx.Frame):
         #         linkExpMiller.append([float(val[0])] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
         #         linkIntensity.append(self.Data_I[val[0]])
         #         linkResidues.append([val[0], val[1], Resi[val[1]]])
-        
+
         for val in list(calib_indexed_spots.values()):
             if val[2] is not None:
-                if not isinstance(val[1],(list, np.ndarray)):
+                if not isinstance(val[1], (list, np.ndarray)):
                     closetheoindex = val[1]
                 else:
                     closetheoindex = val[1][0]
@@ -2182,19 +2105,19 @@ class MainCalibrationFrame(wx.Frame):
         selected_data_peak = np.take(data_peak, indExp, axis=0)
 
         if initialdatfile.endswith('.dat'):
-            (Xexp, Yexp, totalIntensity, peakAmplitude,
+            (Xexp, Yexp, _, peakAmplitude,
             peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
 
         elif initialdatfile.endswith('.cor'):
-            (_,_,Xexp, Yexp, peakAmplitude) = selected_data_peak.T
-            totalIntensity= peakAmplitude
-            unknowns=np.zeros(len(Xexp))
+            (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
+            totalIntensity = peakAmplitude
+            unknowns = np.zeros(len(Xexp))
             peak_fwaxmaj = unknowns
             peak_fwaxmin = unknowns
             peak_inclination = unknowns
             Xdev_peakFit = unknowns
-            Ydev_peakFit, peak_bkg, IntensityMax = unknowns,unknowns,unknowns
+            Ydev_peakFit, peak_bkg, IntensityMax = unknowns, unknowns, unknowns
 
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
@@ -2215,7 +2138,7 @@ class MainCalibrationFrame(wx.Frame):
         datatooutput = np.round(datatooutput, decimals=5)
 
         # sort by decreasing intensity
-        data = datatooutput[np.argsort(datatooutput[:,1])[::-1]]
+        data = datatooutput[np.argsort(datatooutput[:, 1])[::-1]]
 
         dict_matrices = {}
         dict_matrices["Element"] = self.key_material
@@ -2637,9 +2560,7 @@ class MainCalibrationFrame(wx.Frame):
         self.update_data(event)
 
     # incrementing or decrementing orientation elementary angles
-    def OnDecreaseAngle1(
-        self, event
-    ):  # delta orientation angles around elementary axes
+    def OnDecreaseAngle1(self, event):  # delta orientation angles around elementary axes
         # Xjsm =y Xmas  Yjsm = -Xxmas Zjsm = Zxmas
         a1 = float(self.moveccdandxtal.angle1.GetValue()) * DEG
 
@@ -2723,7 +2644,7 @@ class MainCalibrationFrame(wx.Frame):
         self.display_current()
 
     def OnCheckEmaxValue(self, _):
-        emax = float(self.crystalparampanel.emaxC.GetValue())
+        # emax = float(self.crystalparampanel.emaxC.GetValue())
         pass
 
     #         if emax > 50:
@@ -2735,7 +2656,7 @@ class MainCalibrationFrame(wx.Frame):
     #             dlg.Destroy()
 
     def OnCheckEminValue(self, _):
-        emin = float(self.crystalparampanel.eminC.GetValue())
+        # emin = float(self.crystalparampanel.eminC.GetValue())
         pass
 
     #         if emin > 50:
@@ -2775,9 +2696,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def onSetOrientMatrix_with_BMatrix(self, _):
         print("reset orientmatrix by integrating B matrix: OrientMatrix=OrientMatrix*B")
-        self.crystalparampanel.UBmatrix = np.dot(
-            self.crystalparampanel.UBmatrix, self.Bmatrix
-        )
+        self.crystalparampanel.UBmatrix = np.dot(self.crystalparampanel.UBmatrix, self.Bmatrix)
 
         self.crystalparampanel.comboBmatrix.SetValue("Identity")
 
@@ -2839,7 +2758,8 @@ class MainCalibrationFrame(wx.Frame):
 
         self.key_material = self.crystalparampanel.comboElem.GetValue()
 
-        Grain = CP.Prepare_Grain(self.key_material, self.crystalparampanel.UBmatrix, dictmaterials=self.dict_Materials)
+        Grain = CP.Prepare_Grain(self.key_material, self.crystalparampanel.UBmatrix,
+                                                    dictmaterials=self.dict_Materials)
 
         self.B0matrix = Grain[0]
 
@@ -3031,8 +2951,7 @@ class MainCalibrationFrame(wx.Frame):
             if self.plotrangepanel.shiftChiOrigin.GetValue():
                 originChi = float(self.plotrangepanel.meanchi.GetValue())
 
-            self.axes.scatter(
-                                self.twicetheta,
+            self.axes.scatter(self.twicetheta,
                                 self.chi + originChi,
                                 s=self.Data_I / np.amax(self.Data_I) * 100.0,
                                 c=self.Data_I / 50.0,
@@ -3086,8 +3005,7 @@ class MainCalibrationFrame(wx.Frame):
             self.axes.set_ylabel("Y gnomon")
 
         elif self.datatype == "pixels":
-            self.axes.scatter(
-                            self.data_x,
+            self.axes.scatter(self.data_x,
                             self.data_y,
                             s=self.Data_I / np.amax(self.Data_I) * 100.0,
                             c=self.Data_I / 50.0,

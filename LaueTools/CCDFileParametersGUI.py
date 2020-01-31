@@ -24,15 +24,11 @@ class CCDFileParameters(wx.Dialog):
         """
         initialize board window
         """
-        wx.Dialog.__init__(
-            self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER)
-
+        wx.Dialog.__init__(self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER)
         self.parent = parent
         print("self.parent", self.parent)
 
-        txt = wx.StaticText(
-            self, -1, "Choose Readout parameters of CCD image file", (50, 10)
-        )
+        txt = wx.StaticText(self, -1, "Choose Readout parameters of CCD image file", (50, 10))
         font = wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.BOLD)
         txt.SetFont(font)
         txt.SetForegroundColour((255, 0, 0))
@@ -44,22 +40,18 @@ class CCDFileParameters(wx.Dialog):
         self.allCCD_names.sort()
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        self.paramdetector = [
-            "CCD label",
-            "header offset",
-            "dataformat",
-            "fliprot",
-            "saturation Value",
-            "file extension",
-        ]
-        self.units = [
-            "ascii",
-            "byte",
-            "python format",
-            "operator tag",
-            "integer",
-            "ascii",
-        ]
+        self.paramdetector = ["CCD label",
+                            "header offset",
+                            "dataformat",
+                            "fliprot",
+                            "saturation Value",
+                            "file extension"]
+        self.units = ["ascii",
+                        "byte",
+                        "python format",
+                        "operator tag",
+                        "integer",
+                        "ascii"]
 
         self.CCDLabel = CCDlabel
         self.readCCDparams()
@@ -73,28 +65,22 @@ class CCDFileParameters(wx.Dialog):
         a0 = wx.StaticText(self.panel, -1, "CCD Image File type", (15, posy))
         a0.SetFont(font3)
 
-        self.allCCD_names = GT.put_on_top_list(
-            (
-                "MARCCD165",
-                "sCMOS",
-                "----------",
-                "PRINCETON",
-                "VHR_Mar13",
-                "----------",
-            ),
-            self.allCCD_names,
-            forceinsertion=True,
-        )
+        self.allCCD_names = GT.put_on_top_list(("MARCCD165",
+                                            "sCMOS",
+                                            "----------",
+                                            "PRINCETON",
+                                            "VHR_Mar13",
+                                            "----------"),
+                                            self.allCCD_names,
+                                            forceinsertion=True)
 
-        self.comboCCD = wx.ComboBox(
-            self.panel,
-            -1,
-            self.CCDLabel,
-            (320, posy - 5),
-            size=(180, -1),
-            choices=self.allCCD_names,
-            style=wx.CB_READONLY,
-        )
+        self.comboCCD = wx.ComboBox(self.panel,
+                                    -1,
+                                    self.CCDLabel,
+                                    (320, posy - 5),
+                                    size=(180, -1),
+                                    choices=self.allCCD_names,
+                                    style=wx.CB_READONLY)
 
         self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
 
@@ -113,19 +99,13 @@ class CCDFileParameters(wx.Dialog):
 
         for kk, param in enumerate(self.paramdetector):
             wx.StaticText(self.panel, -1, param, (15, self.posyvalues + 5 + 30 * kk))
-            wx.StaticText(
-                self.panel,
-                -1,
-                str(self.value[kk]),
-                (340, self.posyvalues + 5 + 30 * kk),
-            )
-            wx.StaticText(
-                self.panel, -1, self.units[kk], (540, self.posyvalues + 5 + 30 * kk)
-            )
+            wx.StaticText(self.panel,
+                            -1,
+                            str(self.value[kk]),
+                            (340, self.posyvalues + 5 + 30 * kk))
+            wx.StaticText(self.panel, -1, self.units[kk], (540, self.posyvalues + 5 + 30 * kk))
 
-        self.comments = wx.TextCtrl(
-            self.panel, style=wx.TE_MULTILINE, size=(580, 50), pos=(10, 280)
-        )
+        self.comments = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE, size=(580, 50), pos=(10, 280))
         self.comments.SetValue(DictLT.dict_CCD[self.CCDLabel][-1])
 
         self.DisplayValues(1)
@@ -149,25 +129,21 @@ class CCDFileParameters(wx.Dialog):
         CCDparams = DictLT.dict_CCD[str(self.CCDLabel)]
 
         # TODO add framedim and pixelsize as CCD parameters better than as Detector parameters
-        (
-            self.parent.framedim,
+        (self.parent.framedim,
             self.parent.pixelsize,
             self.saturationvalue,
             self.fliprot,
             self.headeroffset,
             self.dataformat,
             self.commentstxt,
-            self.file_extension,
-        ) = CCDparams
+            self.file_extension) = CCDparams
 
-        self.value = (
-            self.CCDLabel,
-            self.headeroffset,
-            self.dataformat,
-            self.fliprot,
-            self.saturationvalue,
-            self.file_extension,
-        )
+        self.value = (self.CCDLabel,
+                    self.headeroffset,
+                    self.dataformat,
+                    self.fliprot,
+                    self.saturationvalue,
+                    self.file_extension)
         print("self.value", self.value)
 
     def DisplayValues(self, event):
@@ -176,14 +152,11 @@ class CCDFileParameters(wx.Dialog):
         """
         for kk, param in enumerate(self.paramdetector):
             self.controltext.append(
-                wx.TextCtrl(
-                    self.panel,
-                    -1,
-                    str(self.value[kk]),
-                    (150, self.posyvalues + 30 * kk),
-                    (150, -1),
-                )
-            )
+                wx.TextCtrl(self.panel,
+                                -1,
+                                str(self.value[kk]),
+                                (150, self.posyvalues + 30 * kk),
+                                (150, -1)))
 
     def DeleteValues(self, event):
         """
@@ -191,14 +164,11 @@ class CCDFileParameters(wx.Dialog):
         """
         for kk, param in enumerate(self.paramdetector):
             self.controltext.append(
-                wx.TextCtrl(
-                    self.panel,
-                    -1,
-                    str(None),
-                    (150, self.posyvalues + 30 * kk),
-                    (150, -1),
-                )
-            )
+                wx.TextCtrl(self.panel,
+                            -1,
+                            str(None),
+                            (150, self.posyvalues + 30 * kk),
+                            (150, -1)))
 
     def EnterComboCCD(self, event):
         item = event.GetSelection()
@@ -228,16 +198,12 @@ class CCDFileParameters(wx.Dialog):
             self.parent.CCDLabel = self.CCDLabel
             self.parent.file_extension = self.file_extension
             # geometrical parameters
-            self.parent.framedim, self.parent.pixelsize = DictLT.dict_CCD[
-                str(self.CCDLabel)
-            ][0:2]
+            self.parent.framedim, self.parent.pixelsize = DictLT.dict_CCD[str(self.CCDLabel)][0:2]
 
             print("self.parent", self.parent)
             print("self.parent.framedim", self.parent.framedim)
 
-            self.parent.detectordiameter = (
-                max(self.parent.framedim) * self.parent.pixelsize
-            )
+            self.parent.detectordiameter = (max(self.parent.framedim) * self.parent.pixelsize)
             self.Close()
         else:
             wx.MessageBox("Please select on type of CCD camera or Cancel", "Error")

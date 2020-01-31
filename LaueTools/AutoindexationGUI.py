@@ -314,9 +314,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.key_material = self.list_materials[item]
         self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
 
-        self.sb.SetStatusText(
-            "Selected material: %s" % str(self.dict_Materials[self.key_material])
-        )
+        self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
         event.Skip()
 
     def getparams_for_irpfile(self):
@@ -844,20 +842,19 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                     if self.showplotBox.GetValue():  # to plot best results selected a priori by user
                         title = "Classical Indexation Result Plot"
 
-                        plotresult = Plot_RefineFrame(
-                            self,
-                            -1,
-                            title,
-                            data_added=[TwicethetaChi[0], -TwicethetaChi[1]],
-                            kf_direction=self.kf_direction,
-                            datatype="2thetachi",
-                            key_material=self.key_material,
-                            Params_to_simulPattern=(grain, emin, self.emax.GetValue()),
-                            ResolutionAngstrom=ResolutionAngstrom,
-                            CCDdetectorparameters=self.CCDdetectorparameters,
-                            IndexationParameters=self.IndexationParameters,
-                            StorageDict=self.StorageDict,
-                            DataSetObject=self.DataSet)
+                        plotresult = Plot_RefineFrame(self,
+                                                -1,
+                                                title,
+                                                data_added=[TwicethetaChi[0], -TwicethetaChi[1]],
+                                                kf_direction=self.kf_direction,
+                                                datatype="2thetachi",
+                                                key_material=self.key_material,
+                                                Params_to_simulPattern=(grain, emin, self.emax.GetValue()),
+                                                ResolutionAngstrom=ResolutionAngstrom,
+                                                CCDdetectorparameters=self.CCDdetectorparameters,
+                                                IndexationParameters=self.IndexationParameters,
+                                                StorageDict=self.StorageDict,
+                                                DataSetObject=self.DataSet)
 
                         plotresult.Show(True)
 
