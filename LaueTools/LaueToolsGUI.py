@@ -172,9 +172,9 @@ class LaueToolsGUImainframe(wx.Frame):
         self.CreateExteriorWindowComponents()
 
         # peak list editor
-        self.control = wx.TextCtrl( panel, -1, "", size=(700, 400),
+        self.control = wx.TextCtrl(panel, -1, "", size=(700, 400),
                         style=wx.TE_MULTILINE | wx.TE_READONLY | wx.VSCROLL)
-        self.console = wx.TextCtrl( panel, -1, "", size=(700, 100),
+        self.console = wx.TextCtrl(panel, -1, "", size=(700, 100),
                         style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL | wx.VSCROLL)
 
         sizer = wx.FlexGridSizer(cols=1, hgap=6, vgap=6)
@@ -242,8 +242,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.dict_Eul = DictLT.dict_Eul  # additional matrix of rotation enter as 3 angles / elemntary rotations applied in left of UB
 
         # make a list of safe functions
-        self.safe_list = [ "math", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "degrees", "e", "exp", "fabs", "floor",
-            "fmod", "frexp", "hypot", "ldexp", "log", "log10", "modf", "pi", "pow", "radians", "sin", "sinh", "sqrt", "tan", "tanh", ]
+        self.safe_list = ["math", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "degrees", "e", "exp", "fabs", "floor", "fmod", "frexp", "hypot", "ldexp", "log", "log10", "modf", "pi", "pow", "radians", "sin", "sinh", "sqrt", "tan", "tanh"]
         # use the list to filter the local namespace
         self.safe_dict = dict([(k, locals().get(k, None)) for k in self.safe_list])
         # add any needed builtins back in.
@@ -511,6 +510,9 @@ class LaueToolsGUImainframe(wx.Frame):
     #                    self.DataPlot_filename = ploimage.peaks_filename
 
     def OnOpenPeakList(self, _):
+        """ Open peak list either .dat or .cor file and initinalize peak list
+        for further use (indexation)
+        """
 
         # read peak list and detector calibration parameters
         OSLFGUI.OnOpenPeakList(self)
@@ -567,7 +569,6 @@ class LaueToolsGUImainframe(wx.Frame):
 
         open_dlg.Destroy()
 
-    
     def recomputeScatteringAngles(self, evt):
 
         if self.DataPlot_filename is None:
@@ -706,7 +707,7 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        print( "AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters )
+        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -877,6 +878,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         titleboard = ("Spots interdistance Screening Indexation Board  file: %s" % self.DataPlot_filename)
 
+
+        #print('self.indexation_parameters', self.indexation_parameters)
         # Launch Automatic brute force indexation procedure (angular distance recognition)
         DistanceScreeningIndexationBoard(self, -1, self.indexation_parameters, titleboard,
                                         StorageDict=StorageDict, DataSetObject=self.DataSet)
@@ -1160,14 +1163,10 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"]=copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print(
-            "self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-            self.indexation_parameters["DataToIndex"]["data_theta"],
-        )
+        print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
+            self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
-        self.indexation_parameters[
-            "current_processedgrain"
-        ] = self.current_processedgrain
+        self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
         self.indexation_parameters["pixelsize"] = self.pixelsize
         self.indexation_parameters["dim"] = self.framedim
@@ -1215,25 +1214,29 @@ class LaueToolsGUImainframe(wx.Frame):
         Method launching Calibration Board
         """
         starting_param = [69.179, 1050.81, 1115.59, 0.104, -0.273]
-        pixelsize = 0.08057
+
         print("Starting param", starting_param)
 
         initialParameter = {}
         initialParameter["CCDParam"] = starting_param
-        initialParameter["detectordiameter"] = 180
-        initialParameter["CCDLabel"] = 'MARCCD165'
+
+        initialParameter["CCDLabel"] = self.CCDLabel
+        pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
+        framedim = DictLT.dict_CCD[self.CCDLabel][0]
+        geomoperator = DictLT.dict_CCD[self.CCDLabel][3]
+        initialParameter["detectordiameter"] = max(framedim[0], framedim[1]) * pixelsize * 1.1
         initialParameter["filename"] = 'dat_Ge0001.cor'
-        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder,"Examples","Ge")
-        initialParameter["dict_Materials"]=self.dict_Materials
+        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples","Ge")
+        initialParameter["dict_Materials"] = self.dict_Materials
 
         print("initialParameter when launching calibration", initialParameter)
 
-        file_peaks = os.path.join(initialParameter["dirname"],initialParameter["filename"])
+        file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
 
-        self.calibframe = DC.MainCalibrationFrame( self, -1, "Detector Calibration Board",
+        self.calibframe = DC.MainCalibrationFrame(self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=file_peaks,
-                                    pixelsize=pixelsize, dim=(2048,2048),
-                                    kf_direction='Z>0', fliprot='no',
+                                    pixelsize=pixelsize, dim=framedim,
+                                    kf_direction='Z>0', fliprot=geomoperator,
                                     starting_param=starting_param)
         self.calibframe.Show(True)
 
@@ -1261,7 +1264,7 @@ class LaueToolsGUImainframe(wx.Frame):
         #            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
         # nbspots = len(Tabledistance)
 
-        print('self.indexation_parameters',self.indexation_parameters)
+        print('self.indexation_parameters', self.indexation_parameters)
         CliquesFindingBoard(self, -1, "Cliques Finding Board :%s" % self.DataPlot_filename,
                                                     indexation_parameters=self.indexation_parameters)
 
@@ -1350,7 +1353,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dlg = wx.TextEntryDialog(self, helptstr, "Material and Crystallographic Structure Entry")
 
         _param = "Ge"
-        flag=True
+        flag = True
         dlg.SetValue(_param)
         if dlg.ShowModal() == wx.ID_OK:
             key_material = str(dlg.GetValue())
@@ -1363,7 +1366,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 print(txt)
 
                 wx.MessageBox(txt, "INFO")
-                flag=False
+                flag = False
 
             dlg.Destroy()
 
@@ -1383,9 +1386,9 @@ class LaueToolsGUImainframe(wx.Frame):
     def computeAngularMatching(self, UBmatrix_toCheck):
         """
         compute matching rate of selected data with current predefined structure and input orientation matrix
-        
+
         set self.stats_properformat
-        
+
         # TODO: compute std
         """
 
@@ -1525,7 +1528,7 @@ class LaueToolsGUImainframe(wx.Frame):
         Save results of indexation and refinement procedures
         .res  :  summary file
         .cor  :  non indexed spots list
-        
+
         TODO: export this ASCII write function in readwriteASCII module
         """
         if filename is None:
@@ -2052,7 +2055,6 @@ class LaueToolsGUImainframe(wx.Frame):
 
         return dict(message="Choose an Image File", defaultDir=self.dirname, wildcard=wcd)
 
-    
 
     def OnDocumentationpdf(self, _):
 
@@ -2067,7 +2069,7 @@ class LaueToolsGUImainframe(wx.Frame):
     def OnDocumentationhtml(self, _):
 
         html_file_address = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation",
-                                                            "build","html", "index.html")
+                                                            "build", "html", "index.html")
 
         webbrowser.open(html_file_address)
 
@@ -2199,14 +2201,12 @@ class CliquesFindingBoard(wx.Frame):
         self.parent = parent
         self.LUTfilename = None
 
-        DataPlot_filename = 'toto'
         print('Inside CliquesFindingBoard', self.indexation_parameters.keys())
         print('Inside CliquesFindingBoard', self.indexation_parameters["AllDataToIndex"].keys())
         DataToIndex = self.indexation_parameters["AllDataToIndex"]
 
         MaxNbSpots = len(DataToIndex["data_theta"])
         print('MaxNbSpots: ', MaxNbSpots)
-        
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -3501,16 +3501,14 @@ class ManualIndexFrame(wx.Frame):
     def BuildDataDict(self, evt):  # filter Exp Data spots
         """
         in ManualIndexFrame class
-        
+
         Filter Exp. Data Button
-        
-        Filter exp. spots data to be displayed 
+
+        Filter exp. spots data to be displayed
         """
 
         self.toreturn = None
 
-        #         self.reinit_data()
-        #         self.init_data()
 
         C0 = self.selectedAbsoluteSpotIndices_init
         AllDataToIndex = self.indexation_parameters["AllDataToIndex"]
@@ -3790,7 +3788,7 @@ class ManualIndexFrame(wx.Frame):
             else:
                 kwords = {"edgecolor": "None", "facecolor": self.data_dict["markercolor"]}
 
-            self.axes.scatter(self.pixelX - X_offset,self.pixelY - Y_offset, s=self.factorsize
+            self.axes.scatter(self.pixelX - X_offset, self.pixelY - Y_offset, s=self.factorsize
                 * self.func_size_peakintensity(np.array(self.Data_I), params_spotsize,
                                                             lin=spotsizescale),
                                                             alpha=1.0,
@@ -4597,13 +4595,13 @@ class ManualIndexFrame(wx.Frame):
 
     def simulateAllResults(self):
 
-        print('self.resindexation',self.resindexation)
-        print('len self.resindexation',len(self.resindexation))
+        #print('self.resindexation',self.resindexation)
+        print('len self.resindexation', len(self.resindexation))
 
         self.UBs_MRs, _ = self.resindexation
 
         if not self.UBs_MRs[0] or self.UBs_MRs is None:
-            wx.MessageBox('Sorry Nothing found !!','INFO')
+            wx.MessageBox('Sorry Nothing found !!', 'INFO')
             return
 
         print("Entering simulateAllResults\n\n")

@@ -295,8 +295,7 @@ class RecognitionResultCheckBox(wx.Frame):
                                             CCDdetectorparameters=self.CCDdetectorparameters,
                                             IndexationParameters=self.IndexationParameters,
                                             StorageDict=self.StorageDict,
-                                            DataSetObject=self.DataSet,
-                                        )
+                                            DataSetObject=self.DataSet)
 
                 newplot.Show(True)
 
@@ -339,8 +338,7 @@ class RecognitionResultCheckBox(wx.Frame):
         Params_to_simulPattern = (grain, emin, emax)
         print("Params_to_simulPattern in OnSimulate_S3", Params_to_simulPattern)
 
-        parentGrainPlot = Plot_RefineFrame(
-                                            self,
+        parentGrainPlot = Plot_RefineFrame(self,
                                             -1,
                                             "parent grain matrix #%d" % parent_matrix_index,
                                             datatype=self.datatype,
@@ -353,8 +351,7 @@ class RecognitionResultCheckBox(wx.Frame):
                                             CCDdetectorparameters=self.CCDdetectorparameters,
                                             IndexationParameters=self.IndexationParameters,
                                             StorageDict=self.StorageDict,
-                                            DataSetObject=self.DataSet,
-                                        )
+                                            DataSetObject=self.DataSet)
 
         parentGrainPlot.Show(True)
 
@@ -368,10 +365,12 @@ class RecognitionResultCheckBox(wx.Frame):
         paramsimul = []
         list_childmatrices = []
 
+        print('***********  ----- Calculating LP of child grains -----  *********\n')
         # four sigma 3 operator in listmatsigma
         for k_matsigma, vecteurref in enumerate(listmatsigma):
-
+            
             parent_grain_matrix = self.mat_solution[parent_matrix_index]
+            #print('self.mat_solution',parent_grain_matrix)
             element = self.key_material
             grain = [vecteurref, [1.0, 1.0, 1.0], parent_grain_matrix, element]
 
@@ -383,7 +382,8 @@ class RecognitionResultCheckBox(wx.Frame):
             grain = CP.Prepare_Grain(key_material, ChildMatrix,
                                 dictmaterials=self.IndexationParameters['dict_Materials'])
 
-            print('ChildMatrix  #%d'%k_matsigma, ChildMatrix)
+            # print('ChildMatrix  #%d'%k_matsigma, ChildMatrix)
+            # print('child grain  ', grain)
 
             # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
             spots2pi = LT.getLaueSpots(DictLT.CST_ENERGYKEV / float(emax),
@@ -395,9 +395,23 @@ class RecognitionResultCheckBox(wx.Frame):
                                         fileOK=0,
                                         verbose=0,
                                         dictmaterials=self.StorageDict['dict_Materials'])
+            # print('spots2pi',spots2pi)
+            # print('len(spots2pi',len(spots2pi[0][0]))
 
             # 2theta, chi of spot which are on camera(with harmonics)
             TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
+
+            print('PARAMS')
+            print(self.CCDdetectorparameters)
+
+            TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1, 
+                                            kf_direction=self.kf_direction,
+                                            detectordistance=self.CCDdetectorparameters['detectorparameters'][0],
+                                            detectordiameter=self.CCDdetectorparameters['detectordiameter']*1.2,
+                                            pixelsize=self.CCDdetectorparameters['pixelsize'],
+                                            dim=self.CCDdetectorparameters['framedim'])
+
+            #print('TwicethetaChi',TwicethetaChi)
             self.TwicethetaChi_solution.append(TwicethetaChi)
 
             # print("*-**********************")
@@ -412,8 +426,7 @@ class RecognitionResultCheckBox(wx.Frame):
             paramsimul.append((grain, emin, emax))
 
             if 0:
-                plotsigma = Plot_RefineFrame(
-                                        self,
+                plotsigma = Plot_RefineFrame(self,
                                         -1,
                                         "sigma #%d" % k_matsigma,
                                         datatype=self.datatype,
@@ -426,8 +439,7 @@ class RecognitionResultCheckBox(wx.Frame):
                                         CCDdetectorparameters=self.CCDdetectorparameters,
                                         IndexationParameters=self.IndexationParameters,
                                         StorageDict=self.StorageDict,
-                                        DataSetObject=self.DataSet,
-                                    )
+                                        DataSetObject=self.DataSet)
 
                 plotsigma.current_matrix = ChildMatrix
                 plotsigma.current_elem_label = self.key_material

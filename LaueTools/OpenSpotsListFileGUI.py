@@ -89,6 +89,10 @@ def OpenCorfile(filename, parent):
 
     pixelsize_fromfile = IOLT.getpixelsize_from_corfile(filename)
 
+    # update  CCDLabel,   framedim (nb pixels * nb pixels)
+    parent.CCDLabel = CCDCalibDict['CCDLabel']
+    parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
+
     # set parent parameters:
 
     if pixelsize_fromfile:
