@@ -91,6 +91,7 @@ def OpenCorfile(filename, parent):
 
     # update  CCDLabel,   framedim (nb pixels * nb pixels)
     parent.CCDLabel = CCDCalibDict['CCDLabel']
+    print('parent.CCDLabel',parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
 
     # set parent parameters:
