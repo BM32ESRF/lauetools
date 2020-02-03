@@ -1168,7 +1168,7 @@ class MainCalibrationFrame(wx.Frame):
         self.incrementfile = wx.CheckBox(self.panel, -1, "increment saved filenameindex")
 
         self.layout()
-
+        # read peaks data 
         self.ReadExperimentData()
         self._replot(wx.EVT_IDLE)
         self.display_current()
@@ -1276,17 +1276,17 @@ class MainCalibrationFrame(wx.Frame):
         vbox2.Add(hboxlabel, 0, wx.ALL, 0)
         vbox2.Add(self.nb, 0, wx.EXPAND, 0)
         vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
-        vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1,10), style=wx.LI_HORIZONTAL),
+        vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1, 10), style=wx.LI_HORIZONTAL),
                                                                 0, wx.EXPAND|wx.ALL, 5)
         vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
         vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 
-        self.hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox.Add(self.vbox, 1, wx.EXPAND)
-        self.hbox.Add(vbox2, 1, wx.EXPAND)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.vbox, 1, wx.EXPAND)
+        hbox.Add(vbox2, 1, wx.EXPAND)
 
         vboxgeneral = wx.BoxSizer(wx.VERTICAL)
-        vboxgeneral.Add(self.hbox, 1, wx.EXPAND)
+        vboxgeneral.Add(hbox, 1, wx.EXPAND)
         vboxgeneral.Add(btnSizer, 0, wx.EXPAND)
 
         self.panel.SetSizer(vboxgeneral)
@@ -1311,6 +1311,7 @@ class MainCalibrationFrame(wx.Frame):
         """
         extension = self.filename.split(".")[-1]
 
+        print('\n\nReadExperimentData()  \n\n')
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
         print('filepath',filepath)
@@ -1332,6 +1333,8 @@ class MainCalibrationFrame(wx.Frame):
                                             pixelsize=self.pixelsize,
                                             kf_direction=self.kf_direction)
             self.initialParameter['filename.cor'] = None
+            self.initialParameter['filename.dat'] = filepath
+            self.filename = filepath
 
 
         elif extension in ("cor",):
@@ -1344,9 +1347,24 @@ class MainCalibrationFrame(wx.Frame):
             twicetheta = 2 * data_theta
             self.initialParameter['filename.cor'] = self.filename
 
+            # write a basic .dat file from .cor file
+            Data_array = np.zeros((len(data_theta),10))
+            Data_array[:, 0] = data_x
+            Data_array[:, 1] = data_y
+            Data_array[:, 2] = dataintensity
+
+            outputprefix = 'calib_'
+            IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
+                                                        initialfilename=self.filename,
+                                                        comments=None,
+                                                        dirname=self.dirname)
+            self.initialParameter['filename.dat'] = os.path.join(self.dirname, outputprefix+'.dat')
+            # next time in ReadExperimentData  this branch (.cor) won't be used
+            self.filename = self.initialParameter['filename.dat']
+
         self.twicetheta = twicetheta
         self.chi = chi
-        self.Data_I = dataintensity        
+        self.Data_I = dataintensity
 
         self.data = (self.twicetheta, self.chi, self.Data_I, self.filename)
         # starting X,Y data to plot (2theta , chi)
@@ -2469,6 +2487,7 @@ class MainCalibrationFrame(wx.Frame):
         """
         self.ReadExperimentData()
 
+        print('update_data....')
         # update theoretical data
         self._replot(event)
         self.display_current()
