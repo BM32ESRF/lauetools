@@ -1449,11 +1449,13 @@ class SimulationPlotFrame(wx.Frame):
 
     def onSetImageScale(self, _):
         """
-        open a board to change image scale
+        open a board to open image and play with its intensity scale
         """
-        IScaleBoard = IntensityScaleBoard(
-            self, -1, "Image scale setting Board", self.data_dict
-        )
+        if self.datatype == "2thetachi":
+            wx.MessageBox('Please, open a new simulation window by restarting the simulation with XYPixel "in Display parameters" checked','Info')
+            return
+
+        IScaleBoard = IntensityScaleBoard(self, -1, "Image scale setting Board", self.data_dict)
 
         IScaleBoard.Show(True)
 

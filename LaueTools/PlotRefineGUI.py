@@ -3905,9 +3905,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         # WIDGETS
         luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
-        self.comboLUT = wx.ComboBox(
-            self, -1, self.init_lut, (70, 5), choices=self.mapsLUT
-        )  # ,
+        self.comboLUT = wx.ComboBox(self, -1, self.init_lut, (70, 5), choices=self.mapsLUT)  # ,
         # style=wx.CB_READONLY)
 
         posv = 40
@@ -3920,13 +3918,12 @@ class IntensityScaleBoard(wx.Dialog):
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
 
-        self.vmaxctrl = wx.SpinCtrl(
-            self, -1, "1000", pos=(50, posv + 30), size=(80, -1), min=2, max=1000000)
+        self.vmaxctrl = wx.SpinCtrl(self, -1, "1000", pos=(50, posv + 30),
+                                                                size=(80, -1), min=2, max=1000000)
 
         #         self.slider_label = wx.StaticText(self, -1,
         #             "peak tilt (%): ")
-        self.slider_vmin = wx.Slider(
-                                    self,
+        self.slider_vmin = wx.Slider(self,
                                     -1,
                                     pos=(150, posv + 5),
                                     size=(220, -1),
@@ -3942,8 +3939,7 @@ class IntensityScaleBoard(wx.Dialog):
         # second horizontal band
         #         self.slider_label2 = wx.StaticText(self, -1,
         #             "data size (%): ")
-        self.slider_vmax = wx.Slider(
-                                    self,
+        self.slider_vmax = wx.Slider(self,
                                     -1,
                                     pos=(150, posv + 35),
                                     size=(220, -1),
