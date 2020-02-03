@@ -258,7 +258,7 @@ DEFAULT_TOP_GEOMETRY = "Z>0"
 LAUEIMAGING_DATA_FORMAT = "uint16"  # 'uint8'
 LAUEIMAGING_FRAME_DIM = (1290, 1970)  # (645, 985)
 
-CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam",
+CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
                                 "xpixelsize", "ypixelsize", "CCDLabel",
                                 "framedim", "detectordiameter", "kf_direction"]
 
