@@ -288,6 +288,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
     """
     List_sharpedParameters = ["# %s" % elem for elem in CCD_CALIBRATION_PARAMETERS]
 
+    print("List_sharpedParameters",List_sharpedParameters)
     if Dict_to_update is None:
         CCDcalib = {}
     else:
@@ -310,6 +311,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
         CCDcalib['pixelsize'] = CCDcalib['ypixelsize']
     if 'xpixelsize' in CCDcalib:
         CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
+    
+    print('CCDcalib in readCalibParametersInFile',CCDcalib)
 
     if 'CCDLabel' not in CCDcalib:  #will recognise from pixelsize...
         CCDcalib['CCDLabel'] = None# DEFAULT_CCDLABEL
