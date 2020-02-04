@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision: 1717$"
 import sys, os
 
 # # workaround to launch this script with modules in parent folder

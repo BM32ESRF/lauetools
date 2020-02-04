@@ -9,7 +9,6 @@ April 2019
 """
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision: 1717$"
 
 import copy
 import os

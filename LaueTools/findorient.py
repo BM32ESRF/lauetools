@@ -16,7 +16,6 @@ There is no refinement of U according to other spots
 
 TODO: generalise to other structure and include symetry considerations in selecting part of the lookuptable
 """
-__version__ = "$Revision$"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import string

@@ -7,8 +7,6 @@ and refine the peak by a gaussian or lorentzian 2D model
 
 More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
 """
-
-__version__ = "$Revision: 975 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 # built-in modules

@@ -10,7 +10,6 @@ http://sourceforge.net/projects/lauetools/
 """
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
 
 import sys
 

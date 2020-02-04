@@ -13,7 +13,6 @@ purposes:
 js micha May  2019
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
 
 import sys
 

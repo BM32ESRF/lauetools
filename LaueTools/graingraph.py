@@ -38,7 +38,6 @@ else:
     import IOLaueTools as IOLT
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
 
 
 def read_LUT(picklefilename):

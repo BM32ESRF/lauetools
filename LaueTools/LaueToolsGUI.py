@@ -15,9 +15,7 @@ https://gitlab.esrf.fr/micha/lauetools
 J. S. Micha July 2019
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
-__version__ = "$Revision: 2349 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-
 
 import time
 import sys

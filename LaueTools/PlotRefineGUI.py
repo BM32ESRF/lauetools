@@ -7,7 +7,6 @@ mailto: micha at esrf dot fr
 
 August 2014
 """
-__version__ = "$Revision: 1712 $"
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy

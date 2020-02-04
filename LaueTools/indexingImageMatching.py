@@ -12,7 +12,6 @@ purposes:
 js micha March 2012
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-__version__ = "$Revision$"
 
 import os, time, copy,sys
 import pickle
