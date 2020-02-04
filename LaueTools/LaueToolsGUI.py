@@ -141,8 +141,6 @@ try:
 except:
     DAY, MONTH, YEAR = "FromDistribution", "", "2019"
 
-REV = __version__.split()[-2]
-
 # --- ------------  MAIN GUI WINDOW
 class LaueToolsGUImainframe(wx.Frame):
     """
@@ -2100,12 +2098,12 @@ class LaueToolsGUImainframe(wx.Frame):
          \n at BM32(European Synchrotron Radiation Facility).
 
         %s %s
-        Revision number: %s
+        
 
         Support and help in developing this package:
         https://sourceforge.net/projects/lauetools/
         https://gitlab.esrf.fr/micha/lauetools
-        """ % (MONTH, YEAR, REV)
+        """ % (MONTH, YEAR)
         f = open("License", "r")
         lines = f.readlines()
         mylicense = ""
@@ -2117,7 +2115,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         info.SetIcon(wx.Icon(os.path.join("icons", "transmissionLaue.png"), wx.BITMAP_TYPE_PNG))
         info.SetName("LaueTools")
-        info.SetVersion("%s %s %s\nRevision Number (subversion): %s" % (DAY, MONTH, YEAR, REV))
+        info.SetVersion("%s %s %s" % (DAY, MONTH, YEAR))
         info.SetDescription(description)
         info.SetCopyright("(C) 2019-%s Jean-Sebastien Micha" % YEAR)
         info.SetWebSite("http://www.esrf.eu/UsersAndScience/Experiments/CRG/BM32/")
