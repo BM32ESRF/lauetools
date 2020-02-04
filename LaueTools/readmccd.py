@@ -150,7 +150,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
         # no zero padded index for filename
         else:
             if imagefilename.endswith(ext):
-                prefix, extension = imagefilename.split(".")
+                prefix, _ = imagefilename.split(".")
                 prefix0 = prefix.split("_")[0]
                 if imageindex > 9999:
                     imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
@@ -243,7 +243,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
         else:
             if imagefilename.endswith(ext):
-                prefix, extension = imagefilename.split(".")
+                prefix, _ = imagefilename.split(".")
                 imageindex = int(prefix.split("_")[1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
@@ -374,7 +374,7 @@ def read_header_marccd(filename):
     f.seek(2048)
     posbyte = 0
     allsentences = ""
-    for k in list(range(32)):
+    for _ in list(range(32)):
         tt = f.read(32)
         s1 = tt.strip("\x00")
         if s1 != "":
@@ -408,7 +408,8 @@ def read_header_marccd2(filename):
     s = struct.Struct("I I I")
     unpacked_data = s.unpack(f.read(3 * 4))
     #     print 'Unpacked Values:', unpacked_data
-    integration_time, expo_time, readout_time = unpacked_data
+    #integration_time, expo_time, readout_time = unpacked_data
+    _, expo_time, _ = unpacked_data
 
     f.close()
     return dataset_comments, expo_time
@@ -522,21 +523,21 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     :rtype: tuple of 3 elements
     """
     (framedim,
-        pixelsize,
-        saturationvalue,
+        _,
+        _,
         fliprot,
         offsetheader,
         formatdata,
-        comments,
-        extension) = DictLT.dict_CCD[CCDLabel]
-        
+        _,
+        _) = DictLT.dict_CCD[CCDLabel]
+
     USE_RAW_METHOD = False
 
     print("CCDLabel in readCCDimage", CCDLabel)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
-        
+
         if CCDLabel in ('MARCCD165',"EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr",
                                             "sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
             print('----> Using fabio ... to open %s\n'%filename)
@@ -582,10 +583,10 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif LIBTIFF_EXISTS:
         print("----> Using libtiff...")
-        if CCDLabel in ("sCMOS","TIFF Format", "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
-                                                            "MARCCD225", "Andrea", "pnCCD_Tuba"):
-        
-            
+        if CCDLabel in ("sCMOS", "MARCCD165","TIFF Format",
+                                "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
+                                "MARCCD225", "Andrea", "pnCCD_Tuba"):
+
             #         print "tiff format", CCDLabel
             #             print "dirname, filename", dirname, filename
             if dirname is not None:
@@ -603,9 +604,11 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif PIL_EXISTS:
         print("using PIL's module Image")
-        if CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
+        if CCDLabel in ("sCMOS", "MARCCD165"):
+            print('PIL is too slow. Better install libtiff or fabio. Meanwhile ...')
+            USE_RAW_METHOD = True
+        elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
             # data are compressed!
-            
 
             if dirname is not None:
                 fullpath = os.path.join(dirname, filename)
@@ -615,14 +618,16 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             im = Image.open(fullpath, "r")
             dataimage = np.array(im.getdata()).reshape(framedim)
 
-        if CCDLabel in ("sCMOS",):
-            USE_RAW_METHOD = True
-    
     # RAW method knowing or deducing offsetheader and dataformat
     if USE_RAW_METHOD:
         print("----> not using libtiff, nor fabio, nor PIL!!!  ")
+        if CCDLabel in ("MARCCD165",):
+            print("for MARCCD not using libtiff, raw method ...")
+            # offsetheader may change ...
+            #filesize = os.path.getsize(os.path.join(dirname, filename))
+            offsetheader = 4096 #filesize - 2048*2048 * 2
         # offset header varying
-        if CCDLabel.startswith("ImageStar_raw"):
+        elif CCDLabel.startswith("ImageStar_raw"):
             filesize = os.path.getsize(os.path.join(dirname, filename))
             bytes_per_pixels = 2
             if CCDLabel.endswith("32bits"):
@@ -632,8 +637,6 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             if CCDLabel in ("ImageStar_1528x1528",):
                 nbpixels = 1528
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
-
-        
         elif CCDLabel in ("sCMOS",):
             print("for sCMOS not using libtiff, raw method ...")
             # offsetheader may change ...
@@ -645,7 +648,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                                 dirname=dirname,
                                 offset=offsetheader,
                                 formatdata=formatdata)
-        
+
         if CCDLabel in ("FRELONID15_corrected",):
 
             dataimage = dataimage.byteswap()

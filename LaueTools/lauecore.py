@@ -2193,7 +2193,7 @@ def simulatepurepattern_np(grain,
 
     # selecting RR nodes without harmonics (fastcompute = 1 loses the miller indices and RR positions associations for quicker computation)
 
-    oncam_sansh = filterLaueSpots_full_np(vecind,
+    oncam_sansh = filterLaueSpots_full_np(vecind[0], vecind[1],
                                         fastcompute=0,
                                         kf_direction=kf_direction,
                                         detectordistance=detectordistance,

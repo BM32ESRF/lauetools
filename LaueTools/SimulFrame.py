@@ -366,64 +366,6 @@ class SimulationPlotFrame(wx.Frame):
             elif self.drawindicesBtn.GetValue():
                 self.OnDrawIndices(event)
 
-    def select_2pts(self, evt, displayMesssage=False):
-        """#pick distance
-        in simulFrame module
-        """
-        toreturn = None
-        if self.nbclick_dist <= 2:
-            if self.nbclick_dist == 1:
-                self.twopoints = []
-
-            self.twopoints.append([evt.xdata, evt.ydata])
-            print("# selected points", self.nbclick_dist)
-            print("Coordinates(%.3f,%.3f)" % (evt.xdata, evt.ydata))
-            print("click nb", self.nbclick_dist)
-
-            if len(self.twopoints) == 2:
-                # compute angular distance:
-                spot1 = self.twopoints[0]  # (X, Y) (e.g. 2theta, chi)
-                spot2 = self.twopoints[1]
-                if self.datatype == "2thetachi":
-                    _dist = GT.distfrom2thetachi(np.array(spot1), np.array(spot2))
-                    print("angular distance :  %.3f deg " % _dist)
-
-                if self.datatype == "gnomon":
-                    tw, ch = IIM.Fromgnomon_to_2thetachi(
-                        [
-                            np.array([spot1[0], spot2[0]]),
-                            np.array([spot1[1], spot2[1]]),
-                        ],
-                        0,
-                    )[:2]
-                    _dist = GT.distfrom2thetachi(
-                        np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]])
-                    )
-                    print("angular distance :  %.3f deg " % _dist)
-                # TODO: add if self.datatype == 'pixels':
-
-                toreturn = self.twopoints, _dist
-                self.nbclick_dist = 0
-                # self.twopoints = []
-                self.pickdistbtn.SetValue(False)
-                self.pickdistbtn.SetBackgroundColour(self.defaultColor)
-
-        self.nbclick_dist += 1
-
-        if displayMesssage:
-            if toreturn is not None:
-
-                twopoints, distangle = toreturn
-
-                print("RES =", toreturn)
-                #                sentence = 'Corresponding lattice planes angular distance'
-                #                sentence += "\n between two scattered direction LatticePlane  : %.2f " % distangle
-                #                dial = wx.MessageBox(sentence, 'INFO')
-                self.nbclick_dist = 1
-                return None
-
-        return toreturn
-
     def readdata(self):
         """
         read input parameter 'data'to be plotted

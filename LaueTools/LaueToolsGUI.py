@@ -2167,7 +2167,7 @@ class PreferencesBoard(wx.Dialog):
         wx.Button(panel, 2, "Quit", (150, 150), (90, 40))
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
 
-    def OnAccept(self, evt):
+    def OnAccept(self, _):
         if self.samefolder.GetValue():
             self.writefolder = "."
         elif self.userdefinedrelfolder.GetValue():
@@ -2180,7 +2180,7 @@ class PreferencesBoard(wx.Dialog):
 
         self.Close()
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Close()
 
 
@@ -2461,7 +2461,7 @@ class MatrixEditor_Dialog(wx.Frame):
                 self.replace = False
         evt.Skip()
 
-    def OnComputeMatrix_axisangles(self, evt):
+    def OnComputeMatrix_axisangles(self, _):
         longitude = float(self.longitude.GetValue())
         latitude = float(self.latitude.GetValue())
         angle = float(self.anglerot.GetValue())
@@ -2482,7 +2482,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.mat_a33.SetValue(str(matrix[2][2]))
         self.text.SetValue(str(matrix.tolist()))
 
-    def OnComputeMatrix_axisvector(self, evt):
+    def OnComputeMatrix_axisvector(self, _):
         Axis = str(self.axisrot.GetValue())
         angle = float(self.anglerot.GetValue())
 
@@ -2503,7 +2503,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.mat_a33.SetValue(str(matrix[2][2]))
         self.text.SetValue(str(matrix.tolist()))
 
-    def OnSaveFile(self, evt):
+    def OnSaveFile(self, _):
         """
         Saves the matrix in ASCII editor or 9 entried elements on Hard Disk
         """
@@ -2553,7 +2553,7 @@ class MatrixEditor_Dialog(wx.Frame):
         else:
             print("No name input")
 
-    def OnStoreMatrix(self, evt):
+    def OnStoreMatrix(self, _):
         r"""
         Stores the matrix from the ASCII editor or the 9 entried elements
         in main list of orientation matrix for further simulation
@@ -2870,14 +2870,12 @@ class MatrixEditor_Dialog(wx.Frame):
         UBs = np.dot(Rot, UB)
         print("UB as read in editor")
         print(UB.tolist())
-        print(
-            "UB converted in lauetools sample frame(From G=ha*+kb*+lc* with a*,b* and c* "
+        print("UB converted in lauetools sample frame(From G=ha*+kb*+lc* with a*,b* and c* "
             "expressed in lab frame to q expressed in sample frame)")
         print(UBs.tolist())
         print("UB converted in XMAS-like sample frame")
         print(np.dot(np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]), UBs).tolist())
-        print(
-            "UB converted in lauetools sample frame(From G=ha*+kb*+lc* with a*,b* "
+        print("UB converted in lauetools sample frame(From G=ha*+kb*+lc* with a*,b* "
             "and c* expressed in sample frame to q expressed in sample frame)")
         print(np.dot(UBs, invRot).tolist())
 
@@ -2888,9 +2886,9 @@ class MatrixEditor_Dialog(wx.Frame):
         self.text.SetValue(str(UBs.tolist()))
 
     def OnQuit(self, evt):
-        dlg = wx.MessageDialog(
-            self,
-            'To use stored Matrices in simulation boards that do not appear, click on "refresh choices" button before.')
+        dlg = wx.MessageDialog(self,
+            'To use stored Matrices in simulation boards that do not appear, click '
+            'on "refresh choices" button before.')
         if dlg.ShowModal() == wx.ID_OK:
             self.Close()
             evt.Skip()
@@ -2915,10 +2913,8 @@ class ManualIndexFrame(wx.Frame):
                                             MATR=0.5,
                                             indexation_parameters=None,
                                             StorageDict=None,
-                                            DataSetObject=None,
-                                            **kwds):
+                                            DataSetObject=None):
 
-        #        wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
         wx.Frame.__init__(self, parent, _id, title, size=(600, 1000))
 
         self.panel = wx.Panel(self)
@@ -3377,8 +3373,8 @@ class ManualIndexFrame(wx.Frame):
         """
         import PlotRefineGUI as PRGUI
 
-        IScaleBoard = PRGUI.IntensityScaleBoard(
-            self, -1, "Image scale setting Board", self.data_dict)
+        IScaleBoard = PRGUI.IntensityScaleBoard(self, -1, "Image scale setting Board",
+                                                                                    self.data_dict)
 
         IScaleBoard.Show(True)
 
@@ -3412,33 +3408,6 @@ class ManualIndexFrame(wx.Frame):
             print("pixels plot")
 
         # TODO to remove
-        self.Data_index_expspot = np.arange(len(self.Data_X))
-
-    def init_data_old(self):
-        """
-        calculate 2theta chi gnomonX gnomonY pixX pixY properties depending on datatype
-
-        """
-        # x,y data coordinates to consider
-        self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-
-        if self.datatype == "2thetachi":
-            self.tth, self.chi = self.Data_X, self.Data_Y
-        elif self.datatype == "gnomon":
-            # TODO: only when not indexed spot is the whole list
-            # Need to do like above from input data
-            self.Data_X = (copy.copy(self.parent.data_gnomonx),)
-            self.Data_Y = copy.copy(self.parent.data_gnomony)
-            self.tth, self.chi = self.data_2thetachi
-        #             print "init_data"
-        #             print self.Data_X, self.Data_Y
-        #             print min(self.Data_X), max(self.Data_X), min(self.Data_Y), max(self.Data_Y)
-
-        elif self.datatype == "pixels":
-            self.tth, self.chi = self.data_2thetachi
-            print("pixels plot")
-            pass
-
         self.Data_index_expspot = np.arange(len(self.Data_X))
 
     def reinit_data(self):
