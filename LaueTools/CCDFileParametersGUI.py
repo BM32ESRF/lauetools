@@ -19,14 +19,13 @@ class CCDFileParameters(wx.Dialog):
     """
     Class to set image file parameters
     """
-
     def __init__(self, parent, _id, title, CCDlabel):
         """
         initialize board window
         """
         wx.Dialog.__init__(self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER)
         self.parent = parent
-        print("self.parent", self.parent)
+        #print("self.parent", self.parent)
 
         txt = wx.StaticText(self, -1, "Choose Readout parameters of CCD image file", (50, 10))
         font = wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.BOLD)
@@ -144,9 +143,9 @@ class CCDFileParameters(wx.Dialog):
                     self.fliprot,
                     self.saturationvalue,
                     self.file_extension)
-        print("self.value", self.value)
+        #print("self.value", self.value)
 
-    def DisplayValues(self, event):
+    def DisplayValues(self, _):
         """
         display and set values of parameters
         """
@@ -158,7 +157,7 @@ class CCDFileParameters(wx.Dialog):
                                 (150, self.posyvalues + 30 * kk),
                                 (150, -1)))
 
-    def DeleteValues(self, event):
+    def DeleteValues(self, _):
         """
         set parameters to zero or None 
         """
@@ -183,12 +182,12 @@ class CCDFileParameters(wx.Dialog):
 
         self.readCCDparams()
 
-        print("self.value", self.value)
+        #print("self.value", self.value)
         self.comments.SetValue(self.commentstxt)
         self.DisplayValues(event)
         event.Skip()
 
-    def OnAccept(self, event):
+    def OnAccept(self, _):
         if not self.CCDLabel.startswith("--"):
             # file parameters
             self.parent.headeroffset = self.headeroffset
@@ -200,7 +199,7 @@ class CCDFileParameters(wx.Dialog):
             # geometrical parameters
             self.parent.framedim, self.parent.pixelsize = DictLT.dict_CCD[str(self.CCDLabel)][0:2]
 
-            print("self.parent", self.parent)
+            #print("self.parent", self.parent)
             print("self.parent.framedim", self.parent.framedim)
 
             self.parent.detectordiameter = (max(self.parent.framedim) * self.parent.pixelsize)
@@ -208,5 +207,5 @@ class CCDFileParameters(wx.Dialog):
         else:
             wx.MessageBox("Please select on type of CCD camera or Cancel", "Error")
 
-    def OnCancel(self, event):
+    def OnCancel(self, _):
         self.Close()

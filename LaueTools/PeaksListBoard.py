@@ -19,15 +19,13 @@ class PeaksListBoard(wx.Frame):
         #         wx.Dialog.__init__(self, parent, _id, title, size=(400, 250))
 
         # - Initialize the window:
-        wx.Frame.__init__(
-            self, None, wx.ID_ANY, "Peak list plot properties", size=(600, 400)
-        )
+        wx.Frame.__init__(self, None, wx.ID_ANY, "Peak list plot properties", size=(600, 400))
 
         # Add a panel so it looks correct on all platforms
         self.panel = wx.Panel(self, wx.ID_ANY)
 
         self.parent = parent
-        print("self.parent", self.parent)
+        #print("self.parent", self.parent)
 
         self.list_markerstyle = ["+", "x", "o", "h", "*", "p"]
 
@@ -92,10 +90,7 @@ class PeaksListBoard(wx.Frame):
 
             self.selectedcolor = data.GetColour().Get()
             print("You selected: (%d, %d, %d)\n" % self.selectedcolor)
-            print(
-                "matplolib color: (%.2f, %.2f, %.2f)\n"
-                % self.convert_to_rgbmatplotlib(self.selectedcolor)
-            )
+            print("matplolib color: (%.2f, %.2f, %.2f)\n" % self.convert_to_rgbmatplotlib(self.selectedcolor))
 
             self.myDataList[index]["Color"] = self.selectedcolor
 
@@ -106,9 +101,7 @@ class PeaksListBoard(wx.Frame):
         dlg.Destroy()
 
         if self.scatterplot_list is not []:
-            self.scatterplot_list[index].set_edgecolor(
-                self.convert_to_rgbmatplotlib(self.selectedcolor)
-            )
+            self.scatterplot_list[index].set_edgecolor(self.convert_to_rgbmatplotlib(self.selectedcolor))
             self.parent.update_draw(1)
 
     def convert_to_rgbmatplotlib(self, rgbcolor):
@@ -138,35 +131,23 @@ class PeaksListBoard(wx.Frame):
             colorbtn = wx.Button(self.panel, -1, "color_%d" % i)
             colorbtn.SetBackgroundColour(wx.Colour(*self.myDataList[i]["Color"]))
             setattr(self, "colorbtn_%d" % i, colorbtn)
-            colorbtn.Bind(
-                wx.EVT_BUTTON,
-                lambda evt, name=colorbtn.GetLabel(): self.onChangeColor(evt, name),
-            )
+            colorbtn.Bind(wx.EVT_BUTTON,
+                lambda evt, name=colorbtn.GetLabel(): self.onChangeColor(evt, name))
 
-            markercombo = wx.ComboBox(
-                self.panel,
-                -1,
-                str(self.myDataList[i]["marker"]),
-                choices=self.list_markerstyle,
-                size=(20, -1),
-            )
+            markercombo = wx.ComboBox(self.panel,
+                                        -1,
+                                        str(self.myDataList[i]["marker"]),
+                                        choices=self.list_markerstyle,
+                                        size=(20, -1))
             #             setattr(self, 'markercombo_%d' % i, markercombo)
-            markercombo.Bind(
-                wx.EVT_COMBOBOX,
-                lambda evt, comboindex=i: self.onChangeMarker(evt, comboindex),
-            )
+            markercombo.Bind( wx.EVT_COMBOBOX,
+                                lambda evt, comboindex=i: self.onChangeMarker(evt, comboindex))
 
-            self.grid.Add(
-                wx.StaticText(self.panel, -1, str(self.myDataList[i]["Select"]))
-            )
-            self.grid.Add(
-                wx.StaticText(self.panel, -1, str(self.myDataList[i]["Name"]))
-            )
+            self.grid.Add(wx.StaticText(self.panel, -1, str(self.myDataList[i]["Select"])))
+            self.grid.Add(wx.StaticText(self.panel, -1, str(self.myDataList[i]["Name"])))
             self.grid.Add(colorbtn)
             self.grid.Add(markercombo)
-            self.grid.Add(
-                wx.StaticText(self.panel, -1, str(self.myDataList[i]["size"]))
-            )
+            self.grid.Add(wx.StaticText(self.panel, -1, str(self.myDataList[i]["size"])))
 
         self.panel.SetSizer(self.vsizer)
         self.vsizer.Layout()
@@ -183,49 +164,33 @@ class PeaksListBoard(wx.Frame):
         # - Populate the grid with new data:
         chckbox = wx.CheckBox(self.panel, -1)
         chckbox.SetValue(True)
-        chckbox.Bind(
-            wx.EVT_CHECKBOX,
-            lambda evt, chckindex=datalist_index: self.onCheckBox(evt, chckindex),
-        )
+        chckbox.Bind(wx.EVT_CHECKBOX,
+            lambda evt, chckindex=datalist_index: self.onCheckBox(evt, chckindex))
         setattr(self, "chckbox_%d" % datalist_index, chckbox)
 
-        txtctrlname = wx.TextCtrl(
-            self.panel, -1, str(self.myDataList[datalist_index]["Name"])
-        )
+        txtctrlname = wx.TextCtrl(self.panel, -1, str(self.myDataList[datalist_index]["Name"]))
         txtctrlname.SetMinSize((300, -1))
         #         setattr(self, 'namectrl_%d' % datalist_index, txtctrlname)
 
         colorbtn = wx.Button(self.panel, -1, "color_%d" % datalist_index)
-        colorbtn.SetBackgroundColour(
-            wx.Colour(*self.myDataList[datalist_index]["Color"])
-        )
+        colorbtn.SetBackgroundColour(wx.Colour(*self.myDataList[datalist_index]["Color"]))
         setattr(self, "colorbtn_%d" % datalist_index, colorbtn)
-        colorbtn.Bind(
-            wx.EVT_BUTTON,
-            lambda evt, name=colorbtn.GetLabel(): self.onChangeColor(evt, name),
-        )
+        colorbtn.Bind(wx.EVT_BUTTON,
+            lambda evt, name=colorbtn.GetLabel(): self.onChangeColor(evt, name))
 
-        markercombo = wx.ComboBox(
-            self.panel,
-            -1,
-            str(self.myDataList[datalist_index]["marker"]),
-            choices=self.list_markerstyle,
-            size=(80, -1),
-        )
+        markercombo = wx.ComboBox(self.panel,
+                                    -1,
+                                    str(self.myDataList[datalist_index]["marker"]),
+                                    choices=self.list_markerstyle,
+                                    size=(80, -1))
         #             setattr(self, 'markercombo_%d' % datalist_index, markercombo)
-        markercombo.Bind(
-            wx.EVT_COMBOBOX,
-            lambda evt, comboindex=datalist_index: self.onChangeMarker(evt, comboindex),
-        )
+        markercombo.Bind(wx.EVT_COMBOBOX,
+            lambda evt, comboindex=datalist_index: self.onChangeMarker(evt, comboindex))
 
-        sizectrl = wx.SpinCtrl(
-            self.panel, -1, str(self.myDataList[datalist_index]["size"])
-        )
+        sizectrl = wx.SpinCtrl(self.panel, -1, str(self.myDataList[datalist_index]["size"]))
         setattr(self, "sizectrl_%d" % datalist_index, sizectrl)
-        sizectrl.Bind(
-            wx.EVT_SPINCTRL,
-            lambda evt, index=datalist_index: self.onChangeSize(evt, index),
-        )
+        sizectrl.Bind(wx.EVT_SPINCTRL,
+            lambda evt, index=datalist_index: self.onChangeSize(evt, index))
 
         self.grid.Add(chckbox, 1)
         self.grid.Add(txtctrlname, 1)
@@ -339,9 +304,7 @@ class PeaksListBoard(wx.Frame):
                 col_Y = colname_dict["Yexp"]
                 print("column for exp. peaks Y position found at index %d" % col_Y)
             else:
-                print(
-                    "\n\n!!column for theo. or exp. peaks Y position not found...!!\n"
-                )
+                print("\n\n!!column for theo. or exp. peaks Y position not found...!!\n")
 
             if len(data) == 2:
                 allspotsdata = data[0][4]
@@ -370,28 +333,22 @@ class PeaksListBoard(wx.Frame):
 
         self.readnewpeaklistfile()
 
-        self.myDataList.append(
-            {
-                "Select": True,
-                "Name": os.path.split(self.fullpathfilename)[-1],
-                "Color": (0, 255, 0),
-                "marker": "*",
-                "size": 20,
-                "peakslist": self.selectedpeaklist,
-            }
-        )
+        self.myDataList.append({"Select": True,
+                                "Name": os.path.split(self.fullpathfilename)[-1],
+                                "Color": (0, 255, 0),
+                                "marker": "*",
+                                "size": 20,
+                                "peakslist": self.selectedpeaklist})
         #         self.update_ImageArray()
         self.addRow_Grid(self.nb_peakslists - 1)
         self.plotmarkers()
 
     def GetfullpathFile(self, evt):
-        myFileDialog = wx.FileDialog(
-            self,
-            "Choose an image file",
-            style=wx.OPEN,
-            #                                         defaultDir=self.dirname,
-            wildcard="Peaks list (*.dat)|*.dat|Peaks list (*.cor)|*.cor|indexed Peaks list (*.fit)|*.fit|All files(*)|*",
-        )
+        myFileDialog = wx.FileDialog(self,
+                        "Choose an image file",
+                        style=wx.OPEN,
+                        #                                         defaultDir=self.dirname,
+                        wildcard="Peaks list (*.dat)|*.dat|Peaks list (*.cor)|*.cor|indexed Peaks list (*.fit)|*.fit|All files(*)|*")
         dlg = myFileDialog
         dlg.SetMessage("Choose an image file")
         if dlg.ShowModal() == wx.ID_OK:
@@ -403,28 +360,22 @@ class PeaksListBoard(wx.Frame):
         else:
             pass
 
-    def plotmarkers(
-        self, addscatteratindex=None, markerstyle="o", edgecolor="g", markersize=20
-    ):
+    def plotmarkers(self, addscatteratindex=None, markerstyle="o", edgecolor="g", markersize=20):
         # offset convention
         X_OFFSET = 1
         Y_OFFSET = 1
 
-        kwords = {
-            "marker": markerstyle,
+        kwords = {"marker": markerstyle,
             "facecolor": "None",
             "edgecolor": edgecolor,
-            "s": markersize,
-        }
+            "s": markersize}
 
         if addscatteratindex is not None:
             X, Y = self.myDataList[addscatteratindex]["peakslist"].T
         else:
             X, Y = self.selectedpeaklist.T
 
-        self.myscatter = self.parent.axes.scatter(
-            X - X_OFFSET, Y - Y_OFFSET, alpha=1.0, **kwords
-        )
+        self.myscatter = self.parent.axes.scatter(X - X_OFFSET, Y - Y_OFFSET, alpha=1.0, **kwords)
 
         if addscatteratindex is not None:
             self.scatterplot_list[addscatteratindex] = self.myscatter

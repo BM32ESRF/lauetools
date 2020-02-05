@@ -93,16 +93,14 @@ class MessageCommand(wx.Dialog):
     Class to command with spec
     """
 
-    def __init__(
-        self, parent, _id, title, sentence=None, speccommand=None, specconnection=None
-    ):
+    def __init__(self, parent, _id, title, sentence=None, speccommand=None, specconnection=None):
         """
         initialize board window
         """
         wx.Dialog.__init__(self, parent, _id, title, size=(400, 250))
 
         self.parent = parent
-        print("self.parent", self.parent)
+        #print("self.parent", self.parent)
 
         self.speccommand = speccommand
 
@@ -175,9 +173,7 @@ class MainFrame(wx.Frame):
 
         filemenu = wx.Menu()
         menuSpecFile = filemenu.Append(-1, "Open spec file", "Open a spec file")
-        menuSetPreference = filemenu.Append(
-            -1, "Folder Preferences", "Set folder Preferences"
-        )
+        menuSetPreference = filemenu.Append(-1, "Folder Preferences", "Set folder Preferences")
         savemeshdata = filemenu.Append(-1, "Save Data", "Save current 2D data")
         self.Bind(wx.EVT_MENU, self.OnOpenSpecFile, menuSpecFile)
         self.Bind(wx.EVT_MENU, self.OnSaveData, savemeshdata)
@@ -190,9 +186,7 @@ class MainFrame(wx.Frame):
 
         helpmenu = wx.Menu()
 
-        menuAbout = helpmenu.Append(
-            wx.ID_ABOUT, "&About", " Information about this program"
-        )
+        menuAbout = helpmenu.Append(wx.ID_ABOUT, "&About", " Information about this program")
         menuExit = helpmenu.Append(wx.ID_EXIT, "E&xit", " Terminate the program")
 
         # Set events.
@@ -230,16 +224,14 @@ class MainFrame(wx.Frame):
 
         self.stbar0 = wx.StatusBar(self.panel)
 
-        self.plot = ImshowPanel(
-            self.panel,
-            -1,
-            "test_plot",
-            z_values,
-            Imageindices=Imageindices,
-            posmotorname=("xmotor", "ymotor"),
-            posarray_twomotors=posmotor,
-            absolute_motorposition_unit="mm",
-        )
+        self.plot = ImshowPanel(self.panel,
+                                -1,
+                                "test_plot",
+                                z_values,
+                                Imageindices=Imageindices,
+                                posmotorname=("xmotor", "ymotor"),
+                                posarray_twomotors=posmotor,
+                                absolute_motorposition_unit="mm")
 
         self.treespecfiles = TreePanel(self.panel, scantype="MESH")
         self.treeacanspecfiles = TreePanel(self.panel, scantype="ASCAN")
@@ -289,12 +281,10 @@ class MainFrame(wx.Frame):
         if not os.path.isdir(defaultdir):
             defaultdir = os.getcwd()
 
-        file = wx.FileDialog(
-            self,
-            "Save 2D Array Data in File",
-            defaultDir=defaultdir,
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        )
+        file = wx.FileDialog(self,
+                            "Save 2D Array Data in File",
+                            defaultDir=defaultdir,
+                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if file.ShowModal() == wx.ID_OK:
 
             outputfile = file.GetPath()
@@ -307,14 +297,9 @@ class MainFrame(wx.Frame):
             #         self.flat_motor1 = posmotor1
             #         self.flat_motor2 = posmotor2
 
-            self.writefile_3columns(
-                outputfile,
-                [
-                    self.flat_data_z_values.tolist(),
-                    self.flat_motor1.tolist(),
-                    self.flat_motor2.tolist(),
-                ],
-            )
+            self.writefile_3columns(outputfile, [self.flat_data_z_values.tolist(),
+                                                self.flat_motor1.tolist(),
+                                                self.flat_motor2.tolist()])
 
     def writefile_3columns(self, output_filename, data):
         """
@@ -326,18 +311,11 @@ class MainFrame(wx.Frame):
 
         outputfile.write("data_z posmotor1 posmotor2\n")
 
-        outputfile.write(
-            "\n".join(
-                [
-                    "%.06f   %.06f   %06f" % tuple(list(zip(data[0], data[1], data[2])[i]))
-                    for i in range(longueur)
-                ]
-            )
-        )
+        outputfile.write("\n".join(
+                ["%.06f   %.06f   %06f" % tuple(list(zip(data[0], data[1], data[2])[i]))
+                    for i in range(longueur)]))
 
-        outputfile.write(
-            "\n# File created at %s with PlotmeshspecGUI.py" % (time.asctime())
-        )
+        outputfile.write("\n# File created at %s with PlotmeshspecGUI.py" % (time.asctime()))
 
         outputfile.close()
         print("Data written in %s" % output_filename)
@@ -358,9 +336,7 @@ class MainFrame(wx.Frame):
 
     def onUpdateSpecFile(self, evt):
 
-        self.folderpath_specfile, self.specfilename = os.path.split(
-            self.fullpath_specfile
-        )
+        self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
         print("self.listmesh before", self.listmesh)
         list_lastmeshscan_indices = []
@@ -384,13 +360,11 @@ class MainFrame(wx.Frame):
 
     def OnOpenSpecFile(self, evt):
 
-        folder = wx.FileDialog(
-            self,
-            "Select spec file",
-            wildcard="BM32 Specfile (laue.*)|laue.*|All files(*)|*",
-            defaultDir=str(self.folderpath_specfile),
-            defaultFile=str(self.specfilename),
-        )
+        folder = wx.FileDialog(self,
+                                "Select spec file",
+                                wildcard="BM32 Specfile (laue.*)|laue.*|All files(*)|*",
+                                defaultDir=str(self.folderpath_specfile),
+                                defaultFile=str(self.specfilename))
 
         self.last_specfilename = self.specfilename
         if folder.ShowModal() == wx.ID_OK:
@@ -399,24 +373,16 @@ class MainFrame(wx.Frame):
 
             #             print "folder.GetPath()", abs_fullpath
 
-            self.folderpath_specfile, self.specfilename = os.path.split(
-                self.fullpath_specfile
-            )
+            self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
-        if (
-            self.specfilename == self.last_specfilename
-            and self.specfilename is not None
-        ):
+        if (self.specfilename == self.last_specfilename and self.specfilename is not None):
             self.onUpdateSpecFile(1)
 
         self.readspecfile(self.fullpath_specfile)
 
         #         print dir(self.treespecfiles.tree)
 
-        if (
-            self.specfilename != self.last_specfilename
-            and self.specfilename is not None
-        ):
+        if (self.specfilename != self.last_specfilename and self.specfilename is not None):
             print("\n\ndeleting last old items\n\n")
             self.treespecfiles.tree.DeleteAllItems()
             wx.CallAfter(self.treespecfiles.maketree)
@@ -427,9 +393,7 @@ class MainFrame(wx.Frame):
 
     def fill_tree(self):
         for meshelems in self.listmeshtoAdd:
-            self.treespecfiles.tree.AppendItem(
-                self.treespecfiles.root, str(meshelems[0])
-            )
+            self.treespecfiles.tree.AppendItem(self.treespecfiles.root, str(meshelems[0]))
 
     def readspecfile(self, fullpathspecfilename):
         samespecfile = False
@@ -460,9 +424,7 @@ class MainFrame(wx.Frame):
 
         if list_meshscan_indices[-1] != lastscan_listmesh and not samespecfile:
             print("adding only new meshes from file %s" % self.fullpath_specfile)
-            indstart_newmeshes = np.searchsorted(
-                list_meshscan_indices, lastscan_listmesh - 1
-            )
+            indstart_newmeshes = np.searchsorted(list_meshscan_indices, lastscan_listmesh - 1)
         else:
             indstart_newmeshes = 0
 
@@ -515,9 +477,7 @@ class MainFrame(wx.Frame):
 
             # self.MonitorOffset  in counts / sec
 
-            counterintensity1D = datay / (
-                data_I0 / (exposureTime / 1.0) - self.MonitorOffset
-            )
+            counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
 
         print("building arrays")
         if nb2 * nb1 == nbacc:
@@ -528,9 +488,7 @@ class MainFrame(wx.Frame):
             except KeyError:
                 print("'img' column doesn't exist! Add fake dummy 0 value")
                 data_img = np.zeros((nb2, nb1))
-            posmotorsinfo = np.reshape(
-                np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2)
-            )
+            posmotorsinfo = np.reshape(np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2))
             scan_in_progress = False
 
         else:
@@ -586,40 +544,34 @@ class MainFrame(wx.Frame):
         self.minmotor2 = float(titlesplit[8])
         self.maxmotor2 = float(titlesplit[9])
 
-        scancommandextremmotorspositions = [
-            self.minmotor1,
-            self.maxmotor1,
-            self.minmotor2,
-            self.maxmotor2,
-        ]
+        scancommandextremmotorspositions = [self.minmotor1,
+                                            self.maxmotor1,
+                                            self.minmotor2,
+                                            self.maxmotor2]
 
         self.plot.combocounters.Clear()
         self.plot.combocounters.AppendItems(self.columns_name)
 
-        self.update_fig(
-            data_z_values,
-            posmotorsinfo,
-            motor1,
-            motor2,
-            Apptitle,
-            data_img,
-            detectorname,
-            scancommandextremmotorspositions,
-        )
+        self.update_fig(data_z_values,
+                            posmotorsinfo,
+                            motor1,
+                            motor2,
+                            Apptitle,
+                            data_img,
+                            detectorname,
+                            scancommandextremmotorspositions)
 
         return scan_in_progress
 
-    def update_fig(
-        self,
-        data_z_values,
-        posmotorsinfo,
-        motor1,
-        motor2,
-        Apptitle,
-        data_img,
-        detectorname,
-        scancommandextremmotorspositions,
-    ):
+    def update_fig(self,
+                    data_z_values,
+                    posmotorsinfo,
+                    motor1,
+                    motor2,
+                    Apptitle,
+                    data_img,
+                    detectorname,
+                    scancommandextremmotorspositions):
         """update fig and plot"""
         #         self.plot.fig.clear()
 
@@ -630,8 +582,7 @@ class MainFrame(wx.Frame):
         self.plot.title = Apptitle
         self.plot.Imageindices = data_img
 
-        (
-            self.plot.minmotor1,
+        (self.plot.minmotor1,
             self.plot.maxmotor1,
             self.plot.minmotor2,
             self.plot.maxmotor2,
@@ -643,8 +594,7 @@ class MainFrame(wx.Frame):
         if self.plot.colorbar is not None:
             self.plot.colorbar_label = detectorname
             (self.plot.myplot, self.plot.colorbar, self.plot.data) = makefig_update(
-                self.plot.fig, self.plot.myplot, self.plot.colorbar, data_z_values
-            )
+                self.plot.fig, self.plot.myplot, self.plot.colorbar, data_z_values)
         else:
             print("self.plot.colorbar is None")
             self.plot.create_axes()
@@ -719,13 +669,11 @@ class MainFrame(wx.Frame):
             self.scan_in_progress = True
             fctparams = [self.update2, (evt,), {}]
 
-            self.TGframe = TG.ThreadHandlingFrame(
-                self,
-                -1,
-                threadFunctionParams=fctparams,
-                parentAttributeName_Result="results",
-                parentNextFunction=self.plot.canvas.draw,
-            )
+            self.TGframe = TG.ThreadHandlingFrame(self,
+                                                    -1,
+                                                    threadFunctionParams=fctparams,
+                                                    parentAttributeName_Result="results",
+                                                    parentNextFunction=self.plot.canvas.draw)
             self.TGframe.OnStart(1)
             self.TGframe.Show(True)
 

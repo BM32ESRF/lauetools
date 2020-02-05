@@ -93,11 +93,16 @@ def OpenCorfile(filename, parent):
     parent.CCDLabel = CCDCalibDict['CCDLabel']
     print('parent.CCDLabel',parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
+    parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][0]
 
     # set parent parameters:
 
     if pixelsize_fromfile:
         parent.pixelsize = pixelsize_fromfile
+        print('reading pixelsize from file: %f mm'%parent.pixelsize)
+    else:
+        parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][1]
+        print('reading pixelsize from CCDLabel : %f mm'%parent.pixelsize)
     if calib is not None:
         parent.defaultParam = calib
 

@@ -48,30 +48,19 @@ class RecognitionResultCheckBox(wx.Frame):
 
     Checkboxes allow user selection to plot the patterns (simulation and exp. data)
     """
-
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        stats_residues,
-        data,
-        DRTA,
-        MATR,
-        key_material="Ge",
-        emax=25,
-        ResolutionAngstrom=False,
-        kf_direction="Z>0",
-        datatype="2thetachi",
-        data_2thetachi=(None, None),
-        data_XY=(None, None),
-        ImageArray=None,
-        CCDdetectorparameters=None,
-        IndexationParameters=None,
-        StorageDict=None,
-        mainframe=None,
-        DataSetObject=None,
-    ):
+    def __init__( self, parent, _id, title, stats_residues, data, DRTA, MATR, key_material="Ge",
+                                                                        emax=25,
+                                                                        ResolutionAngstrom=False,
+                                                                        kf_direction="Z>0",
+                                                                        datatype="2thetachi",
+                                                                        data_2thetachi=(None, None),
+                                                                        data_XY=(None, None),
+                                                                        ImageArray=None,
+                                                                        CCDdetectorparameters=None,
+                                                                        IndexationParameters=None,
+                                                                        StorageDict=None,
+                                                                        mainframe=None,
+                                                                        DataSetObject=None):
 
         self.parent = parent
         self._id = _id
@@ -94,7 +83,6 @@ class RecognitionResultCheckBox(wx.Frame):
             self.mainframe = parent.parent
 
         # print("RecognitionResultCheckBox my parent is ", self.parent)
-        #         print "**** \n\nIndexationParameters",IndexationParameters
 
         self.nbPotentialSolutions = len(stats_residues)
 
@@ -110,8 +98,6 @@ class RecognitionResultCheckBox(wx.Frame):
 
         self.data_XY_exp = data_XY
 
-        #         print "data_XY_exp", self.data_XY_exp
-
         self.matr_ctrl, self.DRTA = MATR, DRTA
         self.key_material = key_material
 
@@ -125,10 +111,8 @@ class RecognitionResultCheckBox(wx.Frame):
         self.data_2thetachi = data_2thetachi
 
         self.DataSet = DataSetObject
-        print(
-            "self.DataSet.detectordiameter in init RecognitionResultCheckBox",
-            self.DataSet.detectordiameter,
-        )
+        print("self.DataSet.detectordiameter in init RecognitionResultCheckBox",
+                                                                    self.DataSet.detectordiameter)
 
         self.init_GUI2()
         self.Show(True)
@@ -169,7 +153,7 @@ class RecognitionResultCheckBox(wx.Frame):
         for k in range(self.nbPotentialSolutions):
 
             nmatched, nmax, std = self.stats_residues[k][:3]
-            mattchingrate= nmatched/nmax*100
+            mattchingrate = nmatched / nmax * 100
 
             if mattchingrate >= 50.:
                 color = (158, 241, 193)
@@ -191,11 +175,11 @@ class RecognitionResultCheckBox(wx.Frame):
             for kt in range(4):
                 txtstats[kt].SetBackgroundColour(color)
             vbox3.AddMany([(self.cb[k], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                                    (txtind, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                                    (txtstats[0], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                                    (txtstats[1], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                                    (txtstats[2], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                                    (txtstats[3], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
+                        (txtind, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                        (txtstats[0], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                        (txtstats[1], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                        (txtstats[2], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
+                        (txtstats[3], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
 
         emintxt = wx.StaticText(panel, -1, "Energy min: ")
         self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150, size=(70, -1))
@@ -237,12 +221,16 @@ class RecognitionResultCheckBox(wx.Frame):
         sizerparam.Fit(self)
 
         #---------  tooltip
-        simulbtn.SetToolTipString('Simulate and Plot Laue Pattern of the 4 children of a selected solution according to sigam3 operator')
-        txtmatched.SetToolTipString('Nb of matched reciprocal space directions between exp. and simulated Laue Patterns')
-        tipmaxnb = 'Nb of expected reciprocal space directions in simulated Laue pattern. A direction is counted as many as harmonics reciprocal nodes it contains'
+        simulbtn.SetToolTipString('Simulate and Plot Laue Pattern of the 4 children of a selected '
+        'solution according to sigam3 operator')
+        txtmatched.SetToolTipString('Nb of matched reciprocal space directions between exp. and '
+        'simulated Laue Patterns')
+        tipmaxnb = 'Nb of expected reciprocal space directions in simulated Laue pattern. '
+        'A direction is counted as many as harmonics reciprocal nodes it contains'
         tipmaxnb += 'This number varies as a function of orientation matrix, the material and emax'
         txttheomax.SetToolTipString(tipmaxnb)
-        txtmr.SetToolTipString('Matching rate ratio in percent of nb of matched directions and nb of simulated directions')
+        txtmr.SetToolTipString('Matching rate ratio in percent of nb of matched directions and '
+        'nb of simulated directions')
         txtstd.SetToolTipString('Standard deviation of angular residues distribution of the matched directions')
 
     def Select(self, _, index):
@@ -271,7 +259,7 @@ class RecognitionResultCheckBox(wx.Frame):
             Emin = int(self.SCmin.GetValue())
             Emax = int(self.SCmax.GetValue())
 
-            print('self.paramsimul', self.paramsimul)
+            print('self.paramsimul in in RecognitionResultCheckBox', self.paramsimul)
             # build all selected plots
             for ind in self.toshow:
 
@@ -282,9 +270,7 @@ class RecognitionResultCheckBox(wx.Frame):
                 Params_to_simulPattern = (grain, Emin, Emax)
                 print("\n****** Params_to_simulPattern", Params_to_simulPattern)
 
-                newplot = Plot_RefineFrame(self,
-                                            -1,
-                                            "matrix #%d" % ind,
+                newplot = Plot_RefineFrame(self, -1, "matrix #%d" % ind,
                                             kf_direction=self.kf_direction,
                                             ImageArray=self.ImageArray,
                                             datatype=self.datatype,

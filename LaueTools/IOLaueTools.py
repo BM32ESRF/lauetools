@@ -237,8 +237,13 @@ def getpixelsize_from_corfile(filename):
     f = open(filename, "r")
     find_xpixelsize = False
     find_ypixelsize = False
+    find_pixelsize = False
 
     for line in f:
+        if line.startswith("# pixelsize"):
+            find_pixelsize = True
+            pixelsize = float(line.split(":")[-1])
+            break
         if line.startswith("# xpixelsize"):
             find_xpixelsize = True
             xpixelsize = float(line.split(":")[-1])
@@ -246,6 +251,9 @@ def getpixelsize_from_corfile(filename):
             find_ypixelsize = True
             ypixelsize = float(line.split(":")[-1])
     f.close()
+
+    if find_pixelsize:
+        return pixelsize
 
     if find_xpixelsize and find_ypixelsize:
         if xpixelsize != ypixelsize:

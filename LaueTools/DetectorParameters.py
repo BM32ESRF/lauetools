@@ -1,7 +1,8 @@
-import wx
 import time, os
 import copy
 import sys
+
+import wx
 
 if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
@@ -29,30 +30,26 @@ class DetectorParameters(wx.Dialog):
         self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 650), pos=(5, 5))
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        self.paramdetector = [
-            "Distance",
-            "xcen",
-            "ycen",
-            "betangle",
-            "gammaangle",
-            "pixelsize",
-            "dim1",
-            "dim2",
-            "detectordiameter",
-            "kf_direction",
-        ]
-        self.units = [
-            "mm",
-            "pixel",
-            "pixel",
-            "deg",
-            "deg",
-            "mm",
-            "pixel",
-            "pixel",
-            "mm",
-            "ascii",
-        ]
+        self.paramdetector = ["Distance",
+                            "xcen",
+                            "ycen",
+                            "betangle",
+                            "gammaangle",
+                            "pixelsize",
+                            "dim1",
+                            "dim2",
+                            "detectordiameter",
+                            "kf_direction"]
+        self.units = ["mm",
+                    "pixel",
+                    "pixel",
+                    "deg",
+                    "deg",
+                    "mm",
+                    "pixel",
+                    "pixel",
+                    "mm",
+                    "ascii"]
 
         self.initialParameters_dict = copy.copy(Parameters_dict)
 
@@ -62,13 +59,11 @@ class DetectorParameters(wx.Dialog):
 
         if len(self.Parameters_dict["CCDParam"]) == 5:
 
-            self.params_values_list = self.Parameters_dict["CCDParam"] + [
-                                    self.Parameters_dict["pixelsize"],
-                                    self.Parameters_dict["framedim"][0],
-                                    self.Parameters_dict["framedim"][1],
-                                    self.Parameters_dict["detectordiameter"],
-                                    self.Parameters_dict["kf_direction"],
-                                ]
+            self.params_values_list = self.Parameters_dict["CCDParam"] + [self.Parameters_dict["pixelsize"],
+                                                                self.Parameters_dict["framedim"][0],
+                                                                self.Parameters_dict["framedim"][1],
+                                                                self.Parameters_dict["detectordiameter"],
+                                                                self.Parameters_dict["kf_direction"]]
 
         print("self.params_values_list", self.params_values_list)
         print("self.paramdetector", self.paramdetector)
@@ -122,7 +117,7 @@ class DetectorParameters(wx.Dialog):
         # toltips
         loadbtn.SetToolTipString("Load Detector Parameters")
 
-    def OnLoadCalib(self, event):
+    def OnLoadCalib(self, _):
         """
         in DetectorParameters
         """
@@ -168,7 +163,7 @@ class DetectorParameters(wx.Dialog):
         open_dlg.Destroy()
         os.chdir(_dir)
 
-    def OnSaveCalib(self, event):
+    def OnSaveCalib(self, _):
         """
         in DetectorParameters
         """
@@ -185,12 +180,9 @@ class DetectorParameters(wx.Dialog):
         for par in self.newparam:
             txt += str(par) + "\n"
 
-        dlg = wx.TextEntryDialog(
-            self,
-            "Enter Calibration File name : \n Current Calibration parameters are: \n"
-            + txt,
-            "Saving Calibration Parameters Entry",
-        )
+        dlg = wx.TextEntryDialog(self,
+                    "Enter Calibration File name : \n Current Calibration parameters are: \n" + txt,
+                        "Saving Calibration Parameters Entry")
         dlg.SetValue("*.det")
         if dlg.ShowModal() == wx.ID_OK:
             filenameCalib = str(dlg.GetValue())
@@ -200,16 +192,14 @@ class DetectorParameters(wx.Dialog):
             comments = self.comments.GetValue()
 
             _file = open(filenameCalib, "w")
-            text = "%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f\n" % (
-                                                                        dd,
+            text = "%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f,%.17f\n" % (dd,
                                                                         xcen,
                                                                         ycen,
                                                                         xbet,
                                                                         xgam,
                                                                         pixsize,
                                                                         dim1,
-                                                                        dim2,
-                                                                    )
+                                                                        dim2)
             text += "Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2 \n"
             text += "Saved at %s with LaueToolsGUI.py\n" % time.asctime()
             text += comments
@@ -224,7 +214,7 @@ class DetectorParameters(wx.Dialog):
 
     #         self.OnCancel(event)
 
-    def OnAcceptCalib(self, event):
+    def OnAcceptCalib(self, _):
         """
         in DetectorParameters
         """
@@ -244,7 +234,6 @@ class DetectorParameters(wx.Dialog):
         # new parameters can be called from outside parent frame
         if self.parent is not None:
 
-            print("coucou")
             try:
                 print("Parameter['kf_direction']", Parameter["kf_direction"])
                 print("detectordiameter", Parameter["detectordiameter"])
@@ -273,11 +262,9 @@ class DetectorParameters(wx.Dialog):
             else:
                 val_kf_direction = str(controller.GetValue())
                 if val_kf_direction not in DictLT.DICT_LAUE_GEOMETRIES:
-                    wx.MessageBox(
-                        "Value of kf_direction (Laue Geometry) is unknown.\nMust be in %s"
-                        % str(list(DictLT.DICT_LAUE_GEOMETRIES.keys())),
-                        "Error",
-                    )
+                    wx.MessageBox("Value of kf_direction (Laue Geometry) is unknown.\nMust be in %s"
+                                            % str(list(DictLT.DICT_LAUE_GEOMETRIES.keys())),
+                                            "Error")
                     return False
                 else:
                     self.newparam.append(val_kf_direction)
@@ -285,16 +272,12 @@ class DetectorParameters(wx.Dialog):
 
     def OnCancel(self, event):
         print("Detector Parameters are unchanged, Still: ")
-        print(
-            (
-                self.Parameters_dict["CCDLabel"],
+        print((self.Parameters_dict["CCDLabel"],
                 self.Parameters_dict["CCDParam"],
                 self.Parameters_dict["pixelsize"],
                 self.Parameters_dict["framedim"],
                 self.Parameters_dict["detectordiameter"],
-                self.Parameters_dict["kf_direction"],
-            )
-        )
+                self.Parameters_dict["kf_direction"]))
 
         self.Close()
         event.Skip()
@@ -319,9 +302,8 @@ if __name__ == "__main__":
     Parameters_dict["kf_direction"] = "Z>0"
 
     DetectorParamGUIApp = wx.App()
-    DetectorParamGUIFrame = DetectorParameters(
-        None, -1, "Detector Calibration Board", Parameters_dict
-    )
+    DetectorParamGUIFrame = DetectorParameters(None, -1, "Detector Calibration Board",
+                                                                                    Parameters_dict)
 
     DetectorParamGUIFrame.Show()
 

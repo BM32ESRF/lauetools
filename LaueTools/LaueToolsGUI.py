@@ -259,35 +259,19 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         ReadImageMenu = wx.Menu()
         for _id, label, helpText, handler in [
-            (wx.ID_ANY,
-                "&Set CCD File Parameters",
-                "CCD ImageFile reading parameters dialog",
-                self.OnSetFileCCDParam),
-            (wx.ID_ANY,
-                "&Set Laue Geometry",
-                "Set general CCD position for Laue experiment",
-                self.OnSetLaueDetectorGeometry),
+            (wx.ID_ANY, "&Set CCD File Parameters", "CCD ImageFile reading parameters dialog",
+                                                                            self.OnSetFileCCDParam),
+            (wx.ID_ANY, "&Set Laue Geometry", "Set general CCD position for Laue experiment",
+                                                                    self.OnSetLaueDetectorGeometry),
             (None, None, None, None),
-            (wx.ID_OPEN,
-                "&Open Image && PeakSearch",
-                "View Image & Peak Search",
-                self.OnOpenImage),
+            (wx.ID_OPEN, "&Open Image && PeakSearch", "View Image & Peak Search", self.OnOpenImage),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Detector Calibration",
-                "Detector Calibration from a known reference crystal",
-                self.OnDetectorCalibration),
-            (5151,
-                "&Set or Reset Detector Parameters",
-                "Open detector parameters board. Set or Reset calibration parameters dialog, compute Laue spots scattering angles",
-                self.recomputeScatteringAngles),
+            (wx.ID_ANY, "&Detector Calibration", "Detector Calibration from a known reference crystal", self.OnDetectorCalibration),
+            (5151, "&Set or Reset Detector Parameters",
+                "Open detector parameters board. Set or Reset calibration parameters dialog, compute Laue spots scattering angles", self.recomputeScatteringAngles),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "Folder Preferences",
-                "Define where to write files",
-                self.OnPreferences)]:
+            (wx.ID_ANY, "Folder Preferences", "Define where to write files", self.OnPreferences)]:
 
-            #             print '_id', _id
             if _id is None:
                 ReadImageMenu.AppendSeparator()
             else:
@@ -298,18 +282,12 @@ class LaueToolsGUImainframe(wx.Frame):
 
         ManualIndexation_SubMenu = wx.Menu()
         for _id, label, helpText, handler in [
-            (wx.ID_ANY,
-                "&2thetaChi",
-                "Selection and recognition Tools in(2theta, chi) coordinates",
-                self.OnPlot_2ThetaChi),
-            (wx.ID_ANY,
-                "&Gnomon.",
-                "Selection and recognition Tools in gnomonic plane coordinates",
-                self.OnPlot_Gnomon),
-            (wx.ID_ANY,
-                "&CCD Pixel",
-                "Selection and recognition Tools in CCD pixels coordinates",
-                self.OnPlot_Pixels)]:
+            (wx.ID_ANY, "&2thetaChi", "Selection and recognition Tools in(2theta, chi) coordinates",
+                                                                            self.OnPlot_2ThetaChi),
+            (wx.ID_ANY, "&Gnomon.", "Selection and recognition Tools in gnomonic plane coordinates",
+                                                                                self.OnPlot_Gnomon),
+            (wx.ID_ANY, "&CCD Pixel", "Selection and recognition Tools in CCD pixels coordinates",
+                                                                            self.OnPlot_Pixels)]:
             if _id is None:
                 ManualIndexation_SubMenu.AppendSeparator()
             else:
@@ -318,64 +296,43 @@ class LaueToolsGUImainframe(wx.Frame):
 
         IndexationMenu = wx.Menu()
         for _id, label, helpText, handler in [
-            (wx.ID_ANY,
-                "&Open Peak List",
-                "Open a data file(peak list)",
-                self.OnOpenPeakList),
-            (wx.ID_ANY,
-                "&Reload Materials",
-                "Update or Load Materials (dict_Materials.dat)",
-                self.OnLoadMaterials),
+            (wx.ID_ANY, "&Open Peak List", "Open a data file(peak list)", self.OnOpenPeakList),
+            (wx.ID_ANY, "&Reload Materials", "Update or Load Materials (dict_Materials.dat)",
+                                                                            self.OnLoadMaterials),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Check Orientation",
+            (wx.ID_ANY, "&Check Orientation",
                 "Enter Orientation matrix, Material and check Matching with the current experimental Laue Pattern spots list",
                 self.OnCheckOrientationMatrix),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Find Spots family",
+            (wx.ID_ANY, "&Find Spots family",
                 "Find cliques of spots for which all mutual angular distances are found in reference crsytal LUT",
                 self.OnCliquesFinding),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Automatic Indexation",
+            (wx.ID_ANY, "&Automatic Indexation",
                 "Indexation by recognition of mutual lattice planes normals angles calculated from pairs of Laue spots",
                 self.OnClassicalIndexation),
-            (5050,
-                "&Image Matching",
-                "Spots position matching with Databank(in Hough Space)",
+            (5050, "&Image Matching", "Spots position matching with Databank(in Hough Space)",
                 self.OnHoughMatching),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Manual Indexation",
-                "Plot Data and Manual indexation (Angles Recognition)",
+            (wx.ID_ANY, "&Manual Indexation", "Plot Data and Manual indexation (Angles Recognition)",
                 ManualIndexation_SubMenu),
             (None, None, None, None),
-            (wx.ID_SAVE,
-                "&Save Indexation Results",
-                "Save indexation results viewed in control in *.idx file",
-                self.OnSaveIndexationResultsfile),
-            (wx.ID_SAVEAS,
-                "Save &As Indexation Results",
-                "Save indexation results viewed in control in *.idx file",
-                self.OnFileResultsSaveAs),
-            (wx.ID_ANY,
-                "Save Non &Indexed .cor file",
-                "Save non indexed spots in a .cor file",
-                self.SaveNonIndexedSpots)]:
-            #             print("handler",type(handler))
+            (wx.ID_SAVE, "&Save Indexation Results",
+                                    "Save indexation results viewed in control in *.idx file", self.OnSaveIndexationResultsfile),
+            (wx.ID_SAVEAS, "Save &As Indexation Results",
+                                    "Save indexation results viewed in control in *.idx file",
+                                    self.OnFileResultsSaveAs),
+            (wx.ID_ANY, "Save Non &Indexed .cor file",
+                                "Save non indexed spots in a .cor file", self.SaveNonIndexedSpots)]:
             if _id is None:
-                #                 print "None Menu"
                 IndexationMenu.AppendSeparator()
             elif isinstance(handler, (wx.Menu, wx.Object)):
-                #                 print 'submenu'
                 if WXPYTHON4:
                     item = IndexationMenu.AppendSubMenu(handler, label, helpText)
                 else:
                     item = IndexationMenu.AppendMenu(
                         wx.ID_ANY, label, handler, helpText)
             else:
-                #                 print 'default menu'
                 item = IndexationMenu.Append(_id, label, helpText)
                 self.Bind(wx.EVT_MENU, handler, item)
 
@@ -383,19 +340,13 @@ class LaueToolsGUImainframe(wx.Frame):
 
         SimulationMenu = wx.Menu()
         for _id, label, helpText, handler in [
-            (wx.ID_ANY,
-                "&PolyGrains Simulation",
-                "Polycrystal selection & simulation",
-                self.Creating_Grains_parametric),
+            (wx.ID_ANY, "&PolyGrains Simulation", "Polycrystal selection & simulation",
+                                                                self.Creating_Grains_parametric),
             (None, None, None, None),
-            (wx.ID_ANY,
-                "&Edit Matrix",
-                "Edit or Load Orientation Matrix",
-                self.OnEditMatrix),
-            (wx.ID_ANY,
-                "&Edit UB, B, Crystal",
-                "Edit B or UB Matrix and unit cell structure and extinctions",
-                self.OnEditUBMatrix)]:
+            (wx.ID_ANY, "&Edit Matrix", "Edit or Load Orientation Matrix", self.OnEditMatrix),
+            (wx.ID_ANY, "&Edit UB, B, Crystal",
+                                "Edit B or UB Matrix and unit cell structure and extinctions",
+                                self.OnEditUBMatrix)]:
             if _id is None:
                 SimulationMenu.AppendSeparator()
             else:
@@ -405,10 +356,7 @@ class LaueToolsGUImainframe(wx.Frame):
         HelpMenu = wx.Menu()
         for _id, label, helpText, handler in [
             (5051, "&Tutorial", "Tutorial", self.OnTutorial),
-            (wx.ID_ANY,
-                "&HTML Documentation",
-                "Documentation",
-                self.OnDocumentationhtml),
+            (wx.ID_ANY, "&HTML Documentation", "Documentation", self.OnDocumentationhtml),
             (wx.ID_ANY, "&PDF Documentation", "Documentation", self.OnDocumentationpdf),
             (None, None, None, None),
             (wx.ID_ANY, "&About", "Information about this program", self.OnAbout)]:
@@ -447,7 +395,7 @@ class LaueToolsGUImainframe(wx.Frame):
     # --- -------- Main FUNCTIONS called from MENU and submenus
     def OnOpenImage(self, _):
         """
-        ask user to select folder and file
+        ask user to select folder and image file
         and launch the peak search board(class PeakSearchFrame)
         """
         if OSLFGUI.askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
@@ -750,7 +698,8 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
         self.EnterMatrix(1)
-        if not self.Enterkey_material(): return
+        if not self.Enterkey_material():
+            return
         self.EnterEnergyMax()
 
         self.DataSet.pixelsize = self.pixelsize
@@ -801,6 +750,7 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.data_theta is None:
             self.OpenDefaultData()
 
+        print('self.pixelsize in OnClassicalIndexation for %s'%self.DataPlot_filename, self.pixelsize)
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
         print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
@@ -1156,7 +1106,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
         #         self.indexation_parameters['DataToIndex']['data_gnomonX'] = self.select_gnomonx
         #         self.indexation_parameters['DataToIndex']['data_gnomonY'] = self.select_gnomony
-        self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"]=copy.copy(self.current_exp_spot_index_list)
+        self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
         print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
@@ -1222,7 +1172,7 @@ class LaueToolsGUImainframe(wx.Frame):
         geomoperator = DictLT.dict_CCD[self.CCDLabel][3]
         initialParameter["detectordiameter"] = max(framedim[0], framedim[1]) * pixelsize * 1.1
         initialParameter["filename"] = 'dat_Ge0001.cor'
-        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples","Ge")
+        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples", "Ge")
         initialParameter["dict_Materials"] = self.dict_Materials
 
         print("initialParameter when launching calibration", initialParameter)
@@ -1759,11 +1709,12 @@ class LaueToolsGUImainframe(wx.Frame):
         Open default data for quick test if user has not yet loaded some data
         """
         DEFAULTFILE = "dat_Ge0001.cor"
-        defaultdatafile = os.path.join(self.dirname, "Examples", "Ge", DEFAULTFILE)
+        defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
 
         print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
 
         self.dirname = os.path.split(os.path.abspath(defaultdatafile))[0]
+        print('self.dirname', self.dirname)
         os.chdir(self.dirname)
 
         self.DataPlot_filename = DEFAULTFILE
@@ -1814,7 +1765,7 @@ class LaueToolsGUImainframe(wx.Frame):
     def select_exp_spots(self):
         """
         select spots to be indexed
-        
+
         set self.non_indexed_spots as array of absolute index in peaks experimental list of non indexed spots
         """
         # select default data for test
@@ -1844,9 +1795,7 @@ class LaueToolsGUImainframe(wx.Frame):
         #         indexation_parameters['data_theta'] = self.data_theta
         #         indexation_parameters['data_chi'] = self.data_chi
         #         indexation_parameters['data_I'] = self.data_I
-        indexation_parameters[
-            "current_exp_spot_index_list"
-        ] = self.current_exp_spot_index_list
+        indexation_parameters["current_exp_spot_index_list"] = self.current_exp_spot_index_list
         indexation_parameters["ClassicalIndexation_Tabledist"] = None
         indexation_parameters["dict_Rot"] = self.dict_Rot
         indexation_parameters["current_processedgrain"] = self.current_processedgrain
@@ -1905,7 +1854,7 @@ class LaueToolsGUImainframe(wx.Frame):
         return list_nonindexed
 
     def Update_DataToIndex_Dict(self, data_list, grain_index):
-        """ 
+        """
         udpate dictionary of exp. spots taking into account data_list values(indexation results)
         """
         #         print "************ \n\n self.indexation_parameters",self.indexation_parameters
@@ -1922,7 +1871,7 @@ class LaueToolsGUImainframe(wx.Frame):
         return
 
     def Update_DB_fromIndexation(self, data_list):
-        """ 
+        """
         udpate dictionary of exp. spots taking into account data_list values(indexation results)
         """
         # data_Miller, data_Energy, list_indexspot = data_list
@@ -2224,7 +2173,7 @@ class CliquesFindingBoard(wx.Frame):
         wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
 
         wx.StaticText(self.panel, -1, "Load AnglesLUT file ", (15, 175))
-        loadanglesbtn=wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
+        loadanglesbtn = wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
 
         self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 215))
@@ -2238,7 +2187,7 @@ class CliquesFindingBoard(wx.Frame):
         self.Show(True)
         self.Centre()
 
-    def OnLoadAnglesFile(self, evt):
+    def OnLoadAnglesFile(self, _):
         # load specific lut angles
         # lutfolder = '/home/micha/LaueToolsPy3/LaueTools/'
         # lutfilename = 'sortedanglesCubic_nLut_5_angles_18_60.angles'
@@ -2256,7 +2205,7 @@ class CliquesFindingBoard(wx.Frame):
         open_dlg.Destroy()
 
 
-    def OnSearch(self, evt):
+    def OnSearch(self, _):
 
         spot_list = self.spotlist.GetValue()
 
@@ -2286,7 +2235,7 @@ class CliquesFindingBoard(wx.Frame):
 
         res_cliques = GraGra.give_bestclique(fullpath, nbmax_probed, ang_tol,
                                                     nodes=Nodes, col_Int=-1,
-                                                    LUTfilename = self.LUTfilename,
+                                                    LUTfilename=self.LUTfilename,
                                                     verbose=1)
 
         if isinstance(Nodes, int):
@@ -2308,7 +2257,7 @@ class CliquesFindingBoard(wx.Frame):
         if not self.indexchkbox.GetValue():
             self.parent.list_of_cliques = None
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Close()
 
 
@@ -2403,8 +2352,8 @@ class MatrixEditor_Dialog(wx.Frame):
         buttonload = wx.Button(panel, 104, "Load", pos=(20, 420), size=(60, 25))
         # buttonload.SetFont(font3)
         buttonload.Bind(wx.EVT_BUTTON, self.OnOpenMatrixFile, id=104)
-        wx.StaticText( panel, -1,
-                "Matrix from saved file in simple ASCII text editor format", (100, 425), )
+        wx.StaticText(panel, -1,
+                "Matrix from saved file in simple ASCII text editor format", (100, 425))
 
         buttonXMASload = wx.Button(panel, 105, "Read XMAS", pos=(20, 460), size=(100, 25))
         # buttonload.SetFont(font3)
@@ -2436,7 +2385,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.statusbar.SetFieldsCount(3)
         self.statusbar.SetStatusWidths([-5, -2, -1])
 
-    def ToggleStatusBar(self, evt):
+    def ToggleStatusBar(self, _):
         if self.statusbar.IsShown():
             self.statusbar.Hide()
         else:
@@ -2683,7 +2632,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.CurrentMat = self.list_of_Rot[item]
         evt.Skip()
 
-    def OnLookMatrix(self, evt):
+    def OnLookMatrix(self, _):
         matrix = self.parent.dict_Rot[self.CurrentMat]
         print("%s is :" % self.CurrentMat)
         print(matrix)
@@ -2699,7 +2648,7 @@ class MatrixEditor_Dialog(wx.Frame):
         self.mat_a33.SetValue(str(matrix[2][2]))
         self.text.SetValue(str(matrix))
 
-    def OnLoadXMAS_INDfile(self, evt):
+    def OnLoadXMAS_INDfile(self, _):
         """
         old and may be obsolete indexation file reading procedure ?!
         """
@@ -2831,7 +2780,7 @@ class MatrixEditor_Dialog(wx.Frame):
             # TODO: advise how to set new calibration parameter(in calibration menu ?)
             evt.Skip()
 
-    def OnConvertlabtosample(self, evt):
+    def OnConvertlabtosample(self, _):
         """
         qs= R ql    q expressed in sample frame(xs,ys,zs) = R * ql
         with ql being q expressed in lab frame(x,y,z)
@@ -3819,7 +3768,7 @@ class ManualIndexFrame(wx.Frame):
                 self.axes.add_patch(circ)
 
             self.dragLines.append(DGP.DraggableLine(circles, line, tolerance=0.03,
-                                                                    parent=self, 
+                                                                    parent=self,
                                                                     datatype=self.datatype))
             self.addlines = False
 
@@ -4093,7 +4042,7 @@ class ManualIndexFrame(wx.Frame):
             Yplot = "y"
 
         if spottype == "exp":
-            self.sb.SetStatusText(( "%s= %.2f " % (Xplot, x) + " %s= %.2f " % (Yplot, y) +
+            self.sb.SetStatusText(("%s= %.2f " % (Xplot, x) + " %s= %.2f " % (Yplot, y) +
                                     "   Spotindex=%d " % annote[0] +
                                     "   Intensity=%.2f" % annote[1] ), 0)
 
@@ -4693,7 +4642,7 @@ class PlotLimitsBoard(wx.Dialog):
         wx.Dialog.__init__(self, parent, _id, title, size=(400, 250))
 
         self.parent = parent
-        print("self.parent", self.parent)
+        #print("self.parent", self.parent)
 
         self.data_dict = data_dict
 

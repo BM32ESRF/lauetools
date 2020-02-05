@@ -140,33 +140,23 @@ class Plot_RefineFrame(wx.Frame):
     """
     Class to implement a window enabling indexation and strain refinement
     """
-    def __init__(self, parent,
-                        _id,
-                        title,
-                        data_added=None,
-                        datatype="2thetachi",
-                        ImageArray=None,
-                        kf_direction="Z>0",
-                        key_material="Ge",
-                        Params_to_simulPattern=None,  # Grain, Emin, Emax
-                        ResolutionAngstrom=False,
-                        MATR=0.5,
-                        CCDdetectorparameters=None,
-                        IndexationParameters=None,
-                        StorageDict=None,
-                        DataSetObject=None,
-                        **kwds):
+    def __init__(self, parent, _id, title, data_added=None, datatype="2thetachi", ImageArray=None,
+                                                kf_direction="Z>0",
+                                                key_material="Ge",
+                                                Params_to_simulPattern=None,  # Grain, Emin, Emax
+                                                ResolutionAngstrom=False,
+                                                MATR=0.5,
+                                                CCDdetectorparameters=None,
+                                                IndexationParameters=None,
+                                                StorageDict=None,
+                                                DataSetObject=None,
+                                                **kwds):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
         # wxmpl.PlotFrame(self, -1,'fdgf', size =(600, 400),dpi = 96)
 
         self.panel = wx.Panel(self)
         self.parent = parent
-
-        #         if mainframe is not None:
-        #             self.mainframe = mainframe
-        #         else:
-        #             self.mainframe = self.parent.parent.parent
 
         self.IndexationParameters = IndexationParameters
 
@@ -176,13 +166,6 @@ class Plot_RefineFrame(wx.Frame):
         else:
             self.indexationframe = "unknown"
 
-        #         print "Plot_RefineFramemy parent is ", self.parent
-        # print("mainframe of Plot_RefineFrame is ", self.mainframe)
-
-        #         # in dvpt --------------------
-        #         import readmccd as RMCCD
-        #         ImageArray, framedim, fliprot = RMCCD.readCCDimage('/home/micha/LaueTools/Examples/Ge/Ge0001.mccd',
-        #                                                            'MARCCD165', dirname=None)
         # -----image array pixels data ------------------------
         self.ImageArray = ImageArray
         self.data_dict = {}
@@ -203,9 +186,8 @@ class Plot_RefineFrame(wx.Frame):
             #             AllData = self.IndexationParameters['AllDataToIndex']
 
             DataToIndex = self.IndexationParameters["DataToIndex"]
-            print(
-                "\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
-                len(DataToIndex["data_theta"]))
+            print("\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
+                                                                    len(DataToIndex["data_theta"]))
             if self.datatype is "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
                 self.Data_Y = DataToIndex["data_chi"]
@@ -359,9 +341,6 @@ class Plot_RefineFrame(wx.Frame):
 
         colourb_bkg = [242, 241, 240, 255]
         colourb_bkg = np.array(colourb_bkg) / 255.0
-
-        #         print 'colourb_bkg', colourb_bkg
-        #         print 'ugiuhiu', wx.NullColor
 
         self.dpi = 100
         self.figsizex, self.figsizey = 4, 3
@@ -1255,9 +1234,9 @@ class Plot_RefineFrame(wx.Frame):
             dataintensity_exp = self.Data_I
 
         print("Nb of exp. spots", len(twicetheta_exp))
-        print("twicetheta_exp", twicetheta_exp)
-        print("chi_exp", chi_exp)
-        print("theo 2theta", twicetheta)
+        # print("twicetheta_exp", twicetheta_exp)
+        # print("chi_exp", chi_exp)
+        # print("theo 2theta", twicetheta)
         # toc = []
         # for k,val in enumerate(Miller_ind):
         # toc.append([k,val])
@@ -1408,7 +1387,7 @@ class Plot_RefineFrame(wx.Frame):
         linkResidues = []
         # Dataxy = []
 
-        print('self.selectedAbsoluteSpotIndices',self.selectedAbsoluteSpotIndices)
+        print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
         print('refine_indexed_spots', refine_indexed_spots)
 
         # for val in list(refine_indexed_spots.values()):
@@ -1456,9 +1435,7 @@ class Plot_RefineFrame(wx.Frame):
     def BuildDataDictAfterLinks( self, _):  # filter links between spots(after OnAutoLink() )
         """
         open editor to look at spots links and filter them
-
         button Filter Links
-
         """
         if self.linkedspots_link is not None:
 
@@ -1478,7 +1455,7 @@ class Plot_RefineFrame(wx.Frame):
                 mySpotData[ff] = to_put_in_dict[k]
             dia = LSEditor.SpotsEditor(None, -1, "Filter spots links Editor", mySpotData,
                                     func_to_call=self.readdata_fromEditor_after,
-                                    field_name_and_order=self.fields, )
+                                    field_name_and_order=self.fields)
             dia.Show(True)
 
         else:
@@ -1507,16 +1484,14 @@ class Plot_RefineFrame(wx.Frame):
 
         if self.use_forfit1.GetValue():
             if self.linkedspots_link is None:
-                wx.MessageBox(
-                    'There are not existing links between simulated and experimental data for the refinement!! Click on "Auto Links" button ',
-                    "INFO")
+                wx.MessageBox('There are not existing links between simulated and experimental '
+                'data for the refinement!! Click on "Auto Links" button ', "INFO")
                 return
 
             if len(self.linkedspots_link) < 8:
                 wx.MessageBox(
-                    "You have only %d over the 8 links needed between exp. and theo. spots to refine orientation and strain"
-                    % len(self.linkedspots_link),
-                    "INFO")
+                    "You have only %d over the 8 links needed between exp. and theo. spots to "
+                    "refine orientation and strain" % len(self.linkedspots_link), "INFO")
                 return
             self.linkedspots_fit = self.linkedspots_link
             self.linkExpMiller_fit = self.linkExpMiller_link
@@ -1589,7 +1564,7 @@ class Plot_RefineFrame(wx.Frame):
         # print "nb_pairs",nb_pairs
         # print "indices of simulated spots(selection in whole Data_Q list)",sim_indices
         # print "Experimental pixX, pixY",pixX, pixY
-        print("starting_orientmatrix",starting_orientmatrix)
+        print("starting_orientmatrix in OnRefine_UB_and_Strain()",starting_orientmatrix)
 
         if self.use_weights.GetValue():
             weights = self.linkIntensity_fit
