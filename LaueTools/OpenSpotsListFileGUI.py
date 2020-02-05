@@ -1,7 +1,8 @@
 import os
 import sys
-import wx
 import copy
+
+import wx
 
 if sys.version_info.major == 3:
     from . import CCDFileParametersGUI as CCDParamGUI
@@ -91,7 +92,7 @@ def OpenCorfile(filename, parent):
 
     # update  CCDLabel,   framedim (nb pixels * nb pixels)
     parent.CCDLabel = CCDCalibDict['CCDLabel']
-    print('parent.CCDLabel',parent.CCDLabel)
+    print('parent.CCDLabel', parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
     parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][0]
 
@@ -348,5 +349,3 @@ class SetGeneralLaueGeometry(wx.Dialog):
     def OnQuit(self, _):
         self.Close()
 
-
-    

@@ -48,7 +48,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
     Checkboxes allow user selection to plot the patterns (simulation and exp. data)
     """
-    def __init__( self, parent, _id, title, stats_residues, data, DRTA, MATR, key_material="Ge",
+    def __init__(self, parent, _id, title, stats_residues, data, DRTA, MATR, key_material="Ge",
                                                                         emax=25,
                                                                         ResolutionAngstrom=False,
                                                                         kf_direction="Z>0",
@@ -354,7 +354,7 @@ class RecognitionResultCheckBox(wx.Frame):
         print('***********  ----- Calculating LP of child grains -----  *********\n')
         # four sigma 3 operator in listmatsigma
         for k_matsigma, vecteurref in enumerate(listmatsigma):
-            
+
             parent_grain_matrix = self.mat_solution[parent_matrix_index]
             #print('self.mat_solution',parent_grain_matrix)
             element = self.key_material
@@ -384,16 +384,13 @@ class RecognitionResultCheckBox(wx.Frame):
             # print('spots2pi',spots2pi)
             # print('len(spots2pi',len(spots2pi[0][0]))
 
+            # print('PARAMS')
+            # print(self.CCDdetectorparameters)
             # 2theta, chi of spot which are on camera(with harmonics)
-            TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1)
-
-            print('PARAMS')
-            print(self.CCDdetectorparameters)
-
-            TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1, 
+            TwicethetaChi = LT.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
                                             kf_direction=self.kf_direction,
                                             detectordistance=self.CCDdetectorparameters['detectorparameters'][0],
-                                            detectordiameter=self.CCDdetectorparameters['detectordiameter']*1.2,
+                                            detectordiameter=self.CCDdetectorparameters['detectordiameter'],
                                             pixelsize=self.CCDdetectorparameters['pixelsize'],
                                             dim=self.CCDdetectorparameters['framedim'])
 
@@ -434,7 +431,7 @@ class RecognitionResultCheckBox(wx.Frame):
                 plotsigma.SimulParam = (grain, emin, emax)
                 plotsigma.ResolutionAngstrom = self.ResolutionAngstrom
                 plotsigma.Simulate_Pattern()
-                
+
 
                 plotsigma.recognition_possible = True
                 #            plotsigma.plotPanel = wxmpl.PlotPanel(plotsigma, -1, size=(5, 3), autoscaleUnzoom=False)
@@ -447,7 +444,7 @@ class RecognitionResultCheckBox(wx.Frame):
         dict_indexationparameters = copy.copy(self.IndexationParameters)
         dict_indexationparameters["paramsimul"] = paramsimul
         dict_indexationparameters["bestmatrices"] = list_childmatrices
-        
+
         RRCB = RecognitionResultCheckBox(self,
                                             -1,
                                             "Potential Solutions from Sigma3 Simulations",
@@ -467,8 +464,7 @@ class RecognitionResultCheckBox(wx.Frame):
                                             IndexationParameters=dict_indexationparameters,
                                             StorageDict=self.StorageDict,
                                             mainframe="billframerc",  # self.mainframe
-                                            DataSetObject=self.DataSet,
-                                        )
+                                            DataSetObject=self.DataSet)
 
         RRCB.TwicethetaChi_solution = self.TwicethetaChi_solution
 

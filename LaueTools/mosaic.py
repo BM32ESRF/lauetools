@@ -74,28 +74,21 @@ class ImshowFrameNew(wx.Frame):
     r"""
     Class to show 2D array intensity data
     """
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        dataarray,
-        posarray_twomotors=None,
-        datatype="scalar",
-        absolutecornerindices=None,
-        Imageindices=None,
-        nb_row=10,
-        nb_lines=10,
-        boxsize_row=10,
-        boxsize_line=10,
-        stepindex=1,
-        imagename="",
-        mosaic=0,
-        extent=None,
-        xylabels=None,
-        Size=(4, 3),
-        **kwds
-    ):
+    def __init__(self, parent, _id, title, dataarray, posarray_twomotors=None,
+                                                    datatype="scalar",
+                                                    absolutecornerindices=None,
+                                                    Imageindices=None,
+                                                    nb_row=10,
+                                                    nb_lines=10,
+                                                    boxsize_row=10,
+                                                    boxsize_line=10,
+                                                    stepindex=1,
+                                                    imagename="",
+                                                    mosaic=0,
+                                                    extent=None,
+                                                    xylabels=None,
+                                                    Size=(4, 3),
+                                                    **kwds):
         r"""
         plot 2D plot of dataarray
 
@@ -131,9 +124,7 @@ class ImshowFrameNew(wx.Frame):
 
         print("self.data.shape in ImshowFrame", self.data.shape)
         print("self.nb_columns, self.nb_lines", self.nb_columns, self.nb_lines)
-        print(
-            "self.boxsize_row, self.boxsize_line", self.boxsize_row, self.boxsize_line
-        )
+        print("self.boxsize_row, self.boxsize_line", self.boxsize_row, self.boxsize_line)
 
         self.LastLUT = "OrRd"
 
@@ -166,9 +157,7 @@ class ImshowFrameNew(wx.Frame):
         # MenuBar.Append(view_menu, "&View")
 
         help_menu = wx.Menu()
-        AboutMenu = help_menu.Append(
-            wx.ID_ANY, "&About", "More information About this program"
-        )
+        AboutMenu = help_menu.Append(wx.ID_ANY, "&About", "More information About this program")
         self.Bind(wx.EVT_MENU, self.OnAbout, AboutMenu)
         MenuBar.Append(help_menu, "&Help")
 
@@ -219,18 +208,15 @@ class ImshowFrameNew(wx.Frame):
         self.mapsLUT.sort()
 
         luttxt = wx.StaticText(self.panel, -1, "LUT")
-        self.comboLUT = wx.ComboBox(
-            self.panel, -1, self.LastLUT, choices=self.mapsLUT
-        )  # ,
+        self.comboLUT = wx.ComboBox(self.panel, -1, self.LastLUT, choices=self.mapsLUT)  # ,
         # style=wx.CB_READONLY)
 
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
 
         self.scaletype = "Linear"
         scaletxt = wx.StaticText(self, -1, "Scale")
-        self.comboscale = wx.ComboBox(
-            self, -1, self.scaletype, choices=["Linear", "Log"], size=(-1, 40)
-        )
+        self.comboscale = wx.ComboBox(self, -1, self.scaletype,
+                                                        choices=["Linear", "Log"], size=(-1, 40))
 
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
@@ -252,16 +238,16 @@ class ImshowFrameNew(wx.Frame):
         self.vbox.Fit(self)
         self.Layout()
 
-    def OnAbout(self, event):
+    def OnAbout(self, _):
         pass
 
-    def OnChangeLUT(self, event):
+    def OnChangeLUT(self, _):
         print("OnChangeLUT")
         self.myplot.set_cmap(self.comboLUT.GetValue())
 
         self.canvas.draw()
 
-    def OnSliderMin(self, evt):
+    def OnSliderMin(self, _):
 
         self.IminDisplayed = int(self.slider_min.GetValue())
         if self.IminDisplayed > self.ImaxDisplayed:
@@ -270,7 +256,7 @@ class ImshowFrameNew(wx.Frame):
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnSliderMax(self, evt):
+    def OnSliderMax(self, _):
         self.ImaxDisplayed = int(self.slider_max.GetValue())
         if self.ImaxDisplayed < self.IminDisplayed:
             self.slider_max.SetValue(self.IminDisplayed + 1)
@@ -285,7 +271,7 @@ class ImshowFrameNew(wx.Frame):
         self.cNorm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         self.myplot.set_norm(self.cNorm)
 
-    def OnSave(self, event):
+    def OnSave(self, _):
         # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
         #    self.OnSave(event)
         if self.askUserForFilename():
@@ -313,7 +299,7 @@ class ImshowFrameNew(wx.Frame):
 
         return dict(message="Choose a file", defaultDir=self.dirname, wildcard="*.*")
 
-    def OnQuit(self, event):
+    def OnQuit(self, _):
         self.Close(True)
 
     def calc_norm_minmax_values(self):
@@ -361,21 +347,15 @@ class ImshowFrameNew(wx.Frame):
         # clear the axes and replot everything
         self.axes.cla()
         self.axes.set_title(self.title)
-        self.myplot = self.axes.imshow(
-            self.data_to_Display,
-            cmap=GT.ORRD,
-            interpolation="nearest",
-            norm=self.cNorm,
-            #                          extent=self.extent,
-            origin="lower",
-        )
+        self.myplot = self.axes.imshow(self.data_to_Display,
+                                        cmap=GT.ORRD,
+                                        interpolation="nearest",
+                                        norm=self.cNorm,
+                                        #                          extent=self.extent,
+                                        origin="lower")
 
-        self.axes.xaxis.set_major_formatter(
-            FuncFormatter(fromindex_to_pixelpos_x_mosaic)
-        )
-        self.axes.yaxis.set_major_formatter(
-            FuncFormatter(fromindex_to_pixelpos_y_mosaic)
-        )
+        self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x_mosaic))
+        self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y_mosaic))
 
         self.axes.set_xlabel(self.xylabels[0])
         self.axes.set_ylabel(self.xylabels[1])
@@ -410,19 +390,11 @@ class ImshowFrameNew(wx.Frame):
                 print("x,y,row,col", x, y, row, col)
                 Imageindex = tabindices[row, col]
                 if self.dataarray_info is None:
-                    sentence = "x=%1.4f, y=%1.4f, color=%s, ImageIndex: %d" % (
-                        x,
-                        y,
-                        str(z),
-                        Imageindex,
-                    )
+                    sentence = "x=%1.4f, y=%1.4f, color=%s, ImageIndex: %d" % ( x, y,
+                                                                                str(z), Imageindex)
                 else:
-                    sentence = "x=%1.4f, y=%1.4f, val=%s, ImageIndex: %d" % (
-                        x,
-                        y,
-                        self.dataarray_info[row, col],
-                        Imageindex,
-                    )
+                    sentence = "x=%1.4f, y=%1.4f, val=%s, ImageIndex: %d" % ( x, y,
+                                                        self.dataarray_info[row, col], Imageindex)
                 self.SetStatusText(sentence)
                 return sentence
             else:
@@ -442,32 +414,25 @@ class ImshowFrame_Scalar(wx.Frame):
     used in multigrains.py to plot maps
     """
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        dataarray,
-        posarray_twomotors=None,
-        posmotorname=(None, None),
-        datatype="scalar",
-        maptype=None,
-        absolutecornerindices=None,
-        Imageindices=None,
-        absolute_motorposition_unit="micron",
-        colorbar_label="Fluo counts",
-        nb_row=10,
-        nb_lines=10,
-        boxsize_row=10,
-        boxsize_line=10,
-        stepindex=1,
-        imagename="",
-        mosaic=0,
-        extent=None,
-        xylabels=None,
-        Size=(4, 3),
-        **kwds
-    ):
+    def __init__(self, parent, _id, title, dataarray, posarray_twomotors=None,
+                                                        posmotorname=(None, None),
+                                                        datatype="scalar",
+                                                        maptype=None,
+                                                        absolutecornerindices=None,
+                                                        Imageindices=None,
+                                                        absolute_motorposition_unit="micron",
+                                                        colorbar_label="Fluo counts",
+                                                        nb_row=10,
+                                                        nb_lines=10,
+                                                        boxsize_row=10,
+                                                        boxsize_line=10,
+                                                        stepindex=1,
+                                                        imagename="",
+                                                        mosaic=0,
+                                                        extent=None,
+                                                        xylabels=None,
+                                                        Size=(4, 3),
+                                                        **kwds):
         """
         plot 2D plot of dataarray
 
@@ -544,9 +509,7 @@ class ImshowFrame_Scalar(wx.Frame):
         # MenuBar.Append(view_menu, "&View")
 
         help_menu = wx.Menu()
-        AboutMenu = help_menu.Append(
-            wx.ID_ANY, "&About", "More information About this program"
-        )
+        AboutMenu = help_menu.Append(wx.ID_ANY, "&About", "More information About this program")
         self.Bind(wx.EVT_MENU, self.OnAbout, AboutMenu)
         MenuBar.Append(help_menu, "&Help")
 
@@ -557,7 +520,6 @@ class ImshowFrame_Scalar(wx.Frame):
         self.stbar = self.CreateStatusBar(3)
 
         self.stbar.SetStatusWidths([100, -1, -1])
-        #         print dir(self.stbar)
 
         self.panel = wx.Panel(self)
 
@@ -591,15 +553,13 @@ class ImshowFrame_Scalar(wx.Frame):
             labelslide1, labelslide2 = "Min :", "Max :"
 
         self.slidertxt_min = wx.StaticText(self.panel, -1, labelslide1)
-        self.slider_min = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=self.IminDisplayed,
-            minValue=0,
-            maxValue=100,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_min = wx.Slider(self.panel,
+                                    -1,
+                                    size=(200, 50),
+                                    value=self.IminDisplayed,
+                                    minValue=0,
+                                    maxValue=100,
+                                    style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_min.SetTickFreq(50)
         else:
@@ -607,15 +567,13 @@ class ImshowFrame_Scalar(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
 
         self.slidertxt_max = wx.StaticText(self.panel, -1, labelslide2)
-        self.slider_max = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=self.ImaxDisplayed,
-            minValue=1,
-            maxValue=100,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_max = wx.Slider(self.panel,
+                                        -1,
+                                        size=(200, 50),
+                                        value=self.ImaxDisplayed,
+                                        minValue=1,
+                                        maxValue=100,
+                                        style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_max.SetTickFreq(50)
         else:
@@ -628,18 +586,15 @@ class ImshowFrame_Scalar(wx.Frame):
             self.mapsLUT.sort()
 
             luttxt = wx.StaticText(self.panel, -1, "LUT")
-            self.comboLUT = wx.ComboBox(
-                self.panel, -1, self.LastLUT, size=(-1, 40), choices=self.mapsLUT
-            )  # ,
-            # style=wx.CB_READONLY)
+            self.comboLUT = wx.ComboBox(self.panel, -1, self.LastLUT, size=(-1, 40),
+                                                                        choices=self.mapsLUT) 
 
             self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
 
             self.scaletype = "Linear"
             scaletxt = wx.StaticText(self.panel, -1, "Scale")
-            self.comboscale = wx.ComboBox(
-                self.panel, -1, self.scaletype, choices=["Linear", "Log"], size=(-1, 40)
-            )
+            self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype,
+                                                        choices=["Linear", "Log"], size=(-1, 40))
 
             self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
@@ -686,14 +641,14 @@ class ImshowFrame_Scalar(wx.Frame):
     def OnAbout(self, event):
         pass
 
-    def OnChangeScale(self, evt):
+    def OnChangeScale(self, _):
         self.scaletype = str(self.comboscale.GetValue())
         if self.scaletype == "Log" and self.minvals < 0:
             self.scaletype = "Linear"
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnChangeLUT(self, event):
+    def OnChangeLUT(self, _):
         print("OnChangeLUT")
         strcmap = str(self.comboLUT.GetValue())
         self.cmap = mplcm.get_cmap(strcmap)
@@ -703,7 +658,7 @@ class ImshowFrame_Scalar(wx.Frame):
 
         self.canvas.draw()
 
-    def OnSliderMin(self, evt):
+    def OnSliderMin(self, _):
 
         self.IminDisplayed = int(self.slider_min.GetValue())
         if self.datatype == "symetricscalar":
@@ -715,7 +670,7 @@ class ImshowFrame_Scalar(wx.Frame):
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnSliderMax(self, evt):
+    def OnSliderMax(self, _):
         self.ImaxDisplayed = int(self.slider_max.GetValue())
         if self.datatype == "symetricscalar":
             pass
@@ -731,11 +686,8 @@ class ImshowFrame_Scalar(wx.Frame):
             #             vmin = self.minvals* (1-self.IminDisplayed /100.)
             #             vmax = self.maxvals*(self.ImaxDisplayed/100.)
 
-            vmax = (
-                self.maxvals
-                * (self.ImaxDisplayed / 100.0)
-                * (self.IminDisplayed / 100.0)
-            )
+            vmax = (self.maxvals * (self.ImaxDisplayed / 100.0)
+                * (self.IminDisplayed / 100.0))
             vmin = -vmax
 
         else:
@@ -767,7 +719,7 @@ class ImshowFrame_Scalar(wx.Frame):
 
         self.myplot.set_norm(self.cNorm)
 
-    def OnSave(self, event):
+    def OnSave(self, _):
         # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
         #    self.OnSave(event)
         if self.askUserForFilename():
@@ -796,7 +748,7 @@ class ImshowFrame_Scalar(wx.Frame):
 
         return dict(message="Choose a file", defaultDir=self.dirname, wildcard="*.*")
 
-    def OnQuit(self, event):
+    def OnQuit(self, _):
         self.Close(True)
 
     #     def onMotion_ToolTip(self, event):  # tool tip to show data when mouse hovers on plot
@@ -903,9 +855,7 @@ class ImshowFrame_Scalar(wx.Frame):
     def forceAspect(self, aspect=1.0):
         im = self.axes.get_images()
         extent = im[0].get_extent()
-        self.axes.set_aspect(
-            abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect
-        )
+        self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
 
     def clear_axes_create_imshow(self):
         """
@@ -924,15 +874,13 @@ class ImshowFrame_Scalar(wx.Frame):
         self.cmap.set_under("k", self.minvals)
 
         if self.datatype in ("scalar", "symetricscalar"):
-            self.myplot = self.axes.imshow(
-                self.data_to_Display,
-                cmap=self.cmap,
-                interpolation="nearest",
-                norm=self.cNorm,
-                aspect="equal",
-                #                              extent=self.extent,
-                origin="lower",
-            )
+            self.myplot = self.axes.imshow(self.data_to_Display,
+                                            cmap=self.cmap,
+                                            interpolation="nearest",
+                                            norm=self.cNorm,
+                                            aspect="equal",
+                                            #                              extent=self.extent,
+                                            origin="lower")
             #             self.myplot = self.axes.pcolor(self.data_to_Display,
             #                                            cmap=self.cmap,
             #                                         interpolation='nearest', norm=self.cNorm,
@@ -945,12 +893,10 @@ class ImshowFrame_Scalar(wx.Frame):
         if self.datatype == "RGBvector":
 
             #             print "self.data_to_Display",self.data_to_Display
-            self.myplot = self.axes.imshow(
-                self.data_to_Display,
-                interpolation="nearest",
-                #                          extent=self.extent,
-                origin="lower",
-            )
+            self.myplot = self.axes.imshow(self.data_to_Display,
+                                            interpolation="nearest",
+                                            #                          extent=self.extent,
+                                            origin="lower")
 
         posmotors = self.dataarray_info
 
@@ -962,12 +908,8 @@ class ImshowFrame_Scalar(wx.Frame):
             posmotor1 = posmotors[0, :, 0]
             posmotor2 = posmotors[:, 0, 1]
 
-            print(
-                "starting motor1 %f %s" % (initmotor1, self.absolute_motorposition_unit)
-            )
-            print(
-                "starting motor2 %f %s" % (initmotor2, self.absolute_motorposition_unit)
-            )
+            print("starting motor1 %f %s" % (initmotor1, self.absolute_motorposition_unit))
+            print("starting motor2 %f %s" % (initmotor2, self.absolute_motorposition_unit))
 
             #         print 'posmotor1', posmotor1
             #         print 'posmotor2', posmotor2
@@ -996,14 +938,10 @@ class ImshowFrame_Scalar(wx.Frame):
                 step_y = step_y * step_factor
 
             def fromindex_to_pixelpos_x_mosaic(index, pos):
-                return (
-                    np.fix((step_x * index) * 1000.0) / 1000.0
-                )  # self.center[0]-self.boxsize[0]+index
+                return (np.fix((step_x * index) * 1000.0) / 1000.0)  # self.center[0]-self.boxsize[0]+index
 
             def fromindex_to_pixelpos_y_mosaic(index, pos):
-                return (
-                    np.fix((step_y * index) * 1000.0) / 1000.0
-                )  # self.center[1]-self.boxsize[1]+index
+                return (np.fix((step_y * index) * 1000.0) / 1000.0)  # self.center[1]-self.boxsize[1]+index
 
             #         def fromindex_to_motor1pos(index, pos):
             #             print posmotor1[int(index)]
@@ -1015,12 +953,8 @@ class ImshowFrame_Scalar(wx.Frame):
             # #             return fix((index * (posmotor2[-1] - initmotor2) / (nb2 - 1) + \
             # #                                 initmotor2) * 100000) / 100000
 
-            self.axes.xaxis.set_major_formatter(
-                FuncFormatter(fromindex_to_pixelpos_x_mosaic)
-            )
-            self.axes.yaxis.set_major_formatter(
-                FuncFormatter(fromindex_to_pixelpos_y_mosaic)
-            )
+            self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x_mosaic))
+            self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y_mosaic))
             #
             #         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_motor1pos))
             #         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_motor2pos))
@@ -1041,24 +975,16 @@ class ImshowFrame_Scalar(wx.Frame):
             # fix the ticks distance: either 1 micron or a given length such as 5 ticks are plotted
 
             tickx_micron_sampling = 1.0 / step_x  # 1 micron
-            tickx_sampling_length = max(
-                np.fabs(nb_of_microns_x / 5.0 / step_x), np.fabs(tickx_micron_sampling)
-            )
+            tickx_sampling_length = max(np.fabs(nb_of_microns_x / 5.0 / step_x), np.fabs(tickx_micron_sampling))
             ticky_micron_sampling = 1.0 / step_y
-            ticky_sampling_length = max(
-                np.fabs(nb_of_microns_y / 5.0 / step_y), np.fabs(ticky_micron_sampling)
-            )
+            ticky_sampling_length = max(np.fabs(nb_of_microns_y / 5.0 / step_y), np.fabs(ticky_micron_sampling))
 
             print("ticks every : tickx_sampling_length (micron)", tickx_sampling_length)
             print("ticks every : ticky_sampling_length (micron)", ticky_sampling_length)
 
-            locx = pltticker.MultipleLocator(
-                base=np.fabs(tickx_sampling_length)
-            )  # this locator puts ticks at regular intervals
+            locx = pltticker.MultipleLocator(base=np.fabs(tickx_sampling_length))  # this locator puts ticks at regular intervals
             self.axes.xaxis.set_major_locator(locx)
-            locy = pltticker.MultipleLocator(
-                base=np.fabs(ticky_sampling_length)
-            )  # this locator puts ticks at regular intervals
+            locy = pltticker.MultipleLocator(base=np.fabs(ticky_sampling_length))  # this locator puts ticks at regular intervals
             self.axes.yaxis.set_major_locator(locy)
 
         self.axes.grid(True)
@@ -1073,7 +999,6 @@ class ImshowFrame_Scalar(wx.Frame):
         #         imageindices = self.Imageindices[0] + arange(0, numrows, numcols) * self.stepindex
 
         tabindices = self.Imageindices
-        #         print "tabindices", tabindices
 
         def format_coord(x, y):
             col = int(x + 0.5)
@@ -1092,21 +1017,12 @@ class ImshowFrame_Scalar(wx.Frame):
                             addedvalue = "angle(deg)=%.3f" % angle
                         else:
                             addedvalue = ""
-                        sentence0 = "x=%1.4f, y=%1.4f, value=%s, %s ImageIndex: %d" % (
-                            x,
-                            y,
-                            zvalue,
-                            addedvalue,
-                            Imageindex,
-                        )
+                        sentence0 = "x=%1.4f, y=%1.4f, value=%s, %s ImageIndex: %d" % ( x, y, zvalue,
+                                                                            addedvalue, Imageindex)
                     else:
                         zvalue = str(z)
-                        sentence0 = "x=%1.4f, y=%1.4f, value=%s, ImageIndex: %d" % (
-                            x,
-                            y,
-                            zvalue,
-                            Imageindex,
-                        )
+                        sentence0 = "x=%1.4f, y=%1.4f, value=%s, ImageIndex: %d" % ( x, y, zvalue,
+                                                                                        Imageindex)
                     sentence_corner = ""
                     sentence_center = ""
                     sentence = "No motors positions"
@@ -1114,30 +1030,14 @@ class ImshowFrame_Scalar(wx.Frame):
                     #                     print "col=", col
                     #                     print posmotor1[col]
                     sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % (
-                        self.motor1name,
-                        (posmotor1[col] - posmotor1[0]) * step_factor,
-                        self.motor2name,
-                        (posmotor2[row] - posmotor2[0]) * step_factor,
-                    )
+                        self.motor1name, (posmotor1[col] - posmotor1[0]) * step_factor,
+                        self.motor2name, (posmotor2[row] - posmotor2[0]) * step_factor)
                     sentence_center = "CENTER =[[%s=%.2f,%s=%.2f]]" % (
-                        self.motor1name,
-                        (posmotor1[col] - posmotor1[nbx / 2]) * step_factor,
-                        self.motor2name,
-                        (posmotor2[row] - posmotor2[nby / 2]) * step_factor,
-                    )
-                    sentence0 = (
-                        "j=%d, i=%d, val = %s, ABSOLUTE=[%s=%.5f,%s=%.5f], ImageIndex: %d"
-                        % (
-                            col,
-                            row,
-                            str(z),
-                            self.motor1name,
-                            posmotor1[col],
-                            self.motor2name,
-                            posmotor2[row],
-                            Imageindex,
-                        )
-                    )
+                        self.motor1name, (posmotor1[col] - posmotor1[nbx / 2]) * step_factor,
+                        self.motor2name, (posmotor2[row] - posmotor2[nby / 2]) * step_factor)
+                    sentence0 = ("j=%d, i=%d, val = %s, ABSOLUTE=[%s=%.5f,%s=%.5f], ImageIndex: %d"
+                        % (col, row, str(z), self.motor1name, posmotor1[col],
+                                self.motor2name, posmotor2[row], Imageindex))
                     sentence = "POSITION (micron) from: "
 
                 self.stbar0.SetStatusText(sentence0)
@@ -1165,30 +1065,22 @@ class ImshowFrame(wx.Frame):
     Class to show 2D array scalar data
     """
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        dataarray,
-        absolutecornerindices=None,
-        Size=(4, 3),
-        Imageindices=np.arange(2),
-        nb_row=10,
-        nb_lines=10,
-        boxsize_row=10,  # TODO row actually is column
-        boxsize_line=10,  # TODO line is row
-        stepindex=1,
-        imagename="",
-        mosaic=1,
-        dict_param=None,
-        datatype="Intensity",
-        **kwds
-    ):
-
+    def __init__(self, parent, _id, title, dataarray, absolutecornerindices=None,
+                                                    Size=(4, 3),
+                                                    Imageindices=np.arange(2),
+                                                    nb_row=10,
+                                                    nb_lines=10,
+                                                    boxsize_row=10,  # TODO row actually is column
+                                                    boxsize_line=10,  # TODO line is row
+                                                    stepindex=1,
+                                                    imagename="",
+                                                    mosaic=1,
+                                                    dict_param=None,
+                                                    datatype="Intensity",
+                                                    **kwds):
         """
         datatype = Intensity, PositionX, PositionY, RadialPosition
-        
+
         """
         print("\n\n*****\nCREATING PLOT of 2D Map of Scalar data\n****\n")
         # dat=dat.reshape(((self.nb_row)*2*self.boxsize_row,(self.nb_lines)*2*self.boxsize_line))
@@ -1219,9 +1111,7 @@ class ImshowFrame(wx.Frame):
 
         self.toolbar.Realize()
 
-        self.tooltip = wx.ToolTip(
-            tip="tip with a long %s line and a newline\n" % (" " * 100)
-        )
+        self.tooltip = wx.ToolTip(tip="tip with a long %s line and a newline\n" % (" " * 100))
         self.canvas.SetToolTip(self.tooltip)
         self.tooltip.Enable(False)
         self.tooltip.SetDelay(0)
@@ -1261,9 +1151,7 @@ class ImshowFrame(wx.Frame):
 
         print("self.data.shape in ImshowFrame", self.data.shape)
         print("self.nb_columns, self.nb_lines", self.nb_columns, self.nb_lines)
-        print(
-            "self.boxsize_row, self.boxsize_line", self.boxsize_row, self.boxsize_line
-        )
+        print("self.boxsize_row, self.boxsize_line", self.boxsize_row, self.boxsize_line)
         #         print 'self.Imageindices', self.Imageindices
 
         self.removebackground = False
@@ -1301,15 +1189,13 @@ class ImshowFrame(wx.Frame):
         self.ImaxDisplayed = 100
         #         if self.datatype == 'scalar':
         self.slidertxt_min = wx.StaticText(self.panel, -1, "Min :")
-        self.slider_min = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=self.IminDisplayed,
-            minValue=0,
-            maxValue=99,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_min = wx.Slider(self.panel,
+                                    -1,
+                                    size=(200, 50),
+                                    value=self.IminDisplayed,
+                                    minValue=0,
+                                    maxValue=99,
+                                    style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_min.SetTickFreq(50)
         else:
@@ -1317,27 +1203,23 @@ class ImshowFrame(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
 
         self.slidertxt_max = wx.StaticText(self.panel, -1, "Max :")
-        self.slider_max = wx.Slider(
-            self.panel,
-            -1,
-            size=(200, 50),
-            value=self.ImaxDisplayed,
-            minValue=1,
-            maxValue=100,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_max = wx.Slider(self.panel,
+                                    -1,
+                                    size=(200, 50),
+                                    value=self.ImaxDisplayed,
+                                    minValue=1,
+                                    maxValue=100,
+                                    style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_max.SetTickFreq(50)
         else:
             self.slider_max.SetTickFreq(50, 1)
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMax, self.slider_max)
 
-        self.vmintxtctrl = wx.TextCtrl(
-            self.panel, -1, str(np.amin(self.data)), style=wx.TE_PROCESS_ENTER
-        )
-        self.vmaxtxtctrl = wx.TextCtrl(
-            self.panel, -1, str(np.amax(self.data)), style=wx.TE_PROCESS_ENTER
-        )
+        self.vmintxtctrl = wx.TextCtrl(self.panel, -1, str(np.amin(self.data)),
+                                                                        style=wx.TE_PROCESS_ENTER)
+        self.vmaxtxtctrl = wx.TextCtrl(self.panel, -1, str(np.amax(self.data)),
+                                                                        style=wx.TE_PROCESS_ENTER)
         self.vmintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmin)
         self.vmaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmax)
 
@@ -1346,15 +1228,12 @@ class ImshowFrame(wx.Frame):
         self.mapsLUT.sort()
 
         self.luttxt = wx.StaticText(self.panel, -1, "LUT")
-        self.comboLUT = wx.ComboBox(
-            self.panel,
-            -1,
-            str(self.LastLUT),
-            size=(-1, 40),
-            choices=self.mapsLUT,
-            style=wx.TE_PROCESS_ENTER,
-        )  # ,
-        # style=wx.CB_READONLY)
+        self.comboLUT = wx.ComboBox(self.panel,
+                                    -1,
+                                    str(self.LastLUT),
+                                    size=(-1, 40),
+                                    choices=self.mapsLUT,
+                                    style=wx.TE_PROCESS_ENTER)
 
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
         self.comboLUT.Bind(wx.EVT_TEXT_ENTER, self.OnTypeLUT)
@@ -1365,22 +1244,19 @@ class ImshowFrame(wx.Frame):
         else:
             self.scaletype = "Linear"
         self.scaletxt = wx.StaticText(self.panel, -1, "Scale")
-        self.comboscale = wx.ComboBox(
-            self.panel, -1, self.scaletype, choices=["Linear", "Log"], size=(-1, 40)
-        )
+        self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype, choices=["Linear", "Log"],
+                                                                                    size=(-1, 40))
 
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
         self.aspect = "auto"
         self.aspecttxt = wx.StaticText(self.panel, -1, "Aspect Ratio")
-        self.comboaspect = wx.ComboBox(
-            self.panel,
-            -1,
-            self.aspect,
-            choices=["equal", "auto"],
-            size=(-1, 40),
-            style=wx.TE_PROCESS_ENTER,
-        )
+        self.comboaspect = wx.ComboBox(self.panel,
+                                        -1,
+                                        self.aspect,
+                                        choices=["equal", "auto"],
+                                        size=(-1, 40),
+                                        style=wx.TE_PROCESS_ENTER)
 
         self.comboaspect.Bind(wx.EVT_COMBOBOX, self.OnChangeAspect)
         self.comboaspect.Bind(wx.EVT_TEXT_ENTER, self.OnChangeAspect)
@@ -1397,57 +1273,41 @@ class ImshowFrame(wx.Frame):
             self.centerbtn = wx.Button(self.panel, -1, "Change Center (X,Y) ")
             self.centerbtn.Bind(wx.EVT_BUTTON, self.OnChangeCenter)
 
-            self.Xcenterctrl = wx.TextCtrl(
-                self.panel, -1, "%.1f" % self.dict_param["pixelX_center"]
-            )
-            self.Ycenterctrl = wx.TextCtrl(
-                self.panel, -1, "%.1f" % self.dict_param["pixelY_center"]
-            )
+            self.Xcenterctrl = wx.TextCtrl(self.panel, -1, "%.1f" % self.dict_param["pixelX_center"])
+            self.Ycenterctrl = wx.TextCtrl(self.panel, -1, "%.1f" % self.dict_param["pixelY_center"])
 
         if self.datatype in ("Vector",):
             self.arrowWidthDisplayed = 50
             self.arrowwidth = self.convertArrowWidth(self.arrowWidthDisplayed)
             self.slidertxt_arrowwidth = wx.StaticText(self.panel, -1, "Arrow width :")
-            self.slider_arrowwidth = wx.Slider(
-                self.panel,
-                -1,
-                size=(200, 50),
-                value=self.arrowWidthDisplayed,
-                minValue=1,
-                maxValue=100,
-                style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-            )
+            self.slider_arrowwidth = wx.Slider(self.panel,
+                                                -1,
+                                                size=(200, 50),
+                                                value=self.arrowWidthDisplayed,
+                                                minValue=1,
+                                                maxValue=100,
+                                                style=wx.SL_AUTOTICKS | wx.SL_LABELS)
             if WXPYTHON4:
                 self.slider_arrowwidth.SetTickFreq(50)
             else:
                 self.slider_arrowwidth.SetTickFreq(50, 1)
-            self.Bind(
-                wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                self.OnSliderArrowSize,
-                self.slider_arrowwidth,
-            )
+            self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderArrowSize, self.slider_arrowwidth)
 
             self.arrowScaleDisplayed = 50
             self.arrowscale = self.convertArrowScale(self.arrowScaleDisplayed)
             self.slidertxt_arrowscale = wx.StaticText(self.panel, -1, "Arrow scale :")
-            self.slider_arrowscale = wx.Slider(
-                self.panel,
-                -1,
-                size=(200, 50),
-                value=self.arrowWidthDisplayed,
-                minValue=1,
-                maxValue=100,
-                style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-            )
+            self.slider_arrowscale = wx.Slider(self.panel,
+                                                -1,
+                                                size=(200, 50),
+                                                value=self.arrowWidthDisplayed,
+                                                minValue=1,
+                                                maxValue=100,
+                                                style=wx.SL_AUTOTICKS | wx.SL_LABELS)
             if WXPYTHON4:
                 self.slider_arrowscale.SetTickFreq(50)
             else:
                 self.slider_arrowscale.SetTickFreq(50, 1)
-            self.Bind(
-                wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                self.OnSliderArrowScale,
-                self.slider_arrowscale,
-            )
+            self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderArrowScale, self.slider_arrowscale)
 
             #             self.arrowScaleDisplayedCutOff=50
             #             self.arrowscaleCutOff = self.convertArrowScale(self.arrowScaleDisplayedCutOff)
@@ -1462,12 +1322,8 @@ class ImshowFrame(wx.Frame):
             #             self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderArrowScaleCutOff, self.slider_arrowscaleCutOff)
 
             lengththreshold = 10
-            self.masklongvectortxt = wx.StaticText(
-                self.panel, -1, "Vector Pix. length <"
-            )
-            self.masklongvectorctrl = wx.TextCtrl(
-                self.panel, -1, "%.1f" % lengththreshold
-            )
+            self.masklongvectortxt = wx.StaticText(self.panel, -1, "Vector Pix. length <")
+            self.masklongvectorctrl = wx.TextCtrl(self.panel, -1, "%.1f" % lengththreshold)
 
         if "FilteredfittedPeaksData" in self.dict_param:
             # self.dict_param['FilteredfittedPeaksData']
@@ -1573,18 +1429,12 @@ class ImshowFrame(wx.Frame):
         MenuBar.Append(FileMenu, "&File")
 
         roi_menu = wx.Menu()
-        SaveRoi = roi_menu.Append(
-            1111,
-            "&Capture && Save ROI",
-            "Capture current rectangular image indices ROI and save",
-        )
+        SaveRoi = roi_menu.Append(1111, "&Capture && Save ROI",
+            "Capture current rectangular image indices ROI and save")
         self.Bind(wx.EVT_MENU, self.SaveRectROI, SaveRoi)
 
-        SaveAsRoi = roi_menu.Append(
-            1112,
-            "Capture && &Save ROI As",
-            "Capture current rectangular image indices ROI and save with user defined name",
-        )
+        SaveAsRoi = roi_menu.Append(1112, "Capture && &Save ROI As",
+            "Capture current rectangular image indices ROI and save with user defined name")
         self.Bind(wx.EVT_MENU, self.SaveAsRectROI, SaveAsRoi)
 
         LoadROI = roi_menu.Append(1113, "&Load ROI", "Load ROI from file")
@@ -1595,9 +1445,7 @@ class ImshowFrame(wx.Frame):
         MenuBar.Append(roi_menu, "&ROI")
 
         help_menu = wx.Menu()
-        AboutMenu = help_menu.Append(
-            wx.ID_ANY, "&About", "More information About this program"
-        )
+        AboutMenu = help_menu.Append(wx.ID_ANY, "&About", "More information About this program")
         self.Bind(wx.EVT_MENU, self.OnAbout, AboutMenu)
         MenuBar.Append(help_menu, "&Help")
 
@@ -1630,12 +1478,8 @@ class ImshowFrame(wx.Frame):
 
         info = wx.AboutDialogInfo()
 
-        info.SetIcon(
-            wx.Icon(
-                os.path.join("icons", "transmissionLaue_fcc_111.png"),
-                wx.BITMAP_TYPE_PNG,
-            )
-        )
+        info.SetIcon(wx.Icon(os.path.join("icons", "transmissionLaue_fcc_111.png"),
+                                                                                wx.BITMAP_TYPE_PNG))
         info.SetName("LaueTools")
         info.SetVersion("6.0")
         info.SetDescription(description)
@@ -1652,9 +1496,7 @@ class ImshowFrame(wx.Frame):
 
     def OnSave(self, event):
 
-        dlg = wx.TextEntryDialog(
-            self, "Enter filename for image", "Saving in png format"
-        )
+        dlg = wx.TextEntryDialog(self, "Enter filename for image", "Saving in png format")
 
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetValue())
@@ -1673,11 +1515,9 @@ class ImshowFrame(wx.Frame):
 
         dlg.Destroy()
 
-    def SaveData(self, event):
-        wx.MessageBox(
-            "To be implemented, but data are automatically saved in the same folder than the images one",
-            "INFO",
-        )
+    def SaveData(self, _):
+        wx.MessageBox("To be implemented, but data are automatically saved in the same folder "
+                                                                "than the images one", "INFO")
 
     def askUserForFilename(self, **dialogOptions):
         dialog = wx.FileDialog(self, **dialogOptions)
@@ -1700,7 +1540,7 @@ class ImshowFrame(wx.Frame):
 
         return dict(message="Choose a file", defaultDir=self.dirname, wildcard="*.*")
 
-    def OnQuit(self, event):
+    def OnQuit(self, _):
         self.Close(True)
 
     def _replotWithCurrentLimits(self):
@@ -1710,7 +1550,7 @@ class ImshowFrame(wx.Frame):
         self.OnMaskWeakPeaks()
         self._replot()
 
-    def OnChangeVmin(self, evt):
+    def OnChangeVmin(self, _):
         self.IminDisplayed = float(self.vmintxtctrl.GetValue())
 
         if self.datatype in ("Vector",):
@@ -1719,7 +1559,7 @@ class ImshowFrame(wx.Frame):
             self.normalizeplot(shrinkrange=True)
             self.canvas.draw()
 
-    def OnChangeVmax(self, evt):
+    def OnChangeVmax(self, _):
         self.ImaxDisplayed = float(self.vmaxtxtctrl.GetValue())
         print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
 
@@ -1729,7 +1569,7 @@ class ImshowFrame(wx.Frame):
             self.normalizeplot(shrinkrange=True)
             self.canvas.draw()
 
-    def OnSliderMin(self, evt):
+    def OnSliderMin(self, _):
 
         self.ImaxDisplayed = int(self.slider_min.GetValue())
         if self.IminDisplayed > self.ImaxDisplayed:
@@ -1742,7 +1582,7 @@ class ImshowFrame(wx.Frame):
             self.normalizeplot()
             self.canvas.draw()
 
-    def OnSliderMax(self, evt):
+    def OnSliderMax(self, _):
 
         self.ImaxDisplayed = int(self.slider_max.GetValue())
         print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
@@ -1756,7 +1596,7 @@ class ImshowFrame(wx.Frame):
             self.normalizeplot()
             self.canvas.draw()
 
-    def OnSliderArrowSize(self, evt):
+    def OnSliderArrowSize(self, _):
         self.arrowWidthDisplayed = int(self.slider_arrowwidth.GetValue())
         print("self.arrowWidthDisplayed ", self.arrowWidthDisplayed)
 
@@ -1769,7 +1609,7 @@ class ImshowFrame(wx.Frame):
 
         return (maxi - mini) / 100.0 * percent
 
-    def OnSliderArrowScale(self, evt):
+    def OnSliderArrowScale(self, _):
         self.arrowScaleDisplayed = int(self.slider_arrowscale.GetValue())
         print("self.arrowScaleDisplayed ", self.arrowScaleDisplayed)
 
@@ -1797,31 +1637,31 @@ class ImshowFrame(wx.Frame):
     #         """
     #         return (maxi-mini)/100.*percent
 
-    def OnChangeLUT(self, evt):
+    def OnChangeLUT(self, _):
 
         #         print "OnChangeLUT"
         self.cmap = self.comboLUT.GetValue()
         self.myplot.set_cmap(self.cmap)
         self.canvas.draw()
 
-    def OnTypeLUT(self, evt):
+    def OnTypeLUT(self, _):
 
         print("OnTypeLUT")
         self.cmap = self.comboLUT.GetValue()
         self.myplot.set_cmap(self.cmap)
         self.canvas.draw()
 
-    def OnChangeScale(self, evt):
+    def OnChangeScale(self, _):
         self.scaletype = str(self.comboscale.GetValue())
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnChangeAspect(self, evt):
+    def OnChangeAspect(self, _):
         self.aspect = str(self.comboaspect.GetValue())
         self.axes.set_aspect(self.aspect)
         self.canvas.draw()
 
-    def OnChangeCenter(self, evt, newCenter=None):
+    def OnChangeCenter(self, _, newCenter=None):
 
         self.memorizedxlimits = self.axes.get_xlim()
         self.memorizedylimits = self.axes.get_ylim()
@@ -1831,10 +1671,7 @@ class ImshowFrame(wx.Frame):
             (VectorX, VectorY, OriginVector) = self.dataVectorinit
 
             if newCenter is None:
-                pixelCenter = (
-                    float(self.Xcenterctrl.GetValue()),
-                    float(self.Ycenterctrl.GetValue()),
-                )
+                pixelCenter = (float(self.Xcenterctrl.GetValue()), float(self.Ycenterctrl.GetValue()))
             else:
                 pixelCenter = newCenter
 
@@ -1852,10 +1689,7 @@ class ImshowFrame(wx.Frame):
             (dataX_2D, dataY_2D, pixelCenter) = self.dict_param["dataRadialPosition"]
 
             if newCenter is None:
-                pixelCenter = (
-                    float(self.Xcenterctrl.GetValue()),
-                    float(self.Ycenterctrl.GetValue()),
-                )
+                pixelCenter = (float(self.Xcenterctrl.GetValue()), float(self.Ycenterctrl.GetValue()))
             else:
                 pixelCenter = newCenter
 
@@ -1898,17 +1732,16 @@ class ImshowFrame(wx.Frame):
         self._replot()
 
     def OnMaskWeakPeaks(self):
-        """ mask self.data according self.maskthresholdctrl value (lowest accepted peak amplitude) 
+        """ mask self.data according self.maskthresholdctrl value (lowest accepted peak amplitude)
         + mask longest peak position shift vectors
-        
+
         """
         print("OnMaskWeakPeaks")
         try:
             maskthreshold = float(self.maskthresholdctrl.GetValue())
         except:
             wx.MessageBox("Peak amplitude threshold must be float or integer", "INFO")
-        (
-            peak_X,
+        (peak_X,
             peak_Y,
             peak_I,
             peak_fwaxmaj,
@@ -1966,15 +1799,11 @@ class ImshowFrame(wx.Frame):
         
         return FilteredfittedPeaksData
         """
-        print(
-            "ApplyMask keeping peaks results with amplitude larger than %d"
-            % maskthreshold
-        )
+        print("ApplyMask keeping peaks results with amplitude larger than %d" % maskthreshold)
 
         fittedPeaksData = self.dict_param["FilteredfittedPeaksData"]
 
-        (
-            peak_X,
+        (peak_X,
             peak_Y,
             peak_I,
             peak_fwaxmaj,
@@ -1994,10 +1823,8 @@ class ImshowFrame(wx.Frame):
 
         ToR = set(to_reject0)  # to reject
 
-        print(
-            "After amplitude thres, %d/%d peaks have been rejected"
-            % (len(ToR), len(peak_X))
-        )
+        print("After amplitude thres, %d/%d peaks have been rejected"
+            % (len(ToR), len(peak_X)))
 
         ToTake = set(np.arange(len(peak_X))) - ToR
 
@@ -2018,20 +1845,16 @@ class ImshowFrame(wx.Frame):
         FilterX = np.ma.masked_where(BoolToMask, FilterX0)
 
         # all peaks list building
-        fittedPeaksData = np.ma.array(
-            [
-                peak_X,
-                peak_Y,
-                peak_I,
-                peak_fwaxmaj,
-                peak_fwaxmin,
-                peak_inclination,
-                Xdev,
-                Ydev,
-                peak_bkg,
-                FilterX,
-            ]
-        ).T
+        fittedPeaksData = np.ma.array([peak_X,
+                                        peak_Y,
+                                        peak_I,
+                                        peak_fwaxmaj,
+                                        peak_fwaxmin,
+                                        peak_inclination,
+                                        Xdev,
+                                        Ydev,
+                                        peak_bkg,
+                                        FilterX]).T
 
         FilteredfittedPeaksData = np.ma.mask_rowcols(fittedPeaksData, axis=0)
 
@@ -2126,28 +1949,20 @@ class ImshowFrame(wx.Frame):
 
             #             print "X.shape",X.shape
             #             print "X",X
-            self.myplot = self.axes.quiver(
-                X,
-                Y,
-                V,
-                U,
-                M,
+            self.myplot = self.axes.quiver(X, Y, V, U, M,
                 width=self.arrowwidth,
                 scale=self.arrowscale,
                 pivot="mid",
-                edgecolors=("k"),
-            )
+                edgecolors=("k"))
             self.axes.plot(X, Y, "k.", markersize=2)
             if self.memorizedxlimits is None:
                 self.axes.axis([-1, n1, -1, n0])
         else:  # 2D imshow scalar plot
 
-            self.myplot = self.axes.imshow(
-                self.data,
-                cmap=self.LastLUT,
-                interpolation="nearest",
-                origin=self.originYaxis,
-            )
+            self.myplot = self.axes.imshow(self.data,
+                                            cmap=self.LastLUT,
+                                            interpolation="nearest",
+                                            origin=self.originYaxis)
             self.colorbar = self.fig.colorbar(self.myplot)
         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x))
         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y))
@@ -2224,9 +2039,8 @@ class ImshowFrame(wx.Frame):
         imagefilenameexample = self.dict_param["filename_representative"]
         CCDLabel = self.dict_param["CCDLabel"]
 
-        imagefilename = RMCCD.setfilename(
-            imagefilenameexample, self.currentpointedImageIndex, 4, CCDLabel
-        )
+        imagefilename = RMCCD.setfilename(imagefilenameexample, self.currentpointedImageIndex,
+                                                                                    4, CCDLabel)
 
         fullpathtoimagefile = os.path.join(imagesfolder, imagefilename)
         xyzech, expotime = RMCCD.read_motorsposition_fromheader(fullpathtoimagefile)
@@ -2252,9 +2066,7 @@ class ImshowFrame(wx.Frame):
 
         if key == "escape":
 
-            ret = wx.MessageBox(
-                "Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self
-            )
+            ret = wx.MessageBox("Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self)
 
             if ret == wx.YES:
                 self.Close()
@@ -2269,42 +2081,23 @@ class ImshowFrame(wx.Frame):
             posmotor1, posmotor2 = xyzech[:2]
             motor1name, motor2name = "xech", "yech"
 
-            print(
-                "SPEC COMMAND:\nmv %s %.6f %s %.6f"
-                % (motor1name, posmotor1, motor2name, posmotor2)
-            )
+            print("SPEC COMMAND:\nmv %s %.6f %s %.6f" % (motor1name, posmotor1, motor2name, posmotor2))
 
             sentence = (
                 "%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
-                % (
-                    motor1name,
-                    posmotor1,
-                    motor2name,
-                    posmotor2,
-                    motor1name,
-                    posmotor1,
-                    motor2name,
-                    posmotor2,
-                )
-            )
+                % (motor1name, posmotor1, motor2name, posmotor2, motor1name,
+                                            posmotor1, motor2name, posmotor2))
 
-            command = "mv %s %.5f %s %.5f" % (
-                motor1name,
-                posmotor1,
-                motor2name,
-                posmotor2,
-            )
+            command = "mv %s %.5f %s %.5f" % (motor1name, posmotor1, motor2name, posmotor2)
 
             #                     wx.MessageBox(sentence, 'INFO')
 
-            msgdialog = PMSG.MessageCommand(
-                self,
-                -1,
-                "motors command",
-                sentence=sentence,
-                speccommand=command,
-                specconnection=None,
-            )
+            msgdialog = PMSG.MessageCommand(self,
+                                            -1,
+                                            "motors command",
+                                            sentence=sentence,
+                                            speccommand=command,
+                                            specconnection=None)
             msgdialog.ShowModal()
 
             return
@@ -2321,30 +2114,18 @@ class ImshowFrame(wx.Frame):
             #         print "self.tabindices", self.tabindices
             if col >= 0 and col < numcols and row >= 0 and row < numrows:
 
-                absoluteImageIndex = self.getImageIndexfromxy(
-                    self.centerx, self.centery
-                )
+                absoluteImageIndex = self.getImageIndexfromxy(self.centerx, self.centery)
 
                 if self.datatype in ("RadialPosition", "Vector"):
                     if self.datatype in ("Vector",):
-                        print(
-                            "Changing center of radial distance to ...",
-                            self.centerx,
-                            self.centery,
-                        )
+                        print("Changing center of radial distance to ...", self.centerx, self.centery)
                         VectorX, VectorY, OriginVector = self.dict_param["dataVector"]
                         centerx = VectorX[row, col] + OriginVector[0]
                         centery = VectorY[row, col] + OriginVector[1]
 
                     elif self.datatype in ("RadialPosition",):
-                        print(
-                            "Changing center of radial distance to ...",
-                            self.centerx,
-                            self.centery,
-                        )
-                        (dataX_2D, dataY_2D, pixelCenter) = self.dict_param[
-                            "dataRadialPosition"
-                        ]
+                        print("Changing center of radial distance to ...", self.centerx, self.centery)
+                        (dataX_2D, dataY_2D, pixelCenter) = self.dict_param["dataRadialPosition"]
                         print("row,col", row, col)
                         centerx = dataX_2D[row, col]
                         centery = dataY_2D[row, col]
@@ -2352,21 +2133,15 @@ class ImshowFrame(wx.Frame):
                     if not isinstance(centerx, (int, float)):
                         return
 
-                    ret = wx.MessageBox(
-                        "Set new center to fitted position of image %d\n(%.2f,%.2f)"
+                    ret = wx.MessageBox("Set new center to fitted position of image %d\n(%.2f,%.2f)"
                         % (absoluteImageIndex, centerx, centery),
-                        "Radial Distance Map Centering",
-                        wx.YES_NO | wx.NO_DEFAULT,
-                        self,
-                    )
+                        "Radial Distance Map Centering", wx.YES_NO | wx.NO_DEFAULT, self)
 
                     if ret == wx.YES:
                         print("OK Centering")
                         self.OnChangeCenter(1, (centerx, centery))
                 else:
-                    print(
-                        "Changing center of Y data  according to value of clicked image"
-                    )
+                    print("Changing center of Y data  according to value of clicked image")
 
                     print("row,col", row, col)
                     neworigin = self.dataraw[row, col]
@@ -2377,10 +2152,7 @@ class ImshowFrame(wx.Frame):
                     ret = wx.MessageBox(
                         "Set new center of Y data with origin = Y value of image %d\n%.2f"
                         % (absoluteImageIndex, neworigin),
-                        "Change of Y value Origin",
-                        wx.YES_NO | wx.NO_DEFAULT,
-                        self,
-                    )
+                        "Change of Y value Origin", wx.YES_NO | wx.NO_DEFAULT, self)
 
                     if ret == wx.YES:
                         print("OK Centering")
@@ -2423,9 +2195,7 @@ class ImshowFrame(wx.Frame):
             if not WXPYTHON4:
                 dc.BeginDrawing()
 
-            x, y, left, right, bottom, top = [
-                int(val) for val in (x, y, left, right, bottom, top)
-            ]
+            x, y, left, right, bottom, top = [int(val) for val in (x, y, left, right, bottom, top)]
 
             self.erase_cursor()
             line1 = (x, bottom, x, top)
@@ -2469,15 +2239,9 @@ class ImshowFrame(wx.Frame):
 
     def getImageIndexfromxy(self, x, y):
         """  return absolute image index from x,y coordinates of a mosaic plot
-        
         """
-
-        #         print 'self.Imageindices',self.Imageindices
-
         indi = int(y / (2 * self.boxsize_line + 1))
         indj = int(x / (2 * self.boxsize_row + 1))
-
-        #         print "indi,indj",indi,indj
 
         nlines, ncols = self.tabindices.shape
 
@@ -2496,20 +2260,13 @@ class ImshowFrame(wx.Frame):
         #         print 'relativeindex',relativeImageindex
         absoluteImageIndex = self.Imageindices[relativeImageindex]
 
-        #         print "absoluteImageIndex",absoluteImageIndex
         return absoluteImageIndex
 
     def getImageIndexfromxy_scalarplot(self, x, y):
         """  return absolute image index from x,y coordinates of a scalar plot
-        
         """
-
-        #         print 'self.Imageindices',self.Imageindices
-
         indi = int(y)
         indj = int(x)
-
-        #         print "indi,indj",indi,indj
 
         nlines, ncols = self.tabindices.shape
 
@@ -2534,7 +2291,6 @@ class ImshowFrame(wx.Frame):
     def format_coord(self, x, y):
         """
         ImshowFrame
-        
         """
         col = int(x + 0.5)
         row = int(y + 0.5)
@@ -2565,30 +2321,16 @@ class ImshowFrame(wx.Frame):
                     jmin, imin = self.absolutecornerindices
                     #                     xpixel, ypixel = (jmin + x % (2 * self.boxsize_row + 1),
                     #                                       imin + y % (2 * self.boxsize_line + 1))
-                    xpixel, ypixel = (
-                        jmin + x % (2 * self.boxsize_row + 1),
-                        imin + 2 * self.boxsize_line - y % (2 * self.boxsize_line + 1),
-                    )
+                    xpixel, ypixel = (jmin + x % (2 * self.boxsize_row + 1),
+                        imin + 2 * self.boxsize_line - y % (2 * self.boxsize_line + 1))
                     return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % (
-                        xpixel,
-                        ypixel,
-                        logz,
-                        z,
-                        self.currentpointedImageIndex,
-                    )
+                                        xpixel, ypixel, logz, z, self.currentpointedImageIndex)
                 else:
-                    return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % (
-                        x,
-                        y,
-                        logz,
-                        z,
-                        self.currentpointedImageIndex,
-                    )
+                    return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % ( x, y,
+                                                        logz, z, self.currentpointedImageIndex)
             else:
                 #                 self.currentpointedImageIndex=self.getImageIndexfromxy(x,y)
-                self.currentpointedImageIndex = self.getImageIndexfromxy_scalarplot(
-                    x, y
-                )
+                self.currentpointedImageIndex = self.getImageIndexfromxy_scalarplot(x, y)
 
                 if self.datatype == "Vector":
                     DxArray, DyArray, OriginV = self.dict_param["dataVector"]
@@ -2596,35 +2338,20 @@ class ImshowFrame(wx.Frame):
                     Dy = DyArray[row, col]
                     Dnorm = np.hypot(Dx, Dy)
 
-                    return (
-                        "x=%1.4f, y=%1.4f, Dx=%.2f Dy=%.2f,\nDnorm %.2f, ImageIndex: %d"
-                        % (x, y, Dx, Dy, Dnorm, self.currentpointedImageIndex)
-                    )
+                    return ("x=%1.4f, y=%1.4f, Dx=%.2f Dy=%.2f,\nDnorm %.2f, ImageIndex: %d"
+                        % (x, y, Dx, Dy, Dnorm, self.currentpointedImageIndex))
                 elif self.datatype == "ReciprocalMap":
                     z = self.data[row, col]
                     qx, qz, qn, E = self.dict_param["QxyznE"][row, col]
-                    sentence = "x=%1.4f, y=%1.4f, I=%5.1f, ImageIndex: %d" % (
-                        x,
-                        y,
-                        z,
-                        self.currentpointedImageIndex,
-                    )
-                    sentence += "\n qx=%1.4f, qz=%1.4f, qn=%.5f, Energy: %.4f" % (
-                        qx,
-                        qz,
-                        qn,
-                        E,
-                    )
+                    sentence = "x=%1.4f, y=%1.4f, I=%5.1f, ImageIndex: %d" % (x, y, z,
+                                                                    self.currentpointedImageIndex)
+                    sentence += "\n qx=%1.4f, qz=%1.4f, qn=%.5f, Energy: %.4f" % (qx, qz, qn, E)
                     return sentence
 
                 else:
                     z = self.data[row, col]
-                    return "x=%1.4f, y=%1.4f, I=%5.5f, ImageIndex: %d" % (
-                        x,
-                        y,
-                        z,
-                        self.currentpointedImageIndex,
-                    )
+                    return "x=%1.4f, y=%1.4f, I=%5.5f, ImageIndex: %d" % (x, y, z,
+                                                                    self.currentpointedImageIndex)
 
         else:
             return "x=%1.4f, y=%1.4f" % (x, y)
@@ -2661,10 +2388,7 @@ class ImshowFrame(wx.Frame):
         val_ROI = ROI_extent_values
         imageindexcenter = ROI_extent_values[0]
 
-        helptstr = (
-            "Enter ROI name for rectangle centered on image index = %d"
-            % imageindexcenter
-        )
+        helptstr = ("Enter ROI name for rectangle centered on image index = %d" % imageindexcenter)
 
         dlg = wx.TextEntryDialog(self, helptstr, "User sample map ROI name Entry")
 
@@ -2715,10 +2439,7 @@ class ImshowFrame(wx.Frame):
 
         print("self.axes.get_ylim()", ylimits)
 
-        xcenterROI, ycenterROI = (
-            0.5 * (xlimits[0] + xlimits[1]),
-            0.5 * (ylimits[0] + ylimits[1]),
-        )
+        xcenterROI, ycenterROI = (0.5 * (xlimits[0] + xlimits[1]), 0.5 * (ylimits[0] + ylimits[1]))
         halfxwidth = 0.5 * (xlimits[1] - xlimits[0])
         halfywidth = 0.5 * (ylimits[1] - ylimits[0])
 
@@ -2765,19 +2486,11 @@ class DrawFrame(wx.Frame):
     """
     A frame
     """
-
-    def __init__(
-        self,
-        parent,
-        imagename="defaultName",
-        ImageTIFF=None,
-        nb_row=10,
-        nb_lines=10,
-        boxsize_row=10,
-        boxsize_line=10,
-        tabindices=np.arange(2),
-        meanvalues=0,
-    ):
+    def __init__(self, parent, imagename="defaultName", ImageTIFF=None, nb_row=10, nb_lines=10,
+                                                                        boxsize_row=10,
+                                                                        boxsize_line=10,
+                                                                        tabindices=np.arange(2),
+                                                                        meanvalues=0):
         wx.Frame.__init__(self, parent, -1, title="trucmuche", size=(600, 800))
 
         self.ImageTIFF = ImageTIFF
@@ -2791,12 +2504,7 @@ class DrawFrame(wx.Frame):
         # dat=dat.reshape(((self.nb_row)*2*self.boxsize_row,(self.nb_lines)*2*self.boxsize_line))
         # print "fhdgukh",self.ImageTIFF
         dat = np.array(self.ImageTIFF.getdata())
-        dat = dat.reshape(
-            (
-                ((self.nb_lines) * 2 * self.boxsize_line),
-                (self.nb_row) * 2 * self.boxsize_row,
-            )
-        )
+        dat = dat.reshape((((self.nb_lines) * 2 * self.boxsize_line), (self.nb_row) * 2 * self.boxsize_row))
 
         print("meanvalues in Drawframe", meanvalues)
         print((meanvalues == 1))
@@ -2808,22 +2516,20 @@ class DrawFrame(wx.Frame):
             print("meanvaluestab", meanvaluestab)
             print("shape(meanvaluestab)", np.shape(meanvaluestab))
 
-            plapla = ImshowFrame(
-                self,
-                -1,
-                "MOSAIC image Plot",
-                meanvaluestab,
-                cmap=GT.ORRD,
-                interpolation="nearest",
-                origin="upper",
-                Imageindices=self.tabindices,
-                nb_row=nb_row,
-                nb_lines=nb_lines,
-                boxsize_row=1,
-                boxsize_line=1,
-                imagename=imagename,
-                mosaic=0,
-            )
+            plapla = ImshowFrame(self,
+                                    -1,
+                                    "MOSAIC image Plot",
+                                    meanvaluestab,
+                                    cmap=GT.ORRD,
+                                    interpolation="nearest",
+                                    origin="upper",
+                                    Imageindices=self.tabindices,
+                                    nb_row=nb_row,
+                                    nb_lines=nb_lines,
+                                    boxsize_row=1,
+                                    boxsize_line=1,
+                                    imagename=imagename,
+                                    mosaic=0)
 
             plapla.dirname = self.dirname
 
@@ -2835,22 +2541,20 @@ class DrawFrame(wx.Frame):
 
             print("shape dat", np.shape(dat))
             # numrows, numcols = self.data.shape
-            ploplo = ImshowFrame(
-                self,
-                -1,
-                "MOSAIC image Plot",
-                np.log(dat),
-                cmap=GT.ORRD,
-                interpolation="nearest",
-                origin="upper",
-                Imageindices=self.tabindices,
-                nb_row=nb_row,
-                nb_lines=nb_lines,
-                boxsize_row=boxsize_row,
-                boxsize_line=boxsize_line,
-                imagename=imagename,
-                mosaic=1,
-            )
+            ploplo = ImshowFrame(self,
+                                    -1,
+                                    "MOSAIC image Plot",
+                                    np.log(dat),
+                                    cmap=GT.ORRD,
+                                    interpolation="nearest",
+                                    origin="upper",
+                                    Imageindices=self.tabindices,
+                                    nb_row=nb_row,
+                                    nb_lines=nb_lines,
+                                    boxsize_row=boxsize_row,
+                                    boxsize_line=boxsize_line,
+                                    imagename=imagename,
+                                    mosaic=1)
 
             ploplo.dirname = self.dirname
 
@@ -2867,7 +2571,7 @@ class MyCustomToolbar(NavigationToolbar):
     def __init__(self, canvas, parentframe):
         """
         parentframe must have the attribute : originYaxis  (lower or upper)
-        
+
         """
         # create the default toolbar
         NavigationToolbar.__init__(self, canvas)
@@ -2887,8 +2591,7 @@ class MyCustomToolbar(NavigationToolbar):
         #         wx.EVT_TOOL(self, self.ON_CUSTOM_RIGHT, self._on_custom_pan_right)
 
         image = wx.Bitmap(
-            os.path.join(DictLT.LAUETOOLSFOLDER, "icons", "transmissionLauesmall.png")
-        )
+            os.path.join(DictLT.LAUETOOLSFOLDER, "icons", "transmissionLauesmall.png"))
         image.SetSize((30, 30))
         #         self.SetToolBitmapSize((30,30))
         if WXPYTHON4:
@@ -2898,13 +2601,9 @@ class MyCustomToolbar(NavigationToolbar):
             self.Bind(wx.EVT_TOOL, self.onYaxisUpper, id=7777)
             self.Bind(wx.EVT_TOOL, self.onYaxisLower, id=7778)
         else:
-            self.AddSimpleTool(
-                self.ON_YAXIS_UPPER, image, "Y axis origin upper", "Y axis origin upper"
-            )
+            self.AddSimpleTool(self.ON_YAXIS_UPPER, image, "Y axis origin upper", "Y axis origin upper")
 
-            self.AddSimpleTool(
-                self.ON_YAXIS_LOWER, image, "Y axis origin lower", "Y axis origin lower"
-            )
+            self.AddSimpleTool(self.ON_YAXIS_LOWER, image, "Y axis origin lower", "Y axis origin lower")
             self.Bind(wx.EVT_TOOL, self.onYaxisUpper, id=self.ON_YAXIS_UPPER)
             self.Bind(wx.EVT_TOOL, self.onYaxisLower, id=self.ON_YAXIS_LOWER)
 
@@ -2959,12 +2658,8 @@ def rebin(a, *args):
     shape = a.shape
     lenShape = len(shape)
     factor = np.asarray(shape) / np.asarray(args)
-    evList = (
-        ["a.reshape("]
-        + ["args[%d],factor[%d]," % (i, i) for i in range(lenShape)]
-        + [")"]
-        + [".mean(%d)" % (i + 1) for i in range(lenShape)]
-    )
+    evList = (["a.reshape("] + ["args[%d],factor[%d]," % (i, i) for i in range(lenShape)]
+        + [")"] + [".mean(%d)" % (i + 1) for i in range(lenShape)])
     print("".join(evList))
     return eval("".join(evList))
 
@@ -2973,8 +2668,8 @@ def stringint(k, n):
     """ returns string of k by placing zeros before to have n characters
     ex: 1 -> '0001'
     15 -> '0015'
-    
-    
+
+
     TODO to be replace by 0 padding format:  %04d for instance
     """
     strint = str(k)
@@ -2991,14 +2686,12 @@ def myformattime():
     """
     tt = time.localtime()
 
-    return "date_%04d%02d%02d_%02d%02d%02d" % (
-        tt.tm_year,
-        tt.tm_mon,
-        tt.tm_mday,
-        tt.tm_hour,
-        tt.tm_min,
-        tt.tm_sec,
-    )
+    return "date_%04d%02d%02d_%02d%02d%02d" % (tt.tm_year,
+                                                tt.tm_mon,
+                                                tt.tm_mday,
+                                                tt.tm_hour,
+                                                tt.tm_min,
+                                                tt.tm_sec)
 
 
 def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=None):
@@ -3020,10 +2713,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
     #     nb_lines, nb_images_per_line = dict_param['nb_lines'], dict_param['nb_images_per_line']
 
     xpic, ypic = dict_param["pixelX_center"], dict_param["pixelY_center"]
-    boxsize_col, boxsize_line = (
-        dict_param["pixelboxsize_X"],
-        dict_param["pixelboxsize_Y"],
-    )
+    boxsize_col, boxsize_line = (dict_param["pixelboxsize_X"], dict_param["pixelboxsize_Y"])
 
     selectedcounters = dict_param["selectedcounters"]
     monitoroffset = dict_param["monitoroffset"]
@@ -3037,10 +2727,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
     #    print "boxsize_col, boxsize_line", halfboxsizes
     selected1Darray_absoluteimageindex = np.ravel(selected2Darray_imageindex)
     tabindices = selected1Darray_absoluteimageindex
-    startind, endind = (
-        selected1Darray_absoluteimageindex[0],
-        selected1Darray_absoluteimageindex[-1],
-    )
+    startind, endind = (selected1Darray_absoluteimageindex[0], selected1Darray_absoluteimageindex[-1])
     try:
         #        nb_image = endind - startind + 1
         datashape = selected2Darray_imageindex.shape
@@ -3056,16 +2743,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
         dict_map_imageindex = {}
         print("selected1Darray_absoluteimageindex", selected1Darray_absoluteimageindex)
         if nb_col > 0:
-            for map_imageindex, absolute_imageindex in enumerate(
-                selected1Darray_absoluteimageindex
-            ):
+            for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
 
-                dict_map_imageindex[map_imageindex] = [
-                    absolute_imageindex,
-                    map_imageindex,
-                    map_imageindex // nb_col,
-                    map_imageindex % nb_col,
-                ]
+                dict_map_imageindex[map_imageindex] = [absolute_imageindex,
+                                                        map_imageindex,
+                                                        map_imageindex // nb_col,
+                                                        map_imageindex % nb_col]
         else:
             print("!***!****!****!")
             print("something wrong")
@@ -3086,16 +2769,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
         monitor = np.zeros((nb_lines, nb_col))
 
-        for map_imageindex, absolute_imageindex in enumerate(
-            selected1Darray_absoluteimageindex
-        ):
+        for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
             imageindex = absolute_imageindex
-            filename = RMCCD.setfilename(
-                filename_representative,
-                imageindex,
-                CCDLabel=ccdlabel,
-                nbdigits=nbdigits,
-            )
+            filename = RMCCD.setfilename(filename_representative,
+                                        imageindex,
+                                        CCDLabel=ccdlabel,
+                                        nbdigits=nbdigits)
 
             filename = os.path.join(dirname, filename)
             print("filename", filename)
@@ -3112,49 +2791,41 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 if not filename.endswith("tif.gz"):
 
-                    indicesborders = RMCCD.getindices2cropArray(
-                        (center_pixel[0], center_pixel[1]),
-                        (halfboxsizes[0], halfboxsizes[1]),
-                        framedimraw,
-                        flipxycenter=0,
-                    )
+                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                                (halfboxsizes[0], halfboxsizes[1]),
+                                                                framedimraw,
+                                                                flipxycenter=0)
                     imin, imax, jmin, jmax = indicesborders
 
                     print("indicesborders", indicesborders)
 
                     # avoid to wrong indices when slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(
-                        imin, imax + 1, jmin, jmax + 1, framedim=framedimraw
-                    )
+                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                framedim=framedimraw)
 
                     print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
                     # new fast way to read specific area in file directly
-                    datacrop = RMCCD.readrectangle_in_image(
-                        filename,
-                        xpic,
-                        ypic,
-                        halfboxsizes[0],
-                        halfboxsizes[1],
-                        dirname=None,
-                        CCDLabel=ccdlabel,
-                    )
+                    datacrop = RMCCD.readrectangle_in_image(filename,
+                                                            xpic,
+                                                            ypic,
+                                                            halfboxsizes[0],
+                                                            halfboxsizes[1],
+                                                            dirname=None,
+                                                            CCDLabel=ccdlabel)
                 else:
 
                     framedim = framedimraw
-                    indicesborders = RMCCD.getindices2cropArray(
-                        (center_pixel[0], center_pixel[1]),
-                        (halfboxsizes[0], halfboxsizes[1]),
-                        framedimraw,
-                        flipxycenter=0,
-                    )
+                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                                (halfboxsizes[0], halfboxsizes[1]),
+                                                                framedimraw,
+                                                                flipxycenter=0)
                     imin, imax, jmin, jmax = indicesborders
 
                     print("indicesborders", indicesborders)
 
                     # avoid to wrong indices when slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(
-                        imin, imax + 1, jmin, jmax + 1, framedim=framedimraw
-                    )
+                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                framedim=framedimraw)
 
                     print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
 
@@ -3171,10 +2842,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                         pedestal = 1000.0
                         dictMonitor = RMCCD.read_header_scmos(filename)
                         print("dictMonitor.keys()", list(dictMonitor.keys()))
-                        monitor_val = (
-                            dictMonitor["mon"]
-                            - monitoroffset * dictMonitor["exposure"] / 1000.0
-                        )
+                        monitor_val = dictMonitor["mon"] - monitoroffset * dictMonitor["exposure"] / 1000.0
                     if ccdlabel in ("MARCCD165",):
                         pedestal = 10.0
                         monitor_val = 1.0
@@ -3193,18 +2861,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 continue
 
             if imageindex % 10 == 1:
-                print(
-                    filename,
-                    "up to",
-                    RMCCD.setfilename(filename, endind, CCDLabel=ccdlabel),
-                )
+                print(filename, "up to", RMCCD.setfilename(filename, endind, CCDLabel=ccdlabel))
 
             kx, ky = dict_map_imageindex[map_imageindex][2:]
 
-            print("dict_map_imageindex", dict_map_imageindex)
-            print(
-                "kx, ky, map_imageindex, imageindex", kx, ky, map_imageindex, imageindex
-            )
+            # print("dict_map_imageindex", dict_map_imageindex)
+            # print("kx, ky, map_imageindex, imageindex", kx, ky, map_imageindex, imageindex)
 
             #             mosaic[kx, ky] = datcrop.T
             mosaic[kx, ky] = np.flipud(datcrop).T
@@ -3229,9 +2891,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 elif counter == "max":
                     dat = np.amax(np.amax(mosaic, axis=2), axis=2)
                 elif counter == "ptp":
-                    dat = np.amax(np.amax(mosaic, axis=2), axis=2) - np.amin(
-                        np.amin(mosaic, axis=2), axis=2
-                    )
+                    dat = np.amax(np.amax(mosaic, axis=2), axis=2) - np.amin(np.amin(mosaic, axis=2), axis=2)
 
                 #                 print "rawdat",rawdat
                 #                 print "rawdat.shape", rawdat.shape
@@ -3244,24 +2904,22 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 if plot:
 
-                    plapla = ImshowFrame(
-                        parent,
-                        -1,
-                        "image Plot %s" % counter,
-                        dat,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=1,
-                        boxsize_line=1,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                    )
+                    plapla = ImshowFrame(parent,
+                                        -1,
+                                        "image Plot %s" % counter,
+                                        dat,
+                                        cmap=GT.ORRD,
+                                        interpolation="nearest",
+                                        origin="upper",
+                                        Imageindices=tabindices,
+                                        nb_row=nb_col,
+                                        nb_lines=nb_lines,
+                                        stepindex=1,
+                                        boxsize_row=1,
+                                        boxsize_line=1,
+                                        imagename=title,
+                                        mosaic=0,
+                                        dict_param=dict_param)
 
                     #            plapla.dirname = self.dirname
 
@@ -3275,10 +2933,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 # Instens monitors selection
                 Intens = np.ravel(dat)
-
-                #                print "XY", Intens
-                #                print "lenXY", len(Intens)
-
                 Intens = Intens[:nbimages]
 
                 tabindices1D = tabindices[:nbimages]
@@ -3293,14 +2947,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 if plot:
 
-                    plotI = PLOT1D.Plot1DFrame(
-                        parent,
-                        -1,
-                        counter + " Intensity",
-                        title + " Intensity",
-                        XYdat,
-                        logscale=0,
-                    )
+                    plotI = PLOT1D.Plot1DFrame(parent,
+                                                -1,
+                                                counter + " Intensity",
+                                                title + " Intensity",
+                                                XYdat,
+                                                logscale=0)
                     plotI.Show(True)
 
                     parent.list_of_windows.append(plotI)
@@ -3314,60 +2966,43 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 #            print "shape dat", shape(dat)
 
-                dat = dat.reshape(
-                    (nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1))
-                )
-
-                #            print "shape dat", shape(dat)
-                # numrows, numcols = self.data.shape
+                dat = dat.reshape((nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1)))
 
                 CountersData[counter + "2D"] = dat
 
                 if plot:
-                    ploplo = ImshowFrame(
-                        parent,
-                        -1,
-                        "MOSAIC image Plot",
-                        dat,
-                        absolutecornerindices=(jmin, imin),
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        boxsize_row=boxsize_col,
-                        stepindex=1,
-                        #                                boxsize_row=boxsize_col,
-                        boxsize_line=boxsize_line,
-                        imagename=title,
-                        mosaic=1,
-                        dict_param=dict_param,
-                    )
+                    ploplo = ImshowFrame(parent,
+                                        -1,
+                                        "MOSAIC image Plot",
+                                        dat,
+                                        absolutecornerindices=(jmin, imin),
+                                        cmap=GT.ORRD,
+                                        interpolation="nearest",
+                                        origin="upper",
+                                        Imageindices=tabindices,
+                                        nb_row=nb_col,
+                                        nb_lines=nb_lines,
+                                        boxsize_row=boxsize_col,
+                                        stepindex=1,
+                                        #                                boxsize_row=boxsize_col,
+                                        boxsize_line=boxsize_line,
+                                        imagename=title,
+                                        mosaic=1,
+                                        dict_param=dict_param)
 
                     #            ploplo.dirname = self.dirname
 
                     ploplo.Show()
 
-                    outfilename = os.path.join(
-                        outputfolder, "%s" % ("MOSAIC_image_Plot")
-                    )
+                    outfilename = os.path.join(outputfolder, "%s" % ("MOSAIC_image_Plot"))
 
                     np.savetxt(outfilename + "_%s" % myformattime(), dat)
 
                     parent.list_of_windows.append(ploplo)
 
-            elif counter in (
-                "Position XY",
-                "Position MAX",
-                "Position Centroid",
-                "Displacement",
-                "Amplitude",
-                "Shape",
-            ):
-                print(
-                    "\n\n\n ***************************  Position XY****************\n\n\n"
-                )
+            elif counter in ("Position XY", "Position MAX", "Position Centroid", "Displacement",
+                                                                            "Amplitude", "Shape"):
+                print("\n\n\n ***************************  Position XY****************\n\n\n")
                 n0, n1, n2, n3 = mosaic.shape
 
                 print("dat.shape", mosaic.shape)
@@ -3377,29 +3012,22 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 #                print 'label', label
 
-                datminimum = scind.measurements.maximum(
-                    mosaic, label, np.arange(n0 * n1)
-                )
-                datminimums = np.repeat(
-                    datminimum.reshape((n0, n1)), n2 * n3, axis=1
-                ).reshape((n0, n1, n2, n3))
+                datminimum = scind.measurements.maximum(mosaic, label, np.arange(n0 * n1))
+                datminimums = np.repeat(datminimum.reshape((n0, n1)), n2 * n3, axis=1).reshape((n0, 
+                                                                                        n1, n2, n3))
                 print("datminimums", datminimums.shape)
                 # center of mass without background removal
                 #                 datcenterofmass = array(scind.measurements.center_of_mass(mosaic,
                 #                                                                              label,
                 #                                                                              arange(n0 * n1)))
                 # remove baseline level set to minimum pixel intensity
-                datcenterofmass2 = np.array(
-                    scind.measurements.center_of_mass(
-                        mosaic - datminimums, label, np.arange(n0 * n1)
-                    )
-                )
+                datcenterofmass2 = np.array(scind.measurements.center_of_mass(
+                        mosaic - datminimums, label, np.arange(n0 * n1)))
                 # from relative position to absolute initial CCD position
                 centerofmass = datcenterofmass2[:, 2:] + np.array([jmin, imin])
 
-                datmaximumpos = scind.measurements.maximum_position(
-                    mosaic, label, np.arange(n0 * n1)
-                )
+                datmaximumpos = scind.measurements.maximum_position(mosaic, label,
+                                                                                np.arange(n0 * n1))
                 datmaximumpos = np.array(datmaximumpos, dtype="uint32")
                 imageindex = datmaximumpos[:, 0] * n1 + datmaximumpos[:, 1] + startind
                 posmax = datmaximumpos[:, 2:] + np.array([jmin, imin])
@@ -3437,19 +3065,17 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 # fit 2D pixel intensities array with a 2D shape gaussian function
                 else:  # default
                     #                 elif counter == 'Position XY':
-                    XY, FilteredfittedPeaksData = FitPeakOnMap(
-                        mosaic,
-                        (xpic, ypic),
-                        reject_negative_baseline=True,
-                        reject_large_PixelDeviation=True,
-                        reject_weakPeaks=False,
-                        FitPixelDev=None,
-                        MinimumPeakAmplitude=25,
-                        modelFunction="gaussian",
-                        framedimensions=framedimraw,
-                        positionStart="max",
-                        verbose=1,
-                    )
+                    XY, FilteredfittedPeaksData = FitPeakOnMap(mosaic,
+                                                            (xpic, ypic),
+                                                            reject_negative_baseline=True,
+                                                            reject_large_PixelDeviation=True,
+                                                            reject_weakPeaks=False,
+                                                            FitPixelDev=None,
+                                                            MinimumPeakAmplitude=25,
+                                                            modelFunction="gaussian",
+                                                            framedimensions=framedimraw,
+                                                            positionStart="max",
+                                                            verbose=1)
 
                     dict_param["FilteredfittedPeaksData"] = FilteredfittedPeaksData
 
@@ -3479,39 +3105,31 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 # plot 1D graph  ( X or Y as fct 1D index in data )
                 if plot and counter == "Position XY":
 
-                    plotX = PLOT1D.Plot1DFrame(
-                        parent,
-                        -1,
-                        counter + "Xpos",
-                        title + "Xpos",
-                        XYdat_x,
-                        logscale=0,
-                    )
+                    plotX = PLOT1D.Plot1DFrame(parent,
+                                                -1,
+                                                counter + "Xpos",
+                                                title + "Xpos",
+                                                XYdat_x,
+                                                logscale=0)
                     plotX.Show(True)
 
                     outfilename = os.path.join(outputfolder, "%s" % (counter + "Xpos"))
 
-                    np.savetxt(
-                        outfilename + "_%s" % myformattime(), np.array(XYdat_x).T
-                    )
+                    np.savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_x).T)
 
                     parent.list_of_windows.append(plotX)
 
-                    plotY = PLOT1D.Plot1DFrame(
-                        parent,
-                        -1,
-                        counter + "Ypos",
-                        title + "Ypos",
-                        XYdat_y,
-                        logscale=0,
-                    )
+                    plotY = PLOT1D.Plot1DFrame(parent,
+                                                -1,
+                                                counter + "Ypos",
+                                                title + "Ypos",
+                                                XYdat_y,
+                                                logscale=0)
                     plotY.Show(True)
 
                     outfilename = os.path.join(outputfolder, "%s" % (counter + "Ypos"))
 
-                    np.savetxt(
-                        outfilename + "_%s" % myformattime(), np.array(XYdat_y).T
-                    )
+                    np.savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_y).T)
 
                     parent.list_of_windows.append(plotY)
 
@@ -3519,25 +3137,23 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 if plot and counter == "Position XY":
                     print("tabindices in plot 2D X", tabindices.shape)
                     print("nb_col,nb_lines", nb_col, nb_lines)
-                    plot2DX = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D Plot X %s" % counter,
-                        dataX_2D,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype="PositionX",
-                    )
+                    plot2DX = ImshowFrame(parent,
+                                            -1,
+                                            "image 2D Plot X %s" % counter,
+                                            dataX_2D,
+                                            cmap=GT.ORRD,
+                                            interpolation="nearest",
+                                            origin="upper",
+                                            Imageindices=tabindices,
+                                            nb_row=nb_col,
+                                            nb_lines=nb_lines,
+                                            stepindex=1,
+                                            boxsize_row=0,
+                                            boxsize_line=0,
+                                            imagename=title,
+                                            mosaic=0,
+                                            dict_param=dict_param,
+                                            datatype="PositionX")
 
                     #            plapla.dirname = self.dirname
 
@@ -3549,25 +3165,23 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 # plot 2D Y position
                 if plot and counter == "Position XY":
-                    plot2DY = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D Plot Y %s" % counter,
-                        dataY_2D,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype="PositionY",
-                    )
+                    plot2DY = ImshowFrame(parent,
+                                            -1,
+                                            "image 2D Plot Y %s" % counter,
+                                            dataY_2D,
+                                            cmap=GT.ORRD,
+                                            interpolation="nearest",
+                                            origin="upper",
+                                            Imageindices=tabindices,
+                                            nb_row=nb_col,
+                                            nb_lines=nb_lines,
+                                            stepindex=1,
+                                            boxsize_row=0,
+                                            boxsize_line=0,
+                                            imagename=title,
+                                            mosaic=0,
+                                            dict_param=dict_param,
+                                            datatype="PositionY")
 
                     #            plapla.dirname = self.dirname
 
@@ -3584,40 +3198,33 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                     # data for radial distzance plot
                     pixelCenter = (meanX, meanY)
-                    radialdistance_2D = np.sqrt(
-                        (dataX_2D - pixelCenter[0]) ** 2
-                        + (dataY_2D - pixelCenter[1]) ** 2
-                    )
+                    radialdistance_2D = np.sqrt((dataX_2D - pixelCenter[0]) ** 2
+                        + (dataY_2D - pixelCenter[1]) ** 2)
                     dict_param["dataRadialPosition"] = (dataX_2D, dataY_2D, pixelCenter)
 
-                    plot2Dradial = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D Plot radial %s" % counter,
-                        radialdistance_2D,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype="RadialPosition",
-                    )
+                    plot2Dradial = ImshowFrame(parent,
+                                                -1,
+                                                "image 2D Plot radial %s" % counter,
+                                                radialdistance_2D,
+                                                cmap=GT.ORRD,
+                                                interpolation="nearest",
+                                                origin="upper",
+                                                Imageindices=tabindices,
+                                                nb_row=nb_col,
+                                                nb_lines=nb_lines,
+                                                stepindex=1,
+                                                boxsize_row=0,
+                                                boxsize_line=0,
+                                                imagename=title,
+                                                mosaic=0,
+                                                dict_param=dict_param,
+                                                datatype="RadialPosition")
 
                     #            plapla.dirname = self.dirname
 
                     plot2Dradial.Show()
 
-                    np.savetxt(
-                        "%s_2D_radial_" % counter + "_%s" % myformattime(),
-                        radialdistance_2D,
-                    )
+                    np.savetxt("%s_2D_radial_" % counter + "_%s" % myformattime(), radialdistance_2D)
 
                     parent.list_of_windows.append(plot2Dradial)
 
@@ -3625,92 +3232,75 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     maxpeaksize = np.amax(FilteredfittedPeaksData[:, 3:5], axis=1)
                     maxpeaksize2D = maxpeaksize.reshape((n0, n1))
 
-                    plot2Dpeaksize = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D Plot peak size %s" % counter,
-                        maxpeaksize2D,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype="PositionX",
-                    )
+                    plot2Dpeaksize = ImshowFrame(parent,
+                                                -1,
+                                                "image 2D Plot peak size %s" % counter,
+                                                maxpeaksize2D,
+                                                cmap=GT.ORRD,
+                                                interpolation="nearest",
+                                                origin="upper",
+                                                Imageindices=tabindices,
+                                                nb_row=nb_col,
+                                                nb_lines=nb_lines,
+                                                stepindex=1,
+                                                boxsize_row=0,
+                                                boxsize_line=0,
+                                                imagename=title,
+                                                mosaic=0,
+                                                dict_param=dict_param,
+                                                datatype="PositionX")
 
                     #            plapla.dirname = self.dirname
 
                     plot2Dpeaksize.Show()
 
-                    np.savetxt(
-                        "%s_2D_size_" % counter + "_%s" % myformattime(), maxpeaksize2D
-                    )
+                    np.savetxt("%s_2D_size_" % counter + "_%s" % myformattime(), maxpeaksize2D)
 
                     parent.list_of_windows.append(plot2Dpeaksize)
 
                 # peak amplitude
                 if plot and counter == "Amplitude":
-                    PeakAmplitude = (
-                        FilteredfittedPeaksData[:, 2] - FilteredfittedPeaksData[:, 8]
-                    )
+                    PeakAmplitude = (FilteredfittedPeaksData[:, 2] - FilteredfittedPeaksData[:, 8])
                     PeakAmplitude2D = PeakAmplitude.reshape((n0, n1))
 
-                    plot2Dpeaksize = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D Plot peak amplitude %s" % counter,
-                        PeakAmplitude2D,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype="PositionX",
-                    )
+                    plot2Dpeaksize = ImshowFrame(parent,
+                                                    -1,
+                                                    "image 2D Plot peak amplitude %s" % counter,
+                                                    PeakAmplitude2D,
+                                                    cmap=GT.ORRD,
+                                                    interpolation="nearest",
+                                                    origin="upper",
+                                                    Imageindices=tabindices,
+                                                    nb_row=nb_col,
+                                                    nb_lines=nb_lines,
+                                                    stepindex=1,
+                                                    boxsize_row=0,
+                                                    boxsize_line=0,
+                                                    imagename=title,
+                                                    mosaic=0,
+                                                    dict_param=dict_param,
+                                                    datatype="PositionX")
 
                     #            plapla.dirname = self.dirname
 
                     plot2Dpeaksize.Show()
 
-                    np.savetxt(
-                        "%s_2D_Amplitude_" % counter + "_%s" % myformattime(),
-                        PeakAmplitude2D,
-                    )
+                    np.savetxt("%s_2D_Amplitude_" % counter + "_%s" % myformattime(), PeakAmplitude2D)
 
                     parent.list_of_windows.append(plot2Dpeaksize)
 
                     dataamplitude = [tabindices1D, PeakAmplitude]
-                    plotAmplitude = PLOT1D.Plot1DFrame(
-                        parent,
-                        -1,
-                        counter + "Amplitude",
-                        title + "Amplitude",
-                        dataamplitude,
-                        logscale=0,
-                    )
+                    plotAmplitude = PLOT1D.Plot1DFrame(parent,
+                                                            -1,
+                                                            counter + "Amplitude",
+                                                            title + "Amplitude",
+                                                            dataamplitude,
+                                                            logscale=0)
                     plotAmplitude.Show(True)
 
-                    outfilename = os.path.join(
-                        outputfolder, "%s" % (counter + "Amplitude")
-                    )
+                    outfilename = os.path.join(outputfolder, "%s" % (counter + "Amplitude"))
 
-                    np.savetxt(
-                        outfilename + "_%s" % myformattime(), np.array(dataamplitude).T
-                    )
+                    np.savetxt(outfilename + "_%s" % myformattime(), np.array(dataamplitude).T)
 
                     parent.list_of_windows.append(plotAmplitude)
 
@@ -3728,34 +3318,29 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     dict_param["dataVector"] = [VectorX, VectorY, pixelCenter]
                     datatypevector = "Vector"
 
-                    plot2Dpeaksize = ImshowFrame(
-                        parent,
-                        -1,
-                        "image 2D vector %s" % counter,
-                        NormVector,
-                        cmap=GT.ORRD,
-                        interpolation="nearest",
-                        origin="upper",
-                        Imageindices=tabindices,
-                        nb_row=nb_col,
-                        nb_lines=nb_lines,
-                        stepindex=1,
-                        boxsize_row=0,
-                        boxsize_line=0,
-                        imagename=title,
-                        mosaic=0,
-                        dict_param=dict_param,
-                        datatype=datatypevector,
-                    )
+                    plot2Dpeaksize = ImshowFrame(parent,
+                                                    -1,
+                                                    "image 2D vector %s" % counter,
+                                                    NormVector,
+                                                    cmap=GT.ORRD,
+                                                    interpolation="nearest",
+                                                    origin="upper",
+                                                    Imageindices=tabindices,
+                                                    nb_row=nb_col,
+                                                    nb_lines=nb_lines,
+                                                    stepindex=1,
+                                                    boxsize_row=0,
+                                                    boxsize_line=0,
+                                                    imagename=title,
+                                                    mosaic=0,
+                                                    dict_param=dict_param,
+                                                    datatype=datatypevector)
 
                     #            plapla.dirname = self.dirname
 
                     plot2Dpeaksize.Show()
 
-                    np.savetxt(
-                        "%s_2D_quiver_" % counter + "_%s" % myformattime(),
-                        maxpeaksize2D,
-                    )
+                    np.savetxt("%s_2D_quiver_" % counter + "_%s" % myformattime(), maxpeaksize2D)
 
                     parent.list_of_windows.append(plot2Dpeaksize)
 
@@ -3768,19 +3353,17 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
         return None
 
 
-def FitPeakOnMap(
-    mosaic,
-    ROIcenter,
-    reject_negative_baseline=True,
-    reject_large_PixelDeviation=True,
-    reject_weakPeaks=True,
-    FitPixelDev=None,
-    MinimumPeakAmplitude=25,
-    modelFunction="gaussian",
-    framedimensions=(2048, 2048),
-    positionStart="max",
-    verbose=1,
-):
+def FitPeakOnMap(mosaic,
+                ROIcenter,
+                reject_negative_baseline=True,
+                reject_large_PixelDeviation=True,
+                reject_weakPeaks=True,
+                FitPixelDev=None,
+                MinimumPeakAmplitude=25,
+                modelFunction="gaussian",
+                framedimensions=(2048, 2048),
+                positionStart="max",
+                verbose=1):
     """
     Fit peak on series of 2D pixel intensities array
     
@@ -3812,12 +3395,10 @@ def FitPeakOnMap(
     CentralPeaks = np.array(centers).T
     #     print "CentralPeaks",CentralPeaks
 
-    Resfit = RMCCD.fitPeakMultiROIs(
-        mosaic.reshape((n0 * n1, n2, n3)),
-        CentralPeaks,
-        FittingParametersDict,
-        showfitresults=False,
-    )
+    Resfit = RMCCD.fitPeakMultiROIs(mosaic.reshape((n0 * n1, n2, n3)),
+                                    CentralPeaks,
+                                    FittingParametersDict,
+                                    showfitresults=False)
     # filter fit results
     params, cov, info, message, baseline = Resfit
 
@@ -3878,25 +3459,19 @@ def FitPeakOnMap(
     if reject_large_PixelDeviation:
         to_reject3 = np.where(np.sqrt(Xdev ** 2 + Ydev ** 2) > FitPixelDev)[0]
         if len(to_reject3) > 0:
-            print(
-                "to_reject3  too far from initial guess minimum pixel distance = %f"
+            print("to_reject3  too far from initial guess minimum pixel distance = %f"
                 % FitPixelDev,
-                to_reject3,
-            )
+                to_reject3)
     else:
         to_reject3 = []
 
-    ToR = (
-        set(to_reject)
+    ToR = (set(to_reject)
         | set(to_reject0)
         | set(to_reject1)
         | set(to_reject2)
-        | set(to_reject3)
-    )  # to reject
+        | set(to_reject3))  # to reject
 
-    print(
-        "After fitting, %d/%d peaks have been rejected" % (len(ToR), len(CentralPeaks))
-    )
+    print("After fitting, %d/%d peaks have been rejected" % (len(ToR), len(CentralPeaks)))
     print("to reject indices: ", ToR)
 
     ToTake = set(np.arange(len(CentralPeaks))) - ToR
@@ -3915,20 +3490,16 @@ def FitPeakOnMap(
     maskedrows = np.where(BoolToMask == True)[0]
 
     # all peaks list building
-    fittedPeaksData = np.array(
-        [
-            peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            maskedrows,
-        ]
-    ).T
+    fittedPeaksData = np.array([peak_X,
+                                peak_Y,
+                                peak_I,
+                                peak_fwaxmaj,
+                                peak_fwaxmin,
+                                peak_inclination,
+                                Xdev,
+                                Ydev,
+                                peak_bkg,
+                                maskedrows]).T
     #                 DEFAULT_WRONG_X = np.nan
     #                 DEFAULT_WRONG_Y = np.nan
     #                 FilterX = np.where(BoolToTake, peak_X, DEFAULT_WRONG_X)
@@ -3940,20 +3511,16 @@ def FitPeakOnMap(
     FilterY = np.ma.masked_where(BoolToMask, FilterY0)
 
     # all peaks list building
-    fittedPeaksData = np.ma.array(
-        [
-            peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            FilterX,
-        ]
-    ).T
+    fittedPeaksData = np.ma.array([peak_X,
+                                    peak_Y,
+                                    peak_I,
+                                    peak_fwaxmaj,
+                                    peak_fwaxmin,
+                                    peak_inclination,
+                                    Xdev,
+                                    Ydev,
+                                    peak_bkg,
+                                    FilterX]).T
     #                 DEFAULT_WRONG_X = np.nan
     #                 DEFAULT_WRONG_Y = np.nan
     #                 FilterX = np.where(BoolToTake, peak_X, DEFAULT_WRONG_X)
@@ -3974,18 +3541,8 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
     """
 
     """
-    (
-        dirname,
-        filename,
-        startind,
-        endind,
-        nb_lines,
-        nb_images_per_line,
-        peaklist,
-        boxsize_row,
-        boxsize_line,
-        selectedcounters,
-    ) = param
+    (dirname, filename, startind, endind, nb_lines, nb_images_per_line,
+        peaklist, boxsize_row, boxsize_line, selectedcounters) = param
 
     print("selectedcounters", selectedcounters)
 
@@ -3995,9 +3552,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
     print("peaklist", peaklist)
 
     startind, endind = int(startind), int(endind)
-    nb_lines, boxsize_row, boxsize_line = list(
-        map(int, [nb_lines, boxsize_row, boxsize_line])
-    )
+    nb_lines, boxsize_row, boxsize_line = list(map(int, [nb_lines, boxsize_row, boxsize_line]))
 
     halfboxsize = boxsize_row, boxsize_line
 
@@ -4035,13 +3590,11 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
         tabindices = np.arange(startind, endind + 1, 1)
         nbimages = len(tabindices)
 
-        CountersData = {
-            "mean1D": np.zeros((nbpeaks, nbimages)),
-            "max1D": np.zeros((nbpeaks, nbimages)),
-            "ptp1D": np.zeros((nbpeaks, nbimages)),
-            "posX": np.zeros((nbpeaks, nbimages)),
-            "posY": np.zeros((nbpeaks, nbimages)),
-        }
+        CountersData = {"mean1D": np.zeros((nbpeaks, nbimages)),
+                        "max1D": np.zeros((nbpeaks, nbimages)),
+                        "ptp1D": np.zeros((nbpeaks, nbimages)),
+                        "posX": np.zeros((nbpeaks, nbimages)),
+                        "posY": np.zeros((nbpeaks, nbimages))}
 
         for k, imageindex in enumerate(tabindices):
             filename = RMCCD.setfilename(filename, imageindex)
@@ -4052,26 +3605,20 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
             for grain_index, peak in enumerate(peaklist):
                 try:
                     framedim = DictLT.dict_CCD[ccdlabel][0]
-                    dataimage, framedim, fliprot = RMCCD.readCCDimage(
-                        filename, CCDLabel=ccdlabel, dirname=None
-                    )
+                    dataimage, framedim, fliprot = RMCCD.readCCDimage(filename, CCDLabel=ccdlabel,
+                                                                                    dirname=None)
 
                     center_pixel = (round(peak[0]), round(peak[1]))
 
-                    indicesborders = RMCCD.getindices2cropArray(
-                        (center_pixel[0], center_pixel[1]),
-                        (halfboxsize[0], halfboxsize[1]),
-                        framedim,
-                        flipxycenter=0,
-                    )
+                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                                (halfboxsize[0], halfboxsize[1]),
+                                                                framedim,
+                                                                flipxycenter=0)
                     imin, imax, jmin, jmax = indicesborders
 
-                    #                print 'indicesborders', indicesborders
-
-                    # avoid to wrong indices when slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(
-                        imin, imax + 1, jmin, jmax + 1, framedim=framedim
-                    )
+                    # avoid to wrong indices wHen slicing the data
+                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                framedim=framedim)
 
                     datcrop = dataimage[imin:imax, jmin:jmax]
 
@@ -4106,13 +3653,9 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
 
                         datminimum = scind.measurements.maximum(piece_dat)
                         # center of mass without background removal
-                        datcenterofmass = np.array(
-                            scind.measurements.center_of_mass(piece_dat)
-                        )
+                        datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
                         # remove baseline level set to minimum pixel intensity
-                        datcenterofmass2 = np.array(
-                            scind.measurements.center_of_mass(piece_dat - datminimum)
-                        )
+                        datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
 
                         print("datcenterofmass2", datcenterofmass2)
 
@@ -4123,26 +3666,11 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
 
                         posmax = datmaximumpos + np.array([jmin, imin])
 
-                        #                    datmaximum = scind.measurements.maximum(mosaic, label, arange(n0 * n1))
-                        #                    print "res maximum", datmaximum
-                        #                    dat = datmaximum.reshape((n0, n1))
-
-                        #                    print "res maximum", datminimum
-                        #                print "res datcenterofmass", datcenterofmass
-                        #                print "res datcenterofmass2", datcenterofmass2
-                        #                print "res datmaximumpos", datmaximumpos
-                        # #
-
-                        #                print 'posmax', posmax
-
                         nbimages = endind - startind + 1
 
                         # position monitors selection
                         XY = posmax
                         XY = centerofmass
-
-                        #                print "XY", XY
-                        #                print "lenXY", len(XY)
 
                         xDATA, yDATA = XY
 
@@ -4195,9 +3723,8 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
     for grain_index, peak in enumerate(peaklist):
         try:
             framedim = DictLT.dict_CCD[ccdlabel][0]
-            dataimage, framedim, fliprot = RMCCD.readCCDimage(
-                filename, CCDLabel=ccdlabel, dirname=None
-            )
+            dataimage, framedim, fliprot = RMCCD.readCCDimage(filename, CCDLabel=ccdlabel,
+                                                                                    dirname=None)
         except IOError:
             print("!***!****!****!")
             print("Missing image file : %s" % filename)
@@ -4216,20 +3743,17 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
 
         center_pixel = (round(peak[0]), round(peak[1]))
 
-        indicesborders = RMCCD.getindices2cropArray(
-            (center_pixel[0], center_pixel[1]),
-            (halfboxsize[0], halfboxsize[1]),
-            framedim,
-            flipxycenter=0,
-        )
+        indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                (halfboxsize[0], halfboxsize[1]),
+                                                framedim,
+                                                flipxycenter=0)
         imin, imax, jmin, jmax = indicesborders
 
         #                print 'indicesborders', indicesborders
 
         # avoid to wrong indices when slicing the data
-        imin, imax, jmin, jmax = RMCCD.check_array_indices(
-            imin, imax + 1, jmin, jmax + 1, framedim=framedim
-        )
+        imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                framedim=framedim)
 
         piece_dat = dataimage[imin:imax, jmin:jmax]
 
@@ -4252,9 +3776,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
                 # center of mass without background removal
                 datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
                 # remove baseline level set to minimum pixel intensity
-                datcenterofmass2 = np.array(
-                    scind.measurements.center_of_mass(piece_dat - datminimum)
-                )
+                datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
 
                 #                 print "datcenterofmass2", datcenterofmass2
 
@@ -4339,9 +3861,10 @@ def htmlRgb(mag, cmin, cmax):
 
 
 def usage():
-    print(
-        "\n\n**********************\nUsage: python mosaic.py /home/mydata/myimage0125.mccd startind endind nb_lines xpic ypic boxsize_row boxsize_line mosaicflag\n mosaicflag=mosaic for mosaic, =mean for only mean value mosaic plotted\n**********************\n\n"
-    )
+    print("\n\n**********************\nUsage: python mosaic.py /home/mydata/myimage0125.mccd "
+        "startind endind nb_lines xpic ypic boxsize_row boxsize_line mosaicflag\n "
+            "mosaicflag=mosaic for mosaic, =mean for only mean value mosaic "
+            "plotted\n**********************\n\n")
 
 
 # --- ---------   MAIN
@@ -4353,9 +3876,8 @@ if __name__ == "__main__":
         # print sys.argv
         # print len(sys.argv)
         if len(sys.argv) == 9:
-            dir_file, startind, endind, nb_lines, xpic, ypic, boxsize_row, boxsize_line = sys.argv[
-                1:
-            ]
+            (dir_file, startind, endind, nb_lines,
+            xpic, ypic, boxsize_row, boxsize_line) = sys.argv[1:]
             sep = dir_file.rfind("/")  # in unix
             meanvalues = 0
             didi = dir_file[: sep + 1]
@@ -4365,14 +3887,13 @@ if __name__ == "__main__":
 
             prefix = allprefix[:-4]
             startind, endind = int(startind), int(endind)
-            nb_lines, xpic, ypic, boxsize_row, boxsize_line = list(
-                map(int, [nb_lines, xpic, ypic, boxsize_row, boxsize_line])
-            )
+            nb_lines, xpic, ypic, boxsize_row, boxsize_line = list(map(int,
+                                                [nb_lines, xpic, ypic, boxsize_row, boxsize_line]))
 
         elif len(sys.argv) == 10:
-            dir_file, startind, endind, nb_lines, xpic, ypic, boxsize_row, boxsize_line, flag = sys.argv[
-                1:
-            ]
+            (dir_file, startind, endind, nb_lines,
+            xpic, ypic,
+            boxsize_row, boxsize_line, flag) = sys.argv[1:]
             if flag == "mosaic":
                 meanvalues = 0
             elif flag == "mean":
@@ -4386,9 +3907,8 @@ if __name__ == "__main__":
             )  # dfjghk_####    and mccd
             prefix = allprefix[:-4]
             startind, endind = int(startind), int(endind)
-            nb_lines, xpic, ypic, boxsize_row, boxsize_line = list(
-                map(int, [nb_lines, xpic, ypic, boxsize_row, boxsize_line])
-            )
+            nb_lines, xpic, ypic, boxsize_row, boxsize_line = list(map(int,
+                                                [nb_lines, xpic, ypic, boxsize_row, boxsize_line]))
 
         else:
             usage()
@@ -4452,11 +3972,7 @@ if __name__ == "__main__":
                 print("!***!****!****!")
 
             if k % 10 == 1:
-                print(
-                    filename,
-                    "up to",
-                    prefix + stringint(endind, 4) + "." + fileextension,
-                )
+                print(filename, "up to", prefix + stringint(endind, 4) + "." + fileextension)
             kx, ky = dic_carto[k][1:]
 
             # print kx,ky,k
@@ -4485,15 +4001,10 @@ if __name__ == "__main__":
             # #scaleddata=clip(data,0,25000)
             # print scaledregion
 
-            mosaic.paste(
-                region,
-                (
-                    ky * 2 * boxsize_row,
-                    kx * 2 * boxsize_line,
-                    (ky + 1) * 2 * boxsize_row,
-                    (kx + 1) * 2 * boxsize_line,
-                ),
-            )
+            mosaic.paste(region, (ky * 2 * boxsize_row,
+                                    kx * 2 * boxsize_line,
+                                    (ky + 1) * 2 * boxsize_row,
+                                    (kx + 1) * 2 * boxsize_line))
 
             # enhancer=ImageEnhance.Brightness(mosaic)
             # mosaic=enhancer.enhance(0.2)
@@ -4507,18 +4018,7 @@ if __name__ == "__main__":
         # print box2
         out = mosaic.crop(box2)
 
-        imagefilename = (
-            "Map_"
-            + prefix
-            + str(startind)
-            + "to"
-            + str(endind)
-            + "x"
-            + stringint(xpic, 4)
-            + "y"
-            + stringint(ypic, 4)
-            + ".TIFF"
-        )
+        imagefilename = ("Map_" + prefix + str(startind) + "to" + str(endind) + "x" + stringint(xpic, 4) + "y" + stringint(ypic, 4) + ".TIFF")
 
         try:
             out.save(os.path.join(didi, imagefilename), mode="I;16")
@@ -4536,17 +4036,15 @@ if __name__ == "__main__":
         print("FLAG: meanvalues before Drawframe", meanvalues)
         app = wx.App(False)
 
-        F = DrawFrame(
-            None,
-            imagename=os.path.join(didi, imagefilename),
-            ImageTIFF=imageout,
-            nb_row=nb_row,
-            nb_lines=nb_lines,
-            boxsize_row=boxsize_row,
-            boxsize_line=boxsize_line,
-            tabindices=tabindices,
-            meanvalues=meanvalues,
-        )
+        F = DrawFrame(None,
+                        imagename=os.path.join(didi, imagefilename),
+                        ImageTIFF=imageout,
+                        nb_row=nb_row,
+                        nb_lines=nb_lines,
+                        boxsize_row=boxsize_row,
+                        boxsize_line=boxsize_line,
+                        tabindices=tabindices,
+                        meanvalues=meanvalues)
         F.dirname = didi
 
         app.MainLoop()

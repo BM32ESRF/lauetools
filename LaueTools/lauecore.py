@@ -6,14 +6,15 @@ Main author is J. S. Micha:   micha [at] esrf [dot] fr
 version July 2019
 from LaueTools package hosted in
 
-http://sourceforge.net/projects/lauetools/ 
+http://sourceforge.net/projects/lauetools/
 
-or 
+or
 
 https://gitlab.esrf.fr/micha/lauetools
 """
 
-import math, sys
+import math
+import sys
 import builtins
 
 import numpy as np
@@ -105,7 +106,7 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     """
     #     print "OrientMatrix in Quicklist", OrientMatrix
 
-    assert lambdamin > 0,"lambdamin in Quicklist is not positive! %s"%str(lambdamin)
+    assert lambdamin > 0, "lambdamin in Quicklist is not positive! %s" % str(lambdamin)
 
     if isinstance(OrientMatrix, list):
         OrientMatrix = np.array(OrientMatrix)
@@ -413,7 +414,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         print("Number of grains: ", nb_of_grains)
 
     if dictmaterials is None:
-        dictmaterials=dict_Materials
+        dictmaterials = dict_Materials
 
     # loop over grains
     for i in list(range(nb_of_grains)):
@@ -430,25 +431,17 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
             linestowrite.append(["grain no ", str(i), " made of ", key_material,
                                 " default lattice parameter ",
                                 str(dictmaterials[crystalsParams[i][3]][1]),])
-            linestowrite.append(
-                [
-            "(vec* basis in lab. frame, real lattice lengthes expansion, orientation matrix, atomic number):"
-                ]
-            )
-            linestowrite.append(
-                [
-            "(orientation angles have no meanings here since orienation is given by a quaternion extracted from openGL, see below)"
-                ]
-            )
+            linestowrite.append(["(vec* basis in lab. frame, real lattice lengthes expansion, "
+            "orientation matrix, atomic number):"])
+            linestowrite.append(["(orientation angles have no meanings here since orienation "
+            "is given by a quaternion extracted from openGL, see below)"])
             for elem in crystalsParams[i]:
                 linestowrite.append([str(elem)])
         # print dictmaterials[crystalsParams[i][3]]
 
     if fileOK:
-        linestowrite.append(
-            ["************------------------------------------***************"]
-        )
-        linestowrite.append( ["energy range: ", str(CST_ENERGYKEV / wlM), " - ",
+        linestowrite.append(["************------------------------------------***************"])
+        linestowrite.append(["energy range: ", str(CST_ENERGYKEV / wlM), " - ",
                                         str(CST_ENERGYKEV / wlm), " keV",])
 
     wholelistvecfiltered = []
@@ -545,10 +538,10 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
             KF_condit = listrotvec_Y < 0
         # x > -R transmission 2theta = 0
         elif kf_direction == "X>0":
-            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0 )
+            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0)
         # x < -R back reflection 2theta = 180
         elif kf_direction == "X<0":
-            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0 )
+            KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0)
         #   all spots inside the two ewald's sphere with scattered beams in any direction'
         elif kf_direction == "4PI":
             KF_condit = np.ones_like(listrotvec_X) * True
@@ -557,7 +550,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         elif isinstance(kf_direction, (builtins.list, np.array)):
             print("\nUSING user defined LauePattern Region\n")
             if len(kf_direction) != 2:
-                raise ValueError("kf_direction must be defined by a list of two angles !" )
+                raise ValueError("kf_direction must be defined by a list of two angles !")
             else:
                 kf_2theta, kf_chi = kf_direction
                 kf_2theta, kf_chi = kf_2theta * DEG, kf_chi * DEG
@@ -778,14 +771,8 @@ def create_spot(
     return spotty
 
 
-def create_spot_np(
-    Qxyz,
-    miller,
-    detectordistance,
-    allattributes=False,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-):
+def create_spot_np(Qxyz, miller, detectordistance, allattributes=False,
+                                                    pixelsize=165.0 / 2048, dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot instance (on top camera geometry)
 
@@ -889,9 +876,7 @@ def create_spot_side_pos(pos_vec, miller, detectordistance,
     return spotty
 
 
-def create_spot_side_neg( pos_vec, miller, detectordistance,
-                                            allattributes=0,
-                                            pixelsize=165.0 / 2048,
+def create_spot_side_neg(pos_vec, miller, detectordistance, allattributes=0, pixelsize=165.0 / 2048,
                                             dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on neg side camera
@@ -946,7 +931,7 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
 
         # if qx < -R   no spot in transmission mode (qx is <0)
         if spotty.Qxyz[0] + spotty.EwaldRadius <= 0.: return None
-        
+
         X = -detectordistance * (spotty.Qxyz[1]) / abskx
         Y = -detectordistance * (spotty.Qxyz[2]) / abskx
         spotty.Xcam = X / pixelsize + dim[0] / 2.0
@@ -962,10 +947,8 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
         return None
 
 
-def create_spot_back( pos_vec, miller, detectordistance,
-                                        allattributes=0,
-                                        pixelsize=165.0 / 2048,
-                                        dim=(2048, 2048)):
+def create_spot_back(pos_vec, miller, detectordistance, allattributes=0,
+                                                        pixelsize=165.0 / 2048, dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on backward direction back reflection geometry
     """
@@ -993,8 +976,8 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
     """filter vector Q and HKL in vec_and_indices
 
     :param vec_and_indices: arrays of vectors Q and HKL
-    :type vec_and_indices: [Qs, HKLs]   
-    :param detectordistance: distance detector sample (mm) 
+    :type vec_and_indices: [Qs, HKLs]
+    :param detectordistance: distance detector sample (mm)
     :type detectordistance: float
     :param detectordiameter: detector diameter (mm)
     :type detectordiameter: float
@@ -1293,7 +1276,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             totalnbspots += len(oncam_2theta)
 
-    print('total number of spots for all the %d grain(s):  '%nbofgrains, totalnbspots)
+    print('total number of spots for all the %d grain(s) in filterLaueSpots:  '%nbofgrains, totalnbspots)
     if totalnbspots == 0:
         return
     # outputs and returns
@@ -1595,7 +1578,7 @@ def get2ThetaChi_geometry_full_np(
     if len(oncam_vec) != len(oncam_HKL):
         raise ValueError("Wrong input for get2ThetaChi_geometry_full_np()")
 
-    TwthetaChiEnergy_list = []
+    # TwthetaChiEnergy_list = []
     options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
 
     dictcase = {"Z>0": create_spot_np,
@@ -1685,7 +1668,7 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
 
     twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
 
-    X, Y, theta = LTGeo.calc_xycam_from2thetachi(twthe,
+    X, Y, _ = LTGeo.calc_xycam_from2thetachi(twthe,
                                                 chi,
                                                 detectorparam,
                                                 verbose=0,
@@ -1845,7 +1828,7 @@ def SimulateLaue_twins(grainparent, twins_operators, emin, emax, detectorparamet
 
     grains = [grainparent]
 
-    for k, twin_op in enumerate(twins_operators):
+    for _, twin_op in enumerate(twins_operators):
         twinUmat = np.dot(Umat, twin_op)
         grains.append([Bmat, dilat, twinUmat, extinction])
 

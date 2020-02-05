@@ -2,7 +2,8 @@
 r"""
 GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
-This module belongs to the open source LaueTools project with a free code repository at https://sourceforge.net/projects/lauetools/
+This module belongs to the open source LaueTools project with a free code repository at
+https://sourceforge.net/projects/lauetools/
 mailto: micha at esrf dot fr
 
 August 2014
@@ -133,6 +134,16 @@ class MessageDataBox(wx.Frame):
         print("res")
 
         return res
+
+
+def call_counter(func):
+    def helper(*args, **kwargs):
+        helper.calls += 1
+        return func(*args, **kwargs)
+    helper.calls = 0
+    helper.__name__= func.__name__
+
+    return helper
 
 
 # --- ---------Plot & Tools Frame Class
@@ -318,7 +329,7 @@ class Plot_RefineFrame(wx.Frame):
         self.Umat2 = None
         self.Bmat_tri = None
 
-        self.UBmat = self.SimulParam[0][2]
+        self.UBmat = copy.copy(self.SimulParam[0][2])
         print('self.UBmat: ', self.UBmat)
         self.current_matrix = self.UBmat
         # saving previous unit cell strain and orientation
@@ -330,13 +341,13 @@ class Plot_RefineFrame(wx.Frame):
         self.new_latticeparameters = None
         self.constantlength = "a"
 
-        DictLT.dict_Rot["Input UBmatrix"] = copy.copy(self.UBmat)
-
         self.DataSet = DataSetObject
         print("self.DataSet.detectordiameter in init plot refine frame", self.DataSet.detectordiameter)
 
         self.initGUI()
 
+
+    @call_counter
     def initGUI(self):
 
         colourb_bkg = [242, 241, 240, 255]
@@ -405,9 +416,7 @@ class Plot_RefineFrame(wx.Frame):
         self.SCEmin = wx.SpinCtrl(self.panel, -1, "5", min=5, max=150)
 
         if self.SimulParam is not None:
-            self.SCEmax = wx.SpinCtrl(
-                self.panel, -1, str(self.SimulParam[2]), min=6, max=150
-            )
+            self.SCEmax = wx.SpinCtrl(self.panel, -1, str(self.SimulParam[2]), min=6, max=150)
         else:
             self.SCEmax = wx.SpinCtrl(self.panel, -1, "25", min=6, max=150)
 
@@ -415,21 +424,18 @@ class Plot_RefineFrame(wx.Frame):
         self.resolutionctrl = wx.TextCtrl(self.panel, -1, str(self.ResolutionAngstrom))
 
         self.list_Materials = sorted(self.dict_Materials.keys())
-        self.txtelem = wx.StaticText(
-            self.panel, -1, "Material Element Structure:       "
-        )
-        self.comboElem = wx.ComboBox(
-            self.panel,
-            -1,
-            self.key_material,
-            choices=self.list_Materials,
-            style=wx.CB_READONLY,
-        )
+        self.txtelem = wx.StaticText(self.panel, -1, "Material Element Structure:       ")
+        self.comboElem = wx.ComboBox(self.panel, -1, self.key_material,
+                                                choices=self.list_Materials, style=wx.CB_READONLY)
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.EnterComboElem)
 
         self.txtmatrix = wx.StaticText(self.panel, -1, "Orientation Matrix (UB)")
 
-        self.comboUBmatrix = wx.ComboBox(self.panel, -1, "Input UBmatrix",
+        indexcall = self.initGUI.calls
+        matrixkeyname = "Input UBmatrix_%d"%indexcall
+        DictLT.dict_Rot[matrixkeyname] = copy.copy(self.UBmat)
+
+        self.comboUBmatrix = wx.ComboBox(self.panel, -1, matrixkeyname,
                                         choices=list(DictLT.dict_Rot.keys()), style=wx.CB_READONLY)
         self.comboUBmatrix.Bind(wx.EVT_COMBOBOX, self.onSelectUBmatrix)
 
@@ -464,9 +470,8 @@ class Plot_RefineFrame(wx.Frame):
         self.use_forfit2 = wx.RadioButton(self.panel, -1, "")
         self.use_forfit3 = wx.RadioButton(self.panel, -1, "")
         self.use_forfit1.SetValue(True)
-        self.txtuserefine = wx.StaticText(
-            self.panel, -1, "<--- Use either built links for Refinement --->"
-        )
+        self.txtuserefine = wx.StaticText(self.panel, -1,
+                                                "<--- Use either built links for Refinement --->")
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
         self.title1 = wx.StaticText(self.panel, -1, "Fitting parameters")
@@ -882,7 +887,7 @@ class Plot_RefineFrame(wx.Frame):
 
     def getDataLimits(self):
         """
-        returns plot limits from experimental data 
+        returns plot limits from experimental data
         """
         if self.datatype == "2thetachi":
             return get2Dlimits(self.tth, self.chi)
@@ -912,14 +917,14 @@ class Plot_RefineFrame(wx.Frame):
     def onMouseOver(self, evt):
         name = evt.GetEventObject().GetClassName()
         self.sb.SetStatusText(name + " widget" + "     " + str(evt.GetEventObject()))
-        print("I am on it!")
+        # print("I am on it!")
         print(evt.GetEventObject())
         print(name)
         evt.Skip()
 
     def onMouseLeave(self, evt):
         self.sb.SetStatusText("")
-        print("I leave")
+        # print("I leave")
         evt.Skip()
 
     def OnUndoReplot(self, _):
@@ -1123,10 +1128,10 @@ class Plot_RefineFrame(wx.Frame):
     def BuildDataDict(self, _):  # filter Exp Data spots
         """
         in Plot_RefineFrame class
-        
+
         Filter Exp. Data Button
-        
-        Filter exp. spots data to be displayed 
+
+        Filter exp. spots data to be displayed
         """
 
         C0 = self.selectedAbsoluteSpotIndices_init
@@ -1255,7 +1260,7 @@ class Plot_RefineFrame(wx.Frame):
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
         # ProxTable[index_theo]  = index_exp   closest link
-        print("Resi",Resi)
+        print("Resi", Resi)
         # print("ProxTable",ProxTable)
         # print("Nb of theo spots", len(ProxTable))
 
@@ -1418,7 +1423,7 @@ class Plot_RefineFrame(wx.Frame):
                 linkResidues.append([absolute_spot_index, closetheoindex, Resi[closetheoindex]])
                 # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
 
-        
+
         self.linkedspots_link = np.array(listofpairs)
         self.linkExpMiller_link = linkExpMiller
         self.linkIntensity_link = linkIntensity
@@ -1432,7 +1437,7 @@ class Plot_RefineFrame(wx.Frame):
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks( self, _):  # filter links between spots(after OnAutoLink() )
+    def BuildDataDictAfterLinks(self, _):  # filter links between spots(after OnAutoLink() )
         """
         open editor to look at spots links and filter them
         button Filter Links
@@ -1479,7 +1484,7 @@ class Plot_RefineFrame(wx.Frame):
         Note: only strain and orientation simultaneously
         # TODO: fit only a set of parameters, useful
         NOTE: refine strained and oriented crystal by minimizing peaks positions (pixels).
-        NOTE: experimental peaks pixel positions are reevaluated from 2theta and chi angles 
+        NOTE: experimental peaks pixel positions are reevaluated from 2theta and chi angles
         """
 
         if self.use_forfit1.GetValue():
@@ -1564,7 +1569,7 @@ class Plot_RefineFrame(wx.Frame):
         # print "nb_pairs",nb_pairs
         # print "indices of simulated spots(selection in whole Data_Q list)",sim_indices
         # print "Experimental pixX, pixY",pixX, pixY
-        print("starting_orientmatrix in OnRefine_UB_and_Strain()",starting_orientmatrix)
+        print("starting_orientmatrix in OnRefine_UB_and_Strain()", starting_orientmatrix)
 
         if self.use_weights.GetValue():
             weights = self.linkIntensity_fit
@@ -1608,41 +1613,40 @@ class Plot_RefineFrame(wx.Frame):
                     0, 1, self.pixelsize, self.framedim, weights, self.kf_direction)
 
             residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
-                                                        initial_values,
-                                                        Data_Q,
-                                                        allparameters,
-                                                        arr_indexvaryingparameters,
-                                                        sim_indices,
-                                                        pixX,
-                                                        pixY,
-                                                        initrot=starting_orientmatrix,
-                                                        Bmat=self.B0matrix,
-                                                        pureRotation=0,
-                                                        verbose=1,
-                                                        pixelsize=self.pixelsize,
-                                                        dim=self.framedim,
-                                                        weights=weights,
-                                                        kf_direction=self.kf_direction)
+                                                                    initial_values,
+                                                                    Data_Q,
+                                                                    allparameters,
+                                                                    arr_indexvaryingparameters,
+                                                                    sim_indices,
+                                                                    pixX,
+                                                                    pixY,
+                                                                    initrot=starting_orientmatrix,
+                                                                    Bmat=self.B0matrix,
+                                                                    pureRotation=0,
+                                                                    verbose=1,
+                                                                    pixelsize=self.pixelsize,
+                                                                    dim=self.framedim,
+                                                                    weights=weights,
+                                                                    kf_direction=self.kf_direction)
 
             print("Initial residues", residues)
             print("---------------------------------------------------\n")
 
-            results = FitO.fit_on_demand_strain(
-                                        initial_values,
-                                        Data_Q,
-                                        allparameters,
-                                        FitO.error_function_on_demand_strain,
-                                        arr_indexvaryingparameters,
-                                        sim_indices,
-                                        pixX,
-                                        pixY,
-                                        initrot=starting_orientmatrix,
-                                        Bmat=self.B0matrix,
-                                        pixelsize=self.pixelsize,
-                                        dim=self.framedim,
-                                        verbose=0,
-                                        weights=weights,
-                                        kf_direction=self.kf_direction)
+            results = FitO.fit_on_demand_strain(initial_values,
+                                                    Data_Q,
+                                                    allparameters,
+                                                    FitO.error_function_on_demand_strain,
+                                                    arr_indexvaryingparameters,
+                                                    sim_indices,
+                                                    pixX,
+                                                    pixY,
+                                                    initrot=starting_orientmatrix,
+                                                    Bmat=self.B0matrix,
+                                                    pixelsize=self.pixelsize,
+                                                    dim=self.framedim,
+                                                    verbose=0,
+                                                    weights=weights,
+                                                    kf_direction=self.kf_direction)
 
             print("\n********************\n       Results of Fit        \n********************")
             print("results", results)
@@ -1656,21 +1660,21 @@ class Plot_RefineFrame(wx.Frame):
 
             print("\nFinal error--------------------------------------\n")
             residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
-                results,
-                Data_Q,
-                allparameters,
-                arr_indexvaryingparameters,
-                sim_indices,
-                pixX,
-                pixY,
-                initrot=starting_orientmatrix,
-                Bmat=self.B0matrix,
-                pureRotation=0,
-                verbose=1,
-                pixelsize=self.pixelsize,
-                dim=self.framedim,
-                weights=weights,
-                kf_direction=self.kf_direction)
+                                                                    results,
+                                                                    Data_Q,
+                                                                    allparameters,
+                                                                    arr_indexvaryingparameters,
+                                                                    sim_indices,
+                                                                    pixX,
+                                                                    pixY,
+                                                                    initrot=starting_orientmatrix,
+                                                                    Bmat=self.B0matrix,
+                                                                    pureRotation=0,
+                                                                    verbose=1,
+                                                                    pixelsize=self.pixelsize,
+                                                                    dim=self.framedim,
+                                                                    weights=weights,
+                                                                    kf_direction=self.kf_direction)
 
             self.residues_non_weighted = FitO.error_function_on_demand_strain(
                                                                 results,
@@ -1736,7 +1740,7 @@ class Plot_RefineFrame(wx.Frame):
                                             constantlength=self.constantlength,
                                             Tsresults=self.Tsresults)
 
-        
+
         # ---------------------------------------------
         # treatment of results of GUI
         # ---------------------------------------------
@@ -1815,7 +1819,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # TODO: to complete ---------------------
         devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))
-        
+
         self.UBB0mat = np.dot(self.newUBmat, B0matrix)
 
         Umat = None
@@ -1978,7 +1982,7 @@ class Plot_RefineFrame(wx.Frame):
         texts_dict["B0matrix"] = txtB0[:-2] + "]"
 
         txtHKLxyz_names = "                                 HKL frame coordinates\n"
-        listvectors= ["x=[100]_LT :",
+        listvectors = ["x=[100]_LT :",
                         "y=[010]_LT :",
                         "z=[001]_LT :",
                         "xs=[100]_LTsample :",
@@ -2006,7 +2010,7 @@ class Plot_RefineFrame(wx.Frame):
         frb.Destroy()
 
     def fit_transform_parameters(self, pixX, pixY, hkls, starting_orientmatrix,
-                                key_material, weights ):
+                                                                            key_material, weights):
         """ refine and find the best transform to match pixX and pixY
         """
 
@@ -2074,14 +2078,7 @@ class Plot_RefineFrame(wx.Frame):
         self.fit_completed = False
         print("results", results)
 
-        #             print 'self.CCDcalib', self.CCDcalib
-        #             print 'pixelsize', self.pixelsize
-        #             print 'pixX', pixX.tolist()
-        #             print 'pixY', pixY.tolist()
-        #             print 'Data_Q', Data_Q.tolist()
-        #             print 'starting_orientmatrix', starting_orientmatrix
-        #
-        #             print 'self.B0matrix', self.B0matrix.tolist()
+
         if results is None:
             return
 
@@ -2104,8 +2101,7 @@ class Plot_RefineFrame(wx.Frame):
                                                                     dim=self.framedim,
                                                                     weights=weights,
                                                                     kf_direction=self.kf_direction,
-                                                                    returnalldata=True,
-                                                                )
+                                                                    returnalldata=True)
 
         self.residues_non_weighted = FitO.error_function_strain(results,
                                                                 self.fitting_parameters_keys,
@@ -2122,8 +2118,7 @@ class Plot_RefineFrame(wx.Frame):
                                                                 dim=self.framedim,
                                                                 weights=None,
                                                                 kf_direction=self.kf_direction,
-                                                                returnalldata=False,
-                                                            )
+                                                                returnalldata=False)
 
         print("Final pixel residues", residues)
         print("---------------------------------------------------\n")
@@ -2162,7 +2157,9 @@ class Plot_RefineFrame(wx.Frame):
 
         print("self.kf_direction in fit_lattice_parameters", self.kf_direction)
 
-        pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
+        #pureUmatrix, residualdistortion = GT.UBdecomposition_RRPP(starting_orientmatrix)
+        pureUmatrix, _ = GT.UBdecomposition_RRPP(starting_orientmatrix)
+
 
         print("self.fitting_parameters_values, self.fitting_parameters_keys")
         print(self.fitting_parameters_values, self.fitting_parameters_keys)
@@ -2374,11 +2371,10 @@ class Plot_RefineFrame(wx.Frame):
 
     def selectFittingParameters(self):
         # fixed parameters (must be an array)
-        self.allparameters = np.array(
-            self.CCDcalib + [ 0.0, 0, 0,  # 3 misorientation / initial UB matrix
-            1, 0, 0, 0, 1, 0, 0, 0, 1,  # Tc
-            1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
-            1, 0, 0, 0, 1, 0, 0, 0, 1, ] )  # Ts
+        self.allparameters = np.array(self.CCDcalib + [0.0, 0, 0,  # 3 misorientation / initial UB matrix
+                                        1, 0, 0, 0, 1, 0, 0, 0, 1,  # Tc
+                                        1, 0, 0, 0, 1, 0, 0, 0, 1,  # T
+                                        1, 0, 0, 0, 1, 0, 0, 0, 1, ])  # Ts
 
         #         all_keys = ['anglex', 'angley', 'anglez',
         #         'Tc00', 'Tc01', 'Tc02', 'Tc10', 'Tc11', 'Tc12', 'Tc20', 'Tc21', 'Tc22',
@@ -2407,12 +2403,12 @@ class Plot_RefineFrame(wx.Frame):
     def build_FitResults_Dict(self, _):
         """
         'button OnShowResults of fit
-        
+
         build dict of results of pairs distance minimization launched by show Results button
         """
         if self.fitresults:
 
-            fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l","Intensity", "residues(pix.)"]
+            fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues(pix.)"]
             # filter results Data spots
 
             # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
@@ -2432,7 +2428,7 @@ class Plot_RefineFrame(wx.Frame):
             mySpotData = {}
             for k, ff in enumerate(fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(None,-1, "Show and Filter fit results Spots Editor ",
+            dia = LSEditor.SpotsEditor(None, -1, "Show and Filter fit results Spots Editor ",
                                         mySpotData,
                                         func_to_call=self.readdata_fromEditor_Res,
                                         field_name_and_order=fields)
@@ -2894,7 +2890,7 @@ class Plot_RefineFrame(wx.Frame):
         elif self.datatype == "pixels":
             self.axes.set_xlabel("X pixel")
             self.axes.set_ylabel("Y pixel")
-        
+
         nbspotstoindex = len(self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"])
 
         texttitle = "%s %d/%d spots" % (self.File_NAME, len(self.Data_I), nbspotstoindex)
@@ -3035,7 +3031,7 @@ class Plot_RefineFrame(wx.Frame):
                 pass
         except AttributeError:
             wx.MessageBox('You must perform a fitting by for instance making '
-                            '"Automatic Links" then "Refine"!','Info')
+                            '"Automatic Links" then "Refine"!', 'Info')
             return
 
 
@@ -3091,22 +3087,14 @@ class Plot_RefineFrame(wx.Frame):
         # Updating the DB ------------------
         if self.Bmat is None and self.Umat is None:
             # non  pure U matrix but rather UB matrix due to refinement procedure to find a matrix from two spots
-            self.mainframe.last_orientmatrix_fromindexation[
-                self.current_processedgrain
-            ] = Grain[2]
+            self.mainframe.last_orientmatrix_fromindexation[self.current_processedgrain] = Grain[2]
             # Identity use for recognition
-            self.mainframe.last_Bmatrix_fromindexation[
-                self.current_processedgrain
-            ] = Grain[0]
+            self.mainframe.last_Bmatrix_fromindexation[self.current_processedgrain] = Grain[0]
         else:  # use results of refinement
             # a UB matrix
-            self.mainframe.last_orientmatrix_fromindexation[
-                self.current_processedgrain
-            ] = self.UBmat
+            self.mainframe.last_orientmatrix_fromindexation[self.current_processedgrain] = self.UBmat
             # the B matrix
-            self.mainframe.last_Bmatrix_fromindexation[
-                self.current_processedgrain
-            ] = self.Bmat
+            self.mainframe.last_Bmatrix_fromindexation[self.current_processedgrain] = self.Bmat
             # we can if needed from UB and B extract B  ...
 
         # update DataSetObject: -----------------------------
@@ -3137,37 +3125,29 @@ class Plot_RefineFrame(wx.Frame):
         print("\n\n\n self.linkResidues_fit[:,0]", self.linkResidues_fit[:, 0])
         print("self.current_processedgrain", self.current_processedgrain)
         print("\n\n\n")
-        self.DataSet.AssignHKL(
-            ISS.OrientMatrix(self.UBmat),
-            grain_index,
-            matching_angle_tolerance,
-            selectbyspotsindices=np.array(self.linkResidues_fit[:, 0], dtype=np.int),
-        )
+        self.DataSet.AssignHKL(ISS.OrientMatrix(self.UBmat),
+                                grain_index,
+                                matching_angle_tolerance,
+                                selectbyspotsindices=np.array(self.linkResidues_fit[:, 0], dtype=np.int))
         self.DataSet.dict_grain_devstrain[grain_index] = self.deviatoricstrain
         self.DataSet.dict_indexedgrains_material[grain_index] = self.key_material
 
         print(self.DataSet.dict_grain_devstrain[grain_index])
         print(self.DataSet.dict_grain_matrix[grain_index])  # = matrix
-        print(
-            self.DataSet.dict_grain_matching_rate[grain_index]
-        )  # = [nb_updates, matching_rate]
+        print(self.DataSet.dict_grain_matching_rate[grain_index])  # = [nb_updates, matching_rate]
         print(self.DataSet.dict_Missing_Reflections[grain_index])  # = missingRefs
 
         self.DataSet.indexedgrains.append(self.current_processedgrain)
 
         print("self.DataSet.dict_grain_matrix", self.DataSet.dict_grain_matrix)
-        print(
-            "self.DataSet.dict_grain_matching_rate",
-            self.DataSet.dict_grain_matching_rate,
-        )
+        print("self.DataSet.dict_grain_matching_rate", self.DataSet.dict_grain_matching_rate)
         # -----------------------------------
 
         # update spots properties with respect to indexation results (and self.current_processedgrain +=1)
         self.mainframe.last_epsil_fromindexation[self.current_processedgrain] = epsil
         self.mainframe.Update_DataToIndex_Dict([Miller_Exp_spot,
                                                 Energy_Exp_spot,
-                                                List_Exp_spot_close],
-                                                self.current_processedgrain)
+                                                List_Exp_spot_close])
         self.mainframe.Update_DB_fromIndexation([Miller_Exp_spot,
                                                 Energy_Exp_spot,
                                                 List_Exp_spot_close])

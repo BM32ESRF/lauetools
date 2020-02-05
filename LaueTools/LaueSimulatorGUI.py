@@ -7,7 +7,7 @@ Main author is J. S. Micha:   micha [at] esrf [dot] fr
 version July 2019
 from LaueTools package for python2 hosted in
 
-http://sourceforge.net/projects/lauetools/ 
+http://sourceforge.net/projects/lauetools/
 
 or for python3 and 2 in
 
@@ -97,13 +97,8 @@ class TransformPanel(wx.Panel):
         self.rb_rotaxis.Bind(wx.EVT_RADIOBUTTON, self.onEnableRotation)
 
         defaultmatrixtransform = "a[[1,0,0],[0,1,0],[0,0,1]]"
-        self.tc_rotmatrix = wx.TextCtrl(
-            self,
-            1000,
-            defaultmatrixtransform,
-            size=(250, 100),
-            style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER,
-        )
+        self.tc_rotmatrix = wx.TextCtrl(self, 1000, defaultmatrixtransform,
+                                    size=(250, 100), style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
         self.tc_rotmatrix.SetFocus()
         self.tc_rotmatrix.Bind(wx.EVT_TEXT, self.granparent.OnTextChanged)
         self.tc_rotmatrix.Bind(wx.EVT_KEY_DOWN, self.granparent.OnKeyDown)
@@ -225,14 +220,10 @@ class TransformPanel(wx.Panel):
         self.SetSizer(vbox)
 
     def tooltips_transformpanel(self):
-        tipaxis = (
-            "Rotation axis: letter[a1,a2,a3] where:\nletter refers to the frame \n"
-        )
+        tipaxis = "Rotation axis: letter[a1,a2,a3] where:\nletter refers to the frame \n"
         tipaxis += "(a: for absolute Lauetools frame, s: sample frame\n"
         tipaxis += "c: crystal reciprocal frame (reciprocal unit cell basis vectors a*,b*,c*)\n"
-        tipaxis += (
-            "d: crystal direct frame (direct real unit cell basis vectors a,b,c))\n"
-        )
+        tipaxis += "d: crystal direct frame (direct real unit cell basis vectors a,b,c))\n"
         tipaxis += "a1,a2,a3 are components along the chosen basis vectors that can be integer, float or mathemical expression involving variable t"
 
         self.axisrot.SetToolTipString(tipaxis)
@@ -270,9 +261,9 @@ class TransformPanel(wx.Panel):
         anglesample = DictLT.SAMPLETILT * DEG
         # transform matrix from xs, ys, zs sample frame to x, y,z absolute frame
         # vec / abs = R * vec / sample
-        matrot_sample = np.array( [ [np.cos(anglesample), 0, -np.sin(anglesample)],
+        matrot_sample = np.array([[np.cos(anglesample), 0, -np.sin(anglesample)],
                                     [0, 1, 0],
-                                    [np.sin(anglesample), 0, np.cos(anglesample)], ] )
+                                    [np.sin(anglesample), 0, np.cos(anglesample)]])
         inv_matrot_sample = np.linalg.inv(matrot_sample)
 
         # no transform
@@ -285,17 +276,12 @@ class TransformPanel(wx.Panel):
             # reads tc_range_rot
             strlinspace = str(self.tc_range_rot.GetValue())[1:-1].split(",")
             try:
-                tmin, tmax, step = (
-                    float(strlinspace[0]),
-                    float(strlinspace[1]),
-                    int(strlinspace[2]),
-                )
+                tmin, tmax, step = (float(strlinspace[0]), float(strlinspace[1]), int(strlinspace[2]))
                 # print "listrange",tmin, tmax, step
             except ValueError:
-                sentence = 'Expression for t variation in ROTATION transform not understood! Check if there are "," and "]" '
-                dlg = wx.MessageDialog(
-                    self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR
-                )
+                sentence = 'Expression for t variation in ROTATION transform not understood! '
+                'Check if there are "," and "]" '
+                dlg = wx.MessageDialog(self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
@@ -311,17 +297,15 @@ class TransformPanel(wx.Panel):
             if self.rb_rotaxis.GetValue():
                 # reads tc_Rot_axis
                 # reads tc_Rot_ang
-                frame_axis_rot = (
-                    self.tc_Rot_axis.GetValue()
-                )  # must contain s[exp1(t),exp2(t),exp3(t)]
+                frame_axis_rot = self.tc_Rot_axis.GetValue()  # must contain s[exp1(t),exp2(t),exp3(t)]
                 angle_rot = str(self.tc_Rot_ang.GetValue())
                 framerot = frame_axis_rot[0]
                 axisrot = str(frame_axis_rot[2:-1]).split(",")
 
-                if 0:
-                    print("framerot", framerot)
-                    print("axisrot", axisrot)
-                    print("angle_rot", angle_rot)
+                # if 0:
+                #     print("framerot", framerot)
+                #     print("axisrot", axisrot)
+                #     print("angle_rot", angle_rot)
 
                 # print "eva",eval(angle_rot,{"__builtins__":None},LaueToolsframe.safe_dict)  #http://lybniz2.sourceforge.net/safeeval.html
 
@@ -359,7 +343,7 @@ class TransformPanel(wx.Panel):
                     # tag for transform , array of angle
                     # NOTE: array of axis  coordinates change is done later
                     # according to the orientation
-                    return ( "r_axis_%s" % framerot, evalangle_rot, np.array(evalaxisrot).T)
+                    return ("r_axis_%s" % framerot, evalangle_rot, np.array(evalaxisrot).T)
 
             # general transform given by input of a matrix and a frame
             if self.rb_rotmatrix.GetValue():
@@ -565,18 +549,18 @@ class SlipSystemPanel(wx.Panel):
 
     def ReadTransform(self):
         """
-        build lists of parameters for the simulation of set of grains 
+        build lists of parameters for the simulation of set of grains
         """
         print("ReadTransform  slipsystem")
         Bmatrix = self.granparent.Bmatrix_current
 
         # slip system settings
-        misorientationangleMAX=0.5
+        misorientationangleMAX = 0.5
         nbsteps = 11
 
         misanglemin = -misorientationangleMAX
         misanglemax = misorientationangleMAX
-        
+
         angle_rot = np.linspace(misanglemin, misanglemax, num=nbsteps)
         nb_angles = len(angle_rot)
 
@@ -734,9 +718,9 @@ class SimulationPanel(wx.Panel):
         gridSizer2.Add(txtpixelsize, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.ctrlpixelsize, 0, wx.EXPAND)
 
-        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
-        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
-        gridSizer2.Add(wx.StaticLine(self, -1,size=(-1,10),style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        gridSizer2.Add(wx.StaticLine(self, -1, size=(-1, 10), style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        gridSizer2.Add(wx.StaticLine(self, -1, size=(-1, 10), style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        gridSizer2.Add(wx.StaticLine(self, -1, size=(-1, 10), style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
 
         gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
         gridSizer2.Add(title4, 0, wx.EXPAND)
@@ -788,12 +772,11 @@ class SimulationPanel(wx.Panel):
 
 class parametric_Grain_Dialog3(wx.Frame):
     """
-    board of parametric 
+    board of parametric
     Laue Simulation with tabs for ergonomic GUI
     """
-
-    def __init__(self, parent, id, title, initialParameters):
-        wx.Frame.__init__(self, parent, id, title)
+    def __init__(self, parent, _id, title, initialParameters):
+        wx.Frame.__init__(self, parent, _id, title)
 
         self.panel = wx.Panel(self)
 
@@ -1276,7 +1259,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         # out them in self.CurrentGrain
         for k, val in enumerate([elem, extinc, stra, rot, B, strc]):
-            print('k,val', k, val)
+            # print('k,val', k, val)
             self.CurrentGrain[k] = val
 
         # inserting parameters in listctrl
@@ -1322,7 +1305,7 @@ class parametric_Grain_Dialog3(wx.Frame):
     def DeleteGrain(self, event):
         """
         delete one grain in created grain list
-        TODO: some strange behaviour when deleting one grain and 
+        TODO: some strange behaviour when deleting one grain and
         grain index in list of grain to simulate
         """
         nametodeselect = self.LC.GetItemText(self.LC.GetFocusedItem())
@@ -1432,7 +1415,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         """
         print("\n\n Writing fake .cor file...\n")
         wholestring = Edit_String_SimulData(data).splitlines()
-        print('wholestring',wholestring)
+        print('wholestring', wholestring)
         # header = '2theta  chi   x   y   I'
         # headerarray = np.array(["2theta", " chi", "   x", "   y", "   I"], dtype="|S11")
 
@@ -1465,7 +1448,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         gi = 0  # grainindex
         while gi < nbgrains:
             list_of_lines = wholestring[posG[gi] + 1 : nbpeaks_per_grain[gi] + posG[gi] + 1]
-            print("list_of_lines",list_of_lines)
+            print("list_of_lines", list_of_lines)
             joineddata = " ".join(list_of_lines)
             # print "array(joineddata.split())",array(joineddata.split())
             array_grain = np.reshape(
@@ -1492,22 +1475,22 @@ class parametric_Grain_Dialog3(wx.Frame):
         Toedit_sorted = Toedit[np.argsort(Toedit[:, 4])[::-1]]
         # print "ghg",array(Toedit_sorted, dtype = '|S11')[:10] # number of digits in file encoded by number of chars in string
 
-        print("Toedit_sorted",Toedit_sorted)
+        print("Toedit_sorted", Toedit_sorted)
         filename = os.path.join(self.dirname, file_name_fake)
 
         corfileobj = open(filename, "w")
 
-        footer="# Cor file generated by LaueTools Polygrains Simulation Software"
+        footer = "# Cor file generated by LaueTools Polygrains Simulation Software"
         footer += "\n# File created at %s by by ParametricLaueSimulator.py" % (time.asctime())
         footer += "\n# Calibration parameters"
         for par, value in zip(["dd", "xcen", "ycen", "xbet", "xgam"], self.calib):
-            footer+="\n# %s     :   %s" % (par, value)
-        footer+="\n# pixelsize    :   %s" % self.pixelsize
-        footer+="\n# ypixelsize    :   %s" % self.pixelsize    
-        footer+="\n# CCDLabel    :   %s" % self.CCDLabel
-        
-        header2="2theta   chi    x    y  I"
-        np.savetxt(corfileobj,Toedit_sorted,fmt='%.8f',header=header2,footer=footer,comments="")
+            footer += "\n# %s     :   %s" % (par, value)
+        footer += "\n# pixelsize    :   %s" % self.pixelsize
+        footer += "\n# ypixelsize    :   %s" % self.pixelsize
+        footer += "\n# CCDLabel    :   %s" % self.CCDLabel
+
+        header2 = "2theta   chi    x    y  I"
+        np.savetxt(corfileobj, Toedit_sorted, fmt='%.8f', header=header2, footer=footer, comments="")
 
         corfileobj.close()
 
@@ -1547,7 +1530,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # list of parameters for parent and child grains
         list_param = MGS.Construct_GrainsParameters_parametric(self.SelectGrains)
 
-        print('list_param',list_param)
+        # print('list_param',list_param)
 
         if not list_param:
             dlg = wx.MessageDialog(self,
@@ -1605,7 +1588,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
             fullpathimagename = str(self.rightpanel.expimagetxtctrl.GetValue())
             if not os.path.isfile(fullpathimagename):
-                dlg = wx.MessageDialog( self, "Image file : %s\n\ndoes not exist!!" % fullpathimagename,
+                dlg = wx.MessageDialog(self, "Image file : %s\n\ndoes not exist!!" % fullpathimagename,
                     "FILE ERROR", wx.OK | wx.ICON_ERROR, )
                 dlg.ShowModal()
                 dlg.Destroy()
@@ -1646,9 +1629,12 @@ class parametric_Grain_Dialog3(wx.Frame):
                                                 framedim=self.framedim,
                                                 dictmaterials=self.parent.dict_Materials)
 
+        # (list_twicetheta, list_chi,
+        # list_energy, list_Miller,
+        # list_posX, list_posY, ListName, nb_g_t, calib, total_nb_grains) = data_res
         (list_twicetheta, list_chi,
         list_energy, list_Miller,
-        list_posX, list_posY, ListName, nb_g_t, calib, total_nb_grains) = data_res
+        list_posX, list_posY, _, nb_g_t, _, total_nb_grains) = data_res
 
         print("len(list_posX)", len(list_posX))
         print("len(list_posY)", len(list_posY))
@@ -1679,7 +1665,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         print('SpotIndexAccum_list', SpotIndexAccum_list)
         print('GrainParent_list', GrainParent_list)
         print('TransformType_list', TransformType_list)
- 
+
         # ------  setting StreakingData   for grains distribution or slips system or single crystals
         # StreakingData = data_res, SpotIndexAccum_list, GrainParent_list, TransformType_list, slipsystemsfcc
         # -------------------------------------------------------
@@ -1687,7 +1673,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         StreakingData = None
         slipsystemsfcc = None
         for elem in nb_g_t:
-            grainindex, nb_transforms, transformtype = elem
+            _, _, transformtype = elem
             print('transformtype', transformtype)
             print('elem transform', elem)
             if 'slip' in transformtype:
@@ -1702,7 +1688,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # ------------------------------------------------
         # plot results --------------------------------------
         #---------------------------------------------------
-        
+
         # experimental data
         if showExperimenalData:
             experimentaldata_2thetachi = (
@@ -1719,8 +1705,9 @@ class parametric_Grain_Dialog3(wx.Frame):
         if plottype == "2thetachi":
             totalnbspots = 0
             for slist in list_twicetheta:
-                totalnbspots+=len(slist)
-            if totalnbspots == 0: wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!','Info')
+                totalnbspots += len(slist)
+            if totalnbspots == 0:
+                wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!', 'Info')
             simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
                             data=(list_twicetheta, list_chi, list_energy, list_Miller,
                             total_nb_grains, plottype, experimentaldata_2thetachi,),
@@ -1730,8 +1717,9 @@ class parametric_Grain_Dialog3(wx.Frame):
         elif "XYmar" in plottype:
             totalnbspots = 0
             for slist in list_posX:
-                totalnbspots+=len(slist)
-            if totalnbspots == 0: wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!','Info')
+                totalnbspots += len(slist)
+            if totalnbspots == 0:
+                wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!', 'Info')
             simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
                         data=(list_posX, list_posY, list_energy, list_Miller,
                         total_nb_grains, plottype, experimentaldata_XYMAR,),

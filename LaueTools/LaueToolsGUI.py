@@ -1853,7 +1853,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 list_nonindexed.append(k)
         return list_nonindexed
 
-    def Update_DataToIndex_Dict(self, data_list, grain_index):
+    def Update_DataToIndex_Dict(self, data_list):
         """
         udpate dictionary of exp. spots taking into account data_list values(indexation results)
         """
@@ -2007,7 +2007,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         #         print "LaueToolsProjectFolder", LaueToolsProjectFolder
 
-        pdffile_adress = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation", "latex",                                                                                           "LaueTools.pdf")
+        pdffile_adress = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation", "latex",
+                                                                                "LaueTools.pdf")
 
         webbrowser.open(pdffile_adress)
 
@@ -2564,7 +2565,7 @@ class MatrixEditor_Dialog(wx.Frame):
         else:
             print("No name input")
 
-    def OnOpenMatrixFile(self, evt):
+    def OnOpenMatrixFile(self, _):
         wcd = "All files(*)|*|Matrix files(*.mat)|*.mat"
         _dir = os.getcwd()
         open_dlg = wx.FileDialog(
@@ -3287,14 +3288,14 @@ class ManualIndexFrame(wx.Frame):
         sizerH.Fit(self)
         self.Layout()
 
-    def sliderUpdate_exp(self, evt):
+    def sliderUpdate_exp(self, _):
         print("sliderUpdate_exp")
         self.factorsize = int(self.slider_exp.GetValue())
         self.getlimitsfromplot = True
         self._replot()
         print("factor spot size = %f " % self.factorsize)
 
-    def sliderUpdate_ps(self, evt):
+    def sliderUpdate_ps(self, _):
         print("sliderUpdate_ps", self.slider_ps.GetValue())
         # ps from -5 5
         ps = (int(self.slider_ps.GetValue()) - 50) / 10.0
@@ -3312,7 +3313,7 @@ class ManualIndexFrame(wx.Frame):
         self._replot()
         print("powerscale factor spot size = %f " % self.powerscale)
 
-    def onSetImageScale(self, evt):
+    def onSetImageScale(self, _):
         """
         open a board to change image scale
         """
@@ -3327,13 +3328,13 @@ class ManualIndexFrame(wx.Frame):
     #         PlotLismitsBoard.Destroy()
     #         self._replot()
 
-    def OnDrawLine(self, evt):
+    def OnDrawLine(self, _):
         self.addlines = True
 
         self.getlimitsfromplot = True
         self._replot()
 
-    def OnClearLines(self, evt):
+    def OnClearLines(self, _):
         self.addlines = False
 
         self.getlimitsfromplot = True
@@ -3358,7 +3359,7 @@ class ManualIndexFrame(wx.Frame):
     def reinit_data(self):
         self.data = copy.copy(self.alldata)
 
-    def BuildDataDict_old(self, evt):  # filter Exp Data spots
+    def BuildDataDict_old(self, _):  # filter Exp Data spots
         """
         in ManualIndexFrame class
         launch by 'filter Exp Data spots' button
@@ -3412,7 +3413,7 @@ class ManualIndexFrame(wx.Frame):
                                     field_name_and_order=fields)
         dia.Show(True)
 
-    def BuildDataDict(self, evt):  # filter Exp Data spots
+    def BuildDataDict(self, _):  # filter Exp Data spots
         """
         in ManualIndexFrame class
 
@@ -4044,7 +4045,7 @@ class ManualIndexFrame(wx.Frame):
         if spottype == "exp":
             self.sb.SetStatusText(("%s= %.2f " % (Xplot, x) + " %s= %.2f " % (Yplot, y) +
                                     "   Spotindex=%d " % annote[0] +
-                                    "   Intensity=%.2f" % annote[1] ), 0)
+                                    "   Intensity=%.2f" % annote[1]), 0)
 
     def locateSpot(self, evt):
         if self.findspotchck.GetValue():

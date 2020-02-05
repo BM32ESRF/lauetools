@@ -149,7 +149,7 @@ class CCDFileParameters(wx.Dialog):
         """
         display and set values of parameters
         """
-        for kk, param in enumerate(self.paramdetector):
+        for kk, _ in enumerate(self.paramdetector):
             self.controltext.append(
                 wx.TextCtrl(self.panel,
                                 -1,
@@ -161,7 +161,7 @@ class CCDFileParameters(wx.Dialog):
         """
         set parameters to zero or None 
         """
-        for kk, param in enumerate(self.paramdetector):
+        for kk, _ in enumerate(self.paramdetector):
             self.controltext.append(
                 wx.TextCtrl(self.panel,
                             -1,

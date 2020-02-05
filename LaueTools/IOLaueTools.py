@@ -296,7 +296,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
     """
     List_sharpedParameters = ["# %s" % elem for elem in CCD_CALIBRATION_PARAMETERS]
 
-    print("List_sharpedParameters",List_sharpedParameters)
+    print("List_sharpedParameters", List_sharpedParameters)
     if Dict_to_update is None:
         CCDcalib = {}
     else:
@@ -319,8 +319,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
         CCDcalib['pixelsize'] = CCDcalib['ypixelsize']
     if 'xpixelsize' in CCDcalib:
         CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
-    
-    print('CCDcalib in readCalibParametersInFile',CCDcalib)
+
+    print('CCDcalib in readCalibParametersInFile', CCDcalib)
 
     if 'CCDLabel' not in CCDcalib:  #will recognise from pixelsize...
         CCDcalib['CCDLabel'] = None# DEFAULT_CCDLABEL
@@ -2027,7 +2027,7 @@ def read_indexationfile(filename, grainindex_mat=0):
     for key, _ in datamat_B.items():
         datamat_B[key] = np.array(datamat_B[key], dtype=float)
 
-    for key, val in datamat_E.items():
+    for key, _ in datamat_E.items():
         datamat_E[key] = np.array(datamat_E[key], dtype=float)
 
     calib = []
