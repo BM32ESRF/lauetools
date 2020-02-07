@@ -32,20 +32,16 @@ from matplotlib.patches import Rectangle as PatchRectangle
 import matplotlib as mpl
 from matplotlib.ticker import FuncFormatter
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar,
-)
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                NavigationToolbar2WxAgg as NavigationToolbar)
 
 WXPYTHON3 = False
 if wx.__version__ >= "3.0.0":
     WXPYTHON3 = True
     from matplotlib.widgets import RectangleSelector
 
-import matplotlib.pyplot as plt
-
 try:
-    from ObjectListView import ObjectListView, ColumnDefn, GroupListView
+    from ObjectListView import ObjectListView, ColumnDefn #, GroupListView
 
     ObjectListView_Present = True
 except ImportError:
@@ -67,13 +63,14 @@ if sys.version_info.major == 3:
     from . import readmccd as RMCCD
     from . import fit2Dintensity as fit2d
     from . import LaueGeometry as F2TC
-    from . import peaklistfit2d as plf2d
+    # from . import peaklistfit2d as plf2d
     from . import Plot1DFrame as PLOT1D
     from . import HistogramPlot as HISTOPLOT
     from . import ImshowFrame as IMSHOW
     from . import generaltools as GT
     from . import CCDFileParametersGUI as CCDParamGUI
     from . import IOLaueTools as IOLT
+    from . import PeaksListBoard
 else:
     import dragpoints as DGP
     import mosaic as MOS
@@ -82,13 +79,14 @@ else:
     import readmccd as RMCCD
     import fit2Dintensity as fit2d
     import LaueGeometry as F2TC
-    import peaklistfit2d as plf2d
+    # import peaklistfit2d as plf2d
     import Plot1DFrame as PLOT1D
     import HistogramPlot as HISTOPLOT
     import ImshowFrame as IMSHOW
     import generaltools as GT
     import CCDFileParametersGUI as CCDParamGUI
     import IOLaueTools as IOLT
+    import PeaksListBoard
 
 LaueToolsProjectFolder = os.path.split(__file__)[0]
 
@@ -96,116 +94,87 @@ print("LaueToolsProjectFolder", LaueToolsProjectFolder)
 
 
 class ViewColorPanel(wx.Panel):
+    """class to play with color LUT and intensity scale
+    """
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()  # layout2()
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
 
-        #         print "granparent of ViewColorPanel", self.granparent
+        self.xc, self.yc = None, None
+        self.indexcirclespatchlist = None
+        self.drg = None
+        self.DetFilename = None
 
+        # widgets
         luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
-        self.comboLUT = wx.ComboBox(
-            self, -1, self.granparent.LastLUT, (70, 5), choices=self.granparent.mapsLUT
-        )  # ,
-        # style=wx.CB_READONLY)
+        self.comboLUT = wx.ComboBox(self, -1, self.mainframe.LastLUT, (70, 5),
+                                                    choices=self.mainframe.mapsLUT)
 
-        self.comboLUT.Bind(wx.EVT_COMBOBOX, self.granparent.OnChangeLUT)
+        self.comboLUT.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeLUT)
 
         posv = 40
 
         self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
-
-        self.vminctrl = wx.SpinCtrl(
-            self,
-            -1,
-            str(self.granparent.vmin),
-            pos=(50, posv),
-            size=(80, -1),
-            min=-200,
-            max=1000000,
-        )
-        self.vminctrl.Bind(wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_IminDisplayed)
+        self.vminctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmin), pos=(50, posv),
+                                                                        size=(80, -1),
+                                                                        min=-200,
+                                                                        max=1000000)
+        self.vminctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
 
-        self.vmaxctrl = wx.SpinCtrl(
-            self,
-            -1,
-            str(self.granparent.vmaxmax),
-            pos=(50, posv + 30),
-            size=(80, -1),
-            min=2,
-            max=1000000,
-        )
-        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_ImaxDisplayed)
+        self.vmaxctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmaxmax), pos=(50, posv + 30),
+                                                            size=(80, -1), min=2, max=1000000)
+        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed)
 
         #         self.slider_label = wx.StaticText(self, -1,
         #             "peak tilt (%): ")
-        self.slider_vmin = wx.Slider(
-            self,
-            -1,
-            pos=(150, posv + 5),
-            size=(220, -1),
-            value=int(self.granparent.vmin),
-            minValue=-int(self.granparent.vminmax) + 2 * int(self.granparent.vmin),
-            maxValue=int(self.granparent.vminmax),
-            style=wx.SL_AUTOTICKS,
-        )  # | wx.SL_LABELS)
+        self.slider_vmin = wx.Slider(self, -1, pos=(150, posv + 5), size=(220, -1),
+                            value=int(self.mainframe.vmin),
+                            minValue=-int(self.mainframe.vminmax) + 2 * int(self.mainframe.vmin),
+                            maxValue=int(self.mainframe.vminmax),
+                            style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
             #            self.slider_vmin.SetTickFreq(500,1)
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
-        self.slider_vmin.Bind(
-            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_IminDisplayed
-        )
+        self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
+                                                        self.mainframe.on_slider_IminDisplayed)
 
         # second horizontal band
         #         self.slider_label2 = wx.StaticText(self, -1,
         #             "data size (%): ")
-        self.slider_vmax = wx.Slider(
-            self,
-            -1,
-            pos=(150, posv + 35),
-            size=(220, -1),
-            value=int(self.granparent.vmax),
-            minValue=int(self.granparent.vmin) + 1,
-            maxValue=int(self.granparent.vmaxmax),
-            style=wx.SL_AUTOTICKS,
-        )  # | wx.SL_LABELS)
+        self.slider_vmax = wx.Slider(self, -1, pos=(150, posv + 35), size=(220, -1),
+                                                        value=int(self.mainframe.vmax),
+                                                        minValue=int(self.mainframe.vmin) + 1,
+                                                        maxValue=int(self.mainframe.vmaxmax),
+                                                        style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_vmax.SetTickFreq(500)
         else:
             self.slider_vmax.SetTickFreq(500, 1)
-        self.slider_vmax.Bind(
-            wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_ImaxDisplayed
-        )
+        self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
+                                                            self.mainframe.on_slider_ImaxDisplayed)
 
-        self.Iminvaltxt = wx.StaticText(
-            self, -1, str(self.granparent.vmin), pos=(400, posv + 5)
-        )
-        self.Imaxvaltxt = wx.StaticText(
-            self, -1, str(self.granparent.vmax), pos=(400, posv + 35)
-        )
+        self.Iminvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmin), pos=(400, posv + 5))
+        self.Imaxvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmax), pos=(400, posv + 35))
 
-        self.lineXYprofilechck = wx.CheckBox(
-            self, -1, "Enable X Y profiler", (5, posv + 60)
-        )
+        self.lineXYprofilechck = wx.CheckBox(self, -1, "Enable X Y profiler", (5, posv + 60))
         InitStateXYProfile = False
         self.lineXYprofilechck.SetValue(InitStateXYProfile)
         self.lineXYprofilechck.Bind(wx.EVT_CHECKBOX, self.OnTogglelineXYprofiles)
         self.plotlineXprofile = InitStateXYProfile
         self.plotlineYprofile = InitStateXYProfile
 
-        self.lineprof_btn = wx.Button(
-            self, -1, "Open LineProfiler", (200, posv + 60), (130, -1)
-        )
+        self.lineprof_btn = wx.Button(self, -1, "Open LineProfiler", (200, posv + 60), (130, -1))
         self.lineprof_btn.Bind(wx.EVT_BUTTON, self.OnShowLineProfiler)
 
         savefig_btn = wx.Button(self, -1, "SaveFig", (5, posv + 150), (80, -1))
-        savefig_btn.Bind(wx.EVT_BUTTON, self.granparent.OnSaveFigure)
+        savefig_btn.Bind(wx.EVT_BUTTON, self.mainframe.OnSaveFigure)
 
         replot_btn = wx.Button(self, -1, "Replot", (120, posv + 150), (80, -1))
         replot_btn.Bind(wx.EVT_BUTTON, self.OnReplot)
@@ -217,7 +186,7 @@ class ViewColorPanel(wx.Panel):
         self.opendetfilebtn.Bind(wx.EVT_BUTTON, self.onOpenDetFile)
 
         showhisto_btn = wx.Button(self, -1, "Intensity Distribution", (260, 5))
-        showhisto_btn.Bind(wx.EVT_BUTTON, self.granparent.ShowHisto)
+        showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto)
 
         self.plotlineprofileframe = None
         self.plotlineXprofileframe = None
@@ -227,14 +196,10 @@ class ViewColorPanel(wx.Panel):
         # tooltip
         tp1 = "selection of various intensity mapping color Looking_up table (LUT)"
 
-        luttxt.SetToolTipString(
-            "selection of various intensity mappingcolor Looking_up table (LUT)"
-        )
+        luttxt.SetToolTipString("selection of various intensity mappingcolor Looking_up table (LUT)")
         self.comboLUT.SetToolTipString(tp1)
 
-        showhisto_btn.SetToolTipString(
-            "Show histogram of pixel intensity distribution of raw image"
-        )
+        showhisto_btn.SetToolTipString("Show histogram of pixel intensity distribution of raw image")
 
         tp2 = "Coarse color scale intensity: min and max"
 
@@ -260,23 +225,19 @@ class ViewColorPanel(wx.Panel):
 
         tiplineprof = "Open/Close Draggable Line Pixel intensity Profiler.\n"
         tiplineprof += "Press left mouse button to move line.\n"
-        tiplineprof += (
-            "Press right mouse button to change line length (or, press + or -).\n"
-        )
+        tiplineprof += ("Press right mouse button to change line length (or, press + or -).\n")
 
         self.lineprof_btn.SetToolTipString(tiplineprof)
 
-        self.lineXYprofilechck.SetToolTipString(
-            "Open X and Y pixel intensity line cross sections"
-        )
+        self.lineXYprofilechck.SetToolTipString("Open X and Y pixel intensity line cross sections")
         tipst2 = "Show in status bar the 2 scattering angles. It needs a calibration file .det"
         self.show2thetachi.SetToolTipString(tipst2)
 
     def OnReplot(self, _):
-        # type np.int to test with cython module arr.pyx
-        #         import arr
-        #         arr.change2Darray_int(self.granparent.dataimage_ROI_display)
-        self.granparent.OnReplot(1)
+        """trigger main self.mainframe.OnReplot(1)
+        """
+
+        self.mainframe.OnReplot(1)
 
     def showprofiles(self, event):
 
@@ -286,8 +247,6 @@ class ViewColorPanel(wx.Panel):
             if isinstance(event, mpl.backend_bases.MouseEvent):
                 self.OnShowLineXYProfiler(event)
 
-    #         self.OnShowLineProfiler(evt)
-
     def OnTogglelineXYprofiles(self, evt):
         self.plotlineXprofile = not self.plotlineXprofile
         self.plotlineYprofile = not self.plotlineYprofile
@@ -295,7 +254,7 @@ class ViewColorPanel(wx.Panel):
         self.showprofiles(evt)
 
     def getlineXYprofiledata(self, event):
-        ax = self.granparent.axes
+        ax = self.mainframe.axes
 
         xmin, xmax = ax.get_xlim()
         # warning of ymax and ymin swapping!
@@ -303,34 +262,30 @@ class ViewColorPanel(wx.Panel):
 
         xmin, xmax, ymin, ymax = [int(val) for val in (xmin, xmax, ymin, ymax)]
 
-        xmin, xmax, ymin, ymax = self.restrictxylimits_to_imagearray(
-            xmin, xmax, ymin, ymax
-        )
+        xmin, xmax, ymin, ymax = self.restrictxylimits_to_imagearray(xmin, xmax, ymin, ymax)
 
         #         print "xmin, xmax, ymin, ymax", xmin, xmax, ymin, ymax
 
-        if self.granparent.dataimage_ROI_display is not None:
+        if self.mainframe.dataimage_ROI_display is not None:
             # Extract the values along the line
-            z = self.granparent.dataimage_ROI_display
+            z = self.mainframe.dataimage_ROI_display
         else:
-            z = self.granparent.dataimage_ROI
+            z = self.mainframe.dataimage_ROI
 
         xyc = self.getclickposition(event)
         if xyc:
             self.xc, self.yc = xyc
-
-        #         print "xc, yc", xc, yc
 
         x = np.arange(xmin, xmax + 1)
         y = np.arange(ymin, ymax + 1)
         zx = z[int(np.round(self.yc)), xmin : xmax + 1]
         zy = z[ymin : ymax + 1, int(np.round(self.xc))]
 
-        #         print "len(y)", len(y)
-        #         print "len(zy)", len(zy)
         return x, y, zx, zy
 
     def getclickposition(self, event):
+        """return closest pixel integer coordinates to clicked pt
+        """
         if not isinstance(event, mpl.backend_bases.MouseEvent):
             return None
 
@@ -340,61 +295,47 @@ class ViewColorPanel(wx.Panel):
         """ show line X and Y profilers
         """
         LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT = 900, 300
-        print(
-            "self.plotlineXprofile and self.plotlineYprofile == ",
-            self.plotlineXprofile and self.plotlineYprofile,
-        )
+        print("self.plotlineXprofile and self.plotlineYprofile == ",
+            self.plotlineXprofile and self.plotlineYprofile)
+
         if self.plotlineXprofile and self.plotlineYprofile:
 
-            if (
-                self.plotlineXprofileframe is None
-                and self.plotlineYprofileframe is None
-            ):
+            if (self.plotlineXprofileframe is None and self.plotlineYprofileframe is None):
 
                 x, y, zx, zy = self.getlineXYprofiledata(event)
 
                 xp, yp = self.bestposition(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT)
 
                 # -- Plot lineprofile...
-                self.plotlineXprofileframe = PLOT1D.Plot1DFrame(
-                    self,
-                    -1,
-                    "Intensity profile X",
-                    "",
-                    [x, zx],
-                    logscale=0,
-                    figsize=(8, 3),
-                    dpi=100,
-                    size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT),
-                )
+                self.plotlineXprofileframe = PLOT1D.Plot1DFrame(self, -1, "Intensity profile X",
+                                                    "",
+                                                    [x, zx],
+                                                    logscale=0,
+                                                    figsize=(8, 3),
+                                                    dpi=100,
+                                                    size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT))
                 self.plotlineXprofileframe.SetPosition((xp, yp))
                 self.plotlineXprofileframe.Show(True)
 
-                self.plotlineYprofileframe = PLOT1D.Plot1DFrame(
-                    self,
-                    -1,
-                    "Intensity profile Y",
-                    "",
-                    [y, zy],
-                    logscale=0,
-                    figsize=(8, 3),
-                    dpi=100,
-                    size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT),
-                )
+                self.plotlineYprofileframe = PLOT1D.Plot1DFrame(self, -1, "Intensity profile Y",
+                                                    "",
+                                                    [y, zy],
+                                                    logscale=0,
+                                                    figsize=(8, 3),
+                                                    dpi=100,
+                                                    size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT))
                 self.plotlineYprofileframe.SetPosition((xp - 200, yp))
                 self.plotlineYprofileframe.Show(True)
 
-            if (
-                self.plotlineXprofileframe is not None
-                or self.plotlineYprofileframe is not None
-            ):
+            if (self.plotlineXprofileframe is not None or self.plotlineYprofileframe is not None):
                 self.updateLineXYProfile(event)
 
     def bestposition(self, LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT):
+        """ return xp, yp (best position) """
         # screen size
         dws, dhs = wx.DisplaySize()
         # peaksearchframe size
-        wf, hf = self.granparent.GetSize()
+        wf, hf = self.mainframe.GetSize()
         print("wf, hf", wf, hf)
         print("dws, dhs", dws, dhs)
 
@@ -409,7 +350,10 @@ class ViewColorPanel(wx.Panel):
         return xp, yp
 
     def restrictxylimits_to_imagearray(self, xmin, ymin, xmax, ymax):
-        dim = self.granparent.framedim
+        """return compatible extremal value of x,y
+        xmin, ymin, xmax, ymax
+        """
+        dim = self.mainframe.framedim
 
         xmin = max(0, xmin)
         ymin = max(0, ymin)
@@ -421,12 +365,10 @@ class ViewColorPanel(wx.Panel):
     def getlineprofiledata(self, x0, y0, x2, y2):
         """
         get pixel intensities array between two points (x0,y0) and (x2,y2)
-        """
 
+        return dataX, dataY
+        """
         x0, y0, x2, y2 = self.restrictxylimits_to_imagearray(x0, y0, x2, y2)
-        #
-        #         print 'x0, y0, x2, y2'
-        #         print x0, y0, x2, y2
 
         length = int(np.hypot(x2 - x0, y2 - y0))
         x1 = (x2 + x0) / 2.0
@@ -434,11 +376,11 @@ class ViewColorPanel(wx.Panel):
 
         x, y = np.linspace(x0, x2, length), np.linspace(y0, y2, length)
 
-        if self.granparent.dataimage_ROI_display is not None:
+        if self.mainframe.dataimage_ROI_display is not None:
             # Extract the values along the line
-            z = self.granparent.dataimage_ROI_display
+            z = self.mainframe.dataimage_ROI_display
         else:
-            z = self.granparent.dataimage_ROI
+            z = self.mainframe.dataimage_ROI
 
         # transpose data
         i_ind = y.astype(np.int)
@@ -466,16 +408,12 @@ class ViewColorPanel(wx.Panel):
             self.lineXYprofilechck.SetValue(False)
 
             self.lineprof_btn.SetLabel("Close LineProfiler")
-            #             self.plotlineXprofile = False
-            #             self.plotlineYprofile = False
-            #             self.lineXYprofilechck.SetValue(False)
 
             # -- Plot lineprofile...
             x, zi = self.getlineprofiledata(self.x0, self.y0, self.x2, self.y2)
 
-            self.plotlineprofileframe = PLOT1D.Plot1DFrame(
-                self, -1, "Intensity profile", "", [x, zi], logscale=0, figsize=(8, 3)
-            )
+            self.plotlineprofileframe = PLOT1D.Plot1DFrame(self, -1, "Intensity profile", "",
+                                                            [x, zi], logscale=0, figsize=(8, 3))
             self.plotlineprofileframe.Show(True)
 
             # plot line on canvas (CCD image)
@@ -484,37 +422,27 @@ class ViewColorPanel(wx.Panel):
             pt2 = [self.x2, self.y2]
             ptcenter = DGP.center_pts(pt1, pt2)
 
-            circles = [
-                Circle(pt1, 50, fill=True, color="r", alpha=0.5),
-                Circle(ptcenter, 50, fc="r", alpha=0.5),
-                Circle(pt2, 50, fill=True, color="r", alpha=0.5),
-            ]
+            circles = [Circle(pt1, 50, fill=True, color="r", alpha=0.5),
+                        Circle(ptcenter, 50, fc="r", alpha=0.5),
+                        Circle(pt2, 50, fill=True, color="r", alpha=0.5)]
 
-            line, = self.granparent.axes.plot(
-                [pt1[0], ptcenter[0], pt2[0]],
-                [pt1[1], ptcenter[1], pt2[1]],
-                picker=1,
-                c="r",
-            )
+            line, = self.mainframe.axes.plot([pt1[0], ptcenter[0], pt2[0]],
+                                            [pt1[1], ptcenter[1], pt2[1]],
+                                            picker=1,
+                                            c="r")
             self.indexcirclespatchlist = []
-            init_patches_nb = len(self.granparent.axes.patches)
+            init_patches_nb = len(self.mainframe.axes.patches)
             for k, circ in enumerate(circles):
-                self.granparent.axes.add_patch(circ)
+                self.mainframe.axes.add_patch(circ)
                 self.indexcirclespatchlist.append(init_patches_nb + k)
             #             print "building draggable line"
-            #             print "peak search canvas", self.granparent.canvas
-            self.drg = DGP.DraggableLine(
-                circles,
-                line,
-                tolerance=200,
-                parent=self.granparent,
-                framedim=self.granparent.framedim,
-                datatype="pixels",
-            )
+            #             print "peak search canvas", self.mainframe.canvas
+            self.drg = DGP.DraggableLine(circles, line, tolerance=200, parent=self.mainframe,
+                                            framedim=self.mainframe.framedim, datatype="pixels")
 
-            self.granparent.axes.set_xlim(0, 2047)
-            self.granparent.axes.set_ylim(2047, 0)
-            self.granparent.canvas.draw()
+            self.mainframe.axes.set_xlim(0, 2047)
+            self.mainframe.axes.set_ylim(2047, 0)
+            self.mainframe.canvas.draw()
 
         else:
             self.lineprof_btn.SetLabel("Open LineProfiler")
@@ -522,15 +450,15 @@ class ViewColorPanel(wx.Panel):
             self.drg.connectingline.set_data([0], [0])  # empty line
 
             # warning patches list can contain circle marker from peak search
-            #             print "self.granparent.axes.patches", self.granparent.axes.patches
+            #             print "self.mainframe.axes.patches", self.mainframe.axes.patches
             for k in range(len(self.indexcirclespatchlist)):
-                del self.granparent.axes.patches[self.indexcirclespatchlist[0]]
+                del self.mainframe.axes.patches[self.indexcirclespatchlist[0]]
 
-            dim = self.granparent.framedim
+            dim = self.mainframe.framedim
 
-            self.granparent.axes.set_xlim(0, dim[1] - 1)
-            self.granparent.axes.set_ylim(dim[0] - 1, 0)
-            self.granparent.canvas.draw()
+            self.mainframe.axes.set_xlim(0, dim[1] - 1)
+            self.mainframe.axes.set_ylim(dim[0] - 1, 0)
+            self.mainframe.canvas.draw()
             self.drg = None
             self.plotlineprofileframe.Destroy()
             self.plotlineprofileframe = None
@@ -538,16 +466,12 @@ class ViewColorPanel(wx.Panel):
         return
 
     def updateLineXYProfile(self, event):
-        #         print "updateLineXYProfile()"
-        #
-        #         print "self.plotlineXprofileframe", self.plotlineXprofileframe
-        #
-        #         print "event updateLineXYProfile", event
-
+        """recompute line section intensity profile
+        horizontal (x, zx)
+        vertical (y, zy)
+        """
         if self.plotlineXprofileframe is not None:
             x, y, zx, zy = self.getlineXYprofiledata(event)
-
-            #             print "x, y, zx, zy", x, y, zx, zy
 
             if len(x) != len(zx) or len(y) != len(zy):
                 print("STRANGE")
@@ -556,17 +480,11 @@ class ViewColorPanel(wx.Panel):
             xyc = self.getclickposition(event)
             if xyc:
                 self.xc, self.yc = xyc
-            #         print "x", x
-            #             print "xmin=", min(x)
-            #             print "xmax=", max(x)
-            #             print "Imin=", min(zi)
-            #             print "Imax=", max(zi)
+
             lineXprofileframe = self.plotlineXprofileframe
 
             lineXprofileframe.line.set_data(x, zx)
-            lineXprofileframe.axes.set_title(
-                "%s\n@y=%s" % (self.granparent.imagefilename, self.yc)
-            )
+            lineXprofileframe.axes.set_title("%s\n@y=%s" % (self.mainframe.imagefilename, self.yc))
             lineXprofileframe.axes.relim()
             lineXprofileframe.axes.autoscale_view(True, True, True)
             lineXprofileframe.canvas.draw()
@@ -581,17 +499,11 @@ class ViewColorPanel(wx.Panel):
             xyc = self.getclickposition(event)
             if xyc:
                 self.xc, self.yc = xyc
-            #         print "x", x
-            #             print "xmin=", min(x)
-            #             print "xmax=", max(x)
-            #             print "Imin=", min(zi)
-            #             print "Imax=", max(zi)
+
             lineYprofileframe = self.plotlineYprofileframe
 
             lineYprofileframe.line.set_data(y, zy)
-            lineYprofileframe.axes.set_title(
-                "%s\n@x=%s" % (self.granparent.imagefilename, self.xc)
-            )
+            lineYprofileframe.axes.set_title("%s\n@x=%s" % (self.mainframe.imagefilename, self.xc))
             lineYprofileframe.axes.relim()
             lineYprofileframe.axes.autoscale_view(True, True, True)
             lineYprofileframe.canvas.draw()
@@ -609,115 +521,96 @@ class ViewColorPanel(wx.Panel):
             lineprofileframe = self.plotlineprofileframe
 
             lineprofileframe.line.set_data(x, zi)
-            lineprofileframe.axes.set_title(
-                "%s\nline [%d,%d]-[%d,%d]"
-                % (self.granparent.imagefilename, self.x0, self.y0, self.x2, self.y2)
-            )
+            lineprofileframe.axes.set_title("%s\nline [%d,%d]-[%d,%d]"
+                % (self.mainframe.imagefilename, self.x0, self.y0, self.x2, self.y2))
             lineprofileframe.axes.relim()
             lineprofileframe.axes.autoscale_view(True, True, True)
             lineprofileframe.canvas.draw()
 
     def onOpenDetFile(self, _):
+        """open and read .det file with geometry detection calibration parameters
+
+        set self.DetFilename
+        set self.mainframe.DetFilename
+        """
         print("onOpenDetFile")
-        self.granparent.ReadDetFile(1)
-        self.DetFilename = self.granparent.DetFilename
-        self.detfiletxtctrl.SetValue(self.granparent.DetFilename)
+        self.mainframe.ReadDetFile(1)
+        self.DetFilename = self.mainframe.DetFilename
+        self.detfiletxtctrl.SetValue(self.DetFilename)
 
     def showImage(self):
         """
         branching from button of ViewColorPanel class: show blur/raw image
         """
-        print(
-            "entering showImage() of ViewColorPanel class with Imagetype %s"
-            % self.granparent.ImageFilterpanel.ImageType
-        )
+        print("entering showImage() of ViewColorPanel class with Imagetype %s"
+                                                % self.mainframe.ImageFilterpanel.ImageType)
 
         # display raw after having displayed blur image
-        if self.granparent.ImageFilterpanel.ImageType == "Blur":
+        if self.mainframe.ImageFilterpanel.ImageType == "Blur":
 
-            self.granparent.ImageFilterpanel.ShowblurImagebtn.SetLabel("Show Raw Image")
+            self.mainframe.ImageFilterpanel.ShowblurImagebtn.SetLabel("Show Raw Image")
             # if auto_backgroiund image is already there
-            if self.granparent.ImageFilterpanel.blurimage is not None:
-                self.granparent.dataimage_ROI_display = (
-                    self.granparent.ImageFilterpanel.blurimage
-                )
-                self.granparent.Show_Image(1, datatype="Blur Image")
+            if self.mainframe.ImageFilterpanel.blurimage is not None:
+                self.mainframe.dataimage_ROI_display = self.mainframe.ImageFilterpanel.blurimage
+                self.mainframe.Show_Image(1, datatype="Blur Image")
             # if auto_backgroiund image is missing, compute it!
             else:
-                self.granparent.ImageFilterpanel.onComputeBlurImage(1)
+                self.mainframe.ImageFilterpanel.onComputeBlurImage(1)
 
         # display blur after having displayed raw image
-        elif self.granparent.ImageFilterpanel.ImageType == "Raw":
-            self.granparent.ImageFilterpanel.ShowblurImagebtn.SetLabel(
-                "Show Blur Image"
-            )
+        elif self.mainframe.ImageFilterpanel.ImageType == "Raw":
+            self.mainframe.ImageFilterpanel.ShowblurImagebtn.SetLabel("Show Blur Image")
             # if substract blur as bck is checked
-            if self.granparent.ImageFilterpanel.FilterImage.GetValue():
-                if self.granparent.ImageFilterpanel.filteredimage is None:
-                    self.granparent.ImageFilterpanel.Computefilteredimage()
+            if self.mainframe.ImageFilterpanel.FilterImage.GetValue():
+                if self.mainframe.ImageFilterpanel.filteredimage is None:
+                    self.mainframe.ImageFilterpanel.Computefilteredimage()
 
-                self.granparent.dataimage_ROI_display = (
-                    self.granparent.ImageFilterpanel.filteredimage
-                )
-                self.granparent.Show_Image(1, datatype="Raw Image - Background")
+                self.mainframe.dataimage_ROI_display = self.mainframe.ImageFilterpanel.filteredimage
+                self.mainframe.Show_Image(1, datatype="Raw Image - Background")
             # raw image
             else:
-                self.granparent.dataimage_ROI_display = self.granparent.dataimage_ROI
-                self.granparent.Show_Image(1, datatype="Raw Image")
+                self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
+                self.mainframe.Show_Image(1, datatype="Raw Image")
 
 
 class FilterBackGroundPanel(wx.Panel):
+    """class to handle image background tools
+    """
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
 
-        #        self.granparent = parent.GetParent()  # layout()
-        self.granparent = parent.GetParent().GetParent()  # layout2()
-
-        self.BImageFilename = self.granparent.BImageFilename
-
-        # print("granparent of FilterBackGroundPanel", self.granparent)
-
-        self.ComputeBlurredImage = wx.Button(self, -1, "Blur Image", (5, 5))
+        self.BImageFilename = self.mainframe.BImageFilename
+        self.BlackListedPeaks = None
+        self.BlackListFilename = None
         self.blurimage = None
-        self.ShowblurImagebtn = wx.ToggleButton(self, -1, "Show Blur Image", (100, 5))
+        self.filteredimage = None
+        self.KERNELSIZE = 5
         self.ImageType_index = 0
         self.ImageTypes = ["Raw", "Blur"]
         self.ImageType = self.ImageTypes[self.ImageType_index]
+
+        # print("mainframe of FilterBackGroundPanel", self.mainframe)
+        # widgets -------------------------
+        self.ComputeBlurredImage = wx.Button(self, -1, "Blur Image", (5, 5))
+        self.ShowblurImagebtn = wx.ToggleButton(self, -1, "Show Blur Image", (100, 5))
+
         self.SaveBlurredImage = wx.Button(self, -1, "Save Blur Image", (250, 5))
 
-        self.FilterImage = wx.CheckBox(
-            self, -1, "Substract blur as background", (5, 35)
-        )
-        self.filteredimage = None
+        self.FilterImage = wx.CheckBox(self, -1, "Substract blur as background", (5, 35))
 
         self.FilterImage.Bind(wx.EVT_CHECKBOX, self.OnSwitchFilterRawImage)
         self.FilterImage.SetValue(False)
 
         self.ComputeBlurredImage.Bind(wx.EVT_BUTTON, self.onComputeBlurImage)
-        self.KERNELSIZE = 5
+
         self.ShowblurImagebtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnSwitchBlurRawImage)
         self.SaveBlurredImage.Bind(wx.EVT_BUTTON, self.onSaveBlurImage)
 
-        # -------  old background
-        #        self.SubBKG = wx.CheckBox(self, -1, 'Substract Gauss. BKG', (5, 42))
-        #        self.SubBKG.SetValue(False)
-        #
-        #        wx.StaticText(self, -1, 'Amp.', (200, 42))
-        #        self.bkgamplitude = wx.TextCtrl(self, -1, '100', (290, 40), (50, -1))
-        #
-        #        wx.StaticText(self, -1, 'Center', (5, 79))
-        #        self.bkgcenter = wx.TextCtrl(self, -1, '[1024,1024]', (80, 75), (100, -1))
-        #
-        #        wx.StaticText(self, -1, 'Const.', (200, 79))
-        #        self.bkgconstant = wx.TextCtrl(self, -1, '100', (290, 75), (50, -1))
-
-        # -------------------
         self.UseImage = wx.CheckBox(self, -1, "Update A = f(A,B) ", (5, 60))
         self.Bequal = wx.StaticText(self, -1, "B = ", (30, 90))
-        self.imageBctrl = wx.TextCtrl(
-            self, -1, self.granparent.BImageFilename, (55, 90), (220, -1)
-        )
+        self.imageBctrl = wx.TextCtrl(self, -1, self.mainframe.BImageFilename, (55, 90), (220, -1))
         self.openImagebtn = wx.Button(self, -1, "...", (290, 88))
         self.UseImage.SetValue(False)
         self.openImagebtn.Bind(wx.EVT_BUTTON, self.onGetBImagefilename)
@@ -732,55 +625,40 @@ class FilterBackGroundPanel(wx.Panel):
         btnsaveformularesult = wx.Button(self, -1, "Save result", (350, 120))
         btnsaveformularesult.Bind(wx.EVT_BUTTON, self.onSaveFormulaResultImage)
 
-        self.RemoveBlackpeaks = wx.CheckBox(
-            self, -1, "Remove BlackListed Peaks", (5, 150)
-        )
+        self.RemoveBlackpeaks = wx.CheckBox(self, -1, "Remove BlackListed Peaks", (5, 150))
         self.BlackListtoltxt = wx.StaticText(self, -1, "Max. Distance", (250, 152))
-        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(
-            self, -1, "15", pos=(350, 150), size=(80, -1), min=1, max=10000
-        )
+        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(self, -1, "15", pos=(350, 150),
+                                                                size=(80, -1), min=1, max=10000)
         self.BlackListedPeaks = wx.TextCtrl(self, -1, "", (30, 180), (220, -1))
         self.openBlackListFile = wx.Button(self, -1, "...", (265, 180))
         self.RemoveBlackpeaks.SetValue(False)
         self.openBlackListFile.Bind(wx.EVT_BUTTON, self.onGetBlackListfilename)
 
         # tooltip
-        self.RemoveBlackpeaks.SetToolTipString(
-            "Peaks from current PeakSearch belonging to the blackList will be removed"
-        )
-        self.ShowblurImagebtn.SetToolTipString(
-            "Toggle button to show either blurred or raw image"
-        )
-        self.ComputeBlurredImage.SetToolTipString(
-            "Apply a blur filter to the raw image"
-        )
-        self.UseImage.SetToolTipString(
-            "Compute a new image according to the formula with A and B resp. the raw and other input image "
-        )
-        self.openBlackListFile.SetToolTipString(
-            "Browse a File containing a list of blacklisted peaks"
-        )
-        self.openImagebtn.SetToolTipString(
-            "Browse a image File as B (with the same format of the raw image A)"
-        )
+        self.RemoveBlackpeaks.SetToolTipString("Peaks from current PeakSearch belonging to the "
+                                                            "blackList will be removed")
+        self.ShowblurImagebtn.SetToolTipString("Toggle button to show either blurred or raw image")
+        self.ComputeBlurredImage.SetToolTipString("Apply a blur filter to the raw image")
+        self.UseImage.SetToolTipString("Compute a new image according to the formula with A and B "
+                                                            "resp. the raw and other input image ")
+        self.openBlackListFile.SetToolTipString("Browse a File containing a list of blacklisted peaks")
+        self.openImagebtn.SetToolTipString("Browse a image File as B (with the same format of "
+                                                                                "the raw image A)")
         self.imageBctrl.SetToolTipString("Current B image path")
         self.BlackListedPeaks.SetToolTipString("Current blacklisted peaks File path")
 
         self.FilterImage.SetToolTipString("set raw image = raw image - blur image)")
 
-        self.usealsoforfit.SetToolTipString(
-            "Use resulting image to refine peak position and shape"
-        )
+        self.usealsoforfit.SetToolTipString("Use resulting image to refine peak position and shape")
 
-        self.formulatxtctrl.SetToolTipString(
-            "Mathematical expression to compute a new A as f(A,B) for local Maxima search\n(to have initial peak position guesses for fit)"
-        )
-        btnsaveformularesult.SetToolTipString(
-            "Save current image (resulting from mathematical operation according to formula)"
-        )
+        self.formulatxtctrl.SetToolTipString("Mathematical expression to compute a new A as f(A,B) "
+                        "for local Maxima search\n(to have initial peak position guesses for fit)")
+        btnsaveformularesult.SetToolTipString("Save current image (resulting from mathematical "
+                                                                "operation according to formula)")
         self.SaveBlurredImage.SetToolTipString("Save blur image.")
 
-        tpbl = "Maximum pixel distance between peaks in blacklisted peaks list and current peaks (found by peak search) to be rejected"
+        tpbl = "Maximum pixel distance between peaks in blacklisted peaks list and current peaks "
+        "(found by peak search) to be rejected"
         self.BlackListtoltxt.SetToolTipString(tpbl)
         self.BlackListRejection_pixeldistanceMax.SetToolTipString(tpbl)
 
@@ -789,7 +667,7 @@ class FilterBackGroundPanel(wx.Panel):
             return
 
         if self.blurimage is not None:
-            self.granparent.viewingLUTpanel.showImage()
+            self.mainframe.viewingLUTpanel.showImage()
         else:
             wx.MessageBox("You need to compute first a blur image!", "INFO")
 
@@ -800,11 +678,10 @@ class FilterBackGroundPanel(wx.Panel):
         if self.blurimage is not None:
             print("ok, I have got self.blurimage")
             print("Computing self.filteredimage")
-            CCDlabel = self.granparent.CCDlabel
+            CCDlabel = self.mainframe.CCDlabel
 
-            self.filteredimage = RMCCD.computefilteredimage(
-                self.granparent.dataimage_ROI, self.blurimage, CCDlabel, kernelsize=5
-            )
+            self.filteredimage = RMCCD.computefilteredimage(self.mainframe.dataimage_ROI,
+                                                            self.blurimage, CCDlabel, kernelsize=5)
         else:
             print("self.blurimage is None !!")
 
@@ -816,16 +693,20 @@ class FilterBackGroundPanel(wx.Panel):
     #             # TODO: to compute for all CCD types
     #             center, radius, minvalue = (1024, 1024), 900, 0
     #
-    #             self.filteredimage = RMCCD.filterimage(self.granparent.dataimage_ROI, framedim,
+    #             self.filteredimage = RMCCD.filterimage(self.mainframe.dataimage_ROI, framedim,
     #                                 blurredimage=self.blurimage, kernelsize=self.KERNELSIZE,
     #                                 mask_parameters=(center, radius, minvalue),
     #                                 clipvalues=(0, saturation_value),
     #                                 imageformat=dataformat)
 
     def onComputeBlurImage(self, _):
-        self.blurimage = RMCCD.compute_autobackground_image(
-            self.granparent.dataimage_ROI, boxsizefilter=10
-        )
+        """ Compute background, blurred, filtered or low frequency spatial image
+        from current image
+
+        set self.blurimage
+        """
+        self.blurimage = RMCCD.compute_autobackground_image(self.mainframe.dataimage_ROI,
+                                                                                boxsizefilter=10)
 
         print("self.blurimage.shape", self.blurimage.shape)
 
@@ -833,21 +714,21 @@ class FilterBackGroundPanel(wx.Panel):
             wx.MessageBox("Binning and Image dimensions are not compatible", "ERROR")
             return
 
-        self.granparent.viewingLUTpanel.showImage()
+        self.mainframe.viewingLUTpanel.showImage()
 
     def OnSwitchBlurRawImage(self, _):
+        """set viewing of raw image (- background) or background (=filtered image)
+        """
         self.ImageType_index += 1
-
         self.ImageType_index = self.ImageType_index % 2
-
         self.ImageType = self.ImageTypes[self.ImageType_index]
-
-        self.granparent.viewingLUTpanel.showImage()
+        self.mainframe.viewingLUTpanel.showImage()
 
     def onSaveBlurImage(self, _):
-
-        filename = self.granparent.imagefilename
-        dirname = self.granparent.dirname
+        """save on hard disk blurred or background image obtained from current image
+        """
+        filename = self.mainframe.imagefilename
+        dirname = self.mainframe.dirname
         OUTPUTFILENAME_BLURIMAGE = "blur_" + filename
 
         _header = RMCCD.readheader(os.path.join(dirname, filename))
@@ -859,67 +740,85 @@ class FilterBackGroundPanel(wx.Panel):
         wx.MessageBox("Blurred Image written in %s" % fullpathname, "INFO")
 
     def onSaveFormulaResultImage(self, _):
-        filename = self.granparent.imagefilename
-        dirname = self.granparent.dirname
+        """save image on hard disk of data obtained by arithmetical formula
+        """
+        filename = self.mainframe.imagefilename
+        dirname = self.mainframe.dirname
         OUTPUTFILENAME_RESULTIMAGE = "result_" + filename
 
-        CCDlabel = self.granparent.CCDlabel
+        CCDlabel = self.mainframe.CCDlabel
 
         _header = RMCCD.readheader(os.path.join(dirname, filename), CCDLabel=CCDlabel)
 
         fullpathname = os.path.join(dirname, OUTPUTFILENAME_RESULTIMAGE)
 
-        RMCCD.writeimage(
-            fullpathname, _header, np.ravel(self.granparent.dataimage_ROI_display)
-        )
+        RMCCD.writeimage(fullpathname, _header, np.ravel(self.mainframe.dataimage_ROI_display))
 
         wx.MessageBox("Blurred Image written in %s" % fullpathname, "INFO")
 
     def onGetBImagefilename(self, _):
-        self.granparent.onOpenBImage(1)
-        self.BImageFilename = self.granparent.BImageFilename
-        self.imageBctrl.SetValue(self.granparent.BImageFilename)
+        """open image as B image
+        set self.BImageFilename
+        """
+        self.mainframe.onOpenBImage(1)
+        self.BImageFilename = self.mainframe.BImageFilename
+        self.imageBctrl.SetValue(self.mainframe.BImageFilename)
 
     def onGetBlackListfilename(self, _):
-        self.granparent.onOpenBlackListFile(1)
-        self.BlackListFilename = self.granparent.BlackListFilename
-        self.BlackListedPeaks.SetValue(self.granparent.BlackListFilename)
+        """ open black peakslist file
+        set self.BlackListFilename
+        set self.mainframe.BlackListFilename
+        """
+        self.mainframe.onOpenBlackListFile(1)
+        self.BlackListFilename = self.mainframe.BlackListFilename
+        self.BlackListedPeaks.SetValue(self.BlackListFilename)
 
     def OnChangeUseFormula(self, evt):
+        """change arithmetical formula
+        """
         print("OnChangeUseFormula")
         # use image and formula
         if self.UseImage.GetValue():
             if self.BImageFilename != "":
-                self.granparent.dataimage_ROI_display = self.granparent.OnUseFormula(1)
+                self.mainframe.dataimage_ROI_display = self.mainframe.OnUseFormula(1)
                 print("new value for image (dataimage_ROI_display)")
-                self.granparent.ConvolvedData = None
+                self.mainframe.ConvolvedData = None
             else:
-                wx.MessageBox(
-                    "missing image B to used in formula! Select one, please!", "Error"
-                )
+                wx.MessageBox("missing image B to used in formula! Select one, please!", "Error")
                 self.UseImage.SetValue(False)
         # not use image and formula
         else:
-            self.granparent.dataimage_ROI_display = self.granparent.dataimage_ROI
+            self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
 
-        if self.granparent.page3.TogglebtnState == 1:  # show convolved
-            self.granparent.Show_ConvolvedImage(evt)
-        elif self.granparent.page3.TogglebtnState == 0:  # show raw image
+        if self.mainframe.page3.TogglebtnState == 1:  # show convolved
+            self.mainframe.Show_ConvolvedImage(evt)
+        elif self.mainframe.page3.TogglebtnState == 0:  # show raw image
             print("show image")
-            self.granparent.Show_Image(1)
+            self.mainframe.Show_Image(1)
 
 
 class BrowseCropPanel(wx.Panel):
+    """class to handle crop operation on images"""
     def __init__(self, parent):
-
+        """init"""
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()  # layout2()
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
 
-        # print("granparent of BrowseCropPanel", self.granparent)
+        self.stepindex = 10
+        startimageindex = self.mainframe.imageindex
+        self.imageindexmax = 1000
 
+        print('startimageindex', startimageindex)
+
+        inivalX = int(startimageindex % self.stepindex)
+        inivalY = int(startimageindex // self.stepindex)
+        # print("inivalX", inivalX)
+        # print("inivalY", inivalY)
+
+        # widgets -----------------------
         self.toggleBtnCrop = wx.Button(self, -1, "CropData")
-        self.toggleBtnCrop.Bind(wx.EVT_BUTTON, self.granparent.onToggleCrop)
+        self.toggleBtnCrop.Bind(wx.EVT_BUTTON, self.mainframe.onToggleCrop)
         self.boxsizetxt = wx.StaticText(self, -1, "boxsize:")
         self.boxxtxt = wx.StaticText(self, -1, "X")
         self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000)
@@ -929,22 +828,16 @@ class BrowseCropPanel(wx.Panel):
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxyctrl)
 
         plusbtn = wx.Button(self, -1, "index +1")
-        plusbtn.Bind(wx.EVT_BUTTON, self.granparent.OnPlus)
+        plusbtn.Bind(wx.EVT_BUTTON, self.mainframe.OnPlus)
         minusbtn = wx.Button(self, -1, "index -1")
-        minusbtn.Bind(wx.EVT_BUTTON, self.granparent.OnMinus)
+        minusbtn.Bind(wx.EVT_BUTTON, self.mainframe.OnMinus)
         self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.granparent.update, self.timer)
+        self.Bind(wx.EVT_TIMER, self.mainframe.update, self.timer)
         self.toggleBtn = wx.Button(self, wx.ID_ANY, "Auto index+1")
-        self.toggleBtn.Bind(wx.EVT_BUTTON, self.granparent.onToggle)
+        self.toggleBtn.Bind(wx.EVT_BUTTON, self.mainframe.onToggle)
 
-        self.stepindex = 10
-        #         self.stepctrl = wx.TextCtrl(self, -1, '%d' % self.stepindex, style=wx.TE_PROCESS_ENTER)
-        #         self.stepctrl.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnStepChange)
         self.stepctrl = wx.SpinCtrl(self, -1, "%d" % self.stepindex, min=2, max=100000)
-        self.stepctrl.Bind(wx.EVT_SPINCTRL, self.granparent.OnStepChange)
-
-        startimageindex = self.granparent.imageindex
-        self.imageindexmax = 1000
+        self.stepctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnStepChange)
 
         imagemintxt = wx.StaticText(self, -1, "Min: ")
         imagemaxtxt = wx.StaticText(self, -1, "Max: ")
@@ -952,13 +845,9 @@ class BrowseCropPanel(wx.Panel):
         self.imagemintxtctrl = wx.TextCtrl(self, -1, "0", size=(100, -1), style=wx.TE_PROCESS_ENTER)
         self.imagemaxtxtctrl = wx.TextCtrl(self, -1, str(self.imageindexmax), size=(100, -1),
                                                                         style=wx.TE_PROCESS_ENTER)
-        self.imagemintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnChangeImageMin)
-        self.imagemaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnChangeImageMax)
+        self.imagemintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.mainframe.OnChangeImageMin)
+        self.imagemaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.mainframe.OnChangeImageMax)
 
-        inivalX = int(startimageindex % self.stepindex)
-        inivalY = int(startimageindex // self.stepindex)
-        # print("inivalX", inivalX)
-        # print("inivalY", inivalY)
         self.slider_image = wx.Slider(self, -1, size=(250, -1), value=inivalX, minValue=0,
                                         maxValue=self.stepindex - 1,
                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
@@ -968,28 +857,29 @@ class BrowseCropPanel(wx.Panel):
                         style=wx.SL_AUTOTICKS | wx.SL_VERTICAL | wx.SL_INVERSE)  # | wx.SL_LABELS)
 
         self.slider_image.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                                                        self.granparent.onChangeIndex_slider_image)
+                                                        self.mainframe.onChangeIndex_slider_image)
 
         self.slider_imagevert.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                                                    self.granparent.onChangeIndex_slider_imagevert)
+                                                    self.mainframe.onChangeIndex_slider_imagevert)
 
         self.txtnbdigits = wx.StaticText(self, -1, "    Nb of digits\n     in ImageFilename")
         self.nbdigitsctrl = wx.TextCtrl(self, -1, "4")
 
         self.largeplusbtn = wx.Button(self, -1, "index +%d" % self.stepindex)
-        self.largeplusbtn.Bind(wx.EVT_BUTTON, self.granparent.OnLargePlus)
+        self.largeplusbtn.Bind(wx.EVT_BUTTON, self.mainframe.OnLargePlus)
         self.largeminusbtn = wx.Button(self, -1, "index -%d" % self.stepindex)
-        self.largeminusbtn.Bind(wx.EVT_BUTTON, self.granparent.OnLargeMinus)
+        self.largeminusbtn.Bind(wx.EVT_BUTTON, self.mainframe.OnLargeMinus)
 
         gotobutton = wx.Button(self, -1, "Go to index")
-        gotobutton.Bind(wx.EVT_BUTTON, self.granparent.OnGoto)
+        gotobutton.Bind(wx.EVT_BUTTON, self.mainframe.OnGoto)
         self.fileindexctrl = wx.TextCtrl(self, -1, str(startimageindex), style=wx.TE_PROCESS_ENTER)
-        self.fileindexctrl.Bind(wx.EVT_TEXT_ENTER, self.granparent.OnGoto)
+        self.fileindexctrl.Bind(wx.EVT_TEXT_ENTER, self.mainframe.OnGoto)
 
         imagepropstxt = wx.StaticText(self, -1, "Image indices properties (2D map arrangement)")
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
         imagepropstxt.SetFont(font3)
 
+        # layout ------------------------
         self.NavigBoxsizer0 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer0.Add(self.toggleBtnCrop, 0, wx.ALL, 5)
         self.NavigBoxsizer0.Add(self.boxsizetxt, 0, wx.ALL, 5)
@@ -1024,25 +914,25 @@ class BrowseCropPanel(wx.Panel):
         self.NavigBoxsizer4.Add(imagemaxtxt, 0)
         self.NavigBoxsizer4.Add(self.imagemaxtxtctrl, 0)
 
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
-        self.vbox.Add(imagepropstxt, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer4, 0, wx.EXPAND)
-        self.vbox.Add(self.slider_image, 0, wx.EXPAND)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(imagepropstxt, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer4, 0, wx.EXPAND)
+        vbox.Add(self.slider_image, 0, wx.EXPAND)
 
-        self.vboxslider = wx.BoxSizer(wx.VERTICAL)
-        self.vboxslider.Add(self.slider_imagevert, 0, wx.EXPAND)
+        vboxslider = wx.BoxSizer(wx.VERTICAL)
+        vboxslider.Add(self.slider_imagevert, 0, wx.EXPAND)
 
-        self.hhbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.hhbox.Add(self.vbox, 0)
-        self.hhbox.Add(self.vboxslider, 0)
+        hhbox = wx.BoxSizer(wx.HORIZONTAL)
+        hhbox.Add(vbox, 0)
+        hhbox.Add(vboxslider, 0)
 
-        self.SetSizer(self.hhbox)
+        self.SetSizer(hhbox)
 
-        # tooltips
+        # tooltips -----------------------------------------
         self.toggleBtnCrop.SetToolTipString("Enable/disable crop of image according to a "
         "Region of interest centered on pixel clicked by user with size defined by boxsize")
         self.boxsizetxt.SetToolTipString("X and Y pixel HALF size of the box for cropping image")
@@ -1098,7 +988,7 @@ class MosaicAndMonitor(wx.Panel):
 
         self.list_of_windows = []
 
-        self.granparent = parent.GetParent().GetParent()  # layout2()
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -1234,22 +1124,22 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer3.Add(self.txtmapstartingindex, 0, wx.ALL, 5)
         self.NavigBoxsizer3.Add(self.mapstartingimageindexctrl, 0, wx.ALL, 5)
 
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(txt1, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
-        self.vbox.Add(txt2, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer2b, 0, wx.EXPAND)
-        self.vbox.Add(self.ROIBoxsizer, 0, wx.EXPAND)
-        self.vbox.Add(txt3, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer1, 0, wx.EXPAND)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txt1, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
+        vbox.Add(txt2, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer2b, 0, wx.EXPAND)
+        vbox.Add(self.ROIBoxsizer, 0, wx.EXPAND)
+        vbox.Add(txt3, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer1, 0, wx.EXPAND)
 
-        self.vbox.Add(txt4, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
-        self.vbox.Add(self.btnMosaic, 0, wx.EXPAND)
+        vbox.Add(txt4, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(self.btnMosaic, 0, wx.EXPAND)
 
-        self.SetSizer(self.vbox)
+        self.SetSizer(vbox)
 
         # tooltips
         self.boxsizetxt.SetToolTipString(
@@ -1332,7 +1222,7 @@ class MosaicAndMonitor(wx.Panel):
 
         print("current dict of ROIs", self.dict_ROI)
 
-        self.granparent.buildMosaic(parent=self)
+        self.mainframe.buildMosaic(parent=self)
 
     def getcounters(self):
         dictCounters = {0: "mosaic",
@@ -1375,13 +1265,14 @@ class ROISelection(wx.Panel):
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
 
         self.list_of_windows = []
-
         self.dict_ROI = {"None": (5, 2, 2)}
+        self.ROIsarray = None
+        self.cselected = None
 
-        self.granparent = parent.GetParent().GetParent()  # layout2()
-
+        # widgets --------------------------------
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
         txt1 = wx.StaticText(self, -1, "Image pixel ROI size")
@@ -1389,10 +1280,8 @@ class ROISelection(wx.Panel):
 
         self.boxxtxt = wx.StaticText(self, -1, "X")
         self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
-        #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxxctrl)
         self.boxytxt = wx.StaticText(self, -1, "Y")
         self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
-        #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxyctrl)
 
         txt2 = wx.StaticText(self, -1, "ROI selection mode")
         txt2.SetFont(font3)
@@ -1432,18 +1321,18 @@ class ROISelection(wx.Panel):
         self.NavigBoxsizer3.Add(self.saveROIbtn, 0, wx.ALL, 5)
         self.NavigBoxsizer3.Add(self.sendROItoSPECbtn, 0, wx.ALL, 5)
 
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(txt1, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
-        self.vbox.Add(txt2, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
-        self.vbox.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
-        self.vbox.Add(txt3, 0, wx.EXPAND)
-        self.vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txt1, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
+        vbox.Add(txt2, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
+        vbox.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
+        vbox.Add(txt3, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
 
-        self.SetSizer(self.vbox)
+        self.SetSizer(vbox)
 
-        # tooltips
+        # tooltips -----------------------------------------
         tpx = "Pixel HALF box size in Laue Pattern image of the ROI box in X direction horizontal"
         tpy = "Pixel HALF box size in Laue Pattern image of the ROI box in Y direction vertical "
         self.boxxtxt.SetToolTipString(tpx)
@@ -1463,7 +1352,7 @@ class ROISelection(wx.Panel):
 
     def buildROIsarray(self):
         ROIslist = []
-        for _, roi in self.granparent.ROIs.items():
+        for _, roi in self.mainframe.ROIs.items():
             x, y, width, minusheight, _, Lauetoolsindex, visibleflag = roi
             if visibleflag is "visible":
                 xmin = int(x)
@@ -1475,7 +1364,7 @@ class ROISelection(wx.Panel):
         return np.array(ROIslist)
 
     def onSaveROIs(self, _):
-        print("self.ROIs", self.granparent.ROIs)
+        print("self.ROIs", self.mainframe.ROIs)
 
         self.ROIsarray = self.buildROIsarray()
 
@@ -1487,7 +1376,7 @@ class ROISelection(wx.Panel):
     def onSendToSpec(self, _):
 
         try:
-            from SpecClient_gevent import SpecVariable, SpecVariable, SpecCommand
+            from SpecClient_gevent import SpecVariable, SpecVariable #, SpecCommand
             import ConnectPSL as psl
         except ImportError:
             wx.MessageBox('Module to connect to current beamline control software '
@@ -1546,14 +1435,14 @@ class ROISelection(wx.Panel):
         pass
 
     def onManualROIsSelection(self, _):
-        if len(self.granparent.ROIs) > 0:
-            self.granparent.roiindex = max(self.granparent.ROIs.keys())
+        if len(self.mainframe.ROIs) > 0:
+            self.mainframe.roiindex = max(self.mainframe.ROIs.keys())
         else:
-            self.granparent.roiindex = 0
+            self.mainframe.roiindex = 0
 
     def onAddROIsonPeaks(self, evt):
 
-        peakslist = self.granparent.peaklistPixels
+        peakslist = self.mainframe.peaklistPixels
 
         if peakslist is None:
             wx.MessageBox(
@@ -1562,7 +1451,7 @@ class ROISelection(wx.Panel):
             return
 
         # correction only to fit peak position to the display
-        if self.granparent.position_definition == 1:
+        if self.mainframe.position_definition == 1:
             offset_convention = np.array([1, 1])
             if peakslist.shape == (10,):
                 XYlist = (peakslist[:2] - offset_convention,)
@@ -1579,24 +1468,24 @@ class ROISelection(wx.Panel):
 
                 rectproperties = [x, y, height, width, None, k, None]
 
-                self.granparent.ROIs[k] = rectproperties
-                self.granparent.addPatchRectangleROI(rectproperties)
+                self.mainframe.ROIs[k] = rectproperties
+                self.mainframe.addPatchRectangleROI(rectproperties)
 
-            print("updated ROIs", self.granparent.ROIs)
+            print("updated ROIs", self.mainframe.ROIs)
 
-            self.granparent.update_draw(evt)
+            self.mainframe.update_draw(evt)
 
     def onDeleteROIs(self, evt):
 
-        for _, rect in self.granparent.ROIs.items():
+        for _, rect in self.mainframe.ROIs.items():
 
             rect[4].set_visible(False)
             rect[4].set_picker(None)
 
-        self.granparent.ROIs = {}
-        self.granparent.roiindex = 0
+        self.mainframe.ROIs = {}
+        self.mainframe.roiindex = 0
 
-        self.granparent.update_draw(evt)
+        self.mainframe.update_draw(evt)
 
     def OnMosaic(self, _):
 
@@ -1604,7 +1493,7 @@ class ROISelection(wx.Panel):
 
         print("current dict of ROIs", self.dict_ROI)
 
-        self.granparent.buildMosaic(parent=self)
+        self.mainframe.buildMosaic(parent=self)
 
     def getcounters(self):
         dictCounters = {0: "mosaic",
@@ -1644,57 +1533,54 @@ class ROISelection(wx.Panel):
 
 
 class PlotPeakListPanel(wx.Panel):
+    """panel class to handle peaks list within GUI
+    """
     def __init__(self, parent):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()  # layout2()
+        self.mainframe = parent.GetParent().GetParent()  # layout2()
+        self.xc, self.yc = None, None
+        self.indexcirclespatchlist = None
+        self.drg = None
+        self.DetFilename = None
+        #         print "mainframe of ViewColorPanel", self.mainframe
 
-        #         print "granparent of ViewColorPanel", self.granparent
-
+        # widgets -----------------------
         luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
-        self.comboLUT = wx.ComboBox(
-            self, -1, self.granparent.LastLUT, (70, 5), choices=self.granparent.mapsLUT)  # ,
-        # style=wx.CB_READONLY)
+        self.comboLUT = wx.ComboBox(self, -1, self.mainframe.LastLUT, (70, 5),
+                                                                choices=self.mainframe.mapsLUT)
 
-        self.comboLUT.Bind(wx.EVT_COMBOBOX, self.granparent.OnChangeLUT)
+        self.comboLUT.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeLUT)
 
         posv = 40
 
         self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
-
         self.vminctrl = wx.SpinCtrl(self, -1, "0", pos=(50, posv), size=(80, -1),
                                                                             min=-200, max=100000)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_IminDisplayed, self.vminctrl)
+        self.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed, self.vminctrl)
 
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
 
         self.vmaxctrl = wx.SpinCtrl(self, -1, "1000", pos=(50, posv + 30), size=(80, -1),
                                                                             min=2, max=1000000)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_ImaxDisplayed, self.vmaxctrl)
-
-        #         self.slider_label = wx.StaticText(self, -1,
-        #             "peak tilt (%): ")
+        self.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed, self.vmaxctrl)
         self.slider_vmin = wx.Slider(self, -1, pos=(150, posv + 5), size=(220, -1), value=0,
                                                         minValue=0,
                                                         maxValue=1000,
                                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         self.slider_vmin.SetTickFreq(500, 1)
-        self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.granparent.on_slider_IminDisplayed)
+        self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.mainframe.on_slider_IminDisplayed)
 
         # second horizontal band
-        #         self.slider_label2 = wx.StaticText(self, -1,
-        #             "data size (%): ")
-        self.slider_vmax = wx.Slider( self, -1, pos=(150, posv + 35), size=(220, -1), value=1000,
+        self.slider_vmax = wx.Slider(self, -1, pos=(150, posv + 35), size=(220, -1), value=1000,
                                                         minValue=1,
                                                         maxValue=1000,
                                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         self.slider_vmax.SetTickFreq(500, 1)
         self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
-                            self.granparent.on_slider_ImaxDisplayed)
+                            self.mainframe.on_slider_ImaxDisplayed)
 
         self.Iminvaltxt = wx.StaticText(self, -1, "0", pos=(400, posv + 5))
         self.Imaxvaltxt = wx.StaticText(self, -1, "1000", pos=(400, posv + 35))
@@ -1711,10 +1597,10 @@ class PlotPeakListPanel(wx.Panel):
         self.lineprof_btn.Bind(wx.EVT_BUTTON, self.OnShowLineProfiler)
 
         savefig_btn = wx.Button(self, -1, "SaveFig", (5, posv + 150), (80, -1))
-        savefig_btn.Bind(wx.EVT_BUTTON, self.granparent.OnSaveFigure)
+        savefig_btn.Bind(wx.EVT_BUTTON, self.mainframe.OnSaveFigure)
 
         replot_btn = wx.Button(self, -1, "Replot", (120, posv + 150), (80, -1))
-        replot_btn.Bind(wx.EVT_BUTTON, self.granparent.OnReplot)
+        replot_btn.Bind(wx.EVT_BUTTON, self.mainframe.OnReplot)
 
         self.show2thetachi = wx.CheckBox(self, -1, "Show 2theta Chi", (5, posv + 100))
         self.detfiletxtctrl = wx.TextCtrl(self, -1, "", (180, posv + 100), (100, -1))
@@ -1723,7 +1609,7 @@ class PlotPeakListPanel(wx.Panel):
         self.opendetfilebtn.Bind(wx.EVT_BUTTON, self.onOpenDetFile)
 
         showhisto_btn = wx.Button(self, -1, "Intensity Distribution", (260, 5))
-        showhisto_btn.Bind(wx.EVT_BUTTON, self.granparent.ShowHisto)
+        showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto)
 
         self.plotlineprofileframe = None
         self.plotlineXprofileframe = None
@@ -1783,7 +1669,7 @@ class PlotPeakListPanel(wx.Panel):
         self.showprofiles(evt)
 
     def getlineXYprofiledata(self, event):
-        ax = self.granparent.axes
+        ax = self.mainframe.axes
 
         xmin, xmax = ax.get_xlim()
         # warning of ymax and ymin swapping!
@@ -1795,11 +1681,11 @@ class PlotPeakListPanel(wx.Panel):
 
         #         print "xmin, xmax, ymin, ymax", xmin, xmax, ymin, ymax
 
-        if self.granparent.dataimage_ROI_display is not None:
+        if self.mainframe.dataimage_ROI_display is not None:
             # Extract the values along the line
-            z = self.granparent.dataimage_ROI_display
+            z = self.mainframe.dataimage_ROI_display
         else:
-            z = self.granparent.dataimage_ROI
+            z = self.mainframe.dataimage_ROI
 
         xyc = self.getclickposition(event)
         if xyc:
@@ -1837,13 +1723,13 @@ class PlotPeakListPanel(wx.Panel):
                 xp, yp = self.bestposition(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT)
 
                 # -- Plot lineprofile...
-                self.plotlineXprofileframe = PLOT1D.Plot1DFrame( self, -1, "Intensity profile X",
+                self.plotlineXprofileframe = PLOT1D.Plot1DFrame(self, -1, "Intensity profile X",
                                             "", [x, zx], logscale=0, figsize=(8, 3),
                                             dpi=100, size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT))
                 self.plotlineXprofileframe.SetPosition((xp, yp))
                 self.plotlineXprofileframe.Show(True)
 
-                self.plotlineYprofileframe = PLOT1D.Plot1DFrame( self, -1, "Intensity profile Y",
+                self.plotlineYprofileframe = PLOT1D.Plot1DFrame(self, -1, "Intensity profile Y",
                                             "", [y, zy], logscale=0, figsize=(8, 3),
                                             dpi=100, size=(LINEPROFILE_WIDTH, LINEPROFILE_HEIGHT))
                 self.plotlineYprofileframe.SetPosition((xp - 200, yp))
@@ -1856,7 +1742,7 @@ class PlotPeakListPanel(wx.Panel):
         # screen size
         dws, dhs = wx.DisplaySize()
         # peaksearchframe size
-        wf, hf = self.granparent.GetSize()
+        wf, hf = self.mainframe.GetSize()
         print("wf, hf", wf, hf)
         print("dws, dhs", dws, dhs)
 
@@ -1871,7 +1757,7 @@ class PlotPeakListPanel(wx.Panel):
         return xp, yp
 
     def restrictxylimits_to_imagearray(self, xmin, ymin, xmax, ymax):
-        dim = self.granparent.framedim
+        dim = self.mainframe.framedim
 
         xmin = max(0, xmin)
         ymin = max(0, ymin)
@@ -1896,11 +1782,11 @@ class PlotPeakListPanel(wx.Panel):
 
         x, y = np.linspace(x0, x2, length), np.linspace(y0, y2, length)
 
-        if self.granparent.dataimage_ROI_display is not None:
+        if self.mainframe.dataimage_ROI_display is not None:
             # Extract the values along the line
-            z = self.granparent.dataimage_ROI_display
+            z = self.mainframe.dataimage_ROI_display
         else:
-            z = self.granparent.dataimage_ROI
+            z = self.mainframe.dataimage_ROI
 
         # transpose data
         i_ind = y.astype(np.int)
@@ -1949,27 +1835,27 @@ class PlotPeakListPanel(wx.Panel):
                         Circle(ptcenter, 50, fc="r", alpha=0.5),
                         Circle(pt2, 50, fill=True, color="r", alpha=0.5)]
 
-            line, = self.granparent.axes.plot([pt1[0], ptcenter[0], pt2[0]],
+            line, = self.mainframe.axes.plot([pt1[0], ptcenter[0], pt2[0]],
                                             [pt1[1], ptcenter[1], pt2[1]],
                                             picker=1,
                                             c="r")
             self.indexcirclespatchlist = []
-            init_patches_nb = len(self.granparent.axes.patches)
+            init_patches_nb = len(self.mainframe.axes.patches)
             for k, circ in enumerate(circles):
-                self.granparent.axes.add_patch(circ)
+                self.mainframe.axes.add_patch(circ)
                 self.indexcirclespatchlist.append(init_patches_nb + k)
             #             print "building draggable line"
-            #             print "peak search canvas", self.granparent.canvas
+            #             print "peak search canvas", self.mainframe.canvas
             self.drg = DGP.DraggableLine(circles,
                                         line,
                                         tolerance=200,
-                                        parent=self.granparent,
-                                        framedim=self.granparent.framedim,
+                                        parent=self.mainframe,
+                                        framedim=self.mainframe.framedim,
                                         datatype="pixels")
 
-            self.granparent.axes.set_xlim(0, 2047)
-            self.granparent.axes.set_ylim(2047, 0)
-            self.granparent.canvas.draw()
+            self.mainframe.axes.set_xlim(0, 2047)
+            self.mainframe.axes.set_ylim(2047, 0)
+            self.mainframe.canvas.draw()
 
         else:
             self.lineprof_btn.SetLabel("Open LineProfiler")
@@ -1977,15 +1863,15 @@ class PlotPeakListPanel(wx.Panel):
             self.drg.connectingline.set_data([0], [0])  # empty line
 
             # warning patches list can contain circle marker from peak search
-            #             print "self.granparent.axes.patches", self.granparent.axes.patches
+            #             print "self.mainframe.axes.patches", self.mainframe.axes.patches
             for k in range(len(self.indexcirclespatchlist)):
-                del self.granparent.axes.patches[self.indexcirclespatchlist[0]]
+                del self.mainframe.axes.patches[self.indexcirclespatchlist[0]]
 
-            dim = self.granparent.framedim
+            dim = self.mainframe.framedim
 
-            self.granparent.axes.set_xlim(0, dim[1] - 1)
-            self.granparent.axes.set_ylim(dim[0] - 1, 0)
-            self.granparent.canvas.draw()
+            self.mainframe.axes.set_xlim(0, dim[1] - 1)
+            self.mainframe.axes.set_ylim(dim[0] - 1, 0)
+            self.mainframe.canvas.draw()
             self.drg = None
             self.plotlineprofileframe.Destroy()
             self.plotlineprofileframe = None
@@ -2019,7 +1905,7 @@ class PlotPeakListPanel(wx.Panel):
             lineXprofileframe = self.plotlineXprofileframe
 
             lineXprofileframe.line.set_data(x, zx)
-            lineXprofileframe.axes.set_title("%s\n@y=%s" % (self.granparent.imagefilename, self.yc))
+            lineXprofileframe.axes.set_title("%s\n@y=%s" % (self.mainframe.imagefilename, self.yc))
             lineXprofileframe.axes.relim()
             lineXprofileframe.axes.autoscale_view(True, True, True)
             lineXprofileframe.canvas.draw()
@@ -2042,7 +1928,7 @@ class PlotPeakListPanel(wx.Panel):
             lineYprofileframe = self.plotlineYprofileframe
 
             lineYprofileframe.line.set_data(y, zy)
-            lineYprofileframe.axes.set_title("%s\n@x=%s" % (self.granparent.imagefilename, self.xc))
+            lineYprofileframe.axes.set_title("%s\n@x=%s" % (self.mainframe.imagefilename, self.xc))
             lineYprofileframe.axes.relim()
             lineYprofileframe.axes.autoscale_view(True, True, True)
             lineYprofileframe.canvas.draw()
@@ -2060,15 +1946,15 @@ class PlotPeakListPanel(wx.Panel):
 
             lineprofileframe.line.set_data(x, zi)
             lineprofileframe.axes.set_title("%s\nline [%d,%d]-[%d,%d]"
-                % (self.granparent.imagefilename, self.x0, self.y0, self.x2, self.y2))
+                % (self.mainframe.imagefilename, self.x0, self.y0, self.x2, self.y2))
             lineprofileframe.axes.relim()
             lineprofileframe.axes.autoscale_view(True, True, True)
             lineprofileframe.canvas.draw()
 
     def onOpenDetFile(self, _):
-        self.granparent.ReadDetFile(1)
-        self.DetFilename = self.granparent.DetFilename
-        self.detfiletxtctrl.SetValue(self.granparent.DetFilename)
+        self.mainframe.ReadDetFile(1)
+        self.DetFilename = self.mainframe.DetFilename
+        self.detfiletxtctrl.SetValue(self.mainframe.DetFilename)
 
 
 class findLocalMaxima_Meth_1(wx.Panel):
@@ -2152,30 +2038,39 @@ class findLocalMaxima_Meth_3(wx.Panel):
     def __init__(self, parent):
         """
         instantiate the panel and widgets for Convolution Method
+
+        mainframe= parent.GetParent().GetParent())
+
+        this mainframe must have following attributes and methods:
+        ShowHisto_ConvolvedData()
+        ComputeConvolvedData()
+        Show_ConvolvedImage()
+        Show_Image()
+        OnSpinCtrl_ImaxDisplayed()
+        dataimage_ROI
+        dataimage_ROI_display
         """
         self.methodnumber = 3
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()
+        self.mainframe = parent.GetParent().GetParent()
 
-        #        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        #        self.title2 = wx.StaticText(self, -1, 'Local Maxima Parameters(Gaussian kernel convolution)', (5, 0))
-        #        self.title2.SetFont(font3)
+        # widgets ---------------------------------
         posv = 30
 
         pnrtxt = wx.StaticText(self, -1, "PixelNearRadius", (5, 32 - posv))
         self.PNR = wx.SpinCtrl(self, -1, "10", (125, 30 - posv), (80, -1), min=5, max=500)
 
         showhisto_btn = wx.Button(self, -1, "ShowHisto", (350, 30 - posv))
-        showhisto_btn.Bind(wx.EVT_BUTTON, self.granparent.ShowHisto_ConvolvedData)
+        showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto_ConvolvedData)
 
         Recompute_btn = wx.Button(self, -1, "Compute Conv.", (220, 30 - posv))
-        Recompute_btn.Bind(wx.EVT_BUTTON, self.granparent.ComputeConvolvedData)
+        Recompute_btn.Bind(wx.EVT_BUTTON, self.mainframe.ComputeConvolvedData)
 
         tctxt = wx.StaticText(self, -1, "ThresholdConvolve", (5, 72 - posv))
         self.ThresholdConvolveCtrl = wx.SpinCtrl(self, -1, "1000", (135, 70 - posv), (100, -1),
                                                                                 min=0, max=200000)
-        self.Bind(wx.EVT_SPINCTRL, self.granparent.Show_ConvolvedImage, self.ThresholdConvolveCtrl)
+        self.Bind(wx.EVT_SPINCTRL, self.mainframe.Show_ConvolvedImage, self.ThresholdConvolveCtrl)
 
         self.showconvolvedImage_btn = wx.ToggleButton(self, -1, "Show Conv. Image", (260, 70 - posv))
         self.showconvolvedImage_btn.Bind(wx.EVT_TOGGLEBUTTON, self.OnSwitchImageDisplay)
@@ -2184,17 +2079,17 @@ class findLocalMaxima_Meth_3(wx.Panel):
 
         self.Applythreshold = wx.CheckBox(self, -1, "Show thresholding", (5, 110 - posv))
         self.Applythreshold.SetValue(True)
-        self.Applythreshold.Bind(wx.EVT_CHECKBOX, self.granparent.Show_ConvolvedImage)
+        self.Applythreshold.Bind(wx.EVT_CHECKBOX, self.mainframe.Show_ConvolvedImage)
 
         vmaxtxt = wx.StaticText(self, -1, "Max. Intensity", (190, 110 - posv))
         self.vmaxctrl = wx.SpinCtrl(self, -1, "65000", (290, 112 - posv), min=2, max=10000000)
-        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.granparent.OnSpinCtrl_ImaxDisplayed)
+        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed)
 
         ittxt = wx.StaticText(self, -1, "Intensity Threshold (raw data)", (5, 152 - posv))
         ittxt2 = wx.StaticText(self, -1, "with respect to local background", (5, 172 - posv))
         self.IT = wx.SpinCtrl(self, -1, "500", (210, 150 - posv), (80, -1), min=0, max=6500000)
 
-        # tooltips
+        # tooltips ---------------------------
         pnrtp = "Minimum pixel distances between local maxima"
         pnrtxt.SetToolTipString(pnrtp)
         self.PNR.SetToolTipString(pnrtp)
@@ -2233,18 +2128,24 @@ class findLocalMaxima_Meth_3(wx.Panel):
 
         if self.TogglebtnState == 1:  # now show conv image
             self.showconvolvedImage_btn.SetLabel("Show Image")
-            self.granparent.Show_ConvolvedImage(evt)
+            self.mainframe.Show_ConvolvedImage(evt)
 
         elif self.TogglebtnState == 0:  # now show raw image
             self.showconvolvedImage_btn.SetLabel("Show Conv. Image")
-            self.granparent.dataimage_ROI_display = self.granparent.dataimage_ROI
-            self.granparent.Show_Image(evt)
+            self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
+            self.mainframe.Show_Image(evt)
 
 
 class FitParametersPanel(wx.Panel):
     def __init__(self, parent):
         """
         method 1 parameters for method #0 for local maxima search + fit(intensity threshold)
+
+        parent must have granparent (call of parent.GetParent())
+
+        this granparent must have following attributes and methods:
+        OnPeakSearch()
+        GetParent().CCDlabel
         """
 
         self.granparent = parent.GetParent()
@@ -2349,21 +2250,20 @@ class FitParametersPanel(wx.Panel):
         HBoxsizer5.Add(self.NbMaxFits, 0, wx.ALL, 5)
         HBoxsizer5.Add(self.onWholeImage, 0, wx.ALL, 5)
 
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(txt0, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer5, 0, wx.EXPAND)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txt0, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer5, 0, wx.EXPAND)
 
-        self.vbox.Add(HBoxsizer1, 0, wx.EXPAND)
-        self.vbox.Add(txt1, 0, wx.EXPAND)
-        #         self.vbox.Add(txt3, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer2, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer3, 0, wx.EXPAND)
-        self.vbox.Add(txt2, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer4, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer4b, 0, wx.EXPAND)
-        self.vbox.Add(HBoxsizer4c, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer1, 0, wx.EXPAND)
+        vbox.Add(txt1, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer2, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(txt2, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer4, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer4b, 0, wx.EXPAND)
+        vbox.Add(HBoxsizer4c, 0, wx.EXPAND)
 
-        self.SetSizer(self.vbox)
+        self.SetSizer(vbox)
 
         # tooltips
         usetp = "Select the intial guessed peak pixel position from results of local maxima search.\n"
@@ -2453,12 +2353,7 @@ DICT_FIELDS_ALIGN = {"intensity": "left",
                     "PixDev_x": "left",
                     "PixDev_y": "left",
                     "PixMax": "left"}
-# (peak_X, peak_Y,
-#         peak_I,
-#         peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-#         Xdev, Ydev,
-#         peak_bkg,
-#         Ipixmax) = datapeak
+
 LIST_OF_FIELDS_DATAPEAK = ["pixX",
                             "pixY",
                             "peak_amplitude",
@@ -2474,11 +2369,17 @@ LIST_OF_FIELDS_DATAPEAK = ["pixX",
 class PeakListOLV(wx.Panel):
     """
     panel embedding an ObjectListViewer from ObjectListView module
+
+    need of:
+    self.grangranparent.peaklistPixels
+    self.grangranparent.onRemovePeaktoPeaklist
+    self.grangranparent.OnReplot
+    self.grangranparent.framedim
+    and lot of other things with mainframe...
     """
     # ----------------------------------------------------------------------
     def __init__(self, parent):
-        """"""
-
+        """init"""
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY, size=(-1, 100))
         #        scrolled.ScrolledPanel.__init__(self, parent, -1)
 
@@ -2497,8 +2398,10 @@ class PeakListOLV(wx.Panel):
 
         self.focuseditem = None
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.allspots = None
+        self.list_selectedspots = None
 
+        # widgets ----------------------------------
         self.updatepeaklist = wx.CheckBox(self, -1, "update peaks list", style=wx.ALIGN_LEFT)
         self.updatepeaklist.SetValue(True)
         self.updatepeaklist.Bind(wx.EVT_CHECKBOX, self.updateView)
@@ -2520,6 +2423,7 @@ class PeakListOLV(wx.Panel):
         self.boxsizex = wx.TextCtrl(self, -1, "20", style=wx.ALIGN_LEFT)
         self.boxsizey = wx.TextCtrl(self, -1, "50", style=wx.ALIGN_LEFT)
 
+        # layout -------------------------------------
         sizerh1 = wx.BoxSizer(wx.HORIZONTAL)
         sizerh2 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -2548,9 +2452,6 @@ class PeakListOLV(wx.Panel):
         sizer.Add(self.myOlv, 1, wx.EXPAND)
 
         self.SetSizer(sizer)
-
-    #        self.SetAutoLayout(1)
-    #        self.SetupScrolling()
 
     def buildlistofspots(self):
         flag = False
@@ -2700,7 +2601,6 @@ class PeakListOLV(wx.Panel):
                 listval.append(sspot.__getattribute__(field))
 
             allselected.append(listval)
-        #            print  listval
 
         return np.array(allselected)
 
@@ -2751,8 +2651,8 @@ class PeakListOLV(wx.Panel):
             imin, imax, jmin, jmax = (centeri - boxi, centeri + boxi, centerj - boxj, centerj + boxj)
 
             # avoid to wrong indices when slicing the data
-            imin, imax, jmin, jmax = RMCCD.check_array_indices(
-                imin, imax, jmin, jmax, framedim=self.grangranparent.framedim)
+            imin, imax, jmin, jmax = RMCCD.check_array_indices( imin, imax, jmin, jmax,
+                                                            framedim=self.grangranparent.framedim)
 
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI[imin:imax, jmin:jmax]
             self.mainframe.reinit_aftercrop_draw()
@@ -2776,35 +2676,27 @@ class MainPeakSearchFrame(wx.Frame):
     """
     Class to show CCD frame pixel intensities
     and provide tools for searching peaks
-
     """
-
-    def __init__(self, parent, _id, initialParameter, title, size=4):
+    def __init__(self, parent, _id, _initialParameter, title, size=4):
         wx.Frame.__init__(self, parent, _id, title, size=(600, 1000))
 
-        self.initialParameter = initialParameter
+        self.initialParameter = _initialParameter
 
-        self.title = initialParameter["title"]
-        self.imagefilename = initialParameter["imagefilename"]
-        self.dirname = initialParameter["dirname"]
-        self.LastLUT = initialParameter["mapsLUT"]
-        self.writefolder = initialParameter["writefolder"]
-        self.CCDlabel = initialParameter["CCDLabel"]
+        self.title = self.initialParameter["title"]
+        self.imagefilename = self.initialParameter["imagefilename"]
+        self.dirname = self.initialParameter["dirname"]
+        self.LastLUT = self.initialParameter["mapsLUT"]
+        self.writefolder = self.initialParameter["writefolder"]
+        self.CCDlabel = self.initialParameter["CCDLabel"]
 
-        self.stackedimages = initialParameter["stackedimages"]
-        self.stackimageindex = initialParameter["stackimageindex"]
-        self.Nbstackedimages = initialParameter["Nbstackedimages"]
+        self.stackedimages = self.initialParameter["stackedimages"]
+        self.stackimageindex = self.initialParameter["stackimageindex"]
+        self.Nbstackedimages = self.initialParameter["Nbstackedimages"]
         self.nbdigits = 4
 
-        (self.framedim,
-            self.pixelsize,
-            self.saturationvalue,
-            self.fliprot,
-            self.headeroffset,
-            self.dataformat,
-            self.comments,
-            self.file_extension,
-        ) = DictLT.dict_CCD[self.CCDlabel]
+        (self.framedim, self.pixelsize, self.saturationvalue, self.fliprot, self.headeroffset,
+                self.dataformat, self.comments,
+                self.file_extension, ) = DictLT.dict_CCD[self.CCDlabel]
 
         self.figsize = size
 
@@ -2819,15 +2711,37 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.dict_param = None
 
-        self.createMenuBar()
-
-        self.sb = self.CreateStatusBar()
-
         # loading LUTS
         self.mapsLUT = [m for m in pcm.datad if not m.endswith("_r")]
         self.mapsLUT.sort()
 
         self.BImageFilename = ""
+
+        self.centerx, self.centery = None, None
+        self.currentROIpatch = None
+        self.ROIRectangleselected = None
+        self.steppresent = None
+        self.stepmissing = None
+
+        self.stepindex = None
+        self.imageindex = None
+        self.justcheckedShowValues = None
+        self.boxx = None
+        self.boxy = None
+        self.myplot = None
+        self.dataimage_ROI = None
+        self.FileDialog = None
+        self.Bdirname = None
+        self.BlackListFilename = None
+        self.DetFilename = None
+        self.IminDisplayed = None
+        self.ImaxDisplayed = None
+        self.lastinfo = None
+        self.boxsize_fit = None
+        self.guessed_amplitude = None
+        self.guessed_bkg = None
+        self.position_definition = None
+        self.dict_param_LocalMaxima = None
 
         # read data
         self.currentime = time.time()
@@ -2836,32 +2750,37 @@ class MainPeakSearchFrame(wx.Frame):
         self.imin_crop, self.jmin_crop = 0, 0
         self.imax_crop, self.jmax_crop = None, None
         self.read_data()
-
         # initial displayed data(no background substraction)
         self.dataimage_ROI_display = self.dataimage_ROI
         self.current_data_display = "Raw Image"
         self.ConvolvedData = None
-
-        self.create_main_panel()
+        # panels
+        self.nb0 = None
+        self.viewingLUTpanel = None
+        self.ImageFilterpanel = None
+        self.ImagesBrowser = None
+        self.Monitor = None
+        if WXPYTHON3:
+            self.RoiSelector = None
 
         self.font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-
         # default method and buttons layout
         self.firstdisplay = 1
         self.method = 3  # index of method
-        #        self.OnMethod3(0)
 
         self.paramsHat = (4, 5, 2)
         self.largehollowcircles = []
         self.smallredcircles = []
 
         self.CCDcalib = None
-
         self.gettime()
 
         self.OnFlyMode = False
-        # update plot
-        #        self._replot()
+
+        # widgets and layout
+        self.createMenuBar()
+        self.sb = self.CreateStatusBar()
+        self.create_main_panel()
         self.init_figure_draw()
 
     def createMenuBar(self):
@@ -2886,7 +2805,7 @@ class MainPeakSearchFrame(wx.Frame):
         preferences = wx.Menu()
         menuSetPreference = preferences.Append(wx.ID_ANY, "PeakList Folder",
                                                         "Set folder to write peaklist .dat files")
-        menudisplayprops = preferences.Append( wx.ID_ANY, "Set Plot Size",
+        menudisplayprops = preferences.Append(wx.ID_ANY, "Set Plot Size",
                                         "Set Minimal plot size to fit with small computer screen")
         self.Bind(wx.EVT_MENU, self.OnFolderPreferences, menuSetPreference)
         self.Bind(wx.EVT_MENU, self.OnSetPlotSize, menudisplayprops)
@@ -3021,10 +2940,10 @@ class MainPeakSearchFrame(wx.Frame):
         self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange_PeakSearchMethod)
         #        self.nb.GetPosition()
 
-        # LAYOUT
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-        self.vbox.Add(self.toolbar, 0, wx.EXPAND)
+        # LAYOUT -------------------------------------------
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
+        vbox.Add(self.toolbar, 0, wx.EXPAND)
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add(self.localfitbtn, 0, wx.ALL, 5)
@@ -3044,23 +2963,21 @@ class MainPeakSearchFrame(wx.Frame):
         btnSizer2.Add(self.numvalues_chck, 0, wx.ALL)
         btnSizer2.Add(self.btnOpenPeakList, 0, wx.ALL)
 
-        self.vbox2 = wx.BoxSizer(wx.VERTICAL)
-        self.vbox2.Add(self.nb0, 1, wx.EXPAND, 0)
-        self.vbox2.Add(self.nb, 1, wx.EXPAND, 0)
+        vbox2 = wx.BoxSizer(wx.VERTICAL)
+        vbox2.Add(self.nb0, 1, wx.EXPAND, 0)
+        vbox2.Add(self.nb, 1, wx.EXPAND, 0)
 
-        self.hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox.Add(self.vbox, 1, wx.EXPAND)
-        self.hbox.Add(self.vbox2, 1, wx.EXPAND)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(vbox, 1, wx.EXPAND)
+        hbox.Add(vbox2, 1, wx.EXPAND)
 
-        self.vboxgeneral = wx.BoxSizer(wx.VERTICAL)
-        self.vboxgeneral.Add(self.hbox, 1, wx.EXPAND)
-        self.vboxgeneral.Add(btnSizer2, 0, wx.EXPAND, 0)
-        self.vboxgeneral.Add(btnSizer, 0, wx.EXPAND, 0)
+        vboxgeneral = wx.BoxSizer(wx.VERTICAL)
+        vboxgeneral.Add(hbox, 1, wx.EXPAND)
+        vboxgeneral.Add(btnSizer2, 0, wx.EXPAND, 0)
+        vboxgeneral.Add(btnSizer, 0, wx.EXPAND, 0)
 
-        #         self.vboxgeneral.Add(wx.Button(self.panel, -1, 'button'), 0, wx.EXPAND, 0)
-
-        self.panel.SetSizer(self.vboxgeneral)
-        self.vboxgeneral.Fit(self)
+        self.panel.SetSizer(vboxgeneral)
+        vboxgeneral.Fit(self)
         self.Layout()
 
         # tooltips
@@ -3079,8 +2996,10 @@ class MainPeakSearchFrame(wx.Frame):
 
         allpeaks_tp = "Search all peaks in CURRENT DISPLAYED image.\n"
         allpeaks_tp += "1- Find local maxima by using one of the three methods\n"
-        allpeaks_tp += "(Threshold, ArrayShift, Convolution) whose parameters are defined in respective tabs\n"
-        allpeaks_tp += "2- Fit all local maxima (or not) by 2D shaped intensity peak model. Parameters are defined in FitParams tab\n"
+        allpeaks_tp += "(Threshold, ArrayShift, Convolution) whose parameters are defined in "
+        "respective tabs\n"
+        allpeaks_tp += "2- Fit all local maxima (or not) by 2D shaped intensity peak model. "
+        "Parameters are defined in FitParams tab\n"
 
         startbutton.SetToolTipString(allpeaks_tp)
 
@@ -3088,9 +3007,12 @@ class MainPeakSearchFrame(wx.Frame):
 
         savepeaklistbutton.SetToolTipString("Save current peaks list in a file (with incremented name)")
 
-        self.page1.SetToolTipString("Guess initial peaks positions for peak refinement by a basic image thresholding")
-        self.page2.SetToolTipString("Guess initial peaks positions for peak refinement by array shifting")
-        self.page3.SetToolTipString("Guess initial peaks positions for peak refinement by peak-kernel like convolution")
+        self.page1.SetToolTipString("Guess initial peaks positions for peak refinement by "
+        "a basic image thresholding")
+        self.page2.SetToolTipString("Guess initial peaks positions for peak refinement by "
+        "array shifting")
+        self.page3.SetToolTipString("Guess initial peaks positions for peak refinement by "
+        "peak-kernel like convolution")
 
     def toplayout2(self):
         """
@@ -3133,11 +3055,11 @@ class MainPeakSearchFrame(wx.Frame):
         """
         handling changing tab of top notebook
         """
-        #        print 'tab changed'
-        selected_tab = self.nb0.GetSelection()
-        print("selected tab:", selected_tab)
-        print(self.nb0.GetPage(self.nb0.GetSelection()))
-        print(self.nb0.GetPage(self.nb0.GetSelection()).GetName())
+
+        #selected_tab = self.nb0.GetSelection()
+        # print("selected tab:", selected_tab)
+        # print(self.nb0.GetPage(self.nb0.GetSelection()))
+        # print(self.nb0.GetPage(self.nb0.GetSelection()).GetName())
 
         event.Skip()  # patch for windows to update the tab display
 
@@ -3150,15 +3072,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         # display raw data or convolved data
         if selected_tab in (0, 1):
-            # does not change image properties
-            #             self.dataimage_ROI_display = self.dataimage_ROI
-            #             self.CropIsOn = False
-            #             self.reinit_aftercrop_draw()
-            #             self.plotPeaks = True
-            #             self.addPeaksMarker()
-            #             self.plotPeaks = False
-            #             self.updatePlotTitle()
-            #             self.canvas.draw()
             pass
 
         elif selected_tab in (2,):
@@ -3200,7 +3113,7 @@ class MainPeakSearchFrame(wx.Frame):
 
     def OnAbout(self, _):
         wx.MessageBox(
-            'Peak Search GUI from Lauetools Package\n April 2014.\n Please contact staff of beamline CRG-IF BM32 at ESRF or micha"_at_"esrf"_dot_"fr', "INFO")
+            'Peak Search GUI from Lauetools Package\n Jan 2019.\n Please contact staff of beamline CRG-IF BM32 at ESRF or micha"_at_"esrf"_dot_"fr', "INFO")
 
     def OnExit(self, _):
         self.Close()
@@ -3229,13 +3142,11 @@ class MainPeakSearchFrame(wx.Frame):
     def OpenImage(self, _):
         # wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
 
-        filepath_dlg = wx.FileDialog( self, "Select binary image file",
+        filepath_dlg = wx.FileDialog(self, "Select binary image file",
                                                 wildcard=DictLT.getwildcardstring(self.CCDlabel))
         if filepath_dlg.ShowModal() == wx.ID_OK:
 
             abspath = filepath_dlg.GetPath()
-
-            #             print "folder.GetPath()", abspath
 
             filename = os.path.split(abspath)[-1]
             dirname = os.path.dirname(abspath)
@@ -3256,7 +3167,7 @@ class MainPeakSearchFrame(wx.Frame):
         """Enter manually CCD file params
         Launch Entry dialog
         """
-        DPBoard = CCDParamGUI.CCDFileParameters( self, -1, "CCD File Parameters Board", self.CCDlabel)
+        DPBoard = CCDParamGUI.CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDlabel)
         DPBoard.ShowModal()
         DPBoard.Destroy()
 
@@ -3269,19 +3180,10 @@ class MainPeakSearchFrame(wx.Frame):
             print(self.writefolder)
 
     def OnSetPlotSize(self, _):
-        wx.MessageBox("not implemented yet. Use better FileSeries/peak_search.py", "INFO")
+        """set marker size
+        """
+        wx.MessageBox("not implemented yet", "INFO")
         return
-
-        # dlg = wx.TextEntryDialog(
-        #     self, "minimum plot size", "Screen Resolution Settings"
-        # )
-        # dlg.SetValue("4")
-        # if dlg.ShowModal() == wx.ID_OK:
-        #     self.SetStatusText("You entered: %s\n" % dlg.GetValue())
-        #     self.figsize = int(dlg.GetValue())
-        # dlg.Destroy()
-
-        #self.fig.set_size_inches(self.figsize, self.figsize, forward=True)
 
     def onClick(self, event):
         """ onclick
@@ -3311,9 +3213,6 @@ class MainPeakSearchFrame(wx.Frame):
         if isinstance(event.artist, Rectangle):
             self.currentROIpatch = event.artist
 
-            #             print dir(event)
-            #             print('onPick Rectangle patch:', self.currentROIpatch.get_path())
-            #             print('onPick Rectangle Id:', dir(self.currentROIpatch))
             print(("onPick Rectangle label:", self.currentROIpatch.get_label()))
             print(("onPick Rectangle gid:", self.currentROIpatch.get_gid()))
             print(("onPick Rectangle picker:", self.currentROIpatch.get_picker()))
@@ -3330,12 +3229,14 @@ class MainPeakSearchFrame(wx.Frame):
             self.RS.set_active(True)
 
     def onKeyPressed(self, event):
+        """Handle key pressed
+        """
         key = event.key
         print("key ==> ", key)
 
         if key == "escape":
 
-            ret = wx.MessageBox( "Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self)
+            ret = wx.MessageBox("Are you sure to quit?", "Question", wx.YES_NO | wx.NO_DEFAULT, self)
 
             if ret == wx.YES:
                 self.Close()
@@ -3466,6 +3367,8 @@ class MainPeakSearchFrame(wx.Frame):
             print("visibleROIs", visibleROIs)
 
     def gettime(self):
+        """set self.currentime to current time
+        """
         self.currentime = time.time()
 
     def getdeltatime(self):
@@ -3496,6 +3399,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.ImagesBrowser.toggleBtn.SetLabel("Stop")
 
     def onToggleCrop(self, event):
+        """activate/deactivate crop image mode
+        """
         # crop already enabled
         if self.CropIsOn:
             self.ImagesBrowser.toggleBtnCrop.SetLabel("Crop Data")
@@ -3549,7 +3454,6 @@ class MainPeakSearchFrame(wx.Frame):
 
                 self.FileExist = True
 
-        #        print "condition   --- ", condition
         return condition
 
     def getIndex_fromfilename(self):
@@ -3563,11 +3467,14 @@ class MainPeakSearchFrame(wx.Frame):
         except ValueError:
             self.image_with_index = False
 
-        print( "************\n\n\nself.imageindex %d \n\n****************" % self.imageindex)
+        print("************\n\n\nself.imageindex %d \n\n****************" % self.imageindex)
 
     def setfilename(self):
+        """set filename from self.imagefilename, self.imageindex,
+                                                    CCDLabel=self.CCDlabel
+        """
         if self.image_with_index:
-            self.imagefilename = RMCCD.setfilename( self.imagefilename, self.imageindex,
+            self.imagefilename = RMCCD.setfilename(self.imagefilename, self.imageindex,
                                                     CCDLabel=self.CCDlabel, nbdigits=self.nbdigits)
 
     def OnStepChange(self, _):
@@ -3656,6 +3563,8 @@ class MainPeakSearchFrame(wx.Frame):
         self.resetfilename_and_plot()
 
     def onChangeIndex_slider_imagevert(self, _):
+        """plot new image obtained by new index changed by vertical (slow axis) slider
+        """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
 
         print("self.ImagesBrowser.slider_imagevert.GetValue()",
@@ -3730,7 +3639,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             imagefilename = secondaryImagefilename
 
-        __class__, extension = str(imagefilename).rsplit(".", 1)
+        _, extension = str(imagefilename).rsplit(".", 1)
 
         (self.framedim,
             _,
@@ -3757,19 +3666,6 @@ class MainPeakSearchFrame(wx.Frame):
                                                         CCDLabel=self.CCDlabel,
                                                         dirname=self.dirname,
                                                         stackimageindex=self.stackimageindex)
-        #         self.getdeltatime()
-        #         del nolog
-
-        #        self.gettime()
-        #        dataimage = RMCCD.readoneimage(imagefilename,
-        #                                    framedim=self.framedim,
-        #                                    dirname=self.dirname,
-        #                                    offset=self.offset,
-        #                                    formatdata=self.format)
-        #        print 'read data execution time ----',
-        #        self.getdeltatime()
-        #
-        # #        dataimage = np.array(dataimage, dtype='uint8')
 
         if secondaryImage:
             self.dataimage_ROI_B = dataimage
@@ -3807,7 +3703,8 @@ class MainPeakSearchFrame(wx.Frame):
 
     # ---   --- DISPLAY IMAGE
     def OnCheckPlotValues(self, _):
-
+        """enable or disable drawing of numerical pixel intensity value on plot
+        """
         if self.numvalues_chck.GetValue():
             self.justcheckedShowValues = True
         else:
@@ -3825,6 +3722,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.PlotValues()
 
     def PlotValues(self):
+        """Draw numerical pixel intensity value on plot
+        """
         if not self.numvalues_chck.GetValue():
             #             print "len(axes.texts)",len(self.axes.texts) # is a list of Text objects
             return
@@ -3843,16 +3742,13 @@ class MainPeakSearchFrame(wx.Frame):
 
         #         print "xmin,xmax,ymin,ymax",xmin,xmax,ymin,ymax
         #         print "int(ymin),int(ymax)+1,1",(int(ymin),int(ymax)+1,1)
-        #         print "np.arange(int(xmin),int(xmax)+1,1)",np.arange(int(xmin),int(xmax)+1,1)
-        #         print "np.arange(int(ymin),int(ymax)+1,1):",np.arange(int(ymin),int(ymax)+1,1)
+
         # Add new drawn values on plot
         for i in np.arange(int(ymax) + 1, int(ymin) + 2, 1):
             for j in np.arange(int(xmin), int(xmax) + 2, 1):
                 label = self.dataimage_ROI_display[i, j]
                 #                 print "label",label
-                self.axes.text(
-                    j, i, label, color="black", ha="center", va="center", size=7
-                )
+                self.axes.text(j, i, label, color="black", ha="center", va="center", size=7)
 
         #         print "fig.texts",self.fig.texts # is a list of Text objects
         #         print "len(axes.texts)",len(self.axes.texts) # is a list of Text objects
@@ -3864,7 +3760,6 @@ class MainPeakSearchFrame(wx.Frame):
         """ init the figure
         """
         # clear the axes and redraw the plot anew
-        #
         self.axes.clear()
         #        self.axes.set_autoscale_on(False) # Otherwise, infinite loop
         self.axes.set_autoscale_on(True)
@@ -3878,11 +3773,6 @@ class MainPeakSearchFrame(wx.Frame):
         self.myplot = self.axes.imshow(self.dataimage_ROI_display,  # aspect = 'equal',
                                     interpolation="nearest",
                                     norm=LogNorm(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed))
-
-        #         self.myplot = self.axes.imshow(self.dataimage_ROI_display,  # aspect = 'equal',
-        #                                 interpolation='nearest',
-        #                                 vmin=self.IminDisplayed,
-        #                                             vmax=self.ImaxDisplayed)
 
         title = self.imagefilename
         if self.stackedimages:
@@ -3909,20 +3799,11 @@ class MainPeakSearchFrame(wx.Frame):
         """
         self.current_data_display = "Raw Image"
 
-        #        self.gettime()
         self.updatePlotTitle(datatype=datatype)
-        #        print 'updated title',
-        #        self.getdeltatime()
 
-        #        self.gettime()
         self.myplot.set_data(self.dataimage_ROI_display)
-        #        print 'set data ---',
-        #        self.getdeltatime()
 
-        #        self.gettime()
         self.OnSpinCtrl_ImaxDisplayed(event)
-        #        print 'last updated',
-        #        self.getdeltatime()
 
         # update line profiler
         self.viewingLUTpanel.showprofiles(event)
@@ -3930,6 +3811,8 @@ class MainPeakSearchFrame(wx.Frame):
         self.PlotValues()
 
     def Show_ConvolvedImage(self, event, datatype="Convolved Image"):
+        """set displayed data to be convolved data
+        """
 
         if self.ConvolvedData is None:
             print("Calculate Convolved Data")
@@ -3954,6 +3837,8 @@ class MainPeakSearchFrame(wx.Frame):
         self.OnSpinCtrl_ImaxDisplayed(event)
 
     def updatePlotTitle(self, datatype=None):
+        """update plot title
+        """
         if datatype == None:
             datatype = ""
         titlestring = "%s\n%s" % (self.imagefilename, datatype)
@@ -3986,15 +3871,17 @@ class MainPeakSearchFrame(wx.Frame):
         self.axes.set_title(titlestring)
 
     def normalizeplot(self):
-        #        norm = mpl.colors.Normalize(IminDisplayed=self.dataimage_ROI_display.min(),
-        #                                    ImaxDisplayed=self.dataimage_ROI_display.max())
+        """normalize current displayed array according to vmin vmax sliders
+        """
 
         norm = mpl.colors.Normalize(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed)
         self.myplot.set_norm(norm)
 
     #        self.myplot.set_clim(self.IminDisplayed, self.ImaxDisplayed)
 
-    def update_draw(self, event):
+    def update_draw(self, _):
+        """update 2D plot taken into account change of LUT table and vmin vamax values
+        """
         #        if self.data_2D == None:
         #            return
         #
@@ -4010,7 +3897,9 @@ class MainPeakSearchFrame(wx.Frame):
         self.canvas.draw()
 
     def getDisplayedImageSize(self):
-        bbox = self.axes.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+        """get xmin, xmax, ymin, ymax from current displayed image
+        """
+        # bbox = self.axes.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
 
         ymin, ymax = self.axes.get_ylim()
         xmin, xmax = self.axes.get_xlim()
@@ -4030,13 +3919,17 @@ class MainPeakSearchFrame(wx.Frame):
             artist.radius = r
 
     # ---  Crop Data
-    def activateCrop(self, event):
+    def activateCrop(self, _):
+        """ set boxx and boxy from ctrls
+        """
         self.boxx = int(self.ImagesBrowser.boxxctrl.GetValue())
         self.boxy = int(self.ImagesBrowser.boxyctrl.GetValue())
 
         print("self.boxx,self.boxy", self.boxx, self.boxy)
 
     def readdata_updateplot_aftercrop_uncrop(self):
+        """read data and update data to be displayed and redraw
+        """
         self.read_data()
         self.dataimage_ROI_display = self.dataimage_ROI
         self.reinit_aftercrop_draw()
@@ -4059,35 +3952,22 @@ class MainPeakSearchFrame(wx.Frame):
         self.myplot = self.axes.imshow(self.dataimage_ROI_display,  # aspect = 'equal',
                                     interpolation="nearest",
                                     norm=LogNorm(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed))
-        #        self.myplot = self.axes.imshow(self.dataimage_ROI_display, #aspect = 'equal',
-        #                                interpolation='nearest')
-        #        self.axes.set_title(self.imagefilename)
-        # self.myplot.set_clim=(1,200)  # work?
-        #        self.myplot.set_cmap(self.viewingLUTpanel.comboLUT.GetValue())
-
-        #        self.getbbox()
-
-        #        self.axes.grid(self.viewingLUTpanel.cb_grid.IsChecked())
-
-        #        self.axes.relim()
-        #        self.axes.autoscale_view()
-
-        #        self.fig.colorbar(self.myplot)
+     
         self.normalizeplot()
 
         if self.CropIsOn:
-            #            print "crop is On, so I change the tick values..."
-
-            #            offset_x = self.centerx - self.boxx
-            #            offset_y = self.centery - self.boxy
 
             offset_x = self.jmin_crop
             offset_y = self.imin_crop
 
-            def tick_indexx(indexx, pos):
+            def tick_indexx(indexx, __dict__):
+                """return integer from index
+                """
                 return int(indexx + offset_x)
 
-            def tick_indexy(indexy, pos):
+            def tick_indexy(indexy, _):
+                """return integer from index
+                """
                 return int(indexy + offset_y)
 
             self.axes.xaxis.set_major_formatter(FuncFormatter(tick_indexx))
@@ -4099,14 +3979,8 @@ class MainPeakSearchFrame(wx.Frame):
 
         print("centeri, centerj", centeri, centerj)
 
-        #         centerj = centerj
-
-        (imin, imax, jmin, jmax) = (centeri - boxi,
-                                    centeri + boxi + 1,
-                                    centerj - boxj,
-                                    centerj + boxj + 1)
-
-        #         print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
+        (imin, imax, jmin, jmax) = (centeri - boxi, centeri + boxi + 1,
+                                    centerj - boxj, centerj + boxj + 1)
 
         # avoid to wrong indices when slicing the data
         imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax, jmin, jmax,
@@ -4114,10 +3988,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         #         print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
 
-        self.imin_crop, self.imax_crop, self.jmin_crop, self.jmax_crop = (imin,
-                                                                            imax,
-                                                                            jmin,
-                                                                            jmax)
+        self.imin_crop, self.imax_crop, self.jmin_crop, self.jmax_crop = (imin, imax, jmin, jmax)
 
         self.dataimage_ROI = self.dataimage_ROI[imin:imax, jmin:jmax]
 
@@ -4141,13 +4012,14 @@ class MainPeakSearchFrame(wx.Frame):
     #        self.init_figure_draw()
 
     def buildMosaic(self, parent=None):
-
+        """ launch MOS.buildMosaic3() with GUI inputs as arguments
+        """
         # self.Monitor
 
         dirname = self.initialParameter["dirname"]
-        filename = self.initialParameter["imagefilename"]
+        # filename = self.initialParameter["imagefilename"]
 
-        filepathname = os.path.join(dirname, filename)
+        # filepathname = os.path.join(dirname, filename)
 
         # use images indices from start final and step fields
         if self.Monitor.generalindexradiobtn.GetValue():
@@ -4292,7 +4164,7 @@ class MainPeakSearchFrame(wx.Frame):
         outputfolder = dirname
         MOS.buildMosaic3(dict_param, outputfolder, parent=parent)
 
-    def onOpenBImage(self, evt):
+    def onOpenBImage(self, _):
         self.FileDialog = wx.FileDialog(self, "Choose an image", style=wx.OPEN,
                                                                         defaultDir=self.dirname)
         dlg = self.FileDialog
@@ -4306,7 +4178,7 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             pass
 
-    def onOpenBlackListFile(self, evt):
+    def onOpenBlackListFile(self, _):
         myFileDialog = wx.FileDialog(self, "Choose a List of peaks not to be considered",
                                     style=wx.OPEN,
                                     defaultDir=self.dirname)
@@ -4321,7 +4193,7 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             pass
 
-    def ReadDetFile(self, evt):
+    def ReadDetFile(self, _):
         myFileDialog = wx.FileDialog(self,
                                     "Choose a detector calibration File .det",
                                     style=wx.OPEN,
@@ -4340,7 +4212,7 @@ class MainPeakSearchFrame(wx.Frame):
             pass
 
     # ---   Background correction
-    def OnUseFormula(self, evt):
+    def OnUseFormula(self, _):
 
         print("read B image")
         self.read_data(secondaryImage=True, secondaryImagefilename=self.BImageFilename)
@@ -4388,9 +4260,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         else:  # only constant substraction
 
-            # print self.dataimage_ROI.shape
-            # print self.dataimage_ROI_display.shape
-            # print cond_circle.shape
             self.dataimage_ROI_display = np.where(cond_circle, self.dataimage_ROI - cst,
                                                                                 self.dataimage_ROI)
 
@@ -4406,7 +4275,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         dims, dimf = self.dataimage_ROI_display.shape[:2]
         #        print "self.data_2D.shape onmotion", self.data_2D.shape
-        radius = 0.5
+        # radius = 0.5
         if event.xdata != None and event.ydata != None:  # mouse is inside the axes
             #            for i in xrange(len(self.dataX)):
             #                radius = 1
@@ -4510,7 +4379,8 @@ class MainPeakSearchFrame(wx.Frame):
         self.update_draw(event)
 
     def OnSpinCtrl_ImaxDisplayed(self, event):
-
+        """on change Imax by spin control
+        """
         #        print "OnSpinCtrl_ImaxDisplayed !!!"
 
         if self.current_data_display == "Raw Image" and not self.OnFlyMode:
@@ -4641,14 +4511,13 @@ class MainPeakSearchFrame(wx.Frame):
 
     #        print "added rectangle"
 
-    def onOpenPeakListBoard(self, event):
-        import PeaksListBoard
+    def onOpenPeakListBoard(self, _):
 
-        PListsBoard = PeaksListBoard.PeaksListBoard(self, -1, "Image scale setting Board")
+        PListsBoard = PeaksListBoard.PeaksListBoard(self, -1)
 
         PListsBoard.Show(True)
 
-    def ShowHisto(self, event):
+    def ShowHisto(self, _):
         mini = np.amin(self.dataimage_ROI)
         maxi = np.amax(self.dataimage_ROI)
         histo = np.histogram(np.ravel(self.dataimage_ROI), 100, range=(mini, maxi))  # N,bins
@@ -4735,7 +4604,7 @@ class MainPeakSearchFrame(wx.Frame):
 
     def erase_cursor(self):
         try:
-            lastline1, lastline2, lastax, lastdc = self.lastInfo
+            lastline1, lastline2, _, lastdc = self.lastInfo
         except AttributeError:
             pass
         else:
@@ -4743,7 +4612,7 @@ class MainPeakSearchFrame(wx.Frame):
             lastdc.DrawLine(*lastline2)  # erase old
 
     # --- ---   Convolved Data Functions
-    def ComputeConvolvedData(self, evt):
+    def ComputeConvolvedData(self, _):
         self.getConvolvedData()
 
         self.page3.showconvolvedImage_btn.SetLabel("Show Image")
@@ -4764,7 +4633,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.ConvolvedData = RMCCD.ConvolvebyKernel(toconvolve, 4, 5, 2)
 
-    def ShowHisto_ConvolvedData(self, event):
+    def ShowHisto_ConvolvedData(self, _):
         if self.ConvolvedData is None:
             print("Calculate Convolved Data")
             self.getConvolvedData()
@@ -4791,7 +4660,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         plotaccum_hotpixelfrequencies.Show(True)
 
-    def OnSaveFigure(self, event):
+    def OnSaveFigure(self, _):
 
         dlg = wx.FileDialog(self,
                             "Saving in png format. Choose a file",
@@ -4816,7 +4685,7 @@ class MainPeakSearchFrame(wx.Frame):
         dlg.Destroy()
 
     # ---  ----Peak Search and Fit
-    def SavePeakList_PSPfile(self, evt):
+    def SavePeakList_PSPfile(self, _):
         """
         save peak list and save .psp file
         """
@@ -4824,7 +4693,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.peaklistPixels is None:
             wx.MessageBox("Peak list is empty !", "INFO")
         # write file with peak search parameters in comments line
-        prefix, file_extension = self.imagefilename.rsplit(".", 1)
+        prefix, _ = self.imagefilename.rsplit(".", 1)
 
         comments_in_file = None
 
@@ -4875,7 +4744,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.file_index_increment += 1
 
-    def onFitOnePeak(self, evt):
+    def onFitOnePeak(self, _):
         """
         fit one peak centered on where user has clicked
 
@@ -4884,7 +4753,7 @@ class MainPeakSearchFrame(wx.Frame):
         #         self.boxsize_fit = 10
         self.boxsize_fit = int(self.fitparampanel.boxsize.GetValue())
 
-        boxx, boxy = self.boxsize_fit, self.boxsize_fit
+        # boxx, boxy = self.boxsize_fit, self.boxsize_fit
 
         print("self.framedim in onFitOnePeak", self.framedim)
         #        (min_value, max_value,
@@ -4975,7 +4844,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         FitPixelDev = float(self.fitparampanel.FitPixelDev.GetValue())
 
-        tabIsorted, params_res, peaklist_res = RMCCD.fitoneimage_manypeaks(filename,
+        tabIsorted, params_res, _ = RMCCD.fitoneimage_manypeaks(filename,
                                             peaklist,
                                             boxsize,
                                             CCDLabel=CCDLabel,
@@ -5003,7 +4872,7 @@ class MainPeakSearchFrame(wx.Frame):
         params_res = params_res[0]
 
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin,
-            peak_inclination, Xdev, Ydev, peak_bkg, Ipixmax) = datapeak
+            peak_inclination, _, _, peak_bkg, _) = datapeak
 
         fitresults = [peak_bkg, peak_I, peak_X, peak_Y, peak_fwaxmaj, peak_fwaxmin, peak_inclination]
 
@@ -5088,7 +4957,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         return datapeak
 
-    def onAddPeaktoPeaklist(self, evt):
+    def onAddPeaktoPeaklist(self, _):
         dist_tolerance = 1
 
         #         print "initial peaklist", self.peaklistPixels
@@ -5151,7 +5020,9 @@ class MainPeakSearchFrame(wx.Frame):
             print("with %d elements", len(newpeak))
             self.page4.AddOneSpot(newpeak)
 
-    def onRemovePeaktoPeaklist(self, evt, centerXY=None):
+    def onRemovePeaktoPeaklist(self, _, centerXY=None):
+        """remove picked peak from the current peaks list
+        """
         if self.peaklistPixels is None:
             wx.MessageBox("Peak list is empty!", "INFO")
             return
@@ -5163,7 +5034,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             self.deleteOnePeak(index_close, peakXY)
 
-    def onRemoveAllPeakstoPeaklist(self, evt):
+    def onRemoveAllPeakstoPeaklist(self, _):
         """
         remove all spots of the peaks list and update the plot (remove circular markers)
         """
@@ -5234,9 +5105,10 @@ class MainPeakSearchFrame(wx.Frame):
 
         # delete object in OLV peak list
         if ObjectListView_Present:
-            self.page4.RemoveOneSpot(peakXY)
+            self.page4.RemoveOneSpot(peakXY) # ??
+            self.page4.RemoveAll()  # ??
 
-    def OnPeakSearch(self, event):  # python & Lauetools
+    def OnPeakSearch(self, _):  # python & Lauetools
         """
         launch peak search by calling methods in readmccd.py
         """
@@ -5473,18 +5345,18 @@ class MainPeakSearchFrame(wx.Frame):
 
 
 def start_func():
-    initialParameter = {}
+    dictParameters = {}
     # MarCCD
-    initialParameter["imagefilename"] = "Ge_blanc_0000.mccd"
+    dictParameters["imagefilename"] = "Ge_blanc_0000.mccd"
     #     initialParameter['dirname'] = '/home/micha/lauetools/trunk'
-    initialParameter["dirname"] = LaueToolsProjectFolder
-    initialParameter["mapsLUT"] = "OrRd"
-    initialParameter["CCDLabel"] = "MARCCD165"
-    initialParameter["title"] = "PeakSearch Board"
-    initialParameter["writefolder"] = "."
+    dictParameters["dirname"] = LaueToolsProjectFolder
+    dictParameters["mapsLUT"] = "OrRd"
+    dictParameters["CCDLabel"] = "MARCCD165"
+    dictParameters["title"] = "PeakSearch Board"
+    dictParameters["writefolder"] = "."
 
     PSGUIApp = wx.App()
-    PSGUIframe = MainPeakSearchFrame(None, -1, initialParameter, "MainPeakSearchFrame")
+    PSGUIframe = MainPeakSearchFrame(None, -1, dictParameters, "MainPeakSearchFrame")
     PSGUIframe.Show()
     PSGUIApp.MainLoop()
 

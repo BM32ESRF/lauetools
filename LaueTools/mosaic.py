@@ -214,7 +214,7 @@ class ImshowFrameNew(wx.Frame):
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
 
         self.scaletype = "Linear"
-        scaletxt = wx.StaticText(self, -1, "Scale")
+        # scaletxt = wx.StaticText(self, -1, "Scale")
         self.comboscale = wx.ComboBox(self, -1, self.scaletype,
                                                         choices=["Linear", "Log"], size=(-1, 40))
 
@@ -338,10 +338,10 @@ class ImshowFrameNew(wx.Frame):
     def clear_axes_create_imshow(self):
         """ init the figure
         """
-        def fromindex_to_pixelpos_x_mosaic(index, pos):
+        def fromindex_to_pixelpos_x_mosaic(index, _):
             return index  # self.center[0]-self.boxsize[0]+index
 
-        def fromindex_to_pixelpos_y_mosaic(index, pos):
+        def fromindex_to_pixelpos_y_mosaic(index, _):
             return index  # self.center[1]-self.boxsize[1]+index
 
         # clear the axes and replot everything
@@ -413,7 +413,6 @@ class ImshowFrame_Scalar(wx.Frame):
 
     used in multigrains.py to plot maps
     """
-
     def __init__(self, parent, _id, title, dataarray, posarray_twomotors=None,
                                                         posmotorname=(None, None),
                                                         datatype="scalar",
@@ -937,10 +936,10 @@ class ImshowFrame_Scalar(wx.Frame):
                 step_x = step_x * step_factor
                 step_y = step_y * step_factor
 
-            def fromindex_to_pixelpos_x_mosaic(index, pos):
+            def fromindex_to_pixelpos_x_mosaic(index, _):
                 return (np.fix((step_x * index) * 1000.0) / 1000.0)  # self.center[0]-self.boxsize[0]+index
 
-            def fromindex_to_pixelpos_y_mosaic(index, pos):
+            def fromindex_to_pixelpos_y_mosaic(index, _):
                 return (np.fix((step_y * index) * 1000.0) / 1000.0)  # self.center[1]-self.boxsize[1]+index
 
             #         def fromindex_to_motor1pos(index, pos):
@@ -1064,7 +1063,6 @@ class ImshowFrame(wx.Frame):
     """
     Class to show 2D array scalar data
     """
-
     def __init__(self, parent, _id, title, dataarray, absolutecornerindices=None,
                                                     Size=(4, 3),
                                                     Imageindices=np.arange(2),
@@ -1561,7 +1559,7 @@ class ImshowFrame(wx.Frame):
 
     def OnChangeVmax(self, _):
         self.ImaxDisplayed = float(self.vmaxtxtctrl.GetValue())
-        print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
+        # print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
 
         if self.datatype in ("Vector",):
             self._replotWithCurrentLimits()
@@ -1585,7 +1583,7 @@ class ImshowFrame(wx.Frame):
     def OnSliderMax(self, _):
 
         self.ImaxDisplayed = int(self.slider_max.GetValue())
-        print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
+        # print("self.ImaxDisplayed ------->", self.ImaxDisplayed)
 
         if self.ImaxDisplayed < self.IminDisplayed:
             self.slider_max.SetValue(self.IminDisplayed + 1)
@@ -1694,8 +1692,7 @@ class ImshowFrame(wx.Frame):
                 pixelCenter = newCenter
 
             radialdistance_2D = np.sqrt(
-                (dataX_2D - pixelCenter[0]) ** 2 + (dataY_2D - pixelCenter[1]) ** 2
-            )
+                (dataX_2D - pixelCenter[0]) ** 2 + (dataY_2D - pixelCenter[1]) ** 2)
             self.data = radialdistance_2D
 
         self.OnMaskWeakPeaks()
@@ -1823,8 +1820,7 @@ class ImshowFrame(wx.Frame):
 
         ToR = set(to_reject0)  # to reject
 
-        print("After amplitude thres, %d/%d peaks have been rejected"
-            % (len(ToR), len(peak_X)))
+        print("After amplitude thres, %d/%d peaks have been rejected" % (len(ToR), len(peak_X)))
 
         ToTake = set(np.arange(len(peak_X))) - ToR
 
@@ -1877,16 +1873,16 @@ class ImshowFrame(wx.Frame):
             self.maxvals = self.ImaxDisplayed
             self.minvals = self.IminDisplayed
 
-        print("in ImshowFrame()")
-        print("self.minvals", self.minvals)
-        print("self.maxvals", self.maxvals)
-        print("self.IminDisplayed", self.IminDisplayed)
-        print("self.ImaxDisplayed", self.ImaxDisplayed)
+        # print("in ImshowFrame()")
+        # print("self.minvals", self.minvals)
+        # print("self.maxvals", self.maxvals)
+        # print("self.IminDisplayed", self.IminDisplayed)
+        # print("self.ImaxDisplayed", self.ImaxDisplayed)
 
         if not shrinkrange:
             self.deltavals = (self.maxvals - self.minvals) / 100.0
 
-            print("self.deltavals", self.deltavals)
+            # print("self.deltavals", self.deltavals)
 
             vmin = self.minvals + self.IminDisplayed * self.deltavals
             vmax = self.minvals + self.ImaxDisplayed * self.deltavals

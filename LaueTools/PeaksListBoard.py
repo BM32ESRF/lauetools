@@ -1,9 +1,15 @@
-import wx
-import copy, os
-
-import wx.grid
+import os
+import sys
 
 import numpy as np
+
+import wx
+import wx.grid
+
+if sys.version_info.major == 3:
+    from . import IOLaueTools as IOLT
+else:
+    import IOLaueTools as IOLT
 
 # --- ---------------  Plot limits board  parameters
 # class PeaksListBoard(wx.Dialog):
@@ -11,13 +17,10 @@ class PeaksListBoard(wx.Frame):
     """
     Class to select scatter plot properties of peak list
     """
-
-    def __init__(self, parent, _id, title):
+    def __init__(self, parent, _id):
         """
         initialize board window
         """
-        #         wx.Dialog.__init__(self, parent, _id, title, size=(400, 250))
-
         # - Initialize the window:
         wx.Frame.__init__(self, None, wx.ID_ANY, "Peak list plot properties", size=(600, 400))
 
@@ -26,20 +29,27 @@ class PeaksListBoard(wx.Frame):
 
         self.parent = parent
         #print("self.parent", self.parent)
+        self.selectedMarker = None
 
         self.list_markerstyle = ["+", "x", "o", "h", "*", "p"]
 
         self.scatterplot_list = []
 
+        self.nb_peakslists = 0
+        self.myDataList = []
+
+        self.selectedcolor = None
+        self.selectedpeaklist = None
+        self.fullpathfilename = None
+        self.myscatter = None
+
+        # widgets ------------------------------
         txtimage = wx.StaticText(self.panel, -1, "Image file path:")
 
         self.expimagetxtctrl = wx.TextCtrl(self.panel, -1, "", size=(400, -1))
         self.expimagebrowsebtn = wx.Button(self.panel, -1, "...", size=(50, -1))
 
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.onSelectPeaksListFile)
-        self.nb_peakslists = 0
-
-        self.myDataList = []
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(txtimage, 0, wx.EXPAND)
@@ -105,9 +115,13 @@ class PeaksListBoard(wx.Frame):
             self.parent.update_draw(1)
 
     def convert_to_rgbmatplotlib(self, rgbcolor):
+        """convert rgb to rgbmatplotlib
+        """
         return (rgbcolor[0] / 255.0, rgbcolor[1] / 255.0, rgbcolor[2] / 255.0)
 
-    def refreshButton(self, event):
+    def refreshButton(self, _):
+        """Refresh
+        """
         self.refreshMyData()
         self.refreshGrid()
 
@@ -140,7 +154,7 @@ class PeaksListBoard(wx.Frame):
                                         choices=self.list_markerstyle,
                                         size=(20, -1))
             #             setattr(self, 'markercombo_%d' % i, markercombo)
-            markercombo.Bind( wx.EVT_COMBOBOX,
+            markercombo.Bind(wx.EVT_COMBOBOX,
                                 lambda evt, comboindex=i: self.onChangeMarker(evt, comboindex))
 
             self.grid.Add(wx.StaticText(self.panel, -1, str(self.myDataList[i]["Select"])))
@@ -203,7 +217,7 @@ class PeaksListBoard(wx.Frame):
         self.panel.SetSizer(self.vsizer)
         self.vsizer.Layout()
 
-    def onCheckBox(self, evt, chckindex):
+    def onCheckBox(self, _, chckindex):
         print("chckindex", chckindex)
 
         chckbox = getattr(self, "chckbox_%d" % chckindex)
@@ -211,7 +225,7 @@ class PeaksListBoard(wx.Frame):
         newstate = chckbox.GetValue()
         print("newstate", newstate)
 
-        if not newstate
+        if not newstate:
             self.scatterplot_list[chckindex].remove()
             self.parent.update_draw(1)
         else:
@@ -220,7 +234,9 @@ class PeaksListBoard(wx.Frame):
                             edgecolor=self.convert_to_rgbmatplotlib(
                                 self.myDataList[chckindex]["Color"]))
 
-    def onChangeSize(self, evt, index):
+    def onChangeSize(self, _, index):
+        """ on change size
+        """
         sizectrl = getattr(self, "sizectrl_%d" % index)
 
         newsize = int(sizectrl.GetValue())
@@ -239,7 +255,8 @@ class PeaksListBoard(wx.Frame):
             self.myDataList[index]["size"] = newsize
 
     def onChangeMarker(self, event, comboindex):
-
+        """ on change marker type
+        """
         print("combo index", comboindex)
         item = event.GetSelection()
         self.selectedMarker = self.list_markerstyle[item]
@@ -270,8 +287,6 @@ class PeaksListBoard(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
-
-        import IOLaueTools as IOLT
 
         if fullpathfilename.endswith(".dat"):
             self.selectedpeaklist = IOLT.read_Peaklist(fullpathfilename)[:, :2]
@@ -343,32 +358,27 @@ class PeaksListBoard(wx.Frame):
         self.addRow_Grid(self.nb_peakslists - 1)
         self.plotmarkers()
 
-    def GetfullpathFile(self, evt):
-        myFileDialog = wx.FileDialog(self,
-                        "Choose an image file",
-                        style=wx.OPEN,
-                        #                                         defaultDir=self.dirname,
-                        wildcard="Peaks list (*.dat)|*.dat|Peaks list (*.cor)|*.cor|indexed Peaks list (*.fit)|*.fit|All files(*)|*")
+    def GetfullpathFile(self, _):
+        wcd = "Peaks list (*.dat)|*.dat|Peaks list (*.cor)|*.cor|indexed Peaks list (*.fit)|*.fit|All files(*)|*"
+        myFileDialog = wx.FileDialog(self, "Choose an image file", style=wx.OPEN, wildcard=wcd)
         dlg = myFileDialog
         dlg.SetMessage("Choose an image file")
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
 
-            #             self.dirnameBlackList = dlg.GetDirectory()
-            #             print 'type filename', type(filename)
             self.fullpathfilename = str(filename)
         else:
             pass
 
     def plotmarkers(self, addscatteratindex=None, markerstyle="o", edgecolor="g", markersize=20):
+        """add plot markers at peaks pixel position from self.selectedpeaklist or self.myDataList
+        """
         # offset convention
         X_OFFSET = 1
         Y_OFFSET = 1
 
-        kwords = {"marker": markerstyle,
-            "facecolor": "None",
-            "edgecolor": edgecolor,
-            "s": markersize}
+        kwords = {"marker": markerstyle, "facecolor": "None",
+                    "edgecolor": edgecolor, "s": markersize}
 
         if addscatteratindex is not None:
             X, Y = self.myDataList[addscatteratindex]["peakslist"].T
@@ -391,7 +401,7 @@ if __name__ == "__main__":
     class App(wx.App):
         def OnInit(self):
             """Create the main window and insert the custom frame"""
-            dlg = PeaksListBoard(None, -1, "Peak List Board")
+            dlg = PeaksListBoard(None, -1)
 
             dlg.Show(True)
             return True

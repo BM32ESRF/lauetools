@@ -280,13 +280,9 @@ class SetGeneralLaueGeometry(wx.Dialog):
 
         initialGeo = DICT_LAUE_GEOMETRIES[parent.kf_direction]
 
-        self.combogeo = wx.ComboBox(
-            self,
-            -1,
-            str(initialGeo),
-            size=(-1, 40),
-            choices=["Top Reflection (2theta=90)", "Transmission"],
-            style=wx.CB_READONLY)
+        self.combogeo = wx.ComboBox(self, -1, str(initialGeo), size=(-1, 40),
+                                    choices=["Top Reflection (2theta=90)", "Transmission"],
+                                    style=wx.CB_READONLY)
 
         self.combogeo.Bind(wx.EVT_COMBOBOX, self.OnChangeGeom)
 
@@ -320,6 +316,8 @@ class SetGeneralLaueGeometry(wx.Dialog):
         self.SetSizer(vbox)
 
     def OnChangeGeom(self, _):
+        """change detection geometry
+        """
         focus_geom = self.combogeo.GetValue()
 
         #         print "Laue Geometry info :", DICT_LAUE_GEOMETRIES_INFO[focus_geom]
@@ -328,6 +326,8 @@ class SetGeneralLaueGeometry(wx.Dialog):
     #         self.sb.SetStatusText(str(DICT_LAUE_GEOMETRIES_INFO[focus_geom]))
 
     def OnAccept(self, _):
+        """accept geometry
+        """
         LaueGeometry = self.combogeo.GetValue()
 
         if LaueGeometry == "Transmission":
@@ -348,4 +348,3 @@ class SetGeneralLaueGeometry(wx.Dialog):
 
     def OnQuit(self, _):
         self.Close()
-

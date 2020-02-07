@@ -188,7 +188,8 @@ def dosimulation_parametric(_list_param,
 
             # print "grain in dosimulation_parametric() input Element",grain
 
-            B0, Extinc0, U0, key = grain  # U0 is identity
+            # B0, Extinc0, U0, key = grain  # U0 is identity
+            B0, _, U0, _ = grain  # U0 is identity
 
             # new B matrix
             newB = np.dot(Tc, np.dot(B, B0))
@@ -499,7 +500,7 @@ def dosimulation_parametric(_list_param,
                     list_posX.append(posx.tolist())
                     list_posY.append(posy.tolist())
 
-                    success = 1
+                    # success = 1
 
                 elif kf_direction in ("Y<0", "Y>0"):
                     # TODO: patch for test: detectordistance = 126.5
@@ -558,7 +559,7 @@ def dosimulation_parametric(_list_param,
 
                 elif kf_direction in ("X>0",):  # transmission mode
                     print("\n*****\nSimulation in transmission mode\n*****\n")
-                        
+
                     # print("spots2pi",spots2pi)
 
                     Laue_spot_list = LAUE.filterLaueSpots(spots2pi,
@@ -595,8 +596,6 @@ def dosimulation_parametric(_list_param,
                     chi = [spot.Chi for spot in Laue_spot_list[0]]
                     energy = [spot.EwaldRadius * DictLT.CST_ENERGYKEV for spot in Laue_spot_list[0]]
                     Miller_ind = [list(spot.Millers) for spot in Laue_spot_list[0]]
-
-                    
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
                                         pixelsize=pixelsize,
@@ -639,9 +638,9 @@ def dosimulation_parametric(_list_param,
             # end of loop over transforms(or children grains)
 
         transform_type = "parametric"
-        print("Transform_listparam in dosimultiondoudou", Transform_listparam)
+        print("Transform_listparam in dosimultion", Transform_listparam)
 
-        if not isinstance(Transform_listparam[0],list):
+        if not isinstance(Transform_listparam[0], list):
             if Transform_listparam[0].endswith("slipsystem"):
                 transform_type = "slipsystem"
 

@@ -60,14 +60,14 @@ class TransformPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()
+        self.mainframe = parent.GetParent().GetParent()
 
-        # print("granparent of TransformPanel", self.granparent)
+        # print("mainframe of TransformPanel", self.mainframe)
 
         self.SelectGrains = {}
 
         # list Control for selected grains for SIMULATION
-        font3 = self.granparent.font3
+        font3 = self.mainframe.font3
 
         titlemiddle = wx.StaticText(self, -1, "Transformations")
         titlemiddle.SetFont(font3)
@@ -100,8 +100,8 @@ class TransformPanel(wx.Panel):
         self.tc_rotmatrix = wx.TextCtrl(self, 1000, defaultmatrixtransform,
                                     size=(250, 100), style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
         self.tc_rotmatrix.SetFocus()
-        self.tc_rotmatrix.Bind(wx.EVT_TEXT, self.granparent.OnTextChanged)
-        self.tc_rotmatrix.Bind(wx.EVT_KEY_DOWN, self.granparent.OnKeyDown)
+        self.tc_rotmatrix.Bind(wx.EVT_TEXT, self.mainframe.OnTextChanged)
+        self.tc_rotmatrix.Bind(wx.EVT_KEY_DOWN, self.mainframe.OnKeyDown)
         self.modify = False
         self.replace = False
 
@@ -144,11 +144,11 @@ class TransformPanel(wx.Panel):
         # self.replace_strain = False
 
         buttontransform = wx.Button(self, -1, "Apply transforms", size=(150, 35))
-        buttontransform.Bind(wx.EVT_BUTTON, self.granparent.OnApplytransform)
+        buttontransform.Bind(wx.EVT_BUTTON, self.mainframe.OnApplytransform)
         buttontransform.SetFont(font3)
 
-        self.granparent.transform_index = 0
-        self.granparent.dict_transform = {}
+        self.mainframe.transform_index = 0
+        self.mainframe.dict_transform = {}
 
         self.tooltips_transformpanel()
 
@@ -318,8 +318,7 @@ class TransformPanel(wx.Panel):
                         evalangle_rot = eval(angle_rot) * np.ones(len(t))
                 except:
                     sentence = 'Expression for t variation in ROTATION axis not understood! Check if there are "," and "]" '
-                    dlg = wx.MessageDialog(
-                        self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
+                    dlg = wx.MessageDialog(self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
                     dlg.ShowModal()
                     dlg.Destroy()
                     return
@@ -332,7 +331,6 @@ class TransformPanel(wx.Panel):
                         evalaxisrot.append(eval(axisrot[k]) * np.ones(len(t)))
 
                 # print "all axis",np.transpose(array(evalaxisrot))
-
                 if framerot in ("s", "a"):
                     if framerot == "s":
                         evalaxisrot = np.dot(matrot_sample, evalaxisrot)
@@ -361,8 +359,6 @@ class TransformPanel(wx.Panel):
                     # print "tu",tu
                     evalmatrot = []
                     for k in range(9):
-                        # print "tu[k]",tu[k]
-                        # print 't' in tu[k]
                         # if the variable 't' appears in formula, then evaluate the formula
                         if "t" in tu[k]:
                             evalmatrot.append(eval(tu[k]))
@@ -411,16 +407,10 @@ class TransformPanel(wx.Panel):
             # reads tc_strainrange
             strlinspace = str(self.tc_strainrange.GetValue())[1:-1].split(",")
             try:
-                tmin, tmax, step = (
-                    float(strlinspace[0]),
-                    float(strlinspace[1]),
-                    int(strlinspace[2]),
-                )
+                tmin, tmax, step = (float(strlinspace[0]), float(strlinspace[1]), int(strlinspace[2]))
             except ValueError:
                 sentence = 'Expression for t variation in STRAIN transform not understood! Check if there are "," and "]" '
-                dlg = wx.MessageDialog(
-                    self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR
-                )
+                dlg = wx.MessageDialog(self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
@@ -437,11 +427,7 @@ class TransformPanel(wx.Panel):
                 evalaxisstrain_list = []
 
                 list_tc_axis = [self.tc_axe1_axis, self.tc_axe2_axis, self.tc_axe3_axis]
-                list_tc_factor = [
-                    self.tc_axe1_factor,
-                    self.tc_axe2_factor,
-                    self.tc_axe3_factor,
-                ]
+                list_tc_factor = [self.tc_axe1_factor, self.tc_axe2_factor, self.tc_axe3_factor]
 
                 # loop over the three axes defined by user
                 for axe in range(3):
@@ -480,30 +466,14 @@ class TransformPanel(wx.Panel):
                         strainID = "s_axis"
                         evalfac_strain_list.append(evalfac_strain)
                         evalaxisstrain_list.append(
-                            np.transpose(
-                                np.dot(matrot_sample, np.array(evalaxisstrain))
-                            )
-                        )
+                            np.transpose(np.dot(matrot_sample, np.array(evalaxisstrain))))
 
-                    elif (
-                        framestrain == "c"
-                    ):  # as with 'a' but calculation is done later according to matorient
+                    elif framestrain == "c":  # as with 'a' but calculation is done later according to matorient
                         strainID = "s_axis_c"
                         evalfac_strain_list.append(evalfac_strain)
                         evalaxisstrain_list.append(np.array(evalaxisstrain).T)
-                    # #                    if framerot == 's' or framerot == 'a':
-                    # #                        if framerot == 's': evalaxisrot = np.dot(matrot_sample, evalaxisrot)
-                    # #                        return 'r_axis',evalangle_rot, np.transpose(array(evalaxisrot))  # array of angle, array of axis
-                    # #                    if framerot == 'c':
-                    # #                        # array of angle, array of axis  coordinates change is done later according to the orientation
-                    # #                        return 'r_axis_c',evalangle_rot, np.transpose(array(evalaxisrot))
-                    # #                    # to finish now
+    
                     strainIDlist.append(strainID)
-
-                    # """
-                    # evalfac_strain_list.append(evalfac_strain)
-                    # evalaxisstrain_list.append(np.transpose(array(evalaxisstrain)))
-                    # """
 
                 # array of strainaxis ID, array of 3 strain factors, array of corresponding 3 axes
                 return strainIDlist, evalfac_strain_list, evalaxisstrain_list
@@ -518,25 +488,23 @@ class SlipSystemPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()
-
-        # print("granparent of TransformPanel", self.granparent)
+        self.mainframe = parent.GetParent().GetParent()
 
         self.SelectGrains = {}
         self.Bmatrices = {}
 
         # list Control for selected grains for SIMULATION
-        font3 = self.granparent.font3
+        font3 = self.mainframe.font3
 
         titlemiddle = wx.StaticText(self, -1, "slip systems rotation Transformations")
         titlemiddle.SetFont(font3)
 
         buttontransform = wx.Button(self, -1, "Apply transforms", size=(150, 35))
-        buttontransform.Bind(wx.EVT_BUTTON, self.granparent.OnApplytransformSlipSystems)
+        buttontransform.Bind(wx.EVT_BUTTON, self.mainframe.OnApplytransformSlipSystems)
         buttontransform.SetFont(font3)
 
-        self.granparent.transform_index = 0
-        self.granparent.dict_transform = {}
+        self.mainframe.transform_index = 0
+        self.mainframe.dict_transform = {}
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(titlemiddle)
@@ -552,7 +520,7 @@ class SlipSystemPanel(wx.Panel):
         build lists of parameters for the simulation of set of grains
         """
         print("ReadTransform  slipsystem")
-        Bmatrix = self.granparent.Bmatrix_current
+        Bmatrix = self.mainframe.Bmatrix_current
 
         # slip system settings
         misorientationangleMAX = 0.5
@@ -593,14 +561,15 @@ class SimulationPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
-        self.granparent = parent.GetParent().GetParent()
+        self.mainframe = parent.GetParent().GetParent()
 
-        # print("granparent of SimulationPanel", self.granparent)
+        self.fullpathimagefile = None
 
+        # widgets -----------------------------------
         self.SetBackgroundColour("cyan")
 
         title1 = wx.StaticText(self, -1, "Spectral Band(keV)")
-        title1.SetFont(self.granparent.font3)
+        title1.SetFont(self.mainframe.font3)
 
         txtemin = wx.StaticText(self, -1, "Energy min: ")
         self.scmin = wx.SpinCtrl(self, -1, "5", size=(60, -1), min=5, max=195)
@@ -616,9 +585,9 @@ class SimulationPanel(wx.Panel):
         gridSizer.Add(self.scmax, 0, wx.EXPAND)
 
         title2 = wx.StaticText(self, -1, "Plot Parameters")
-        title2.SetFont(self.granparent.font3)
+        title2.SetFont(self.mainframe.font3)
         title25 = wx.StaticText(self, -1, "Detector Parameters")
-        title25.SetFont(self.granparent.font3)
+        title25.SetFont(self.mainframe.font3)
 
         self.rbtop = wx.RadioButton(self, 200, "Reflection mode top", style=wx.RB_GROUP)
         self.rbside = wx.RadioButton(self, 200, "Reflection mode side +")
@@ -627,7 +596,7 @@ class SimulationPanel(wx.Panel):
 
         self.rbtop.SetValue(True)
 
-        current_param = self.granparent.initialParameters["CalibrationParameters"]
+        current_param = self.mainframe.initialParameters["CalibrationParameters"]
 
         txtdd = wx.StaticText(self, -1, "Det.Dist. (mm): ")
         self.detdist = wx.TextCtrl(self, -1, str(current_param[0]), size=(75, -1))
@@ -642,25 +611,18 @@ class SimulationPanel(wx.Panel):
         txtxgam = wx.StaticText(self, -1, "xgam (deg): ")
         self.xgam = wx.TextCtrl(self, -1, str(current_param[4]), size=(75, -1))
         txtpixelsize = wx.StaticText(self, -1, "pixelsize (mm): ")
-        self.ctrlpixelsize = wx.TextCtrl(
-            self, -1, str(self.granparent.pixelsize), size=(75, -1)
-        )
-
+        self.ctrlpixelsize = wx.TextCtrl(self, -1, str(self.mainframe.pixelsize), size=(75, -1))
         title4 = wx.StaticText(self, -1, "Display Parameters")
-        title4.SetFont(self.granparent.font3)
+        title4.SetFont(self.mainframe.font3)
 
         self.checkshowExperimenalData = wx.CheckBox(self, -1, "Show Exp. Data")
         self.checkshowExperimenalData.SetValue(False)
-
         self.checkshowFluoFrame = wx.CheckBox(self, -1, "Show Fluo. Det. Frame")
         self.checkshowFluoFrame.SetValue(False)
-
         self.checkExperimenalImage = wx.CheckBox(self, -1, "Show Exp. Image")
         self.checkExperimenalImage.SetValue(False)
-
         self.expimagetxtctrl = wx.TextCtrl(self, -1, "", size=(75, -1))
         self.expimagebrowsebtn = wx.Button(self, -1, "...", size=(50, -1))
-
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.onSelectImageFile)
 
         self.pt_2thetachi = wx.RadioButton(self, 100, "2ThetaChi", style=wx.RB_GROUP)
@@ -673,9 +635,7 @@ class SimulationPanel(wx.Panel):
         self.rbsideneg.SetToolTipString("Camera at 90 deg on other side of sample")
         self.rbtransmission.SetToolTipString("Camera at 2theta=0 deg")
 
-        self.checkshowExperimenalData.SetToolTipString(
-            "Plot markers for current experimental peak list"
-        )
+        self.checkshowExperimenalData.SetToolTipString("Plot markers for current experimental peak list")
         self.checkExperimenalImage.SetToolTipString("Display Laue pattern (2D image)")
         self.expimagetxtctrl.SetToolTipString("Full path for Laue pattern to be superimposed to simulated peaks")
         self.expimagebrowsebtn.SetToolTipString("Browse and select Laue Pattern image file")
@@ -738,14 +698,14 @@ class SimulationPanel(wx.Panel):
         gridSizer2.Add(self.expimagetxtctrl, 0, wx.EXPAND)
         gridSizer2.Add(self.expimagebrowsebtn, 0, wx.EXPAND)
 
-        self.spSizer = wx.BoxSizer(wx.VERTICAL)
-        self.spSizer.Add(title1, 0, wx.ALIGN_CENTER)
-        self.spSizer.AddSpacer(10)
-        self.spSizer.Add(gridSizer, 0)
-        self.spSizer.Add(gridSizer2, 0)
-        self.spSizer.AddSpacer(5)
+        spSizer = wx.BoxSizer(wx.VERTICAL)
+        spSizer.Add(title1, 0, wx.ALIGN_CENTER)
+        spSizer.AddSpacer(10)
+        spSizer.Add(gridSizer, 0)
+        spSizer.Add(gridSizer2, 0)
+        spSizer.AddSpacer(5)
 
-        self.SetSizer(self.spSizer)
+        self.SetSizer(spSizer)
 
     def onSelectImageFile(self, evt):
         self.GetfullpathFile(evt)
@@ -814,7 +774,22 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.CurrentGrain = ["Cu", "FaceCenteredCubic", "Identity",
                             "Identity", "Identity", "Identity", "Grain_0", "", ]
+        self.modify = None
+        self.list_of_Elem = None
+        self.list_of_Extinc = None
+        self.list_of_Strain_a = None
+        self.list_of_Rot = None
+        self.list_of_Vect = None
+        self.list_of_Strain_c = None
+        self.Bmatrix_current = None
+        self.ParentGrainname = None
+        self.emin, self.emax = None, None
+        self.Det_distance, self.Det_diameter = None, None
+        self.Xcen, self.Ycen, self.Xbet, self.Xgam = None, None, None, None
+        self.calib = None
+        self.simul_filename = None
 
+        # widgets --------------------------------
         self.create_leftpanel()
 
         # defines self.hboxbottom  sizer
@@ -835,26 +810,24 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.nb0.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange_nb0)
 
         # tooltips
-        self.centerpanel.SetToolTipString(
-            "Apply parametric transforms (distribution of orientation and strain) on higlighted grain in basket"
-        )
-        self.rightpanel.SetToolTipString(
-            "Simulation parameters board (CCD position, spots coordinates,Energy band pass...)"
-        )
+        self.centerpanel.SetToolTipString("Apply parametric transforms (distribution of "
+        "orientation and strain) on higlighted grain in basket")
+        self.rightpanel.SetToolTipString("Simulation parameters board (CCD position, spots "
+        "coordinates,Energy band pass...)")
 
         self.hbox = wx.BoxSizer(wx.HORIZONTAL)
         self.hbox.Add(self.buttonsvertSizer, 1, wx.EXPAND)
         self.hbox.Add(self.nb0, 1, wx.EXPAND)
 
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(self.hbox, 1, wx.EXPAND, 0)
-        self.vbox.AddSpacer(10)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.hbox, 1, wx.EXPAND, 0)
+        vbox.AddSpacer(10)
         linehoriz = wx.StaticLine(self.panel)
-        self.vbox.Add(linehoriz, 0, wx.ALL | wx.EXPAND, 5)
-        self.vbox.Add(self.hboxbottom, 0, wx.EXPAND, 0)
+        vbox.Add(linehoriz, 0, wx.ALL | wx.EXPAND, 5)
+        vbox.Add(self.hboxbottom, 0, wx.EXPAND, 0)
 
-        self.panel.SetSizer(self.vbox)
-        self.vbox.Fit(self)
+        self.panel.SetSizer(vbox)
+        vbox.Fit(self)
         self.Layout()
 
     def OnTabChange_nb0(self, event):
@@ -928,20 +901,12 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.LC.SetColumnWidth(6, Col_width)
         self.LC.SetColumnWidth(7, Col_width)
 
-        #         self.String_Info = self.userguidestring()
-        #         self.infotext = wx.TextCtrl(self.panel,
-        #                                     style=wx.TE_MULTILINE | wx.TE_READONLY,  # | wx.HSCROLL,
-        #                                     size=(590, 190),
-        #                                     pos=(5, 40))
-        #
-        #         self.infotext.SetValue(self.String_Info)
-
         deletebutton = wx.Button(self.panel, -1, "Delete")
         deleteallbutton = wx.Button(self.panel, -1, "DeleteAll")
         deletebutton.Bind(wx.EVT_BUTTON, self.DeleteGrain)
         deleteallbutton.Bind(wx.EVT_BUTTON, self.DeleteAllGrain)
 
-        # tooltips
+        # tooltips --------------------------------
         tipmat = "Material or Crystallographic structure"
 
         txt1.SetToolTipString(tipmat)
@@ -961,9 +926,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.comboRot.SetToolTipString(tipRotationMatrix)
 
         tipvect = "Operator B in formula: q= A U B C G*\n"
-        tipvect += (
-            "Initial set of reciprocal unit cell basis vector in LaueTools lab. frame"
-        )
+        tipvect += "Initial set of reciprocal unit cell basis vector in LaueTools lab. frame"
 
         txt5.SetToolTipString(tipvect)
         self.comboVect.SetToolTipString(tipvect)
@@ -997,10 +960,10 @@ class parametric_Grain_Dialog3(wx.Frame):
         gridSizer.Add(txt6, 0, wx.ALIGN_CENTER | wx.ALIGN_CENTER)
         gridSizer.Add(self.comboStrain_c, 0, wx.EXPAND)
 
-        self.buttonshoriz2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.buttonshoriz2Sizer.Add(addgrainbtn, 1)
-        self.buttonshoriz2Sizer.Add(buttonrefresh, 1)
-        self.buttonshoriz2Sizer.Add(loadMaterialsbtn, 1)
+        buttonshoriz2Sizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonshoriz2Sizer.Add(addgrainbtn, 1)
+        buttonshoriz2Sizer.Add(buttonrefresh, 1)
+        buttonshoriz2Sizer.Add(loadMaterialsbtn, 1)
 
         horizbtnsizers = wx.BoxSizer(wx.HORIZONTAL)
         horizbtnsizers.Add(deletebutton, 0)
@@ -1009,7 +972,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.buttonsvertSizer = wx.BoxSizer(wx.VERTICAL)
         self.buttonsvertSizer.Add(titlegrain, 0, wx.ALIGN_CENTER)
         self.buttonsvertSizer.Add(gridSizer)
-        self.buttonsvertSizer.Add(self.buttonshoriz2Sizer, 0, wx.ALIGN_CENTER)
+        self.buttonsvertSizer.Add(buttonshoriz2Sizer, 0, wx.ALIGN_CENTER)
         self.buttonsvertSizer.AddSpacer(10)
         self.buttonsvertSizer.Add(txtlist, 0, wx.ALIGN_CENTER)
         self.buttonsvertSizer.Add(self.LC, 1, wx.EXPAND | wx.ALL)
@@ -1056,12 +1019,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         # set tool tips
         self.savefileBox.SetToolTipString("Save simulated peaks in file")
         self.rb1.SetToolTipString("Manual set of simulation peaks list Filename  .sim")
-        self.rb2.SetToolTipString(
-            "Automatic incrementation of simulation peaks list Filename  .sim"
-        )
-        self.corfileBox.SetToolTipString(
-            "Create a fake experimental peaks list (without miller indices)"
-        )
+        self.rb2.SetToolTipString("Automatic incrementation of simulation peaks list Filename  .sim")
+        self.corfileBox.SetToolTipString("Create a fake experimental peaks list (without miller indices)")
 
         # widgets layout
 
@@ -1101,38 +1060,28 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.hboxbottom.Add(v3)
 
     def userguidestring(self):
-        self.String_Info = " ***** USER GUIDE ******\n\n"
-        self.String_Info += (
-            "1- Select crystallographic structure of by Element or structure\n"
-        )
-        self.String_Info += "          Orientation by some specific orientation of a*,b*,c* or rotation matrix\n"
-        self.String_Info += "          Angular strain matrix\n"
-        self.String_Info += "2- Add grains as many as you want in the list\n"
-        self.String_Info += "          Delete unwanted grains by selecting them and clicking in Delete button\n"
-        self.String_Info += "3- OPTIONNALY Select a set of orientation or strain transfrom from a selected parent grain in the list\n"
-        self.String_Info += (
-            "          Axis rotation and Axes traction can not be combined\n"
-        )
-        self.String_Info += "          One transform set for one selected grain\n"
-        self.String_Info += "          t is the varying parameter given start, end and number of steps values,\n"
-        self.String_Info += "               can be put in any place in other field with maths expression\n"
-        self.String_Info += "               example: a[1+cos(t/2.)*exp(-t*.1)]\n"
-        self.String_Info += "               start, end may be floats\n"
-        self.String_Info += "          Frame chosen to express coordinates can be selectiong by choosing the letter a, s or c\n\n"
-        self.String_Info += "          ROTATION:\n"
-        self.String_Info += (
-            "          Choose the frame, axis-vector coordinnates and angle in degree\n"
-        )
-        self.String_Info += "          STRAIN:\n"
-        self.String_Info += "          three axes of traction can be combined,\n"
-        self.String_Info += (
-            "          with frame, vector direction, and amplitude in real space\n"
-        )
-        self.String_Info += "                example: factor of 1.1 means 10\% expansion in real space along the chosen direction\n"
-        self.String_Info += (
-            "4- Select plot/calibration/file parameter and click on simulate button\n"
-        )
-        return self.String_Info
+        String_Info = " ***** USER GUIDE ******\n\n"
+        String_Info += "1- Select crystallographic structure of by Element or structure\n"
+        String_Info += "          Orientation by some specific orientation of a*,b*,c* or rotation matrix\n"
+        String_Info += "          Angular strain matrix\n"
+        String_Info += "2- Add grains as many as you want in the list\n"
+        String_Info += "          Delete unwanted grains by selecting them and clicking in Delete button\n"
+        String_Info += "3- OPTIONNALY Select a set of orientation or strain transfrom from a selected parent grain in the list\n"
+        String_Info += "          Axis rotation and Axes traction can not be combined\n"
+        String_Info += "          One transform set for one selected grain\n"
+        String_Info += "          t is the varying parameter given start, end and number of steps values,\n"
+        String_Info += "               can be put in any place in other field with maths expression\n"
+        String_Info += "               example: a[1+cos(t/2.)*exp(-t*.1)]\n"
+        String_Info += "               start, end may be floats\n"
+        String_Info += "          Frame chosen to express coordinates can be selectiong by choosing the letter a, s or c\n\n"
+        String_Info += "          ROTATION:\n"
+        String_Info += "          Choose the frame, axis-vector coordinnates and angle in degree\n"
+        String_Info += "          STRAIN:\n"
+        String_Info += "          three axes of traction can be combined,\n"
+        String_Info += "          with frame, vector direction, and amplitude in real space\n"
+        String_Info += "                example: factor of 1.1 means 10\% expansion in real space along the chosen direction\n"
+        String_Info += "4- Select plot/calibration/file parameter and click on simulate button\n"
+        return String_Info
 
     def OnTextChanged(self, evt):
         self.modify = True
@@ -1142,12 +1091,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         event.Skip()
 
     def showCurrentDir(self, _):
-        dlg = wx.MessageDialog(
-            self,
-            "Current directory :%s" % self.dirname,
-            "Current Directory",
-            wx.OK | wx.ICON_INFORMATION,
-        )
+        dlg = wx.MessageDialog(self, "Current directory :%s" % self.dirname,
+                                                "Current Directory", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -1161,19 +1106,14 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.comboElem.Clear()
         self.comboElem.AppendItems(self.list_of_Elem)
-
         self.comboExtinc.Clear()
         self.comboExtinc.AppendItems(self.list_of_Extinc)
-
         self.comboStrain_a.Clear()
         self.comboStrain_a.AppendItems(self.list_of_Strain_a)
-
         self.comboRot.Clear()
         self.comboRot.AppendItems(self.list_of_Rot)
-
         self.comboVect.Clear()
         self.comboVect.AppendItems(self.list_of_Vect)
-
         self.comboStrain_c.Clear()
         self.comboStrain_c.AppendItems(self.list_of_Strain_c)
 
@@ -1298,8 +1238,7 @@ class parametric_Grain_Dialog3(wx.Frame):
                 self.SelectGrains[name] = self.dict_grain_created[name]
 
             else:
-                print("You must select by mouse a least one grain!!")  # TODO better error catching
-        # print self.SelectGrains
+                print("You must select by mouse a least one grain!!")
         event.Skip()
 
     def DeleteGrain(self, event):
@@ -1518,7 +1457,6 @@ class parametric_Grain_Dialog3(wx.Frame):
         dlg.Destroy()
 
     def OnQuit(self, _):
-        #        print "Current selected grains ", self.SelectGrains
         self.Close()
 
     def OnSimulate(self, evt):
@@ -1691,10 +1629,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         # experimental data
         if showExperimenalData:
-            experimentaldata_2thetachi = (
-                                        self.data_2theta,
-                                        self.data_chi,
-                                        self.data_I)
+            experimentaldata_2thetachi = (self.data_2theta, self.data_chi, self.data_I)
             experimentaldata_XYMAR = self.data_pixX, self.data_pixY, self.data_I
         else:
             experimentaldata_2thetachi = None
@@ -1784,11 +1719,7 @@ def Edit_String_SimulData(data):
 
         for index_grain in range(nb_grains):
             nb_of_simulspots = len(TWT[index_grain])
-            startgrain = "#G %d\t%s\t%d\n" % (
-                index_grain,
-                NAME[index_grain],
-                nb_of_simulspots,
-            )
+            startgrain = "#G %d\t%s\t%d\n" % (index_grain, NAME[index_grain], nb_of_simulspots)
 
             lines += startgrain
             # print nb_of_simulspots
@@ -1828,16 +1759,15 @@ def Edit_String_SimulData(data):
                 lines += startgrain
                 for data_index in range(nb_of_simulspots):
                     linedata = "%d\t%d\t%d\t%d\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n" % (
-                        data_index,
-                        MIL[gen_i][data_index][0],
-                        MIL[gen_i][data_index][1],
-                        MIL[gen_i][data_index][2],
-                        ENE[gen_i][data_index],
-                        TWT[gen_i][data_index],
-                        CHI[gen_i][data_index],
-                        XX[gen_i][data_index],
-                        YY[gen_i][data_index],
-                    )
+                                                                data_index,
+                                                                MIL[gen_i][data_index][0],
+                                                                MIL[gen_i][data_index][1],
+                                                                MIL[gen_i][data_index][2],
+                                                                ENE[gen_i][data_index],
+                                                                TWT[gen_i][data_index],
+                                                                CHI[gen_i][data_index],
+                                                                XX[gen_i][data_index],
+                                                                YY[gen_i][data_index])
                     lines += linedata
                 gen_i += 1
 
