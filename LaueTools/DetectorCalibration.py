@@ -957,7 +957,7 @@ class MainCalibrationFrame(wx.Frame):
         self.tog = 0
         self.datatype = datatype
 
-        self.dict_Materials = initialParameter["dict_Materials"]
+        self.dict_Materials = self.initialParameter["dict_Materials"]
 
         self.points = []  # to store points
         self.selectionPoints = []
@@ -969,7 +969,7 @@ class MainCalibrationFrame(wx.Frame):
         self.nbclick_dist = 1
         self.nbclick_zone = 1
 
-        self.dirname = initialParameter["dirname"]
+        self.dirname = self.initialParameter["dirname"]
 
         self.recognition_possible = True
         self.toshow = []
@@ -1021,7 +1021,6 @@ class MainCalibrationFrame(wx.Frame):
         self.HKLxyz_names, self.HKLxyz = None, None
         self.totalintensity = None
         self.p2S, self.p3S = None, None
-        
 
         self.setwidgets()
 
