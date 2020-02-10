@@ -189,10 +189,10 @@ class PlotRangePanel(wx.Panel):
             if not CalibrationFile in os.listdir(self.mainframe.dirname):
                 wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of '
                 '%s is missing. \nPlease, change the name of %s (remove "dat_" for instance) '
-                    'to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile),'Info')
+                    'to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile), 'Info')
                 raise ValueError('%s corresponding to .dat file of %s is missing. '
                 'Change the name of %s (remove "dat_" '
-                'for instance)'%(CalibrationFile,selectedFile,selectedFile))
+                'for instance)'%(CalibrationFile, selectedFile, selectedFile))
 
         else:
             CalibrationFile = selectedFile
@@ -265,8 +265,8 @@ class CrystalParamPanel(wx.Panel):
         b2 = wx.Button(self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40))
         btn_sortUBsname = wx.Button(self, 1011, "sort UBs name",
                                     (deltaposx + 240, pos7d + vertical_shift), (120, 40))
-        
-        btnReloadMaterials = wx.Button( self, -1, "Reload Materials",
+
+        btnReloadMaterials = wx.Button(self, -1, "Reload Materials",
                                     (deltaposx + 370, pos7d + vertical_shift), (120, 40))
 
         # warning button id =52 is common with an other button
@@ -277,7 +277,7 @@ class CrystalParamPanel(wx.Panel):
         self.eminC.Bind(wx.EVT_SPINCTRL, self.mainframe.OnCheckEminValue)
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeElement)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeBMatrix, id=2424)
-        self.btn_mergeUB.Bind( wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix)
+        self.btn_mergeUB.Bind(wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeMatrix, id=2525)
         self.Bind(wx.EVT_BUTTON, self.mainframe.EnterMatrix, id=1010)
         btn_sortUBsname.Bind(wx.EVT_BUTTON, self.onSortUBsname)
@@ -861,7 +861,7 @@ class TextFrame(wx.Frame):
 
         panel = wx.Panel(self, -1)
         matrixLabel = wx.StaticText(panel, -1, "Matrix Elements:")
-        matrixText = wx.TextCtrl( panel, -1, strexpression, size=(490, 100),
+        matrixText = wx.TextCtrl(panel, -1, strexpression, size=(490, 100),
                                                         style=wx.TE_MULTILINE | wx.TE_READONLY)
         #         matrixText.SetInsertionPoint(0)
 
@@ -1013,6 +1013,7 @@ class MainCalibrationFrame(wx.Frame):
         self.chi = None
         self.Data_I, self.data, self.Data_index_expspot = None, None, None
         self.data_x, self.data_y = None, None
+        self.data_gnomonx, self.data_gnomony = None, None
         self.filenameCalib = None
         self.linkIntensity = None
         self.UBmatrix = None
@@ -1021,6 +1022,23 @@ class MainCalibrationFrame(wx.Frame):
         self.HKLxyz_names, self.HKLxyz = None, None
         self.totalintensity = None
         self.p2S, self.p3S = None, None
+
+        self.inputmatrix = None
+        self.init_plot = None
+        self.Extinctions = None
+        self.emin, self.emax = None, None
+        self.key_material, self.B0matrix, self.Bmatrix = None, None, None
+        self.Miller_ind = None
+        self.sim_gnomonx, self.sim_gnomony = None, None
+        self.successfull = None
+        self.EXPpoints = None
+        self.mat_solution = None
+        self.TwicethetaChi_solution = None
+        self.data_fromGnomon = None
+        self.RecBox = None
+        self.centerx, self.centery = None, None
+        self.press = None
+        self._dataANNOTE_exp, self._dataANNOTE_theo = None, None
 
         self.setwidgets()
 
@@ -1150,8 +1168,6 @@ class MainCalibrationFrame(wx.Frame):
         self.ReadExperimentData()
         self._replot(wx.EVT_IDLE)
         self.display_current()
-
-
 
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
@@ -1296,7 +1312,7 @@ class MainCalibrationFrame(wx.Frame):
         print('\n\nReadExperimentData()  \n\n')
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
-        print('filepath',filepath)
+        print('filepath', filepath)
 
         if extension in ("dat", "DAT"):
             colI = 3
@@ -1330,7 +1346,7 @@ class MainCalibrationFrame(wx.Frame):
             self.initialParameter['filename.cor'] = self.filename
 
             # write a basic .dat file from .cor file
-            Data_array = np.zeros((len(data_theta),10))
+            Data_array = np.zeros((len(data_theta), 10))
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
             Data_array[:, 2] = dataintensity
@@ -1596,9 +1612,9 @@ class MainCalibrationFrame(wx.Frame):
         # tag duplicates in ProxTable with negative sign ----------------------
         # ProxTable[index_theo]  = index_exp   closest link
 
-        for theo_ind, exp_ind in enumerate(ProxTable):
+        #ProxTable = list of (theo_ind, exp_ind)
+        for _, exp_ind in enumerate(ProxTable):
             where_th_ind = np.where(ProxTablecopy == exp_ind)[0]
-            # print "theo_ind, exp_ind ******** ",theo_ind, exp_ind
             if len(where_th_ind) > 1:
                 # exp spot(exp_ind) is close to several theo spots
                 # then tag the index with negative sign
@@ -1986,8 +2002,7 @@ class MainCalibrationFrame(wx.Frame):
             print("determinant")
             print(np.linalg.det(Umat).round(decimals=5))
 
-            toto = Umat.transpose()
-            Bmat_triang_up = np.dot(toto, self.UBmatrix)
+            Bmat_triang_up = np.dot(Umat.T, self.UBmatrix)
 
             print(" Bmat_triang_up= ")
             print(Bmat_triang_up.round(decimals=5))
@@ -2091,9 +2106,9 @@ class MainCalibrationFrame(wx.Frame):
 
         print('self.initialParameter["filename.cor"] in OnWriteResults',
                 self.initialParameter["filename.cor"])
-        
+
         initialdatfile = self.filename #self.initialParameter["filename.cor"]
-        print('initialdatfile  :',initialdatfile)
+        print('initialdatfile  :', initialdatfile)
 
         data_peak = IOLT.read_Peaklist(initialdatfile)
 
@@ -2457,7 +2472,7 @@ class MainCalibrationFrame(wx.Frame):
     def update_data(self, event):
         """
         update experimental data according to CCD parameters
-        and replot simulated data 
+        and replot simulated data
         with _replot
         """
         self.ReadExperimentData()
@@ -2841,10 +2856,10 @@ class MainCalibrationFrame(wx.Frame):
         #         self.axes.set_autoscale_on(True)
 
         # to have the data coordinates when pointing with the mouse
-        def fromindex_to_pixelpos_x(index, pos):
+        def fromindex_to_pixelpos_x(index, _):
             return index
 
-        def fromindex_to_pixelpos_y(index, pos):
+        def fromindex_to_pixelpos_y(index, _):
             return index
 
         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x))
@@ -3335,7 +3350,7 @@ class MainCalibrationFrame(wx.Frame):
 
                     # PATCH: redefinition of grain to simulate any unit cell(not only cubic) ---
                     key_material = grain[3]
-                    grain = CP.Prepare_Grain(key_material, grain[2],dictmaterials=self.dict_Materials)
+                    grain = CP.Prepare_Grain(key_material, grain[2], dictmaterials=self.dict_Materials)
                     # -----------------------------------------------------------------------------
 
                     # array(vec) and array(indices)(here with fastcompute = 0 array(indices) = 0) of spots exiting the crystal in 2pi steradian(Z>0)
@@ -3599,7 +3614,7 @@ class MainCalibrationFrame(wx.Frame):
         if nq1tilted_perp <= 0.0001:
             angle = 0
         else:
-            angle = (1 / DEG * np.arcsin(np.dot( qaxis, np.cross(q1tilted_perp / nq1tilted_perp,
+            angle = (1 / DEG * np.arcsin(np.dot(qaxis, np.cross(q1tilted_perp / nq1tilted_perp,
                                                     q2tilted_perp / nq1tilted_perp))))
 
         #         print 'angle', angle

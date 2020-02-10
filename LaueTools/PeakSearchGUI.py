@@ -5328,10 +5328,10 @@ def start_func():
     dictParameters["title"] = "PeakSearch Board"
     dictParameters["writefolder"] = "."
 
-    PSGUIApp = wx.App()
-    PSGUIframe = MainPeakSearchFrame(None, -1, dictParameters, "MainPeakSearchFrame")
-    PSGUIframe.Show()
-    PSGUIApp.MainLoop()
+    _PSGUIApp = wx.App()
+    _PSGUIframe = MainPeakSearchFrame(None, -1, dictParameters, "MainPeakSearchFrame")
+    _PSGUIframe.Show()
+    _PSGUIApp.MainLoop()
 
 
 if __name__ == "__main__":

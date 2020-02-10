@@ -14,7 +14,8 @@ see also example in indexingAnglesLUT.getUBs_and_MatchingRate() and LaueToolsGUI
 """
 
 import time
-from threading import *
+#from threading import *
+from threading import Thread
 import wx
 
 # Button definitions
@@ -194,8 +195,8 @@ APP_SIZE_Y = 200
 
 
 class testFrame(wx.Frame):
-    def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, id, title, size=(APP_SIZE_X, APP_SIZE_Y))
+    def __init__(self, parent, _id, title):
+        wx.Frame.__init__(self, parent, _id, title, size=(APP_SIZE_X, APP_SIZE_Y))
 
         wx.Button(self, 1, "Close", (50, 130))
         wx.Button(self, 2, "Compute", (150, 130), (110, -1))
@@ -205,7 +206,7 @@ class testFrame(wx.Frame):
 
         self.Centre()
 
-    def OnClose(self, event):
+    def OnClose(self, _):
         if self.TGframe is not None:
             if self.TGframe.worker is not None:
                 self.TGframe.worker.abort()
@@ -218,7 +219,7 @@ class testFrame(wx.Frame):
     def readdata(self):
         self.data = list(range(200))
 
-    def OnCompute(self, event):
+    def OnCompute(self, _):
 
         self.MyResults = None
 
@@ -227,35 +228,29 @@ class testFrame(wx.Frame):
         arg2 = self.data[5:-5]
         arg3 = 0
 
-        fctparams = [
-            myfunction,
+        fctparams = [myfunction,
             (arg1, arg2, arg3),
-            {"keyarg1": "foo", "keyarg2": [1, 2, 3], "keyarg3": (0, -1, "bar")},
-        ]
+            {"keyarg1": "foo", "keyarg2": [1, 2, 3], "keyarg3": (0, -1, "bar")}]
 
-        self.TGframe = ThreadHandlingFrame(
-            self,
+        self.TGframe = ThreadHandlingFrame(self,
             -1,
             threadFunctionParams=fctparams,
             parentAttributeName_Result="MyResults",  # attribute where to put the output of function
-            parentNextFunction=self.HandleResults,
-        )  # function to be called after completion of stop
+            parentNextFunction=self.HandleResults)  # function to be called after completion of stop
         self.TGframe.OnStart(1)
         self.TGframe.startbtn.SetFocus()
         self.TGframe.Show(True)
         self.TGframe.Centre()
 
 
-def myfunction(
-    a, b, c, keyarg1=None, keyarg2=1, keyarg3=0, worker=None, otherkeyarg=True
-):
+def myfunction(a, b, c, keyarg1=None, keyarg2=1, keyarg3=0, worker=None, otherkeyarg=True):
     """
     the function must contain the worker keyword arg and use it to communicate with client class
     Two things to do:
     - place  several 'if worker._want_abort'  conditions
     - set worker.fctOutputResults to the data you want to handle after this thread
      (parent.parentAttributeName_Result will be pointed to these data)
-    
+
     """
 
     WORKEREXISTS = False
@@ -273,9 +268,7 @@ def myfunction(
         time.sleep(0.3)
         print("val: %d  k=%d/%d" % (val, k, nbelem))
 
-        if (
-            WORKEREXISTS and worker._want_abort
-        ):  # places in loops where thread can be stopped
+        if (WORKEREXISTS and worker._want_abort):  # places in loops where thread can be stopped
             worker.callbackfct("ABORTED")
             NORMALRUNNING = False
 
