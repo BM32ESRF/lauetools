@@ -1091,9 +1091,9 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer.Add(self.maxposcounter4, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(wx.StaticText(self, -1, ""), 0, wx.ALL, 2)
 
-        self.NavigBoxsizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        self.NavigBoxsizer1.Add(self.normalizechck, 0, wx.ALL, 2)
-        self.NavigBoxsizer1.Add(self.monitoroffsetctrl, 0, wx.ALL, 2)
+        NavigBoxsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer1.Add(self.normalizechck, 0, wx.ALL, 2)
+        NavigBoxsizer1.Add(self.monitoroffsetctrl, 0, wx.ALL, 2)
 
         self.NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer2.Add(self.generalindexradiobtn, 0, wx.ALL, 5)
@@ -1104,19 +1104,19 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer2.Add(self.stepimageindex, 0, wx.ALL, 5)
         self.NavigBoxsizer2.Add(self.stepimageindexctrl, 0, wx.ALL, 5)
 
-        self.NavigBoxsizer2b = wx.BoxSizer(wx.HORIZONTAL)
-        self.NavigBoxsizer2b.Add(self.rectangleindexradiobtn, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.txtimagecenter, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.centerindexctrl, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.txtimagefastindexbox, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.txtimagefastindexboxctrl, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.txtimageslowindexbox, 0, wx.ALL, 5)
-        self.NavigBoxsizer2b.Add(self.txtimageslowindexboxctrl, 0, wx.ALL, 5)
+        NavigBoxsizer2b = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer2b.Add(self.rectangleindexradiobtn, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.txtimagecenter, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.centerindexctrl, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.txtimagefastindexbox, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.txtimagefastindexboxctrl, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.txtimageslowindexbox, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.txtimageslowindexboxctrl, 0, wx.ALL, 5)
 
-        self.ROIBoxsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.ROIBoxsizer.Add(self.predefinedROIradiobtn, 0, wx.ALL, 5)
-        self.ROIBoxsizer.Add(self.twtROI, 0, wx.ALL, 5)
-        self.ROIBoxsizer.Add(self.comboROI, 0, wx.ALL, 5)
+        ROIBoxsizer = wx.BoxSizer(wx.HORIZONTAL)
+        ROIBoxsizer.Add(self.predefinedROIradiobtn, 0, wx.ALL, 5)
+        ROIBoxsizer.Add(self.twtROI, 0, wx.ALL, 5)
+        ROIBoxsizer.Add(self.comboROI, 0, wx.ALL, 5)
 
         self.NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer3.Add(self.txtnbimagesperline, 0, wx.ALL, 5)
@@ -1129,11 +1129,11 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
         vbox.Add(txt2, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
-        vbox.Add(self.NavigBoxsizer2b, 0, wx.EXPAND)
-        vbox.Add(self.ROIBoxsizer, 0, wx.EXPAND)
+        vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
+        vbox.Add(ROIBoxsizer, 0, wx.EXPAND)
         vbox.Add(txt3, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
-        vbox.Add(self.NavigBoxsizer1, 0, wx.EXPAND)
+        vbox.Add(NavigBoxsizer1, 0, wx.EXPAND)
 
         vbox.Add(txt4, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
@@ -1306,29 +1306,29 @@ class ROISelection(wx.Panel):
         self.sendROItoSPECbtn = wx.Button(self, wx.ID_ANY, "Send ROIs->SPEC")
         self.sendROItoSPECbtn.Bind(wx.EVT_BUTTON, self.onSendToSpec)
 
-        self.NavigBoxsizer0 = wx.BoxSizer(wx.HORIZONTAL)
-        self.NavigBoxsizer0.Add(self.boxxtxt, 0, wx.ALL, 5)
-        self.NavigBoxsizer0.Add(self.boxxctrl, 0, wx.ALL, 5)
-        self.NavigBoxsizer0.Add(self.boxytxt, 0, wx.ALL, 5)
-        self.NavigBoxsizer0.Add(self.boxyctrl, 0, wx.ALL, 5)
+        NavigBoxsizer0 = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer0.Add(self.boxxtxt, 0, wx.ALL, 5)
+        NavigBoxsizer0.Add(self.boxxctrl, 0, wx.ALL, 5)
+        NavigBoxsizer0.Add(self.boxytxt, 0, wx.ALL, 5)
+        NavigBoxsizer0.Add(self.boxyctrl, 0, wx.ALL, 5)
 
-        self.NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.NavigBoxsizer2.Add(self.ROIfromPeaklistbtn, 0, wx.ALL, 5)
-        self.NavigBoxsizer2.Add(self.ROIfromManualtbtn, 0, wx.ALL, 5)
-        self.NavigBoxsizer2.Add(self.centerROIbtn, 0, wx.ALL, 5)
+        NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer2.Add(self.ROIfromPeaklistbtn, 0, wx.ALL, 5)
+        NavigBoxsizer2.Add(self.ROIfromManualtbtn, 0, wx.ALL, 5)
+        NavigBoxsizer2.Add(self.centerROIbtn, 0, wx.ALL, 5)
 
-        self.NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
-        self.NavigBoxsizer3.Add(self.saveROIbtn, 0, wx.ALL, 5)
-        self.NavigBoxsizer3.Add(self.sendROItoSPECbtn, 0, wx.ALL, 5)
+        NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer3.Add(self.saveROIbtn, 0, wx.ALL, 5)
+        NavigBoxsizer3.Add(self.sendROItoSPECbtn, 0, wx.ALL, 5)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(txt1, 0, wx.EXPAND)
-        vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
+        vbox.Add(NavigBoxsizer0, 0, wx.EXPAND)
         vbox.Add(txt2, 0, wx.EXPAND)
-        vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
+        vbox.Add(NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
         vbox.Add(txt3, 0, wx.EXPAND)
-        vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(NavigBoxsizer3, 0, wx.EXPAND)
 
         self.SetSizer(vbox)
 
@@ -2530,7 +2530,7 @@ class PeakListOLV(wx.Panel):
                 self.myOlv.SetFilter(None)
 
     def OnRemove(self, _):
-        """ remove one from a highlighted row
+        """ remove one element corresponding to the current highlighted row
         """
         if self.grangranparent.peaklistPixels is None:
             wx.MessageBox("Peak List is empty", "INFO")
@@ -2936,7 +2936,7 @@ class MainPeakSearchFrame(wx.Frame):
         if ObjectListView_Present:
             self.nb.AddPage(self.page4, "PeakNavigator")
 
-        # TODO bind with self.Show_Image
+        # TODO bind with self.Show_Image ?
         self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange_PeakSearchMethod)
         #        self.nb.GetPosition()
 
@@ -3452,8 +3452,6 @@ class MainPeakSearchFrame(wx.Frame):
                 condition = True
                 print("file present and correct size!")
 
-                self.FileExist = True
-
         return condition
 
     def getIndex_fromfilename(self):
@@ -3501,6 +3499,9 @@ class MainPeakSearchFrame(wx.Frame):
         self.ImagesBrowser.slider_imagevert.SetMax(imagemax // stepindex)
 
     def OnLargePlus(self, _):
+        """increase self.imageindex by self.stepindex (vertical descending in sample raster scan)
+        and read new image and plot
+        """
         #        print self.canvas.GetRect()
         #        print self.canvas.GetScreenRect()
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
@@ -3508,11 +3509,17 @@ class MainPeakSearchFrame(wx.Frame):
         self.resetfilename_and_plot()
 
     def OnLargeMinus(self, _):
+        """decrease self.imageindex by self.stepindex (vertical ascendindg in sample raster scan)
+        and read new image and plot
+        """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
         self.imageindex -= self.stepindex
         self.resetfilename_and_plot()
 
     def OnPlus(self, _):
+        """increase  self.imageindex by 1 (horizontal ascending to the right in sample raster scan)
+        and read new image and plot
+        """
         print(self.canvas.GetRect())
         print(self.canvas.GetScreenRect())
         if self.stackedimages:
@@ -3525,6 +3532,9 @@ class MainPeakSearchFrame(wx.Frame):
         self.resetfilename_and_plot()
 
     def OnMinus(self, _):
+        """decrease  self.imageindex by 1 (horizontal descending to the left in sample raster scan)
+        and read new image and plot
+        """
         if self.stackedimages:
             #         if self.CCDlabel in ('EIGER_4Mstack',):
             self.stackimageindex -= 1
@@ -3535,6 +3545,9 @@ class MainPeakSearchFrame(wx.Frame):
         self.resetfilename_and_plot()
 
     def OnGoto(self, _):
+        """
+        read image with selected self.imageindex and plot
+        """
         if self.stackedimages:
             self.stackimageindex = int(self.ImagesBrowser.fileindexctrl.GetValue())
             self.stackimageindex = self.stackimageindex % self.Nbstackedimages
@@ -3587,7 +3600,7 @@ class MainPeakSearchFrame(wx.Frame):
         nbd = self.ImagesBrowser.nbdigitsctrl.GetValue()
         try:
             self.nbdigits = int(nbd)
-        except:
+        except ValueError:
             self.nbdigits = None
 
         self.setfilename()
@@ -3678,8 +3691,6 @@ class MainPeakSearchFrame(wx.Frame):
 
             xpic, ypic = np.round(self.centerx), np.round(self.centery)
 
-            #             self.cropdata_center(xpic, ypic,int(self.boxx), int(self.boxy))
-
             self.dataimage_ROI = RMCCD.readrectangle_in_image(imagefilename,
                                                                 xpic,
                                                                 ypic,
@@ -3687,8 +3698,6 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 int(self.boxy),
                                                                 dirname=self.dirname,
                                                                 CCDLabel=self.CCDlabel)
-
-        #        self.dataimage_ROI = np.array(self.dataimage_ROI, dtype='uint8')
 
         if self.CCDlabel in ("sCMOS", "sCMOS_fliplr"):
             self.vmin = 1000
@@ -3725,7 +3734,6 @@ class MainPeakSearchFrame(wx.Frame):
         """Draw numerical pixel intensity value on plot
         """
         if not self.numvalues_chck.GetValue():
-            #             print "len(axes.texts)",len(self.axes.texts) # is a list of Text objects
             return
 
         if len(self.axes.texts) > 0:
@@ -3739,9 +3747,6 @@ class MainPeakSearchFrame(wx.Frame):
             #             wx.MessageBox('Field of view of pixel intensities is too large! Please zoom in!','info')
             print("Field of view of pixel intensities is too large!")
             return
-
-        #         print "xmin,xmax,ymin,ymax",xmin,xmax,ymin,ymax
-        #         print "int(ymin),int(ymax)+1,1",(int(ymin),int(ymax)+1,1)
 
         # Add new drawn values on plot
         for i in np.arange(int(ymax) + 1, int(ymin) + 2, 1):
@@ -3780,13 +3785,6 @@ class MainPeakSearchFrame(wx.Frame):
         self.axes.set_title(title)
         # self.myplot.set_clim=(1,200)  # work?
         self.myplot.set_cmap(self.viewingLUTpanel.comboLUT.GetValue())
-
-        #        self.getbbox()
-
-        #        self.axes.grid(self.viewingLUTpanel.cb_grid.IsChecked())
-
-        #        self.axes.relim()
-        #        self.axes.autoscale_view()
 
         self.fig.colorbar(self.myplot)
         self.normalizeplot()
@@ -3852,18 +3850,6 @@ class MainPeakSearchFrame(wx.Frame):
                     titlestring += "\n%d peaks" % nbpeaks
 
             if self.current_data_display == "Raw Image":
-                #                xmin, xmax, ymax, ymin = self.axes.axis()
-                #    #            print "self.axes.axis()", xmin, xmax, ymin, ymax
-                #                dim = DictLT.dict_CCD[self.CCDlabel][0]
-                #                xmin = int(min(xmin, dim[0]))
-                #                xmax = int(max(xmax, 0))
-                #                ymin = int(min(ymin, dim[1]))
-                #                ymax = int(max(ymax, 0))
-                #
-                #    #            print self.dataimage_ROI_display.shape
-                #    #            print xmin, xmax, ymin, ymax
-                #
-                #                MaxI = np.amax(self.dataimage_ROI_display[ymin:ymax, xmin:xmax])
 
                 MaxI = np.amax(self.dataimage_ROI_display)
                 titlestring += "  max I= %.1f" % MaxI
@@ -3943,16 +3929,11 @@ class MainPeakSearchFrame(wx.Frame):
         # clear the axes and redraw the plot anew
         #
         self.axes.clear()
-        #        self.axes.set_autoscale_on(False) # Otherwise, infinite loop
-        #        self.axes.set_autoscale_on(True)
-
-        #        self.IminDisplayed = 1
-        #        self.ImaxDisplayed = DictLT.dict_CCD[self.CCDlabel][2]
 
         self.myplot = self.axes.imshow(self.dataimage_ROI_display,  # aspect = 'equal',
                                     interpolation="nearest",
                                     norm=LogNorm(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed))
-     
+
         self.normalizeplot()
 
         if self.CropIsOn:
@@ -4008,8 +3989,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         #        self._replot()
         self.update_draw(event)
-
-    #        self.init_figure_draw()
 
     def buildMosaic(self, parent=None):
         """ launch MOS.buildMosaic3() with GUI inputs as arguments
@@ -4506,11 +4485,6 @@ class MainPeakSearchFrame(wx.Frame):
         hsize = size / 2.0
         self.axes.add_patch(Rectangle((X - hsize, Y - hsize), size, size, fill=False))
 
-    #        print "self.axes.patches", self.axes.patches
-    #        self.axes.patches.remove()
-
-    #        print "added rectangle"
-
     def onOpenPeakListBoard(self, _):
 
         PListsBoard = PeaksListBoard.PeaksListBoard(self, -1)
@@ -4548,8 +4522,6 @@ class MainPeakSearchFrame(wx.Frame):
                 pass
             return
         canvas = self.canvas
-        #         print 'canvas', dir(canvas.figure.bbox)
-        #         figheight = canvas.figure.bbox.height()
         figheight = canvas.figure.bbox.height
         ax = event.inaxes
         #         left, bottom, width, height = ax.bbox.get_bounds()
@@ -4578,6 +4550,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.erase_cursor()
             line1 = (x, bottom, x, top)
             line2 = (left, y, right, y)
+            # warning there is a test if lastInfo is a self attribute.
+            # So don't set self.lastInfo in __init__()
             self.lastInfo = line1, line2, ax, dc
             dc.DrawLine(*line1)  # draw new
             dc.DrawLine(*line2)  # draw new
@@ -4894,7 +4868,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         if self.plot_singlefitresults_chck.GetValue():  # showplot:
             framedim = self.framedim
-            # TODO remove patch
             # patch ------------------------------------
             if self.CCDlabel in ("VHR_PSI", "EIGER_4M"):
                 framedim = self.framedim[1], self.framedim[0]
@@ -5105,8 +5078,8 @@ class MainPeakSearchFrame(wx.Frame):
 
         # delete object in OLV peak list
         if ObjectListView_Present:
-            self.page4.RemoveOneSpot(peakXY) # ??
-            self.page4.RemoveAll()  # ??
+            # self.page4.RemoveOneSpot(peakXY) # ??
+            self.page4.OnRemoveAll(1)  # ??
 
     def OnPeakSearch(self, _):  # python & Lauetools
         """

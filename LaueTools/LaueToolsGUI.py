@@ -213,11 +213,22 @@ class LaueToolsGUImainframe(wx.Frame):
         self.data_gnomonx = None
         self.data_pixX, self.data_pixY = None, None
 
+        self.select_theta, self.select_chi, self.select_I = None, None, None
+        self.select_pixX, self.select_pixY = None, None
+        self.select_dataXY = None
+        self.select_gnomonx, self.select_gnomony = None, None
+        self.data_pixXY = None
+        self.data = None
+        self.statsresidues = None
+        self.TwicethetaChi_solution = None
+
         self.Matrix_Store = []
         self.mat_store_ind = 0
         self.list_of_cliques = None
 
         self.ClassicalIndexation_Tabledist = None
+        self.key_material = None
+        self.emax = None
 
         self.picky = None
         self.last_orientmatrix_fromindexation = {}  # dict of orientation matrix found
@@ -1179,12 +1190,12 @@ class LaueToolsGUImainframe(wx.Frame):
 
         file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
 
-        self.calibframe = DC.MainCalibrationFrame(self, -1, "Detector Calibration Board",
+        calibframe = DC.MainCalibrationFrame(self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=file_peaks,
                                     pixelsize=pixelsize, dim=framedim,
                                     kf_direction='Z>0', fliprot=geomoperator,
                                     starting_param=starting_param)
-        self.calibframe.Show(True)
+        calibframe.Show(True)
 
     def OnCliquesFinding(self, _):
         """
@@ -1218,12 +1229,12 @@ class LaueToolsGUImainframe(wx.Frame):
         return True
 
     def OnEditMatrix(self, _):
-        self.MatrixEditor = MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
-        self.MatrixEditor.Show(True)
+        MatrixEditor = MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
+        MatrixEditor.Show(True)
 
     def OnEditUBMatrix(self, _):
-        self.UBMatrixEditor = B0Editor.B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
-        self.UBMatrixEditor.Show(True)
+        UBMatrixEditor = B0Editor.B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
+        UBMatrixEditor.Show(True)
 
     def EnterMatrix(self, _):
         """
@@ -2360,15 +2371,18 @@ class MatrixEditor_Dialog(wx.Frame):
         # buttonload.SetFont(font3)
         buttonXMASload.Bind(wx.EVT_BUTTON, self.OnLoadXMAS_INDfile, id=105)
         wx.StaticText(panel, -1, ".IND file", (130, 465))
+        buttonXMASload.Disable()
 
         buttonconvert = wx.Button(panel, 106, "Convert", pos=(200, 460), size=(70, 25))
         # buttonload.SetFont(font3)
         buttonconvert.Bind(wx.EVT_BUTTON, self.OnConvert, id=106)
         wx.StaticText(panel, -1, "XMAS to LaueTools lab. frame", (290, 465))
+        buttonconvert.Disable()
 
         buttonconvert2 = wx.Button(panel, 107, "Convert", pos=(200, 510), size=(70, 25))
         buttonconvert2.Bind(wx.EVT_BUTTON, self.OnConvertlabtosample, id=107)
         wx.StaticText(panel, -1, "LaueTools: from lab. to sample frame", (290, 515))
+        buttonconvert2.Disable()
 
         self.invconvert = wx.CheckBox(panel, 108, "inv.", (210, 535))
         self.invconvert.SetValue(False)
@@ -2748,38 +2762,40 @@ class MatrixEditor_Dialog(wx.Frame):
         open_dlg.Destroy()
 
     def OnConvert(self, evt):
+        """ old functionality...
         """
-        #TODO: to check, obsolete ?
-        """
-        text = str(self.text.GetValue())
-        tu = text.replace("[", "").replace("]", "")
-        ta = tu.split(",")
-        to = [float(elem) for elem in ta]
-        matrix = np.array([to[:3], to[3:6], to[6:]])
+        wx.MessageBox('This conversion has been deleted','Info')
+        pass
 
-        dlg = wx.MessageDialog(
-            self,
-            "New matrix will be displated in Text Editor Input\nConversion will use current calibration, namely xbet: %.4f \n  \nDo you want to continue ?"
-            % self.parent.defaultParam[3])
-        if dlg.ShowModal() == wx.ID_OK:
+        # text = str(self.text.GetValue())
+        # tu = text.replace("[", "").replace("]", "")
+        # ta = tu.split(",")
+        # to = [float(elem) for elem in ta]
+        # matrix = np.array([to[:3], to[3:6], to[6:]])
 
-            evt.Skip()
+        # dlg = wx.MessageDialog(
+        #     self,
+        #     "New matrix will be displated in Text Editor Input\nConversion will use current calibration, namely xbet: %.4f \n  \nDo you want to continue ?"
+        #     % self.parent.defaultParam[3])
+        # if dlg.ShowModal() == wx.ID_OK:
 
-            # newmatrix = F2TC.matxmas_to_OrientMatrix(matrix, LaueToolsframe.defaultParam)
-            newmatrix = FXL.convert_fromXMAS_toLaueTools(
-                matrix, 5.6575, anglesample=40.0, xbet=self.parent.defaultParam[3])
-            print("Matrix read in editor")
-            print(matrix.tolist())
-            print("Matrix as converted to Lauetools by F2TC")
-            print(newmatrix.tolist())
-            # matrix UB normalized
-            # must be multiplied by lattic param*
+        #     evt.Skip()
 
-            self.rbeditor.SetValue(True)
-            self.text.SetValue(str(newmatrix.tolist()))
-        else:
-            # TODO: advise how to set new calibration parameter(in calibration menu ?)
-            evt.Skip()
+        #     # newmatrix = F2TC.matxmas_to_OrientMatrix(matrix, LaueToolsframe.defaultParam)
+        #     newmatrix = FXL.convert_fromXMAS_toLaueTools(
+        #         matrix, 5.6575, anglesample=40.0, xbet=self.parent.defaultParam[3])
+        #     print("Matrix read in editor")
+        #     print(matrix.tolist())
+        #     print("Matrix as converted to Lauetools by F2TC")
+        #     print(newmatrix.tolist())
+        #     # matrix UB normalized
+        #     # must be multiplied by lattic param*
+
+        #     self.rbeditor.SetValue(True)
+        #     self.text.SetValue(str(newmatrix.tolist()))
+        # else:
+        #     # TODO: advise how to set new calibration parameter(in calibration menu ?)
+        #     evt.Skip()
 
     def OnConvertlabtosample(self, _):
         """
@@ -3557,11 +3573,11 @@ class ManualIndexFrame(wx.Frame):
         if not collisionFound:
             pass
 
-    def SetSpotSize(self, evt):
+    def SetSpotSize(self, _):
         wx.MessageBox("To be implemented", "info")
         pass
 
-    def SetPlotLimits(self, evt):
+    def SetPlotLimits(self, _):
         """
         open a board to change plot limits
         """

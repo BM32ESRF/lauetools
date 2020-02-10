@@ -160,6 +160,8 @@ class PlotRangePanel(wx.Panel):
 
         b3.SetToolTipString(tpb3)
 
+        openbtn.SetToolTipString('Open peaks list .dat or (resp.) .cor file : without (resp. with) knowledge of detector calibtation')
+
     def set_init_plot_True(self, _):
         print("reset init_plot to True")
         self.mainframe.init_plot = True
@@ -185,8 +187,12 @@ class PlotRangePanel(wx.Panel):
             CalibrationFile = prefix_filename[4:] + ".dat"
 
             if not CalibrationFile in os.listdir(self.mainframe.dirname):
-                wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of %s is missing. \nPlease, change the name of %s (remove "dat_" for instance) to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile),'Info')
-                raise ValueError('%s corresponding to .dat file of %s is missing. Change the name of %s (remove "dat_" for instance)'%(CalibrationFile,selectedFile,selectedFile))
+                wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of '
+                '%s is missing. \nPlease, change the name of %s (remove "dat_" for instance) '
+                    'to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile),'Info')
+                raise ValueError('%s corresponding to .dat file of %s is missing. '
+                'Change the name of %s (remove "dat_" '
+                'for instance)'%(CalibrationFile,selectedFile,selectedFile))
 
         else:
             CalibrationFile = selectedFile
@@ -234,29 +240,20 @@ class CrystalParamPanel(wx.Panel):
                                         style=wx.CB_READONLY)
 
         t3 = wx.StaticText(self, -1, "Tmatrix", (deltaposx, pos7))  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
-        self.comboBmatrix = wx.ComboBox(self,
-                                            2424,
-                                            "Identity",
-                                            (150 + deltaposx, pos7),
+        self.comboBmatrix = wx.ComboBox(self, 2424, "Identity", (150 + deltaposx, pos7),
                                             choices=sorted(DictLT.dict_Transforms.keys()),
                                             style=wx.CB_READONLY)
 
         pos7b = pos7 + 30
         t4 = wx.StaticText(self, -1, "Orient Matrix (UB)", (deltaposx, pos7b))
-        self.comboMatrix = wx.ComboBox(self,
-                                        2525,
-                                        "Identity",
-                                        (150 + deltaposx, pos7b),
+        self.comboMatrix = wx.ComboBox(self, 2525, "Identity", (150 + deltaposx, pos7b),
                                         choices=list(DictLT.dict_Rot.keys()))
 
         self.btn_mergeUB = wx.Button(self, -1, "set UB with B", (deltaposx + 400, pos7b))
 
         pos7c = pos7 + 65
         t5 = wx.StaticText(self, -1, "Extinctions", (deltaposx, pos7c))
-        self.comboExtinctions = wx.ComboBox(self,
-                                            -1,
-                                            "Diamond",
-                                            (150 + deltaposx, pos7c),
+        self.comboExtinctions = wx.ComboBox(self, -1, "Diamond", (150 + deltaposx, pos7c),
                                             choices=list(DictLT.dict_Extinc.keys()))
 
         self.comboExtinctions.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeExtinc)
@@ -364,14 +361,9 @@ class CrystalParamPanel(wx.Panel):
 
         wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
         _dir = os.getcwd()
-        open_dlg = wx.FileDialog(
-                                self,
-                                message="Choose a file",
-                                defaultDir=_dir,
-                                defaultFile="",
-                                wildcard=wcd,
-                                style=wx.OPEN
-                            )
+        open_dlg = wx.FileDialog(self, message="Choose a file", defaultDir=_dir, defaultFile="",
+                                                                                    wildcard=wcd,
+                                                                                    style=wx.OPEN)
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
 
@@ -428,9 +420,7 @@ class CCDParamPanel(wx.Panel):
         txtdetdiam = wx.StaticText(self, -1, "Det. diameter")
 
         self.pixelsize_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.pixelsize))
-        self.detectordiameter_txtctrl = wx.TextCtrl(
-            self, -1, str(self.mainframe.detectordiameter)
-        )
+        self.detectordiameter_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.detectordiameter))
 
         btnaccept = wx.Button(self, -1, "Accept")
         btnaccept.Bind(wx.EVT_BUTTON, self.onAccept)
@@ -499,16 +489,11 @@ class DetectorParametersDisplayPanel(wx.Panel):
         currenttxt = wx.StaticText(self, -1, "Current&Set Value")
 
         # values resulting from model refinement
-        self.act_distance_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
-        )
-        self.act_Xcen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
-        )
-        self.act_Ycen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
-        )
-        self.act_Ang1_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
-        )
-        self.act_Ang2_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl
-        )
+        self.act_distance_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl)
+        self.act_Xcen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl)
+        self.act_Ycen_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl)
+        self.act_Ang1_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl)
+        self.act_Ang2_r = wx.TextCtrl(self, -1, "", style=wx.TE_READONLY, size=sizetxtctrl)
 
         if WXPYTHON4:
             grid = wx.GridSizer(6, 2, 2)
@@ -520,31 +505,25 @@ class DetectorParametersDisplayPanel(wx.Panel):
             grid.Add(wx.StaticText(self, -1, txt), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
 
         grid.Add(currenttxt)
-        for txtctrl in [self.act_distance,
-                        self.act_Xcen,
-                        self.act_Ycen,
-                        self.act_Ang1,
-                        self.act_Ang2]:
+        for txtctrl in [self.act_distance, self.act_Xcen, self.act_Ycen, self.act_Ang1,
+                                                                                    self.act_Ang2]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Current and Set new value (press enter)")
             txtctrl.SetSize(sizetxtctrl)
 
         grid.Add(resultstxt)
-        for txtctrl in [self.act_distance_r,
-                        self.act_Xcen_r,
-                        self.act_Ycen_r,
-                        self.act_Ang1_r,
-                        self.act_Ang2_r]:
+        for txtctrl in [self.act_distance_r, self.act_Xcen_r, self.act_Ycen_r, self.act_Ang1_r,                                                                                         self.act_Ang2_r]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Fit result value")
 
         self.SetSizer(grid)
 
         # tooltips
-        resultstxt.SetToolTipString("CCD detector plane parameters resulting from the best refined model"
-        )
-        currenttxt.SetToolTipString('Current CCD detector plane parameters. New parameters value can be entered in the corresponding field and accepted by pressing the "Accept" button'
-        )
+        resultstxt.SetToolTipString("CCD detector plane parameters resulting from the best "
+        "refined model")
+        currenttxt.SetToolTipString('Current CCD detector plane parameters. '
+        'New parameters value can be entered in the corresponding field and '
+        'accepted by pressing the "Accept" button')
 
 
 class MoveCCDandXtal(wx.Panel):
@@ -636,32 +615,23 @@ class MoveCCDandXtal(wx.Panel):
         self.cb_theta3.SetValue(True)
 
         self.EnableRotationLabel = "Select\nAxis\nand\nRotate"
-        self.rotatebtn = wx.Button(
-            self, -1, self.EnableRotationLabel, (posx, 180), (100, 100)
-        )
+        self.rotatebtn = wx.Button(self, -1, self.EnableRotationLabel, (posx, 180), (100, 100))
         self.rotatebtn.Bind(wx.EVT_BUTTON, self.OnActivateRotation)
         stepangletxt = wx.StaticText(self, -1, "step(deg)", (posx + 100, 180))
         self.stepanglerot = wx.TextCtrl(self, -1, "10.", (posx + 100, 210), (35, -1))
 
-        self.listofparamfitctrl = [
-                                    self.cb_dd,
-                                    self.cb_Xcen,
-                                    self.cb_Ycen,
-                                    self.cb_angle1,
+        self.listofparamfitctrl = [self.cb_dd, self.cb_Xcen, self.cb_Ycen, self.cb_angle1,
                                     self.cb_angle2,  # detector param
                                     self.cb_theta1,
                                     self.cb_theta2,
-                                    self.cb_theta3,
-                                ]  # delta angle of orientation
+                                    self.cb_theta3]  # delta angle of orientation
 
         # tooltips
         a3.SetToolTipString("Angle 3: angle around z axis")
-        a2.SetToolTipString("Angle 2: angle around y axis (horizontal and perp. to incoming beam)"
-        )
+        a2.SetToolTipString("Angle 2: angle around y axis (horizontal and perp. to incoming beam)")
         a1.SetToolTipString("Angle 1: angle around x axis (// incoming beam")
 
-        rottip = ("Rotate crystal such as rotating the Laue Pattern around a selected axis.\n"
-        )
+        rottip = ("Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
         rottip += 'Click on a point in plot to select an invariant Laue spot by rotation. Then press "+" or "-" keys to rotation the pattern.\n'
         rottip += "Step angle can be adjusted (default 10 degrees).\n"
         rottip += "Press the Rotate button to disable the rotation and enable other functionnalities."
@@ -803,8 +773,7 @@ class StrainXtal(wx.Panel):
 
         #         print "modify lattice parameter: %s and initial value: %.2f" % (key_param, self.lattice_parameters_dict[key_param])
         self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self,
-                                                            "stepctrl_%s" % key_param).GetValue()
-        )
+                                                            "stepctrl_%s" % key_param).GetValue())
 
         # now building or updating an element in dict_Materials
         if "strained" not in self.key_material:
@@ -839,10 +808,7 @@ class StrainXtal(wx.Panel):
 
     def ModifyLatticeParams(self, event):
 
-        #         print "sign_of_step", sign_of_step
-
         name = event.GetEventObject().myname
-        #         print "name", name
 
         key_param = name.split("_")[-1]
 
@@ -893,7 +859,6 @@ class TextFrame(wx.Frame):
         self.parent = parent
         self.index = index
 
-        #         print "my parent is ", parent
         panel = wx.Panel(self, -1)
         matrixLabel = wx.StaticText(panel, -1, "Matrix Elements:")
         matrixText = wx.TextCtrl( panel, -1, strexpression, size=(490, 100),
@@ -901,9 +866,7 @@ class TextFrame(wx.Frame):
         #         matrixText.SetInsertionPoint(0)
 
         storeLabel = wx.StaticText(panel, -1, "Stored Matrix name: ")
-        self.storeText = wx.TextCtrl(
-            panel, -1, "storedMatrix_%d" % self.index, size=(175, -1)
-        )
+        self.storeText = wx.TextCtrl(panel, -1, "storedMatrix_%d" % self.index, size=(175, -1))
 
         saveLabel = wx.StaticText(panel, -1, "Save Matrix filename: ")
         self.saveText = wx.TextCtrl(panel, -1, "SavedMatrix_%d" % self.index, size=(175, -1))
@@ -957,7 +920,7 @@ class MainCalibrationFrame(wx.Frame):
     """
     Class to display calibration tools on data
     """
-    def __init__(self, parent, _id, title, initialParameter,
+    def __init__(self, parent, _id, title, _initialParameter,
                 file_peaks="Cu_near_28May08_0259.peaks",
                 starting_param=[71, 1039.42, 1095, 0.0085, -0.981],
                 pixelsize=165.0 / 2048,
@@ -971,7 +934,7 @@ class MainCalibrationFrame(wx.Frame):
 
         self.parent = parent
 
-        self.initialParameter = initialParameter
+        self.initialParameter = _initialParameter
 
         self.starting_param = starting_param
         # 5 parameters defining Detector Plane and frame
@@ -1037,12 +1000,28 @@ class MainCalibrationFrame(wx.Frame):
         self.linkExpMillerAfterFit = None
         self.linkIntensityAfterFit = None
         self.residues_fitAfterFit = None
+        self.residues_fit = None
 
         self.SpotsData = None
 
         # save previous result to undo goto fit results-----------------
         self.previous_CCDParam = copy.copy(self.CCDParam)
         self.previous_UBmatrix = np.eye(3)
+
+
+        self.twicetheta = None
+        self.chi = None
+        self.Data_I, self.data, self.Data_index_expspot = None, None, None
+        self.data_x, self.data_y = None, None
+        self.filenameCalib = None
+        self.linkIntensity = None
+        self.UBmatrix = None
+        self.Umat2 = None
+        self.Bmat_tri = None
+        self.HKLxyz_names, self.HKLxyz = None, None
+        self.totalintensity = None
+        self.p2S, self.p3S = None, None
+        
 
         self.setwidgets()
 
@@ -1173,6 +1152,8 @@ class MainCalibrationFrame(wx.Frame):
         self._replot(wx.EVT_IDLE)
         self.display_current()
 
+
+
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
         self.moveccdandxtal.SetToolTipString("Change manually and fit (by checking corresponding "
@@ -1223,16 +1204,18 @@ class MainCalibrationFrame(wx.Frame):
 
         self.startfit.SetToolTipString(tpfit)
 
-        self.cb_gotoresults.SetToolTipString("Update CCD parameters and crystal orientation according to the fit results")
-        self.use_weights.SetToolTipString("Refine the model by Weighting each separation distance between exp. and modeled spots positions by experimental intensity")
+        self.cb_gotoresults.SetToolTipString("Update CCD parameters and crystal orientation "
+        "according to the fit results")
+        self.use_weights.SetToolTipString("Refine the model by Weighting each separation distance "
+        "between exp. and modeled spots positions by experimental intensity")
 
         self.incrementfile.SetToolTipString("If Checked, increment filename avoiding overwritten file")
 
     def layout(self):
         # LAYOUT
-        self.vbox = wx.BoxSizer(wx.VERTICAL)
-        self.vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-        self.vbox.Add(self.toolbar, 0, wx.EXPAND)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
+        vbox.Add(self.toolbar, 0, wx.EXPAND)
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add(self.btnswitchspace, 0, wx.ALL, 5)
@@ -1282,7 +1265,7 @@ class MainCalibrationFrame(wx.Frame):
         vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.vbox, 1, wx.EXPAND)
+        hbox.Add(vbox, 1, wx.EXPAND)
         hbox.Add(vbox2, 1, wx.EXPAND)
 
         vboxgeneral = wx.BoxSizer(wx.VERTICAL)
@@ -1396,8 +1379,8 @@ class MainCalibrationFrame(wx.Frame):
         """
         dlg = wx.TextEntryDialog(self,
             "Enter Calibration File name : \n Current Detector parameters are: \n %s\n Pixelsize and dimensions : %s"
-            % (str(self.CCDParam), str([self.pixelsize, self.framedim[0], self.framedim[1]]),
-            ), "Saving Calibration Parameters Entry")
+            % (str(self.CCDParam), str([self.pixelsize, self.framedim[0], self.framedim[1]])),
+                                                        "Saving Calibration Parameters Entry")
         dlg.SetValue("*.det")
         self.filenameCalib = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -1408,21 +1391,17 @@ class MainCalibrationFrame(wx.Frame):
             dd, xcen, ycen, xbet, xgam = self.CCDParam
 
             outputfile = open(self.filenameCalib, "w")
-            text = "%.3f, %.2f, %.2f, %.3f, %.3f, %.5f, %.0f, %.0f\n" % (
-                                                                round(dd, 3),
-                                                                round(xcen, 2),
-                                                                round(ycen, 2),
-                                                                round(xbet, 3),
-                                                                round(xgam, 3),
-                                                                self.pixelsize,
-                                                                round(self.framedim[0], 0),
-                                                                round(self.framedim[1], 0),
-                                                            )
+            text = "%.3f, %.2f, %.2f, %.3f, %.3f, %.5f, %.0f, %.0f\n" % (round(dd, 3),
+                                                                        round(xcen, 2),
+                                                                        round(ycen, 2),
+                                                                        round(xbet, 3),
+                                                                        round(xgam, 3),
+                                                                        self.pixelsize,
+                                                                        round(self.framedim[0], 0),
+                                                                        round(self.framedim[1], 0))
             text += "Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2\n"
             text += "Calibration done with %s at %s with LaueToolsGUI.py\n" % (
-                self.crystalparampanel.comboElem.GetValue(),
-                time.asctime(),
-            )
+                self.crystalparampanel.comboElem.GetValue(), time.asctime())
             text += "Experimental Data file: %s\n" % self.filename
             text += "Orientation Matrix:\n"
             text += "[[%.7f,%.7f,%.7f],[%.7f,%.7f,%.7f],[%.7f,%.7f,%.7f]]\n" % (
@@ -2055,10 +2034,7 @@ class MainCalibrationFrame(wx.Frame):
                                                             kf_direction=self.kf_direction)
 
         filename = os.path.split(fullpathfilename)[1]
-        #         print "dirname,filename",dirname,filename
-
         prefix = filename.split(".")[0]
-        #         print 'prefix',prefix
 
         IOLT.writefile_cor(prefix,
                         twicetheta,
@@ -2131,7 +2107,7 @@ class MainCalibrationFrame(wx.Frame):
 
         elif initialdatfile.endswith('.cor'):
             (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
-            totalIntensity = peakAmplitude
+            _ = peakAmplitude
             unknowns = np.zeros(len(Xexp))
             peak_fwaxmaj = unknowns
             peak_fwaxmin = unknowns
@@ -2556,28 +2532,16 @@ class MainCalibrationFrame(wx.Frame):
     def OnIncreaseang1(self, event):
 
         self.CCDParam[3] += float(self.moveccdandxtal.stepang1.GetValue())
-        #         if self.CCDParam[3] > 60.:
-        #             print "Ang1 seems too high..."
-        #             self.CCDParam[3] = 60.
-
         self.update_data(event)
 
     def OnDecreaseang2(self, event):
 
         self.CCDParam[4] -= float(self.moveccdandxtal.stepang2.GetValue())
-        #         if self.CCDParam[4] < -60.:
-        #             print "Ang2 seems too low..."
-        #             self.CCDParam[4] = -60.
-
         self.update_data(event)
 
     def OnIncreaseang2(self, event):
 
         self.CCDParam[4] += float(self.moveccdandxtal.stepang2.GetValue())
-        #         if self.CCDParam[4] > 60.:
-        #             print "Ang2 seems too high..."
-        #             self.CCDParam[4] = 60.
-
         self.update_data(event)
 
     # incrementing or decrementing orientation elementary angles
@@ -2668,24 +2632,9 @@ class MainCalibrationFrame(wx.Frame):
         # emax = float(self.crystalparampanel.emaxC.GetValue())
         pass
 
-    #         if emax > 50:
-    #             dlg = wx.MessageDialog(parent=self, message="This high energy limit emax=%s will be time-consumming!\nAre you sure?" % emax,
-    #                                caption="Warning", style=wx.YES_NO | wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
-    #             if dlg.ShowModal() == wx.ID_NO:
-    #                 self.crystalparampanel.emaxC.SetValue(25)
-    #
-    #             dlg.Destroy()
-
     def OnCheckEminValue(self, _):
         # emin = float(self.crystalparampanel.eminC.GetValue())
         pass
-
-    #         if emin > 50:
-    #             dlg = wx.MessageDialog(parent=self, message="This high energy limit emin=%s will be time-consumming!" % emin,
-    #                                caption="Warning", style=wx.YES_NO | wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
-    #             if dlg.ShowModal() == wx.ID_NO:
-    #                 self.crystalparampanel.eminC.SetValue(5)
-    #             dlg.Destroy()
 
     def define_kf_direction(self):
         """
@@ -2769,10 +2718,7 @@ class MainCalibrationFrame(wx.Frame):
 
         pixelsize = self.pixelsize
 
-        #         print "pixelsize in simulate_theo", pixelsize
-
         self.define_kf_direction()
-        #        self.kf_direction = LaueToolsframe.kf_direction
 
         self.emin = self.crystalparampanel.eminC.GetValue()
         self.emax = self.crystalparampanel.emaxC.GetValue()
@@ -3482,9 +3428,7 @@ class MainCalibrationFrame(wx.Frame):
         """
         #        print 'clicked on mouse'
         if event.inaxes:
-            #            print("inaxes", event)
-            #             print("inaxes x,y", event.x, event.y)
-            #             print("inaxes xdata, ydata", event.xdata, event.ydata)
+
             if event.button == 1:
                 self.centerx, self.centery = event.xdata, event.ydata
 
@@ -3547,8 +3491,6 @@ class MainCalibrationFrame(wx.Frame):
             X1, Y1 = self.press
             X2, Y2 = event.xdata, event.ydata
 
-            #             print 'X1,Y1', X1, Y1
-            #             print 'X2,Y2', X2, Y2
             twth1, chi1 = self.convertpixels2twotheta(X1, Y1)
             #             print 'twth1, chi1', twth1, chi1
             twth2, chi2 = self.convertpixels2twotheta(X2, Y2)
@@ -3556,9 +3498,6 @@ class MainCalibrationFrame(wx.Frame):
             axis2theta, axischi = self.convertpixels2twotheta(self.centerx, self.centery)
         else:
             return
-
-        #         print "twth1, chi1", twth1, chi1
-        #         print "twth2, chi2", twth2, chi2
 
         # left mouse button
         if event.button == 1:
@@ -3927,17 +3866,14 @@ if __name__ == "__main__":
     #    initialParameter['dirname'] = '/home/micha/lauetools/trunk'
 
     CalibGUIApp = wx.App()
-    CalibGUIFrame = MainCalibrationFrame(None,
-                                            -1,
-                                            "Detector Calibration Board",
-                                            initialParameter,
-                                            file_peaks=filepathname,
-                                            starting_param=initialParameter["CCDParam"],
-                                            pixelsize=165.0 / 2048,
-                                            datatype="2thetachi",
-                                            dim=(2048, 2048),
-                                            fliprot="no",
-                                            data_added=None)
+    CalibGUIFrame = MainCalibrationFrame(None, -1, "Detector Calibration Board", initialParameter,
+                                                        file_peaks=filepathname,
+                                                        starting_param=initialParameter["CCDParam"],
+                                                        pixelsize=165.0 / 2048,
+                                                        datatype="2thetachi",
+                                                        dim=(2048, 2048),
+                                                        fliprot="no",
+                                                        data_added=None)
 
     CalibGUIFrame.Show()
 
