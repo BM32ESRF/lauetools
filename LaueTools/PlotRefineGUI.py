@@ -74,8 +74,6 @@ else:
     import orientations as ORI
 
 
-SIZE_PLOTTOOLS = (8, 6)
-
 # class MessageDataBox(wx.Dialog):
 #     def __init__(self, parent, _id, title, matrix, defaultname):
 class MessageDataBox(wx.Frame):
@@ -141,7 +139,7 @@ def call_counter(func):
         helper.calls += 1
         return func(*args, **kwargs)
     helper.calls = 0
-    helper.__name__= func.__name__
+    helper.__name__ = func.__name__
 
     return helper
 
@@ -1320,7 +1318,8 @@ class Plot_RefineFrame(wx.Frame):
         # tag duplicates in ProxTable with negative sign ----------------------
         # ProxTable[index_theo]  = index_exp   closest link
 
-        for theo_ind, exp_ind in enumerate(ProxTable):
+        #ProxTable = list of   theo_ind, exp_ind
+        for _, exp_ind in enumerate(ProxTable):
             where_th_ind = np.where(ProxTablecopy == exp_ind)[0]
             # print "theo_ind, exp_ind ******** ",theo_ind, exp_ind
             if len(where_th_ind) > 1:
@@ -1358,7 +1357,7 @@ class Plot_RefineFrame(wx.Frame):
                 # print "exp_index", exp_index
                 # print "theo_index", theo_index
 
-                if (len(theo_index) == 1):  # only one theo spot close to the current exp. spot
+                if len(theo_index) == 1:  # only one theo spot close to the current exp. spot
                     # print "add in dict refine_indexed_spots\n"
                     refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index,
@@ -1612,7 +1611,7 @@ class Plot_RefineFrame(wx.Frame):
                     sim_indices, pixX, pixY, starting_orientmatrix, self.B0matrix,
                     0, 1, self.pixelsize, self.framedim, weights, self.kf_direction)
 
-            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
+            residues, deltamat, _ = FitO.error_function_on_demand_strain(
                                                                     initial_values,
                                                                     Data_Q,
                                                                     allparameters,
@@ -1818,7 +1817,7 @@ class Plot_RefineFrame(wx.Frame):
         self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
 
         # TODO: to complete ---------------------
-        devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))
+        # devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))
 
         self.UBB0mat = np.dot(self.newUBmat, B0matrix)
 
@@ -2479,7 +2478,7 @@ class Plot_RefineFrame(wx.Frame):
             SpotsProperties = LAUE.calcSpots_fromHKLlist(self.UBmat, self.B0matrix,
                                                             np.array([_h, _k, _l]).T,
                                                             dictCCD)
-            # (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties                       
+            # (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
             (_, _, _, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
 
             # self.Data_2theta, self.Data_chi, self.Data_I, self.File_NAME = self.data
@@ -3007,7 +3006,7 @@ class Plot_RefineFrame(wx.Frame):
     def Spot_MillerAttribution(self, evt):
         """
         in Plot_RefineFrame
-        
+
         button Accept Matching
 
         Assign Miller indices of exp. spots for simulated spots close to them
@@ -3516,10 +3515,10 @@ class FitResultsBoard(wx.Dialog):
         txt_define_reference_frames += "Deviatoric strain in crystal frame is in the cartesian frame built from the vectors of the direct-space crystal unit cell. \n"
         self.OKBtn.SetToolTipString(txt_define_reference_frames)
 
-    def onOK(self, evt):
+    def onOK(self, _):
         self.Close()
 
-    def onNothing(self, evt):
+    def onNothing(self, _):
         return
 
 
@@ -3580,7 +3579,7 @@ class IntensityScaleBoard(wx.Dialog):
                         "spring"]
 
         # WIDGETS
-        luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
+        wx.StaticText(self, -1, "LUT", (5, 7))
         self.comboLUT = wx.ComboBox(self, -1, self.init_lut, (70, 5), choices=self.mapsLUT)  # ,
         # style=wx.CB_READONLY)
 
@@ -3635,9 +3634,9 @@ class IntensityScaleBoard(wx.Dialog):
         self.chck_scaletypeplot.SetValue(True)
 
         self.changecolorbtn = wx.Button(self, -1, "Change Circle Color", pos=(150, posv + 70))
-        txtimage = wx.StaticText(self, -1, "Image:", pos=(5, posv + 107))
-        txtfolderimage = wx.StaticText(self, -1, "folder:", pos=(70, posv + 107))
-        txtfilename = wx.StaticText(self, -1, "filename:", pos=(70, posv + 137))
+        wx.StaticText(self, -1, "Image:", pos=(5, posv + 107))
+        wx.StaticText(self, -1, "folder:", pos=(70, posv + 107))
+        wx.StaticText(self, -1, "filename:", pos=(70, posv + 137))
 
         self.folderexpimagetxtctrl = wx.TextCtrl(
             self, -1, "", size=(240, -1), pos=(140, posv + 105))

@@ -23,8 +23,6 @@ else:
     import generaltools as GT
     from PlotRefineGUI import IntensityScaleBoard
 
-
-SIZE_PLOTTOOLS = (6, 6)
 DEG = np.pi / 180.0
 CA = np.cos(40.0 * DEG)
 SA = np.sin(40.0 * DEG)
@@ -106,7 +104,7 @@ class SimulationPlotFrame(wx.Frame):
             # nb_transforms  = nb of subgrains
             # with slipsystem simulation:
             # nb_transforms = nb of steps (or subgrains) / slip * nb of slips 
-            for k in range(nb_transforms):
+            for _ in range(nb_transforms):
                 # print( "parentgrainindex,transformindex", parentgrainindex, transformindex )
                 if transform_type in ("slipsystem",):
                     self.ScatterPlot_Grain[transformindex] = False
@@ -589,7 +587,7 @@ class SimulationPlotFrame(wx.Frame):
 
                     tip_theo = " SPOT @ x= %.2f y= %2f E= %.3f [h,k,l]=%s" % (x, y, E, HKL)
 
-                    subgrainindex, parentgrainindex, transform_type = infostuple
+                    subgrainindex, parentgrainindex, _ = infostuple
                     #starting subgrains index:
                     stindex = self.getstartingsubgrainindex(subgrainindex) # val[0]
 
@@ -868,7 +866,7 @@ class SimulationPlotFrame(wx.Frame):
             print('dictindicesStreakingData', dictindicesStreakingData)
 
             for elem in list_ParentGrain_transforms:
-                parentgrainindex, nbtransforms, _ = elem
+                parentgrainindex, _, _ = elem
                 print('parentgrainindex: %d, self.ScatterPlot_ParentGrain[parentgrainindex]'%parentgrainindex,
                                             self.ScatterPlot_ParentGrain[parentgrainindex])
 
@@ -998,7 +996,7 @@ class SimulationPlotFrame(wx.Frame):
 
     def isSingleStreakingPlot(self):
         flag = True
-        ParentGrainName_list = self.StreakingData[0][6]
+        # ParentGrainName_list = self.StreakingData[0][6]
         list_ParentGrain_transforms = self.StreakingData[0][7]
 
         # print('ParentGrainName_list', ParentGrainName_list)
@@ -1006,7 +1004,7 @@ class SimulationPlotFrame(wx.Frame):
 
         # disable slip system in case of mixture: single crystals and slip system simulation
         for elem in list_ParentGrain_transforms:
-            parentgrainindex, nbtransforms, transform_type = elem
+            _, _, transform_type = elem
             if 'param' in transform_type:
                 flag = False
                 break
@@ -1432,8 +1430,6 @@ def getindices_StreakingData(list_ParentGrain_transforms):
 
 
 if __name__ == "__main__":
-
-    import os
 
     dirname = os.curdir
 

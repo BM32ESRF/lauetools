@@ -51,7 +51,6 @@ else:
     import threadGUI2 as TG
     import PlotLimitsBoard
 
-SIZE_PLOTTOOLS = (8, 6)
 # --- ---------------  Manual indexation Frame
 class ManualIndexFrame(wx.Frame):
     """
