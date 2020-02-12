@@ -368,9 +368,7 @@ class TransformPanel(wx.Panel):
                     evalmat = np.reshape(np.array(evalmatrot).T, (len(t), 3, 3))
                 except ValueError:
                     sentence = 'Expression for general expression in ROTATION transform not understood! Check if there are "," and "]". Mathematical operators may be unknown by numpy'
-                    dlg = wx.MessageDialog(
-                        self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR
-                    )
+                    dlg = wx.MessageDialog(self, sentence, "Wrong expression", wx.OK | wx.ICON_ERROR)
                     dlg.ShowModal()
                     dlg.Destroy()
                     return
@@ -384,9 +382,8 @@ class TransformPanel(wx.Panel):
                             # computing M transform from a*,b*,c* to x, y,z absolute frame
                             # ie.  Xfinal = MXinitial_a*,b*,c*
                             # from evalmat[trans] matrix input by user in xs, ys, zs frame
-                            evalmat[trans] = np.dot(
-                                matrot_sample, np.dot(evalmat[trans], inv_matrot_sample)
-                            )
+                            evalmat[trans] = np.dot(matrot_sample, np.dot(evalmat[trans],
+                                                    inv_matrot_sample))
 
                     print("evalmat from s or a", evalmat)
                     # tag: general matrix transform in absolute frame, array of rot matrix

@@ -309,7 +309,7 @@ class spotsset:
             posx, posy, dataintensity,
             isolatedspots,
             isolatedspots_ref,
-            ) = SpTra.sortSpotsDataCor(data_theta, Chi, 
+            ) = SpTra.sortSpotsDataCor(data_theta, Chi,
                                         posx, posy,
                                         dataintensity,
                                         refpositionfilepath)
@@ -318,7 +318,7 @@ class spotsset:
             print("isolatedspots_ref", isolatedspots_ref)
             # write refposfile  .cor file     'REF_------.cor
             dir_reffile, file_reffile = os.path.split(filename)
-            refposfileprefix = os.path.join(dir_reffile,'REF_' + file_reffile[:-4])
+            refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
             IOLT.writefile_cor(refposfileprefix,
                             2*data_theta, Chi, posx, posy, dataintensity,
                             param=detectorparameters,
@@ -3828,8 +3828,6 @@ def FindMatrices(dmat, tol=0.01):
 
 def mergesimilarmatrices(dmat):
 
-    import pickle
-
     #    rr= rFindMatrices(dmat)  # this takes a while
     #    '/home/micha/LaueProjects/CuVia/Carto'
     f = open("dictsimilmat")
@@ -4764,7 +4762,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     lastindex = nstart
 
     firstindex = fileindexrange[0]
-    lastindex  = fileindexrange[1]
+    lastindex = fileindexrange[1]
     indexstep = fileindexrange[2]
     # image index rearrangment parameters
     # mapshape
@@ -4877,7 +4875,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                         refposfile = refposfiles[imageindexprior]
 
                     else:
-                        refposfiles[imageindex]= refposfile
+                        refposfiles[imageindex] = refposfile
 
                 #---------------------------------------------------------------
                 # read data and calibration parameters from .cor file
