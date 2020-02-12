@@ -50,7 +50,7 @@ if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import FitOrient as FitO
     from . import LaueGeometry as F2TC
-    from . import LaueSpotsEditor as LSEditor
+    from . GUI import LaueSpotsEditor as LSEditor
     from . import indexingAnglesLUT as INDEX
     from . import indexingSpotsSet as ISS
     from . import matchingrate
@@ -65,7 +65,7 @@ else:
     import lauecore as LAUE
     import FitOrient as FitO
     import LaueGeometry as F2TC
-    import LaueSpotsEditor as LSEditor
+    import GUI.LaueSpotsEditor as LSEditor
     import indexingAnglesLUT as INDEX
     import indexingSpotsSet as ISS
     import matchingrate

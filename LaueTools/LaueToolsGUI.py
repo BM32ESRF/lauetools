@@ -57,8 +57,8 @@ if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import graingraph as GraGra
     from . import LaueGeometry as F2TC
-    from . import LaueSpotsEditor as LSEditor
-    from . import LaueSimulatorGUI as LSGUI
+    from . GUI import LaueSpotsEditor as LSEditor
+    from . GUI import LaueSimulatorGUI as LSGUI
     from . import CrystalParameters as CP
     from . import IOLaueTools as IOLT
     from . import generaltools as GT
@@ -66,12 +66,12 @@ if sys.version_info.major == 3:
     from . import PeakSearchGUI
     from . import DetectorParameters as DP
     from . import DetectorCalibration as DC
-    from . import CCDFileParametersGUI as CCDParamGUI
+    from . GUI import CCDFileParametersGUI as CCDParamGUI
     from . import dragpoints as DGP
     from . import matchingrate
     from . GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
     from . import threadGUI2 as TG
-    from . import B0matrixLatticeEditor as B0Editor
+    from . GUI import B0matrixLatticeEditor as B0Editor
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import OpenSpotsListFileGUI as OSLFGUI
 else:
@@ -81,8 +81,8 @@ else:
     import lauecore as LAUE
     import graingraph as GraGra
     import LaueGeometry as F2TC
-    import LaueSpotsEditor as LSEditor
-    import LaueSimulatorGUI as LSGUI
+    import GUI.LaueSpotsEditor as LSEditor
+    import GUI.LaueSimulatorGUI as LSGUI
     import CrystalParameters as CP
     import IOLaueTools as IOLT
     import generaltools as GT
@@ -90,13 +90,13 @@ else:
     import PeakSearchGUI
     import DetectorParameters as DP
     import DetectorCalibration as DC
-    import CCDFileParametersGUI as CCDParamGUI
+    import GUI.CCDFileParametersGUI as CCDParamGUI
     import dragpoints as DGP
     import matchingrate
     from GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
     from ResultsIndexationGUI import RecognitionResultCheckBox
     import threadGUI2 as TG
-    import B0matrixLatticeEditor as B0Editor
+    import GUI.B0matrixLatticeEditor as B0Editor
     import OpenSpotsListFileGUI as OSLFGUI
 
 SIZE_PLOTTOOLS = (8, 6)

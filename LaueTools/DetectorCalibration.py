@@ -54,7 +54,7 @@ if sys.version_info.major == 3:
     from . import findorient as FindO
     from . import FitOrient as FitO
     from . import spotslinkeditor as SLE
-    from . import LaueSpotsEditor as LSEditor
+    from . GUI import LaueSpotsEditor as LSEditor
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
     from . import CrystalParameters as CP
@@ -74,7 +74,7 @@ else:
     import findorient as FindO
     import FitOrient as FitO
     import spotslinkeditor as SLE
-    import LaueSpotsEditor as LSEditor
+    import GUI.LaueSpotsEditor as LSEditor
     import generaltools as GT
     import IOLaueTools as IOLT
     import CrystalParameters as CP

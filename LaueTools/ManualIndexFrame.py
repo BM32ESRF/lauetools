@@ -28,7 +28,7 @@ if sys.version_info.major == 3:
     from . import indexingSpotsSet as ISS
     from . import lauecore as LAUE
     from . import LaueGeometry as F2TC
-    from . import LaueSpotsEditor as LSEditor
+    from . GUI import LaueSpotsEditor as LSEditor
     from . import CrystalParameters as CP
     from . import generaltools as GT
     from . import dict_LaueTools as DictLT
@@ -42,7 +42,7 @@ else:
     import indexingSpotsSet as ISS
     import lauecore as LAUE
     import LaueGeometry as F2TC
-    import LaueSpotsEditor as LSEditor
+    import GUI.LaueSpotsEditor as LSEditor
     import CrystalParameters as CP
     import generaltools as GT
     import dict_LaueTools as DictLT
