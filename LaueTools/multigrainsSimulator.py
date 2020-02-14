@@ -63,27 +63,22 @@ def Construct_GrainsParameters_parametric(SelectGrains_parametric):
     # self.SelectGrains_parametric  == parametric_Grain_Dialog().SelectGrains
     for key_grain in sorted(SelectGrains_parametric.keys()):
         # print "self.SelectGrains_parametric[key_grain]",self.SelectGrains_parametric[key_grain]
-        list_selectgrains_param.append(
-            Read_GrainListparameter(SelectGrains_parametric[key_grain])
-        )
+        list_selectgrains_param.append(Read_GrainListparameter(SelectGrains_parametric[key_grain]))
     # print list_selectgrains_param
     return list_selectgrains_param
 
 
-def dosimulation_parametric(_list_param,
-                            Transform_params=None,
-                            SelectGrains=None,
-                            emax=25.0,
-                            emin=5.0,
-                            detectordistance=68.7,
-                            detectordiameter=165.0,
-                            posCEN=(1024.0, 1024.0),
-                            cameraAngles=(0.0, 0.0),
-                            gauge=None,
-                            kf_direction="Z>0",
-                            pixelsize=165.0 / 2048,
-                            framedim=(2048, 2048),
-                            dictmaterials=DictLT.dict_Materials):
+def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=None, emax=25.0,
+                                                            emin=5.0,
+                                                            detectordistance=68.7,
+                                                            detectordiameter=165.0,
+                                                            posCEN=(1024.0, 1024.0),
+                                                            cameraAngles=(0.0, 0.0),
+                                                            gauge=None,
+                                                            kf_direction="Z>0",
+                                                            pixelsize=165.0 / 2048,
+                                                            framedim=(2048, 2048),
+                                                            dictmaterials=DictLT.dict_Materials):
     r"""
     Simulation of orientation or deformation gradient.
     From parent grain simulate a list of transformations (deduced by a parametric variation)
@@ -429,7 +424,6 @@ def dosimulation_parametric(_list_param,
 
             else:
                 # no transformation
-                #                 print "\n No trandformation \n"
                 pass
 
             # test whether there is at least one Laue spot in the camera
@@ -555,13 +549,12 @@ def dosimulation_parametric(_list_param,
                     list_posX.append(posx)
                     list_posY.append(posy)
 
-                    success = 1
+                    # success = 1
 
                 elif kf_direction in ("X>0",):  # transmission mode
                     print("\n*****\nSimulation in transmission mode\n*****\n")
 
                     # print("spots2pi",spots2pi)
-
                     Laue_spot_list = LAUE.filterLaueSpots(spots2pi,
                                                     fileOK=0,
                                                     fastcompute=0,
@@ -627,10 +620,6 @@ def dosimulation_parametric(_list_param,
                 txt += "It may seem that the transform you have designed has a too large amplitude\n"
                 txt += "-Try then to reduce the variation range of t\n"
                 txt += "-Or reduce ratio between extrema in input matrix transform\n\n"
-
-                #                dlg = wx.MessageDialog(self, txt, 'Pattern without peaks!', wx.OK | wx.ICON_ERROR)
-                #                dlg.ShowModal()
-                #                dlg.Destroy()
 
                 success = 0
                 break

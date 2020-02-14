@@ -38,14 +38,14 @@ else:
 
 if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
-    from .. SimulFrame import SimulationPlotFrame #, getindices_StreakingData
+    from . SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     from .. import CrystalParameters as CP
     from .. import multigrainsSimulator as MGS
     from .. import readmccd as RMCCD
 
 else:
     import dict_LaueTools as DictLT
-    from SimulFrame import SimulationPlotFrame #, getindices_StreakingData
+    from GUI.SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     import CrystalParameters as CP
     import multigrainsSimulator as MGS
     import readmccd as RMCCD

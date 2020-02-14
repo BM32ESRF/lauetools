@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import pickle
 import numpy as np
 import pylab as pp
@@ -307,9 +308,7 @@ def build_hdf5(
         group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
 
         # Create one table on it
-        table = h5file.createTable(
-            group_images, "matching_rate", IndexedImage, "indexation rate"
-        )
+        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
         # Fill the table with data
         indexedImage = table.row
 
@@ -320,13 +319,9 @@ def build_hdf5(
             indexedImage["fileindex"] = key_image
             for grainindex in range(max_nb_grains):
                 if grainindex in dictMR[key_image]:
-                    indexedImage["MatchingRate_%d" % grainindex] = dictMR[key_image][
-                        grainindex
-                    ]  # 1 grain
+                    indexedImage["MatchingRate_%d" % grainindex] = dictMR[key_image][grainindex]  # 1 grain
                 if grainindex in dictNB[key_image]:
-                    indexedImage["NBindexed_%d" % grainindex] = dictNB[key_image][
-                        grainindex
-                    ]
+                    indexedImage["NBindexed_%d" % grainindex] = dictNB[key_image][grainindex]
 
             # Insert a new particle record
             indexedImage.append()
@@ -340,9 +335,7 @@ def build_hdf5(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB = h5file.createTable(
-            group_images, "UB_matrices", Matrices, "UB Matrices elements"
-        )
+        tableUB = h5file.createTable(group_images, "UB_matrices", Matrices, "UB Matrices elements")
         # Fill the table with data
         indexedUB = tableUB.row
         print("using Lauehdf5.....")
@@ -383,9 +376,8 @@ def build_hdf5(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB_array = h5file.createTable(
-            group_images, "UB_matrices_array", Matrices_array, "UB Matrices elements"
-        )
+        tableUB_array = h5file.createTable(group_images, "UB_matrices_array", Matrices_array,
+                                                                            "UB Matrices elements")
         # Fill the table with data
         indexedUB_ar = tableUB_array.row
 
@@ -414,9 +406,8 @@ def build_hdf5(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tabledev = h5file.createTable(
-            group_images, "Devstrain_matrices", DevStrain, "UB Matrices elements"
-        )
+        tabledev = h5file.createTable(group_images, "Devstrain_matrices", DevStrain,
+                                                                            "UB Matrices elements")
         # Fill the table with data
         indexedDev = tabledev.row
 
@@ -451,13 +442,11 @@ def build_hdf5(
 
         group_spots = h5file.createGroup("/", "Allspots", "All spots information")
 
-        tableallspots = h5file.createTable(
-            group_spots,
-            "total_spots",
-            AllIndexedSpots,
-            "Readout example",
-            expectedrows=nb_of_images * nb_of_spots_per_image,
-        )
+        tableallspots = h5file.createTable(group_spots,
+                                            "total_spots",
+                                            AllIndexedSpots,
+                                            "Readout example",
+                                            expectedrows=nb_of_images * nb_of_spots_per_image)
 
         allIndexedSpots = tableallspots.row
 
@@ -468,8 +457,7 @@ def build_hdf5(
                 allIndexedSpots["fileindex"] = key_image
                 grainindex = int(elem[1])
 
-                (
-                    allIndexedSpots["spotindex"],
+                (allIndexedSpots["spotindex"],
                     allIndexedSpots["grainindex"],
                     allIndexedSpots["twotheta"],
                     allIndexedSpots["chi"],
@@ -497,9 +485,7 @@ def build_hdf5(
                     # UB matrix: in dictMat
                     UBmatrix = np.ravel(dictMat[key_image][grainindex])
                     # deviatoric strain matrix: in dictstrain
-                    devstrainmatrix = np.take(
-                        np.ravel(dictstrain[key_image][grainindex]), pos_voigt
-                    )
+                    devstrainmatrix = np.take(np.ravel(dictstrain[key_image][grainindex]), pos_voigt)
 
                 for k, ub_element in enumerate(list_ub_element):
                     allIndexedSpots[ub_element] = UBmatrix[k]
@@ -528,21 +514,16 @@ def build_hdf5(
     return True
 
 
-def Add_allspotsSummary_from_dict(
-    Summary_HDF5_filename,
-    filename_dictRes,
-    Summary_HDF5_dirname=None,
-    dirname_dictRes=None,
-    nb_of_spots_per_image=200,
-):
+def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
+                                                            Summary_HDF5_dirname=None,
+                                                            dirname_dictRes=None,
+                                                            nb_of_spots_per_image=200):
     """
     open a hdf5 file and create a branch of allspots summary
     """
     full_HDF5_output_path = Summary_HDF5_filename
     if Summary_HDF5_dirname is not None:
-        full_HDF5_output_path = os.path.join(
-            Summary_HDF5_dirname, Summary_HDF5_filename
-        )
+        full_HDF5_output_path = os.path.join(Summary_HDF5_dirname, Summary_HDF5_filename)
 
     # Open a file in append mode
     h5file = Tab.openFile(full_HDF5_output_path, mode="a", title="%s" % "allspots")
@@ -558,7 +539,7 @@ def Add_allspotsSummary_from_dict(
     if len(dicts) == 5:
         dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
     else:
-        dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
+        _, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
 
     keys_indexfile = sorted(dictMat.keys())
 
@@ -578,13 +559,9 @@ def Add_allspotsSummary_from_dict(
 
     group_spots = h5file.createGroup("/", "Allspots", "All spots information")
 
-    tableallspots = h5file.createTable(
-        group_spots,
-        "total_spots",
-        AllIndexedSpots,
-        "Readout example",
-        expectedrows=nb_of_images * nb_of_spots_per_image,
-    )
+    tableallspots = h5file.createTable(group_spots, "total_spots", AllIndexedSpots,
+                                                "Readout example",
+                                                expectedrows=nb_of_images * nb_of_spots_per_image)
 
     allIndexedSpots = tableallspots.row
 
@@ -595,8 +572,7 @@ def Add_allspotsSummary_from_dict(
             allIndexedSpots["fileindex"] = key_image
             grain_index = int(elem[1])
 
-            (
-                allIndexedSpots["spotindex"],
+            (allIndexedSpots["spotindex"],
                 allIndexedSpots["grainindex"],
                 allIndexedSpots["twotheta"],
                 allIndexedSpots["chi"],
@@ -624,9 +600,7 @@ def Add_allspotsSummary_from_dict(
                 # UB matrix: in dictMat
                 UBmatrix = np.ravel(dictMat[key_image][grain_index])
                 # deviatoric strain matrix: in dictstrain
-                devstrainmatrix = np.take(
-                    np.ravel(dictstrain[key_image][grain_index]), pos_voigt
-                )
+                devstrainmatrix = np.take(np.ravel(dictstrain[key_image][grain_index]), pos_voigt)
 
             for k, ub_element in enumerate(list_ub_element):
                 allIndexedSpots[ub_element] = UBmatrix[k]
@@ -653,17 +627,13 @@ def Add_allspotsSummary_from_dict(
     h5file.close()
 
 
-def Add_allspotsSummary_from_fitfiles(
-    Summary_HDF5_filename,
-    prefix_fitfiles,
-    fitfiles_folder,
-    fileindex_list,
-    Summary_HDF5_dirname=None,
-    number_of_digits_in_image_name=4,
-    filesuffix=".fit",
-    nb_of_spots_per_image=200,
-    max_nb_grains=3,
-):
+def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, fitfiles_folder,
+                                                                fileindex_list,
+                                                                Summary_HDF5_dirname=None,
+                                                                number_of_digits_in_image_name=4,
+                                                                filesuffix=".fit",
+                                                                nb_of_spots_per_image=200,
+                                                                max_nb_grains=3):
     """
     open a hdf5 file and create or Add a Node of /Allspots/total_spots with spots data
 
@@ -672,9 +642,7 @@ def Add_allspotsSummary_from_fitfiles(
     """
     full_HDF5_output_path = Summary_HDF5_filename
     if Summary_HDF5_dirname is not None:
-        full_HDF5_output_path = os.path.join(
-            Summary_HDF5_dirname, Summary_HDF5_filename
-        )
+        full_HDF5_output_path = os.path.join(Summary_HDF5_dirname, Summary_HDF5_filename)
 
     # Open a file in 'append' mode
     h5file = Tab.openFile(full_HDF5_output_path, mode="a", title="%s" % "allspots")
@@ -690,13 +658,9 @@ def Add_allspotsSummary_from_fitfiles(
     if not Node_tableallspots_alreadyExists:
 
         group_spots = h5file.createGroup("/", "Allspots", "All spots information")
-        tableallspots = h5file.createTable(
-            group_spots,
-            "total_spots",
-            AllIndexedSpots,
-            "Readout example",
-            expectedrows=max(nb_of_images * nb_of_spots_per_image, 10000),
-        )
+        tableallspots = h5file.createTable( group_spots, "total_spots", AllIndexedSpots,
+                                    "Readout example",
+                                    expectedrows=max(nb_of_images * nb_of_spots_per_image, 10000))
 
     allIndexedSpots = tableallspots.row
 
@@ -709,9 +673,7 @@ def Add_allspotsSummary_from_fitfiles(
     if not Node_tableimage_alreadyExists:
 
         group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
-        table = h5file.createTable(
-            group_images, "matching_rate", IndexedImage, "indexation rate"
-        )
+        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
 
     indexedImage = table.row
 
@@ -722,9 +684,7 @@ def Add_allspotsSummary_from_fitfiles(
         Node_tableUB_alreadyExists = False
 
     if not Node_tableUB_alreadyExists:
-        tableUB = h5file.createTable(
-            group_images, "UB_matrices_LT", Matrices, "UB Matrices elements"
-        )
+        tableUB = h5file.createTable(group_images, "UB_matrices_LT", Matrices, "UB Matrices elements")
 
     indexedUB = tableUB.row
 
@@ -735,9 +695,8 @@ def Add_allspotsSummary_from_fitfiles(
         Node_tableUB_alreadyExists = False
 
     if not Node_tableUB_alreadyExists:
-        tableUB_sample = h5file.createTable(
-            group_images, "UB_matrices_SampleFrame", Matrices, "UB Matrices elements"
-        )
+        tableUB_sample = h5file.createTable(group_images, "UB_matrices_SampleFrame", Matrices,
+                                                                            "UB Matrices elements")
 
     indexedUB_sample = tableUB_sample.row
 
@@ -774,19 +733,16 @@ def Add_allspotsSummary_from_fitfiles(
         filefitmg = os.path.join(fitfiles_folder, _filename)
 
         # read data from .fit file (grains and unindexed spots)
-        resIndexed, resUnindexed = IOLT.readfitfile_multigrains(
-            filefitmg,
-            verbose=0,
-            readmore=True,
-            fileextensionmarker=".cor",
-            returnUnindexedSpots=True,
-        )
+        resIndexed, resUnindexed = IOLT.readfitfile_multigrains(filefitmg,
+                                                                verbose=0,
+                                                                readmore=True,
+                                                                fileextensionmarker=".cor",
+                                                                returnUnindexedSpots=True)
 
         #         print "resIndexed", resIndexed
 
         if resIndexed != 0:
-            (
-                list_indexedgrains_indices,
+            (list_indexedgrains_indices,
                 list_nb_indexed_peaks,
                 list_starting_rows_in_data,
                 all_UBmats_flat,
@@ -813,8 +769,7 @@ def Add_allspotsSummary_from_fitfiles(
             for spot_data in spotsdata_for_this_grain:
                 allIndexedSpots["fileindex"] = key_image
 
-                (
-                    allIndexedSpots["spotindex"],
+                (allIndexedSpots["spotindex"],
                     allIndexedSpots["intensity"],
                     allIndexedSpots["H"],
                     allIndexedSpots["K"],
@@ -872,9 +827,7 @@ def Add_allspotsSummary_from_fitfiles(
         indexedImage["fileindex"] = key_image
         # default values
         for k in range(max_nb_grains):
-            indexedImage["NBindexed_%d" % k] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES[
-                "Nb_indexedspots"
-            ]
+            indexedImage["NBindexed_%d" % k] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["Nb_indexedspots"]
         # grains values
         for k, grain_index in enumerate(list_indexedgrains_indices):
             # data for images indexation performance
@@ -889,8 +842,7 @@ def Add_allspotsSummary_from_fitfiles(
             #             print "spot_data", spot_data
             allIndexedSpots["fileindex"] = key_image
 
-            (
-                allIndexedSpots["spotindex"],
+            (allIndexedSpots["spotindex"],
                 allIndexedSpots["intensity"],
                 allIndexedSpots["twotheta"],
                 allIndexedSpots["chi"],
@@ -898,21 +850,18 @@ def Add_allspotsSummary_from_fitfiles(
                 allIndexedSpots["pixY"],
             ) = spot_data
 
-            (
-                allIndexedSpots["H"],
+            (allIndexedSpots["H"],
                 allIndexedSpots["K"],
                 allIndexedSpots["L"],
                 allIndexedSpots["energy"],
                 allIndexedSpots["grainindex"],
                 allIndexedSpots["PixDev"],
-            ) = (
-                DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["H"],
+            ) = (DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["H"],
                 DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["K"],
                 DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["L"],
                 DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["Energy"],
                 DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["grainindex"],
-                DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["PixDev"],
-            )
+                DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["PixDev"])
 
             UBmatrix_flat = DEFAULT_TO_RESET[5 : 5 + 9]
             devstrainmatrix = DEFAULT_TO_RESET[14 : 14 + 6]
@@ -925,12 +874,8 @@ def Add_allspotsSummary_from_fitfiles(
 
             # new fields
             #                 allIndexedSpots['MatchingRate'] = 0.0
-            allIndexedSpots["MeanPixDev"] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES[
-                "PixDev"
-            ]
-            allIndexedSpots["NbindexedSpots"] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES[
-                "Nb_indexedspots"
-            ]
+            allIndexedSpots["MeanPixDev"] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["PixDev"]
+            allIndexedSpots["NbindexedSpots"] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["Nb_indexedspots"]
 
             allIndexedSpots.append()
 
@@ -957,9 +902,8 @@ def build_hdf5_fromSummaryFile(
     build hdf5 (summary) file from summary file generated by FileSeries/build_summary (multigrain)
     """
 
-    bigdata, list_col_names, dict_col_names = IOLT.ReadSummaryFile(
-        Summaryfilename, dirname=Summarydirname
-    )
+    bigdata, list_col_names, dict_col_names = IOLT.ReadSummaryFile(Summaryfilename,
+                                                                    dirname=Summarydirname)
     # dict [key]=val where key = image index and val = list of indexed grains indices
     dict_images_indexed_grains = {}
     # dict [key]=val where key = image index and val = dict_locate
@@ -996,9 +940,7 @@ def build_hdf5_fromSummaryFile(
 
     # Open a file in "w"rite mode
     full_HDF5_output_path = os.path.join(output_dirname, output_hdf5_filename)
-    h5file = Tab.openFile(
-        full_HDF5_output_path, mode="w", title="%s" % imagefilename_prefix
-    )
+    h5file = Tab.openFile(full_HDF5_output_path, mode="w", title="%s" % imagefilename_prefix)
 
     keys_indexfile = keys_indexfile[:nb_of_images]
     #     keys_indexfile = keys_indexfile[:10]
@@ -1008,9 +950,7 @@ def build_hdf5_fromSummaryFile(
         group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
 
         # Create one table on it
-        table = h5file.createTable(
-            group_images, "matching_rate", IndexedImage, "indexation rate"
-        )
+        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
         # Fill the table with data
         indexedImage = table.row
 
@@ -1020,10 +960,7 @@ def build_hdf5_fromSummaryFile(
             print("key_image", key_image)
             for grain_index in range(max_nb_grains):
                 nbpeaks = 0.0
-                print(
-                    "dict_images_indexed_grains[key_image]",
-                    dict_images_indexed_grains[key_image],
-                )
+                print("dict_images_indexed_grains[key_image]", dict_images_indexed_grains[key_image])
                 print("grain_index", grain_index)
                 if grain_index in dict_images_indexed_grains[key_image]:
                     print("youpi")
@@ -1032,9 +969,7 @@ def build_hdf5_fromSummaryFile(
                     nbpeaks = bigdata_row[dict_col_names["npeaks"]]
 
                 print("nbpeaks", nbpeaks)
-                indexedImage["MatchingRate_%d" % grain_index] = (
-                    nbpeaks + 100
-                )  # must be integer!!
+                indexedImage["MatchingRate_%d" % grain_index] = (nbpeaks + 100)  # must be integer!!
                 indexedImage["NBindexed_%d" % grain_index] = nbpeaks
 
             # Insert a new particle record
@@ -1049,12 +984,10 @@ def build_hdf5_fromSummaryFile(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB = h5file.createTable(
-            group_images,
-            "UB_matrices",
-            Matrices,
-            "matstarlab UB Matrices elements in OR frame",
-        )
+        tableUB = h5file.createTable(group_images,
+                                    "UB_matrices",
+                                    Matrices,
+                                    "matstarlab UB Matrices elements in OR frame")
         # Fill the table with data
         indexedUB = tableUB.row
 
@@ -1067,9 +1000,7 @@ def build_hdf5_fromSummaryFile(
                     print("youpi")
                     bigdata_row = bigdata[dict_locate_grains[key_image][grain_index]]
                     col_start_matrix = dict_col_names["matstarlab_0"]
-                    matstarlab_line = bigdata_row[
-                        col_start_matrix : col_start_matrix + 9
-                    ]
+                    matstarlab_line = bigdata_row[col_start_matrix : col_start_matrix + 9]
                     print("matstarlab_line", matstarlab_line)
 
                 for k, ub_element in enumerate(list_ub_element):
@@ -1091,9 +1022,8 @@ def build_hdf5_fromSummaryFile(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB_array = h5file.createTable(
-            group_images, "UB_matrices_array", Matrices_array, "UB Matrices elements"
-        )
+        tableUB_array = h5file.createTable(group_images, "UB_matrices_array", Matrices_array,
+                                                                            "UB Matrices elements")
         # Fill the table with data
         indexedUB_ar = tableUB_array.row
 
@@ -1106,9 +1036,7 @@ def build_hdf5_fromSummaryFile(
                     print("youpi")
                     bigdata_row = bigdata[dict_locate_grains[key_image][grain_index]]
                     col_start_matrix = dict_col_names["matstarlab_0"]
-                    matstarlab_line = bigdata_row[
-                        col_start_matrix : col_start_matrix + 9
-                    ]
+                    matstarlab_line = bigdata_row[col_start_matrix : col_start_matrix + 9]
                     exp_mat = np.reshape(matstarlab_line, (3, 3))
                     print("exp_mat", matstarlab_line)
 
@@ -1126,9 +1054,7 @@ def build_hdf5_fromSummaryFile(
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tabledev = h5file.createTable(
-            group_images, "Deviatoric_strain", DevStrain, "voigt notation"
-        )
+        tabledev = h5file.createTable(group_images, "Deviatoric_strain", DevStrain, "voigt notation")
         # Fill the table with data
         indexedDev = tabledev.row
 
@@ -1141,14 +1067,10 @@ def build_hdf5_fromSummaryFile(
                     print("youpi")
                     bigdata_row = bigdata[dict_locate_grains[key_image][grain_index]]
                     col_start_matrix = dict_col_names["strain6_crystal_0"]
-                    devstrainmatrix = bigdata_row[
-                        col_start_matrix : col_start_matrix + 6
-                    ]
+                    devstrainmatrix = bigdata_row[col_start_matrix : col_start_matrix + 6]
 
                 for k, strain_element in enumerate(list_devstrain_element):
-                    indexedDev[strain_element + "_%d" % grain_index] = devstrainmatrix[
-                        k
-                    ]
+                    indexedDev[strain_element + "_%d" % grain_index] = devstrainmatrix[k]
 
             # Insert a new particle record
             indexedDev.append()
@@ -1159,12 +1081,10 @@ def build_hdf5_fromSummaryFile(
     # Close (and flush) the file
     h5file.close()
 
-    Add_allspotsSummary_from_dict(
-        full_HDF5_output_path,
-        Dict_Res_filename,
-        Summary_HDF5_dirname=None,
-        dirname_dictRes=dirname_Dict_Res,
-    )
+    Add_allspotsSummary_from_dict(full_HDF5_output_path,
+                                    Dict_Res_filename,
+                                    Summary_HDF5_dirname=None,
+                                    dirname_dictRes=dirname_Dict_Res)
 
     return True
 
@@ -1244,9 +1164,7 @@ class TableMap:
         """
         set links with file in different folders and the way to read them
         """
-        self.setfolders(
-            FOLDER_IMAGE_PATHNAME, FOLDER_PEAKLIST_PATHNAME, FOLDER_PEAKLISTCOR_PATHNAME
-        )
+        self.setfolders(FOLDER_IMAGE_PATHNAME, FOLDER_PEAKLIST_PATHNAME, FOLDER_PEAKLISTCOR_PATHNAME)
         self.prefixfilename_image = PREFIXFILENAME_IMAGE
         self.prefixfilename_peaklist = PREFIXFILENAME_PEAKLIST
         self.prefixfilename_peaklistcor = PREFIXFILENAME_PEAKLISTCOR
@@ -1515,9 +1433,7 @@ class TableMap:
         """
         sentence = """fileindex == %d"""
 
-        return self.tableMR.ask(sentence % fileindex, ["MatchingRate_%d" % grainindex])[
-            0
-        ]
+        return self.tableMR.ask(sentence % fileindex, ["MatchingRate_%d" % grainindex])[0]
 
     def getGrainMatchingRate(self, fileindex, grainindex):
         """ return matching rate of one indexed grain in one image
@@ -1591,36 +1507,10 @@ class TableMap:
 
     def getUBs(self, fileindex):
 
-        if self.tableUBNode.colnames != [
-            "UB11_0",
-            "UB11_1",
-            "UB11_2",
-            "UB12_0",
-            "UB12_1",
-            "UB12_2",
-            "UB13_0",
-            "UB13_1",
-            "UB13_2",
-            "UB21_0",
-            "UB21_1",
-            "UB21_2",
-            "UB22_0",
-            "UB22_1",
-            "UB22_2",
-            "UB23_0",
-            "UB23_1",
-            "UB23_2",
-            "UB31_0",
-            "UB31_1",
-            "UB31_2",
-            "UB32_0",
-            "UB32_1",
-            "UB32_2",
-            "UB33_0",
-            "UB33_1",
-            "UB33_2",
-            "fileindex",
-        ]:
+        if self.tableUBNode.colnames != ["UB11_0", "UB11_1", "UB11_2", "UB12_0", "UB12_1", "UB12_2",
+        "UB13_0", "UB13_1", "UB13_2", "UB21_0", "UB21_1", "UB21_2", "UB22_0", "UB22_1", "UB22_2",
+            "UB23_0", "UB23_1", "UB23_2", "UB31_0", "UB31_1", "UB31_2", "UB32_0", "UB32_1", "UB32_2", "UB33_0",
+            "UB33_1", "UB33_2", "fileindex"]:
             raise TypeError("columns of tableUB are not in the correct order")
 
         sentence = """fileindex == %d"""
@@ -1629,9 +1519,7 @@ class TableMap:
         #         print fileindex, queryanswer
         if len(queryanswer) > 0:
             tupleelems = list(queryanswer[0])[:-1]
-            threematrices = (
-                np.array([tupleelems]).reshape((3, 3, 3)).transpose((2, 0, 1))
-            )
+            threematrices = (np.array([tupleelems]).reshape((3, 3, 3)).transpose((2, 0, 1)))
             print("threematrices", threematrices)
             return threematrices
         else:
@@ -1673,24 +1561,20 @@ class TableMap:
         # patch grain 0
         return UBarray.reshape((mapshape[0], mapshape[1], 3))
 
-    def Where_peak_is_indexed(
-        self,
-        fileindex,
-        spotindex,
-        grainindex=-1,
-        spotrank_in_grain=0,
-        otherinfo=None,
-        radius=2.0,
-    ):
+    def Where_peak_is_indexed(self,
+                                fileindex,
+                                spotindex,
+                                grainindex=-1,
+                                spotrank_in_grain=0,
+                                otherinfo=None,
+                                radius=2.0):
         """ return  fileindex grainindex spotindex h,k,l of one peak
         given fileindex grainindex
         or given by fileindex spotindex
         """
         if spotindex == -1:
             # find X,Y spot by grainindex and corresponding spotrank_in_grain
-            res = self.infospots_grain(
-                fileindex, grainindex, spotranks=spotrank_in_grain
-            )[0]
+            res = self.infospots_grain(fileindex, grainindex, spotranks=spotrank_in_grain)[0]
         else:
             # find X,Y spot by spotindex
             res = self.infospot(fileindex, spotindex)[0]
@@ -1700,8 +1584,7 @@ class TableMap:
 
         sentence = """((pixX-%.5f)**2+(pixY-%.5f)**2<%.1f**2) & (grainindex >=0)"""
 
-        what = [
-            "fileindex",
+        what = ["fileindex",
             "spotindex",
             "grainindex",
             "pixX",
@@ -1710,17 +1593,14 @@ class TableMap:
             "H",
             "K",
             "L",
-            "energy",
-        ]
+            "energy"]
         if otherinfo != None:
             for info in otherinfo:
                 if info in self.tableallspots.fields:
                     what += [info]
                 else:
-                    raise ValueError(
-                        "tableallspots.fields : %s does not contain this requested field: %s "
-                        % (self.tableallspots.fields, info)
-                    )
+                    raise ValueError("tableallspots.fields : %s does not contain this requested field: %s "
+                        % (self.tableallspots.fields, info))
 
         allspots_data = self.tableallspots.ask(sentence % (Xres, Yres, radius), what)
 
@@ -1735,11 +1615,9 @@ class TableMap:
         self.tableMR.Add_Row(dataMR)
 
     def testadds(self):
-        dataMR = [
-            [58.6, 22.3, 0.0029, 15000],
-            [0.01, 258, 129, 9998],
-            [18.8, 3.14159, 0.29, 9997],
-        ]
+        dataMR = [[58.6, 22.3, 0.0029, 15000],
+                    [0.01, 258, 129, 9998],
+                    [18.8, 3.14159, 0.29, 9997]]
         self.tableMR.Add_Rows(dataMR)
 
     def deleteIndexedGrain(self, fileindex, grainindex):
@@ -1769,51 +1647,45 @@ class TableMap:
         self.position_definition = 1  # LT and XMAS compatible
         self.fit_peaks_gaussian = 1
 
-        self.dict_param = dict(
-            PixelNearRadius=15,
-            Thresconvolve=30000,
-            IntensityThreshold=200,
-            boxsize=15,
-            xtol=0.0001,
-            FitPixelDev=2,
-        )
+        self.dict_param = dict(PixelNearRadius=15,
+                                Thresconvolve=30000,
+                                IntensityThreshold=200,
+                                boxsize=15,
+                                xtol=0.0001,
+                                FitPixelDev=2)
 
-        self.kwds_fitpeaks = dict(
-            baseline="auto",
-            startangles=0.0,
-            start_sigma1=1.0,
-            start_sigma2=1.0,
-            position_start="center",
-            fitfunc="gaussian",
-            showfitresults=0,
-            offsetposition=1,
-            verbose=0,
-            xtol=0.00000001,
-            framedim=(2048, 2048),
-            offset=4096,
-            formatdata="uint16",
-            fliprot="no",
-        )
+        self.kwds_fitpeaks = dict(baseline="auto",
+                                    startangles=0.0,
+                                    start_sigma1=1.0,
+                                    start_sigma2=1.0,
+                                    position_start="center",
+                                    fitfunc="gaussian",
+                                    showfitresults=0,
+                                    offsetposition=1,
+                                    verbose=0,
+                                    xtol=0.00000001,
+                                    framedim=(2048, 2048),
+                                    offset=4096,
+                                    formatdata="uint16",
+                                    fliprot="no")
 
-        self.kwds_peaksearch = dict(
-            CCDLabel=self.CCDlabel,
-            PixelNearRadius=self.dict_param["PixelNearRadius"],
-            removeedge=2,
-            IntensityThreshold=self.dict_param["IntensityThreshold"],
-            local_maxima_search_method=2,
-            thresholdConvolve=self.dict_param["Thresconvolve"],
-            boxsize=self.dict_param["boxsize"],
-            paramsHat=self.paramsHat,
-            position_definition=self.position_definition,
-            verbose=0,
-            fit_peaks_gaussian=self.fit_peaks_gaussian,
-            xtol=self.dict_param["xtol"],
-            FitPixelDev=self.dict_param["FitPixelDev"],
-            return_histo=0,
-            Saturation_value=DictLT.dict_CCD[self.CCDlabel][2],
-            Saturation_value_flatpeak=DictLT.dict_CCD[self.CCDlabel][2],
-            write_execution_time=1,
-        )
+        self.kwds_peaksearch = dict(CCDLabel=self.CCDlabel,
+                                    PixelNearRadius=self.dict_param["PixelNearRadius"],
+                                    removeedge=2,
+                                    IntensityThreshold=self.dict_param["IntensityThreshold"],
+                                    local_maxima_search_method=2,
+                                    thresholdConvolve=self.dict_param["Thresconvolve"],
+                                    boxsize=self.dict_param["boxsize"],
+                                    paramsHat=self.paramsHat,
+                                    position_definition=self.position_definition,
+                                    verbose=0,
+                                    fit_peaks_gaussian=self.fit_peaks_gaussian,
+                                    xtol=self.dict_param["xtol"],
+                                    FitPixelDev=self.dict_param["FitPixelDev"],
+                                    return_histo=0,
+                                    Saturation_value=DictLT.dict_CCD[self.CCDlabel][2],
+                                    Saturation_value_flatpeak=DictLT.dict_CCD[self.CCDlabel][2],
+                                    write_execution_time=1)
 
     #
     #        return RMCCD.readoneimage_multiROIfit(filename,
@@ -1822,25 +1694,19 @@ class TableMap:
     #                             **self.kwds_fitpeaks)
 
     def getImageFilename(self, fileindex):
-        return os.path.join(
-            self.folder_image,
+        return os.path.join(self.folder_image,
             self.prefixfilename_image
-            + "%04d.%s" % (int(fileindex), self.image_extension),
-        )
+            + "%04d.%s" % (int(fileindex), self.image_extension))
 
     def getPeakListFilename(self, fileindex):
-        return os.path.join(
-            self.folder_peaklist,
+        return os.path.join(self.folder_peaklist,
             self.prefixfilename_image
-            + "%04d.%s" % (int(fileindex), self.peaklist_extension),
-        )
+            + "%04d.%s" % (int(fileindex), self.peaklist_extension))
 
     def getPeakListCorFilename(self, fileindex):
-        return os.path.join(
-            self.folder_peaklistcor,
+        return os.path.join(self.folder_peaklistcor,
             self.prefixfilename_image
-            + "%04d.%s" % (int(fileindex), self.peaklistcor_extension),
-        )
+            + "%04d.%s" % (int(fileindex), self.peaklistcor_extension))
 
     def searchPeaks_oneImage(self, fileindex, **kwargs):
         """
@@ -1930,20 +1796,16 @@ class TableMap:
         #    print "Ydev", Ydev
 
         # all peaks list building
-        tabpeak = np.array(
-            [
-                peak_X,
-                peak_Y,
-                peak_I,
-                peak_fwaxmaj,
-                peak_fwaxmin,
-                peak_inclination,
-                Xdev,
-                Ydev,
-                peak_bkg,
-                Ipixmax,
-            ]
-        ).T
+        tabpeak = np.array([peak_X,
+                            peak_Y,
+                            peak_I,
+                            peak_fwaxmaj,
+                            peak_fwaxmin,
+                            peak_inclination,
+                            Xdev,
+                            Ydev,
+                            peak_bkg,
+                            Ipixmax]).T
 
         if plot:
             RMCCD.plot_image_markers(self.getFullImageData(fileindex), tabpeak)
@@ -1958,21 +1820,17 @@ class TableMap:
 
         prefixname = filename.split(".")[0]
 
-        RMCCD.writepeaklist(
-            tabpeaks,
-            prefixname,
-            outputfolder=None,
-            comments=comments,
-            initialfilename=imagefilename,
-        )
+        RMCCD.writepeaklist(tabpeaks,
+                            prefixname,
+                            outputfolder=None,
+                            comments=comments,
+                            initialfilename=imagefilename)
 
     def getTabPeaksList(self, fileindex):
         filename = self.getPeakListFilename(fileindex)
         return IOLT.read_Peaklist(filename, dirname=None)
 
-    def addPeaks_in_peaklistfile(
-        self, fileindex, tabpeaks, updatePeaks=0, dist_tolerance=1.0
-    ):
+    def addPeaks_in_peaklistfile(self, fileindex, tabpeaks, updatePeaks=0, dist_tolerance=1.0):
         """
         add peaks from tabpeak in peaklist file
 
@@ -1985,13 +1843,11 @@ class TableMap:
         array_pts = data_current_peaks[:, :2]
 
         if not updatePeaks:
-            IOLT.addPeaks_in_Peaklist(
-                filename_in,
-                tabpeaks,
-                filename_out="test",
-                dirname_in=None,
-                dirname_out=self.folder_peaklist,
-            )
+            IOLT.addPeaks_in_Peaklist(filename_in,
+                                        tabpeaks,
+                                        filename_out="test",
+                                        dirname_in=None,
+                                        dirname_out=self.folder_peaklist)
             return
 
         resetspotindex = []
@@ -2015,23 +1871,18 @@ class TableMap:
 
         if len(newpeaks) > 0:
             # merge:
-            data_current_peaks = np.concatenate(
-                (data_current_peaks, np.array(newpeaks)), axis=0
-            )
+            data_current_peaks = np.concatenate((data_current_peaks, np.array(newpeaks)), axis=0)
 
         # sort
-        data_current_peaks = data_current_peaks[
-            np.argsort(data_current_peaks[:, 3])[::-1]
-        ]
+        data_current_peaks = data_current_peaks[np.argsort(data_current_peaks[:, 3])[::-1]]
 
         self.write_PeakListFile(1700, data_current_peaks)
 
     def getFullImageData(self, fileindex):
         filename = self.getImageFilename(fileindex)
 
-        data_1d = RMCCD.readoneimage(
-            filename, framedim=self.framedim, offset=self.offset, formatdata=self.format
-        )
+        data_1d = RMCCD.readoneimage(filename, framedim=self.framedim, offset=self.offset,
+                                                                            formatdata=self.format)
         return np.reshape(data_1d, self.framedim)
 
     # --- ------   Plot spots ------
@@ -2062,23 +1913,20 @@ POS_TO_RESET = [
     26,  # graindex
 ]
 
-DEFAULT_DICT_NONINDEXEDSPOTS_VALUES = {
-    "H": 10000,
-    "K": 10000,
-    "L": 10000,
-    "MatchingRate": -1,
-    "Nb_indexedspots": 0.0,
-    "Matrix_elements": 0.0,
-    "Strain_elements": 0.0,
-    "Energy": -1,
-    "grainindex": -1,
-    "PixDev": -1,
-    "PixDev_x": -1,
-    "PixDev_y": -1,
-}
+DEFAULT_DICT_NONINDEXEDSPOTS_VALUES = {"H": 10000,
+                                        "K": 10000,
+                                        "L": 10000,
+                                        "MatchingRate": -1,
+                                        "Nb_indexedspots": 0.0,
+                                        "Matrix_elements": 0.0,
+                                        "Strain_elements": 0.0,
+                                        "Energy": -1,
+                                        "grainindex": -1,
+                                        "PixDev": -1,
+                                        "PixDev_x": -1,
+                                        "PixDev_y": -1}
 
-DEFAULT_TO_RESET = (
-    [
+DEFAULT_TO_RESET = ([
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["H"],
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["K"],
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["L"],
@@ -2089,9 +1937,7 @@ DEFAULT_TO_RESET = (
     + [DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["Strain_elements"]] * 6
     + [
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["Energy"],
-        DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["grainindex"],
-    ]
-)
+        DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["grainindex"]])
 
 
 class TabletoQuery:
@@ -2110,9 +1956,7 @@ class TabletoQuery:
     def ask(self, conditions, returnwhat):
         for elem in self.fields:
             if elem not in self.fields:
-                raise ValueError(
-                    "%s does not contain the column %s" % (self.table, elem)
-                )
+                raise ValueError("%s does not contain the column %s" % (self.table, elem))
 
         return Query(self.table, conditions, returnwhat)
 
@@ -2260,10 +2104,8 @@ def query_peak_location(tableallspots, peak, radius=5.0):
     (found by peak search) in .cor file
     """
     query_sentence = """(pixX-%.5f)**2+(pixY-%.5f)**2<%.1f**2"""
-    return [
-        [x["fileindex"], x["intensity"]]
-        for x in tableallspots.where(query_sentence % (peak[0], peak[1], radius))
-    ]
+    return [[x["fileindex"], x["intensity"]]
+        for x in tableallspots.where(query_sentence % (peak[0], peak[1], radius))]
 
 
 def query_twopeaks_location(tableallspots, peak1, peak2, radius1=5.0, radius2=5.0):
@@ -2321,10 +2163,8 @@ def query_grainpeaks(tableallspots, fileindex, grainindex):
     return x,y,I of peaks belonging to one grain of a given image
     """
     query_sentence = """(fileindex == %d) & (grainindex == %d)"""
-    return [
-        [x["pixX"], x["pixY"], x["intensity"]]
-        for x in tableallspots.where(query_sentence % (fileindex, grainindex))
-    ]
+    return [[x["pixX"], x["pixY"], x["intensity"]]
+        for x in tableallspots.where(query_sentence % (fileindex, grainindex))]
 
 
 def query_grainlocation(tableallspots, fileindex, grainindex):
@@ -2338,21 +2178,16 @@ def query_grainlocation(tableallspots, fileindex, grainindex):
     allspots = np.array(allspots)
     peak1, peak2 = allspots[:2, :2]
 
-    return query_twopeaks_location(
-        tableallspots, peak1, peak2, radius1=5.0, radius2=5.0
-    )
+    return query_twopeaks_location(tableallspots, peak1, peak2, radius1=5.0, radius2=5.0)
 
 
 def query_peaksMiller(tableallspots, peak, radius=5.0):
     """ return file index a and intensity and hkl for a peak
     """
-    return [
-        [x["fileindex"], x["intensity"], x["H"], x["K"], x["L"]]
+    return [[x["fileindex"], x["intensity"], x["H"], x["K"], x["L"]]
         for x in tableallspots.where(
             """((pixX-%.5f)**2+(pixY-%.5f)**2<%.1f**2) & (grainindex>-1)"""
-            % (peak[0], peak[1], radius)
-        )
-    ]
+            % (peak[0], peak[1], radius))]
 
 
 def query_Miller_mainpeak(tableallspots, fileindex, grainindex, spotindex, radius=5.0):
@@ -2374,13 +2209,9 @@ def get_UBs(tableUB, fileindex, nbgrains=3):
     """
     give the UB matrices of 3 grains in one image
     """
-    mat = [
-        [
-            [x[ub_element + "_%d" % k] for ub_element in list_ub_element]
-            for k in range(nbgrains)
-        ]
-        for x in tableUB.where("""fileindex == %d""" % fileindex)
-    ]
+    mat = [[[x[ub_element + "_%d" % k] for ub_element in list_ub_element]
+            for k in range(nbgrains)]
+        for x in tableUB.where("""fileindex == %d""" % fileindex)]
 
     mats = np.array(mat[0])
 
@@ -2401,12 +2232,10 @@ def get_UBgrain(tableUB, fileindex, grainindex):
 def get_UBspot(tableallspots, fileindex, spotindex):
     query_sentence = """(fileindex == %d) & (spotindex == %d)"""
 
-    mat = np.array(
-        [
+    mat = np.array([
             [x[ub_element] for ub_element in list_ub_element]
             for x in tableallspots.where(query_sentence % (fileindex, spotindex))
-        ]
-    )[0]
+        ])[0]
 
     return mat.reshape((3, 3))
 
@@ -2415,10 +2244,8 @@ def get_MRs(tableMR, fileindex, nbgrains=3):
     """
     give the Matching rates of 3 grains in one image
     """
-    mat = [
-        [x["MatchingRate_%d" % k] for k in range(nbgrains)]
-        for x in tableMR.where("""fileindex == %d""" % fileindex)
-    ]
+    mat = [[x["MatchingRate_%d" % k] for k in range(nbgrains)]
+        for x in tableMR.where("""fileindex == %d""" % fileindex)]
 
     MRs = mat[0]
 
@@ -2439,10 +2266,8 @@ def get_MR(tableMR, fileindex, grainindex):
 def get_MRspot(tableallspots, fileindex, spotindex):
     query_sentence = """(fileindex == %d) & (spotindex == %d)"""
 
-    MR = [
-        x["MatchingRate"]
-        for x in tableallspots.where(query_sentence % (fileindex, spotindex))
-    ][0]
+    MR = [x["MatchingRate"]
+        for x in tableallspots.where(query_sentence % (fileindex, spotindex))][0]
 
     return MR
 
@@ -2453,12 +2278,8 @@ def get_DevStrainSpot(tableallspots, fileindex, spotindex):
     """
     query_sentence = """(fileindex == %d) & (spotindex == %d)"""
 
-    devstrain_voigt = np.array(
-        [
-            [x[strain_element] for strain_element in list_devstrain_element]
-            for x in tableallspots.where(query_sentence % (fileindex, spotindex))
-        ]
-    )[0]
+    devstrain_voigt = np.array([[x[strain_element] for strain_element in list_devstrain_element]
+            for x in tableallspots.where(query_sentence % (fileindex, spotindex))])[0]
 
     return devstrain_voigt
 
@@ -2603,10 +2424,8 @@ def filterlist(initlist, list_of_strings_to_add, list_of_fields):
         if elem in list_of_fields:
             initlist += [elem]
         else:
-            raise ValueError(
-                "tableallspots.fields : %s does not contain this requested field: %s "
-                % (list_of_fields, elem)
-            )
+            raise ValueError("tableallspots.fields : %s does not contain this requested field: %s "
+                % (list_of_fields, elem))
     return initlist
 
 
@@ -2625,15 +2444,10 @@ def plotpeaklist(peaklist_XYI):
     fig = pp.figure(figindex)
     #    ax = fig.add_subplot(111)
     # all exp spots
-    pp.scatter(
-        X,
-        Y,
-        s=Intens / np.amax(Intens) * 100.0,
-        c=Intens / 50.0,
-        marker="o",
-        faceted=True,
-        alpha=0.5,
-    )
+    pp.scatter(X, Y, s=Intens / np.amax(Intens) * 100.0, c=Intens / 50.0,
+                        marker="o",
+                        faceted=True,
+                        alpha=0.5)
 
     pp.title("nb points: %d" % nbpoints)
 

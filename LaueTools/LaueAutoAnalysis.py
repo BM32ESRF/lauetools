@@ -26,7 +26,6 @@ if sys.version_info.major == 3:
     from . import FitOrient as FitO
     from . import readmccd as rmccd
     from . import IOLaueTools as RWASCII
-    from . import dict_LaueTools as Dict
     from . import generaltools as GT
     from . import CrystalParameters as CP
     from . import dict_LaueTools as DictLT
@@ -39,7 +38,6 @@ else:
     import FitOrient as FitO
     import readmccd as rmccd
     import IOLaueTools as RWASCII
-    import dict_LaueTools as Dict
     import generaltools as GT
     import CrystalParameters as CP
     from matchingrate import SpotLinks
@@ -56,7 +54,7 @@ def Non_Indexed_Spots(indexed_spots, n):
             list_nonindexed.append(k)
     return list_nonindexed
 
-def SimulateResult_withMiller( grain, emin, emax, defaultParam, pixelsize=165.0 / 2048,
+def SimulateResult_withMiller(grain, emin, emax, defaultParam, pixelsize=165.0 / 2048,
                                                                                 dim=(2048, 2048)):
     """Simulate Laue Pattern for 1 grain
 
@@ -282,10 +280,10 @@ def RefineUB(linkedspots_link,
 
     if results != None:
 
-        fitresults = True
+        # fitresults = True
 
         # print "\nFinal error--------------------------------------\n"
-        residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(results,
+        residues, deltamat, _ = FitO.error_function_on_demand_strain(results,
                                                                         Data_Q,
                                                                         allparameters,
                                                                         arr_indexvaryingparameters,
@@ -589,7 +587,7 @@ def test_indexation_refinement_Ge():
                                         param=defaultParam,
                                         pixelsize=pixelsize)
 
-    prefix, extens = DataPlot_filename.split(".")
+    prefix, _ = DataPlot_filename.split(".")
     # writing .cor file
     RWASCII.writefile_cor(os.path.join(dirname, "C_" + prefix),
                             twicetheta,
@@ -674,7 +672,7 @@ def test_indexation_refinement_Ge():
     NBRP = 2  # number of best result for each element of spot_index_central
 
     n = 3  # for LUT
-    latticeparams = Dict.dict_Materials[elem_label][1]
+    latticeparams = DictLT.dict_Materials[elem_label][1]
     B = CP.calc_B_RR(latticeparams)
 
     # indexation procedure
@@ -790,7 +788,7 @@ def RefineCalibParameters(linkedspots,
     # initial parameters of calibration and misorientation from the current orientation matrix
     # print "Detector parameters in refine procedure",paramDet
 
-    allparameters = np.array(paramDet + [0, 0, 0] )  # 3 last params = 3 quaternion angles not used here
+    allparameters = np.array(paramDet + [0, 0, 0])  # 3 last params = 3 quaternion angles not used here
 
     # select the parameters that must be fitted
     # dd, xcen, ycen, xbet, xgam,  a1,a2,a3
@@ -893,7 +891,7 @@ def RefineCalibParameters(linkedspots,
     # print "\n ----- Computation of fit results residues -------\n"
 
     # print "\n ----- weighted residues -------\n"
-    residues, deltamat, newmatrix = FitO.error_function_on_demand_calibration(results,
+    _, _, newmatrix = FitO.error_function_on_demand_calibration(results,
                                                                         Data_Q,
                                                                         allparameters,
                                                                         arr_indexvaryingparameters,
@@ -992,7 +990,7 @@ def test_peaksearch_index_refine():
     dirname = "./Examples/Ge/"
     imagefilename = "Ge0001.mccd"
 
-    defaultParam = [ 69.17369978864516611, 1050.50098288478648101, 1115.53514707010231177, 0.13049762505535042, -0.23799600745091942, ]
+    defaultParam = [69.17369978864516611, 1050.50098288478648101, 1115.53514707010231177, 0.13049762505535042, -0.23799600745091942]
     # defaultParam = [69.15, 1050, 1114, 0.1, -0.2]
 
     pixelsize = 165.0 / 2048
@@ -1124,7 +1122,7 @@ def test_peaksearch_index_refine():
     NBRP = 2  # number of best result for each element of spot_index_central
 
     n = 3  # for LUT
-    latticeparams = Dict.dict_Materials[elem_label][1]
+    latticeparams = DictLT.dict_Materials[elem_label][1]
     B = CP.calc_B_RR(latticeparams)
 
     # indexation procedure
@@ -1230,7 +1228,7 @@ def GetCalibParameter(emax, veryclose_angletol, element, startingmatrix, default
             linkedspots_link,
             linkExpMiller_link,
             linkIntensity_link,
-            linkResidues_link,
+            _,
             _,
             _,
         ) = res_assoc
@@ -1309,7 +1307,7 @@ def test_calibration_refinement():
     element = "Ge"
 
     pixelsize = 165.0 / 2048
-    dim = (2048, 2048)
+    # dim = (2048, 2048)
 
     # Automation of peaksearch + indexation + calibration refinement
 
@@ -1354,7 +1352,7 @@ def test_calibration_refinement():
                                                                             sorting_intensity="yes",
                                                                             param=defaultParam,
                                                                             pixelsize=pixelsize)
-    file_peaks = prefix + ".dat"
+    # file_peaks = prefix + ".dat"
     # data = (twicetheta, chi, dataintensity, file_peaks)
     # Data_X, Data_Y, Data_I, File_NAME = data # 2theta and chi are now meant as X and Y
     # Data_index_expspot = np.arange(len(Data_X))
@@ -1604,7 +1602,7 @@ if __name__ == "__main__":
     print("fine_tolangle ", fine_tolangle)
     NBRP = 5  # number of best result for each element of spot_index_central
 
-    latticeparams = Dict.dict_Materials[elem_label][1]
+    latticeparams = DictLT.dict_Materials[elem_label][1]
     B = CP.calc_B_RR(latticeparams)
 
     # indexation procedure
@@ -1657,7 +1655,7 @@ if __name__ == "__main__":
 
     newUBmat, newUmat, newBmat, deviatoricstrain, RR, linkResidues_fit, pixdev, nb_fitted_peaks, linkExpMiller_link = res_strain
 
-    latticeparams = Dict.dict_Materials[elem_label][1]
+    latticeparams = DictLT.dict_Materials[elem_label][1]
     deviatoric_strain, latticeparameterstrained = CP.DeviatoricStrain_LatticeParams(
         newUBmat, latticeparams)
 
@@ -1672,221 +1670,153 @@ if __name__ == "__main__":
 
     print("\n\nstrain sample frame", giveeps(deviatoricstrain))
 
-    raise ValueError("end of example")
+    if 0:
+        # ----------------------------------------------------------------------------
+        # example with Ti
+        dirname = "./Examples/Ti/"
 
-    # ----------------------------------------------------------------------------
-    # example with Ti
-    dirname = "./Examples/Ti/"
+        # Ti with orientsurf111 stretched by 1 % in bstar direction
+        DataPlot_filename = "Ti_111_0p01_bstar.cor"
+        elem_label = "Ti"
 
-    # Ti with orientsurf111 stretched by 1 % in bstar direction
-    DataPlot_filename = "Ti_111_0p01_bstar.cor"
-    elem_label = "Ti"
+        # Ti_s with orientsurf111 lattice param 3 3 4.7 90.5 89.5 120.5
+        DataPlot_filename = "Tis.cor"
+        elem_label = "Ti"
+        # Bmatrix = [[0.3868688469461854, 0.19633627174252782, -0.0010612910304965497],
+        # [0.0, 0.33334602612857905, 0.0018567803810125216],
+        # [0.0, 0.0, 0.21276595744680851]]
 
-    # Ti_s with orientsurf111 lattice param 3 3 4.7 90.5 89.5 120.5
-    DataPlot_filename = "Tis.cor"
-    elem_label = "Ti"
-    # Bmatrix = [[0.3868688469461854, 0.19633627174252782, -0.0010612910304965497],
-    # [0.0, 0.33334602612857905, 0.0018567803810125216],
-    # [0.0, 0.0, 0.21276595744680851]]
+        defaultParam = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]
 
-    defaultParam = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]
+        pixelsize = 165.0 / 2048
 
-    pixelsize = 165.0 / 2048
+        # Automation of peaksearch + indexation + strain refinement
 
-    # Automation of peaksearch + indexation + strain refinement
+        # peak search
+        time_0 = ttt.time()
 
-    # peak search
-    time_0 = ttt.time()
+        # a C_#########.cor file is now created
+        file_extension = "cor"
 
-    # a C_#########.cor file is now created
-    file_extension = "cor"
+        # Reading . cor file
+        # TODO use better readcorfile in readmccd.py
+        #    Current_peak_data = scipy.io.array_import.read_array(os.path.join(dirname, DataPlot_filename), lines=(1, -1))
+        Current_peak_data = np.loadtxt(os.path.join(dirname, DataPlot_filename), skiprows=1)
 
-    # Reading . cor file
-    # TODO use better readcorfile in readmccd.py
-    #    Current_peak_data = scipy.io.array_import.read_array(os.path.join(dirname, DataPlot_filename), lines=(1, -1))
-    Current_peak_data = np.loadtxt(os.path.join(dirname, DataPlot_filename), skiprows=1)
+        # nbcolumns == 5:
+        data_theta = Current_peak_data[:, 0] / 2.0
+        data_chi, data_pixX, data_pixY, data_I = np.transpose(Current_peak_data)[1:]
 
-    # nbcolumns == 5:
-    data_theta = Current_peak_data[:, 0] / 2.0
-    data_chi, data_pixX, data_pixY, data_I = np.transpose(Current_peak_data)[1:]
+        # filename = DataPlot_filename
 
-    # filename = DataPlot_filename
+        index_foundgrain = 0
+        # dictionary of exp spots
+        indexed_spots = {}
+        for k in range(len(data_theta)):
+            indexed_spots[k] = [
+                k,  # index of experimental spot in .cor file
+                data_theta[k] * 2.0,
+                data_chi[k],  # 2theta, chi coordinates
+                data_pixX[k],
+                data_pixY[k],  # pixel coordinates
+                data_I[k],  # intensity
+                0]  # 0 means non indexed yet
+        last_orientmatrix_fromindexation = {}
+        last_Bmatrix_fromindexation = {}
+        last_epsil_fromindexation = {}
 
-    index_foundgrain = 0
-    # dictionary of exp spots
-    indexed_spots = {}
-    for k in range(len(data_theta)):
-        indexed_spots[k] = [
-            k,  # index of experimental spot in .cor file
-            data_theta[k] * 2.0,
-            data_chi[k],  # 2theta, chi coordinates
-            data_pixX[k],
-            data_pixY[k],  # pixel coordinates
-            data_I[k],  # intensity
-            0]  # 0 means non indexed yet
-    last_orientmatrix_fromindexation = {}
-    last_Bmatrix_fromindexation = {}
-    last_epsil_fromindexation = {}
+        # Running indexation
 
-    # Running indexation
+        # updated exp spot index to be still index
+        current_exp_spot_index_list = Non_Indexed_Spots(indexed_spots, len(data_theta))
 
-    # updated exp spot index to be still index
-    current_exp_spot_index_list = Non_Indexed_Spots(indexed_spots, len(data_theta))
+        # for each grain or indexation step: ******************************
+        # ******************************************************************
 
-    # for each grain or indexation step: ******************************
-    # ******************************************************************
+        # compute angular distance between all exp; spots:
 
-    # compute angular distance between all exp; spots:
+        nbspots_in_data = len(data_theta[current_exp_spot_index_list])
 
-    nbspots_in_data = len(data_theta[current_exp_spot_index_list])
+        # Matching spots set Size (MSSS):
+        nbspotmaxformatching = nbspots_in_data
 
-    # Matching spots set Size (MSSS):
-    nbspotmaxformatching = nbspots_in_data
+        # select 1rstly spots that have not been indexed and 2ndly reduced list by user
+        index_to_select = np.take(current_exp_spot_index_list, np.arange(nbspotmaxformatching))
 
-    # select 1rstly spots that have not been indexed and 2ndly reduced list by user
-    index_to_select = np.take(current_exp_spot_index_list, np.arange(nbspotmaxformatching))
+        select_theta = data_theta[index_to_select]
+        select_chi = data_chi[index_to_select]
+        select_I = data_I[index_to_select]
+        # print select_theta
+        # print select_chi
+        listcouple = np.transpose(np.array([select_theta, select_chi]))
+        Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
 
-    select_theta = data_theta[index_to_select]
-    select_chi = data_chi[index_to_select]
-    select_I = data_I[index_to_select]
-    # print select_theta
-    # print select_chi
-    listcouple = np.transpose(np.array([select_theta, select_chi]))
-    Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
+        # classical indexation parameters:
+        data = (2 * select_theta, select_chi, select_I, DataPlot_filename)
 
-    # classical indexation parameters:
-    data = (2 * select_theta, select_chi, select_I, DataPlot_filename)
+        spot_index_central = [0, 1, 2, 3]  # central spot or list of spots
+        spot_index_central = 0  # central spot or list of spots
+        nbmax_probed = 10  # 'Recognition spots set Size (RSSS): '
 
-    spot_index_central = [0, 1, 2, 3]  # central spot or list of spots
-    spot_index_central = 0  # central spot or list of spots
-    nbmax_probed = 10  # 'Recognition spots set Size (RSSS): '
+        energy_max = 20.0
+        n = 3  # for LUT
 
-    energy_max = 20.0
-    n = 3  # for LUT
+        rough_tolangle = 0.5  # 'Dist. Recogn. Tol. Angle (deg)'
+        fine_tolangle = 0.2  # 'Matching Tolerance Angle (deg)'
+        Nb_criterium = 15  # 'Minimum Number Matched Spots: '
+        print("rough_tolangle ", rough_tolangle)
+        print("fine_tolangle ", fine_tolangle)
+        NBRP = 1  # number of best result for each element of spot_index_central
 
-    rough_tolangle = 0.5  # 'Dist. Recogn. Tol. Angle (deg)'
-    fine_tolangle = 0.2  # 'Matching Tolerance Angle (deg)'
-    Nb_criterium = 15  # 'Minimum Number Matched Spots: '
-    print("rough_tolangle ", rough_tolangle)
-    print("fine_tolangle ", fine_tolangle)
-    NBRP = 1  # number of best result for each element of spot_index_central
+        latticeparams = DictLT.dict_Materials[elem_label][1]
+        B = CP.calc_B_RR(latticeparams)
 
-    latticeparams = Dict.dict_Materials[elem_label][1]
-    B = CP.calc_B_RR(latticeparams)
+        # indexation procedure
+        bestmat, stats_res = INDEX.getOrientMatrices(spot_index_central,
+                                                    energy_max,
+                                                    Tabledistance[:nbmax_probed, :nbmax_probed],
+                                                    select_theta,
+                                                    select_chi,
+                                                    n,
+                                                    B,
+                                                    rough_tolangle=rough_tolangle,
+                                                    fine_tolangle=fine_tolangle,
+                                                    Nb_criterium=Nb_criterium,
+                                                    plot=0,
+                                                    structure_label=elem_label,
+                                                    nbbestplot=NBRP)
 
-    # indexation procedure
-    bestmat, stats_res = INDEX.getOrientMatrices(spot_index_central,
-                                                energy_max,
-                                                Tabledistance[:nbmax_probed, :nbmax_probed],
-                                                select_theta,
-                                                select_chi,
-                                                n,
-                                                B,
-                                                rough_tolangle=rough_tolangle,
-                                                fine_tolangle=fine_tolangle,
-                                                Nb_criterium=Nb_criterium,
-                                                plot=0,
-                                                structure_label=elem_label,
-                                                nbbestplot=NBRP)
+        # bestmat contains: NBRP * len(spot_index_central) matrix
 
-    # bestmat contains: NBRP * len(spot_index_central) matrix
+        # Look for the very best matrix candidates: -----to be improved in readability ------------------------
+        ar = []
+        for elem in stats_res:
+            ar.append([elem[0], -elem[2]])
 
-    # Look for the very best matrix candidates: -----to be improved in readability ------------------------
-    ar = []
-    for elem in stats_res:
-        ar.append([elem[0], -elem[2]])
+        tabstat = np.array(ar)  # , dtype = [('x', '<i4'), ('y', '<i4')])
+        rankmat = np.argsort(tabstat[:, 0])[::-1]  # ,order=('x','y'))
 
-    tabstat = np.array(ar)  # , dtype = [('x', '<i4'), ('y', '<i4')])
-    rankmat = np.argsort(tabstat[:, 0])[::-1]  # ,order=('x','y'))
+        verybestmat = bestmat[rankmat[0]]
+        # -----------------------------------------------------------------------------------------------------
+        # very best matrix
+        orientmatrix = verybestmat
 
-    verybestmat = bestmat[rankmat[0]]
-    # -----------------------------------------------------------------------------------------------------
-    # very best matrix
-    orientmatrix = verybestmat
+        # the resimulate to output miller indices
+        emax_simul = 16
+        veryclose_angletol = 0.2
 
-    # the resimulate to output miller indices
-    emax_simul = 16
-    veryclose_angletol = 0.2
+        res_strain = GetStrainOrient(orientmatrix,
+                                        B,
+                                        elem_label,
+                                        emax_simul,
+                                        veryclose_angletol,
+                                        data,
+                                        detectorparameters=defaultParam,
+                                        addoutput=0)
 
-    res_strain = GetStrainOrient(orientmatrix,
-                                    B,
-                                    elem_label,
-                                    emax_simul,
-                                    veryclose_angletol,
-                                    data,
-                                    detectorparameters=defaultParam,
-                                    addoutput=0)
+        (newUBmat, newUmat, newBmat, deviatoricstrain, RR,
+        linkResidues_fit, pixdev, nb_fitted_peaks) = res_strain
 
-    (newUBmat, newUmat, newBmat, deviatoricstrain, RR,
-    linkResidues_fit, pixdev, nb_fitted_peaks) = res_strain
-
-    latticeparams = Dict.dict_Materials[elem_label][1]
-    deviatoric_strain, latticeparameterstrained = CP.DeviatoricStrain_LatticeParams(
-        newUBmat, latticeparams)
-
-    # from Ti
-    # newUBmat, newUmat, newBmat, deviatoricstrain, RR, pixdev
-    # Out[1]:
-    # (array([[-0.68422622,  0.2470165 , -0.6816598 ],
-    # [-0.70578767, -0.0078926 ,  0.71599148],
-    # [ 0.17871844,  0.96290171,  0.18976071]]),
-    # array([[-0.68422622,  0.25286919, -0.68403207],
-    # [-0.70578767, -0.00335966,  0.70841667],
-    # [ 0.17871844,  0.96725604,  0.18018198]]),
-    # array([[ 1.        ,  0.00644962, -0.00528998],
-    # [ 0.        ,  0.99430657,  0.00986164],
-    # [ 0.        ,  0.        ,  1.00546901]]),
-    # array([[ 0.8 , -4.37,  2.53],
-    # [-4.37,  5.86, -4.36],
-    # [ 2.53, -4.36, -6.66]]),
-    # array([[-0.68765096,  0.25446209, -0.67998912],
-    # [-0.70460084, -0.00796557,  0.70955916],
-    # [ 0.1751394 ,  0.96704994,  0.18477174]]),
-    # 0.00068999999999999997)
-
-    # in [2]: np.dot(newUBmat,B)
-    # Out[2]:
-    # array([[-0.2678225 , -0.05017684, -0.1456538 ],
-    # [-0.27626217, -0.14080654,  0.15298963],
-    # [ 0.06995467,  0.36138469,  0.04054716]])
-
-    # mat nb<0.20   nb. theo. spots    mean         max            plane indices
-    # 10        62                   115                0.099       0.196  [[0.0, 1.0, 2.0], [1.0, 1.0, 2.0]]    [0, 2]
-
-    # array([[ 0.,  1.,  2.],
-    # [ 1.,  1.,  2.]])]]
-
-    # From Ti_s reference
-    # In [1]: newUBmat, newUmat, newBmat, deviatoricstrain, RR, pixdev
-    # Out[1]:
-    # (array([[-0.68482852,  0.2544511 , -0.68283814],
-    # [-0.70640875, -0.00178952,  0.70780027],
-    # [ 0.17887595,  0.96708315,  0.18097249]]),
-    # array([[-0.68482852,  0.25444909, -0.68283641],
-    # [-0.70640875, -0.00179182,  0.70780186],
-    # [ 0.17887595,  0.96708452,  0.18097217]]),
-    # array([[  1.00000000e+00,  -3.24985181e-06,   2.36606402e-06],
-    # [  0.00000000e+00,   9.99999189e-01,  -1.29756083e-07],
-    # [  0.00000000e+00,   0.00000000e+00,   1.00000011e+00]]),
-    # array([[-0.,  0., -0.],
-    # [ 0.,  0.,  0.],
-    # [-0.,  0., -0.]]),
-    # array([[-0.68482728,  0.25445014, -0.68283726],
-    # [-0.70640958, -0.00179066,  0.70780103],
-    # [ 0.17887734,  0.96708424,  0.18097231]]),
-    # 0.00077999999999999999)
-
-    # In [1]: np.dot(newUBmat,B)
-    # Out[1]:
-    # array([[-0.26493882, -0.04963641, -0.14408545],
-    # [-0.27328754, -0.13929019,  0.15134218],
-    # [ 0.06920153,  0.35749316,  0.04011061]])
-
-    # 1        19                   118                0.010       0.187  [[-0.0, -1.0, -2.0], [-0.0, -1.0, -1.0]]    [0, 1]
-    # 2        116                   116                0.000       0.000  [[0.0, 1.0, 2.0], [1.0, 1.0, 2.0]]    [0, 2]
-    # 8        116                   116                0.000       0.000  [[0.0, 1.0, 2.0], [1.0, 1.0, 3.0]]    [0, 4]
-    # 12        116                   116                0.000       0.000  [[0.0, 1.0, 2.0], [0.0, 1.0, 3.0]]    [0, 5]
-    # 14        19                   118                0.010       0.187  [[-0.0, -1.0, -2.0], [-0.0, -1.0, -3.0]]    [0, 5]
-    # 24        116                   116                0.000       0.000  [[0.0, 1.0, 2.0], [2.0, 1.0, 2.0]]    [0, 8]
-
-    # [[0.0, 1.0, 2.0], [0.0, 1.0, 3.0]]
+        latticeparams = DictLT.dict_Materials[elem_label][1]
+        deviatoric_strain, latticeparameterstrained = CP.DeviatoricStrain_LatticeParams(
+            newUBmat, latticeparams)

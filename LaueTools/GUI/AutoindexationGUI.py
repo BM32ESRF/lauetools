@@ -38,8 +38,8 @@ if sys.version_info.major == 3:
     from .. import IOLaueTools as IOLT
     from .. import generaltools as GT
     from .. import dict_LaueTools as DictLT
-    from .. PlotRefineGUI import Plot_RefineFrame
-    from .. ResultsIndexationGUI import RecognitionResultCheckBox
+    from . PlotRefineGUI import Plot_RefineFrame
+    from . ResultsIndexationGUI import RecognitionResultCheckBox
 
 else:
     import lauecore as LT
@@ -49,8 +49,8 @@ else:
     import IOLaueTools as IOLT
     import generaltools as GT
     import dict_LaueTools as DictLT
-    from PlotRefineGUI import Plot_RefineFrame
-    from ResultsIndexationGUI import RecognitionResultCheckBox
+    from GUI.PlotRefineGUI import Plot_RefineFrame
+    from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
 
 
 # --- ----------------   Classical Indexation Board

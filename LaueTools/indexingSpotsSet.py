@@ -4122,8 +4122,7 @@ def getSpotsFamilyData(indexed_spots_dict, grain_index, onlywithMiller=1):
     return np.array(data)
 
 
-def proposeEnergyforMatching(
-    indexed_spots_dict, test_Matrix, ang_tol, simulparam, removeharmonics=1):
+def proposeEnergyforMatching(indexed_spots_dict, test_Matrix, simulparam, removeharmonics=1):
     """
     return energy for which the matching rate is the highest
 

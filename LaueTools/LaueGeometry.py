@@ -339,7 +339,7 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
     return calc_xycam(uflab, calib, energy=0, offset=posI, verbose=verbose, returnIpM=True)
 
 
-def calc_xycam( uflab, calib, energy=0, offset=None,
+def calc_xycam(uflab, calib, energy=0, offset=None,
                                         verbose=0,
                                         returnIpM=False,
                                         pixelsize=165.0 / 2048.,
@@ -472,7 +472,7 @@ def calc_xycam( uflab, calib, energy=0, offset=None,
         return xcam, ycam, th0
 
 
-def calc_xycam_transmission( uflab, calib, energy=0, offset=None,
+def calc_xycam_transmission(uflab, calib, energy=0, offset=None,
                                                     verbose=0,
                                                     returnIpM=False,
                                                     pixelsize=165.0 / 2048,
@@ -593,7 +593,7 @@ def calc_xycam_transmission( uflab, calib, energy=0, offset=None,
         return xcam, ycam, th0
 
 
-def calc_xycam_from2thetachi( twicetheta, chi, calib, offset=0,
+def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0,
                                                         verbose=0,
                                                         pixelsize=165.0 / 2048,
                                                         dim=(2048, 2048),
@@ -662,9 +662,9 @@ def uflab_from2thetachi(twicetheta, chi, verbose=0):
 def q_unit_XYZ(twicetheta, chi):
     r"""
     Computes unit vector of :math:`{\bf q}` (scattering transfer moment) :math:`{\bf u_q}`
-    from scattered :math:`{\bf k_f}` angles  
+    from scattered :math:`{\bf k_f}` angles
     # TODO: useful ? check with from_twchi_to_qunit()
-    lauetools frame 
+    lauetools frame
     #in degrees
     """
     THETA = twicetheta / 2.0 * DEG
@@ -737,7 +737,7 @@ def from_qunit_to_twchi(arrayXYZ, labXMAS=0):
 
     .. note::
         in LaueTools frame
-        
+
         .. math::
             kf = \left [ \begin{matrix}
             \cos 2\theta \\ \sin 2\theta \sin \chi \\ \sin 2\theta \cos \chi
@@ -1051,7 +1051,7 @@ def readlt_det(filedet, returnmatLT=False, min_matLT=False):
     matLT3x3 = (GT.matline_to_mat3x3(mat_line)).T
 
     if min_matLT:
-        matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
+        matmin, _ = FindO.find_lowest_Euler_Angles_matrix(matLT3x3)
         matLT3x3 = matmin
 
     matstarlab = matstarlabLaueTools_to_matstarlabOR(matLT3x3)
@@ -1101,7 +1101,7 @@ def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verb
             i = i + 1
             # print i
             if line[:5] == "spot#":
-                linecol = line.rstrip("\n")
+                # linecol = line.rstrip("\n")
                 linestartspot = i + 1
             if line[:3] == "#UB":
                 # print line
@@ -1129,15 +1129,13 @@ def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verb
                 lineeuler = i + 1
             if matrixfound:
                 if i in (linestartmat + 1, linestartmat + 2, linestartmat + 3):
-                    toto = line.rstrip("\n").replace("[", "").replace("]", "").split()
-                    # print toto
-                    matLT3x3[j, :] = np.array(toto, dtype=float)
+                    strline = line.rstrip("\n").replace("[", "").replace("]", "").split()
+                    matLT3x3[j, :] = np.array(strline, dtype=float)
                     j = j + 1
             if strainfound:
                 if i in (linestrain + 1, linestrain + 2, linestrain + 3):
-                    toto = line.rstrip("\n").replace("[", "").replace("]", "").split()
-                    # print toto
-                    strain[j, :] = np.array(toto, dtype=float)
+                    strline = line.rstrip("\n").replace("[", "").replace("]", "").split()
+                    strain[j, :] = np.array(strline, dtype=float)
                     j = j + 1
             if calibfound & (i == linecalib):
                 calib = np.array(line.split(",")[:5], dtype=float)
@@ -1152,7 +1150,7 @@ def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verb
                 list1.append(line.rstrip("\n").replace("[", "").replace("]", "").split())
     finally:
         f.close()
-        linetot = i
+        # linetot = i
 
     # print "linetot = ", linetot
 
@@ -1303,7 +1301,7 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi( filename, tuple_column_X_Y_I, _nblines_headertoskip,
+def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
                                                         sorting_intensity="yes",
                                                         param=None,
                                                         kf_direction="Z>0",
@@ -1450,7 +1448,7 @@ def Compute_data2thetachi( filename, tuple_column_X_Y_I, _nblines_headertoskip,
         #        print "dxynorm2 = ", dxynorm2
         dxynorm = np.power(dxynorm2, 0.5)
         #        print "dxynorm =", dxynorm
-        dxynorminv = 1.0 / dxynorm
+        # dxynorminv = 1.0 / dxynorm
         scale_factor = pixelsize / param_det[0]
         scale_factor = scale_factor * scale_factor
         #        print "dd = ", param_det[0]
@@ -1648,22 +1646,17 @@ def convert2corfile_multiprocessing(fileindexrange,
     try:
         index_start, index_final = fileindexrange
     except:
-        raise ValueError(
-            "Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)"
-        )
-        return
+        raise ValueError("Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)")
+        
 
-    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(
-        index_start, index_final, nb_of_cpu
-    )
+    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
     #    t00 = time.time()
     jobs = []
     for ii in list(range(nb_of_cpu)):
         proc = multiprocessing.Process(
             target=convert2corfile_fileseries,
-            args=(
-                fileindexdivision[ii],
+            args=(fileindexdivision[ii],
                 filenameprefix,
                 calibparam,
                 suffix,
@@ -1671,9 +1664,7 @@ def convert2corfile_multiprocessing(fileindexrange,
                 dirname_in,
                 outputname,
                 dirname_out,
-                pixelsize,
-            ),
-        )
+                pixelsize))
         jobs.append(proc)
         proc.start()
 
@@ -1798,7 +1789,7 @@ def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40.0, anglewire=40
     angs = anglesample * DEG
     angw = anglewire * DEG
 
-    x, y, z = (IM * 1.0).T
+    _, y, z = (IM * 1.0).T
 
     IH = np.array([0, -depth_wire * np.sin(angs), depth_wire * np.cos(angs)])
 
@@ -1828,7 +1819,7 @@ def IW_from_source_oneIM(IIprime, IM, depth_wire, anglesample=40.0):
     """
 
     yIp, zIp = (IIprime * 1.0).T
-    x, y, z = IM
+    _, y, z = IM
 
     slope = (zIp - z) / (yIp - y)
 
@@ -1876,7 +1867,7 @@ def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
 
     IMlab = IMlab_from_xycam(xcam, ycam, calib)
 
-    X_IM_notused, Y_IM, Z_IM = IMlab.T
+    _, Y_IM, Z_IM = IMlab.T
     y1, y2 = Y_IM
     z1, z2 = Z_IM
 

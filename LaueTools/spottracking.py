@@ -18,12 +18,8 @@ else:
     import IOLaueTools as IOLT
 
 
-def getspotindex(XY,
-                spotslist_XY,
-                maxdistancetolerance=5,
-                minimum_seconddistance=10,
-                predictedshift_X=None,
-                predictedshift_Y=None):
+def getspotindex(XY, spotslist_XY, maxdistancetolerance=5, minimum_seconddistance=10,
+                                                    predictedshift_X=None, predictedshift_Y=None):
     """
     get spot index of spot in the spot list located closest to target XY=[X,Y]
 
@@ -39,8 +35,6 @@ def getspotindex(XY,
         if closest spot is farther than 'maxdistancetolerance' from target XY
         or
         if second closest is at least at 'minimum_seconddistance' from target XY
-
-
     """
     target_XY = XY
 
@@ -60,12 +54,10 @@ def getspotindex(XY,
     return first, first_dist
 
 
-def getSpotsAssociations(spotlist_XY,
-                            ref_list_XY,
-                            maxdistancetolerance=5,
-                            minimum_seconddistance=10,
-                            list_predictedshift_X=None,
-                            list_predictedshift_Y=None):
+def getSpotsAssociations(spotlist_XY, ref_list_XY, maxdistancetolerance=5,
+                                                minimum_seconddistance=10,
+                                                list_predictedshift_X=None,
+                                                list_predictedshift_Y=None):
     """
     return spot association list from spots in two lists
 

@@ -1090,6 +1090,17 @@ initialparameters["PeakList Filename Suffix"] = ".cor"
 # prepare sorted list of values
 list_valueparamIR = fill_list_valueparamIR(initialparameters)
 
+def start():
+    Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
+
+    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)
+    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_valueparamIR)
+    IndexRefineSeriesApp = wx.App()
+    IndexRefineSeries = MainFrame_indexrefine(None, -1, "Index Refine Parameters Board",
+                                                    initialparameters, Stock_INDEXREFINE)
+    IndexRefineSeries.Show()
+    IndexRefineSeriesApp.MainLoop()
+
 if __name__ == "__main__":
 
     #     if 0:
@@ -1105,12 +1116,4 @@ if __name__ == "__main__":
 
     # -----------------------------------------------------------
 
-    Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
-
-    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)
-    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_valueparamIR)
-    IndexRefineSeriesApp = wx.App()
-    IndexRefineSeries = MainFrame_indexrefine(None, -1, "Index Refine Parameters Board",
-                                                    initialparameters, Stock_INDEXREFINE)
-    IndexRefineSeries.Show(True)
-    IndexRefineSeriesApp.MainLoop()
+    start()

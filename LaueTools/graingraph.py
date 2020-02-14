@@ -7,13 +7,14 @@ to belong to the same grain
 Tabledistance comes from most important planes (and intense reflection) in cubic structure up to family plane (321)
 
 TODO: take into account the information related to the connectivity between two spots
-
 """
-import sys, os
+
+import sys
+import os
 # import scipy.io.array_import # pour charger les donnees
+import pickle
 
 import numpy as np
-import pickle
 
 import pylab as P
 
@@ -60,12 +61,8 @@ def create_tabdist(pickle_it=0, picklefilename="CubicDistanceList.dat"):
     # print np.sort(array(whole_interdistance_list))
 
     ar_distances = np.sort(np.array(np.array(list(
-                    set(
-                        list(
-                            np.array(
-                                np.sort(np.array(whole_interdistance_list)).round(
-                                    decimals=3
-                                ), dtype="|S6"))))), dtype=np.float32))
+                    set(list(np.array(np.sort(np.array(whole_interdistance_list)).round(
+                                    decimals=3), dtype="|S6"))))), dtype=np.float32))
     print("Table of distances")
     print(ar_distances)
 
@@ -138,7 +135,7 @@ def TableDistance_exp(filename, nb_of_spots, col_Int=4):
         sorted_int_index = np.argsort(data_I)[::-1]
         upto = nbp
 
-    listofselectedpts = np.arange(len(sorted_int_index))
+    # listofselectedpts = np.arange(len(sorted_int_index))
     Theta = data_theta[sorted_int_index]
     Chi = data_chi[sorted_int_index]
     Intens = data_I[sorted_int_index]

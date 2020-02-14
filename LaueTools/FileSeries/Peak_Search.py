@@ -808,9 +808,7 @@ class MainFrame_peaksearch(wx.Frame):
                 dictPeakSearch=dict_param,
                 nb_of_cpu=nb_cpus)
 
-
-if __name__ == "__main__":
-
+def start():
     LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
     print("LaueToolProjectFolder in main", LaueToolsProjectFolder)
 
@@ -848,5 +846,18 @@ if __name__ == "__main__":
     PeakSearchSeriesApp = wx.App()
     PeakSearchSeries = MainFrame_peaksearch(
         None, -1, "Peak Search Parameters Board", initialparameters, Stock_PS)
-    PeakSearchSeries.Show(True)
+    PeakSearchSeries.Show()
     PeakSearchSeriesApp.MainLoop()
+        
+    # LaueToolsGUIApp = wx.App()
+    # LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
+    #                                         projectfolder=LaueToolsProjectFolder)
+    # LaueToolsframe.Show()
+
+    # MySplash(LaueToolsframe, duration=500)
+
+    # LaueToolsGUIApp.MainLoop()
+
+if __name__ == "__main__":
+
+    start()

@@ -2,9 +2,9 @@
 
 # plotmeshspecGUI.py
 
-import os, sys
+import os
+import sys
 import time
-
 
 import wx
 
@@ -21,21 +21,25 @@ else:
 
 import numpy as np
 
-import matplotlib
+import matplotlib as mpl
 
-matplotlib.use("WXAgg")
+mpl.use("WXAgg")
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import (
-    FigureCanvasWxAgg as FigCanvas,
-    NavigationToolbar2WxAgg as NavigationToolbar,
-)
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                    NavigationToolbar2WxAgg as NavigationToolbar)
 
 import matplotlib.colors as colors
 
 from matplotlib.ticker import FuncFormatter
-import matplotlib as mpl
 from pylab import cm as pcm
+
+from matplotlib.axes import Axes
+
+try:
+    from SpecClient_gevent import SpecCommand
+except ImportError:
+    print('spec control software and SpecClient_gevent missing ?')
 
 if sys.version_info.major == 3:
     from . import generaltools as GT
@@ -54,9 +58,8 @@ class TreePanel(wx.Panel):
         self.parent = parent
         self.scantype = scantype
         self.frameparent = self.parent.GetParent()
-        self.tree = wx.TreeCtrl(
-            self, -1, wx.DefaultPosition, (-1, -1), wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
-        )
+        self.tree = wx.TreeCtrl(self, -1, wx.DefaultPosition, (-1, -1),
+                                                            wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
 
         self.maketree()
 
@@ -124,20 +127,17 @@ class MessageCommand(wx.Dialog):
         vbox.Add(btnssizer)
         self.SetSizer(vbox)
 
-    def onAccept(self, evt):
+    def onAccept(self, _):
 
         self.Close()
 
-    def onCancel(self, evt):
+    def onCancel(self, _):
 
         # todo save old positions and make inverse mvt
         self.Close()
 
-    def onCommandtoSpec(self, evt):
-        try: 
-            from SpecClient_gevent import SpecCommand
-        except:
-            return
+    def onCommandtoSpec(self, _):
+
 
         myspec = SpecCommand.SpecCommand("", "crg1:laue")
 
@@ -199,7 +199,7 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
-    def OnAbout(self, evt):
+    def OnAbout(self, _):
         print("open spec file")
         pass
 
@@ -207,7 +207,7 @@ class MainFrame(wx.Frame):
         pass
 
     def create_main_panel(self):
-        """ 
+        """
         """
         self.panel = wx.Panel(self)
 
@@ -275,7 +275,7 @@ class MainFrame(wx.Frame):
         bigvbox.Fit(self)
         self.Layout()
 
-    def OnSaveData(self, evt):
+    def OnSaveData(self, _):
 
         defaultdir = ""
         if not os.path.isdir(defaultdir):
@@ -334,7 +334,7 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         return userProvidedFilename
 
-    def onUpdateSpecFile(self, evt):
+    def onUpdateSpecFile(self, _):
 
         self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
@@ -358,7 +358,7 @@ class MainFrame(wx.Frame):
 
         wx.CallAfter(self.fill_tree)
 
-    def OnOpenSpecFile(self, evt):
+    def OnOpenSpecFile(self, _):
 
         folder = wx.FileDialog(self,
                                 "Select spec file",
@@ -446,10 +446,10 @@ class MainFrame(wx.Frame):
         print("tit.split()")
 
         titlesplit = tit.split()
-        minmotor1 = float(titlesplit[4])
-        maxmotor1 = float(titlesplit[5])
-        minmotor2 = float(titlesplit[8])
-        maxmotor2 = float(titlesplit[9])
+        # minmotor1 = float(titlesplit[4])
+        # maxmotor1 = float(titlesplit[5])
+        # minmotor2 = float(titlesplit[8])
+        # maxmotor2 = float(titlesplit[9])
 
         # counter and key name of data
         columns_name = list(data.keys())
@@ -632,7 +632,7 @@ class MainFrame(wx.Frame):
             self.timer.Start(self.stepmissing)
             self.toggleBtn.SetLabel("STOP Real Time")
 
-    def update(self, event, worker=None):
+    def update(self, _, worker=None):
         """
         update at each time step time
         """
@@ -662,7 +662,7 @@ class MainFrame(wx.Frame):
         USETHREAD = 1
         if USETHREAD:
             # with a thread 2----------------------------------------
-            import threadGUI2 as TG
+            from . GUI import threadGUI2 as TG
 
             self.worker = None
             self.results = None
@@ -680,9 +680,9 @@ class MainFrame(wx.Frame):
             # will set self.UBs_MRs to the output of INDEX.getUBs_and_MatchingRate
             return
 
-    def update2(self, event, worker=None):
+    def update2(self, _, worker=None):
         """
-        not used 
+        not used
         update at each time step time
         """
         print("\nupdated: ")
@@ -885,7 +885,7 @@ class ImshowPanel(wx.Panel):
 
     def create_main_panel(self):
         """
-        set main panel of ImshowPanel 
+        set main panel of ImshowPanel
         """
         #         self.tooltip = wx.ToolTip(tip='tip with a long %s line and a newline\n' % (' ' * 100))
         #         self.canvas.SetToolTip(self.tooltip)
@@ -1040,7 +1040,7 @@ class ImshowPanel(wx.Panel):
     def OnAbout(self, event):
         pass
 
-    def OnNormalizeData(self, evt):
+    def OnNormalizeData(self, _):
         self.frameparent.normalizeintensity = not self.frameparent.normalizeintensity
 
         self.frameparent.MonitorOffset = float(self.I0offsetctrl.GetValue())
@@ -1138,18 +1138,18 @@ class ImshowPanel(wx.Panel):
 
             return
 
-    def OnChangeScale(self, evt):
+    def OnChangeScale(self, _):
         self.scaletype = str(self.comboscale.GetValue())
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnChangeLUT(self, event):
+    def OnChangeLUT(self, _):
         #         print "OnChangeLUT"
         self.cmap = self.comboLUT.GetValue()
         self.myplot.set_cmap(self.cmap)
         self.canvas.draw()
 
-    def OnChangeYorigin(self, event):
+    def OnChangeYorigin(self, _):
         """
         reverse y origin
         """
@@ -1158,7 +1158,7 @@ class ImshowPanel(wx.Panel):
         self.origin = self.YORIGINLIST[self.flagyorigin % 2]
         self.canvas.draw()
 
-    def OnChangeXorigin(self, event):
+    def OnChangeXorigin(self, _):
         """
         reverse  x limits of plot, and update self.flagxorigin
         """
@@ -1166,7 +1166,7 @@ class ImshowPanel(wx.Panel):
         self.flagxorigin += 1
         self.canvas.draw()
 
-    def OnChangeCounter(self, evt):
+    def OnChangeCounter(self, _):
         #         print "OnChangeCounter"
 
         self.detectorname = self.combocounters.GetValue()
@@ -1175,7 +1175,7 @@ class ImshowPanel(wx.Panel):
 
         self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index)
 
-    def OnSliderMin(self, evt):
+    def OnSliderMin(self, _):
 
         self.IminDisplayed = int(self.slider_min.GetValue())
         if self.IminDisplayed > self.ImaxDisplayed:
@@ -1185,7 +1185,7 @@ class ImshowPanel(wx.Panel):
         self.normalizeplot()
         self.canvas.draw()
 
-    def OnSliderMax(self, evt):
+    def OnSliderMax(self, _):
         self.ImaxDisplayed = int(self.slider_max.GetValue())
         if self.ImaxDisplayed < self.IminDisplayed:
             self.slider_max.SetValue(self.IminDisplayed + 1)
@@ -1209,7 +1209,7 @@ class ImshowPanel(wx.Panel):
 
         self.myplot.set_norm(self.cNorm)
 
-    def OnSave(self, event):
+    def OnSave(self, _):
         # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
         #    self.OnSave(event)
         if self.askUserForFilename():
@@ -1294,7 +1294,7 @@ class ImshowPanel(wx.Panel):
             if self.XORIGINLIST[self.flagxorigin % 2] == "right":
                 self.axes.set_xlim(self.axes.get_xlim()[::-1])
 
-    def fromindex_to_pixelpos_x_absolute(self, index, pos):
+    def fromindex_to_pixelpos_x_absolute(self, index, _):
         # absolute positions ticks
         step_factor = self.step_factor
         #         print "step_factor", step_factor
@@ -1304,7 +1304,7 @@ class ImshowPanel(wx.Panel):
             / 100000.0
         )
 
-    def fromindex_to_pixelpos_x_relative_corner(self, index, pos):
+    def fromindex_to_pixelpos_x_relative_corner(self, index, _):
 
         step_factor = self.step_factor
         # relative positions from bottom left corner ticks
@@ -1315,17 +1315,15 @@ class ImshowPanel(wx.Panel):
 
     #         return np.fix((index * self.step_x) * 100.) / 100.
 
-    def fromindex_to_pixelpos_y_absolute(self, index, pos):
+    def fromindex_to_pixelpos_y_absolute(self, index, _):
         # absolute positions ticks
         step_factor = self.step_factor
         print("step_factor", step_factor)
         print("self.step_x", self.step_x)
-        return (
-            np.fix((index * self.step_y / step_factor + self.posmotor2[0]) * 100000.0)
-            / 100000.0
-        )
+        return (np.fix((index * self.step_y / step_factor + self.posmotor2[0]) * 100000.0)
+            / 100000.0)
 
-    def fromindex_to_pixelpos_y_relative_corner(self, index, pos):
+    def fromindex_to_pixelpos_y_relative_corner(self, index, _):
 
         step_factor = self.step_factor
         # relative positions from bottom left corner ticks
@@ -1336,233 +1334,6 @@ class ImshowPanel(wx.Panel):
 
     #         return np.fix((index * self.step_y) * 100.) / 100.
 
-    #     def fromindex_to_pixelpos_y(self, index, pos):
-    #         numrows = self.numrows
-    #         posmotor2 = self.posmotor2
-    #         step_factor = self.step_factor
-    # #         poscenter_motor1, poscenter_motor2 = self.poscenter_motor1, self.poscenter_motor2
-    #
-    #         row = int(index + .5)
-    #         if row >= 0 and row < numrows:
-    #             return np.round(step_factor * (posmotor2[int(index + .5)] - posmotor2[0]))
-
-    #         factor_ticks = 1.
-    #         step_y = 10.
-    #         return np.fix((step_y * index) * factor_ticks) / factor_ticks
-
-    #     def calc_spatialpositions(self):
-    #
-    #         print "in calc_spatialpositions"
-    # #         print "self.posarray_twomotors in calc_spatialpositions", self.posarray_twomotors
-    #         print "absolute_motorposition_unit", self.absolute_motorposition_unit
-    #
-    #         print "pos extremes"
-    #         print self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1]
-    #         print self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1]
-    #
-    #         posmotors = self.posarray_twomotors
-    #         print "self.posarray_twomotors.shape",self.posarray_twomotors.shape
-    #
-    #         if posmotors is not None:
-    #
-    #
-    #             initmotor1 = posmotors[0, 0, 0]
-    #             initmotor2 = posmotors[0, 0, 1]
-    #
-    #             posmotor1 = posmotors[0, :, 0]
-    #             posmotor2 = posmotors[:, 0, 1]
-    #
-    # #             print "starting motor1 %f %s" % (initmotor1, self.absolute_motorposition_unit)
-    # #             print "starting motor2 %f %s" % (initmotor2, self.absolute_motorposition_unit)
-    #
-    # #             print 'posmotor1', posmotor1
-    # #             print 'posmotor2', posmotor2
-    #
-    #             nby, nbx = posmotors.shape[:2]
-    #
-    #             poscenter_motor1 = posmotor1[nbx / 2]
-    #             poscenter_motor2 = posmotor2[nby / 2]
-    #
-    # #             print "center motor1", poscenter_motor1
-    # #             print "center motor2", poscenter_motor2
-    #
-    #             # x= fast motor  (first in spec scan)
-    #             # y slow motor (second in spec scan)
-    #             step_x = (posmotor1[-1] - posmotor1[0]) / (nbx - 1)
-    #             step_y = (posmotor2[-1] - posmotor2[0]) / (nby - 1)
-    #
-    # #             print "step_x %f %s " % (step_x, self.absolute_motorposition_unit)
-    # #             print "step_y %f %s " % (step_y, self.absolute_motorposition_unit)
-    #     #         def fromindex_to_pixelpos_x_mosaic(index, pos):
-    #     #                 return index  # self.center[0]-self.boxsize[0]+index
-    #     #         def fromindex_to_pixelpos_y_mosaic(index, pos):
-    #     #                 return index  # self.center[1]-self.boxsize[1]+index
-    #
-    #             step_factor = 1.
-    #             if self.absolute_motorposition_unit == 'mm':
-    #                 step_factor = 1000.
-    #                 step_x = step_x * step_factor
-    #                 step_y = step_y * step_factor
-    #
-    # #             print "step_x %f micron " % (step_x)
-    # #             print "step_y %f micron " % (step_y)
-    #
-    #             # TRYING fix clever ticks values and locations ------------------
-    #             numrows, numcols = self.data.shape[:2]
-    # #             print 'numrows, numcols', numrows, numcols
-    #
-    #
-    #
-    #             factor_ticks = 1.
-    #             def fromindex_to_pixelpos_x_mosaic(index, pos):
-    #                     return np.fix((step_x * index) * factor_ticks) / factor_ticks
-    #             def fromindex_to_pixelpos_y_mosaic(index, pos):
-    #                     return np.fix((step_y * index) * factor_ticks) / factor_ticks
-    #
-    # #             def fromindex_to_pixelpos_x_mosaic(index, pos):
-    # #                     return index
-    # #             def fromindex_to_pixelpos_y_mosaic(index, pos):
-    # #                     return index
-    #
-    # #             print 'posmotor1', posmotor1
-    # #             print 'posmotor2', posmotor2
-    #
-    #
-    #             def fromindex_to_pixelpos_x_mosaic(index, pos):
-    #                 col = int(index + .5)
-    #                 if col >= 0 and col < numcols:
-    #                     return step_factor * (posmotor1[int(index + .5)] - posmotor1[0])
-    #             def fromindex_to_pixelpos_y_mosaic(index, pos):
-    #                 row = int(index + 0.5)
-    #                 if row >= 0 and row < numrows:
-    #                     return step_factor * (posmotor2[int(index + .5)] - posmotor2[0])
-    #
-    # #
-    # #             def fromindex_to_motor1pos(index, pos):
-    # #                 return posmotor1[int(index)]
-    # #     #             return fix((index * (posmotor1[-1] - initmotor1) / (nb1 - 1) + \
-    # #     #                                 initmotor1) * 100000) / 100000
-    # #             def fromindex_to_motor2pos(index, pos):
-    # #                 return posmotor2[int(index)]
-    # #     #             return fix((index * (posmotor2[-1] - initmotor2) / (nb2 - 1) + \
-    # #     #                                 initmotor2) * 100000) / 100000
-    #             currentaxes = self.fig.gca()
-    #
-    # #             print "self.fig", self.fig
-    # #             print "currentaxes", currentaxes
-    #
-    # #             print dir(currentaxes)
-    # #             print currentaxes
-    #     #
-    # #             currentaxes.get_xaxis().set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x_mosaic))
-    # #             currentaxes.get_yaxis().set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y_mosaic))
-    #     #
-    #     #         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_motor1pos))
-    #     #         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_motor2pos))
-    #
-    #             currentaxes.get_xaxis().set_major_formatter(FuncFormatter(self.fromindex_to_pixelpos_x))
-    #             currentaxes.get_yaxis().set_major_formatter(FuncFormatter(self.fromindex_to_pixelpos_y))
-    #
-    #             # END of TRYING fix clever ticks values and locations ------------------
-    #             import time
-    #             currentaxes.set_xlabel(self.xylabels[0] + str(time.time()))
-    #             currentaxes.set_ylabel(self.xylabels[1])
-    #
-    #             nb_of_microns_x = round((posmotor1[-1] - posmotor1[0]) * step_factor)
-    #             nb_of_microns_y = round((posmotor2[-1] - posmotor2[0]) * step_factor)
-    #
-    # #             print "nb_points_y,nb_points_x", nby, nbx
-    # #             print "nb_of_microns_x", nb_of_microns_x
-    # #             print "nb_of_microns_y", nb_of_microns_y
-    #
-    #     #         self.axes.locator_params('x', tight=True, nbins=6)  # round(nb_of_microns_x) + 1)
-    #     #         self.axes.locator_params('y', tight=True, nbins=round(nb_of_microns_y) + 1)
-    #
-    #             # fix the ticks distance: either 1 micron or a given length such as 5 ticks are plotted
-    # #
-    # #             tickx_micron_sampling = 1. / step_x  # 1 micron
-    # #             tickx_sampling_length = max(math.fabs(nb_of_microns_x / 5. / step_x),
-    # #                                         math.fabs(tickx_micron_sampling))
-    # #             ticky_micron_sampling = 1. / step_y
-    # #             ticky_sampling_length = max(math.fabs(nb_of_microns_y / 5. / step_y),
-    # #                                         math.fabs(ticky_micron_sampling))
-    # #
-    # #             print "ticks every : tickx_sampling_length (micron)", tickx_sampling_length
-    # #             print "ticks every : ticky_sampling_length (micron)", ticky_sampling_length
-    # #
-    # #             locx = pltticker.MultipleLocator(base=math.fabs(tickx_sampling_length))  # this locator puts ticks at regular intervals
-    # #             self.axes.xaxis.set_major_locator(locx)
-    # #             locy = pltticker.MultipleLocator(base=math.fabs(ticky_sampling_length))  # this locator puts ticks at regular intervals
-    # #             self.axes.yaxis.set_major_locator(locy)
-    #
-    #         currentaxes.grid(True)
-    #
-    # #         numrows, numcols, color = self.data.shape
-    #         numrows, numcols = self.data.shape[:2]
-    #
-    # #         print "self.Imageindices", self.Imageindices
-    # #         print "self.Imageindices.shape", self.Imageindices.shape
-    # #         print "self.data.shape", self.data.shape
-    #
-    # #         imageindices = self.Imageindices[0] + arange(0, numrows, numcols) * self.stepindex
-    #
-    #         tabindices = self.Imageindices
-    # #         print "tabindices", tabindices
-    #
-    # #         print "motor positions"
-    # #         print posmotor1
-    # #         print len(posmotor1)
-    # #         print posmotor2
-    # #         print len(posmotor2)
-    #
-    #         def format_coord(x, y):
-    #             col = int(x + 0.5)
-    #             row = int(y + 0.5)
-    #
-    # #             print "x,y before in col and row", x, y
-    #             if col >= 0 and col < numcols and row >= 0 and row < numrows:
-    #                 z = self.data[row, col]
-    # #                 print "z", z
-    # #                 print "x,y,row,col", x, y, row, col
-    #                 Imageindex = tabindices[row, col]
-    #                 if posmotors is None:
-    # #                     print "self.posarray_twomotors is None"
-    #                     sentence0 = 'x=%1.4f, y=%1.4f, z_intensity=%s, ImageIndex: %d' % \
-    #                                         (x, y, str(z), Imageindex)
-    #                     sentence_corner = ''
-    #                     sentence_center = ''
-    #                     sentence = 'No motors positions'
-    #                 else:
-    # #                     print "col,row= ", col, row
-    # #                     print "posmotor1[col],posmotor2[row]", posmotor1[col], posmotor2[row]
-    #
-    #                     sentence0 = "j=%d, i=%d, z_intensity = %s, ABSOLUTE=[%s=%.5f,%s=%.5f], ImageIndex: %d" % \
-    #                             (col, row, str(z),
-    #                              self.motor1name, posmotor1[col], self.motor2name, posmotor2[row], Imageindex)
-    #
-    #                     sentence = 'POSITION (micron) from: '
-    #                     sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % \
-    #                             (self.motor1name, (posmotor1[col] - posmotor1[0]) * step_factor,
-    #                              self.motor2name, (posmotor2[row] - posmotor2[0]) * step_factor)
-    #                     sentence_center = "CENTER =[[%s=%.2f,%s=%.2f]]" % \
-    #                             (self.motor1name, (posmotor1[col] - poscenter_motor1) * step_factor,
-    #                              self.motor2name, (posmotor2[row] - poscenter_motor2) * step_factor)
-    #
-    #                 self.frameparent.stbar0.SetStatusText(sentence0)
-    #                 self.frameparent.stbar.SetStatusText(sentence)
-    #                 self.frameparent.stbar.SetStatusText(sentence_corner, 1)
-    #                 self.frameparent.stbar.SetStatusText(sentence_center, 2)
-    #
-    #                 return sentence0
-    #             else:
-    #                 print 'out of plot'
-    #                 return 'out of plot'
-    #
-    #         currentaxes.format_coord = self.format_coord
-    #
-    # #         if step_y != 0 and step_x != 0:
-    # #             ratio = 1.*step_x / step_y
-    # #             self.forceAspect(ratio)
 
     def set_motorspositions_parameters(self):
         self.posmotors = self.posarray_twomotors
@@ -1575,29 +1346,17 @@ class ImshowPanel(wx.Panel):
         print("absolute_motorposition_unit", self.absolute_motorposition_unit)
 
         print("pos extremes")
-        print(
-            "first motor", self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1]
-        )
-        print(
-            "second motor",
+        print("first motor", self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
+        print("second motor",
             self.posarray_twomotors[-1, 0],
-            self.posarray_twomotors[-1, -1],
-        )
+            self.posarray_twomotors[-1, -1])
 
-        rangeX = (
-            np.fix(
-                (self.posarray_twomotors[0, -1] - self.posarray_twomotors[0, 0])[0]
-                * 100000
-            )
-            / 100000
-        )
-        rangeY = (
-            np.fix(
-                (self.posarray_twomotors[-1, -1] - self.posarray_twomotors[0, -1])[1]
-                * 100000
-            )
-            / 100000
-        )
+        rangeX = (np.fix((self.posarray_twomotors[0, -1] - self.posarray_twomotors[0, 0])[0]
+                * 100000)
+            / 100000)
+        rangeY = (np.fix((self.posarray_twomotors[-1, -1] - self.posarray_twomotors[0, -1])[1]
+                * 100000)
+            / 100000)
 
         print("first motor total range", rangeX)
         print("second motor total range", rangeY)
@@ -1606,8 +1365,8 @@ class ImshowPanel(wx.Panel):
 
         self.tabindices = self.Imageindices
 
-        initmotor1 = self.posmotors[0, 0, 0]
-        initmotor2 = self.posmotors[0, 0, 1]
+        # initmotor1 = self.posmotors[0, 0, 0]
+        # initmotor2 = self.posmotors[0, 0, 1]
 
         self.posmotor1 = self.posmotors[0, :, 0]
         self.posmotor2 = self.posmotors[:, 0, 1]
@@ -1665,10 +1424,7 @@ class ImshowPanel(wx.Panel):
         posmotor1, posmotor2 = self.posmotor1, self.posmotor2
         tabindices = self.tabindices
         step_factor = self.step_factor
-        poscenter_motor1, poscenter_motor2 = (
-            self.poscenter_motor1,
-            self.poscenter_motor2,
-        )
+        poscenter_motor1, poscenter_motor2 = (self.poscenter_motor1, self.poscenter_motor2)
 
         #         print "x,y before in col and row", x, y
         if col >= 0 and col < numcols and row >= 0 and row < numrows:
@@ -1678,12 +1434,7 @@ class ImshowPanel(wx.Panel):
             Imageindex = tabindices[row, col]
             if posmotors is None:
                 #                     print "self.posarray_twomotors is None"
-                sentence0 = "x=%1.4f, y=%1.4f, val=%s, ImageIndex: %d" % (
-                    x,
-                    y,
-                    str(z),
-                    Imageindex,
-                )
+                sentence0 = "x=%1.4f, y=%1.4f, val=%s, ImageIndex: %d" % (x, y, str(z), Imageindex)
                 sentence_corner = ""
                 sentence_center = ""
                 sentence = "No motors positions"
@@ -1691,33 +1442,25 @@ class ImshowPanel(wx.Panel):
                 #                 print "col,row= ", col, row
                 #                 print "posmotor1[col],posmotor2[row]", posmotor1[col], posmotor2[row]
 
-                sentence0 = (
-                    "j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], z_intensity = %s, ImageIndex: %d"
-                    % (
-                        col,
-                        row,
-                        self.motor1name,
-                        posmotor1[col],
-                        self.motor2name,
-                        posmotor2[row],
-                        str(z),
-                        Imageindex,
-                    )
-                )
+                sentence0 = ("j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], z_intensity = %s, ImageIndex: %d"
+                                % (col,
+                                    row,
+                                    self.motor1name,
+                                    posmotor1[col],
+                                    self.motor2name,
+                                    posmotor2[row],
+                                    str(z),
+                                    Imageindex))
 
                 sentence = "POSITION (micron) from: "
-                sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % (
-                    self.motor1name,
-                    (posmotor1[col] - posmotor1[0]) * step_factor,
-                    self.motor2name,
-                    (posmotor2[row] - posmotor2[0]) * step_factor,
-                )
-                sentence_center = "CENTER =[[%s=%.2f,%s=%.2f]]" % (
-                    self.motor1name,
-                    (posmotor1[col] - poscenter_motor1) * step_factor,
-                    self.motor2name,
-                    (posmotor2[row] - poscenter_motor2) * step_factor,
-                )
+                sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % (self.motor1name,
+                                                    (posmotor1[col] - posmotor1[0]) * step_factor,
+                                                    self.motor2name,
+                                                    (posmotor2[row] - posmotor2[0]) * step_factor)
+                sentence_center = "CENTER =[[%s=%.2f,%s=%.2f]]" % (self.motor1name,
+                                                (posmotor1[col] - poscenter_motor1) * step_factor,
+                                                self.motor2name,
+                                                (posmotor2[row] - poscenter_motor2) * step_factor)
 
             self.frameparent.stbar0.SetStatusText(sentence0)
             self.frameparent.stbar.SetStatusText(sentence)
@@ -1728,9 +1471,6 @@ class ImshowPanel(wx.Panel):
         else:
             print("out of plot")
             return "out of plot"
-
-
-from matplotlib.axes import Axes
 
 
 class MyRectilinearAxes(Axes):
