@@ -13,6 +13,11 @@ sys.path.append("..")
 
 import wx
 
+# this is for running through ipython
+import matplotlib
+matplotlib.use("WXAgg")
+#------------------------
+
 if wx.__version__ < "4.":
     WXPYTHON4 = False
 else:
@@ -301,13 +306,13 @@ class PeakSearchParameters(wx.Frame):
         return flag
 
     def setParams(self):
-        for kk, elem in enumerate(self.list_txtparamIR):
+        for kk, _ in enumerate(self.list_txtparamIR):
             self.list_txtctrl[kk].SetValue(str(self.list_valueparamIR[kk]))
 
     def getParams(self):
         self.dict_param = {}
         flag = True
-        for kk, elem in enumerate(self.list_txtparamIR):
+        for kk, _ in enumerate(self.list_txtparamIR):
             val = self.list_txtctrl[kk].GetValue()
 
             if not self.hascorrectvalue(kk, val):
@@ -322,7 +327,7 @@ class PeakSearchParameters(wx.Frame):
         print(self.dict_param)
         return flag
 
-    def OnSave(self, evt):
+    def OnSave(self, _):
 
         if not self.getParams():
             return
@@ -376,7 +381,7 @@ class PeakSearchParameters(wx.Frame):
         self.list_valueparamIR = LIST_VALUESPARAMS
         self.setParams()
 
-    def OnQuit(self, evt):
+    def OnQuit(self, _):
         self.Close()
 
 
@@ -520,7 +525,7 @@ class MainFrame_peaksearch(wx.Frame):
 
         print("dict_param", dict_param)
         listvals = [] * len(LIST_VALUESPARAMS)
-        for kk, key in enumerate(LIST_TXTPARAMS):
+        for _, key in enumerate(LIST_TXTPARAMS):
             if key in list(dict_param.keys()):
                 listvals.append(dict_param[key])
             else:
@@ -549,13 +554,13 @@ class MainFrame_peaksearch(wx.Frame):
 
             self.list_txtctrl[1].SetValue(os.path.join(abspath, "datfiles"))
 
-    def OnbtnBrowse_filepathout(self, event):
+    def OnbtnBrowse_filepathout(self, _):
         folder = wx.DirDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[1].SetValue(folder.GetPath())
 
-    def OnbtnBrowse_CCDfileimage(self, event):
+    def OnbtnBrowse_CCDfileimage(self, _):
         folder = wx.FileDialog(self, "Select CCD Image file")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -609,7 +614,7 @@ class MainFrame_peaksearch(wx.Frame):
 
             self.list_txtctrl[8].SetValue(bkgfile.GetPath())
 
-    def OnbtnBrowse_Blacklistfile(self, event):
+    def OnbtnBrowse_Blacklistfile(self, _):
         blacklist_datfile = wx.FileDialog(
                                             self,
                                             "Select BlackList .dat file image",
@@ -618,7 +623,7 @@ class MainFrame_peaksearch(wx.Frame):
 
             self.list_txtctrl[9].SetValue(blacklist_datfile.GetPath())
 
-    def OnbtnBrowse_pspfile(self, event):
+    def OnbtnBrowse_pspfile(self, _):
         pspfile = wx.FileDialog(self,
             "Select Peak Search Parameters File",
             wildcard="PeakSearch Param.(*.psp)|*.psp|All files(*)|*")
@@ -626,35 +631,35 @@ class MainFrame_peaksearch(wx.Frame):
 
             self.list_txtctrl[10].SetValue(pspfile.GetPath())
 
-    def Onbtnhelp_filepath(self, event):
+    def Onbtnhelp_filepath(self, _):
         help_a_remplir = "Folder containing images file"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_Nbpicture1(self, event):
+    def Onbtnhelp_Nbpicture1(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_Nblastpicture(self, event):
+    def Onbtnhelp_Nblastpicture(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_increment(self, event):
+    def Onbtnhelp_increment(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_filepathout(self, event):
+    def Onbtnhelp_filepathout(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_fileprefix(self, event):
+    def Onbtnhelp_fileprefix(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_filesuffix(self, event):
+    def Onbtnhelp_filesuffix(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
-    def Onbtnhelp_Nbdigits(self, event):
+    def Onbtnhelp_Nbdigits(self, _):
         help_a_remplir = "a remplir"
         self.help.SetValue(str(help_a_remplir))
 
@@ -681,7 +686,7 @@ class MainFrame_peaksearch(wx.Frame):
 
         return True
 
-    def OnStart(self, event):
+    def OnStart(self, _):
 
         # read .psp file
         print("read peak search parameters in:", self.list_txtctrl[10].GetValue())

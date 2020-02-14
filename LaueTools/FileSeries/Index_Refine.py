@@ -13,6 +13,11 @@ import os
 
 sys.path.append("..")
 
+# this is for running through ipython
+import matplotlib
+matplotlib.use("WXAgg")
+#------------------------
+
 import wx
 
 if wx.__version__ < "4.":
@@ -53,7 +58,7 @@ print("LaueToolProjectFolder", LaueToolsProjectFolder)
 # --- ---- core index and refine parameters
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
-LIST_VALUESPARAMS = [ "Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
+LIST_VALUESPARAMS = ["Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
                     False, 3, None, True, 1000, [1, 1], None]
 
 # WARNING when adding parameters above:
@@ -239,7 +244,7 @@ class IndexRefineParameters(wx.Frame):
         self.Close()
 
     def OnLoad(self, _):
-        """read irp.file containing indexation and refinement parameters 
+        """read irp.file containing indexation and refinement parameters
         """
         irpfile = wx.FileDialog(
                                 self,
@@ -275,7 +280,7 @@ class IndexRefineParameters(wx.Frame):
     def getParams(self):
         self.dict_param_list = []
         flag = True
-        for materialindex, materialpage in enumerate(self.materialpages_list):
+        for _, materialpage in enumerate(self.materialpages_list):
             flag = flag and materialpage.getParams()
 
             self.dict_param_list.append(materialpage.dict_param_list)
@@ -393,7 +398,7 @@ class PageMaterialPanel(wx.Panel):
             try:
                 vals = val.split(",")
                 print("vals", vals)
-                h, k, l = vals
+                # h, k, l = vals
             except:
                 wx.MessageBox(
                     "Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be list of 3 integers"
@@ -411,7 +416,7 @@ class PageMaterialPanel(wx.Panel):
         """
         read parameters from text controllers self.list_txtctrl
         and set self.dict_param_list
-        
+
         :return: [description]
         :rtype: [type]
         """
@@ -449,7 +454,8 @@ class MainFrame_indexrefine(wx.Frame):
     """
 
     def __init__(self, parent, _id, title, _initialparameters, objet_IR):
-        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(900, 650))
+        print('entering MainFrame_indexrefine')
+        wx.Frame.__init__(self, parent, _id, title, size=(900, 650))
 
         self.initialparameters = _initialparameters
 
@@ -591,7 +597,7 @@ class MainFrame_indexrefine(wx.Frame):
             projectpath = abspath
 
             if "datfiles" in abspath:
-                projectpath, lastpath = os.path.split(abspath)
+                projectpath, _ = os.path.split(abspath)
 
             self.list_txtctrl[2].SetValue(os.path.join(projectpath, "fitfiles"))
             self.list_txtctrl[1].SetValue(os.path.join(projectpath, "corfiles"))
@@ -685,7 +691,7 @@ class MainFrame_indexrefine(wx.Frame):
                 dict_param = {}
 
         listvals = [] * len(LIST_VALUESPARAMS)
-        for kk, _key in enumerate(LIST_TXTPARAMS):
+        for _, _key in enumerate(LIST_TXTPARAMS):
             if _key in list(dict_param.keys()):
                 listvals.append(dict_param[_key])
             else:
@@ -715,16 +721,18 @@ class MainFrame_indexrefine(wx.Frame):
                     "maxpixdev_filter_peaks_index_refine_calib"]
                 self.referencefiledat_purged = filter_peaks(
                     referencefiledat_init, maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
+                #(calib_fitfilename, npeaks_LT, pixdev_LT,
                 (calib_fitfilename,
-                    npeaks_LT,
-                    pixdev_LT,
+                    _,
+                    _,
                 ) = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
             else:
-                raise ValueError(
-                    "filter_peaks_index_refine_calib=1 without .dat file of peaks used for calibration is no more used in Index_refine()")
+                raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
+                "used for calibration is no more used in Index_refine()")
 
         else:
-            (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image(
+            # (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image
+            (calib_fitfilename, _, _) = index_refine_calib_one_image(
                 self.referencefiledat_purged, filedet=filedet)
 
         self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
@@ -739,8 +747,8 @@ class MainFrame_indexrefine(wx.Frame):
                 os.mkdir(fitfolder)
                 return True
             except IOError:
-                wx.MessageBox(
-                    "Can not create %s to contain peaks list .fit files !" % fitfolder, "Error")
+                wx.MessageBox("Can not create %s to contain peaks list .fit files !" % fitfolder,
+                                                                                        "Error")
                 return False
 
         return True
@@ -791,7 +799,7 @@ class MainFrame_indexrefine(wx.Frame):
         try:
             self.dict_param_list = ISS.readIndexRefineConfigFile(fileirp)
         except IndexError:
-            wx.MessageBox("Can't read properly index_refine config file %s\n" % fileirp, "Error" )
+            wx.MessageBox("Can't read properly index_refine config file %s\n" % fileirp, "Error")
             return
 
         print("dict_param_list in OnStart", self.dict_param_list)
@@ -800,10 +808,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         print("nb_materials loaded", self.nb_of_materials)
 
-        if (
-            not self.fitFolderExists()
-            or not self.corFolderExists()
-            or not self.datFolderExists()):
+        if (not self.fitFolderExists() or not self.corFolderExists() or not self.datFolderExists()):
             print("some folder missing ")
             return
 
@@ -925,7 +930,7 @@ class MainFrame_indexrefine(wx.Frame):
 
                 # read list or single matrix (ces) in GUI field
                 if not guessedMatricesFile.endswith(".ubs"):
-                    nbguesses, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
+                    _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
 
                     print("guessedmatrix", guessedSolutions)
                     Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
@@ -991,7 +996,8 @@ class MainFrame_indexrefine(wx.Frame):
                                                         CCDCalibdict=CCDCalibdict)
 
                 if output_index_fileseries_3 is not None:
-                    dictRes, outputdict_filename = output_index_fileseries_3
+                    # dictRes, outputdict_filename = output_index_fileseries_3
+                    pass
                 else:
                     wx.MessageBox("Indexation and Refinement not completed.\n An error occured during the procedure\n"
                         + "See stdout or terminal window for details.", "INFO")

@@ -27,14 +27,7 @@ import matplotlib
 
 matplotlib.use("WXAgg")
 
-from matplotlib.figure import Figure
-
-from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
-                                                NavigationToolbar2WxAgg as NavigationToolbar)
-
-from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
-from pylab import Rectangle
 
 import numpy as np
 import wx
@@ -144,7 +137,7 @@ class LaueToolsGUImainframe(wx.Frame):
     """
 
     def __init__(self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
-            projectfolder=None, ):
+            projectfolder=None):
 
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
