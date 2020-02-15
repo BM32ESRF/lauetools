@@ -508,15 +508,15 @@ class ViewColorPanel(wx.Panel):
             lineYprofileframe.canvas.draw()
 
     def updateLineProfile(self):
-        print("updateLineProfile")
+        # print("updateLineProfile")
         if self.plotlineprofileframe is not None:
 
             x, zi = self.getlineprofiledata(self.x0, self.y0, self.x2, self.y2)
-            print("x", x)
-            print("xmin=", min(x))
-            print("xmax=", max(x))
-            print("Imin=", min(zi))
-            print("Imax=", max(zi))
+            # print("x", x)
+            # print("xmin=", min(x))
+            # print("xmax=", max(x))
+            # print("Imin=", min(zi))
+            # print("Imax=", max(zi))
             lineprofileframe = self.plotlineprofileframe
 
             lineprofileframe.line.set_data(x, zi)
@@ -2916,6 +2916,9 @@ class MainPeakSearchFrame(wx.Frame):
         savepeaklistbutton = wx.Button(self.panel, 2, "Save PeakListc", size=(-1, 40))
         savepeaklistbutton.Bind(wx.EVT_BUTTON, self.SavePeakList_PSPfile)
 
+        savelistroibtn = wx.Button(self.panel, -1, "Save ROIs from Peaks", size=(-1,50))
+        savelistroibtn.Bind(wx.EVT_BUTTON, self.onSaveROIsList)
+
         quitbutton = wx.Button(self.panel, 3, "Quit", size=(-1, 40))
         quitbutton.Bind(wx.EVT_BUTTON, self.OnQuit)
 
@@ -2953,7 +2956,8 @@ class MainPeakSearchFrame(wx.Frame):
         btnSizer.AddSpacer(60)
         btnSizer.Add(startbutton, 0, wx.ALL, 5)
         btnSizer.Add(savepeaklistbutton, 0, wx.ALL, 5)
-        btnSizer.AddSpacer(60)
+        btnSizer.Add(savelistroibtn, 0, wx.ALL, 5)
+        btnSizer.AddSpacer(15)
         btnSizer.Add(quitbutton, 0, wx.ALL, 5)
 
         btnSizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -3005,6 +3009,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.btnOpenPeakList.SetToolTip(wx.ToolTip("Select and plot peaks contained in .dat or .fit file"))
 
         savepeaklistbutton.SetToolTipString("Save current peaks list in a file (with incremented name)")
+        savelistroibtn.SetToolTipString('Save current peaks list as a list of ROI with current boxsize used in fitparams')
 
         self.page1.SetToolTipString("Guess initial peaks positions for peak refinement by "
         "a basic image thresholding")
@@ -4716,6 +4721,41 @@ class MainPeakSearchFrame(wx.Frame):
         self.peaks_filename = prefix + "_LT"
 
         self.file_index_increment += 1
+
+    def onSaveROIsList(self, _):
+        """
+        save rois list from current peaks list with boxsize of fitting procedure
+        """
+        
+        if self.peaklistPixels is None:
+            wx.MessageBox("Peak list is empty !", "INFO")
+        
+        print("Saving list of rois from peaks")
+        
+        prefix, _ = self.imagefilename.rsplit(".", 1)
+        finalfilename = prefix + "_LT_%d" % self.file_index_increment
+
+        if self.dirname is not None:
+            outputfolder = self.dirname
+        else:
+            outputfolder = self.writefolder
+
+        # halfboxsize for all rois
+        boxsize = int(self.fitparampanel.boxsize.GetValue())
+
+        if len(self.peaklistPixels.shape) == 1:
+            rois = np.array([self.peaklistPixels[0],self.peaklistPixels[1],boxsize])
+        else:
+            nb_of_peaks = self.peaklistPixels.shape[0]
+            boxsizearray = boxsize*np.ones(nb_of_peaks)
+            rois = np.array([self.peaklistPixels[:,0],self.peaklistPixels[:,1],boxsizearray, boxsizearray])
+
+        fullpathlistrois = os.path.join(outputfolder, finalfilename + '.rois')
+        f = open(fullpathlistrois, 'w')
+        np.savetxt(f, rois.T)
+        f.close()
+
+        wx.MessageBox('List of ROIs from peaks saved in %s' % fullpathlistrois,'INFO')
 
     def onFitOnePeak(self, _):
         """
