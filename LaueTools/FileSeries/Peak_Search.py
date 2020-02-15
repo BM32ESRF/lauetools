@@ -34,10 +34,12 @@ else:
 if sys.version_info.major == 3:
     from .. import readmccd as RMCCD
     from .. import dict_LaueTools as DictLT
+    from .. import IOLaueTools as IOLT
 
 else:
     import readmccd as RMCCD
     import dict_LaueTools as DictLT
+    import IOLaueTools as IOLT
 
 dict_CCD = DictLT.dict_CCD
 LIST_OF_CCDS = list(dict_CCD.keys())
@@ -93,20 +95,25 @@ LIST_TXTPARAM_FILE_PS = [
     "Image index step",
     "Background Removal",
     "BlackListed Peaks File",
+    "Selected ROIs File",
     "PeakSearch Parameters File (.psp)",
 ]
 
-TIP_PS = [
-    "Folder containing image files",
+TIP_PS = ["Folder containing image files",
     "Folder containing results Peaks List .dat files",
     "Prefix for peaks list .dat filename prefix####suffix where #### are digits of file index",
     "Image file suffix.",
-    "maximum nb of digits for zero padding of filename index.(e.g. nb of # in prefix####.dat)\n0 for no zero padding.",
+    "maximum nb of digits for zero padding of filename index.(e.g. nb of # in prefix####.dat)\n0 "
+    "for no zero padding.",
     "starting file index (integer)",
     "final file index (integer)",
     "incremental step for file index (integer)",
-    "Background removal type: None, auto (self background) or file path to image B and optionally formula expression separated by ;\ne.g. /home/lauetools/myimageB.mccd;A-3.0*B",
-    "full path to .dat file (as made by peak search procedure) containing peaks to be removed from the list of peaks found in the current image.",
+    "Background removal type: None, auto (self background) or file path to image B and optionally "
+    "formula expression separated by ;\ne.g. /home/lauetools/myimageB.mccd;A-3.0*B",
+    "full path to .dat file (as made by peak search procedure) containing peaks to be removed from "
+    "the list of peaks found in the current image.",
+    "full path to .rois file containing list of pixel centers and boxsizex, boxsizey with the "
+    "simple format in each line for a roi: x y halfboxx halboxy (separated or not by , ; etc...",
     "full path to .psp file containing Peak Search parameters",
 ]
 
@@ -235,10 +242,7 @@ class PeakSearchParameters(wx.Frame):
                         "Error")
                     flag = False
             except ValueError:
-                wx.MessageBox(
-                    "wrong type for %s! (kk=%d) Must be integer"
-                    % (self.list_txtparamIR[kk], kk),
-                    "Error")
+                wx.MessageBox("wrong type for %s! (kk=%d) Must be integer" % (self.list_txtparamIR[kk], kk), "Error")
                 flag = False
 
         # int  = 0 1
@@ -246,14 +250,11 @@ class PeakSearchParameters(wx.Frame):
             try:
                 v = int(val)
                 if v not in (0, 1):
-                    wx.MessageBox(
-                        "%s must be equal to 0 or 1" % self.list_txtparamIR[kk], "Error")
+                    wx.MessageBox("%s must be equal to 0 or 1" % self.list_txtparamIR[kk], "Error")
                     flag = False
             except ValueError:
-                wx.MessageBox(
-                    "wrong type for %s! (kk=%d) Must be integer"
-                    % (self.list_txtparamIR[kk], kk),
-                    "Error")
+                wx.MessageBox("wrong type for %s! (kk=%d) Must be integer"
+                    % (self.list_txtparamIR[kk], kk), "Error")
                 flag = False
 
         #         elif kk == 1:
@@ -269,10 +270,8 @@ class PeakSearchParameters(wx.Frame):
                     wx.MessageBox("%s must be greater than 1" % self.list_txtparamIR[kk], "Error")
                     flag = False
             except ValueError:
-                wx.MessageBox(
-                                "wrong type for %s! (kk=%d) Must be integer"
-                                % (self.list_txtparamIR[kk], kk),
-                                "Error")
+                wx.MessageBox("wrong type for %s! (kk=%d) Must be integer"
+                                % (self.list_txtparamIR[kk], kk), "Error")
                 flag = False
 
         # positive integer > 1
@@ -283,10 +282,8 @@ class PeakSearchParameters(wx.Frame):
                     wx.MessageBox("%s must be >= 1" % self.list_txtparamIR[kk], "Error")
                     flag = False
             except ValueError:
-                wx.MessageBox(
-                                "wrong type for %s! (kk=%d) Must be integer"
-                                % (self.list_txtparamIR[kk], kk),
-                                "Error")
+                wx.MessageBox("wrong type for %s! (kk=%d) Must be integer"
+                                % (self.list_txtparamIR[kk], kk), "Error")
                 flag = False
 
         # positive float
@@ -297,10 +294,8 @@ class PeakSearchParameters(wx.Frame):
                     wx.MessageBox("%s must be positive" % self.list_txtparamIR[kk], "Error")
                     flag = False
             except ValueError:
-                wx.MessageBox(
-                                "wrong type for %s! (kk=%d) Must be float"
-                                % (self.list_txtparamIR[kk], kk),
-                                "Error")
+                wx.MessageBox("wrong type for %s! (kk=%d) Must be float"
+                                % (self.list_txtparamIR[kk], kk), "Error")
                 flag = False
 
         return flag
@@ -351,7 +346,7 @@ class PeakSearchParameters(wx.Frame):
             outputfilename = RMCCD.savePeakSearchConfigFile(self.dict_param, outputfilename=outputfile)
 
             # outputfilename has .psp extension
-            self.parent.list_txtctrl[10].SetValue(outputfilename)
+            self.parent.list_txtctrl[11].SetValue(outputfilename)
 
         self.Close()
 
@@ -424,7 +419,7 @@ class MainFrame_peaksearch(wx.Frame):
                 txt.SetToolTipString(dict_tooltip[txt_elem])
                 self.txtctrl.SetToolTipString(dict_tooltip[txt_elem])
 
-            if kk in (0, 1, 2, 8, 9, 10):
+            if kk in (0, 1, 2, 8, 9, 10, 11):
                 btnbrowse = wx.Button(self.panel, kk + 10, "Browse File/Folder")
                 grid.Add(btnbrowse)
                 if kk == 0:
@@ -447,17 +442,17 @@ class MainFrame_peaksearch(wx.Frame):
                     btnbrowse.SetToolTipString(
                         "Select peak list .dat file to remove peaks from the current peaks list")
                 elif kk == 10:
+                    btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_ROIslistfile)
+                    btnbrowse.SetToolTipString(
+                        "Select ROIs list .rois file to restrict peaksearch in theses regions")
+                elif kk == 11:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_pspfile)
                     btnbrowse.SetToolTipString("Select .psp file containing Peak Search parameters to be applied on all images")
 
             elif kk == 3:
-                self.comboCCD = wx.ComboBox(
-                                            self.panel,
-                                            -1,
-                                            "MARCCD165",
-                                            size=(150,-1),
-                                            choices=self.allMaterialsnames,
-                                            style=wx.CB_READONLY)
+                self.comboCCD = wx.ComboBox(self.panel, -1, "MARCCD165", size=(150, -1),
+                                                                choices=self.allMaterialsnames,
+                                                                style=wx.CB_READONLY)
                 self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
                 grid.Add(self.comboCCD)
             else:
@@ -481,10 +476,8 @@ class MainFrame_peaksearch(wx.Frame):
         txt_cpus = wx.StaticText(self.panel, -1, "nb CPU(s)")
         self.txtctrl_cpus = wx.TextCtrl(self.panel, -1, "1")
 
-        #          bouton START
-        btnStart = wx.Button(
-                            self.panel,
-                            -1,
+        # button START
+        btnStart = wx.Button(self.panel, -1,
                             "START PEAK SEARCH (Peaklist files .dat in OutPutFolder)",
                             size=(300, 50))
 
@@ -508,16 +501,16 @@ class MainFrame_peaksearch(wx.Frame):
         self.Layout()
 
         # tooltips
-        btnStart.SetToolTipString(
-            "Start Peak Search on all images and create a list of peaks (.dat file) for each image")
-        Createcfgbtn.SetToolTipString(
-            "Create .psp file containing parameters to peak search & peak position refinement")
+        btnStart.SetToolTipString("Start Peak Search on all images and create a list of peaks "
+        "(.dat file) for each image")
+        Createcfgbtn.SetToolTipString("Create .psp file containing parameters to peak search & "
+        "peak position refinement")
         tipcpus = "nb of cores to use to find peaks in all images"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
 
     def OnCreatePSP(self, _):
-        filepsp = self.list_txtctrl[10].GetValue()
+        filepsp = self.list_txtctrl[11].GetValue()
         if not os.path.exists(filepsp):
             return
 
@@ -534,12 +527,8 @@ class MainFrame_peaksearch(wx.Frame):
 
         #         print "listvals", listvals
 
-        PSPboard = PeakSearchParameters(
-            self,
-            -1,
-            "PeakSearch Parameters",
-            (LIST_TXTPARAMS, listvals, LIST_UNITSPARAMS),
-        )
+        PSPboard = PeakSearchParameters(self, -1, "PeakSearch Parameters",
+                                                    (LIST_TXTPARAMS, listvals, LIST_UNITSPARAMS))
         PSPboard.Show(True)
 
     def OnbtnBrowse_filepath(self, _):
@@ -565,8 +554,6 @@ class MainFrame_peaksearch(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
 
             abspath = folder.GetPath()
-
-            #             print "folder.GetPath()", abspath
 
             filename = os.path.split(abspath)[-1]
             #             print "filename", filename
@@ -606,22 +593,25 @@ class MainFrame_peaksearch(wx.Frame):
         event.Skip()
 
     def OnbtnBrowse_bkgfile(self, _):
-        bkgfile = wx.FileDialog(
-                                    self,
-                                    "Select background image",
+        bkgfile = wx.FileDialog(self, "Select background image",
                                     wildcard="MARCCD or ROPER file (*.mccd)|*.mccd|All files(*)|*")
         if bkgfile.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[8].SetValue(bkgfile.GetPath())
 
     def OnbtnBrowse_Blacklistfile(self, _):
-        blacklist_datfile = wx.FileDialog(
-                                            self,
-                                            "Select BlackList .dat file image",
+        blacklist_datfile = wx.FileDialog(self, "Select BlackList .dat file image",
                                             wildcard="peaklist file (*.dat)|*.dat|All files(*)|*")
         if blacklist_datfile.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[9].SetValue(blacklist_datfile.GetPath())
+
+    def OnbtnBrowse_ROIslistfile(self, _):
+        ROIslist_file = wx.FileDialog(self, "Select ROIs .rois file image",
+                                            wildcard="ROIs file (*.rois)|*.rois|All files(*)|*")
+        if ROIslist_file.ShowModal() == wx.ID_OK:
+
+            self.list_txtctrl[10].SetValue(ROIslist_file.GetPath())
 
     def OnbtnBrowse_pspfile(self, _):
         pspfile = wx.FileDialog(self,
@@ -629,39 +619,39 @@ class MainFrame_peaksearch(wx.Frame):
             wildcard="PeakSearch Param.(*.psp)|*.psp|All files(*)|*")
         if pspfile.ShowModal() == wx.ID_OK:
 
-            self.list_txtctrl[10].SetValue(pspfile.GetPath())
+            self.list_txtctrl[11].SetValue(pspfile.GetPath())
 
     def Onbtnhelp_filepath(self, _):
-        help_a_remplir = "Folder containing images file"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "Folder containing images file"
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_Nbpicture1(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_Nblastpicture(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_increment(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_filepathout(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_fileprefix(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_filesuffix(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def Onbtnhelp_Nbdigits(self, _):
-        help_a_remplir = "a remplir"
-        self.help.SetValue(str(help_a_remplir))
+        help_tip = "to be filled..."
+        self.help.SetValue(str(help_tip))
 
     def datFolderExists(self):
         datfolder = self.list_txtctrl[1].GetValue()
@@ -687,11 +677,11 @@ class MainFrame_peaksearch(wx.Frame):
         return True
 
     def OnStart(self, _):
-
+        """   read all ctrls and start processing  """
         # read .psp file
-        print("read peak search parameters in:", self.list_txtctrl[10].GetValue())
+        print("read peak search parameters in:", self.list_txtctrl[11].GetValue())
 
-        dict_param = RMCCD.readPeakSearchConfigFile(self.list_txtctrl[10].GetValue())
+        dict_param = RMCCD.readPeakSearchConfigFile(self.list_txtctrl[11].GetValue())
 
         print("Peak Search parameters", dict_param)
 
@@ -706,10 +696,9 @@ class MainFrame_peaksearch(wx.Frame):
         except ValueError:
             wx.MessageBox("indices must be integer", "ERROR")
 
-        if (not (imageindexmin < imageindexmax)
-            or imageindexmin < 0
-            or imageindexmax < 0):
-            wx.MessageBox("Problems with image indices", "ERROR")
+        if (not (imageindexmin < imageindexmax) or imageindexmin < 0 or imageindexmax < 0):
+            wx.MessageBox("Problems with image indices. starting index should be lower "
+                                                                    "than final index", "ERROR")
 
         fileindexrange = (imageindexmin, imageindexmax, stepimage)
 
@@ -731,29 +720,28 @@ class MainFrame_peaksearch(wx.Frame):
         # setting folders for the next analysis steps
 
         if self.parent is not None:
-            #         import Index_Refine as IR
-            object_to_set = self.parent  # IR
+            parent = self.parent  # IR
 
-            print("object_to_set.initialparameters", object_to_set.initialparameters)
+            print("parent.initialparameters", parent.initialparameters)
 
-            object_to_set.initialparameters["ImageFolder"] = dirname_in
-            object_to_set.initialparameters["Output Folder (Peaklist)"] = dirname_out
-            object_to_set.initialparameters["ImageFilename Prefix"] = filenameprefix
-            object_to_set.initialparameters["ImageFilename Suffix"] = suffix
+            parent.initialparameters["ImageFolder"] = dirname_in
+            parent.initialparameters["Output Folder (Peaklist)"] = dirname_out
+            parent.initialparameters["ImageFilename Prefix"] = filenameprefix
+            parent.initialparameters["ImageFilename Suffix"] = suffix
 
-            object_to_set.initialparameters["PeakList Folder"] = dirname_out
-            object_to_set.initialparameters["IndexRefine PeakList Folder"] = os.path.join(os.path.dirname(dirname_out), "fitfiles")
-            object_to_set.initialparameters["PeakListCor Folder"] = os.path.join(os.path.dirname(dirname_out), "corfiles")
-            object_to_set.initialparameters["PeakList Filename Prefix"] = filenameprefix
-            object_to_set.initialparameters["IndexRefine Parameters File"] = os.path.join(os.path.dirname(dirname_out), "None")
-            object_to_set.initialparameters["Detector Calibration File .det"] = os.path.join(os.path.dirname(dirname_out), "None")
-            object_to_set.initialparameters["Detector Calibration File (.dat)"] = os.path.join(os.path.dirname(dirname_out), "None")
-            object_to_set.initialparameters["PeakList Filename Suffix"] = ".dat"
+            parent.initialparameters["PeakList Folder"] = dirname_out
+            parent.initialparameters["IndexRefine PeakList Folder"] = os.path.join(os.path.dirname(dirname_out), "fitfiles")
+            parent.initialparameters["PeakListCor Folder"] = os.path.join(os.path.dirname(dirname_out), "corfiles")
+            parent.initialparameters["PeakList Filename Prefix"] = filenameprefix
+            parent.initialparameters["IndexRefine Parameters File"] = os.path.join(os.path.dirname(dirname_out), "None")
+            parent.initialparameters["Detector Calibration File .det"] = os.path.join(os.path.dirname(dirname_out), "None")
+            parent.initialparameters["Detector Calibration File (.dat)"] = os.path.join(os.path.dirname(dirname_out), "None")
+            parent.initialparameters["PeakList Filename Suffix"] = ".dat"
 
-            object_to_set.initialparameters["startingindex"] = imageindexmin
-            object_to_set.initialparameters["finalindex"] = imageindexmax
-            object_to_set.initialparameters["nbdigits"] = nbdigits_resultfiles
-            object_to_set.initialparameters["stepindex"] = stepimage
+            parent.initialparameters["startingindex"] = imageindexmin
+            parent.initialparameters["finalindex"] = imageindexmax
+            parent.initialparameters["nbdigits"] = nbdigits_resultfiles
+            parent.initialparameters["stepindex"] = stepimage
 
         #        progressMax = 100
         #        dialog = wx.ProgressDialog("A progress box", "Time remaining", progressMax,
@@ -775,7 +763,18 @@ class MainFrame_peaksearch(wx.Frame):
 
         # set parameter  for blacklisted peaks
         blacklistpeaklist = self.list_txtctrl[9].GetValue()
-        dict_param["Remove_BlackListedPeaks_fromfile"] = RMCCD.read_blacklist_filepath(blacklistpeaklist)
+        dict_param["Remove_BlackListedPeaks_fromfile"] = RMCCD.set_blacklist_filepath(blacklistpeaklist)
+
+        # set parameter  for blacklisted peaks
+        ROIslistfile = self.list_txtctrl[10].GetValue()
+        
+        pathroisfile = RMCCD.set_rois_file(ROIslistfile)
+        if pathroisfile:
+            dict_param["listrois"] = IOLT.read_roisfile(pathroisfile)
+        else:
+            dict_param["listrois"] = None
+
+
         try:
             nb_cpus = int(self.txtctrl_cpus.GetValue())
         except ValueError:
@@ -787,31 +786,28 @@ class MainFrame_peaksearch(wx.Frame):
 
         # check the first imagefile to read:
         #         print "dict_param in file series", dict_param
+
+        # dict_param['listrois']=[(723,1530,35,35),(723,1530,5,5),(723,1538,7,7),(673,1769,15,41),]
+        # dict_param['IntensityThreshold']=1000
         if nb_cpus == 1:
-            RMCCD.peaksearch_fileseries(
-                fileindexrange,
-                filenameprefix,
-                suffix=suffix,
-                nbdigits=nbdigits,
-                dirname_in=dirname_in,
-                outputname=None,
-                dirname_out=dirname_out,
-                CCDLABEL=self.CCDlabel,
-                KF_DIRECTION="Z>0",
-                dictPeakSearch=dict_param)
+            RMCCD.peaksearch_fileseries(fileindexrange, filenameprefix, suffix=suffix,
+                                                                        nbdigits=nbdigits,
+                                                                        dirname_in=dirname_in,
+                                                                        outputname=None,
+                                                                        dirname_out=dirname_out,
+                                                                        CCDLABEL=self.CCDlabel,
+                                                                        KF_DIRECTION="Z>0",
+                                                                        dictPeakSearch=dict_param)
         else:
-            RMCCD.peaksearch_multiprocessing(
-                fileindexrange,
-                filenameprefix,
-                suffix=suffix,
-                nbdigits=nbdigits,
-                dirname_in=dirname_in,
-                outputname=None,
-                dirname_out=dirname_out,
-                CCDLABEL=self.CCDlabel,
-                KF_DIRECTION="Z>0",
-                dictPeakSearch=dict_param,
-                nb_of_cpu=nb_cpus)
+            RMCCD.peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix=suffix,
+                                                                        nbdigits=nbdigits,
+                                                                        dirname_in=dirname_in,
+                                                                        outputname=None,
+                                                                        dirname_out=dirname_out,
+                                                                        CCDLABEL=self.CCDlabel,
+                                                                        KF_DIRECTION="Z>0",
+                                                                        dictPeakSearch=dict_param,
+                                                                        nb_of_cpu=nb_cpus)
 
 def start():
     LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
@@ -831,29 +827,27 @@ def start():
     initialparameters["CCDLabel"] = "MARCCD165"
     initialparameters["BackgroundRemoval"] = "auto"
     initialparameters["BlackListed Peaks File"] = None
+    initialparameters["Selected ROIs File"] = None
 
-    list_valueparamPS = [
-        initialparameters["ImageFolder"],
-        initialparameters["Output Folder (Peaklist)"],
-        initialparameters["ImageFilename Prefix"],
-        initialparameters["ImageFilename Suffix"],
-        4,
-        0,
-        5,
-        1,
-        initialparameters["BackgroundRemoval"],
-        initialparameters["BlackListed Peaks File"],
-        initialparameters["PeakSearch Parameters File"]]
+    list_valueparamPS = [initialparameters["ImageFolder"],
+                        initialparameters["Output Folder (Peaklist)"],
+                        initialparameters["ImageFilename Prefix"],
+                        initialparameters["ImageFilename Suffix"],
+                        4, 0, 5, 1,
+                        initialparameters["BackgroundRemoval"],
+                        initialparameters["BlackListed Peaks File"],
+                        initialparameters["Selected ROIs File"],
+                        initialparameters["PeakSearch Parameters File"]]
 
 
     Stock_PS = Stock_parameters_PeakSearch(LIST_TXTPARAM_FILE_PS, list_valueparamPS)
 
     PeakSearchSeriesApp = wx.App()
-    PeakSearchSeries = MainFrame_peaksearch(
-        None, -1, "Peak Search Parameters Board", initialparameters, Stock_PS)
+    PeakSearchSeries = MainFrame_peaksearch(None, -1, "Peak Search Parameters Board",
+                                                                        initialparameters, Stock_PS)
     PeakSearchSeries.Show()
     PeakSearchSeriesApp.MainLoop()
-        
+
     # LaueToolsGUIApp = wx.App()
     # LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
     #                                         projectfolder=LaueToolsProjectFolder)

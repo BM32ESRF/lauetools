@@ -6,10 +6,11 @@ Created on Wed Jun 26 12:23:40 2013
 
 from initially T. Cerba
 
-Revised May 2019
+Revised February 2020
 """
 import sys
 import os
+import math
 
 sys.path.append("..")
 
@@ -67,21 +68,19 @@ LIST_VALUESPARAMS = ["Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
 
 LIST_UNITSPARAMS = ISS.LIST_OPTIONS_TYPE_INDEXREFINE[1:]
 
-LIST_TXTPARAM_FILE_INDEXREFINE = [
-    "Peak List .dat Folder",
-    "Peak List (Output) .cor Folder",
-    "Peak List (Output) .fit Folder",
-    "PeakList Filename (for prefix)",
-    "PeakList Filename Suffix",
-    "Nbdigits in index filename",
-    "Starting Image index",
-    "Final Image index",
-    "Image index step",
-    "Detector Calibration File (.det)",
-    "Guessed Matrix(ces) (.mat,.mats,.ubs)",
-    "Minimum Matching Rate",
-    "IndexRefine Parameters File (.irp)",
-]
+LIST_TXTPARAM_FILE_INDEXREFINE = ["Peak List .dat Folder",
+                                "Peak List (Output) .cor Folder",
+                                "Peak List (Output) .fit Folder",
+                                "PeakList Filename (for prefix)",
+                                "PeakList Filename Suffix",
+                                "Nbdigits in index filename",
+                                "Start Image index or List indices File",
+                                "Final Image index",
+                                "Image index step",
+                                "Detector Calibration File (.det)",
+                                "Guessed Matrix(ces) (.mat,.mats,.ubs)",
+                                "Minimum Matching Rate",
+                                "IndexRefine Parameters File (.irp)"]
 
 TIP_IR = [
     "Folder containing indexed Peaks List .dat files",
@@ -90,7 +89,7 @@ TIP_IR = [
     "Prefix for .fit files filename prefix####suffix where #### are digits of file index",
     'peak list filename suffix. ".dat" or ".cor"',
     "maximum nb of digits for zero padding of filename index.(e.g. nb of # in prefix####.dat)\n0 for no zero padding.",
-    "starting file index (integer)",
+    "starting file index (integer) or full path (str) to a file with list of file indices",
     "final file index (integer)",
     "incremental step file index (integer)",
     "full path to detector calibration .det file containing detector plane position and angles parameters\nNot used if PeakList Filename Suffix is .cor",
@@ -320,9 +319,6 @@ class PageMaterialPanel(wx.Panel):
 
         nbrows = len(self.list_txtparamIR)
 
-        #        wx.Frame.__init__(self, None, -1, title,
-        #                          wx.DefaultPosition, wx.Size(500, nbrows * 40))
-
         self.tooltips()
         if WXPYTHON4:
             grid = wx.FlexGridSizer(3, 10, 10)
@@ -388,8 +384,7 @@ class PageMaterialPanel(wx.Panel):
                 v = int(val)
             except ValueError:
                 wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be integer"
-                    % self.list_txtparamIR[kk],
-                    "Error")
+                    % self.list_txtparamIR[kk], "Error")
                 flag = False
 
         if kk == 12:
@@ -400,10 +395,8 @@ class PageMaterialPanel(wx.Panel):
                 print("vals", vals)
                 # h, k, l = vals
             except:
-                wx.MessageBox(
-                    "Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be list of 3 integers"
-                    % self.list_txtparamIR[kk],
-                    "Error")
+                wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must "
+                    "be list of 3 integers" % self.list_txtparamIR[kk], "Error")
                 flag = False
 
         return flag
@@ -490,34 +483,33 @@ class MainFrame_indexrefine(wx.Frame):
                 txt.SetToolTipString(dict_tooltip[txt_elem])
                 self.txtctrl.SetToolTipString(dict_tooltip[txt_elem])
 
-            if kk in (0, 1, 2, 3, 9, 10, 12):
-                btnbrowse = wx.Button(self.panel, -1, "Browse")
+            if kk in (0, 1, 2, 3, 6, 9, 10, 12):
+                btnbrowse = wx.Button(self.panel, -1, "browse")
                 grid.Add(btnbrowse)
                 if kk == 0:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepathdat)
                     btnbrowse.SetToolTipString("Select Folder containing .dat files")
                 elif kk == 1:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepathout_cor)
-                    btnbrowse.SetToolTipString(
-                        "Select Folder containing (results or input) .cor files"
-                    )
+                    btnbrowse.SetToolTipString("Select Folder containing (results or input) .cor files")
                 elif kk == 2:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepathout_fit)
-                    btnbrowse.SetToolTipString(
-                        "Select Folder containing indexed peaks list results .fit files"
-                    )
+                    btnbrowse.SetToolTipString("Select Folder containing indexed peaks list results .fit files")
                 elif kk == 3:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filedat)
-                    btnbrowse.SetToolTipString(
-                        "Select one .dat or .cor file to get (and guess) the generic prefix of all peaks list filenames")
+                    btnbrowse.SetToolTipString("Select one .dat or .cor file to get (and guess) "
+                                                "the generic prefix of all peaks list filenames")
+                elif kk == 6:
+                    btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filelistindices)
+                    btnbrowse.SetToolTipString("Select a file with list of image indices to be analysed")
                 elif kk == 9:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filedet)
                     btnbrowse.SetToolTipString(
                         "Select detector calibration parameters .det file")
                 elif kk == 10:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_matsfile)
-                    btnbrowse.SetToolTipString(
-                        "Select list of guessed UB matrices or check orientation parameters (.mat,.mats or .ubs) file")
+                    btnbrowse.SetToolTipString("Select list of guessed UB matrices or check "
+                    "orientation parameters (.mat,.mats or .ubs) file")
                 elif kk == 12:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_irpfile)
                     btnbrowse.SetToolTipString("Select index and refine .irp file")
@@ -615,30 +607,42 @@ class MainFrame_indexrefine(wx.Frame):
 
             self.list_txtctrl[1].SetValue(folder.GetPath())
 
+    def OnbtnBrowse_filelistindices(self, _):
+        print("OnbtnBrowse_filelistindices")
+
+        listinndfile = wx.FileDialog(self, "Select file with list of image index (integers)",
+                wildcard="All files(*)|*")
+        if listinndfile.ShowModal() == wx.ID_OK:
+
+            self.list_txtctrl[6].SetValue(listinndfile.GetPath())
+            self.list_txtctrl[7].SetValue('None')
+            self.list_txtctrl[8].SetValue('None')
+
     def OnbtnBrowse_filedat(self, _):
-        folder = wx.FileDialog(
-            self,
-            "Select Peaklist File .dat (or .cor)",
-            wildcard="PeakList (*.dat)|*.dat|PeakList (*.cor)|*.cor|All files(*)|*")
+        folder = wx.FileDialog(self, "Select Peaklist File .dat (or .cor)",
+                        wildcard="PeakList (*.dat)|*.dat|PeakList (*.cor)|*.cor|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
 
             abspath = folder.GetPath()
 
-            #             print "folder.GetPath()", abspath
-
             filename = os.path.split(abspath)[-1]
-            #             print "filename", filename
             intension, extension = filename.split(".")
 
             self.list_txtctrl[4].SetValue("." + extension)
 
-            nbdigits = int(self.list_txtctrl[5].GetValue())
-            self.list_txtctrl[3].SetValue(intension[:-nbdigits])
+            nbdigits = self.getnbdigits()
+            self.list_txtctrl[3].SetValue(intension[: -nbdigits])
+            
+    def getnbdigits(self):
+        try:
+            val = int(self.list_txtctrl[5].GetValue())
+            testpos = math.sqrt(val)
+        except ValueError:
+            wx.MessageBox("nb of digits in filename must be a positive integer! Please check the "
+                                                                    "corresponding field!", "Info")
 
     def OnbtnBrowse_filedet(self, _):
-        folder = wx.FileDialog(
-                                self,
-                                "Select CCD Calibration Parameters file .det",
+        folder = wx.FileDialog(self, "Select CCD Calibration Parameters file .det",
                                 wildcard="Detector Parameters File (*.det)|*.det|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -654,10 +658,8 @@ class MainFrame_indexrefine(wx.Frame):
     def OnbtnBrowse_matsfile(self, _):
         print("OnbtnBrowse_matsfile")
 
-        matsfile = wx.FileDialog(
-                    self,
-                    "Select Guessed Matrices File or check orientation parameters file (.ubs)",
-                    wildcard="Guessed Matrices (*.mat;*.mats;*.ubs)|*.mat;*.mats;*.ubs|All files(*)|*")
+        matsfile = wx.FileDialog(self, "Select Guessed Matrices File or check orientation parameters file (.ubs)",
+                wildcard="Guessed Matrices (*.mat;*.mats;*.ubs)|*.mat;*.mats;*.ubs|All files(*)|*")
         if matsfile.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[10].SetValue(matsfile.GetPath())
@@ -665,9 +667,7 @@ class MainFrame_indexrefine(wx.Frame):
     def OnbtnBrowse_irpfile(self, _):
         print("OnbtnBrowse_irpfile")
 
-        irpfile = wx.FileDialog(
-                                self,
-                                "Select Index Refine Parameters File",
+        irpfile = wx.FileDialog(self, "Select Index Refine Parameters File",
                                 wildcard="Index Refine Param.(*.irp)|*.irp|All files(*)|*")
         if irpfile.ShowModal() == wx.ID_OK:
 
@@ -697,12 +697,7 @@ class MainFrame_indexrefine(wx.Frame):
             else:
                 listvals.append(None)
 
-        #        print "listvals", listvals
-
-        IRPboard = IndexRefineParameters(
-                                        self,
-                                        -1,
-                                        "Index and Refine Parameters",
+        IRPboard = IndexRefineParameters(self, -1, "Index and Refine Parameters",
                                         (LIST_TXTPARAMS, LIST_VALUESPARAMS, LIST_UNITSPARAMS))
         IRPboard.Show(True)
 
@@ -815,215 +810,232 @@ class MainFrame_indexrefine(wx.Frame):
         fileprefix = self.list_txtctrl[3].GetValue()
         filesuffix = self.list_txtctrl[4].GetValue()
 
-        nbdigits_filename = int(self.list_txtctrl[5].GetValue())
+        nbdigits_filename = self.getnbdigits()
 
-        if 0:  # odile's way
-            # refine calibration
-            self.calcCalibrationfitFile()
-            filefitcalib = self.initialparameters["CCDcalibrationReference .fit file"]
-            # TODO correct multigrain to use os.path.join
-            filepathout = self.list_txtctrl[2].GetValue() + "/"
+        # if 0:  # odile's way
+        #     # refine calibration
+        #     self.calcCalibrationfitFile()
+        #     filefitcalib = self.initialparameters["CCDcalibrationReference .fit file"]
+        #     # TODO correct multigrain to use os.path.join
+        #     filepathout = self.list_txtctrl[2].GetValue() + "/"
 
-            # TODO correct multigrain to use os.path.join
-            filepathdat = self.list_txtctrl[0].GetValue() + "/"
+        #     # TODO correct multigrain to use os.path.join
+        #     filepathdat = self.list_txtctrl[0].GetValue() + "/"
 
-            indimg = list(range(int(self.list_txtctrl[6].GetValue()),
-                    int(self.list_txtctrl[7].GetValue()) + 1,
-                    int(self.list_txtctrl[8].GetValue())))
+        #     indimg = list(range(int(self.list_txtctrl[6].GetValue()),
+        #             int(self.list_txtctrl[7].GetValue()) + 1,
+        #             int(self.list_txtctrl[8].GetValue())))
 
-            serial_index_refine_multigrain(
-                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
+        #     serial_index_refine_multigrain(
+        #         filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
 
-            serial_index_refine_multigrain_v2(
-                filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
+        #     serial_index_refine_multigrain_v2(
+        #         filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
 
-        if 1:  # Lauetools ISS way
 
-            filepathdat = self.list_txtctrl[0].GetValue()
-            filepathcor = self.list_txtctrl[1].GetValue()
-            filepathout = self.list_txtctrl[2].GetValue()
+        filepathdat = self.list_txtctrl[0].GetValue()
+        filepathcor = self.list_txtctrl[1].GetValue()
+        filepathout = self.list_txtctrl[2].GetValue()
 
-            print("filepathcor", filepathcor)
-            print("filepathout", filepathout)
+        print("filepathcor", filepathcor)
+        print("filepathout", filepathout)
 
-            filedet = self.list_txtctrl[9].GetValue()
+        filedet = self.list_txtctrl[9].GetValue()
 
-            # checking if at least one peak list filename with prefix exist
-            listfiles = os.listdir(filepathdat)
-            #             print "listfiles", listfiles
-            nbfiles = len(listfiles)
-            print("nb of files", nbfiles)
-            if nbfiles == 0:
-                wx.MessageBox("Apparently the folder %s is empty!" % filepathdat, "ERROR")
-                return
+        # checking if at least one peak list filename with prefix exist
+        listfiles = os.listdir(filepathdat)
+        #             print "listfiles", listfiles
+        nbfiles = len(listfiles)
+        print("nb of files in directory %s   : "%filepathdat, nbfiles)
+        if nbfiles == 0:
+            wx.MessageBox("Apparently the folder %s is empty!" % filepathdat, "ERROR")
+            return
 
-            indexfile = 0
-            FileNotFound = True
-            while FileNotFound:
-                if listfiles[indexfile].endswith(filesuffix):
-                    #                     print listfiles[indexfile]
-                    if listfiles[indexfile].startswith(fileprefix):
-                        break
-                if indexfile == nbfiles - 1:
-                    wx.MessageBox("No peaklist filename %s starting with\n%s\nin folder\n%s"
-                        % (filesuffix, fileprefix, filepathdat),
-                        "ERROR")
-                    FileNotFound = False
-                indexfile += 1
+        indexfile = 0
+        FileNotFound = True
+        while FileNotFound:
+            if listfiles[indexfile].endswith(filesuffix):
+                #                     print listfiles[indexfile]
+                if listfiles[indexfile].startswith(fileprefix):
+                    break
+            if indexfile == nbfiles - 1:
+                wx.MessageBox("No peaklist filename %s starting with\n%s\nin folder\n%s"
+                    % (filesuffix, fileprefix, filepathdat),
+                    "ERROR")
+                FileNotFound = False
+            indexfile += 1
 
-            # at least one file has been found
-            if not FileNotFound:
-                return
+        # at least one file has been found
+        if not FileNotFound:
+            return
 
-            #             CCDparams, calibmatrix = IOLT.readfile_det(filedet, nbCCDparameters=8)
+        CCDCalibdict = None
+        if filesuffix in ('.dat',):
+            CCDCalibdict = IOLT.readCalib_det_file(filedet)
 
-            CCDCalibdict = None
-            if filesuffix in ('.dat',):
-                CCDCalibdict = IOLT.readCalib_det_file(filedet)
+        Index_Refine_Parameters_dict = {}
 
-            Index_Refine_Parameters_dict = {}
+        #             Index_Refine_Parameters_dict['CCDCalibParameters'] = CCDparams[:5]
+        #             Index_Refine_Parameters_dict['pixelsize'] = CCDparams[5]
+        #             Index_Refine_Parameters_dict['framedim'] = CCDparams[6:8]
+        #             Index_Refine_Parameters_dict['detectordiameter'] = max(CCDparams[6:8]) * CCDparams[5]
+        #             Index_Refine_Parameters_dict['kf_direction'] = DEFAULT_KF_DIRECTION
 
-            #             Index_Refine_Parameters_dict['CCDCalibParameters'] = CCDparams[:5]
-            #             Index_Refine_Parameters_dict['pixelsize'] = CCDparams[5]
-            #             Index_Refine_Parameters_dict['framedim'] = CCDparams[6:8]
-            #             Index_Refine_Parameters_dict['detectordiameter'] = max(CCDparams[6:8]) * CCDparams[5]
-            #             Index_Refine_Parameters_dict['kf_direction'] = DEFAULT_KF_DIRECTION
+        Index_Refine_Parameters_dict["CCDCalibdict"] = CCDCalibdict
+        Index_Refine_Parameters_dict["PeakList Folder"] = filepathdat
+        Index_Refine_Parameters_dict["PeakListCor Folder"] = filepathcor
+        Index_Refine_Parameters_dict["nbdigits"] = nbdigits_filename
+        Index_Refine_Parameters_dict["prefixfilename"] = fileprefix
+        Index_Refine_Parameters_dict["suffixfilename"] = filesuffix
+        Index_Refine_Parameters_dict["prefixdictResname"] = fileprefix + "_dict_"
 
-            Index_Refine_Parameters_dict["CCDCalibdict"] = CCDCalibdict
-            Index_Refine_Parameters_dict["PeakList Folder"] = filepathdat
-            Index_Refine_Parameters_dict["PeakListCor Folder"] = filepathcor
-            Index_Refine_Parameters_dict["nbdigits"] = nbdigits_filename
-            Index_Refine_Parameters_dict["prefixfilename"] = fileprefix
-            Index_Refine_Parameters_dict["suffixfilename"] = filesuffix
-            Index_Refine_Parameters_dict["prefixdictResname"] = fileprefix + "_dict_"
+        Index_Refine_Parameters_dict["PeakListFit Folder"] = filepathout
+        Index_Refine_Parameters_dict["Results Folder"] = filepathout
 
-            Index_Refine_Parameters_dict["PeakListFit Folder"] = filepathout
-            Index_Refine_Parameters_dict["Results Folder"] = filepathout
+        Index_Refine_Parameters_dict["dict params list"] = self.dict_param_list
 
-            Index_Refine_Parameters_dict["dict params list"] = self.dict_param_list
-
+        startindexstr = self.list_txtctrl[6].GetValue()
+        enable_finalandstepindex = True
+        if startindexstr.startswith(('[', '(', '{')):
+            print('startindex is a list of indices.')
+            startindex = startindexstr
+            enable_finalandstepindex = False
+        elif startindexstr[0] in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'):
+            print('startindex is an integer')
             try:
-                startindex = int(self.list_txtctrl[6].GetValue())
+                startindex = int(startindexstr)
+            except ValueError:
+                wx.MessageBox("You should enter a single integer value for startindex", "ERROR")
+                return
+        else:
+            print("startindex is a path (str) to a file with all indices")
+            startindex = startindexstr
+            enable_finalandstepindex = False
+
+        if enable_finalandstepindex:
+            try:
                 finalindex = int(self.list_txtctrl[7].GetValue())
                 stepindex = int(self.list_txtctrl[8].GetValue())
-            except:
-                wx.MessageBox("You should enter integer values for images index fields", "ERROR")
-                return
-
-            fileindexrange = (startindex, finalindex, stepindex)
-
-            use_previous_results = self.previousreschk.GetValue()
-            reanalyse = self.chck_renanalyse.GetValue()
-            updatefitfiles = self.updatefitfiles.GetValue()
-
-            # read file containing guessed UB matrix or params to check orientation in .ubs file to check potential matching --------------
-            # before doing (maybe long) indexation from scratch
-            guessedMatricesFile = str(self.list_txtctrl[10].GetValue())
-            print("guessedMatricesFile", guessedMatricesFile)
-            # -----------------------------------------------------------------------
-
-            # corresponding minimum matching rate -----------------------------------------------
-            MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
-            print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
-            if guessedMatricesFile not in ("None", "none"):
-                print("Reading general file for guessed UB solutions")
-
-                # read list or single matrix (ces) in GUI field
-                if not guessedMatricesFile.endswith(".ubs"):
-                    _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
-
-                    print("guessedmatrix", guessedSolutions)
-                    Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
-                # read .ubs file
-                else:
-                    Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
-
-                Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
-            elif updatefitfiles:
-                Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
-            else:
-                # we are sure to be less than that!
-                Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
-            # ----------------------------------------------------------------------
-
-            if self.parent is not None:
-                object_to_set = self.parent  # IR
-
-                print("object_to_set.initialparameters", object_to_set.initialparameters)
-
-                object_to_set.initialparameters["IndexRefine PeakList Folder"] = filepathout
-                object_to_set.initialparameters["file xyz"] = "None"
-                object_to_set.initialparameters["IndexRefine PeakList Prefix"] = fileprefix
-                object_to_set.initialparameters["IndexRefine PeakList Suffix"] = ".fit"
-                object_to_set.initialparameters["stiffness file"] = None
-                object_to_set.initialparameters["Map shape"] = (0, 0)
-                object_to_set.initialparameters["fast axis: x or y"] = "x"
-                object_to_set.initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
-
-                object_to_set.initialparameters["startingindex"] = startindex
-                object_to_set.initialparameters["finalindex"] = finalindex
-                object_to_set.initialparameters["nbdigits"] = nbdigits_filename
-                object_to_set.initialparameters["stepindex"] = stepindex
-
-            print("start indexing multifiles")
-            #NB_MATERIALS = 2
-
-            NB_MATERIALS = len(self.dict_param_list)
-
-            print('self.dict_param_list',self.dict_param_list)
-
-            try:
-                nb_cpus = int(self.txtctrl_cpus.GetValue())
             except ValueError:
-                wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
+                wx.MessageBox("You should enter integer values for finalindex and stepindex fields", "ERROR")
                 return
-            if nb_cpus <= 0:
-                wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
-                return
+        else:
+            finalindex = None
+            stepindex = None
 
-            flagcompleted = True
-            if nb_cpus == 1:
-                output_index_fileseries_3 = ISS.index_fileseries_3(fileindexrange,
-                                                        Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                                                        saveObject=0,
-                                                        verbose=0,
-                                                        nb_materials=NB_MATERIALS,
-                                                        build_hdf5=True,
-                                                        prefixfortitle=fileprefix,
-                                                        reanalyse=reanalyse,
-                                                        use_previous_results=use_previous_results,
-                                                        updatefitfiles=updatefitfiles,
-                                                        CCDCalibdict=CCDCalibdict)
+        fileindexrange = (startindex, finalindex, stepindex)
 
-                if output_index_fileseries_3 is not None:
-                    # dictRes, outputdict_filename = output_index_fileseries_3
-                    pass
-                else:
-                    wx.MessageBox("Indexation and Refinement not completed.\n An error occured during the procedure\n"
-                        + "See stdout or terminal window for details.", "INFO")
+        use_previous_results = self.previousreschk.GetValue()
+        reanalyse = self.chck_renanalyse.GetValue()
+        updatefitfiles = self.updatefitfiles.GetValue()
 
-            elif nb_cpus > 1:
-                print("Using %d processors" % nb_cpus)
-                flagcompleted = ISS.indexing_multiprocessing(fileindexrange,
-                                            dirname_dictRes=filepathout,
-                                            Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                                            saveObject=0,
-                                            verbose=0,
-                                            nb_materials=NB_MATERIALS,
-                                            nb_of_cpu=nb_cpus,
-                                            build_hdf5=True,
-                                            prefixfortitle=fileprefix,
-                                            reanalyse=reanalyse,
-                                            use_previous_results=use_previous_results,
-                                            updatefitfiles=updatefitfiles,
-                                            CCDCalibdict=CCDCalibdict)
+        # read file containing guessed UB matrix or params to check orientation in .ubs file to check potential matching --------------
+        # before doing (maybe long) indexation from scratch
+        guessedMatricesFile = str(self.list_txtctrl[10].GetValue())
+        print("guessedMatricesFile", guessedMatricesFile)
+        # -----------------------------------------------------------------------
 
-                print("flagcompleted", flagcompleted)
-                if not flagcompleted:
-                    print("\n\n ****** \nIndexation and Refinement not completed\n***********\n\n")
-                wx.MessageBox(
-                    "Indexation and Refinement not completed.\n Check the prefixfilename of .dat file! Launch the task with only one CPU",
-                    "INFO")
+        # corresponding minimum matching rate -----------------------------------------------
+        MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
+        print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
+        if guessedMatricesFile not in ("None", "none"):
+            print("Reading general file for guessed UB solutions")
+
+            # read list or single matrix (ces) in GUI field
+            if not guessedMatricesFile.endswith(".ubs"):
+                _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
+
+                print("guessedmatrix", guessedSolutions)
+                Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
+            # read .ubs file
+            else:
+                Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
+
+            Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
+        elif updatefitfiles:
+            Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
+        else:
+            # we are sure to be less than that!
+            Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
+        # ----------------------------------------------------------------------
+
+        if self.parent is not None:
+            object_to_set = self.parent  # IR
+
+            print("object_to_set.initialparameters", object_to_set.initialparameters)
+
+            object_to_set.initialparameters["IndexRefine PeakList Folder"] = filepathout
+            object_to_set.initialparameters["file xyz"] = "None"
+            object_to_set.initialparameters["IndexRefine PeakList Prefix"] = fileprefix
+            object_to_set.initialparameters["IndexRefine PeakList Suffix"] = ".fit"
+            object_to_set.initialparameters["stiffness file"] = None
+            object_to_set.initialparameters["Map shape"] = (0, 0)
+            object_to_set.initialparameters["fast axis: x or y"] = "x"
+            object_to_set.initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
+
+            object_to_set.initialparameters["startingindex"] = startindex
+            object_to_set.initialparameters["finalindex"] = finalindex
+            object_to_set.initialparameters["nbdigits"] = nbdigits_filename
+            object_to_set.initialparameters["stepindex"] = stepindex
+
+        print("start indexing multifiles")
+        #NB_MATERIALS = 2
+
+        NB_MATERIALS = len(self.dict_param_list)
+
+        print('self.dict_param_list', self.dict_param_list)
+
+        try:
+            nb_cpus = int(self.txtctrl_cpus.GetValue())
+        except ValueError:
+            wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
+            return
+        if nb_cpus <= 0:
+            wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
+            return
+
+        flagcompleted = True
+        if nb_cpus == 1:
+            output_index_fileseries_3 = ISS.index_fileseries_3(fileindexrange,
+                                    Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
+                                    saveObject=0,
+                                    verbose=0,
+                                    nb_materials=NB_MATERIALS,
+                                    build_hdf5=True,
+                                    prefixfortitle=fileprefix,
+                                    reanalyse=reanalyse,
+                                    use_previous_results=use_previous_results,
+                                    updatefitfiles=updatefitfiles,
+                                    CCDCalibdict=CCDCalibdict)
+
+            if output_index_fileseries_3 is not None:
+                # dictRes, outputdict_filename = output_index_fileseries_3
+                pass
+            else:
+                wx.MessageBox("Indexation and Refinement not completed.\n An error occured "
+                    "during the procedure\n" + "See stdout or terminal window for details.", "INFO")
+
+        elif nb_cpus > 1:
+            print("Using %d processors" % nb_cpus)
+            flagcompleted = ISS.indexing_multiprocessing(fileindexrange,
+                                        dirname_dictRes=filepathout,
+                                        Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
+                                        saveObject=0,
+                                        verbose=0,
+                                        nb_materials=NB_MATERIALS,
+                                        nb_of_cpu=nb_cpus,
+                                        build_hdf5=True,
+                                        prefixfortitle=fileprefix,
+                                        reanalyse=reanalyse,
+                                        use_previous_results=use_previous_results,
+                                        updatefitfiles=updatefitfiles,
+                                        CCDCalibdict=CCDCalibdict)
+
+            print("flagcompleted", flagcompleted)
+            if not flagcompleted:
+                print("\n\n ****** \nIndexation and Refinement not completed\n***********\n\n")
+            wx.MessageBox("Indexation and Refinement not completed.\n Check the prefixfilename "
+                "of .dat file! Launch the task with only one CPU", "INFO")
 
         return
 
@@ -1051,8 +1063,6 @@ def fill_list_valueparamIR(initialparameters):
 
 # default values for the fields appearing in the Index_Refine.py GUI
 initialparameters = {}
-
-
 
 MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
 

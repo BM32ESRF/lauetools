@@ -1111,8 +1111,6 @@ def read3linesasMatrix(fileobject):
     for i in list(range(3)):
         line = fileobject.readline()
 
-        #         lineval = line.rstrip('\n').replace('[', '').replace(']', '').split()
-
         listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
         listelem = []
         for elem in listval:
@@ -1126,6 +1124,61 @@ def read3linesasMatrix(fileobject):
         iline += 1
     if iline == 3:
         return matrix
+
+
+def readListofIntegers(fullpathtoFile):
+    fileobject = open(fullpathtoFile, "r")
+
+    nbElements = 0
+
+    lines = fileobject.readlines()
+    listelem = []
+    for line in lines:
+
+        listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
+
+        for elem in listval:
+            if elem not in ("",):
+                try:
+                    val = int(elem)
+                except ValueError:
+                    return None
+                listelem.append(val)
+                nbElements += 1
+
+    return listelem
+
+def read_roisfile(fullpathtoFile):
+    """ read a file where each line is x,y,boxx,boxy (all integers or will be converted in integers)
+    """
+    f = open(fullpathtoFile, "r")
+
+    nbRois = 0
+
+    lines = f.readlines()
+    listrois = []
+    for line in lines:
+
+        listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
+        nbelems = 0
+        listroielems = []
+        for elem in listval:
+            if elem not in ("",):
+                try:
+                    val = int(elem)
+                except ValueError:
+                    return None
+                listroielems.append(val)
+                nbelems += 1
+        if nbelems == 4:
+            listrois.append(listroielems)
+            nbRois += 1
+        else:
+            print("\n\n**********\n\nSorry. I can't extract 4 integers from the line %s. "
+                "I give up...****\n\n" % line)
+            return None
+
+    return listrois
 
 
 def readListofMatrices(fullpathtoFile):
@@ -2255,10 +2308,10 @@ class LT_fitfile:
             l = f.readline().split()
             self.peak["{:d} {:d} {:d}".format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
 
-    def __NumberIndexedSpots__(self, f, l):
+    def __NumberIndexedSpots__(self, _, l):
         self.NumberOfIndexedSpots = int(l.split(" ")[-1])
 
-    def __MeanDev__(self, f, l):
+    def __MeanDev__(self, _, l):
         self.MeanDevPixel = float(l.split(" ")[-1])
 
     def __init__(self, filename, verbose=False):

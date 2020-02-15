@@ -117,7 +117,7 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList):
     #TODO accept also .dat
 
     return:
-    - rearranged 5 elements of data, nb of elements = nb of common pts 
+    - rearranged 5 elements of data, nb of elements = nb of common pts
     - isolated_spots_in_spotlist: indices of spot in data without association,
     - isolated_spots_in_reflist: indices of spot in referenceList without association
     """

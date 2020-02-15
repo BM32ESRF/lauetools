@@ -1033,7 +1033,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5):
     dist = np.hypot(diffx, diffy)
 
     # print('dist.shape', dist.shape)
-    n1, n2 = dist.shape
+    _, n2 = dist.shape
 
     resmin = np.where(dist <= dist_tolerance)
 
@@ -1386,7 +1386,6 @@ def LaueSpotsCorrelator_multiprocessing(
         index_start, index_final = fileindexrange[:2]
     except:
         raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
-        return
 
     fileindexdivision = getlist_fileindexrange_multiprocessing(
         index_start, index_final, nb_of_cpu)
@@ -1519,7 +1518,6 @@ def twoindices_positive_up_to(n, m):
     """
     if not isinstance(n, int) or n <= 0:
         raise ValueError("%s is not a positive integer" % str(n))
-        return None
 
     nbpos_n = n + 1
     nbpos_m = m + 1
@@ -1805,7 +1803,7 @@ def Positiveindices_up_to(n):
             return majorindices_pos
 
 
-def fct_j(p, q):
+def fct_j(p, _):
     """
     return second called argument
     TODO: likely to exist a python built in function for that
@@ -2313,13 +2311,8 @@ def fromMatrix_to_EulerAngles(mat):
 #    return phi1, PHI, phi2
 
 
-def getdirectbasiscosines(
-    UBmatrix_array,
-    B0=np.eye(3),
-    frame="sample",
-    vec1=[1, 0, 0],
-    vec2=[0, 1, 0],
-    vec3=[0, 0, 1]):
+def getdirectbasiscosines( UBmatrix_array, B0=np.eye(3), frame="sample",
+                                                    vec1=[1, 0, 0], vec2=[0, 1, 0], vec3=[0, 0, 1]):
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
 
@@ -2386,19 +2379,15 @@ def getdirectbasiscosines(
     cosvec3_Z = (
         np.inner(qvec3s_sample, np.array([0, 0, 1])) / normqvec3)  # cosine component along z sample
 
-    cosinesarray = np.array(
-        [
-            cosvec1_X,
-            cosvec1_Y,
-            cosvec1_Z,
-            cosvec2_X,
-            cosvec2_Y,
-            cosvec2_Z,
-            cosvec3_X,
-            cosvec3_Y,
-            cosvec3_Z,
-        ]
-    )
+    cosinesarray = np.array([cosvec1_X,
+                            cosvec1_Y,
+                            cosvec1_Z,
+                            cosvec2_X,
+                            cosvec2_Y,
+                            cosvec2_Z,
+                            cosvec3_X,
+                            cosvec3_Y,
+                            cosvec3_Z])
     # return array with (nb matrices, 9) shape
     return cosinesarray.T, vecs
 
@@ -2519,8 +2508,7 @@ def fromvec_to_directionangles(vec):
 
     if np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2) != 0:
         lat = (np.arctan(finalvec[2] / (np.sqrt(finalvec[0] ** 2 + finalvec[1] ** 2)))
-            * 180.0
-            / np.pi)  # latitude
+            * 180.0 / np.pi)  # latitude
     else:
         if finalvec[2] > 0:
             lat = 90.0
@@ -2590,26 +2578,10 @@ def prodquat(quat1, quat2):
     returns product quaternion od  quat1.quat2
     Seems to be not used in Lauetools package
     """
-    return [
-        [
-            quat1[3] * quat2[0]
-            + quat1[0] * quat2[3]
-            + quat1[1] * quat2[2]
-            - quat1[2] * quat2[1],
-            quat1[3] * quat2[1]
-            + quat1[1] * quat2[3]
-            + quat1[2] * quat2[0]
-            - quat1[0] * quat2[2],
-            quat1[3] * quat2[2]
-            + quat1[2] * quat2[3]
-            + quat1[0] * quat2[1]
-            - quat1[1] * quat2[0],
-            quat1[3] * quat2[3]
-            - quat1[0] * quat2[0]
-            - quat1[1] * quat2[1]
-            - quat1[2] * quat2[2],
-        ]
-    ]
+    return [[quat1[3] * quat2[0] + quat1[0] * quat2[3] + quat1[1] * quat2[2] - quat1[2] * quat2[1],
+            quat1[3] * quat2[1] + quat1[1] * quat2[3] + quat1[2] * quat2[0] - quat1[0] * quat2[2],
+            quat1[3] * quat2[2] + quat1[2] * quat2[3] + quat1[0] * quat2[1] - quat1[1] * quat2[0],
+            quat1[3] * quat2[3] - quat1[0] * quat2[0] - quat1[1] * quat2[1] - quat1[2] * quat2[2]]]
 
 # ----- ------------  plot tools: colormap
 COPPER = mplcm.get_cmap("copper")
@@ -2768,8 +2740,7 @@ def findfirstnumberpos(s):
 
 def lognorm(x, mu, s):
 
-    return (1.0
-        / (x * s * np.sqrt(2 * np.pi))
+    return (1.0 / (x * s * np.sqrt(2 * np.pi))
         * np.exp(-np.log(x / (1.0 * mu)) ** 2 / (2 * s ** 2)))
 
 
@@ -2777,19 +2748,15 @@ def CCDintensitymodel(x):
     """
     function to model response of CCD
     """
-    return np.piecewise(x,
-        [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
+    return np.piecewise(x, [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
         [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x])
 
 def CCDintensitymodel2(x):
     """
     function to model response of CCD
     """
-    return np.piecewise(x,
-        [x < 6.0, (x >= 6.0) & (x <= 10.0), x > 10.0],
-        [lambda x: 0.05,
-            lambda x: 0.95 / 4.0 * x - 5.5 / 4,
-            lambda x: 10.0 / np.power(x, 0.95)])
+    return np.piecewise(x, [x < 6.0, (x >= 6.0) & (x <= 10.0), x > 10.0],
+        [lambda x: 0.05, lambda x: 0.95 / 4.0 * x - 5.5 / 4, lambda x: 10.0 / np.power(x, 0.95)])
 
 
 # -------------------------  IN DEVELOPMENT  ----------------

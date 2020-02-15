@@ -15,11 +15,10 @@ import os
 import copy
 import time as ttt
 import struct
-import math
 
 # third party modules
 
-import scipy.interpolate as sci
+# import scipy.interpolate as sci
 import scipy.ndimage as ndimage
 import scipy.signal
 import scipy.spatial.distance as ssd
@@ -142,7 +141,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
         if nbdigits is not None:
             if imagefilename.endswith(ext):
                 imagefilename = imagefilename[: -(lenext + nbdigits)] + "{:04d}.{}".format(
-                    imageindex,ext)
+                    imageindex, ext)
             elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
         # no zero padded index for filename
@@ -810,13 +809,13 @@ def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
                 image data pixel intensity
     """
     (framedim,
-        pixelsize,
-        saturationvalue,
+        _,
+        _,
         fliprot,
         offsetheader,
         formatdata,
-        comments,
-        extension) = DictLT.dict_CCD[CCDLabel]
+        _,
+        _) = DictLT.dict_CCD[CCDLabel]
 
     print("framedim read from DictLT.dict_CCD in readoneimage_crop_fast()", framedim)
     print("formatdata", formatdata)
@@ -874,13 +873,13 @@ def readrectangle_in_image(filename,
                 image data pixel intensity
     """
     (framedim,
-        pixelsize,
-        saturationvalue,
+        _,
+        _,
         fliprot,
         offsetheader,
         formatdata,
-        comments,
-        extension) = DictLT.dict_CCD[CCDLabel]
+        _,
+        _) = DictLT.dict_CCD[CCDLabel]
 
     if verbose:
         print("framedim read from DictLT.dict_CCD in readrectangle_in_image()", framedim)
@@ -949,7 +948,7 @@ def readrectangle_in_image(filename,
 
     band2D = np.reshape(band, (nblines, framedim[1]))
 
-    dataimage2D = np.zeros(framedim)
+    # dataimage2D = np.zeros(framedim)
 
     if verbose:
         print("band2D.shape", band2D.shape)
@@ -994,7 +993,7 @@ def readoneimage_crop(filename, center, halfboxsize, CCDLabel="PRINCETON", dirna
 
     xpic, ypic = center
 
-    dataimage, framedim, fliprot = readCCDimage(filename, CCDLabel=CCDLabel, dirname=None)
+    dataimage, framedim, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=None)
 
     x1 = np.maximum(0, xpic - boxsizex)
     x2 = np.minimum(framedim[1], xpic + boxsizex + 1)  # framedim[0]
@@ -1054,10 +1053,10 @@ def readoneimage_manycrops(filename,
     if use_data_corrected is not None:
         if isinstance(use_data_corrected, tuple):
             if len(use_data_corrected) == 3:
-                fulldata, framedim, fliprot = use_data_corrected
+                fulldata, framedim, _ = use_data_corrected
     # use data by reading file
     else:
-        fulldata, framedim, fliprot = readCCDimage(filename, stackimageindex=stackimageindex,
+        fulldata, framedim, _ = readCCDimage(filename, stackimageindex=stackimageindex,
                                                             CCDLabel=CCDLabel,
                                                             dirname=None)
 
@@ -1066,7 +1065,7 @@ def readoneimage_manycrops(filename,
     elif type(boxsize) == type((10, 20)):
         boxsizex, boxsizey = boxsize
 
-    xpic, ypic = np.array(centers).T
+    # xpic, ypic = np.array(centers).T
 
     #    x1 = np.array(np.maximum(0, xpic - boxsizex), dtype=np.int)
     #    x2 = np.array(np.minimum(framedim[0], xpic + boxsizex), dtype=np.int)
@@ -1220,7 +1219,7 @@ def readoneimage_multiROIfit(filename,
     #     print "nb of images to fitdata ... in  readoneimage_multiROIfit()", nb_Images
     if baseline in ("auto", None):  # background height or baseline level
         list_min = []
-        for k, dd in enumerate(Data):
+        for _, dd in enumerate(Data):
             #            print "k, dd.shape", k, dd.shape
             list_min.append(np.amin(dd))
         start_baseline = list_min
@@ -1292,7 +1291,7 @@ def readoneimage_multiROIfit(filename,
             if Data[k_image].shape != ROIshape:
                 ijindices_array = None
 
-            ROIdata = Data[k_image]
+            # ROIdata = Data[k_image]
             #             print 'ROIdata', ROIdata
             #             print 'np.amax(ROIdata)', np.amax(ROIdata)
             #             print 'np.amin (ROIdata)', np.amin(ROIdata)
@@ -1597,6 +1596,8 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     ------------
     imin, imax, jmin, jmax : 4 integers
                              4 indices allowing to slice a 2D np.ndarray
+                             
+    .. todo::  merge with check_array_indices()
     """
     xpic, ypic = center
     if flipxycenter:
@@ -1635,6 +1636,7 @@ def check_array_indices(imin, imax, jmin, jmax, framedim=None):
     imin, imax, jmin, jmax: 4 integers
                             mini. and maxi. indices in both directions
 
+    .. todo:: merge with getindices2cropArray()
     """
     if framedim is None:
         print("framedim is empty in check_array_indices()")
@@ -2373,17 +2375,14 @@ def ConvolvebyKernel(Data, peakVal=4, boxsize=5, central_radius=2):
     return bb
 
 
-def LocalMaxima_KernelConvolution(Data,
-                                    framedim=(2048, 2048),
-                                    peakValConvolve=4,
-                                    boxsizeConvolve=5,
-                                    central_radiusConvolve=2,
-                                    thresholdConvolve=1000,
-                                    connectivity=1,
-                                    IntensityThreshold=500,
-                                    boxsize_for_probing_minimal_value_background=30,
-                                    return_nb_raw_blobs=0,
-                                    peakposition_definition="max"):  # full side length
+def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
+                            peakValConvolve=4, boxsizeConvolve=5, central_radiusConvolve=2,
+                            thresholdConvolve=1000,
+                            connectivity=1,
+                            IntensityThreshold=500,
+                            boxsize_for_probing_minimal_value_background=30,
+                            return_nb_raw_blobs=0,
+                            peakposition_definition="max"):  # full side length
     r"""
     return local maxima (blobs) position and amplitude in Data by using
     convolution with a mexican hat like kernel.
@@ -2588,9 +2587,7 @@ def LocalMaxima_KernelConvolution(Data,
 #         return np.fliplr(th_peaklist), Ipixmax
 
 
-def LocalMaxima_ShiftArrays(Data,
-                                framedim=(2048, 2048),
-                                IntensityThreshold=500,
+def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
                                 Saturation_value=65535,
                                 boxsize_for_probing_minimal_value_background=30,  # full side length
                                 nb_of_shift=25,
@@ -2791,46 +2788,103 @@ def LocalMaxima_ShiftArrays(Data,
     return np.fliplr(purged_pklist), Ipixmax
 
 
-def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400):
+def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, framedim=None,
+                                                                                    verbose=False):
     """
-    return center of mass of each blobs composes by pixels above 
-    IntensityThreshold
+    return center of mass of each blobs composes by pixels above IntensityThreshold
+
+    if Centers = list of (x,y, halfboxsizex, halfboxsizey)  perform only blob search in theses ROIs
 
     !warning!: center of mass of blob where all intensities are set to 1
     """
-    thrData_for_label = np.where(Data > IntensityThreshold, 1, 0)
+    if rois is not None:
 
-    #     thrData = np.where(Data > IntensityThreshold, Data, 0)
+        listmeanpos_roi = []
+        for x, y, boxx, boxy in rois:
 
-    #    star = array([[0,1,0],[1,1,1],[0,1,0]])
-    # ll, nf = ndimage.label(thrData_for_label, structure=np.ones((3,3)))
-    # ll, nf = ndimage.label(thrData_for_label, structure=star)
-    ll, nf = ndimage.label(thrData_for_label)
+            
+            centerj, centeri = x, y
+            boxj, boxi = boxx, boxy
+            (imin, imax, jmin, jmax) = (centeri - boxi, centeri + boxi + 1,
+                                    centerj - boxj, centerj + boxj + 1)
 
-    #     print "nb of blobs in LocalMaxima_from_thresholdarray()", nf
+            # avoid to wrong indices when slicing the data
+            imin, imax, jmin, jmax = check_array_indices(imin, imax, jmin, jmax,
+                                                                    framedim=framedim)
+            # print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
+            dataroi = Data[imin : imax, jmin : jmax]
+            if verbose:
+                print("\n------------------\nx,y, boxx, boxy", x, y, boxx, boxy)
+                print('max intensity in dataroi', np.amax(dataroi))
+                print('min intensity in dataroi', np.amin(dataroi))
+                print('IntensityThreshold', IntensityThreshold)
 
-    if nf == 0:
-        return None
-    # meanpos = np.zeros((nf,2))
-    # for k in range(nf):
-    # meanpos[k] = np.mean(np.where((ll == k),axis=1)
 
-    # ndimage.find_objects(ll)
-    #     meanpos = \
-    #     np.array(ndimage.measurements.center_of_mass(Data,
-    #                                                ll,
-    #                                                np.arange(1, nf + 1)),
-    #                                                 dtype=float)
+            # other way equivalent
+            # print("framedim in LocalMaxima_from_thresholdarray", framedim)
+            # framedim = framedim[1], framedim[0]
 
-    meanpos = np.array(ndimage.measurements.maximum_position(Data, ll, np.arange(1, nf + 1)),
-        dtype=float)
+            # i1, i2, j1, j2 = getindices2cropArray((x,y), (boxx, boxy), framedim)
+            # #        print "i1, i2, j1, j2-----", i1, i2, j1, j2
+            # dataroi = Data[i1:i2, j1:j2]
 
-    if len(np.shape(meanpos)) > 1:
-        meanpos = np.fliplr(meanpos)
+            # # for spot near border, replace by zeros array
+            # if i2 - i1 != boxy * 2 or j2 - j1 != boxx * 2:
+            #     dataroi = np.zeros((boxy * 2 + 1, boxx * 2 + 1))
+            # print('max intensity in dataroi  2  :  ', np.amax(dataroi))
+
+            # blob seach in dataroi
+            thrData_for_label = np.where(dataroi > IntensityThreshold, 1, 0)
+
+            ll, nf = ndimage.label(thrData_for_label)
+            if nf == 0:
+                print('sad! No blobs there in this roi...')
+                continue
+
+            meanpos_roi = np.array(ndimage.measurements.maximum_position(dataroi, ll, np.arange(1, nf + 1)),
+                dtype=float)
+
+            if len(np.shape(meanpos_roi)) > 1:
+                meanpos_roi = np.fliplr(meanpos_roi)
+            else:
+                meanpos_roi = np.roll(meanpos_roi, 1)
+            if verbose:
+                print('meanpos_roi  =>', meanpos_roi)
+            for pos in meanpos_roi:
+                listmeanpos_roi.append([pos[0] + x - boxx, pos[1] + y - boxy])
+
+        meanpos = np.array(listmeanpos_roi)
+
+        if verbose:
+            print('meanpos', meanpos)
+
+    # single ROI is whole Data
     else:
-        meanpos = np.roll(meanpos, 1)
+        thrData_for_label = np.where(Data > IntensityThreshold, 1, 0)
+
+        #     thrData = np.where(Data > IntensityThreshold, Data, 0)
+
+        #    star = array([[0,1,0],[1,1,1],[0,1,0]])
+        # ll, nf = ndimage.label(thrData_for_label, structure=np.ones((3,3)))
+        # ll, nf = ndimage.label(thrData_for_label, structure=star)
+        ll, nf = ndimage.label(thrData_for_label)
+
+        #     print "nb of blobs in LocalMaxima_from_thresholdarray()", nf
+
+        if nf == 0:
+            return None
+
+        meanpos = np.array(ndimage.measurements.maximum_position(Data, ll, np.arange(1, nf + 1)),
+            dtype=float)
+
+        if len(np.shape(meanpos)) > 1:
+            meanpos = np.fliplr(meanpos)
+        else:
+            meanpos = np.roll(meanpos, 1)
 
     return meanpos
+
+
 
 
 def localmaxima(DataArray, n, diags=1, verbose=0):
@@ -2921,7 +2975,7 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
     print("optim value for thresholdConvolve", optim_value)
 
     return optim_value, Res
-    
+
 
 def shiftarrays_accum(Data_array, n, dimensions=1, diags=0):
     """
@@ -3063,7 +3117,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                                     reject_negative_baseline=True,
                                                     purgeDuplicates=True):
 
-    """ 
+    """
     fit multiple ROI data to get peaks position in a single image
 
     Ipixmax  :  highest intensity above background in every ROI centered on element of peaklist
@@ -3074,23 +3128,19 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                         where fulldata is an ndarray
 
     purgeDuplicates    : True   remove duplicates that are close within pixel distance of 'boxsize' and keep the most intense peak
-    
+
     use_data_corrected   :  enter data instead of reading data from file
                         must be a tuple of 3 elements:
                         fulldata, framedim, fliprot
                         where fulldata  ndarray
 
     .. note:: used in PeakSearchGUI
-    
     """
-
     #     print 'Ipixmax in fitoneimage_manypeaks', Ipixmax
     if len(peaklist) >= NumberMaxofFits:
         print("TOO MUCH peaks to fitdata.")
         print("(in fitoneimage_manypeaks) It may stuck the computer.")
-        print(
-            "Try to reduce the number of Local Maxima or reduce NumberMaxofFits in fitoneimage_manypeaks()"
-        )
+        print("Try to reduce the number of Local Maxima or reduce NumberMaxofFits in fitoneimage_manypeaks()")
         return
 
     if dirname is not None:
@@ -3198,19 +3248,13 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         print(np.take(peaklist, to_reject2, axis=0))
         print(np.take(peaklist, to_reject3, axis=0))
 
-    print(
-        "After fitting, {}/{} peaks have been rejected\n due to (final - initial position)> FitPixelDev = {}".format(
-            len(to_reject3), len(peaklist), FitPixelDev))
-    print(
-        "{} spots have been rejected\n due to negative baseline".format(len(to_reject2)))
-    print(
-        "{} spots have been rejected\n due to much intensity ".format(len(to_reject4)))
-    print(
-        "{} spots have been rejected\n due to weak intensity ".format(len(to_reject5)))
-    print(
-        "{} spots have been rejected\n due to small peak size".format(len(to_reject6)))
-    print(
-        "{} spots have been rejected\n due to large peak size".format(len(to_reject7)))
+        print("After fitting, {}/{} peaks have been rejected\n due to (final - initial position)> FitPixelDev = {}".format(
+                len(to_reject3), len(peaklist), FitPixelDev))
+        print("{} spots have been rejected\n due to negative baseline".format(len(to_reject2)))
+        print("{} spots have been rejected\n due to much intensity ".format(len(to_reject4)))
+        print("{} spots have been rejected\n due to weak intensity ".format(len(to_reject5)))
+        print("{} spots have been rejected\n due to small peak size".format(len(to_reject6)))
+        print("{} spots have been rejected\n due to large peak size".format(len(to_reject7)))
 
     # spots indices to reject
     ToR = (set(to_reject)
@@ -3224,8 +3268,9 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # spot indices to take
     ToTake = set(np.arange(len(peaklist))) - ToR
 
-    print("ToTake", ToTake)
-    print("len(ToTake)", len(ToTake))
+    if verbose:
+        print("index ToTake", ToTake)
+        print("nb indices in ToTake", len(ToTake))
     if len(ToTake) < 1:
         return None, par, peaklist
 
@@ -3237,8 +3282,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         pass
 
     # all peaks list building
-    tabpeak = np.array( [ peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                        Xdev, Ydev, peak_bkg, Ipixmax, ] ).T
+    tabpeak = np.array([peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                        Xdev, Ydev, peak_bkg, Ipixmax]).T
 
     # print("Results of all fits in tabpeak", tabpeak)
 
@@ -3319,16 +3364,17 @@ def PeakSearch(filename,
                 maxDistanceRejection=15,
                 NumberMaxofFits=5000,
                 reject_negative_baseline=True,
-                formulaexpression="A-1.1*B"):
+                formulaexpression="A-1.1*B",
+                listrois=None):
     """
     Find local intensity maxima as starting position for fittinng and return peaklist.
-    
+
     Parameters
     -------------------
-    
+
     filename : string
                full path to image data file
-               
+
     stackimageindex : integer
                 index corresponding to the position of image data on a stacked images file
                 if -1  means single image data w/o stacking
@@ -3336,7 +3382,7 @@ def PeakSearch(filename,
     CCDLabel : string
                label for CCD 2D detector used to read the image data file see dict_LaueTools.py
 
-    center : #TODO: to be removed: position of the ROI center in CCD frame
+    center : position#TODO: to be removed: position of the ROI center in CCD frame
 
     boxsizeROI : dimensions of the ROI to crop the data array
                     only used if center != None
@@ -3395,7 +3441,8 @@ def PeakSearch(filename,
                             :    2  2D lorentzian peak refinement
 
     xtol  : relative error on solution (x vector)  see args for leastsq in scipy.optimize
-    FitPixelDev            :  largest pixel distance between initial (from local maxima search) and refined peak position  
+    FitPixelDev            :  largest pixel distance between initial (from local maxima search)
+                            and refined peak position  
 
     position_definition: due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values
                          = 0    no offset (python numpy convention)
@@ -3463,14 +3510,14 @@ def PeakSearch(filename,
                                                 verbose=1)
         print("image from filename {} read!".format(filename))
 
-        # peak search in a particular region of image
+        # peak search in a single and particular region of image
         if center is not None:
 
             #        imin, imax, jmin, jmax = getindices2cropArray(center, boxsizeROI, framedim)
             #        Data = Data[imin: imax, jmin: jmax]
 
-            framedim = (framedim[1], framedim[0])
-            imin, imax, jmin, jmax = getindices2cropArray(center, boxsizeROI, framedim)
+            framediminv = (framedim[1], framedim[0])
+            imin, imax, jmin, jmax = getindices2cropArray(center, boxsizeROI, framediminv)
             Data = Data[jmin:jmax, imin:imax]
 
         if write_execution_time:
@@ -3502,7 +3549,7 @@ def PeakSearch(filename,
             path_to_bkgfile = Data_for_localMaxima
             print("Using image file {} as background".format(path_to_bkgfile))
             try:
-                backgroundimage, framedim_bkg, fliprot_bkg = readCCDimage(path_to_bkgfile,
+                backgroundimage, _, _ = readCCDimage(path_to_bkgfile,
                                                                         CCDLabel=CCDLabel)
             except IOError:
                 raise ValueError("{} does not seem to be a path file ".format(path_to_bkgfile))
@@ -3510,11 +3557,8 @@ def PeakSearch(filename,
             usemask = False
 
         print("Removing background for local maxima search")
-        Data = computefilteredimage(Data,
-                                    backgroundimage,
-                                    CCDLabel,
-                                    usemask=usemask,
-                                    formulaexpression=formulaexpression)
+        Data = computefilteredimage(Data, backgroundimage, CCDLabel, usemask=usemask,
+                                                            formulaexpression=formulaexpression)
 
     print("Data.shape for local maxima", Data.shape)
 
@@ -3523,7 +3567,9 @@ def PeakSearch(filename,
     if local_maxima_search_method in (0, "0"):
 
         print("Using simple intensity thresholding to detect local maxima (method 1/3)")
-        peaklist = LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold)
+        peaklist = LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold,
+                                                    rois=listrois,
+                                                    framedim=framedim)
 
         if peaklist is not None:
             print("len(peaklist)", len(peaklist))
@@ -3761,7 +3807,7 @@ def peaksearch_on_Image(filename_in,
     dict_param = readPeakSearchConfigFile(pspfile)
 
     Data_for_localMaxima, formulaexpression = read_background_flag(background_flag)
-    blacklistedpeaks_file = read_blacklist_filepath(blacklistpeaklist)
+    blacklistedpeaks_file = set_blacklist_filepath(blacklistpeaklist)
 
     dict_param["Data_for_localMaxima"] = Data_for_localMaxima
     dict_param["formulaexpression"] = formulaexpression
@@ -3899,10 +3945,8 @@ LIST_OPTIONS_TYPE_PEAKSEARCH = ["integer flag",
 
 LIST_OPTIONS_VALUESPARAMS = [1, 1000, 5000, 15, 10, 1, 0.001, 2.0, 1, 15.0, 0.01, 3.0]
 
-if (len(CONVERTKEY_dict)
-    != len(LIST_OPTIONS_PEAKSEARCH)
-    != LIST_OPTIONS_TYPE_PEAKSEARCH
-    != LIST_OPTIONS_VALUESPARAMS):
+if (len(CONVERTKEY_dict) != len(LIST_OPTIONS_PEAKSEARCH)
+                            != LIST_OPTIONS_TYPE_PEAKSEARCH != LIST_OPTIONS_VALUESPARAMS):
     raise ValueError(
         "Lists of parameters for config .psp file do not have the same length (readmccd.py)")
 
@@ -3972,8 +4016,6 @@ def readPeakSearchConfigFile(filename):
                 except KeyError:
                     optionkey = option_ref
 
-                #                 print 'optionkey', optionkey
-
                 option_lower = option_ref.lower()
 
                 try:
@@ -3988,9 +4030,7 @@ def readPeakSearchConfigFile(filename):
                 #                     print "optionkey", optionkey
                 #                     print "option_lower", option_lower
                 except ValueError:
-                    print(
-                        "Value of option '{}' has not the correct type".format(option)
-                    )
+                    print("Value of option '{}' has not the correct type".format(option))
                     return None
 
                 break
@@ -4034,13 +4074,21 @@ def read_background_flag(background_flag):
     return Data_for_localMaxima, formulaexpression
 
 
-def read_blacklist_filepath(blacklistpeaklist):
-    if blacklistpeaklist == "None":
+def set_blacklist_filepath(filepathstr):
+    if filepathstr == "None":
         Remove_BlackListedPeaks_fromfile = None
     # fullpath
     else:
-        Remove_BlackListedPeaks_fromfile = blacklistpeaklist
+        Remove_BlackListedPeaks_fromfile = filepathstr
     return Remove_BlackListedPeaks_fromfile
+
+def set_rois_file(filepathstr):
+    if filepathstr == "None":
+        roisfilepath = None
+    # fullpath
+    else:
+        roisfilepath = filepathstr
+    return roisfilepath
 
 
 # --- -------------- Plot image and peaks
@@ -4153,6 +4201,7 @@ def peaksearch_fileseries(fileindexrange,
     """
     peaksearch function to be called for multi or single processing
     """
+    print('\n\n ***** Starting peaksearch_fileseries()  *****\n\n')
     # peak search Parameters update from .psp file
     if isinstance(dictPeakSearch, dict):
         for key, val in list(dictPeakSearch.items()):
@@ -4186,7 +4235,7 @@ def peaksearch_fileseries(fileindexrange,
     else:
         filenameprefix_in = filenameprefix
 
-    filename_wo_path = filenameprefix_in.split("/")[-1]
+    # filename_wo_path = filenameprefix_in.split("/")[-1]
 
     if outputname != None:
         prefix_outputname = outputname
@@ -4210,7 +4259,6 @@ def peaksearch_fileseries(fileindexrange,
 
         fullpath_backgroundimage = PEAKSEARCHDICT_Convolve["Data_for_localMaxima"]
 
-        #         print "fullpath_backgroundimage ", fullpath_backgroundimage
 
         dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
 
@@ -4237,9 +4285,8 @@ def peaksearch_fileseries(fileindexrange,
                 tirets, tirets, filename_in, tirets, tirets, tirets))
 
         if not os.path.exists(filename_in):
-            raise ValueError(
-                "\n\n*******\nSomething wrong with the filename: {}. Please check carefully the filename!".format(
-                    filename_in))
+            raise ValueError("\n\n*******\nSomething wrong with the filename: {}. Please check "
+                                            "carefully the filename!".format(filename_in))
 
         # remove a single image (considered as background) to current image
         if BackgroundImageCreated:
@@ -4279,7 +4326,7 @@ def peaksearch_fileseries(fileindexrange,
 
         # --------------------------
         # launch peaksearch
-        # ------------------------
+        # -----------------------
         Res = PeakSearch(filename_in,
                             CCDLabel=CCDLABEL,
                             Saturation_value=DictLT.dict_CCD[CCDLABEL][2],
@@ -4301,20 +4348,17 @@ def peaksearch_fileseries(fileindexrange,
                     params_comments += "# " + key + " : " + str(val) + "\n"
 
             if BackgroundImageCreated:
-                params_comments += ("# "
-                                    + "Data_for_localMaxima"
+                params_comments += ("# " + "Data_for_localMaxima"
                                     + " : {} \n".format(fullpath_backgroundimage))
             # .dat file extension is done in writefile_Peaklist()
             # filename_out = prefix_outputname + encodingdigits % fileindex
             # TODO valid whatever
             filename_out = prefix_outputname + str(fileindex).zfill(nbdigits)
-            IOLT.writefile_Peaklist(
-                "{}".format(filename_out),
-                Isorted,
-                overwrite=1,
-                initialfilename=filename_in,
-                comments=params_comments,
-            )
+            IOLT.writefile_Peaklist("{}".format(filename_out),
+                                        Isorted,
+                                        overwrite=1,
+                                        initialfilename=filename_in,
+                                        comments=params_comments)
 
     print("\n\n\n*******************\n\n\n task of peaksearch COMPLETED!")
 
@@ -4605,7 +4649,7 @@ def purgePeaksListFile(filename1, blacklisted_XY, dist_tolerance=0.5, dirname=No
 
     blacklisted_XY = np.array(blacklisted_XY).T
 
-    peakX, peakY, tokeep = GT.removeClosePoints_two_sets(XY, blacklisted_XY, 
+    peakX, peakY, tokeep = GT.removeClosePoints_two_sets(XY, blacklisted_XY,
                                             dist_tolerance=dist_tolerance, verbose=0)
 
     return peakX, peakY, tokeep
@@ -4616,9 +4660,8 @@ def write_PurgedPeakListFile(filename1, blacklisted_XY, outputfilename, dist_tol
     """
     write a new .dat file where peaks in blacklist are omitted
     """
-    peakX, peakY, tokeep = purgePeaksListFile(
-        filename1, blacklisted_XY, dist_tolerance=0.5, dirname=dirname
-    )
+    #peakX, peakY, tokeep
+    _, _, tokeep = purgePeaksListFile( filename1, blacklisted_XY, dist_tolerance=0.5, dirname=dirname)
 
     data_peak = IOLT.read_Peaklist(filename1, dirname=dirname)
 
@@ -4662,7 +4705,7 @@ def removePeaks_inPeakList(PeakListfilename,
 def merge_2Peaklist(filename1, filename2, dist_tolerance=5, dirname1=None, dirname2=None, verbose=0):
     """
     return merge spots data from two peaklists and removed duplicates within dist_tolerance (pixel)
-    
+
     """
     data_peak_1 = IOLT.read_Peaklist(filename1, dirname=dirname1)
     data_peak_2 = IOLT.read_Peaklist(filename2, dirname=dirname2)
@@ -4670,7 +4713,8 @@ def merge_2Peaklist(filename1, filename2, dist_tolerance=5, dirname1=None, dirna
     XY1 = data_peak_1[:, 0:2]
     XY2 = data_peak_2[:, 0:2]
 
-    XY, ind_delele_1, ind_delele_2 = GT.mergelistofPoints(XY1, XY2, dist_tolerance=dist_tolerance,
+    #XY, ind_delele_1, ind_delele_2
+    _, ind_delele_1, ind_delele_2 = GT.mergelistofPoints(XY1, XY2, dist_tolerance=dist_tolerance,
                                                             verbose=verbose)
 
     data1 = np.delete(data_peak_1, ind_delele_1, axis=0)

@@ -11,6 +11,7 @@ import pickle
 import os
 import sys
 import time
+import re
 
 import numpy as np
 from pylab import figure, scatter, show, subplot, title
@@ -4483,6 +4484,10 @@ def indexing_multiprocessing(fileindexrange,
     """
     launch several indexation and unit cell refinement processes in parallel
     """
+    if not isinstance(fileindexrange[0], int):
+        printred("\n\n ---- Warning! multiprocessing treatment for a specific list of indices is "
+                                                                    "not implemented yet !\n\n")
+
     try:
         if len(fileindexrange) > 2:
             print("\n\n ---- Warning! file STEP INDEX is SET to 1 !\n\n")
@@ -4604,8 +4609,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     """
     Core procedure to index and refine a serie of peaks list
 
-    :param fileindexrange: list of starting, final and step image index
-    :type fileindexrange: list of 3 integers
+    :param fileindexrange: list of starting, final and step image index.
+        First element can be a path to a file containing list of indices.
+        In this case 2nd and 3rd element are meaningless
     :param Index_Refine_Parameters_dict:
     :type Index_Refine_Parameters_dict:
     :param saveObject: save spots dataset object
@@ -4684,12 +4690,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
     encodingdigits = "%%0%dd" % nbdigits
 
-    print("fileindexrange", fileindexrange)
-    nstart = fileindexrange[0]
-    nend = fileindexrange[1]
-
-    outputdict_filename = prefixdictResname + "%04d_%04d" % (nstart, nend)
-
+    # --- ----------------
     totalnb_grains = 0
     for material_index in list(range(nb_materials)):
         # read indexation parameters for the current material
@@ -4699,7 +4700,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         print("nbGrainstoFind_mat", nbGrainstoFind_mat)
         totalnb_grains += nbGrainstoFind_mat
 
-    if len(fileindexrange) == 2:
+    if len(fileindexrange) == 2 and isinstance(fileindexrange[0], int):
         fileindexrange = fileindexrange[0], fileindexrange[1], 1
 
     if not reanalyse:
@@ -4714,6 +4715,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
     # -------------------------------------------------
     # optionally: spots tracking
+    #------------------------------------------------
     # select sort spots order according to the order in a file
     # set self.mapshape
     # write reflist.cor file that will evolve during the loop over images
@@ -4744,7 +4746,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             posy,
             dataintensity,
             detectorparameters,
-            CCDcalibdict) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
+            _) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
 
             # write refposfile  .cor file     'REF_------.cor
             dir_reffile, file_reffile = os.path.split(refpositionfilepath)
@@ -4755,26 +4757,72 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                             overwrite=1)
             refposfile = refposfileprefix + '.cor'
 
-    # -------------------------------------------
-    # --- Loop over images ----------------------
-    # -------------------------------------------
-    lastindex = nstart
+    #----------------------------------------
+    # ---   Building list of indices -------
+    #----------------------------------------
+    print("fileindexrange", fileindexrange)
 
-    firstindex = fileindexrange[0]
-    lastindex = fileindexrange[1]
-    indexstep = fileindexrange[2]
+    if isinstance(fileindexrange[0], int):
+        firstindex = fileindexrange[0]
+        lastindex = fileindexrange[1]
+        indexstep = fileindexrange[2]
+
+        listindices = list(range(firstindex, lastindex + 1, indexstep))
+        nstart = firstindex
+        nend = lastindex + 1
+
+    elif fileindexrange[0].startswith(('[', '(', '{')) or ',' in fileindexrange[0]:
+        # print("fileindexrange[0].type",type(fileindexrange[0]))
+        # print("fileindexrange[0]",fileindexrange[0])
+
+        # I do need to import again re here otherwise UnboundLocalError !!!!
+        import re
+        listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", fileindexrange[0])
+
+        listindices = []
+        for elem in listval:
+            try:
+                val = int(elem)
+                listindices.append(val)
+            except ValueError:
+                continue
+
+        nstart = listindices[0]
+        nend = listindices[-1]
+
+        firstindex = nstart
+        lastindex = nend
+    else:
+        # reading file of list of indices
+        listindices = IOLT.readListofIntegers(fileindexrange[0])
+        if listindices is None:
+            printred("\n\n*******\nlist indices file: %s contains non integers ! Please check carefully!"
+                        % fileindexrange[0])
+            return
+        nstart = listindices[0]
+        nend = listindices[-1]
+
+        firstindex = nstart
+        lastindex = nend
+
+    outputdict_filename = prefixdictResname + "%04d_%04d" % (nstart, nend)
+
     # image index rearrangment parameters
     # mapshape
     # initial index can differ from firstindex used to scan some data images
     mapfirstimageindex = fileindexrange[0]
+
+    if refpositionfilepath is not None:
     # dict of refposfile at the beginning of each line (nb of lines = mapshape[0])
-    refposfiles = {}
-    print('mapshape', mapshape)
-    dim1, dim2 = mapshape # slow , fast axes
-    maptableindices = np.arange(dim1 * dim2).reshape((dim1, dim2))
+        refposfiles = {}
+        print('mapshape', mapshape)
+        dim1, dim2 = mapshape # slow , fast axes
+        maptableindices = np.arange(dim1 * dim2).reshape((dim1, dim2))
 
-
-    for imageindex in list(range(firstindex, lastindex + 1, indexstep)):
+    # -------------------------------------------
+    # --- Loop over images ----------------------
+    # -------------------------------------------
+    for imageindex in listindices:
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + ".res"
             if resfilename in list_resfiles_in_folder:
@@ -4866,9 +4914,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     if imageindex != firstindex:
                         i, j = np.where(maptableindices == imageindex)
                         (iprior, jprior), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
-                                                        maxdist=indexstep*2,  # to get some condidates
+                                                        maxdist=indexstep*2,  # to get some candidates
                                                         startingindex=mapfirstimageindex,
-                                                        existingabsindices = refposfiles.keys())
+                                                        existingabsindices=refposfiles.keys())
                         print('best located refpositions for imageindex = %d'%imageindexprior)
 
                         refposfile = refposfiles[imageindexprior]
@@ -4889,8 +4937,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     # update refposfile at each change of imageindex
                     #'.cor file generated by DataSet.importdatafromfile()  above'
                     refposfiles[imageindex] = DataSet.refpositionfilepath
-
-
 
                 if DataSet.nbspots < 3:
                     print("%d spot(s) are too few to be indexed" % DataSet.nbspots)
@@ -4939,6 +4985,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                         "UseIntensityWeights": dict_param_SingleGrain["UseIntensityWeights"],
                         "MinimumNumberMatches": dict_param_SingleGrain["MinimumNumberMatches"],
                         "MinimumMatchingRate": MinimumMatchingRate}
+
             if "nbSpotsToIndex" not in dict_param_SingleGrain:
                 dict_param_SingleGrain["nbSpotsToIndex"] = 1000
 
@@ -5047,11 +5094,11 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     + "_g%d.fit" % material_index)
 
                 (list_indexedgrains_indices,
-                list_nb_indexed_peaks,
-                pixdev,
+                _,
+                _,
                 Material_list,
                 all_UBmats_flat,
-                CCDcalib) = IOLT.readfitfile_multigrains(os.path.join(fitfile_folder, fitfilename),
+                _) = IOLT.readfitfile_multigrains(os.path.join(fitfile_folder, fitfilename),
                                                             return_toreindex=True)
 
                 nbindexedgrains = len(list_indexedgrains_indices)
@@ -5178,7 +5225,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     #        DataSet.plotallgrains()
 
     print("************************\n\n\n\n\n\n\nCompleted process for %s:"
-        % str([fileindexrange[0], fileindexrange[1] + 1, fileindexrange[2]]),
+        % str([nstart, nend, fileindexrange[2]]),
         p.name,
         p.pid)
 
