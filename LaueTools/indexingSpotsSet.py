@@ -269,11 +269,13 @@ class spotsset:
     def importdatafromfile(self, filename, refpositionfilepath=None):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list:
-        ie self.indexed_spots_dict
+        ie self.indexed_spots_dict  taken into account a reference file
+
+        optionnaly: write a 'REF_*******.cor' file and set self.refpositionfilepath accordingly
 
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
-        will be selected and aranged according to this reference list. A 'REF_*******.cor' is also written
-        enabling spots tracking (by position [posx,posy]) over a set of files.
+        will be selected and aranged according to this reference list.
+        A 'REF_*******.cor' is also written enabling spots tracking (by position [posx,posy]) over a set of files.
         This file is self.refpositionfilepath
 
         sets  spots data set, namely:
@@ -4740,7 +4742,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             firstrefpositionfilepath = param[0]
             refpositionfilepath = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
-            'SpotsReference.cor')
+                                                                        'SpotsReference.cor')
 
             (data_theta,
             Chi,

@@ -131,6 +131,8 @@ class ManualIndexFrame(wx.Frame):
         print("self.indexation_parameters['detectordiameter']",
             self.indexation_parameters["detectordiameter"])
 
+        self.pixelsize = self.indexation_parameters["pixelsize"]
+
         if indexation_parameters is not None:
             DataToIndex = self.indexation_parameters["DataToIndex"]
             if self.datatype is "2thetachi":
@@ -389,7 +391,9 @@ class ManualIndexFrame(wx.Frame):
         self.UCEP.SetToolTipString(
             "Select nearest spot position or exact clicked position")
 
-        sethkltip = "Set the [h,k,l] Miller indices of the first clicked spot. For cubic structure (simple, body & face centered, diamond etc...) l index must be positive"
+        sethkltip = "Set the [h,k,l] Miller indices of the first clicked spot. "
+        "For cubic structure (simple, body & face centered, diamond etc...) "
+        "l index must be positive"
         self.sethklchck.SetToolTipString(sethkltip)
         self.sethklcentral.SetToolTipString(sethkltip)
 
@@ -535,6 +539,7 @@ class ManualIndexFrame(wx.Frame):
         """
         open a board to change image scale
         """
+        # TODO  put import at top module. check if PRGUI does not load circularly this module
         import PlotRefineGUI as PRGUI
 
         IScaleBoard = PRGUI.IntensityScaleBoard(self, -1, "Image scale setting Board",
@@ -742,16 +747,12 @@ class ManualIndexFrame(wx.Frame):
                 if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
                     annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
 
-            #             print 'annotes', annotes
-
             if annotes == []:
                 collisionFound = False
                 return
 
             annotes.sort()
             _distance, x, y, annote = annotes[0]
-            #             print "the nearest experimental point is at(%.2f,%.2f)" % (x, y)
-            #             print "with index %d and intensity %.1f" % (annote[0], annote[1])
 
             self.updateStatusBar(x, y, annote)
 
@@ -1079,11 +1080,12 @@ class ManualIndexFrame(wx.Frame):
                         detectorparameters = self.indexation_parameters["detectorparameters"]
 
                         print("LaueToolsframe.defaultParam", detectorparameters)
-                        tw, ch = F2TC.calc_uflab(
-                            np.array([spot1[0], spot2[0]]),
-                            np.array([spot1[1], spot2[1]]),
-                            detectorparameters,
-                            kf_direction=self.kf_direction)
+                        tw, ch = F2TC.calc_uflab(np.array([spot1[0], spot2[0]]),
+                                                    np.array([spot1[1], spot2[1]]),
+                                                    detectorparameters,
+                                                    pixelsize=self.pixelsize,
+                                                    kf_direction=self.kf_direction)
+                        print('tw, ch', tw, ch)
 
                         _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]),
                                                     np.array([tw[1], ch[1]]))
@@ -1130,7 +1132,6 @@ class ManualIndexFrame(wx.Frame):
 
                     self.twospots.append((x, y))
 
-                    #                     self.Reckon_2pts(evt)
                     self.Reckon_2pts_new(evt)
         else:
             print("outside!! axes object")
@@ -1343,70 +1344,6 @@ class ManualIndexFrame(wx.Frame):
     def readlogicalbuttons(self):
         return [butt.GetValue() for butt in self.listbuttons]
 
-    def select_2pts(self, evt, displayMesssage=False):
-        """#pick distance
-        in ManualIndexFrame
-        """
-        toreturn = None
-        if self.nbclick_dist <= 2:
-            if self.nbclick_dist == 1:
-                self.twopoints = []
-
-            self.twopoints.append([evt.xdata, evt.ydata])
-            print("# selected points", self.nbclick_dist)
-            print("Coordinates(%.3f,%.3f)" % (evt.xdata, evt.ydata))
-            print("click nb", self.nbclick_dist)
-
-            if len(self.twopoints) == 2:
-                # compute angular distance:
-                spot1 = self.twopoints[0]  # (X, Y) (e.g. 2theta, chi)
-                spot2 = self.twopoints[1]
-                if self.datatype == "2thetachi":
-                    _dist = GT.distfrom2thetachi(np.array(spot1), np.array(spot2))
-
-                elif self.datatype == "gnomon":
-                    tw, ch = IIM.Fromgnomon_to_2thetachi(
-                        [np.array([spot1[0], spot2[0]]),
-                            np.array([spot1[1], spot2[1]])], 0)[:2]
-
-                    _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]),
-                                                    np.array([tw[1], ch[1]]))
-
-                elif self.datatype == "pixels":
-                    detectorparameters = self.indexation_parameters["AllDataToIndex"][
-                        "detectorparameters"]
-
-                    print("LaueToolsframe.defaultParam", detectorparameters)
-                    tw, ch = F2TC.calc_uflab(np.array([spot1[0], spot2[0]]),
-                                                    np.array([spot1[1], spot2[1]]),
-                                                    detectorparameters,
-                                                    kf_direction=self.kf_direction)
-
-                    _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]),
-                                                np.array([tw[1], ch[1]]))
-
-                print("Angular distance :  %.3f deg " % _dist)
-
-                toreturn = self.twopoints, _dist
-                self.nbclick_dist = 0
-                # self.twopoints = []
-                self.pickdistbtn.SetValue(False)
-                self.pickdistbtn.SetBackgroundColour(self.defaultColor)
-
-        self.nbclick_dist += 1
-
-        if displayMesssage:
-            if toreturn is not None:
-
-                print("RES =", toreturn)
-                #                sentence = 'Corresponding lattice planes angular distance'
-                #                sentence += "\n between two scattered direction LatticePlane  : %.2f " % distangle
-                #                dial = wx.MessageBox(sentence, 'INFO')
-                self.nbclick_dist = 1
-                return None
-
-        return toreturn
-
     def Reckon_2pts_new(self, _):
         """ Start indexation from picked spots
 
@@ -1469,6 +1406,7 @@ class ManualIndexFrame(wx.Frame):
                 tw, ch = F2TC.calc_uflab(np.array([spot1[0], spot2[0]]),
                                                     np.array([spot1[1], spot2[1]]),
                                                     detectorparameters,
+                                                    pixelsize=self.pixelsize,
                                                     kf_direction=self.kf_direction)
                 spot1 = [tw[0], ch[0]]
                 spot2 = [tw[1], ch[1]]

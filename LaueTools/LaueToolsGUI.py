@@ -666,8 +666,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-            self.indexation_parameters["DataToIndex"]["data_theta"])
+        # print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
+        #     self.indexation_parameters["DataToIndex"]["data_theta"])
 
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
         self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
@@ -898,8 +898,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print("self.indexation_parameters['DataToIndex']['data_theta']",
-            self.indexation_parameters["DataToIndex"]["data_theta"])
+        # print("self.indexation_parameters['DataToIndex']['data_theta']",
+        #     self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
         self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
@@ -998,8 +998,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print("self.indexation_parameters['DataToIndex']['data_theta']",
-                                            self.indexation_parameters["DataToIndex"]["data_theta"])
+        # print("self.indexation_parameters['DataToIndex']['data_theta']",
+        #                                     self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
         self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
@@ -1100,8 +1100,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
-            self.indexation_parameters["DataToIndex"]["data_theta"])
+        # print("self.indexation_parameters['DataToIndex']['data_theta'] = self.select_theta",
+        #     self.indexation_parameters["DataToIndex"]["data_theta"])
         self.indexation_parameters["dict_Rot"] = self.dict_Rot
         self.indexation_parameters["current_processedgrain"] = self.current_processedgrain
         self.indexation_parameters["detectordiameter"] = self.detectordiameter
@@ -1687,7 +1687,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                                                         nbspotstoindex)
         self.indexation_parameters["AllDataToIndex"]["absolutespotindex"] = np.array(
                                             np.arange(nbspotstoindex), dtype=np.int)
-
 
     def OpenDefaultData(self):
         """

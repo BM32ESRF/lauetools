@@ -214,9 +214,12 @@ class SpotsEditor(wx.Frame):
         self.toreturn = None
 
         # tooltips
-        tp1 = "To keep spots associations according to the spots properties values. Three expressions can be used to select only spots whose property values satisfy all expressions.\n"
+        tp1 = "To keep spots associations according to the spots properties values. "
+        "Three expressions can be used to select only spots whose "
+        "property values satisfy all expressions.\n"
         tp1 += 'For instances: Expression 1 : <50  with selected property "#Spot Exp" and <0.25 with selected property "residues"'
-        tp1 += " select only spots associations (links) with experimental spot index smaller than 50 and angular distance (residues) between exp. and theo. spots smaller than 0.25 degree"
+        tp1 += " select only spots associations (links) with experimental spot index smaller "
+        "than 50 and angular distance (residues) between exp. and theo. spots smaller than 0.25 degree"
         pnl1.SetToolTipString(tp1)
 
         apfilterbtn.SetToolTipString("Apply filter(s) designed by logical expression on columns properties")
@@ -258,21 +261,23 @@ class SpotsEditor(wx.Frame):
 
     def OnApplyFilter(self, event):
         # read filter fields
-        # field = [ff for ff in (self.filterfield1, self.filterfield2, self.filterfield3)]
+        # field must be defined. The following line mustn't be commented!
+        field = [ff for ff in (self.filterfield1, self.filterfield2, self.filterfield3)]
 
         # read conditionnal expressions
         cond = [str(tc.GetValue()) for tc in (self.tc1, self.tc2, self.tc3)]
 
         AllConds = True * np.ones(self.nbspots)  # by default we start the filter from the whole initial data
 
-        for _, condition in enumerate(cond):
+        for k, condition in enumerate(cond):
             if condition != "":
                 # print "condition is ",condition
 
-                # array_data = np.array(self.dict_spots_data[field[k]])
+                # array_data must be defined. The following line mustn't be commented!
+                array_data = np.array(self.dict_spots_data[field[k]])
                 # print "before filtering", array_data
                 toeval = "array_data" + condition
-
+                    
                 try:
                     _cond = eval(toeval)
                 except NameError:

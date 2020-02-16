@@ -2274,10 +2274,10 @@ def calc_Euler_angles(mat3x3):
             euler[0] = -euler[0]
     else:
         # psi */
-        toto = np.sqrt(1 - mat[2, 2] * mat[2, 2])  # sin theta - >0 */
-        euler[2] = RAD * np.arccos(mat[1, 2] / toto)
+        st = np.sqrt(1 - mat[2, 2] * mat[2, 2])  # sin theta - >0 */
+        euler[2] = RAD * np.arccos(mat[1, 2] / st)
         # phi */
-        euler[0] = RAD * np.arccos(-mat[2, 1] / toto)
+        euler[0] = RAD * np.arccos(-mat[2, 1] / st)
         if mat[2, 0] < 0.0:
             euler[0] = 360.0 - euler[0]
 

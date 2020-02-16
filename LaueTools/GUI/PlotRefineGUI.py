@@ -206,24 +206,13 @@ class Plot_RefineFrame(wx.Frame):
             self.File_NAME = self.IndexationParameters["Filename"]
             self.data_XY = DataToIndex["data_X"], DataToIndex["data_Y"]
             self.data_2thetachi = 2 * DataToIndex["data_theta"], DataToIndex["data_chi"]
-            # print(
-            #     "self.data_2thetachi[0][:5],self.data_2thetachi[1][:5]",
-            #     self.data_2thetachi[0][:5],
-            #     self.data_2thetachi[1][:5],
-            # )
+
             self.data = self.Data_X, self.Data_Y, self.Data_I, self.File_NAME
             #             print DataToIndex.keys()
             self.selectedAbsoluteSpotIndices_init = DataToIndex["current_exp_spot_index_list"]
             self.selectedAbsoluteSpotIndices = copy.copy(self.selectedAbsoluteSpotIndices_init)
 
         self.setDatacoordinates()
-
-        self.xlim, self.ylim = self.getDataLimits()
-        self.flipyaxis = IndexationParameters["flipyaxis"]
-
-        #         if 'Plot_xlim' in IndexationParameters:
-        #                 self.xlim = IndexationParameters['Plot_xlim']
-        #                 self.ylim = IndexationParameters['Plot_ylim']
 
         self.Millerindices = None
         self.Data_index_expspot = np.arange(len(self.Data_X))
@@ -273,7 +262,7 @@ class Plot_RefineFrame(wx.Frame):
             self.dict_Materials = self.mainframe.dict_Materials
 
         print("detector parameters in Plot_RefineFrame")
-        print(self.CCDcalib, self.framedim, self.pixelsize)
+        print(self.CCDcalib, self.framedim, self.pixelsize, self.CCDLabel)
 
         # simulated 2theta,chi
         self.data_theo = data_added
@@ -281,6 +270,8 @@ class Plot_RefineFrame(wx.Frame):
         self.ResolutionAngstrom = ResolutionAngstrom
         self.Simulate_Pattern()
         # self.data_theo = data_added # a way in the past to put simulated data
+
+        self.xlim, self.ylim = self.getDataLimits()
 
         self.points = []  # to store points
         self.selectionPoints = []
@@ -888,11 +879,26 @@ class Plot_RefineFrame(wx.Frame):
         if self.datatype == "2thetachi":
             return get2Dlimits(self.tth, self.chi)
         elif self.datatype == "pixels":
+            # we like upper origin for y axis
             if self.pixelX is None:
-                return (0, 2300), (0, 2300)
-            return get2Dlimits(self.pixelX, self.pixelY)
+                return (0, 2300), (2300, 0)
+
+            # xlim, ylim = get2Dlimits(self.pixelX, self.pixelY)
+
+            if self.CCDLabel in ("MARCCD165", "PRINCETON"):
+                ylim = (2048, 0)
+                xlim = (0, 2048)
+            elif self.CCDLabel in ("VHR_PSI",):
+                ylim = (3000, 0)
+                xlim = (0, 4000)
+            elif self.CCDLabel.startswith("sCMOS"):
+                ylim = (2050, 0)
+                xlim = (0, 2050)
+            return xlim, ylim
+
 
     def OnSwitchCoords(self, _):
+        """ from btn switch representation space for spots position"""
         if self.datatype == "2thetachi":
             print("was 2theta")
             self.datatype = "pixels"
@@ -905,8 +911,6 @@ class Plot_RefineFrame(wx.Frame):
 
         print("space coordinates is now:", self.datatype)
         self.datatype_unchanged = False
-
-        self.setplotlimits_fromdata()
 
         self._replot()
 
@@ -935,6 +939,7 @@ class Plot_RefineFrame(wx.Frame):
         self.UpdateFromRefinement.SetValue(False)
 
     def OnReplot(self, _):
+        """ replot spots when pressing btn 'replot'"""
 
         if self.SimulParam is not None:
             # check element if user needs to change it
@@ -2717,16 +2722,6 @@ class Plot_RefineFrame(wx.Frame):
     #         print "new limits x", self.xlim
     #         print "new limits y", self.ylim
 
-    def setplotlimits_fromdata(self):
-        self.xlim, self.ylim = self.getDataLimits()
-
-        ylim = self.ylim
-
-        if self.flipyaxis and self.datatype == "pixels":
-            ylim = (self.ylim[1], self.ylim[0])
-
-        self.ylim = ylim
-
     def _replot(self):
         """
         _replot in Plot_RefineFrame
@@ -2741,8 +2736,6 @@ class Plot_RefineFrame(wx.Frame):
             X_offset = 0
             Y_offset = 0
 
-        self.setplotlimits_fromdata()
-
         if self.datatype_unchanged:
             if not self.init_plot:
                 self.setplotlimits_fromcurrentplot()
@@ -2754,6 +2747,8 @@ class Plot_RefineFrame(wx.Frame):
         #        fig = self.plotPanel.get_figure()
         #        self.axes = fig.gca()
         self.axes.clear()
+
+        self.xlim, self.ylim = self.getDataLimits()
 
         # clear the axes and replot everything
         #        self.axes.cla()
@@ -2790,7 +2785,7 @@ class Plot_RefineFrame(wx.Frame):
         #                 self.axes.set_ylim((2048, 0))
         #                 self.axes.set_xlim((0, 2048))
 
-        # there are theoretical data
+        # --------  plot theoretical(simulated) data  spots -----------
         if self.data_theo is not None:
             #             print "there is theo. data in plot_RefineFrame"
 
@@ -2812,20 +2807,13 @@ class Plot_RefineFrame(wx.Frame):
             except KeyError:
                 # print "No acces to this key is os.environ ??!!"
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = 50, marker = 'o',facecolor = 'None',edgecolor = 'r',alpha = 1.)  # ok for window, matplotlib 0.99.1.1
-                self.axes.scatter(self.data_theo_displayed[0],
-                                        self.data_theo_displayed[1],
-                                        s=50,
-                                        marker=markerstyle,
-                                        edgecolor="r",
-                                        facecolors="None")
+                self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
+                                        s=50, marker=markerstyle, edgecolor="r", facecolors="None")
+
                 if matplotlibversion == "0.99.1":  # ok linux with matplotlib 0.99.1
                     # print "matplotlibversion  ==  '0.99.1'"
-                    self.axes.scatter(self.data_theo_displayed[0],
-                                        self.data_theo_displayed[1],
-                                        s=50,
-                                        marker=markerstyle,
-                                        edgecolor="r",
-                                        facecolor="None")
+                    self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
+                                        s=50, marker=markerstyle, edgecolor="r", facecolor="None")
 
             else:
                 print("else of KeyError")
@@ -2859,9 +2847,8 @@ class Plot_RefineFrame(wx.Frame):
 
             # background image
             if self.ImageArray is not None:
-                kwords = {"marker": "o",
-                            "facecolor": "None",
-                            "edgecolor": self.data_dict["markercolor"]}
+                kwords = {"marker": "o", "facecolor": "None",
+                                                        "edgecolor": self.data_dict["markercolor"]}
             else:
                 #                 self.axes.set_xbound(self.currentbounds[0])
                 #                 self.axes.set_ybound(self.currentbounds[1])

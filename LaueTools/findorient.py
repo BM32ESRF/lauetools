@@ -21,24 +21,24 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import string
 import sys
 
-import numpy as np
 try:
     from scipy.linalg.basic import lstsq
 except ImportError:
     from scipy.linalg import lstsq
+import numpy as np
 from numpy import linalg as LA
 
 if sys.version_info.major == 3:
     from . import CrystalParameters as CP
     from . import LaueGeometry as LTGeo
     from . import generaltools as GT
-    from . dict_LaueTools import dict_Materials
+    # from . dict_LaueTools import dict_Materials
     from . import dict_LaueTools as DictLT
 else:
     import CrystalParameters as CP
     import LaueGeometry as LTGeo
     import generaltools as GT
-    from dict_LaueTools import dict_Materials
+    # from dict_LaueTools import dict_Materials
     import dict_LaueTools as DictLT
 
 # --- ---------  CONSTANTS
@@ -120,35 +120,15 @@ LISTNEIGHBORS_321 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 
 LISTCUT321 = [0, 3, 8, 12, 19, 27, 35, 45, 51, 62]
 SLICING321 = [[0, 3], [3, 8], [8, 12], [12, 19], [19, 27], [27, 35], [35, 45], [45, 51], [51, 62]]
 
-DICOLISTNEIGHBOURS = {100: LISTNEIGHBORS_100,
-                        110: LISTNEIGHBORS_110,
-                        111: LISTNEIGHBORS_111,
-                        210: LISTNEIGHBORS_210,
-                        211: LISTNEIGHBORS_211,
-                        221: LISTNEIGHBORS_221,
-                        310: LISTNEIGHBORS_310,
-                        311: LISTNEIGHBORS_311,
-                        321: LISTNEIGHBORS_321}
+DICOLISTNEIGHBOURS = {100: LISTNEIGHBORS_100, 110: LISTNEIGHBORS_110, 111: LISTNEIGHBORS_111,
+    210: LISTNEIGHBORS_210, 211: LISTNEIGHBORS_211, 221: LISTNEIGHBORS_221, 310: LISTNEIGHBORS_310,
+    311: LISTNEIGHBORS_311, 321: LISTNEIGHBORS_321}
 
-DICOSLICING = {100: SLICING100,
-                110: SLICING110,
-                111: SLICING111,
-                210: SLICING210,
-                211: SLICING211,
-                221: SLICING221,
-                310: SLICING310,
-                311: SLICING311,
-                321: SLICING321}
+DICOSLICING = {100: SLICING100, 110: SLICING110, 111: SLICING111, 210: SLICING210, 211: SLICING211,
+                221: SLICING221, 310: SLICING310, 311: SLICING311, 321: SLICING321}
 
-DICOINDICE = {100: [1, 0, 0],
-                110: [1, 1, 0],
-                111: [1, 1, 1],
-                210: [2, 1, 0],
-                211: [2, 1, 1],
-                221: [2, 2, 1],
-                310: [3, 1, 0],
-                311: [3, 1, 1],
-                321: [3, 2, 1]}
+DICOINDICE = {100: [1, 0, 0], 110: [1, 1, 0], 111: [1, 1, 1], 210: [2, 1, 0], 211: [2, 1, 1],
+                221: [2, 2, 1], 310: [3, 1, 0], 311: [3, 1, 1], 321: [3, 2, 1]}
 
 
 # --- ------------------  END of tables and dictionnaries
@@ -250,11 +230,9 @@ LUT_MAIN_CUBIC = [prodtab_100(),
 # --- ----------   FUNCTIONS
 def convplanetypetoindice(myinteger):
     """
-
     Converts plane type to list of integer
     ex: 320 -> [3,2,0]
     CAUTION: valip only for abc with a,b,c<10 !!
-
     """
     stri = str(myinteger)
     return [string.atoi(elem) for elem in stri]
@@ -363,7 +341,6 @@ def constructMat(matrice_P, qq1, qq2, qq3prod):
     Construction of rotation matrix from:
     matrice_P  columns = (G1,G2,G1^G2)     in a*,b*,c* frame
     qq1,qq2,qq3prod  respectively three vectors in  x,y,z space
-
     """
     qq3 = qq3prod / np.sqrt(np.dot(qq3prod, qq3prod))
 
@@ -427,7 +404,6 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     three possible frames: lauetools , XMASlab, XMASsample
 
     WARNING! only valid for cubic unit cell!
-
     """
     h1 = hkl1[0]
     k1 = hkl1[1]
@@ -496,7 +472,6 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
     .. note::
         Upgrade of just above givematorient()
         take into account distorted structure by using Gstar (metric tensor of unit cell)
-
     """
     # h1, k1, l1 = hkl1
     # h2, k2, l2 = hkl2
@@ -588,19 +563,19 @@ def computeUnique_UBmatrix(UBmat):
 
 def find_lowest_Euler_Angles_matrix(mat):
     """
-        # corrected 08 Nov 11 by O. Robach
-        # mat : gives columns of a* b* c* on x y z
+        corrected 08 Nov 11 by O. Robach
+        mat : gives columns of a* b* c* on x y z
     """
     if LA.det(mat) < 0.0:
         raise ValueError("warning : det < 0 in input of find_lowest_Euler_Angles_matrix")
 
-    sign3 = np.ones(3)
+    # sign3 = np.ones(3)
     ind6 = np.zeros(6)
     ind4 = np.zeros(4)
-    sign3m = -1.0 * sign3
+    # sign3m = -1.0 * sign3
     matm = mat * -1.0
     mat6 = np.hstack((mat, matm))
-    sign6 = np.hstack((sign3, sign3m))
+    # sign6 = np.hstack((sign3, sign3m))
 
     # print "find lowest euler angles matrix"
     # print mat6
@@ -620,7 +595,7 @@ def find_lowest_Euler_Angles_matrix(mat):
     # mat4 : a', b', -a', -b'
     mat4 = mat6[:, ind2]
     # print mat4
-    sign4 = sign6[ind2]
+    # sign4 = sign6[ind2]
     # print sign4
     # find which vector a' b' -a' -b' has largest x component => new vector a''
     ia = np.argmax(mat4[0, :])

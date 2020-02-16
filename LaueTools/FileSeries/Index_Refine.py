@@ -642,7 +642,7 @@ class MainFrame_indexrefine(wx.Frame):
 
             nbdigits = self.getnbdigits()
             self.list_txtctrl[3].SetValue(intension[: -nbdigits])
-            
+
     def getnbdigits(self):
         try:
             val = int(self.list_txtctrl[5].GetValue())
@@ -1113,7 +1113,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 0:
+if 1:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1123,6 +1123,8 @@ if 0:
     initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["nbdigits"] = 0
+    initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+                                                            "fitfiles", "SiCustrain5_g0_short.fit")
 
 
 

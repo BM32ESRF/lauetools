@@ -584,6 +584,10 @@ def addPeaks_in_Peaklist(
 
     return merged_data
 
+def readfile_dat(filename_in, dirname=None):
+    """ call simply read_Peaklist()"""
+    return read_Peaklist(filename_in, dirname=dirname)
+
 
 def read_Peaklist(filename_in, dirname=None):
     """
@@ -766,6 +770,18 @@ def ReadASCIIfile(_filename_data, col_2theta=0, col_chi=1, col_Int=-1, nblineski
     return (_data_theta, _data_chi, _data_I)
 
 
+def readfile_fit(fitfilename, verbose=0, readmore=False,
+                                        fileextensionmarker=(".fit", ".cor", ".dat"),
+                                        returnUnindexedSpots=False,
+                                        return_columnheaders=False,
+                                        return_toreindex=False):
+    """ call alias function readfitfile_multigrains()"""
+    return readfitfile_multigrains(fitfilename, verbose, readmore,
+                                        fileextensionmarker,
+                                        returnUnindexedSpots,
+                                        return_columnheaders,
+                                        return_toreindex)
+
 def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                                         fileextensionmarker=(".fit", ".cor", ".dat"),
                                         returnUnindexedSpots=False,
@@ -816,10 +832,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         for line in f:
             #             _line = line.rstrip(("\n", '\r', '\t'))
             _line = line.rstrip(string.whitespace)
-            #             print "line", _line
-            #             print "_line[-4:]", _line[-4:]
-            #             print _line.endswith(fileextensionmarker)
-            #             print _line.startswith('# Unindexed and unrefined')
+
             if _line.endswith(fileextensionmarker) and not _line.startswith(
                 "# Unindexed and unrefined"):
                 nbgrains += 1
