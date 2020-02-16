@@ -1803,7 +1803,7 @@ def Positiveindices_up_to(n):
             return majorindices_pos
 
 
-def fct_j(p, _):
+def fct_j(_, q):
     """
     return second called argument
     TODO: likely to exist a python built in function for that

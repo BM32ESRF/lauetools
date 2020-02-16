@@ -4825,13 +4825,16 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     # --- Loop over images ----------------------
     # -------------------------------------------
     for imageindex in listindices:
+        # if renanalysz is not checked, will only considered image and index
+        # for which correspondind .res does not exist
         if not reanalyse:
             resfilename = prefixfilename + encodingdigits % imageindex + ".res"
             if resfilename in list_resfiles_in_folder:
                 printcyan("file %s exists, corresponding .dat or .cor file is already indexed !!"
                     % resfilename)
                 continue
-
+        # consider peak from .dat (only X, Y, I ) no scattering angles.
+        # So it will use .det to compute 2theta chi scattering angles and write a .cor file
         if suffixfilename.endswith(".dat"):
             print("CCDCalibdict eeeeee.dat", CCDCalibdict)
             datfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
@@ -4863,6 +4866,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             corfilename = datfilename.split(".")[0] + ".cor"
 
+        # consider peaks from .cor file (that could have been created at the previous branch from .dat file)
         elif suffixfilename == ".cor":
             print("CCDCalibdict fffffff.cor", CCDCalibdict)
             corfilename = prefixfilename + encodingdigits % imageindex + suffixfilename

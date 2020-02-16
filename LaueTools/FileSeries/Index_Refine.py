@@ -34,11 +34,7 @@ else:
     wx.Window.SetToolTipString = sttip
 
 try:
-    from multigrain import (
-        filter_peaks,
-        index_refine_calib_one_image,
-        serial_index_refine_multigrain,
-        serial_index_refine_multigrain_v2)
+    from multigrain import filter_peaks, index_refine_calib_one_image
 except ImportError:
     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
@@ -56,7 +52,7 @@ LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
 LaueToolsProjectFolder = os.path.abspath(dictLT.LAUETOOLSFOLDER)
 print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
-# --- ---- core index and refine parameters
+# --- ---- core index and refine parameters   (see .irp file)
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
 LIST_VALUESPARAMS = ["Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
@@ -80,22 +76,23 @@ LIST_TXTPARAM_FILE_INDEXREFINE = ["Peak List .dat Folder",
                                 "Detector Calibration File (.det)",
                                 "Guessed Matrix(ces) (.mat,.mats,.ubs)",
                                 "Minimum Matching Rate",
-                                "IndexRefine Parameters File (.irp)"]
+                                "IndexRefine Parameters File (.irp)",
+                                "Selected Peaks from File"]
 
-TIP_IR = [
-    "Folder containing indexed Peaks List .dat files",
+TIP_IR = ["Folder containing indexed Peaks List .dat files",
     "Folder containing (results) Peaks List .cor files",
     "Folder containing (results) indexed Peaks List .fit files",
     "Prefix for .fit files filename prefix####suffix where #### are digits of file index",
     'peak list filename suffix. ".dat" or ".cor"',
     "maximum nb of digits for zero padding of filename index.(e.g. nb of # in prefix####.dat)\n0 for no zero padding.",
     "starting file index (integer) or full path (str) to a file with list of file indices",
-    "final file index (integer)",
-    "incremental step file index (integer)",
+    "final file index (integer). Not considered if starting file index is a list of indices or a path to a file",
+    "incremental step file index (integer). Not considered if starting file index is a list of indices or a path to a file",
     "full path to detector calibration .det file containing detector plane position and angles parameters\nNot used if PeakList Filename Suffix is .cor",
     "full path to a file (.mat or .mats) containing one or several guessed orientation matrix(ces) or check orientation parameters file (.ubs) to be tested prior to indexation from scratch",
     "Minimum matching rate (nb of matches/ nb of theoritical spots) corresponding to guessed orientation matrices tested.\n if higher than 100, then test of guessed solution orientation matrix(ces) will be omitted",
-    "full path to .irp file containing index & refine parameters",
+    "Full path to .irp file containing index & refine parameters",
+    "Full path to a refined peakslist .fit file to restrict refinement to those peaks",
 ]
 
 DICT_TOOLTIP = {}
@@ -116,7 +113,6 @@ class IndexRefineParameters(wx.Frame):
         self.panel = wx.Panel(self)
 
         self.listParameters = listParameters
-
         _list_txtparamIR, _list_valueparamIR, _list_unitsparams = listParameters
 
         self.parent = parent
@@ -128,8 +124,7 @@ class IndexRefineParameters(wx.Frame):
         self.nb_of_materials = nb_of_materials
         self.dict_param_list = []
 
-        # GUI widgets
-
+        # GUI widgets----------------
         nbmaterialtxt = wx.StaticText(self.panel, -1, "Nb Material")
         self.nbmaterialctrl = wx.SpinCtrl(self.panel, -1, "1", min=1, max=15)
 
@@ -292,7 +287,6 @@ class IndexRefineParameters(wx.Frame):
         print("reset")
         self.list_valueparamIR = LIST_VALUESPARAMS
         self.setParams()
-            #             print "i add"
 
     def OnQuit(self, _):
         self.Close()
@@ -345,9 +339,9 @@ class PageMaterialPanel(wx.Panel):
 
         self.SetSizer(grid, wx.EXPAND)
 
-        # tooltips
-
     def tooltips(self):
+        """ tooltips
+        """
         self.tips_dict = {}
         for kk, elem in enumerate(self.list_txtparamIR):
             self.tips_dict[kk] = "%s : " % elem
@@ -357,23 +351,33 @@ class PageMaterialPanel(wx.Panel):
         self.tips_dict[2] += "Minimum energy bandpass (keV)"
         self.tips_dict[3] += "Maximum energy bandpass (keV)"
 
-        self.tips_dict[4] += "Minimum matching rate to stop the loop over mutual spots angular distance recognition."
-        self.tips_dict[4] += "Then the corresponding unit cell orientation matrix and strain will be refined.\n"
+        self.tips_dict[4] += "Minimum matching rate to stop the loop over mutual spots angular "
+        "distance recognition."
+        self.tips_dict[4] += "Then the corresponding unit cell orientation matrix and "
+        "strain will be refined.\n"
         self.tips_dict[4] += "100.0 implies that all mutual spots distances will be checked"
 
-        self.tips_dict[5] += "Angular tolerance (deg) for looking up a distance in the reference distances database (LUT)"
-        self.tips_dict[6] += "Maximum angle separating two spots forming a pair (1 exp. and 1 theo.) to compute the number of spots matches (or matching rate)."
-        self.tips_dict[7] += "Number of the most intense spots from which angular distances with central spots will be tested for recognition."
+        self.tips_dict[5] += "Angular tolerance (deg) for looking up a distance "
+        "in the reference distances database (LUT)"
+        self.tips_dict[6] += "Maximum angle separating two spots forming a pair "
+        "(1 exp. and 1 theo.) to compute the number of spots matches (or matching rate)."
+        self.tips_dict[7] += "Number of the most intense spots from which angular distances "
+        "with central spots will be tested for recognition."
         self.tips_dict[8] += "Minimum number of spots matches for a indexation solution to be stored"
 
-        self.tips_dict[9] += "Central spot or list of spot indices: e.g.\n[1,2,3,5]\n[0]\n5\n8:20\n:10"
-        self.tips_dict[10] += "if not False, minimum lattice spacing (for cubic structure) of spot to be simulated for matching with experimental spots data."
-        self.tips_dict[11] += "highest miller indices order to calculate the reference mutual angular distances table (LUT)."
-        self.tips_dict[12] += "if not None, [h,k,l] miller indices of all central spots used for recognition."
-
+        self.tips_dict[9] += "Central spot or list of spot indices: "
+        "e.g.\n[1,2,3,5]\n[0]\n5\n8:20\n:10"
+        self.tips_dict[10] += "if not False, minimum lattice spacing (for cubic structure) "
+        "of spot to be simulated for matching with experimental spots data."
+        self.tips_dict[11] += "highest miller indices order to calculate "
+        "the reference mutual angular distances table (LUT)."
+        self.tips_dict[12] += "if not None, [h,k,l] miller indices of "
+        "all central spots used for recognition."
         self.tips_dict[13] += "maximum number of spots to be used for refined (first ones in the list)"
-        self.tips_dict[14] += "True/False to use or not the experimental spot intensities as a weight in the refinement (minimization of distances between matched spots)"
-        self.tips_dict[15] += "list of angular tolerance used at each step after the refinement procedure to link exp. and modeled spots"
+        self.tips_dict[14] += "True/False to use or not the experimental spot intensities "
+        "as a weight in the refinement (minimization of distances between matched spots)"
+        self.tips_dict[15] += "list of angular tolerance used at each step "
+        "after the refinement procedure to link exp. and modeled spots"
 
     def hascorrectvalue(self, kk, val):
 
@@ -483,7 +487,7 @@ class MainFrame_indexrefine(wx.Frame):
                 txt.SetToolTipString(dict_tooltip[txt_elem])
                 self.txtctrl.SetToolTipString(dict_tooltip[txt_elem])
 
-            if kk in (0, 1, 2, 3, 6, 9, 10, 12):
+            if kk in (0, 1, 2, 3, 6, 9, 10, 12, 13):
                 btnbrowse = wx.Button(self.panel, -1, "browse")
                 grid.Add(btnbrowse)
                 if kk == 0:
@@ -513,6 +517,9 @@ class MainFrame_indexrefine(wx.Frame):
                 elif kk == 12:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_irpfile)
                     btnbrowse.SetToolTipString("Select index and refine .irp file")
+                elif kk == 13:
+                    btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_reffitfile)
+                    btnbrowse.SetToolTipString("Select .fit file to restrict refinement to those peaks")
             else:
                 nothing = wx.StaticText(self.panel, -1, "")
                 grid.Add(nothing)
@@ -559,8 +566,10 @@ class MainFrame_indexrefine(wx.Frame):
         self.Layout()
 
         # tooltips
-        sentencereanaylse = "If not checked, indexation will be performed for images for which corresponding .res file is missing.\n"
-        sentencereanaylse += "If checked, indexation will be (re)performed and overwrite all .fit and .res files (if any)."
+        sentencereanaylse = "If not checked, indexation will be performed for images "
+        "for which corresponding .res file is missing.\n"
+        sentencereanaylse += "If checked, indexation will be (re)performed and overwrite "
+        "all .fit and .res files (if any)."
         self.chck_renanalyse.SetToolTipString(sentencereanaylse)
 
         sentenceupdate = ("If checked, indexation and refinement will be performed again\n")
@@ -570,8 +579,9 @@ class MainFrame_indexrefine(wx.Frame):
 
         Createcfgbtn.SetToolTipString(
             "Create .irp file containing parameters to index & refine peaks list")
-        self.previousreschk.SetToolTipString(
-            "If checked, prior to indexation from scratch (according to .irp file)first if  orientation matrix of image n-1 is a good guess for indexing the current image n")
+        self.previousreschk.SetToolTipString("If checked, prior to indexation from scratch "
+        "(according to .irp file)first if orientation matrix of image n-1 is a good guess "
+        "for indexing the current image n")
         tipcpus = "nb of cores to use to index&refine all peaks list files"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
@@ -640,6 +650,7 @@ class MainFrame_indexrefine(wx.Frame):
         except ValueError:
             wx.MessageBox("nb of digits in filename must be a positive integer! Please check the "
                                                                     "corresponding field!", "Info")
+        return val
 
     def OnbtnBrowse_filedet(self, _):
         folder = wx.FileDialog(self, "Select CCD Calibration Parameters file .det",
@@ -656,6 +667,7 @@ class MainFrame_indexrefine(wx.Frame):
     #             self.list_txtctrl[10].SetValue(folder.GetPath())
 
     def OnbtnBrowse_matsfile(self, _):
+        """ get .mats file fullpath and set corresponding txtctrl"""
         print("OnbtnBrowse_matsfile")
 
         matsfile = wx.FileDialog(self, "Select Guessed Matrices File or check orientation parameters file (.ubs)",
@@ -665,6 +677,7 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[10].SetValue(matsfile.GetPath())
 
     def OnbtnBrowse_irpfile(self, _):
+        """ get .irp file fullpath and set corresponding txtctrl"""
         print("OnbtnBrowse_irpfile")
 
         irpfile = wx.FileDialog(self, "Select Index Refine Parameters File",
@@ -673,7 +686,18 @@ class MainFrame_indexrefine(wx.Frame):
 
             self.list_txtctrl[12].SetValue(irpfile.GetPath())
 
+    def OnbtnBrowse_reffitfile(self, _):
+        """ get .fit file fullpath and set corresponding txtctrl"""
+        print("OnbtnBrowse_reffitfile")
+
+        fitfile = wx.FileDialog(self, "Select peaks list .fit File (i.e. containing h,k,l)",
+                                wildcard="indexed and refined peaks list (*.fit)|*.fit|All files(*)|*")
+        if fitfile.ShowModal() == wx.ID_OK:
+
+            self.list_txtctrl[13].SetValue(fitfile.GetPath())
+
     def OnCreateIRP(self, _):
+        """ open GUI to set indexing and refinement parameters (irp)"""
         print("OnCreateIRP")
 
         fileirp = str(self.list_txtctrl[12].GetValue())
@@ -734,6 +758,7 @@ class MainFrame_indexrefine(wx.Frame):
         print("CCDcalibrationReference .fit file : %s" % calib_fitfilename)
 
     def fitFolderExists(self):
+        """ check if fitfolder exists"""
         fitfolder = str(self.list_txtctrl[2].GetValue())
 
         print("fitfolder in fitFolderExists", fitfolder)
@@ -749,6 +774,7 @@ class MainFrame_indexrefine(wx.Frame):
         return True
 
     def corFolderExists(self):
+        """ check if corfolder exists"""
         corfolder = str(self.list_txtctrl[1].GetValue())
         if not os.path.isdir(corfolder):
             try:
@@ -762,6 +788,7 @@ class MainFrame_indexrefine(wx.Frame):
         return True
 
     def datFolderExists(self):
+        """ check if datfolder exists"""
         datfolder = str(self.list_txtctrl[0].GetValue())
         if not os.path.isdir(datfolder):
             wx.MessageBox("Can not see %s containing peak list .dat files !" % datfolder, "Error")
@@ -769,17 +796,9 @@ class MainFrame_indexrefine(wx.Frame):
 
         return True
 
-    def PeaklistCorFile_FolderExists(self):
-        corfolder = self.list_txtctrl[1].GetValue()
-
-        if not os.path.isdir(corfolder):
-            wx.MessageBox("Can not find %s containing peaklist .cor file!" % corfolder, "Error")
-            return False
-
-        return True
-
     def OnStart(self, _):
-        """Start indexation and refinement of a series of files
+        """
+        Start indexation and refinement of a series of files
         """
         print("OnStart in index_Refine.py MainFrame class")
 
@@ -1056,7 +1075,8 @@ def fill_list_valueparamIR(initialparameters):
                         initialparameters["Detector Calibration File .det"],
                         initialparameters["GuessedUBMatrix"],
                         initialparameters["MinimumMatchingRate"],
-                        initialparameters["IndexRefine Parameters File"]]
+                        initialparameters["IndexRefine Parameters File"],
+                        initialparameters["Selected Peaks from File"]]
 
     return list_valueparamIR
 
@@ -1077,7 +1097,7 @@ initialparameters["Detector Calibration File (.dat)"] = os.path.join(
     MainFolder, "nanox2_400_0000_LT_1.dat")
 initialparameters["PeakList Filename Suffix"] = ".dat"
 
-initialparameters["nbdigits"] = 0
+initialparameters["nbdigits"] = 4
 initialparameters["startingindex"] = 0
 initialparameters["finalindex"] = 5
 initialparameters["stepindex"] = 1
@@ -1090,17 +1110,21 @@ initialparameters["maxpixdev_filter_peaks_index_refine_calib"] = 0.7
 
 initialparameters["GuessedUBMatrix"] = "None"
 initialparameters["MinimumMatchingRate"] = 4.0
-
+initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
-print("MainFolder", MainFolder)
-initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
-initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
-initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
-initialparameters["PeakList Filename Prefix"] = "SiCustrain"
-initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
-initialparameters["PeakList Filename Suffix"] = ".cor"
+if 0:
+    MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
+    print("MainFolder", MainFolder)
+    initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
+    initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
+    initialparameters["PeakList Filename Prefix"] = "SiCustrain"
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
+    initialparameters["PeakList Filename Suffix"] = ".cor"
+    initialparameters["nbdigits"] = 0
+
+
 
 
 # prepare sorted list of values
