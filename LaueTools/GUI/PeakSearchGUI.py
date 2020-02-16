@@ -5317,7 +5317,7 @@ class MainPeakSearchFrame(wx.Frame):
                                         Saturation_value_flatpeak=self.dict_param["MaxIntensity"],
                                         MinIntensity=self.dict_param["MinIntensity"],
                                         PeakSizeRange=(self.dict_param["MinPeakSize"],
-                                            self.dict_param["MaxPeakSize"]),
+                                                        self.dict_param["MaxPeakSize"]),
                                         write_execution_time=1,
                                         Data_for_localMaxima=Data_for_localMaxima,
                                         Fit_with_Data_for_localMaxima=Fit_with_Data_for_localMaxima,
@@ -5392,41 +5392,13 @@ if __name__ == "__main__":
 
     initialParameter["mapsLUT"] = "OrRd"
     initialParameter["CCDLabel"] = "MARCCD165"
-    # ((2048, 2048), 165. / 2048, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd")
-
-    #    initialParameter['imagefilename'] = 'test_0084_mar.tiff'
-    #    initialParameter['dirname'] = '.'
-    #
-    #    initialParameter['mapsLUT'] = 'OrRd'
-    #    initialParameter['CCDLabel'] = 'VHR'
-    #
+    
     # ---------------------
     initialParameter["imagefilename"] = "Ag1_0135_mar.tiff"
     #    initialParameter['imagefilename'] = 'fake_0000_mar.tiff'
     initialParameter["dirname"] = "/home/micha/LaueProjects/VHR_Ag"
     initialParameter["mapsLUT"] = "OrRd"
     initialParameter["CCDLabel"] = "VHR_Feb13"
-
-    # ---------------------
-    #    # MarCCD (or ROPER?) close to sample
-    #    initialParameter['imagefilename'] = 'UO2_Kr_1_0050.mccd'
-    #    initialParameter['dirname'] = '/home/micha/LaueProjects/AxelUO2'
-    #    initialParameter['mapsLUT'] = 'OrRd'
-    #    initialParameter['CCDLabel'] = 'MARCCD165' # OK, peaksearch &  calib on UO2 crystal
-
-    #    #---------------------
-    #    # VHR camera close to diamond as monochromator Jun12
-    #    initialParameter['imagefilename'] = 'Si_test_01Jun12_0001_mar.tiff'
-    #    initialParameter['dirname'] = '/home/micha/LT4'
-    #    initialParameter['mapsLUT'] = 'OrRd'
-    #    initialParameter['CCDLabel'] = 'VHR_Feb13_rotated'  # non!
-    #
-    #    #---------------------
-    #    # VHR camera close to diamond as monochromator Nov 12
-    #    initialParameter['imagefilename'] = 'dia1_0250_mar.tiff'
-    #    initialParameter['dirname'] = '/home/micha/LaueProjects/DiamondMethod'
-    #    initialParameter['mapsLUT'] = 'OrRd'
-    #    initialParameter['CCDLabel'] = 'VHR_small'  # OK, peaksearch &  calib
 
     # ---------------------
     initialParameter["imagefilename"] = "run1_0040_mar.tiff"
@@ -5442,29 +5414,6 @@ if __name__ == "__main__":
     initialParameter["mapsLUT"] = "OrRd"
     initialParameter["CCDLabel"] = "MARCCD165"
 
-    #    # princeton
-    #    initialParameter['imagefilename'] = 'NW_curve2_000078.mccd'
-    #    initialParameter['dirname'] = '/home/micha/LaueProjects/NW'
-    #    initialParameter['mapsLUT'] = 'OrRd'
-    #    initialParameter['CCDLabel'] = 'PRINCETON'
-
-    # MarCCD
-    #     initialParameter['imagefilename'] = 'SnsurfscanBig_0050.mccd'
-    #     initialParameter['dirname'] = '/media/Nouveau volume/MapSn'
-    #     initialParameter['mapsLUT'] = 'OrRd'
-    #     initialParameter['CCDLabel'] = 'MARCCD165'
-    #
-    #         # MarCCD
-    #     initialParameter['imagefilename'] = 'Umono_0000.mccd'
-    #     initialParameter['dirname'] = '/media/Nouveau volume/DiamondUO2'
-    #     initialParameter['mapsLUT'] = 'OrRd'
-    #     initialParameter['CCDLabel'] = 'MARCCD165'
-    #
-    #
-    #     initialParameter['dirname'] = '/media/data3D/data/2013/June13/nwnanox2'
-    #     initialParameter['imagefilename'] = 'nanox2_400_0000.mccd'
-    #     initialParameter['CCDLabel'] = 'MARCCD165'
-
     initialParameter["dirname"] = "/home/micha/LaueTools/Examples/GeGaN"
     initialParameter["imagefilename"] = "nanox2_400_0000.mccd"
     initialParameter["CCDLabel"] = "MARCCD165"
@@ -5472,18 +5421,6 @@ if __name__ == "__main__":
     initialParameter["dirname"] = "/home/micha/LaueTools/MapSn"
     initialParameter["imagefilename"] = "SnsurfscanBig_0180.mccd"
     initialParameter["CCDLabel"] = "MARCCD165"
-
-    #     initialParameter['dirname'] = '/home/micha/LaueProjects/TarikSadat_hdf5'
-    #     initialParameter['imagefilename'] = 'Si_reference_y3_2_224_data_000001.h5'
-    #     initialParameter['CCDLabel'] = 'EIGER_4Mstack'
-
-    #     initialParameter['dirname'] = '/home/micha/LaueProjects/MichaudTardif'
-    #     initialParameter['imagefilename'] = 'f0p53_u190_flat_0003.tif.gz'
-    #     initialParameter['CCDLabel'] = 'sCMOS'
-
-    # initialParameter['dirname'] = '/home/micha/LaueProjects/DiamondOct18/data'
-    # initialParameter['imagefilename'] = 'Ge40_1999.tif'
-    # initialParameter['CCDLabel'] = 'sCMOS'
 
     initialParameter["dirname"] = os.path.join(DictLT.LAUETOOLSFOLDER, "LaueImages")
     initialParameter["imagefilename"] = "AH12_CMT_r14_0200.tif"

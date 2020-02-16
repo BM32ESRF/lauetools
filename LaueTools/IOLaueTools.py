@@ -1140,7 +1140,7 @@ def readListofIntegers(fullpathtoFile):
         for elem in listval:
             if elem not in ("",):
                 try:
-                    val = int(elem)
+                    val = int(float(elem))
                 except ValueError:
                     return None
                 listelem.append(val)
@@ -1165,8 +1165,9 @@ def read_roisfile(fullpathtoFile):
         for elem in listval:
             if elem not in ("",):
                 try:
-                    val = int(elem)
+                    val = int(float(elem))
                 except ValueError:
+                    print("can't convert %s into integer...! I give up"%elem)
                     return None
                 listroielems.append(val)
                 nbelems += 1
@@ -1432,7 +1433,7 @@ def getfileindex(str_expression):
 
     list_val = str_expression.strip("[]()\n").split(",")
     print("list_val", list_val)
-    integerlist = [int(elem) for elem in list_val]
+    integerlist = [int(float(elem)) for elem in list_val]
     return integerlist
 
 

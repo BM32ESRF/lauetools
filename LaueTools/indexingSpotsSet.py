@@ -350,7 +350,7 @@ class spotsset:
             self.dim = self.CCDcalibdict["framedim"]
         else:
             self.dim = DictLT.dict_CCD[self.CCDLabel][0]
-            
+
         self.framedim = self.dim
 
         if "detectordiameter" in self.CCDcalibdict:
@@ -708,8 +708,8 @@ class spotsset:
         AssignationHKL_res, nbtheospots, missingRefs = self.getSpotsLinks(matrix,
                                                                     exp_data=selected_expdata,
                                                                     useabsoluteindex=useabsoluteindex,
-                                                                    removeharmonics=1,  # for fast computations
-                                                                    ResolutionAngstrom=False,# 
+                                                                    removeharmonics=1, # for fast computations
+                                                                    ResolutionAngstrom=False,#
                                                                     veryclose_angletol=AngleTol,
                                                                     verbose=verbose)
         # TODO nb of links with getSpotsLinks() larger than nb of links used in previous refinement
@@ -3606,7 +3606,8 @@ def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
             #print("\n*********boolval", boolval)
             return boolval
 
-        if verbose: print("k,FilteredMatrixList", k, FilteredMatrixList)
+        if verbose:
+            print("k,FilteredMatrixList", k, FilteredMatrixList)
         FilteredMatrixList.append(BSM[0])
         # BSM = [m for m in BSM if Matrixcomparewith(m)]
 
@@ -3621,7 +3622,8 @@ def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
         print("FilteredMatrixList")
         print(FilteredMatrixList)
         for mat in FilteredMatrixList:
-            if isinstance(mat, (np.ndarray, )): mat = mat.tolist()
+            if isinstance(mat, (np.ndarray, )):
+                mat = mat.tolist()
             FilteredScoreList.append(scores[list(Dict_mat.values()).index(mat)])
 
         return FilteredMatrixList, FilteredScoreList
@@ -4209,7 +4211,7 @@ def plotgrains(dict_mat, key_material, detectorparameters, emax, exp_data=None):
             scatter(tth_exp, Chi_exp, s=40, c="w", marker="o", faceted=True, alpha=0.5)
 
         # simul spots
-        ax.scatter(all_tthchi[i_mat][0], all_tthchi[i_mat][1], 
+        ax.scatter(all_tthchi[i_mat][0], all_tthchi[i_mat][1],
                                             c=dicocolor[(i_mat + 1) % nbcolors], faceted=False)
         if index_fig < nb_matrices:
             index_fig += 1
@@ -4838,7 +4840,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             if imageindex == firstindex:
                 fullpath = os.path.join(dirname_in, datfilename)
-                writeEmptyFileSummary(datfilename, dirname= fitfile_folder )
+                writeEmptyFileSummary(datfilename, dirname=fitfile_folder)
                 if not os.path.exists(fullpath):
                     printred("\n\n*******\nSomething wrong with the first filename: %s. Please check carefully the filename!"
                         % fullpath)
@@ -4847,7 +4849,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             if not os.path.exists(os.path.join(dirname_in, datfilename)):
                 printcyan("Missing file : %s\n Keep on scanning files\n" % datfilename)
 
-                writeEmptyFileSummary(datfilename, dirname= fitfile_folder)
+                writeEmptyFileSummary(datfilename, dirname=fitfile_folder)
                 continue
 
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
@@ -4975,7 +4977,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             print("with material: %s\n" % key_material)
             print("dataset.pixelsize  ff", DataSet.pixelsize)
-            t0_2 = time.time()
+            # t0_2 = time.time()
 
             dict_loop = {"MATCHINGRATE_THRESHOLD_IAL": dict_param_SingleGrain["MATCHINGRATE THRESHOLD IAL"],
                         "MATCHINGRATE_ANGLE_TOL": dict_param_SingleGrain["MATCHINGRATE ANGLE TOL"],
@@ -5371,7 +5373,7 @@ def readIndexRefineConfigFile(filename):
 
     dict_param = {}
 
-    list_options = config.options(section)
+    # list_options = config.options(section)
     list_options_gen = []
     list_material = []
     for opt in config.options(section):

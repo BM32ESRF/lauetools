@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 """
-Modules that creates and uses lookuptable of distance between pairs of 
+Modules that creates and uses lookuptable of distance between pairs of
 planes to propose a approximate orientation matrix
 
 Lookuptable is divided with respect to the a known plane [1,0,0],[1,1,0],...,up to [3,2,1] (central plane)
@@ -19,6 +19,7 @@ TODO: generalise to other structure and include symetry considerations in select
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import string
+import sys
 
 import numpy as np
 try:
@@ -26,8 +27,6 @@ try:
 except ImportError:
     from scipy.linalg import lstsq
 from numpy import linalg as LA
-
-import sys
 
 if sys.version_info.major == 3:
     from . import CrystalParameters as CP
@@ -67,7 +66,7 @@ LISTNEIGHBORS_111 = [[1, 0, 0], [1, 1, 0], [-1, 1, 0], [-1, 1, 1], [1, 2, 0], [-
 [-1, 1, 3], [3, -1, -1], [1, 2, 3], [-1, 2, 3], [-2, 1, 3], [-3, 1, 2]]
 LISTCUT111 = [0, 1, 3, 4, 6, 9, 12, 14, 17, 21]
 SLICING111 = [[0, 1], [1, 3], [3, 4], [4, 6], [6, 9], [9, 12], [12, 14], [14, 17], [17, 21]]
-LISTNEIGHBORS_210 = [ [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, -1, 0], [1, 1, 1],
+LISTNEIGHBORS_210 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, -1, 0], [1, 1, 1],
 [1, -1, 1], [2, -1, 0], [1, 2, 0], [1, 0, 2], [0, 1, 2], [-1, 2, 0], [2, 1, 1], [1, 2, 1], [1, 1, 2],
 [1, -1, 2], [1, -2, 1], [2, 2, 1], [2, 1, 2], [1, 2, 2], [2, -1, 2], [2, -2, 1], [-1, 2, 2],
 [3, 1, 0], [3, 0, 1], [1, 3, 0], [0, 3, 1], [1, 0, 3], [0, 1, 3], [3, 1, 1], [1, 3, 1], [1, 1, 3],
@@ -91,7 +90,7 @@ LISTNEIGHBORS_221 = [[1, 0, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, 0, -1], [1,
 [3, 1, 1], [3, 1, -1], [3, -1, 1], [3, -1, -1], [1, 1, -3], [3, 2, 1], [3, 1, 2], [3, 2, -1],
 [3, 1, -2], [2, -1, 3], [3, -2, 1], [3, -1, -2], [3, -2, -1]]
 LISTCUT221 = [0, 2, 6, 9, 15, 21, 26, 31, 36, 44]
-SLICING221 = [ [0, 2], [2, 6], [6, 9], [9, 15], [15, 21], [21, 26], [26, 31], [31, 36], [36, 44]]
+SLICING221 = [[0, 2], [2, 6], [6, 9], [9, 15], [15, 21], [21, 26], [26, 31], [31, 36], [36, 44]]
 
 LISTNEIGHBORS_310 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [1, -1, 0], [0, 1, 1],
 [1, 1, 1], [1, -1, 1], [2, 1, 0], [2, 0, 1], [1, 2, 0], [1, 0, 2], [0, 2, 1], [0, 1, 2], [2, 1, 1],
@@ -277,7 +276,7 @@ def convindicetoplanetype(listindice):
 
 def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"):
     """
-    Returns plane(s) solution of the matching between angular distance (angle) and lookup table 
+    Returns plane(s) solution of the matching between angular distance (angle) and lookup table
     between plane central type and neighbour type plane)
     with reespect to angular tolerance (tolerance)
     """
@@ -304,7 +303,7 @@ def findneighbours(central_type, neighbour_type, angle, tolerance, verbose="yes"
             print("No planes of type ", str(neighbour_type), " is found around ",
                     str(central_type), " at ", angle, " within ", tolerance, " deg")
         return None
-    elif (len(possibleplanes) > 1):  # very rare case for family with small multiplicity and small ang. tolerance
+    elif len(possibleplanes) > 1:  # very rare case for family with small multiplicity and small ang. tolerance
         if verbose == "yes":
             print("Ambiguity! I found more than two planes! You may reduce the angular tolerance")
         return possibleplanes
@@ -637,7 +636,7 @@ def find_lowest_Euler_Angles_matrix(mat):
     # mat2 : b'', -b''
     mat2 = mat4[:, ind2]
     # print mat2
-    sign2 = sign4[ind2]
+    # sign2 = sign4[ind2]
     # find which vector b" -b" gives direct triedre => new vector b'''
     csec = mat6[:, ic]
     asec = mat4[:, ia]
@@ -761,7 +760,7 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
 
 HKL_CUBIC_UP3 = [[1, 0, 0], [1, 1, 0], [1, 1, 1], [2, 1, 0], [2, 1, 1], [2, 2, 1], [3, 1, 0],
                     [3, 1, 1], [3, 2, 1], [3, 2, 2], [3, 3, 1], [3, 3, 2]]
-                    
+
 HKL_CUBIC_UP4 = HKL_CUBIC_UP3 + [[4, 1, 0], [4, 1, 1], [4, 2, 1], [4, 3, 0], [4, 3, 1], [4, 3, 2], [4, 3, 3],
                     [4, 4, 1], [4, 4, 3]]
 
@@ -770,7 +769,7 @@ HKL_CUBIC_UP5 = HKL_CUBIC_UP4 + [[5, 1, 0], [5, 1, 1], [5, 2, 0], [5, 2, 1], [5,
 
 HKL_CUBIC_UP6 = HKL_CUBIC_UP5 + [[6, 1, 0], [6, 1, 1], [6, 2, 1], [6, 3, 1], [6, 3, 2], [6, 4, 1], [6, 4, 3],
                     [6, 5, 0], [6, 5, 1], [6, 5, 2], [6, 5, 3], [6, 5, 4], [6, 5, 5], [6, 6, 5]]
-                    
+
 HKL_CUBIC_UP7 = HKL_CUBIC_UP6 + [[7, 1, 0], [7, 1, 1], [7, 2, 0], [7, 2, 1], [7, 2, 2], [7, 3, 0], [7, 3, 1],
                     [7, 3, 2], [7, 3, 3], [7, 4, 0], [7, 4, 1], [7, 4, 2], [7, 4, 3], [7, 4, 4],
                     [7, 5, 0], [7, 5, 1], [7, 5, 2], [7, 5, 3], [7, 5, 4], [7, 5, 5], [7, 6, 0],
@@ -840,7 +839,7 @@ def QueryLUT(LUT, query_angle, tolerance_angle, LUTfraction=2, verbose=0):
     halfLUT : (int) fraction of LUT angles to be used (to increase speed).
     Reference angles are comprised from 0 to 180deg. For recognition of Laue Pattern collected 2D detector
     of even rather large area , only angles from 0 to 90 (fraction =2) are necessary.
-    (even shorter range may be used) 
+    (even shorter range may be used)
     """
     RefAngles = LUT[1][:len(LUT[1])//LUTfraction]
 
@@ -890,7 +889,7 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, 
     hkl_all = GT.threeindices_up_to(n, remove_negative_l=restrictLUT)
 
     if applyExtinctionRules is not None:
-        hkl_all = CP.ApplyExtinctionrules(hkl_all,applyExtinctionRules)
+        hkl_all = CP.ApplyExtinctionrules(hkl_all, applyExtinctionRules)
 
     if 1:  # filterharmonics:
         #        hkl_all = CP.FilterHarmonics_2(hkl_all)
@@ -974,7 +973,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
                         : 0 for considering all angle close to query_angle within angle_tol
 
     LUTfraction:   fraction reference angles from 0 to 180 deg to consider. 2 is sufficient (0-90 deg)
-                            for common 2D plane detector geomtery 
+                            for common 2D plane detector geomtery
 
     TODO: many target angles
     """
@@ -988,7 +987,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
     # if angle_query is a tuple,array,list
     if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
         angle_query = query_angle[0]
-    
+
     print('angle_query', angle_query)
 
     # Find matching
@@ -1110,7 +1109,8 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
         rules = (None, dictmaterials[key_material][2])
         LUT = Generate_selectedLUT(hkl1, hkl2, key_material, 0, dictmaterials, True, rules)
 
-    (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
+    # (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
+    (_, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
 
     #     print "sorted_ind", sorted_ind
     #     print "sorted_ind_ij", sorted_ind_ij
@@ -1179,7 +1179,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
     #     planes_pairs = np.hstack((plane_1, plane_2)).reshape((len(plane_1), 2, 3))
     # else:
     #     planes_pairs = np.array([plane_1[0], plane_2[0]])
-        
+
     if nbplane_1 > 1:
         #         print 'nb sol >1'
         planes_pairs = np.hstack((plane_1, plane_2)).reshape((nbplane_1, 2, 3))
@@ -1248,17 +1248,19 @@ def FilterHarmonics(hkl):
     if len(pos_zeros) > 0:
         # print('ind_in_flat_a[pos_zeros]',ind_in_flat_a[pos_zeros])
         hkls_pairs_index = GT.indices_in_TriuMatrix(ind_in_flat_a[pos_zeros], SA[0])
-        hkls_pairs = np.take(hkl, hkls_pairs_index, axis=0)
+        # hkls_pairs = np.take(hkl, hkls_pairs_index, axis=0)
 
         # print "hkls_pairs_index",hkls_pairs_index
         # print "hkls_pairs",hkls_pairs
         # create dict of equivalent hkls (same direction), same irreductible representation
-        dictsets, intermediary_dict = GT.Set_dict_frompairs(hkls_pairs_index, verbose=0)
+
+        #dictsets, intermediary_dict = GT.Set_dict_frompairs(hkls_pairs_index, verbose=0)
+        dictsets, _ = GT.Set_dict_frompairs(hkls_pairs_index, verbose=0)
 
         # print "dictsets, intermediary_dict",dictsets, intermediary_dict
 
         toremove = []
-        for key, val in list(dictsets.items()):
+        for _, val in list(dictsets.items()):
             toremove += sorted(val)[1:]
         toremove.sort()
 
@@ -1313,7 +1315,7 @@ def FilterEquivalentPairsHKL(pairs_hkl):
 
     if len(pairs_hkl) > 1:
 
-        dict_diff = {}
+        # dict_diff = {}
 
         # mutual pair addition
         # shape = ( len(pairs_hkl), len(pairs_hkl) )
@@ -1326,10 +1328,11 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         # i,j position of
         truepos_ij = np.array([truepos[0], truepos[1]]).T
 
-        dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(truepos_ij, verbose=0)
+        # dictsets_pairs, intermediary_dict_pairs = GT.Set_dict_frompairs(truepos_ij, verbose=0)
+        dictsets_pairs, _ = GT.Set_dict_frompairs(truepos_ij, verbose=0)
 
         toremove_pairs = []
-        for key, val in list(dictsets_pairs.items()):
+        for _, val in list(dictsets_pairs.items()):
             toremove_pairs += sorted(val)[1:]
         toremove_pairs.sort()
 

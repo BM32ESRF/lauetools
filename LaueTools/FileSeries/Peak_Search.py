@@ -391,6 +391,7 @@ class MainFrame_peaksearch(wx.Frame):
         self.objet_PS = objet_PS
 
         self.allMaterialsnames = LIST_OF_CCDS
+        self.CCDlabel = None
 
         if WXPYTHON4:
             grid = wx.FlexGridSizer(3, 7, 7)
@@ -459,15 +460,6 @@ class MainFrame_peaksearch(wx.Frame):
                 nothing = wx.StaticText(self.panel, -1, "")
                 grid.Add(nothing)
             #grid.Add(wx.Button(self.panel, kk + 12, "?", size=(25, 25)))
-
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepath, id=12)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filepathout, id=13)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_fileprefix, id=14)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_filesuffix, id=15)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbdigits, id=16)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nbpicture1, id=17)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_Nblastpicture, id=18)
-        # self.Bind(wx.EVT_BUTTON, self.Onbtnhelp_increment, id=19)
 
         Createcfgbtn = wx.Button(self.panel, -1, "Edit/Create .psp file", size=(150, -1))
         Createcfgbtn.Bind(wx.EVT_BUTTON, self.OnCreatePSP)
@@ -767,13 +759,15 @@ class MainFrame_peaksearch(wx.Frame):
 
         # set parameter  for blacklisted peaks
         ROIslistfile = self.list_txtctrl[10].GetValue()
-        
+
         pathroisfile = RMCCD.set_rois_file(ROIslistfile)
-        if pathroisfile:
+        print('pathroisfile', pathroisfile)
+        if pathroisfile is not None:
             dict_param["listrois"] = IOLT.read_roisfile(pathroisfile)
         else:
             dict_param["listrois"] = None
-
+        if dict_param["listrois"] is not None:
+            print('\n  Finding only peaks in given ROIs according to parameters of .psp file')
 
         try:
             nb_cpus = int(self.txtctrl_cpus.GetValue())

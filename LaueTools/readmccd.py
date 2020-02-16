@@ -2798,10 +2798,9 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
     !warning!: center of mass of blob where all intensities are set to 1
     """
     if rois is not None:
-
+        print('\n>>>>> Finding only peaks in %d ROIs.\n' % len(rois))
         listmeanpos_roi = []
         for x, y, boxx, boxy in rois:
-
             
             centerj, centeri = x, y
             boxj, boxi = boxx, boxy
