@@ -452,7 +452,7 @@ def build_hdf5(
 
         print("keys_indexfile", keys_indexfile)
         for key_image in keys_indexfile:
-            print("key_image", key_image, "--------------------------/n/n")
+            # print("key_image", key_image, "--------------------------/n/n")
             for elem in dictspots[key_image]:
                 allIndexedSpots["fileindex"] = key_image
                 grainindex = int(elem[1])

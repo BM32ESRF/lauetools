@@ -56,7 +56,7 @@ print("LaueToolProjectFolder", LaueToolsProjectFolder)
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
 LIST_VALUESPARAMS = ["Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
-                    False, 3, None, True, 1000, [1, 1], None]
+                    False, 3, None, True, 1000, [1, 1]]
 
 # WARNING when adding parameters above:
 # check if field position is correct in def hascorrectvalue(self, kk, val):
@@ -530,6 +530,9 @@ class MainFrame_indexrefine(wx.Frame):
         self.previousreschk = wx.CheckBox(self.panel, -1, "Index n using n-1 results ")
         self.previousreschk.SetValue(True)
 
+        txt_mapshape = wx.StaticText(self.panel, -1, "Map Shape")
+        self.txtctrl_mapshape = wx.TextCtrl(self.panel, -1, "None")
+
         grid.Add(Createcfgbtn)
         grid.Add(self.previousreschk)
 
@@ -556,8 +559,13 @@ class MainFrame_indexrefine(wx.Frame):
         hfinal.Add(self.chck_renanalyse, 0)
         hfinal.Add(self.updatefitfiles, 0, wx.EXPAND)
 
+        hmap = wx.BoxSizer(wx.HORIZONTAL)
+        hmap.Add(txt_mapshape, 0)
+        hmap.Add(self.txtctrl_mapshape, 0)
+
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
+        vbox.Add(hmap, 0)
         vbox.Add(hfinal, 0, wx.EXPAND)
         vbox.Add(btnStart, 0, wx.EXPAND)
 
@@ -579,12 +587,16 @@ class MainFrame_indexrefine(wx.Frame):
 
         Createcfgbtn.SetToolTipString(
             "Create .irp file containing parameters to index & refine peaks list")
-        self.previousreschk.SetToolTipString("If checked, prior to indexation from scratch "
-        "(according to .irp file)first if orientation matrix of image n-1 is a good guess "
-        "for indexing the current image n")
+        self.previousreschk.SetToolTipString("If checked, for indexing the current image n, "
+        "first check if orientation matrix of image n-1 is a good guess before starting "
+        "an indexation from scratch (according to .irp file)")
         tipcpus = "nb of cores to use to index&refine all peaks list files"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
+
+        tipshape = "List of nb of steps in two (resp. three) directions for 2D (resp. 3D) map. Only use when tracking spots positions with 'Selected Peaks from File' : 41,21 or [15,8,100]"
+        txt_mapshape.SetToolTipString(tipshape)
+        self.txtctrl_mapshape.SetToolTipString(tipshape)
 
         btnStart.SetToolTipString("Start indexing & refining all the peaks list files")
 
@@ -796,6 +808,22 @@ class MainFrame_indexrefine(wx.Frame):
 
         return True
 
+    def readmapshape(self):
+        mapshapestr = self.txtctrl_mapshape.GetValue()
+        errormapshape = False
+        if mapshapestr in ('None', "None",) :
+            errormapshape = True
+        else:
+            mapshape = IOLT.readStringOfIterable(mapshapestr)
+            if isinstance(mapshape, str):
+                errormapshape = True
+            if not isinstance(mapshape[0], int) or not isinstance(mapshape[1], int):
+                errormapshape = True
+        if errormapshape:
+            return None
+        else:
+            return mapshape
+
     def OnStart(self, _):
         """
         Start indexation and refinement of a series of files
@@ -830,27 +858,6 @@ class MainFrame_indexrefine(wx.Frame):
         filesuffix = self.list_txtctrl[4].GetValue()
 
         nbdigits_filename = self.getnbdigits()
-
-        # if 0:  # odile's way
-        #     # refine calibration
-        #     self.calcCalibrationfitFile()
-        #     filefitcalib = self.initialparameters["CCDcalibrationReference .fit file"]
-        #     # TODO correct multigrain to use os.path.join
-        #     filepathout = self.list_txtctrl[2].GetValue() + "/"
-
-        #     # TODO correct multigrain to use os.path.join
-        #     filepathdat = self.list_txtctrl[0].GetValue() + "/"
-
-        #     indimg = list(range(int(self.list_txtctrl[6].GetValue()),
-        #             int(self.list_txtctrl[7].GetValue()) + 1,
-        #             int(self.list_txtctrl[8].GetValue())))
-
-        #     serial_index_refine_multigrain(
-        #         filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
-
-        #     serial_index_refine_multigrain_v2(
-        #         filepathdat, fileprefix, indimg, filesuffix, filefitcalib, filepathout)
-
 
         filepathdat = self.list_txtctrl[0].GetValue()
         filepathcor = self.list_txtctrl[1].GetValue()
@@ -893,12 +900,6 @@ class MainFrame_indexrefine(wx.Frame):
             CCDCalibdict = IOLT.readCalib_det_file(filedet)
 
         Index_Refine_Parameters_dict = {}
-
-        #             Index_Refine_Parameters_dict['CCDCalibParameters'] = CCDparams[:5]
-        #             Index_Refine_Parameters_dict['pixelsize'] = CCDparams[5]
-        #             Index_Refine_Parameters_dict['framedim'] = CCDparams[6:8]
-        #             Index_Refine_Parameters_dict['detectordiameter'] = max(CCDparams[6:8]) * CCDparams[5]
-        #             Index_Refine_Parameters_dict['kf_direction'] = DEFAULT_KF_DIRECTION
 
         Index_Refine_Parameters_dict["CCDCalibdict"] = CCDCalibdict
         Index_Refine_Parameters_dict["PeakList Folder"] = filepathdat
@@ -977,6 +978,25 @@ class MainFrame_indexrefine(wx.Frame):
             # we are sure to be less than that!
             Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
         # ----------------------------------------------------------------------
+        
+        # ----- selecting part of peaks that belong to "refposfile"
+        rsl = self.list_txtctrl[13].GetValue()
+        if rsl in ('None',"None", 'none',"none"):
+            Index_Refine_Parameters_dict['Reference Spots List'] = None
+        else:
+            Index_Refine_Parameters_dict['Reference Spots List'] = rsl
+        
+        print("\n\n\n ------Index_Refine_Parameters_dict['Reference Spots List']", Index_Refine_Parameters_dict['Reference Spots List'])
+        if Index_Refine_Parameters_dict['Reference Spots List'] is not None:
+
+            mapshape = self.readmapshape()
+            if mapshape is None:
+                wx.MessageBox('You need to fill Map Shape field:\n"[nb steps // x, nb steps //y]".\n '
+                    'At least two numbers! "(nb steps,1)" could work as well for 1D scan\n '
+                    'Please put brackets or parentheses','INFO')
+                return
+            else:
+                Index_Refine_Parameters_dict['mapshape'] = mapshape
 
         if self.parent is not None:
             object_to_set = self.parent  # IR
@@ -1113,7 +1133,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 1:
+if 0:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1124,10 +1144,7 @@ if 1:
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["nbdigits"] = 0
     initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
-                                                            "fitfiles", "SiCustrain5_g0_short.fit")
-
-
-
+                                                            "corfiles", "SiCustrain5_Cu20spots.fit")
 
 # prepare sorted list of values
 list_valueparamIR = fill_list_valueparamIR(initialparameters)

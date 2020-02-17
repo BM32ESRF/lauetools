@@ -309,7 +309,7 @@ class spotsset:
             return False
 
         if refpositionfilepath not in (None, "None"):
-            print('BEFORE posx', posx)
+            # print('BEFORE posx', posx)
             (data_theta, Chi,
             posx, posy, dataintensity,
             isolatedspots,
@@ -318,10 +318,9 @@ class spotsset:
                                         posx, posy,
                                         dataintensity,
                                         refpositionfilepath)
-            print('AFTER posx', posx)
-
-            print("isolatedspots", isolatedspots)
-            print("isolatedspots_ref", isolatedspots_ref)
+            # print('AFTER posx', posx)
+            # print("isolatedspots", isolatedspots)
+            # print("isolatedspots_ref", isolatedspots_ref)
             # write refposfile  .cor file     'REF_------.cor
             dir_reffile, file_reffile = os.path.split(filename)
             refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
@@ -894,32 +893,26 @@ class spotsset:
 
         return bestmat, stats_properformat
 
-    def IndexSpotsSet(self,
-                        file_to_index,
-                        key_material,
-                        emin,
-                        emax,
-                        dict_parameters,
-                        database,
-                        starting_grainindex=0,
-                        use_file=1,
-                        verbose=0,
-                        plotintermediateresults=0,
-                        IMM=True,
-                        nbGrainstoFind="max",
-                        LUT=None,
-                        n_LUT=3,
-                        set_central_spots_hkl=None,
-                        ResolutionAngstrom=False,
-                        MatchingRate_List=[50, 60, 80],
-                        angletol_list=[0.5, 0.2, 0.1],
-                        checkSigma3=False,
-                        previousResults=None,
-                        CheckOrientations=None,
-                        corfilename=None,
-                        dirnameout_fitfile=None):
+    def IndexSpotsSet(self, file_to_index, key_material, emin, emax, dict_parameters, database,
+                                                                starting_grainindex=0,
+                                                                use_file=1,
+                                                                verbose=0,
+                                                                plotintermediateresults=0,
+                                                                IMM=True,
+                                                                nbGrainstoFind="max",
+                                                                LUT=None,
+                                                                n_LUT=3,
+                                                                set_central_spots_hkl=None,
+                                                                ResolutionAngstrom=False,
+                                                                MatchingRate_List=[50, 60, 80],
+                                                                angletol_list=[0.5, 0.2, 0.1],
+                                                                checkSigma3=False,
+                                                                previousResults=None,
+                                                                CheckOrientations=None,
+                                                                corfilename=None,
+                                                                dirnameout_fitfile=None):
         r"""
-        General procedure to index the current set of experimental spots.
+        General class method to index a set of experimental spots.
 
         Guessed matrices can checked prior to proceed to indexation from scratch (previous Results)
 
@@ -2348,19 +2341,14 @@ class spotsset:
             lattice_parameter_reciprocal = CP.matrix_to_rlat(Bstar_s)
             lattice_parameter_direct_strain = CP.dlat_to_rlat(lattice_parameter_reciprocal)
 
-            Bmatrix_direct_strain = CP.calc_B_RR(
-                lattice_parameter_direct_strain, directspace=0
-            )
+            Bmatrix_direct_strain = CP.calc_B_RR(lattice_parameter_direct_strain, directspace=0)
             Bmatrix_direct_unstrained = CP.calc_B_RR(latticeparams, directspace=0)
 
-            Trans = np.dot(
-                Bmatrix_direct_strain, np.linalg.inv(Bmatrix_direct_unstrained)
-            )
+            Trans = np.dot(Bmatrix_direct_strain, np.linalg.inv(Bmatrix_direct_unstrained))
             strain_direct = (Trans + Trans.T) / 2.0 - np.eye(3)
 
             devstrain = strain_direct - np.trace(strain_direct) / 3.0 * np.eye(3)
-            print("devstrain, lattice_parameter_direct_strain",
-                                                devstrain,
+            print("devstrain, lattice_parameter_direct_strain", devstrain,
                                                 lattice_parameter_direct_strain)
 
             devstrain1, lattice_parameter_direct_strain1 = CP.DeviatoricStrain_LatticeParams(
@@ -2369,8 +2357,6 @@ class spotsset:
                                                                             constantlength="a")
             print("devstrain1, lattice_parameter_direct_strain1", devstrain1,
                                                                 lattice_parameter_direct_strain1)
-
-            #             devstrain_round = np.round(devstrain * 1000, decimals=2)
 
             (devstrain,
             deviatoricstrain_sampleframe,
@@ -2424,9 +2410,6 @@ class spotsset:
         #    print "data_1grain.shape", data_1grain.shape
         if len(data_1grain) >= MINIMUM_LINKS_FOR_FIT:
             index, _, _, posX, posY, intensity, H, K, L, _ = data_1grain.T
-        #
-        #             print "tth exp", tth
-        #             print "chi exp", chi
         else:
             print("Too few exp. data to fit")
             return None, None
@@ -4627,7 +4610,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     :param nb_materials: number of materials used in predefined list Index_Refine_Parameters_dict
     :type nb_materials: int
     """
-
     p = multiprocessing.current_process()
     print("Starting:", p.name, p.pid)
 
@@ -4733,20 +4715,13 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     refpositionfilepath = None
     refposfile = None
 
-    if "Spots Order Reference File" in dict_param_SingleGrain:
-        sortSpots_from_refenceList = dict_param_SingleGrain["Spots Order Reference File"]
+    if "Reference Spots List" in Index_Refine_Parameters_dict:
+        refpositionfilepath = Index_Refine_Parameters_dict["Reference Spots List"]
         # file path of spots to be only considered for refinement + shape or map (2D, 3D)
         # reffilepathsortSpots_from_refenceList  =  filepath, dim1, dim2, [dim3 ...]
-        if sortSpots_from_refenceList not in ('None', "None", None):
-            paramstr = sortSpots_from_refenceList.split(',')
-            # print('paramstr:', paramstr)
+        if refpositionfilepath not in ('None', "None", None):
+            mapshape = Index_Refine_Parameters_dict["mapshape"]
 
-            mapshape = []
-            for dimstr in paramstr[1:]:
-                mapshape.append(int(dimstr))
-
-            refpositionfilepath = paramstr[0]
-            
             # from the .fit we create a .cor file and use the procedure of the next branch
             if refpositionfilepath.endswith('.fit'):
                 refpositionfilepath = IOLT.convert_fit_to_cor(refpositionfilepath)
@@ -5297,7 +5272,6 @@ LIST_OPTIONS_INDEXREFINE = [
     "UseIntensityWeights",
     "nbSpotsToIndex",
     "List Matching Tol Angles",
-    "Spots Order Reference File",
 ]
 
 CONVERTKEY_dict = {
@@ -5318,7 +5292,6 @@ CONVERTKEY_dict = {
     "useintensityweights": "UseIntensityWeights",
     "nbspotstoindex": "nbSpotsToIndex",
     "list matching tol angles": "List Matching Tol Angles",
-    "spots order reference file": "Spots Order Reference File",
 }
 
 LIST_OPTIONS_TYPE_INDEXREFINE = [
@@ -5338,7 +5311,6 @@ LIST_OPTIONS_TYPE_INDEXREFINE = [
     "string",
     "string",
     "int",
-    "string",
     "string",
 ]
 
@@ -5432,15 +5404,10 @@ def readIndexRefineConfigFile(filename):
 
             if option_ref == option or option_ref.lower() == option:
 
-                #                 print "BINGO read %s" % option_ref
-
                 try:
                     optionkey = CONVERTKEY_dict[option_ref]
                 except KeyError:
                     optionkey = option_ref
-
-                #                 print 'optionkey', optionkey
-                #                 print "option, option_type", option_ref, option_type
 
                 option_lower = option_ref.lower() + "_%d" % matindex
                 try:

@@ -1171,6 +1171,7 @@ def readfitfile_comments(fitfilepath):
 
 
 def convert_fit_to_cor(fitfilepath):
+    """ convert .fit file to .cor file"""
 
     col_2theta, col_chi = 9, 10
     col_Xexp, col_Yexp = 7, 8
@@ -1214,12 +1215,13 @@ def convert_fit_to_cor(fitfilepath):
     listval = detectorparameters + [pixelsize, pixelsize, pixelsize, CCDLabel]
     dictparam = {}
     for key, val in zip(listfield, listval):
-        dictparam[key]=val
+        dictparam[key] = val
 
     # print('dictparam in convert_fit_to_cor()', dictparam)
 
     # write .cor file
-    filecor = writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity, param=dictparam,
+    filecor = writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity,
+                                    param=dictparam,
                                     dirname_output=folder,
                                     overwrite=1)
 
@@ -1251,6 +1253,7 @@ def read3linesasMatrix(fileobject):
 
 
 def readListofIntegers(fullpathtoFile):
+    """ parse a string of list of integers """
     fileobject = open(fullpathtoFile, "r")
 
     nbElements = 0
