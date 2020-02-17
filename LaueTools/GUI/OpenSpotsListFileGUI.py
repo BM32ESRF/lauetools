@@ -100,6 +100,8 @@ def OpenCorfile(filename, parent):
     ) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
 
     print("\nCCDCalibDict after readfile_cor ", CCDCalibDict)
+    if 'CCDLabel' in CCDCalibDict:
+        CCDLabel =  CCDCalibDict['CCDLabel']
 
     CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent)
 

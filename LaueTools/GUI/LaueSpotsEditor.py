@@ -337,12 +337,6 @@ class SpotsEditor(wx.Frame):
 
         self.toreturn = self.ReadSortedData()
 
-        #         print 'self.toreturn', self.toreturn
-
-        #        if self.parent is not None:
-        #            print "self.parent", self.parent
-        #            self.parent.readdata_fromEditor(self.toreturn)
-
         if self.func_to_call is not None:
             #             print "self.func_to_call", self.func_to_call
 

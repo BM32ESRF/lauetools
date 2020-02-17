@@ -73,13 +73,8 @@ class CCDFileParameters(wx.Dialog):
                                             self.allCCD_names,
                                             forceinsertion=True)
 
-        self.comboCCD = wx.ComboBox(self.panel,
-                                    -1,
-                                    self.CCDLabel,
-                                    (320, posy - 5),
-                                    size=(180, -1),
-                                    choices=self.allCCD_names,
-                                    style=wx.CB_READONLY)
+        self.comboCCD = wx.ComboBox(self.panel, -1, self.CCDLabel, (320, posy - 5),
+                                    size=(180, -1), choices=self.allCCD_names, style=wx.CB_READONLY)
 
         self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
 
@@ -98,10 +93,7 @@ class CCDFileParameters(wx.Dialog):
 
         for kk, param in enumerate(self.paramdetector):
             wx.StaticText(self.panel, -1, param, (15, self.posyvalues + 5 + 30 * kk))
-            wx.StaticText(self.panel,
-                            -1,
-                            str(self.value[kk]),
-                            (340, self.posyvalues + 5 + 30 * kk))
+            wx.StaticText(self.panel, -1, str(self.value[kk]), (340, self.posyvalues + 5 + 30 * kk))
             wx.StaticText(self.panel, -1, self.units[kk], (540, self.posyvalues + 5 + 30 * kk))
 
         self.comments = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE, size=(580, 50), pos=(10, 280))
@@ -125,6 +117,7 @@ class CCDFileParameters(wx.Dialog):
     #        self.Centre()
 
     def readCCDparams(self):
+        """ read CCD parameters from self.CCDLabel and set value for display"""
         CCDparams = DictLT.dict_CCD[str(self.CCDLabel)]
 
         # TODO add framedim and pixelsize as CCD parameters better than as Detector parameters
@@ -150,12 +143,11 @@ class CCDFileParameters(wx.Dialog):
         display and set values of parameters
         """
         for kk, _ in enumerate(self.paramdetector):
-            self.controltext.append(
-                wx.TextCtrl(self.panel,
-                                -1,
-                                str(self.value[kk]),
-                                (150, self.posyvalues + 30 * kk),
-                                (150, -1)))
+            self.controltext.append(wx.TextCtrl(self.panel,
+                                                    -1,
+                                                    str(self.value[kk]),
+                                                    (150, self.posyvalues + 30 * kk),
+                                                    (150, -1)))
 
     def DeleteValues(self, _):
         """

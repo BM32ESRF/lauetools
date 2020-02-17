@@ -47,6 +47,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
     + comments at the end for calibration CCD parameters that have been used for calculating
     2theta and chi for each peak (in addition to X,Y pixel position)
 
+    :return: outputfilename
+
     sortedexit    : 1 sort peaks by intensity for the outputfile
                     0 sorting not needed (e.g. sorting already done in input file)
 
@@ -95,13 +97,16 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                 % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
                 for i in list(range(longueur))]))
 
-    outputfile.write("\n# File created at %s with readwriteASCII.py" % (time.asctime()))
+    outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
 
     if initialfilename:
         outputfile.write("\n# From: %s" % initialfilename)
-
+            
+    # metadata on detector position and nature
+    print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
     if param is not None:
         outputfile.write("\n# Calibration parameters")
+        # param is a list
         if isinstance(param, (list, np.ndarray)):
             if len(param) == 6:
                 for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:6], param)):
@@ -113,11 +118,13 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                     outputfile.write("\n# %s     :   %s" % (par, value))
             else:
                 raise ValueError("5 or 6 calibration parameters are needed!")
-
+        # param is a dict : CCDCalibdict
         elif isinstance(param, dict):
-            #             print "param is a dict!"
+            print("param is a dict!")
             for key in CCD_CALIBRATION_PARAMETERS:
+                # print('key in CCD_CALIBRATION_PARAMETERS', key)
                 if key in param:
+                    # print('key in param', key)
                     outputfile.write("\n# %s     :   %s" % (key, param[key]))
 
     if comments:
@@ -127,7 +134,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile.close()
 
-    print("(%s) written in %s" % (firstline[:-1], outputfilename))
+    print("(%s) written in %s at the end of writefile_cor()" % (firstline[:-1], outputfilename))
+    return outputfilename
 
 
 def readfile_cor(filename, output_CCDparamsdict=False):
@@ -142,7 +150,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     (see find2thetachi for definition of kf)
 
 
-    returns alldata                  #array with all data)
+    :return: alldata                  #array with all data)
             data_theta, data_chi,
             data_pixX, data_pixY,
             data_I,                            # intensity
@@ -160,7 +168,6 @@ def readfile_cor(filename, output_CCDparamsdict=False):
 
     if sys.version.split()[0] < "2.6.1":
         f = open(filename, "r")
-        # self.alldata = scipy.io.array_import.read_array(f, lines = (1,-1))
         alldata = np.loadtxt(f, skiprows=SKIPROWS)
         f.close()
     else:
@@ -211,11 +218,11 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     # new way of reading CCD calibration parameters
 
     CCDcalib = readCalibParametersInFile(openf)
-    print('CCDcalib in readfile_cor', CCDcalib)
+    print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
 
     if len(CCDcalib) >= 5:
-        print("CCD Detector parameters read from .cor file")
         detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
+        # print("5 CCD Detector parameters read from .cor file: %s"%filename)
 
     openf.close()
 
@@ -296,7 +303,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
     """
     List_sharpedParameters = ["# %s" % elem for elem in CCD_CALIBRATION_PARAMETERS]
 
-    print("List_sharpedParameters", List_sharpedParameters)
+    # print("List_sharpedParameters", List_sharpedParameters)
     if Dict_to_update is None:
         CCDcalib = {}
     else:
@@ -514,7 +521,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                     ) for i in list(range(longueur))]))
         nbpeaks = len(peak_X)
 
-    outputfile.write("\n# File created at %s with readwriteASCII.py" % (time.asctime()))
+    outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
     if initialfilename:
         outputfile.write("\n# From: %s" % initialfilename)
 
@@ -681,9 +688,9 @@ def writefitfile(outputfilename,
         footer += str(dict_matrices["B0"].round(decimals=8)) + "\n"
 
     if "UBB0" in dict_matrices:
-        footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: "
-        "astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, "
-        "xlab1 = ui, ui = unit vector along incident beam)\n"
+        footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns "
+        footer += "in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, "
+        footer += "xlab1 = ui, ui = unit vector along incident beam)\n"
         footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
 
     if "euler_angles" in dict_matrices:
@@ -692,13 +699,13 @@ def writefitfile(outputfilename,
 
     if "mastarlab" in dict_matrices:
         footer += "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] "
-        ",bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"
+        footer += ",bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"
         footer += str(dict_matrices["matstarlab"].round(decimals=7)) + "\n"
 
     if "matstarsample" in dict_matrices:
         footer += "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 "
-        "by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] "
-        ",bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
+        footer += "by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] "
+        footer += ",bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
         footer += str(dict_matrices["matstarsample"].round(decimals=8)) + "\n"
 
     if "devstrain_crystal" in dict_matrices:
@@ -908,7 +915,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             line = f.readline()
             #             print "iline =%d line" % iline, line
             if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-                print("iline =%d line" % iline, line)
+                # print("iline =%d line" % iline, line)
                 try:
                     nb_indexed_spots = int(line.split(":")[-1])
                 except ValueError:
@@ -983,10 +990,12 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 eulerfound = 1
                 lineeuler = iline + 1
 
+                print('matrixfound',matrixfound)
+
             if matrixfound:
                 for jline_matrix in list(range(3)):
                     line = f.readline()
-                    #                     print "line in matrix", line
+                    # print("line in matrix matrixfound", line)
                     lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
                     UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -995,7 +1004,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             if strainfound:
                 for jline_matrix in list(range(3)):
                     line = f.readline()
-                    #                     print "line in matrix", line
                     lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
                     strain[jline_matrix, :] = np.array(lineval, dtype=float)
                     iline += 1
@@ -1005,7 +1013,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 calibparam = []
                 for _ in list(range(7)):
                     line = f.readline()
-                    #                     print "line in matrix", line
                     val = float(line.split(":")[-1])
                     calibparam.append(val)
                     iline += 1
@@ -1113,6 +1120,110 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         return _res, dict_column_header
     else:
         return _res
+
+def readfitfile_comments(fitfilepath):
+    """read comments and return corresponding strings
+    #CCDLabel
+    #pixelsize
+    #Frame dimensions
+    #DetectorParameters
+    """
+    dictcomments = {}
+    ccdlabelflag = False
+    pixelsizeflag = False
+    framedimflag = False
+    detectorflag = False
+
+    f = open(fitfilepath, "r")
+    nblines=0
+    for line in f.readlines():
+        nblines+=1
+    f.seek(0)
+    lineindex=0
+    while(lineindex<nblines):
+        line=f.readline()
+        # print('lineeeeeeeeee', line)
+        if ccdlabelflag:
+            dictcomments['CCDLabel'] = line.split('#')[1].strip()
+            ccdlabelflag = False
+        if pixelsizeflag:
+            dictcomments['pixelsize'] = line.split('#')[1].strip()
+            pixelsizeflag = False
+        if framedimflag:
+            dictcomments['framedim'] = line.split('#')[1].strip()
+            framedimflag = False
+        if detectorflag:
+            dictcomments['detectorparameters'] = line.split('#')[1].strip()
+            detectorflag = False
+
+        if line.startswith(('#CCDLabel', "# CCDLabel")):
+            ccdlabelflag = True
+        if line.startswith(('#pixelsize', "# pixelsize")):
+            pixelsizeflag = True
+        if line.startswith(('#Frame dimensions', "# Frame dimensions")):
+            framedimflag = True
+        if line.startswith(('#DetectorParameters', "# DetectorParameters")):
+            detectorflag = True
+        lineindex += 1
+    f.close()
+
+    return dictcomments
+
+
+def convert_fit_to_cor(fitfilepath):
+
+    col_2theta, col_chi = 9, 10
+    col_Xexp, col_Yexp = 7, 8
+    col_intensity = 1
+
+    output_corfilepath = fitfilepath[-4:] + '.cor'
+
+    folder, filename = os.path.split(fitfilepath)
+    prefixfilename = filename.rsplit(".", 1)[0]
+
+    print('filename', filename)
+    print('prefixfilename', prefixfilename)
+
+    # read .fit file
+    res = readfitfile_multigrains(fitfilepath)
+
+    alldata = res[4]
+
+    #   (nb spots,  nb properties/spots)  sorted by grainindex
+    print('alldata.shape', alldata.shape)
+
+    (twicetheta, chi,
+    data_x, data_y, dataintensity) = (alldata[:, col_2theta], alldata[:, col_chi],
+                            alldata[:, col_Xexp], alldata[:, col_Yexp], alldata[:, col_intensity])
+
+    dictcoms = readfitfile_comments(fitfilepath)
+    if 'pixelsize' in dictcoms:
+        pixelsize = dictcoms['pixelsize']
+        # print('pix', pixelsize)
+    if 'CCDLabel' in dictcoms:
+        CCDLabel = dictcoms['CCDLabel']
+        # print('ccdlabel',CCDLabel)
+
+    if 'detectorparameters' in dictcoms:
+        detparams = dictcoms['detectorparameters']
+        detectorparameters = readStringOfIterable(detparams)
+        # print('detparam',detectorparameters)
+
+    listfield = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
+                                "xpixelsize", "ypixelsize", "CCDLabel"]
+    listval = detectorparameters + [pixelsize, pixelsize, pixelsize, CCDLabel]
+    dictparam = {}
+    for key, val in zip(listfield, listval):
+        dictparam[key]=val
+
+    # print('dictparam in convert_fit_to_cor()', dictparam)
+
+    # write .cor file
+    filecor = writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity, param=dictparam,
+                                    dirname_output=folder,
+                                    overwrite=1)
+
+    return os.path.join(folder, filecor)
 
 
 def read3linesasMatrix(fileobject):
@@ -2128,8 +2239,8 @@ def getpeaks_fromfit2d(filename):
 
 
 def start_func():
-    print("main of readwriteASCII.py")
-    print("numpy version", np.__version__)
+    print("main of IOLaueTools.py")
+    # print("numpy version", np.__version__)
 
     print("print current", time.asctime())
 

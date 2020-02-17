@@ -243,10 +243,11 @@ class spotsset:
     def importdata(self, exp_data):
         """
         initialize spots indexation dictionary from exp_data
-        exp_data : array of 5 elements : tth, chi, Intensity, posX, posY
+        
+        :param exp_data: array of 5 elements tth, chi, Intensity, posX, posY
 
-        NB: tth, chi are the twotheta and chi scattering angles.
-        They must correspond to posX and poxY (pixel position on detector) through calibration
+        .. note:: tth, chi are the twotheta and chi scattering angles.
+            They must correspond to posX and poxY (pixel position on detector) through calibration
         """
         self.indexed_spots_dict = initIndexationDict(exp_data)
 
@@ -292,7 +293,7 @@ class spotsset:
         """
         print("Import Data for DATASET indexation procedure")
 
-        print("filename", filename)
+        print("filename in importdatafromfile()", filename)
         (data_theta,
             Chi,
             posx,
@@ -308,6 +309,7 @@ class spotsset:
             return False
 
         if refpositionfilepath not in (None, "None"):
+            print('BEFORE posx', posx)
             (data_theta, Chi,
             posx, posy, dataintensity,
             isolatedspots,
@@ -316,6 +318,7 @@ class spotsset:
                                         posx, posy,
                                         dataintensity,
                                         refpositionfilepath)
+            print('AFTER posx', posx)
 
             print("isolatedspots", isolatedspots)
             print("isolatedspots_ref", isolatedspots_ref)
@@ -324,7 +327,7 @@ class spotsset:
             refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
             IOLT.writefile_cor(refposfileprefix,
                             2*data_theta, Chi, posx, posy, dataintensity,
-                            param=detectorparameters,
+                            param=CCDcalibdict,
                             overwrite=1)
             refposfile = refposfileprefix + '.cor'
 
@@ -336,6 +339,7 @@ class spotsset:
 
         Twicetheta = 2.0 * data_theta
 
+        # init data to be indexed in a dict  (import is misleading ...)
         self.importdata([Twicetheta, Chi, dataintensity, posx, posy])
 
         self.CCDcalibdict = CCDcalibdict
@@ -1821,8 +1825,8 @@ class spotsset:
                     theoindex = elem[1][0]
                 tps.append(theoindex)
 
-            print('tps', tps)
-            print('nb_of_simulated_spots', list(range(nb_of_simulated_spots)))
+            # print('tps', tps)
+            # print('nb_of_simulated_spots', list(range(nb_of_simulated_spots)))
 
             missing_refs = set(range(nb_of_simulated_spots))- set(tps)
 
@@ -4732,34 +4736,47 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     if "Spots Order Reference File" in dict_param_SingleGrain:
         sortSpots_from_refenceList = dict_param_SingleGrain["Spots Order Reference File"]
         # file path of spots to be only considered for refinement + shape or map (2D, 3D)
-        # reffilepathsortSpots_from_refenceList  =  filepaht, dim1, dim2, [dim3 ...]
+        # reffilepathsortSpots_from_refenceList  =  filepath, dim1, dim2, [dim3 ...]
         if sortSpots_from_refenceList not in ('None', "None", None):
-            param = sortSpots_from_refenceList.split(',')
-            print('param:', param)
+            paramstr = sortSpots_from_refenceList.split(',')
+            # print('paramstr:', paramstr)
+
             mapshape = []
-            for dimstr in param[1:]:
+            for dimstr in paramstr[1:]:
                 mapshape.append(int(dimstr))
 
-            firstrefpositionfilepath = param[0]
-            refpositionfilepath = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
-                                                                        'SpotsReference.cor')
+            refpositionfilepath = paramstr[0]
+            
+            # from the .fit we create a .cor file and use the procedure of the next branch
+            if refpositionfilepath.endswith('.fit'):
+                refpositionfilepath = IOLT.convert_fit_to_cor(refpositionfilepath)
+            
+            if refpositionfilepath.endswith('.cor'):
+                print('\n\nEntering write refposfile  .cor file ')
+                (data_theta,
+                Chi,
+                posx,
+                posy,
+                dataintensity,
+                _,
+                CCDCalibdict) = IOLT.readfile_cor(refpositionfilepath, output_CCDparamsdict=True)[1:]
 
-            (data_theta,
-            Chi,
-            posx,
-            posy,
-            dataintensity,
-            detectorparameters,
-            _) = IOLT.readfile_cor(firstrefpositionfilepath, output_CCDparamsdict=True)[1:]
+                # write refposfile  .cor file     'REF_------.cor
+                
+                dir_reffile, file_reffile = os.path.split(refpositionfilepath)
+                refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
+                refposfile = IOLT.writefile_cor(refposfileprefix,
+                                2 * data_theta, Chi, posx, posy, dataintensity,
+                                param=CCDCalibdict,
+                                overwrite=1)
+                print('\n\nrefposfile written! It is %s\n\n' % refposfile)
+                firstrefposfile = IOLT.writefile_cor(refposfileprefix + 'INITIALREFERENCE',
+                                2 * data_theta, Chi, posx, posy, dataintensity,
+                                param=CCDCalibdict,
+                                overwrite=1)
 
-            # write refposfile  .cor file     'REF_------.cor
-            dir_reffile, file_reffile = os.path.split(refpositionfilepath)
-            refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
-            IOLT.writefile_cor(refposfileprefix,
-                            2*data_theta, Chi, posx, posy, dataintensity,
-                            param=detectorparameters,
-                            overwrite=1)
-            refposfile = refposfileprefix + '.cor'
+                print('\n\nrefposfile written! It is %s\n\n'%firstrefposfile)
+                #refposfile = refposfileprefix + '.cor'
 
     #----------------------------------------
     # ---   Building list of indices -------
@@ -4818,6 +4835,10 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
     if refpositionfilepath is not None:
     # dict of refposfile at the beginning of each line (nb of lines = mapshape[0])
+        print('\n-------Spots Tracking Mode -------\n')
+        # dict with:
+        # key = image index
+        # val = filepath of list of spots nearest in the sample map
         refposfiles = {}
         print('mapshape', mapshape)
         dim1, dim2 = mapshape # slow , fast axes
@@ -4870,7 +4891,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
         # consider peaks from .cor file (that could have been created at the previous branch from .dat file)
         elif suffixfilename == ".cor":
-            print("CCDCalibdict fffffff.cor", CCDCalibdict)
+            # print("CCDCalibdict fffffff.cor", CCDCalibdict)
             corfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
             dirname_in = Index_Refine_Parameters_dict["PeakListCor Folder"]
 
@@ -4916,9 +4937,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 starting_grainindex = 0
 
                 # we may consider only spots present in refposfile (same number and ordered spots)
-                if refpositionfilepath is not None:
+                if refposfile is not None:
 
-                    #  finding the closest in sample map
+                    #  finding the closest reference position file in sample map
                     if imageindex != firstindex:
                         i, j = np.where(maptableindices == imageindex)
                         (iprior, jprior), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
@@ -4930,7 +4951,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                         refposfile = refposfiles[imageindexprior]
 
                     else:
-                        refposfiles[imageindex] = refposfile
+                        print('TRACKING: first image %d: reference file is %s'%(imageindex, firstrefposfile))
+                        refposfiles[imageindex] = firstrefposfile
 
                 #---------------------------------------------------------------
                 # read data and calibration parameters from .cor file
@@ -4952,7 +4974,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     continue
 
             print("\n ########### starting_grainindex %d ###########\n" % starting_grainindex)
-            print("dataset.pixelsize  ee", DataSet.pixelsize)
+            # print("dataset.pixelsize  ee", DataSet.pixelsize)
             key_material = dict_param_SingleGrain["key material"]
             emin = dict_param_SingleGrain["emin"]
             emax = dict_param_SingleGrain["emax"]
@@ -4981,8 +5003,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     % dict_param_SingleGrain["List Matching Tol Angles"])
                 return
 
-            print("with material: %s\n" % key_material)
-            print("dataset.pixelsize  ff", DataSet.pixelsize)
+            # print("with material: %s\n" % key_material)
+            # print("dataset.pixelsize  ff", DataSet.pixelsize)
             # t0_2 = time.time()
 
             dict_loop = {"MATCHINGRATE_THRESHOLD_IAL": dict_param_SingleGrain["MATCHINGRATE THRESHOLD IAL"],
@@ -5044,7 +5066,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             #             if dataSubstrate is not None:
             #                 DataSet.purgedata(dataSubstrate[1:3],
             #                                   dist_tolerance=ANGLE_TOL_REMOVE_PEAKS)
-            print("dataset.pixelsize  ggg", DataSet.pixelsize)
+            # print("dataset.pixelsize  ggg", DataSet.pixelsize)
             previousResults = None
             # read a guessed orientation matrix in dictMat
             if use_previous_results:
@@ -5135,7 +5157,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 LUT = None
 
 
-            print("dataset.pixelsize", DataSet.pixelsize)
+            # print("dataset.pixelsize", DataSet.pixelsize)
             #             print "current unindexed spot absolute index", DataSet.getUnIndexedSpots()
             # ----------------------------------------------------------
             # index spots data set with IndexSpotsSet method
@@ -5403,7 +5425,7 @@ def readIndexRefineConfigFile(filename):
         if matindex >= nb_materials:
             continue
 
-        print("\n option, matindex\n", option, matindex)
+        # print("\n option, matindex\n", option, matindex)
         for option_ref, option_type in zip(LIST_OPTIONS_INDEXREFINE, LIST_OPTIONS_TYPE_INDEXREFINE):
 
             #             print "option_ref, option_type", option_ref, option_type
@@ -5430,7 +5452,7 @@ def readIndexRefineConfigFile(filename):
                     else:
                         val = config.get(section, option_lower)
 
-                    print("val", val)
+                    # print("val", val)
                     dict_param[matindex][optionkey] = val
 
                 #                     print "matindex", matindex

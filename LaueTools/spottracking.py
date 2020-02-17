@@ -108,7 +108,8 @@ def getSpotsAssociations(spotlist_XY, ref_list_XY, maxdistancetolerance=5,
     return correspondence, nocorrespondence
 
 
-def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList):
+def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
+                                                                        thresholddistances=(10,50)):
     """
     return rearranged and shortened list of spots properties (data_theta, Chi, posx, posy, dataintensity)
     if pixel positions (posx, posy) are in referenceList
@@ -157,18 +158,22 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList):
 
 
         # now the array referenceList will be used in the next branch...
-        print('referenceList in sortSpotsDataCor()', referenceList)
+        # print('referenceList in sortSpotsDataCor()', referenceList)
 
     if isinstance(referenceList, (np.ndarray, list)):
 
         spotlist_XY = np.array([posx, posy]).T
 
+        # print('spotlist_XY', spotlist_XY)
+
+        maxdistancetolerance, minimum_seconddistance = thresholddistances
+
         corresp, isolated_spots_in_spotlist = getSpotsAssociations(spotlist_XY,
                                                                     referenceList,
-                                                                    maxdistancetolerance=5,
-                                                                    minimum_seconddistance=10,
-                                                                    list_predictedshift_X=None,
-                                                                    list_predictedshift_Y=None)
+                                                                    maxdistancetolerance,
+                                                                    minimum_seconddistance,
+                                                                    None,
+                                                                    None)
 
         print("corresp", corresp)
         # isolated spots in spotlist
