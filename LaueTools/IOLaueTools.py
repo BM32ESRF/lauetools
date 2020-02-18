@@ -36,6 +36,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                                                                             sortedexit=0,
                                                                             overwrite=1,
                                                                             data_sat=None,
+                                                                            data_props=None,
                                                                             rectpix=0,  # RECTPIX
                                                                             dirname_output=None):
     """
@@ -57,9 +58,11 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     rectpix      :   to deal with non squared pixel: ypixelsize = xpixelsize * (1.0 + rectpix)
 
+    :param data_props: [array of dataproperties, list columns name]
+
     if data_sat list, add column to .cor file to mark saturated peaks
     """
-    longueur = len(chi)
+    nbspots = len(twicetheta)
 
     outputfilename = prefixfilename + ".cor"
 
@@ -79,10 +82,20 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         firstline += " data_sat"
         format_string += "   %d"
         list_of_data += [data_sat]
+    if data_props:
+        data_peaks, columnnames = data_props
+        for k in range(len(columnnames)):
+            firstline += " %s" % columnnames[k]
+            format_string += "   %.06f"
+            list_of_data += [data_peaks[:, k]]
+
     firstline += "\n"
 
+    print('format_string', format_string)
+    print('firstline', firstline)
+
     if sortedexit:
-        # to write in decreasing order of intensity
+        # to write in decreasing order of intensity (col intensity =4)
         print("rearranging exp. spots order according to intensity")
         arraydata = np.array(list_of_data).T
         sortedintensity = np.argsort(arraydata[:, 4])[::-1]
@@ -93,15 +106,20 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         list_of_data = sortedarray.T
 
     outputfile.write(firstline)
-    outputfile.write("\n".join([format_string
-                % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
-                for i in list(range(longueur))]))
+    # outputfile.write("\n".join([format_string
+    #             % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
+    #             for i in list(range(nbspots))]))
+
+    print('nbspots', nbspots)
+    print('len(list_of_data)', len(list_of_data))
+    outputfile.write("\n".join(    [format_string % tuple(  list(  zip((*list_of_data)))[i])
+                                                                    for i in range(nbspots)]  )  )
 
     outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
 
     if initialfilename:
         outputfile.write("\n# From: %s" % initialfilename)
-            
+
     # metadata on detector position and nature
     print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
     if param is not None:
@@ -198,6 +216,9 @@ def readfile_cor(filename, output_CCDparamsdict=False):
         elif nbcolumns == 6:
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T
             data_theta = data_2theta / 2.0
+        elif nbcolumns > 6:
+            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T[:6]
+            data_theta = data_2theta / 2.0
     elif nb_peaks == 1:
         if nbcolumns == 3:
             data_theta = alldata[0] / 2.0
@@ -207,9 +228,13 @@ def readfile_cor(filename, output_CCDparamsdict=False):
         elif nbcolumns == 5:
             data_theta = alldata[0] / 2.0
             (data_chi, data_pixX, data_pixY, data_I) = alldata[1:]
+        
         # case of unindexed file .cor
         elif nbcolumns == 6:
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata
+            data_theta = data_2theta / 2.0
+        elif nbcolumns > 6:
+            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata[:6]
             data_theta = data_2theta / 2.0
 
     #    print "Reading detector parameters if exist"
@@ -591,12 +616,13 @@ def addPeaks_in_Peaklist(
 
     return merged_data
 
+
 def readfile_dat(filename_in, dirname=None):
     """ call simply read_Peaklist()"""
     return read_Peaklist(filename_in, dirname=dirname)
 
 
-def read_Peaklist(filename_in, dirname=None):
+def read_Peaklist(filename_in, dirname=None, output_columnsname=False):
     """
     read peak list .dat file and return the entire array of spots data
 
@@ -609,7 +635,12 @@ def read_Peaklist(filename_in, dirname=None):
     SKIPROWS = 1
 
     data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS)
-    #     print "data_xyI in read_Peaklist()", data_peak.shape
+
+    if output_columnsname:
+        f = open(filename_in, 'r')
+        output_columnsname = f.readline().split()
+        f.close()
+        return data_peak, output_columnsname
 
     return data_peak
 

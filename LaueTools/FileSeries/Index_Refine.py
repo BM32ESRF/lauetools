@@ -29,6 +29,7 @@ else:
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """ modification tooltip fct"""
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -135,7 +136,7 @@ class IndexRefineParameters(wx.Frame):
         self.InitTabs()
 
         # TODO bind with self.Show_Image
-        self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange_PeakSearchMethod)
+        self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange)
 
         btnSave = wx.Button(self.panel, -1, "ACCEPT & SAVE", size=(-1, 50))
         btnSave.Bind(wx.EVT_BUTTON, self.OnSaveConfigFile)
@@ -171,12 +172,16 @@ class IndexRefineParameters(wx.Frame):
         self.Layout()
 
     def OnChangeNbMaterial(self, _):
+        """ call back fct   read nb of materials
+        set  self.nb_of_materials_new"""
         self.nb_of_materials_new = int(self.nbmaterialctrl.GetValue())
 
         print("use now %d materials" % self.nb_of_materials_new)
         self.AddDeleteTabs()
 
     def InitTabs(self):
+        """ set material pages
+        set self.materialpages_list  """
         self.materialpages_list = []
         for material_index in range(self.nb_of_materials):
             pagematerial = PageMaterialPanel(self.nb)
@@ -184,6 +189,7 @@ class IndexRefineParameters(wx.Frame):
             self.nb.AddPage(pagematerial, "Material %d" % material_index)
 
     def AddDeleteTabs(self):
+        """ add or delete materialpage"""
         diff = self.nb_of_materials_new - self.nb_of_materials
         if diff >= 1:
             for material_index in range(diff):
@@ -205,11 +211,12 @@ class IndexRefineParameters(wx.Frame):
             self.nb_of_materials = len(self.materialpages_list)
     #             print dir(self.nb)
 
-    def OnTabChange_PeakSearchMethod(self, evt):
+    def OnTabChange(self, evt):
+        """ """
         pass
 
     def OnSaveConfigFile(self, _):
-
+        """ save .irp config file """
         if not self.getParams():
             return
 
@@ -219,12 +226,8 @@ class IndexRefineParameters(wx.Frame):
         if not os.path.isdir(defaultdir):
             defaultdir = os.getcwd()
 
-        file = wx.FileDialog(
-                            self,
-                            "Save irp File",
-                            defaultDir=defaultdir,
-                            wildcard=wcd,
-                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        file = wx.FileDialog(self, "Save irp File", defaultDir=defaultdir, wildcard=wcd,
+                                                        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if file.ShowModal() == wx.ID_OK:
 
             outputfile = file.GetPath()
@@ -240,10 +243,8 @@ class IndexRefineParameters(wx.Frame):
     def OnLoad(self, _):
         """read irp.file containing indexation and refinement parameters
         """
-        irpfile = wx.FileDialog(
-                                self,
-                                "Open Index Refine Parameters",
-                                wildcard="IndexRefine Param.(*.irp)|*.irp|All files(*)|*")
+        irpfile = wx.FileDialog(self, "Open Index Refine Parameters",
+                                        wildcard="IndexRefine Param.(*.irp)|*.irp|All files(*)|*")
         if irpfile.ShowModal() == wx.ID_OK:
 
             fileirp = irpfile.GetPath()
@@ -268,10 +269,13 @@ class IndexRefineParameters(wx.Frame):
                 pagematerialpanel.setParams()
 
     def setParams(self):
+        """call materialpage.setParams() for all materialpage
+        """
         for materialpage in self.materialpages_list:
             materialpage.setParams()
 
     def getParams(self):
+        """set all .irp parameters in self.dict_param_list """
         self.dict_param_list = []
         flag = True
         for _, materialpage in enumerate(self.materialpages_list):
@@ -284,11 +288,13 @@ class IndexRefineParameters(wx.Frame):
         return flag
 
     def OnLoadDefault(self, _):
+        """ reset .irp parameters to default LIST_VALUESPARAMS """
         print("reset")
         self.list_valueparamIR = LIST_VALUESPARAMS
         self.setParams()
 
     def OnQuit(self, _):
+        """ quit """
         self.Close()
 
 
@@ -380,7 +386,7 @@ class PageMaterialPanel(wx.Panel):
         "after the refinement procedure to link exp. and modeled spots"
 
     def hascorrectvalue(self, kk, val):
-
+        """ return boolean depending on type of velue val entered in self.list_txtparamIR[kk]"""
         flag = True
 
         if kk in (1, 11):
@@ -406,6 +412,7 @@ class PageMaterialPanel(wx.Panel):
         return flag
 
     def setParams(self):
+        """ set all self.list_txtctrl with values of self.list_valueparamIR """
         for kk, _ in enumerate(self.list_txtparamIR):
             self.list_txtctrl[kk].SetValue(str(self.list_valueparamIR[kk]))
 
@@ -414,8 +421,7 @@ class PageMaterialPanel(wx.Panel):
         read parameters from text controllers self.list_txtctrl
         and set self.dict_param_list
 
-        :return: [description]
-        :rtype: [type]
+        :return: boolean
         """
         self.dict_param_list = {}
         flag = True
@@ -601,6 +607,8 @@ class MainFrame_indexrefine(wx.Frame):
         btnStart.SetToolTipString("Start indexing & refining all the peaks list files")
 
     def OnbtnBrowse_filepathdat(self, _):
+        """ select file
+        set self.list_txtctrl[0], self.list_txtctrl[1], self.list_txtctrl[2] """
         folder = wx.DirDialog(self, "Select folder for peaklist files")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -617,6 +625,8 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[1].SetValue(os.path.join(projectpath, "corfiles"))
 
     def OnbtnBrowse_filepathout_fit(self, _):
+        """ select file
+        set self.list_txtctrl[2] """
         folder = wx.DirDialog(
             self, "Select folder for indexed and refined peaklist .fit files")
         if folder.ShowModal() == wx.ID_OK:
@@ -624,12 +634,18 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[2].SetValue(folder.GetPath())
 
     def OnbtnBrowse_filepathout_cor(self, _):
+        """ select file
+        set self.list_txtctrl[1] """
         folder = wx.DirDialog(self, "Select folder for peaklist .cor files")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[1].SetValue(folder.GetPath())
 
     def OnbtnBrowse_filelistindices(self, _):
+        """ select file where list indices is written
+        set self.list_txtctrl[6] file
+        set self.list_txtctrl[7] None
+        set self.list_txtctrl[8] None"""
         print("OnbtnBrowse_filelistindices")
 
         listinndfile = wx.FileDialog(self, "Select file with list of image index (integers)",
@@ -641,6 +657,9 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[8].SetValue('None')
 
     def OnbtnBrowse_filedat(self, _):
+        """ select file  and deduce prefix filename
+        read nb of digits
+        set self.list_txtctrl[3], self.list_txtctrl[4] """
         folder = wx.FileDialog(self, "Select Peaklist File .dat (or .cor)",
                         wildcard="PeakList (*.dat)|*.dat|PeakList (*.cor)|*.cor|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
@@ -656,6 +675,11 @@ class MainFrame_indexrefine(wx.Frame):
             self.list_txtctrl[3].SetValue(intension[: -nbdigits])
 
     def getnbdigits(self):
+        """get integer from self.list_txtctrl[5]
+
+        :return: nb of digits
+        :rtype: int
+        """
         try:
             val = int(self.list_txtctrl[5].GetValue())
             testpos = math.sqrt(val)
@@ -665,6 +689,8 @@ class MainFrame_indexrefine(wx.Frame):
         return val
 
     def OnbtnBrowse_filedet(self, _):
+        """ select file of detector geometry calibration
+        set self.list_txtctrl[9]"""
         folder = wx.FileDialog(self, "Select CCD Calibration Parameters file .det",
                                 wildcard="Detector Parameters File (*.det)|*.det|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
@@ -809,9 +835,13 @@ class MainFrame_indexrefine(wx.Frame):
         return True
 
     def readmapshape(self):
+        """get mapshape from self.txtctrl_mapshape
+
+        :return: tuple of integers, None if troubles
+        """
         mapshapestr = self.txtctrl_mapshape.GetValue()
         errormapshape = False
-        if mapshapestr in ('None', "None",) :
+        if mapshapestr in ('None', "None",):
             errormapshape = True
         else:
             mapshape = IOLT.readStringOfIterable(mapshapestr)
@@ -826,7 +856,9 @@ class MainFrame_indexrefine(wx.Frame):
 
     def OnStart(self, _):
         """
-        Start indexation and refinement of a series of files
+        Start indexation and refinement of a series of files.
+
+        read all self.list_txtctrl[3] and GUI widgets
         """
         print("OnStart in index_Refine.py MainFrame class")
 
@@ -978,14 +1010,14 @@ class MainFrame_indexrefine(wx.Frame):
             # we are sure to be less than that!
             Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
         # ----------------------------------------------------------------------
-        
+
         # ----- selecting part of peaks that belong to "refposfile"
         rsl = self.list_txtctrl[13].GetValue()
-        if rsl in ('None',"None", 'none',"none"):
+        if rsl in ('None', "None", 'none', "none"):
             Index_Refine_Parameters_dict['Reference Spots List'] = None
         else:
             Index_Refine_Parameters_dict['Reference Spots List'] = rsl
-        
+
         print("\n\n\n ------Index_Refine_Parameters_dict['Reference Spots List']", Index_Refine_Parameters_dict['Reference Spots List'])
         if Index_Refine_Parameters_dict['Reference Spots List'] is not None:
 
@@ -993,7 +1025,7 @@ class MainFrame_indexrefine(wx.Frame):
             if mapshape is None:
                 wx.MessageBox('You need to fill Map Shape field:\n"[nb steps // x, nb steps //y]".\n '
                     'At least two numbers! "(nb steps,1)" could work as well for 1D scan\n '
-                    'Please put brackets or parentheses','INFO')
+                    'Please put brackets or parentheses', 'INFO')
                 return
             else:
                 Index_Refine_Parameters_dict['mapshape'] = mapshape
@@ -1150,6 +1182,7 @@ if 0:
 list_valueparamIR = fill_list_valueparamIR(initialparameters)
 
 def start():
+    """ start of GUI for module launch"""
     Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
 
     print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)

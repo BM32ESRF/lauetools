@@ -1515,11 +1515,12 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
             return twicetheta, chi, dataintensity, data_x, data_y
 
 
-def convert2corfile(filename, calibparam, dirname_in=None,
-                                        dirname_out=None,
-                                        pixelsize=165.0 / 2048,
-                                        CCDCalibdict=None):
+def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pixelsize=165.0 / 2048,
+                                                                                CCDCalibdict=None,
+                                                                                add_props=False):
     r"""
+    Convert .dat (peaks list from peaksearch procedure) to .cor (adding scattering angles 2theta chi)
+
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
@@ -1528,6 +1529,8 @@ def convert2corfile(filename, calibparam, dirname_in=None,
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
 
     :param CCDCalibdict: dictionary of CCD file and calibration parameters
+
+    :param add_props: add all peaks properties to .cor file instead of the 5 columns
     """
     if dirname_in != None:
         filename_in = os.path.join(dirname_in, filename)
@@ -1541,13 +1544,19 @@ def convert2corfile(filename, calibparam, dirname_in=None,
         if "xpixelsize" in CCDCalibdict:
             pixelsize = CCDCalibdict["xpixelsize"]
 
-    (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(
-                                                    filename_in,
-                                                    (0, 1, 3),
-                                                    1,
-                                                    sorting_intensity="yes",
-                                                    param=calibparam,
-                                                    pixelsize=pixelsize)
+    (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
+                                                                            (0, 1, 3),
+                                                                            1,
+                                                                            sorting_intensity="yes",
+                                                                            param=calibparam,
+                                                                            pixelsize=pixelsize)
+    if add_props:
+        rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
+        # need to sort data by intensity (col 2)
+        sortedind = np.argsort(rawdata[:, 2])[:: -1]
+        data = rawdata[sortedind]
+
+        add_props = (data[:, 4:], allcolnames[4:])
 
     # TODO: handle windowsOS path syntax
     filename_wo_path = filename.split("/")[-1]
@@ -1560,8 +1569,6 @@ def convert2corfile(filename, calibparam, dirname_in=None,
         filename_out = os.path.join(dirname_out, prefix_outputname)
     else:
         filename_out = prefix_outputname
-
-    #     print "filename_out", filename_out
 
     if CCDCalibdict is not None:
         for kk, key in enumerate(DictLT.CCD_CALIBRATION_PARAMETERS[:5]):
@@ -1580,22 +1587,19 @@ def convert2corfile(filename, calibparam, dirname_in=None,
 
     else:
         param = calibparam + [pixelsize]
+        
+    # print('add_props', data.shape, add_props)
 
-    IOLT.writefile_cor(filename_out,
-                        twicetheta,
-                        chi,
-                        data_x,
-                        data_y,
-                        dataintensity,
-                        sortedexit=0,
-                        param=param,
-                        initialfilename=filename)
+    IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
+                                                            data_props=add_props,
+                                                            sortedexit=0,
+                                                            param=param,
+                                                            initialfilename=filename)
 
 
 def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffix="",
                                                                             nbdigits=4,
                                                                             dirname_in=None,
-                                                                            outputname=None,
                                                                             dirname_out=None,
                                                                             pixelsize=165.0 / 2048,
                                                                             fliprot="no"):
@@ -1622,7 +1626,6 @@ def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffi
         convert2corfile(filename_in,
                         calibparam,
                         dirname_in=dirname_in,
-                        outputname=outputname,
                         dirname_out=dirname_out,
                         pixelsize=pixelsize)
 
@@ -1633,7 +1636,6 @@ def convert2corfile_multiprocessing(fileindexrange,
                                     dirname_in=None,
                                     suffix="",
                                     nbdigits=4,
-                                    outputname=None,
                                     dirname_out=None,
                                     pixelsize=165.0 / 2048,
                                     fliprot="no",
@@ -1647,7 +1649,6 @@ def convert2corfile_multiprocessing(fileindexrange,
         index_start, index_final = fileindexrange
     except:
         raise ValueError("Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)")
-        
 
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
@@ -1662,7 +1663,6 @@ def convert2corfile_multiprocessing(fileindexrange,
                 suffix,
                 nbdigits,
                 dirname_in,
-                outputname,
                 dirname_out,
                 pixelsize))
         jobs.append(proc)

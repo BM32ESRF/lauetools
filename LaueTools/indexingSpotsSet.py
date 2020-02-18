@@ -3,7 +3,7 @@
 Class to handle indexing of a set of laue spots
 
 this class belongs to the open-source LaueTools project
-JS micha May 2019
+JS micha February 2020
 """
 
 import copy
@@ -71,8 +71,7 @@ class OrientMatrix:
             self.matrix = matrix
             self.eulers = None
             if np.array(matrix).shape != (3, 3):
-                raise ValueError(
-                    "the following object is not a 3x3 matrix !"
+                raise ValueError("the following object is not a 3x3 matrix !"
                 ).with_traceback(matrix)
         elif eulers is not None:
             self.eulers = eulers
@@ -243,7 +242,7 @@ class spotsset:
     def importdata(self, exp_data):
         """
         initialize spots indexation dictionary from exp_data
-        
+
         :param exp_data: array of 5 elements tth, chi, Intensity, posX, posY
 
         .. note:: tth, chi are the twotheta and chi scattering angles.
@@ -2730,16 +2729,15 @@ class spotsset:
         write a .fit file
         list of spots belonging to a single grain
 
-        extension:    _g(grain_index).fit for .fit with only data of grain number grain index
-        (e.g. _g2.fit for the third indexed grain). Grain_index starts from zero)
+        .. note:: output filename has additional info  '_g(grain_index).fit' for .fit
+        with only data of grain number grain index
+        (e.g. _g2.fit for the third indexed grain). Grain_index starts from zero!)
         """
         # set output file name
         if corfilename is not None:
 
             if add_grainindex_in_outputfilename:
-                outputfilename = (
-                    corfilename.split(".")[0] + "_g%d" % grain_index + ".fit"
-                )
+                outputfilename = (corfilename.split(".")[0] + "_g%d" % grain_index + ".fit")
             else:
                 outputfilename = corfilename.split(".")[0] + ".fit"
 
@@ -2756,16 +2754,8 @@ class spotsset:
             print("data spots are empty... Nothing to write in .fit file")
             return
 
-        #         print "len(index)", len(index)
-        #         print "index[0], index[-1]", index[0], index[-1]
-
         if add_strain_sampleframe:
-            # deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame(self.deviatoricstrain,
-            #                                         self.refinedUBmatrix,
-            #                                        LaueToolsFrame_for_UBmat=True)
-            # deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
-            #     self.deviatoricstrain, self.refinedUBmatrix
-            # )
+
             deviatoricstrain_sampleframe = self.deviatoricstrain_sampleframe
 
         if addpixdev:
@@ -2790,9 +2780,7 @@ class spotsset:
             for ind in index:
                 pos.append(np.where(abs_spotindex == ind)[0][0])
 
-            #             print 'pos', pos
-
-            # take a part of  pixeldevs
+            # take a part of pixeldevs
             pixeldevarray = pixeldevs[pos]
             # -----------------------------
 
@@ -2849,20 +2837,20 @@ class spotsset:
             columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy\n"
 
         currentfolder = os.path.abspath(os.curdir)
-        IOLT.writefitfile(outputfilename,
-                            datatooutput,
-                            nbindexedspots,
-                            dict_matrices=dict_matrices,
-                            meanresidues=meanresidues,
-                            PeakListFilename=self.filename,
-                            columnsname=columnsname,
-                            modulecaller="indexingSpotsSet.py")
+        IOLT.writefitfile(outputfilename, datatooutput, nbindexedspots, dict_matrices=dict_matrices,
+                                                                meanresidues=meanresidues,
+                                                                PeakListFilename=self.filename,
+                                                                columnsname=columnsname,
+                                                                modulecaller="indexingSpotsSet.py")
         print("File : %s written in %s" % (outputfilename, currentfolder))
 
-    def writecorFile_unindexedSpots(
-        self, corfilename=None, dirname=None, filename_nbdigits=None):
+    def writecorFile_unindexedSpots(self, corfilename=None, dirname=None, filename_nbdigits=None):
         r"""
         write a .cor file of spots that are still not indexed.
+
+        .. todo:: use better IOLaueTools.writefile_cor
+
+        .. note:: called by LaueToolsGUI. .OnSaveIndexationResultsfile
         """
 
         if corfilename is not None:
@@ -2883,14 +2871,9 @@ class spotsset:
                 str_to_add = "_unindexed_"
 
             if corfilename.endswith(".cor"):
-                outputfilename = (
-                    corfilename[:posdigit] + str_to_add + corfilename[posdigit:]
-                )
+                outputfilename = (corfilename[:posdigit] + str_to_add + corfilename[posdigit:])
             else:
-                outputfilename = (
-                    corfilename[:posdigit]
-                    + str_to_add
-                    + corfilename[posdigit:]
+                outputfilename = (corfilename[:posdigit] + str_to_add + corfilename[posdigit:]
                     + ".cor")
 
         if dirname is not None:
@@ -2928,10 +2911,6 @@ class spotsset:
         outputfile.write(header)
         np.savetxt(outputfile, datatooutput, fmt="%.6f")
 
-        #         self.pixelsize = 165. / 2048
-        #         self.dim = (2048, 2048)
-        #         self.kf_direction = 'Z>0'
-        #         self.detectordiameter = 165.
         rectpix = 0.0
         param = self.detectorparameters + [self.pixelsize]
         if param is not None:
@@ -2953,13 +2932,8 @@ class spotsset:
 
         outputfile.close()
 
-    def merge_fitfiles(
-        self,
-        nbgrains,
-        corfilename=None,
-        dirname=None,
-        removefiles=0,
-        add_unindexed_spotslist=True):
+    def merge_fitfiles(self, nbgrains, corfilename=None, dirname=None, removefiles=0,
+                                                                    add_unindexed_spotslist=True):
         r"""
         merge into a single .fit file all .fit files corresponding to each grain
 
@@ -3073,9 +3047,6 @@ class spotsset:
             codefigure = 331
         index_fig = 0
 
-        #    ax.set_xlim((35, 145))
-        #    ax.set_ylim((-45, 45))
-
         # TODO: confusion ax and p ? see plotgrains()
         dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
         nbcolors = len(dicocolor)
@@ -3092,7 +3063,6 @@ class spotsset:
 
             # simul spots
             tthchi = np.array(twicethetaChi[i_grain])
-            #        print tthchi
             ax.scatter(tthchi[:, 0], tthchi[:, 1],
                                 c=dicocolor[(i_grain + 1) % nbcolors], faceted=False)
             if index_fig < nb_of_orientations:
@@ -3160,9 +3130,6 @@ class spotsset:
         if nb_matrices in (7, 8, 9):
             codefigure = 331
 
-        #    ax.set_xlim((35, 145))
-        #    ax.set_ylim((-45, 45))
-
         dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
         nbcolors = len(dicocolor)
 
@@ -3189,8 +3156,6 @@ class spotsset:
             if unindexedspots is not None:
                 # unindexed spots
                 scatter(th_unind, Chi_unind, s=20, c="b", faceted=False, alpha=0.5)
-
-            # simul spots
 
             scatter(
                 all_tthchi[i_mat][0],
@@ -3226,9 +3191,7 @@ class spotsset:
                 isgrain = False
 
         if unindexedspots is not None:
-            th_unind, Chi_unind = self.getUnIndexedSpotsallData(
-                exceptgrains=unindexedspots
-            )[:, 1:3].T
+            th_unind, Chi_unind = self.getUnIndexedSpotsallData(exceptgrains=unindexedspots)[:, 1:3].T
 
         #    print "twicethetaChi", twicethetaChi
         all_tthchi = self.getSpotsallData()[:, 1:3]
@@ -3246,13 +3209,7 @@ class spotsset:
             scatter(th_unind, Chi_unind, s=20, c="b", faceted=False, alpha=0.5)
 
         # all exp spots
-        scatter(all_tthchi[:, 0],
-            all_tthchi[:, 1],
-            s=40,
-            c="w",
-            marker="o",
-            faceted=True,
-            alpha=0.5)
+        scatter(all_tthchi[:, 0], all_tthchi[:, 1], s=40, c="w", marker="o", faceted=True, alpha=0.5)
 
         # theo spots
         for i_grain in list(range(nb_of_orientations)):
@@ -3283,9 +3240,6 @@ def writeEmptyFileSummary(filenamepattern, dirname=None):
 
     nbspots = 0
 
-    # datatooutput = np.transpose(np.array(Columns))
-    # datatooutput = np.round(datatooutput, decimals=7)
-
     header = "# Spots Summary of missing or empty: %s\n" % filenamepattern
     header += "# File created at %s with indexingSpotsSet.py\n" % (time.asctime())
     #         header += '# Number of indexed spots: %d\n' % nbindexedspots
@@ -3311,7 +3265,8 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
 
     tth, chi, posX, posY, Intensity = exp_data
 
-    Twicetheta, Chi, tokeep = GT.removeClosePoints_two_sets((tth, chi), twicethetaChi_to_remove,                                                                                    dist_tolerance=dist_tolerance)
+    Twicetheta, Chi, tokeep = GT.removeClosePoints_two_sets((tth, chi), twicethetaChi_to_remove,
+                                                                dist_tolerance=dist_tolerance)
 
     posx = np.take(posX, tokeep)
     posy = np.take(posY, tokeep)
@@ -3490,9 +3445,6 @@ def comparematrices(matA, matB, tol=0.001, allpermu=None):
 
     resflag = np.all(flagdiff.reshape(Shape[0], ny), axis=1)
 
-    # print("resflag",resflag)
-    # print("np.any(resflag)",np.any(resflag))
-
     return np.any(resflag), resflag
 
 def transform_matrix_similar(Aref, B, tol=0.001):
@@ -3619,7 +3571,7 @@ def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
 
 
 def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
-                        tol=0.0001, keep_only_equivalent=True):
+                                                        tol=0.0001, keep_only_equivalent=True):
     r"""
     Returns: Best Sorted Non equivalent orientation matrix (according to matching rate)
 
@@ -3684,12 +3636,7 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
 
 
 # --- -----------  Orientation Matrix handling in map
-def findtwins(imageindex,
-                dmat,
-                grainindex=0,
-                nbgrains_per_image=1,
-                imagerange=(1708, 3323),
-                tol=0.01):
+def findtwins(imageindex, dmat, grainindex=0, nbgrains_per_image=1, imagerange=(1708, 3323), tol=0.01):
     """
     find twins of matrix in imageindex and grainindex in other matrices in dict dmat
 
@@ -3711,9 +3658,7 @@ def findtwins(imageindex,
         return []
 
     if nbgrains_per_image > len(dmat[imageindex]):
-        print(
-            "nbgrains_per_image argument is not compatible with nb of matrices per image in dmat "
-        )
+        print("nbgrains_per_image argument is not compatible with nb of matrices per image in dmat")
         return []
 
     twins = []
@@ -3723,10 +3668,8 @@ def findtwins(imageindex,
             probed_matrix = dmat[fileindex][matrix_grain_ind]
             if probed_matrix != 0:
                 if AreTwinned(testmatrix, probed_matrix, tol=tol, allpermu=None)[0]:
-                    print(
-                        "Got twins !: [%d,%d] with [%d,%d] "
-                        % (imageindex, grainindex, fileindex, matrix_grain_ind)
-                    )
+                    print("Got twins !: [%d,%d] with [%d,%d] "
+                        % (imageindex, grainindex, fileindex, matrix_grain_ind))
                     nbtwins += 1
                     twins.append(fileindex)
 
@@ -3734,8 +3677,7 @@ def findtwins(imageindex,
     return twins
 
 
-def findsimilarmatrix(
-    imageindex, dmat, grainindex=0, imagerange=(1708, 3323), tol=0.001):
+def findsimilarmatrix(imageindex, dmat, grainindex=0, imagerange=(1708, 3323), tol=0.001):
     """
     find similar matrices in dmat to matrix given by imageindex
 
@@ -3848,7 +3790,7 @@ def get4sigma3Matrices(mat):
 
 # --- ----------  old non OOP methods
 def rawMultipleIndexation(bestEULER, indexed_spots_dict, ELEMENT, detectorparameters,
-                                    AngleTol=1.0, emax=25):
+                                                                        AngleTol=1.0, emax=25):
     """
     from a list of 3euler angles index exp spot data
     if matchingrate in 2theta,chi space is higher than MatchingRate_Threshold (in percent)
@@ -3953,18 +3895,14 @@ def updateIndexationDict(indexation_res, indexed_spots_dict, grain_index, overwr
     return indexed_spots_dict, nb_updates
 
 
-def getIndexedSpots(OrientMatrix,
-                    exp_data,
-                    key_material,
-                    detectorparameters,
-                    useabsoluteindex=None,
-                    removeharmonics=0,
-                    veryclose_angletol=1.0,
-                    emin=5,
-                    emax=25,
-                    detectordiameter=None,
-                    verbose=0,
-                    dictmaterials=DictLT.dict_Materials):
+def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters, useabsoluteindex=None,
+                                                            removeharmonics=0,
+                                                            veryclose_angletol=1.0,
+                                                            emin=5,
+                                                            emax=25,
+                                                            detectordiameter=None,
+                                                            verbose=0,
+                                                            dictmaterials=DictLT.dict_Materials):
     """
     return links between experimental and theoretical spots
     (simulated from a grain with OrientMatrix, key_material)
@@ -4182,9 +4120,6 @@ def plotgrains(dict_mat, key_material, detectorparameters, emax, exp_data=None):
 
     index_fig = 0
 
-    #    ax.set_xlim((35, 145))
-    #    ax.set_ylim((-45, 45))
-
     dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
     nbcolors = len(dicocolor)
 
@@ -4229,11 +4164,7 @@ def PrintMatchingResults(bestmat_list, stats_res_list):
         for kkk in list(range(3)):
             txt = "%s        " % str(mat_elem[kkk])
             if kkk == 0:
-                txt += "res: %s %.3f %.2f" % (
-                    str(stat_elem[:2]),
-                    mean_angular_residues,
-                    matching_rate,
-                )
+                txt += "res: %s %.3f %.2f" % (str(stat_elem[:2]), mean_angular_residues, matching_rate)
             if len(stat_elem) > 3:
                 if kkk == 1:
                     txt += "spot indices %s" % str(stat_elem[3])
@@ -4305,12 +4236,8 @@ def plotindexingMap_rgbs(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
             #                                        (x, y, col, row,
             #                                         Imageindex + startindex)
             return ("r=%1.3f, g=%1.3f, b=%1.3f, MatchingRate=%.1f, Nbpeaks=%d, ImageIndex: %d"
-                % (red,
-                    green,
-                    blue,
-                    dmr[Imageindex + startindex][0],
-                    dnb[Imageindex + startindex][0],
-                    Imageindex + startindex))
+                % (red, green, blue, dmr[Imageindex + startindex][0], dnb[Imageindex + startindex][0],
+                                                                        Imageindex + startindex))
         else:
             return ""
 
@@ -4459,19 +4386,17 @@ def log_result(result):
     print("mylog print")
 
 
-def indexing_multiprocessing(fileindexrange,
-                            dirname_dictRes=None,
-                            Index_Refine_Parameters_dict=None,
-                            verbose=0,
-                            nb_materials=None,
-                            saveObject=0,
-                            nb_of_cpu=2,
-                            build_hdf5=True,
-                            prefixfortitle="",
-                            reanalyse=True,
-                            use_previous_results=True,
-                            updatefitfiles=False,
-                            CCDCalibdict=None):
+def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_Parameters_dict=None,
+                                                                    verbose=0,
+                                                                    nb_materials=None,
+                                                                    saveObject=0,
+                                                                    nb_of_cpu=2,
+                                                                    build_hdf5=True,
+                                                                    prefixfortitle="",
+                                                                    reanalyse=True,
+                                                                    use_previous_results=True,
+                                                                    updatefitfiles=False,
+                                                                    CCDCalibdict=None):
     """
     launch several indexation and unit cell refinement processes in parallel
     """
@@ -4534,10 +4459,6 @@ def indexing_multiprocessing(fileindexrange,
     print("Execution time : %.2f" % t_mp)
 
     print("HOURRA it's FINISHED")
-
-    #     f = open(os.path.join(dirname_dictRes, "indexrefine.log"), 'r')
-    #     list_files = f.readlines()
-    #     f.close()
 
     output_mergeddicts_filename = "%s_dict_%04d_%04d" % (prefixfortitle, index_start, index_final)
 
@@ -4725,7 +4646,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             # from the .fit we create a .cor file and use the procedure of the next branch
             if refpositionfilepath.endswith('.fit'):
                 refpositionfilepath = IOLT.convert_fit_to_cor(refpositionfilepath)
-            
+
             if refpositionfilepath.endswith('.cor'):
                 print('\n\nEntering write refposfile  .cor file ')
                 (data_theta,
@@ -4737,7 +4658,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 CCDCalibdict) = IOLT.readfile_cor(refpositionfilepath, output_CCDparamsdict=True)[1:]
 
                 # write refposfile  .cor file     'REF_------.cor
-                
+
                 dir_reffile, file_reffile = os.path.split(refpositionfilepath)
                 refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
                 refposfile = IOLT.writefile_cor(refposfileprefix,
@@ -4792,8 +4713,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # reading file of list of indices
         listindices = IOLT.readListofIntegers(fileindexrange[0])
         if listindices is None:
-            printred("\n\n*******\nlist indices file: %s contains non integers ! Please check carefully!"
-                        % fileindexrange[0])
+            printred("\n\n*******\nlist indices file: %s contains non integers ! "
+                                                    "Please check carefully!" % fileindexrange[0])
             return
         nstart = listindices[0]
         nend = listindices[-1]
@@ -4860,7 +4781,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                                 calibparam,
                                 dirname_in=dirname_in,
                                 dirname_out=Index_Refine_Parameters_dict["PeakListCor Folder"],
-                                CCDCalibdict=CCDCalibdict)
+                                CCDCalibdict=CCDCalibdict,
+                                add_props=True)
 
             corfilename = datfilename.split(".")[0] + ".cor"
 
@@ -4880,11 +4802,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
         DataSet = spotsset()
-
-        #         DataSet.dict_indexedgrains_material = {}
-        #         DataSet.dict_grain_matrix = {}
-        #         DataSet.dict_grain_matching_rate = {}
-        #         DataSet.dict_grain_devstrain = {}
 
         # preparing dicts of results for indexation of peaks list
         # corresponding to image with imageindex
@@ -5058,10 +4975,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     if GuessedUBMatrices is 0:  # TODO: to BE REMOVED
                         previousResults = None
                     else:
-                        previousResults = (nbAddMatrices,
-                                        addMatrices,
-                                        dictMR[lastindex][0],
-                                        dictNB[lastindex][0])
+                        previousResults = (nbAddMatrices, addMatrices,
+                                            dictMR[lastindex][0], dictNB[lastindex][0])
 
                     print("previousResults", previousResults)
 
@@ -5137,27 +5052,22 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             # ----------------------------------------------------------
             # index spots data set with IndexSpotsSet method
             # -----------------------------------------
-            DataSet.IndexSpotsSet(file_to_index,
-                                    key_material,
-                                    emin,
-                                    emax,
-                                    dict_loop,
-                                    None,
-                                    starting_grainindex=starting_grainindex,
-                                    use_file=0,
-                                    IMM=False,
-                                    n_LUT=nLUTmax,
-                                    LUT=LUT,
-                                    set_central_spots_hkl=set_central_spots_hkl,
-                                    ResolutionAngstrom=ResolutionAngstrom,
-                                    angletol_list=List_Matching_Tol_Angles,
-                                    MatchingRate_List=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 10 steps of refinements is highly reasonable
-                                    nbGrainstoFind=nbGrainstoFind,
-                                    verbose=0,
-                                    corfilename=corfilename,
-                                    dirnameout_fitfile=fitfile_folder,
-                                    previousResults=previousResults,
-                                    CheckOrientations=CheckOrientationParams)
+            DataSet.IndexSpotsSet(file_to_index, key_material, emin, emax, dict_loop, None,
+                                                starting_grainindex=starting_grainindex,
+                                                use_file=0,
+                                                IMM=False,
+                                                n_LUT=nLUTmax,
+                                                LUT=LUT,
+                                                set_central_spots_hkl=set_central_spots_hkl,
+                                                ResolutionAngstrom=ResolutionAngstrom,
+                                                angletol_list=List_Matching_Tol_Angles,
+                                                MatchingRate_List=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 10 steps of refinements is highly reasonable
+                                                nbGrainstoFind=nbGrainstoFind,
+                                                verbose=0,
+                                                corfilename=corfilename,
+                                                dirnameout_fitfile=fitfile_folder,
+                                                previousResults=previousResults,
+                                                CheckOrientations=CheckOrientationParams)
 
             dict_LUT_material[key_material] = DataSet.LUT
 
@@ -5254,65 +5164,45 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 #    return DataSet_Si, DataSet
 
 # --- -----------  Config file .irp file I/O  (Index Refine Parameters)
-LIST_OPTIONS_INDEXREFINE = [
-    "nb materials",
-    "key material",
-    "nbGrainstoFind",
-    "emin",
-    "emax",
-    "MATCHINGRATE THRESHOLD IAL",
-    "AngleTolLUT",
-    "MATCHINGRATE ANGLE TOL",
-    "NBMAXPROBED",
-    "MinimumNumberMatches",
-    "central spots indices",
-    "ResolutionAngstrom",
-    "nLUTmax",
-    "setCentralSpotsHKL",
-    "UseIntensityWeights",
-    "nbSpotsToIndex",
-    "List Matching Tol Angles",
-]
+LIST_OPTIONS_INDEXREFINE = ["nb materials",
+                            "key material",
+                            "nbGrainstoFind",
+                            "emin",
+                            "emax",
+                            "MATCHINGRATE THRESHOLD IAL",
+                            "AngleTolLUT",
+                            "MATCHINGRATE ANGLE TOL",
+                            "NBMAXPROBED",
+                            "MinimumNumberMatches",
+                            "central spots indices",
+                            "ResolutionAngstrom",
+                            "nLUTmax",
+                            "setCentralSpotsHKL",
+                            "UseIntensityWeights",
+                            "nbSpotsToIndex",
+                            "List Matching Tol Angles"]
 
-CONVERTKEY_dict = {
-    "nb materials": "nb materials",
-    "key material": "key material",
-    "nbgrainstofind": "nbGrainstoFind",
-    "emin": "emin",
-    "emax": "emax",
-    "matchingrate threshold ial": "MATCHINGRATE THRESHOLD IAL",
-    "angletollut": "AngleTolLUT",
-    "matchingrate angle tol": "MATCHINGRATE ANGLE TOL",
-    "nbmaxprobed": "NBMAXPROBED",
-    "minimumnumbermatches": "MinimumNumberMatches",
-    "central spots indices": "central spots indices",
-    "resolutionangstrom": "ResolutionAngstrom",
-    "nlutmax": "nLUTmax",
-    "setcentralspotshkl": "setCentralSpotsHKL",
-    "useintensityweights": "UseIntensityWeights",
-    "nbspotstoindex": "nbSpotsToIndex",
-    "list matching tol angles": "List Matching Tol Angles",
-}
+CONVERTKEY_dict = {"nb materials": "nb materials",
+                    "key material": "key material",
+                    "nbgrainstofind": "nbGrainstoFind",
+                    "emin": "emin",
+                    "emax": "emax",
+                    "matchingrate threshold ial": "MATCHINGRATE THRESHOLD IAL",
+                    "angletollut": "AngleTolLUT",
+                    "matchingrate angle tol": "MATCHINGRATE ANGLE TOL",
+                    "nbmaxprobed": "NBMAXPROBED",
+                    "minimumnumbermatches": "MinimumNumberMatches",
+                    "central spots indices": "central spots indices",
+                    "resolutionangstrom": "ResolutionAngstrom",
+                    "nlutmax": "nLUTmax",
+                    "setcentralspotshkl": "setCentralSpotsHKL",
+                    "useintensityweights": "UseIntensityWeights",
+                    "nbspotstoindex": "nbSpotsToIndex",
+                    "list matching tol angles": "List Matching Tol Angles"}
 
-LIST_OPTIONS_TYPE_INDEXREFINE = [
-    "int",
-    "string",
-    "int",
-    "float",
-    "float",
-    "float",
-    "float",
-    "float",
-    "int",
-    "int",
-    "string",
-    "string",
-    "integer",
-    "string",
-    "string",
-    "int",
-    "string",
-]
+LIST_OPTIONS_TYPE_INDEXREFINE = ["int", "string", "int", "float", "float", "float", "float",
+                                "float", "int", "int", "string", "string", "integer", "string",
+                                "string", "int", "string"]
 
 # WARNING when adding parameters above:
 # check in index_refine.py if field position is correct in def hascorrectvalue(self, kk, val):
@@ -5421,10 +5311,6 @@ def readIndexRefineConfigFile(filename):
 
                     # print("val", val)
                     dict_param[matindex][optionkey] = val
-
-                #                     print "matindex", matindex
-                #                     print "optionkey", optionkey
-                #                     print "option_lower", option_lower
                 except ValueError:
                     print("Value of option '% s' has not the correct type" % option)
                     return None
