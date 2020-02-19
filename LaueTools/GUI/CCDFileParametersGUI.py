@@ -193,6 +193,7 @@ class CCDFileParameters(wx.Dialog):
 
             #print("self.parent", self.parent)
             print("self.parent.framedim", self.parent.framedim)
+            print("self.parent.pixelsize", self.parent.pixelsize)
 
             self.parent.detectordiameter = (max(self.parent.framedim) * self.parent.pixelsize)
             self.Close()

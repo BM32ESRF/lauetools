@@ -1120,6 +1120,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("initialParameter when launching calibration", initialParameter)
 
+        print('OnDetectorCalibration ==> pixelsize', pixelsize)
+
         file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
 
         calibframe = DC.MainCalibrationFrame(self, -1, "Detector Calibration Board",

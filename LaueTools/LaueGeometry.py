@@ -339,12 +339,10 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
     return calc_xycam(uflab, calib, energy=0, offset=posI, verbose=verbose, returnIpM=True)
 
 
-def calc_xycam(uflab, calib, energy=0, offset=None,
-                                        verbose=0,
-                                        returnIpM=False,
-                                        pixelsize=165.0 / 2048.,
-                                        dim=(2048, 2048),
-                                        rectpix=RECTPIX):
+def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
+                                                                        pixelsize=165.0 / 2048.,
+                                                                        dim=(2048, 2048),
+                                                                        rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units in CCD frame
     from unit scattered vector uf expressed in Lab. frame
@@ -472,12 +470,10 @@ def calc_xycam(uflab, calib, energy=0, offset=None,
         return xcam, ycam, th0
 
 
-def calc_xycam_transmission(uflab, calib, energy=0, offset=None,
-                                                    verbose=0,
-                                                    returnIpM=False,
-                                                    pixelsize=165.0 / 2048,
-                                                    dim=(2048, 2048),
-                                                    rectpix=RECTPIX):
+def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
+                                                                            pixelsize=165.0 / 2048,
+                                                                            dim=(2048, 2048),
+                                                                            rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
 
@@ -593,8 +589,7 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None,
         return xcam, ycam, th0
 
 
-def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0,
-                                                        verbose=0,
+def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
                                                         pixelsize=165.0 / 2048,
                                                         dim=(2048, 2048),
                                                         kf_direction="Z>0"):
@@ -707,6 +702,7 @@ def from_twchi_to_qunit(Angles):
     qy = np.sin(twthe) * np.sin(chi)
     qz = np.sin(twthe) * np.cos(chi)
     return np.array([qx, qy, qz]) / no
+
 
 def from_twchi_to_q(Angles):
     r"""
@@ -1537,6 +1533,7 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
     else:
         filename_in = filename
 
+    print('CCDCalibdict in convert2corfile of %s'%filename, CCDCalibdict)
     if CCDCalibdict is not None:
         if "CCDCalibParameters" in CCDCalibdict:
             calibparam = CCDCalibdict["CCDCalibParameters"]

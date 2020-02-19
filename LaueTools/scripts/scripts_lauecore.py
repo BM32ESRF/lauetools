@@ -629,17 +629,11 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
         )
 
     for i in list(range(nbofgrains)):
-        condCam = (
-            elem.Xcam ** 2 + elem.Ycam ** 2 <= (DEFAULT_DETECTOR_DIAMETER / 2) ** 2
-        )
-        _oncam[i] = [
-            elem for elem in listoflistofspots[i] if (elem.Xcam is not None and condCam)
-        ]
+        condCam = (elem.Xcam ** 2 + elem.Ycam ** 2 <= (DEFAULT_DETECTOR_DIAMETER / 2) ** 2)
+        _oncam[i] = [elem for elem in listoflistofspots[i] if (elem.Xcam is not None and condCam)]
 
         # Creating list of spot without harmonics
-        _invdict = (
-            {}
-        )  # for each grain, use of _invdict to remove harmonics present in _oncam
+        _invdict = {}  # for each grain, use of _invdict to remove harmonics present in _oncam
 
         for elem in sorted(_oncam[i], reverse=True):
             _invdict[elem.__hash__()] = elem

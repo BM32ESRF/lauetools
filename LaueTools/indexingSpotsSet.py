@@ -87,9 +87,14 @@ class spotsset:
         instantiate the class
         """
         # dict of spots properties
-        # (last element is a flag =1 if spot belong to indexed (completed) grain, 0 else)
+        # key is  spotindex and val a list of spot properties
+        # val: [spotindex, 2theta, chi, X, Y, Intensity, prop0, prop1, prop2,..., H, K, L, Energy, graindindex, isindex]
+        # main elements of val are val[:6] and from indexing  val[-6:]
+        # see initIndexationDict()
         self.indexed_spots_dict = {}
-
+        # corresponding dict  with key is props name and val column index in val of self.indexed_spots_dict
+        self.dict_props_name = {}
+        
         # dicts of completed or current indexation state (key is grain index)
         self.dict_grain_matrix = {}
         self.dict_grain_devstrain = {}
@@ -112,8 +117,7 @@ class spotsset:
         self.detectordiameter = None
         self.CCDLabel = None
 
-        self.emin = 5
-        self.emax = 23
+        self.emin, self.emax = 5, 23
 
         #materials
         self.key_material = None
@@ -240,15 +244,24 @@ class spotsset:
         return self.simulparameter
 
     def importdata(self, exp_data):
+        """ old name of set_dict_spotprops"""
+        self.set_dict_spotprops(exp_data)
+
+    def set_dict_spotprops(self, exp_data, add_props=None):
         """
         initialize spots indexation dictionary from exp_data
 
+        set self.indexed_spots_dict and self.dict_props_name
+
         :param exp_data: array of 5 elements tth, chi, Intensity, posX, posY
+
+        :param add_props: tuple of spots properties: (data, colnames) data is
+        a list of properties values. nb of values = nb of spots
 
         .. note:: tth, chi are the twotheta and chi scattering angles.
             They must correspond to posX and poxY (pixel position on detector) through calibration
         """
-        self.indexed_spots_dict = initIndexationDict(exp_data)
+        self.indexed_spots_dict, self.dict_props_name = initIndexationDict(exp_data, add_props)
 
     def purgedata(self, twicethetaChi_to_remove, dist_tolerance=0.2):
         """
@@ -256,11 +269,14 @@ class spotsset:
         of those present in twicethetaChi_to_remove
 
         twicethetaChi_to_remove : array of two elements [tth, chi]
+
+        .. warning:: Not used yet! and does not handle additional spots properties
         """
         exp_data = self.getSpotsallData()[:, 1:]
         print("Before purge len(exp_data)", exp_data.shape)
-        self.indexed_spots_dict = purgeSpotsinDict(
-            exp_data.T, twicethetaChi_to_remove, dist_tolerance=dist_tolerance)
+        self.indexed_spots_dict, self.dict_props_name = purgeSpotsinDict(exp_data.T,
+                                                                    twicethetaChi_to_remove,
+                                                                    dist_tolerance=dist_tolerance)
         # update the nb of spots
         self.nbspots = len(self.getSpotsallData()[:, 0])
 
@@ -273,14 +289,16 @@ class spotsset:
 
         optionnaly: write a 'REF_*******.cor' file and set self.refpositionfilepath accordingly
 
+        :param filename: fullpath to file (str)
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
         will be selected and aranged according to this reference list.
         A 'REF_*******.cor' is also written enabling spots tracking (by position [posx,posy]) over a set of files.
         This file is self.refpositionfilepath
 
-        sets  spots data set, namely:
+        set  spots data set, namely:
+
         self.nbspots
-        self.indexed_spots_dict  from calling self.importdata()
+        self.indexed_spots_dict  from calling self.set_dict_spotprops()
         calibration and geometry parameters:
             - self.pixelsize
             - self.dim
@@ -288,18 +306,16 @@ class spotsset:
             - self.detectordiameter
             - self.kf_direction
             - ...
-
         """
         print("Import Data for DATASET indexation procedure")
 
         print("filename in importdatafromfile()", filename)
-        (data_theta,
-            Chi,
-            posx,
-            posy,
-            dataintensity,
-            detectorparameters,
-            CCDcalibdict) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)[1:]
+        (allspotsprops,
+        data_theta, Chi, posx, posy, dataintensity,
+        detectorparameters,
+        CCDcalibdict) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
+
+        add_props = IOLT.get_otherspotprops(allspotsprops, filename)
 
         if isinstance(data_theta, (float, int)):
             nb_spots = 1
@@ -311,12 +327,18 @@ class spotsset:
             # print('BEFORE posx', posx)
             (data_theta, Chi,
             posx, posy, dataintensity,
+            new_order_spotindices,
             isolatedspots,
             isolatedspots_ref,
-            ) = SpTra.sortSpotsDataCor(data_theta, Chi,
-                                        posx, posy,
-                                        dataintensity,
-                                        refpositionfilepath)
+            ) = SpTra.sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity,
+                                                                                refpositionfilepath)
+
+            # filter add_props
+            dataprops, colnames = add_props
+            arrayprops=np.array(dataprops).T
+            add_props = arrayprops[new_order_spotindices].T, colnames
+
+
             # print('AFTER posx', posx)
             # print("isolatedspots", isolatedspots)
             # print("isolatedspots_ref", isolatedspots_ref)
@@ -325,6 +347,7 @@ class spotsset:
             refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
             IOLT.writefile_cor(refposfileprefix,
                             2*data_theta, Chi, posx, posy, dataintensity,
+                            data_props=add_props,
                             param=CCDcalibdict,
                             overwrite=1)
             refposfile = refposfileprefix + '.cor'
@@ -333,12 +356,14 @@ class spotsset:
 
         nb_spots = len(data_theta)
 
-        print("CCDcalibdict", CCDcalibdict)
+        # print("CCDcalibdict", CCDcalibdict)
 
         Twicetheta = 2.0 * data_theta
 
-        # init data to be indexed in a dict  (import is misleading ...)
-        self.importdata([Twicetheta, Chi, dataintensity, posx, posy])
+        # init data to be indexed in a dict
+        # print('len Twicetheta',len(Twicetheta), Twicetheta[:10])
+        # print('add_props', add_props)
+        self.set_dict_spotprops([Twicetheta, Chi, dataintensity, posx, posy], add_props=add_props)
 
         self.CCDcalibdict = CCDcalibdict
         self.CCDLabel = self.CCDcalibdict['CCDLabel']
@@ -381,22 +406,26 @@ class spotsset:
 
     def getSpotsallData(self):
         """
-        get all data of experimental spots
-        array where columns are:
+        get all data of experimental spots (only the 6 first ones)
+
+        set self.data
+
+        :return: array where columns are
         absolute spot index, tth, chi, posX, posY, intensity
         """
         data = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
             data.append([index, tth, chi, posX, posY, intensity])
+        arr_data = np.array(data)
+        self.alldata = arr_data
 
-        self.alldata = np.array(data)
-        return self.alldata
+        return arr_data
 
     def getSpotsExpData(self, selectedspots_index=None):
         """
-        return useful data of all experimental spots in 3 rows
-        i.e. 2theta, chi, intensity
+        return (2theta, chi, intensity) of all experimental spots
+        i.e. 
 
         selectedspots_index  : None, return all data
                                 : list of indices, return corresponding data
@@ -412,93 +441,97 @@ class spotsset:
 
     def getSpotsFamily(self, grain_index):
         """
-        return spots that belong to the same grain
+        get spots indices that belong to the same grain
+
+        :return: list of spot indices (int)
         """
+        c = -1 # index column flag isindexed 1, otherwise 0
+        cg = -2 # index column grainindex
         spots_set = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             # spot has been indexed
-            if self.indexed_spots_dict[key_spot][-1] == 1:
-                if self.indexed_spots_dict[key_spot][-2] == grain_index:
+            if self.indexed_spots_dict[key_spot][c] == 1:
+                if self.indexed_spots_dict[key_spot][cg] == grain_index:
                     spots_set.append(key_spot)
 
         return spots_set
 
     def getUnIndexedSpots(self):
         """
-        read dictionary of spots and
         return spots indices for which indexation has not been completed
+
+        or in progress of indexing  grain
+
+        self.indexedgrains is grainindex list of completed indexations
         """
+        c = -1 # index column flag isindexed
+
+        # print('self.indexed_spots_dict in getUnIndexedSpots',self.indexed_spots_dict)
+
         unindexed_spots_indices = []
-        for key_spot in sorted(self.indexed_spots_dict.keys()):
-            if self.indexed_spots_dict[key_spot][-1] == 0:
-                unindexed_spots_indices.append(key_spot)
-            elif self.indexed_spots_dict[key_spot][-1] == 1:
-                if self.indexed_spots_dict[key_spot][-2] not in self.indexedgrains:
-                    unindexed_spots_indices.append(key_spot)
+        for k_spot in sorted(self.indexed_spots_dict.keys()):
+            # print('getUnIndexedSpots',self.indexed_spots_dict[k_spot])
+            # not indexed
+            if self.indexed_spots_dict[k_spot][c] == 0:
+                unindexed_spots_indices.append(k_spot)
+            # indexed
+            elif self.indexed_spots_dict[k_spot][c] == 1:
+                # but actually indexing is in progress only
+                if self.indexed_spots_dict[k_spot][c] not in self.indexedgrains:
+                    unindexed_spots_indices.append(k_spot)
 
         return unindexed_spots_indices
 
     def getSpotsFamilyallData(self, grain_index, onlywithMiller=1):
         """
         return all data of experimental spots for one grain
+
+        Reader of self.indexed_spots_dict
+
+        :param onlywithMiller: 1, 3 dedicated elements for H, K,L
+                                0, single element with array of [h,k,l]
         """
+        # TODO: to be changed:  CREATE and OVERWRITE val of self.indexed_spots_dict
+        c = -1 # index column flag isindexed 1, otherwise 0
+        cg = -2 # index column flag isindexed 1, otherwise 0
         data = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
-            # last element is a flag. flag=1 implies spot has been indexed
-            if self.indexed_spots_dict[key_spot][-1] == 1:
-                # spot belong to the grain grain_index
-                if self.indexed_spots_dict[key_spot][-2] == grain_index:
-                    (index,
-                        tth,
-                        chi,
-                        posX,
-                        posY,
-                        intensity,
-                        Miller,
-                        Energy,
-                    ) = self.indexed_spots_dict[key_spot][:8]
-                    # in ambiguous case, spot has not been assigned Miller indices
-                    if onlywithMiller == 1:
-                        if Miller is not None:
-                            H, K, L = Miller
-                            data.append([index, tth, chi, posX, posY,
-                                            intensity, H, K, L, Energy])
+            # flag=1 implies spot has been indexed
+            if self.indexed_spots_dict[key_spot][c] == 1:
+                # spot belong to the grain #grain_index
+                if self.indexed_spots_dict[key_spot][cg] == grain_index:
+                    
+                    # (index,
+                    #     tth,
+                    #     chi,
+                    #     posX,
+                    #     posY,
+                    #     intensity) = self.indexed_spots_dict[key_spot][:6]
+
+                    # H,K,L,Energy = self.indexed_spots_dict[key_spot][-6:-6+4]
+
+                    # dd = [self.indexed_spots_dict[key_spot][i] for i in (0,1,2,3,4,5,6,-6,-5,-4,-3)]
+                    data.append([self.indexed_spots_dict[key_spot][i] for i in (0,1,2,3,4,5,6,-6,-5,-4,-3)])
 
         return np.array(data)
 
     def getSummaryallData(self):
         """
-        return all data of experimental spots
+        return all data of experimental spots (indexed and not indexed spot)
+
+        Reader of self.indexed_spots_dict
         """
+        c = -1 # col isindexed
+        # TODO: to be changed: here CREATE and OVERWRITE val of self.indexed_spots_dict
         data = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
-            # spot has been indexed
-            if self.indexed_spots_dict[key_spot][-1] == 1:
-                (spotindex,
-                    tth,
-                    chi,
-                    posX,
-                    posY,
-                    intensity,
-                    Miller,
-                    Energy,
-                ) = self.indexed_spots_dict[key_spot][:8]
-
-                grain_index = self.indexed_spots_dict[key_spot][-2]
-                if Miller is not None:
-                    H, K, L = Miller
-                    data.append([spotindex, grain_index, tth, chi, posX, posY,
-                                    intensity, H, K, L, Energy])
-                else:
-                    # experimental spot is likely belonging to one grain
-                    # 10000 is a flag meanwhile waiting for other structure
-                    data.append([spotindex, grain_index, tth, chi, posX, posY, intensity,
-                                                                    10000, 10000, 10000, 10000])
+            spot_props = self.indexed_spots_dict[key_spot]
+            
             # spot has not been indexed
-            else:
-                (spotindex, tth, chi, posX, posY, intensity) = self.indexed_spots_dict[key_spot][:6]
-                data.append([spotindex, -1, tth, chi, posX, posY, intensity,
-                                            10000, 10000, 10000, 10000])
+            if spot_props[c] != 1:
+                # set H,K,L, Energy to 10000
+                spot_props[-6:-6+4] = 10000, 10000, 10000, 10000
+            data.append(spot_props)
 
         return np.array(data)
 
@@ -532,9 +565,11 @@ class spotsset:
     def getUnIndexedSpotsallData(self, exceptgrains=None):
         """
         return all data of unindexed experimental spots
-        and those already indexed but not from grains of index in exceptgrains
+        and those already indexed but not from grains in 'exceptgrains' list
 
-        exceptgrains    : list of integers or integer
+        Reader of self.indexed_spots_dict (only the 6 main elements)
+
+        :param exceptgrains: list of integers or integer, grains for which indexing is in progress (still unindexed)
 
         return:
         array whose columns are: absolute spot index, tth, chi, posX, posY, intensity
@@ -551,43 +586,33 @@ class spotsset:
             # spot already indexed, guessed to be indexed or being indexed
             if isinstance(grain_origin, int):
                 if grain_origin not in exceptgrains:
-                    index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
-                    data.append([index, tth, chi, posX, posY, intensity])
+                    data.append(self.indexed_spots_dict[key_spot])
             # spot not indexed at all
-            else:
-                index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[key_spot][:6]
-                data.append([index, tth, chi, posX, posY, intensity])
+            elif grain_origin is None:
+                data.append(self.indexed_spots_dict[key_spot])
 
         return np.array(data)
 
     def getSpotsFromSpotIndices(self, spotindices):
         r"""
-        return all data of unindexed experimental spots from their index
-        and those already indexed but not from grains of index in exceptgrains
+        return all data of experimental spots from their index
 
         spotindices    : list of integers or integer
 
         return:
         array whose columns are: absolute spot index, tth, chi, posX, posY, intensity
         """
-        data = []
+        # print("self.indexed_spots_dict in getSpotsFromSpotIndices", self.indexed_spots_dict)
 
-        print("self.indexed_spots_dict", self.indexed_spots_dict)
+        arr = np.zeros((len(spotindices), 4))
+        for k, spot_index in enumerate(spotindices):
+            # absoluteindex, twthe, chi, intensity_data
+            arr[k] = [self.indexed_spots_dict[spot_index][i] for i in (0, 1, 2, 5)]
 
-        for spot_index in spotindices:
+        absoluteindex=np.array(arr[:,0], dtype=np.int)
 
-            print("self.indexed_spots_dict[spot_index]", self.indexed_spots_dict[spot_index])
-
-            index, tth, chi, posX, posY, intensity = self.indexed_spots_dict[spot_index][:6]
-            data.append([index, tth, chi, posX, posY, intensity])
-
-        toindexdata = np.array(data)
-
-        absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
-        intensity_data = toindexdata[:, 5]
-        absoluteindex = np.array(absoluteindex, dtype=np.int)
-
-        return np.array([twicetheta_data, chi_data, intensity_data]), absoluteindex
+        # np.array([twicetheta_data, chi_data, intensity_data]), absoluteindex
+        return arr[:, 1: 4].T, absoluteindex
 
     def getSelectedExpSpotsData(self, exceptgrains=None):
         """
@@ -638,12 +663,16 @@ class spotsset:
         """
         reset spots properties in self.indexed_spots_dict for spots
         belonging to the grain of index 'grain_index'
+
+        Reader of self.indexed_spots_dict
         """
+        c = 6  # col of flag isindexed
+        cg = -1  # col of #grainindex
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             # spot has been indexed
-            if self.indexed_spots_dict[key_spot][-1] == 1:
-                if self.indexed_spots_dict[key_spot][-2] == grain_index:
-                    self.indexed_spots_dict[key_spot] = self.indexed_spots_dict[key_spot][:6] + [0]
+            if self.indexed_spots_dict[key_spot][c] == 1:
+                if self.indexed_spots_dict[key_spot][cg] == grain_index:
+                    self.indexed_spots_dict[key_spot][-6:] = [10000,10000,10000,10000,-1,0] 
 
     def AssignHKL(self, Orientation, grain_index, AngleTol=1.0,
                         use_spots_in_currentselection=True, selectbyspotsindices=None, verbose=1):
@@ -1241,10 +1270,10 @@ class spotsset:
                         print("central list of spots contains spots that do not belong the current list of spots to be indexed")
                         break
 
-                    print("Central set of exp. spotDistances from spot_index_central_list probed")
-                    print("self.absolute_index", self.absolute_index)
-                    print("spot_index_central_list", spot_index_central_list)
-                    print(self.absolute_index[spot_index_central_list])
+                    # print("Central set of exp. spotDistances from spot_index_central_list probed")
+                    # print("self.absolute_index", self.absolute_index)
+                    # print("spot_index_central_list", spot_index_central_list)
+                    # print(self.absolute_index[spot_index_central_list])
 
                     # find single best orientation matrix UB solution
                     (bestUB,
@@ -1276,7 +1305,7 @@ class spotsset:
                     print("taking the first one only.")
 
                 # update (overwrite) candidate orientMatrix object list
-                print("bestUB object", bestUB)
+                # print("bestUB object", bestUB)
 
                 if bestUB is None:
                     print("\n #### No matrix available for refinement.####")
@@ -1508,8 +1537,9 @@ class spotsset:
                                 hklmin = np.dot(transfmat, hkl.T).T
 
                                 for kspot, exp_spot_index in enumerate(index):
-
-                                    self.indexed_spots_dict[exp_spot_index][6] = hklmin[kspot]
+                                    # TODO: to be changed: here CREATE and OVERWRITE val of self.indexed_spots_dict
+                                    hh,kk,ll = hklmin[kspot]
+                                    self.indexed_spots_dict[exp_spot_index][-6:-6+3] = [hh,kk,ll]
                                 #
                                 # print("hkl", hkl)
                                 # print("new hkl (min euler angles)", hklmin)
@@ -1598,20 +1628,17 @@ class spotsset:
             except:
                 theo_index = int(theo_index)
 
+            c = -1 # col of flag is indexed
             # this exp spot has not been already indexed
-            if self.indexed_spots_dict[exp_index][-1] != 1:
+            if self.indexed_spots_dict[exp_index][c] != 1:
                 # keep the spot data and add theo info
-
-                self.indexed_spots_dict[exp_index] = self.indexed_spots_dict[exp_index][
-                    :6
-                ] + [miller_indices, energy, grain_index, 1]
+                # TODO: to be changed! here CREATE and OVERWRITE val of self.indexed_spots_dict
+                hh,kk,ll=miller_indices
+                self.indexed_spots_dict[exp_index][-6:] + [hh,kk,ll, energy, grain_index, 1]
                 #                linked_spots.append(exp_index)
                 nb_updates += 1
 
-        print(
-            "\ngrain #%d : %d links to simulated spots have been found "
-            % (grain_index, nb_updates)
-        )
+        print("\ngrain #%d : %d links to simulated spots have been found " % (grain_index, nb_updates))
         #        print "absolute spot indices that have been linked", linked_spots
 
         return nb_updates
@@ -1639,14 +1666,14 @@ class spotsset:
         for k, pos_data in enumerate(Data):
             close_spots = self.getCloseExpSpots(pos_data[:2], angle_tol, verbose=0)
 
-            miller_indices = millers[k]
+            hh, kk, ll = millers[k]
             energy = energies[k]
 
             for close_spot in close_spots:
                 exp_index = int(close_spot[0])
                 # keep the spot data and add theo info
-
-                self.indexed_spots_dict[exp_index] = self.indexed_spots_dict[exp_index][:6] + [miller_indices, energy, MissingRef_grain_index, 1]
+                # TODO: to be changed! here CREATE and OVERWRITE val of self.indexed_spots_dict
+                self.indexed_spots_dict[exp_index][-6:] + [hh, kk, ll, energy, MissingRef_grain_index, 1]
 
         #         print "Number of missing reflections:",len(close_spots)
         print("Experimental experimental spots indices which are not indexed",
@@ -2195,19 +2222,12 @@ class spotsset:
         """
         MINIMUM_LINKS_FOR_FIT = 8
 
-        #         print "self.indexed_spots_dict",self.indexed_spots_dict
-
         data_1grain_raw = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
 
         if isinstance(nbSpotsToIndex, int):
             data_1grain = data_1grain_raw[:nbSpotsToIndex]
         else:
             data_1grain = data_1grain_raw
-
-        #         print "data_1grain",data_1grain
-
-        #         print "absolute index of spots to refine", data_1grain[:, 0]
-        #         print "data_1grain.shape", data_1grain.shape
 
         if len(data_1grain) >= MINIMUM_LINKS_FOR_FIT:
             index, _, _, posX, posY, intensity, H, K, L, _ = data_1grain.T
@@ -2662,13 +2682,29 @@ class spotsset:
 
         Data = self.getSummaryallData()
 
-        (spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy) = Data.T
+        assert len(Data.shape) == 2
 
-        Columns = [spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy]
+        nbspots = len(Data)
+        nb_props = len(self.dict_props_name)
+        nb_add_props = nb_props-6-6  # 6 main ones on the left and 6 on the right for indexing purpose
+        # print('nb_add_props',nb_add_props)
+        # print('self.dict_props_name',self.dict_props_name)
+        if nb_add_props == 0:
+            datatooutput = np.take(Data, (0, -2, 1, 2, 3, 4, 5, -6, -5, -4, -3), axis=1)
+        else:
+            selcol = tuple([0, -2, 1, 2, 3, 4, 5] + list(range(6, 6 + nb_add_props))+[-6, -5, -4, -3])
+            datatooutput = np.take(Data, selcol, axis=1)
 
-        nbspots = len(spotindex)
+        if 0:
+            (spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy) = Data.T
 
-        datatooutput = np.transpose(np.array(Columns))
+            Columns = [spotindex, grain_index, tth, chi, posX, posY, intensity, H, K, L, Energy]
+
+            nbspots = len(spotindex)
+
+            datatooutput = np.transpose(np.array(Columns))
+
+
         datatooutput = np.round(datatooutput, decimals=7)
 
         header = "# Spots Summary of: %s\n" % (self.filename)
@@ -2677,7 +2713,20 @@ class spotsset:
         #         header += '# Number of unindexed spots: %d\n' % nbunindexedspots
         header += "# Number of spots: %d\n" % nbspots
 
-        header += ("#spot_index grain_index 2theta Chi Xexp Yexp intensity h k l Energy\n")
+        header += ("#spot_index grain_index 2theta Chi Xexp Yexp")
+
+        if nb_add_props > 0:
+            header_addprops = ''
+            invdict = dict([(val, key) for key, val in self.dict_props_name.items()])
+            # print('invdict', invdict)
+            # start at 6 to 12 included for 7 added spot properties
+            for keycol in range(6, 6 + nb_add_props):
+                header_addprops += ' %s' % invdict[keycol]  
+            # print('header_addprops',header_addprops)
+            header = header[:-1]+header_addprops
+
+        header = header + " intensity h k l Energy\n"
+
         outputfile = open(outputfilename, "w")
 
         outputfile.write(header)
@@ -2842,7 +2891,7 @@ class spotsset:
                                                                 PeakListFilename=self.filename,
                                                                 columnsname=columnsname,
                                                                 modulecaller="indexingSpotsSet.py")
-        print("File : %s written in %s" % (outputfilename, currentfolder))
+        print("Fit File : %s written in %s" % (outputfilename, currentfolder))
 
     def writecorFile_unindexedSpots(self, corfilename=None, dirname=None, filename_nbdigits=None):
         r"""
@@ -2879,20 +2928,35 @@ class spotsset:
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
 
-        # [index, tth, chi, posX, posY, intensity]
-        res_unindexed = self.getUnIndexedSpotsallData(exceptgrains=self.indexedgrains).T
 
-        if len(res_unindexed) == 0:
-            return
+        alldataunindexed = self.getUnIndexedSpotsallData(exceptgrains=self.indexedgrains)
+        assert len(alldataunindexed.shape) == 2
 
-        (index, tth, chi, posX, posY, intensity) = res_unindexed
+        nbunindexedspots = len(alldataunindexed)
+        nb_props = len(self.dict_props_name)
+        nb_add_props = nb_props - 6 - 6  # 6 main ones on the left and 6 on the right for indexing purpose
+        # print('nb_add_props',nb_add_props)
+        # print('self.dict_props_name',self.dict_props_name)
+        if nb_add_props == 0:
+            datatooutput = np.take(alldataunindexed, (0, 5, 1, 2, 3, 4), axis=1)
+        else:
+            selcol = tuple([0, 5, 1, 2, 3, 4]+ list(range(6, 6 + nb_add_props)))
+            datatooutput = np.take(alldataunindexed, selcol, axis=1)
 
-        Columns = [index, intensity, tth, chi, posX, posY]
+        if 0:
+            # [index, tth, chi, posX, posY, intensity]
+            res_unindexed = self.getUnIndexedSpotsallData(exceptgrains=self.indexedgrains).T
 
-        nbunindexedspots = len(index)
+            if len(res_unindexed) == 0:
+                return
 
-        datatooutput = np.transpose(np.array(Columns))
+            (index, tth, chi, posX, posY, intensity) = res_unindexed
+            Columns = [index, intensity, tth, chi, posX, posY]
+            nbunindexedspots = len(index)
+            datatooutput = np.transpose(np.array(Columns))
+
         datatooutput = np.round(datatooutput, decimals=7)
+        print('datatooutput.shape', datatooutput.shape)
 
         # TODO: add pixdev mean and all corresponding pixdev
         header = "# Unindexed and unrefined Spots of: %s\n" % (self.filename)
@@ -2905,6 +2969,16 @@ class spotsset:
         header += "None" + "\n"
 
         header += "#spot_index intensity 2theta Chi Xexp Yexp\n"
+        if nb_add_props > 0:
+            header_addprops = ''
+            invdict = dict([(val, key) for key, val in self.dict_props_name.items()])
+            # print('invdict', invdict)
+            # start at 6 to 12 included for 7 added spot properties
+            for keycol in range(6, 6 + nb_add_props):
+                header_addprops += ' %s' % invdict[keycol]  
+            # print('header_addprops', header_addprops)
+            header = header[:-1]+header_addprops+'\n'
+
         outputfile = open(outputfilename, "w")
 
         print("Saving unindexed  fit file: %s" % outputfilename)
@@ -2914,21 +2988,21 @@ class spotsset:
         rectpix = 0.0
         param = self.detectorparameters + [self.pixelsize]
         if param is not None:
-            outputfile.write("\n# Calibration parameters")
+            outputfile.write("# Calibration parameters\n")
             if len(param) == 6:
                 for par, value in zip(
                     ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize"], param):
-                    outputfile.write("\n# %s     :   %s" % (par, value))
+                    outputfile.write("# %s     :   %s\n" % (par, value))
                 ypixelsize = param[5] * (1.0 + rectpix)
-                outputfile.write("\n# ypixelsize     :   " + str(ypixelsize))
+                outputfile.write("# ypixelsize     :   %s\n" % str(ypixelsize))
             elif len(param) == 5:
                 for par, value in zip(["dd", "xcen", "ycen", "xbet", "xgam"], param):
-                    outputfile.write("\n# %s     :   %s" % (par, value))
+                    outputfile.write("# %s     :   %s\n" % (par, value))
             else:
                 raise ValueError("5 or 6 calibration parameters are needed!")
 
         # add CCDlabel:
-        outputfile.write("\n# CCDLabel    :  %s"%self.CCDLabel)
+        outputfile.write("# CCDLabel    :  %s"%self.CCDLabel)
 
         outputfile.close()
 
@@ -3014,9 +3088,7 @@ class spotsset:
             spots = self.getSpotsFamily(grain_index)
             if spots:
                 for key_spot in spots:
-                    twicethetaChi[grain_index].append(
-                        self.indexed_spots_dict[key_spot][1:3]
-                    )
+                    twicethetaChi[grain_index].append(self.indexed_spots_dict[key_spot][1:3])
                 grain_index += 1
                 twicethetaChi.append([])
             else:
@@ -3024,8 +3096,7 @@ class spotsset:
 
         if unindexedspots is not None:
             th_unind, Chi_unind = self.getUnIndexedSpotsallData(
-                exceptgrains=unindexedspots
-            )[:, 1:3].T
+                exceptgrains=unindexedspots)[:, 1:3].T
 
         #    print "twicethetaChi", twicethetaChi
         all_tthchi = self.getSpotsallData()[:, 1:3]
@@ -3117,8 +3188,6 @@ class spotsset:
                 print("Warning: limiting to 9 plots")
                 break
 
-        #        print "nb_of_matrices to plot %d " % nb_matrices + titlefig
-
         if nb_matrices == 1:
             codefigure = 111
         if nb_matrices == 2:
@@ -3182,9 +3251,7 @@ class spotsset:
             spots = self.getSpotsFamily(grain_index)
             if spots:
                 for key_spot in spots:
-                    twicethetaChi[grain_index].append(
-                        self.indexed_spots_dict[key_spot][1:3]
-                    )
+                    twicethetaChi[grain_index].append(self.indexed_spots_dict[key_spot][1:3])
                 grain_index += 1
                 twicethetaChi.append([])
             else:
@@ -3193,13 +3260,8 @@ class spotsset:
         if unindexedspots is not None:
             th_unind, Chi_unind = self.getUnIndexedSpotsallData(exceptgrains=unindexedspots)[:, 1:3].T
 
-        #    print "twicethetaChi", twicethetaChi
         all_tthchi = self.getSpotsallData()[:, 1:3]
-        #    print all_tthchi
         nb_of_orientations = grain_index
-
-        #    ax.set_xlim((35, 145))
-        #    ax.set_ylim((-45, 45))
 
         dicocolor = {0: "k", 1: "r", 2: "g", 3: "b", 4: "c", 5: "m"}
         nbcolors = len(dicocolor)
@@ -3259,10 +3321,12 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
     twicethetaChi_to_remove tuple of 2 elements: 2theta,chi
     dist_tolerance = angular tolerance in a approximate 2theta chi cartesian space
 
-    NOTE: may be used to remove substrate uninteresting peaks from substrate
-    """
-    _ = len(exp_data[0])
+    :return: indexed_spots_dict, dict_props_name
 
+    .. note:: may be used to remove substrate uninteresting peaks from substrate
+
+    .. warning:: handling additional spots properties is not implemented... (add_props=None)
+    """
     tth, chi, posX, posY, Intensity = exp_data
 
     Twicetheta, Chi, tokeep = GT.removeClosePoints_two_sets((tth, chi), twicethetaChi_to_remove,
@@ -3274,30 +3338,65 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
 
     purged_exp_data = Twicetheta, Chi, dataintensity, posx, posy
 
-    return initIndexationDict(purged_exp_data)
+    return initIndexationDict(purged_exp_data, add_props=None)
 
 
-def initIndexationDict(exp_data):
+def initIndexationDict(exp_data, add_props=None):
     """
     initialize spots indexation dictionary from exp_data
-    tth, chi, Intensity, posX, posY = exp_data
+
+    :param exp_data: tuple of spots properties. It must have at least 5 elements (the main ones)
+    tth, chi, Intensity, posX, posY
+
+    :param add_props: tuple of spots properties: (data, colnames) data is a list of properties values
+    . nb of values = nb of spots
+
+    :return: indexed_spots_dict, dict_props_name
     """
     nb_of_spots = len(exp_data[0])
 
-    tth, chi, Intensity, posX, posY = exp_data
+    # val is index in spot_props
+    dict_props_name = {'spotindex': 0,
+                        'twicetheta': 1,
+                        'chi': 2,
+                        'X': 3,
+                        'Y': 4,
+                        'intensity': 5,
+                        'H': -6,
+                        'K': -5,
+                        'L': -4,
+                        'energy': -3,
+                        'grainindex': -2,
+                        'isindexed': -1}
+
+    tth, chi, Intensity, posX, posY = exp_data[:5]
+    if add_props is not None:
+        data, colnames = add_props
+        data_props = np.array(data).T
+        for k, colname in enumerate(colnames):
+            dict_props_name[colname] = 6 + k
 
     indexed_spots_dict = {}
     # dictionary of exp spots
-    for k in list(range(nb_of_spots)):
-        indexed_spots_dict[k] = [k,  # index of experimental spot in .cor file
-                                    tth[k],
-                                    chi[k],  # 2theta, chi coordinates
-                                    posX[k],
-                                    posY[k],  # pixel coordinates
-                                    Intensity[k],  # intensity
-                                    0]  # 0 means non indexed yet
+    for k in range(nb_of_spots):
+        spot_props = [k,  # index of experimental spot in .cor file
+                        tth[k],
+                        chi[k],  # 2theta, chi coordinates
+                        posX[k],
+                        posY[k],  # pixel coordinates
+                        Intensity[k]]  # intensity
+                        
+        if add_props is not None:
+            spot_props = spot_props + data_props[k].tolist()
+            
+        spot_props = spot_props +[10000,10000,10000, # H, K,L
+                                    10000, # energy
+                                    -1,  # grainindex   -1 not indexed yet
+                                    0]  # isindexed  0 means not indexed yet
 
-    return indexed_spots_dict
+        indexed_spots_dict[k] = spot_props
+
+    return indexed_spots_dict, dict_props_name
 
 
 # --- -----------------  ORIENT MATRIX FILTERING
@@ -3945,18 +4044,18 @@ def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters, us
     else:
         return None, None
 
-def getSpotsFamily(indexed_spots_dict, grain_index):
-    """
-    return spots that belong to the same grain
-    """
-    spots_set = []
-    for key_spot in sorted(indexed_spots_dict.keys()):
-        # spot has been indexed
-        if indexed_spots_dict[key_spot][-1] == 1:
-            if indexed_spots_dict[key_spot][-2] == grain_index:
-                spots_set.append(key_spot)
+# def getSpotsFamily(indexed_spots_dict, grain_index):
+#     """
+#     return spots that belong to the same grain
+#     """
+#     spots_set = []
+#     for key_spot in sorted(indexed_spots_dict.keys()):
+#         # spot has been indexed
+#         if indexed_spots_dict[key_spot][-1] == 1:
+#             if indexed_spots_dict[key_spot][-2] == grain_index:
+#                 spots_set.append(key_spot)
 
-    return spots_set
+#     return spots_set
 
 
 def resetSpotsFamily(indexed_spots_dict, grain_index):
@@ -3990,11 +4089,13 @@ def isindexed(spot_index, indexed_spots_dict):
     """
     return grain index if spot is indexed, otherwise return None
     """
+    c = -1  # col isindexed
+    cg = -2 # col grainindex
     #    if spot_index not in indexed_spots_dict.keys():
     #        raise KeyError, "this spots index '%s' doesn't exist
     # in spots dictionary" % str(spot_index)
-    if indexed_spots_dict[spot_index][-1] == 1:
-        return indexed_spots_dict[spot_index][-2]
+    if indexed_spots_dict[spot_index][c] == 1:
+        return indexed_spots_dict[spot_index][cg]
     else:
         return None
 
@@ -4755,7 +4856,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # consider peak from .dat (only X, Y, I ) no scattering angles.
         # So it will use .det to compute 2theta chi scattering angles and write a .cor file
         if suffixfilename.endswith(".dat"):
-            print("CCDCalibdict eeeeee.dat", CCDCalibdict)
+            # print("CCDCalibdict eeeeee.dat", CCDCalibdict)
             datfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
 
             dirname_in = Index_Refine_Parameters_dict["PeakList Folder"]
@@ -4799,7 +4900,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         file_to_index = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
                                                     corfilename)
 
-        print("\n\nINDEXING    file : %s\n\n" % file_to_index)
+        print("\n\n ---------------INDEXING----------    file : \n%s\n\n" % file_to_index)
 
         DataSet = spotsset()
 
@@ -4954,10 +5055,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     except ValueError:
                         printred("nLUTmax can not be converted to integer !!\nPlease check the irp file")
                         return
-
-            #             if dataSubstrate is not None:
-            #                 DataSet.purgedata(dataSubstrate[1:3],
-            #                                   dist_tolerance=ANGLE_TOL_REMOVE_PEAKS)
+            
             # print("dataset.pixelsize  ggg", DataSet.pixelsize)
             previousResults = None
             # read a guessed orientation matrix in dictMat
@@ -5013,9 +5111,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 fitfilename = (prefixfilename + encodingdigits % imageindex
                     + "_g%d.fit" % material_index)
 
-                (list_indexedgrains_indices,
-                _,
-                _,
+                (list_indexedgrains_indices, _, _,
                 Material_list,
                 all_UBmats_flat,
                 _) = IOLT.readfitfile_multigrains(os.path.join(fitfile_folder, fitfilename),

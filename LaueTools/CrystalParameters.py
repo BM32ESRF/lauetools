@@ -1443,7 +1443,7 @@ def directlatticeparameters_fromBmatrix(Bmatrix):
 def matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True):
     r"""
     Convert matrix from lauetools frame: ki//x, z towards CCD (top), y = z^x
-                    to ORobach or XMAS's frame: ki//y, z towards CCD (top), y = z^x
+                    to ORobach (or equivalent XMAS)'s frame: ki//y, z towards CCD (top), y = z^x
 
     convert the so called UBmat to matstarlab
     (matstarlab stands for 'matrix of reciprocal unit cell basis vectors in lab. frame')

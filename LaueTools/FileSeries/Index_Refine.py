@@ -1144,7 +1144,7 @@ initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
 initialparameters["PeakList Filename Prefix"] = "orig_nanox2_400_"
 initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "GeGaN.irp")
 initialparameters["Detector Calibration File .det"] = os.path.join(
-    MainFolder, "calibGe_nanowMARCCD165.det")
+    MainFolder, "calibGe_Feb2020.det")
 initialparameters["Detector Calibration File (.dat)"] = os.path.join(
     MainFolder, "nanox2_400_0000_LT_1.dat")
 initialparameters["PeakList Filename Suffix"] = ".dat"

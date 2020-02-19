@@ -30,6 +30,11 @@ else:
 DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
+def convert2corfile():
+    """ from .dat + .det compute .cor file  in LaueGeometry """
+    pass
+
+
 def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity, param=None,
                                                                             initialfilename=None,
                                                                             comments=None,
@@ -106,12 +111,9 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         list_of_data = sortedarray.T
 
     outputfile.write(firstline)
-    # outputfile.write("\n".join([format_string
-    #             % tuple(list(zip(twicetheta, chi, data_x, data_y, dataintensity))[i])
-    #             for i in list(range(nbspots))]))
 
-    print('nbspots', nbspots)
-    print('len(list_of_data)', len(list_of_data))
+    # print('nbspots', nbspots)
+    # print('len(list_of_data)', len(list_of_data))
     outputfile.write("\n".join(    [format_string % tuple(  list(  zip((*list_of_data)))[i])
                                                                     for i in range(nbspots)]  )  )
 
@@ -143,7 +145,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                 # print('key in CCD_CALIBRATION_PARAMETERS', key)
                 if key in param:
                     # print('key in param', key)
-                    outputfile.write("\n# %s     :   %s" % (key, param[key]))
+                    outputfile.write("\n# %s     :   %s" % (key, str(param[key])))
 
     if comments:
         outputfile.write("\n# Comments")
@@ -152,9 +154,32 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile.close()
 
-    print("(%s) written in %s at the end of writefile_cor()" % (firstline[:-1], outputfilename))
+    # print("(%s) written in %s at the end of writefile_cor()" % (firstline[:-1], outputfilename))
     return outputfilename
 
+def get_otherspotprops(allspotsprops, filename, sortintensities=True):
+    """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
+
+    :param allspotsprops: array with shape (nb of spots, nb of props)
+    """
+    assert len(allspotsprops.shape) == 2
+
+    # print('filename', filename, 'allspotsprops  int', allspotsprops[:,4])
+    if sortintensities:
+        props = allspotsprops[np.argsort(allspotsprops[:, 4])[:: -1]]
+    else:
+        props = allspotsprops
+    print()
+
+    # list of props
+    otherpropsdata = props[:, 5:].T
+    f = open(filename, 'r')
+    columnnames = f.readline().split()[5:]
+    f.close()
+
+    # print('otherpropsdata', otherpropsdata[0])
+    # print('columnnames', columnnames)
+    return otherpropsdata, columnnames
 
 def readfile_cor(filename, output_CCDparamsdict=False):
     """
@@ -167,8 +192,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     from pixX and pixY, ie 2theta chi are detector position independent
     (see find2thetachi for definition of kf)
 
-
-    :return: alldata                  #array with all data)
+    :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
             data_pixX, data_pixY,
             data_I,                            # intensity
@@ -180,7 +204,9 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     # read first line
     f = open(filename, "r")
     firstline = f.readline()
+    unindexeddata=False
     if firstline.startswith("# Unindexed"):
+        unindexeddata=True
         SKIPROWS = 7
     f.close()
 
@@ -213,11 +239,11 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             data_theta = alldata[:, 0] / 2.0
             (data_chi, data_pixX, data_pixY, data_I) = alldata.T[1:]
         # case of unindexed file .cor
-        elif nbcolumns == 6:
+        elif unindexeddata:
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T
             data_theta = data_2theta / 2.0
-        elif nbcolumns > 6:
-            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T[:6]
+        elif nbcolumns > 6:  # .cor file with additional spots properties
+            data_2theta, data_chi, data_pixX, data_pixY, data_I= alldata.T[:5]
             data_theta = data_2theta / 2.0
     elif nb_peaks == 1:
         if nbcolumns == 3:
@@ -230,11 +256,11 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             (data_chi, data_pixX, data_pixY, data_I) = alldata[1:]
         
         # case of unindexed file .cor
-        elif nbcolumns == 6:
+        elif unindexeddata:
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata
             data_theta = data_2theta / 2.0
         elif nbcolumns > 6:
-            _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata[:6]
+            data_2theta, data_chi, data_pixX, data_pixY, data_I = alldata[:5]
             data_theta = data_2theta / 2.0
 
     #    print "Reading detector parameters if exist"
@@ -243,7 +269,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     # new way of reading CCD calibration parameters
 
     CCDcalib = readCalibParametersInFile(openf)
-    print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
+    # print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
 
     if len(CCDcalib) >= 5:
         detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
@@ -322,10 +348,22 @@ def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
     return calib, mat_line
 
 
+def writeCalibFile():
+    """
+    # TODO:   put here DetectorCalibration.OnSaveCalib()
+
+    """
+    pass
+
 def readCalibParametersInFile(openfile, Dict_to_update=None):
     """
+    read .det file (detector geometry calibration)
+
     return dict of parameters in open file
     """
+    #CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam",
+    #                           "pixelsize", "xpixelsize", "ypixelsize",
+    #                           "CCDLabel",  "framedim", "detectordiameter", "kf_direction"]
     List_sharpedParameters = ["# %s" % elem for elem in CCD_CALIBRATION_PARAMETERS]
 
     # print("List_sharpedParameters", List_sharpedParameters)
@@ -333,6 +371,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
         CCDcalib = {}
     else:
         CCDcalib = Dict_to_update
+
     for line in openfile:
         if line.startswith(tuple(List_sharpedParameters)):
             key, val = line.split(":")
@@ -352,7 +391,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
     if 'xpixelsize' in CCDcalib:
         CCDcalib['pixelsize'] = CCDcalib['xpixelsize']
 
-    print('CCDcalib in readCalibParametersInFile', CCDcalib)
+    # print('CCDcalib in readCalibParametersInFile of file: %s'%openfile, CCDcalib)
 
     if 'CCDLabel' not in CCDcalib:  #will recognise from pixelsize...
         CCDcalib['CCDLabel'] = None# DEFAULT_CCDLABEL
@@ -477,31 +516,12 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
 
     if nbcolumns == 10:
-        (peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            Ipixmax,
-        ) = Data_array.T
+            (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+            Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
 
     elif nbcolumns == 11:
-        (peak_X,
-            peak_Y,
-            _,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            Ipixmax,
-        ) = Data_array.T
+        (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+            Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
 
     outputfile = open(os.path.join(dirname, outputfilename), "w")
 

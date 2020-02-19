@@ -257,15 +257,12 @@ pos_voigt = [0, 4, 8, 5, 2, 1]
 #    h5file.close()
 
 
-def build_hdf5(
-    filename_dictRes,
-    dirname_dictRes=None,
-    output_hdf5_filename="dict_Res.h5",
-    output_dirname="/home/micha/LaueProjects/Ni_joint",
-    imagefilename_prefix="TSVCU",  # for title only in metadata
-    max_nb_grains=2,  # maximum number of grains per image
-    nb_of_spots_per_image=200,  # estimation for optimization in data access
-):
+def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="dict_Res.h5",
+                    output_dirname="/home/micha/LaueProjects/Ni_joint",
+                    imagefilename_prefix="TSVCU",  # for title only in metadata
+                    max_nb_grains=2,  # maximum number of grains per image
+                    nb_of_spots_per_image=200,  # estimation for optimization in data access
+                ):
     """
     build hdf5 (summary) file from index and refine results on file series 
     """
@@ -455,20 +452,21 @@ def build_hdf5(
             # print("key_image", key_image, "--------------------------/n/n")
             for elem in dictspots[key_image]:
                 allIndexedSpots["fileindex"] = key_image
-                grainindex = int(elem[1])
+                grainindex = int(elem[-2])
 
-                (allIndexedSpots["spotindex"],
-                    allIndexedSpots["grainindex"],
-                    allIndexedSpots["twotheta"],
+                allIndexedSpots["grainindex"] = elem[-2]
+                allIndexedSpots["spotindex"] = elem[0]
+                (allIndexedSpots["twotheta"],
                     allIndexedSpots["chi"],
                     allIndexedSpots["pixX"],
                     allIndexedSpots["pixY"],
-                    allIndexedSpots["intensity"],
-                    allIndexedSpots["H"],
+                    allIndexedSpots["intensity"]) = elem[1:6]
+                    
+                (allIndexedSpots["H"],
                     allIndexedSpots["K"],
                     allIndexedSpots["L"],
                     allIndexedSpots["energy"],
-                ) = elem
+                ) = elem[-6:-6+4]
 
                 # new fields
                 allIndexedSpots["MatchingRate"] = 0.0

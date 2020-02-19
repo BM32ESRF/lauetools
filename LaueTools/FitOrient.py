@@ -66,20 +66,16 @@ def remove_harmonic(hkl, uflab, yz):
     return (hkl2, uflab2, yz2, nspots2, isbadpeak)
 
 
-def xy_from_Quat(
-    varying_parameter_values,
-    DATA_Q,
-    nspots,
-    varying_parameter_indices,
-    allparameters,
-    initrot=None,
-    vecteurref=IDENTITYMATRIX,
-    pureRotation=0,
-    labXMAS=0,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    kf_direction="Z>0"):
+def xy_from_Quat( varying_parameter_values, DATA_Q, nspots, varying_parameter_indices,
+                                                                        allparameters,
+                                                                        initrot=None,
+                                                                        vecteurref=IDENTITYMATRIX,
+                                                                        pureRotation=0,
+                                                                        labXMAS=0,
+                                                                        verbose=0,
+                                                                        pixelsize=165.0 / 2048,
+                                                                        dim=(2048, 2048),
+                                                                        kf_direction="Z>0"):
     """
     compute x and y pixel positions of Laue spots given hkl list
 
@@ -156,8 +152,7 @@ def xy_from_Quat(
         print("Qrot/Qrotn", Qrot / Qrotn)
         print("twthe,chi", twthe, chi)
 
-    X, Y, theta = F2TC.calc_xycam_from2thetachi(
-                                                twthe,
+    X, Y, theta = F2TC.calc_xycam_from2thetachi(twthe,
                                                 chi,
                                                 calibration_parameters,
                                                 verbose=0,
@@ -298,21 +293,19 @@ def error_function_on_demand_calibration(
     # three last parameters are orientation angles in quaternion expression
     onlydetectorindices = arr_indexvaryingparameters[arr_indexvaryingparameters < 5]
 
-    X, Y, theta, R = xy_from_Quat(
-        param_calib,
-        DATA_Q,
-        nspots,
-        onlydetectorindices,
-        allparameters,
-        initrot=newmatrix,
-        vecteurref=vecteurref,
-        pureRotation=pureRotation,
-        labXMAS=0,
-        verbose=verbose,
-        pixelsize=pixelsize,
-        dim=dim,
-        kf_direction=kf_direction,
-    )
+    X, Y, theta, R = xy_from_Quat(param_calib,
+                                    DATA_Q,
+                                    nspots,
+                                    onlydetectorindices,
+                                    allparameters,
+                                    initrot=newmatrix,
+                                    vecteurref=vecteurref,
+                                    pureRotation=pureRotation,
+                                    labXMAS=0,
+                                    verbose=verbose,
+                                    pixelsize=pixelsize,
+                                    dim=dim,
+                                    kf_direction=kf_direction)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -994,17 +987,16 @@ def error_function_XCEN(
     # All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # param_orient is three elements array representation of quaternion
 
-    X, Y, theta, R = xy_from_Quat(
-        param_calib,
-        DATA_Q,
-        nspots,
-        np.arange(8)[1],
-        allparameters,
-        initrot=initrot,
-        pureRotation=pureRotation,
-        labXMAS=0,
-        verbose=verbose,
-        pixelsize=pixelsize)
+    X, Y, theta, R = xy_from_Quat(param_calib,
+                                DATA_Q,
+                                nspots,
+                                np.arange(8)[1],
+                                allparameters,
+                                initrot=initrot,
+                                pureRotation=pureRotation,
+                                labXMAS=0,
+                                verbose=verbose,
+                                pixelsize=pixelsize)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -1017,11 +1009,7 @@ def error_function_XCEN(
         print("pixY", pixY)
         print("param_orient", param_calib)
         print("distanceterm", distanceterm)
-        print(
-            "\n*****************\n\nmean distanceterm   ",
-            np.mean(distanceterm),
-            "    ********\n",
-        )
+        print("\n*****************\n\nmean distanceterm   ", np.mean(distanceterm), "    ********\n")
         return distanceterm, R
     else:
         return distanceterm

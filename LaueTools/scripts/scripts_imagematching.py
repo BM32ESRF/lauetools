@@ -444,12 +444,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
     
     """
 
-    from indexingSpotsSet import (
-        comparematrices,
-        initIndexationDict,
-        getIndexedSpots,
-        updateIndexationDict,
-    )
+    from indexingSpotsSet import (comparematrices, initIndexationDict, getIndexedSpots, updateIndexationDict)
 
     ELEMENT = "Cu"
     EXTINCTION = "fcc"
@@ -499,7 +494,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
     )
 
     # create a dictionary of indexed spots
-    indexed_spots_dict = initIndexationDict(
+    indexed_spots_dict, dict_props_name = initIndexationDict(
         (Twicetheta, Chi, dataintensity, posx, posy)
     )
 
@@ -862,7 +857,7 @@ def test_ImageMatching_twins(database=None):
     Twicetheta = 2.0 * data_theta
 
     # create a dictionary of indexed spots
-    indexed_spots_dict = ISS.initIndexationDict(
+    indexed_spots_dict, dict_props_name = ISS.initIndexationDict(
         (Twicetheta, Chi, dataintensity, posx, posy)
     )
 
@@ -1179,7 +1174,7 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
     Twicetheta = 2.0 * data_theta
 
     # create an initial dictionary of indexed spots
-    indexed_spots_dict = initIndexationDict(
+    indexed_spots_dict, dict_props_name = initIndexationDict(
         (Twicetheta, Chi, dataintensity, posx, posy)
     )
 

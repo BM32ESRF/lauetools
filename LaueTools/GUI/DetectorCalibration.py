@@ -408,7 +408,7 @@ class CCDParamPanel(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        # print("self.mainframe in CCDParamPanel", self.mainframe)
+        print("self.mainframe in CCDParamPanel", self.mainframe)
 
         self.init_pixelsize = self.mainframe.pixelsize
         self.init_detectordiameter = self.mainframe.detectordiameter
@@ -932,7 +932,7 @@ class MainCalibrationFrame(wx.Frame):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1200, 830))
 
-        self.parent = parent
+        self.parent = parent # LaueToolsGUI.MainFrame
 
         self.initialParameter = _initialParameter
 
@@ -1151,15 +1151,12 @@ class MainCalibrationFrame(wx.Frame):
         self._replot(wx.EVT_IDLE)
         self.display_current()
 
-
-
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
         self.moveccdandxtal.SetToolTipString("Change manually and fit (by checking corresponding "
                                         "boxes) the 5 CCD parameters and rotate the crystal "
                                         "around 3 elementary angles")
-        self.crystalparampanel.SetToolTipString(
-            "set crystal parameters for laue spots simulation")
+        self.crystalparampanel.SetToolTipString("set crystal parameters for laue spots simulation")
         self.ccdparampanel.SetToolTipString("Set new CCD camera parameters")
 
         self.btnmanuallinks.SetToolTipString("Build manually a list of associations or links "
@@ -1374,7 +1371,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def OnSaveCalib(self, _):
         """
-        Save  calibration parameters in .det file
+        Save detector geometry calibration parameters in .det file
         """
         dlg = wx.TextEntryDialog(self,
             "Enter Calibration File name : \n Current Detector parameters are: \n %s\n Pixelsize and dimensions : %s"
@@ -1390,7 +1387,7 @@ class MainCalibrationFrame(wx.Frame):
             dd, xcen, ycen, xbet, xgam = self.CCDParam
 
             outputfile = open(self.filenameCalib, "w")
-            text = "%.3f, %.2f, %.2f, %.3f, %.3f, %.5f, %.0f, %.0f\n" % (round(dd, 3),
+            text = "%.5f, %.4f, %.4f, %.7f, %.7f, %.8f, %.0f, %.0f\n" % (round(dd, 3),
                                                                         round(xcen, 2),
                                                                         round(ycen, 2),
                                                                         round(xbet, 3),
@@ -1410,7 +1407,8 @@ class MainCalibrationFrame(wx.Frame):
             #                       'framedim', 'detectordiameter', 'kf_direction']
             vals_list = [round(dd, 3), round(xcen, 2), round(ycen, 2),
                         round(xbet, 3), round(xgam, 3),
-                        self.pixelsize, self.pixelsize, self.CCDLabel,
+                        self.pixelsize, self.pixelsize, self.pixelsize,
+                        self.CCDLabel,
                         self.framedim, self.detectordiameter, self.kf_direction]
 
             key_material = str(self.crystalparampanel.comboElem.GetValue())
