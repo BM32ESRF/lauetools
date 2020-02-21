@@ -1,0 +1,19 @@
+69.19300, 1050.7900, 1116.3300, 0.1540000, -0.2550000, 0.08057000, 2048, 2048
+Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2
+Calibration done with Si at Fri Feb 21 16:43:17 2020 with LaueToolsGUI.py
+Experimental Data file: /home/micha/LaueToolsPy3/LaueTools/Examples/Ge/Ge0001.dat
+Orientation Matrix:
+[[0.9729606,0.0924311,-0.2116698],[-0.2247853,0.5896078,-0.7757798],[0.0530960,0.8023834,0.5944423]]
+# Material : Si
+# dd : 69.193
+# xcen : 1050.79
+# ycen : 1116.33
+# xbet : 0.154
+# xgam : -0.255
+# pixelsize : 0.08057
+# xpixelsize : 0.08057
+# ypixelsize : 0.08057
+# CCDLabel : MARCCD165
+# framedim : (2048, 2048)
+# detectordiameter : 178.29109760000003
+# kf_direction : Z>0
