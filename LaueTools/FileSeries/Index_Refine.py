@@ -91,7 +91,7 @@ TIP_IR = ["Folder containing indexed Peaks List .dat files",
     "incremental step file index (integer). Not considered if starting file index is a list of indices or a path to a file",
     "full path to detector calibration .det file containing detector plane position and angles parameters\nNot used if PeakList Filename Suffix is .cor",
     "full path to a file (.mat or .mats) containing one or several guessed orientation matrix(ces) or check orientation parameters file (.ubs) to be tested prior to indexation from scratch",
-    "Minimum matching rate (nb of matches/ nb of theoritical spots) corresponding to guessed orientation matrices tested.\n if higher than 100, then test of guessed solution orientation matrix(ces) will be omitted",
+    "Minimum matching rate (nb of matches/ nb of theoritical spots) to consider that test with Guessed Matrix(ces) is positive and then start directly refinement of this solution. (so indexation from scratch is skipped).\n If higher than 100, then test of guessed solution orientation matrix(ces) will be skipped",
     "Full path to .irp file containing index & refine parameters",
     "Full path to a refined peakslist .fit file to restrict refinement to those peaks",
 ]
@@ -123,6 +123,7 @@ class IndexRefineParameters(wx.Frame):
         self.list_unitsparams = _list_unitsparams
 
         self.nb_of_materials = nb_of_materials
+        self.nb_of_materials_new = None
         self.dict_param_list = []
 
         # GUI widgets----------------
@@ -212,7 +213,7 @@ class IndexRefineParameters(wx.Frame):
     #             print dir(self.nb)
 
     def OnTabChange(self, evt):
-        """ """
+        """ nothing particular implemented  """
         pass
 
     def OnSaveConfigFile(self, _):
@@ -463,6 +464,11 @@ class MainFrame_indexrefine(wx.Frame):
         self.initialparameters = _initialparameters
 
         self.parent = parent
+
+        self.dict_param_list = {}
+        self.nb_of_materials = 1
+
+        #---  widgets -----------------------------
         if WXPYTHON4:
             grid = wx.FlexGridSizer(3, 10, 10)
         else:
@@ -480,8 +486,8 @@ class MainFrame_indexrefine(wx.Frame):
             txt = wx.StaticText(self.panel, -1, "     %s" % txt_elem)
             grid.Add(txt)
 
-            print("kk,txt_elem", kk, txt_elem)
-            print("objet_IR.list_valueparamIR[kk]", objet_IR.list_valueparamIR[kk])
+            # print("kk,txt_elem", kk, txt_elem)
+            # print("objet_IR.list_valueparamIR[kk]", objet_IR.list_valueparamIR[kk])
 
             self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(500, 25))
             self.txtctrl.SetValue(str(objet_IR.list_valueparamIR[kk]))
@@ -537,7 +543,7 @@ class MainFrame_indexrefine(wx.Frame):
         self.previousreschk.SetValue(True)
 
         txt_mapshape = wx.StaticText(self.panel, -1, "Map Shape")
-        self.txtctrl_mapshape = wx.TextCtrl(self.panel, -1, "None")
+        self.txtctrl_mapshape = wx.TextCtrl(self.panel, -1, "(1000,1)")
 
         grid.Add(Createcfgbtn)
         grid.Add(self.previousreschk)
@@ -600,7 +606,7 @@ class MainFrame_indexrefine(wx.Frame):
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
 
-        tipshape = "List of nb of steps in two (resp. three) directions for 2D (resp. 3D) map. Only use when tracking spots positions with 'Selected Peaks from File' : 41,21 or [15,8,100]"
+        tipshape = "List of nb of steps in two (resp. three) directions for 2D (resp. 3D) map. Only use when tracking spots positions with 'Selected Peaks from File' : [41,21] or [15,8,100]"
         txt_mapshape.SetToolTipString(tipshape)
         self.txtctrl_mapshape.SetToolTipString(tipshape)
 
@@ -608,6 +614,7 @@ class MainFrame_indexrefine(wx.Frame):
 
     def OnbtnBrowse_filepathdat(self, _):
         """ select file
+
         set self.list_txtctrl[0], self.list_txtctrl[1], self.list_txtctrl[2] """
         folder = wx.DirDialog(self, "Select folder for peaklist files")
         if folder.ShowModal() == wx.ID_OK:
@@ -708,7 +715,8 @@ class MainFrame_indexrefine(wx.Frame):
         """ get .mats file fullpath and set corresponding txtctrl"""
         print("OnbtnBrowse_matsfile")
 
-        matsfile = wx.FileDialog(self, "Select Guessed Matrices File or check orientation parameters file (.ubs)",
+        matsfile = wx.FileDialog(self, "Select Guessed Matrices File or check orientation "
+                "parameters file (.ubs)",
                 wildcard="Guessed Matrices (*.mat;*.mats;*.ubs)|*.mat;*.mats;*.ubs|All files(*)|*")
         if matsfile.ShowModal() == wx.ID_OK:
 
@@ -765,7 +773,11 @@ class MainFrame_indexrefine(wx.Frame):
 
     def calcCalibrationfitFile(self):
         """
-        produce a .fit file of the reference crystal used for CCD calibration parameters
+        produce a .fit file of the reference crystal used for CCD calibration parameters.
+
+        Need proper version of module multigrain
+
+        .. note:: this function is not called anywhere. OnbtnBrowse_fileReferenceCalibrationdat() is commented in this module
         """
         # needs to remove bad shaped spots for calibration refinement
         if self.initialparameters["filter_peaks_index_refine_calib"]:
@@ -776,12 +788,10 @@ class MainFrame_indexrefine(wx.Frame):
             if referencefiledat_init is not None:
                 MAXPIXDEV_CALIBRATIONREFINEMENT = self.initialparameters[
                     "maxpixdev_filter_peaks_index_refine_calib"]
-                self.referencefiledat_purged = filter_peaks(
-                    referencefiledat_init, maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
+                self.referencefiledat_purged = filter_peaks(referencefiledat_init,
+                                                        maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
                 #(calib_fitfilename, npeaks_LT, pixdev_LT,
-                (calib_fitfilename,
-                    _,
-                    _,
+                (calib_fitfilename, _, _,
                 ) = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
             else:
                 raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
@@ -904,7 +914,7 @@ class MainFrame_indexrefine(wx.Frame):
         listfiles = os.listdir(filepathdat)
         #             print "listfiles", listfiles
         nbfiles = len(listfiles)
-        print("nb of files in directory %s   : "%filepathdat, nbfiles)
+        print("nb of files in directory %s   : " % filepathdat, nbfiles)
         if nbfiles == 0:
             wx.MessageBox("Apparently the folder %s is empty!" % filepathdat, "ERROR")
             return
@@ -918,8 +928,7 @@ class MainFrame_indexrefine(wx.Frame):
                     break
             if indexfile == nbfiles - 1:
                 wx.MessageBox("No peaklist filename %s starting with\n%s\nin folder\n%s"
-                    % (filesuffix, fileprefix, filepathdat),
-                    "ERROR")
+                    % (filesuffix, fileprefix, filepathdat), "ERROR")
                 FileNotFound = False
             indexfile += 1
 
@@ -1018,7 +1027,7 @@ class MainFrame_indexrefine(wx.Frame):
         else:
             Index_Refine_Parameters_dict['Reference Spots List'] = rsl
 
-        print("\n\n\n ------Index_Refine_Parameters_dict['Reference Spots List']", Index_Refine_Parameters_dict['Reference Spots List'])
+        # print("\n\n\n ------Index_Refine_Parameters_dict['Reference Spots List']", Index_Refine_Parameters_dict['Reference Spots List'])
         if Index_Refine_Parameters_dict['Reference Spots List'] is not None:
 
             mapshape = self.readmapshape()
@@ -1141,7 +1150,7 @@ MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
 initialparameters["PeakList Folder"] = os.path.join(MainFolder, "datfiles")
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
 initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
-initialparameters["PeakList Filename Prefix"] = "orig_nanox2_400_"
+initialparameters["PeakList Filename Prefix"] = "nanox2_400_"
 initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "GeGaN.irp")
 initialparameters["Detector Calibration File .det"] = os.path.join(
     MainFolder, "calibGe_Feb2020.det")
@@ -1165,7 +1174,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 0:
+if 1:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1174,9 +1183,11 @@ if 0:
     initialparameters["PeakList Filename Prefix"] = "SiCustrain"
     initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
     initialparameters["PeakList Filename Suffix"] = ".cor"
+    initialparameters["Detector Calibration File .det"] = None
     initialparameters["nbdigits"] = 0
     initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
                                                             "corfiles", "SiCustrain5_Cu20spots.fit")
+
 
 # prepare sorted list of values
 list_valueparamIR = fill_list_valueparamIR(initialparameters)

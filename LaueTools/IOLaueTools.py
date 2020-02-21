@@ -96,8 +96,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     firstline += "\n"
 
-    print('format_string', format_string)
-    print('firstline', firstline)
+    # print('format_string', format_string)
+    # print('firstline', firstline)
 
     if sortedexit:
         # to write in decreasing order of intensity (col intensity =4)
@@ -107,7 +107,6 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
         sortedarray = arraydata[sortedintensity]
 
-        #             twicetheta, chi, data_x, data_y, dataintensity = sortedarray.T
         list_of_data = sortedarray.T
 
     outputfile.write(firstline)
@@ -164,12 +163,15 @@ def get_otherspotprops(allspotsprops, filename, sortintensities=True):
     """
     assert len(allspotsprops.shape) == 2
 
+    # no additional spot properties
+    if allspotsprops.shape[1] == 5:
+        return None
+
     # print('filename', filename, 'allspotsprops  int', allspotsprops[:,4])
     if sortintensities:
         props = allspotsprops[np.argsort(allspotsprops[:, 4])[:: -1]]
     else:
         props = allspotsprops
-    print()
 
     # list of props
     otherpropsdata = props[:, 5:].T
@@ -177,8 +179,10 @@ def get_otherspotprops(allspotsprops, filename, sortintensities=True):
     columnnames = f.readline().split()[5:]
     f.close()
 
+    # print('\n\n      get_otherspotprops()')
     # print('otherpropsdata', otherpropsdata[0])
     # print('columnnames', columnnames)
+    # print('\n\n')
     return otherpropsdata, columnnames
 
 def readfile_cor(filename, output_CCDparamsdict=False):
@@ -204,9 +208,9 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     # read first line
     f = open(filename, "r")
     firstline = f.readline()
-    unindexeddata=False
+    unindexeddata = False
     if firstline.startswith("# Unindexed"):
-        unindexeddata=True
+        unindexeddata = True
         SKIPROWS = 7
     f.close()
 
@@ -1186,13 +1190,13 @@ def readfitfile_comments(fitfilepath):
     detectorflag = False
 
     f = open(fitfilepath, "r")
-    nblines=0
+    nblines = 0
     for line in f.readlines():
-        nblines+=1
+        nblines += 1
     f.seek(0)
-    lineindex=0
-    while(lineindex<nblines):
-        line=f.readline()
+    lineindex = 0
+    while(lineindex < nblines):
+        line = f.readline()
         # print('lineeeeeeeeee', line)
         if ccdlabelflag:
             dictcomments['CCDLabel'] = line.split('#')[1].strip()
@@ -1233,8 +1237,9 @@ def convert_fit_to_cor(fitfilepath):
     folder, filename = os.path.split(fitfilepath)
     prefixfilename = filename.rsplit(".", 1)[0]
 
+    print('\n in convert_fit_to_cor')
     print('filename', filename)
-    print('prefixfilename', prefixfilename)
+    print('prefixfilename: %s\n'%prefixfilename)
 
     # read .fit file
     res = readfitfile_multigrains(fitfilepath)

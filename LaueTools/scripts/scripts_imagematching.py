@@ -1,25 +1,25 @@
-import generaltools as GT
 import numpy as np
+
+import generaltools as GT
 import IOLaueTools as IOLT
 import lauecore as LAUE
 import dict_LaueTools as DictLT
-import indexingSpotsSet as ISS
+import indexingImageMatching as IMM
 import matchingrate
 
-import indexingImageMatching as IMM
+from .. import indexingSpotsSet as ISS
+
+
+from . scripts_indexing import createFakeData
 
 # --- ----------  TESTs image Matching
 def test_speedbuild():
     """
     test to be launched with python (not ipython)
     """
-
     import profile
 
-    profile.run(
-        'Hough_peak_position_fast([12., 51., 37], Nb=40, pos2D=0, removedges=2, key_material="Si", verbose=0, EULER=1)',
-        "mafonction.profile",
-    )
+    profile.run('Hough_peak_position_fast([12., 51., 37], Nb=40, pos2D=0, removedges=2, key_material="Si", verbose=0, EULER=1)', "mafonction.profile")
     import pstats
 
     pstats.Stats("mafonction.profile").sort_stats("time").print_stats()
@@ -32,20 +32,17 @@ def show_solution_existence():
 
     detectorparameters = [70, 1024, 1024, 0, 0]
     grainSi = [np.eye(3), "dia", matsol, "Si"]
-    Twicetheta, Chi, Miller_ind, posx, posy, Energy = LAUE.SimulateLaue(
-        grainSi, 5, 25, detectorparameters, removeharmonics=1
-    )
+    Twicetheta, Chi, _, posx, posy, _ = LAUE.SimulateLaue(
+        grainSi, 5, 25, detectorparameters, removeharmonics=1)
     dataintensity = 20000 * np.ones(len(Twicetheta))
 
-    IOLT.writefile_cor(
-        "testmatch",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testmatch",
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     from indexingSpotsSet import getallcubicMatrices
 
@@ -61,9 +58,8 @@ def show_solution_existence():
             IMM.plotHough_compare(angles, "testmatch.cor", 100000, EULER=EULER)
 
     bestangles = [37, 7, 89]
-    IMM.Plot_compare_2thetachi(
-        bestangles, Twicetheta, Chi, verbose=0, key_material="Si", emax=25, EULER=EULER
-    )
+    IMM.Plot_compare_2thetachi(bestangles, Twicetheta, Chi, verbose=0, key_material="Si",
+                                                                            emax=25, EULER=EULER)
 
 
 def randomdetectorparameters():
@@ -84,9 +80,9 @@ def randomdetectorparameters():
 def test_ImageMatching(database=None):
     """
     Image Matching Test with single crystal Si randomly oriented
-    
+
     No intensity used
-    
+
     """
     # read database
     if database is None:
@@ -106,25 +102,21 @@ def test_ImageMatching(database=None):
     print("detectorparameters", detectorparameters)
 
     grainSi = [np.eye(3), "dia", matsol, "Si"]
-    Twicetheta, Chi, Miller_ind, posx, posy, Energy = LAUE.SimulateLaue(
-        grainSi, 5, 25, detectorparameters
-    )
+    Twicetheta, Chi, _, posx, posy, _ = LAUE.SimulateLaue(
+        grainSi, 5, 25, detectorparameters)
     dataintensity = 20000 * np.ones(len(Twicetheta))
 
-    IOLT.writefile_cor(
-        "testSirandom",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testSirandom",
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     # Find the best orientations and gives a table of results
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
-        "testSirandom.cor", 1000000, database, dirname=None, plotHough=0
-    )
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
+        "testSirandom.cor", 1000000, database, dirname=None, plotHough=0)
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -147,24 +139,22 @@ def test_ImageMatching(database=None):
     p.close()
     for k in list(range(len(bestEULER))):
         p.close()
-        IMM.Plot_compare_2thetachi(
-            bestEULER[k],
-            dataselected[0],
-            dataselected[1],
-            verbose=1,
-            key_material="Si",
-            emax=22,
-            EULER=1,
-        )
+        IMM.Plot_compare_2thetachi(bestEULER[k],
+                                    dataselected[0],
+                                    dataselected[1],
+                                    verbose=1,
+                                    key_material="Si",
+                                    emax=22,
+                                    EULER=1)
         p.close()
 
 
 def test_ImageMatching_2(database=None):
     """
     Image Matching Test with two crystal Si randomly oriented
-    
+
     No intensity used
-    
+
     """
 
     # read database
@@ -190,14 +180,12 @@ def test_ImageMatching_2(database=None):
     grainSi1 = [np.eye(3), "dia", matsol1, "Si"]
     grainSi2 = [np.eye(3), "dia", matsol2, "Si"]
 
-    Twicetheta1, Chi1, Miller_ind1, posx1, posy1, Energy1 = LAUE.SimulateLaue(
-        grainSi1, 5, 25, detectorparameters
-    )
+    Twicetheta1, Chi1, _, posx1, posy1, _ = LAUE.SimulateLaue(
+        grainSi1, 5, 25, detectorparameters)
     dataintensity1 = 20000 * np.ones(len(Twicetheta1))
 
-    Twicetheta2, Chi2, Miller_ind2, posx2, posy2, Energy2 = LAUE.SimulateLaue(
-        grainSi2, 5, 25, detectorparameters
-    )
+    Twicetheta2, Chi2, _, posx2, posy2, _ = LAUE.SimulateLaue(
+        grainSi2, 5, 25, detectorparameters)
     dataintensity2 = 20000 * np.ones(len(Twicetheta2))
 
     Twicetheta, Chi, posx, posy, dataintensity = (
@@ -205,30 +193,26 @@ def test_ImageMatching_2(database=None):
         np.concatenate((Chi1, Chi2)),
         np.concatenate((posx1, posx2)),
         np.concatenate((posy1, posy2)),
-        np.concatenate((dataintensity1, dataintensity2)),
-    )
+        np.concatenate((dataintensity1, dataintensity2)))
 
-    IOLT.writefile_cor(
-        "testSirandom",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testSirandom",
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     sigmagauss = 0.5
     # Find the best orientations and gives a table of results
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
-        "testSirandom.cor",
-        1000000,
-        database,
-        dirname=None,
-        plotHough=0,
-        rank_n=20,
-        sigmagaussian=(sigmagauss, sigmagauss, sigmagauss),
-    )
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
+                                                "testSirandom.cor",
+                                                1000000,
+                                                database,
+                                                dirname=None,
+                                                plotHough=0,
+                                                rank_n=20,
+                                                sigmagaussian=(sigmagauss, sigmagauss, sigmagauss))
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -236,13 +220,12 @@ def test_ImageMatching_2(database=None):
     print("bestEuler")
     print(bestEULER)
 
-    twicetheta_data, chi_data, intensity_data = dataselected
+    twicetheta_data, chi_data, _ = dataselected
 
     matchingrate.getStatsOnMatching(bestEULER, twicetheta_data, chi_data, "Si")
 
-    correlintensity, argcorrel = IMM.plotHoughCorrel(
-        database, "testSirandom.cor", 100000, dirname=".", returnCorrelArray=1
-    )
+    correlintensity, _ = IMM.plotHoughCorrel(
+        database, "testSirandom.cor", 100000, dirname=".", returnCorrelArray=1)
     #    print "min", np.amin(correlintensity)
     #    print "max", np.amax(correlintensity)
     #    print "mean", np.mean(correlintensity)
@@ -257,15 +240,13 @@ def test_ImageMatching_2(database=None):
     p.close()
     for k in list(range(len(bestEULER))):
         p.close()
-        IMM.Plot_compare_2thetachi(
-            bestEULER[k],
-            dataselected[0],
-            dataselected[1],
-            verbose=1,
-            key_material="Si",
-            emax=25,
-            EULER=1,
-        )
+        IMM.Plot_compare_2thetachi(bestEULER[k],
+                                    dataselected[0],
+                                    dataselected[1],
+                                    verbose=1,
+                                    key_material="Si",
+                                    emax=25,
+                                    EULER=1)
         p.close()
 
     IMM.plottab(correlintensity)
@@ -283,9 +264,9 @@ def test_ImageMatching_2(database=None):
 def test_ImageMatching_ngrains(database=None, nbgrains=5):
     """
     Image Matching Test with nb crystals of Si randomly oriented
-    
+
     No intensity used
-    
+
     """
     from indexingSpotsSet import comparematrices
 
@@ -312,9 +293,8 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
 
         grains.append([np.eye(3), "dia", orientmat, "Si"])
 
-        Twicetheta1, Chi1, Miller_ind1, posx1, posy1, Energy1 = LAUE.SimulateLaue(
-            grains[k], 5, 25, detectorparameters
-        )
+        Twicetheta1, Chi1, _, posx1, posy1, _ = LAUE.SimulateLaue(
+            grains[k], 5, 25, detectorparameters)
         dataintensity1 = 20000 * np.ones(len(Twicetheta1))
 
         Twicetheta = np.concatenate((Twicetheta, Twicetheta1))
@@ -324,27 +304,24 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
         dataintensity = np.concatenate((dataintensity, dataintensity1))
 
     # write fake .cor file
-    IOLT.writefile_cor(
-        "testSirandom",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testSirandom",
+                            Twicetheta,
+                            Chi,
+                            posx,
+                            posy,
+                            dataintensity,
+                            param=detectorparameters)
 
     # Find the best orientations and gives a table of results
     SIGMAGAUSS = 0.5
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
-        "testSirandom.cor",
-        1000000,
-        database,
-        dirname=None,
-        plotHough=0,
-        rank_n=20,
-        sigmagaussian=(SIGMAGAUSS, SIGMAGAUSS, SIGMAGAUSS),
-    )
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
+                                        "testSirandom.cor",
+                                        1000000,
+                                        database,
+                                        dirname=None,
+                                        plotHough=0,
+                                        rank_n=20,
+                                        sigmagaussian=(SIGMAGAUSS, SIGMAGAUSS, SIGMAGAUSS))
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -352,12 +329,11 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
     #    print "bestEuler"
     #    print bestEULER
 
-    twicetheta_data, chi_data, intensity_data = dataselected
+    twicetheta_data, chi_data, _ = dataselected
 
     # sort solution by matching rate
     sortedindices, matchingrates = matchingrate.getStatsOnMatching(
-        bestEULER, twicetheta_data, chi_data, "Si", verbose=0
-    )
+        bestEULER, twicetheta_data, chi_data, "Si", verbose=0)
 
     #    correlintensity, argcorrel = plotHoughCorrel(database, 'testSirandom.cor', 100000,
     #                                                 dirname='.', returnCorrelArray=1)
@@ -373,7 +349,7 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
     bestEULER = np.take(bestEULER, sortedindices, axis=0)
     bestmatchingrates = np.take(np.array(matchingrates), sortedindices)
 
-    verybestmat = GT.fromEULERangles_toMatrix(bestEULER[0])
+    # verybestmat = GT.fromEULERangles_toMatrix(bestEULER[0])
 
     grain_indexed = []
     ind_euler = 0
@@ -387,8 +363,7 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
             if comparematrices(bestmat, mat, tol=0.1)[0]:
                 print(
                     "\nindexation succeeded with grain #%d !! with Euler Angles #%d\n"
-                    % (kk, ind_euler)
-                )
+                    % (kk, ind_euler))
                 angx, angy, angz = eulers
                 print("[ %.1f, %.1f, %.1f]" % (angx, angy, angz))
                 print("matching rate  ", bestmatchingrates[ind_euler])
@@ -412,15 +387,13 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
     import pylab as p
 
     p.close()
-    IMM.Plot_compare_2thetachi(
-        bestEULER[0],
-        dataselected[0],
-        dataselected[1],
-        verbose=1,
-        key_material="Si",
-        emax=25,
-        EULER=1,
-    )
+    IMM.Plot_compare_2thetachi(bestEULER[0],
+                                dataselected[0],
+                                dataselected[1],
+                                verbose=1,
+                                key_material="Si",
+                                emax=25,
+                                EULER=1)
 
 
 #    plottab(correlintensity)
@@ -439,9 +412,9 @@ def test_ImageMatching_ngrains(database=None, nbgrains=5):
 def test_ImageMatching_otherelement(database=None, nbgrains=3):
     """
     Image Matching Test with other element than that used for building the database
-    
+
     No intensity used
-    
+
     """
 
     from indexingSpotsSet import (comparematrices, initIndexationDict, getIndexedSpots, updateIndexationDict)
@@ -471,9 +444,8 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
 
         grains.append([np.eye(3), EXTINCTION, orientmat, ELEMENT])
 
-        Twicetheta1, Chi1, Miller_ind1, posx1, posy1, Energy1 = LAUE.SimulateLaue(
-            grains[k], 5, 25, detectorparameters
-        )
+        Twicetheta1, Chi1, _, posx1, posy1, _ = LAUE.SimulateLaue(
+            grains[k], 5, 25, detectorparameters)
         dataintensity1 = 20000 * np.ones(len(Twicetheta1))
 
         Twicetheta = np.concatenate((Twicetheta, Twicetheta1))
@@ -483,34 +455,30 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
         dataintensity = np.concatenate((dataintensity, dataintensity1))
 
     # write fake .cor file
-    IOLT.writefile_cor(
-        "testSirandom",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testSirandom",
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     # create a dictionary of indexed spots
-    indexed_spots_dict, dict_props_name = initIndexationDict(
-        (Twicetheta, Chi, dataintensity, posx, posy)
-    )
+    indexed_spots_dict, _ = initIndexationDict(
+        (Twicetheta, Chi, dataintensity, posx, posy))
 
     #    print "indexed_spots_dict", indexed_spots_dict
 
     # Find the best orientations and gives a table of results
     SIGMAGAUSS = 0.5
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
         "testSirandom.cor",
         1000000,
         database,
         dirname=None,
         plotHough=0,
         rank_n=20,
-        sigmagaussian=(SIGMAGAUSS, SIGMAGAUSS, SIGMAGAUSS),
-    )
+        sigmagaussian=(SIGMAGAUSS, SIGMAGAUSS, SIGMAGAUSS))
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -522,8 +490,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
 
     # sort solution by matching rate
     sortedindices, matchingrates = matchingrate.getStatsOnMatching(
-        bestEULER, twicetheta_data, chi_data, ELEMENT, verbose=0
-    )
+        bestEULER, twicetheta_data, chi_data, ELEMENT, verbose=0)
 
     #    correlintensity, argcorrel = plotHoughCorrel(database, 'testSirandom.cor', 100000,
     #                                                 dirname='.', returnCorrelArray=1)
@@ -551,8 +518,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
             if comparematrices(bestmat, mat, tol=0.1)[0]:
                 print(
                     "\nindexation succeeded with grain #%d !! with Euler Angles #%d\n"
-                    % (kk, ind_euler)
-                )
+                    % (kk, ind_euler))
                 angx, angy, angz = eulers
                 print("[ %.1f, %.1f, %.1f]" % (angx, angy, angz))
                 print("matching rate  ", bestmatchingrates[ind_euler])
@@ -569,17 +535,15 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
 
     verybestmat = GT.fromEULERangles_toMatrix(bestEULER[0])
 
-    indexation_res, nbtheospots = getIndexedSpots(
-        verybestmat,
-        (twicetheta_data, chi_data, intensity_data),
-        ELEMENT,
-        detectorparameters,
-        veryclose_angletol=0.5,
-        emin=5,
-        emax=25,
-        verbose=0,
-        detectordiameter=165.0,
-    )
+    indexation_res, _ = getIndexedSpots(verybestmat,
+                                        (twicetheta_data, chi_data, intensity_data),
+                                        ELEMENT,
+                                        detectorparameters,
+                                        veryclose_angletol=0.5,
+                                        emin=5,
+                                        emax=25,
+                                        verbose=0,
+                                        detectordiameter=165.0)
 
     nb_of_indexed_spots = len(indexation_res[5])
 
@@ -587,9 +551,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
     print("nb of indexed spots fo this matrix: %d" % nb_of_indexed_spots)
 
     grain_index = 0
-    indexed_spots_dict, nb_updates = updateIndexationDict(
-        indexation_res, indexed_spots_dict, grain_index
-    )
+    indexed_spots_dict, _ = updateIndexationDict(indexation_res, indexed_spots_dict, grain_index)
 
     #    p.close()
     #    for k in range(len(bestEULER)):
@@ -601,15 +563,13 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
     import pylab as p
 
     p.close()
-    IMM.Plot_compare_2thetachi(
-        bestEULER[0],
-        dataselected[0],
-        dataselected[1],
-        verbose=1,
-        key_material=ELEMENT,
-        emax=25,
-        EULER=1,
-    )
+    IMM.Plot_compare_2thetachi(bestEULER[0],
+                                dataselected[0],
+                                dataselected[1],
+                                verbose=1,
+                                key_material=ELEMENT,
+                                emax=25,
+                                EULER=1)
 
     return indexed_spots_dict
 
@@ -630,7 +590,7 @@ def test_ImageMatching_otherelement(database=None, nbgrains=3):
 def test_ImageMatching_dev(database=None):
     """
     Image Matching Test with single crystal Si randomly oriented
-    
+
     No intensity used
     """
     # read database
@@ -651,25 +611,21 @@ def test_ImageMatching_dev(database=None):
     print("detectorparameters", detectorparameters)
 
     grainSi = [np.eye(3), "dia", matsol, "Si"]
-    Twicetheta, Chi, Miller_ind, posx, posy, Energy = LAUE.SimulateLaue(
-        grainSi, 5, 25, detectorparameters
-    )
+    Twicetheta, Chi, _, posx, posy, _ = LAUE.SimulateLaue(
+        grainSi, 5, 25, detectorparameters)
     dataintensity = 20000 * np.ones(len(Twicetheta))
 
-    IOLT.writefile_cor(
-        "testSirandom",
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor("testSirandom",
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     # Find the best orientations and gives a table of results
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
-        "testSirandom.cor", 1000000, database, dirname=None, plotHough=0
-    )
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
+        "testSirandom.cor", 1000000, database, dirname=None, plotHough=0)
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -678,7 +634,7 @@ def test_ImageMatching_dev(database=None):
     print(bestEULER)
 
     #    print dataselected
-    twicetheta_data, chi_data, intensity_data = dataselected
+    twicetheta_data, chi_data, _ = dataselected
 
     matchingrate.getStatsOnMatching(bestEULER, twicetheta_data, chi_data, "Si")
 
@@ -697,22 +653,20 @@ def test_ImageMatching_dev(database=None):
     p.close()
     for k in list(range(len(bestEULER))):
         p.close()
-        IMM.Plot_compare_2thetachi(
-            bestEULER[k],
-            dataselected[0],
-            dataselected[1],
-            verbose=1,
-            key_material="Si",
-            emax=25,
-            EULER=1,
-        )
+        IMM.Plot_compare_2thetachi(bestEULER[k],
+                                dataselected[0],
+                                dataselected[1],
+                                verbose=1,
+                                key_material="Si",
+                                emax=25,
+                                EULER=1)
         p.close()
 
 
 def test_ImageMatching_twins(database=None):
     """
     Image Matching Test with other element than that used for building the database
-    
+
     No intensity used
     """
     DictLT.dict_Materials["DIAs"] = ["DIAs", [3.16, 3.16, 3.16, 90, 90, 90], "dia"]
@@ -792,20 +746,15 @@ def test_ImageMatching_twins(database=None):
 
     grains.append([np.eye(3), EXTINCTION, orientmat, ELEMENT])
 
-    grains.append(
-        [
-            np.eye(3),
+    grains.append([np.eye(3),
             EXTINCTION,
             np.dot(DictLT.dict_Vect["sigma3_1"], orientmat),
-            ELEMENT,
-        ]
-    )
+            ELEMENT])
 
     for k in list(range(2)):
 
-        Twicetheta1, Chi1, Miller_ind1, posx1, posy1, Energy1 = LAUE.SimulateLaue(
-            grains[k], 5, 25, detectorparameters, removeharmonics=1
-        )
+        Twicetheta1, Chi1, _, posx1, posy1, _ = LAUE.SimulateLaue(
+            grains[k], 5, 25, detectorparameters, removeharmonics=1)
         dataintensity1 = (20000 + k) * np.ones(len(Twicetheta1))
 
         Twicetheta = np.concatenate((Twicetheta, Twicetheta1))
@@ -815,15 +764,13 @@ def test_ImageMatching_twins(database=None):
         dataintensity = np.concatenate((dataintensity, dataintensity1))
 
     # write fake .cor file
-    IOLT.writefile_cor(
-        outputfilename,
-        Twicetheta,
-        Chi,
-        posx,
-        posy,
-        dataintensity,
-        param=detectorparameters,
-    )
+    IOLT.writefile_cor(outputfilename,
+                        Twicetheta,
+                        Chi,
+                        posx,
+                        posy,
+                        dataintensity,
+                        param=detectorparameters)
 
     file_to_index = outputfilename + ".cor"
 
@@ -832,34 +779,31 @@ def test_ImageMatching_twins(database=None):
     # Find the best orientations and gives a table of results
 
     sigmas = (SIGMAGAUSS, SIGMAGAUSS, SIGMAGAUSS)
-    TBO, dataselected, gno_dataselected = IMM.give_best_orientations_new(
-        file_to_index,
-        1000000,
-        database,
-        maxindex=maxindex,
-        dirname=None,
-        plotHough=plotHough,
-        Hough_init_sigmas=Hough_init_sigmas,
-        Hough_init_Threshold=Hough_init_Threshold,
-        useintensities=useintensities,
-        rank_n=rank_n,  # 20
-        sigmagaussian=sigmas,
-    )
+    TBO, dataselected, _ = IMM.give_best_orientations_new(
+                                                file_to_index,
+                                                1000000,
+                                                database,
+                                                maxindex=maxindex,
+                                                dirname=None,
+                                                plotHough=plotHough,
+                                                Hough_init_sigmas=Hough_init_sigmas,
+                                                Hough_init_Threshold=Hough_init_Threshold,
+                                                useintensities=useintensities,
+                                                rank_n=rank_n,  # 20
+                                                sigmagaussian=sigmas)
 
     if TBO is None:
         print("Image  Matching has not found any potential orientations!")
         return
 
     # TODO:to simplify
-    alldata, data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(
-        file_to_index
-    )
+    _, data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(
+        file_to_index)
     Twicetheta = 2.0 * data_theta
 
     # create a dictionary of indexed spots
-    indexed_spots_dict, dict_props_name = ISS.initIndexationDict(
-        (Twicetheta, Chi, dataintensity, posx, posy)
-    )
+    indexed_spots_dict, _ = ISS.initIndexationDict(
+        (Twicetheta, Chi, dataintensity, posx, posy))
 
     # table of best 3 Eulerian angles
     bestEULER = np.transpose(TBO)
@@ -871,8 +815,7 @@ def test_ImageMatching_twins(database=None):
 
     # sort solution by matching rate
     sortedindices, matchingrates = matchingrate.getStatsOnMatching(
-        bestEULER, twicetheta_data, chi_data, ELEMENT, verbose=0
-    )
+        bestEULER, twicetheta_data, chi_data, ELEMENT, verbose=0)
 
     bestEULER = np.take(bestEULER, sortedindices, axis=0)
     bestmatchingrates = np.take(np.array(matchingrates), sortedindices)
@@ -882,62 +825,49 @@ def test_ImageMatching_twins(database=None):
     print(bestmatchingrates)
 
     bestEULER_0, bestmatchingrates_0 = ISS.filterEquivalentMatrix(
-        bestEULER, bestmatchingrates
-    )
+        bestEULER, bestmatchingrates)
 
     bestEULER, bestmatchingrates = ISS.filterMatrix_MinimumRate(
-        bestEULER_0, bestmatchingrates_0, MatchingRate_Threshold
-    )
-    print(
-        "After filtering (cubic permutation, matching threshold %.2f)"
-        % MatchingRate_Threshold
-    )
+        bestEULER_0, bestmatchingrates_0, MatchingRate_Threshold)
+    print("After filtering (cubic permutation, matching threshold %.2f)"
+        % MatchingRate_Threshold)
     print("%d matrices remain\n" % len(bestEULER))
 
     # first indexation of spots with raw (un refined) matrices
     AngleTol = 1.0
     dict_grain_matrix = {}
     dict_matching_rate = {}
-    (
-        indexed_spots_dict,
+    (indexed_spots_dict,
         dict_grain_matrix,
         dict_matching_rate,
-    ) = ISS.rawMultipleIndexation(
-        bestEULER,
-        indexed_spots_dict,
-        ELEMENT,
-        detectorparameters,
-        AngleTol=AngleTol,
-        emax=25,
-    )
+    ) = ISS.rawMultipleIndexation(bestEULER,
+                                    indexed_spots_dict,
+                                    ELEMENT,
+                                    detectorparameters,
+                                    AngleTol=AngleTol,
+                                    emax=25)
 
     print("dict_grain_matrix", dict_grain_matrix)
 
     if dict_grain_matrix is not None:
-        ISS.plotgrains(
-            dict_grain_matrix, ELEMENT, detectorparameters, 25, exp_data=dataselected
-        )
+        ISS.plotgrains(dict_grain_matrix, ELEMENT, detectorparameters, 25, exp_data=dataselected)
     else:
         print("plot the best orientation matrix candidate")
-        IMM.Plot_compare_2thetachi(
-            bestEULER_0[0],
-            dataselected[0],
-            dataselected[1],
-            verbose=1,
-            key_material=ELEMENT,
-            emax=25,
-            EULER=1,
-        )
+        IMM.Plot_compare_2thetachi(bestEULER_0[0],
+                                    dataselected[0],
+                                    dataselected[1],
+                                    verbose=1,
+                                    key_material=ELEMENT,
+                                    emax=25,
+                                    EULER=1)
 
-        IMM.Plot_compare_gnomondata(
-            bestEULER_0[0],
-            dataselected[0],
-            dataselected[1],
-            verbose=1,
-            key_material=ELEMENT,
-            emax=25,
-            EULER=1,
-        )
+        IMM.Plot_compare_gnomondata(bestEULER_0[0],
+                                    dataselected[0],
+                                    dataselected[1],
+                                    verbose=1,
+                                    key_material=ELEMENT,
+                                    emax=25,
+                                    EULER=1)
         return
 
     # ---    refine matrix
@@ -945,14 +875,12 @@ def test_ImageMatching_twins(database=None):
 
     grain_index = 0
     #    print "initial matrix", dict_grain_matrix[grain_index]
-    refinedMatrix, devstrain = ISS.refineUBSpotsFamily(
-        indexed_spots_dict,
+    refinedMatrix, _ = ISS.refineUBSpotsFamily(indexed_spots_dict,
         grain_index,
         dict_grain_matrix[grain_index],
         ELEMENT,
         detectorparameters,
-        use_weights=1,
-    )
+        use_weights=1)
 
     #    print "refinedMatrix"
     #    print refinedMatrix
@@ -961,18 +889,16 @@ def test_ImageMatching_twins(database=None):
 
         AngleTol = 0.5
         # redo the spots links
-        indexation_res, nbtheospots = ISS.getIndexedSpots(
-            refinedMatrix,
-            (twicetheta_data, chi_data, intensity_data),
-            ELEMENT,
-            detectorparameters,
-            removeharmonics=1,
-            veryclose_angletol=AngleTol,
-            emin=5,
-            emax=25,
-            verbose=0,
-            detectordiameter=165.0,
-        )
+        indexation_res, nbtheospots = ISS.getIndexedSpots(refinedMatrix,
+                                                    (twicetheta_data, chi_data, intensity_data),
+                                                    ELEMENT,
+                                                    detectorparameters,
+                                                    removeharmonics=1,
+                                                    veryclose_angletol=AngleTol,
+                                                    emin=5,
+                                                    emax=25,
+                                                    verbose=0,
+                                                    detectordiameter=165.0)
 
         #        print 'nb of links', len(indexation_res[1])
 
@@ -980,26 +906,21 @@ def test_ImageMatching_twins(database=None):
             return
 
         indexed_spots_dict, nb_updates = ISS.updateIndexationDict(
-            indexation_res, indexed_spots_dict, grain_index, overwrite=1
-        )
+            indexation_res, indexed_spots_dict, grain_index, overwrite=1)
 
         print("with refined matrix")
-        print(
-            "nb of indexed spots for this matrix # %d: %d / %d"
-            % (grain_index, nb_updates, nbtheospots)
-        )
+        print("nb of indexed spots for this matrix # %d: %d / %d"
+            % (grain_index, nb_updates, nbtheospots))
         print("with tolerance angle : %.2f deg" % AngleTol)
 
         dict_grain_matrix[grain_index] = refinedMatrix
         dict_matching_rate[grain_index] = [nb_updates, 100.0 * nb_updates / nbtheospots]
 
-        ISS.plotgrains(
-            dict_grain_matrix,
+        ISS.plotgrains(dict_grain_matrix,
             ELEMENT,
             detectorparameters,
             25,
-            exp_data=ISS.getSpotsData(indexed_spots_dict)[:, 1:3].T,
-        )
+            exp_data=ISS.getSpotsData(indexed_spots_dict)[:, 1:3].T)
 
         # one more time with less tolerance in spotlinks
 
@@ -1008,16 +929,14 @@ def test_ImageMatching_twins(database=None):
 
         grain_index = 0
         #        print "initial matrix", dict_grain_matrix[grain_index]
-        refinedMatrix, devstrain = ISS.refineUBSpotsFamily(
-            indexed_spots_dict,
+        refinedMatrix, _ = ISS.refineUBSpotsFamily(indexed_spots_dict,
             grain_index,
             dict_grain_matrix[grain_index],
             ELEMENT,
             detectorparameters,
             use_weights=1,
             pixelsize=165.0 / 2048,
-            dim=(2048, 2048),
-        )
+            dim=(2048, 2048))
 
         #        print "refinedMatrix"
         #        print refinedMatrix
@@ -1026,44 +945,37 @@ def test_ImageMatching_twins(database=None):
             return
 
         AngleTol = 0.1
-        indexation_res, nbtheospots = ISS.getIndexedSpots(
-            refinedMatrix,
-            (twicetheta_data, chi_data, intensity_data),
-            ELEMENT,
-            detectorparameters,
-            removeharmonics=1,
-            veryclose_angletol=AngleTol,
-            emin=5,
-            emax=25,
-            verbose=0,
-            detectordiameter=165.0,
-        )
+        indexation_res, nbtheospots = ISS.getIndexedSpots(refinedMatrix,
+                                                        (twicetheta_data, chi_data, intensity_data),
+                                                        ELEMENT,
+                                                        detectorparameters,
+                                                        removeharmonics=1,
+                                                        veryclose_angletol=AngleTol,
+                                                        emin=5,
+                                                        emax=25,
+                                                        verbose=0,
+                                                        detectordiameter=165.0)
 
         #        print 'nb of links', len(indexation_res[1])
         if indexation_res is None:
             return
 
-        indexed_spots_dict, nb_updates = ISS.updateIndexationDict(
-            indexation_res, indexed_spots_dict, grain_index, overwrite=1
-        )
+        indexed_spots_dict, nb_updates = ISS.updateIndexationDict(indexation_res,
+                                                    indexed_spots_dict, grain_index, overwrite=1)
 
         print("with refined matrix")
-        print(
-            "nb of indexed spots for this matrix # %d: %d / %d"
-            % (grain_index, nb_updates, nbtheospots)
-        )
+        print("nb of indexed spots for this matrix # %d: %d / %d"
+            % (grain_index, nb_updates, nbtheospots))
         print("with tolerance angle : %.2f deg" % AngleTol)
 
         dict_grain_matrix[grain_index] = refinedMatrix
         dict_matching_rate[grain_index] = [nb_updates, 100.0 * nb_updates / nbtheospots]
 
-        ISS.plotgrains(
-            dict_grain_matrix,
+        ISS.plotgrains(dict_grain_matrix,
             ELEMENT,
             detectorparameters,
             25,
-            exp_data=ISS.getSpotsData(indexed_spots_dict)[:, 1:3].T,
-        )
+            exp_data=ISS.getSpotsData(indexed_spots_dict)[:, 1:3].T)
 
     return indexed_spots_dict, dict_grain_matrix
 
@@ -1078,16 +990,15 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
         initIndexationDict,
         rawMultipleIndexation,
         plotgrains,
-        filterEulersList,
-    )
+        filterEulersList)
 
     DictLT.dict_Materials["DIAs"] = ["DIAs", [3.16, 3.16, 3.16, 90, 90, 90], "dia"]
     firstmatchingtolerance = 1.0
     nb_of_peaks = 1000000  # all peaks are used in hough transform for recognition
-    tolerancedistance = 0  # no close peaks removal
-    maxindex = 40
-    useintensities = 0
-    plotHough = 0
+    # tolerancedistance = 0  # no close peaks removal
+    # maxindex = 40
+    # useintensities = 0
+    # plotHough = 0
 
     emax = 25
     if 1:
@@ -1096,19 +1007,17 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
 
         MatchingRate_Threshold = 60  # percent
 
-        SIGMAGAUSS = 0.5
-        Hough_init_sigmas = (1, 0.7)
-        Hough_init_Threshold = 1  # threshold for a kind of filter
-        rank_n = 20
-        useintensities = 0
+        # SIGMAGAUSS = 0.5
+        # Hough_init_sigmas = (1, 0.7)
+        # Hough_init_Threshold = 1  # threshold for a kind of filter
+        # rank_n = 20
+        # useintensities = 0
 
-        dictimm = {
-            "sigmagaussian": (0.5, 0.5, 0.5),
+        dictimm = {"sigmagaussian": (0.5, 0.5, 0.5),
             "Hough_init_sigmas": (1, 0.7),
             "Hough_init_Threshold": 1,
             "rank_n": 20,
-            "useintensities": 0,
-        }
+            "useintensities": 0}
 
     # 1 ,2, 3 grains with diamond structure small unit cell
     if 0:
@@ -1117,14 +1026,14 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
 
         MatchingRate_Threshold = 50  # percent
 
-        SIGMAGAUSS = 0.5
-        Hough_init_sigmas = (1, 0.7)
+        # SIGMAGAUSS = 0.5
+        # Hough_init_sigmas = (1, 0.7)
 
-        Hough_init_Threshold = -1  # -1 : maximum filter
-        rank_n = 40
-        plotHough = 0
-        useintensities = 0
-        maxindex = 40
+        # Hough_init_Threshold = -1  # -1 : maximum filter
+        # rank_n = 40
+        # plotHough = 0
+        # useintensities = 0
+        # maxindex = 40
 
     # 4 grains with diamond structure small unit cell
     # testSirandom_7.cor   :  zones axes overlap
@@ -1136,15 +1045,15 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
 
         MatchingRate_Threshold = 15  # percent
 
-        Hough_init_sigmas = (1, 0.7)
-        Hough_init_Threshold = 1
-        rank_n = 40
-        SIGMAGAUSS = 0.5
-        plotHough = 1
-        useintensities = 0
-        maxindex = 40
+        # Hough_init_sigmas = (1, 0.7)
+        # Hough_init_Threshold = 1
+        # rank_n = 40
+        # SIGMAGAUSS = 0.5
+        # plotHough = 1
+        # useintensities = 0
+        # maxindex = 40
         firstmatchingtolerance = 0.5
-        tolerancedistance = 1.0
+        # tolerancedistance = 1.0
     #        nb_of_peaks = 100
 
     # read database
@@ -1157,9 +1066,7 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
     # create a fake data file of randomly oriented crystal
     if readfile is None:
         outputfilename = "test%srandom" % key_material
-        file_to_index = createFakeData(
-            key_material, nbgrains, outputfilename=outputfilename
-        )
+        file_to_index = createFakeData(key_material, nbgrains, outputfilename=outputfilename)
     else:
         file_to_index = readfile
 
@@ -1168,44 +1075,38 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
 
     twicetheta_data, chi_data = TwiceTheta_Chi_Int[:2]
     # TODO:to simplify
-    alldata, data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(
-        file_to_index
-    )
+    _, data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(
+        file_to_index)
     Twicetheta = 2.0 * data_theta
 
     # create an initial dictionary of indexed spots
-    indexed_spots_dict, dict_props_name = initIndexationDict(
-        (Twicetheta, Chi, dataintensity, posx, posy)
-    )
+    indexed_spots_dict, _ = initIndexationDict(
+        (Twicetheta, Chi, dataintensity, posx, posy))
 
     # Find the best orientations and gives a table of results
 
     bestEULER = IMM.bestorient_from_2thetachi(
-        (Twicetheta, Chi), database, dictparameters=dictimm
-    )
+        (Twicetheta, Chi), database, dictparameters=dictimm)
 
-    bestEULER, bestmatchingrates = filterEulersList(
-        bestEULER,
-        (Twicetheta, Chi),
-        key_material,
-        emax,
-        rawAngularmatchingtolerance=firstmatchingtolerance,
-        MatchingRate_Threshold=MatchingRate_Threshold,
-        verbose=1,
-    )
+    bestEULER, _ = filterEulersList(bestEULER,
+                                (Twicetheta, Chi),
+                                key_material,
+                                emax,
+                                rawAngularmatchingtolerance=firstmatchingtolerance,
+                                MatchingRate_Threshold=MatchingRate_Threshold,
+                                verbose=1)
 
     # first indexation of spots with raw (un refined) matrices
     AngleTol = 1.0
     dict_grain_matrix = {}
-    dict_matching_rate = {}
-    (indexed_spots_dict, dict_grain_matrix, dict_matching_rate) = rawMultipleIndexation(
-        bestEULER,
-        indexed_spots_dict,
-        key_material,
-        detectorparameters,
-        AngleTol=AngleTol,
-        emax=emax,
-    )
+    # dict_matching_rate = {}
+    (indexed_spots_dict, dict_grain_matrix, _) = rawMultipleIndexation(
+                                                                        bestEULER,
+                                                                        indexed_spots_dict,
+                                                                        key_material,
+                                                                        detectorparameters,
+                                                                        AngleTol=AngleTol,
+                                                                        emax=emax)
 
     print("dict_grain_matrix", dict_grain_matrix)
 
@@ -1215,8 +1116,7 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
             key_material,
             detectorparameters,
             emax,
-            exp_data=(Twicetheta, Chi),
-        )
+            exp_data=(Twicetheta, Chi))
     else:
         print("plot the best orientation matrix candidate")
         IMM.Plot_compare_2thetachi(
@@ -1226,8 +1126,7 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
             verbose=1,
             key_material=key_material,
             emax=emax,
-            EULER=1,
-        )
+            EULER=1)
 
         IMM.Plot_compare_gnomondata(
             bestEULER[0],
@@ -1236,8 +1135,7 @@ def test_ImageMatching_index(database=None, nbgrains=3, readfile=None):
             verbose=1,
             key_material=key_material,
             emax=emax,
-            EULER=1,
-        )
+            EULER=1)
         return
 
 
@@ -1263,8 +1161,7 @@ def test_old(database):
             "Hough_init_sigmas": (1, 0.7),
             "Hough_init_Threshold": 1,
             "rank_n": 20,
-            "useintensities": 0,
-        }
+            "useintensities": 0}
 
     # read database
     if database is None:
@@ -1277,14 +1174,12 @@ def test_old(database):
     if readfile is None:
         outputfilename = "testSirandom"
         nbgrains = 3
-        file_to_index = createFakeData(
-            key_material, nbgrains, outputfilename=outputfilename
-        )
+        file_to_index = createFakeData(key_material, nbgrains, outputfilename=outputfilename)
     else:
         file_to_index = readfile
 
     # read spots data and init dictionary of indexed spots
-    DataSet = spotsset()
+    DataSet = ISS.spotsset()
     DataSet.importdatafromfile(file_to_index)
 
     TwiceTheta_Chi_Int = DataSet.getSpotsExpData()
@@ -1296,19 +1191,15 @@ def test_old(database):
     DataSet.emax = emax
 
     # potential orientation solutions from image matching
-    bestEULER = IMM.bestorient_from_2thetachi(
-        TwiceTheta_Chi_Int, database, dictparameters=dictimm
-    )
+    bestEULER = IMM.bestorient_from_2thetachi(TwiceTheta_Chi_Int, database, dictparameters=dictimm)
 
-    bestEULER, bestmatchingrates = filterEulersList(
-        bestEULER,
-        TwiceTheta_Chi_Int,
-        key_material,
-        emax,
-        rawAngularmatchingtolerance=firstmatchingtolerance,
-        MatchingRate_Threshold=MatchingRate_Threshold,
-        verbose=1,
-    )
+    bestEULER, _ = ISS.filterEulersList(bestEULER,
+                                                TwiceTheta_Chi_Int,
+                                                key_material,
+                                                emax,
+                                                rawAngularmatchingtolerance=firstmatchingtolerance,
+                                                MatchingRate_Threshold=MatchingRate_Threshold,
+                                                verbose=1)
 
     MatrixPile = bestEULER.tolist()
 
@@ -1324,7 +1215,7 @@ def test_old(database):
 
         if len(MatrixPile) != 0:
             eulerangles = MatrixPile.pop(0)
-            trialmatrix = GT.fromEULERangles_toMatrix(eulerangles)
+            _ = GT.fromEULERangles_toMatrix(eulerangles)
         else:
             print("no more orientation to test (euler angles)")
             print("need to use other indexing techniques, Angles LUT, cliques help...")
@@ -1337,20 +1228,16 @@ def test_old(database):
         print(DataSet.dict_grain_matrix)
 
         # indexation of spots with raw (un refined) matrices & #update dictionaries
-        print(
-            "\n\n---------------indexing grain  #%d-----------------------"
-            % grain_index
-        )
+        print("\n\n---------------indexing grain  #%d-----------------------"
+            % grain_index)
         print("eulerangles", eulerangles)
         #        print "selectedspots_index", selectedspots_index
         #        print "making raw links for grain #%d" % grain_index
         # TODO update
-        DataSet.AssignHKL(
-            eulerangles,
-            grain_index,
-            AngleTol_0,
-            use_spots_in_currentselection=selectedspots_index,
-        )
+        DataSet.AssignHKL(eulerangles,
+                        grain_index,
+                        AngleTol_0,
+                        use_spots_in_currentselection=selectedspots_index)
 
         #        print "dict_grain_matrix after raw matching", DataSet.dict_grain_matrix
         #        print "dict_matching_rate", DataSet.dict_grain_matching_rate
@@ -1360,29 +1247,24 @@ def test_old(database):
             DataSet.plotgrains(
                 exp_data=TwiceTheta_Chi_Int,
                 titlefig="%d Exp. spots data (/%d) after raw matching grain #%d"
-                % (len(TwiceTheta_Chi_Int[0]), totalnbspots, grain_index),
-            )
+                % (len(TwiceTheta_Chi_Int[0]), totalnbspots, grain_index))
         else:
             print("plot the best last orientation matrix candidate")
-            IMM.Plot_compare_2thetachi(
-                eulerangles,
-                TwiceTheta_Chi_Int[0],
-                TwiceTheta_Chi_Int[1],
-                verbose=1,
-                key_material=DataSet.key_material,
-                emax=DataSet.emax,
-                EULER=1,
-            )
+            IMM.Plot_compare_2thetachi(eulerangles,
+                                        TwiceTheta_Chi_Int[0],
+                                        TwiceTheta_Chi_Int[1],
+                                        verbose=1,
+                                        key_material=DataSet.key_material,
+                                        emax=DataSet.emax,
+                                        EULER=1)
 
-            IMM.Plot_compare_gnomondata(
-                eulerangles,
-                TwiceTheta_Chi_Int[0],
-                TwiceTheta_Chi_Int[1],
-                verbose=1,
-                key_material=DataSet.key_material,
-                emax=DataSet.emax,
-                EULER=1,
-            )
+            IMM.Plot_compare_gnomondata(eulerangles,
+                                        TwiceTheta_Chi_Int[0],
+                                        TwiceTheta_Chi_Int[1],
+                                        verbose=1,
+                                        key_material=DataSet.key_material,
+                                        emax=DataSet.emax,
+                                        EULER=1)
 
         AngleTol_List = [0.5, 0.2, 0.1]
 
@@ -1392,9 +1274,8 @@ def test_old(database):
             print("\n\n refining grain #%d step -----%d\n" % (grain_index, k))
             #    print "initial matrix", dict_grain_matrix[grain_index]
 
-            refinedMatrix = DataSet.refineUBSpotsFamily(
-                grain_index, DataSet.dict_grain_matrix[grain_index], use_weights=1
-            )
+            refinedMatrix = DataSet.refineUBSpotsFamily(grain_index,
+                                            DataSet.dict_grain_matrix[grain_index], use_weights=1)
 
             if refinedMatrix is None:
                 break
@@ -1412,32 +1293,26 @@ def test_old(database):
             #            print "twicetheta_data", toindexdata[:5, 1]
 
             print("\n\n---------------extracting data-----------------------")
-            indexation_res, nbtheospots, missingRefs = DataSet.getSpotsLinks(
+            indexation_res, nbtheospots, _ = DataSet.getSpotsLinks(
                 refinedMatrix,
                 exp_data=TwiceTheta_Chi_Int,
                 useabsoluteindex=absoluteindex,
                 removeharmonics=1,
                 veryclose_angletol=AngleTol,
-                verbose=0,
-            )
+                verbose=0)
 
             #        print 'nb of links', len(indexation_res[1])
 
             if indexation_res is None:
-                print(
-                    "no unambiguous close links between exp. and  theo. spots have been found!"
-                )
+                print("no unambiguous close links between exp. and  theo. spots have been found!")
                 break
 
             # TODO: getstatsonmatching before updateindexation... ?
             nb_updates = DataSet.updateIndexationDict(
-                indexation_res, grain_index, overwrite=1
-            )
+                indexation_res, grain_index, overwrite=1)
 
-            print(
-                "\nnb of indexed spots for this refined matrix: %d / %d"
-                % (nb_updates, nbtheospots)
-            )
+            print("\nnb of indexed spots for this refined matrix: %d / %d"
+                % (nb_updates, nbtheospots))
             print("with tolerance angle : %.2f deg" % AngleTol)
 
             Matching_rate = 100.0 * nb_updates / nbtheospots
@@ -1452,37 +1327,30 @@ def test_old(database):
 
                     print("\n\n---------------------------------------------")
                     print(
-                        "Use again imagematching on purged data from previously indexed spots"
-                    )
+                        "Use again imagematching on purged data from previously indexed spots")
                     print("---------------------------------------------\n\n")
 
                     #                    print "indexedgrains", indexedgrains
 
                     # extract data not yet indexed or temporarly indexed
-                    toindexdata = DataSet.getUnIndexedSpotsallData(
-                        exceptgrains=indexedgrains
-                    )
+                    toindexdata = DataSet.getUnIndexedSpotsallData(exceptgrains=indexedgrains)
                     absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
                     intensity_data = toindexdata[:, 5]
 
-                    TwiceTheta_Chi_Int = np.array(
-                        [twicetheta_data, chi_data, intensity_data]
-                    )
+                    TwiceTheta_Chi_Int = np.array([twicetheta_data, chi_data, intensity_data])
 
                     # potential orientation solutions from image matching
                     bestEULER2 = IMM.bestorient_from_2thetachi(
-                        TwiceTheta_Chi_Int, database, dictparameters=dictimm
-                    )
+                        TwiceTheta_Chi_Int, database, dictparameters=dictimm)
 
-                    bestEULER2, bestmatchingrates2 = filterEulersList(
+                    bestEULER2, _ = ISS.filterEulersList(
                         bestEULER,
                         TwiceTheta_Chi_Int,
                         key_material,
                         emax,
                         rawAngularmatchingtolerance=firstmatchingtolerance,
                         MatchingRate_Threshold=MatchingRate_Threshold,
-                        verbose=1,
-                    )
+                        verbose=1)
 
                     # overwrite (NOT add in) MatrixPile
                     MatrixPile = bestEULER2.tolist()
@@ -1503,25 +1371,19 @@ def test_old(database):
                 # keep on refining and reducing tolerance angle
                 # or for the lowest tolerance angle, consider the refinement-indexation is completed
                 DataSet.dict_grain_matrix[grain_index] = refinedMatrix
-                DataSet.dict_grain_matching_rate[grain_index] = [
-                    nb_updates,
-                    Matching_rate,
-                ]
+                DataSet.dict_grain_matching_rate[grain_index] = [nb_updates, Matching_rate]
 
                 DataSet.plotgrains(
                     exp_data=DataSet.getSpotsExpData(),
                     titlefig="%d Exp. spots data (/%d), after refinement of grain #%d at step #%d"
-                    % (totalnbspots, totalnbspots, grain_index, k),
-                )
+                    % (totalnbspots, totalnbspots, grain_index, k))
 
                 # if this is the last tolerance step
                 if k == len(AngleTol_List) - 1:
 
                     print("\n---------------------------------------------")
-                    print(
-                        "indexing completed for grain #%d with matching rate %.2f "
-                        % (grain_index, Matching_rate)
-                    )
+                    print("indexing completed for grain #%d with matching rate %.2f "
+                        % (grain_index, Matching_rate))
                     print("---------------------------------------------\n")
                     indexedgrains.append(grain_index)
                     grain_index += 1
@@ -1545,7 +1407,7 @@ def test_index(database):
     emin = 5
     emax = 25
 
-    MatchingRate_Threshold = 30  # percent
+    # MatchingRate_Threshold = 30  # percent
 
     # read database
     if database is None:
@@ -1554,13 +1416,11 @@ def test_index(database):
         database = IMM.DataBaseImageMatchingSi()
         # ------------------------------------------------------------------------
 
-    dictimm = {
-        "sigmagaussian": (0.5, 0.5, 0.5),
+    dictimm = {"sigmagaussian": (0.5, 0.5, 0.5),
         "Hough_init_sigmas": (1, 0.7),
         "Hough_init_Threshold": 1,
         "rank_n": 20,
-        "useintensities": 0,
-    }
+        "useintensities": 0}
 
     # create a fake data file of randomly oriented crystal
     if readfile is None:
@@ -1570,17 +1430,15 @@ def test_index(database):
         addspots = 6
         #        removespots = None
         #        addspots = None
-        file_to_index = createFakeData(
-            key_material,
-            nbgrains,
-            outputfilename=outputfilename,
-            removespots=removespots,
-            addspots=addspots,
-        )
+        file_to_index = createFakeData(key_material,
+                                        nbgrains,
+                                        outputfilename=outputfilename,
+                                        removespots=removespots,
+                                        addspots=addspots)
     else:
         file_to_index = readfile
 
-    DataSet = spotsset()
+    DataSet = ISS.spotsset()
 
     DataSet.IndexSpotsSet(file_to_index, key_material, emin, emax, dictimm, database)
 
@@ -1592,17 +1450,17 @@ def test_index(database):
 def test_compare_IMM_IAM(database, nbgrains, twins=0):
     """
     test refinement and multigrains indexing with class
-    
+
     comparison Indexing Matching Method and indexing Angles Method
     """
     #    readfile = 'test6.cor'
     #    readfile = 'test7.cor'
     #    readfile = 'test10.cor'
-    import time, os
+    import time
+    import os
 
-    readfile = os.path.join(
-        "./Examples/strain_calib_test2", "dat_Wmap_WB_14sep_d0_500MPa_0045_LT_0.cor"
-    )
+    readfile = os.path.join("./Examples/strain_calib_test2",
+                                    "dat_Wmap_WB_14sep_d0_500MPa_0045_LT_0.cor")
 
     key_material = "W"
     emin = 5
@@ -1617,7 +1475,7 @@ def test_compare_IMM_IAM(database, nbgrains, twins=0):
         database = IMM.DataBaseImageMatchingSi()
         # ------------------------------------------------------------------------
 
-    MatchingRate_Threshold_Si = 30  # percent for simulated Si
+    # MatchingRate_Threshold_Si = 30  # percent for simulated Si
     dictimm_Si = {
         "sigmagaussian": (0.5, 0.5, 0.5),
         "Hough_init_sigmas": (1, 0.7),
@@ -1626,7 +1484,7 @@ def test_compare_IMM_IAM(database, nbgrains, twins=0):
         "useintensities": 0,
     }
 
-    MatchingRate_Threshold_W = 15  # percent W
+    # MatchingRate_Threshold_W = 15  # percent W
     dictimm_W = {
         "sigmagaussian": (0.5, 0.5, 0.5),
         "Hough_init_sigmas": (1, 0.7),
@@ -1635,7 +1493,7 @@ def test_compare_IMM_IAM(database, nbgrains, twins=0):
         "useintensities": 0,
     }
 
-    MatchingRate_Threshold = MatchingRate_Threshold_W
+    # MatchingRate_Threshold = MatchingRate_Threshold_W
     dictimm = dictimm_W
 
     # create a fake data file of randomly oriented crystal
@@ -1646,14 +1504,12 @@ def test_compare_IMM_IAM(database, nbgrains, twins=0):
         addspots = 0
         #        removespots = None
         #        addspots = None
-        file_to_index = createFakeData(
-            key_material,
-            nbgrains,
-            outputfilename=outputfilename,
-            removespots=removespots,
-            addspots=addspots,
-            twins=twins,
-        )
+        file_to_index = createFakeData(key_material,
+                                        nbgrains,
+                                        outputfilename=outputfilename,
+                                        removespots=removespots,
+                                        addspots=addspots,
+                                        twins=twins)
     else:
         file_to_index = readfile
 
@@ -1676,19 +1532,17 @@ def test_compare_IMM_IAM(database, nbgrains, twins=0):
     print("\n\n\n\n\n")
 
     t0_2 = time.time()
-    DataSet_2 = spotsset()
+    DataSet_2 = ISS.spotsset()
 
-    DataSet_2.IndexSpotsSet(
-        file_to_index,
-        key_material,
-        emin,
-        emax,
-        dictimm,
-        database,
-        IMM=False,
-        MatchingRate_List=[40, 50, 60],
-        nbGrainstoFind=nbGrainstoFind,
-    )
+    DataSet_2.IndexSpotsSet(file_to_index,
+                            key_material,
+                            emin,
+                            emax,
+                            dictimm,
+                            database,
+                            IMM=False,
+                            MatchingRate_List=[40, 50, 60],
+                            nbGrainstoFind=nbGrainstoFind)
 
     tf2 = time.time()
     print("Angles LUT execution time %.3f sec." % (tf2 - t0_2))
@@ -1714,13 +1568,11 @@ def test_old_imagematching(database):
 
         MatchingRate_Threshold = 30  # percent
 
-        dictimm = {
-            "sigmagaussian": (0.5, 0.5, 0.5),
-            "Hough_init_sigmas": (1, 0.7),
-            "Hough_init_Threshold": 1,
-            "rank_n": 20,
-            "useintensities": 0,
-        }
+        dictimm = {"sigmagaussian": (0.5, 0.5, 0.5),
+                    "Hough_init_sigmas": (1, 0.7),
+                    "Hough_init_Threshold": 1,
+                    "rank_n": 20,
+                    "useintensities": 0}
 
     # read database
     if database is None:
@@ -1733,14 +1585,12 @@ def test_old_imagematching(database):
     if readfile is None:
         outputfilename = "testSirandom"
         nbgrains = 3
-        file_to_index = createFakeData(
-            key_material, nbgrains, outputfilename=outputfilename
-        )
+        file_to_index = createFakeData(key_material, nbgrains, outputfilename=outputfilename)
     else:
         file_to_index = readfile
 
     # read spots data and init dictionary of indexed spots
-    DataSet = spotsset()
+    DataSet = ISS.spotsset()
     DataSet.importdatafromfile(file_to_index)
 
     TwiceTheta_Chi_Int = DataSet.getSpotsExpData()
@@ -1752,19 +1602,15 @@ def test_old_imagematching(database):
     DataSet.emax = emax
 
     # potential orientation solutions from image matching
-    bestEULER = IMM.bestorient_from_2thetachi(
-        TwiceTheta_Chi_Int, database, dictparameters=dictimm
-    )
+    bestEULER = IMM.bestorient_from_2thetachi(TwiceTheta_Chi_Int, database, dictparameters=dictimm)
 
-    bestEULER, bestmatchingrates = ISS.filterEulersList(
-        bestEULER,
-        TwiceTheta_Chi_Int,
-        key_material,
-        emax,
-        rawAngularmatchingtolerance=firstmatchingtolerance,
-        MatchingRate_Threshold=MatchingRate_Threshold,
-        verbose=1,
-    )
+    bestEULER, _ = ISS.filterEulersList(bestEULER,
+                                        TwiceTheta_Chi_Int,
+                                        key_material,
+                                        emax,
+                                        rawAngularmatchingtolerance=firstmatchingtolerance,
+                                        MatchingRate_Threshold=MatchingRate_Threshold,
+                                        verbose=1)
 
     MatrixPile = bestEULER.tolist()
 
@@ -1780,7 +1626,7 @@ def test_old_imagematching(database):
 
         if len(MatrixPile) != 0:
             eulerangles = MatrixPile.pop(0)
-            trialmatrix = GT.fromEULERangles_toMatrix(eulerangles)
+            # trialmatrix = GT.fromEULERangles_toMatrix(eulerangles)
         else:
             print("no more orientation to test (euler angles)")
             print("need to use other indexing techniques, Angles LUT, cliques help...")
@@ -1793,52 +1639,42 @@ def test_old_imagematching(database):
         print(DataSet.dict_grain_matrix)
 
         # indexation of spots with raw (un refined) matrices & #update dictionaries
-        print(
-            "\n\n---------------indexing grain  #%d-----------------------"
-            % grain_index
-        )
+        print("\n\n---------------indexing grain  #%d-----------------------"
+            % grain_index)
         print("eulerangles", eulerangles)
         #        print "selectedspots_index", selectedspots_index
         #        print "making raw links for grain #%d" % grain_index
         # TODO update
-        DataSet.AssignHKL(
-            eulerangles,
-            grain_index,
-            AngleTol_0,
-            use_spots_in_currentselection=selectedspots_index,
-        )
+        DataSet.AssignHKL(eulerangles,
+                        grain_index,
+                        AngleTol_0,
+                        use_spots_in_currentselection=selectedspots_index)
 
         #        print "dict_grain_matrix after raw matching", DataSet.dict_grain_matrix
         #        print "dict_matching_rate", DataSet.dict_grain_matching_rate
 
         # plot
         if DataSet.dict_grain_matrix is not None:
-            DataSet.plotgrains(
-                exp_data=TwiceTheta_Chi_Int,
+            DataSet.plotgrains(exp_data=TwiceTheta_Chi_Int,
                 titlefig="%d Exp. spots data (/%d) after raw matching grain #%d"
-                % (len(TwiceTheta_Chi_Int[0]), totalnbspots, grain_index),
-            )
+                % (len(TwiceTheta_Chi_Int[0]), totalnbspots, grain_index))
         else:
             print("plot the best last orientation matrix candidate")
-            IMM.Plot_compare_2thetachi(
-                eulerangles,
-                TwiceTheta_Chi_Int[0],
-                TwiceTheta_Chi_Int[1],
-                verbose=1,
-                key_material=DataSet.key_material,
-                emax=DataSet.emax,
-                EULER=1,
-            )
+            IMM.Plot_compare_2thetachi(eulerangles,
+                                    TwiceTheta_Chi_Int[0],
+                                    TwiceTheta_Chi_Int[1],
+                                    verbose=1,
+                                    key_material=DataSet.key_material,
+                                    emax=DataSet.emax,
+                                    EULER=1)
 
-            IMM.Plot_compare_gnomondata(
-                eulerangles,
-                TwiceTheta_Chi_Int[0],
-                TwiceTheta_Chi_Int[1],
-                verbose=1,
-                key_material=DataSet.key_material,
-                emax=DataSet.emax,
-                EULER=1,
-            )
+            IMM.Plot_compare_gnomondata(eulerangles,
+                                        TwiceTheta_Chi_Int[0],
+                                        TwiceTheta_Chi_Int[1],
+                                        verbose=1,
+                                        key_material=DataSet.key_material,
+                                        emax=DataSet.emax,
+                                        EULER=1)
 
         AngleTol_List = [0.5, 0.2, 0.1]
 
@@ -1848,9 +1684,8 @@ def test_old_imagematching(database):
             print("\n\n refining grain #%d step -----%d\n" % (grain_index, k))
             #    print "initial matrix", dict_grain_matrix[grain_index]
 
-            refinedMatrix = DataSet.refineUBSpotsFamily(
-                grain_index, DataSet.dict_grain_matrix[grain_index], use_weights=1
-            )
+            refinedMatrix = DataSet.refineUBSpotsFamily(grain_index,
+                                        DataSet.dict_grain_matrix[grain_index], use_weights=1)
 
             if refinedMatrix is None:
                 break
@@ -1868,31 +1703,25 @@ def test_old_imagematching(database):
             #            print "twicetheta_data", toindexdata[:5, 1]
 
             print("\n\n---------------extracting data-----------------------")
-            indexation_res, nbtheospots, missingRefs = DataSet.getSpotsLinks(
-                refinedMatrix,
-                exp_data=TwiceTheta_Chi_Int,
-                useabsoluteindex=absoluteindex,
-                removeharmonics=1,
-                veryclose_angletol=AngleTol,
-                verbose=0,
-            )
+            indexation_res, nbtheospots, _ = DataSet.getSpotsLinks(refinedMatrix,
+                                                                exp_data=TwiceTheta_Chi_Int,
+                                                                useabsoluteindex=absoluteindex,
+                                                                removeharmonics=1,
+                                                                veryclose_angletol=AngleTol,
+                                                                verbose=0)
 
             #        print 'nb of links', len(indexation_res[1])
 
             if indexation_res is None:
-                print(
-                    "no unambiguous close links between exp. and  theo. spots have been found!"
-                )
+                print("no unambiguous close links between exp. and  theo. spots have been found!")
                 break
 
             # TODO: getstatsonmatching before updateindexation... ?
             nb_updates = DataSet.updateIndexationDict(
                 indexation_res, grain_index, overwrite=1)
 
-            print(
-                "\nnb of indexed spots for this refined matrix: %d / %d"
-                % (nb_updates, nbtheospots)
-            )
+            print("\nnb of indexed spots for this refined matrix: %d / %d"
+                % (nb_updates, nbtheospots))
             print("with tolerance angle : %.2f deg" % AngleTol)
 
             Matching_rate = 100.0 * nb_updates / nbtheospots
@@ -1925,15 +1754,13 @@ def test_old_imagematching(database):
                     bestEULER2 = IMM.bestorient_from_2thetachi(
                         TwiceTheta_Chi_Int, database, dictparameters=dictimm)
 
-                    bestEULER2, bestmatchingrates2 = filterEulersList(
-                                                                bestEULER,
-                                                                TwiceTheta_Chi_Int,
-                                                                key_material,
-                                                                emax,
-                                                                rawAngularmatchingtolerance=firstmatchingtolerance,
-                                                                MatchingRate_Threshold=MatchingRate_Threshold,
-                                                                verbose=1,
-                                                            )
+                    bestEULER2, _ = ISS.filterEulersList(bestEULER,
+                                                    TwiceTheta_Chi_Int,
+                                                    key_material,
+                                                    emax,
+                                                    rawAngularmatchingtolerance=firstmatchingtolerance,
+                                                    MatchingRate_Threshold=MatchingRate_Threshold,
+                                                    verbose=1)
 
                     # overwrite (NOT add in) MatrixPile
                     MatrixPile = bestEULER2.tolist()
@@ -1954,10 +1781,7 @@ def test_old_imagematching(database):
                 # keep on refining and reducing tolerance angle
                 # or for the lowest tolerance angle, consider the refinement-indexation is completed
                 DataSet.dict_grain_matrix[grain_index] = refinedMatrix
-                DataSet.dict_grain_matching_rate[grain_index] = [
-                                                                nb_updates,
-                                                                Matching_rate,
-                                                            ]
+                DataSet.dict_grain_matching_rate[grain_index] = [nb_updates, Matching_rate]
 
                 DataSet.plotgrains(
                     exp_data=DataSet.getSpotsExpData(),
@@ -1968,10 +1792,8 @@ def test_old_imagematching(database):
                 if k == len(AngleTol_List) - 1:
 
                     print("\n---------------------------------------------")
-                    print(
-                        "indexing completed for grain #%d with matching rate %.2f "
-                        % (grain_index, Matching_rate)
-                    )
+                    print("indexing completed for grain #%d with matching rate %.2f "
+                        % (grain_index, Matching_rate))
                     print("---------------------------------------------\n")
                     indexedgrains.append(grain_index)
                     grain_index += 1
@@ -2007,13 +1829,11 @@ def test(database):
         database = IMM.DataBaseImageMatchingSi()
         # ------------------------------------------------------------------------
 
-    dictimm = {
-        "sigmagaussian": (0.5, 0.5, 0.5),
+    dictimm = {"sigmagaussian": (0.5, 0.5, 0.5),
         "Hough_init_sigmas": (1, 0.7),
         "Hough_init_Threshold": 1,
         "rank_n": 20,
-        "useintensities": 0,
-    }
+        "useintensities": 0}
 
     # create a fake data file of randomly oriented crystal
     if readfile is None:
@@ -2023,18 +1843,16 @@ def test(database):
         addspots = 6
         #        removespots = None
         #        addspots = None
-        file_to_index = createFakeData(
-            key_material,
-            nbgrains,
-            outputfilename=outputfilename,
-            removespots=removespots,
-            addspots=addspots,
-        )
+        file_to_index = createFakeData(key_material,
+                                        nbgrains,
+                                        outputfilename=outputfilename,
+                                        removespots=removespots,
+                                        addspots=addspots)
     else:
         file_to_index = readfile
 
     # read spots data and init dictionary of indexed spots
-    DataSet = spotsset()
+    DataSet = ISS.spotsset()
     DataSet.importdatafromfile(file_to_index)
     totalnbspots = DataSet.nbspots
 
@@ -2073,7 +1891,7 @@ def test(database):
             # potential orientation solutions from image matching
             print("providing new set of matrices")
 
-            (bestUB, bestmatchingrates, nbspotsIMM) = DataSet.getOrients_ImageMatching(
+            (bestUB, _, nbspotsIMM) = DataSet.getOrients_ImageMatching(
                                                             MatchingRate_Threshold=MatchingRate_Threshold,
                                                             exceptgrains=DataSet.indexedgrains,
                                                             verbose=VERBOSE)
@@ -2084,9 +1902,7 @@ def test(database):
             DataSet.UBStack = bestUB
 
         if DataSet.UBStack is not None and len(DataSet.UBStack) != 0:
-            print(
-                "%d Matrices are candidates in the Matrix Pile !" % len(DataSet.UBStack)
-            )
+            print("%d Matrices are candidates in the Matrix Pile !" % len(DataSet.UBStack))
             if VERBOSE:
                 print("\n  -----   Taking a new matrix from the matrices stack  -------")
             UB = DataSet.UBStack.pop(0)
@@ -2105,10 +1921,7 @@ def test(database):
         #        print DataSet.dict_grain_matrix
 
         # indexation of spots with raw (un refined) matrices & #update dictionaries
-        print(
-            "\n\n---------------indexing grain  #%d-----------------------"
-            % grain_index
-        )
+        print("\n\n---------------indexing grain  #%d-----------------------" % grain_index)
         if VERBOSE:
             print("eulerangles", UB.eulers)
 
@@ -2123,8 +1936,7 @@ def test(database):
                     titlefig="%d Exp. spots data (/%d) after raw matching grain #%d"
                                     % (nbspotsIMM, totalnbspots, grain_index))
 
-        print("\n\n---------------refining grain orientation #%d-----------------"
-            % grain_index)
+        print("\n\n---------------refining grain orientation #%d-----------------" % grain_index)
         # TODO: data flow and branching will be improved later
         for k, AngleTol in enumerate(AngleTol_List):
             if VERBOSE:
@@ -2137,11 +1949,11 @@ def test(database):
 
             if refinedMatrix is not None:
 
-                UBrefined = OrientMatrix(matrix=refinedMatrix)
+                UBrefined = ISS.OrientMatrix(matrix=refinedMatrix)
                 #            print "UBrefined", UBrefined.matrix
                 DataSet.dict_grain_matrix[grain_index] = UBrefined.matrix
                 # select data, link spots, update spot dictionary, update matrix dictionary
-                Matching_rate, nb_updates, missingRefs = DataSet.AssignHKL(UBrefined,
+                Matching_rate, _, _ = DataSet.AssignHKL(UBrefined,
                                                                             grain_index,
                                                                             AngleTol,
                                                                             verbose=VERBOSE)
@@ -2176,18 +1988,15 @@ def test(database):
                     DataSet.plotgrains(
                         exp_data=DataSet.getSpotsExpData(),
                         titlefig="%d Exp. spots data (/%d), after refinement of grain #%d at step #%d"
-                        % (totalnbspots, totalnbspots, grain_index, k),
-                    )
+                        % (totalnbspots, totalnbspots, grain_index, k))
 
                 # if this is the last tolerance step
                 if k == len(AngleTol_List) - 1:
 
                     if 1:
                         print("\n---------------------------------------------")
-                        print(
-                            "indexing completed for grain #%d with matching rate %.2f "
-                            % (grain_index, Matching_rate)
-                        )
+                        print("indexing completed for grain #%d with matching rate %.2f "
+                            % (grain_index, Matching_rate))
                         print("---------------------------------------------\n")
 
                     DataSet.indexedgrains.append(grain_index)
@@ -2439,7 +2248,7 @@ if __name__ == "__main__":
     def plot_mapmajor(listoflocations, xmin, xmax, ymin, ymax):
         """
         example of map plot given list of coordinates ?? ( I do not remember actually)
-        
+
         """
         import pylab as p
 
