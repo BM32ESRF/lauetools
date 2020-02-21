@@ -60,13 +60,10 @@ def isCubic(latticeparams):
         raise ValueError("latticeparams is not a list of the 6 lattice parameters")
 
     Cubic = False
-    if (
-        latticeparams[0] == latticeparams[1]
-        and latticeparams[2] == latticeparams[1]
+    if (latticeparams[0] == latticeparams[1] and latticeparams[2] == latticeparams[1]
         and latticeparams[3] * 1.0 == 90.0
         and latticeparams[4] * 1.0 == 90.0
-        and latticeparams[5] * 1.0 == 90.0
-    ):
+        and latticeparams[5] * 1.0 == 90.0):
         Cubic = True
 
     return Cubic
@@ -117,7 +114,6 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
     elif Extinc == "Ti2AlN":
-
         # wurtzite condition
         condfirst = (H == K) * ((L % 2) != 0)
         array_hkl_1 = np.delete(HKL, np.where(condfirst == True)[0], axis=0)
@@ -336,9 +332,7 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     :return: grain (4 elements list),  contains_U (boolean)
     """
     try:
-        elem_key, unitCellparameters, Structure_extinction = dictmaterials[
-            key_material
-        ]
+        elem_key, unitCellparameters, Structure_extinction = dictmaterials[key_material]
     except KeyError:
         raise KeyError("Unknown key '%s'for material" % str(key_material))
 
@@ -605,7 +599,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
 
     Zero strain corresponds to reference state of input `lattice parameters`
 
-    :param newUBmat: (3x3) matrix operator including rotation and deformation 
+    :param newUBmat: (3x3) matrix operator including rotation and deformation
     :param latticeparams: 6 lattice parameters  [a,b,c,:math:`\alpha, \beta, \gamma`] in Angstrom and degrees
     :param constantlength: 'a','b', or 'c' to set one length according to the value in `latticeparams`
 
@@ -614,12 +608,12 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     :rtype: 3x3 numpy array, 6 elements list
 
     .. note::
-    
+
         * q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input.
 
         * equivalently, q = UBstar_s . G*
     """
-    # q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input 
+    # q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input
     # q = UBstar_s . G*
     # print "new UBs matrix in q= UBs G"
     B0 = calc_B_RR(latticeparams)
@@ -667,7 +661,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     return devstrain, lattice_parameter_direct_strain
 
 
-def evaluate_strain_fromUBmat(UBmat,key_material,constantlength="a", dictmaterials=dict_Materials):
+def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmaterials=dict_Materials):
     r"""
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
@@ -986,7 +980,7 @@ def matrix_to_rlat(mat, angles_in_deg=1):
 def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     r"""
     Computes RECIPROCAL lattice parameters from DIRECT lattice parameters `dlat`
-    
+
     :param dlat: [a,b,c, alpha, beta, gamma] angles are in degrees
     :param angles_in_deg: 1 when last three parameters are angle in degrees
     (then results angles are in degrees)
@@ -995,7 +989,7 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
 
     .. note::
 
-        dlat stands for DIRECT (real space) lattice, rlat for RECIPROCAL lattice 
+        dlat stands for DIRECT (real space) lattice, rlat for RECIPROCAL lattice
 
     .. todo:: To remove setvolume
     """
@@ -1101,7 +1095,7 @@ def calc_epsp(dlat):
     and from SMALL deformation
 
     .. note::
-    
+
         from O Robach's scripts
 
     .. todo:: to be deleted since not general
@@ -1185,10 +1179,8 @@ def strain_from_crystal_to_sample_frame(
         # from matstarlab in Odile's frame
         matstarlab = UBmat
         if len(matstarlab) != 3:
-            raise TypeError(
-                "strain_from_crystal_to_sample_frame function "
-                "needs 3x3 orientation matrix"
-            )
+            raise TypeError("strain_from_crystal_to_sample_frame function "
+                "needs 3x3 orientation matrix")
     else:
         # from UB matrix in Lauetools frame
         matstarlab = matstarlabLaueTools_to_matstarlabOR(
@@ -1271,8 +1263,7 @@ def hydrostaticStrain(
     print("C_sampleframe", C_sampleframe)
 
     deviatoricStrain_sampleframe = strain_from_crystal_to_sample_frame2(
-        deviatoricStrain, UBmatrix
-    )
+        deviatoricStrain, UBmatrix)
 
     # with UBmatrix=np.eye(3)
     #     deviatoricStrain_crystalframe=np.array([[ 0.00082635, -0.00076604, -0.00098481],
@@ -1298,18 +1289,15 @@ def hydrostaticStrain(
 
     # third row gives an equation where eps_hydro can be extracted
     # 0 = np.dot(devstrain_voigt,C_sampleframe[2])+eps_hydro/3.*np.sum(np.dot(devstrain_voigt[:3],C_sampleframe[2][3:]))
-    hydrostrain = (
-        -np.dot(devstrain_voigt_sampleframe, C_sampleframe[2])
-        * 3
+    hydrostrain = (-np.dot(devstrain_voigt_sampleframe, C_sampleframe[2]) * 3
         / np.sum(C_sampleframe[2][:3]))
 
     print("hydrostatic strain", hydrostrain)
 
-    fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.0 * np.eye( 3 )
+    fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.0 * np.eye(3)
 
     fullstrain_voigt_sampleframe = (
-        devstrain_voigt_sampleframe + hydrostrain / 3.0 * np.array([1, 1, 1, 0, 0, 0])
-    )
+        devstrain_voigt_sampleframe + hydrostrain / 3.0 * np.array([1, 1, 1, 0, 0, 0]))
 
     fullstress_voigt_sampleframe = np.dot(C_sampleframe, fullstrain_voigt_sampleframe)
 
@@ -1417,7 +1405,7 @@ def matstarlab_to_matdirONDsample(
     # matdirONDsample = uc_dir_OND on sample
     # rsample = matdirONDsample * ruc_dir_OND
     # orientation of the OND frame related to a,b,c (direct lattice vectors)
-    # 1rst column is components of vector basis 'a' of OND frame related to 
+    # 1rst column is components of vector basis 'a' of OND frame related to
     # crystal (direct space) expressed in sample frame
     matdirONDsample = np.dot(matrot, matdirONDlab)
 
@@ -1462,9 +1450,9 @@ def matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True):
     """
     mm = UBmat
 
-    matstarlab = np.array([ -mm[1, 0], mm[0, 0], mm[2, 0],
+    matstarlab = np.array([-mm[1, 0], mm[0, 0], mm[2, 0],
                             -mm[1, 1], mm[0, 1], mm[2, 1],
-                            -mm[1, 2], mm[0, 2], mm[2, 2]] )
+                            -mm[1, 2], mm[0, 2], mm[2, 2]])
 
     matstarlab = matstarlab / GT.norme_vec(matstarlab[:3])
 
@@ -1512,25 +1500,18 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab, vec_in_columns=True):
     return from_ORlabframe_to_Lauetools(matstarlab)
 
 
-def matstarlab_to_matstarsample3x3(
-    matstarlab,
-    omega=None,  # 40.
-    mat_from_lab_to_sample_frame=np.array(
-        [ [1.0, 0.0, 0.0],
-            [0.0, 0.766044443118978, 0.642787609686539],
-            [0.0, -0.642787609686539, 0.766044443118978], ] ),
-):
+def matstarlab_to_matstarsample3x3(matstarlab, omega=None,  # 40.
+                        mat_from_lab_to_sample_frame=np.array([[1.0, 0.0, 0.0],
+                                                [0.0, 0.766044443118978, 0.642787609686539],
+                                                [0.0, -0.642787609686539, 0.766044443118978]])):
     matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
 
-    if (omega is not None) & (
-        mat_from_lab_to_sample_frame is None
-    ):  # deprecated - only for retrocompatibility
+    if (omega is not None) & (mat_from_lab_to_sample_frame is None):  # deprecated - only for retrocompatibility
         omega = omega * DEG
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = np.array(
-            [ [1.0, 0.0, 0.0],
-                [0.0, np.cos(omega), np.sin(omega)],
-                [0.0, -np.sin(omega), np.cos(omega)], ] )
+        mat_from_lab_to_sample_frame = np.array([[1.0, 0.0, 0.0],
+                                                [0.0, np.cos(omega), np.sin(omega)],
+                                                [0.0, -np.sin(omega), np.cos(omega)]])
 
     matstarsample3x3 = np.dot(mat_from_lab_to_sample_frame, matstarlab3x3)
 
@@ -1538,16 +1519,15 @@ def matstarlab_to_matstarsample3x3(
     return matstarsample3x3
 
 
-def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
-    matstarlab=None,  # OR
-    UBmat=None,  # LT , UBB0 ici
-    omega=None,  # 40. was MG.PAR.omega_sample_frame,
-    mat_from_lab_to_sample_frame=None,
-    results_in_OR_frames=1,
-    results_in_LT_frames=0,
-    sampletilt=40.0):
+def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
+                                                    UBmat=None,  # LT , UBB0 ici
+                                                    omega=None,  # 40. was MG.PAR.omega_sample_frame,
+                                                    mat_from_lab_to_sample_frame=None,
+                                                    results_in_OR_frames=1,
+                                                    results_in_LT_frames=0,
+                                                    sampletilt=40.0):
     """Compute HKLs which are parallel to xyz axis of sample frame and lab frame.
-    
+
     One of the two optional arguments (matstarlab or UBmat) must be input.
 
     :param matstarlab: ORs matrix, defaults to None
@@ -1597,11 +1577,9 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
 
     if results_in_OR_frames:
 
-        matstarsample3x3 = matstarlab_to_matstarsample3x3(
-            matstarlab,
-            omega=omega,
-            mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame,
-        )
+        matstarsample3x3 = matstarlab_to_matstarsample3x3(matstarlab,
+                                        omega=omega,
+                                        mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame)
 
         mat3 = inv(matstarlab3x3)
         for i in list(range(3)):
@@ -1709,15 +1687,15 @@ from numpy.linalg.linalg import norm
 boa  means  b over a!!!!
 """
 
-def S11p(boa, coa, alpha, beta, gamma):
+def S11p(boa, coa, alpha, b, g):
     return boa ** 2 * coa ** 2 * np.sin(alpha) ** 2
 
 
-def S22p(boa, coa, alpha, beta, gamma):
+def S22p(_, coa, a, beta, g):
     return coa ** 2 * np.sin(beta) ** 2
 
 
-def S33p(boa, coa, alpha, beta, gamma):
+def S33p(boa, _, a, b, gamma):
     return boa ** 2 * np.sin(gamma) ** 2
 
 
@@ -1734,31 +1712,21 @@ def S12p(boa, coa, alpha, beta, gamma):
 
 
 def V2p(boa, coa, alpha, beta, gamma):
-    return (boa ** 2
-            * coa ** 2
-            * (
-                1.0
-                - np.cos(alpha) ** 2
+    return (boa ** 2 * coa ** 2
+            * (1.0 - np.cos(alpha) ** 2
                 - np.cos(beta) ** 2
                 - np.cos(gamma) ** 2
-                + 2.0 * np.cos(alpha) * np.cos(beta) * np.cos(gamma)
-            )
-    )
+                + 2.0 * np.cos(alpha) * np.cos(beta) * np.cos(gamma)))
 
 
 def fhkl(boa, coa, alpha, beta, gamma, h, k, l):
-    return (
-        1.0
-        / V2p(boa, coa, alpha, beta, gamma)
-        * (
-            S11p(boa, coa, alpha, beta, gamma) * h ** 2
+    return (1.0 / V2p(boa, coa, alpha, beta, gamma)
+        * (S11p(boa, coa, alpha, beta, gamma) * h ** 2
             + S22p(boa, coa, alpha, beta, gamma) * k ** 2
             + S33p(boa, coa, alpha, beta, gamma) * l ** 2
             + 2.0 * S23p(boa, coa, alpha, beta, gamma) * k * l
             + 2.0 * S13p(boa, coa, alpha, beta, gamma) * l * h
-            + 2.0 * S12p(boa, coa, alpha, beta, gamma) * h * k
-        )
-    )
+            + 2.0 * S12p(boa, coa, alpha, beta, gamma) * h * k))
 
 
 def dhkl(a, b, c, alpha, beta, gamma, h, k, l):
@@ -1795,7 +1763,7 @@ def calculate_a(fitfile, energy, h, k, l):
     :param fitfile:  fitfile object
     :param energy: energy  in eV
 
-    :returns: scalar a 
+    :returns: scalar a
     """
     print("calculate_a function in CrystalParameters")
     # b over a
@@ -1812,11 +1780,8 @@ def calculate_a(fitfile, energy, h, k, l):
     #  qxoverq = (h * astar + k * bstar + l * cstar)[0] / norm((h * astar + k * bstar + l * cstar))
     # Bragg angle
     print("astar,bstar,cstar", astar, bstar, cstar)
-    theta = (np.arccos(
-            (h * astar + k * bstar + l * cstar)[0]
-            / norm((h * astar + k * bstar + l * cstar))
-            )
-            - np.pi / 2.0)
+    theta = (np.arccos((h * astar + k * bstar + l * cstar)[0]
+            / norm((h * astar + k * bstar + l * cstar))) - np.pi / 2.0)
 
     print("theta in rad", theta)
     print("theta in degree", theta / np.pi * 180.0)
@@ -1825,10 +1790,8 @@ def calculate_a(fitfile, energy, h, k, l):
     normGclassic = np.sqrt(np.sum((h * astar + k * bstar + l * cstar) ** 2))
     print("normGclassic", normGclassic)
 
-    a = (E2L(energy)
-        * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l))
-        / 2.0
-        / np.sin(theta))
+    a = (E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l))
+        / 2.0 / np.sin(theta))
     #     a = E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2. / qxoverq
     return a
 
