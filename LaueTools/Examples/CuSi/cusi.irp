@@ -1,0 +1,20 @@
+[IndexRefine]
+nb materials = 1
+useintensityweights_0 = True
+nbspotstoindex_0 = 1000
+nbgrainstofind_0 = 1
+emin_0 = 5
+emax_0 = 18
+matchingrate threshold ial_0 = 100.0
+nbmaxprobed_0 = 15
+matchingrate angle tol_0 = 0.5
+angletollut_0 = 0.5
+resolutionangstrom_0 = False
+list matching tol angles_0 = [1, 1]
+minimumnumbermatches_0 = 6
+key material_0 = Cu
+setcentralspotshkl_0 = None
+central spots indices_0 = [0,1,2,3,4]
+nlutmax_0 = 4
+
+
