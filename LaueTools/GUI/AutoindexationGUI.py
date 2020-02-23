@@ -169,8 +169,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.DRTA = wx.TextCtrl(self.panel, -1, "0.5", (250, 135))
 
         luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (400, 140))
-        # self.nLUT = wx.TextCtrl(self.panel, -1, "4", (220, 100), (30, -1))
-        self.nLUT = wx.SpinCtrl(self.panel, -1, "3", (500, 135), (50, -1), min=3, max=7)
+        self.nLUT = wx.SpinCtrl(self.panel, -1, "4", (500, 135), (50, -1), min=3, max=7)
 
         elemtxt = wx.StaticText(self.panel, -1, "Materials", (15, 175))
         self.SetMaterialsCombo(0)
@@ -196,7 +195,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         pptxt = wx.StaticText(self.panel, -1, "Filtering && Post Processing", (15, 310))
         pptxt.SetFont(font3)
 
-        self.filterMatrix = wx.CheckBox(self.panel, -1, "Remove equivalent Matrices (cubic symmetry)", (15, 345))
+        self.filterMatrix = wx.CheckBox(self.panel, -1,
+                                        "Remove equivalent Matrices (cubic symmetry)", (15, 345))
         self.filterMatrix.SetValue(True)
 
         self.showplotBox = wx.CheckBox(self.panel, -1, "Plot Best result", (15, 380))

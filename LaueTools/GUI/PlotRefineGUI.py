@@ -85,8 +85,6 @@ class MessageDataBox(wx.Frame):
 
         self.comments = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=(300, 100))
         self.comments.SetValue(self.CreateStringfromMatrix(matrix))
-        #         text.SetBackgroundColour(wx.SystemSettings.GetColour(4))
-
         self.text2 = wx.TextCtrl(self, -1, "", style=wx.TE_MULTILINE, size=(300, 30))
         self.text2.SetValue(defaultname)
 
@@ -184,6 +182,41 @@ class Plot_RefineFrame(wx.Frame):
         self.data_dict["logscale"] = True
         self.data_dict["markercolor"] = "b"
 
+        self.datatype_unchanged = None
+        self.centerx, self.centery = None, None
+        self.tth, self.chi, self.pixelX, self.pixelY = None, None, None, None
+        self.linkExpMiller_link = None
+        self.linkResidues_link = None
+        self.linkIntensity_link = None
+        self.Energy_Exp_spot = None
+        self.fields = None
+        self.linkResidues = None
+
+        self.linkExpMiller_fit = None
+        self.linkResidues_fit = None
+        self.linkIntensity_fit = None
+        self.fit_completed = False
+        self.residues_non_weighted = None
+        self.varyingstrain = None
+        self.newUmat = None
+        self.newUBmat = None
+        self.previous_Umat = None
+        self.previous_Bmat = None
+        self.UBB0mat = None
+        self.deviatoricstrain_sampleframe = None
+        self.HKLxyz_names = None
+        self.HKLxyz = None
+
+        self.allparameters = None
+        self.fitting_parameters_keys = None
+        self.fitting_parameters_values = None
+
+        self.init_plot = None
+        self.myplot = None
+        self.data_theo_displayed = None
+
+        self.selectedName = None
+        self._dataANNOTE_exp = None
         self.sigmanoise = 0
 
         self.datatype = datatype
@@ -229,9 +262,6 @@ class Plot_RefineFrame(wx.Frame):
         if IndexationParameters is not None:
             self.DataPlot_filename = IndexationParameters["DataPlot_filename"]
             self.current_processedgrain = IndexationParameters["current_processedgrain"]
-
-            # print("self.current_processedgrain in init () Plot_RefineFrame",
-            #                     self.current_processedgrain)
         else:
             self.DataPlot_filename = self.mainframe.DataPlot_filename
             self.current_processedgrain = self.mainframe.current_processedgrain
@@ -280,6 +310,7 @@ class Plot_RefineFrame(wx.Frame):
         self.nbclick_dist = 1
 
         self.recognition_possible = True
+        self.listbuttonstate = None
         self.toshow = []
 
         self.savedfileindex = 0  # index in fit results filename
@@ -589,9 +620,7 @@ class Plot_RefineFrame(wx.Frame):
         fittip += "(default a is set to a of the reference structure)\n"
         fittip += "qref = UBref B0 G*\n where UBref=Rotx,y,z UBinit Mref,\nMref is triangular up matrix with first element set to 1\n"
         fittip += "\n     OR      \n\n"
-        fittip += (
-            "--- Crystal orientation and Strain in sample frame (tilted by 40deg)\n"
-        )
+        fittip += ("--- Crystal orientation and Strain in sample frame (tilted by 40deg)\n")
         fittip += "6 elements of Ts which is a triangular up matrix, except that one element must be fixed"
         fittip += "qref = Tref Uref B0 G*\n"
         fittip += "with Tref= P-1 Tsref P\n"
@@ -786,11 +815,6 @@ class Plot_RefineFrame(wx.Frame):
         IScaleBoard = IntensityScaleBoard(self, -1, "Image & scale setting Board", self.data_dict)
 
         IScaleBoard.Show(True)
-
-    #         PlotLismitsBoard.ShowModal()
-    #         PlotLismitsBoard.Destroy()
-
-    #         self._replot()
 
     def onSetNoise(self, _):
         """
@@ -1661,7 +1685,7 @@ class Plot_RefineFrame(wx.Frame):
             self.fitresults = True
 
             print("\nFinal error--------------------------------------\n")
-            residues, deltamat, newmatrix = FitO.error_function_on_demand_strain(
+            residues, deltamat, _ = FitO.error_function_on_demand_strain(
                                                                     results,
                                                                     Data_Q,
                                                                     allparameters,
@@ -2228,7 +2252,7 @@ class Plot_RefineFrame(wx.Frame):
             Uxyz,
             newUmat,
             newB0matrix,
-            newlatticeparameters,
+            _,
         ) = FitO.error_function_latticeparameters(results,
                                                 self.fitting_parameters_keys,
                                                 hkls,
@@ -3526,15 +3550,8 @@ class IntensityScaleBoard(wx.Dialog):
         #                 self.fullpathimagefile = self.parent.fullpathimagefile
 
         self.data_dict = data_dict
-        self.dict_colors = {0: "b",
-                            1: "g",
-                            2: "r",
-                            3: "yellow",
-                            4: "m",
-                            5: "grey",
-                            6: "black",
-                            7: "white",
-                            8: "pink"}
+        self.dict_colors = {0: "b", 1: "g", 2: "r", 3: "yellow", 4: "m", 5: "grey",
+                                6: "black", 7: "white", 8: "pink"}
         self.colorindex = 0
 
         Imin = self.data_dict["Imin"]
@@ -3549,16 +3566,11 @@ class IntensityScaleBoard(wx.Dialog):
         self.init_vman = copy.copy(vmax)
         self.init_lut = copy.copy(lut)
 
-        self.mapsLUT = ["jet",
-                        "GnBu",
-                        "cool",
-                        "BuGn",
-                        "PuBu",
-                        "autumn",
-                        "copper",
-                        "gist_heat",
-                        "hot",
-                        "spring"]
+        self.mapsLUT = ["jet", "GnBu", "cool", "BuGn", "PuBu", "autumn",
+                        "copper", "gist_heat", "hot", "spring"]
+
+        self.xlim = None
+        self.ylim = None
 
         # WIDGETS
         wx.StaticText(self, -1, "LUT", (5, 7))
@@ -3569,8 +3581,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
 
-        self.vminctrl = wx.SpinCtrl(
-            self, -1, "1", pos=(50, posv), size=(80, -1), min=-200, max=100000)
+        self.vminctrl = wx.SpinCtrl(self, -1, "1", pos=(50, posv), size=(80, -1), min=-200, max=100000)
 
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
@@ -3578,31 +3589,16 @@ class IntensityScaleBoard(wx.Dialog):
         self.vmaxctrl = wx.SpinCtrl(self, -1, "1000", pos=(50, posv + 30),
                                                                 size=(80, -1), min=2, max=1000000)
 
-        #         self.slider_label = wx.StaticText(self, -1,
-        #             "peak tilt (%): ")
-        self.slider_vmin = wx.Slider(self,
-                                    -1,
-                                    pos=(150, posv + 5),
-                                    size=(220, -1),
-                                    value=0,
-                                    minValue=0,
-                                    maxValue=1000,
+        self.slider_vmin = wx.Slider(self, -1, pos=(150, posv + 5), size=(220, -1),
+                                    value=0, minValue=0, maxValue=1000,
                                     style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
 
-        # second horizontal band
-        #         self.slider_label2 = wx.StaticText(self, -1,
-        #             "data size (%): ")
-        self.slider_vmax = wx.Slider(self,
-                                    -1,
-                                    pos=(150, posv + 35),
-                                    size=(220, -1),
-                                    value=1000,
-                                    minValue=1,
-                                    maxValue=1000,
+        self.slider_vmax = wx.Slider(self, -1, pos=(150, posv + 35), size=(220, -1), value=1000,
+                                    minValue=1, maxValue=1000,
                                     style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
             self.slider_vmax.SetTickFreq(500)
@@ -3660,7 +3656,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.expimagebrowsebtn.SetToolTipString(
             "Open new or update displayed Image according to image filename field")
 
-    def OpenImage(self, evt):
+    def OpenImage(self, _):
 
         #         print "self.ImageArray in OpenImage", self.ImageArray
         if hasattr(self, "fullpathimagefile"):
@@ -3679,10 +3675,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.folderexpimagetxtctrl.SetValue(folder)
         self.expimagetxtctrl.SetValue(imagefile)
 
-    def GetfullpathFile(self, evt):
-        myFileDialog = wx.FileDialog(self,
-                                    "Choose an image file",
-                                    style=wx.OPEN,
+    def GetfullpathFile(self, _):
+        myFileDialog = wx.FileDialog(self, "Choose an image file", style=wx.OPEN,
                                     # defaultDir=self.dirname,
                                     wildcard=DictLT.getwildcardstring(self.parent.CCDLabel))
         dlg = myFileDialog
@@ -3709,10 +3703,8 @@ class IntensityScaleBoard(wx.Dialog):
         if not os.path.isfile(self.fullpathimagefile):
             dlg = wx.MessageDialog(self,
                                     "Path to image file : %s\n\ndoes not exist!!" % self.fullpathimagename,
-                                    "error",
-                                    wx.OK | wx.ICON_ERROR)
-            #                 dlg = wx.MessageDialog(self, 'Detector parameters must be float with dot separator',
-            #                                    'Bad Input Parameters',)
+                                    "error", wx.OK | wx.ICON_ERROR)
+
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -3721,7 +3713,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         print("using CCDLabel", CCDLabel)
 
-        ImageArray, framedim, fliprot = RMCCD.readCCDimage(self.fullpathimagefile,
+        ImageArray, _, _ = RMCCD.readCCDimage(self.fullpathimagefile,
                                                                             CCDLabel, dirname=None)
 
         self.ImageArray = ImageArray
@@ -3734,19 +3726,19 @@ class IntensityScaleBoard(wx.Dialog):
         self.btncloseimage.Enable()
         self.updateplot()
 
-    def onCloseImage(self, evt):
+    def onCloseImage(self, _):
         self.ImageArray = None
         self.parent.ImageArray = self.ImageArray
         self.btncloseimage.Disable()
         self.updateplot()
 
-    def OnChangeLUT(self, evt):
+    def OnChangeLUT(self, _):
         self.data_dict["lut"] = self.comboLUT.GetValue()
 
         print("now selected lut:%s" % self.data_dict["lut"])
         self.updateplot()
 
-    def onChangeColor(self, evt):
+    def onChangeColor(self, _):
         self.colorindex += 1
         self.colorindex = self.colorindex % 8
         self.data_dict["markercolor"] = self.dict_colors[self.colorindex]
@@ -3755,7 +3747,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.updateplot()
 
-    def OnSpinCtrl_IminDisplayed(self, evt):
+    def OnSpinCtrl_IminDisplayed(self, _):
         self.IminDisplayed = self.vminctrl.GetValue()
         self.ImaxDisplayed = self.vmaxctrl.GetValue()
 
@@ -3766,7 +3758,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.slider_vmax.SetMin(int(self.IminDisplayed))
         self.normalizeplot()
 
-    def OnSpinCtrl_ImaxDisplayed(self, evt):
+    def OnSpinCtrl_ImaxDisplayed(self, _):
 
         self.IminDisplayed = self.vminctrl.GetValue()
         self.ImaxDisplayed = self.vmaxctrl.GetValue()
@@ -3788,7 +3780,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.updateplot()
 
-    def onChangeScaleTypeplot(self, evt):
+    def onChangeScaleTypeplot(self, _):
 
         self.data_dict["logscale"] = not self.data_dict["logscale"]
 
@@ -3805,7 +3797,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.updateplot()
 
-    def on_slider_IminDisplayed(self, evt):
+    def on_slider_IminDisplayed(self, _):
         self.IminDisplayed = self.slider_vmin.GetValue()
 
         #         self.viewingLUTpanel.vminctrl.SetValue(int(self.IminDisplayed))
@@ -3817,7 +3809,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.displayIMinMax()
         self.normalizeplot()
 
-    def on_slider_ImaxDisplayed(self, evt):
+    def on_slider_ImaxDisplayed(self, _):
         self.ImaxDisplayed = self.slider_vmax.GetValue()
         #         self.viewingLUTpanel.vmaxctrl.SetValue(int(self.ImaxDisplayed))
 
@@ -3835,7 +3827,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.Iminvaltxt.SetLabel(str(self.IminDisplayed))
         self.Imaxvaltxt.SetLabel(str(self.ImaxDisplayed))
 
-    def onEnterValue(self, evt):
+    def onEnterValue(self, _):
         self.readvalues()
         self.updateplot()
 
@@ -3856,7 +3848,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.xlim = (xmin, xmax)
         self.ylim = (ymin, ymax)
 
-    def onAccept(self, evt):
+    def onAccept(self, _):
 
         self.readvalues()
 
@@ -3865,7 +3857,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         self.Close()
 
-    def onCancel(self, evt):
+    def onCancel(self, _):
 
         self.parent.xlim = self.init_xlim
         self.parent.ylim = self.init_ylim
@@ -3891,7 +3883,7 @@ class NoiseLevelBoard(wx.Dialog):
 
         posv = 5
 
-        txtimage = wx.StaticText(self, -1, "RMS Radial pixel noise", pos=(5, posv + 57))
+        wx.StaticText(self, -1, "RMS Radial pixel noise", pos=(5, posv + 57))
 
         self.noisetxtctrl = wx.TextCtrl(
             self, -1, "0", size=(150, -1), pos=(120, posv + 55))
@@ -3900,7 +3892,7 @@ class NoiseLevelBoard(wx.Dialog):
 
         self.applynoisebtn.Bind(wx.EVT_BUTTON, self.onApplyNoise)
 
-    def onApplyNoise(self, evt):
+    def onApplyNoise(self, _):
 
         self.parent.sigmanoise = float(self.noisetxtctrl.GetValue())
         self.parent._replot()

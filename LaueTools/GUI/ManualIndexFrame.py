@@ -277,7 +277,7 @@ class ManualIndexFrame(wx.Frame):
         self.matr_ctrl = wx.TextCtrl(self.panel, -1, str(self.MATR))
 
         self.txtnlut = wx.StaticText(self.panel, -1, "n LUT:    ")
-        self.nlut = wx.SpinCtrl(self.panel, -1, "3", min=1, max=7, size=(50, -1))
+        self.nlut = wx.SpinCtrl(self.panel, -1, "4", min=1, max=7, size=(50, -1))
 
         self.nlut.Bind(wx.EVT_SPINCTRL, self.onNlut)
 
@@ -539,17 +539,12 @@ class ManualIndexFrame(wx.Frame):
         """
         open a board to change image scale
         """
-        # TODO  put import at top module. check if PRGUI does not load circularly this module
-        import PlotRefineGUI as PRGUI
+        from . PlotRefineGUI import IntensityScaleBoard
 
-        IScaleBoard = PRGUI.IntensityScaleBoard(self, -1, "Image scale setting Board",
+        IScaleBoard = IntensityScaleBoard(self, -1, "Image scale setting Board",
                                                                                     self.data_dict)
 
         IScaleBoard.Show(True)
-
-    #         PlotLismitsBoard.ShowModal()
-    #         PlotLismitsBoard.Destroy()
-    #         self._replot()
 
     def OnDrawLine(self, _):
         self.addlines = True

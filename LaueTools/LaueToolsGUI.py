@@ -52,7 +52,6 @@ if sys.version_info.major == 3:
     from . GUI import LaueSimulatorGUI as LSGUI
     from . import CrystalParameters as CP
     from . import IOLaueTools as IOLT
-    from . import generaltools as GT
     from . import dict_LaueTools as DictLT
     from . GUI import PeakSearchGUI
     from . GUI import DetectorParameters as DP
@@ -74,9 +73,8 @@ else:
     import GUI.LaueSimulatorGUI as LSGUI
     import CrystalParameters as CP
     import IOLaueTools as IOLT
-    import generaltools as GT
     import dict_LaueTools as DictLT
-    import GUI.PeakSearchGUI
+    import GUI.PeakSearchGUI as PeakSearchGUI
     import GUI.DetectorParameters as DP
     import GUI.DetectorCalibration as DC
     import GUI.CCDFileParametersGUI as CCDParamGUI
@@ -1625,7 +1623,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Open default data for quick test if user has not yet loaded some data
         """
-        DEFAULTFILE = "dat_Ge0001.cor"
+        DEFAULTFILE = "defaultGe0001.cor"
         defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
 
         print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)

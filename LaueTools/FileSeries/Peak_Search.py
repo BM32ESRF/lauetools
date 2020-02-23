@@ -671,9 +671,13 @@ class MainFrame_peaksearch(wx.Frame):
     def OnStart(self, _):
         """   read all ctrls and start processing  """
         # read .psp file
-        print("read peak search parameters in:", self.list_txtctrl[11].GetValue())
+        filepsp = self.list_txtctrl[11].GetValue()
+        if not os.path.exists(filepsp):
+            wx.MessageBox("Missing file ! %s"%str(filepsp), "ERROR")
+            return
+        print("read peak search parameters in:", filepsp)
 
-        dict_param = RMCCD.readPeakSearchConfigFile(self.list_txtctrl[11].GetValue())
+        dict_param = RMCCD.readPeakSearchConfigFile(filepsp)
 
         print("Peak Search parameters", dict_param)
 
@@ -688,7 +692,7 @@ class MainFrame_peaksearch(wx.Frame):
         except ValueError:
             wx.MessageBox("indices must be integer", "ERROR")
 
-        if (not (imageindexmin < imageindexmax) or imageindexmin < 0 or imageindexmax < 0):
+        if (imageindexmin >= imageindexmax or imageindexmin < 0 or imageindexmax < 0):
             wx.MessageBox("Problems with image indices. starting index should be lower "
                                                                     "than final index", "ERROR")
 

@@ -124,13 +124,12 @@ class DetectorParameters(wx.Dialog):
         """
         wcd = "Calibration file(*.det)|*.det|All files(*)|*"
         _dir = os.getcwd()
-        open_dlg = wx.FileDialog(
-            self,
-            message="Choose a file",
-            defaultDir=_dir,
-            defaultFile="",
-            wildcard=wcd,
-            style=wx.OPEN | wx.CHANGE_DIR)
+        open_dlg = wx.FileDialog(self,
+                                message="Choose a file",
+                                defaultDir=_dir,
+                                defaultFile="",
+                                wildcard=wcd,
+                                style=wx.OPEN | wx.CHANGE_DIR)
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
             try:

@@ -16,6 +16,8 @@ import copy
 import time as ttt
 import struct
 
+import configparser as CONF
+
 # third party modules
 
 # import scipy.interpolate as sci
@@ -519,14 +521,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         - fliprot : string, key for CCD frame transform to orient image
     :rtype: tuple of 3 elements
     """
-    (framedim,
-        _,
-        _,
-        fliprot,
-        offsetheader,
-        formatdata,
-        _,
-        _) = DictLT.dict_CCD[CCDLabel]
+    (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
 
     USE_RAW_METHOD = False
 
@@ -535,8 +530,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
 
-        if CCDLabel in ('MARCCD165',"EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr",
-                                            "sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
             print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
@@ -580,7 +574,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif LIBTIFF_EXISTS:
         print("----> Using libtiff...")
-        if CCDLabel in ("sCMOS", "MARCCD165","TIFF Format",
+        if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format",
                                 "FRELONID15_corrected", "VHR_PSI", "VHR_DLS",
                                 "MARCCD225", "Andrea", "pnCCD_Tuba"):
 
@@ -1154,7 +1148,7 @@ def readoneimage_multiROIfit(filename,
         1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0)
         2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)
 
-    use_data_corrected : tuple of 3 elements    
+    use_data_corrected : tuple of 3 elements
                          Enter data instead of reading data from file:
                          fulldata, framedim, fliprot
                          where fulldata is a ndarray
@@ -1408,7 +1402,7 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
 
     if baseline in ("auto", None):  # background height or baseline level
         list_min = []
-        for k, dd in enumerate(Data):
+        for _, dd in enumerate(Data):
             #            print "k, dd.shape", k, dd.shape
             list_min.append(np.amin(dd))
         start_baseline = list_min
@@ -1464,8 +1458,8 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
     #                                    start_sigma1, start_sigma2,
     #                                    start_anglerot)
 
-    startingparams_zip = np.array( [ start_baseline, start_amplitude, start_j, start_i,
-                            start_sigma1, start_sigma2, start_anglerot, ] )
+    startingparams_zip = np.array([start_baseline, start_amplitude, start_j, start_i,
+                            start_sigma1, start_sigma2, start_anglerot])
 
     RES_params = []
     RES_cov = []
@@ -1489,7 +1483,7 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
             if Data[k_image].shape != ROIshape:
                 ijindices_array = None
 
-            ROIdata = Data[k_image]
+            # ROIdata = Data[k_image]
             #             print 'ROIdata', ROIdata
             #             print 'np.amax(ROIdata)', np.amax(ROIdata)
             #             print 'np.amin (ROIdata)', np.amin(ROIdata)
@@ -1580,7 +1574,7 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     Parameters
     ------------
     center : iterable of 2 elements
-             (x,y) pixel center of the ROI 
+             (x,y) pixel center of the ROI
     halfboxsizeROI : integer or iterable of 2 elements
                      half boxsize ROI in two dimensions
     arrayshape : iterable of 2 integers
@@ -1596,7 +1590,7 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     ------------
     imin, imax, jmin, jmax : 4 integers
                              4 indices allowing to slice a 2D np.ndarray
-                             
+
     .. todo::  merge with check_array_indices()
     """
     xpic, ypic = center
@@ -1656,7 +1650,7 @@ def to8bits(PILimage, normalization_value=None):
     returns:
     [0]  8 bits image
     [1] corresponding pixels value array
-    
+
     TODO: since not used, may be deleted
     """
 
@@ -1720,7 +1714,7 @@ def SumImages(prefixname,
 
     filename = "{}{:04d}{}".format(prefixname, ind_start, suffixname)
 
-    data, shape, fliprot = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname)
+    data, shape, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname)
 
     if CCDLabel == "ImageStar_raw":
         # Add addition of 32 bits image => replace 2 by 4  nb of bytes per pixel
@@ -1743,9 +1737,7 @@ def SumImages(prefixname,
         # print k
         filename = "{}{:04d}{}".format(prefixname, k, suffixname)
         # print filename1
-        data, shape, fliprot = readCCDimage(
-            filename, CCDLabel=CCDLabel, dirname=dirname
-        )
+        data, shape, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname)
         # print max(data1), np.argmax(data1)
         datasum = data + datasum
 
@@ -1834,7 +1826,7 @@ def Add_Images(prefixname, ind_start, ind_end, plot=0, writefilename=None):
     Returns
     ---------
     datastart : array
-                accumulation of 2D data from each image 
+                accumulation of 2D data from each image
 
     """
     suffixname = ".mccd"
@@ -2017,8 +2009,9 @@ def getIntegratedIntensities(fullpathimagefile,
                             thresholdlevel=0.2,
                             flipxycenter=True):
     """
-    read binary image file and compute integrated intensities of peaks whose center is given in list_centers 
-    
+    read binary image file and compute integrated intensities of peaks
+    whose center is given in list_centers
+
     return
     ----------
     array of
@@ -2026,10 +2019,11 @@ def getIntegratedIntensities(fullpathimagefile,
     column 1: absolute minimum intensity threshold
     column 2: nb of pixels composing the peak
     """
-    dataimage, framedim, fliprot = readCCDimage(fullpathimagefile, CCDLabel, None, 0)
+    dataimage, framedim, _ = readCCDimage(fullpathimagefile, CCDLabel, None, 0)
     res = []
     for center in list_centers:
-        res.append(getIntegratedIntensity(dataimage, center, boxsize, framedim, thresholdlevel, flipxycenter))
+        res.append(getIntegratedIntensity(dataimage, center, boxsize, framedim,
+                                                        thresholdlevel, flipxycenter))
     return np.array(res)
 
 
@@ -2046,7 +2040,7 @@ def getIntegratedIntensity(data2d, center, boxsize, framedim,
                    swap input center coordinates
     data2d : 2D array
              data array as read by :func:`readCCDimage`
-             
+
     Thresholdlevel  :  relative level above which pixel intensity must be taken into account
                 I(p)- minimum> Thresholdlevel* (maximum-minimum)
 
@@ -2065,8 +2059,7 @@ def getIntegratedIntensity(data2d, center, boxsize, framedim,
     datacropped = data2d[imin:imax, jmin:jmax]
 
     # mini, maxi, posmin, posmax
-
-    mini, maxi, posmin, posmax = ndimage.measurements.extrema(datacropped)
+    mini, maxi, _, _ = ndimage.measurements.extrema(datacropped)
 
     minimum_amplitude = thresholdlevel * (maxi - mini) + mini
     print("integration for pixel intensity higher than: ", minimum_amplitude)
@@ -2301,9 +2294,9 @@ def LocalMaxima_ndimage(Data,
     connectivity :
         1 for filled square 3*3 connectivity
         0 for 3*3 star like connectivity
-        
+
     autothresholdpercentage :
-        threshold in filtered image with respect to the maximum intensity in filtered image 
+        threshold in filtered image with respect to the maximum intensity in filtered image
 
     output:
     array (n,2): array of 2 indices
@@ -2389,7 +2382,7 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
 
     Two Thresholds are used sequently:
         - thresholdConvolve : level under which intensity of kernel-convolved array is discarded
-        - IntensityThreshold : level under which blob whose local intensity amplitude in raw array is discarded  
+        - IntensityThreshold : level under which blob whose local intensity amplitude in raw array is discarded
 
     Parameters
     ------------
@@ -2408,7 +2401,8 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
 
     IntensityThreshold : minimum local blob amplitude to accept
 
-    boxsize_for_probing_minimal_value_background : boxsize to evaluate the background and the blob amplitude 
+    boxsize_for_probing_minimal_value_background : boxsize to evaluate the background
+                                                        and the blob amplitude
 
     peakposition_definition : string ('max' or 'center')
                               key to assign to the blob position its hottest pixel position
@@ -2612,8 +2606,7 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
     # j corresponds to x
     # change nom xminf2d => xminfit2d pour coherence avec le reste
 
-    # imin,imax,jmin,jmax=2048-ymaxfit2d,2048-yminfit2d,xminfit2d,xmaxfit2d
-    imin, imax, jmin, jmax = (framedim[0] - ymaxfit2d,
+    imin, _, jmin, _ = (framedim[0] - ymaxfit2d,
                                 framedim[0] - yminfit2d,
                                 xminfit2d - 1,
                                 xmaxfit2d - 1)
@@ -2774,7 +2767,7 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
         sqdistmatrix_c = ssd.squareform(disttable_c)
         distmatrix_c = sqdistmatrix_c + np.eye(sqdistmatrix_c.shape[0]) * maxdistance_c
         # must be (array([], dtype=int64), array([], dtype=int64))
-        print("close hotpixels", np.where(distmatrix_c < pixeldistance))  
+        print("close hotpixels", np.where(distmatrix_c < pixeldistance))
     # print "purged_pklist", purged_pklist
     print("shape(purged_pklist)", np.shape(purged_pklist))
     npeaks = np.shape(purged_pklist)[0]
@@ -2801,7 +2794,7 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
         print('\n>>>>> Finding only peaks in %d ROIs.\n' % len(rois))
         listmeanpos_roi = []
         for x, y, boxx, boxy in rois:
-            
+
             centerj, centeri = x, y
             boxj, boxi = boxx, boxy
             (imin, imax, jmin, jmax) = (centeri - boxi, centeri + boxi + 1,
@@ -2944,20 +2937,19 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
     res = []
     for tc in (0, 100, 200, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000):
         # tstart = ttt.time()
-        Isorted, fitpeak, localpeak, nbrawblobs = PeakSearch(
-            filename,
-            CCDLabel=CCDLabel,
-            PixelNearRadius=20,
-            removeedge=2,
-            IntensityThreshold=IntensityThreshold,
-            thresholdConvolve=tc,
-            boxsize=15,
-            position_definition=1,
-            verbose=0,
-            fit_peaks_gaussian=0,
-            xtol=0.001,
-            return_histo=2,
-        )
+        # Isorted, fitpeak, localpeak, nbrawblobs
+        _, fitpeak, _, nbrawblobs = PeakSearch(filename,
+                                                CCDLabel=CCDLabel,
+                                                PixelNearRadius=20,
+                                                removeedge=2,
+                                                IntensityThreshold=IntensityThreshold,
+                                                thresholdConvolve=tc,
+                                                boxsize=15,
+                                                position_definition=1,
+                                                verbose=0,
+                                                fit_peaks_gaussian=0,
+                                                xtol=0.001,
+                                                return_histo=2)
 
         # res.append([tc,IntensityThreshold, nbrawblobs,len(fitpeak), ttt.time()-tstart])
         res.append([tc, IntensityThreshold, nbrawblobs, len(fitpeak)])
@@ -3170,9 +3162,9 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     print("nb of results: ", len(ResFit[0]))
 
     if ComputeIpixmax:
-        params, cov, info, message, baseline, Ipixmax = ResFit
+        params, _, info, _, baseline, Ipixmax = ResFit
     else:
-        params, cov, info, message, baseline = ResFit
+        params, _, info, _, baseline = ResFit
 
     par = np.array(params)
 
@@ -3317,7 +3309,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         # minimum distance fit solutions
         pixeldistance = boxsize
 
-        tabXY, index_todelete = GT.purgeClosePoints2(tabIsorted[:, :2], pixeldistance)
+        # tabXY, index_todelete
+        _, index_todelete = GT.purgeClosePoints2(tabIsorted[:, :2], pixeldistance)
 
         #         print tabXY
         #         print index_todelete
@@ -3331,40 +3324,37 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     return tabIsorted, par, peaklist
 
 
-def PeakSearch(filename,
-                stackimageindex=-1,
-                CCDLabel="PRINCETON",
-                center=None,
-                boxsizeROI=(200, 200),  # use only if center != None
-                PixelNearRadius=5,
-                removeedge=2,
-                IntensityThreshold=400,
-                thresholdConvolve=200,
-                paramsHat=(4, 5, 2),
-                boxsize=15,
-                verbose=0,
-                position_definition=1,
-                local_maxima_search_method=1,
-                peakposition_definition="max",
-                fit_peaks_gaussian=1,
-                xtol=0.00001,
-                return_histo=1,
-                FitPixelDev=25,  # to_reject3 parameter
-                write_execution_time=1,
-                Saturation_value=65535,  # to be merged in CCDLabel
-                Saturation_value_flatpeak=65535,
-                MinIntensity=0,
-                PeakSizeRange=(0, 200),
-                oldversion=False,  # to be removed
-                Data_for_localMaxima=None,
-                Fit_with_Data_for_localMaxima=False,
-                Remove_BlackListedPeaks_fromfile=None,
-                maxPixelDistanceRejection=15.0,
-                maxDistanceRejection=15,
-                NumberMaxofFits=5000,
-                reject_negative_baseline=True,
-                formulaexpression="A-1.1*B",
-                listrois=None):
+def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
+                                                boxsizeROI=(200, 200),  # use only if center != None
+                                                PixelNearRadius=5,
+                                                removeedge=2,
+                                                IntensityThreshold=400,
+                                                thresholdConvolve=200,
+                                                paramsHat=(4, 5, 2),
+                                                boxsize=15,
+                                                verbose=0,
+                                                position_definition=1,
+                                                local_maxima_search_method=1,
+                                                peakposition_definition="max",
+                                                fit_peaks_gaussian=1,
+                                                xtol=0.00001,
+                                                return_histo=1,
+                                                FitPixelDev=25,  # to_reject3 parameter
+                                                write_execution_time=1,
+                                                Saturation_value=65535,  # to be merged in CCDLabel
+                                                Saturation_value_flatpeak=65535,
+                                                MinIntensity=0,
+                                                PeakSizeRange=(0, 200),
+                                                oldversion=False,  # to be removed
+                                                Data_for_localMaxima=None,
+                                                Fit_with_Data_for_localMaxima=False,
+                                                Remove_BlackListedPeaks_fromfile=None,
+                                                maxPixelDistanceRejection=15.0,
+                                                maxDistanceRejection=15,
+                                                NumberMaxofFits=5000,
+                                                reject_negative_baseline=True,
+                                                formulaexpression="A-1.1*B",
+                                                listrois=None):
     """
     Find local intensity maxima as starting position for fittinng and return peaklist.
 
@@ -3381,7 +3371,7 @@ def PeakSearch(filename,
     CCDLabel : string
                label for CCD 2D detector used to read the image data file see dict_LaueTools.py
 
-    center : position#TODO: to be removed: position of the ROI center in CCD frame
+    center : position #TODO: to be removed: position of the ROI center in CCD frame
 
     boxsizeROI : dimensions of the ROI to crop the data array
                     only used if center != None
@@ -3441,7 +3431,7 @@ def PeakSearch(filename,
 
     xtol  : relative error on solution (x vector)  see args for leastsq in scipy.optimize
     FitPixelDev            :  largest pixel distance between initial (from local maxima search)
-                            and refined peak position  
+                            and refined peak position
 
     position_definition: due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values
                          = 0    no offset (python numpy convention)
@@ -3530,8 +3520,8 @@ def PeakSearch(filename,
             max_intensity = min(np.amax(Data), Saturation_value)
             print("min_intensity", min_intensity)
             print("max_intensity", max_intensity)
-            histo = np.histogram(Data,
-                bins=np.logspace(np.log10(min_intensity), np.log10(max_intensity), num=30))
+            # histo = np.histogram(Data,
+            #     bins=np.logspace(np.log10(min_intensity), np.log10(max_intensity), num=30))
 
     if isinstance(Data_for_localMaxima, str):
         print("Using Data_for_localMaxima for local maxima search: --->", Data_for_localMaxima)
@@ -3678,7 +3668,7 @@ def PeakSearch(filename,
 
             X, Y = peaklist[:, :2].T
 
-            (peakX, peakY, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
+            (peakX, _, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
                                                         dist_tolerance=maxPixelDistanceRejection,
                                                         verbose=0)
 
@@ -3787,19 +3777,16 @@ def PeakSearch(filename,
                                 reject_negative_baseline=reject_negative_baseline)
 
 
-def peaksearch_on_Image(filename_in,
-                        pspfile,
-                        background_flag="no",
-                        blacklistpeaklist=None,
-                        dictPeakSearch={},
-                        CCDLabel="MARCCD165",
-                        outputfilename=None,
-                        KF_DIRECTION="Z>0",
-                        psdict_Convolve=PEAKSEARCHDICT_Convolve):
+def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpeaklist=None,
+                                                        dictPeakSearch={},
+                                                        CCDLabel="MARCCD165",
+                                                        outputfilename=None,
+                                                        KF_DIRECTION="Z>0",
+                                                        psdict_Convolve=PEAKSEARCHDICT_Convolve):
     """
     Perform a peaksearch by using .psp file
 
-    # not very used ?
+    # still not very used and checked?
     # missing dictPeakSearch   as function argument for formulaexpression  or dict_param??
     """
 
@@ -3825,32 +3812,26 @@ def peaksearch_on_Image(filename_in,
 
         #         print "fullpath_backgroundimage ", fullpath_backgroundimage
 
-        dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
+        # dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
 
-        CCDlabel_bkg = CCDLabel
-
-        (dataimage_bkg, framedim_bkg, fliprot_bkg) = readCCDimage(imagefilename_bkg,
-                                                                CCDLabel=CCDlabel_bkg,
-                                                                dirname=dirname_bkg)
+        # CCDlabel_bkg = CCDLabel
 
         BackgroundImageCreated = True
 
         print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
-        (dataimage_raw, framedim_raw, fliprot_raw) = readCCDimage(filename_in, CCDLabel=CCDLabel,
-                                                                                    dirname=None)
 
         if "formulaexpression" in dictPeakSearch:
             formulaexpression = dictPeakSearch["formulaexpression"]
         else:
             raise ValueError('Missing "formulaexpression" to operate on images before peaksearch in '                                    'peaksearch_fileseries()')
 
-        saturationlevel = DictLT.dict_CCD[CCDLabel][2]
+        # saturationlevel = DictLT.dict_CCD[CCDLabel][2]
 
-        dataimage_corrected = applyformula_on_images(dataimage_raw,
-                                                    dataimage_bkg,
-                                                    formulaexpression=formulaexpression,
-                                                    SaturationLevel=saturationlevel,
-                                                    clipintensities=True)
+        # dataimage_corrected = applyformula_on_images(dataimage_raw,
+        #                                             dataimage_bkg,
+        #                                             formulaexpression=formulaexpression,
+        #                                             SaturationLevel=saturationlevel,
+        #                                             clipintensities=True)
 
         print("using {} in peaksearch_fileseries".format(formulaexpression))
 
@@ -3872,7 +3853,7 @@ def peaksearch_on_Image(filename_in,
         print("No peak found for image file: ", filename_in)
         return None
     # write file with comments
-    Isorted, fitpeak, localpeak = Res[:3]
+    Isorted, _, _ = Res[:3]
 
     if outputfilename:
 
@@ -3900,7 +3881,7 @@ def peaksearch_on_Image(filename_in,
 
 
 # -------------------  CONFIG file functions (.psp)
-import configparser as CONF
+# import configparser as CONF
 
 # --- ---- Local maxima and fit parameters
 CONVERTKEY_dict = {"fit_peaks_gaussian": "fit_peaks_gaussian",
@@ -3991,8 +3972,6 @@ def readPeakSearchConfigFile(filename):
         raise ValueError(
             "wrong section name in config file {}. Must be in {}".format(
                 filename, "IndexRefine"))
-
-    #     print "section", section
 
     dict_param = {}
 
@@ -4206,7 +4185,7 @@ def peaksearch_fileseries(fileindexrange,
         for key, val in list(dictPeakSearch.items()):
             PEAKSEARCHDICT_Convolve[key] = val
 
-    if not "MinPeakSize" in PEAKSEARCHDICT_Convolve:
+    if "MinPeakSize" not in PEAKSEARCHDICT_Convolve:
         PEAKSEARCHDICT_Convolve["MinPeakSize"] = 0.65
         PEAKSEARCHDICT_Convolve["MaxPeakSize"] = 3.
         print("Default values for minimal and maximal peaksize are used!. Resp. 0.65 and 3 pixels.")
@@ -4219,11 +4198,12 @@ def peaksearch_fileseries(fileindexrange,
     # ----handle reading of filename
     # special case for _mar.tif files...
     if nbdigits in ("varying",):
-        DEFAULT_DIGITSENCODING = 4
-        encodingdigits = "{" + ":0{}".format(DEFAULT_DIGITSENCODING) + "}"
+        # DEFAULT_DIGITSENCODING = 4
+        # encodingdigits = "{" + ":0{}".format(DEFAULT_DIGITSENCODING) + "}"
+        pass
     # normal case
     else:
-        encodingdigits = "{" + ":0{}".format(int(nbdigits)) + "}"
+        # encodingdigits = "{" + ":0{}".format(int(nbdigits)) + "}"
         nbdigits = int(nbdigits)
 
     if suffix == "":
@@ -4259,13 +4239,13 @@ def peaksearch_fileseries(fileindexrange,
         fullpath_backgroundimage = PEAKSEARCHDICT_Convolve["Data_for_localMaxima"]
 
 
-        dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
+        # dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
 
-        CCDlabel_bkg = CCDLABEL
+        # CCDlabel_bkg = CCDLABEL
 
-        (dataimage_bkg, framedim_bkg, fliprot_bkg) = readCCDimage(imagefilename_bkg,
-                                                                    CCDLabel=CCDlabel_bkg,
-                                                                    dirname=dirname_bkg)
+        # (dataimage_bkg, _, _) = readCCDimage(imagefilename_bkg,
+        #                                                             CCDLabel=CCDlabel_bkg,
+        #                                                             dirname=dirname_bkg)
 
         BackgroundImageCreated = True
 
@@ -4291,8 +4271,8 @@ def peaksearch_fileseries(fileindexrange,
         if BackgroundImageCreated:
 
             print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
-            (dataimage_raw, framedim_raw, fliprot_raw) = readCCDimage(filename_in, CCDLabel=CCDLABEL,
-                                                                                    dirname=None)
+            # (dataimage_raw, _, _) = readCCDimage(filename_in, CCDLabel=CCDLABEL,
+            #                                                                         dirname=None)
 
             if "formulaexpression" in dictPeakSearch:
                 formulaexpression = dictPeakSearch["formulaexpression"]
@@ -4300,13 +4280,13 @@ def peaksearch_fileseries(fileindexrange,
                 raise ValueError('Missing "formulaexpression" to operate on images before '
                                 'peaksearch in peaksearch_fileseries()')
 
-            saturationlevel = DictLT.dict_CCD[CCDLABEL][2]
+            # saturationlevel = DictLT.dict_CCD[CCDLABEL][2]
 
-            dataimage_corrected = applyformula_on_images(dataimage_raw,
-                                                        dataimage_bkg,
-                                                        formulaexpression=formulaexpression,
-                                                        SaturationLevel=saturationlevel,
-                                                        clipintensities=True)
+            # dataimage_corrected = applyformula_on_images(dataimage_raw,
+            #                                             dataimage_bkg,
+            #                                             formulaexpression=formulaexpression,
+            #                                             SaturationLevel=saturationlevel,
+            #                                             clipintensities=True)
 
             print("using {} in peaksearch_fileseries".format(formulaexpression))
 
@@ -4336,7 +4316,7 @@ def peaksearch_fileseries(fileindexrange,
             print("No peak found for image file: ", filename_in)
         #             Isorted, fitpeak, localpeak = None, None, None
         else:  # write file with comments
-            Isorted, fitpeak, localpeak = Res[:3]
+            Isorted, _, _ = Res[:3]
 
             params_comments = "Peak Search and Fit parameters\n"
 
@@ -4382,7 +4362,6 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="",
         index_start, index_final = fileindexrange[:2]
     except:
         raise ValueError("Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)")
-        return
 
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
     #
@@ -4433,11 +4412,11 @@ def gauss_kern(size, sizey=None):
     Returns a normalized 2D gauss kernel array for convolutions
     """
     size = int(size)
-    if not sizey:
+    if sizey is not None:
         sizey = size
     else:
         sizey = int(sizey)
-    x, y = np.mgrid[-size : size + 1, -sizey : sizey + 1]
+    x, y = np.mgrid[-size : size + 1, -sizey: sizey + 1]
     g = np.exp(-(x ** 2 / float(size) + y ** 2 / float(sizey)))
     return g / g.sum()
 
@@ -4615,7 +4594,7 @@ def blurCCD_with_binning(im, n, binsize=(2, 2)):
     """
     blur the array by rebinning before and after aplying the filter
     """
-    framedim = im.shape
+    # framedim = im.shape
     imrebin = rebin2Darray(im, bin_dims=binsize, operator="min")
     if imrebin is None:
         return None
@@ -4660,7 +4639,7 @@ def write_PurgedPeakListFile(filename1, blacklisted_XY, outputfilename, dist_tol
     write a new .dat file where peaks in blacklist are omitted
     """
     #peakX, peakY, tokeep
-    _, _, tokeep = purgePeaksListFile( filename1, blacklisted_XY, dist_tolerance=0.5, dirname=dirname)
+    _, _, tokeep = purgePeaksListFile(filename1, blacklisted_XY, dist_tolerance=0.5, dirname=dirname)
 
     data_peak = IOLT.read_Peaklist(filename1, dirname=dirname)
 
