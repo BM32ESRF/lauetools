@@ -30,15 +30,15 @@ Last revision (1rst August 2019)
 *************************************************
 - start Lauetools GUIs from command line :
 
-To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter as following
+To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
 
-	Examples:
+	if LaueTools is a current subfolder:
 
 	- python -m LaueTools.LaueToolsGUI
 
-	- python -m LaueTools.LaueSimulatorGUI
+	- python -m LaueTools.GUI.LaueSimulatorGUI
 
-	- python -m LaueTools.PeaksearchGUI
+	- python -m LaueTools.GUI.PeaksearchGUI
 
 The two last GUIs (LaueSimulatorGUI, PeaksearchGUI) can be accessed by the first main one, LaueToolsGUI
 
