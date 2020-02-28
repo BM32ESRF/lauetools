@@ -324,7 +324,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     # matrix_list[k] = np.dot(inv(matOrient),np.dot(matrix_list[k],matOrient))
 
                 # transform is a list of tensile transforms
-            elif type(Transform_listparam[0]) == type(["1", "2", "3"]):
+            elif isinstance(Transform_listparam[0], list):
                 # is a list of 's_axis' or 's_axis_c
                 liststrainframe = Transform_listparam[0]
                 # list of 3 arrays, each array contains the nb_transforms axis
@@ -386,19 +386,19 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 qvectors_ChildGrain = np.dot(
                     matrix_list[ChildGrain_index], Qvectors_ParentGrain[0].T).T
 
-                if 0:
-                    print(" 10 first transpose(Qvectors_ParentGrain[0])",
-                        Qvectors_ParentGrain[0].T[:, :10])
-                    print("%d / %d" % (ChildGrain_index, nb_transforms))
-                    print("current matrix", matrix_list[ChildGrain_index])
-                    print(np.shape(qvectors_ChildGrain))
-                    print("GrainSimulParam", GrainSimulParam)
-                    print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
+                # if 0:
+                #     print(" 10 first transpose(Qvectors_ParentGrain[0])",
+                #         Qvectors_ParentGrain[0].T[:, :10])
+                #     print("%d / %d" % (ChildGrain_index, nb_transforms))
+                #     print("current matrix", matrix_list[ChildGrain_index])
+                #     print(np.shape(qvectors_ChildGrain))
+                #     print("GrainSimulParam", GrainSimulParam)
+                #     print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
                 # list of spot which are on camera(without harmonics)
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
             # for the three consecutive axial strains
-            elif type(Transform_listparam[0]) == type(["1", "2", "3"]):
+            elif isinstance(Transform_listparam[0], list):
 
                 first_traction = GT.tensile_along_u(
                     Qvectors_ParentGrain[0],
@@ -415,12 +415,12 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 # list of spots for a child grain (on camera + without harmonics)
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
-                if 1:
-                    print(" 10 first transpose(Qvectors_ParentGrain[0])",
-                        Qvectors_ParentGrain[0][:10])
-                    print(np.shape(qvectors_ChildGrain))
-                    print("GrainSimulParam", GrainSimulParam)
-                    print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
+                # if 0:
+                #     print(" 10 first transpose(Qvectors_ParentGrain[0])",
+                #         Qvectors_ParentGrain[0][:10])
+                #     print(np.shape(qvectors_ChildGrain))
+                #     print("GrainSimulParam", GrainSimulParam)
+                #     print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
 
             else:
                 # no transformation
@@ -612,7 +612,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     list_posX.append(posx)
                     list_posY.append(posy)
 
-                    success = 1
+                    # success = 1
 
             except UnboundLocalError:
                 txt = "With theses parameters, there are no peaks in the CCD frame!!\n"
@@ -621,7 +621,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 txt += "-Try then to reduce the variation range of t\n"
                 txt += "-Or reduce ratio between extrema in input matrix transform\n\n"
 
-                success = 0
+                # success = 0
                 break
 
             # end of loop over transforms(or children grains)

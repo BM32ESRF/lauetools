@@ -1687,9 +1687,6 @@ class parametric_Grain_Dialog3(wx.Frame):
 #-----    End of GUI class------------------------
 
 
-
-
-# end dosimulation_parametric
 def Edit_String_SimulData(data):
     """
     return string object made of lines which contains laue spots properties
@@ -1708,7 +1705,7 @@ def Edit_String_SimulData(data):
     lines += "Total number of grains : %s\n" % int(nb_total_grains)
     lines += "spot# h k l E 2theta chi X Y\n"
     nb = data[7]
-    if type(nb) == type(5):  # multigrains simulations without transformations
+    if isinstance(nb, int):  # multigrains simulations without transformations
         nb_grains = data[7]
         TWT, CHI, ENE, MIL, XX, YY = data[:6]
         NAME = data[6]

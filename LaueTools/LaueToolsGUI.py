@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 r"""
 LaueToolsGUI.py is a (big) central GUI for microdiffraction Laue Pattern analysis
 and simulation
@@ -15,6 +14,8 @@ https://gitlab.esrf.fr/micha/lauetools
 J. S. Micha July 2019
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
+from __future__ import absolute_import
+
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import time
@@ -22,6 +23,10 @@ import sys
 import copy
 import os.path
 import re
+
+# last modified date of this module is displayed in title and documentation and about
+import datetime
+import webbrowser
 
 import matplotlib
 
@@ -40,57 +45,61 @@ else:
 # import wx.lib.scrolledpanel as scrolled
 # from . GUI import ProportionalSplitter as PropSplit
 
-import webbrowser
-
-# TODO restrict imports to only used functions
 if sys.version_info.major == 3:
-    from . import indexingImageMatching as IIM
-    from . import indexingSpotsSet as ISS
-    from . import lauecore as LAUE
-    from . import graingraph as GraGra
-    from . import LaueGeometry as F2TC
-    from . GUI import LaueSimulatorGUI as LSGUI
-    from . import CrystalParameters as CP
-    from . import IOLaueTools as IOLT
-    from . import dict_LaueTools as DictLT
-    from . GUI import PeakSearchGUI
-    from . GUI import DetectorParameters as DP
-    from . GUI import DetectorCalibration as DC
-    from . GUI import CCDFileParametersGUI as CCDParamGUI
+    from . indexingImageMatching import ComputeGnomon_2
+    from . indexingSpotsSet import spotsset
+    from . lauecore import SimulateResult
+    from . graingraph import give_bestclique
+    from . LaueGeometry import Compute_data2thetachi
+    from . GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
+    from . CrystalParameters import calc_B_RR
+    from . IOLaueTools import writefile_cor, createselecteddata
+    from . dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
+                                    dict_Transforms, dict_Vect, dict_Rot,
+                                    dict_Eul, list_CCD_file_extensions,
+                                    readDict, getwildcardstring, LAUETOOLSFOLDER)
+    from . GUI.PeakSearchGUI import MainPeakSearchFrame
+    from . GUI.DetectorParameters import autoDetectDetectorType
+    from . GUI.DetectorCalibration import MainCalibrationFrame
+    from . GUI.CCDFileParametersGUI import CCDFileParameters
     from . import matchingrate
     from . GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
-    from . GUI import B0matrixLatticeEditor as B0Editor
+    from . GUI.B0matrixLatticeEditor import B0MatrixEditor
     from . GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    from . GUI import OpenSpotsListFileGUI as OSLFGUI
-    from . GUI import ManualIndexFrame as MIF
-    from . GUI import MatrixEditor as MatEdit
+    from . GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList,
+                                                    OpenCorfile, SetGeneralLaueGeometry)
+    from . GUI.ManualIndexFrame import ManualIndexFrame
+    from . GUI.MatrixEditor import MatrixEditor_Dialog
 else:
-    import indexingImageMatching as IIM
-    import indexingSpotsSet as ISS
-    import lauecore as LAUE
-    import graingraph as GraGra
-    import LaueGeometry as F2TC
-    import GUI.LaueSimulatorGUI as LSGUI
-    import CrystalParameters as CP
-    import IOLaueTools as IOLT
-    import dict_LaueTools as DictLT
-    import GUI.PeakSearchGUI as PeakSearchGUI
-    import GUI.DetectorParameters as DP
-    import GUI.DetectorCalibration as DC
-    import GUI.CCDFileParametersGUI as CCDParamGUI
+    from indexingImageMatching import ComputeGnomon_2
+    from indexingSpotsSet import spotsset
+    from lauecore import SimulateResult
+    from graingraph import give_bestclique
+    from LaueGeometry import Compute_data2thetachi
+    from GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
+    from CrystalParameters import calc_B_RR
+    from IOLaueTools import writefile_cor, createselecteddata
+    from dict_LaueTools import (dict_CCD, dict_calib,
+                                    dict_Materials, dict_Extinc, dict_Transforms, dict_Vect, dict_Rot,
+                                    dict_Eul, list_CCD_file_extensions,
+                                    readDict, getwildcardstring, LAUETOOLSFOLDER)
+    from GUI.PeakSearchGUI import MainPeakSearchFrame
+    from GUI.DetectorParameters import autoDetectDetectorType
+    from GUI.DetectorCalibration import MainCalibrationFrame
+    from GUI.CCDFileParametersGUI import CCDFileParameters
     import matchingrate
     from GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import GUI.B0matrixLatticeEditor as B0Editor
-    import GUI.OpenSpotsListFileGUI as OSLFGUI
-    import GUI.ManualIndexFrame as MIF
-    import GUI.MatrixEditor as MatEdit
+    from GUI.B0matrixLatticeEditor import B0MatrixEditor
+    from GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList,
+                                                    OpenCorfile, SetGeneralLaueGeometry)
+    from GUI.ManualIndexFrame import ManualIndexFrame
+    from GUI.MatrixEditor import MatrixEditor_Dialog
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
 PI = np.pi
 DEG = PI / 180.0
-CST_ENERGYKEV = DictLT.CST_ENERGYKEV
 
 # DEFAULT_CCDCAMERA = 'MARCCD165' #'sCMOS_16M' #   # VHR_Feb13'
 # DEFAULT_DETECTORPARAMETERS = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201] #  'MARCCD165'
@@ -98,10 +107,6 @@ CST_ENERGYKEV = DictLT.CST_ENERGYKEV
 # DEFAULT_DETECTORPARAMETERS = [77.4, 983., 977., 0.32, -0.28] # sCMOS, sans flip LR #
 DEFAULT_CCDCAMERA = "sCMOS"
 DEFAULT_DETECTORPARAMETERS = [77.088, 1012.45, 1049.92, 0.423, 0.172]  # bin 2x2 avec flip LR
-
-DICT_LAUE_GEOMETRIES = DictLT.DICT_LAUE_GEOMETRIES
-
-DICT_LAUE_GEOMETRIES_INFO = DictLT.DICT_LAUE_GEOMETRIES_INFO
 
 # --- --------  SOME GUI parameters
 ID_FILE_OPEN = 101
@@ -111,21 +116,18 @@ LaueToolsProjectFolder = os.path.split(__file__)[0]
 
 print("LaueToolsProjectFolder", LaueToolsProjectFolder)
 
-# last modified date of this module is displayed in title and documentation and about
-import datetime
-
 try:
     modifiedTime = os.path.getmtime(os.path.join(LaueToolsProjectFolder, "LaueToolsGUI.py"))
     DAY, MONTH, YEAR = (datetime.datetime.fromtimestamp(modifiedTime).strftime("%d %B %Y").split())
 except:
     DAY, MONTH, YEAR = "FromDistribution", "", "2019"
 
+
 # --- ------------  MAIN GUI WINDOW
 class LaueToolsGUImainframe(wx.Frame):
     """
     class of the main window of LaueTools GUI
     """
-
     def __init__(self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
             projectfolder=None):
 
@@ -140,7 +142,6 @@ class LaueToolsGUImainframe(wx.Frame):
         self.dirname = projectfolder
         print("self.dirname", self.dirname)
         self.writefolder = self.dirname
-        #        self.lauetoolsrootdirectory = os.curdir
         self.consolefile = consolefile
 
         # --- begin of general layout -------------------
@@ -164,16 +165,14 @@ class LaueToolsGUImainframe(wx.Frame):
 
         # Default CCD file image props
         self.CCDLabel = DEFAULT_CCDCAMERA
-        # default pixel size and frame dimension:  MARCCD
-        self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]  # 165./2048
-        # self.pixelsize = 0.031  # for VHR camera
-        self.framedim = DictLT.dict_CCD[self.CCDLabel][0]  # (2048, 2048)
+        self.pixelsize = dict_CCD[self.CCDLabel][1]
+        self.framedim = dict_CCD[self.CCDLabel][0]
         # self.framedim =(2671,4008)
         # for VHR camera as seen by XMAS LaueTools and other array readers(reverse order for fit2S)
-        self.fliprot = DictLT.dict_CCD[self.CCDLabel][3]
-        self.headeroffset, self.dataformat = DictLT.dict_CCD[self.CCDLabel][4:6]
-        self.file_extension = DictLT.dict_CCD[self.CCDLabel][7]
-        self.saturationvalue = DictLT.dict_CCD[self.CCDLabel][2]
+        self.fliprot = dict_CCD[self.CCDLabel][3]
+        self.headeroffset, self.dataformat = dict_CCD[self.CCDLabel][4:6]
+        self.file_extension = dict_CCD[self.CCDLabel][7]
+        self.saturationvalue = dict_CCD[self.CCDLabel][2]
 
         self.defaultParam = DEFAULT_DETECTORPARAMETERS
 
@@ -190,6 +189,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.Current_peak_data = None
         self.data_theta = None
         self.data_gnomonx = None
+        self.data_gnomony = None
         self.data_pixX, self.data_pixY = None, None
 
         self.select_theta, self.select_chi, self.select_I = None, None, None
@@ -205,6 +205,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.mat_store_ind = 0
         self.list_of_cliques = None
 
+        self.indexation_parameters = {}
+        self.DataSet = None
         self.ClassicalIndexation_Tabledist = None
         self.key_material = None
         self.emax = None
@@ -217,15 +219,17 @@ class LaueToolsGUImainframe(wx.Frame):
         self.current_processedgrain = 0  # index corresponding to the grain found in data
         self.current_exp_spot_index_list = []
 
-        # loading dictionaries
-        self.dict_calib = DictLT.dict_calib  # calibration parameter
+        self.UBmatrix_toCheck = None
 
-        self.dict_Materials = DictLT.dict_Materials  # Materials or compounds
-        self.dict_Extinc = DictLT.dict_Extinc
-        self.dict_Transforms = DictLT.dict_Transforms  # deformation dict
-        self.dict_Vect = DictLT.dict_Vect  # initial orientation and strain matrix(UB matrix)
-        self.dict_Rot = DictLT.dict_Rot  # additional matrix of rotation applied in left of UB
-        self.dict_Eul = DictLT.dict_Eul  # additional matrix of rotation enter as 3 angles / elemntary rotations applied in left of UB
+        # loading dictionaries
+        self.dict_calib = dict_calib  # calibration parameter
+
+        self.dict_Materials = dict_Materials  # Materials or compounds
+        self.dict_Extinc = dict_Extinc
+        self.dict_Transforms = dict_Transforms  # deformation dict
+        self.dict_Vect = dict_Vect  # initial orientation and strain matrix(UB matrix)
+        self.dict_Rot = dict_Rot  # additional matrix of rotation applied in left of UB
+        self.dict_Eul = dict_Eul  # additional matrix of rotation enter as 3 angles / elemntary rotations applied in left of UB
 
         # make a list of safe functions
         self.safe_list = ["math", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "degrees", "e", "exp", "fabs", "floor", "fmod", "frexp", "hypot", "ldexp", "log", "log10", "modf", "pi", "pow", "radians", "sin", "sinh", "sqrt", "tan", "tanh"]
@@ -331,7 +335,7 @@ class LaueToolsGUImainframe(wx.Frame):
         SimulationMenu = wx.Menu()
         for _id, label, helpText, handler in [
             (wx.ID_ANY, "&PolyGrains Simulation", "Polycrystal selection & simulation",
-                                                                self.Creating_Grains_parametric),
+                                                                self.onParametricLaueSimulator),
             (None, None, None, None),
             (wx.ID_ANY, "&Edit Matrix", "Edit or Load Orientation Matrix", self.OnEditMatrix),
             (wx.ID_ANY, "&Edit UB, B, Crystal",
@@ -388,7 +392,7 @@ class LaueToolsGUImainframe(wx.Frame):
         ask user to select folder and image file
         and launch the peak search board(class PeakSearchFrame)
         """
-        if OSLFGUI.askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
+        if askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
 
             os.chdir(self.dirname)
             print("self.dirname", self.dirname)
@@ -408,13 +412,12 @@ class LaueToolsGUImainframe(wx.Frame):
 
             print("extension", file_extension)
 
-            if file_extension in DictLT.list_CCD_file_extensions:
+            if file_extension in list_CCD_file_extensions:
 
-                detectedCCDlabel = DP.autoDetectDetectorType(file_extension)
+                detectedCCDlabel = autoDetectDetectorType(file_extension)
                 if detectedCCDlabel is not None:
-                    self.CCDLabel = DP.autoDetectDetectorType(file_extension)
-                DPBoard = CCDParamGUI.CCDFileParameters(self, -1, "CCD File Parameters Board",
-                                                                            self.CCDLabel)
+                    self.CCDLabel = autoDetectDetectorType(file_extension)
+                DPBoard = CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
                 DPBoard.ShowModal()
                 DPBoard.Destroy()
 
@@ -434,7 +437,7 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = 20
 
-                peakserchframe = PeakSearchGUI.MainPeakSearchFrame(self, -1, initialParameter,
+                peakserchframe = MainPeakSearchFrame(self, -1, initialParameter,
                                                                         "peaksearch Board")
                 peakserchframe.Show(True)
 
@@ -445,7 +448,7 @@ class LaueToolsGUImainframe(wx.Frame):
         for further use (indexation)
         """
         # read peak list and detector calibration parameters
-        OSLFGUI.OnOpenPeakList(self)
+        OnOpenPeakList(self)
 
         # ---------------------------------------------
         self.filename = self.DataPlot_filename
@@ -480,9 +483,9 @@ class LaueToolsGUImainframe(wx.Frame):
             path = open_dlg.GetPath()
 
             try:
-                self.dict_Materials = DictLT.readDict(path)
+                self.dict_Materials = readDict(path)
 
-                DictLT.dict_Materials = self.dict_Materials
+                dict_Materials = self.dict_Materials
 
             except IOError as error:
                 dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
@@ -518,7 +521,7 @@ class LaueToolsGUImainframe(wx.Frame):
         print("self.defaultParam after", self.defaultParam)
 
         (twicetheta, chi, dataintensity,
-        data_x, data_y) = F2TC.Compute_data2thetachi(fullpathfile,
+        data_x, data_y) = Compute_data2thetachi(fullpathfile,
                                                     (0, 1, 3),
                                                     1,
                                                     sorting_intensity="yes",
@@ -526,7 +529,7 @@ class LaueToolsGUImainframe(wx.Frame):
                                                     pixelsize=self.pixelsize,
                                                     kf_direction=self.kf_direction)
 
-        IOLT.writefile_cor("update_" + prefix, twicetheta, chi, data_x, data_y,
+        writefile_cor("update_" + prefix, twicetheta, chi, data_x, data_y,
                                                         dataintensity,
                                                         sortedexit=0,
                                                         param=self.defaultParam + [self.pixelsize],
@@ -543,7 +546,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # for .cor file ------------------------------
 
         # read peak list and detector calibration parameters
-        OSLFGUI.OpenCorfile(self.DataPlot_filename, self)
+        OpenCorfile(self.DataPlot_filename, self)
 
         # ---------------------------------------------
         self.filename = self.DataPlot_filename
@@ -566,7 +569,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """Enter manually CCD file params
         Launch Entry dialog
         """
-        DPBoard = CCDParamGUI.CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
+        DPBoard = CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
         DPBoard.ShowModal()
         DPBoard.Destroy()
 
@@ -582,7 +585,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dlg.Destroy()
 
     def OnSetLaueDetectorGeometry(self, _):
-        LaueGeomBoard = OSLFGUI.SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
+        LaueGeomBoard = SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
 
@@ -618,7 +621,6 @@ class LaueToolsGUImainframe(wx.Frame):
                             self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
-        #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
@@ -670,7 +672,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
+        StorageDict["dict_Rot"] = dict_Rot
         StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
         self.EnterMatrix(1)
@@ -697,7 +699,7 @@ class LaueToolsGUImainframe(wx.Frame):
             # ------------------------------------------------------------------
 
             #                 print "self.indexation_parameters", self.indexation_parameters
-            TwicethetaChi = LAUE.SimulateResult(grain, 5, self.emax, self.indexation_parameters,
+            TwicethetaChi = SimulateResult(grain, 5, self.emax, self.indexation_parameters,
                                                                 ResolutionAngstrom=False,
                                                                 fastcompute=1,
                                                                 dictmaterials=self.dict_Materials)
@@ -737,7 +739,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                 self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
-        #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename,)
@@ -787,8 +788,8 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
+        StorageDict["dict_Rot"] = dict_Rot
+        StorageDict["dict_Materials"] = dict_Materials
 
         titleboard = ("Spots interdistance Screening Indexation Board  file: %s" % self.DataPlot_filename)
 
@@ -836,7 +837,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                     self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
-        #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
         self.data = (2 * self.select_theta, self.select_chi, self.select_I, self.DataPlot_filename)
@@ -892,11 +892,11 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
+        StorageDict["dict_Rot"] = dict_Rot
+        StorageDict["dict_Materials"] = dict_Materials
 
         # Open manual indextion Board
-        self.picky = MIF.ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
+        self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
                                             kf_direction=self.kf_direction,
                                             Params_to_simulPattern=None,
                                             indexation_parameters=self.indexation_parameters,
@@ -926,7 +926,6 @@ class LaueToolsGUImainframe(wx.Frame):
                             self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
-        #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
         self.select_gnomonx = self.data_gnomonx[self.current_exp_spot_index_list]
@@ -987,11 +986,11 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
+        StorageDict["dict_Rot"] = dict_Rot
+        StorageDict["dict_Materials"] = dict_Materials
 
         # Open manual indextion Board
-        self.picky = MIF.ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
+        self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
                                         kf_direction=self.kf_direction,
                                         datatype="gnomon",
                                         Params_to_simulPattern=None,
@@ -1022,7 +1021,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                 self.data_pixY[self.current_exp_spot_index_list])
         #         self.select_dataXY = self.data_XY[index_to_select]
         #         CCDdetectorparameters
-        #         self.StorageDict=None
         self.data_pixXY = self.data_pixX, self.data_pixY
 
         self.select_gnomonx = self.data_gnomonx[self.current_exp_spot_index_list]
@@ -1083,10 +1081,10 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
-        StorageDict["dict_Materials"] = DictLT.dict_Materials
+        StorageDict["dict_Rot"] = dict_Rot
+        StorageDict["dict_Materials"] = dict_Materials
         # Open manual indextion Board
-        self.picky = MIF.ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
+        self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
                                         kf_direction=self.kf_direction,
                                         datatype="pixels",
                                         Params_to_simulPattern=None,
@@ -1108,9 +1106,9 @@ class LaueToolsGUImainframe(wx.Frame):
         initialParameter["CCDParam"] = starting_param
 
         initialParameter["CCDLabel"] = self.CCDLabel
-        pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
-        framedim = DictLT.dict_CCD[self.CCDLabel][0]
-        geomoperator = DictLT.dict_CCD[self.CCDLabel][3]
+        pixelsize = dict_CCD[self.CCDLabel][1]
+        framedim = dict_CCD[self.CCDLabel][0]
+        geomoperator = dict_CCD[self.CCDLabel][3]
         initialParameter["detectordiameter"] = max(framedim[0], framedim[1]) * pixelsize * 1.1
         initialParameter["filename"] = 'dat_Ge0001.cor'
         initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples", "Ge")
@@ -1122,7 +1120,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
 
-        calibframe = DC.MainCalibrationFrame(self, -1, "Detector Calibration Board",
+        calibframe = MainCalibrationFrame(self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=file_peaks,
                                     pixelsize=pixelsize, dim=framedim,
                                     kf_direction='Z>0', fliprot=geomoperator,
@@ -1140,10 +1138,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 self.OpenDefaultData()
                 self.CreateSpotDB()
 
-            if 1:
-                self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())
-            else:
-                self.current_exp_spot_index_list = np.arange(len(self.data_theta))
+            self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())
 
         #            select_theta = LaueToolsframe.data_theta[LaueToolsframe.current_exp_spot_index_list]
         #            select_chi = LaueToolsframe.data_chi[LaueToolsframe.current_exp_spot_index_list]
@@ -1161,11 +1156,11 @@ class LaueToolsGUImainframe(wx.Frame):
         return True
 
     def OnEditMatrix(self, _):
-        MatrixEditor = MatEdit.MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
+        MatrixEditor = MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
         MatrixEditor.Show(True)
 
     def OnEditUBMatrix(self, _):
-        UBMatrixEditor = B0Editor.B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
+        UBMatrixEditor = B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
         UBMatrixEditor.Show(True)
 
     def EnterMatrix(self, _):
@@ -1186,7 +1181,6 @@ class LaueToolsGUImainframe(wx.Frame):
             paramraw = str(dlg.GetValue())
 
             listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
-            #             print "listval", listval
             listelem = []
             for elem in listval:
                 try:
@@ -1220,9 +1214,9 @@ class LaueToolsGUImainframe(wx.Frame):
 
             for k, mat in enumerate(ListMatrices):
                 mname = inputmatrixname + "%d" % k
-                DictLT.dict_Rot[mname] = mat
-            #                 self.crystalparampanel.comboMatrix.Append(mname)
-            print("len dict", len(DictLT.dict_Rot))
+                dict_Rot[mname] = mat
+
+            print("len dict", len(dict_Rot))
 
             #             self.crystalparampanel.comboMatrix.SetSelection(initlength)
 
@@ -1247,7 +1241,7 @@ class LaueToolsGUImainframe(wx.Frame):
             key_material = str(dlg.GetValue())
 
             # check
-            if key_material in DictLT.dict_Materials:
+            if key_material in dict_Materials:
                 self.key_material = key_material
             else:
                 txt = "This material label is unknown. Please check typo or Reload Materials dict"
@@ -1276,8 +1270,6 @@ class LaueToolsGUImainframe(wx.Frame):
         compute matching rate of selected data with current predefined structure and input orientation matrix
 
         set self.stats_properformat
-
-        # TODO: compute std
         """
 
         ANGLETOLERANCE = 0.5
@@ -1308,7 +1300,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
-        StorageDict["dict_Rot"] = DictLT.dict_Rot
+        StorageDict["dict_Rot"] = dict_Rot
         StorageDict["dict_Materials"] = self.dict_Materials
 
         # display "statistical" results
@@ -1385,8 +1377,8 @@ class LaueToolsGUImainframe(wx.Frame):
             #            outputfile.write(str(self.UBB0mat) + '\n')
             outputfile.write(str(self.dict_grain_matrix[grain_index]) + "\n")
             outputfile.write("#B0 matrix (starting unit cell) in q= UB (B0) G*\n")
-            latticeparams = DictLT.dict_Materials[key_material][1]
-            B0matrix = CP.calc_B_RR(latticeparams)
+            latticeparams = dict_Materials[key_material][1]
+            B0matrix = calc_B_RR(latticeparams)
             outputfile.write(str(B0matrix) + "\n")
             outputfile.write("#deviatoric strain (10-3 unit)\n")
             outputfile.write(
@@ -1428,7 +1420,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.DataSet.writecorFile_unindexedSpots(corfilename=filename, dirname=self.dirname)
 
     # --- ---------------- Simulation Functions
-    def Creating_Grains_parametric(self, _):
+    def onParametricLaueSimulator(self, _):
         """
         Method launching polycrystal simulation Board
         """
@@ -1446,101 +1438,14 @@ class LaueToolsGUImainframe(wx.Frame):
                                                         self.data_I)
 
         # print("initialParameters", initialParameters)
-        self.CurrentdialogGrainCreation_cont = LSGUI.parametric_Grain_Dialog3(
+        CurrentdialogGrainCreation_cont = parametric_Grain_Dialog3(
                         self, -1, "Polygrains parametric definition for Laue Simulation",
                         initialParameters)
 
-        self.SelectGrains_parametric = self.CurrentdialogGrainCreation_cont.SelectGrains
-        self.CurrentdialogGrainCreation_cont.Show(True)
+        # self.SelectGrains_parametric = CurrentdialogGrainCreation_cont.SelectGrains
+        CurrentdialogGrainCreation_cont.Show(True)
 
         return True
-
-    def Edit_String_SimulData(self,
-                    data=([0], [0], [0], [0], [0], [0], [""], 0, [0.0, 0.0, 0.0, 0.0, 0.0], 0)):
-        """
-        Writes in LaueToolsframe.control
-        data =(list_twicetheta,
-                list_chi,
-                list_energy,
-                list_Miller,
-                list_posX,
-                list_posY,
-                ListName,
-                nb of(parent) grains,
-                calibration parameters list,
-                total nb of grains)
-        TODO: put the calibration parameters
-        """
-        nb_total_grains = data[9]
-        lines = "Simulation Data from LAUE Pattern Program v1.0 2009 \n"
-        lines += "Total number of grains : %s\n" % int(nb_total_grains)
-        lines += "spot# h k l E 2theta chi X Y\n"
-        nb = data[7]
-        if isinstance(nb, int):  # multigrains simulations without transformations
-            nb_grains = data[7]
-            TWT, CHI, ENE, MIL, XX, YY = data[:6]
-            NAME = data[6]
-            calib = data[8]
-
-            for index_grain in range(nb_grains):
-                nb_of_simulspots = len(TWT[index_grain])
-                startgrain = "#G %d\t%s\t%d\n" % (index_grain,
-                                                NAME[index_grain],
-                                                nb_of_simulspots)
-
-                lines += startgrain
-                # print nb_of_simulspots
-                for data_index in range(nb_of_simulspots):
-                    linedata = "%d\t%d\t%d\t%d\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n" % (
-                                                            data_index,
-                                                            MIL[index_grain][data_index][0],
-                                                            MIL[index_grain][data_index][1],
-                                                            MIL[index_grain][data_index][2],
-                                                            ENE[index_grain][data_index],
-                                                            TWT[index_grain][data_index],
-                                                            CHI[index_grain][data_index],
-                                                            XX[index_grain][data_index],
-                                                            YY[index_grain][data_index])
-                    lines += linedata
-            lines += "#calibration parameters\n"
-            for param in calib:
-                lines += "# %s\n" % param
-            # print "in edit",lines
-            self.control.SetValue(lines)
-            return True
-
-        elif isinstance(nb, list):
-            print("nb in Edit_String_SimulData", nb)
-            gen_i = 0
-            TWT, CHI, ENE, MIL, XX, YY = data[:6]
-            NAME = data[6]
-            calib = data[8]
-            for grain_ind in range(len(nb)):  # loop over parent grains
-                for tt in range(nb[grain_ind][1]):
-                    nb_of_simulspots = len(TWT[gen_i])
-                    startgrain = "#G %d\t%s\t%d\t%d\n" % (grain_ind, NAME[grain_ind], tt, nb_of_simulspots)
-
-                    lines += startgrain
-                    for data_index in range(nb_of_simulspots):
-                        linedata = "%d\t%d\t%d\t%d\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n" % (
-                                                            data_index,
-                                                            MIL[gen_i][data_index][0],
-                                                            MIL[gen_i][data_index][1],
-                                                            MIL[gen_i][data_index][2],
-                                                            ENE[gen_i][data_index],
-                                                            TWT[gen_i][data_index],
-                                                            CHI[gen_i][data_index],
-                                                            XX[gen_i][data_index],
-                                                            YY[gen_i][data_index])
-                        lines += linedata
-                    gen_i += 1
-
-            lines += "#calibration parameters\n"
-            for param in calib:
-                lines += "# %s\n" % param
-            # print "in edit",lines
-            self.control.SetValue(lines)
-            return True
 
     # --- ------------- spots database
     def SaveNonIndexedSpots(self, _):
@@ -1564,7 +1469,6 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def SaveFileCorNonIndexedSpots(self, outputfilename=None):
         if outputfilename is None:
-            outputfilename
             pre = self.DataPlot_filename.strip(".")[0]
             outputfilename = pre + "nonindexed"
 
@@ -1589,7 +1493,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # comment
         strgrains = ["Remaining Non indexed spots of %s" % self.DataPlot_filename]
 
-        IOLT.writefile_cor(outputfilename, Twicetheta, Chi, posx, posy,
+        writefile_cor(outputfilename, Twicetheta, Chi, posx, posy,
                                                         dataintensity,
                                                         param=self.defaultParam + [self.pixelsize],
                                                         initialfilename=self.DataPlot_filename,
@@ -1634,7 +1538,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.DataPlot_filename = DEFAULTFILE
 
-        OSLFGUI.OpenCorfile(defaultdatafile, self)
+        OpenCorfile(defaultdatafile, self)
 
         self.set_gnomonic_data()
 
@@ -1654,7 +1558,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def init_DataSet(self):
         # DataSetObject init
-        self.DataSet = ISS.spotsset()
+        self.DataSet = spotsset()
         # get spots scattering angles,X,Y positions from .cor file
         self.DataSet.importdatafromfile(self.filename)
         self.DataSet.pixelsize = self.pixelsize
@@ -1671,30 +1575,26 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def set_gnomonic_data(self):
         # compute Gnomonic projection
-        dataselected = IOLT.createselecteddata(
-                                        (self.data_theta * 2, self.data_chi, self.data_I),
-                                        np.arange(len(self.data_theta)),
-                                        len(self.data_theta))[0]
-        self.data_gnomonx, self.data_gnomony = IIM.ComputeGnomon_2(dataselected)
+        dataselected = createselecteddata((self.data_theta * 2, self.data_chi, self.data_I),
+                                                np.arange(len(self.data_theta)),
+                                                len(self.data_theta))[0]
+        self.data_gnomonx, self.data_gnomony = ComputeGnomon_2(dataselected)
 
     def select_exp_spots(self):
         """
         select spots to be indexed
 
-        set self.non_indexed_spots as array of absolute index in peaks experimental list of non indexed spots
+        set self.current_exp_spot_index_list as array of absolute index in peaks experimental list of non indexed spots
         """
         # select default data for test
         if self.data_theta is None:
             self.OpenDefaultData()
 
-        if 1:
-            self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())  # plot non indexed spots
-        else:
-            self.current_exp_spot_index_list = np.arange(len(self.data_theta))  # plot whole data
+        self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())  
 
-        self.non_indexed_spots = np.array(self.current_exp_spot_index_list)
+        non_indexed_spots = np.array(self.current_exp_spot_index_list)
 
-        if not self.non_indexed_spots:
+        if not non_indexed_spots:
             wx.MessageBox("There are no spots to be indexed now !", "INFO")
 
     def set_params_manualindexation(self):
@@ -1728,14 +1628,14 @@ class LaueToolsGUImainframe(wx.Frame):
 
         indexation_parameters["mainAppframe"] = self
 
-        StorageDict = {}
-        StorageDict["mat_store_ind"] = self.mat_store_ind
-        StorageDict["Matrix_Store"] = self.Matrix_Store
-        StorageDict["dict_Rot"] = self.dict_Rot
-        StorageDict["dict_Materials"] = self.dict_Materials
+        # StorageDict = {}
+        # StorageDict["mat_store_ind"] = self.mat_store_ind
+        # StorageDict["Matrix_Store"] = self.Matrix_Store
+        # StorageDict["dict_Rot"] = self.dict_Rot
+        # StorageDict["dict_Materials"] = self.dict_Materials
 
         self.indexation_parameters = indexation_parameters
-        self.StorageDict = StorageDict
+        # self.StorageDict = StorageDict
 
     def CreateSpotDB(self):
         """
@@ -1774,7 +1674,6 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         # data_Miller, data_Energy, list_indexspot = data_list
         list_indexspot = data_list[2]
-
 
         print("list_indexspot in Update_DataToIndex_Dict", list_indexspot)
 
@@ -1906,12 +1805,11 @@ class LaueToolsGUImainframe(wx.Frame):
         wcd0 += ("Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf|hdf5(*.h5)|*.h5|All files(*)|*")
 
         try:
-            wcd = DictLT.getwildcardstring(self.CCDLabel)
+            wcd = getwildcardstring(self.CCDLabel)
         except:
             wcd = wcd0
 
         return dict(message="Choose an Image File", defaultDir=self.dirname, wildcard=wcd)
-
 
     def OnDocumentationpdf(self, _):
 
@@ -2004,6 +1902,8 @@ class PreferencesBoard(wx.Dialog):
 
         self.parent = parent
 
+        self.writefolder = None
+        # widgets ----------
         self.samefolder = wx.RadioButton(panel, -1, "Images folder", (25, 15))
         self.userdefinedrelfolder = wx.RadioButton(panel, -1, "path relative to lauetools", (25, 55))
         self.userdefinedabsfolder = wx.RadioButton(panel, -1, "absolute path", (25, 95))
@@ -2022,7 +1922,7 @@ class PreferencesBoard(wx.Dialog):
         if self.samefolder.GetValue():
             self.writefolder = "."
         elif self.userdefinedrelfolder.GetValue():
-            self.writefolder = os.path.join(DictLT.LAUETOOLSFOLDER,
+            self.writefolder = os.path.join(LAUETOOLSFOLDER,
                                             str(self.relativepathname.GetValue())[2:])
         elif self.userdefinedabsfolder.GetValue():
             self.writefolder = str(self.abspathname.GetValue())
@@ -2033,7 +1933,6 @@ class PreferencesBoard(wx.Dialog):
 
     def OnQuit(self, _):
         self.Close()
-
 
 
 # --- ---------------------  CLIQUES board
@@ -2138,7 +2037,7 @@ class CliquesFindingBoard(wx.Frame):
 
         fullpath = os.path.join(self.parent.dirname, self.parent.DataPlot_filename,)
 
-        res_cliques = GraGra.give_bestclique(fullpath, nbmax_probed, ang_tol,
+        res_cliques = give_bestclique(fullpath, nbmax_probed, ang_tol,
                                                     nodes=Nodes, col_Int=-1,
                                                     LUTfilename=self.LUTfilename,
                                                     verbose=1)

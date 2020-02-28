@@ -49,9 +49,7 @@ if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
     from .. import lauecore as LAUE
     from .. import FitOrient as FitO
-    from .. import LaueGeometry as F2TC
     from . import LaueSpotsEditor as LSEditor
-    from .. import indexingAnglesLUT as INDEX
     from .. import indexingSpotsSet as ISS
     from .. import matchingrate
     from .. import readmccd as RMCCD
@@ -63,9 +61,7 @@ else:
     import dict_LaueTools as DictLT
     import lauecore as LAUE
     import FitOrient as FitO
-    import LaueGeometry as F2TC
     import GUI.LaueSpotsEditor as LSEditor
-    import indexingAnglesLUT as INDEX
     import indexingSpotsSet as ISS
     import matchingrate
     import readmccd as RMCCD
@@ -2021,13 +2017,13 @@ class Plot_RefineFrame(wx.Frame):
 
         print(txtHKLxyz_names)
 
-        if 0:
-            txtHKLxyz = "HKL = \n"
-            txtHKLxyz += "["
-            for k in range(6):
-                txtHKLxyz += "[%.3f, %.3f, %.3f],\n" % tuple(self.HKLxyz[k])
-                texts_dict["HKLxyz"] = txtHKLxyz[:-2] + "]"
-            print(txtHKLxyz)
+        # if 0:
+        #     txtHKLxyz = "HKL = \n"
+        #     txtHKLxyz += "["
+        #     for k in range(6):
+        #         txtHKLxyz += "[%.3f, %.3f, %.3f],\n" % tuple(self.HKLxyz[k])
+        #         texts_dict["HKLxyz"] = txtHKLxyz[:-2] + "]"
+        #     print(txtHKLxyz)
         texts_dict["HKLxyz"] = ""
 
         frb = FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
@@ -3039,6 +3035,11 @@ class Plot_RefineFrame(wx.Frame):
                             '"Automatic Links" then "Refine"!', 'Info')
             return
 
+        if self.linkResidues_fit is None:
+            wx.MessageBox('You must perform a fitting by for instance making '
+                            '"Automatic Links" then "Refine"!', 'Info')
+            return
+
 
         Grain, emin, emax = self.SimulParam
 
@@ -3547,7 +3548,8 @@ class IntensityScaleBoard(wx.Dialog):
         if self.parent is not None:
             if hasattr(self.parent, "ImageArray"):
                 self.ImageArray = self.parent.ImageArray
-        #                 self.fullpathimagefile = self.parent.fullpathimagefile
+
+        self.fullpathimagefile = None
 
         self.data_dict = data_dict
         self.dict_colors = {0: "b", 1: "g", 2: "r", 3: "yellow", 4: "m", 5: "grey",

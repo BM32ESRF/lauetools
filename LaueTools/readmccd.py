@@ -531,6 +531,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     if FABIO_EXISTS:
 
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
+
             print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
@@ -2240,27 +2241,19 @@ def radialArr(shape, func, orig=None, wrap=False, dtype=np.float32):
     #                                              np.sqrt( \
     #             (wrapIt((x-x0),nx))**2 + (wrapIt((y-y0),ny))**2 + (wrapIt((z-z0),nz))**2 ) ), shape, dtype)
     if len(shape) == 1:
-        x0 = orig[
-            0
-        ]  # 20060606: [0] prevents orig (as array) promoting its dtype (e.g. Float64) into result
+        x0 = orig[0]  # 20060606: [0] prevents orig (as array) promoting its dtype (e.g. Float64) into result
         return myfromfunction(lambda x: func(wrapIt(0, np.absolute(x - x0))), shape, dtype)
     elif len(shape) == 2:
         y0, x0 = orig
         return myfromfunction(lambda y, x: func(
                 np.sqrt((wrapIt(-1, x - x0)) ** 2 + (wrapIt(-2, y - y0)) ** 2)
-            ),
-            shape,
-            dtype)
+            ), shape, dtype)
     elif len(shape) == 3:
         z0, y0, x0 = orig
         return myfromfunction(lambda z, y, x: func(
-                np.sqrt(
-                    (wrapIt(-1, x - x0)) ** 2
+                np.sqrt((wrapIt(-1, x - x0)) ** 2
                     + (wrapIt(-2, y - y0)) ** 2
-                    + (wrapIt(-3, z - z0)) ** 2
-                )),
-            shape,
-            dtype)
+                    + (wrapIt(-3, z - z0)) ** 2)), shape, dtype)
     else:
         raise ValueError("only defined for dim < 3 (#TODO)")
 
@@ -2529,8 +2522,7 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
         # using th_peaklist which is float position
         pass
 
-    print(
-        "{} local maxima found after thresholding above {} (amplitude above local background)".format(
+    print("{} local maxima found after thresholding above {} (amplitude above local background)".format(
             len(th_ar_amp), threshold_amp))
 
     # NEW --- from method array shift!
@@ -2592,9 +2584,7 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
         import networkx as NX
     except ImportError:
         print("\n***********************************************************")
-        print(
-            "networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/"
-        )
+        print("networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/")
         print("***********************************************************\n")
 
     # time_0 = ttt.time()
@@ -2649,53 +2639,53 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
         if verbose:
             print("positions of saturated pixels \n", sat_pix)
 
-        if 1:  # use of graph algorithms
-            sat_pix = np.column_stack(sat_pix)
+        # use of graph algorithms
+        sat_pix = np.column_stack(sat_pix)
 
-            disttable_sat = ssd.pdist(sat_pix, "euclidean")
-            sqdistmatrix_sat = ssd.squareform(disttable_sat)
-            # building adjencymat
+        disttable_sat = ssd.pdist(sat_pix, "euclidean")
+        sqdistmatrix_sat = ssd.squareform(disttable_sat)
+        # building adjencymat
 
-            a, b = np.indices(sqdistmatrix_sat.shape)
-            indymat = np.triu(b) + np.tril(a)
-            cond2 = np.logical_and(sqdistmatrix_sat < Size_of_pixelconnection, sqdistmatrix_sat > 0)
-            adjencymat = np.where(cond2, indymat, 0)
+        a, b = np.indices(sqdistmatrix_sat.shape)
+        indymat = np.triu(b) + np.tril(a)
+        cond2 = np.logical_and(sqdistmatrix_sat < Size_of_pixelconnection, sqdistmatrix_sat > 0)
+        adjencymat = np.where(cond2, indymat, 0)
 
-            # print "before networkx"
-            print("networkx version", NX.__version__)
-            GGraw = NX.to_networkx_graph(adjencymat, create_using=NX.Graph())
-            list_of_cliques = NX.find_cliques(GGraw)
-            # print "after networkx"
+        # print "before networkx"
+        print("networkx version", NX.__version__)
+        GGraw = NX.to_networkx_graph(adjencymat, create_using=NX.Graph())
+        list_of_cliques = NX.find_cliques(GGraw)
+        # print "after networkx"
 
-            # now find average pixel of each clique
-            sat_pix_mean = []
-            for clique in list_of_cliques:
-                ii, jj = np.mean(sat_pix[clique], axis=0)
-                sat_pix_mean.append([int(ii), int(jj)])
+        # now find average pixel of each clique
+        sat_pix_mean = []
+        for clique in list_of_cliques:
+            ii, jj = np.mean(sat_pix[clique], axis=0)
+            sat_pix_mean.append([int(ii), int(jj)])
 
-            sat_pix_mean = np.array(sat_pix_mean)
-            print("Mean position of saturated pixels blobs = \n", sat_pix_mean)
+        sat_pix_mean = np.array(sat_pix_mean)
+        print("Mean position of saturated pixels blobs = \n", sat_pix_mean)
 
-        if 0:  # of scipy.ndimage
+        # if 0:  # of scipy.ndimage
 
-            df = ndimage.gaussian_filter(dataimage_ROI, 10)
+        #     df = ndimage.gaussian_filter(dataimage_ROI, 10)
 
-            # histo = np.histogram(df)
-            # print "histogram",histo
-            # print "maxinten",np.amax(df)
-            threshold_for_measurements = (
-                np.amax(df) / 10.0
-            )  # histo[1][1]# 1000  pour CdTe # 50 pour Ge
+        #     # histo = np.histogram(df)
+        #     # print "histogram",histo
+        #     # print "maxinten",np.amax(df)
+        #     threshold_for_measurements = (
+        #         np.amax(df) / 10.0
+        #     )  # histo[1][1]# 1000  pour CdTe # 50 pour Ge
 
-            tG = np.where(df > threshold_for_measurements, 1, 0)
-            ll, nf = ndimage.label(tG)  # , structure = np.ones((3,3)))
-            meanpos = np.array(
-                ndimage.measurements.center_of_mass(tG, ll, np.arange(1, nf + 1)), dtype=float)
-            # meanpos = np.fliplr(meanpos)  # this done later
+        #     tG = np.where(df > threshold_for_measurements, 1, 0)
+        #     ll, nf = ndimage.label(tG)  # , structure = np.ones((3,3)))
+        #     meanpos = np.array(
+        #         ndimage.measurements.center_of_mass(tG, ll, np.arange(1, nf + 1)), dtype=float)
+        #     # meanpos = np.fliplr(meanpos)  # this done later
 
-            # print "meanpos",meanpos
+        #     # print "meanpos",meanpos
 
-            sat_pix_mean = meanpos
+        #     sat_pix_mean = meanpos
     else:
         print("No pixel saturation")
     # SATURATION handling -(End) --------------------------------------------------------
@@ -3793,6 +3783,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpea
     dict_param = readPeakSearchConfigFile(pspfile)
 
     Data_for_localMaxima, formulaexpression = read_background_flag(background_flag)
+
     blacklistedpeaks_file = set_blacklist_filepath(blacklistpeaklist)
 
     dict_param["Data_for_localMaxima"] = Data_for_localMaxima
@@ -4042,8 +4033,8 @@ def read_background_flag(background_flag):
             filepath, formulaexpression = ressplit
 
         if not os.path.exists(filepath):
-            wx.MessageBox("{} does not exist. Check filename and path.".format(filepath), "Error")
-            return
+            raise ValueError('File %s for background is does not exist'%filepath)
+            return None, None
 
         Data_for_localMaxima = filepath
 
@@ -4416,7 +4407,7 @@ def gauss_kern(size, sizey=None):
         sizey = size
     else:
         sizey = int(sizey)
-    x, y = np.mgrid[-size : size + 1, -sizey: sizey + 1]
+    x, y = np.mgrid[-1*size : size + 1, -1*sizey: sizey + 1]
     g = np.exp(-(x ** 2 / float(size) + y ** 2 / float(sizey)))
     return g / g.sum()
 
