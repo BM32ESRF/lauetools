@@ -8,6 +8,7 @@ from LaueTools package hosted in
 
 https://gitlab.esrf.fr/micha/lauetools
 """
+from __future__ import division
 import sys
 import copy
 
@@ -26,6 +27,8 @@ else:
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
+
+import wx.lib.stattext as ST
 
 if sys.version_info.major == 3:
     from .. import lauecore as LT
@@ -119,10 +122,8 @@ class RecognitionResultCheckBox(wx.Frame):
 
     def init_GUI2(self):
 
-        import wx.lib.stattext as ST
-
         wx.Frame.__init__(self, self.parent, self._id, self.titlew,
-                        size=(600, 50 + 20 * self.nbPotentialSolutions + 120))
+                        size=(2000, 50 + 20 * self.nbPotentialSolutions + 120))
         panel = wx.Panel(self, -1)
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
@@ -130,9 +131,10 @@ class RecognitionResultCheckBox(wx.Frame):
         txt.SetFont(font3)
 
         if WXPYTHON4:
+            # cols, vgap, hgap
             vbox3 = wx.GridSizer(6, 5, 10)
         else:
-            vbox3 = wx.GridSizer(6, 3)
+            vbox3 = wx.GridSizer(5, 6)
 
         txtmatched = wx.StaticText(panel, -1, "Matched")
         txttheomax = wx.StaticText(panel, -1, "Expected")
@@ -153,6 +155,7 @@ class RecognitionResultCheckBox(wx.Frame):
         for k in range(self.nbPotentialSolutions):
 
             nmatched, nmax, std = self.stats_residues[k][:3]
+            print("resss",nmatched, nmax, std)
             mattchingrate = nmatched / nmax * 100
 
             if mattchingrate >= 50.:
@@ -167,6 +170,8 @@ class RecognitionResultCheckBox(wx.Frame):
             self.cb.append(wx.CheckBox(panel, -1))
             self.cb[k].SetValue(False)
 
+            styletxt = wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL
+
             txtstats = []
             txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmatched)))
             txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmax)))
@@ -174,12 +179,12 @@ class RecognitionResultCheckBox(wx.Frame):
             txtstats.append(ST.GenStaticText(panel, -1, "%.2f"%float(std)))
             for kt in range(4):
                 txtstats[kt].SetBackgroundColour(color)
-            vbox3.AddMany([(self.cb[k], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (txtind, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (txtstats[0], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (txtstats[1], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (txtstats[2], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                        (txtstats[3], 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
+            vbox3.AddMany([(self.cb[k], 0, styletxt),
+                        (txtind, 0, styletxt),
+                        (txtstats[0], 0, styletxt),
+                        (txtstats[1], 0, styletxt),
+                        (txtstats[2], 0, styletxt),
+                        (txtstats[3], 0, styletxt)])
 
         emintxt = wx.StaticText(panel, -1, "Energy min: ")
         self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150, size=(70, -1))
@@ -218,6 +223,7 @@ class RecognitionResultCheckBox(wx.Frame):
         sizerparam.Add(hbox, 0, wx.EXPAND)
 
         panel.SetSizer(sizerparam)
+        
         sizerparam.Fit(self)
 
         #---------  tooltip

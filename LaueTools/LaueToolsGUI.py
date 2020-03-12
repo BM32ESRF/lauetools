@@ -14,7 +14,7 @@ https://gitlab.esrf.fr/micha/lauetools
 J. S. Micha July 2019
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
@@ -1123,8 +1123,7 @@ class LaueToolsGUImainframe(wx.Frame):
         calibframe = MainCalibrationFrame(self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=file_peaks,
                                     pixelsize=pixelsize, dim=framedim,
-                                    kf_direction='Z>0', fliprot=geomoperator,
-                                    starting_param=starting_param)
+                                    kf_direction='Z>0', fliprot=geomoperator)
         calibframe.Show(True)
 
     def OnCliquesFinding(self, _):

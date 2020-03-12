@@ -1055,9 +1055,9 @@ def readoneimage_manycrops(filename,
                                                             CCDLabel=CCDLabel,
                                                             dirname=None)
 
-    if type(boxsize) == type(5):
+    if isinstance(boxsize, int):
         boxsizex, boxsizey = boxsize, boxsize
-    elif type(boxsize) == type((10, 20)):
+    elif len(boxsize) == 2:
         boxsizex, boxsizey = boxsize
 
     # xpic, ypic = np.array(centers).T
@@ -3335,12 +3335,10 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                                                 Saturation_value_flatpeak=65535,
                                                 MinIntensity=0,
                                                 PeakSizeRange=(0, 200),
-                                                oldversion=False,  # to be removed
                                                 Data_for_localMaxima=None,
                                                 Fit_with_Data_for_localMaxima=False,
                                                 Remove_BlackListedPeaks_fromfile=None,
                                                 maxPixelDistanceRejection=15.0,
-                                                maxDistanceRejection=15,
                                                 NumberMaxofFits=5000,
                                                 reject_negative_baseline=True,
                                                 formulaexpression="A-1.1*B",
@@ -3771,7 +3769,6 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpea
                                                         dictPeakSearch={},
                                                         CCDLabel="MARCCD165",
                                                         outputfilename=None,
-                                                        KF_DIRECTION="Z>0",
                                                         psdict_Convolve=PEAKSEARCHDICT_Convolve):
     """
     Perform a peaksearch by using .psp file
@@ -4103,7 +4100,7 @@ def plot_image_markers(image, markerpos, position_definition=1):
     pp.show()
 
 
-def getPixeltest(x, y, filename="test_0072.edf", ccdtypegeometry="edf"):
+def getPixeltest(x, y, filename="test_0072.edf"):
     """
     x,y on display mapcanvas of lauetools are swaped by respect to array   = d[y,x]
 

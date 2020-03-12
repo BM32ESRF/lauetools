@@ -1,4 +1,4 @@
-import sys, os
+import sys
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -6,26 +6,25 @@ import os
 import numpy as np
 import time as ttt
 
-import readmccd as RMCCD
-import IOLaueTools as IOLT
-import generaltools as GT
-import dict_LaueTools as DictLT
 import scipy.interpolate as sci
-import fit2Dintensity as fit2d
+
 import scipy.ndimage as ndimage
 import scipy.signal
 import scipy.spatial.distance as ssd
 
+import fit2Dintensity as fit2d
+import readmccd as RMCCD
+import IOLaueTools as IOLT
+import generaltools as GT
+import dict_LaueTools as DictLT
 
-def Simulate_gaussianpeak(
-    height,
-    center_x_slowdir,
-    center_y_fastdir,
-    width_x_slowdir,
-    width_y_fastdir,
-    slowdirection_range=(0, 20),
-    fastdirection_range=(0, 20),
-):
+def Simulate_gaussianpeak(height,
+                            center_x_slowdir,
+                            center_y_fastdir,
+                            width_x_slowdir,
+                            width_y_fastdir,
+                            slowdirection_range=(0, 20),
+                            fastdirection_range=(0, 20)):
     """
     returns a 2D array with dimensions
     shape=(slow direction value, fast direction value)
@@ -107,30 +106,26 @@ def test_VHR_ROI():
     # interpolation='nearest',
     # norm = LogNorm(vmin=200, vmax= 4096))
 
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
-        filename,
-        CCDLabel="VHR_full",
-        PixelNearRadius=20,
-        removeedge=2,
-        IntensityThreshold=500,
-        boxsize=15,
-        position_definition=1,
-        verbose=1,
-        fit_peaks_gaussian=1,
-        xtol=0.001,
-        return_histo=1,
-        Saturation_value=4095,
-        Saturation_value_flatpeak=4095,
-    )
+    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename,
+                                                            CCDLabel="VHR_full",
+                                                            PixelNearRadius=20,
+                                                            removeedge=2,
+                                                            IntensityThreshold=500,
+                                                            boxsize=15,
+                                                            position_definition=1,
+                                                            verbose=1,
+                                                            fit_peaks_gaussian=1,
+                                                            xtol=0.001,
+                                                            return_histo=1,
+                                                            Saturation_value=4095,
+                                                            Saturation_value_flatpeak=4095)
 
     print("Isorted", Isorted)
-    IOLT.writefile_Peaklist(
-        "Au_0290_mar_test_full",
-        Isorted,
-        overwrite=1,
-        initialfilename=filename,
-        comments="test, test",
-    )
+    IOLT.writefile_Peaklist("Au_0290_mar_test_full",
+                            Isorted,
+                            overwrite=1,
+                            initialfilename=filename,
+                            comments="test, test")
 
     print(
         "\n************************************\npartial frame peak search\n***********************\n"
@@ -1735,13 +1730,11 @@ p.imshow(dataimage2D, vmin=10, vmax=4000, origin="upper", interpolation="nearest
 
 p.subplot(144)
 #     p.imshow(dataimage2D[lineFirstElemIndex:lineLastElemIndex+1,xpixmin:xpixmax+1], vmin = 1000, vmax=4000, origin='upper')
-p.imshow(
-    band2D[:, xpixmin : xpixmax + 1],
-    vmin=10,
-    vmax=4000,
-    origin="upper",
-    interpolation="nearest",
-)
+p.imshow(band2D[:, xpixmin : xpixmax + 1],
+                    vmin=10,
+                    vmax=4000,
+                    origin="upper",
+                    interpolation="nearest")
 
 
 if 0:
@@ -1750,14 +1743,12 @@ if 0:
     blacklistpeaklist = None
     outputfilename = "testpsearch.dat"
     pspfile = "PeakSearch_Ge_blanc_0000_LT_0.psp"
-    RMCCD.peaksearch_on_Image(
-        "Ge_blanc_0000.mccd",
-        pspfile,
-        background_flag,
-        blacklistpeaklist,
-        "MARCCD165",
-        outputfilename,
-    )
+    RMCCD.peaksearch_on_Image("Ge_blanc_0000.mccd",
+                                pspfile,
+                                background_flag,
+                                blacklistpeaklist,
+                                "MARCCD165",
+                                outputfilename)
 
 
 if 0:
@@ -1803,8 +1794,7 @@ if 0:
                 y,
                 z,
                 zblur,
-                z - zblur,
-            )
+                z - zblur)
         else:
             return "x=%1.4f, y=%1.4f" % (x, y)
 
@@ -1816,9 +1806,7 @@ if 0:
 
     print("shape")
 
-    RMCCD.writeimage(
-        os.path.join(dirname, "NW_curve2_001000.mccd"), _header, np.ravel(overbkg)
-    )
+    RMCCD.writeimage(os.path.join(dirname, "NW_curve2_001000.mccd"), _header, np.ravel(overbkg))
 
 if 0:
 
@@ -1830,26 +1818,24 @@ if 0:
 
     # d = rot90(d,k=3)
 
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
-        filename,
-        CCDLabel="MARCCD165",
-        center=None,
-        boxsizeROI=(200, 200),
-        PixelNearRadius=5,
-        removeedge=2,
-        IntensityThreshold=400,
-        thresholdConvolve=200,
-        boxsize=15,
-        verbose=0,
-        position_definition=0,
-        fit_peaks_gaussian=1,
-        xtol=0.0000001,
-        return_histo=1,
-        FitPixelDev=25,  # to_reject3 parameter
-        write_execution_time=1,
-        Saturation_value=65535,
-        Saturation_value_flatpeak=65535,
-    )
+    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename,
+                                            CCDLabel="MARCCD165",
+                                            center=None,
+                                            boxsizeROI=(200, 200),
+                                            PixelNearRadius=5,
+                                            removeedge=2,
+                                            IntensityThreshold=400,
+                                            thresholdConvolve=200,
+                                            boxsize=15,
+                                            verbose=0,
+                                            position_definition=0,
+                                            fit_peaks_gaussian=1,
+                                            xtol=0.0000001,
+                                            return_histo=1,
+                                            FitPixelDev=25,  # to_reject3 parameter
+                                            write_execution_time=1,
+                                            Saturation_value=65535,
+                                            Saturation_value_flatpeak=65535)
 
     print("meanpos", Isorted)
     t4 = ttt.time()

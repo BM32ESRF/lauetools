@@ -1010,7 +1010,7 @@ def Set_dict_frompairs(pairs_index, verbose=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1, XY2, dist_tolerance=0.5):
+def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1032,11 +1032,14 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5):
 
     dist = np.hypot(diffx, diffy)
 
+    if samelist:
+        # add big distance in diagonal
+        np.fill_diagonal(dist, np.amax(dist)+2*dist_tolerance)
+
     # print('dist.shape', dist.shape)
     _, n2 = dist.shape
 
     resmin = np.where(dist <= dist_tolerance)
-
 
     # closest distance beyond tolerance distance
     #print('resmin in getCommonPts', resmin)
@@ -1046,8 +1049,10 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5):
         # print('closest distance:', dist[ind_XY1, ind_XY2])
         WITHINTOLERANCE = False
     else:
-        ind_XY1, ind_XY2 = resmin[0][0], resmin[1][0]
-
+        if not samelist:
+            ind_XY1, ind_XY2 = resmin[0][0], resmin[1][0]
+        else:
+            ind_XY1, ind_XY2 = resmin[0], resmin[1]
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
 

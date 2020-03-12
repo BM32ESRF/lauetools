@@ -80,7 +80,7 @@ else:
     import CrystalParameters as CP
     import GUI.DetectorParameters as DP
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import OpenSpotsListFileGUI as OSLFGUI
+    import GUI.OpenSpotsListFileGUI as OSLFGUI
     import orientations as ORI
 
 
@@ -189,10 +189,10 @@ class PlotRangePanel(wx.Panel):
             if not CalibrationFile in os.listdir(self.mainframe.dirname):
                 wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of '
                 '%s is missing. \nPlease, change the name of %s (remove "dat_" for instance) '
-                    'to work with %s but without peaks properties (shape, size, Imax, etc...)'%(CalibrationFile, selectedFile, selectedFile, selectedFile),'Info')
+                    'to work with %s but without peaks properties (shape, size, Imax, etc...)' %(CalibrationFile, selectedFile, selectedFile, selectedFile), 'Info')
                 raise ValueError('%s corresponding to .dat file of %s is missing. '
                 'Change the name of %s (remove "dat_" '
-                'for instance)'%(CalibrationFile,selectedFile,selectedFile))
+                'for instance)' % (CalibrationFile, selectedFile, selectedFile))
 
         else:
             CalibrationFile = selectedFile
@@ -785,7 +785,7 @@ class StrainXtal(wx.Panel):
         # update label
         DictLT.dict_Materials[new_key_material][0] = new_key_material
 
-        if (self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1):
+        if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
             print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
@@ -823,7 +823,7 @@ class StrainXtal(wx.Panel):
         DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
         DictLT.dict_Materials[new_key_material][0] = new_key_material
 
-        if (self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1):
+        if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
             print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
@@ -861,7 +861,7 @@ class TextFrame(wx.Frame):
 
         panel = wx.Panel(self, -1)
         matrixLabel = wx.StaticText(panel, -1, "Matrix Elements:")
-        matrixText = wx.TextCtrl( panel, -1, strexpression, size=(490, 100),
+        matrixText = wx.TextCtrl(panel, -1, strexpression, size=(490, 100),
                                                         style=wx.TE_MULTILINE | wx.TE_READONLY)
         #         matrixText.SetInsertionPoint(0)
 
@@ -922,7 +922,6 @@ class MainCalibrationFrame(wx.Frame):
     """
     def __init__(self, parent, _id, title, _initialParameter,
                 file_peaks="Cu_near_28May08_0259.peaks",
-                starting_param=[71, 1039.42, 1095, 0.0085, -0.981],
                 pixelsize=165.0 / 2048,
                 datatype="2thetachi",
                 dim=(2048, 2048),  # for MARCCD 165,
@@ -936,7 +935,6 @@ class MainCalibrationFrame(wx.Frame):
 
         self.initialParameter = _initialParameter
 
-        self.starting_param = starting_param
         # 5 parameters defining Detector Plane and frame
         self.CCDParam = self.initialParameter["CCDParam"]
         # to interact with LaueToolsGUI
@@ -976,6 +974,8 @@ class MainCalibrationFrame(wx.Frame):
         self.current_matrix = []
         self.deltamatrix = np.eye(3)
         self.manualmatrixinput = None
+
+        self.inputmatrix = None
 
         # for plot spots annotation
         self.drawnAnnotations_exp = {}
@@ -1021,6 +1021,29 @@ class MainCalibrationFrame(wx.Frame):
         self.HKLxyz_names, self.HKLxyz = None, None
         self.totalintensity = None
         self.p2S, self.p3S = None, None
+
+        self.init_plot = True
+        self.Extinctions = None
+
+        self.emin, self.emax = 5, 25
+        self.key_material = None
+        self.B0matrix = None
+        self.Bmatrix = None
+        self.Miller_ind = None
+
+        self.sim_gnomonx, self.sim_gnomony = None, None
+        self.data_gnomonx, self.data_gnomony = None, None
+        self.successfull = False
+        self.EXPpoints = None
+
+        self.mat_solution = None
+        self.TwicethetaChi_solution = None
+        self.data_fromGnomon = None
+        self.RecBox = None
+        self.centerx, self.centery = None, None
+        self.press = None
+
+        self._dataANNOTE_exp, self._dataANNOTE_theo = None, None
 
         self.setwidgets()
 
@@ -1146,7 +1169,7 @@ class MainCalibrationFrame(wx.Frame):
         self.incrementfile = wx.CheckBox(self.panel, -1, "increment saved filenameindex")
 
         self.layout()
-        # read peaks data 
+        # read peaks data
         self.ReadExperimentData()
         self._replot(wx.EVT_IDLE)
         self.display_current()
@@ -1293,7 +1316,7 @@ class MainCalibrationFrame(wx.Frame):
         print('\n\nReadExperimentData()  \n\n')
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
-        print('filepath',filepath)
+        print('filepath', filepath)
 
         if extension in ("dat", "DAT"):
             colI = 3
@@ -1327,7 +1350,7 @@ class MainCalibrationFrame(wx.Frame):
             self.initialParameter['filename.cor'] = self.filename
 
             # write a basic .dat file from .cor file
-            Data_array = np.zeros((len(data_theta),10))
+            Data_array = np.zeros((len(data_theta), 10))
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
             Data_array[:, 2] = dataintensity
@@ -1610,13 +1633,6 @@ class MainCalibrationFrame(wx.Frame):
                 # print "where_exp_ind[closest]",where_th_ind[closest]
                 # print "Resi[where_th_ind[closest]]", Resi[where_th_ind[closest]]
                 ProxTablecopy[where_th_ind[closest]] = -ProxTablecopy[where_th_ind[closest]]
-
-        # ------------------------------------------------------------------
-        # print "ProxTable after duplicate removal tagging"
-        # print ProxTablecopy
-
-        # print "List_Exp_spot_close",List_Exp_spot_close
-        # print "Results",[Miller_Exp_spot, List_Exp_spot_close]
 
         singleindices = []
         calib_indexed_spots = {}
@@ -1985,8 +2001,7 @@ class MainCalibrationFrame(wx.Frame):
             print("determinant")
             print(np.linalg.det(Umat).round(decimals=5))
 
-            toto = Umat.transpose()
-            Bmat_triang_up = np.dot(toto, self.UBmatrix)
+            Bmat_triang_up = np.dot(Umat.T, self.UBmatrix)
 
             print(" Bmat_triang_up= ")
             print(Bmat_triang_up.round(decimals=5))
@@ -2090,7 +2105,7 @@ class MainCalibrationFrame(wx.Frame):
 
         print('self.initialParameter["filename.cor"] in OnWriteResults',
                 self.initialParameter["filename.cor"])
-        
+
         initialdatfile = self.filename #self.initialParameter["filename.cor"]
         print('initialdatfile  :', initialdatfile)
 
@@ -2456,7 +2471,7 @@ class MainCalibrationFrame(wx.Frame):
     def update_data(self, event):
         """
         update experimental data according to CCD parameters
-        and replot simulated data 
+        and replot simulated data
         with _replot
         """
         self.ReadExperimentData()
@@ -2709,10 +2724,10 @@ class MainCalibrationFrame(wx.Frame):
             self.crystalparampanel.UBmatrix = self.inputmatrix
             self.manualmatrixinput = None
 
-        if 0:
-            print("Beginning simulation of spots")
-            print("self.UBmatrix", self.crystalparampanel.UBmatrix)
-            print("misorientation UBmatrix", self.deltamatrix)
+        # if 0:
+        #     print("Beginning simulation of spots")
+        #     print("self.UBmatrix", self.crystalparampanel.UBmatrix)
+        #     print("misorientation UBmatrix", self.deltamatrix)
 
         pixelsize = self.pixelsize
 
@@ -3306,14 +3321,13 @@ class MainCalibrationFrame(wx.Frame):
 
             print("\n")
             print("---Planes Recognition---")
-            if type(sol) == type(np.array([1, 2])):
+            if isinstance(sol, np.ndarray):
                 print("planes found ------ for angle %.3f within %.2f deg"% (_dist, ang_tol))
                 print("spot 1          spot 2           theo. value(deg)")
                 for k in range(len(sol[0])):
                     theodist = (np.arccos(np.dot(sol[0][k], sol[1][k])
                             / np.sqrt(np.dot(sol[0][k], sol[0][k])* np.dot(sol[1][k], sol[1][k])
-                            ))
-                        * 180.0 / np.pi)
+                            )) * 180.0 / np.pi)
                     # print sol[0][k]
                     # print sol[1][k]
                     print(" %s          %s           %.3f" % (str(sol[0][k]), str(sol[1][k]), theodist))
@@ -3597,11 +3611,8 @@ class MainCalibrationFrame(wx.Frame):
         if nq1tilted_perp <= 0.0001:
             angle = 0
         else:
-            angle = (1 / DEG * np.arcsin(np.dot( qaxis, np.cross(q1tilted_perp / nq1tilted_perp,
+            angle = (1 / DEG * np.arcsin(np.dot(qaxis, np.cross(q1tilted_perp / nq1tilted_perp,
                                                     q2tilted_perp / nq1tilted_perp))))
-
-        #         print 'angle', angle
-        #         print "nq1tilted_perp", nq1tilted_perp
 
         return qaxis, angle
 
@@ -3609,8 +3620,6 @@ class MainCalibrationFrame(wx.Frame):
         """
         return 3D vector of rotation axis
         """
-        #         print 'self.datatype', self.datatype
-
         if self.datatype == "gnomon":
             RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]),
                                                     np.array([chi, chi])], 0)[:2]
@@ -3836,8 +3845,10 @@ def qunit(twth, chi):
     return np.array([-sinth, costh * sinchi, costh * coschi])
 
 
-def givesharmonics(E, Emin, Emax):
-
+def givesharmonics(E, _, Emax):
+    """
+    .. todo:: should consider Emin
+    """
     multiples_E = []
     n = 1
     Eh = E
@@ -3865,7 +3876,6 @@ if __name__ == "__main__":
     CalibGUIApp = wx.App()
     CalibGUIFrame = MainCalibrationFrame(None, -1, "Detector Calibration Board", initialParameter,
                                                         file_peaks=filepathname,
-                                                        starting_param=initialParameter["CCDParam"],
                                                         pixelsize=165.0 / 2048,
                                                         datatype="2thetachi",
                                                         dim=(2048, 2048),

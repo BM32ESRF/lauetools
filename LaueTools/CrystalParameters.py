@@ -17,8 +17,10 @@ from numpy.linalg import inv
 try:
     ELASTICITYMODULE = True
     from . import elasticity as el
-except (ImportError, ModuleNotFoundError):
-    # raise ImportError("Please download elasticity module ...")
+#except (ImportError, ModuleNotFoundError):
+except (ImportError, ValueError):
+
+    print("elasticity.py module is missing. You may need it for very few usages")
     ELASTICITYMODULE = False
 
 if sys.version_info.major == 3:
@@ -1195,8 +1197,8 @@ def strain_from_crystal_to_sample_frame(
     return deviatoric_strain_sampleframe
 
 
-def hydrostaticStrain(
-    deviatoricStrain, key_material, UBmatrix, assumption="stresszz=0", sampletilt=40.0):
+def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stresszz=0",
+                                                                        sampletilt=40.0):
     r"""
     Computes full strain & stress from deviatoricStrain (voigt notation in crystal frame), material
     and mechanical assumtion
@@ -1687,15 +1689,15 @@ from numpy.linalg.linalg import norm
 boa  means  b over a!!!!
 """
 
-def S11p(boa, coa, alpha, b, g):
+def S11p(boa, coa, alpha, beta, _):
     return boa ** 2 * coa ** 2 * np.sin(alpha) ** 2
 
 
-def S22p(_, coa, a, beta, g):
+def S22p(_, coa, alpha, beta, gamma):
     return coa ** 2 * np.sin(beta) ** 2
 
 
-def S33p(boa, _, a, b, gamma):
+def S33p(boa, _, alpha, beta, gamma):
     return boa ** 2 * np.sin(gamma) ** 2
 
 

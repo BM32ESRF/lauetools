@@ -8,6 +8,7 @@ mailto: micha at esrf dot fr
 
 August 2014
 """
+from __future__ import division
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy

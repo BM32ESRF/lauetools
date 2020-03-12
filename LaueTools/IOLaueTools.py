@@ -9,7 +9,7 @@ JS Micha   May 2019
 this module gathers functions to read and write ASCII file corresponding
 to various data
 """
-
+from __future__ import division
 import os
 import sys
 import time
@@ -24,8 +24,12 @@ np.set_printoptions(precision=15)
 
 if sys.version_info.major == 3:
     from . dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
+    PYTHON3 = True
+    print('you are using python 3')
 else:
     from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
+    PYTHON3 = False
+    print('you are using python 2. Better install python 3')
 
 DEFAULT_CCDLABEL = 'sCMOS'
 
@@ -113,8 +117,13 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     # print('nbspots', nbspots)
     # print('len(list_of_data)', len(list_of_data))
-    outputfile.write("\n".join(    [format_string % tuple(  list(  zip((*list_of_data)))[i])
-                                                                    for i in range(nbspots)]  )  )
+    ldata = [elem for elem in list_of_data]
+    if PYTHON3:
+        liststrs = [format_string % tuple(list(zip(*ldata))[i]) for i in range(nbspots)]
+        #liststrs = [format_string % tuple(list(zip((*list_of_data)))[i]) for i in range(nbspots)]
+    else:
+        liststrs = [format_string % tuple(zip(*ldata)[i]) for i in range(nbspots)]
+    outputfile.write("\n".join(liststrs))
 
     outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
 
@@ -258,7 +267,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
         elif nbcolumns == 5:
             data_theta = alldata[0] / 2.0
             (data_chi, data_pixX, data_pixY, data_I) = alldata[1:]
-        
+
         # case of unindexed file .cor
         elif unindexeddata:
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata
@@ -520,8 +529,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
 
     if nbcolumns == 10:
-            (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-            Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
+        (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+        Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
 
     elif nbcolumns == 11:
         (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
@@ -1232,7 +1241,7 @@ def convert_fit_to_cor(fitfilepath):
     col_Xexp, col_Yexp = 7, 8
     col_intensity = 1
 
-    output_corfilepath = fitfilepath[-4:] + '.cor'
+    # output_corfilepath = fitfilepath[-4:] + '.cor'
 
     folder, filename = os.path.split(fitfilepath)
     prefixfilename = filename.rsplit(".", 1)[0]
