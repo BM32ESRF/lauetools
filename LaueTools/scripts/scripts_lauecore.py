@@ -20,8 +20,9 @@ import sys, os
 # if LTpath not in sys.path:
 #     sys.path.append(LTpath)
 
-import numpy as np
 import time
+import pickle
+import numpy as np
 
 import LaueTools
 print("Using LaueToolsFolder: ", os.path.abspath(LaueTools.__file__))
@@ -352,13 +353,7 @@ def simulatepurepattern(
     return True
 
 
-def Plot_Laue(
-    _emin,
-    _emax,
-    list_of_spots,
-    _data_2theta,
-    _data_chi,
-    _data_filename,
+def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filename,
     Plot_Data=1,
     Display_label=1,
     What_to_plot="2thetachi",
@@ -366,8 +361,7 @@ def Plot_Laue(
     WriteLogFile=1,
     removeharmonics=0,
     kf_direction=DEFAULT_TOP_GEOMETRY,
-    linestowrite=[[""]],
-):
+    linestowrite=[[""]]):
     """
     basic function to plot LaueData for showcase
     """
@@ -1119,9 +1113,7 @@ if 0:
         calib,
         verbose=0,
         pixelsize=165.0 / 2048,
-        dim=(2048, 2048),
-        kf_direction=kf_direction,
-    )
+        kf_direction=kf_direction)
 
     X, Y, theta = xyd_fromfind2
 
@@ -1191,7 +1183,6 @@ if 0:
         calib,
         verbose=0,
         pixelsize=pixelsize,
-        dim=(2048, 2048),
         kf_direction=kf_direction)
 
     X, Y, theta = xyd_fromfind2
@@ -1284,7 +1275,6 @@ if 0:  # Si 111 in transmission on ID15
         calib,
         verbose=0,
         pixelsize=0.048,
-        dim=(2048, 2048),
         kf_direction=kf_direction)
 
     X, Y, theta = xyd_fromfind2

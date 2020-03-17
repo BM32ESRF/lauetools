@@ -54,8 +54,7 @@ def Non_Indexed_Spots(indexed_spots, n):
             list_nonindexed.append(k)
     return list_nonindexed
 
-def SimulateResult_withMiller(grain, emin, emax, defaultParam, pixelsize=165.0 / 2048,
-                                                                                dim=(2048, 2048)):
+def SimulateResult_withMiller(grain, emin, emax, defaultParam, pixelsize=165.0 / 2048):
     """Simulate Laue Pattern for 1 grain
 
     Returns Twicetheta, Chi, Miller_ind, posx, posy, Energy arrays
@@ -100,9 +99,7 @@ def SimulateResult_withMiller(grain, emin, emax, defaultParam, pixelsize=165.0 /
                                                 Chi,
                                                 defaultParam,
                                                 verbose=0,
-                                                pixelsize=pixelsize,
-                                                dim=dim,
-                                            )[:2]
+                                                pixelsize=pixelsize)[:2]
 
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
@@ -155,9 +152,7 @@ def simulate_theo(grain, emax, emin, paramDet, pixelsize, dim):
                                                 chi,
                                                 paramDet[:5],
                                                 verbose=0,
-                                                pixelsize=pixelsize,
-                                                dim=dim,
-                                            )[:2]
+                                                pixelsize=pixelsize)[:2]
 
     return twicetheta, chi, Miller_ind, posx, posy
 
@@ -215,7 +210,7 @@ def RefineUB(linkedspots_link,
                     np.take(data[1], exp_indices))  # 2theta chi coordinates
     # pixel coordinates
     pixX, pixY, _th = F2TC.calc_xycam_from2thetachi(
-        _twth, _chi, calib, verbose=0, pixelsize=pixelsize, dim=dim)
+        _twth, _chi, calib, verbose=0, pixelsize=pixelsize)
 
     # print "2*_th must be equal to _twth",(2*_th-_twth) < 0.000001 # this a test
 
@@ -1200,7 +1195,7 @@ def GetCalibParameter(emax, veryclose_angletol, element, startingmatrix, default
 
     paramDet = defaultParam
     print("paramDet in LAA.GetCalibParameters :", paramDet)
-    if type(paramDet) != type([1, 2, 3]):
+    if not isinstance(paramDet, list):
         paramDet = paramDet.tolist()
 
     # simulated theo spots
@@ -1530,9 +1525,7 @@ if __name__ == "__main__":
                                                 Chi,
                                                 defaultParam,
                                                 verbose=0,
-                                                pixelsize=pixelsize,
-                                                dim=(2048, 2048),
-                                            )[:2]
+                                                pixelsize=pixelsize)[:2]
 
     # READING COR file AND INDEXATION ----------------------------------------------------------------------------
     file_extension = "cor"

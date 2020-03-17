@@ -77,7 +77,6 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                                             gauge=None,
                                                             kf_direction="Z>0",
                                                             pixelsize=165.0 / 2048,
-                                                            framedim=(2048, 2048),
                                                             dictmaterials=DictLT.dict_Materials):
     r"""
     Simulation of orientation or deformation gradient.
@@ -477,15 +476,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                                                     chi,
                                                                     calib,
                                                                     pixelsize=pixelsize,
-                                                                    dim=framedim,
-                                                                    kf_direction=kf_direction,
-                                                                )[:2]
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
-
-                    #                    vecRR = [spot.Qxyz for spot in Laue_spot_list[0]] #uf_lab in JSM LaueTools frame
-
-                    # print "twicetheta",twicetheta
-                    # print "2*th0",(2*theta0).tolist()
+                                                                    kf_direction=kf_direction)[:2]
+                    # vecRR = [spot.Qxyz for spot in Laue_spot_list[0]] #uf_lab in JSM LaueTools frame
 
                     list_twicetheta.append(twicetheta)
                     list_chi.append(chi)

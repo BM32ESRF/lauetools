@@ -539,7 +539,9 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
     after Busing Levy, Acta Crysta 22 (1967), p 457
 
-    .. math:: \left( \begin{matrix}
+    .. math::
+    
+            \left( \begin{matrix}
             a^*  & b^*\cos \gamma^* & c^*\cos beta^*\\
             0  & b^*\sin \gamma^* &-c^*\sin \beta^*\cos \alpha\\
             0 &  0    &      c^*\sin \beta^*\sin \alpha\\

@@ -66,7 +66,7 @@ def remove_harmonic(hkl, uflab, yz):
     return (hkl2, uflab2, yz2, nspots2, isbadpeak)
 
 
-def xy_from_Quat( varying_parameter_values, DATA_Q, nspots, varying_parameter_indices,
+def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_indices,
                                                                         allparameters,
                                                                         initrot=None,
                                                                         vecteurref=IDENTITYMATRIX,
@@ -157,7 +157,6 @@ def xy_from_Quat( varying_parameter_values, DATA_Q, nspots, varying_parameter_in
                                                 calibration_parameters,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
-                                                dim=dim,
                                                 kf_direction=kf_direction)
 
     return X, Y, theta, R
@@ -224,7 +223,6 @@ def calc_XY_pixelpositions(calibration_parameters, DATA_Q, nspots, UBmatrix=None
                                             offset=offset,
                                             verbose=0,
                                             pixelsize=pixelsize,
-                                            dim=dim,
                                             kf_direction=kf_direction)
 
     return X, Y, theta, R
@@ -293,7 +291,7 @@ def error_function_on_demand_calibration(
     # three last parameters are orientation angles in quaternion expression
     onlydetectorindices = arr_indexvaryingparameters[arr_indexvaryingparameters < 5]
 
-    X, Y, theta, R = xy_from_Quat(param_calib,
+    X, Y, theta, _ = xy_from_Quat(param_calib,
                                     DATA_Q,
                                     nspots,
                                     onlydetectorindices,
@@ -542,7 +540,7 @@ def error_function_on_demand_strain(param_strain,
     ally = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X, Y, theta, R = xy_from_Quat(allparameters[:5],
+    X, Y, _, _ = xy_from_Quat(allparameters[:5],
                                 DATA_Q,
                                 nspots,
                                 np.arange(5),
@@ -726,7 +724,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     ally_1 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X1, Y1, theta1, R1 = xy_from_Quat(allparameters[:5],
+    X1, Y1, _, _ = xy_from_Quat(allparameters[:5],
                                         DATA_Q,
                                         nspots,
                                         np.arange(5),
@@ -745,7 +743,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     ally_2 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X2, Y2, theta2, R2 = xy_from_Quat(allparameters[:5],
+    X2, Y2, _, _ = xy_from_Quat(allparameters[:5],
                                     DATA_Q,
                                     nspots,
                                     np.arange(5),
@@ -814,13 +812,13 @@ def fit_on_demand_strain(starting_param,
     """
 
     # All miller indices must be entered in miller, selection is done in xy_from_Quat with nspots (array of indices)
-    parameters = [ "dd", "xcen", "ycen", "angle1", "angle2", "b/a", "c/a",
+    parameters = ["dd", "xcen", "ycen", "angle1", "angle2", "b/a", "c/a",
                         "a12", "a13", "a23", "theta1", "theta2", "theta3", ]
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     param_strain_0 = starting_param
-    if 1:#verbose:
+    if 1: #verbose:
         print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted,
             " \n\n***************************\n")
@@ -930,7 +928,7 @@ def plot_refinement_oneparameter(starting_param,
     parameters = ["distance (mm)", "Xcen (pixel)", "Ycen (pixel)",
                     "Angle1 (deg)", "Angle2 (deg)", "theta1", "theta2", "theta3"]
 
-    parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
+    # parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
     param_calib_0 = starting_param
 
     mini, maxi, nbsteps = param_range
@@ -987,7 +985,7 @@ def error_function_XCEN(
     # All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
     # param_orient is three elements array representation of quaternion
 
-    X, Y, theta, R = xy_from_Quat(param_calib,
+    X, Y, _, R = xy_from_Quat(param_calib,
                                 DATA_Q,
                                 nspots,
                                 np.arange(8)[1],
@@ -1341,7 +1339,7 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
         #         print "varyingstrain", varyingstrain
         #         print 'all_newmatrices', all_newmatrices
 
-        Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+        Xmodel, Ymodel, _, _ = calc_XY_pixelpositions(calibrationparameters,
                                                             DATA_Q,
                                                             absolutespotsindices[grain_index],
                                                             UBmatrix=newmatrix,
@@ -1606,7 +1604,7 @@ def error_function_general(varying_parameters_values_array,
         print("newmatrix", newmatrix)
         print("B0matrix", B0matrix)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+    Xmodel, Ymodel, _, _ = calc_XY_pixelpositions(calibrationparameters,
                                                         Miller_indices,
                                                         absolutespotsindices,
                                                         UBmatrix=newmatrix,
@@ -2044,7 +2042,7 @@ def error_function_latticeparameters(varying_parameters_values_array,
         print("initrot", initrot)
         print("newmatrix", newmatrix)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+    Xmodel, Ymodel, _, _ = calc_XY_pixelpositions(calibrationparameters,
                                                     Miller_indices,
                                                     absolutespotsindices,
                                                     UBmatrix=newmatrix,
@@ -2236,7 +2234,7 @@ def error_function_strain(varying_parameters_values_array,
         print("Miller_indices", Miller_indices)
         print("absolutespotsindices", absolutespotsindices)
 
-    Xmodel, Ymodel, theta, R = calc_XY_pixelpositions(calibrationparameters,
+    Xmodel, Ymodel, _, _ = calc_XY_pixelpositions(calibrationparameters,
                                                         Miller_indices,
                                                         absolutespotsindices,
                                                         UBmatrix=newmatrix,
@@ -2635,8 +2633,8 @@ def error_strain_from_elongation(varying_parameters_values_array,
 
 def test_generalfitfunction():
     # Ge example unstrained
-    pixX = np.array([ 1027.1099965580365, 1379.1700028337193, 1288.1100055910788, 926.219994375393, 595.4599989710869, 1183.2699986884652, 1672.670001029018, 1497.400007802548, 780.2700069727559, 819.9099991880139, 873.5600007021501, 1579.39000403102, 1216.4900044928474, 1481.199997684615, 399.87000836895436, 548.2499911593322, 1352.760007116035, 702.5200057620646, 383.7700117705855, 707.2000052800154, 1140.9300043834062, 1730.3299981313016, 289.68999155533413, 1274.8600008806216, 1063.2499947675371, 1660.8600022917144, 1426.670005812432])
-    pixY = np.array([ 1293.2799953573963, 1553.5800003037994, 1460.1599988550274, 872.0599978043742, 876.4400033114814, 598.9200007214372, 1258.6199918206175, 1224.7000037967478, 1242.530005349013, 552.8399954684833, 706.9700021553684, 754.63000554209, 1042.2800069222762, 364.8400055136739, 1297.1899933698528, 1260.320007366279, 568.0299942819768, 949.8800073732916, 754.580011319991, 261.1099917270594, 748.3999917806088, 1063.319998717625, 945.9700059216573, 306.9500110237749, 497.7900029269757, 706.310001700921, 858.780004244009, ])
+    pixX = np.array([1027.1099965580365, 1379.1700028337193, 1288.1100055910788, 926.219994375393, 595.4599989710869, 1183.2699986884652, 1672.670001029018, 1497.400007802548, 780.2700069727559, 819.9099991880139, 873.5600007021501, 1579.39000403102, 1216.4900044928474, 1481.199997684615, 399.87000836895436, 548.2499911593322, 1352.760007116035, 702.5200057620646, 383.7700117705855, 707.2000052800154, 1140.9300043834062, 1730.3299981313016, 289.68999155533413, 1274.8600008806216, 1063.2499947675371, 1660.8600022917144, 1426.670005812432])
+    pixY = np.array([1293.2799953573963, 1553.5800003037994, 1460.1599988550274, 872.0599978043742, 876.4400033114814, 598.9200007214372, 1258.6199918206175, 1224.7000037967478, 1242.530005349013, 552.8399954684833, 706.9700021553684, 754.63000554209, 1042.2800069222762, 364.8400055136739, 1297.1899933698528, 1260.320007366279, 568.0299942819768, 949.8800073732916, 754.580011319991, 261.1099917270594, 748.3999917806088, 1063.319998717625, 945.9700059216573, 306.9500110237749, 497.7900029269757, 706.310001700921, 858.780004244009])
     miller_indices = np.array([[3.0, 3.0, 3.0], [2.0, 4.0, 2.0], [3.0, 5.0, 3.0], [5.0, 3.0, 3.0], [6.0, 2.0, 4.0], [6.0, 4.0, 2.0], [3.0, 5.0, 1.0], [4.0, 6.0, 2.0], [5.0, 3.0, 5.0], [7.0, 3.0, 3.0], [4.0, 2.0, 2.0], [5.0, 5.0, 1.0], [5.0, 5.0, 3.0], [7.0, 5.0, 1.0], [5.0, 1.0, 5.0], [3.0, 1.0, 3.0], [8.0, 6.0, 2.0], [7.0, 3.0, 5.0], [5.0, 1.0, 3.0], [9.0, 3.0, 3.0], [7.0, 5.0, 3.0], [5.0, 7.0, 1.0], [7.0, 1.0, 5.0], [5.0, 3.0, 1.0], [9.0, 5.0, 3.0], [7.0, 7.0, 1.0], [3.0, 3.0, 1.0]])
     starting_orientmatrix = np.array([[-0.9727538909589738, -0.21247913537718385, 0.09274958034159074],
             [0.22567394392094073, -0.7761682018781203, 0.5887564805829774],

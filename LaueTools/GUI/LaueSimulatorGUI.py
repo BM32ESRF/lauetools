@@ -1561,7 +1561,6 @@ class parametric_Grain_Dialog3(wx.Frame):
                                                 Transform_params=self.dict_transform,
                                                 SelectGrains=self.SelectGrains,
                                                 pixelsize=self.pixelsize,
-                                                framedim=self.framedim,
                                                 dictmaterials=self.parent.dict_Materials)
 
         # (list_twicetheta, list_chi,

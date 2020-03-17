@@ -1568,13 +1568,7 @@ class Plot_RefineFrame(wx.Frame):
         AllData = self.IndexationParameters["AllDataToIndex"]
         _twth, _chi = (np.take(2.0 * AllData["data_theta"], exp_indices),
                         np.take(AllData["data_chi"], exp_indices))  # 2theta chi coordinates
-        # experimental spots pixel coordinates
-        #         pixX, pixY, _th = F2TC.calc_xycam_from2thetachi(_twth, _chi, self.CCDcalib,
-        #                                         verbose=0,
-        #                                         pixelsize=self.pixelsize,
-        #                                         dim=self.framedim,
-        #                                         kf_direction=self.kf_direction)
-
+        
         pixX = np.take(AllData["data_pixX"], exp_indices)
         pixY = np.take(AllData["data_pixY"], exp_indices)
 

@@ -277,6 +277,7 @@ dict_CCD = {
     "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif", ],
     "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
     "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
+    "pSL_Weiwei": [(1247, 1960), 0.075, 65535, "no", 3828, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
     "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff", ),
     "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff", ),
     "VHR_small": ((2594, 2748), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Nov12 frame size is lower than VHR_diamond", "tiff", ),
@@ -383,7 +384,6 @@ def getwildcardstring(CCDlabel):
     >>> from dict_LaueTools import getwildcardstring
     >>> getwildcardstring('MARCCD165')
     'MARCCD, ROPER(*.mccd)|*mccd|mar tif(*.tif)|*_mar.tiff|tiff(*.tiff)|*tiff|Princeton(*.spe)|*spe|Frelon(*.edf)|*edf|tif(*.tif)|*tif|All files(*)|*'
-
     """
     ALL_EXTENSIONS = [ "mccd", "tif", "_mar.tiff", "tiff", "spe", "edf", "tif", "tif.gz", "h5", "", ]
     INFO_EXTENSIONS = [ "MARCCD, ROPER(*.mccd)", "sCMOS sCMOS_fliplr", "mar tif(*.tif)", "tiff(*.tiff)",

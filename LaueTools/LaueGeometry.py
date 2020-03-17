@@ -308,8 +308,6 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
 
     if verbose:
         print("chi_JSM", chi)
-        #         print "chi_XMAS", chiXMAS
-        #         print "chi_XMAS2", chiXMAS2
         print("2theta", twicetheta)
 
     if returnAngles != 1:
@@ -341,7 +339,6 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
 
 def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
                                                                         pixelsize=165.0 / 2048.,
-                                                                        dim=(2048, 2048),
                                                                         rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units in CCD frame
@@ -470,9 +467,18 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
         return xcam, ycam, th0
 
 
+def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
+                                                                            pixelsize=165.0 / 2048,
+                                                                            rectpix=RECTPIX):
+    r"""
+    Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
+
+    As calc_xycam() but in BACK REFLECTION geometry
+    """
+    pass
+
 def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
                                                                             pixelsize=165.0 / 2048,
-                                                                            dim=(2048, 2048),
                                                                             rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
@@ -591,7 +597,6 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, retu
 
 def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
                                                         pixelsize=165.0 / 2048,
-                                                        dim=(2048, 2048),
                                                         kf_direction="Z>0"):
     r"""
     calculate spots coordinates in pixel units in detector plane
@@ -611,14 +616,18 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
         print("uflab", uflab)
 
     if kf_direction in ("Z>0",):  # , '[90.0, 45.0]'):
-        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
+        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("Y>0", "Y<0"):
         print("CAUTION: not checked yet")
         # TODO raise ValueError, print "not checked yet"
-        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
+        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("X>0",):  # transmission
         return calc_xycam_transmission(
-            uflab, calib, offset=offset, pixelsize=pixelsize, dim=dim)
+            uflab, calib, offset=offset, pixelsize=pixelsize)
+    elif kf_direction in ("X<0",):  # back-reflection
+        # patch JSM March 2020
+        return calc_xycam_transmission(
+            uflab, calib, offset=offset, pixelsize=pixelsize)
     else:
         sentence = "kf_direction = %s is not implemented yet " % kf_direction
         sentence += "in calc_xycam_from2thetachi() in find2thetachi"
@@ -1584,7 +1593,7 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
 
     else:
         param = calibparam + [pixelsize]
-        
+
     # print('add_props', data.shape, add_props)
 
     IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
@@ -1781,7 +1790,7 @@ def IW_from_IM_onesource(IIprime, IM, depth_wire, anglesample=40.0, anglewire=40
         yIp, zIp = IIprime
     except ValueError:
         print("Next time, please use a 2elements source position (y,z)")
-        xIp, yIp, zIp = IIprime
+        _, yIp, zIp = IIprime
 
     angs = anglesample * DEG
     angw = anglewire * DEG
@@ -1851,7 +1860,7 @@ def find_yzsource_from_xycam_uf(OM, uf, calib, depth_z=0, anglesample=40.0):
     return find_yzsource_from_IM_uf(IMlab_yz, uf, depth_z=depth_z, anglesample=anglesample)
 
 
-def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
+def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib):
     """
     rfrom:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
@@ -1888,7 +1897,7 @@ def find_yzsource_from_2xycam_2yzwire(OMs, IWs, calib, anglesample=40.0):
     return np.array([ysource, zsource])
 
 
-def find_yzsource_from_2xycam_2yzwire_version2(OMs, IWs, calib, anglesample=40.0, verbose=0):
+def find_yzsource_from_2xycam_2yzwire_version2(OMs, IWs, calib, verbose=0):
     r"""
     from:
     OMs: array of 2 vectors OM (2 elements) in CCD plane in CCD frame (pixels unit): array([OM1,OM2])
@@ -1958,7 +1967,6 @@ def find_multiplesourcesyz_from_multiplexycam_multipleyzwire(OMs, Wire_abscissae
             find_yzsource_from_2xycam_2yzwire_version2(np.take(OMs, p, axis=0),
                                                         np.take(IWs, p, axis=0),
                                                         calib,
-                                                        anglesample=anglesample,
                                                         verbose=0))
 
     return np.array(results)
@@ -1991,7 +1999,7 @@ def Wireabscissa_from_IW(IWy, IWz, wire_height, anglesample=40.0):
     """
     angs = anglesample * DEG
 
-    IH = np.array([0, -wire_height * np.sin(angs), wire_height * np.cos(angs)])
+    # IH = np.array([0, -wire_height * np.sin(angs), wire_height * np.cos(angs)])
 
     # WH = array([0, IWy, IWz]) -  IH
 

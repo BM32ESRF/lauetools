@@ -501,10 +501,12 @@ def readoneimage_full(filename, frametype="mccd", dirname=None):
 
 
 def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-1, verbose=0):
-    r"""read raw data image file and return pixel intensity 2D array
-    such as to fit the data (2theta, chi) scattering angles representation convention
+    r"""Read raw data binary image file.
 
-    :param filename: path to image file (fullpath if `dirname`=None)
+    Read raw data binary image file and return pixel intensity 2D array such as
+    to fit the data (2theta, chi) scattering angles representation convention.
+
+    :param filename: path to image file (fullpath if ` dirname` =None)
     :type filename: str
     :param CCDLabel: label, defaults to "MARCCD165"
     :type CCDLabel: str, optional
@@ -530,7 +532,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
 
-        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
+        if CCDLabel in ('pSL_Weiwei','MARCCD165', "EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
 
             print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
@@ -740,7 +742,6 @@ def readoneimage_band(filename,
     returns a 1d array of integers from a binary image file. Data located in band according shape of data (framedim)
 
     Parameters
-    -------------
     filename : string
                path to image file (fullpath if `dirname`=None)
     offset : integer
@@ -751,7 +752,6 @@ def readoneimage_band(filename,
                  key for numpy dtype to decode binary file
 
     Returns
-    ----------
     dataimage : 1D array
                 image data pixel intensity
     """
@@ -782,26 +782,16 @@ def readoneimage_band(filename,
 
 def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
                                                     firstElemIndex=0, lastElemIndex=2047):
-    """
-    returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
-    with respect to firstElemIndex
-    and lastElemIndex
+    """ Returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
 
-    Parameters
-    -------------
-    filename : string
-               path to image file (fullpath if `dirname`=None)
-    offset : integer
-             nb of file header bytes
-    framedim : iterable of 2 integers
-               shape of expected 2D data
-    formatdata : string
-                 key for numpy dtype to decode binary file
+    with respect to firstElemIndex and lastElemIndex.
 
-    Returns
-    ----------
-    dataimage : 1D array
-                image data pixel intensity
+    :param filename: string, path to image file (fullpath if ` dirname`=None)
+    :param offset: integer, nb of file header bytes
+    :param framedim: iterable of 2 integers, shape of expected 2D data
+    :param formatdata: string, key for numpy dtype to decode binary file
+
+    :return: dataimage : 1D array image data pixel intensity
     """
     (framedim,
         _,
@@ -862,10 +852,7 @@ def readrectangle_in_image(filename,
     returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
     centered on pixx, pixy
 
-    Returns
-   -------
-    dataimage : 2D array
-                image data pixel intensity
+    :return: dataimage : 2D array, image data pixel intensity
     """
     (framedim,
         _,
@@ -960,19 +947,11 @@ def readoneimage_crop(filename, center, halfboxsize, CCDLabel="PRINCETON", dirna
     """
     return a cropped array of data read in an image file
 
-    Parameters
-    -------------
-    filename : string
-               path to image file (fullpath if `dirname`=None)
-    center : iterable of 2 integers
-             (x,y) pixel coordinates
-    halfboxsize : integer or iterable of 2 integers
-                  ROI half size in both directions
+    :param filename: string, path to image file (fullpath if ` dirname`=None)
+    :param center: iterable of 2 integers, (x,y) pixel coordinates
+    :param halfboxsize: integer or iterable of 2 integers, ROI half size in both directions
 
-    Returns
-    ----------
-    dataimage : 1D array
-                image data pixel intensity
+    :return: dataimage : 1D array, image data pixel intensity
 
     #TODO: useless?
     """
@@ -1010,11 +989,8 @@ def readoneimage_manycrops(filename,
     centered on center_pixel with xyboxsize dimensions in pixel unit
 
     Parameters
-    -------------
-    filename : string
-               fullpath to image file
-    centers : list or array of [int,int]
-              centers (x,y) pixel coordinates
+    filename : string,fullpath to image file
+    centers : list or array of [int,int] centers (x,y) pixel coordinates
     use_data_corrected : enter data instead of reading data from file
                          must be a tuple of 3 elements:
                          fulldata, framedim, fliprot
@@ -1024,7 +1000,6 @@ def readoneimage_manycrops(filename,
               boxsizes [in x, in y] direction or integer to set a square ROI
 
     Returns
-    ----------
     Data : list of 2D array pixel intensity
 
     Imax :
@@ -1122,17 +1097,14 @@ def readoneimage_multiROIfit(filename,
     Fit several peaks in one image
 
     Parameters
-    -------------
-    filename : string
-              full path to image file
+    filename : string, full path to image file
     centers : list or array like with shape=(n,2)
               list of centers of selected ROI
     boxsize : (Truly HALF boxsize: fuill boxsize= 2 *halfboxsize +1)
-                iterable 2 elements or integer
+              iterable 2 elements or integer
               boxsizes [in x, in y] direction or integer to set a square ROI
 
     Optional parameters
-    ---------------------
     baseline : string
                'auto' (ie minimum intensity in ROI) or array of floats
     startangles : float or iterable of 2 floats
@@ -1155,7 +1127,6 @@ def readoneimage_multiROIfit(filename,
                          where fulldata is a ndarray
 
     returns
-    -------------
     params_sol : list of results
                  bkg,  amp  (gaussian height-bkg), X , Y ,
                 major axis standard deviation ,minor axis standard deviation,
@@ -1573,7 +1544,6 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     return array indices limits to crop array data
 
     Parameters
-    ------------
     center : iterable of 2 elements
              (x,y) pixel center of the ROI
     halfboxsizeROI : integer or iterable of 2 elements
@@ -1582,13 +1552,11 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
                  maximal number of pixels in both directions
 
     Options
-    ------------
     flipxycenter : boolean
                    True: swap x and y of center with respect to others
                    parameters that remain fixed
 
     Return
-    ------------
     imin, imax, jmin, jmax : 4 integers
                              4 indices allowing to slice a 2D np.ndarray
 
@@ -1620,14 +1588,12 @@ def check_array_indices(imin, imax, jmin, jmax, framedim=None):
     Return 4 indices for array slice compatible with framedim
 
     Parameters
-    -----------
     imin, imax, jmin, jmax: 4 integers
                             mini. and maxi. indices in both directions
     framedim : iterable of 2 integers
                shape of the array to be sliced by means of the 4 indices
 
     Return
-    -------
     imin, imax, jmin, jmax: 4 integers
                             mini. and maxi. indices in both directions
 
@@ -1809,7 +1775,6 @@ def Add_Images(prefixname, ind_start, ind_end, plot=0, writefilename=None):
         Add_Images2 exists
 
     Parameters
-    ----------
     prefixname : string
                  prefix common part of name of files
 
@@ -1820,12 +1785,10 @@ def Add_Images(prefixname, ind_start, ind_end, plot=0, writefilename=None):
               final image index
 
     Optional Parameters
-    ----------
     writefilename: string
                    new image filename where to write datastart (with last image file header read)
 
     Returns
-    ---------
     datastart : array
                 accumulation of 2D data from each image
 
@@ -1887,7 +1850,6 @@ def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
     Obsolete? Still used in LocalMaxima_ShiftArrays()
 
     Parameters
-    -----------
     D_array : 2D array
               data array
     center : iterable of 2 integers
@@ -1898,7 +1860,6 @@ def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
                shape of D_array
 
     Return
-    --------
     [min, max]: minimium and maximum pixel internsity in ROI
     [min, max],absolute_max_pos : if withmaxpos is True  add in output
                                   the absolute position of the largest pixel
@@ -1947,7 +1908,6 @@ def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True
     return  min max XYposmin, XYposmax values in ROI
 
     Parameters
-    ------------
     ROIcoords : 1 in local array indices coordinates
                 0 in X,Y pixel CCD coordinates
     flipxycenter : boolean like
@@ -1956,7 +1916,6 @@ def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True
              data array as read by :func:`readCCDimage`
 
     Return
-    --------
     min, max, XYposmin, XYposmax:
         - min : minimum pixel intensity
         - max : maximum pixel intensity
@@ -2014,7 +1973,6 @@ def getIntegratedIntensities(fullpathimagefile,
     whose center is given in list_centers
 
     return
-    ----------
     array of
     column 0: integrated intensity
     column 1: absolute minimum intensity threshold
@@ -2034,7 +1992,6 @@ def getIntegratedIntensity(data2d, center, boxsize, framedim,
     return  crude estimate of integrated intensity of peak above a given relative threshold
 
     Parameters
-    ------------
     ROIcoords : 1 in local array indices coordinates
                 0 in X,Y pixel CCD coordinates
     flipxycenter : boolean like
@@ -2046,7 +2003,6 @@ def getIntegratedIntensity(data2d, center, boxsize, framedim,
                 I(p)- minimum> Thresholdlevel* (maximum-minimum)
 
     Return
-    --------
     integrated intensity, minimum absolute intensity, nbpixels used for the summation
 
     """
@@ -2075,7 +2031,7 @@ def getMinMax(data2d, center, boxsize, framedim):
     return min and max values in ROI
 
     Parameters:
-    --------------
+    
     data2d : 2D array
              array as read by readCCDimage
     """
@@ -2274,12 +2230,12 @@ def LocalMaxima_ndimage(Data,
 
     .. note:: used only in LocalMaxima_KernelConvolution
 
-    input:
+    inputs
 
-    peakVal, boxsize, central_radius    :
+    peakVal, boxsize, central_radius:
         parameters for numerical convolution with a mexican-hat-like kernel
 
-    threshold :
+    threshold:
         intensity threshold of filtered Data (by convolution with the kernel)
         above which blob signal will be considered
         if = 0 : take all blobs at the expense of processing time
@@ -2378,7 +2334,6 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
         - IntensityThreshold : level under which blob whose local intensity amplitude in raw array is discarded
 
     Parameters
-    ------------
 
     Data : 2D array containing pixel intensities
 
@@ -2402,7 +2357,7 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
                               or its center (no weight)
 
     Returns:
-    ---------
+    --
 
     peakslist : array like (n,2)
                 list of peaks position (pixel)
@@ -3347,8 +3302,6 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
     Find local intensity maxima as starting position for fittinng and return peaklist.
 
     Parameters
-    -------------------
-
     filename : string
                full path to image data file
 

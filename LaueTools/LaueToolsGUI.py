@@ -845,11 +845,6 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        #         ClassicalIndexationBoard(self, -1, 'Classical Indexation Board :%s' % self.DataPlot_filename)
-
-        # AllDataToIndex
-        #         self.indexation_parameters['AllDataToIndex'] is already set
-        #         self.indexation_parameters ={}
         print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
@@ -937,11 +932,6 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        #         ClassicalIndexationBoard(self, -1, 'Classical Indexation Board :%s' % self.DataPlot_filename)
-
-        # AllDataToIndex
-        #         self.indexation_parameters['AllDataToIndex'] is already set
-        #         self.indexation_parameters ={}
         print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction

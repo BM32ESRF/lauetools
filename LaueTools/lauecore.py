@@ -12,6 +12,7 @@ or
 
 https://gitlab.esrf.fr/micha/lauetools
 """
+from __future__ import division
 
 import math
 import sys
@@ -812,14 +813,8 @@ def create_spot_np(Qxyz, miller, detectordistance, allattributes=False,
     return Twicetheta, Chi, Energy, miller
 
 
-def create_spot_4pi(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-):
+def create_spot_4pi(pos_vec, miller, detectordistance, allattributes=0, pixelsize=165.0 / 2048,
+                                                                                dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot scattered in 4pi steradian no camera position
 
@@ -930,7 +925,8 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
         normkout = 1.0 * math.sqrt(abskx ** 2 + spotty.Qxyz[1] ** 2 + spotty.Qxyz[2] ** 2)
 
         # if qx < -R   no spot in transmission mode (qx is <0)
-        if spotty.Qxyz[0] + spotty.EwaldRadius <= 0.: return None
+        if spotty.Qxyz[0] + spotty.EwaldRadius <= 0.:
+            return None
 
         X = -detectordistance * (spotty.Qxyz[1]) / abskx
         Y = -detectordistance * (spotty.Qxyz[2]) / abskx
@@ -950,7 +946,7 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
 def create_spot_back(pos_vec, miller, detectordistance, allattributes=0,
                                                         pixelsize=165.0 / 2048, dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
-    create a spot on backward direction back reflection geometry
+    create a spot on backward directions i.e.  back reflection geometry
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -1249,8 +1245,8 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
             # Creating list of spot with or without harmonics
             if HarmonicsRemoval and listspot:
                 # ListSpots_Oncam_wo_harmonics[grainindex] = RemoveHarmonics(listspot)
-                (oncam_HKL_filtered, toremove) = CP.FilterHarmonics_2(oncam_HKL,
-                                                                    return_indices_toremove=1)
+                # (oncam_HKL_filtered, toremove)
+                (_, toremove) = CP.FilterHarmonics_2(oncam_HKL, return_indices_toremove=1)
                 #print('toremove',toremove)
                 listspot = np.delete(np.array(listspot), toremove).tolist()
 
@@ -1300,19 +1296,14 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         return (np.concatenate(Oncam2theta) / DEG, np.concatenate(Oncamchi) / DEG)
 
 
-def filterLaueSpots_full_np(
-    veccoord,
-    indicemiller,
-    onlyXYZ=False,
-    HarmonicsRemoval=1,
-    fastcompute=0,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    detectordiameter=DEFAULT_DETECTOR_DIAMETER,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    linestowrite=[[""]],
-    grainindex=0):
+def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemoval=1,
+                                                        fastcompute=0,
+                                                        kf_direction=DEFAULT_TOP_GEOMETRY,
+                                                        detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                                        detectordiameter=DEFAULT_DETECTOR_DIAMETER,
+                                                        pixelsize=165.0 / 2048,
+                                                        dim=(2048, 2048),
+                                                        grainindex=0):
     r""" Calculates spots data for an individual grain
     on camera and without harmonics
     and on CCD camera
@@ -1370,6 +1361,13 @@ def filterLaueSpots_full_np(
         Xcam = -1.0 * ratiod * (VecY)
         Ycam = -ratiod * (VecZ)
     elif kf_direction == "X<0":  # back reflection geometry
+        # pos0 = np.where(np.abs(VecX + Rewald) < 0.0000000001)
+        # print('pos0', pos0)
+        # print(VecX[pos0])
+        # print(Rewald[pos0])
+        # if VecX +Rewald = 0 then kf is // z axis
+        # peaks are likely not to be intercepted bt detector plane
+        # except if plane is
         ratiod = detectordistance / np.abs(VecX + Rewald)
         Xcam = ratiod * (VecY)
         Ycam = ratiod * (VecZ)
@@ -1585,7 +1583,7 @@ def get2ThetaChi_geometry_full_np(
                 "Y>0": create_spot_side_pos,
                 "Y<0": create_spot_side_neg,
                 "X>0": create_spot_np,
-                "X<0": create_spot_back,
+                "X<0": create_spot_np, #create_spot_back,
                 "4PI": create_spot_4pi}
 
     try:
@@ -1647,7 +1645,7 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
 
     detectorparam = dictCCD["CCDparam"]
     pixelsize = dictCCD["pixelsize"]
-    dim = dictCCD["dim"]
+    # dim = dictCCD["dim"]
     if "kf_direction" in dictCCD:
         kf_direction = dictCCD["kf_direction"]
     else:
@@ -1673,7 +1671,6 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
                                                 detectorparam,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
-                                                dim=dim,
                                                 kf_direction=kf_direction)
 
     # E = (C)*(-q**2/qx/2)
@@ -1904,13 +1901,13 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
 
     # list of spot which are on camera (with harmonics)
     ListofListofSpots = filterLaueSpots(Spots2pi,
-                                    fileOK=0,
-                                    fastcompute=0,
-                                    detectordistance=detectorparameters[0],
-                                    detectordiameter=DETECTORDIAMETER,
-                                    kf_direction=kf_direction,
-                                    HarmonicsRemoval=removeharmonics,
-                                    pixelsize=pixelsize)
+                                            fileOK=0,
+                                            fastcompute=0,
+                                            detectordistance=detectorparameters[0],
+                                            detectordiameter=DETECTORDIAMETER,
+                                            kf_direction=kf_direction,
+                                            HarmonicsRemoval=removeharmonics,
+                                            pixelsize=pixelsize)
 
     ListofSpots = ListofListofSpots[0]
 
@@ -1924,9 +1921,7 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
                                                 detectorparameters,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
-                                                dim=dim,
-                                                kf_direction=kf_direction,
-                                            )[:2]
+                                                kf_direction=kf_direction)[:2]
 
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
@@ -2009,7 +2004,6 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 detectorparameters,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
-                                                dim=dim,
                                                 kf_direction=kf_direction)[:2]
 
 
@@ -2100,6 +2094,7 @@ def StructureFactorCubic(h, k, l, extinctions="dia"):
     """
     computes structure factor of cubic
     """
+    assert extinctions == 'dia'
     pi = np.pi
     F = (1 + np.exp(-1.0j * pi / 2.0 * (h + k + l))) * (1 + np.exp(-1.0j * pi * (k + l))
                                                         + np.exp(-1.0j * pi * (h + l))
@@ -2150,19 +2145,14 @@ def atomicformfactor(q, element="Ge"):
     return val
 
 
-def simulatepurepattern_np(grain,
-                            emin,
-                            emax,
-                            kf_direction,
-                            data_filename,
-                            PlotLaueDiagram=1,
-                            Plot_Data=0,
-                            verbose=0,
-                            detectordistance=DEFAULT_DETECTOR_DISTANCE,
-                            ResolutionAngstrom=False,
-                            Display_label=1,
-                            HarmonicsRemoval=1,
-                            dictmaterials=dict_Materials):
+def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotLaueDiagram=1,
+                                                        Plot_Data=0,
+                                                        verbose=0,
+                                                        detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                                        ResolutionAngstrom=False,
+                                                        Display_label=1,
+                                                        HarmonicsRemoval=1,
+                                                        dictmaterials=dict_Materials):
     """
     .. warning:: In test. NOT USED anywhere !!???
     """
