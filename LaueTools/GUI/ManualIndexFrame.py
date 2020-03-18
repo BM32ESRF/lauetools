@@ -121,7 +121,8 @@ class ManualIndexFrame(wx.Frame):
         self.factorsize = None
         self.powerscale = None
         self.toreturn = None
-        self.tth, self.chi, self.pixelX, self.pixelY, self.gnomonX, self.gnomonY = None,None,None,None,None,None
+        self.tth, self.chi, self.pixelX, self.pixelY = None, None, None, None
+        self.gnomonX, self.gnomonY = None, None
         self.xlim = None
         self.ylim = None
         self.locatespotmarkersize = 1
@@ -821,7 +822,7 @@ class ManualIndexFrame(wx.Frame):
             if self.kf_direction == "Z>0":
                 self.xlim = (34, 146)
                 self.ylim = (-50, 50)
-            elif self.kf_direction in ("X>0","X<0"):
+            elif self.kf_direction in ("X>0", "X<0"):
                 self.xlim = (-1, 60)
                 self.ylim = (-180, 180)
 

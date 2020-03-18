@@ -590,6 +590,7 @@ class SimulationPanel(wx.Panel):
         self.rbside = wx.RadioButton(self, 200, "Reflection mode side +")
         self.rbsideneg = wx.RadioButton(self, 200, "Reflection mode side -")
         self.rbtransmission = wx.RadioButton(self, 200, "Transmission mode")
+        self.rbbackreflection = wx.RadioButton(self, 200, "Back Reflection mode")
 
         self.rbtop.SetValue(True)
 
@@ -631,6 +632,7 @@ class SimulationPanel(wx.Panel):
         self.rbside.SetToolTipString("Camera at 2theta=90 deg on side of sample")
         self.rbsideneg.SetToolTipString("Camera at 90 deg on other side of sample")
         self.rbtransmission.SetToolTipString("Camera at 2theta=0 deg")
+        self.rbbackreflection.SetToolTipString("Camera at 2theta=180 deg")
 
         self.checkshowExperimenalData.SetToolTipString("Plot markers for current experimental peak list")
         self.checkExperimenalImage.SetToolTipString("Display Laue pattern (2D image)")
@@ -667,7 +669,7 @@ class SimulationPanel(wx.Panel):
         gridSizer2.Add(txtxbet, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.xbet, 0, wx.EXPAND)
 
-        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        gridSizer2.Add(self.rbbackreflection, 0, wx.ALIGN_LEFT)
         gridSizer2.Add(txtxgam, 0, wx.ALIGN_RIGHT)
         gridSizer2.Add(self.xgam, 0, wx.EXPAND)
 
@@ -709,11 +711,7 @@ class SimulationPanel(wx.Panel):
         self.expimagetxtctrl.SetValue(self.fullpathimagefile)
 
     def GetfullpathFile(self, _):
-        myFileDialog = wx.FileDialog(
-                                    self,
-                                    "Choose an image file",
-                                    style=wx.OPEN,
-                                    #                                         defaultDir=self.dirname,
+        myFileDialog = wx.FileDialog(self, "Choose an image file", style=wx.OPEN,
                                     wildcard="MAR or Roper images(*.mccd)|*.mccd|All files(*)|*")
         dlg = myFileDialog
         dlg.SetMessage("Choose an image file")
@@ -722,7 +720,6 @@ class SimulationPanel(wx.Panel):
 
             #             self.dirnameBlackList = dlg.GetDirectory()
             self.fullpathimagefile = str(filename)
-
         else:
             pass
 
@@ -1484,6 +1481,8 @@ class parametric_Grain_Dialog3(wx.Frame):
             cameraposition = "Y>0"
         elif self.rightpanel.rbtransmission.GetValue():
             cameraposition = "X>0"
+        elif self.rightpanel.rbbackreflection.GetValue():
+            cameraposition = "X<0"
         else:
             cameraposition = "Y<0"
 

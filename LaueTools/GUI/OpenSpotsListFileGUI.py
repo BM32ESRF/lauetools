@@ -101,7 +101,7 @@ def OpenCorfile(filename, parent):
 
     print("\nCCDCalibDict after readfile_cor ", CCDCalibDict)
     if 'CCDLabel' in CCDCalibDict:
-        CCDLabel =  CCDCalibDict['CCDLabel']
+        CCDLabel = CCDCalibDict['CCDLabel']
 
     CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent)
 
@@ -175,7 +175,7 @@ def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, pare
                 DPBoard.ShowModal()
                 DPBoard.Destroy()
 
-def Launch_DetectorParamBoard(parent, evt):
+def Launch_DetectorParamBoard(parent):
     """Board to enter manually detector params
     Launch Entry dialog
     """
@@ -222,7 +222,7 @@ def OnOpenPeakList(parent):
 
         # open .det file to compute 2thea and chi scattering angles and write .cor file
         # will set defaultParam pixelsize framedim detectordiameter kf_direction
-        Launch_DetectorParamBoard(parent, 1)
+        Launch_DetectorParamBoard(parent)
 
         # will set kf_direction attributr
         LaueGeomBoard = SetGeneralLaueGeometry(parent, -1, "Select Laue Geometry")
@@ -357,11 +357,8 @@ class SetGeneralLaueGeometry(wx.Dialog):
         print("Laue geometry set to: %s" % LaueGeometry)
         print("kf_direction set to: %s" % kf_direction)
 
-        #         wx.MessageBox('Laue geometry set to: %s\nkf_direction set to: %s' % \
-        #                             (LaueGeometry, kf_direction),
-        #                             'Info')
-
         self.Close()
 
     def OnQuit(self, _):
+        """ quit """
         self.Close()

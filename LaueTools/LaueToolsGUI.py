@@ -516,7 +516,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("self.defaultParam before ", self.defaultParam)
 
-        Launch_DetectorParamBoard(self,1)
+        Launch_DetectorParamBoard(self)
 
         print("self.defaultParam after", self.defaultParam)
 

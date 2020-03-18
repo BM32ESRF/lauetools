@@ -543,8 +543,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                     # success = 1
 
-                elif kf_direction in ("X>0",):  # transmission mode
-                    print("\n*****\nSimulation in transmission mode\n*****\n")
+                elif kf_direction in ("X>0", "X<0"):  # transmission mode or back reflection mode
 
                     # print("spots2pi",spots2pi)
                     Laue_spot_list = LAUE.filterLaueSpots(spots2pi,
@@ -584,7 +583,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                     posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
                                         pixelsize=pixelsize,
-                                        kf_direction=kf_direction, )[:2]
+                                        kf_direction=kf_direction)[:2]
                     posx = posx.tolist()
                     posy = posy.tolist()
                     # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)

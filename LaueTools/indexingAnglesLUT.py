@@ -1128,7 +1128,7 @@ def getOrientMatrix_from_onespot(spot_index,
                             'detectordistance', detector distance (mm)
                             'detectordiameter', detector diameter (mm)
 
-    LUT_with_rules : 
+    LUT_with_rules :
 
     TODO: to make it more compact !! there are too much copy-paste
     TODO: in the main loop should start at spot_index +1   !!!
@@ -2029,7 +2029,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 if LUT is None:
                     # use following LUT
                     print("building LUT in getOrientMatrices()")
-                        
+
                     if LUT_with_rules:
                         Rules = dictmaterials[key_material][2]
                     else:
