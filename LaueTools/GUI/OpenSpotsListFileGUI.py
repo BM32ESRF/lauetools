@@ -175,7 +175,7 @@ def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, pare
                 DPBoard.ShowModal()
                 DPBoard.Destroy()
 
-def Launch_DetectorParamBoard(parent):
+def Launch_DetectorParamBoard(parent, evt):
     """Board to enter manually detector params
     Launch Entry dialog
     """
@@ -222,15 +222,14 @@ def OnOpenPeakList(parent):
 
         # open .det file to compute 2thea and chi scattering angles and write .cor file
         # will set defaultParam pixelsize framedim detectordiameter kf_direction
-        Launch_DetectorParamBoard(parent)
-
+        Launch_DetectorParamBoard(parent, 1)
 
         # will set kf_direction attributr
         LaueGeomBoard = SetGeneralLaueGeometry(parent, -1, "Select Laue Geometry")
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
 
-        # print("kf_direction in OnOpenPeakList", self.kf_direction)
+        print("kf_direction in OnOpenPeakList", parent.kf_direction)
 
         # compute 2theta and chi according to detector calibration geometry
         (twicetheta, chi, dataintensity,
@@ -281,7 +280,6 @@ class SetGeneralLaueGeometry(wx.Dialog):
 
     parent must have   kf_direction attribute
     """
-
     def __init__(self, parent, _id, title):
 
         wx.Dialog.__init__(self, parent, _id, title, size=(400, 200))
@@ -293,12 +291,12 @@ class SetGeneralLaueGeometry(wx.Dialog):
         txt.SetFont(font)
         txt.SetForegroundColour((255, 0, 0))
 
-        #         self.sb = self.CreateStatusBar()
-
         initialGeo = DICT_LAUE_GEOMETRIES[parent.kf_direction]
 
         self.combogeo = wx.ComboBox(self, -1, str(initialGeo), size=(-1, 40),
-                                    choices=["Top Reflection (2theta=90)", "Transmission"],
+                                    choices=["Top Reflection (2theta=90)",
+                                            "Transmission (2theta=0",
+                                            "Back Reflection (2theta=180)"],
                                     style=wx.CB_READONLY)
 
         self.combogeo.Bind(wx.EVT_COMBOBOX, self.OnChangeGeom)
@@ -351,6 +349,8 @@ class SetGeneralLaueGeometry(wx.Dialog):
             kf_direction = "X>0"
         elif LaueGeometry == "Top Reflection (2theta=90)":
             kf_direction = "Z>0"
+        elif LaueGeometry == "Back Reflection (2theta=180)":
+            kf_direction = "X<0"
 
         self.parent.kf_direction = kf_direction
 

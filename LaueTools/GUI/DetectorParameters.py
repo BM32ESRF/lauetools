@@ -113,15 +113,17 @@ class DetectorParameters(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=4)
 
         self.keepon = False
-        #        self.Show(True)
-        #        self.Centre()
 
         # tooltips
         loadbtn.SetToolTipString("Load Detector Parameters")
 
     def OnLoadCalib(self, _):
         """
-        in DetectorParameters
+        Load calibration detector geometry (in DetectorParameters)
+
+        only the first 8 parameters are set
+        
+        .. warning:: diameter and kf direction are not set!
         """
         wcd = "Calibration file(*.det)|*.det|All files(*)|*"
         _dir = os.getcwd()

@@ -66,7 +66,7 @@ if sys.version_info.major == 3:
     from . GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
     from . GUI.B0matrixLatticeEditor import B0MatrixEditor
     from . GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    from . GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList,
+    from . GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList, Launch_DetectorParamBoard,
                                                     OpenCorfile, SetGeneralLaueGeometry)
     from . GUI.ManualIndexFrame import ManualIndexFrame
     from . GUI.MatrixEditor import MatrixEditor_Dialog
@@ -485,7 +485,7 @@ class LaueToolsGUImainframe(wx.Frame):
             try:
                 self.dict_Materials = readDict(path)
 
-                dict_Materials = self.dict_Materials
+                # dict_Materials = self.dict_Materials
 
             except IOError as error:
                 dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
@@ -516,7 +516,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("self.defaultParam before ", self.defaultParam)
 
-        self.Launch_DetectorParamBoard(evt)
+        Launch_DetectorParamBoard(self,1)
 
         print("self.defaultParam after", self.defaultParam)
 
@@ -823,10 +823,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
-        #         nb_exp_spots_data = len(self.data_theta)
-        #
-        #         index_to_select = np.take(self.current_exp_spot_index_list,
-        #                                       np.arange(nb_exp_spots_data))
+        # nb_exp_spots_data = len(self.data_theta)
+        # index_to_select = np.take(self.current_exp_spot_index_list, np.arange(nb_exp_spots_data))
 
         self.select_theta = self.data_theta[self.current_exp_spot_index_list]
         self.select_chi = self.data_chi[self.current_exp_spot_index_list]
@@ -1088,7 +1086,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Method launching Calibration Board
         """
-        starting_param = [69.179, 1050.81, 1115.59, 0.104, -0.273]
+        starting_param = [100, 1000, 1000, 0, 0]
 
         print("Starting param", starting_param)
 
@@ -1105,7 +1103,6 @@ class LaueToolsGUImainframe(wx.Frame):
         initialParameter["dict_Materials"] = self.dict_Materials
 
         print("initialParameter when launching calibration", initialParameter)
-
         print('OnDetectorCalibration ==> pixelsize', pixelsize)
 
         file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
@@ -1128,14 +1125,6 @@ class LaueToolsGUImainframe(wx.Frame):
                 self.CreateSpotDB()
 
             self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())
-
-        #            select_theta = LaueToolsframe.data_theta[LaueToolsframe.current_exp_spot_index_list]
-        #            select_chi = LaueToolsframe.data_chi[LaueToolsframe.current_exp_spot_index_list]
-        # print select_theta
-        # print select_chi
-        #            listcouple = np.array([select_theta, select_chi]).T
-        #            Tabledistance = GT.calculdist_from_thetachi(listcouple, listcouple)
-        # nbspots = len(Tabledistance)
 
         print('self.indexation_parameters', self.indexation_parameters)
         CliquesFindingBoard(self, -1, "Cliques Finding Board :%s" % self.DataPlot_filename,
@@ -1206,8 +1195,6 @@ class LaueToolsGUImainframe(wx.Frame):
                 dict_Rot[mname] = mat
 
             print("len dict", len(dict_Rot))
-
-            #             self.crystalparampanel.comboMatrix.SetSelection(initlength)
 
             # update with the first input matrix
             self.UBmatrix_toCheck = ListMatrices
@@ -1549,7 +1536,9 @@ class LaueToolsGUImainframe(wx.Frame):
         # DataSetObject init
         self.DataSet = spotsset()
         # get spots scattering angles,X,Y positions from .cor file
-        self.DataSet.importdatafromfile(self.filename)
+        warningflag = self.DataSet.importdatafromfile(self.filename)
+        if warningflag:
+            wx.MessageBox(warningflag + 'Please set an other Laue geometry if needed from the menu!','Info')
         self.DataSet.pixelsize = self.pixelsize
 
         self.SetTitle()  # Update the window title with the new filename

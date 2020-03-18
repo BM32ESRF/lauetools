@@ -1046,7 +1046,8 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
                                                             filterharmonics=1,
                                                             LUT=None,
                                                             verbose=0,
-                                                            dictmaterials=DictLT.dict_Materials):
+                                                            dictmaterials=DictLT.dict_Materials,
+                                                            LUT_with_rules=True):
     """
     return pairs of lattice hkl planes
     whose angle between normals are the closest to the given query_angle within tolerance.
@@ -1065,6 +1066,8 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
+    LUT_with_rules: True, apply extinctions rules when computing LUT
+
     .. note:: used in FileSeries, and AutoIndexation for some cases, Manual indexation
 
     TODO: many target angles in this function
@@ -1081,7 +1084,10 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
     if LUT is None:
         # GenerateLookUpTable
         print("Calculating LUT in PlanePairs_from2sets()")
-        rules = (None, dictmaterials[key_material][2])
+        if LUT_with_rules:
+            rules = (None, dictmaterials[key_material][2])
+        else:
+            rules = None
         LUT = Generate_selectedLUT(hkl1, hkl2, key_material, 0, dictmaterials, True, rules)
 
     # (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
@@ -1284,7 +1290,7 @@ def FilterEquivalentPairsHKL(pairs_hkl):
     if pairs_hkl is None:
         print("pairs_hkl is empty !!")
         return None
-    if type(pairs_hkl) != type(np.ones(2)):
+    if not isinstance(pairs_hkl, np.ndarray):
         print("Wrong input! Array with shape (#,2,3) is needed!")
         return None
 

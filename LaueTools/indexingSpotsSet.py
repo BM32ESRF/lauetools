@@ -368,7 +368,7 @@ class spotsset:
         # print('add_props', add_props)
         self.set_dict_spotprops([Twicetheta, Chi, dataintensity, posx, posy],
                                                             add_props=add_props)
-
+        warningflag = False
         self.CCDcalibdict = CCDcalibdict
         self.CCDLabel = self.CCDcalibdict['CCDLabel']
 
@@ -394,9 +394,13 @@ class spotsset:
         if "kf_direction" in self.CCDcalibdict:
             self.kf_direction = self.CCDcalibdict["kf_direction"]
         else:
-            printcyan("\n\n*******\n warning: use default geometry: \n%s\n*****\n\n"
-                                                    % DEFAULT_KF_DIRECTION)
+            textwarning = "\n\n*******\n "
+            textwarning += "warning: Laue geometry wasn't specified in %s" % filename
+            textwarning +=" use default geometry: \n%s\n*****\n\n" % DEFAULT_KF_DIRECTION
+            printred(textwarning)
+
             self.kf_direction = DEFAULT_KF_DIRECTION
+            warningflag = textwarning
 
         self.detectorparameters = detectorparameters
         self.nbspots = nb_spots
@@ -406,7 +410,7 @@ class spotsset:
             printred("file %s does not contain the 5 detector parameters" % filename)
             return
 
-        return True
+        return warningflag
 
     def getSpotsallData(self):
         """
@@ -432,7 +436,7 @@ class spotsset:
         i.e.
 
         selectedspots_index  : None, return all data
-                                : list of indices, return corresponding data
+                            : list of indices, return corresponding data
         """
         exp_data = np.take(self.getSpotsallData(), [1, 2, 5], axis=1)
 
@@ -889,7 +893,8 @@ class spotsset:
                                                     set_central_spots_hkl=set_central_spots_hkl,
                                                     detectorparameters=simulparameters,
                                                     verbosedetails=False,  # not CP.isCubic(key_material)
-                                                    dictmaterials=self.dict_Materials)
+                                                    dictmaterials=self.dict_Materials,
+                                                    LUT_with_rules=True)
         # when nbbestplot is very high  self.bestmat contain all matrices
         # with matching rate above Minimum_Nb_Matches
 

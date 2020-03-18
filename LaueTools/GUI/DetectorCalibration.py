@@ -160,7 +160,8 @@ class PlotRangePanel(wx.Panel):
 
         b3.SetToolTipString(tpb3)
 
-        openbtn.SetToolTipString('Open peaks list .dat or (resp.) .cor file : without (resp. with) knowledge of detector calibtation')
+        openbtn.SetToolTipString('Open peaks list .dat or (resp.) .cor file : without '
+                                            '(resp. with) knowledge of detector calibtation')
 
     def set_init_plot_True(self, _):
         print("reset init_plot to True")
@@ -628,8 +629,8 @@ class MoveCCDandXtal(wx.Panel):
 
         # tooltips
         a3.SetToolTipString("Angle 3: angle around z axis")
-        a2.SetToolTipString("Angle 2: angle around y axis (horizontal and perp. to incoming beam)")
-        a1.SetToolTipString("Angle 1: angle around x axis (// incoming beam")
+        a1.SetToolTipString("Angle 1: angle around y axis (horizontal and perp. to incoming beam)")
+        a2.SetToolTipString("Angle 2: angle around x axis (// incoming beam")
 
         rottip = ("Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
         rottip += 'Click on a point in plot to select an invariant Laue spot by rotation. Then press "+" or "-" keys to rotation the pattern.\n'
@@ -1008,7 +1009,6 @@ class MainCalibrationFrame(wx.Frame):
         self.previous_CCDParam = copy.copy(self.CCDParam)
         self.previous_UBmatrix = np.eye(3)
 
-
         self.twicetheta = None
         self.chi = None
         self.Data_I, self.data, self.Data_index_expspot = None, None, None
@@ -1046,6 +1046,12 @@ class MainCalibrationFrame(wx.Frame):
         self._dataANNOTE_exp, self._dataANNOTE_theo = None, None
 
         self.setwidgets()
+
+        # read peaks data --------------------------
+        self.ReadExperimentData()
+        # plot simulated and experimental data
+        self._replot(wx.EVT_IDLE)
+        self.display_current()
 
     def setwidgets(self):
         # drag laue pattern
@@ -1169,10 +1175,7 @@ class MainCalibrationFrame(wx.Frame):
         self.incrementfile = wx.CheckBox(self.panel, -1, "increment saved filenameindex")
 
         self.layout()
-        # read peaks data
-        self.ReadExperimentData()
-        self._replot(wx.EVT_IDLE)
-        self.display_current()
+
 
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
@@ -1317,6 +1320,7 @@ class MainCalibrationFrame(wx.Frame):
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
         print('filepath', filepath)
+        print('self.kf_direction', self.kf_direction)
 
         if extension in ("dat", "DAT"):
             colI = 3
@@ -1550,6 +1554,9 @@ class MainCalibrationFrame(wx.Frame):
         for k in range(len(twicetheta)):
             print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
+        print('theo', np.array([twicetheta, chi]).T)
+        print('exp' ,np.array([self.twicetheta, self.chi]).T)
+
         Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                         self.twicetheta / 2.0,
                                         self.chi,  # warning theta, chi for exp
@@ -1557,13 +1564,6 @@ class MainCalibrationFrame(wx.Frame):
                                         angtol=5.0,
                                         verbose=0,
                                         signchi=1)[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
-
-        # len(Resi) = nb of theo spots
-        # len(ProxTable) = nb of theo spots
-        # ProxTable[index_theo]  = index_exp   closest link
-        # print "Resi",Resi
-        # print "ProxTable",ProxTable
-        # print "Nb of theo spots", len(ProxTable)
 
         # array theo spot index
         very_close_ind = np.where(Resi < veryclose_angletol)[0]
@@ -1604,8 +1604,7 @@ class MainCalibrationFrame(wx.Frame):
         if len(toremoveindex) > 0:
             # index of exp spot in arrayLESC that are duplicated
             ambiguous_exp_ind = GT.find_closest(
-                np.array(sorted_LESC[toremoveindex], dtype=float), arrayLESC, 0.1
-            )[1]
+                np.array(sorted_LESC[toremoveindex], dtype=float), arrayLESC, 0.1)[1]
             # print "ambiguous_exp_ind", ambiguous_exp_ind
 
             # marking exp spots(belonging ambiguously to several simulated grains)
@@ -2388,7 +2387,7 @@ class MainCalibrationFrame(wx.Frame):
                 wx.MessageBox(txt, "INFO")
                 return
 
-            nbmatrices = nbval / 9
+            nbmatrices = nbval // 9
             ListMatrices = np.zeros((nbmatrices, 3, 3))
             ind_elem = 0
             for ind_matrix in range(nbmatrices):
@@ -2558,7 +2557,10 @@ class MainCalibrationFrame(wx.Frame):
         self.update_data(event)
 
     # incrementing or decrementing orientation elementary angles
-    def OnDecreaseAngle1(self, event):  # delta orientation angles around elementary axes
+    def OnDecreaseAngle1(self, event):
+        """
+        decrease angle1  (rotation around Y axis LaueTools)
+        delta orientation angles around elementary axes"""
         # Xjsm =y Xmas  Yjsm = -Xxmas Zjsm = Zxmas
         a1 = float(self.moveccdandxtal.angle1.GetValue()) * DEG
 
@@ -2582,7 +2584,7 @@ class MainCalibrationFrame(wx.Frame):
         self.display_current()
 
     def OnDecreaseAngle2(self, event):
-
+        """decrease angle1  (rotation around X axis LaueTools = incoming beam)"""
         a2 = float(self.moveccdandxtal.angle2.GetValue()) * DEG
         # mat = np.array([[math.cos(a2),0, math.sin(-a2)],[0, 1,0],[math.sin(a2),0, math.cos(a2)]])  #in LaueTools Frame
         mat = np.array([[1, 0, 0],
@@ -2606,7 +2608,7 @@ class MainCalibrationFrame(wx.Frame):
         self.display_current()
 
     def OnDecreaseAngle3(self, event):
-
+        """decrease angle1  (rotation around Z vertical axis LaueTools) """
         a3 = float(self.moveccdandxtal.angle3.GetValue()) * DEG
         mat = np.array([[math.cos(a3), math.sin(a3), 0],
                         [math.sin(-a3), math.cos(a3), 0],
@@ -2675,7 +2677,7 @@ class MainCalibrationFrame(wx.Frame):
         else:
             self.kf_direction = [Central2Theta, CentralChi]
 
-    #         print "kf_direction chosen:", self.kf_direction
+        print("kf_direction chosen:", self.kf_direction)
 
     def onSetOrientMatrix_with_BMatrix(self, _):
         print("reset orientmatrix by integrating B matrix: OrientMatrix=OrientMatrix*B")
@@ -2700,8 +2702,7 @@ class MainCalibrationFrame(wx.Frame):
 
         ResolutionAngstrom = None
 
-        self.Extinctions = DictLT.dict_Extinc[
-            self.crystalparampanel.comboExtinctions.GetValue()]
+        self.Extinctions = DictLT.dict_Extinc[self.crystalparampanel.comboExtinctions.GetValue()]
 
         # default
         # (deltamatrix can be updated step by step by buttons)
@@ -2714,8 +2715,7 @@ class MainCalibrationFrame(wx.Frame):
         # from combobox of UBmatrix
         elif self.manualmatrixinput == 0:
             # self.UBmatrix = np.dot(self.deltamatrix, LaueToolsframe.dict_Rot[self.comboMatrix.GetValue()])
-            self.crystalparampanel.UBmatrix = DictLT.dict_Rot[
-                self.crystalparampanel.comboMatrix.GetValue()]
+            self.crystalparampanel.UBmatrix = DictLT.dict_Rot[self.crystalparampanel.comboMatrix.GetValue()]
             # to keep self.UBmatrix unchanged at this step
             self.manualmatrixinput = None
 
@@ -2723,11 +2723,6 @@ class MainCalibrationFrame(wx.Frame):
         elif self.manualmatrixinput == 1:
             self.crystalparampanel.UBmatrix = self.inputmatrix
             self.manualmatrixinput = None
-
-        # if 0:
-        #     print("Beginning simulation of spots")
-        #     print("self.UBmatrix", self.crystalparampanel.UBmatrix)
-        #     print("misorientation UBmatrix", self.deltamatrix)
 
         pixelsize = self.pixelsize
 
@@ -2755,8 +2750,11 @@ class MainCalibrationFrame(wx.Frame):
 
         SINGLEGRAIN = 1
         if SINGLEGRAIN:  # for single grain simulation
-            if self.kf_direction in ("Z>0", "X>0") and removeharmonics == 0:
+            if self.kf_direction in ("Z>0", "X>0", 'X<0') and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
+                print('SINGLEGRAIN')
+                print(self.CCDParam[:5],self.kf_direction, removeharmonics,pixelsize,self.framedim)
+
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,
                                                     self.emax,
@@ -2783,14 +2781,12 @@ class MainCalibrationFrame(wx.Frame):
                                             force_extinction=self.Extinctions,
                                             dictmaterials=self.dict_Materials)
 
-            #             print "ResSimul", ResSimul[2]
-            #             print 'len ResSimul[2]', len(ResSimul[2])
+
             if ResSimul is None:
                 return None
 
             (twicetheta, chi, self.Miller_ind, posx, posy, Energy) = ResSimul
-
-        #             print "nb of spots", len(twicetheta)
+            print('twicetheta[:5], chi[:5]', twicetheta[:5], chi[:5])
 
         else:
             # for twinned grains simulation
@@ -2831,7 +2827,6 @@ class MainCalibrationFrame(wx.Frame):
     def _replot(self, _):  # in MainCalibrationFrame
         """
         in MainCalibrationFrame
-        Plot simulated spots only in 2theta, chi space
         """
         # simulate theo data
         ResSimul = self.simulate_theo()  # twicetheta, chi, self.Miller_ind, posx, posy
@@ -2845,9 +2840,6 @@ class MainCalibrationFrame(wx.Frame):
         if not self.init_plot:
             xlim = self.axes.get_xlim()
             ylim = self.axes.get_ylim()
-
-        #             print "limits x", xlim
-        #             print "limits y", ylim
 
         #         print "_replot MainCalibrationFrame"
         self.axes.clear()
@@ -3292,9 +3284,8 @@ class MainCalibrationFrame(wx.Frame):
                 print("(2theta, chi) ")
 
             elif self.datatype == "gnomon":
-                tw, ch = IIM.Fromgnomon_to_2thetachi(
-                    [np.array([spot1[0], spot2[0]]), np.array([spot1[1], spot2[1]])], 0
-                )[:2]
+                tw, ch = IIM.Fromgnomon_to_2thetachi([np.array([spot1[0], spot2[0]]),
+                                                np.array([spot1[1], spot2[1]])], 0)[:2]
                 _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))
                 spot1 = [tw[0], ch[0]]
                 spot2 = [tw[1], ch[1]]
@@ -3416,10 +3407,6 @@ class MainCalibrationFrame(wx.Frame):
         self._replot(evt)
 
     def onKeyPressed(self, event):
-        #        print dir(event)
-        #        print event.x, event.y
-        #        print event.xdata, event.ydata
-
         key = event.key
         #         print "key", key
         if key == "escape":

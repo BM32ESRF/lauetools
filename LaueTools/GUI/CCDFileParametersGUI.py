@@ -1,7 +1,6 @@
 """
 GUI Module of LaueTools package for choosing Detector File Parameters
 """
-
 import sys
 
 import wx
@@ -17,7 +16,7 @@ else:
 # --- ---------------  Binary image File parameters
 class CCDFileParameters(wx.Dialog):
     """
-    Class to set image file parameters
+    Class to set binary image file parameters
     """
     def __init__(self, parent, _id, title, CCDlabel):
         """
@@ -113,9 +112,6 @@ class CCDFileParameters(wx.Dialog):
         # tooltip
         btnaccept.SetToolTipString("Accept")
 
-    #        self.Show(True)
-    #        self.Centre()
-
     def readCCDparams(self):
         """ read CCD parameters from self.CCDLabel and set value for display"""
         CCDparams = DictLT.dict_CCD[str(self.CCDLabel)]
@@ -143,9 +139,7 @@ class CCDFileParameters(wx.Dialog):
         display and set values of parameters
         """
         for kk, _ in enumerate(self.paramdetector):
-            self.controltext.append(wx.TextCtrl(self.panel,
-                                                    -1,
-                                                    str(self.value[kk]),
+            self.controltext.append(wx.TextCtrl(self.panel, -1, str(self.value[kk]),
                                                     (150, self.posyvalues + 30 * kk),
                                                     (150, -1)))
 
@@ -155,13 +149,10 @@ class CCDFileParameters(wx.Dialog):
         """
         for kk, _ in enumerate(self.paramdetector):
             self.controltext.append(
-                wx.TextCtrl(self.panel,
-                            -1,
-                            str(None),
-                            (150, self.posyvalues + 30 * kk),
-                            (150, -1)))
+                wx.TextCtrl(self.panel, -1, str(None), (150, self.posyvalues + 30 * kk), (150, -1)))
 
     def EnterComboCCD(self, event):
+        """ select detector item """
         item = event.GetSelection()
         self.CCDLabel = self.allCCD_names[item]
         print("item", item)
@@ -180,6 +171,9 @@ class CCDFileParameters(wx.Dialog):
         event.Skip()
 
     def OnAccept(self, _):
+        """ accept current parameters and set self.parent attributes:
+        headeroffset, dataformat, fliprot, saturationvalue, CCDLabel, file_extension
+        framedim, pixelsize, detectordiameter """
         if not self.CCDLabel.startswith("--"):
             # file parameters
             self.parent.headeroffset = self.headeroffset

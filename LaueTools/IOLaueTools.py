@@ -414,6 +414,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
                 ccdlabel = 'MARCCD165'
             elif abs(ps-0.073) <= 0.002:
                 ccdlabel = 'sCMOS'
+            elif abs(ps-0.075) <= 0.002:
+                ccdlabel = 'psl_weiwei'
             CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib

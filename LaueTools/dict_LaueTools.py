@@ -7,7 +7,6 @@ Lauetools project
 April 2019
 
 """
-
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy
@@ -133,7 +132,7 @@ dict_Materials_short = {
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
     "CdTe": ["CdTe", [6.487, 6.487, 6.487, 90, 90, 90], "fcc"],
-    'NbSe3' :['NbSe3',[10.006, 3.48, 15.629], 'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
+    'NbSe3' :['NbSe3', [10.006, 3.48, 15.629], 'cubic'], # monoclinic structure, angle beta = 109.5 must be input in grain definition
     "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
     "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
     "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
@@ -165,7 +164,7 @@ dict_Materials_short = {
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
 }
 
-def writeDict(_dict, filename, writemode='a',sep=', '):
+def writeDict(_dict, filename, writemode='a', sep=', '):
     """write an ascii file of dict_Materials
 
     :param dict: dict_Materials (see below)
@@ -231,9 +230,6 @@ def readsinglelinedictfile(line):
 
     nbstrings = len(liststring)
     nbval = len(listfloat)
-    #  print "nbval", nbval
-    # print("liststring",liststring)
-    # print("listfloat",listfloat)
 
     if nbval != 6 or nbstrings != 3:
         txt = "Something wrong, I can't parse the line %s!!\n"%line
@@ -273,83 +269,35 @@ CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
 # file extension
 dict_CCD = {
     "MARCCD165": ((2048, 2048), 0.079142, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd", ),
-    "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif", ],
-    "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif", ],
-    "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
-    "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
-    "pSL_Weiwei": [(1247, 1960), 0.075, 65535, "no", 3828, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
-    "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff", ),
-    "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_small": ((2594, 2748), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Nov12 frame size is lower than VHR_diamond", "tiff", ),
-    "ImageStar": ((1500, 1500), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond March13  extension is mar.tiff", "tiff", ),
-    "ImageStar_raw_3056x3056": ((3056, 3056), 0.022, 64000, "vhr", 872, "uint16", "raw image Apr 2018 imagestar for diamond binning 1x1  .tif (could be read by VHR_DLS?)", "tif", ),
-    "ImageStar_1528x1528": ((1528, 1528), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond May 2018  extension is mar.tiff  non remapping 1528x1528", "tiff", ),
-    "ImageDeathStar": ((1500, 1500), 0.044, 65535, "VHR_Feb13", 4096, "uint16", "Imagestar photonics Science close to sample, mounting similar to MARCCD, Sep14", "tif", ),
-    "ImageStar_raw": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint16", "raw image GISAXS BM32 November 2014 .tif", "tif", ),
-    "VHR_diamond_Mar13": ((2594, 2774), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Mar13 frame size is lower than VHR_diamond", "tiff", ),
-    "VHR": ((2594, 3764), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Jun 12 2theta axis displayed is horizontal, no problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_Feb13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff", ),
-    "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif", ),
-    "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif", ),
-    "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd", ),  # 2X2, saturation value depends on gain and DAC
-    "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf", ),
+    "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif"],
+    "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif"],
+    "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
+    "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
+    "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
+    "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff"),
+    "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff"),
+    "VHR_small": ((2594, 2748), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Nov12 frame size is lower than VHR_diamond", "tiff"),
+    "ImageStar": ((1500, 1500), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond March13  extension is mar.tiff", "tiff"),
+    "ImageStar_raw_3056x3056": ((3056, 3056), 0.022, 64000, "vhr", 872, "uint16", "raw image Apr 2018 imagestar for diamond binning 1x1  .tif (could be read by VHR_DLS?)", "tif"),
+    "ImageStar_1528x1528": ((1528, 1528), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond May 2018  extension is mar.tiff  non remapping 1528x1528", "tiff"),
+    "ImageDeathStar": ((1500, 1500), 0.044, 65535, "VHR_Feb13", 4096, "uint16", "Imagestar photonics Science close to sample, mounting similar to MARCCD, Sep14", "tif"),
+    "ImageStar_raw": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint16", "raw image GISAXS BM32 November 2014 .tif", "tif"),
+    "VHR_diamond_Mar13": ((2594, 2774), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Mar13 frame size is lower than VHR_diamond", "tiff"),
+    "VHR": ((2594, 3764), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Jun 12 2theta axis displayed is horizontal, no problem with fit from PeakSearchGUI", "tiff"),
+    "VHR_Feb13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "tiff"),
+    "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff"),
+    "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif"),
+    "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif"),
+    "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd"),  # 2X2, saturation value depends on gain and DAC
+    "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf"),
     "TIFF Format": (-1, -1, "", "", "", "" "CCD parameters read from tiff header", "tiff", ),
     "EDF": ((1065, 1030), 0.075, 650000000000, "no", 0, "uint32", "CCD parameters read from edf header EIGER", "edf", ),
-    "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff", ),
-    "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff", ),
-    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS", "tif", ),
-    "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5", ),
-    "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked", ),
-    "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M at BM32 ESRF", "edf", ),
-}
-
-dict_CCD_all = {
-    "MARCCD165": ((2048, 2048), 0.079142, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd", ),
-    "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif", ],
-    "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif", ],
-    "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
-    "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
-    "sCMOS_16Mtest": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif", ],
-    "Andrea": ((2048, 2048), 0.080, 65535, "no", 2213, "uint16", "Andrea", "tif"),
-    "ROPER159": ((2048, 2048), 158.76 / 2048.0, 57700, "no", 4096, "uint16", "Roper scientific (PRINCETON) now defunct camera, used from July 2011 to December 2012", "mccd", ),
-    "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff", ),
-    "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_small": ((2594, 2748), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Nov12 frame size is lower than VHR_diamond", "tiff", ),
-    "ImageStar": ((1500, 1500), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond March13  extension is mar.tiff", "tiff", ),
-    "ImageStar_raw_3056x3056": ((3056, 3056), 0.022, 64000, "vhr", 872, "uint16", "raw image Apr 2018 imagestar for diamond binning 1x1  .tif (could be read by VHR_DLS?)", "tif", ),
-    "ImageStar_1528x1528": ((1528, 1528), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond May 2018  extension is mar.tiff  non remapping 1528x1528", "tiff", ),
-    "ImageDeathStar": ((1500, 1500), 0.044, 65535, "VHR_Feb13", 4096, "uint16", "Imagestar photonics Science close to sample, mounting similar to MARCCD, Sep14", "tif", ),
-    "ImageStar_raw_offset884": ((1500, 1500), 0.044, 65535, "vhr", 884, "uint16", "vhr close to diamond Sep13  extension is .tif", "tiff", ),
-    "ImageStar_raw_offset882": ((1500, 1500), 0.044, 65535, "vhr", 882, "uint16", "vhr close to diamond Sep13  extension is .tif", "tiff", ),
-    "ImageStar_raw": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint16", "raw image GISAXS BM32 November 2014 .tif", "tif", ),
-    "ImageStar_raw_32bits": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint32", "sum result image GISAXS BM32 November 2014 .tif", "tif", ),
-    "ImageStar_raw_float32bits": ((1500, 1500), 0.044, 64000, "vhr", 872, "float32", "sum result image GISAXS BM32 November 2014 .tif", "tif", ),
-    "VHR_diamond_Mar13": ((2594, 2774), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Mar13 frame size is lower than VHR_diamond", "tiff", ),
-    "VHR": ((2594, 3764), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Jun 12 2theta axis displayed is horizontal, no problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_Feb13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "tiff", ),
-    "VHR_Mar13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "_mar.tiff", ),
-    "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff", ),
-    "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif", ),
-    "MARCCD225": ((3072, 3072), 0.07325, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif", ),
-    "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif", ),
-    "LaueImaging": (LAUEIMAGING_FRAME_DIM, 0.080, 255, "no", 110, LAUEIMAGING_DATA_FORMAT, "psl laueimaging from CEA-D5 test for INES June 2012 binning 2x2 (.tif format)", "tif", ),
-    "PRINCETON_bin4x4": ((1024, 1024), 0.079 * 2, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 1024x1024 pixels converted from .spe to .mccd", "mccd", ),  # 4X4, saturation value depends on gain and DAC
-    "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd", ),  # 2X2, saturation value depends on gain and DAC
-    "PRINCETON_rotated": ((2048, 2048), 0.079, 57000, "spe", 4096, "uint16", "Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd", ),  # rotation spe
-    "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf", ),
-    "FRELONID15": ((2048, 2048), 0.048, 65000, "no", 1024, "uint16", "FRELON ID15 camera 2048x2048 pixels (edf format)", "edf", ),
-    "FRELONID15_corrected": ((2048, 2048), 0.048, 65000, "no", 225, "uint16", "FRELON ID15 camera 2048x2048 pixels distorsion free", "tif", ),
-    "TIFF Format": (-1, -1, "", "", "", "" "CCD parameters read from tiff header", "tiff", ),
-    "EDF": ((1065, 1030), 0.075, 650000000000, "no", 0, "uint32", "CCD parameters read from edf header EIGER", "edf", ),
-    "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff", ),
-    "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff", ),
-    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS", "tif", ),
-    "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5", ),
-    "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked", ),
-    "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M at BM32 ESRF", "edf", ),
-    "RayonixMX340-HS": ((7680, 7680), 0.0443, 65000, "no", 4096, "uint16", "Rayonix MX340-HS Camera 50 Mpixels", "mccd", ),
-    "Rayonix MX170-HS": ((1920, 1920), 0.08854, 65535, "no", 1024, "uint16", "Rayonix MX170-HS", "edf", ),
+    "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff"),
+    "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff"),
+    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS", "tif"),
+    "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5"),
+    "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked"),
+    "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M at BM32 ESRF", "edf"),
 }
 
 
@@ -385,8 +333,8 @@ def getwildcardstring(CCDlabel):
     >>> getwildcardstring('MARCCD165')
     'MARCCD, ROPER(*.mccd)|*mccd|mar tif(*.tif)|*_mar.tiff|tiff(*.tiff)|*tiff|Princeton(*.spe)|*spe|Frelon(*.edf)|*edf|tif(*.tif)|*tif|All files(*)|*'
     """
-    ALL_EXTENSIONS = [ "mccd", "tif", "_mar.tiff", "tiff", "spe", "edf", "tif", "tif.gz", "h5", "", ]
-    INFO_EXTENSIONS = [ "MARCCD, ROPER(*.mccd)", "sCMOS sCMOS_fliplr", "mar tif(*.tif)", "tiff(*.tiff)",
+    ALL_EXTENSIONS = ["mccd", "tif", "_mar.tiff", "tiff", "spe", "edf", "tif", "tif.gz", "h5", "", ]
+    INFO_EXTENSIONS = ["MARCCD, ROPER(*.mccd)", "sCMOS sCMOS_fliplr", "mar tif(*.tif)", "tiff(*.tiff)",
                         "Princeton(*.spe)", "Frelon(*.edf)", "tif(*.tif)", "tif.gz(*.tif.gz)",
                         "hdf5(*.h5)", "All files(*)", ]
 
@@ -428,19 +376,22 @@ list_CCD_file_extensions.append("tif.gz")
 # print list_CCD_file_extensions
 
 # ---   ---  general geometry of detector CCD position
-DICT_LAUE_GEOMETRIES = {"Z>0": "Top Reflection (2theta=90)", "X>0": "Transmission"}
+DICT_LAUE_GEOMETRIES = {"Z>0": "Top Reflection (2theta=90)",
+                        "X>0": "Transmission (2theta=0)",
+                        "X<0": "Back Reflection (2theta=180)"}
 
 DICT_LAUE_GEOMETRIES_INFO = {
-    "Top Reflection (2theta=90)": ["Z>0", "top reflection geometry camera on top"],
-    "Transmission": ["X>0", "Transmission geometry, camera in direct beam"],
+    "Top Reflection (2theta=90)": ["Z>0", "top reflection geometry camera on top (2theta=90)"],
+    "Transmission (2theta=0)": ["X>0", "Transmission geometry, camera in direct beam (2theta=0)"],
+    "Back Reflection (2theta=180)": ["X<0", "Back reflection geometry, camera is upstream (2theta=180)"]
 }
 
 
 # --- -------------- History of Calibration Parameters
 dict_calib = {
-    "ZrO2 Sep08": [ 69.8076, 878.438, 1034.46, 0.54925, 0.18722, ],  # as first trial of zrO2 sicardy sep 08
+    "ZrO2 Sep08": [69.8076, 878.438, 1034.46, 0.54925, 0.18722],  # as first trial of zrO2 sicardy sep 08
     "Sep09": [68.0195, 934.94, 1033.6, 0.73674, -0.74386],  # Sep09
-    "ZrO2 Dec09": [ 69.66221, 895.29492, 960.78674, 0.84324, -0.32201, ],  # Dec09 Julie Ge_run41_1_0003.mccd
+    "ZrO2 Dec09": [69.66221, 895.29492, 960.78674, 0.84324, -0.32201],  # Dec09 Julie Ge_run41_1_0003.mccd
     "Basic": [68, 930, 1100, 0.0, 0.0],
 }
 
@@ -531,12 +482,9 @@ dict_Vect = {
     "shear4": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.032, 0.0, 1.0]],
     "JSMtest": [[1.0, 1.02, 0.98], [-0.1, 1.1, 0.2], [-0.032, 0.05, 1.15]],
     "JSMtest2": [[1.0, 1.02, 0.98], [-0.1, 1.1, 0.2], [-0.032, 0.05, 1.15]],
-    "543_909075": [
-        [0.20705523608201659, -0.066987298107780757, 2.0410779985789219e-17],
+    "543_909075": [[0.20705523608201659, -0.066987298107780757, 2.0410779985789219e-17],
         [0.0, 0.24999999999999994, -2.0410779985789219e-17],
-        [0.0, 0.0, 0.33333333333333331],
-    ],
-}
+        [0.0, 0.0, 0.33333333333333331]]}
 
 dict_Transforms = {
     "Identity": [[1.0, 0, 0], [0, 1, 0], [0, 0, 1]],
@@ -739,7 +687,7 @@ PI = np.pi
 RotY40 = np.array([[np.cos(SAMPLETILT * DEG), 0, -np.sin(SAMPLETILT * DEG)],
                     [0, 1, 0],
                     [np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
-RotYm40 = np.array( [ [np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
+RotYm40 = np.array([[np.cos(SAMPLETILT * DEG), 0, np.sin(SAMPLETILT * DEG)],
                         [0, 1, 0],
                         [-np.sin(SAMPLETILT * DEG), 0, np.cos(SAMPLETILT * DEG)]])
 
@@ -818,7 +766,7 @@ OpSymArray = np.reshape(opsymlist, (48, 3, 3))
 
 # FCC slips systems  plane normal (p) and slip direction (burger b)
 # rotation axis is given by cross product of p ^ b
-SLIPSYSTEMS_FCC = np.array([ [1, 1, 1], [0, -1, 1],
+SLIPSYSTEMS_FCC = np.array([[1, 1, 1], [0, -1, 1],
     [1, 1, 1], [-1, 0, 1],
     [1, 1, 1], [-1, 1, 0],
     [-1, 1, 1], [0, -1, 1],

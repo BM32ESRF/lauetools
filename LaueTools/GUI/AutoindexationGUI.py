@@ -174,8 +174,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         elemtxt = wx.StaticText(self.panel, -1, "Materials", (15, 175))
         self.SetMaterialsCombo(0)
 
-        self.refresh = wx.Button(self.panel, -1, "Refresh", (400, 170))
+        self.refresh = wx.Button(self.panel, -1, "Refresh", (350, 170))
         self.refresh.Bind(wx.EVT_BUTTON, self.SetMaterialsCombo)
+
+        self.applyrulesLUT = wx.CheckBox(self.panel, -1, "Apply Extinc Rules", (450, 170))
+        self.applyrulesLUT.SetValue(True)
 
         matchtxt = wx.StaticText(self.panel, -1, "Matching", (15, 210))
         matchtxt.SetFont(font3)
@@ -211,8 +214,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.output_irp = wx.TextCtrl(self.panel, -1, "%s" % self.config_irp_filename,
                                     (410, 395), size=(250, -1))
 
-        self.StartButton = wx.Button(self.panel, 1, "Start", (25, 420), (200, 60))
-        self.Bind(wx.EVT_BUTTON, self.OnStart, id=1)
+        self.StartButton = wx.Button(self.panel, -1, "Start", (25, 420), (200, 60))
+        self.Bind(wx.EVT_BUTTON, self.OnStart)
 
         wx.Button(self.panel, 2, "Quit", (250, 420), (110, 60))
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
@@ -252,7 +255,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         luttxt.SetToolTipString(luttip)
         self.nLUT.SetToolTipString(luttip)
 
-        tsstip = "Largest experimental spot index for trying to recognise a distance in reference structure distance LUT from all spots in central spots list."
+        tsstip = "If checked, set of spot index to compute all mutual angles between spots of setA and setB."
         rsstxt.SetToolTipString(tsstip)
         self.spotlistB.SetToolTipString(tsstip)
 
@@ -260,8 +263,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         mssstxt.SetToolTipString(mssstip)
         self.nbspotmaxformatching.SetToolTipString(mssstip)
 
-        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). Angles between each central spot and every spots of "recognition spots set" will calculated and compared to angles in reference LUT.\n'
-        cstip += 'List of spots must written in with bracket (e.g. [0,1,2,5,8]). Central spots index must be strictly lower to nb of spots of the "recognition set".'
+        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). All mutual angles between spots of setA will be considered for recognition. If setB is checked, all mutual angles between spots of setA and spots of setB will be calculated and compared to angles in reference LUT for recognition.\n'
+        # cstip += 'List of spots must written in with bracket (e.g. [0,1,2,5,8]). Central spots index must be strictly lower to nb of spots of the "recognition set".'
         cstxt.SetToolTipString(cstip)
         self.spotlistA.SetToolTipString(cstip)
 
@@ -277,13 +280,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         mnmstxt.SetToolTipString(mnmstip)
         self.MNMS.SetToolTipString(mnmstip)
 
-        self.showplotBox.SetToolTipString(
-            'Plot all exp. and theo. Laue Patterns for which the number of matched spots is larger than "Minimum Number Matched spots".'
-        )
+        self.showplotBox.SetToolTipString('Plot all exp. and theo. Laue Patterns for which the '
+                        'number of matched spots is larger than "Minimum Number Matched spots".')
 
-        self.filterMatrix.SetToolTipString(
-            "Keep only one orientation matrix for matrices which are equivalent (cubic symmetry unit cell vectors permutations)."
-        )
+        self.filterMatrix.SetToolTipString("Keep only one orientation matrix for matrices which "
+                                "are equivalent (cubic symmetry unit cell vectors permutations).")
 
         sethkltip = "Set the [h,k,l] Miller indices of central spot. This will reduce the running time of recognition."
         self.sethklchck.SetToolTipString(sethkltip)
@@ -291,8 +292,13 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.verbose.SetToolTipString("Display details for long indexation procedure")
 
+        self.applyrulesLUT.SetToolTipString("Apply systematic lattice extinction Rules "
+            "when calculating angles LUT from reciprocal directions. "
+            "To index single grain high hkl spots, better uncheck this (e.g. back reflection or "
+            "transmission geometry.")
+
     def SetMaterialsCombo(self, _):
-        """ set material combo
+        """ set material combo  from   self.dict_Materials
         .. todo:: better to use gridsizer and refresh/update of combo
         """
         self.list_materials = sorted(self.dict_Materials.keys())
@@ -593,6 +599,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         print("set_central_spots_hkl", set_central_spots_hkl)
         print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
+        
+        LUT_with_rules = self.applyrulesLUT.GetValue()
 
         self.getparams_for_irpfile()
         self.Save_irp_configfile(outputfile=self.output_irp.GetValue())
@@ -631,7 +639,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #         return
 
         # autoindexation core procedure
-        # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials'])
+        # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials']
+
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
@@ -656,7 +665,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     gauge=self.gauge,
                                     dictmaterials=self.IndexationParameters['dict_Materials'],
                                     MaxRadiusHKL=False,#True could be OK for this workflow
-                                )
+                                    LUT_with_rules=LUT_with_rules)
 
         elif spotssettype in ('listsetA', 'listsetAB', ):
             # and spotsB is checked
@@ -667,7 +676,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 n, self.key_material, rough_tolangle,
                                                 detectorparameters,
                                                 set_hkl_1=set_central_spots_hkl,
-                                                minimumNbMatches=Minimum_MatchesNb)
+                                                minimumNbMatches=Minimum_MatchesNb,
+                                                LUT_with_rules=LUT_with_rules)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res

@@ -1,10 +1,10 @@
 import sys
+import os
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
-import os
-import numpy as np
 import time as ttt
+import numpy as np
 
 import scipy.interpolate as sci
 
@@ -168,7 +168,7 @@ def test_peaksearch_ROI_martiff():
 
     inputfilename = prefixfilename + suffix
     print("Full frame peak search")
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
+    Isorted, _, _, histo = RMCCD.PeakSearch(
         inputfilename,
         CCDLabel="MARCCD165",
         PixelNearRadius=10,
@@ -231,9 +231,7 @@ def example_Use_of_Bispline():
     import scipy.interpolate as sci
 
     Z = fit2d.gaussian(100, 10, 10, 2, 2)(X, Y)
-    tck, fp, ier, msg = sci.bisplrep(
-        np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1
-    )
+    tck, _, _, _ = sci.bisplrep(np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1)
 
     Zfit = sci.bisplev(np.arange(10), np.arange(10), tck)
 
@@ -255,9 +253,7 @@ def test_Approximate_Background():
     import scipy.interpolate as sci
 
     Z = fit2d.gaussian(100, 2, 13, 3, 5)(X, Y)
-    tck, fp, ier, msg = sci.bisplrep(
-        np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1
-    )
+    tck, _, _, _ = sci.bisplrep(np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1)
     print(Z.shape)
     print(X.shape)
     print(Y.shape)
@@ -282,7 +278,7 @@ def test_Approximate_Background_mccdimage_spline():
     """
     filename = "CdTe_I999_03Jul06_0200.mccd"
 
-    pilimage, dataimage = RMCCD.readoneimage_full(filename)
+    _, dataimage = RMCCD.readoneimage_full(filename)
 
     mini = np.amin(dataimage[dataimage > 0])
 
@@ -304,17 +300,15 @@ def test_Approximate_Background_mccdimage_spline():
     print(dataimage_bis.shape)
     print(Xin.shape)
     print(Yin.shape)
-    tck, fp, ier, msg = sci.bisplrep(
-        np.ravel(Xin),
-        np.ravel(Yin),
-        np.ravel(dataimage_bis),
-        kx=3,
-        ky=3,
-        nxest=100,
-        nyest=100,
-        s=10000,
-        full_output=1,
-    )
+    tck, _, _, msg = sci.bisplrep(np.ravel(Xin),
+                                    np.ravel(Yin),
+                                    np.ravel(dataimage_bis),
+                                    kx=3,
+                                    ky=3,
+                                    nxest=100,
+                                    nyest=100,
+                                    s=10000,
+                                    full_output=1)
 
     # print "tck",tck
     print("msg", msg)
@@ -343,7 +337,7 @@ def test_Approximate_Background_mccdimage_gaussian():
 
     filename = "CdTe_I999_03Jul06_0200.mccd"
     # filename = 'Wmap_blanc_11Sep08_d0_5MPa_0000.mccd'
-    pilimage, dataimage = RMCCD.readoneimage_full(filename)
+    _, dataimage = RMCCD.readoneimage_full(filename)
 
     mini = np.amin(dataimage[dataimage > 0])
     print("non zero minimum value", mini)
@@ -381,26 +375,22 @@ def test_Approximate_Background_mccdimage_gaussian():
     start_sigma2 = 300 // sampling
     start_anglerot = 0
 
-    startingparams = [
-        start_baseline,
-        start_amplitude,
-        start_j,
-        start_i,
-        start_sigma1,
-        start_sigma2,
-        start_anglerot,
-    ]
+    startingparams = [start_baseline,
+                    start_amplitude,
+                    start_j,
+                    start_i,
+                    start_sigma1,
+                    start_sigma2,
+                    start_anglerot]
 
-    params, cov, infodict, errmsg = fit2d.gaussfit(
-        dataimage_bis,
-        err=None,
-        params=startingparams,
-        autoderiv=1,
-        return_all=1,
-        circle=0,
-        rotate=1,
-        vheight=1,
-    )
+    params, _, _, _ = fit2d.gaussfit(dataimage_bis,
+                                                err=None,
+                                                params=startingparams,
+                                                autoderiv=1,
+                                                return_all=1,
+                                                circle=0,
+                                                rotate=1,
+                                                vheight=1)
 
     print("\n *****fitting results ************\n")
     print(params)
@@ -408,14 +398,10 @@ def test_Approximate_Background_mccdimage_gaussian():
     print("Peak amplitude above background        %.2f" % params[1])
     print("pixel position (X)            %.2f" % (params[3] * sampling))
     print("pixel position (Y)            %.2f" % (params[2] * sampling))
-    print(
-        "std 1,std 2 (pix)            ( %.2f , %.2f )"
-        % (params[4] * sampling, params[5] * sampling)
-    )
-    print(
-        "e=min(std1,std2)/max(std1,std2)        %.3f"
-        % (min(params[4], params[5]) / max(params[4], params[5]))
-    )
+    print("std 1,std 2 (pix)            ( %.2f , %.2f )"
+        % (params[4] * sampling, params[5] * sampling))
+    print("e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[4], params[5]) / max(params[4], params[5])))
     print("Rotation angle (deg)            %.2f" % (params[6] % 360))
     print("************************************\n")
     print(params)
@@ -434,7 +420,7 @@ def test_Approximate_Background_mccdimage_gaussian():
 def test_filtereffect():
 
     filename = "CdTe_I999_03Jul06_0200.mccd"
-    pilimage, dataimage = RMCCD.readoneimage_full(filename)
+    pilimage, _ = RMCCD.readoneimage_full(filename)
 
     im8bit = RMCCD.to8bits(pilimage)[0]
     im1 = im8bit.filter(ImageFilter.MinFilter)
@@ -481,17 +467,13 @@ def shiftarrays(Data_array, n, dimensions=1):
 
 
 def test_localmaxima():
-    bb = np.array(
-        [
-            [0, 1, 2, 0, 5, 1, 0, 2, 0],
-            [1, 3, 0, 2, 2, 6, 5, 8, 2],
-            [2, 4, 0, 1, 6, 3, 4, 2, 1],
-            [4, 5, 6, 9, 4, 6, 5, 3, 0],
-            [2, 2, 5, 6, 4, 3, 4, 5, 1],
-            [2, 0, 2, 2, 2, 2, 2, 2, 1],
-            [4, 2, 0, 1, 3, 2, 5, 2, 2],
-        ]
-    )
+    bb = np.array([[0, 1, 2, 0, 5, 1, 0, 2, 0],
+                    [1, 3, 0, 2, 2, 6, 5, 8, 2],
+                    [2, 4, 0, 1, 6, 3, 4, 2, 1],
+                    [4, 5, 6, 9, 4, 6, 5, 3, 0],
+                    [2, 2, 5, 6, 4, 3, 4, 5, 1],
+                    [2, 0, 2, 2, 2, 2, 2, 2, 1],
+                    [4, 2, 0, 1, 3, 2, 5, 2, 2]])
 
     aa = np.array([0, 1, 3, 7, 12, 25, 18, 20, 10, 16, 19, 12, 6, 9, 5, 3, 2])
     c, alll, allr = RMCCD.shiftarrays_accum(aa, 2, dimensions=1, diags=0)
@@ -584,12 +566,10 @@ def test_VHR():
     dataimage = np.reshape(dataimage, framedim)
 
     p.subplot(211)
-    p.imshow(
-        dataimage - 83,
+    p.imshow(dataimage - 83,
         aspect="equal",
         interpolation="nearest",
-        norm=LogNorm(vmin=200, vmax=4096),
-    )
+        norm=LogNorm(vmin=200, vmax=4096))
 
     Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
         filename,
@@ -743,24 +723,17 @@ def test_PSL_LAUE_INES():
     framedim = (645, 985)
     filename = "bidon - 8.tif"
 
-    dataimage = RMCCD.readoneimage(
-        filename,
-        framedim=framedim,
-        offset=offsetheader,
-        formatdata=LAUEIMAGING_DATA_FORMAT,
-    )
+    dataimage = RMCCD.readoneimage(filename,
+                                    framedim=framedim,
+                                    offset=offsetheader,
+                                    formatdata=LAUEIMAGING_DATA_FORMAT)
 
     dataimage = np.reshape(dataimage, framedim)
 
     from matplotlib.colors import LogNorm
 
     ax = p.subplot(111)
-    ax.imshow(
-        dataimage,
-        aspect="equal",
-        interpolation="nearest",
-        norm=LogNorm(vmin=0.0001, vmax=255),
-    )
+    ax.imshow(dataimage, aspect="equal", interpolation="nearest", norm=LogNorm(vmin=0.0001, vmax=255))
 
     numrows, numcols = dataimage.shape
 
@@ -777,23 +750,21 @@ def test_PSL_LAUE_INES():
 
     p.show()
 
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
-        filename,
-        CCDLabel="LaueImaging",
-        PixelNearRadius=20,
-        FitPixelDev=5,
-        removeedge=2,
-        local_maxima_search_method=0,
-        IntensityThreshold=120,
-        boxsize=15,
-        position_definition=1,
-        verbose=1,
-        fit_peaks_gaussian=1,
-        xtol=0.001,
-        return_histo=1,
-        Saturation_value=65000,
-        Saturation_value_flatpeak=65000,
-    )
+    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename,
+                                                        CCDLabel="LaueImaging",
+                                                        PixelNearRadius=20,
+                                                        FitPixelDev=5,
+                                                        removeedge=2,
+                                                        local_maxima_search_method=0,
+                                                        IntensityThreshold=120,
+                                                        boxsize=15,
+                                                        position_definition=1,
+                                                        verbose=1,
+                                                        fit_peaks_gaussian=1,
+                                                        xtol=0.001,
+                                                        return_histo=1,
+                                                        Saturation_value=65000,
+                                                        Saturation_value_flatpeak=65000)
 
     #    # local_maxima_search_method=1  not implemented for non squared CCD frame
     #    Isorted, fitpeak, localpeak, histo = PeakSearch(filename,CCDLabel='LaueImaging',
@@ -837,13 +808,8 @@ def test_PSL_LAUE_INES():
     #                                            Saturation_value_flatpeak=255)
 
     print("Isorted", Isorted)
-    IOLT.writefile_Peaklist(
-        "VHR2test",
-        Isorted,
-        overwrite=1,
-        initialfilename=filename,
-        comments="test, test",
-    )
+    IOLT.writefile_Peaklist("VHR2test", Isorted, overwrite=1, initialfilename=filename,
+                                                                            comments="test, test")
 
 
 def test_PSL_LAUE_INES_16bits():
@@ -857,24 +823,16 @@ def test_PSL_LAUE_INES_16bits():
     filename = "bidon - 5.tif"
     LAUEIMAGING_DATA_FORMAT = "uint16"
 
-    dataimage = RMCCD.readoneimage(
-        filename,
-        framedim=framedim,
-        offset=offsetheader,
-        formatdata=LAUEIMAGING_DATA_FORMAT,
-    )
+    dataimage = RMCCD.readoneimage(filename, framedim=framedim, offset=offsetheader,
+                                                            formatdata=LAUEIMAGING_DATA_FORMAT)
 
     dataimage = np.reshape(dataimage, framedim)
 
     from matplotlib.colors import LogNorm
 
     ax = p.subplot(111)
-    ax.imshow(
-        dataimage,
-        aspect="equal",
-        interpolation="nearest",
-        norm=LogNorm(vmin=0.0001, vmax=255),
-    )
+    ax.imshow(dataimage, aspect="equal", interpolation="nearest",
+                                                                norm=LogNorm(vmin=0.0001, vmax=255))
 
     numrows, numcols = dataimage.shape
 
@@ -891,34 +849,27 @@ def test_PSL_LAUE_INES_16bits():
 
     p.show()
 
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
-        filename,
-        CCDLabel="LaueImaging",
-        PixelNearRadius=10,
-        FitPixelDev=2,
-        removeedge=2,
-        local_maxima_search_method=2,
-        IntensityThreshold=10,
-        thresholdConvolve=12000,
-        paramsHat=(6, 8, 4),
-        boxsize=15,
-        position_definition=1,
-        verbose=1,
-        fit_peaks_gaussian=1,
-        xtol=0.01,
-        return_histo=1,
-        Saturation_value=65000,
-        Saturation_value_flatpeak=65000,
-    )
+    Isorted, _, _, _ = RMCCD.PeakSearch(filename,
+                                    CCDLabel="LaueImaging",
+                                    PixelNearRadius=10,
+                                    FitPixelDev=2,
+                                    removeedge=2,
+                                    local_maxima_search_method=2,
+                                    IntensityThreshold=10,
+                                    thresholdConvolve=12000,
+                                    paramsHat=(6, 8, 4),
+                                    boxsize=15,
+                                    position_definition=1,
+                                    verbose=1,
+                                    fit_peaks_gaussian=1,
+                                    xtol=0.01,
+                                    return_histo=1,
+                                    Saturation_value=65000,
+                                    Saturation_value_flatpeak=65000)
 
     print("Isorted", Isorted)
-    IOLT.writefile_Peaklist(
-        "VHR2test",
-        Isorted,
-        overwrite=1,
-        initialfilename=filename,
-        comments="test, test",
-    )
+    IOLT.writefile_Peaklist("VHR2test", Isorted, overwrite=1, initialfilename=filename,
+                                                                            comments="test, test")
 
 
 def test_peak_search_file_series():
@@ -939,10 +890,8 @@ def test_peak_search_file_series():
         filename = prefixname + RMCCD.stringint(kk, 4) + filesuffix
         print(filename)
         # prefix = "D:\Documents and Settings\or208865\Bureau\AAA\AA\\W500Mpa_d0_"+ rmccd.stringint(kk,4)
-        prefix = (
-            "D:\Documents and Settings\or208865\Bureau\AAA\AA\\toto_"
-            + RMCCD.stringint(kk, 4)
-        )
+        prefix = ("D:\Documents and Settings\or208865\Bureau\AAA\AA\\toto_"
+            + RMCCD.stringint(kk, 4))
         print("prefix ", prefix)
         commentaire = "LT rev 437 \n# PixelNearRadius=5, removeedge=2, IntensityThreshold=500, boxsize=5,\n# \
             position_definition=1, fit_peaks_gaussian=1, xtol=0.001, FitPixelDev=2.0 \n"
@@ -950,24 +899,21 @@ def test_peak_search_file_series():
 
         time_0 = ttt.time()
 
-        Isorted, fitpeak, localpeak = RMCCD.PeakSearch(
-            filename,
-            CCDLabel="MARCCD165",
-            PixelNearRadius=5,
-            removeedge=2,
-            IntensityThreshold=500,
-            boxsize=5,
-            position_definition=1,
-            verbose=1,
-            fit_peaks_gaussian=1,
-            xtol=0.001,
-            return_histo=0,
-            FitPixelDev=2.0,
-        )
+        Isorted, fitpeak, localpeak = RMCCD.PeakSearch(filename,
+                                                        CCDLabel="MARCCD165",
+                                                        PixelNearRadius=5,
+                                                        removeedge=2,
+                                                        IntensityThreshold=500,
+                                                        boxsize=5,
+                                                        position_definition=1,
+                                                        verbose=1,
+                                                        fit_peaks_gaussian=1,
+                                                        xtol=0.001,
+                                                        return_histo=0,
+                                                        FitPixelDev=2.0)
 
         IOLT.writefile_Peaklist(
-            prefix, Isorted, overwrite=1, initialfilename=filename, comments=commentaire
-        )
+            prefix, Isorted, overwrite=1, initialfilename=filename, comments=commentaire)
 
         print("peak list written in %s" % (prefix + ".dat"))
         print("execution time: %.2f sec" % (ttt.time() - time_0))
@@ -977,24 +923,21 @@ def test_Peaksearch_Ge(filename="Ge_blanc_0000.mccd"):
 
     time_0 = ttt.time()
 
-    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(
-        filename,
-        CCDLabel="MARCCD165",
-        PixelNearRadius=20,
-        removeedge=2,
-        IntensityThreshold=200,
-        boxsize=15,
-        position_definition=1,
-        verbose=0,
-        fit_peaks_gaussian=1,
-        xtol=0.001,
-        return_histo=1,
-    )
+    Isorted, fitpeak, localpeak, histo = RMCCD.PeakSearch(filename,
+                                                        CCDLabel="MARCCD165",
+                                                        PixelNearRadius=20,
+                                                        removeedge=2,
+                                                        IntensityThreshold=200,
+                                                        boxsize=15,
+                                                        position_definition=1,
+                                                        verbose=0,
+                                                        fit_peaks_gaussian=1,
+                                                        xtol=0.001,
+                                                        return_histo=1)
 
     prefix, file_extension = filename.split(".")
     IOLT.writefile_Peaklist(
-        prefix + "_c", Isorted, overwrite=1, initialfilename=filename, comments="test"
-    )
+        prefix + "_c", Isorted, overwrite=1, initialfilename=filename, comments="test")
 
     print("peak list written in %s" % (prefix + "_c.dat"))
     print("execution time: %.2f sec" % (ttt.time() - time_0))

@@ -117,6 +117,36 @@ class ManualIndexFrame(wx.Frame):
         self.getlimitsfromplot = False
 
         self.datatype = datatype
+
+        self.factorsize = None
+        self.powerscale = None
+        self.toreturn = None
+        self.tth, self.chi, self.pixelX, self.pixelY, self.gnomonX, self.gnomonY = None,None,None,None,None,None
+        self.xlim = None
+        self.ylim = None
+        self.locatespotmarkersize = 1
+
+        self.centerx, self.centery = None, None
+        self.listbuttonstate = []
+        self.twospots = None
+        self._dataANNOTE_exp = None
+
+        self.select_chi, self.select_theta = None, None
+        self.select_dataX, self.select_dataY = None, None
+        self.select_I = None
+        self.set_central_spots_hkl = None
+        self.spot_index_central = None
+        self.Nb_criterium, self.NBRP, self.B, self.energy_max = None, None, None, None
+
+        self.ResolutionAngstrom, self.nLUT = None, None
+        self.rough_tolangle, self.resindexation = None, None
+
+        self.fine_tolangle, self.TGframe, self.worker = None, None, None
+
+        self.UBs_MRs, self.bestmat = None, None
+        self.TwicethetaChi_solution = None
+
+
         # depending of datatype self.Data_X, self.Data_Y can be 2theta, chi or gnomonX,gnomonY, or pixelX,pixelY
         # print "data",data
         # Data_X, Data_Y, Data_I, File_NAME = data
@@ -248,10 +278,10 @@ class ManualIndexFrame(wx.Frame):
         self.tooltip.SetDelay(0)
         self.fig.canvas.mpl_connect("motion_notify_event", self.onMotion_ToolTip)
 
-        self.pickdistbtn = wx.ToggleButton(self.panel, 2, "Pick distance")
+        self.pickdistbtn = wx.ToggleButton(self.panel, 2, "Pick distance")  # T2
         self.recongnisebtn = wx.ToggleButton(
-            self.panel, 3, "Recognise distance", size=(150, 40))
-        self.pointButton6 = wx.ToggleButton(self.panel, 6, "Show Exp. Spot Props")
+            self.panel, 3, "Recognise distance", size=(150, 40)) # T3
+        self.pointButton6 = wx.ToggleButton(self.panel, 6, "Show Exp. Spot Props")  # T6
 
         self.listbuttons = [self.pickdistbtn, self.recongnisebtn, self.pointButton6]
 
@@ -260,9 +290,9 @@ class ManualIndexFrame(wx.Frame):
         self.listbuttonstate = [self.p2S, self.p3S, self.p6S]
         self.listbuttonstate = [0, 0, 0]
 
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T2, id=2)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T3, id=3)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T2, id=2)  # pick distance
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T3, id=3)  # recognise distance
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)  # show Exp. spot props
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -791,7 +821,7 @@ class ManualIndexFrame(wx.Frame):
             if self.kf_direction == "Z>0":
                 self.xlim = (34, 146)
                 self.ylim = (-50, 50)
-            elif self.kf_direction == "X>0":
+            elif self.kf_direction in ("X>0","X<0"):
                 self.xlim = (-1, 60)
                 self.ylim = (-180, 180)
 
@@ -812,6 +842,9 @@ class ManualIndexFrame(wx.Frame):
             elif self.CCDLabel.startswith("sCMOS"):
                 self.ylim = (2050, 0)
                 self.xlim = (0, 2050)
+            elif self.CCDLabel.startswith("psl"):
+                self.ylim = (2000, 0)
+                self.xlim = (0, 1500)
 
         self.factorsize = 50
         self.powerscale = 1.0
@@ -826,7 +859,6 @@ class ManualIndexFrame(wx.Frame):
         """
         ManualIndexFrame
         """
-
         # offsets to match imshow and scatter plot coordinates frames
         if self.datatype == "pixels":
             X_offset = 1
@@ -834,12 +866,6 @@ class ManualIndexFrame(wx.Frame):
         else:
             X_offset = 0
             Y_offset = 0
-
-        # Data_X, Data_Y, Data_I, File_NAME = self.data
-        #         print "ManualIndexFrame _replot"
-        #         print "self.init_plot", self.init_plot
-        #         print "self.getlimitsfromplot", self.getlimitsfromplot
-        #         print "self.flipyaxis", self.flipyaxis
 
         if not self.init_plot and self.getlimitsfromplot:
             self.setplotlimits_fromcurrentplot()
@@ -1016,7 +1042,7 @@ class ManualIndexFrame(wx.Frame):
             dlg.Destroy()
 
     def onClick(self, evt):
-        """ onclick with mouse
+        """ onclick with mouse. Behavior depends on toggle button state
         """
 
         if evt.inaxes:
@@ -1269,8 +1295,6 @@ class ManualIndexFrame(wx.Frame):
         if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
             del self.axes.patches[-1]
 
-    #            print "deleted rectangle"
-
     def addPatchRectangle(self, X, Y, size=50):
         hsize = size / 2.0
         self.axes.add_patch(Rectangle((X - hsize, Y - hsize), size, size, fill=False, color="r"))
@@ -1279,16 +1303,18 @@ class ManualIndexFrame(wx.Frame):
         self.Close(True)
 
     def all_reds(self):
+        """ set all btns to red """
         for butt in self.listbuttons:
             butt.SetBackgroundColour(self.defaultColor)
 
     def what_was_pressed(self, flag):
+        """ print btn pressed """
         if flag:
             print("-------------------")
             print([butt.GetValue() for butt in self.listbuttons])
             print("self.listbuttonstate", self.listbuttonstate)
 
-    def T2(self, _):
+    def T2(self, _):  # pick distance  see onClick
         self.what_was_pressed(0)
         if self.listbuttonstate[0] == 0:
             self.all_reds()
@@ -1302,7 +1328,7 @@ class ManualIndexFrame(wx.Frame):
             self.pickdistbtn.SetValue(False)
             self.listbuttonstate = [0, 0, 0]
 
-    def T3(self, evt):  # Recognise distance
+    def T3(self, evt):  # Recognise distance  see onClick
         self.what_was_pressed(0)
         if self.listbuttonstate[1] == 0:
             self.all_reds()
@@ -1317,7 +1343,7 @@ class ManualIndexFrame(wx.Frame):
             self.listbuttonstate = [0, 0, 0]
             evt.Skip()
 
-    def T6(self, evt):
+    def T6(self, evt): # show exp spot props see onClick
         self.what_was_pressed(0)
         if self.listbuttonstate[2] == 0:
             self.all_reds()
@@ -1333,10 +1359,12 @@ class ManualIndexFrame(wx.Frame):
             evt.Skip()
 
     def allbuttons_off(self):
+        """ set all btns to False state """
         for butt in self.listbuttons:
             butt.SetValue(False)
 
     def readlogicalbuttons(self):
+        """ return list of btns states """
         return [butt.GetValue() for butt in self.listbuttons]
 
     def Reckon_2pts_new(self, _):
@@ -1602,6 +1630,8 @@ class ManualIndexFrame(wx.Frame):
             self.DataSet.emax = energy_max
 
             print("self.DataSet.detectordiameter", self.DataSet.detectordiameter)
+            print("self.DataSet.kf_direction", self.DataSet.kf_direction)
+            print("self.DataSet.pixelsize", self.DataSet.pixelsize)
 
             self.TGframe = TG.ThreadHandlingFrame(self, -1, threadFunctionParams=fctparams,
                                                         parentAttributeName_Result="resindexation",

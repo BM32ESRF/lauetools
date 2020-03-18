@@ -467,9 +467,10 @@ def getProximity(TwicethetaChi,
     #     print "table_dist_old", table_dist.shape
 
     if not usecython:
-        # table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
-        import scipy
-        table_dist = scipy.spatial.distance.cdist(sorted_data, theodata).T
+        table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+        
+        # import scipy
+        # table_dist = scipy.spatial.distance.cdist(sorted_data, theodata).T
 
     else:
         # TODO to be improved by not preparing array?

@@ -915,6 +915,9 @@ class Plot_RefineFrame(wx.Frame):
             elif self.CCDLabel.startswith("sCMOS"):
                 ylim = (2050, 0)
                 xlim = (0, 2050)
+            else:
+                ylim = (2500, 0)
+                xlim = (0, 2500)
             return xlim, ylim
 
 

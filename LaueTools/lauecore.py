@@ -576,17 +576,11 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
                 Rewald = arraysquare / (2 * np.fabs(listrotvec_X))
                 kfsquare = Rewald ** 2
-                KF_condit = (
-                    np.arccos(
-                        (
+                KF_condit = (np.arccos((
                             (listrotvec_X + Rewald) * np.cos(kf_2theta)
                             + listrotvec_Y * np.sin(kf_2theta) * np.sin(kf_chi)
                             + listrotvec_Z * np.sin(kf_2theta) * np.cos(kf_chi)
-                        )
-                        / np.sqrt(kfsquare)
-                    )
-                    < AngleMax
-                )
+                        ) / np.sqrt(kfsquare)) < AngleMax)
         else:
             raise ValueError("kf_direction '%s' is not understood!" % str(kf_direction))
 
@@ -595,13 +589,10 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         # vectors inside the two Ewald's spheres
         # last condition could be perhaps put before on
         # listrotvec_X[listrotvec_Z > 0]...
-        Condit = np.logical_and(
-            np.logical_and(
+        Condit = np.logical_and(np.logical_and(
                 ((listrotvec_X * 2.0 / wlm + arraysquare) <= 0.0),
                 ((listrotvec_X * 2.0 / wlM + arraysquare) > 0.0),
-            ),
-            (KF_condit),
-        )
+            ), (KF_condit))
         #   print "nb of spots in spheres and in towards CCD region", len(np.where(Condit == True)[0])
 
         if fastcompute == 0:
@@ -653,17 +644,9 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
             if fileOK:
                 linestowrite.append(["# grain :", str(i)])
-                linestowrite.append(
-                    ["Orientation matrix given as input :", str(Orientmatrix)]
-                )
-                linestowrite.append(
-                    [
-                        "Number of spots for # grain  ",
-                        str(i),
-                        ": ",
-                        str(len(listvecfiltered)),
-                    ]
-                )
+                linestowrite.append(["Orientation matrix given as input :", str(Orientmatrix)])
+                linestowrite.append(["Number of spots for # grain  ",
+                        str(i), ": ", str(len(listvecfiltered))])
                 linestowrite.append(["*****-------------*****"])
 
         # only q vectors are calculated, not Miller indices
@@ -702,30 +685,16 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
             if fileOK:
                 linestowrite.append(["# grain :", str(i)])
-                linestowrite.append(
-                    ["Orientation matrix given as input :", str(Orientmatrix)]
-                )
-                linestowrite.append(
-                    [
-                        "Number of spots for # grain  ",
-                        str(i),
-                        ": ",
-                        str(len(listvecfiltered)),
-                    ]
-                )
+                linestowrite.append(["Orientation matrix given as input :", str(Orientmatrix)])
+                linestowrite.append(["Number of spots for # grain  ", str(i), ": ",
+                        str(len(listvecfiltered))])
                 linestowrite.append(["*****-------------*****"])
 
     return wholelistvecfiltered, wholelistindicesfiltered
 
 
-def create_spot(
-    pos_vec,
-    miller,
-    detectordistance,
-    allattributes=False,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-):
+def create_spot(pos_vec, miller, detectordistance, allattributes=False, pixelsize=165.0 / 2048,
+                                                                                dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot instance (on top camera geometry)
 
@@ -747,25 +716,19 @@ def create_spot(
     vecres = np.array(pos_vec)
     spotty.EwaldRadius = np.dot(vecres, vecres) / (2.0 * math.fabs(vecres[0]))
     if spotty.Qxyz[2] > 0:
-        normkout = math.sqrt(
-            (spotty.Qxyz[0] + spotty.EwaldRadius) ** 2
+        normkout = math.sqrt((spotty.Qxyz[0] + spotty.EwaldRadius) ** 2
             + spotty.Qxyz[1] ** 2
-            + spotty.Qxyz[2] ** 2
-        )
+            + spotty.Qxyz[2] ** 2)
 
         if allattributes not in (False, 0):
-            X = (
-                detectordistance
+            X = (detectordistance
                 * (spotty.Qxyz[0] + spotty.EwaldRadius)
-                / spotty.Qxyz[2]
-            )
+                / spotty.Qxyz[2])
             Y = detectordistance * (spotty.Qxyz[1]) / spotty.Qxyz[2]
             spotty.Xcam = -X / pixelsize + dim[0] / 2
             spotty.Ycam = -Y / pixelsize + dim[1] / 2
 
-        spotty.Twicetheta = (
-            math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG
-        )
+        spotty.Twicetheta = (math.acos((spotty.Qxyz[0] + spotty.EwaldRadius) / normkout) / DEG)
         #        spotty.Chi = math.atan(spotty.Qxyz[1] * 1. / spotty.Qxyz[2]) / DEG
         spotty.Chi = math.atan2(spotty.Qxyz[1] * 1.0, spotty.Qxyz[2]) / DEG
 
@@ -856,8 +819,7 @@ def create_spot_side_pos(pos_vec, miller, detectordistance,
             + spotty.Qxyz[2] ** 2)
 
         if not allattributes:
-            X = (detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius)
-                / spotty.Qxyz[1])
+            X = (detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius) / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             #             spotty.Xcam = X / pixelsize + dim[0] / 2
             #             spotty.Ycam = Y / pixelsize + dim[1] / 2
@@ -890,8 +852,7 @@ def create_spot_side_neg(pos_vec, miller, detectordistance, allattributes=0, pix
             + spotty.Qxyz[2] ** 2)
 
         if not allattributes:
-            X = (-detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius)
-                / spotty.Qxyz[1])
+            X = (-detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius) / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             spotty.Xcam = X / pixelsize + dim[0] / 2.0
             spotty.Ycam = Y / pixelsize + dim[1] / 2.0
@@ -1007,7 +968,6 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
         ratiod = detectordistance / Qy
         Xcam = ratiod * (Qx + Rewald)
         Ycam = ratiod * (Qz)
-
     elif kf_direction == "Y<0":  # other side reflection
         ratiod = detectordistance / np.abs(Qy)
         Xcam = -ratiod * (Qx + Rewald)
@@ -1278,16 +1238,11 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
     # outputs and returns
     if fileOK:
         linestowrite.append(["\n"])
-        linestowrite.append(
-            ["--------------------------------------------------------"])
-        linestowrite.append(
-            ["------------- Simulation Data --------------------------"])
-        linestowrite.append(
-            ["--------------------------------------------------------"])
+        linestowrite.append(["--------------------------------------------------------"])
+        linestowrite.append(["------------- Simulation Data --------------------------"])
+        linestowrite.append(["--------------------------------------------------------"])
         linestowrite.append(["\n"])
-        linestowrite.append(
-            ["#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"
-            ])
+        linestowrite.append(["#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"])
     if fastcompute == 0:
         # list of elements which are list of objects of spot class (1 element / grain)
         return ListSpots_Oncam_wo_harmonics
@@ -1473,13 +1428,10 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
         return oncam_2theta, oncam_chi
 
 
-def get2ThetaChi_geometry(
-    oncam_vec,
-    oncam_HKL,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    kf_direction=DEFAULT_TOP_GEOMETRY):
+def get2ThetaChi_geometry(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                                                pixelsize=165.0 / 2048,
+                                                                dim=(2048, 2048),
+                                                                kf_direction=DEFAULT_TOP_GEOMETRY):
     r"""
     computes list of spots instances from oncam_vec (q 3D vectors)
     and oncam_HKL (miller indices 3D vectors)
@@ -1536,13 +1488,10 @@ def get2ThetaChi_geometry(
     return listspot
 
 
-def get2ThetaChi_geometry_full_np(
-    oncam_vec,
-    oncam_HKL,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    kf_direction=DEFAULT_TOP_GEOMETRY):
+def get2ThetaChi_geometry_full_np(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                                                pixelsize=165.0 / 2048,
+                                                                dim=(2048, 2048),
+                                                                kf_direction=DEFAULT_TOP_GEOMETRY):
     r"""
     computes 2theta chi from oncam_vec (only 3D Q vectors corresponding to reflections on camera)
     and oncam_HKL (miller indices 3D vectors) for all spots of one grain
@@ -2010,7 +1959,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
     if removeharmonics:
         # remove harmonics:
         _, _, tokeep = GT.removeClosePoints(posx, posy, 0.05)
-        #print('tokeep',tokeep)
+        print('removeharmonics = 1 in SimulateLaue_full_np() tokeep',tokeep)
 
         s_tth = Twicetheta[tokeep]
         s_chi = Chi[tokeep]
