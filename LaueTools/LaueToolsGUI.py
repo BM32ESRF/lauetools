@@ -76,18 +76,18 @@ else:
     from lauecore import SimulateResult
     from graingraph import give_bestclique
     from LaueGeometry import Compute_data2thetachi
-    from GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
     from CrystalParameters import calc_B_RR
     from IOLaueTools import writefile_cor, createselecteddata
     from dict_LaueTools import (dict_CCD, dict_calib,
                                     dict_Materials, dict_Extinc, dict_Transforms, dict_Vect, dict_Rot,
                                     dict_Eul, list_CCD_file_extensions,
                                     readDict, getwildcardstring, LAUETOOLSFOLDER)
+    import matchingrate
+    from GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
     from GUI.PeakSearchGUI import MainPeakSearchFrame
     from GUI.DetectorParameters import autoDetectDetectorType
     from GUI.DetectorCalibration import MainCalibrationFrame
     from GUI.CCDFileParametersGUI import CCDFileParameters
-    import matchingrate
     from GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     from GUI.B0matrixLatticeEditor import B0MatrixEditor
@@ -502,7 +502,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         open_dlg.Destroy()
 
-    def recomputeScatteringAngles(self, evt):
+    def recomputeScatteringAngles(self, _):
 
         if self.DataPlot_filename is None:
             wx.MessageBox("You must first open a peaks list like in .dat or .cor file")
@@ -1568,7 +1568,7 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.data_theta is None:
             self.OpenDefaultData()
 
-        self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())  
+        self.current_exp_spot_index_list = (self.getAbsoluteIndices_Non_Indexed_Spots_())
 
         non_indexed_spots = np.array(self.current_exp_spot_index_list)
 
@@ -1897,6 +1897,7 @@ class PreferencesBoard(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
 
     def OnAccept(self, _):
+        """ accept and set parent folders correspondingly and quit """
         if self.samefolder.GetValue():
             self.writefolder = "."
         elif self.userdefinedrelfolder.GetValue():
@@ -1910,6 +1911,7 @@ class PreferencesBoard(wx.Dialog):
         self.Close()
 
     def OnQuit(self, _):
+        """ quit """
         self.Close()
 
 

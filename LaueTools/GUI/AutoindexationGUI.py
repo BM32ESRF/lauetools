@@ -130,6 +130,18 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.DataSet = DataSetObject
 
+        self.list_materials = []
+        self.combokeymaterial = None
+        self.spotsorder = None
+        self.dict_param, self.dict_param_list = None, None
+        self.select_chi, self.select_theta = None, None
+        self.select_dataX, self.select_dataY, self.select_I = None, None, None
+        self.data = None
+        self.select_dataXY = None
+        self.bestmatrices = []
+        self.TwicethetaChi_solution = None
+        self.config_irp_filename = None
+
         self.initGUI()
 
     def initGUI(self):
@@ -599,7 +611,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         print("set_central_spots_hkl", set_central_spots_hkl)
         print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
-        
+
         LUT_with_rules = self.applyrulesLUT.GetValue()
 
         self.getparams_for_irpfile()

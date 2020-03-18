@@ -11,12 +11,10 @@ import pickle
 import os
 import sys
 import time
-import re
-
-import numpy as np
-from pylab import figure, scatter, show, subplot, title
 import multiprocessing
 import configparser as CONF
+import numpy as np
+from pylab import figure, scatter, show, subplot, title
 
 if sys.version_info.major == 3:
     from . import generaltools as GT
@@ -102,6 +100,34 @@ class spotsset:
         self.dict_grain_matching_rate = {}
         self.dict_Missing_Reflections = {}
         self.dict_grain_twins = {}
+
+        self.simulparameter = {}
+        self.refpositionfilepath = None
+        self.CCDcalibdict = {}
+        self.framedim = None
+        self.alldata = None
+
+        self.ResolutionAngstromLUT = None
+        self.n_LUT = 4
+        self.B_LUT = None
+        self.MissingReflindexedgrains = None
+        self.nbMatricesInUBstack = 0
+        self.UseIntensityWeights = False
+        self.nbSpotsToIndex = 0
+        self.MinimumNumberMatches = -1
+
+        self.AngTol_LUTmatching = 0
+        self.refinedTS = None
+        self.deviatoricstrain = None
+        self.deviatoricstrain_sampleframe = None
+        self.new_latticeparameters = None
+
+        self.refinedUBmatrix = None
+        self.B0matrix = None
+        self.pixelresidues = None
+        self.spotindexabs = None
+        self.residues_non_weighted = None
+
 
         # list of indices of grains that are already indexed (indexation considered as completed)
         self.indexedgrains = []
@@ -338,9 +364,8 @@ class spotsset:
             # filter add_props
             if add_props is not None:
                 dataprops, colnames = add_props
-                arrayprops=np.array(dataprops).T
+                arrayprops = np.array(dataprops).T
                 add_props = arrayprops[new_order_spotindices].T, colnames
-
 
             # print('AFTER posx', posx)
             # print("isolatedspots", isolatedspots)
@@ -396,7 +421,7 @@ class spotsset:
         else:
             textwarning = "\n\n*******\n "
             textwarning += "warning: Laue geometry wasn't specified in %s" % filename
-            textwarning +=" use default geometry: \n%s\n*****\n\n" % DEFAULT_KF_DIRECTION
+            textwarning += "\nSo using default top reflection geometry: \n%s\n*****\n\n" % DEFAULT_KF_DIRECTION
             printred(textwarning)
 
             self.kf_direction = DEFAULT_KF_DIRECTION
@@ -490,18 +515,16 @@ class spotsset:
 
         return unindexed_spots_indices
 
-    def getSpotsFamilyallData(self, grain_index, onlywithMiller=1):
+    def getSpotsFamilyallData(self, grain_index):
         """
         return all data of experimental spots for one grain
 
         Reader of self.indexed_spots_dict
 
-        :param onlywithMiller: 1, 3 dedicated elements for H, K,L
-                                0, single element with array of [h,k,l]
+        :param grain_index: grain index (int)
 
         :return: array   (nb spots, nb properties)
         """
-        # TODO: to be changed:  CREATE and OVERWRITE val of self.indexed_spots_dict
         c = -1 # index column flag isindexed 1, otherwise 0
         cg = -2 # index column flag isindexed 1, otherwise 0
         data = []
@@ -510,7 +533,7 @@ class spotsset:
             if self.indexed_spots_dict[key_spot][c] == 1:
                 # spot belong to the grain #grain_index
                 if self.indexed_spots_dict[key_spot][cg] == grain_index:
-                    lcol = (0, 1, 2, 3, 4, 5, 6, -6, -5, -4, -3,-2,-1)
+                    lcol = (0, 1, 2, 3, 4, 5, 6, -6, -5, -4, -3, -2, -1)
                     data.append([self.indexed_spots_dict[key_spot][i] for i in lcol])
 
         return np.array(data)
@@ -542,7 +565,7 @@ class spotsset:
         """
         DataGraindict = {}
         for grainindex in self.indexedgrains:
-            datagrain = self.getSpotsFamilyallData(grainindex, onlywithMiller=1)
+            datagrain = self.getSpotsFamilyallData(grainindex)
             DataGraindict[grainindex] = datagrain
 
         return DataGraindict
@@ -551,7 +574,7 @@ class spotsset:
         """
         return useful data of experimental spots for one grain
         """
-        alldata = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
+        alldata = self.getSpotsFamilyallData(grain_index)
 
         #        print 'alldata', alldata
         #        print 'alldata', type(alldata)
@@ -641,7 +664,7 @@ class spotsset:
         nbspots = toindexdata.shape[0]
 
         if nbspots == 0:
-            return np.array([[],[],[]]), np.array([])
+            return np.array([[], [], []]), np.array([])
         if nbspots == 1:
             print('\n\n warning single spot in getSelectedExpSpotsData()')
 
@@ -734,7 +757,7 @@ class spotsset:
         if not use_spots_in_currentselection:
             print("case 1")
             # exp data used from refined model
-            data_1grain = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
+            data_1grain = self.getSpotsFamilyallData(grain_index)
             (index_r, tth_r, chi_r, _, _, intensity_r) = (data_1grain.T)[:6]
 
             self.TwiceTheta_Chi_Int = [tth_r, chi_r, intensity_r]
@@ -755,7 +778,7 @@ class spotsset:
             useabsoluteindex = self.absolute_index
 
         print("***nb of selected spots in AssignHKL*****", len(useabsoluteindex))
-        print("selected_expdata",selected_expdata)
+        print("selected_expdata", selected_expdata)
         print('matrix', matrix)
 
         AssignationHKL_res, nbtheospots, missingRefs = self.getSpotsLinks(matrix,
@@ -1362,7 +1385,8 @@ class spotsset:
                                 use_spots_in_currentselection=True,
                                 verbose=VERBOSE)
 
-                print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  self.dict_grain_matrix[grain_index]',self.dict_grain_matrix[grain_index])
+                print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  '
+                    'self.dict_grain_matrix[grain_index]', self.dict_grain_matrix[grain_index])
                 # --- ------- Refine with old strain model (varying strain at the right of UB)
                 refinedMatrix, devstrain = self.refineUBSpotsFamily(grain_index,
                                                                     self.dict_grain_matrix[grain_index],
@@ -1536,18 +1560,13 @@ class spotsset:
                                 # update matrix
                                 self.dict_grain_matrix[grain_index] = UBsingle
 
-                                # (index, _, _, _, _,
-                                # _,
-                                # H, K, L,
-                                # _) = self.getSpotsFamilyallData(grain_index, onlywithMiller=1).T
-                                datafamily = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
-                                index, H, K, L = np.take(datafamily, (0,-6,-5,-4), axis=1).T
+                                datafamily = self.getSpotsFamilyallData(grain_index)
+                                index, H, K, L = np.take(datafamily, (0, -6, -5, -4), axis=1).T
 
                                 hkl = np.array([H, K, L]).T
                                 hklmin = np.dot(transfmat, hkl.T).T
 
                                 for kspot, exp_spot_index in enumerate(index):
-                                    # TODO: to be changed: here CREATE and OVERWRITE val of self.indexed_spots_dict
                                     hh, kk, ll = hklmin[kspot]
                                     self.indexed_spots_dict[exp_spot_index][-6: -6 + 3] = [hh, kk, ll]
                                 #
@@ -1616,10 +1635,10 @@ class spotsset:
         """
 
         print('\n\n  entering  updateIndexationDict()  --------------------\n\n')
-        print('self.indexed_spots_dict[0]',self.indexed_spots_dict[0])
+        print('self.indexed_spots_dict[0]', self.indexed_spots_dict[0])
         if overwrite:
             self.resetSpotsFamily(grain_index)
-        print('self.indexed_spots_dict[0] after resetSpotsFamily',self.indexed_spots_dict[0])
+        print('self.indexed_spots_dict[0] after resetSpotsFamily', self.indexed_spots_dict[0])
 
         links_Miller = indexation_res[2]
         links_energy = indexation_res[5]
@@ -1643,14 +1662,13 @@ class spotsset:
             # this exp spot has not been already indexed
             if self.indexed_spots_dict[exp_index][c] != 1:
                 # keep the spot data and add theo info
-                # TODO: to be changed! here CREATE and OVERWRITE val of self.indexed_spots_dict
                 hh, kk, ll = miller_indices
                 self.indexed_spots_dict[exp_index][-6:] = [hh, kk, ll, energy, grain_index, 1]
                 #                linked_spots.append(exp_index)
                 nb_updates += 1
 
         print("\nupdateIndexationDict():     ")
-        print('self.indexed_spots_dict[0]',self.indexed_spots_dict[0])
+        print('self.indexed_spots_dict[0]', self.indexed_spots_dict[0])
         print("grain #%d : %d links to simulated spots have been found " % (grain_index, nb_updates))
         #        print "absolute spot indices that have been linked", linked_spots
 
@@ -1685,10 +1703,8 @@ class spotsset:
             for close_spot in close_spots:
                 exp_index = int(close_spot[0])
                 # keep the spot data and add theo info
-                # TODO: to be changed! here CREATE and OVERWRITE val of self.indexed_spots_dict
                 self.indexed_spots_dict[exp_index][-6:] = [hh, kk, ll, energy, MissingRef_grain_index, 1]
 
-        #         print "Number of missing reflections:",len(close_spots)
         print("Experimental experimental spots indices which are not indexed",
                                                                         close_spots[:, 0])
         print("Missing reflections grainindex is %d for indexed grainindex %d"
@@ -1885,15 +1901,15 @@ class spotsset:
                                         Missing_Reflections_Miller,
                                         Missing_Reflections_Energy)
 
-#        # check if some missing reflections are quite close to some exp spots
-#        Resi, ProxTable = matchingrate.getProximity(Missing_Reflections_Pos[:2], # warning array(2theta, chi)
-#                                                    twicetheta_data / 2., chi_data, # warning theta, chi for exp
-#                                                    proxtable=1, angtol=veryclose_angletol,
-#                                                    verbose=0,
-#                                                    signchi=1)[:2]
-#
-#        print "Resi", Resi
-#        print "ProxTable", ProxTable
+    #        # check if some missing reflections are quite close to some exp spots
+    #        Resi, ProxTable = matchingrate.getProximity(Missing_Reflections_Pos[:2], # warning array(2theta, chi)
+    #                                                    twicetheta_data / 2., chi_data, # warning theta, chi for exp
+    #                                                    proxtable=1, angtol=veryclose_angletol,
+    #                                                    verbose=0,
+    #                                                    signchi=1)[:2]
+    #
+    #        print "Resi", Resi
+    #        print "ProxTable", ProxTable
 
             return res, nb_of_simulated_spots, Missing_Reflections_Data
 
@@ -2044,21 +2060,21 @@ class spotsset:
             spot_index_central = 0
 
         #  matrix, score, Threshold_reached = INDEX.getOrients_AnglesLUT(spot_index_central,
-#                                             self.table_angdist,
-#                                             self.TwiceTheta_Chi_Int[0],
-#                                             self.TwiceTheta_Chi_Int[1],
-#                                             n=self.n_LUT,
-#                                             B=self.B_LUT,
-#                                             LUT=self.LUT,
-#                                               ResolutionAngstrom=False,
-#                                             Matching_Threshold_Stop=MatchingRate_Threshold,
-#                                             angleTolerance_LUT=self.AngTol_LUTmatching,
-#                                             MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
-#                                             key_material=self.key_material,
-#                                             emax=self.emax,
-#                                             absoluteindex=self.absolute_index,
-#                                             detectorparameters=self.simulparameter,
-#                                             verbose=verbose)
+    #                                             self.table_angdist,
+    #                                             self.TwiceTheta_Chi_Int[0],
+    #                                             self.TwiceTheta_Chi_Int[1],
+    #                                             n=self.n_LUT,
+    #                                             B=self.B_LUT,
+    #                                             LUT=self.LUT,
+    #                                               ResolutionAngstrom=False,
+    #                                             Matching_Threshold_Stop=MatchingRate_Threshold,
+    #                                             angleTolerance_LUT=self.AngTol_LUTmatching,
+    #                                             MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
+    #                                             key_material=self.key_material,
+    #                                             emax=self.emax,
+    #                                             absoluteindex=self.absolute_index,
+    #                                             detectorparameters=self.simulparameter,
+    #                                             verbose=verbose)
 
         list_matrices, list_stats = self.FindOrientMatrices(spot_index_central=spot_index_central,
                                                     nbmax_probed=nbmax_probed,
@@ -2230,10 +2246,10 @@ class spotsset:
         """
         MINIMUM_LINKS_FOR_FIT = 8
 
-        data_1grain_raw = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
+        data_1grain_raw = self.getSpotsFamilyallData(grain_index)
 
         print('\n\n *******data_1grain_raw.shape in refineUBSpotsFamily', data_1grain_raw.shape)
-        print('data_1grain_raw[0]',data_1grain_raw)
+        print('data_1grain_raw[0]', data_1grain_raw)
         if isinstance(nbSpotsToIndex, int):
             data_1grain = data_1grain_raw[:nbSpotsToIndex]
         else:
@@ -2420,7 +2436,7 @@ class spotsset:
 
         :param grain_index: grain index (int)
         :param initial_matrix: guessed UB matrix (rotation*little strain)
-        :param use_weights: use spot intensity to weight the pair (theo , exp) distance 
+        :param use_weights: use spot intensity to weight the pair (theo , exp) distance
 
         set results values as following:
         self.refinedUBmatrix = newUBmat
@@ -2436,7 +2452,7 @@ class spotsset:
 
         MINIMUM_LINKS_FOR_FIT = 8
 
-        data_1grain = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
+        data_1grain = self.getSpotsFamilyallData(grain_index)
 
         #        print "absolute index of spots to refine", data_1grain[:, 0]
         #    print "data_1grain.shape", data_1grain.shape
@@ -2698,9 +2714,9 @@ class spotsset:
         print("Saving Summary file: %s" % outputfilename)
 
         Data = self.getSummaryallData()
-        if len(Data)==0:
+        if len(Data) == 0:
             return
-        if Data.shape[0]==1:
+        if Data.shape[0] == 1:
             nbspots = 1
         else:
             nbspots = len(Data)
@@ -2805,7 +2821,7 @@ class spotsset:
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
         # get spots data
-        dataspots = self.getSpotsFamilyallData(grain_index, onlywithMiller=1)
+        dataspots = self.getSpotsFamilyallData(grain_index)
         nbindexedspots = len(dataspots)
         if nbindexedspots > 1:
             # (index, tth, chi, posX, posY, intensity, H, K, L, Energy) = dataspots.T
@@ -2955,7 +2971,7 @@ class spotsset:
         elif nbunindexedspots == 1:
             #TODO check !!
             # assert 1==0
-            print('alldataunindexed',r_alldataunindexed)
+            print('alldataunindexed', r_alldataunindexed)
             alldataunindexed = r_alldataunindexed[0]
             pass
         else:
@@ -3112,12 +3128,12 @@ class spotsset:
                 r_alldataunindexed = self.getUnIndexedSpotsallData(exceptgrains=unindexedspots)
                 nbunindexedspots = r_alldataunindexed.shape[0]
                 if nbunindexedspots == 0:
-                    th_unind, Chi_unind = [],[]
+                    th_unind, Chi_unind = [], []
                 elif nbunindexedspots == 1:
                     #TODO check !!
                     th_unind, Chi_unind = r_alldataunindexed[0][0][1:3]
                 else:
-                    th_unind, Chi_unind = np.take(r_alldataunindexed,(1,2),axis=1).T
+                    th_unind, Chi_unind = np.take(r_alldataunindexed, (1, 2), axis=1).T
 
         #    print "twicethetaChi", twicethetaChi
         all_tthchi = self.getSpotsallData()[:, 1:3]
@@ -3228,12 +3244,12 @@ class spotsset:
             r_alldataunindexed = self.getUnIndexedSpotsallData(exceptgrains=unindexedspots)
             nbunindexedspots = r_alldataunindexed.shape[0]
             if nbunindexedspots == 0:
-                th_unind, Chi_unind = [],[]
+                th_unind, Chi_unind = [], []
             elif nbunindexedspots == 1:
                 #TODO check !!
                 th_unind, Chi_unind = r_alldataunindexed[0][0][1:3]
             else:
-                th_unind, Chi_unind = np.take(r_alldataunindexed,(1,2),axis=1).T
+                th_unind, Chi_unind = np.take(r_alldataunindexed, (1, 2), axis=1).T
         # theo spots
         for i_mat in list(range(min(nbMatrices, 9))):
 
@@ -3289,7 +3305,7 @@ class spotsset:
                 return
             elif nbunindexedspots == 1:
                 #TODO check !!
-                assert 1==0
+                assert 1 == 0
             else:
                 th_unind, Chi_unind = alldataunindexed
 
@@ -4124,9 +4140,7 @@ def isindexed(spot_index, indexed_spots_dict):
     """
     c = -1  # col isindexed
     cg = -2 # col grainindex
-    #    if spot_index not in indexed_spots_dict.keys():
-    #        raise KeyError, "this spots index '%s' doesn't exist
-    # in spots dictionary" % str(spot_index)
+
     if indexed_spots_dict[spot_index][c] == 1:
         return indexed_spots_dict[spot_index][cg]
     else:
@@ -4359,6 +4373,7 @@ def plotindexingMap_rgbs(dmat, dmr, dnb, startindex=1708, mapshape=(16, 101)):
     numrows, numcols, _ = rgbs.shape
 
     def format_coord(x, y):
+        """ return from x, y , matching rate, nb of peaks image index """
         col = int(x + 0.5)
         row = int(y + 0.5)
         if col >= 0 and col < numcols and row >= 0 and row < numrows:
@@ -4544,7 +4559,6 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
         index_start, index_final = fileindexrange[:2]
     except:
         raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
-        return
 
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
@@ -4968,7 +4982,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     #  finding the closest reference position file in sample map
                     if imageindex != firstindex:
                         i, j = np.where(maptableindices == imageindex)
-                        (iprior, jprior), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
+                        #(iprior, jprior), imageindexprior, _
+                        (_, _), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
                                                         maxdist=indexstep*2,  # to get some candidates
                                                         startingindex=mapfirstimageindex,
                                                         existingabsindices=refposfiles.keys())
@@ -5231,7 +5246,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 dictNB[imageindex][grainindex] = DataSet.dict_grain_matching_rate[grainindex][0]
                 dictstrain[imageindex][grainindex] = DataSet.dict_grain_devstrain[grainindex]
 
-        if 1:  # verbose:
+        if verbose:
             print("dictMaterial", dictMaterial)
             print("dictMat", dictMat)
             print("dictMR", dictMR)

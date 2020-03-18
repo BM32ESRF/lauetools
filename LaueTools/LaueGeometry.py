@@ -137,7 +137,7 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
     #    print "pixelsize in calc_uflab ", pixelsize
 
     # transmission geometry
-    if kf_direction in ("X>0"):
+    if kf_direction in ("X>0",):
         return calc_uflab_trans(xcam,
                                 ycam,
                                 calib,
@@ -145,7 +145,7 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
                                 verbose=verbose,
                                 pixelsize=pixelsize,
                                 rectpix=rectpix)
-    elif kf_direction in ("X<0"):
+    elif kf_direction in ("X<0",):
         return calc_uflab_back(xcam,
                                 ycam,
                                 calib,
@@ -261,7 +261,8 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
     #    print "pixelsize in calc_uflab ", pixelsize
 
-    # TODO: this is strange beta defintion is different... but it has been checked by data from Poitiers 
+    # TODO: this is strange beta defintion is different...
+    # but it has been checked by data from Poitiers
     # cosbeta definition differs from
     # cosbeta = np.cos(PI / 2.0 - xbet * DEG)
     # sinbeta = np.sin(PI / 2.0 - xbet * DEG)
@@ -391,7 +392,7 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
     # print "uflab",uflab
     EPS = 1e-17
 
-    print("back reflection mode ", uflab)
+    # print("back reflection mode ", uflab)
 
     chi = np.arctan2(-xM, zM + EPS) / DEG
     twicetheta = 180-np.arccos(-uflab[:, 1]) / DEG
@@ -1285,7 +1286,9 @@ def matstarlabOR_to_matstarlabLaueTools(matstarlab):
 
 
 def matstarlab_to_matwithlatpar(matstarlab, dlatu_rad):
-
+    """  OR method to convert UB matrix to matrix with vec recirpocical basis.
+    .. todo:: to put in CrustalParameters or LaueGeometry?
+    """
     norm_vec0 = np.sqrt(np.inner(matstarlab[0:3], matstarlab[0:3]))
     matnorm = matstarlab / norm_vec0
     rlatsr = CP.matrix_to_rlat(GT.matline_to_mat3x3(matnorm), angles_in_deg=0)
@@ -1304,7 +1307,9 @@ def matstarlab_to_matwithlatpar(matstarlab, dlatu_rad):
 
 
 def readlt_det(filedet, returnmatLT=False, min_matLT=False):
-
+    """ OR method to read .det file
+    .. todo:: use better IOLauetools method
+    """
     print("reading info from LaueTools det file : \n", filedet)
     print("calibration, orientation matrix")
     print("convert matrix to matstarlabOR")
@@ -2333,12 +2338,13 @@ def convert_xycam_from_sourceshift(OMs, IIp, calib, verbose=0):
 
 
 def absorbprofile(x, R, mu, x0):
-
+    """ absorption profile"""
     cond = np.fabs(x - x0) <= R
     print(cond)
     print(cond.dtype)
 
     def Absorbfunction(x, radius=R, coef=mu, center=x0):
+        """ absorption function """
         return np.exp(-2 * coef * np.sqrt(radius ** 2 - (x - center) ** 2))
 
     yabs = list(map(Absorbfunction, x))

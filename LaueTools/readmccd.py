@@ -532,7 +532,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
 
-        if CCDLabel in ('psl_weiwei','MARCCD165', "EDF", "EIGER_4M", "EIGER_1M", "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M", "Rayonix MX170-HS"):
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M",
+                        "sCMOS", "sCMOS_fliplr","sCMOS_fliplr_16M", "sCMOS_16M",
+                        "Rayonix MX170-HS", 'psl_weiwei'):
 
             print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
@@ -1660,15 +1662,11 @@ def write_rawbinary(outputname, data, dataformat=np.uint16):
     print("image written in ", outputname)
 
 
-def SumImages(prefixname,
-                    suffixname,
-                    ind_start,
-                    ind_end,
-                    dirname=None,
-                    plot=0,
-                    output_filename=None,
-                    CCDLabel=None,
-                    nbdigits=0):
+def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
+                                                            plot=0,
+                                                            output_filename=None,
+                                                            CCDLabel=None,
+                                                            nbdigits=0):
     """
     sum images and write image with 32 bits per pixel format (4 bytes)
     """
@@ -2031,7 +2029,7 @@ def getMinMax(data2d, center, boxsize, framedim):
     return min and max values in ROI
 
     Parameters:
-    
+
     data2d : 2D array
              array as read by readCCDimage
     """
@@ -3984,7 +3982,6 @@ def read_background_flag(background_flag):
 
         if not os.path.exists(filepath):
             raise ValueError('File %s for background is does not exist'%filepath)
-            return None, None
 
         Data_for_localMaxima = filepath
 

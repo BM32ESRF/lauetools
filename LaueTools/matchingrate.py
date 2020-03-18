@@ -468,7 +468,8 @@ def getProximity(TwicethetaChi,
 
     if not usecython:
         table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
-        
+
+        # for cartesian distance only, crude approximate for kf_direction=Z>0
         # import scipy
         # table_dist = scipy.spatial.distance.cdist(sorted_data, theodata).T
 
@@ -680,23 +681,20 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
 
     #     print "kf_direction,pixelsize,detectordistance", kf_direction, pixelsize, detectordistance
 
-    # ---simulation
-    # print "Reference Element or structure label", key_material
-
-    # spots2pi = generalfabriquespot_fromMat_veryQuick(CST_ENERGYKEV/emax,CST_ENERGYKEV/emin,[grain],1,fastcompute=1,fileOK=0,verbose=0)
+    # ---simulation-----------------------------------
     grain = CP.Prepare_Grain(key_material, test_Matrix, dictmaterials=dictmaterials)
 
-    # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0) of spots exiting the crystal in 2pi steradian (Z>0)
-    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
-                            CST_ENERGYKEV / emin,
-                            [grain],
-                            1,
-                            fastcompute=1,
-                            fileOK=0,
-                            verbose=0,
-                            kf_direction=kf_direction,
-                            ResolutionAngstrom=ResolutionAngstrom,
-                            dictmaterials=dictmaterials)
+    # array(vec) and array(indices) (here with fastcompute=0 array(indices)=0)
+    # of spots exiting the crystal towards detector plane and geometry given by kf_direction
+    spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin,
+                                    [grain],
+                                    1,
+                                    fastcompute=1,
+                                    fileOK=0,
+                                    verbose=0,
+                                    kf_direction=kf_direction,
+                                    ResolutionAngstrom=ResolutionAngstrom,
+                                    dictmaterials=dictmaterials)
 
     if not SCIKITLEARN or not onlyXYZ:
         # 2theta,chi of spot which are on camera (with harmonics)

@@ -604,7 +604,6 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
                                             key_material,
                                             LUT=LUT,
                                             onlyclosest=0,
-                                            filterharmonics=1,
                                             verbose=verbose,
                                             dictmaterials=dictmaterials,
                                             LUT_with_rules=LUT_with_rules)
@@ -959,7 +958,6 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
         (hkls, _), LUT = FindO.PlanePairs_from2sets(exp_angular_dist, angle_tol,
                                                 set_hkl_1, hkl2,
                                                 key_material, LUT=None, onlyclosest=0,
-                                                filterharmonics=1,
                                                 verbose=verbose,
                                                 LUT_with_rules=LUT_with_rules)
 

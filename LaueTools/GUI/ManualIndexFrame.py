@@ -858,7 +858,7 @@ class ManualIndexFrame(wx.Frame):
 
     def _replot(self):
         """
-        ManualIndexFrame
+        replot Laue pattern theo. and exp. spots in ManualIndexFrame
         """
         # offsets to match imshow and scatter plot coordinates frames
         if self.datatype == "pixels":
@@ -1277,6 +1277,7 @@ class ManualIndexFrame(wx.Frame):
                                     "   Intensity=%.2f" % annote[1]), 0)
 
     def locateSpot(self, _):
+        """ add rectangle at spot given by its index (read from self.findspotchck)"""
         if self.findspotchck.GetValue():
             spotindex = int(self.spotindexspinctrl.GetValue())
             print("Showing spot #: %d" % spotindex)
@@ -1293,14 +1294,17 @@ class ManualIndexFrame(wx.Frame):
             self.canvas.draw()
 
     def RemoveLastRectangle(self):
+        """ remove last added rectangle """
         if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
             del self.axes.patches[-1]
 
     def addPatchRectangle(self, X, Y, size=50):
+        """ add rectangle at X,Y in self.axes """
         hsize = size / 2.0
         self.axes.add_patch(Rectangle((X - hsize, Y - hsize), size, size, fill=False, color="r"))
 
     def close(self, _):
+        """ close """
         self.Close(True)
 
     def all_reds(self):
@@ -1316,6 +1320,7 @@ class ManualIndexFrame(wx.Frame):
             print("self.listbuttonstate", self.listbuttonstate)
 
     def T2(self, _):  # pick distance  see onClick
+        """ read toggle button for pick distance"""
         self.what_was_pressed(0)
         if self.listbuttonstate[0] == 0:
             self.all_reds()
@@ -1330,6 +1335,7 @@ class ManualIndexFrame(wx.Frame):
             self.listbuttonstate = [0, 0, 0]
 
     def T3(self, evt):  # Recognise distance  see onClick
+        """ read toggle button for Recognise distance"""
         self.what_was_pressed(0)
         if self.listbuttonstate[1] == 0:
             self.all_reds()
@@ -1345,6 +1351,7 @@ class ManualIndexFrame(wx.Frame):
             evt.Skip()
 
     def T6(self, evt): # show exp spot props see onClick
+        """ read toggle button for show exp spot props"""
         self.what_was_pressed(0)
         if self.listbuttonstate[2] == 0:
             self.all_reds()
@@ -1679,7 +1686,10 @@ class ManualIndexFrame(wx.Frame):
             self.simulateAllResults()
 
     def simulateAllResults(self):
+        """ simulate all potential UB matrix solution from indexing.
 
+        Read self.resindexation
+        """
         #print('self.resindexation',self.resindexation)
         print('len self.resindexation', len(self.resindexation))
 
