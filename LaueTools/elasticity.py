@@ -19,8 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ======================================================================
 
-
-
 import itertools
 import warnings
 
@@ -31,8 +29,8 @@ try:
 except:
     scipy_stats = None
 
-import ase.units as units
-from ase.atoms import Atoms
+# import ase.units as units
+# from ase.atoms import Atoms
 
 # ##
 
@@ -43,8 +41,6 @@ def full_3x3_to_Voigt_6_index(i, j):
     if i == j:
         return i
     return 6 - i - j
-
-# ##
 
 def Voigt_6_to_full_3x3_strain(strain_vector):
     """

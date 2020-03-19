@@ -42,8 +42,8 @@ if wx.__version__ < "4.":
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
-# import wx.lib.scrolledpanel as scrolled
-# from . GUI import ProportionalSplitter as PropSplit
+
+    import wx.adv as wxadv
 
 if sys.version_info.major == 3:
     from . indexingImageMatching import ComputeGnomon_2
@@ -119,7 +119,7 @@ print("LaueToolsProjectFolder", LaueToolsProjectFolder)
 try:
     modifiedTime = os.path.getmtime(os.path.join(LaueToolsProjectFolder, "LaueToolsGUI.py"))
     DAY, MONTH, YEAR = (datetime.datetime.fromtimestamp(modifiedTime).strftime("%d %B %Y").split())
-except:
+except (FileExistsError, FileNotFoundError):
     DAY, MONTH, YEAR = "FromDistribution", "", "2019"
 
 
@@ -340,7 +340,7 @@ class LaueToolsGUImainframe(wx.Frame):
             (wx.ID_ANY, "&Edit Matrix", "Edit or Load Orientation Matrix", self.OnEditMatrix),
             (wx.ID_ANY, "&Edit UB, B, Crystal",
                                 "Edit B or UB Matrix and unit cell structure and extinctions",
-                                self.OnEditUBMatrix)]:
+                                self.OnEditB0Matrix)]:
             if _id is None:
                 SimulationMenu.AppendSeparator()
             else:
@@ -503,7 +503,7 @@ class LaueToolsGUImainframe(wx.Frame):
         open_dlg.Destroy()
 
     def recomputeScatteringAngles(self, _):
-
+        """ update scattering angles 2theta chi from user entered value from Launch_DetectorParamBoard"""
         if self.DataPlot_filename is None:
             wx.MessageBox("You must first open a peaks list like in .dat or .cor file")
             return
@@ -574,6 +574,7 @@ class LaueToolsGUImainframe(wx.Frame):
         DPBoard.Destroy()
 
     def OnFileResultsSaveAs(self, evt):
+        """ save indexed spots data as .res file"""
         dlg = wx.TextEntryDialog(self, "Enter Indexation filename(*.res):",
                                         "Indexation Results Filename Entry")
 
@@ -585,6 +586,7 @@ class LaueToolsGUImainframe(wx.Frame):
         dlg.Destroy()
 
     def OnSetLaueDetectorGeometry(self, _):
+        """ launch board to set Laue Detection Geometry"""
         LaueGeomBoard = SetGeneralLaueGeometry(self, -1, "Select Laue Geometry")
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
@@ -800,12 +802,14 @@ class LaueToolsGUImainframe(wx.Frame):
                                         StorageDict=StorageDict, DataSetObject=self.DataSet)
 
     def OnHoughMatching(self, _):
+        """ not implemented """
         dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
                                                     "Classical Indexation Method", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnRadialRecognition(self, _):
+        """ not implemented """
         dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
                                                             "Radial Recognition Method", wx.OK)
         dialog.ShowModal()
@@ -1130,14 +1134,13 @@ class LaueToolsGUImainframe(wx.Frame):
         CliquesFindingBoard(self, -1, "Cliques Finding Board :%s" % self.DataPlot_filename,
                                                     indexation_parameters=self.indexation_parameters)
 
-    def OnRecognitionParam(self, _):
-        return True
-
     def OnEditMatrix(self, _):
+        """ launch board to edit/create/load orientation matrix"""
         MatrixEditor = MatrixEditor_Dialog(self, -1, "Create/Read/Save/Load/Convert Orientation Matrix")
         MatrixEditor.Show(True)
 
-    def OnEditUBMatrix(self, _):
+    def OnEditB0Matrix(self, _):
+        """ launch editor for B0 matrix  (from lattice parameters)"""
         UBMatrixEditor = B0MatrixEditor(self, -1, "UB Matrix Editor and Board")
         UBMatrixEditor.Show(True)
 
@@ -1206,6 +1209,9 @@ class LaueToolsGUImainframe(wx.Frame):
             return nbmatrices
 
     def Enterkey_material(self):
+        """ launch key material dialog
+        .. note:: used in checkOrientation workflow
+        """
         helptstr = "Enter Material, structure or Element Label (example: Cu, UO2,)"
 
         dlg = wx.TextEntryDialog(self, helptstr, "Material and Crystallographic Structure Entry")
@@ -1231,6 +1237,9 @@ class LaueToolsGUImainframe(wx.Frame):
         return flag
 
     def EnterEnergyMax(self):
+        """ launch energy max dialog
+        .. note:: used in checkOrientation workflow
+        """
         helptstr = "Enter maximum energy of polychromatic beam"
 
         dlg = wx.TextEntryDialog(self, helptstr, "Energy Maximum Entry")
@@ -1272,7 +1281,11 @@ class LaueToolsGUImainframe(wx.Frame):
         return stats_properformat
 
     def PlotandRefineSolution(self):
+        """ from self.statsresidues (results of checkOrientation)
+        launch RecognitionResultCheckBox with potential solutions to be selected
 
+        .. note:: used in checkOrientation workflow
+        """
         StorageDict = {}
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
@@ -1425,6 +1438,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
     # --- ------------- spots database
     def SaveNonIndexedSpots(self, _):
+        """ launch user input filedialog to save current non indexed spots  in .cor file with suffix 'unindexed' """
         dlg = wx.TextEntryDialog(self,
                             "Enter new filename (*.cor):", "Peaks List .cor Filename Entry")
 
@@ -1444,6 +1458,7 @@ class LaueToolsGUImainframe(wx.Frame):
     #         self.SaveFileCorNonIndexedSpots(os.path.join(self.dirname, 'nonindexed'))
 
     def SaveFileCorNonIndexedSpots(self, outputfilename=None):
+        """ save current non indexed spots  in .cor file with suffix 'unindexed' """
         if outputfilename is None:
             pre = self.DataPlot_filename.strip(".")[0]
             outputfilename = pre + "nonindexed"
@@ -1533,18 +1548,21 @@ class LaueToolsGUImainframe(wx.Frame):
         self.last_epsil_fromindexation = {}
 
     def init_DataSet(self):
+        """ init instance of spots list and properties for indexation """
         # DataSetObject init
         self.DataSet = spotsset()
         # get spots scattering angles,X,Y positions from .cor file
         warningflag = self.DataSet.importdatafromfile(self.filename)
         if warningflag:
-            wx.MessageBox(warningflag + 'Please set an other Laue geometry if needed from the menu!','Info')
+            wx.MessageBox(warningflag + 'Please set an other Laue geometry if needed from the menu!', 'Info')
         self.DataSet.pixelsize = self.pixelsize
 
         self.SetTitle()  # Update the window title with the new filename
         # ----------------------------------
 
     def display_corfile_contents(self):
+        """display spots list prpos in main LaueToolsGUI window
+        """
         # -----------------------------------------------
         textfile = open(os.path.join(self.dirname, self.DataPlot_filename), "r")
         String_in_File_Data = textfile.read()
@@ -1552,7 +1570,9 @@ class LaueToolsGUImainframe(wx.Frame):
         textfile.close()
 
     def set_gnomonic_data(self):
-        # compute Gnomonic projection
+        """ compute Gnomonic projection coordinates from self.data_theta * 2, self.data_chi
+        set self.data_gnomonx, self.data_gnomony
+        """
         dataselected = createselecteddata((self.data_theta * 2, self.data_chi, self.data_I),
                                                 np.arange(len(self.data_theta)),
                                                 len(self.data_theta))[0]
@@ -1576,6 +1596,7 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no spots to be indexed now !", "INFO")
 
     def set_params_manualindexation(self):
+        """ init dict of parameters for manual indexation """
 
         indexation_parameters = {}
         indexation_parameters["kf_direction"] = self.kf_direction
@@ -1790,20 +1811,21 @@ class LaueToolsGUImainframe(wx.Frame):
         return dict(message="Choose an Image File", defaultDir=self.dirname, wildcard=wcd)
 
     def OnDocumentationpdf(self, _):
-
+        """ open pdf file of Lauetools Documentation """
         pdffile_adress = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation", "latex",
                                                                                 "LaueTools.pdf")
 
         webbrowser.open(pdffile_adress)
 
     def OnDocumentationhtml(self, _):
-
+        """ open html file of Lauetools Documentation """
         html_file_address = "file://%s" % os.path.join(LaueToolsProjectFolder, "Documentation",
                                                             "build", "html", "index.html")
 
         webbrowser.open(html_file_address)
 
     def OnTutorial(self, _):
+        """ not implemented """
         dialog = wx.MessageDialog(self, "Not yet implemented \n"
             "in wxPython\n\n See \nhttps://sourceforge.net/userapps/mediawiki/jsmicha/index.php?title=Main_Page",
             "Tutorial", wx.OK)
@@ -1811,12 +1833,14 @@ class LaueToolsGUImainframe(wx.Frame):
         dialog.Destroy()
 
     def OnSerieIndexation(self, _):
+        """ not implemented  """
         dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
                                                             "OnSerieIndexation", wx.OK)
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnMapAnalysis(self, _):
+        """ not implemented  """
         dialog = wx.MessageDialog(self, "Not yet implemented \n" "in wxPython",
                                                             "OnMapAnalysis", wx.OK)
         dialog.ShowModal()
@@ -1832,7 +1856,6 @@ class LaueToolsGUImainframe(wx.Frame):
          \n at BM32(European Synchrotron Radiation Facility).
 
         %s %s
-        
 
         Support and help in developing this package:
         https://sourceforge.net/projects/lauetools/
@@ -1851,7 +1874,7 @@ class LaueToolsGUImainframe(wx.Frame):
         info.SetName("LaueTools")
         info.SetVersion("%s %s %s" % (DAY, MONTH, YEAR))
         info.SetDescription(description)
-        info.SetCopyright("(C) 2019-%s Jean-Sebastien Micha" % YEAR)
+        info.SetCopyright("(C) 2020-%s Jean-Sebastien Micha" % YEAR)
         info.SetWebSite("http://www.esrf.eu/UsersAndScience/Experiments/CRG/BM32/")
         info.SetLicence(mylicense)
         info.AddDeveloper("Jean-Sebastien Micha")
@@ -1972,7 +1995,7 @@ class CliquesFindingBoard(wx.Frame):
         self.Centre()
 
     def OnLoadAnglesFile(self, _):
-        # load specific lut angles
+        """ load specific lut angles """
         # lutfolder = '/home/micha/LaueToolsPy3/LaueTools/'
         # lutfilename = 'sortedanglesCubic_nLut_5_angles_18_60.angles'
         # LUTfilename = os.path.join(lutfolder,lutfilename)
@@ -1990,7 +2013,7 @@ class CliquesFindingBoard(wx.Frame):
 
 
     def OnSearch(self, _):
-
+        """ start cliques search """
         spot_list = self.spotlist.GetValue()
 
         print("spot_list in OnSearch", spot_list)
@@ -2042,21 +2065,19 @@ class CliquesFindingBoard(wx.Frame):
             self.parent.list_of_cliques = None
 
     def OnQuit(self, _):
+        """ quit """
         self.Close()
 
 
 # --- ----------   DISPLAY SPlASH SCREEN
 if WXPYTHON4:
-    import wx.adv as wxadv
 
     class MySplash(wxadv.SplashScreen):
         """
         display during a given period a image and give back the window focus
         """
-
         def __init__(self, parent, duration=2000):
             # pick a splash image file you have in the working folder
-
             image_file = os.path.join(LaueToolsProjectFolder, "icons", "transmissionLaue_fcc_111.png")
             print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
@@ -2103,6 +2124,7 @@ class RedirectText:
 
 
 def start():
+    """ launcher of LaueToolsGUI (as module) """
     LaueToolsGUIApp = wx.App()
     LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
                                             projectfolder=LaueToolsProjectFolder)
