@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+r"""
+GUI class to manual indexing of laue pattern
+
+This module belongs to the open source LaueTools project with a free code repository at
+https://gitlab.esrf.fr/micha/lauetools
+mailto: micha -at- esrf *dot* fr
+
+March 2020
+"""
+from __future__ import division
+__author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import sys
 import copy
 
@@ -42,11 +54,11 @@ else:
     import indexingSpotsSet as ISS
     import lauecore as LAUE
     import LaueGeometry as F2TC
-    import GUI.LaueSpotsEditor as LSEditor
     import CrystalParameters as CP
     import generaltools as GT
     import dict_LaueTools as DictLT
     import dragpoints as DGP
+    import GUI.LaueSpotsEditor as LSEditor
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     import GUI.threadGUI2 as TG
     import GUI.PlotLimitsBoard
@@ -125,6 +137,7 @@ class ManualIndexFrame(wx.Frame):
         self.gnomonX, self.gnomonY = None, None
         self.xlim = None
         self.ylim = None
+        self.myplot = None
         self.locatespotmarkersize = 1
 
         self.centerx, self.centery = None, None
@@ -542,6 +555,7 @@ class ManualIndexFrame(wx.Frame):
         self.Layout()
 
     def sliderUpdate_exp(self, _):
+        """ on slider for exp spot  size"""
         print("sliderUpdate_exp")
         self.factorsize = int(self.slider_exp.GetValue())
         self.getlimitsfromplot = True
@@ -549,6 +563,7 @@ class ManualIndexFrame(wx.Frame):
         print("factor spot size = %f " % self.factorsize)
 
     def sliderUpdate_ps(self, _):
+        """ slider update power scale"""
         print("sliderUpdate_ps", self.slider_ps.GetValue())
         # ps from -5 5
         ps = (int(self.slider_ps.GetValue()) - 50) / 10.0
@@ -578,18 +593,22 @@ class ManualIndexFrame(wx.Frame):
         IScaleBoard.Show(True)
 
     def OnDrawLine(self, _):
+        """ draw line drawn on gnomonic plot """
         self.addlines = True
 
         self.getlimitsfromplot = True
         self._replot()
 
     def OnClearLines(self, _):
+        """ clear lines drawn on gnomonic plot """
         self.addlines = False
 
         self.getlimitsfromplot = True
         self._replot()
 
     def init_data(self):
+        """ depending on self.datatype
+        set spots coordinates in 2theta, chi, X, Y , or gnomonX, gnomonY"""
         if self.datatype == "2thetachi":
             #             self.tth, self.chi = self.Data_X, self.Data_Y
             self.tth, self.chi = self.data_2thetachi
@@ -602,10 +621,11 @@ class ManualIndexFrame(wx.Frame):
             self.pixelX, self.pixelY = self.data_XY
             print("pixels plot")
 
-        # TODO to remove
         self.Data_index_expspot = np.arange(len(self.Data_X))
 
     def reinit_data(self):
+        """ reset self.data to initial self.alldata (got from file)
+        """
         self.data = copy.copy(self.alldata)
 
     def BuildDataDict_old(self, _):  # filter Exp Data spots
@@ -759,14 +779,10 @@ class ManualIndexFrame(wx.Frame):
         xdata, ydata, _annotes = (self.Data_X, self.Data_Y, list(zip(self.Data_index_expspot,
                                                                     self.Data_I)))
 
-        #         print "DATA:    \n\n\n", xdata[:5], ydata[:5], annotes
-
         if evt.xdata is not None and evt.ydata is not None:
 
             clickX = evt.xdata
             clickY = evt.ydata
-
-            #             print 'clickX,clickY in onMotion_ToolTip', clickX, clickY
 
             annotes = []
             for x, y, a in zip(xdata, ydata, _annotes):
@@ -789,12 +805,12 @@ class ManualIndexFrame(wx.Frame):
 
             return
 
-        if not collisionFound:
-            pass
+        # if not collisionFound:
+        #     pass
 
     def SetSpotSize(self, _):
+        """ to be implemented """
         wx.MessageBox("To be implemented", "info")
-        pass
 
     def SetPlotLimits(self, _):
         """
@@ -817,6 +833,7 @@ class ManualIndexFrame(wx.Frame):
         PlotLismitsBoard.Show(True)
 
     def initplotlimits(self):
+        """  set self.xlim, self.ylim depending on self.datatype and self.kf_direction """
         if self.datatype == "2thetachi":
             self.locatespotmarkersize = 3
             if self.kf_direction == "Z>0":
@@ -851,6 +868,7 @@ class ManualIndexFrame(wx.Frame):
         self.powerscale = 1.0
 
     def setplotlimits_fromcurrentplot(self):
+        """ set self.xlim and self.ylim from current plot """
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
         print("new limits x", self.xlim)
@@ -879,12 +897,14 @@ class ManualIndexFrame(wx.Frame):
         #        self.axes.cla()
 
         def fromindex_to_pixelpos_x(index, _):
+            """ return index """
             if self.datatype == "pixels":
                 return int(index)
             else:
                 return index
 
         def fromindex_to_pixelpos_y(index, _):
+            """ return index """
             if self.datatype == "pixels":
                 return int(index)
             else:
@@ -1010,15 +1030,18 @@ class ManualIndexFrame(wx.Frame):
         self.canvas.draw()
 
     def func_size_energy(self, val, factor):
+        """ spot size function from energy input value (val)"""
         return 400.0 * factor / (val + 1.0)
 
     def func_size_intensity(self, val, factor, offset, lin=1):
+        """ spot size function from intensity input value (val)"""
         if lin:
             return 0.1 * (factor * val + offset)
         else:  # log scale
             return factor * np.log(np.clip(val, 0.000000001, 1000000000000)) + offset
 
     def func_size_peakintensity(self, intensity, params, lin=1):
+        """ spot size function from intensity input value (val)"""
         if lin == 1:
             s0, slope, smin, smax = params
             s = np.clip(slope * intensity + s0, smin, smax)
@@ -1033,11 +1056,10 @@ class ManualIndexFrame(wx.Frame):
         return s
 
     def onNlut(self, _):
-
+        """ raise warning message dialog if nlut > 7 """
         nlut = int(self.nlut.GetValue())
         if nlut > 7:
-            dlg = wx.MessageDialog(self, "nlut must be reasonnably less or equal to 7",
-                                                                    "warning",
+            dlg = wx.MessageDialog(self, "nlut must be reasonnably less or equal to 7", "warning",
                                                                     wx.OK | wx.ICON_WARNING)
             dlg.ShowModal()
             dlg.Destroy()
@@ -1111,7 +1133,6 @@ class ManualIndexFrame(wx.Frame):
 
                         _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]),
                                                     np.array([tw[1], ch[1]]))
-                    # TODO: add if self.datatype == 'pixels':
 
                     print("angular distance (q1,q2):  %.3f deg " % _dist)
 
@@ -1169,6 +1190,7 @@ class ManualIndexFrame(wx.Frame):
         evt.Skip()
 
     def store_pts(self, evt):
+        """ store clicked pt in self.points """
         self.points.append((evt.xdata, evt.ydata))
         print("# selected points", self.nbclick)
         print("Coordinates(%.3f,%.3f)" % (evt.xdata, evt.ydata))
@@ -1263,7 +1285,7 @@ class ManualIndexFrame(wx.Frame):
         return x, y, annote[0], annote[1]
 
     def updateStatusBar(self, x, y, annote, spottype="exp"):
-
+        """ update data of statusbar with spot x,y index, intensity ..."""
         if self.datatype == "2thetachi":
             Xplot = "2theta"
             Yplot = "chi"
@@ -1295,7 +1317,8 @@ class ManualIndexFrame(wx.Frame):
 
     def RemoveLastRectangle(self):
         """ remove last added rectangle """
-        if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
+        #if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
+        if isinstance(self.axes.patches[-1], Rectangle):
             del self.axes.patches[-1]
 
     def addPatchRectangle(self, X, Y, size=50):

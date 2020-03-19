@@ -311,7 +311,7 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
 
     print("transmission mode ", uflab[:, 1])
 
-    chi = np.arctan2(-xM, zM) / DEG
+    chi = np.arctan2(-xM, zM + EPS) / DEG
     twicetheta = np.arccos(uflab[:, 1]) / DEG
     #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
     #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
@@ -1785,10 +1785,12 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
     r"""
     Convert .dat (peaks list from peaksearch procedure) to .cor (adding scattering angles 2theta chi)
 
-    From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
-    and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
+    From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry,
+    it computes scattering angles 2theta chi and creates a .cor file (ascii peaks list
+    (2theta chi X Y int ...))
 
-    :param calibparam: list of 5 CCD cakibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
+    :param calibparam: list of 5 CCD cakibration parameters
+                        (used if CCDCalibdict is None or CCDCalibdict['CCDCalibPameters'] is missing)
 
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
 
@@ -1823,8 +1825,7 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
 
         add_props = (data[:, 4:], allcolnames[4:])
 
-    # TODO: handle windowsOS path syntax
-    filename_wo_path = filename.split("/")[-1]
+    filename_wo_path = os.path.split(filename)[-1]
 
     file_extension = filename_wo_path.split(".")[-1]
 
@@ -1866,8 +1867,7 @@ def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffi
                                                                             nbdigits=4,
                                                                             dirname_in=None,
                                                                             dirname_out=None,
-                                                                            pixelsize=165.0 / 2048,
-                                                                            fliprot="no"):
+                                                                            pixelsize=165.0 / 2048):
     r"""
     convert a serie of peaks list ascii files to .cor files (adding scattering angles).
 

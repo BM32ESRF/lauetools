@@ -119,8 +119,8 @@ print("LaueToolsProjectFolder", LaueToolsProjectFolder)
 try:
     modifiedTime = os.path.getmtime(os.path.join(LaueToolsProjectFolder, "LaueToolsGUI.py"))
     DAY, MONTH, YEAR = (datetime.datetime.fromtimestamp(modifiedTime).strftime("%d %B %Y").split())
-except:
-    DAY, MONTH, YEAR = "FromDistribution", "", "2019"
+except (FileNotFoundError, FileExistsError):
+    DAY, MONTH, YEAR = "FromDistribution", "", "2020"
 
 
 # --- ------------  MAIN GUI WINDOW
@@ -503,7 +503,8 @@ class LaueToolsGUImainframe(wx.Frame):
         open_dlg.Destroy()
 
     def recomputeScatteringAngles(self, _):
-
+        """ update scattering angles 2theta chi according to new user entered detector parameters
+        """
         if self.DataPlot_filename is None:
             wx.MessageBox("You must first open a peaks list like in .dat or .cor file")
             return
@@ -521,9 +522,7 @@ class LaueToolsGUImainframe(wx.Frame):
         print("self.defaultParam after", self.defaultParam)
 
         (twicetheta, chi, dataintensity,
-        data_x, data_y) = Compute_data2thetachi(fullpathfile,
-                                                    (0, 1, 3),
-                                                    1,
+        data_x, data_y) = Compute_data2thetachi(fullpathfile, (0, 1, 3), 1,
                                                     sorting_intensity="yes",
                                                     param=self.defaultParam,
                                                     pixelsize=self.pixelsize,

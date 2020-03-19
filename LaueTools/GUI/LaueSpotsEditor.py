@@ -224,13 +224,10 @@ class SpotsEditor(wx.Frame):
 
         apfilterbtn.SetToolTipString("Apply filter(s) designed by logical expression on columns properties")
         rlbtn.SetToolTipString("Reload and Display the complete set of associations")
-        rmv1spotbtn.SetToolTipString("Remove the spot association selected in the links list")
+        rmv1spotbtn.SetToolTipString("Remove the spot association selected in the links list. Press also key 'd'.")
         plotfreqbtn.SetToolTipString("Plot residues distribution frequency of the spot links list")
 
     def onKeypressed(self, event):
-        #         print "key ==", dir(event)
-        #         print event.KeyCode
-        #         print event.RawKeyCode
         # delete items
         if event.KeyCode == 68 and event.RawKeyCode == 100:  # it means 'd'
             self.OnRemove(event)
@@ -239,19 +236,16 @@ class SpotsEditor(wx.Frame):
 
         item = event.GetSelection()
         self.filterfield1 = self.field_name[item]
-        # print "selected filter field", self.filterfield1
 
     def EnterCombocolumn2(self, event):
 
         item = event.GetSelection()
         self.filterfield2 = self.field_name[item]
-        # print "selected filter field", self.filterfield2
 
     def EnterCombocolumn3(self, event):
 
         item = event.GetSelection()
         self.filterfield3 = self.field_name[item]
-        # print "selected filter field", self.filterfield3
 
     def OnReload(self, event):
         self.OnClear(event)
@@ -271,7 +265,6 @@ class SpotsEditor(wx.Frame):
 
         for k, condition in enumerate(cond):
             if condition != "":
-                # print "condition is ",condition
 
                 # array_data must be defined. The following line mustn't be commented!
                 array_data = np.array(self.dict_spots_data[field[k]])

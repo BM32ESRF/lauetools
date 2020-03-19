@@ -3,10 +3,10 @@ r"""
 GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
 This module belongs to the open source LaueTools project with a free code repository at
-https://sourceforge.net/projects/lauetools/
-mailto: micha at esrf dot fr
+https://gitlab.esrf.fr/micha/lauetools
+mailto: micha *at- esrf -dot** fr
 
-August 2014
+March 2020
 """
 from __future__ import division
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -26,6 +26,7 @@ else:
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """ alias for wxpython 4"""
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -854,7 +855,7 @@ class Plot_RefineFrame(wx.Frame):
                 wx.MessageBox(txt, "INFO")
                 return
 
-            nbmatrices = nbval / 9
+            nbmatrices = nbval // 9
             ListMatrices = np.zeros((nbmatrices, 3, 3))
             ind_elem = 0
             for ind_matrix in range(nbmatrices):
