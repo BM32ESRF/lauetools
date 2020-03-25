@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
+r"""
+GUI class to edit spots properties and select spots for further use
 
+This module belongs to the open source LaueTools project with a free code repository at
+https://gitlab.esrf.fr/micha/lauetools
+mailto: micha -at* esrf *dot- fr
+
+March 2020
+"""
+from __future__ import division
 import sys
 import numpy as np
 
@@ -9,7 +18,7 @@ try:
     from wx.lib.embeddedimage import PyEmbeddedImage
 
     PyEmbeddedImageOk = True
-except:
+except ImportError:
     PyEmbeddedImageOk = False
 import wx.lib.mixins.listctrl
 
@@ -21,6 +30,7 @@ else:
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """ alias fct"""
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -105,17 +115,17 @@ class SpotsEditor(wx.Frame):
 
         list_tcs = [self.tc1, self.tc2, self.tc3]
 
-        self.f1 = wx.ComboBox(pnl1, 700, self.field_name[0], choices=self.field_name,
+        self.f1 = wx.ComboBox(pnl1, -1, self.field_name[0], choices=self.field_name,
                                 style=wx.CB_READONLY, size=(120, -1))
-        self.f1.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn1, id=700)
+        self.f1.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn1)
 
-        self.f2 = wx.ComboBox(pnl1, 701, self.field_name[1], choices=self.field_name,
+        self.f2 = wx.ComboBox(pnl1, -1, self.field_name[1], choices=self.field_name,
                                 style=wx.CB_READONLY, size=(120, -1))
-        self.f2.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn2, id=701)
+        self.f2.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn2)
 
-        self.f3 = wx.ComboBox(pnl1, 702, self.field_name[2], choices=self.field_name,
+        self.f3 = wx.ComboBox(pnl1, -1, self.field_name[2], choices=self.field_name,
                                 style=wx.CB_READONLY, size=(120, -1))
-        self.f3.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn3, id=702)
+        self.f3.Bind(wx.EVT_COMBOBOX, self.EnterCombocolumn3)
 
         list_fs = [self.f1, self.f2, self.f3]
 
@@ -153,9 +163,15 @@ class SpotsEditor(wx.Frame):
 
         # ---------------------------------------------
         apfilterbtn = wx.Button(pnl2, 10, "Apply Filter")
-        rlbtn = wx.Button(pnl2, 100, "Reload")
-        rmv1spotbtn = wx.Button(pnl2, 11, "Remove one spot")
-        plotfreqbtn = wx.Button(pnl2, 106, "Plot Freq.")
+        rlbtn = wx.Button(pnl2, -1, "Reload")
+        rmv1spotbtn = wx.Button(pnl2, -1, "Remove one spot")
+        plotfreqbtn = wx.Button(pnl2, -1, "Plot Freq.")
+
+        self.Bind(wx.EVT_BUTTON, self.OnApplyFilter, id=10)
+        plotfreqbtn.Bind(wx.EVT_BUTTON, self.OnPlot)
+        rlbtn.Bind(wx.EVT_BUTTON, self.OnReload)
+        rmv1spotbtn.Bind(wx.EVT_BUTTON, self.OnRemove)
+        self.Bind(wx.EVT_BUTTON, self.OnAcceptQuit, id=wx.ID_OK)
 
         # vbox4.Add(wx.Button(pnl2, 10, 'Filter'),   0, wx.ALIGN_CENTER | wx.TOP, 15)
         hbobox0 = wx.BoxSizer(wx.HORIZONTAL)
@@ -168,13 +184,6 @@ class SpotsEditor(wx.Frame):
         vbox4.Add(hbobox, 0, wx.ALIGN_CENTER | wx.TOP, 15)
         vbox4.Add(wx.Button(pnl2, wx.ID_OK, "Accept and Quit",
                             size=(-1, 60)), 0, wx.EXPAND | wx.ALL, 5)
-
-        self.Bind(wx.EVT_BUTTON, self.OnApplyFilter, id=10)
-        self.Bind(wx.EVT_BUTTON, self.OnPlot, id=106)
-        self.Bind(wx.EVT_BUTTON, self.OnReload, id=100)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, id=11)
-        self.Bind(wx.EVT_BUTTON, self.OnAcceptQuit, id=wx.ID_OK)
-
         pnl2.SetSizer(vbox4)
 
         # final layout
@@ -228,27 +237,25 @@ class SpotsEditor(wx.Frame):
         plotfreqbtn.SetToolTipString("Plot residues distribution frequency of the spot links list")
 
     def onKeypressed(self, event):
-        #         print "key ==", dir(event)
-        #         print event.KeyCode
-        #         print event.RawKeyCode
+        """ handle key pressed """
         # delete items
         if event.KeyCode == 68 and event.RawKeyCode == 100:  # it means 'd'
             self.OnRemove(event)
 
     def EnterCombocolumn1(self, event):
-
+        """  handle column1 """
         item = event.GetSelection()
         self.filterfield1 = self.field_name[item]
         # print "selected filter field", self.filterfield1
 
     def EnterCombocolumn2(self, event):
-
+        """  handle column2 """
         item = event.GetSelection()
         self.filterfield2 = self.field_name[item]
         # print "selected filter field", self.filterfield2
 
     def EnterCombocolumn3(self, event):
-
+        """  handle column3 """
         item = event.GetSelection()
         self.filterfield3 = self.field_name[item]
         # print "selected filter field", self.filterfield3
@@ -260,6 +267,8 @@ class SpotsEditor(wx.Frame):
         self.tcnb.SetLabel(str(self.nbspots))
 
     def OnApplyFilter(self, event):
+        """ apply filter (set by evaluating a expression with = < >...)
+        to select or discard spots from the list"""
         # read filter fields
         # field must be defined. The following line mustn't be commented!
         field = [ff for ff in (self.filterfield1, self.filterfield2, self.filterfield3)]
@@ -277,7 +286,7 @@ class SpotsEditor(wx.Frame):
                 array_data = np.array(self.dict_spots_data[field[k]])
                 # print "before filtering", array_data
                 toeval = "array_data" + condition
-                    
+
                 try:
                     _cond = eval(toeval)
                 except NameError:
@@ -313,6 +322,7 @@ class SpotsEditor(wx.Frame):
         barplt.Show(True)
 
     def OnRemove(self, _):
+        """ remove a spot selected from mouse click or 'd' pressed key """
         index = self.listcontrol.GetFocusedItem()
         self.listcontrol.DeleteItem(index)
         #         oldnb = int(self.tcnb.GetValue())
@@ -322,6 +332,7 @@ class SpotsEditor(wx.Frame):
             self.tcnb.SetLabel(str(oldnb - 1))
 
     def ReadSortedData(self):
+        """ read current list of spots and return it """
         self.toreturn = []
         #         print "self.field_name", self.field_name
         for idx in range(self.listcontrol.GetItemCount()):  # loop over spots
@@ -334,12 +345,11 @@ class SpotsEditor(wx.Frame):
         return self.toreturn
 
     def OnAcceptQuit(self, _):
-
+        """ accept current list of spots and export it by means of self.func_to_call()"""
         self.toreturn = self.ReadSortedData()
 
         if self.func_to_call is not None:
             #             print "self.func_to_call", self.func_to_call
-
             #             print "self.toreturn", self.toreturn
             print(("nb of spots selected", len(self.toreturn)))
             self.func_to_call(self.toreturn)
@@ -347,10 +357,12 @@ class SpotsEditor(wx.Frame):
         self.Close()
 
     def OnClear(self, _):
+        """ delete all list items """
         self.listcontrol.DeleteAllItems()
 
 
 class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
+    """ class to contain list of elements"""
     def __init__(self, parent, field_name, dict_data):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
 
@@ -364,13 +376,11 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             SmallUpArrow = PyEmbeddedImage(
                 "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
                 "REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
-                "cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg=="
-            )
+                "cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
             SmallDnArrow = PyEmbeddedImage(
                 "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
                 "REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
-                "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg=="
-            )
+                "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
 
             self.il = wx.ImageList(16, 16)
             self.sort_up = self.il.Add(SmallUpArrow.GetBitmap())
@@ -386,6 +396,7 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
         self.itemDataMap = {}
 
     def add_rows(self, dict_data, nbspots):
+        """ read dict_data and add all rows corresponding to elements"""
         # print "Building list of Data spots"
 
         for row in range(nbspots):  # loop over spots
@@ -397,7 +408,7 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             # self.SetStringItem( num_items, k+1, str(dict_data[field][spot_index]) )
 
     def add_row(self, row, dict_data):
-
+        """ add to the list a row corresponding to a single element contained in dict_data"""
         # if 0: wxpython 4.0.1
         #     index = self.InsertItem(
         #         sys.maxsize, str(dict_data[self.field_name[0]][row])
@@ -447,13 +458,8 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             self.SetItemData(index, row)
             self.itemDataMap[row] = _content
 
-    def GetListCtrl(self):
-        return self
-
-    # def GetSortImages(self):
-    # return (self.sort_dn, self.sort_up)
-
     def clean(self):
+        """ clear all items list"""
         self.DeleteAllItems()
         self.itemDataMap = {}
 
@@ -541,12 +547,14 @@ if __name__ == "__main__":
         "h": [0, 0, 5, 1, 2, 2, 1, 1, 1, -1, -1],
         "k": [1, 1, 1, 2, 0, 2, 1, 0, -1, 2, 5],
         "l": [-1, 0, 6, 10, 1, 0, -6, -3, -2, -1, 0],
-        "2theta": [ 23.125, 90.1258, 68.36512, 49.98598, 65.0000236, 101.101101, 89.8996, 56.2356, 45.2356, 92.2365, 48.2658, ],
-        "Intensity": [ 10000.0, 558.235, 24.3265, -1.123665, 65535, 100, 1, 0, 445, 2048, 6525.356, ],
+        "2theta": [23.125, 90.1258, 68.36512, 49.98598, 65.0000236, 101.101101, 89.8996, 56.2356, 45.2356, 92.2365, 48.2658, ],
+        "Intensity": [10000.0, 558.235, 24.3265, -1.123665, 65535, 100, 1, 0, 445, 2048, 6525.356, ],
     }
 
     class MyApp(wx.App):
+        """ class App SpotsEditor"""
         def OnInit(self):
+            """ init """
             dia = SpotsEditor(None, -1, "Spots Editor.py", mySpotData, field_name_and_order=fields)
             #            dia.Destroy()
             dia.Show(True)

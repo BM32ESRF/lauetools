@@ -1278,9 +1278,9 @@ class ROISelection(wx.Panel):
         txt1.SetFont(font3)
 
         self.boxxtxt = wx.StaticText(self, -1, "X")
-        self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
+        self.boxxctrl = wx.SpinCtrl(self, -1, "30", min=0, max=3000, size=(60, -1))
         self.boxytxt = wx.StaticText(self, -1, "Y")
-        self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
+        self.boxyctrl = wx.SpinCtrl(self, -1, "30", min=0, max=3000, size=(60, -1))
 
         txt2 = wx.StaticText(self, -1, "ROI selection mode")
         txt2.SetFont(font3)
@@ -3212,6 +3212,7 @@ class MainPeakSearchFrame(wx.Frame):
 
 
     def onPick(self, event):
+        """ on pick """
         self.currentROIpatch = None
 
         if isinstance(event.artist, Rectangle):
@@ -3736,6 +3737,7 @@ class MainPeakSearchFrame(wx.Frame):
 
     def PlotValues(self):
         """Draw numerical pixel intensity value on plot
+        if self.numvalues_chck is True
         """
         if not self.numvalues_chck.GetValue():
             return
@@ -4468,6 +4470,7 @@ class MainPeakSearchFrame(wx.Frame):
                                 rectboxproperties[2],
                                 -rectboxproperties[3],
                                 facecolor="none",
+                                edgecolor="k",
                                 picker=20,
                                 alpha=0.5,
                                 label=labelroiindex)
@@ -4744,18 +4747,18 @@ class MainPeakSearchFrame(wx.Frame):
         boxsize = int(self.fitparampanel.boxsize.GetValue())
 
         if len(self.peaklistPixels.shape) == 1:
-            rois = np.array([self.peaklistPixels[0],self.peaklistPixels[1],boxsize])
+            rois = np.array([self.peaklistPixels[0], self.peaklistPixels[1],boxsize])
         else:
             nb_of_peaks = self.peaklistPixels.shape[0]
-            boxsizearray = boxsize*np.ones(nb_of_peaks)
-            rois = np.array([self.peaklistPixels[:,0],self.peaklistPixels[:,1],boxsizearray, boxsizearray])
+            boxsizearray = boxsize * np.ones(nb_of_peaks)
+            rois = np.array([self.peaklistPixels[:,0], self.peaklistPixels[:,1], boxsizearray, boxsizearray])
 
         fullpathlistrois = os.path.join(outputfolder, finalfilename + '.rois')
         f = open(fullpathlistrois, 'w')
         np.savetxt(f, rois.T)
         f.close()
 
-        wx.MessageBox('List of ROIs from peaks saved in %s' % fullpathlistrois,'INFO')
+        wx.MessageBox('List of ROIs from peaks saved in %s' % fullpathlistrois, 'INFO')
 
     def onFitOnePeak(self, _):
         """

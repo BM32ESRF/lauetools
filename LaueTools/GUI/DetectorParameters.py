@@ -122,7 +122,7 @@ class DetectorParameters(wx.Dialog):
         Load calibration detector geometry (in DetectorParameters)
 
         only the first 8 parameters are set
-        
+
         .. warning:: diameter and kf direction are not set!
         """
         wcd = "Calibration file(*.det)|*.det|All files(*)|*"

@@ -3,10 +3,10 @@ r"""
 GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
 This module belongs to the open source LaueTools project with a free code repository at
-https://sourceforge.net/projects/lauetools/
-mailto: micha at esrf dot fr
+https://gitlab.esrf.fr/micha/lauetools
+mailto: micha -at* esrf *dot- fr
 
-August 2014
+March 2020
 """
 from __future__ import division
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -26,6 +26,7 @@ else:
     wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """ alias fct """
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -35,11 +36,10 @@ import numpy as np
 np.set_printoptions(precision=15)
 
 # Plot & Tools Frame Class
+from pylab import FuncFormatter
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
                                                     NavigationToolbar2WxAgg as NavigationToolbar)
-
-from pylab import FuncFormatter
 from matplotlib import __version__ as matplotlibversion
 import matplotlib
 
@@ -72,6 +72,7 @@ else:
 # class MessageDataBox(wx.Dialog):
 #     def __init__(self, parent, _id, title, matrix, defaultname):
 class MessageDataBox(wx.Frame):
+    """ class GUI allow to store matrix """
     def __init__(self, parent, _id, title, matrix, defaultname):
         wx.Frame.__init__(self, parent, _id, title, size=(400, 200))
 
@@ -106,9 +107,13 @@ class MessageDataBox(wx.Frame):
         self.SetSizer(vbox)
 
     def OnQuit(self, _):
+        """ quit """
         self.Close()
 
     def OnAccept(self, _):
+        """ accept and quit
+        set self.parent.selectedName and self.parent.dict_Rot[matrixname]
+        """
         matrixname = str(self.text2.GetValue())
         self.parent.dict_Rot[matrixname] = self.matrix
         self.parent.selectedName = matrixname
@@ -116,6 +121,7 @@ class MessageDataBox(wx.Frame):
         self.Close()
 
     def CreateStringfromMatrix(self, matrix):
+        """ create string from 3*3 matrix"""
         matstr = "UBmat=\n["
         for elem in matrix:
             matstr += str(elem) + ",\n"
@@ -128,7 +134,10 @@ class MessageDataBox(wx.Frame):
 
 
 def call_counter(func):
+    """ decorator function to count the nb of calls of 'func'
+    """
     def helper(*args, **kwargs):
+        """ call func with args"""
         helper.calls += 1
         return func(*args, **kwargs)
     helper.calls = 0
@@ -361,10 +370,9 @@ class Plot_RefineFrame(wx.Frame):
 
         self.initGUI()
 
-
     @call_counter
     def initGUI(self):
-
+        """ init GUI of Plot_RefineFrame """
         colourb_bkg = [242, 241, 240, 255]
         colourb_bkg = np.array(colourb_bkg) / 255.0
 
@@ -394,21 +402,18 @@ class Plot_RefineFrame(wx.Frame):
         self.tooltip.SetDelay(0)
         self.fig.canvas.mpl_connect("motion_notify_event", self.onMotion_ToolTip)
 
-        self.pointButton5 = wx.ToggleButton(self.panel, 5, "Accept Matching")
-        self.pointButton6 = wx.ToggleButton(self.panel, 6, "Draw Exp. Spot index")
-        self.pointButton7 = wx.ToggleButton(self.panel, 7, "Draw Theo. Spot index")
+        self.pointButton5 = wx.ToggleButton(self.panel, -1, "Accept Matching")
+        self.pointButton6 = wx.ToggleButton(self.panel, -1, "Draw Exp. Spot index")
+        self.pointButton7 = wx.ToggleButton(self.panel, -1, "Draw Theo. Spot index")
         self.listbuttons = [self.pointButton5, self.pointButton6, self.pointButton7]
         self.defaultColor = self.GetBackgroundColour()
         self.p5S, self.p6S, self.p7S = 0, 0, 0
         self.listbuttonstate = [self.p5S, self.p6S, self.p7S]
         self.listbuttonstate = [0, 0, 0]
 
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnAcceptMatching, id=5)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T7, id=7)
-
-        #        self.pointButton5.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
-        #        self.pointButton5.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
+        self.pointButton5.Bind(wx.EVT_TOGGLEBUTTON, self.OnAcceptMatching)
+        self.pointButton6.Bind(wx.EVT_TOGGLEBUTTON, self.T6) # Draw Exp. Spot index
+        self.pointButton7.Bind(wx.EVT_TOGGLEBUTTON, self.T7) # Draw Theo. Spot index
 
         self.switchCoordinatesbtn = wx.Button(self.panel, -1, "Switch Coord.")
         self.switchCoordinatesbtn.Bind(wx.EVT_BUTTON, self.OnSwitchCoords)
@@ -774,6 +779,7 @@ class Plot_RefineFrame(wx.Frame):
         self.Layout()
 
     def Onselectfitparameters_latticeparams(self, _):
+        """ uncheck self.fitTrecip and all Ts chcks"""
         self.fitTrecip.SetValue(False)
         if (self.fita.GetValue()
             or self.fitb.GetValue()
@@ -790,6 +796,7 @@ class Plot_RefineFrame(wx.Frame):
                 chck.SetValue(False)
 
     def Onselectfitparameters_Tsparams(self, _):
+        """ uncheck self.fitTrecip and all fit# chcks"""
         self.fitTrecip.SetValue(False)
         if (self.Ts00chck.GetValue()
             or self.Ts01chck.GetValue()
@@ -822,7 +829,7 @@ class Plot_RefineFrame(wx.Frame):
         NLevelBoard.Show(True)
 
     def onEnterMatrix(self, evt):
-
+        """ enter a matrix """
         helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += " Or list of Matrices"
         dlg = wx.TextEntryDialog(
@@ -882,6 +889,7 @@ class Plot_RefineFrame(wx.Frame):
             self.OnReplot(evt)
 
     def setDatacoordinates(self):
+        """ set coordinates of spots depending on chosen representing space 'self.datatype' """
         if self.datatype == "2thetachi":
             #             self.tth, self.chi = self.Data_X, self.Data_Y
             self.tth, self.chi = self.data_2thetachi
@@ -938,21 +946,16 @@ class Plot_RefineFrame(wx.Frame):
 
         self._replot()
 
-    def onMouseOver(self, evt):
-        name = evt.GetEventObject().GetClassName()
-        self.sb.SetStatusText(name + " widget" + "     " + str(evt.GetEventObject()))
-        # print("I am on it!")
-        print(evt.GetEventObject())
-        print(name)
-        evt.Skip()
-
-    def onMouseLeave(self, evt):
-        self.sb.SetStatusText("")
-        # print("I leave")
-        evt.Skip()
+    # def onMouseOver(self, evt):
+    #     name = evt.GetEventObject().GetClassName()
+    #     self.sb.SetStatusText(name + " widget" + "     " + str(evt.GetEventObject()))
+    #     # print("I am on it!")
+    #     print(evt.GetEventObject())
+    #     print(name)
+    #     evt.Skip()
 
     def OnUndoReplot(self, _):
-
+        """   replot with UB matrix prior to refinement  """
         self.UBmat = copy.copy(self.previous_UBmat)
 
         print("back to self.UBmat,self.Umat,self.Bmat")
@@ -1213,7 +1216,7 @@ class Plot_RefineFrame(wx.Frame):
 
             print("\n****SELECTED and DISPLAYED PART OF EXPERIMENTAL SPOTS\n")
         if self.datatype is "pixels":
-            col4, col5 = selectedSpotsPropsarray[4:6]
+            col4, col5 = selectedSpotsPropsarray[4: 6]
             self.data_2thetachi = col4, col5
             self.tth, self.chi = col4, col5
             self.Data_I = col3
@@ -1494,7 +1497,8 @@ class Plot_RefineFrame(wx.Frame):
             'data!! Click on "Auto Links" button ', "INFO")
 
     def readdata_fromEditor_after(self, data):
-
+        """ set self.linkedspots, self.linkExpMiller, self.linkIntensity, self.linkResidues
+        from data array"""
         ArrayReturn = np.array(data)
 
         self.linkedspots = ArrayReturn[:, :2]
@@ -1571,7 +1575,7 @@ class Plot_RefineFrame(wx.Frame):
         AllData = self.IndexationParameters["AllDataToIndex"]
         _twth, _chi = (np.take(2.0 * AllData["data_theta"], exp_indices),
                         np.take(AllData["data_chi"], exp_indices))  # 2theta chi coordinates
-        
+
         pixX = np.take(AllData["data_pixX"], exp_indices)
         pixY = np.take(AllData["data_pixY"], exp_indices)
 
@@ -2303,6 +2307,9 @@ class Plot_RefineFrame(wx.Frame):
         self.varyingstrain = np.dot(newB0matrix, np.linalg.inv(self.B0matrix))
 
     def selectFittingTransformParameters(self, key_material):
+        """ set structural parameters with transform model to be refined
+        set self.fitting_parameters_keys, self.fitting_parameters_values
+        according to checkboxes of fitting parameters"""
         # fixed parameters (must be an array)
 
         # triangular up transform in sample frame
@@ -2349,6 +2356,9 @@ class Plot_RefineFrame(wx.Frame):
                 self.fitting_parameters_values.append(List_of_defaultvalues[k + 5])
 
     def selectFittingLatticeParameters(self, key_material):
+        """ set structural parameters with Lattice parameters model to be refined
+        set self.fitting_parameters_keys, self.fitting_parameters_values
+        according to checkboxes of fitting parameters"""
         # fixed parameters (must be an array)
         latticeparameters = self.dict_Materials[key_material][1]
         self.B0matrix = CP.calc_B_RR(latticeparameters)
@@ -2390,6 +2400,9 @@ class Plot_RefineFrame(wx.Frame):
                 self.fitting_parameters_values.append(List_of_defaultvalues[k + 5])
 
     def selectFittingParameters(self):
+        """ set structural parameters with Tc distorstion model to be refined
+        set self.fitting_parameters_keys, self.fitting_parameters_values
+        according to checkboxes of fitting parameters"""
         # fixed parameters (must be an array)
         self.allparameters = np.array(self.CCDcalib + [0.0, 0, 0,  # 3 misorientation / initial UB matrix
                                         1, 0, 0, 0, 1, 0, 0, 0, 1,  # Tc
@@ -2458,6 +2471,11 @@ class Plot_RefineFrame(wx.Frame):
             wx.MessageBox("You must have run once a data refinement!", "INFO")
 
     def readdata_fromEditor_Res(self, data):
+        """ set self attribute from data:
+        self.linkedspots_fit
+        self.linkExpMiller_fit
+        self.linkIntensity_fit
+        self.linkResidues_fit"""
         ArrayReturn = np.array(data)
 
         self.linkedspots_fit = ArrayReturn[:, :2]
@@ -2668,22 +2686,27 @@ class Plot_RefineFrame(wx.Frame):
         event.Skip()
 
     def onSelectUBmatrix(self, event):
+        """ select UB matrix and replot"""
         self.sb.SetStatusText("Selected Ubmatrix: %s" % str(self.comboUBmatrix.GetValue()))
         self.UpdateFromRefinement.SetValue(False)
         self.OnReplot(1)
         event.Skip()
 
     def all_reds(self):
+        """ set all buttons to red"""
         for butt in self.listbuttons:
             butt.SetBackgroundColour(self.defaultColor)
 
     def what_was_pressed(self, flag):
+        """ print function to show all buttons state"""
         if flag:
             print("-------------------")
             print([butt.GetValue() for butt in self.listbuttons])
             print("self.listbuttonstate", self.listbuttonstate)
 
     def OnAcceptMatching(self, evt):  # accept AcceptMatching indexation
+        """ accept current spots theo and exp. matching as completed indexation
+        call Spot_MillerAttribution()"""
         self.what_was_pressed(0)
         if self.listbuttonstate[0] == 0:
             self.all_reds()
@@ -2701,6 +2724,7 @@ class Plot_RefineFrame(wx.Frame):
             evt.Skip()
 
     def T6(self, evt):
+        """ Draw Exp. Spot index mode """
         self.what_was_pressed(0)
         if self.listbuttonstate[1] == 0:
             self.all_reds()
@@ -2716,6 +2740,7 @@ class Plot_RefineFrame(wx.Frame):
             evt.Skip()
 
     def T7(self, _):
+        """ Draw Theo. Spot index mode"""
         self.what_was_pressed(0)
         print(self.GetId())
         if self.listbuttonstate[2] == 0:
@@ -2730,10 +2755,12 @@ class Plot_RefineFrame(wx.Frame):
             self.listbuttonstate = [0, 0, 0]
 
     def close(self, _):
+        """ close """
         self.Close(True)
 
     # --- ---------Plot  functions
     def setplotlimits_fromcurrentplot(self):
+        """ set self.xlim and self.ylim to current plot borders """
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
 
@@ -2772,12 +2799,14 @@ class Plot_RefineFrame(wx.Frame):
         #        self.axes.cla()
 
         def fromindex_to_pixelpos_x(index, _):
+            """ return pixel position X from plot """
             if self.datatype == "pixels":
                 return int(index)
             else:
                 return index
 
         def fromindex_to_pixelpos_y(index, _):
+            """ return pixel position Y from plot"""
             if self.datatype == "pixels":
                 return int(index)
             else:
@@ -2842,9 +2871,6 @@ class Plot_RefineFrame(wx.Frame):
                                     marker=markerstyle,
                                     facecolor="None",
                                     edgecolor="r")
-        # with size varying according to F**2 = self.Millerindices**2
-        # print "self.Millerindices",self.Millerindices
-        # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = np.sum(self.Millerindices**2, axis = 1),marker = 'o',alpha = 0, edgecolor = 'r',c = 'w')
 
         # ---------------------
         # Experimental spots
@@ -2870,7 +2896,6 @@ class Plot_RefineFrame(wx.Frame):
             else:
                 #                 self.axes.set_xbound(self.currentbounds[0])
                 #                 self.axes.set_ybound(self.currentbounds[1])
-
                 kwords = {"edgecolor": "None",
                             "facecolor": self.data_dict["markercolor"]}
 
@@ -2913,10 +2938,12 @@ class Plot_RefineFrame(wx.Frame):
         self.canvas.draw()
 
     def allbuttons_off(self):
+        """ set all buttons state to False """
         for butt in self.listbuttons:
             butt.SetValue(False)
 
     def readlogicalbuttons(self):
+        """ return list of all buttons state """
         return [butt.GetValue() for butt in self.listbuttons]
 
     def _on_point_choice(self, evt):
@@ -2982,23 +3009,10 @@ class Plot_RefineFrame(wx.Frame):
 
             proposed_name = "%s_%d" % (prefix, self.mat_store_ind)
 
-            # dialog for matrix name
-            #             dlg = wx.TextEntryDialog(self, '%s\nEnter Matrix Name : \n default is: \n %s' \
-            #                                      % (str(tostore), proposed_name),
-            #                                      'Storing Matrix Name Entry')
-            #             dlg.SetValue(proposed_name)
-
             self.selectedName = None
             dlg = MessageDataBox(self, -1, "Storing Matrix Name Entry", tostore, proposed_name)
 
             dlg.Show(True)
-
-        #             dlg.ShowModal()
-        #             dlg.Destroy()
-
-        #             txtmsg = 'Matrix is stored as %s\n'% self.selectedName
-        #             txtmsg+='in rotation matrix list for further simulation with B matrix = Id'
-        #             wx.MessageBox(txtmsg, 'INFO')
 
         else:
             print("No simulation matrix available!...")
@@ -3305,6 +3319,7 @@ class Plot_RefineFrame(wx.Frame):
             self.canvas.draw()
 
     def drawSpecificAnnote_theo(self, annote):
+        """ draw annote according to self._dataANNOTE_theo"""
         annotesToDraw = [(x, y, a) for x, y, a in self._dataANNOTE_theo if a == annote]
         for x, y, a in annotesToDraw:
             self.drawAnnote_theo(self.axes, x, y, a)
@@ -3348,11 +3363,6 @@ class Plot_RefineFrame(wx.Frame):
 
         print("clickX, clickY", clickX, clickY)
 
-        #         annotes = []
-        #         for x, y, a in self._dataANNOTE_theo:
-        #             if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
-        #                 annotes.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, a))
-
         annotes = []
         for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
             if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
@@ -3371,7 +3381,7 @@ class Plot_RefineFrame(wx.Frame):
             self.updateStatusBar(x, y, annote)
 
     def updateStatusBar(self, x, y, annote, spottype="theo"):
-
+        """ display spots properties in statusbar"""
         if self.datatype == "2thetachi":
             Xplot = "2theta"
             Yplot = "chi"
@@ -3470,7 +3480,6 @@ class FitResultsBoard(wx.Dialog):
         self.devstraincryst.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.HKLxyz_names.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
         self.HKLxyz.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
-        #         self.OKBtn.Bind(wx.EVT_BUTTON, self.onOK)
 
         # layout----------------------
         horizontalBox1 = wx.BoxSizer()
@@ -3520,10 +3529,8 @@ class FitResultsBoard(wx.Dialog):
         txt_define_reference_frames += "Deviatoric strain in crystal frame is in the cartesian frame built from the vectors of the direct-space crystal unit cell. \n"
         self.OKBtn.SetToolTipString(txt_define_reference_frames)
 
-    def onOK(self, _):
-        self.Close()
-
     def onNothing(self, _):
+        """ to be implemented """
         return
 
 
@@ -3657,7 +3664,7 @@ class IntensityScaleBoard(wx.Dialog):
             "Open new or update displayed Image according to image filename field")
 
     def OpenImage(self, _):
-
+        """ launch file selector and launch update_ImageArray"""
         #         print "self.ImageArray in OpenImage", self.ImageArray
         if hasattr(self, "fullpathimagefile"):
             if self.fullpathimagefile in ("", None, " "):
@@ -3669,6 +3676,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.update_ImageArray()
 
     def onSelectImageFile(self, evt):
+        """ launch file dialog and set GUI attributes
+        self.folderexpimagetxtctrl and self.expimagetxtctrl"""
         self.GetfullpathFile(evt)
 
         folder, imagefile = os.path.split(self.fullpathimagefile)
@@ -3676,6 +3685,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.expimagetxtctrl.SetValue(imagefile)
 
     def GetfullpathFile(self, _):
+        """ open file dialog and set self.fullpathimagefile"""
         myFileDialog = wx.FileDialog(self, "Choose an image file", style=wx.OPEN,
                                     # defaultDir=self.dirname,
                                     wildcard=DictLT.getwildcardstring(self.parent.CCDLabel))
@@ -3690,7 +3700,11 @@ class IntensityScaleBoard(wx.Dialog):
             pass
 
     def readnewimage(self):
-
+        """ open image from GUI path txtctrls
+        set self.ImageArray
+        set self.fullpathimagefile
+        if parent exists:
+        set self.parent.fullpathimagefile"""
         folder = str(self.folderexpimagetxtctrl.GetValue())
         imagename = str(self.expimagetxtctrl.GetValue())
         self.fullpathimagefile = os.path.join(folder, imagename)
@@ -3721,24 +3735,28 @@ class IntensityScaleBoard(wx.Dialog):
             self.parent.fullpathimagefile = self.fullpathimagefile
 
     def update_ImageArray(self):
+        """ set self.parent.ImageArray and call updateplot()"""
         self.parent.ImageArray = self.ImageArray
 
         self.btncloseimage.Enable()
         self.updateplot()
 
     def onCloseImage(self, _):
+        """ clear image from plot and call updateplot()"""
         self.ImageArray = None
         self.parent.ImageArray = self.ImageArray
         self.btncloseimage.Disable()
         self.updateplot()
 
     def OnChangeLUT(self, _):
+        """ change LUT"""
         self.data_dict["lut"] = self.comboLUT.GetValue()
 
         print("now selected lut:%s" % self.data_dict["lut"])
         self.updateplot()
 
     def onChangeColor(self, _):
+        """ change marker coler """
         self.colorindex += 1
         self.colorindex = self.colorindex % 8
         self.data_dict["markercolor"] = self.dict_colors[self.colorindex]
@@ -3748,6 +3766,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.updateplot()
 
     def OnSpinCtrl_IminDisplayed(self, _):
+        """ set image plot vmin vmax.
+        set self.IminDisplayed, self.ImaxDisplayed and call self.normalizeplot() """
         self.IminDisplayed = self.vminctrl.GetValue()
         self.ImaxDisplayed = self.vmaxctrl.GetValue()
 
@@ -3759,7 +3779,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.normalizeplot()
 
     def OnSpinCtrl_ImaxDisplayed(self, _):
-
+        """ set image plot vmin vmax.
+        set self.IminDisplayed, self.ImaxDisplayed and call self.normalizeplot() """
         self.IminDisplayed = self.vminctrl.GetValue()
         self.ImaxDisplayed = self.vmaxctrl.GetValue()
 
@@ -3772,7 +3793,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.normalizeplot()
 
     def normalizeplot(self):
-
+        """ set self.data_dict["vmin"] and self.data_dict["vmax"]
+        call self.updateplot()"""
         self.data_dict["vmin"] = self.IminDisplayed
         self.data_dict["vmax"] = self.ImaxDisplayed
 
@@ -3781,7 +3803,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.updateplot()
 
     def onChangeScaleTypeplot(self, _):
-
+        """ switch change between linear or logscale"""
         self.data_dict["logscale"] = not self.data_dict["logscale"]
 
         print("Now logscale is %s" % str(self.data_dict["logscale"]))
@@ -3798,6 +3820,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.updateplot()
 
     def on_slider_IminDisplayed(self, _):
+        """ set self.IminDisplayed and call self.normalizeplot() """
         self.IminDisplayed = self.slider_vmin.GetValue()
 
         #         self.viewingLUTpanel.vminctrl.SetValue(int(self.IminDisplayed))
@@ -3810,6 +3833,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.normalizeplot()
 
     def on_slider_ImaxDisplayed(self, _):
+        """ set  self.ImaxDisplayed and call self.normalizeplot() """
         self.ImaxDisplayed = self.slider_vmax.GetValue()
         #         self.viewingLUTpanel.vmaxctrl.SetValue(int(self.ImaxDisplayed))
 
@@ -3824,22 +3848,20 @@ class IntensityScaleBoard(wx.Dialog):
         self.normalizeplot()
 
     def displayIMinMax(self):
+        """ set GUI txt"""
         self.Iminvaltxt.SetLabel(str(self.IminDisplayed))
         self.Imaxvaltxt.SetLabel(str(self.ImaxDisplayed))
 
-    def onEnterValue(self, _):
-        self.readvalues()
-        self.updateplot()
-
     def updateplot(self):
+        """ call parent methods: setplotlimits_fromcurrentplot() and _replot()"""
         #         self.parent.xlim = self.xlim
         #         self.parent.ylim = self.ylim
-
         #         self.parent.fullpathimagefile = self.fullpathimagefile
         self.parent.setplotlimits_fromcurrentplot()
         self.parent._replot()
 
     def readvalues(self):
+        """ set self.xlim, self.ylim from txtctrls"""
         xmin = float(self.txtctrl_xmin.GetValue())
         xmax = float(self.txtctrl_xmax.GetValue())
         ymin = float(self.txtctrl_ymin.GetValue())
@@ -3849,16 +3871,16 @@ class IntensityScaleBoard(wx.Dialog):
         self.ylim = (ymin, ymax)
 
     def onAccept(self, _):
-
+        """ update plot limits values and close
+        set parent xlim and ylim attributes"""
         self.readvalues()
-
         self.parent.xlim = self.xlim
         self.parent.ylim = self.ylim
-
         self.Close()
 
     def onCancel(self, _):
-
+        """ close
+        keep initial parent xlim and ylim attributes"""
         self.parent.xlim = self.init_xlim
         self.parent.ylim = self.init_ylim
         self.Close()
@@ -3869,7 +3891,6 @@ class NoiseLevelBoard(wx.Dialog):
     """
     Class to set noise level ONLY when refining crystal strain and orientation
     """
-
     def __init__(self, parent, _id, title, data_dict):
         """
         initialize board window
@@ -3893,12 +3914,13 @@ class NoiseLevelBoard(wx.Dialog):
         self.applynoisebtn.Bind(wx.EVT_BUTTON, self.onApplyNoise)
 
     def onApplyNoise(self, _):
-
+        """ set parent.sigmanoise and call parent._replot()"""
         self.parent.sigmanoise = float(self.noisetxtctrl.GetValue())
         self.parent._replot()
 
 
 def get2Dlimits(X, Y):
+    """ return xlim, ylim from min max of X and Y"""
     Xmin = min(X)
     Xmax = max(X)
     Ymin = min(Y)
@@ -3911,7 +3933,7 @@ def get2Dlimits(X, Y):
 if __name__ == "__main__":
 
     class App(wx.App):
-
+        """ App to launch IntensityScaleBoard"""
         data_dict = {}
 
         Imin = 1
@@ -3928,8 +3950,7 @@ if __name__ == "__main__":
 
         def OnInit(self):
             """Create the main window and insert the custom frame"""
-            dlg = IntensityScaleBoard(
-                None, -1, "Laue Simulation Frame", data_dict=self.data_dict)
+            dlg = IntensityScaleBoard(None, -1, "Laue Simulation Frame", data_dict=self.data_dict)
             dlg.Show(True)
             return True
 
