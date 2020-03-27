@@ -70,6 +70,8 @@ if sys.version_info.major == 3:
     from . import CCDFileParametersGUI as CCDParamGUI
     from .. import IOLaueTools as IOLT
     from . import PeaksListBoard
+    from .. import IOimagefile as IOimage
+    from .. import imageprocessing as ImProc
 else:
     import dragpoints as DGP
     import GUI.mosaic as MOS
@@ -86,6 +88,8 @@ else:
     import GUI.CCDFileParametersGUI as CCDParamGUI
     import IOLaueTools as IOLT
     import GUI.PeaksListBoard
+    import IOimagefile as IOimage
+    import imageprocessing as ImProc
 
 LaueToolsProjectFolder = os.path.split(__file__)[0]
 
@@ -679,24 +683,10 @@ class FilterBackGroundPanel(wx.Panel):
             print("Computing self.filteredimage")
             CCDlabel = self.mainframe.CCDlabel
 
-            self.filteredimage = RMCCD.computefilteredimage(self.mainframe.dataimage_ROI,
+            self.filteredimage = ImProc.computefilteredimage(self.mainframe.dataimage_ROI,
                                                             self.blurimage, CCDlabel, kernelsize=5)
         else:
             print("self.blurimage is None !!")
-
-    #             framedim = DictLT.dict_CCD[CCDlabel][0]
-    #             saturation_value = DictLT.dict_CCD[CCDlabel][2]
-    #             dataformat = DictLT.dict_CCD[CCDlabel][5]
-    #
-    #             # mask parameter to avoid high intensity steps at border:
-    #             # TODO: to compute for all CCD types
-    #             center, radius, minvalue = (1024, 1024), 900, 0
-    #
-    #             self.filteredimage = RMCCD.filterimage(self.mainframe.dataimage_ROI, framedim,
-    #                                 blurredimage=self.blurimage, kernelsize=self.KERNELSIZE,
-    #                                 mask_parameters=(center, radius, minvalue),
-    #                                 clipvalues=(0, saturation_value),
-    #                                 imageformat=dataformat)
 
     def onComputeBlurImage(self, _):
         """ Compute background, blurred, filtered or low frequency spatial image
@@ -704,7 +694,7 @@ class FilterBackGroundPanel(wx.Panel):
 
         set self.blurimage
         """
-        self.blurimage = RMCCD.compute_autobackground_image(self.mainframe.dataimage_ROI,
+        self.blurimage = ImProc.compute_autobackground_image(self.mainframe.dataimage_ROI,
                                                                                 boxsizefilter=10)
 
         print("self.blurimage.shape", self.blurimage.shape)
@@ -730,7 +720,7 @@ class FilterBackGroundPanel(wx.Panel):
         dirname = self.mainframe.dirname
         OUTPUTFILENAME_BLURIMAGE = "blur_" + filename
 
-        _header = RMCCD.readheader(os.path.join(dirname, filename))
+        _header = IOimage.readheader(os.path.join(dirname, filename))
 
         fullpathname = os.path.join(dirname, OUTPUTFILENAME_BLURIMAGE)
 
@@ -747,7 +737,7 @@ class FilterBackGroundPanel(wx.Panel):
 
         CCDlabel = self.mainframe.CCDlabel
 
-        _header = RMCCD.readheader(os.path.join(dirname, filename), CCDLabel=CCDlabel)
+        _header = IOimage.readheader(os.path.join(dirname, filename), CCDLabel=CCDlabel)
 
         fullpathname = os.path.join(dirname, OUTPUTFILENAME_RESULTIMAGE)
 
@@ -2650,7 +2640,7 @@ class PeakListOLV(wx.Panel):
             imin, imax, jmin, jmax = (centeri - boxi, centeri + boxi, centerj - boxj, centerj + boxj)
 
             # avoid to wrong indices when slicing the data
-            imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax, jmin, jmax,
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax, jmin, jmax,
                                                             framedim=self.grangranparent.framedim)
 
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI[imin:imax, jmin:jmax]
@@ -3465,7 +3455,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         self.image_with_index = True
         try:
-            self.imageindex = RMCCD.getIndex_fromfilename(self.imagefilename,
+            self.imageindex = IOimage.getIndex_fromfilename(self.imagefilename,
             CCDLabel=self.CCDlabel, stackimageindex=self.stackimageindex, nbdigits=self.nbdigits)
         except ValueError:
             self.image_with_index = False
@@ -3477,7 +3467,7 @@ class MainPeakSearchFrame(wx.Frame):
                                                     CCDLabel=self.CCDlabel
         """
         if self.image_with_index:
-            self.imagefilename = RMCCD.setfilename(self.imagefilename, self.imageindex,
+            self.imagefilename = IOimage.setfilename(self.imagefilename, self.imageindex,
                                                     CCDLabel=self.CCDlabel, nbdigits=self.nbdigits)
 
     def OnStepChange(self, _):
@@ -3613,7 +3603,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         if (self.ImageFilterpanel.FilterImage and self.ImageFilterpanel.ImageType == "Raw"):
             print("self.ImageFilterpanel.ImageType == 'Raw'")
-            self.ImageFilterpanel.blurimage = RMCCD.compute_autobackground_image(
+            self.ImageFilterpanel.blurimage = ImProc.compute_autobackground_image(
                                                             self.dataimage_ROI, boxsizefilter=10)
             self.ImageFilterpanel.Computefilteredimage()
             self.viewingLUTpanel.showImage()
@@ -3680,7 +3670,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         #         nolog = wx.LogNull()
         #         self.gettime()
-        dataimage, _, _ = RMCCD.readCCDimage(imagefilename,
+        dataimage, _, _ = IOimage.readCCDimage(imagefilename,
                                                         CCDLabel=self.CCDlabel,
                                                         dirname=self.dirname,
                                                         stackimageindex=self.stackimageindex)
@@ -3696,7 +3686,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             xpic, ypic = np.round(self.centerx), np.round(self.centery)
 
-            self.dataimage_ROI = RMCCD.readrectangle_in_image(imagefilename,
+            self.dataimage_ROI = IOimage.readrectangle_in_image(imagefilename,
                                                                 xpic,
                                                                 ypic,
                                                                 int(self.boxx),
@@ -3970,7 +3960,7 @@ class MainPeakSearchFrame(wx.Frame):
                                     centerj - boxj, centerj + boxj + 1)
 
         # avoid to wrong indices when slicing the data
-        imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax, jmin, jmax,
+        imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax, jmin, jmax,
                                                                             framedim=self.framedim)
 
         #         print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
@@ -4210,7 +4200,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         SaturationLevel = DictLT.dict_CCD[self.CCDlabel][2]
 
-        newarray = RMCCD.applyformula_on_images(self.dataimage_ROI,
+        newarray = ImProc.applyformula_on_images(self.dataimage_ROI,
                                                 self.dataimage_ROI_B,
                                                 formulaexpression=formulaexpression,
                                                 SaturationLevel=SaturationLevel,
@@ -4612,7 +4602,7 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             toconvolve = self.dataimage_ROI
 
-        self.ConvolvedData = RMCCD.ConvolvebyKernel(toconvolve, 4, 5, 2)
+        self.ConvolvedData = ImProc.ConvolvebyKernel(toconvolve, 4, 5, 2)
 
     def ShowHisto_ConvolvedData(self, _):
         if self.ConvolvedData is None:
@@ -4773,7 +4763,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         print("self.framedim in onFitOnePeak", self.framedim)
         #        (min_value, max_value,
-        #         min_position, max_position) = RMCCD.getExtrema(self.dataimage_ROI,
+        #         min_position, max_position) = ImProc.getExtrema(self.dataimage_ROI,
         #                                                     [int(self.centerx), int(self.centery)],
         #                                                     self.boxsize_fit, (self.framedim[1], self.framedim[0]),
         #                                                     ROIcoords=0, flipxycenter=1)
@@ -4783,7 +4773,7 @@ class MainPeakSearchFrame(wx.Frame):
         # patch switch: framedim
         framedim = self.framedim[1], self.framedim[0]
 
-        (min_value, max_value, min_position, max_position) = RMCCD.getExtrema(self.dataimage_ROI,
+        (min_value, max_value, min_position, max_position) = ImProc.getExtrema(self.dataimage_ROI,
                                                                         [np.round(self.centerx),
                                                                         np.round(self.centery)],
                                                                         self.boxsize_fit,
@@ -4798,7 +4788,7 @@ class MainPeakSearchFrame(wx.Frame):
         print("Peak Amplitude estimate :", max_value - min_value)
 
         print("Integrated Intensity",
-            RMCCD.getIntegratedIntensity(self.dataimage_ROI,
+            ImProc.getIntegratedIntensity(self.dataimage_ROI,
                                             [np.round(self.centerx), np.round(self.centery)],
                                             self.boxsize_fit,
                                             framedim,
@@ -4922,7 +4912,7 @@ class MainPeakSearchFrame(wx.Frame):
             #             print "indicesborders", indicesborders
 
             # avoid to wrong indices when slicing the data
-            imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax, jmin, jmax,
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax, jmin, jmax,
                                                                             framedim=self.framedim)
 
             #             print "imin, imax, jmin, jmax", imin, imax, jmin, jmax

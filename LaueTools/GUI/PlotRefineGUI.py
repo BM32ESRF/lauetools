@@ -55,6 +55,7 @@ if sys.version_info.major == 3:
     from .. import matchingrate
     from .. import readmccd as RMCCD
     from .. import orientations as ORI
+    from .. import IOimagefile as IOimage
 else:
     import CrystalParameters as CP
     import IOLaueTools as IOLT
@@ -67,6 +68,7 @@ else:
     import matchingrate
     import readmccd as RMCCD
     import orientations as ORI
+    import IOimagefile as IOimage
 
 
 # class MessageDataBox(wx.Dialog):
@@ -3727,7 +3729,7 @@ class IntensityScaleBoard(wx.Dialog):
 
         print("using CCDLabel", CCDLabel)
 
-        ImageArray, _, _ = RMCCD.readCCDimage(self.fullpathimagefile,
+        ImageArray, _, _ = IOimage.readCCDimage(self.fullpathimagefile,
                                                                             CCDLabel, dirname=None)
 
         self.ImageArray = ImageArray

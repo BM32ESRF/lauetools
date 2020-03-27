@@ -38,6 +38,7 @@ if sys.version_info.major == 3:
     from .. import generaltools as GT
     from .. import tifffile as TIFF
     from . import spec_reader as SR
+    from . import IOimagefile as IOimage
 
     # WARNING  looped imports
     from . import multigrain as MG
@@ -53,6 +54,7 @@ else:
     from . import multigrain as MG
     from . import spec_reader as SR
     from .. import tifffile as TIFF
+    from .. import IOimagefile as IOimage
 
 
 def fromimageindexTothf(imageindex, scan):
@@ -1407,7 +1409,7 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         print("image file : ", fileim)
 
-        dataimage, framedim, fliprot = rmccd.readCCDimage(fileim, CCDLabel=CCDlabel, dirname=None)
+        dataimage, framedim, fliprot = IOimage.readCCDimage(fileim, CCDLabel=CCDlabel, dirname=None)
 
         #        print np.shape(dataimage)
 

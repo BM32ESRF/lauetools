@@ -47,10 +47,10 @@ import numpy as np
 # lauetools modules
 if sys.version_info.major == 3:
     from . import dict_LaueTools as DictLT
-    from . import imageprocessing as IOimage
+    from . import imageprocessing as ImProc
 else:
     import dict_LaueTools as DictLT
-    import imageprocessing as IOimage
+    import imageprocessing as ImProc
 
 listfile = os.listdir(os.curdir)
 
@@ -225,6 +225,18 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
 
     return imageindex
 
+
+def getfilename(dirname, imfileprefix, imfilesuffix=None, numim=None,
+                nbdigits_filename=4):
+    """
+    to get the global file name (name+path) for given components of the name
+    put %4d instead of stringint
+    """
+
+    fileim = imfileprefix + stringint(numim, nbdigits_filename) + imfilesuffix
+    filename = os.path.join(dirname, fileim)
+
+    return filename
 
 def getwildcardstring(CCDlabel):
     r"""  return smart wildcard to open binary CCD image file with priority of CCD type of CCDlabel
@@ -961,11 +973,9 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
 
     print("framedim in readoneimage_manycrops", framedim)
     framedim = framedim[1], framedim[0]
-    #    print "framedim in readoneimage_manycrops", framedim
 
-    #     print "centers",centers
     for center in centers:
-        i1, i2, j1, j2 = IOimage.getindices2cropArray(center, (boxsizex, boxsizey), framedim)
+        i1, i2, j1, j2 = ImProc.getindices2cropArray(center, (boxsizex, boxsizey), framedim)
         #        print "i1, i2, j1, j2-----", i1, i2, j1, j2
         cropdata = fulldata[i1:i2, j1:j2]
         #         # print "cropdata.shape", cropdata.shape
@@ -1006,6 +1016,8 @@ def writeimage(outputname, _header, data, dataformat=np.uint16):
 def write_rawbinary(outputname, data, dataformat=np.uint16):
     r"""
     write a binary file without header of a 2D array
+
+    used ?
     """
     newfile = open(outputname, "wb")
     data = np.array(data, dtype=dataformat)
@@ -1022,6 +1034,8 @@ def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
                                                             nbdigits=0):
     r"""
     sum images and write image with 32 bits per pixel format (4 bytes)
+
+    used?
     """
     #     prefixname = 'HN08_'
     #     suffixname = '.tif'

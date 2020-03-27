@@ -36,18 +36,6 @@ except ImportError:
     USE_CYTHON = False
 
 
-def stringint(k, n):
-    """ returns string of k by placing zeros before to have n characters
-    ex: 1 -> '0001'
-    15 -> '0015'
-    
-    #TODO: replace by string format %04d
-    """
-    strint = str(k)
-    res = "0" * (n - len(strint)) + strint
-    return res
-
-
 def gaussian(height, center_x, center_y, width_x, width_y):
     """Returns a gaussian function with the given parameters"""
     width_x = float(width_x)
@@ -576,9 +564,8 @@ if __name__ == "__main__":
     else:
         import readmccd as RMCCD
 
-    dat = RMCCD.readoneimage_crop(
-        fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname
-    )
+    dat = IOimage.readoneimage_crop(
+        fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname)
 
     def fromindex_to_pixelpos_x(index, pos):
         return center_pixel[0] - xboxsize + index

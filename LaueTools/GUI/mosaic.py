@@ -7,6 +7,7 @@ mosaic.py belong to the LaueTools Software
 May 2019
 """
 import os
+import time
 import sys
 from copy import copy
 
@@ -30,6 +31,7 @@ else:
     wx.OPEN = wx.FD_OPEN
 
     def sttip(argself, strtip):
+        """ alias """
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -57,12 +59,16 @@ if sys.version_info.major == 3:
     from .. import readmccd as RMCCD
     from . import Plot1DFrame as PLOT1D
     from .. import plotmeshspecGUI as PMSG
+    from .. import IOimagefile as IOimage
+    from .. import imageprocessing as ImProc
 else:
     import dict_LaueTools as DictLT
     import generaltools as GT
     import readmccd as RMCCD
     import Plot1DFrame as PLOT1D
     import plotmeshspecGUI as PMSG
+    import IOimagefile as IOimage
+    import imageprocessing as ImProc
 
 
 class ImshowFrameNew(wx.Frame):
@@ -1182,9 +1188,7 @@ class ImshowFrame(wx.Frame):
         self.ImaxDisplayed = 100
         #         if self.datatype == 'scalar':
         self.slidertxt_min = wx.StaticText(self.panel, -1, "Min :")
-        self.slider_min = wx.Slider(self.panel,
-                                    -1,
-                                    size=(200, 50),
+        self.slider_min = wx.Slider(self.panel, -1, size=(200, 50),
                                     value=self.IminDisplayed,
                                     minValue=0,
                                     maxValue=99,
@@ -1196,9 +1200,7 @@ class ImshowFrame(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
 
         self.slidertxt_max = wx.StaticText(self.panel, -1, "Max :")
-        self.slider_max = wx.Slider(self.panel,
-                                    -1,
-                                    size=(200, 50),
+        self.slider_max = wx.Slider(self.panel, -1, size=(200, 50),
                                     value=self.ImaxDisplayed,
                                     minValue=1,
                                     maxValue=100,
@@ -1232,7 +1234,7 @@ class ImshowFrame(wx.Frame):
         self.comboLUT.Bind(wx.EVT_TEXT_ENTER, self.OnTypeLUT)
 
         if self.datatype == "Intensity":
-            self.scaletype = "Log"
+            self.scaletype = "Linear" #self.scaletype = "Log"
 
         else:
             self.scaletype = "Linear"
@@ -2030,11 +2032,11 @@ class ImshowFrame(wx.Frame):
         imagefilenameexample = self.dict_param["filename_representative"]
         CCDLabel = self.dict_param["CCDLabel"]
 
-        imagefilename = RMCCD.setfilename(imagefilenameexample, self.currentpointedImageIndex,
+        imagefilename = IOimage.setfilename(imagefilenameexample, self.currentpointedImageIndex,
                                                                                     4, CCDLabel)
 
         fullpathtoimagefile = os.path.join(imagesfolder, imagefilename)
-        xyzech, expotime = RMCCD.read_motorsposition_fromheader(fullpathtoimagefile)
+        xyzech, expotime = IOimage.read_motorsposition_fromheader(fullpathtoimagefile)
         #         print "xyzech",xyzech
         return xyzech
 
@@ -2074,8 +2076,7 @@ class ImshowFrame(wx.Frame):
 
             print("SPEC COMMAND:\nmv %s %.6f %s %.6f" % (motor1name, posmotor1, motor2name, posmotor2))
 
-            sentence = (
-                "%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
+            sentence = ("%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
                 % (motor1name, posmotor1, motor2name, posmotor2, motor1name,
                                             posmotor1, motor2name, posmotor2))
 
@@ -2655,22 +2656,6 @@ def rebin(a, *args):
     return eval("".join(evList))
 
 
-def stringint(k, n):
-    """ returns string of k by placing zeros before to have n characters
-    ex: 1 -> '0001'
-    15 -> '0015'
-
-
-    TODO to be replace by 0 padding format:  %04d for instance
-    """
-    strint = str(k)
-    res = "0" * (n - len(strint)) + strint
-    return res
-
-
-import time
-
-
 def myformattime():
     """
     convert secs since the Epoch to my string format
@@ -2762,7 +2747,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
         for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
             imageindex = absolute_imageindex
-            filename = RMCCD.setfilename(filename_representative,
+            filename = IOimage.setfilename(filename_representative,
                                         imageindex,
                                         CCDLabel=ccdlabel,
                                         nbdigits=nbdigits)
@@ -2791,12 +2776,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     print("indicesborders", indicesborders)
 
                     # avoid to wrong indices when slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                    imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                 framedim=framedimraw)
 
                     print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
                     # new fast way to read specific area in file directly
-                    datacrop = RMCCD.readrectangle_in_image(filename,
+                    datacrop = IOimage.readrectangle_in_image(filename,
                                                             xpic,
                                                             ypic,
                                                             halfboxsizes[0],
@@ -2815,12 +2800,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     print("indicesborders", indicesborders)
 
                     # avoid to wrong indices when slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                    imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                 framedim=framedimraw)
 
                     print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
 
-                    datawhole, fdim, flrot = RMCCD.readCCDimage(filename, ccdlabel)
+                    datawhole, fdim, flrot = IOimage.readCCDimage(filename, ccdlabel)
                     datacrop = datawhole[imin:imax, jmin:jmax]
 
                 if datacrop is None:
@@ -2831,13 +2816,13 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                     if ccdlabel in ("sCMOS", "sCMOS_fliplr"):
                         pedestal = 1000.0
-                        dictMonitor = RMCCD.read_header_scmos(filename)
+                        dictMonitor = IOimage.read_header_scmos(filename)
                         print("dictMonitor.keys()", list(dictMonitor.keys()))
                         monitor_val = dictMonitor["mon"] - monitoroffset * dictMonitor["exposure"] / 1000.0
                     if ccdlabel in ("MARCCD165",):
                         pedestal = 10.0
                         monitor_val = 1.0
-                    #                     RMCCD.read_header_marccd2(filename)
+                    #                     IOimage.read_header_marccd2(filename)
                     datcrop = (datacrop - pedestal) / monitor_val
 
                 else:
@@ -2852,7 +2837,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 continue
 
             if imageindex % 10 == 1:
-                print(filename, "up to", RMCCD.setfilename(filename, endind, CCDLabel=ccdlabel))
+                print(filename, "up to", IOimage.setfilename(filename, endind, CCDLabel=ccdlabel))
 
             kx, ky = dict_map_imageindex[map_imageindex][2:]
 
@@ -3588,7 +3573,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
                         "posY": np.zeros((nbpeaks, nbimages))}
 
         for k, imageindex in enumerate(tabindices):
-            filename = RMCCD.setfilename(filename, imageindex)
+            filename = IOimage.setfilename(filename, imageindex)
 
             filename = os.path.join(dirname, filename)
             #            print "filename", filename
@@ -3596,7 +3581,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
             for grain_index, peak in enumerate(peaklist):
                 try:
                     framedim = DictLT.dict_CCD[ccdlabel][0]
-                    dataimage, framedim, fliprot = RMCCD.readCCDimage(filename, CCDLabel=ccdlabel,
+                    dataimage, framedim, fliprot = IOimage.readCCDimage(filename, CCDLabel=ccdlabel,
                                                                                     dirname=None)
 
                     center_pixel = (round(peak[0]), round(peak[1]))
@@ -3608,7 +3593,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
                     imin, imax, jmin, jmax = indicesborders
 
                     # avoid to wrong indices wHen slicing the data
-                    imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                    imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                 framedim=framedim)
 
                     datcrop = dataimage[imin:imax, jmin:jmax]
@@ -3620,7 +3605,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
                     break
 
                 if k % 10 == 1:
-                    print(filename, "up to", RMCCD.setfilename(filename, endind))
+                    print(filename, "up to", IOimage.setfilename(filename, endind))
 
                 piece_dat = datcrop
 
@@ -3706,7 +3691,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
     CountersData["Monitor"] = 1.0
     CountersData["ExposureTime"] = 1000.0  # milliseconds
 
-    filename = RMCCD.setfilename(filename, imageindex)
+    filename = IOimage.setfilename(filename, imageindex)
     #     print "filename", filename
 
     filename = os.path.join(dirname, filename)
@@ -3714,7 +3699,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
     for grain_index, peak in enumerate(peaklist):
         try:
             framedim = DictLT.dict_CCD[ccdlabel][0]
-            dataimage, framedim, fliprot = RMCCD.readCCDimage(filename, CCDLabel=ccdlabel,
+            dataimage, framedim, fliprot = IOimage.readCCDimage(filename, CCDLabel=ccdlabel,
                                                                                     dirname=None)
         except IOError:
             print("!***!****!****!")
@@ -3723,12 +3708,12 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
             raise IOError
 
         if ccdlabel == "MARCCD165":
-            comments, expo_time = RMCCD.read_header_marccd2(filename)
+            comments, expo_time = IOimage.read_header_marccd2(filename)
             I0 = float(comments.split()[3])
             CountersData["Monitor"] = I0
             CountersData["ExposureTime"] = expo_time
         elif ccdlabel == "sCMOS":
-            dictpar = RMCCD.read_header_scmos(filename)
+            dictpar = IOimage.read_header_scmos(filename)
             CountersData["Monitor"] = dictpar["mon"]
             CountersData["ExposureTime"] = dictpar["exposure"] * 1000  # in milliseconds
 
@@ -3740,10 +3725,8 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
                                                 flipxycenter=0)
         imin, imax, jmin, jmax = indicesborders
 
-        #                print 'indicesborders', indicesborders
-
         # avoid to wrong indices when slicing the data
-        imin, imax, jmin, jmax = RMCCD.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+        imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                 framedim=framedim)
 
         piece_dat = dataimage[imin:imax, jmin:jmax]
@@ -3951,7 +3934,7 @@ if __name__ == "__main__":
 
         tabindices = np.arange(startind, endind + 1, 1)
         for k in tabindices:
-            fifi = prefix + stringint(k, 4) + "." + fileextension
+            fifi = prefix + IOimage.stringint(k, 4) + "." + fileextension
             filename = os.path.join(didi, fifi)
             print("filename", filename)
             try:
@@ -3963,7 +3946,7 @@ if __name__ == "__main__":
                 print("!***!****!****!")
 
             if k % 10 == 1:
-                print(filename, "up to", prefix + stringint(endind, 4) + "." + fileextension)
+                print(filename, "up to", prefix + IOimage.stringint(endind, 4) + "." + fileextension)
             kx, ky = dic_carto[k][1:]
 
             # print kx,ky,k
@@ -4009,7 +3992,7 @@ if __name__ == "__main__":
         # print box2
         out = mosaic.crop(box2)
 
-        imagefilename = ("Map_" + prefix + str(startind) + "to" + str(endind) + "x" + stringint(xpic, 4) + "y" + stringint(ypic, 4) + ".TIFF")
+        imagefilename = ("Map_" + prefix + str(startind) + "to" + str(endind) + "x" + IOimage.stringint(xpic, 4) + "y" + IOimage.stringint(ypic, 4) + ".TIFF")
 
         try:
             out.save(os.path.join(didi, imagefilename), mode="I;16")

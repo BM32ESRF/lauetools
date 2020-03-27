@@ -13,7 +13,9 @@ js micha March 2012
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
-import os, time, copy,sys
+import os
+import time
+import sys
 import pickle
 
 import scipy.ndimage as NDI
@@ -41,6 +43,8 @@ if sys.version_info.major == 3:
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT
     from . annot import AnnoteFinder
+    from . import IOimagefile as IOimage
+    from . import imageprocessing as ImProc
 else:
     import lauecore as LAUE
     import CrystalParameters as CP
@@ -50,6 +54,8 @@ else:
     import readmccd as RMCCD
     import IOLaueTools as IOLT
     from annot import AnnoteFinder
+    import IOimagefile as IOimage
+    import imageprocessing as ImProc
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
@@ -91,18 +97,6 @@ def CreateArgumentTable(_gnomonx, _gnomony):
     print(" --------------------------------------------")
     print("\n")
     return _argumtable
-
-
-def stringint(k, n):
-    """ returns string of k by placing zeros before to have n characters
-    ex: 1 -> '0001'
-    15 -> '0015'
-
-    # TODO: replace by string format %04d
-    """
-    strint = str(k)
-    res = "0" * (n - len(strint)) + strint
-    return res
 
 
 def plotgnomondata(gnomonx, gnomony, X, Y, savefilename=None, maxIndexIoPlot=None, filename_data=None):
@@ -995,7 +989,7 @@ def Hough_peak_position(Angles,
         mikeclipjsm.save(fullname + "clipfilt" + ".TIFF")
     # ---------------------
 
-    #    popos = RMCCD.LocalMaxima_ndimage(mike, peakVal=4,
+    #    popos = ImProc.LocalMaxima_ndimage(mike, peakVal=4,
     #                                    boxsize=5,
     #                                    central_radius=2,
     #                                    threshold=10,
@@ -1339,7 +1333,7 @@ def tophatfilter(data_array, removedges=2, peakVal=4, boxsize=6, central_radius=
     clipdata_array = data_array[
         removedges : nbrow - removedges, removedges : nbcol - removedges]
 
-    enhancedarray = RMCCD.ConvolvebyKernel(
+    enhancedarray = ImProc.ConvolvebyKernel(
         clipdata_array, peakVal=peakVal, boxsize=boxsize, central_radius=central_radius)
     newarray = np.zeros_like(data_array)
     newarray[removedges : nbrow - removedges, removedges : nbcol - removedges] = enhancedarray
@@ -1858,7 +1852,7 @@ def give_best_orientations(prefixname,
     High resolution (1 deg step)
     _fromfiledata is the databank: huge array containing indices to pick up in transformed data p
     """
-    filename_data = prefixname + stringint(file_index, 4) + ".cor"
+    filename_data = prefixname + IOimage.stringint(file_index, 4) + ".cor"
     print("filename_data", filename_data)
     #    nblines_to_skip=1 # nb lines of header
     #    col_2theta=0
@@ -1996,7 +1990,7 @@ def findGrain_in_orientSpace_new(CorrelIntensTab, nbfirstpt):
 
     #    print "in findGrain_in_orientSpace_new() --------------------"
     #
-    #                        convolvedCorrelIntensTab = RMCCD.ConvolvebyKernel(CorrelIntensTab,
+    #    convolvedCorrelIntensTab = ImProc.ConvolvebyKernel(CorrelIntensTab,
     #                        peakVal=3,
     #                        boxsize=4,
     #                        central_radius=2)
@@ -2448,7 +2442,7 @@ def plotHough_Exp(prefixname, file_index, nbofpeaks_max, dirname="."):
 
     High resolution (1 deg step)
     """
-    filename_data = prefixname + stringint(file_index, 4) + ".cor"
+    filename_data = prefixname + IOimage.stringint(file_index, 4) + ".cor"
     print("filename_data", filename_data)
 
     mydata = IOLT.ReadASCIIfile(os.path.join(dirname, filename_data))
@@ -2659,9 +2653,7 @@ def plotHoughCorrel(Database, filename_data, nbofpeaks_max, dirname=".", returnC
     nb_to_extract = min(nbofpeaks_max, length_of_data)
     listofselectedpts = np.arange(nb_to_extract)
     # selection of points in the three arrays in first argument
-    dataselected, nbmax = IOLT.createselecteddata(
-        (mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1
-    )
+    dataselected, nbmax = IOLT.createselecteddata((mydata[0] * 2, mydata[1], mydata[2]), listofselectedpts, -1)
 
     # compute gnomonic coordinnates of a discrete number of peak
     # (from 2theta,chi coordinates)
@@ -2670,13 +2662,9 @@ def plotHoughCorrel(Database, filename_data, nbofpeaks_max, dirname=".", returnC
     #    print len(gnomonx)
 
     # lowresolution=1  : stepdeg=1,steprho=0.004
-    bigHoughcollector = ComputeHough(
-        gnomonx, gnomony, Intensity_table=None, lowresolution=1
-    )
+    bigHoughcollector = ComputeHough(gnomonx, gnomony, Intensity_table=None, lowresolution=1)
 
-    rara, argrara = Houghcorrel(
-        np.ravel(np.reshape(bigHoughcollector, (300, 360))), Database
-    )
+    rara, argrara = Houghcorrel(np.ravel(np.reshape(bigHoughcollector, (300, 360))), Database)
 
     if returnCorrelArray:
         return rara, argrara
@@ -2687,7 +2675,7 @@ def plotHoughCorrel(Database, filename_data, nbofpeaks_max, dirname=".", returnC
 
 def plottab(array_to_plot):
     """
-    function to plot an array with x,y,intensity values displayed when hovering on array 
+    function to plot an array with x,y,intensity values displayed when hovering on array
     """
     fig = p.figure()
     axes = fig.gca()

@@ -1741,7 +1741,7 @@ class TableMap:
         tabpeak = RMCCD.PeakSearch(filename, **self.kwds_peaksearch)[0]
         if plot:
             XY = tabpeak[:, :2]
-            RMCCD.plot_image_markers(self.getFullImageData(fileindex), XY)
+            ImProc.plot_image_markers(self.getFullImageData(fileindex), XY)
 
         return tabpeak
 
@@ -1749,7 +1749,7 @@ class TableMap:
         data2d = self.getFullImageData(fileindex)
 
         # [mini, maxi]
-        return RMCCD.getMinMax(data2d, center, boxsize, self.framedim)
+        return ImProc.getMinMax(data2d, center, boxsize, self.framedim)
 
     def fitpeak_at_centers(self, fileindex, centers, boxsize, plot=0, **kwargs):
         """
@@ -1806,7 +1806,7 @@ class TableMap:
                             Ipixmax]).T
 
         if plot:
-            RMCCD.plot_image_markers(self.getFullImageData(fileindex), tabpeak)
+            ImProc.plot_image_markers(self.getFullImageData(fileindex), tabpeak)
 
         return tabpeak
 

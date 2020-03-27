@@ -1528,7 +1528,7 @@ class parametric_Grain_Dialog3(wx.Frame):
                 dlg.Destroy()
                 return
 
-            ImageArray = RMCCD.readCCDimage(fullpathimagename, self.CCDLabel, dirname=None)[0]
+            ImageArray = IOimage.readCCDimage(fullpathimagename, self.CCDLabel, dirname=None)[0]
 
             self.rightpanel.pt_XYCCD.SetValue(True)
 

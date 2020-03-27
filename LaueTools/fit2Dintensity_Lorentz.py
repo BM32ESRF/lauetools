@@ -16,18 +16,10 @@ from matplotlib.ticker import *
 
 if sys.version_info.major == 3:
     from . import generaltools as GT
+    from . import IOimagefile as IOimage
 else:
     import generaltools as GT
-
-
-def stringint(k, n):
-    """ returns string of k by placing zeros before to have n characters
-    ex: 1 -> '0001'
-    15 -> '0015'
-    """
-    strint = str(k)
-    res = "0" * (n - len(strint)) + strint
-    return res
+    import IOimagefile as IOimage
 
 
 def lorentzian(height, center_x, center_y, width_x, width_y):
@@ -35,8 +27,7 @@ def lorentzian(height, center_x, center_y, width_x, width_y):
     width_x = float(width_x) ** 2
     width_y = float(width_y) ** 2
     return lambda x, y: height / (
-        1.0 + 4 * (x - center_x) ** 2 / width_x + 4 * (y - center_y) ** 2 / width_y
-    )
+        1.0 + 4 * (x - center_x) ** 2 / width_x + 4 * (y - center_y) ** 2 / width_y)
 
 
 def moments(data):
@@ -148,8 +139,7 @@ def twodlorentzian(inpars, circle, rotate, vheight):
             + str(inpars)
             + " and you've input: "
             + str(inpars_old)
-            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight)
-        )
+            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight))
 
     def rotlorentz(x, y):
         """
@@ -171,8 +161,7 @@ def twodlorentzian(inpars, circle, rotate, vheight):
     return rotlorentz
 
 
-def lorentzfit(
-    data,
+def lorentzfit(data,
     err=None,
     params=[],
     autoderiv=1,
@@ -180,8 +169,7 @@ def lorentzfit(
     circle=0,
     rotate=1,
     vheight=1,
-    xtol=0.0000001,
-):
+    xtol=0.0000001):
     """
     Lorentzian fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
 
@@ -296,7 +284,7 @@ if __name__ == "__main__":
     center_pixel = (1588, 818)
     xboxsize, yboxsize = 20, 20
 
-    dat = RMCCD.readoneimage_crop(fifi, center_pixel, (xboxsize, yboxsize))
+    dat = IOimage.readoneimage_crop(fifi, center_pixel, (xboxsize, yboxsize))
 
     def fromindex_to_pixelpos_x(index, pos):
         return center_pixel[0] - xboxsize + index

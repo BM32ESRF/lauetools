@@ -65,7 +65,7 @@ PEAKSEARCHDICT_Convolve = {"PixelNearRadius": 10,
 IOimagefuncs = ['Add_Images', 'Add_Images2', 'SumImages', 'getIndex_fromfilename', 'get_imagesize',
 'getpixelValue', 'getwildcardstring', 'libtiff_ctypes', 'listfile', 'readCCDimage', 'read_header_marccd',
  'read_header_marccd2', 'read_header_scmos', 'read_motorsposition_fromheader', 'readheader', 'readoneimage', 'readoneimage_band', 'readoneimage_crop', 'readoneimage_crop_fast', 'readoneimage_full', 'readoneimage_manycrops',
- 'readrectangle_in_image', 'setfilename', 'stringint', 'write_rawbinary', 'writeimage']
+ 'readrectangle_in_image', 'setfilename', 'stringint', 'write_rawbinary', 'writeimage','getfilename']
 
 imageprocfuncs = ['ConvolvebyKernel', 'LoG', 'LoGArr', 'LocalMaxima_KernelConvolution', 'LocalMaxima_ShiftArrays',
  'LocalMaxima_from_thresholdarray', 'LocalMaxima_ndimage', 'applyformula_on_images', 'blurCCD', 'blurCCD_with_binning',
@@ -86,10 +86,10 @@ def warn_func_is_now_in(func, modulename):
     return inner
 
 for iofunc in IOimagefuncs:
-    setattr(thismodule, iofunc, warn_func_is_now_in(getattr(IOimage,iofunc), 'IOimagefile.py'))
+    setattr(thismodule, iofunc, warn_func_is_now_in(getattr(IOimage, iofunc), 'IOimagefile.py'))
 
 for ipfunc in imageprocfuncs:
-    setattr(thismodule, ipfunc, warn_func_is_now_in(getattr(ImProc,ipfunc), 'imageprocessing.py'))
+    setattr(thismodule, ipfunc, warn_func_is_now_in(getattr(ImProc, ipfunc), 'imageprocessing.py'))
 
 def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCDLabel="PRINCETON",
                                                                         baseline="auto",
@@ -1026,9 +1026,6 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         # peak search in a single and particular region of image
         if center is not None:
 
-            #        imin, imax, jmin, jmax = getindices2cropArray(center, boxsizeROI, framedim)
-            #        Data = Data[imin: imax, jmin: jmax]
-
             framediminv = (framedim[1], framedim[0])
             imin, imax, jmin, jmax = ImProc.getindices2cropArray(center, boxsizeROI, framediminv)
             Data = Data[jmin:jmax, imin:imax]
@@ -1673,7 +1670,7 @@ def peaksearch_fileseries(fileindexrange,
 
         # CCDlabel_bkg = CCDLABEL
 
-        # (dataimage_bkg, _, _) = readCCDimage(imagefilename_bkg,
+        # (dataimage_bkg, _, _) = IOimage.readCCDimage(imagefilename_bkg,
         #                                                             CCDLabel=CCDlabel_bkg,
         #                                                             dirname=dirname_bkg)
 
@@ -1702,7 +1699,7 @@ def peaksearch_fileseries(fileindexrange,
         if BackgroundImageCreated:
 
             print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
-            # (dataimage_raw, _, _) = readCCDimage(filename_in, CCDLabel=CCDLABEL,
+            # (dataimage_raw, _, _) = IOimage.readCCDimage(filename_in, CCDLabel=CCDLABEL,
             #                                                                         dirname=None)
 
             if "formulaexpression" in dictPeakSearch:

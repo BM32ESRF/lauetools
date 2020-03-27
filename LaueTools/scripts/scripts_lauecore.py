@@ -9,7 +9,8 @@ from __future__ import absolute_import
 
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-import sys, os
+import sys
+import os
 
 # # workaround to launch this script with modules in parent folder
 # # whatever the folder it is launched in 
@@ -28,13 +29,11 @@ import LaueTools
 print("Using LaueToolsFolder: ", os.path.abspath(LaueTools.__file__))
 
 import LaueTools.CrystalParameters as CP
-from LaueTools.dict_LaueTools import (
-    dict_Rot,
-    dict_Materials,
-    dict_Vect,
-    dict_Extinc,
-    CST_ENERGYKEV,
-)
+from LaueTools.dict_LaueTools import (dict_Rot,
+                                    dict_Materials,
+                                    dict_Vect,
+                                    dict_Extinc,
+                                    CST_ENERGYKEV)
 
 import LaueTools.generaltools as GT
 import LaueTools.lauecore as LT
@@ -341,14 +340,12 @@ def simulatepurepattern(
 
     # selecting RR nodes without harmonics (fastcompute = 1 loses the miller indices and RR positions associations for quicker computation)
 
-    oncam_sansh = LT.filterLaueSpots(
-        vecind,
-        fileOK=0,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        detectordistance=detectordistance,
-        HarmonicsRemoval=HarmonicsRemoval,
-    )
+    oncam_sansh = LT.filterLaueSpots(vecind,
+                                    fileOK=0,
+                                    fastcompute=0,
+                                    kf_direction=kf_direction,
+                                    detectordistance=detectordistance,
+                                    HarmonicsRemoval=HarmonicsRemoval)
 
     return True
 

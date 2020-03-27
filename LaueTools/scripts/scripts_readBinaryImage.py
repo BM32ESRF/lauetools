@@ -10,13 +10,15 @@ import scipy.interpolate as sci
 
 import scipy.ndimage as ndimage
 import scipy.signal
-import scipy.spatial.distance as ssd
 
 import fit2Dintensity as fit2d
 import readmccd as RMCCD
 import IOLaueTools as IOLT
 import generaltools as GT
 import dict_LaueTools as DictLT
+
+from .. import IOimagefile as IOimage
+from .. import imageprocessing as ImProc
 
 def Simulate_gaussianpeak(height,
                             center_x_slowdir,
@@ -45,8 +47,6 @@ def Simulate_gaussianpeak(height,
 
     X, Y = np.mgrid[s1:s2, f1:f2]
 
-    import fit2Dintensity as fit2d
-
     Z = fit2d.gaussian(
         height, center_x_slowdir, center_y_fastdir, width_x_slowdir, width_y_fastdir
     )(X, Y)
@@ -70,20 +70,18 @@ def test_addimage():
     futureindex = 0  # index for the new image
     # for k in range(0,383,3):  # 0,3,6
     for k in list(range(100, 201, 2)):
-        # filename1=prefixname+stringint(k,4)+suffixname
-        # filename2=prefixname+stringint(k+1,4)+suffixname
-        # filename3=prefixname+stringint(k+2,4)+suffixname
-        filename1 = prefixname + RMCCD.stringint(k, 4) + suffixname
-        filename2 = prefixname + RMCCD.stringint(k + 1, 4) + suffixname
+        
+        filename1 = prefixname + IOimage.stringint(k, 4) + suffixname
+        filename2 = prefixname + IOimage.stringint(k + 1, 4) + suffixname
         print("Sum of ", filename1, filename2)  # ,filename3
-        data1 = RMCCD.readoneimage(filename1)
-        data2 = RMCCD.readoneimage(filename2)
+        data1 = IOimage.readoneimage(filename1)
+        data2 = IOimage.readoneimage(filename2)
         # data3=readoneimage(filename3)
         datasum = data1 + data2  # +data3
-        header = RMCCD.readheader(filename1)
-        outputfilename = prefixname + "S" + RMCCD.stringint(futureindex, 4) + suffixname
+        header = IOimage.readheader(filename1)
+        outputfilename = prefixname + "S" + IOimage.stringint(futureindex, 4) + suffixname
         print("written in ", outputfilename)
-        RMCCD.writeimage(outputfilename, header, datasum)
+        IOimage.writeimage(outputfilename, header, datasum)
         futureindex += 1
 
 
@@ -95,7 +93,7 @@ def test_VHR_ROI():
     # shapeCCD=(n,m)  # opposite of fit2d displays in loading data  X 1 m  and Y 1 n
     framedim = (2671, 4008)
     filename = "Au_0290_mar.tiff"
-    dataimage = RMCCD.readoneimage(filename, framedim=framedim)
+    dataimage = IOimage.readoneimage(filename, framedim=framedim)
 
     dataimage = np.reshape(dataimage, framedim)
 
@@ -226,9 +224,6 @@ def test_peaksearch_ROI_martiff():
 def example_Use_of_Bispline():
 
     X, Y = np.mgrid[0:10, 0:10]
-    import pylab as p
-    import fit2Dintensity as fit2d
-    import scipy.interpolate as sci
 
     Z = fit2d.gaussian(100, 10, 10, 2, 2)(X, Y)
     tck, _, _, _ = sci.bisplrep(np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1)
@@ -249,8 +244,6 @@ def test_Approximate_Background():
     """
     X, Y = np.mgrid[0:10, 0:20]
     import pylab as p
-    import fit2Dintensity as fit2d
-    import scipy.interpolate as sci
 
     Z = fit2d.gaussian(100, 2, 13, 3, 5)(X, Y)
     tck, _, _, _ = sci.bisplrep(np.ravel(X), np.ravel(Y), np.ravel(Z), kx=4, ky=4, full_output=1)
@@ -278,7 +271,7 @@ def test_Approximate_Background_mccdimage_spline():
     """
     filename = "CdTe_I999_03Jul06_0200.mccd"
 
-    _, dataimage = RMCCD.readoneimage_full(filename)
+    _, dataimage = IOimage.readoneimage_full(filename)
 
     mini = np.amin(dataimage[dataimage > 0])
 
@@ -292,8 +285,6 @@ def test_Approximate_Background_mccdimage_spline():
     cond_circle = (Xin - 1023) ** 2 + (Yin - 1023) ** 2 <= 1024 ** 2
 
     dataimage_bis = np.where(cond_circle, dataimage, mini)
-
-    import pylab as p
 
     #    Z=fit2d.gaussian(100,25,50,30,30)(Xin,Yin)
 
@@ -333,11 +324,9 @@ def test_Approximate_Background_mccdimage_gaussian():
     with spline: does not work
 
     """
-    import pylab as p
-
     filename = "CdTe_I999_03Jul06_0200.mccd"
     # filename = 'Wmap_blanc_11Sep08_d0_5MPa_0000.mccd'
-    _, dataimage = RMCCD.readoneimage_full(filename)
+    _, dataimage = IOimage.readoneimage_full(filename)
 
     mini = np.amin(dataimage[dataimage > 0])
     print("non zero minimum value", mini)
@@ -420,9 +409,9 @@ def test_Approximate_Background_mccdimage_gaussian():
 def test_filtereffect():
 
     filename = "CdTe_I999_03Jul06_0200.mccd"
-    pilimage, _ = RMCCD.readoneimage_full(filename)
+    pilimage, _ = IOimage.readoneimage_full(filename)
 
-    im8bit = RMCCD.to8bits(pilimage)[0]
+    im8bit = ImProc.to8bits(pilimage)[0]
     im1 = im8bit.filter(ImageFilter.MinFilter)
     im2 = im8bit.filter(ImageFilter.BLUR)
     im3 = im8bit.filter(ImageFilter.SMOOTH_MORE)
@@ -476,7 +465,7 @@ def test_localmaxima():
                     [4, 2, 0, 1, 3, 2, 5, 2, 2]])
 
     aa = np.array([0, 1, 3, 7, 12, 25, 18, 20, 10, 16, 19, 12, 6, 9, 5, 3, 2])
-    c, alll, allr = RMCCD.shiftarrays_accum(aa, 2, dimensions=1, diags=0)
+    c, alll, allr = ImProc.shiftarrays_accum(aa, 2, dimensions=1, diags=0)
 
     flag = np.greater(c, alll[0])
 
@@ -490,7 +479,7 @@ def test_localmaxima():
 
     print("value local max", c[peaklist])
 
-    RMCCD.localmaxima(bb, 2, verbose=1, diags=0)
+    ImProc.localmaxima(bb, 2, verbose=1, diags=0)
 
     dd = np.array(
         [
@@ -506,7 +495,7 @@ def test_localmaxima():
     print(
         "testing saturation... central peak is not detected because the top has at least two equal pixel"
     )
-    RMCCD.localmaxima(dd, 2, verbose=1, diags=0)
+    ImProc.localmaxima(dd, 2, verbose=1, diags=0)
 
     dd = np.array(
         [
@@ -522,7 +511,7 @@ def test_localmaxima():
     print(
         "testing saturation... central peak is detected (equal pixel are not the most intense)"
     )
-    RMCCD.localmaxima(dd, 2, verbose=1, diags=1)
+    ImProc.localmaxima(dd, 2, verbose=1, diags=1)
 
     dd = np.array(
         [
@@ -538,7 +527,7 @@ def test_localmaxima():
     print(
         "testing saturation... central peak is detected (equal pixel are not the most intense)"
     )
-    RMCCD.localmaxima(dd, 4, verbose=1, diags=1)
+    ImProc.localmaxima(dd, 4, verbose=1, diags=1)
 
 
 def test_average_Images():
@@ -552,7 +541,7 @@ def test_average_Images():
 
     outfile = prefixname + "ave_0to9.mccd"
 
-    RMCCD.Add_Images(prefixname, 0, 9, plot=0, writefilename=outfile)
+    IOimage.Add_Images(prefixname, 0, 9, plot=0, writefilename=outfile)
 
 
 def test_VHR():
@@ -561,7 +550,7 @@ def test_VHR():
     # shapeCCD=(n,m)  # opposite of fit2d displays in loading data  X 1 m  and Y 1 n
     framedim = (2671, 4008)
     filename = "Au_0290_mar.tiff"
-    dataimage = RMCCD.readoneimage(filename, framedim=framedim)
+    dataimage = IOimage.readoneimage(filename, framedim=framedim)
 
     dataimage = np.reshape(dataimage, framedim)
 
@@ -607,7 +596,7 @@ def test_VHR_crop():
     centers = np.array([[1920, 3032], [1024, 1024]])
     boxsize = 10
 
-    dataimages = RMCCD.readoneimage_manycrops(
+    dataimages = IOimage.readoneimage_manycrops(
         filename, centers, boxsize, CCDLabel="VHR_diamond"
     )
 
@@ -634,7 +623,7 @@ def test_VHR_2():
     offsetheader = 4096
     fliprotvhr = "vhr"
     filename = "dia10_0500_mar.tiff"
-    dataimage = RMCCD.readoneimage(filename, framedim=framedim, offset=offsetheader)
+    dataimage = IOimage.readoneimage(filename, framedim=framedim, offset=offsetheader)
 
     dataimage = np.reshape(dataimage, framedim)
 
@@ -723,7 +712,7 @@ def test_PSL_LAUE_INES():
     framedim = (645, 985)
     filename = "bidon - 8.tif"
 
-    dataimage = RMCCD.readoneimage(filename,
+    dataimage = IOimage.readoneimage(filename,
                                     framedim=framedim,
                                     offset=offsetheader,
                                     formatdata=LAUEIMAGING_DATA_FORMAT)
@@ -823,7 +812,7 @@ def test_PSL_LAUE_INES_16bits():
     filename = "bidon - 5.tif"
     LAUEIMAGING_DATA_FORMAT = "uint16"
 
-    dataimage = RMCCD.readoneimage(filename, framedim=framedim, offset=offsetheader,
+    dataimage = IOimage.readoneimage(filename, framedim=framedim, offset=offsetheader,
                                                             formatdata=LAUEIMAGING_DATA_FORMAT)
 
     dataimage = np.reshape(dataimage, framedim)
@@ -887,11 +876,10 @@ def test_peak_search_file_series():
 
     #    j = 0
     for kk in indimg:
-        filename = prefixname + RMCCD.stringint(kk, 4) + filesuffix
+        filename = prefixname + IOimage.stringint(kk, 4) + filesuffix
         print(filename)
-        # prefix = "D:\Documents and Settings\or208865\Bureau\AAA\AA\\W500Mpa_d0_"+ rmccd.stringint(kk,4)
         prefix = ("D:\Documents and Settings\or208865\Bureau\AAA\AA\\toto_"
-            + RMCCD.stringint(kk, 4))
+            + IOimage.stringint(kk, 4))
         print("prefix ", prefix)
         commentaire = "LT rev 437 \n# PixelNearRadius=5, removeedge=2, IntensityThreshold=500, boxsize=5,\n# \
             position_definition=1, fit_peaks_gaussian=1, xtol=0.001, FitPixelDev=2.0 \n"
@@ -977,7 +965,7 @@ def test_fast_peaksearch(filename="Ge_blanc_0000.mccd", t=1000):
 
     t1 = ttt.time()
     print("Read frame, execution time: %.2f sec" % (t1 - time_0))
-    aa = RMCCD.ConvolvebyKernel(d, peakVal=4, boxsize=5, central_radius=2)
+    aa = ImProc.ConvolvebyKernel(d, peakVal=4, boxsize=5, central_radius=2)
 
     print("result of convolve shape", aa.shape)
 
@@ -1199,11 +1187,11 @@ def test_image_singlepeak(filename="Ge_blanc_0000.mccd"):
     formatdata = DictLT.dict_CCD[CCDLABEL][5]
     offset = DictLT.dict_CCD[CCDLABEL][4]
 
-    dataimage = RMCCD.readoneimage(
+    dataimage = IOimage.readoneimage(
         filename, framedim=framedim, offset=offset, formatdata=formatdata
     )
 
-    header = RMCCD.readheader(filename, offset=offset)
+    header = IOimage.readheader(filename, offset=offset)
 
     dataimage = np.reshape(dataimage, framedim)
 
@@ -1226,7 +1214,7 @@ def test_image_singlepeak(filename="Ge_blanc_0000.mccd"):
 
     newfilename = "Ge_blanc_0000_test.mccd"
 
-    RMCCD.writeimage(newfilename, header, np.ravel(dataimage), dataformat=np.uint16)
+    IOimage.writeimage(newfilename, header, np.ravel(dataimage), dataformat=np.uint16)
 
 
 def test_edf(filename="test_0058.edf"):
@@ -1240,24 +1228,20 @@ def test_edf(filename="test_0058.edf"):
     formatdata = DictLT.dict_CCD[CCDLABEL][5]
     offset = DictLT.dict_CCD[CCDLABEL][4]
 
-    dataimage = RMCCD.readoneimage(
+    dataimage = IOimage.readoneimage(
         filename, framedim=framedim, offset=offset, formatdata=formatdata
     )
 
-    header = RMCCD.readheader(filename, offset=offset)
+    header = IOimage.readheader(filename, offset=offset)
 
     dataimage = np.reshape(dataimage, framedim)
 
     # build a peak
-    mypeak = np.array(
-        [
-            [1, 5, 6, 1, 4],
-            [2, 10, 50, 60, 2],
-            [6, 80, 90, 60, 2],
-            [2, 55, 60, 60, 3],
-            [1, 23, 3, 9, 9],
-        ]
-    )
+    mypeak = np.array([[1, 5, 6, 1, 4],
+                        [2, 10, 50, 60, 2],
+                        [6, 80, 90, 60, 2],
+                        [2, 55, 60, 60, 3],
+                        [1, 23, 3, 9, 9]])
 
     dataimage[1200:1205, 600:605] = 20 * mypeak
 
@@ -1265,7 +1249,7 @@ def test_edf(filename="test_0058.edf"):
 
     newfilename = "testpeak_0058.edf"
 
-    RMCCD.writeimage(newfilename, header, np.ravel(dataimage), dataformat=np.uint16)
+    IOimage.writeimage(newfilename, header, np.ravel(dataimage), dataformat=np.uint16)
 
     from matplotlib.colors import LogNorm
 
@@ -1318,9 +1302,8 @@ def test_edf_onepix(filename="test_0072.edf"):
     formatdata = DictLT.dict_CCD[CCDLABEL][5]
     offset = DictLT.dict_CCD[CCDLABEL][4]
 
-    dataimage = RMCCD.readoneimage(
-        filename, framedim=framedim, offset=offset, formatdata=formatdata
-    )
+    dataimage = IOimage.readoneimage(
+        filename, framedim=framedim, offset=offset, formatdata=formatdata)
 
     dataimage = np.reshape(dataimage, framedim)
 
@@ -1391,7 +1374,7 @@ def test_readSCMOS_crop_fast():
 
     ysize = linefinal_ypix_ifast - linestart_ypix_ifast + 1
 
-    band = RMCCD.readoneimage_band(
+    band = IOimage.readoneimage_band(
         fullpathfilename,
         framedim=(2018, 2016),
         dirname=None,
@@ -1411,7 +1394,7 @@ def test_readSCMOS_crop_fast():
     p.imshow(band2D, vmin=1000, vmax=4000, origin="upper", interpolation="nearest")
 
     #
-    dataimage, framedim, fliprot = RMCCD.readCCDimage(
+    dataimage, framedim, fliprot = IOimage.readCCDimage(
         fullpathfilename, CCDLabel="sCMOS_fliplr"
     )
     p.subplot(142)
@@ -1437,7 +1420,7 @@ def test_readSCMOS_crop_fast():
     print("lineFirstElemIndex", lineFirstElemIndex)
     print("lineLastElemIndex", lineLastElemIndex)
 
-    band = RMCCD.readoneimage_band(
+    band = IOimage.readoneimage_band(
         fullpathfilename,
         framedim=(2018, 2016),
         dirname=None,
@@ -1490,7 +1473,7 @@ def test_EIGER4Munstacked_fast():
 
     ysize = linefinal_ypix_ifast - linestart_ypix_ifast + 1
 
-    band = RMCCD.readoneimage_band(
+    band = IOimage.readoneimage_band(
         fullpathfilename,
         framedim=framedim,
         dirname=None,
@@ -1510,7 +1493,7 @@ def test_EIGER4Munstacked_fast():
     p.imshow(band2D, vmin=10, vmax=50000, origin="upper", interpolation="nearest")
 
     #
-    dataimage, framedim, fliprot = RMCCD.readCCDimage(
+    dataimage, framedim, fliprot = IOimage.readCCDimage(
         fullpathfilename, CCDLabel="EIGER_4Munstacked"
     )
     p.subplot(142)
@@ -1536,7 +1519,7 @@ def test_EIGER4Munstacked_fast():
     print("lineFirstElemIndex", lineFirstElemIndex)
     print("lineLastElemIndex", lineLastElemIndex)
 
-    band = RMCCD.readoneimage_band(
+    band = IOimage.readoneimage_band(
         fullpathfilename,
         framedim=framedim,
         dirname=None,
@@ -1598,7 +1581,7 @@ linefinal_ypix_ifast = 1308
 
 ysize = linefinal_ypix_ifast - linestart_ypix_ifast + 1
 
-band = RMCCD.readoneimage_band(
+band = IOimage.readoneimage_band(
     fullpathfilename,
     framedim=framedim,
     dirname=None,
@@ -1620,7 +1603,7 @@ p.imshow(band2D, vmin=10, vmax=4000, origin="upper", interpolation="nearest")
 
 
 #
-dataimage, framedim, fliprot = RMCCD.readCCDimage(
+dataimage, framedim, fliprot = IOimage.readCCDimage(
     fullpathfilename, CCDLabel="sCMOS_fliplr"
 )
 p.subplot(142)
@@ -1647,7 +1630,7 @@ lineLastElemIndex = ypixmax
 print("lineFirstElemIndex", lineFirstElemIndex)
 print("lineLastElemIndex", lineLastElemIndex)
 
-band = RMCCD.readoneimage_band(
+band = IOimage.readoneimage_band(
     fullpathfilename,
     framedim=framedim,
     dirname=None,
@@ -1700,7 +1683,7 @@ if 0:
     dirname = "/home/micha/LaueProjects/NW"
     filename = "NW_curve2_000078.mccd"
 
-    d, framedim, fliprot = RMCCD.readCCDimage(os.path.join(dirname, filename))
+    d, framedim, fliprot = IOimage.readCCDimage(os.path.join(dirname, filename))
 
     p.figure(1)
 
@@ -1716,11 +1699,11 @@ if 0:
     ax3.imshow(d - dmin, interpolation="nearest")
 
     ax4 = p.subplot(224)
-    dblur = RMCCD.blurCCD(d, 5)
+    dblur = ImProc.blurCCD(d, 5)
     ax4.imshow(dblur, interpolation="nearest")
 
     cd = np.clip(d - dblur, 0, 57500)
-    maskcd = np.where(RMCCD.circularMask((1024, 1024), 1020, (2048, 2048)), cd, 0)
+    maskcd = np.where(ImProc.circularMask((1024, 1024), 1020, (2048, 2048)), cd, 0)
     overbkg = np.array(maskcd, dtype=np.uint16)
 
     numrows, numcols = d.shape
@@ -1745,18 +1728,18 @@ if 0:
     #
     #    p.show()
 
-    _header = RMCCD.readheader(os.path.join(dirname, filename))
+    _header = IOimage.readheader(os.path.join(dirname, filename))
 
     print("shape")
 
-    RMCCD.writeimage(os.path.join(dirname, "NW_curve2_001000.mccd"), _header, np.ravel(overbkg))
+    IOimage.writeimage(os.path.join(dirname, "NW_curve2_001000.mccd"), _header, np.ravel(overbkg))
 
 if 0:
 
     filename = "Ge_blanc_0000.mccd"
     t = 1000
     time_0 = ttt.time()
-    d = RMCCD.readoneimage("Ge_blanc_0000.mccd")
+    d = IOimage.readoneimage("Ge_blanc_0000.mccd")
     # , framedim = (2048,2048), dirname = None, offset = 4100, formatdata = "uint16").reshape((2048,2048))
 
     # d = rot90(d,k=3)
@@ -1821,7 +1804,7 @@ if 0:
 
     time_0 = ttt.time()
 
-    d = RMCCD.readoneimage(filename).reshape((2048, 2048))
+    d = IOimage.readoneimage(filename).reshape((2048, 2048))
 
     t1 = ttt.time()
     print("Read frame, execution time: %.2f sec" % (t1 - time_0))
@@ -1913,7 +1896,7 @@ if 0:
     # t = 500
     # import pylab as p
     # time_0 = ttt.time()
-    # d = readoneimage('CdTe_I999_03Jul06_0200.mccd').reshape((2048,2048))
+    # d = IOimage.readoneimage('CdTe_I999_03Jul06_0200.mccd').reshape((2048,2048))
 
     # t1 = ttt.time()
     # print "Read frame, execution time: %.2f sec"%( t1 - time_0)
@@ -1982,7 +1965,7 @@ if 0:
     # # PERFORMANCE PROFILER
     # import profile
     # #profile.run('test_Peaksearch_Ge()','peaksearch.profile')
-    # d = readoneimage('Ge_blanc_0000.mccd', framedim = (2048,2048))
+    # d = IOimage.readoneimage('Ge_blanc_0000.mccd', framedim = (2048,2048))
     # Data = np.reshape(d, (2048,2048))
     # profile.run('localmaxima(Data, 25, diags=1)','peaksearch.profile')
 
@@ -1992,8 +1975,10 @@ if 0:
     # using PIL and filtering
 
     import pylab as p
-    import ImageFilter
-
+    try:
+        import ImageFilter  
+    except ImportError:
+        import PIL.ImageFilter as ImageFilter
     # test_multiROIfit()
 
     from matplotlib.colors import LogNorm
@@ -2007,7 +1992,7 @@ if 0:
         filename = "Ge_blanc_0000.mccd"
         centers = [[621, 1656], [1242, 1661]]
         boxsize = 15
-        taby = RMCCD.readoneimage_multi_barycenters(
+        taby = IOimage.readoneimage_multi_barycenters(
             filename, centers, boxsize, offsetposition=0
         )
 
@@ -2016,7 +2001,7 @@ if 0:
         # filename='CdTe_I999_03Jul06_0200.mccd'
         # filename = 'SS_0171.mccd'
         time_0 = ttt.time()
-        pilimage, dataimage = RMCCD.readoneimage_full(filename)
+        pilimage, dataimage = IOimage.readoneimage_full(filename)
 
         xminf2d, xmaxfit2d, yminfit2d, ymaxfit2d = 1, 2048, 1, 2048
 
@@ -2026,13 +2011,12 @@ if 0:
         # fit2d index:  X=j Y=2048-i
 
         # WARNING LocalMaxima_ShiftArrays returns 2 args
-        purged_pklist = RMCCD.LocalMaxima_ShiftArrays(
+        purged_pklist = ImProc.LocalMaxima_ShiftArrays(
             dataimage_ROI,
             IntensityThreshold=500,
             Saturation_value=65535,
             boxsize_for_probing_minimal_value_background=30,
-            pixeldistance_remove_duplicates=25,
-        )
+            pixeldistance_remove_duplicates=25)
 
         purged_pklist = purged_pklist - np.array([2, 1])
         purged_pklist = np.fliplr(purged_pklist)

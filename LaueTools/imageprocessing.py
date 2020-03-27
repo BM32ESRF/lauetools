@@ -129,8 +129,6 @@ def to8bits(PILimage, normalization_value=None):
     return image8bits, datatoput
 
 
-
-
 # --- -------------  getting data from images or ROI
 def diff_pix(pix, array_pix, radius=1):
     r"""
@@ -326,6 +324,8 @@ def minmax_fast(D_array, centers, boxsize=(25, 25)):
 
     [0] background values
     [1] intensity value
+
+    used?
     """
 
     min_array = ndimage.minimum_filter(D_array, size=boxsize)
@@ -815,9 +815,6 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
         print("networkx module is missing! Some functions may not work...\nPlease install it at http://networkx.github.io/")
         print("***********************************************************\n")
 
-    # time_0 = ttt.time()
-    # pilimage,dataimage=readoneimage_full(filename)
-
     xminfit2d, xmaxfit2d, yminfit2d, ymaxfit2d = (1, framedim[1], 1, framedim[0])
 
     # warning i corresponds to y
@@ -1195,8 +1192,6 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
             meanpos = np.roll(meanpos, 1)
 
     return meanpos
-
-
 
 
 def localmaxima(DataArray, n, diags=1, verbose=0):

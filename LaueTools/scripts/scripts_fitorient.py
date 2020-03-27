@@ -1349,7 +1349,7 @@ if 0:
             fitfunc = "lorentzian"
 
         peaklist = np.transpose(np.array([pixX, pixY]))
-        params, cov, info, message, baseline = RMCCD.readoneimage_multiROIfit(
+        params, cov, info, message, baseline = IOimage.readoneimage_multiROIfit(
             filename_image,
             peaklist,
             20,

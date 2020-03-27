@@ -56,18 +56,6 @@ DEG = np.pi / 180.0
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
 
 # --- -------------  PROCEDURES
-def stringint(k, n):
-    """ returns string of k by placing zeros before to have n characters
-    ex: 1 -> '0001'
-    15 -> '0015'
-
-    # ugly way: better use  '%04d'%k  for n=4 for isntance
-    """
-    strint = str(k)
-    res = "0" * (n - len(strint)) + strint
-    return res
-
-
 def Plot_compare_2thetachi(Angles,
                         twicetheta_data,
                         chi_data,
