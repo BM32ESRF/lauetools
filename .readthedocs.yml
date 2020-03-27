@@ -7,7 +7,7 @@ version: 2
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-  configuration: LaueTools/Documentation/conf.py
+  configuration: LaueTools/Documentation/source/conf.py
 
 # Build documentation with MkDocs
 #mkdocs:
