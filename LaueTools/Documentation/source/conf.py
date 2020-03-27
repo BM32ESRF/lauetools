@@ -30,7 +30,7 @@ print('in conf.py sys.path',sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'LaueTools'
-copyright = '2019, J.S. Micha, O. Robach., S. Tardif'
+copyright = '2020, J.S. Micha, O. Robach., S. Tardif'
 author = 'JS Micha, O. Robach.,S. Tardif'
 
 # The short X.Y version
@@ -134,7 +134,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'LaueToolsdoc'
+htmlhelp_basename = 'LaueToolsDoc'
 
 todo_include_todos=True
 
