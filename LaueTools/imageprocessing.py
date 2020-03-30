@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-readmccd module is made for reading data contained in binary image file
-fully or partially.
-It can process a peak or blob search by various methods
-and refine the peak by a gaussian or lorentzian 2D model
+imageprocessing module is made to modify filter data array
 
 More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
 March 2020

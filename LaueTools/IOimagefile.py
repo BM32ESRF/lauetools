@@ -397,11 +397,14 @@ def read_header_scmos(filename):
 
     img = Image.open(filename)
 
+
     # img.tag.keys()
     # tag[270]   = (u'0 (thf=-50.4850 mon=24923 exposure=0.400)',)
 
     dictpar = {}
-    strcom = img.tag[270]
+    strcom = img.tag[270][0]
+    print('read_header_scmos', strcom, type(strcom))
+
     si = strcom.index("(")
     fi = strcom.index(")")
     listpar = strcom[si + 1 : fi].split()

@@ -18,10 +18,6 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
-#    def stfreq(agr1, arg2):
-#        return wx.Slider.SetTickFreq(agr1)
-#    wx.Slider.SetTickFreq =stfreq
-
 from pylab import cm as pcm
 from pylab import Rectangle
 from matplotlib.colors import LogNorm
@@ -141,7 +137,6 @@ class ViewColorPanel(wx.Panel):
                             maxValue=int(self.mainframe.vminmax),
                             style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
-            #            self.slider_vmin.SetTickFreq(500,1)
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
@@ -1559,7 +1554,10 @@ class PlotPeakListPanel(wx.Panel):
                                                         minValue=0,
                                                         maxValue=1000,
                                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
-        self.slider_vmin.SetTickFreq(500, 1)
+        if WXPYTHON4:
+            self.slider_vmin.SetTickFreq(500)
+        else:
+            self.slider_vmin.SetTickFreq(500, 1)
         self.slider_vmin.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.mainframe.on_slider_IminDisplayed)
 
         # second horizontal band
@@ -1567,7 +1565,10 @@ class PlotPeakListPanel(wx.Panel):
                                                         minValue=1,
                                                         maxValue=1000,
                                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
-        self.slider_vmax.SetTickFreq(500, 1)
+        if WXPYTHON4:
+            self.slider_vmax.SetTickFreq(500)
+        else:
+            self.slider_vmax.SetTickFreq(500, 1)
         self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
                             self.mainframe.on_slider_ImaxDisplayed)
 

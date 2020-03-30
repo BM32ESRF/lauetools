@@ -109,29 +109,21 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
 
     :param filename: string, full path to image file
     :param centers: list or array like with shape=(n,2)
-              list of centers of selected ROI
-    :param boxsize: (Truly HALF boxsize: fuill boxsize= 2 *halfboxsize +1)
-              iterable 2 elements or integer
-              boxsizes [in x, in y] direction or integer to set a square ROI
-
+                    list of centers of selected ROI
+    :param boxsize: (Truly HALF boxsize: fuill boxsize= 2(halfboxsize) +1), iterable 2 elements or integer
+                    boxsizes [in x, in y] direction or integer to set a square ROI
     :param baseline: string, 'auto' (ie minimum intensity in ROI) or array of floats
     :param startangles: float or iterable of 2 floats, elliptic gaussian angle (major axis with respect to X direction),
-                  one value or array of values
+                        one value or array of values
     :param start_sigma1, start_sigma2: floats, gaussian standard deviation (major and minor axis) in pixel,
-    :param position_start: string, starting gaussian center:'max' (position of maximum intensity in ROI),
-                     'centers' (centre of each ROI)
-
+    :param position_start:  string, starting gaussian center:'max' (position of maximum intensity in ROI),
+                            "centers" (centre of each ROI)
     :param offsetposition: integer, 0 for no offset, 1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0), 2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)
-
     :param use_data_corrected: tuple of 3 elements, Enter data instead of reading data from file:
                          fulldata, framedim, fliprot
                          where fulldata is a ndarray
-
-    :return: list of results:
-                 bkg,  amp  (gaussian height-bkg), X , Y ,
-                major axis standard deviation ,minor axis standard deviation,
-                major axis tilt angle / Ox
-
+    :return: list of results:   bkg,  amp  (gaussian height-bkg), X , Y, major axis standard deviation, minor axis standard deviation,
+                                major axis tilt angle / Ox
     .. todo:: setting list of initial guesses can be improve with
         scipy.ndimages of a concatenate array of multiple slices?
     """
@@ -897,50 +889,33 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
     :param CCDLabel: string, label for CCD 2D detector used to read the image data file see dict_LaueTools.py
 
     :param center: position
+
     .. todo:: to be removed: position of the ROI center in CCD frame
 
     :param boxsizeROI: dimensions of the ROI to crop the data array
                     only used if center != None
 
-    :param boxsize: half length of the selected ROI array centered on each peak:
-                for fitting a peak
-                for estimating the background around a peak
-                for shifting array in second method of local maxima search (shifted arrays)
+    :param boxsize: half length of the selected ROI array centered on each peak, used for:
+                - fitting a peak
+                - estimating the background around a peak
+                - shifting array in second method of local maxima search (shifted arrays)
 
-    :param IntensityThreshold: integer
-                         pixel intensity level above which potential peaks are kept for fitting position procedure
-                        for local maxima method 0 and 1, this level is relative to zero intensity
-                        for local maxima method 2, this level is relative to lowest intensity in the ROI (local background)
-                        start with high value
-                        If too high, few peaks are found (only the most important)
-                        If too low, too many local maxima are found leading to time consuming fitting procedure
+    :param IntensityThreshold: integer, pixel intensity level above which potential peaks are kept for fitting position procedure. For local maxima method 0 and 1, this level is relative to zero intensity. For local maxima method 2, this level is relative to lowest intensity in the ROI (local background). Advice: start with high value, because if too high, few peaks are found (only the most important), and if too low, too many local maxima are found leading to time consuming fitting procedure.
 
-    :param thresholdConvolve: integer
-                        pixel intensity level in convolved image above which potential peaks are kept for fitting position procedure
-                        This threshold step on convolved image is applied prior to the local threshold step with IntensityThreshold on initial image (with respect to the local background)
+    :param thresholdConvolve: integer, pixel intensity level in convolved image above which potential peaks are kept for fitting position procedure. This threshold step on convolved image is applied prior to the local threshold step with IntensityThreshold on initial image (with respect to the local background)
 
-    :param paramsHat:  mexican hat kernel parameters (see :func:`LocalMaxima_ndimage`)
+    :param paramsHat: mexican hat kernel parameters (see :func:`LocalMaxima_ndimage`)
 
-    :param PixelNearRadius: integer
-                     pixel distance between two regions considered as peaks
-                    start rather with a large value.
-                    If too low, there are very much peaks duplicates and
-                    this is very time consuming
+    :param PixelNearRadius: integer, pixel distance between two regions considered as peaks. Advice: start rather with a large value. If too low, there are very much peaks duplicates and this is very time consuming.
 
-    :param local_maxima_search_method: integer
-                                 Select method for find the local maxima, each of them will fitted
-                            : 0   extract all pixel above intensity threshold
-                            : 1   find pixels are highest than their neighbours in horizontal, vertical
-                                    and diagonal direction (up to a given pixel distance)
-                            : 2   find local hot pixels which after numerical convolution give high intensity
-                                above threshold (thresholdConvolve)
-                                then threshold (IntensityThreshold) on raw data
+    :param local_maxima_search_method: integer, Select method for find the local maxima, each of them will fitted
+                            - 0   extract all pixel above intensity threshold
+                            - 1   find pixels are highest than their neighbours in horizontal, vertica and diagonal direction (up to a given pixel distance)
+                            - 2   find local hot pixels which after numerical convolution give high intensity above threshold (thresholdConvolve) then threshold (IntensityThreshold) on raw data
 
-    :param peakposition_definition: 'max' or 'center'  for local_maxima_search_method == 2
-                                to assign to the blob position its hottest pixel position
-                                                            or its center (no weight)
+    :param peakposition_definition: 'max' or 'center'  for local_maxima_search_method == 2 to assign to the blob position its hottest pixel position or its center (no weight)
 
-    :param Saturation_value_flatpeak:  saturation value of detector for local maxima search method 1
+    :param Saturation_value_flatpeak: saturation value of detector for local maxima search method 1
 
     :param Remove_BlackListedPeaks_fromfile: None or full file path to a peaklist file containing peaks
                                             that will be deleted in peak list resulting from
@@ -951,18 +926,19 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
 
     :param NumberMaxofFits: highest acceptable number of local maxima peak to be refined with a 2D modelPeakSearch
 
-    :param fit_peaks_gaussian:    0  no position and shape refinement procedure performed from local maxima (or blob) results
-                            :    1  2D gaussian peak refinement
-                            :    2  2D lorentzian peak refinement
+    :param fit_peaks_gaussian:
+        - 0  no position and shape refinement procedure performed from local maxima (or blob) result
+        - 1  2D gaussian peak refinement
+        - 2  2D lorentzian peak refinement
 
     :param xtol: relative error on solution (x vector)  see args for leastsq in scipy.optimize
-    :param FitPixelDev:  largest pixel distance between initial (from local maxima search)
+    :param FitPixelDev: largest pixel distance between initial (from local maxima search)
                             and refined peak position
 
-    :param position_definition: due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values
-                         = 0    no offset (python numpy convention)
-                         = 1   XMAS offset
-                         = 2   fit2d offset
+    :param position_definition: due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values:
+        - 0    no offset (python numpy convention)
+        - 1   XMAS offset
+        - 2   fit2d offset
 
     :param return_histo: 0   3 output elements
                         : 1   4 elemts, last one is histogram of data

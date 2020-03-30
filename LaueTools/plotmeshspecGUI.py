@@ -8,13 +8,26 @@ import time
 
 import wx
 
-if wx.__version__ < "4.0.2":
+# if wx.__version__ < "4.0.2":
+#     WXPYTHON4 = False
+# else:
+#     WXPYTHON4 = True
+#     wx.OPEN = wx.FD_OPEN
+
+#     def sttip(argself, strtip):
+#         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
+#     wx.Window.SetToolTipString = sttip
+
+if wx.__version__ < "4.":
     WXPYTHON4 = False
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
+    wx.CHANGE_DIR = wx.FD_CHANGE_DIR
 
     def sttip(argself, strtip):
+        """ alias fct """
         return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
 
     wx.Window.SetToolTipString = sttip
@@ -22,19 +35,18 @@ else:
 import numpy as np
 
 import matplotlib as mpl
-
-mpl.use("WXAgg")
-
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
                                                     NavigationToolbar2WxAgg as NavigationToolbar)
 
 import matplotlib.colors as colors
-
+from matplotlib.axes import Axes
 from matplotlib.ticker import FuncFormatter
+
 from pylab import cm as pcm
 
-from matplotlib.axes import Axes
+# mpl.use("WXAgg")
+
 
 try:
     from SpecClient_gevent import SpecCommand
@@ -756,22 +768,15 @@ class ImshowPanel(wx.Panel):
     Class to show 2D array intensity data
     """
 
-    def __init__(
-        self,
-        parent,
-        _id,
-        title,
-        dataarray,
-        posarray_twomotors=None,
-        posmotorname=(None, None),
-        datatype="scalar",
-        absolutecornerindices=None,
-        Imageindices=None,
-        absolute_motorposition_unit="micron",
-        colorbar_label="Fluo counts",
-        stepindex=1,
-        xylabels=None,
-    ):
+    def __init__( self, parent, _id, title, dataarray, posarray_twomotors=None,
+                                                        posmotorname=(None, None),
+                                                        datatype="scalar",
+                                                        absolutecornerindices=None,
+                                                        Imageindices=None,
+                                                        absolute_motorposition_unit="micron",
+                                                        colorbar_label="Fluo counts",
+                                                        stepindex=1,
+                                                        xylabels=None):
         """
         plot 2D plot of dataarray
         """
@@ -901,35 +906,25 @@ class ImshowPanel(wx.Panel):
         self.ImaxDisplayed = 100
         #         if self.datatype == 'scalar':
         self.slidertxt_min = wx.StaticText(self, -1, "Min :")
-        self.slider_min = wx.Slider(
-            self,
-            -1,
-            size=(200, 50),
-            value=self.IminDisplayed,
-            minValue=0,
-            maxValue=99,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_min = wx.Slider(self, -1, size=(200, 50), value=self.IminDisplayed,
+                                                                minValue=0,
+                                                                maxValue=99,
+                                                                style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
-            self.slider_min.SetTickFreq(50, 1)
-        else:
             self.slider_min.SetTickFreq(50)
+        else:
+            self.slider_min.SetTickFreq(50, 1)
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
 
         self.slidertxt_max = wx.StaticText(self, -1, "Max :")
-        self.slider_max = wx.Slider(
-            self,
-            -1,
-            size=(200, 50),
-            value=self.ImaxDisplayed,
-            minValue=1,
-            maxValue=100,
-            style=wx.SL_AUTOTICKS | wx.SL_LABELS,
-        )
+        self.slider_max = wx.Slider(self, -1, size=(200, 50), value=self.ImaxDisplayed,
+                                                            minValue=1,
+                                                            maxValue=100,
+                                                            style=wx.SL_AUTOTICKS | wx.SL_LABELS)
         if WXPYTHON4:
-            self.slider_max.SetTickFreq(50, 1)
-        else:
             self.slider_max.SetTickFreq(50)
+        else:
+            self.slider_max.SetTickFreq(50, 1)
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMax, self.slider_max)
 
         # loading LUTS
@@ -937,15 +932,10 @@ class ImshowPanel(wx.Panel):
         self.mapsLUT.sort()
 
         luttxt = wx.StaticText(self, -1, "LUT")
-        self.comboLUT = wx.ComboBox(
-            self,
-            -1,
-            self.LastLUT,
-            size=(-1, 40),
-            choices=self.mapsLUT,
-            style=wx.TE_PROCESS_ENTER,
-        )  # ,
-        # style=wx.CB_READONLY)
+        self.comboLUT = wx.ComboBox(self, -1, self.LastLUT, size=(-1, 40),
+                                                    choices=self.mapsLUT,
+                                                    style=wx.TE_PROCESS_ENTER)  # ,
+                                                # style=wx.CB_READONLY)
 
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.OnChangeLUT)
         self.comboLUT.Bind(wx.EVT_TEXT_ENTER, self.OnChangeLUT)
@@ -959,9 +949,8 @@ class ImshowPanel(wx.Panel):
 
         self.scaletype = "Linear"
         scaletxt = wx.StaticText(self, -1, "Scale")
-        self.comboscale = wx.ComboBox(
-            self, -1, self.scaletype, choices=["Linear", "Log10"], size=(-1, 40)
-        )
+        self.comboscale = wx.ComboBox(self, -1, self.scaletype, choices=["Linear", "Log10"],
+                                                                            size=(-1, 40))
 
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
@@ -975,14 +964,10 @@ class ImshowPanel(wx.Panel):
 
         print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
-        self.combocounters = wx.ComboBox(
-            self,
-            -1,
-            self.frameparent.detectorname,
-            choices=sortedcounterslist,
-            size=(-1, 40),
-            style=wx.TE_PROCESS_ENTER,
-        )
+        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname,
+                                                        choices=sortedcounterslist,
+                                                        size=(-1, 40),
+                                                        style=wx.TE_PROCESS_ENTER)
 
         self.combocounters.Bind(wx.EVT_COMBOBOX, self.OnChangeCounter)
         self.combocounters.Bind(wx.EVT_TEXT_ENTER, self.OnChangeCounter)
@@ -1254,9 +1239,7 @@ class ImshowPanel(wx.Panel):
     def forceAspect(self, aspect=1.0):
         im = self.axes.get_images()
         extent = im[0].get_extent()
-        self.axes.set_aspect(
-            abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect
-        )
+        self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
 
     def re_init_colorbar(self):
 
@@ -1288,8 +1271,7 @@ class ImshowPanel(wx.Panel):
                 norm=self.cNorm,
                 aspect="equal",
                 #                              extent=self.extent,
-                origin=self.origin,
-            )
+                origin=self.origin)
 
             if self.XORIGINLIST[self.flagxorigin % 2] == "right":
                 self.axes.set_xlim(self.axes.get_xlim()[::-1])
@@ -1299,17 +1281,15 @@ class ImshowPanel(wx.Panel):
         step_factor = self.step_factor
         #         print "step_factor", step_factor
         #         print "self.step_x", self.step_x
-        return (
-            np.fix((index * self.step_x / step_factor + self.posmotor1[0]) * 100000.0)
-            / 100000.0
-        )
+        return (np.fix((index * self.step_x / step_factor + self.posmotor1[0]) * 100000.0)
+            / 100000.0)
 
     def fromindex_to_pixelpos_x_relative_corner(self, index, _):
 
         step_factor = self.step_factor
         # relative positions from bottom left corner ticks
 
-        print("self.step_x", self.step_x)
+        # print("self.step_x", self.step_x)
 
         return np.fix((index * self.step_x) * 10000.0) / 10000.0
 
@@ -1318,8 +1298,8 @@ class ImshowPanel(wx.Panel):
     def fromindex_to_pixelpos_y_absolute(self, index, _):
         # absolute positions ticks
         step_factor = self.step_factor
-        print("step_factor", step_factor)
-        print("self.step_x", self.step_x)
+        # print("step_factor", step_factor)
+        # print("self.step_x", self.step_x)
         return (np.fix((index * self.step_y / step_factor + self.posmotor2[0]) * 100000.0)
             / 100000.0)
 
@@ -1328,7 +1308,7 @@ class ImshowPanel(wx.Panel):
         step_factor = self.step_factor
         # relative positions from bottom left corner ticks
 
-        print("self.step_y", self.step_y)
+        # print("self.step_y", self.step_y)
 
         return np.fix((index * self.step_y) * 10000.0) / 10000.0
 
@@ -1352,11 +1332,9 @@ class ImshowPanel(wx.Panel):
             self.posarray_twomotors[-1, -1])
 
         rangeX = (np.fix((self.posarray_twomotors[0, -1] - self.posarray_twomotors[0, 0])[0]
-                * 100000)
-            / 100000)
+                * 100000) / 100000)
         rangeY = (np.fix((self.posarray_twomotors[-1, -1] - self.posarray_twomotors[0, -1])[1]
-                * 100000)
-            / 100000)
+                * 100000) / 100000)
 
         print("first motor total range", rangeX)
         print("second motor total range", rangeY)
