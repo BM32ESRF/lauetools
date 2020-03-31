@@ -61,7 +61,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.todo',
-    'rinoh.frontend.sphinx',
+    #'rinoh.frontend.sphinx',
     'sphinx.ext.mathjax',
     "sphinx_rtd_theme"# to delete for an other theme
 
