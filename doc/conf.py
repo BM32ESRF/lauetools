@@ -14,12 +14,9 @@
 #
 import os
 import sys
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../'))
 #sys.path.insert(0, os.path.abspath('../..'))
-#sys.path.insert(0, '/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_static')
-#sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools/Doumentation/source/_templates')
-#sys.path.insert(0,'/home/micha/LaueToolsPy3/LaueTools')
 #sys.path.insert(0, os.path.abspath('..'))
 #sys.path.insert(0, os.path.abspath('../..'))
 #sys.path.insert(0,os.path.abspath('../../..'))
