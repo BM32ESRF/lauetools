@@ -9,7 +9,7 @@ The next documentation comes from the docstring in the header of function or cla
 
 readmccd.py
 ----------------------
-.. automodule:: LaueTools.readmccd
+.. automodule:: readmccd
    :members: setfilename, getIndex_fromfilename, readheader, read_header_marccd, read_header_marccd2,
        read_header_scmos, read_motorsposition_fromheader, readCCDimage, readoneimage, readoneimage_crop_fast,
        readrectangle_in_image, readoneimage_crop, readoneimage_manycrops, readoneimage_multiROIfit,
@@ -25,13 +25,13 @@ readmccd.py
 
 IOimagefile.py
 ----------------------
-.. automodule:: LaueTools.IOimagefile
+.. automodule:: IOimagefile
    :members:
 
 
 imageprocessing.py
 ----------------------
-.. automodule:: LaueTools.imageprocessing
+.. automodule:: imageprocessing
    :members:
 
 

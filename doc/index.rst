@@ -2,16 +2,18 @@
 Welcome to LaueTools's DOCUMENTATION!
 #######################################
 
-.. toctree::
-    :maxdepth: 2
+You have data to analyse? You are at the right place! You can also contact us for more assistance.
 
-    intro
-    installation
-    getStarted
-    conventions
-    GUIs
-    Tutorials
-    LaueToolsModules
+.. toctree::
+   :maxdepth: 2
+
+   intro
+   installation
+   getStarted
+   conventions
+   GUIs
+   Tutorials
+   LaueToolsModules
 
 Indices and tables
 ==================
