@@ -13,5 +13,12 @@ Welcome to LaueTools's DOCUMENTATION!
     Tutorials
     LaueToolsModules
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
 
 
