@@ -6,7 +6,7 @@ Last revision (March 2020)
 1- Download LaueTools code
 ***************************
 
-- the very last version of the code at gitlab.esrf.fr (you are also welcome to fork this project):
+- the very last version of the code running with python3 is at gitlab.esrf.fr (you are also welcome to fork this project):
 
 	https://gitlab.esrf.fr/micha/lauetools
 
@@ -29,6 +29,8 @@ Last revision (March 2020)
 2a- Launch Graphical User Interfaces of LaueTools
 *************************************************
 - start Lauetools GUIs from command line :
+
+Normally, in a command window if environment variables are well set 3 main GUIs can be launched: > lauetools  or >peaksearch or >indexrefine
 
 To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
 
@@ -85,7 +87,7 @@ Documentation can be generated, by installing sphinx and a cool html theme:
 
 	   pip install sphinx
 
-           pip install sphinx-rtd-theme
+       pip install sphinx-rtd-theme
 
 You may need:
 
