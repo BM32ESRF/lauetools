@@ -3,6 +3,10 @@ Welcome to LaueTools's DOCUMENTATION!
 
 Last revision (March 2020)
 
+LaueTools code and documentation at:
+
+https://lauetools.readthedocs.io/en/latest/index.html
+
 1- Download LaueTools code
 ***************************
 
@@ -30,7 +34,11 @@ Last revision (March 2020)
 *************************************************
 - start Lauetools GUIs from command line :
 
-Normally, in a command window if environment variables are well set 3 main GUIs can be launched: > lauetools  or >peaksearch or >indexrefine
+Normally, in a command window (if environment variables are well set) 3 main GUIs can be launched:
+
+	> lauetools   for the main GUI
+	> peaksearch  for batch Laue pattern peak search processing
+	> indexrefine   for batch Laue pattern indexing and unit cell (strain) refinement
 
 To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
 
