@@ -17,7 +17,7 @@ import sys
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../LaueTools'))
 #sys.path.insert(0, os.path.abspath('../..'))
-#sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('..'))
 #sys.path.insert(0, os.path.abspath('../..'))
 #sys.path.insert(0,os.path.abspath('../../..'))
 sys.setrecursionlimit(1500)
