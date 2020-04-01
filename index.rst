@@ -76,7 +76,7 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple in the same manner:
 
-	.. image:: Images/notebook0.jpg
+	.. image:: ../doc/images/notebook0.jpg
 
 2c- LaueTools Documentation
 ****************************
