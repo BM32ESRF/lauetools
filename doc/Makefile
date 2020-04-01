@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = LaueTools
-SOURCEDIR     = .
+SOURCEDIR     = ../LaueTools
 BUILDDIR      = build
 
 # Put it first so that "make" without argument is like "make help".
