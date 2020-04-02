@@ -11,20 +11,20 @@ Read Images and Binary files
 
 First select the detector you have used for the data collection in the menu Calibration
 
-.. image:: ./Images/clickcalib.png
+.. image:: ./images/clickcalib.png
 
 Choose the correct camera to define the binary image file parameters
 
-.. image:: ./Images/ccdfileselect.png
+.. image:: ./images/ccdfileselect.png
     
 
 View an image by selecting in the Menu  File/Open Image and Peak Search.
 
-.. image:: ./Images/peaksearchBoard.png
+.. image:: ./images/peaksearchBoard.png
 
 Then you obtain a board enabling to browse your set of images and to search for peaks
 
-.. image:: ./Images/peaksearchGUI.png
+.. image:: ./images/peaksearchGUI.png
    :scale: 60%
 
 This board is composed by composed by 4 TOP tabs:
@@ -49,15 +49,15 @@ This panel helps for viewing images with an appropriate color LUT, getting some 
 
 * Color Mapping (LUT) of the displayed image. ``ShowHisto`` displays the histogram of intensity distribution (nb of pixel as a function of pixel intensity) 
 
-   .. image:: ./Images/lutparam.png
+   .. image:: ./images/lutparam.png
 
 * intensities limits taken into account by the LUT
 
-   .. image:: ./Images/imagedisplaylimits.png
+   .. image:: ./images/imagedisplaylimits.png
 
 * ``Open LineProfiler``: 1D plot of pixel intensities along a movable-by-user line. And ``Eneable X Y Profiler``: 1D plot of pixel intensities along X and Y from a clicked pixel position
 
-.. image:: ./Images/profilers.png
+.. image:: ./images/profilers.png
 
 Image & Filter
 ---------------------
@@ -70,7 +70,7 @@ This panel supplies digital image processing tools to filter current image and p
 
 ``Save results`` saves on hard disk the A' image with the header contains and format of A. 
 
-   .. image:: ./Images/imagefilterbckg.png
+   .. image:: ./images/imagefilterbckg.png
 
 Browse & Crop
 ---------------------
@@ -79,11 +79,11 @@ One can navigate on a set of images provided the images file name contains a num
  
 The ``Go To index`` button allows to read directly an image with an other in the same dataset. ``Auto index+1`` button will display the next image and wait for it if it is not already in the folder.
 
-   .. image:: ./Images/imagebrowser.png
+   .. image:: ./images/imagebrowser.png
    
 To navigate and display faster the image when browsing on a particular region of interest (ROI) of the images, you can crop the data (``CropData``) by specifying the half sizes (``boxsize``) of the cropping box in the two directions.
 
-   .. image:: ./Images/cropdata.png
+   .. image:: ./images/cropdata.png
 
 Mosaic & Monitor
 ---------------------
@@ -107,15 +107,15 @@ The standard toolbar is provided by the graphical 'matplotlib' library with the 
 
 * A ROI can be set to zoom in the data.
 
-   .. image:: ./Images/zoominrectsmall.png
+   .. image:: ./images/zoominrectsmall.png
 
 * This ROI can be moved easily with the pan button
 
-   .. image:: ./Images/panbtnsmall.png
+   .. image:: ./images/panbtnsmall.png
 
 * When hovering the mouse on the image pixel position and corresponding intensity are displayed
 
-   .. image:: ./Images/localinfosmall.png
+   .. image:: ./images/localinfosmall.png
 
 * Previous selected ROIs are stored and can be recalled by arrows (``Home`` icon recalls the initial full image)
 
@@ -123,7 +123,7 @@ Local Maxima or Blob Search
 ===============================
 To guess the initial parameters fitting, 3 methods leads to a list of local maxima (or blobs)
 
-.. image:: ./Images/tablocalmaxima.png
+.. image:: ./images/tablocalmaxima.png
 
 Method 1: pixels above a threshold on raw image
 --------------------------------------------------
@@ -134,7 +134,7 @@ If ``intensityThreshold`` is too small you will too much pixels that you may stu
 ``MinimumDistance`` is the smallest distance separating two local maxima.
 A good habit is too check the highest background level (e.g close to the image centre) and set ``intensityThreshold`` to a larger value. But even in this case if (fluorescence) background varies a lot, you will miss peaks whose maximum intensities are below the threshold... This is why removing the background is mandatory.
 
-.. image:: ./Images/method1small.png
+.. image:: ./images/method1small.png
 
 Method 2: hottest pixel in a box (by array shift)
 ------------------------------------------------------
@@ -143,7 +143,7 @@ Second Method finds the hottest pixel in a small box given by ``PixelNearRadius`
 The **thresholding** with the ``IntensityThreshold`` level is performed on the intensity of these hot pixels **with respect to local background level** (set to the lowest pixel intensity in the box around the hot pixel).
 One drawback of this method is that 2 hot pixels at the top of the peak but with strictly the same intensity are not detected (coincidence or more likely when peak is saturated).
  
-.. image:: ./Images/method2small.png
+.. image:: ./images/method2small.png
 
 Method 3: Peak enhancement by convolution on raw image
 ------------------------------------------------------------
@@ -154,7 +154,7 @@ With this blobs list, a second thresholding at ``Intensity Threshold (raw data)`
 ``PixelNearRadius`` value enables the user to reject too much closed spots.
 ``Max.Intensity`` value is used for the display of the convolved Image by clicking on ``Show Conv. Image``. Thresholding can be visualize by checking ``Show thresholding``.
       
-.. image:: ./Images/method3small.png
+.. image:: ./images/method3small.png
 
 Peak Position Fit
 =================
@@ -162,13 +162,13 @@ Peak Position Fit
 The goal of the peak search is to have systematic values of Laue peaks and intensities. You can decide to fit or not the blob found. The Button ``Search All Peaks`` launches  the local maxima chosen method and apply a fitting procedure (or not) to each found blob. A general peak list is built.
 By clicking close to a Laue spot in the image and clicking on the ``Fit Peak`` button, a gaussian fit is performed. This result can be added to the current general peak list with the button ``Add Peak``. Clicking close to a Laue spot that belongs to the peak list (blue circle marker on top of the image) and pressing ``Remove Peak`` removes the laue spot from the list. 
 
-.. image:: ./Images/finalbtns.png
+.. image:: ./images/finalbtns.png
 
 Parameters to choose the fitting model or no fit and to reject or not the fitting result of each peak according to deviation from the initial guessed position (``FitPixelDeviation``).
 
-.. image:: ./Images/selectfitornotsmall.png
+.. image:: ./images/selectfitornotsmall.png
 
-.. image:: ./Images/fitparam.png
+.. image:: ./images/fitparam.png
 
 
 

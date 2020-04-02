@@ -51,4 +51,4 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple in the same manner:
 
-	.. image:: Images/notebook0.jpg
+	.. image:: ./images/notebook0.jpg

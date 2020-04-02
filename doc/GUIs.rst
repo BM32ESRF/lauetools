@@ -18,7 +18,8 @@ The main steps of analysis are Laue peaks search, Laue Pattern indexation and un
 Peak Search (PeaksearchGUI)
 ----------------------------------
 
-
+.. toctree::
+    PeakSearchGUI.rst
 
 Indexation (LaueToolsGUI)
 ---------------------------------------

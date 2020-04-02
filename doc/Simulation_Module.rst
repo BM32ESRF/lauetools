@@ -29,7 +29,7 @@ Laue Pattern Simulation
 
 Multiple Grains and Strain/orientation Distribution 
 =========================================================
-.. automodule:: LaueTools.GUI.multigrainsSimulator
+.. automodule:: LaueTools.multigrainsSimulator
     :members: Read_GrainListparameter, Construct_GrainsParameters_parametric, dosimulation_parametric
 
 

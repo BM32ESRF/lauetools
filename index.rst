@@ -84,29 +84,6 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple in the same manner:
 
-	.. image:: ../doc/images/notebook0.jpg
+	.. image:: /images/notebook0.jpg
 
-2c- LaueTools Documentation
-****************************
 
-Documentation can be generated, by installing sphinx and a cool html theme:
-
-.. code-block:: python
-
-	   pip install sphinx
-
-       pip install sphinx-rtd-theme
-
-You may need:
-
-.. code-block:: python
-
-	   pip install RinohType
-
-Then from /LaueTools/Documentation folder which contain `Makefile` and 2 folders `build` and `source`, build the documentation
-
-.. code-block:: shell
-
-	   make html
-
-Files in html format can be browsed in /build/html folder. You can start with index.html.
