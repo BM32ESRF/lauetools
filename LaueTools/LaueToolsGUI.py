@@ -290,7 +290,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         IndexationMenu = wx.Menu()
         for _id, label, helpText, handler in [
-            (wx.ID_ANY, "&Open Peak List", "Open a data file(peak list)", self.OnOpenPeakList),
+            (wx.ID_ANY, "&Open Peak List", "Open a file with a peak list: .dat or .cor", self.OnOpenPeakList),
             (wx.ID_ANY, "&Reload Materials", "Update or Load Materials (dict_Materials.dat)",
                                                                             self.OnLoadMaterials),
             (None, None, None, None),

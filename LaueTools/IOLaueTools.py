@@ -368,9 +368,13 @@ def writeCalibFile():
     """
     pass
 
-def readCalibParametersInFile(openfile, Dict_to_update=None):
+def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True):
     """
     read .det file (detector geometry calibration)
+
+    .. warning:: if CCDLabel is unknown, it is gueesed from pixelsize...
+
+    .. todo:: we could add dimensions to guess CCDLabel
 
     return dict of parameters in open file
     """
@@ -408,15 +412,18 @@ def readCalibParametersInFile(openfile, Dict_to_update=None):
 
     if 'CCDLabel' not in CCDcalib:  #will recognise from pixelsize...
         CCDcalib['CCDLabel'] = None# DEFAULT_CCDLABEL
-        if 'pixelsize' in CCDcalib:
-            ps = CCDcalib['pixelsize']
-            if abs(ps-0.0795) < 0.004:
-                ccdlabel = 'MARCCD165'
-            elif abs(ps-0.073) <= 0.002:
-                ccdlabel = 'sCMOS'
-            elif abs(ps-0.075) <= 0.002:
-                ccdlabel = 'psl_weiwei'
-            CCDcalib['CCDLabel'] = ccdlabel
+        if guessCCDLabel:
+            if 'pixelsize' in CCDcalib:
+                ps = CCDcalib['pixelsize']
+                if abs(ps-0.0795) < 0.004:
+                    ccdlabel = 'MARCCD165'
+                elif abs(ps-0.073) <= 0.002:
+                    ccdlabel = 'sCMOS'
+                elif abs(ps-0.075) <= 0.002:
+                    ccdlabel = 'psl_weiwei'
+                elif abs(ps-0.031) <= 0.002:
+                    ccdlabel = 'VHR_Feb13'
+                CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib
 

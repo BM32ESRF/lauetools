@@ -794,7 +794,6 @@ class BrowseCropPanel(wx.Panel):
         self.imageindexmax = 1000
 
         print('startimageindex', startimageindex)
-
         inivalX = int(startimageindex % self.stepindex)
         inivalY = int(startimageindex // self.stepindex)
         # print("inivalX", inivalX)
@@ -3457,11 +3456,13 @@ class MainPeakSearchFrame(wx.Frame):
         self.image_with_index = True
         try:
             self.imageindex = IOimage.getIndex_fromfilename(self.imagefilename,
-            CCDLabel=self.CCDlabel, stackimageindex=self.stackimageindex, nbdigits=self.nbdigits)
-        except ValueError:
+                                                            CCDLabel=self.CCDlabel,
+                                                            stackimageindex=self.stackimageindex,
+                                                            nbdigits=self.nbdigits)
+            print("************\n\n\nself.imageindex %d \n\n****************" % self.imageindex)
+        except (ValueError, TypeError):
+            self.imageindex = 0
             self.image_with_index = False
-
-        print("************\n\n\nself.imageindex %d \n\n****************" % self.imageindex)
 
     def setfilename(self):
         """set filename from self.imagefilename, self.imageindex,
