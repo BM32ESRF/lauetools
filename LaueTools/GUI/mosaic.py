@@ -2880,10 +2880,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 if plot:
 
-                    plapla = ImshowFrame(parent,
-                                        -1,
-                                        "image Plot %s" % counter,
-                                        dat,
+                    plapla = ImshowFrame(parent, -1, "image Plot %s" % counter, dat,
                                         cmap=GT.ORRD,
                                         interpolation="nearest",
                                         origin="upper",
@@ -2947,10 +2944,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 CountersData[counter + "2D"] = dat
 
                 if plot:
-                    ploplo = ImshowFrame(parent,
-                                        -1,
-                                        "MOSAIC image Plot",
-                                        dat,
+                    ploplo = ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
                                         absolutecornerindices=(jmin, imin),
                                         cmap=GT.ORRD,
                                         interpolation="nearest",
@@ -3205,7 +3199,10 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     parent.list_of_windows.append(plot2Dradial)
 
                 if plot and counter == "Shape":
+                    
                     maxpeaksize = np.amax(FilteredfittedPeaksData[:, 3:5], axis=1)
+                    
+                    
                     maxpeaksize2D = maxpeaksize.reshape((n0, n1))
 
                     plot2Dpeaksize = ImshowFrame(parent,
@@ -3231,6 +3228,8 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                     plot2Dpeaksize.Show()
 
                     np.savetxt("%s_2D_size_" % counter + "_%s" % myformattime(), maxpeaksize2D)
+
+                    np.savetxt("%s_2Dshape_" % counter + "_%s" % myformattime(), FilteredfittedPeaksData[:, 3:6])
 
                     parent.list_of_windows.append(plot2Dpeaksize)
 
