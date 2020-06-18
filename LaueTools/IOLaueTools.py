@@ -519,9 +519,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     # just one row!
     elif len(Data_array.shape) == 1:
         print("single peak to record!")
-        longueur, nbcolumns = 1, Data_array.shape[0]
+        nbpeaks, nbcolumns = 1, Data_array.shape[0]
     else:
-        longueur, nbcolumns = Data_array.shape
+        nbpeaks, nbcolumns = Data_array.shape
         if Data_array.shape == (1, 10):
             Data_array = Data_array[0]
 
@@ -533,7 +533,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     if outputfilename in os.listdir(os.curdir) and not overwrite:
         outputfilename = outputfilename + "_new" + ".dat"
 
-    if longueur == 1:
+    if nbpeaks == 1:
         Data_array = np.array([Data_array, Data_array])
 
 
@@ -545,12 +545,19 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
 
+    elif nbcolumns == 3: # basic X, Y , I
+        # need to set fake data
+        (peak_X, peak_Y, peak_I) = Data_array.T
+        (peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+        Xdev, Ydev, peak_bkg) =  np.zeros((6, nbpeaks))
+        Ipixmax = 500*np.ones(nbpeaks)
+
     outputfile = open(os.path.join(dirname, outputfilename), "w")
 
     outputfile.write("peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
                                                 "peak_inclination Xdev Ydev peak_bkg Ipixmax\n")
 
-    if longueur == 1:
+    if nbpeaks == 1:
         print("nbcolumns", nbcolumns)
 
         outputfile.write(
@@ -585,7 +592,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                                 Ydev.round(decimals=2),
                                 peak_bkg.round(decimals=2),
                                 Ipixmax))[i]
-                    ) for i in list(range(longueur))]))
+                    ) for i in list(range(nbpeaks))]))
         nbpeaks = len(peak_X)
 
     outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
@@ -599,7 +606,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     outputfile.close()
 
     print("table of %d peak(s) with %d columns has been written in \n%s"
-        % (longueur, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
+        % (nbpeaks, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
 
     return os.path.join(os.path.abspath(dirname), outputfilename)
 
@@ -1718,8 +1725,8 @@ def writefilegnomon(gnomonx, gnomony, outputfilename, dataselected):
     """
     linestowrite = []
     linestowrite.append(["gnomonx gnomony 2theta chi I #spot"])
-    longueur = len(gnomonx)
-    for i in list(range(longueur)):
+    nb = len(gnomonx)
+    for i in list(range(nb)):
         linestowrite.append([str(gnomonx[i]),
                             str(gnomony[i]),
                             str(2.0 * dataselected[0][i]),
