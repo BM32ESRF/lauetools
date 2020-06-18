@@ -54,6 +54,7 @@ if sys.version_info.major == 3:
     from .. import indexingSpotsSet as ISS
     from .. import matchingrate
     from .. import readmccd as RMCCD
+    from .. import imageprocessing as ImProc
     from .. import orientations as ORI
     from .. import IOimagefile as IOimage
 else:
@@ -67,6 +68,7 @@ else:
     import indexingSpotsSet as ISS
     import matchingrate
     import readmccd as RMCCD
+    import imageprocessing as ImProc
     import orientations as ORI
     import IOimagefile as IOimage
 
@@ -180,7 +182,9 @@ class Plot_RefineFrame(wx.Frame):
             self.indexationframe = "unknown"
 
         # -----image array pixels data ------------------------
-        self.ImageArray = ImageArray
+        self.ImageArrayInit = ImageArray
+        self.ImageArray = ImageArray  # this array is effectively displayed and can be modified
+        self.ImageArrayMinusBckg = None
         self.data_dict = {}
         self.data_dict["Imin"] = 1
         self.data_dict["Imax"] = 1000
@@ -189,6 +193,7 @@ class Plot_RefineFrame(wx.Frame):
         self.data_dict["lut"] = "jet"
         self.data_dict["logscale"] = True
         self.data_dict["markercolor"] = "b"
+        self.data_dict["removebckg"] = False
 
         self.datatype_unchanged = None
         self.centerx, self.centery = None, None
@@ -349,6 +354,11 @@ class Plot_RefineFrame(wx.Frame):
         self.linkedspots_link = None
         self.fitresults = False
         self.fitcounterindex = 0
+
+        # highlight spots
+        self.plotlinks = None   # exp spot linked to theo spot
+        self.highlighttheospot = None  # closest theo. spot from mouse position
+        self.highlightexpspot = None # closest exp. spot from mouse position
 
         self.Bmat = None
         self.Umat = None
@@ -973,7 +983,7 @@ class Plot_RefineFrame(wx.Frame):
         if self.SimulParam is not None:
             # check element if user needs to change it
             keymaterial = str(self.comboElem.GetValue())
-            print("Element in pickyframe OnReplot() ", keymaterial)
+            #print("Element in pickyframe OnReplot() ", keymaterial)
             # check Emin,Emax
             Emin, Emax = float(self.SCEmin.GetValue()), float(self.SCEmax.GetValue())
 
@@ -1064,21 +1074,25 @@ class Plot_RefineFrame(wx.Frame):
 
         if event.xdata != None and event.ydata != None:
 
-            clickX = event.xdata
-            clickY = event.ydata
+            evx, evy = event.xdata, event.ydata
+
+            if self.datatype == "pixels":
+                tip = "(X,Y)=(%.2f,%.2f)"%(evx, evy)
+            if self.datatype == "2thetachi":
+                tip = "(2theta,chi)=(%.2f,%.2f)"%(evx, evy)
 
             annotes_exp = []
             for x, y, aexp in zip(xdata, ydata, _annotes_exp):
-                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+                if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
                     #                     print "got exp. spot!! at x,y", x, y
-                    annotes_exp.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, aexp))
+                    annotes_exp.append((GT.cartesiandistance(x, evx, y, evy), x, y, aexp))
 
             annotes_theo = []
             for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
-                if (clickX - xtol < x < clickX + xtol) and (clickY - ytol < y < clickY + ytol):
+                if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
                     #                     print "got theo. spot!!"
                     #                     print "with info: ", atheo
-                    annotes_theo.append((GT.cartesiandistance(x, clickX, y, clickY), x, y, atheo))
+                    annotes_theo.append((GT.cartesiandistance(x, evx, y, evy), x, y, atheo))
 
             if annotes_exp != []:
                 collisionFound_exp = True
@@ -1086,8 +1100,9 @@ class Plot_RefineFrame(wx.Frame):
                 collisionFound_theo = True
 
             if not collisionFound_exp and not collisionFound_theo:
+                self.tooltip.SetTip(tip)
                 return
-
+                
             tip_exp = ""
             tip_theo = ""
             if self.datatype == "2thetachi":
@@ -1102,13 +1117,16 @@ class Plot_RefineFrame(wx.Frame):
                 # if exp. spot is close enough
                 if _distanceexp < closedistance:
                     # print("\nthe nearest exp point is at(%.2f,%.2f)" % (x, y))
-                    # print("with info ", annote_exp)
+                    print("with info annote_exp", annote_exp)
                     tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
                     self.updateStatusBar(x, y, annote_exp, spottype="exp")
+
+                    self.highlightexpspot = annote_exp[0]
                 else:
                     self.sb.SetStatusText("", 1)
                     tip_exp = ""
                     collisionFound_exp = False
+                    self.highlightexpspot = None
 
             if collisionFound_theo:
                 annotes_theo.sort()
@@ -1118,25 +1136,30 @@ class Plot_RefineFrame(wx.Frame):
                 if _distancetheo < closedistance:
                     # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
                     # print("with info (hkl, other coordinates, energy)", annote_theo)
-
+                    
                     tip_theo = "[h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
                     if self.datatype == "pixels":
-                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % (
-                            x,
-                            y,
-                            annote_theo[1],
-                            annote_theo[2])
+                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            x, y, annote_theo[1], annote_theo[2])
                     if self.datatype == "2thetachi":
-                        tip_theo += "\n(X,Y)=(%.1f,%.1f) (2theta,Chi)=(%.2f,%.2f)" % (
-                            annote_theo[1],
-                            annote_theo[2],
-                            x,
-                            y)
+                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            annote_theo[1], annote_theo[2], x, y)
                     self.updateStatusBar(x, y, annote_theo, spottype="theo")
+
+                    # find theo spot index
+                    hkl0 = annote_theo[0]
+                    #print('hkl0',hkl0)
+                    hkls = self.data_theo[2]
+                    theoindex = np.where(np.sum(np.hypot(hkls-hkl0,0),axis=1)<0.01)[0]
+                    #print('theoindex',theoindex)
+                    self.highlighttheospot = theoindex
+                    print('theo index : %d, annote_theo'%theoindex, annote_theo)
                 else:
                     self.sb.SetStatusText("", 0)
                     tip_theo = ""
                     collisionFound_theo = False
+                    self.highlighttheospot = None
+                    self._replot()
 
             if collisionFound_exp or collisionFound_theo:
                 if tip_exp is not "":
@@ -1144,8 +1167,10 @@ class Plot_RefineFrame(wx.Frame):
                 else:
                     fulltip = tip_theo
 
-                self.tooltip.SetTip(fulltip)
+                self.tooltip.SetTip(tip + "\n" + fulltip)
                 self.tooltip.Enable(True)
+
+                self._replot()
                 return
 
         if not collisionFound_exp and not collisionFound_theo:
@@ -1290,7 +1315,7 @@ class Plot_RefineFrame(wx.Frame):
         # len(Resi) = nb of theo spots
         # len(ProxTable) = nb of theo spots
         # ProxTable[index_theo]  = index_exp   closest link
-        print("Resi", Resi)
+        #print("Resi", Resi)
         # print("ProxTable",ProxTable)
         # print("Nb of theo spots", len(ProxTable))
 
@@ -1466,6 +1491,9 @@ class Plot_RefineFrame(wx.Frame):
 
         # self.Data_X, self.Data_Y = np.transpose(np.array(Dataxy))
 
+        self.plotlinks = self.linkedspots_link
+        self._replot()
+
         return refine_indexed_spots
 
     def BuildDataDictAfterLinks(self, _):  # filter links between spots(after OnAutoLink() )
@@ -1507,6 +1535,9 @@ class Plot_RefineFrame(wx.Frame):
         self.linkExpMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity = ArrayReturn[:, 5]
         self.linkResidues = np.take(ArrayReturn, [0, 1, 6], axis=1)
+
+        self.plotlinks = self.linkedspots
+        self._replot()
 
     # --- ------------ Fitting functions ----
     def OnRefine_UB_and_Strain(self, _):
@@ -2437,7 +2468,7 @@ class Plot_RefineFrame(wx.Frame):
 
     def build_FitResults_Dict(self, _):
         """
-        'button OnShowResults of fit
+        button OnShowResults of fit
 
         build dict of results of pairs distance minimization launched by show Results button
         """
@@ -2484,6 +2515,9 @@ class Plot_RefineFrame(wx.Frame):
         self.linkExpMiller_fit = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity_fit = ArrayReturn[:, 5]
         self.linkResidues_fit = np.take(ArrayReturn, [0, 1, 6], axis=1)
+
+        self.plotlinks = self.linkedspots_fit
+        self._replot()
 
     def onWriteFitFile(self, _):
         """
@@ -2766,12 +2800,9 @@ class Plot_RefineFrame(wx.Frame):
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
 
-    #         print "new limits x", self.xlim
-    #         print "new limits y", self.ylim
-
     def _replot(self):
         """
-        _replot in Plot_RefineFrame
+        _replot() in Plot_RefineFrame
         """
         # print("_replot")
 
@@ -2788,14 +2819,13 @@ class Plot_RefineFrame(wx.Frame):
                 self.setplotlimits_fromcurrentplot()
         else:
             self.init_plot = True
+            self.xlim, self.ylim = self.getDataLimits()
 
         # Data_X, Data_Y, Data_I, File_NAME = self.data
 
         #        fig = self.plotPanel.get_figure()
         #        self.axes = fig.gca()
         self.axes.clear()
-
-        self.xlim, self.ylim = self.getDataLimits()
 
         # clear the axes and replot everything
         #        self.axes.cla()
@@ -2817,9 +2847,26 @@ class Plot_RefineFrame(wx.Frame):
         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x))
         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y))
 
-        # background image
+        # image array
         if self.ImageArray is not None and self.datatype == "pixels":
-            #             print 'self.ImageArray', self.ImageArray.shape
+                
+            # array to display: raw
+            print('self.data_dict["removebckg"]',self.data_dict["removebckg"])
+            if not self.data_dict["removebckg"]:
+                self.ImageArray = self.ImageArrayInit
+            # array to display: raw - bkg
+            else:
+                if self.ImageArrayMinusBckg is None:
+                    # compute 
+                    backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
+                                                                            boxsizefilter=10)
+                    # basic substraction
+                    self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
+                                                            backgroundimage, self.CCDLabel,
+                                                            usemask=True, formulaexpression='A-B')
+                    
+                self.ImageArray = self.ImageArrayMinusBckg
+
             self.myplot = self.axes.imshow(self.ImageArray, interpolation="nearest", origin="upper")
 
             if not self.data_dict["logscale"]:
@@ -2839,6 +2886,7 @@ class Plot_RefineFrame(wx.Frame):
             #             print "there is theo. data in plot_RefineFrame"
 
             markerstyle = "*"  # 'o' 'h'
+            markersizetheo = 100
 
             if self.datatype in ("2thetachi", ):
                 # define self.data_theo
@@ -2857,37 +2905,32 @@ class Plot_RefineFrame(wx.Frame):
                 # print "No acces to this key is os.environ ??!!"
                 # self.axes.scatter(self.data_theo[0], self.data_theo[1],s = 50, marker = 'o',facecolor = 'None',edgecolor = 'r',alpha = 1.)  # ok for window, matplotlib 0.99.1.1
                 self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
-                                        s=50, marker=markerstyle, edgecolor="r", facecolors="None")
+                                        s=markersizetheo, marker=markerstyle, edgecolor="r", facecolors="None")
 
                 if matplotlibversion == "0.99.1":  # ok linux with matplotlib 0.99.1
                     # print "matplotlibversion  ==  '0.99.1'"
                     self.axes.scatter(self.data_theo_displayed[0], self.data_theo_displayed[1],
-                                        s=50, marker=markerstyle, edgecolor="r", facecolor="None")
+                                        s=markersizetheo, marker=markerstyle, edgecolor="r", facecolor="None")
 
             else:
                 print("else of KeyError")
                 # ok for windows matplotlib 0.99.1
                 self.axes.scatter(self.data_theo_displayed[0],
                                     self.data_theo_displayed[1],
-                                    s=50,
+                                    s=markersizetheo,
                                     marker=markerstyle,
                                     facecolor="None",
                                     edgecolor="r")
 
-        # ---------------------
-        # Experimental spots
-        # ---------------------
+        # ---------------------------------------------------------------
+        # Experimental spots  (including linked ones to theo. spot)
+        # ---------------------------------------------------------------
         if self.datatype == "2thetachi":
-            #             print "first 5 experimental spots self.tth,self.chi", self.tth[:5], self.chi[:5]
-            #             self.axes.scatter(self.tth, self.chi,
-            #                           s=self.Data_I / np.amax(self.Data_I) * 100., alpha=0.5)
-            #                           # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
 
             self.axes.scatter(self.data_2thetachi[0],
                                 self.data_2thetachi[1],
                                 s=self.Data_I / np.amax(self.Data_I) * 100.0,
                                 alpha=0.5)
-            # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
 
         elif self.datatype == "pixels":
 
@@ -2896,18 +2939,46 @@ class Plot_RefineFrame(wx.Frame):
                 kwords = {"marker": "o", "facecolor": "None",
                                                         "edgecolor": self.data_dict["markercolor"]}
             else:
-                #                 self.axes.set_xbound(self.currentbounds[0])
-                #                 self.axes.set_ybound(self.currentbounds[1])
-                kwords = {"edgecolor": "None",
-                            "facecolor": self.data_dict["markercolor"]}
+                kwords = {"edgecolor": "None", "facecolor": self.data_dict["markercolor"]}
 
-            #             print "experimental spots self.pixelX,self.pixelY", self.pixelX[:5], self.pixelY[:5]
             self.axes.scatter(self.pixelX - X_offset,
                             self.pixelY - Y_offset,
                             s=self.Data_I / np.amax(self.Data_I) * 100.0,
                             alpha=0.5,
                             **kwords)
-            # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
+
+        # ---------------------------------------------------------------
+        # plot experimental spots linked to 1 theo. spot)
+        # ---------------------------------------------------------------
+        if self.plotlinks is not None:
+            absspotindices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int)
+            print('absspotindices',absspotindices)
+            if self.datatype == "2thetachi":
+                Xlink = self.data_2thetachi[0][absspotindices]
+                Ylink = self.data_2thetachi[1][absspotindices]
+
+            elif self.datatype == "pixels":
+                Xlink = self.pixelX[absspotindices] - X_offset
+                Ylink = self.pixelY[absspotindices] - Y_offset
+
+            self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
+
+        if self.highlighttheospot is not None:
+            iHL= self.highlighttheospot
+            XtheoHL, YtheoHL = self.data_theo_displayed[0][iHL], self.data_theo_displayed[1][iHL]
+            self.axes.scatter(XtheoHL, YtheoHL, s=100., alpha=0.5, c='k', marker='X')
+
+        if self.highlightexpspot is not None:
+            indexHL = self.highlightexpspot
+            if self.datatype == "2thetachi":
+                XexpHL = self.data_2thetachi[0][indexHL]
+                YexpHL = self.data_2thetachi[1][indexHL]
+
+            elif self.datatype == "pixels":
+                XexpHL = self.pixelX[indexHL] - X_offset
+                YexpHL = self.pixelY[indexHL] - Y_offset
+
+            self.axes.scatter(XexpHL, YexpHL, s=100., alpha=0.5, c='k', marker='X')
 
         # axes labels
         if self.datatype == "2thetachi":
@@ -3586,6 +3657,8 @@ class IntensityScaleBoard(wx.Dialog):
         self.comboLUT = wx.ComboBox(self, -1, self.init_lut, (70, 5), choices=self.mapsLUT)  # ,
         # style=wx.CB_READONLY)
 
+        self.changecolorbtn = wx.Button(self, -1, "Change Circle Color", pos=(180, 7))
+
         posv = 40
 
         self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
@@ -3620,7 +3693,10 @@ class IntensityScaleBoard(wx.Dialog):
         self.chck_scaletypeplot = wx.CheckBox(self, -1, "Logscale", pos=(5, posv + 70))
         self.chck_scaletypeplot.SetValue(True)
 
-        self.changecolorbtn = wx.Button(self, -1, "Change Circle Color", pos=(150, posv + 70))
+        self.chck_removebckg = wx.CheckBox(self, -1, "Remove Background", pos=(145, posv + 70))
+        self.chck_removebckg.SetValue(False)
+
+        
         wx.StaticText(self, -1, "Image:", pos=(5, posv + 107))
         wx.StaticText(self, -1, "folder:", pos=(70, posv + 107))
         wx.StaticText(self, -1, "filename:", pos=(70, posv + 137))
@@ -3644,6 +3720,7 @@ class IntensityScaleBoard(wx.Dialog):
         self.slider_vmax.Bind(
             wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.on_slider_ImaxDisplayed)
         self.chck_scaletypeplot.Bind(wx.EVT_CHECKBOX, self.onChangeScaleTypeplot)
+        self.chck_removebckg.Bind(wx.EVT_CHECKBOX, self.onChangebckgremoval)
         self.changecolorbtn.Bind(wx.EVT_BUTTON, self.onChangeColor)
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.OpenImage)
         self.btncloseimage.Bind(wx.EVT_BUTTON, self.onCloseImage)
@@ -3739,6 +3816,8 @@ class IntensityScaleBoard(wx.Dialog):
     def update_ImageArray(self):
         """ set self.parent.ImageArray and call updateplot()"""
         self.parent.ImageArray = self.ImageArray
+        self.parent.ImageArrayInit = self.ImageArray
+        self.parent.ImageArrayMinusBckg = None
 
         self.btncloseimage.Enable()
         self.updateplot()
@@ -3820,6 +3899,19 @@ class IntensityScaleBoard(wx.Dialog):
             self.on_slider_IminDisplayed(1)
 
         self.updateplot()
+
+    def onChangebckgremoval(self, _):
+        """ switch remove auto background or not"""
+        self.data_dict["removebckg"] = not self.data_dict["removebckg"]
+
+        print("Now removebckg state is %s" % str(self.data_dict["removebckg"]))
+
+        if self.data_dict["removebckg"]:
+            # data to display are now
+            pass
+
+        self.updateplot()
+
 
     def on_slider_IminDisplayed(self, _):
         """ set self.IminDisplayed and call self.normalizeplot() """

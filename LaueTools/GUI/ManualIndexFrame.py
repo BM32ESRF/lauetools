@@ -48,6 +48,7 @@ if sys.version_info.major == 3:
     from . import threadGUI2 as TG
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import PlotLimitsBoard
+    from .. import imageprocessing as ImProc
 else:
     import indexingAnglesLUT as INDEX
     import indexingImageMatching as IIM
@@ -62,6 +63,7 @@ else:
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     import GUI.threadGUI2 as TG
     import GUI.PlotLimitsBoard
+    import imageprocessing as ImProc
 
 # --- ---------------  Manual indexation Frame
 class ManualIndexFrame(wx.Frame):
@@ -111,6 +113,7 @@ class ManualIndexFrame(wx.Frame):
         self.data_dict["ImageArray"] = None
         self.data_dict["logscale"] = True
         self.data_dict["markercolor"] = "b"
+        self.data_dict["removebckg"] = False
 
         if self.data_dict["CCDLabel"] in ("MARCCD165", "ROPER"):
             # flip Y axis for marccd type image display
@@ -584,8 +587,7 @@ class ManualIndexFrame(wx.Frame):
         """
         from . PlotRefineGUI import IntensityScaleBoard
 
-        IScaleBoard = IntensityScaleBoard(self, -1, "Image scale setting Board",
-                                                                                    self.data_dict)
+        IScaleBoard = IntensityScaleBoard(self, -1, "Image scale setting Board", self.data_dict)
 
         IScaleBoard.Show(True)
 
@@ -872,8 +874,8 @@ class ManualIndexFrame(wx.Frame):
         """ set self.xlim and ylim for current plot """
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
-        print("new limits x", self.xlim)
-        print("new limits y", self.ylim)
+        #print("new limits x", self.xlim)
+        #print("new limits y", self.ylim)
 
     def _replot(self):
         """
@@ -916,6 +918,23 @@ class ManualIndexFrame(wx.Frame):
 
         # background image
         if self.ImageArray is not None and self.datatype == "pixels":
+
+            # array to display: raw
+            print('self.data_dict["removebckg"]',self.data_dict["removebckg"])
+            if not self.data_dict["removebckg"]:
+                self.ImageArray = self.ImageArrayInit
+            # array to display: raw - bkg
+            else:
+                if self.ImageArrayMinusBckg is None:
+                    # compute 
+                    backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
+                                                                            boxsizefilter=10)
+                    # basic substraction
+                    self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
+                                                            backgroundimage, self.CCDLabel,
+                                                            usemask=True, formulaexpression='A-B')
+                    
+                self.ImageArray = self.ImageArrayMinusBckg
 
             print("self.ImageArray", self.ImageArray.shape)
             self.myplot = self.axes.imshow(self.ImageArray, interpolation="nearest")

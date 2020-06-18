@@ -652,7 +652,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials']
-
+        excludespotspairs = [[0,0]]
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
@@ -677,7 +677,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     gauge=self.gauge,
                                     dictmaterials=self.IndexationParameters['dict_Materials'],
                                     MaxRadiusHKL=False,#True could be OK for this workflow
-                                    LUT_with_rules=LUT_with_rules)
+                                    LUT_with_rules=LUT_with_rules,
+                                    excludespotspairs=excludespotspairs)
 
         elif spotssettype in ('listsetA', 'listsetAB', ):
             # and spotsB is checked
@@ -689,7 +690,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 detectorparameters,
                                                 set_hkl_1=set_central_spots_hkl,
                                                 minimumNbMatches=Minimum_MatchesNb,
-                                                LUT_with_rules=LUT_with_rules)
+                                                LUT_with_rules=LUT_with_rules,
+                                                excludespotspairs=excludespotspairs)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res

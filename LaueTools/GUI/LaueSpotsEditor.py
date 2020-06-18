@@ -46,7 +46,7 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 fields = ["spot index", "h", "k", "l", "Energy", "2theta", "chi", "X", "Y", "Intensity", "deviation"]
 
 
-class SpotsEditor(wx.Frame):
+class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
     """ GUI class for Spot properties edition and selection
 
     """
@@ -353,7 +353,7 @@ class SpotsEditor(wx.Frame):
             #             print "self.toreturn", self.toreturn
             print(("nb of spots selected", len(self.toreturn)))
             self.func_to_call(self.toreturn)
-
+        
         self.Close()
 
     def OnClear(self, _):
@@ -394,6 +394,9 @@ class MyListCtrl(wx.ListCtrl, wx.lib.mixins.listctrl.ColumnSorterMixin):
             self.SetColumnWidth(k, widthcolumn)
 
         self.itemDataMap = {}
+
+    def GetListCtrl(self):
+        return self
 
     def add_rows(self, dict_data, nbspots):
         """ read dict_data and add all rows corresponding to elements"""
