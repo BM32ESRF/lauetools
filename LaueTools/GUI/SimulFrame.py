@@ -644,8 +644,8 @@ class SimulationPlotFrame(wx.Frame):
     def setplotlimits_fromcurrentplot(self):
         self.xlim = self.axes.get_xlim()
         self.ylim = self.axes.get_ylim()
-        print("new limits x", self.xlim)
-        print("new limits y", self.ylim)
+        #print("new limits x", self.xlim)
+        #print("new limits y", self.ylim)
 
     def OnSideFluoDetector(self, _):
         """
