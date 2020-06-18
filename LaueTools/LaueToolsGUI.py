@@ -140,7 +140,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.filename = filename
         self.dirname = projectfolder
-        print("self.dirname", self.dirname)
+        #print("self.dirname", self.dirname)
         self.writefolder = self.dirname
         self.consolefile = consolefile
 
@@ -395,11 +395,11 @@ class LaueToolsGUImainframe(wx.Frame):
         if askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
 
             os.chdir(self.dirname)
-            print("self.dirname", self.dirname)
+            #print("self.dirname", self.dirname)
             print(os.curdir)
 
             self.DataPlot_filename = str(self.filename)
-            print("Current file   :", self.DataPlot_filename)
+            #print("Current file   :", self.DataPlot_filename)
 
             nbparts = len(self.DataPlot_filename.split("."))
             if nbparts == 2:
@@ -408,9 +408,9 @@ class LaueToolsGUImainframe(wx.Frame):
                 prefix, ext1, ext2 = self.DataPlot_filename.rsplit(".", 2)
                 file_extension = ext1 + "." + ext2
 
-            print("prefix", prefix)
+            #print("prefix", prefix)
 
-            print("extension", file_extension)
+            #print("extension", file_extension)
 
             if file_extension in list_CCD_file_extensions:
 
@@ -631,7 +631,7 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
+        #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -727,10 +727,10 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.data_theta is None:
             self.OpenDefaultData()
 
-        print('self.pixelsize in OnClassicalIndexation for %s'%self.DataPlot_filename, self.pixelsize)
+        #print('self.pixelsize in OnClassicalIndexation for %s'%self.DataPlot_filename, self.pixelsize)
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
+        #print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         self.select_theta = self.data_theta[self.current_exp_spot_index_list]
         self.select_chi = self.data_chi[self.current_exp_spot_index_list]
@@ -754,7 +754,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # AllDataToIndex
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
-        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
+        #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -825,7 +825,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
+        #print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         # nb_exp_spots_data = len(self.data_theta)
         # index_to_select = np.take(self.current_exp_spot_index_list, np.arange(nb_exp_spots_data))
@@ -847,7 +847,7 @@ class LaueToolsGUImainframe(wx.Frame):
             wx.MessageBox("There are no more spots left to be indexed now !", "INFO")
             return
 
-        print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
+        #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
 
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
@@ -1002,7 +1002,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
+        #print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         self.select_theta = self.data_theta[self.current_exp_spot_index_list]
         self.select_chi = self.data_chi[self.current_exp_spot_index_list]
@@ -1122,7 +1122,7 @@ class LaueToolsGUImainframe(wx.Frame):
         Method launching Cliques Finding  Board
         """
         if not self.ClassicalIndexation_Tabledist:
-            print("hello in OnCliquesFinding")
+            print("OnCliquesFinding")
 
             if self.data_theta is None:
                 self.OpenDefaultData()
@@ -2034,7 +2034,7 @@ class CliquesFindingBoard(wx.Frame):
 
         nbmax_probed = self.nbspotmax.GetValue()
         ang_tol = float(self.AT.GetValue())
-        print("ang_tol", ang_tol)
+        #print("ang_tol", ang_tol)
         Nodes = spot_index_central
         print("Clique finding for Nodes :%s" % Nodes)
 
