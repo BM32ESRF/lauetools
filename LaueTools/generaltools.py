@@ -1268,16 +1268,16 @@ def purgeClosePoints(peaklist, dist_tolerance=0.5):
     return np.array([X, Y]).T
 
 
-def purgeClosePoints2(peaklist, pixeldistance_remove_duplicates, verbose=0):
+def purgeClosePoints2(peaklist, maxdistance, verbose=0):
     """
-    return peaks list without peaks closer than pixeldistance (pixeldistance_remove_duplicates)
+    return peaks list without peaks closer than pixeldistance (maxdistance)
     """
 
     if np.shape(peaklist)[0] < 2:
         print("GT.purgeClosePoints2 : shape(peaklist) = ", np.shape(peaklist))
         return peaklist, []
 
-    pixeldistance = pixeldistance_remove_duplicates
+    pixeldistance = maxdistance
 
     disttable = ssd.pdist(peaklist, "euclidean")
 
