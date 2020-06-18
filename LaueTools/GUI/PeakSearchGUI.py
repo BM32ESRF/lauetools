@@ -4260,8 +4260,10 @@ class MainPeakSearchFrame(wx.Frame):
             #                    top = tip = 'x=%f\ny=%f' % (event.xdata, event.ydata)
             #            for i in xrange(dims * dimf):
             #                X, Y = self.Xin[0, i % dimf], self.Yin[i % dimf, 0]
-            rx = int(np.round(event.xdata))
-            ry = int(np.round(event.ydata))
+            evx = event.xdata
+            evy = event.ydata
+            rx = int(np.round(evx))
+            ry = int(np.round(evy))
 
             if (abs(rx - (dimf - 1) // 2) <= (dimf - 1) // 2
                 and abs(ry - (dims - 1) // 2) <= (dims - 1) // 2):
@@ -4279,7 +4281,8 @@ class MainPeakSearchFrame(wx.Frame):
                     tip = "x=%d\ny=%d\nI=%.5f" % (rx + self.jmin_crop, ry + self.imin_crop, zvalue)
                     xabs, yabs = rx + self.jmin_crop, ry + self.imin_crop
                 else:
-                    tip = "x=%d\ny=%d\nI=%.5f" % (rx, ry, zvalue)
+                    #tip = "x=%d\ny=%d\nI=%.5f" % (rx, ry, zvalue)
+                    tip = "x=%.2f\ny=%.2f\nI=%.5f" % (evx, evy, zvalue)
 
                     xabs, yabs = rx, ry
 
@@ -4688,13 +4691,13 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             nb_of_peaks = self.peaklistPixels.shape[0]
 
-        # writing ascii peak list and peaksearch parameters
+        # writing ascii peak list
         RMCCD.writepeaklist(self.peaklistPixels,
                                 finalfilename,
                                 outputfolder=outputfolder,
                                 comments=comments_in_file,
                                 initialfilename=os.path.join(self.dirname, self.imagefilename))
-
+        # writing ascii peaksearch parameters
         pspfile_fullpath = os.path.join(self.dirname, "PeakSearch_%s.psp" % finalfilename)
 
         if self.dict_param is not None:
