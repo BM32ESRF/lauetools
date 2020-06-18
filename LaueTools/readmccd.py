@@ -595,9 +595,6 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
     return optim_value, Res
 
 
-
-
-
 def writepeaklist(tabpeaks, output_filename,
                                         outputfolder=None, comments=None, initialfilename=None):
     r"""
