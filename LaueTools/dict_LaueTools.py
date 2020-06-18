@@ -67,6 +67,7 @@ dict_Materials = {
     "UO2": ["UO2", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
     "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
     "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
+    "ZrO2fake1": ["ZrO2fake1", [5.1505, 5.048116, 4.988933, 90, 99.23, 90], "VO2_mono"],
     "DIA": ["DIA", [5.0, 5.0, 5.0, 90, 90, 90], "dia", ],  #  small lattice Diamond like Structure
     "DIAs": ["DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
     "FCC": ["FCC", [5.0, 5.0, 5.0, 90, 90, 90], "fcc"],  # small lattice fcc Structure
