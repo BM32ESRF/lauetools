@@ -1232,7 +1232,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             totalnbspots += len(oncam_2theta)
 
-    print('total number of spots for all the %d grain(s) in filterLaueSpots:  '%nbofgrains, totalnbspots)
+    print('total number of spots for all the %d grain(s) in filterLaueSpots():  '%nbofgrains, totalnbspots)
     if totalnbspots == 0:
         return
     # outputs and returns
