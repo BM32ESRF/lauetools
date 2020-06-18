@@ -889,7 +889,7 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
         return calc_xycam_backreflection(uflab, calib, offset=offset, pixelsize=pixelsize)
     else:
         sentence = "kf_direction = %s is not implemented yet " % kf_direction
-        sentence += "in calc_xycam_from2thetachi() in find2thetachi"
+        sentence += "in calc_xycam_from2thetachi() in LaueGeometry  (new find2thetachi)"
         raise ValueError(sentence)
 
 
