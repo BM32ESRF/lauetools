@@ -371,7 +371,7 @@ def read_header_marccd2(filename):
     f.seek(3072)
     tt = f.read(512)
     # from beamline designed input
-    dataset_comments = tt.strip("\x00")
+    dataset_comments = str(tt).strip("\x00")
 
     f.seek(1024 + 2 * 256 + 128 + 12)
     s = struct.Struct("I I I")
