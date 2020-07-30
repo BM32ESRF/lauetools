@@ -129,6 +129,7 @@ class SimulationPlotFrame(wx.Frame):
         self.nbclick = 1
         self.nbclick_dist = 0
 
+        # ----------    GUI ------------------------
         self.panel = wx.Panel(self)
 
         self.dpi = 100
@@ -383,7 +384,7 @@ class SimulationPlotFrame(wx.Frame):
             self.Ymax = max(list(map(max, self.Data_Y)))
 
             for k in range(self.nbGrains):
-                #                 print "self.Data_X[k] type", type(self.Data_X[k])
+                #print("self.Data_X[k] ", self.Data_X[k])
                 #                 print "len(self.data[0][k])", len(self.data[0][k])
                 self.Xdat += self.Data_X[k]
                 self.Ydat += self.Data_Y[k]
@@ -419,9 +420,6 @@ class SimulationPlotFrame(wx.Frame):
             self.Ydat = datY
             self.Idat = self.Data_I[0]  # intensity or Energy
             self.Mdat = self.Data_Miller[0]
-
-            #            self.Data_X = datX
-            #            self.Data_Y = datY
 
             self.allspotindex = np.arange(len(self.Xdat))
             self.mini = 0
@@ -686,7 +684,7 @@ class SimulationPlotFrame(wx.Frame):
 
     def _replot(self):
         """
-        plot spots in SimulationPlotFrame
+        draw scatter plot of spots in SimulationPlotFrame()
         """
         print("self.datatype", self.datatype)
         print("self.init_plot", self.init_plot)
@@ -695,7 +693,7 @@ class SimulationPlotFrame(wx.Frame):
         if 'XYMAR' in self.datatype:
             self.X_offset = 1
             self.Y_offset = 1
-        #coordinates 2theta chi
+        #coordinates 2theta chi  or gnomon
         else:
             self.X_offset = 0
             self.Y_offset = 0
@@ -802,6 +800,8 @@ class SimulationPlotFrame(wx.Frame):
             else:
                 kwords["c"] = tuple(colors[grainindex])
 
+            print('np.array(self.Data_X[grainindex])',np.array(self.Data_X[grainindex]))
+
             # theo Laue spots scatter plot
             self.axes.scatter(np.array(self.Data_X[grainindex]) - self.X_offset,
                             np.array(self.Data_Y[grainindex]) - self.Y_offset,
@@ -857,16 +857,6 @@ class SimulationPlotFrame(wx.Frame):
                 print('nbsteps = nbsubgrains/slip', nbsteps)
                 print('nbslips', nbslips)
 
-                # print('sahpe shape',len(self.Data_X))
-                # print(len(self.Data_X[0]))
-                # print(self.Data_X[0])
-                # print(self.Data_X[1])
-                # print(self.Data_X[10])
-                # print(self.Data_X[11])
-                # print(self.Data_X[12])
-                # XX = np.array(self.Data_X).T.reshape((nbLauespots,nbslips,nbsteps))
-                # YY = np.array(self.Data_Y).T.reshape((nbLauespots,nbslips,nbsteps))
-
                 try:
                     XX = rawX.T.reshape((nbLauespots, nbslips, nbsteps))
                     YY = rawY.T.reshape((nbLauespots, nbslips, nbsteps))
@@ -907,6 +897,11 @@ class SimulationPlotFrame(wx.Frame):
                 self.axes.set_ylabel("chi (deg)")
                 self.ylim = (-50, 50)
                 self.xlim = (40, 130)
+            elif self.datatype == "gnomon":
+                self.axes.set_xlabel("xgnomon (deg.)")
+                self.axes.set_ylabel("ygnomon (deg)")
+                self.ylim = (-.75, .75)
+                self.xlim = (-.6, .6)
             elif "XYmar" in self.datatype:
                 self.axes.set_xlabel("X (pixel)")
                 self.axes.set_ylabel("Y (pixel)")
@@ -1136,15 +1131,10 @@ class SimulationPlotFrame(wx.Frame):
         """
         xtol = 20
         ytol = 20
-        # """
-        # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
-        # self.Data_index_expspot = np.arange(len(self.Data_X))
-        # """
+       
         xdata, ydata, annotes = (self.Data_X, self.Data_Y,
             list(zip(self.Data_index_expspot, self.Data_I)))
-        # print self.Idat
-        # print self.Mdat
-        # print annotes
+       
         self._dataANNOTE_exp = list(zip(xdata, ydata, annotes))
 
         clickX = event.xdata
