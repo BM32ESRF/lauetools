@@ -42,6 +42,7 @@ if sys.version_info.major == 3:
     from .. import CrystalParameters as CP
     from .. import multigrainsSimulator as MGS
     from .. import readmccd as RMCCD
+    from .. import indexingImageMatching as IMM
 
 else:
     import dict_LaueTools as DictLT
@@ -49,6 +50,7 @@ else:
     import CrystalParameters as CP
     import multigrainsSimulator as MGS
     import readmccd as RMCCD
+    import indexingImageMatching as IMM
 
 
 class TransformPanel(wx.Panel):
@@ -623,8 +625,9 @@ class SimulationPanel(wx.Panel):
         self.expimagebrowsebtn = wx.Button(self, -1, "...", size=(50, -1))
         self.expimagebrowsebtn.Bind(wx.EVT_BUTTON, self.onSelectImageFile)
 
-        self.pt_2thetachi = wx.RadioButton(self, 100, "2ThetaChi", style=wx.RB_GROUP)
-        self.pt_XYCCD = wx.RadioButton(self, 300, "XYPixel")
+        self.pt_2thetachi = wx.RadioButton(self, -1, "2ThetaChi", style=wx.RB_GROUP)
+        self.pt_XYCCD = wx.RadioButton(self, -1, "XYPixel")
+        self.pt_gnomon = wx.RadioButton(self, -1, "Gnomon")
         self.pt_2thetachi.SetValue(True)
 
         # set tooltips--------------------------
@@ -687,7 +690,7 @@ class SimulationPanel(wx.Panel):
 
         gridSizer2.Add(self.pt_2thetachi, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
         gridSizer2.Add(self.pt_XYCCD, 0, wx.EXPAND)
-        gridSizer2.Add(wx.StaticText(self, -1, ""), 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER)
+        gridSizer2.Add(self.pt_gnomon, 0, wx.EXPAND)
 
         gridSizer2.Add(self.checkshowExperimenalData, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
         gridSizer2.Add(self.checkshowFluoFrame, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
@@ -707,10 +710,12 @@ class SimulationPanel(wx.Panel):
         self.SetSizer(spSizer)
 
     def onSelectImageFile(self, evt):
+        """ open a File Dialog for an image to set self.expimagetxtctrl """
         self.GetfullpathFile(evt)
         self.expimagetxtctrl.SetValue(self.fullpathimagefile)
 
     def GetfullpathFile(self, _):
+        """ open File Dialog and set self.fullpathimagefile"""
         myFileDialog = wx.FileDialog(self, "Choose an image file", style=wx.OPEN,
                                     wildcard="MAR or Roper images(*.mccd)|*.mccd|All files(*)|*")
         dlg = myFileDialog
@@ -993,8 +998,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.savefileBox = wx.CheckBox(self.panel, -1, "Save File")
         self.savefileBox.SetValue(False)
 
-        self.rb1 = wx.RadioButton(self.panel, 300, "Manual", style=wx.RB_GROUP)
-        self.rb2 = wx.RadioButton(self.panel, 300, "Auto. Indexed")
+        self.rb1 = wx.RadioButton(self.panel, -1, "Manual", style=wx.RB_GROUP)
+        self.rb2 = wx.RadioButton(self.panel, -1, "Auto. Indexed")
         self.rb2.SetValue(True)
 
         self.textcontrolfilemanual = wx.TextCtrl(self.panel, -1, "myfilename")
@@ -1536,6 +1541,8 @@ class parametric_Grain_Dialog3(wx.Frame):
             plottype = "2thetachi"
         elif self.rightpanel.pt_XYCCD.GetValue():
             plottype = "XYmar"
+        elif self.rightpanel.pt_gnomon.GetValue():
+            plottype = "gnomon"
         else:
             raise ValueError('plottype "%s" in OnSimulate() is unknown...!'%plottype)
 
@@ -1568,6 +1575,14 @@ class parametric_Grain_Dialog3(wx.Frame):
         (list_twicetheta, list_chi,
         list_energy, list_Miller,
         list_posX, list_posY, _, nb_g_t, _, total_nb_grains) = data_res
+
+        # compute gnomonic coordinates
+        list_xgnomon, list_ygnomon = [], []
+        nblists = len(list_twicetheta)
+        for k in range(nblists):
+            xgs, ygs = IMM.ComputeGnomon_2((np.array(list_twicetheta[k]), np.array(list_chi[k])))
+            list_xgnomon.append(xgs.tolist())
+            list_ygnomon.append(ygs.tolist())
 
         print("len(list_posX)", len(list_posX))
         print("len(list_posY)", len(list_posY))
@@ -1619,18 +1634,21 @@ class parametric_Grain_Dialog3(wx.Frame):
         print('StreakingData[1]', StreakingData[1])
 
         # ------------------------------------------------
-        # plot results --------------------------------------
-        #---------------------------------------------------
+        # -------   plot results -------------------------
+        #-------------------------------------------------
 
-        # experimental data
+        # experimental data--------------------------------------
         if showExperimenalData:
             experimentaldata_2thetachi = (self.data_2theta, self.data_chi, self.data_I)
             experimentaldata_XYMAR = self.data_pixX, self.data_pixY, self.data_I
+            xgexp, ygexp = IMM.ComputeGnomon_2((self.data_2theta, self.data_chi))
+            experimentaldata_gnomon = (xgexp, ygexp, self.data_I)
         else:
             experimentaldata_2thetachi = None
             experimentaldata_XYMAR = None
+            experimentaldata_gnomon = None
 
-        # theoretical data
+        # theoretical data--------------------------------------
         print('plottype in LaueSimulatorGUI : %s  \n\n'%plottype)
         if plottype == "2thetachi":
             totalnbspots = 0
@@ -1644,7 +1662,8 @@ class parametric_Grain_Dialog3(wx.Frame):
                             StreakingData=StreakingData,
                             list_grains_transforms=nb_g_t,
                             CCDLabel=self.CCDLabel)
-        elif "XYmar" in plottype:
+
+        elif "XYmar" in plottype: # XYPixel
             totalnbspots = 0
             for slist in list_posX:
                 totalnbspots += len(slist)
@@ -1657,6 +1676,19 @@ class parametric_Grain_Dialog3(wx.Frame):
                         StreakingData=StreakingData,
                         list_grains_transforms=nb_g_t,
                         CCDLabel=self.CCDLabel)
+
+        elif plottype == "gnomon":
+            totalnbspots = 0
+            for slist in list_xgnomon:
+                totalnbspots += len(slist)
+            if totalnbspots == 0:
+                wx.MessageBox('No Laue spots on the detector defined by the current position, distance, diameter, ... . Change the simulation parameters!', 'Info')
+            simulframe = SimulationPlotFrame(self, -1, "LAUE Pattern simulation visualisation frame",
+                            data=(list_xgnomon, list_ygnomon, list_energy, list_Miller,
+                            total_nb_grains, plottype, experimentaldata_gnomon,),
+                            StreakingData=StreakingData,
+                            list_grains_transforms=nb_g_t,
+                            CCDLabel=self.CCDLabel)
 
         simulframe.Show(True)
 
