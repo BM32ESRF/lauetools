@@ -1791,6 +1791,93 @@ def extract_array(indices_center, halfsizes, inputarray2D):
     return inputarray2D[imin : imax + 1, jmin : jmax + 1]
 
 
+def to2Darray(a, n2):
+    """ return a zero padded array from elements of a and new shape =(n1,n2)
+    n2 is the number element in the 2nd axis (fast axis)
+    """
+    l = len(a)
+    dt = a.dtype
+    n1 = l // n2
+    if l % n2 != 0:
+        n1 += 1
+
+    b = np.zeros(n1 * n2, dtype=dt)
+    b[:l] = a
+    return b.reshape((n1, n2))
+
+
+def splitarray(a, ndivisions):
+    """ split array into several subarrays
+    
+    ndivisions: tuple of (n1divisions,n2divisions)
+    n1divisions and resp. n2divisions subarrayarrays
+    along first axis (slow axis) and resp. second axis (fast axis)
+    if subarrays dimensions multiples don't fit to input array's shape
+    then split is performed from a suited part of input array
+
+    a = [[ 0  1  2  3  4  5]
+        [ 6  7  8  9 10 11]
+        [12 13 14 15 16 17]
+        [18 19 20 21 22 23]]
+    c = splitarray(a,2,3)   (division by 2 vertically and 3 horizontally) so 6 subarrays
+    c = [[[ 0  1]
+        [ 6  7]],
+        [[12 13]
+        [18 19]],
+        [[ 2  3]
+        [ 8  9]],
+        [[14 15]
+        [20 21]],
+        [[ 4  5]
+        [10 11]],
+        [[16 17]
+        [22 23]]]
+
+    In this case final ROI index arranged as follows:
+    [[ 0  2  4]
+    [ 1  3  5]]
+    """
+    n1, n2 = a.shape
+
+    n1divisions, n2divisions = ndivisions
+    remainder2 = n2%n2divisions
+    remainder1 = n1%n1divisions
+
+    #print("a.shape", a.shape)
+    #print('remainder2',remainder2)
+    #print('remainder1',remainder1)
+
+    m1 = n1 // n1divisions
+    if remainder1 == 0:
+        b = np.vsplit(a, n1divisions)
+    else:
+        print('m1', m1)
+        b = np.vsplit(a[:n1divisions * m1, :], n1divisions)
+
+    b1 = np.array(b)
+    d1, _, d3 = b1.shape
+    #b1.shape=(d1,d3)
+    #print(b1.shape)
+    #print(b1)
+
+    # horizontal split (fast (second) axis)
+    m2 = n2//n2divisions
+    if remainder2 == 0:
+        c = np.dsplit(b1, n2divisions)
+    else:
+        #print('m2', m2)
+        #print('cropb1 shape',b1[:,:n2divisions*m2].shape)
+        c = np.dsplit(b1[:, :, :n2divisions * m2], n2divisions)
+
+    ar = np.array(c)
+    d1, d2, d3, d4 = ar.shape
+    ar.shape = (d1 * d2, d3, d4)
+
+    roi_index = np.arange(n1divisions * n2divisions).reshape((n2divisions, n1divisions)).T
+    boxsizes = (m1, m2)  # slow axis (vert.), fast axis (horiz)
+    return ar, roi_index, boxsizes
+
+
 def Positiveindices_up_to(n):
     """
     build major positive hkl indices up to n  (each scanned from 0 to n)
