@@ -957,9 +957,7 @@ def Hough_peak_position(Angles,
     tagreso = 0
     if arraysize == (300, 360):
         tagreso = 1
-    bigHoughcollector = ComputeHough(xgnomon,
-                                    ygnomon,
-                                    Intensity_table=None,
+    bigHoughcollector = ComputeHough(xgnomon, ygnomon, Intensity_table=None,
                                     stepdeg=0.5,
                                     steprho=0.002,
                                     lowresolution=tagreso)
