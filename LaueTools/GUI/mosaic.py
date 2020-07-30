@@ -2767,7 +2767,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 if not filename.endswith("tif.gz"):
 
-                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                    indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
                                                                 (halfboxsizes[0], halfboxsizes[1]),
                                                                 framedimraw,
                                                                 flipxycenter=0)
@@ -2791,7 +2791,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 else:
 
                     framedim = framedimraw
-                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                    indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
                                                                 (halfboxsizes[0], halfboxsizes[1]),
                                                                 framedimraw,
                                                                 flipxycenter=0)
@@ -3585,7 +3585,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
 
                     center_pixel = (round(peak[0]), round(peak[1]))
 
-                    indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                    indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
                                                                 (halfboxsize[0], halfboxsize[1]),
                                                                 framedim,
                                                                 flipxycenter=0)
@@ -3661,14 +3661,24 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
         return None
 
 
-def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
+def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
+                selectedcounters = ("Imean", "Imax", "Iptp", "posX", "posY"), ndivisions=(1,15)):
     """
     return dictionary of counters
+
+    if selectedcounters have  Imean_multiple, Imax_multiple, Iptp_multiple, then array will subdivided
+    according to nbdivsions = (n1,n2) ie n1*n2 subarrays.
+    n1 divisions along slow axis (Y, vert), n2 along fast axis (X, horiz) 
+
+    param  = (dirname, filename, imageindex, peaklist, boxsize_row, boxsize_line)
+
+    peaklist : list of pixel X pixel Y (horiz, vert)   . For multiple detector : box around [[X, Y]] will be split 
+    boxsize_row = half boxsize (in pixel) // pixel X axis horiz
+    boxsize_line = half boxsize (in pixel) // pixel Y axis vert
+    
     """
     (dirname, filename, imageindex, peaklist, boxsize_row, boxsize_line) = param
-
-    selectedcounters = ["Imean", "Imax", "Iptp", "posX", "posY"]
-
+    
     #    print "selectedcounters", selectedcounters
 
     nbpeaks = len(peaklist)
@@ -3686,7 +3696,13 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
 
     CountersData = {}
     for counter in selectedcounters:
-        CountersData[counter] = np.zeros(nbpeaks)
+        if 'multiple' not in counter: 
+            CountersData[counter] = np.zeros(nbpeaks)
+        else:
+            ny,nx = ndivisions
+            CountersData[counter] = np.zeros((nbpeaks,nx*ny))
+
+            CountersData["posmax_multiple"] = np.zeros((nbpeaks,nx*ny,2))
     CountersData["Monitor"] = 1.0
     CountersData["ExposureTime"] = 1000.0  # milliseconds
 
@@ -3695,7 +3711,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
 
     filename = os.path.join(dirname, filename)
 
-    for grain_index, peak in enumerate(peaklist):
+    for peak_index, peak in enumerate(peaklist):
         try:
             framedim = DictLT.dict_CCD[ccdlabel][0]
             dataimage, framedim, fliprot = IOimage.readCCDimage(filename, CCDLabel=ccdlabel,
@@ -3718,7 +3734,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
 
         center_pixel = (round(peak[0]), round(peak[1]))
 
-        indicesborders = RMCCD.getindices2cropArray((center_pixel[0], center_pixel[1]),
+        indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
                                                 (halfboxsize[0], halfboxsize[1]),
                                                 framedim,
                                                 flipxycenter=0)
@@ -3730,59 +3746,72 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165"):
 
         piece_dat = dataimage[imin:imax, jmin:jmax]
 
+        if 'multiple' in counter:  #split array into several subarrays
+
+            piece_dat, _, (box1, box2) = GT.splitarray(piece_dat,ndivisions)
+
         #         print "selectedcounters", selectedcounters
 
         for counter in selectedcounters:
 
-            if counter in ("Imean", "Imax", "Iptp"):
+            if counter.startswith("I"):
+                if 'multiple' not in counter:
+                    if counter == "Imean":
+                        CountersData["Imean"][peak_index] = np.mean(piece_dat)
+                    elif counter == "Imax":
+                        CountersData["Imax"][peak_index] = np.amax(piece_dat)
+                    elif counter == "Iptp":
+                        CountersData["Iptp"][peak_index] = np.ptp(piece_dat)
+                else:
+                    if counter == "Imean_multiple":
+                        CountersData["Imean_multiple"][peak_index] = np.mean(piece_dat, axis=(1, 2))
+                    elif counter == "Imax_multiple":
+                        CountersData["Imax_multiple"][peak_index] = np.amax(piece_dat, axis=(1, 2))
+                    elif counter == "Iptp_multiple":
+                        CountersData["Iptp_multiple"][peak_index] = np.ptp(piece_dat, axis=(1, 2))
 
-                if counter == "Imean":
-                    CountersData["Imean"][grain_index] = np.mean(piece_dat)
-                elif counter == "Imax":
-                    CountersData["Imax"][grain_index] = np.amax(piece_dat)
-                elif counter == "Iptp":
-                    CountersData["Iptp"][grain_index] = np.ptp(piece_dat)
+            elif counter.startswith ("pos"):
 
-            elif counter in ("posX", "posY"):
+                if 'multiple' in counter:
+                    if counter == "posmax_multiple":
+                        nbrois = ndivisions[0] * ndivisions[1]
+                        labels = np.repeat(np.arange(nbrois), box1 * box2).reshape((nbrois, box1, box2))
+                        #print('labels.shape',labels.shape)
+                        index = np.arange(nbrois)
+                        datmaximumpos = np.array(scind.measurements.maximum_position(piece_dat, labels=labels, index=index))
+                        CountersData["posmax_multiple"][peak_index] = datmaximumpos[:,1:]
 
-                datminimum = scind.measurements.maximum(piece_dat)
-                # center of mass without background removal
-                datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
-                # remove baseline level set to minimum pixel intensity
-                datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
+                else:
+                    datminimum = scind.measurements.maximum(piece_dat)
+                    # center of mass without background removal
+                    datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
+                    # remove baseline level set to minimum pixel intensity
+                    datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
 
-                #                 print "datcenterofmass2", datcenterofmass2
+                    #                 print "datcenterofmass2", datcenterofmass2
 
-                centerofmass = datcenterofmass2 + np.array([jmin, imin])
+                    centerofmass = datcenterofmass2 + np.array([jmin, imin])
 
-                datmaximumpos = scind.measurements.maximum_position(piece_dat)
-                datmaximumpos = np.array(datmaximumpos, dtype="uint32")
+                    datmaximumpos = scind.measurements.maximum_position(piece_dat)
+                    datmaximumpos = np.array(datmaximumpos, dtype="uint32")
 
-                posmax = datmaximumpos + np.array([jmin, imin])
+                    posmax = datmaximumpos + np.array([jmin, imin])
 
-                #                    datmaximum = scind.measurements.maximum(mosaic, label, arange(n0 * n1))
-                #                    print "res maximum", datmaximum
-                #                    dat = datmaximum.reshape((n0, n1))
+                    #                    datmaximum = scind.measurements.maximum(mosaic, label, arange(n0 * n1))
+                    #                    print "res maximum", datmaximum
+                    #                    dat = datmaximum.reshape((n0, n1))
+                    
+                    # position monitors selection
+                    XY = posmax
+                    XY = centerofmass
 
-                #                    print "res maximum", datminimum
-                #                print "res datcenterofmass", datcenterofmass
-                #                print "res datcenterofmass2", datcenterofmass2
-                #                print "res datmaximumpos", datmaximumpos
-                # #
+                    #                print "XY", XY
+                    #                print "lenXY", len(XY)
 
-                #                print 'posmax', posmax
+                    xDATA, yDATA = XY
 
-                # position monitors selection
-                XY = posmax
-                XY = centerofmass
-
-                #                print "XY", XY
-                #                print "lenXY", len(XY)
-
-                xDATA, yDATA = XY
-
-                CountersData["posX"][grain_index] = xDATA
-                CountersData["posY"][grain_index] = yDATA
+                    CountersData["posX"][peak_index] = xDATA
+                    CountersData["posY"][peak_index] = yDATA
 
     return CountersData
 
