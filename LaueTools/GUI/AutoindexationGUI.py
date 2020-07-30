@@ -62,9 +62,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     def __init__(self, parent, _id, indexation_parameters, title,
                                         StorageDict=None, DataSetObject=None):
 
-        wx.Frame.__init__(self, parent, _id, title, size=(700, 550))
-
-        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(690, 385), pos=(5, 5))
+        wx.Frame.__init__(self, parent, _id, title, size=(900, 800))
 
         if parent is not None:
             self.parent = parent
@@ -150,90 +148,81 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
-        title1 = wx.StaticText(self.panel, -1, "Spots Selection", (15, 15))
+        title1 = wx.StaticText(self, -1, "Spots Selection")
         title1.SetFont(font3)
-        wx.StaticText(self.panel, -1, "Current File:        %s" % self.DataPlot_filename, (180, 15))
-
+        txtcf = wx.StaticText(self, -1, "Current File:        %s   " % self.DataPlot_filename)
         nbspots_in_data = len(self.current_exp_spot_index_list)
-        mssstxt = wx.StaticText(self.panel, -1, "Spots set Size", (500, 15))
-        self.nbspotmaxformatching = wx.SpinCtrl(self.panel, -1, str(nbspots_in_data), (600, 10),
+        mssstxt = wx.StaticText(self, -1, "Spots set Size         ")
+        self.nbspotmaxformatching = wx.SpinCtrl(self, -1, str(nbspots_in_data),
                                                         (60, -1), min=3, max=nbspots_in_data)
 
-        self.setAchck = wx.CheckBox(self.panel, -1, "", (15, 43))
+        self.setAchck = wx.CheckBox(self, -1, "")
         self.setAchck.SetValue(True)
+        cstxt = wx.StaticText(self, -1, "Spots set A")
+        self.spotlistA = wx.TextCtrl(self, -1, "0", size=(200, -1))
+        self.sethklchck = wx.CheckBox(self, -1, "set hkl of set A spots")
+        self.sethklcentral = wx.TextCtrl(self, -1, "[1,0,0]")
 
-        cstxt = wx.StaticText(self.panel, -1, "Spots set A", (50, 45))
-        self.spotlistA = wx.TextCtrl(self.panel, -1, "0", (140, 43), (200, -1))
-
-        self.sethklchck = wx.CheckBox(self.panel, -1, "set hkl of set A spots", (350, 43))
-        self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", (520, 43), (80, -1))
-
-        self.setBchck = wx.CheckBox(self.panel, -1, "", (15, 73))
+        self.setBchck = wx.CheckBox(self, -1, "")
         self.setBchck.SetValue(True)
+        rsstxt = wx.StaticText(self, -1, "Spots Set B: ")
+        self.spotlistB = wx.TextCtrl(self, -1, "to10", (200, -1))
 
-        rsstxt = wx.StaticText(self.panel, -1, "Spots Set B: ", (50, 75))
-        self.spotlistB = wx.TextCtrl(self.panel, -1, "to10", (140, 73), (200, -1))
-
-        lutrectxt = wx.StaticText(self.panel, -1, "Angles LUT Recognition", (15, 110))
+        lutrectxt = wx.StaticText(self, -1, "Angles LUT Recognition")
         lutrectxt.SetFont(font3)
 
-        drtatxt = wx.StaticText(self.panel, -1, "Recognition Tol. Angle(deg)", (15, 140))
-        self.DRTA = wx.TextCtrl(self.panel, -1, "0.5", (250, 135))
+        drtatxt = wx.StaticText(self, -1, "Recognition Tol. Angle(deg)")
+        self.DRTA = wx.TextCtrl(self, -1, "0.5")
+        luttxt = wx.StaticText(self, -1, "LUT Nmax")
+        self.nLUT = wx.SpinCtrl(self, -1, "4", (50, -1), min=3, max=7)
 
-        luttxt = wx.StaticText(self.panel, -1, "LUT Nmax", (400, 140))
-        self.nLUT = wx.SpinCtrl(self.panel, -1, "4", (500, 135), (50, -1), min=3, max=7)
-
-        elemtxt = wx.StaticText(self.panel, -1, "Materials", (15, 175))
+        elemtxt = wx.StaticText(self, -1, "Materials")
         self.SetMaterialsCombo(0)
-
-        self.refresh = wx.Button(self.panel, -1, "Refresh", (350, 170))
+        self.refresh = wx.Button(self, -1, "Refresh")
         self.refresh.Bind(wx.EVT_BUTTON, self.SetMaterialsCombo)
-
-        self.applyrulesLUT = wx.CheckBox(self.panel, -1, "Apply Extinc Rules", (450, 170))
+        #self.applyrulesLUT = wx.CheckBox(self, -1, "Apply Extinc. Rules")
+        self.applyrulesLUT = wx.CheckBox(self, -1, "Apply Extinc. Rules")
         self.applyrulesLUT.SetValue(True)
 
-        matchtxt = wx.StaticText(self.panel, -1, "Matching", (15, 210))
+        matchtxt = wx.StaticText(self, -1, "Matching")
         matchtxt.SetFont(font3)
 
-        mtatxt = wx.StaticText(self.panel, -1, "Matching Tolerance Angle(deg)", (15, 245))
-        self.MTA = wx.TextCtrl(self.panel, -1, "0.2", (250, 240))
+        mtatxt = wx.StaticText(self, -1, "Matching Tol. Angle(deg)")
+        self.MTA = wx.TextCtrl(self, -1, "0.2")
+        resangtxt = wx.StaticText(self, -1, "Min. d-spacing")
+        self.ResolutionAngstromctrl = wx.TextCtrl(self, -1, "False", (70, -1))
 
-        resangtxt = wx.StaticText(self.panel, -1, "Min. Res. Lattice Spacing", (400, 245))
-        self.ResolutionAngstromctrl = wx.TextCtrl(self.panel, -1, "False", (580, 242), (70, -1))
+        emaxtxt = wx.StaticText(self, -1, "Energy max.: ")
+        self.emax = wx.SpinCtrl(self, -1, "22", (60, -1), min=10, max=150)
+        mnmstxt = wx.StaticText(self, -1, "Matching Threshold")
+        self.MNMS = wx.SpinCtrl(self, -1, "15", (60, -1), min=1, max=500)
 
-        emaxtxt = wx.StaticText(self.panel, -1, "Energy max.: ", (15, 280))
-        self.emax = wx.SpinCtrl(self.panel, -1, "22", (300, 275), (60, -1), min=10, max=150)
-
-        mnmstxt = wx.StaticText(self.panel, -1, "Min. Nb. Matched Spots: ", (400, 280))
-        self.MNMS = wx.SpinCtrl(self.panel, -1, "15", (580, 275), (60, -1), min=1, max=500)
-
-        pptxt = wx.StaticText(self.panel, -1, "Filtering && Post Processing", (15, 310))
+        pptxt = wx.StaticText(self, -1, "Filtering && Post Processing")
         pptxt.SetFont(font3)
 
-        self.filterMatrix = wx.CheckBox(self.panel, -1,
-                                        "Remove equivalent Matrices (cubic symmetry)", (15, 345))
+        self.filterMatrix = wx.CheckBox(self, -1,
+                                        "Remove equivalent Matrices (cubic symmetry)")
         self.filterMatrix.SetValue(True)
-
-        self.showplotBox = wx.CheckBox(self.panel, -1, "Plot Best result", (15, 380))
-        self.showplotBox.SetValue(False)
-
-        self.verbose = wx.CheckBox(self.panel, -1, "Print details", (410, 345))
+        self.verbose = wx.CheckBox(self, -1, "Print details")
         self.verbose.SetValue(False)
 
+        self.showplotBox = wx.CheckBox(self, -1, "Plot Best result")
+        self.showplotBox.SetValue(False)
         self.indexation_index = 0
         self.config_irp_filename = (self.DataPlot_filename[:-4] + "_%d.irp" % self.indexation_index)
-        wx.StaticText(self.panel, -1, "Saving parameters in config file", (410, 370))
-        self.output_irp = wx.TextCtrl(self.panel, -1, "%s" % self.config_irp_filename,
-                                    (410, 395), size=(250, -1))
+        spcftxt= wx.StaticText(self, -1, "Saving parameters in config file")
+        self.output_irp = wx.TextCtrl(self, -1, "%s" % self.config_irp_filename,
+                                     size=(250, -1))
 
-        self.StartButton = wx.Button(self.panel, -1, "Start", (25, 420), (200, 60))
-        self.Bind(wx.EVT_BUTTON, self.OnStart)
+        self.StartButton = wx.Button(self, -1, "Start", size=(-1,80))
+        self.StartButton.SetFont(font3)
+        quitbtn = wx.Button(self, 2, "Quit", size=(-1, 80))
+        self.textprocess = wx.StaticText(self, -1, "                     ")
+        self.gauge = wx.Gauge(self, -1, 1000, size=(250, 25))
 
-        wx.Button(self.panel, 2, "Quit", (250, 420), (110, 60))
-        self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
-
-        self.textprocess = wx.StaticText(self.panel, -1, "                     ", (400, 435))
-        self.gauge = wx.Gauge(self.panel, -1, 1000, (400, 455), size=(250, 25))
+        self.StartButton.Bind(wx.EVT_BUTTON, self.OnStart)
+        quitbtn.Bind(wx.EVT_BUTTON, self.OnQuit)
+        
 
         self.sb = self.CreateStatusBar()
 
@@ -242,6 +231,85 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             cliqueindex = 0
             self.spotlistA.SetValue(str(self.list_of_cliques[cliqueindex].tolist()))
             self.setBchck.SetValue(False)
+
+        # layout
+        h1box = wx.BoxSizer(wx.HORIZONTAL)
+        h1box.Add(mssstxt,0, wx.EXPAND,10)
+        h1box.Add(self.nbspotmaxformatching,0, wx.EXPAND,10)
+
+        h2box = wx.BoxSizer(wx.HORIZONTAL)
+        h2box.Add(self.setAchck,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(cstxt,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.spotlistA,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.sethklchck ,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.sethklcentral,0, wx.EXPAND|wx.ALL,10)
+
+        h3box = wx.BoxSizer(wx.HORIZONTAL)
+        h3box.Add(self.setBchck,0, wx.EXPAND|wx.ALL,10)
+        h3box.Add(rsstxt,0, wx.EXPAND|wx.ALL,10)
+        h3box.Add(self.spotlistB,0, wx.EXPAND|wx.ALL,10)
+
+        h4box = wx.BoxSizer(wx.HORIZONTAL)
+        h4box.Add(drtatxt,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(self.DRTA,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(luttxt,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(self.nLUT,0, wx.EXPAND|wx.ALL,10)
+
+        h5box = wx.BoxSizer(wx.HORIZONTAL)
+        h5box.Add(elemtxt,0, wx.EXPAND|wx.ALL,10)
+        h5box.Add(self.combokeymaterial,0, wx.EXPAND|wx.ALL,10)
+        h5box.Add(self.refresh,0, wx.EXPAND|wx.ALL,10)
+        h5box.Add(self.applyrulesLUT,0, wx.EXPAND|wx.ALL,10)
+
+        h6box = wx.BoxSizer(wx.HORIZONTAL)
+        h6box.Add(mtatxt,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(self.MTA,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(emaxtxt,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(self.emax,0, wx.EXPAND|wx.ALL,10)
+
+        h7box = wx.BoxSizer(wx.HORIZONTAL)
+        h7box.Add(resangtxt,0, wx.EXPAND|wx.ALL,10)
+        h7box.Add(self.ResolutionAngstromctrl,0, wx.EXPAND|wx.ALL,10)
+        h7box.Add(mnmstxt,0, wx.EXPAND|wx.ALL,10)
+        h7box.Add(self.MNMS,0, wx.EXPAND|wx.ALL,10)
+
+        h8box = wx.BoxSizer(wx.HORIZONTAL)
+        h8box.Add(self.filterMatrix,0, wx.EXPAND,10)
+        h8box.Add(self.verbose,0, wx.EXPAND,10)
+
+        h9box = wx.BoxSizer(wx.HORIZONTAL)
+        h9box.Add(spcftxt,0, wx.EXPAND,10)
+        h9box.Add(self.output_irp,0, wx.EXPAND,10)
+
+        h10box = wx.BoxSizer(wx.HORIZONTAL)
+        h10box.Add(self.StartButton,1, wx.EXPAND,10)
+        h10box.Add(quitbtn,0, wx.EXPAND,10)
+        h10box.Add(self.textprocess,0, wx.EXPAND,10)
+        h10box.Add(self.gauge,0, wx.EXPAND,10)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txtcf,0, wx.EXPAND,10)
+        vbox.Add(h1box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(title1,0, wx.EXPAND,10)
+        vbox.Add(h2box,0, wx.EXPAND,10)
+        vbox.Add(h3box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(lutrectxt,0, wx.EXPAND,10)
+        vbox.Add(h4box,0, wx.EXPAND,10)
+        vbox.Add(h5box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(matchtxt,0, wx.EXPAND,10)
+        vbox.Add(h6box,0, wx.EXPAND,10)
+        vbox.Add(h7box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(pptxt,0, wx.EXPAND,10)
+        vbox.Add(h8box,0, wx.EXPAND,10)
+        vbox.Add(self.showplotBox,0, wx.EXPAND,10)
+        vbox.Add(h9box,0, wx.EXPAND,10)
+        vbox.Add(h10box,0, wx.EXPAND,10)
+
+        self.SetSizer(vbox)
 
         self.Show(True)
         self.Centre()
@@ -315,7 +383,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         self.list_materials = sorted(self.dict_Materials.keys())
 
-        self.combokeymaterial = wx.ComboBox(self.panel, -1, "Ge", (140, 170), size=(150, -1),
+        self.combokeymaterial = wx.ComboBox(self, -1, "Ge", (140, 170), size=(150, -1),
                                         choices=self.list_materials, style=wx.CB_READONLY)
 
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)

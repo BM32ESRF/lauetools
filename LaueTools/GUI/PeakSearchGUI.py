@@ -106,37 +106,43 @@ class ViewColorPanel(wx.Panel):
         self.drg = None
         self.DetFilename = None
 
+        self.plotlineprofileframe = None
+        self.plotlineXprofileframe = None
+        self.plotlineYprofileframe = None
+        self.x0, self.y0, self.x2, self.y2 = 200, 200, 1800, 1800
+
         # widgets
-        luttxt = wx.StaticText(self, -1, "LUT", (5, 7))
-        self.comboLUT = wx.ComboBox(self, -1, self.mainframe.LastLUT, (70, 5),
+        luttxt = wx.StaticText(self, -1, "LUT")
+        self.comboLUT = wx.ComboBox(self, -1, self.mainframe.LastLUT,
                                                     choices=self.mainframe.mapsLUT)
 
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeLUT)
 
-        posv = 40
+        showhisto_btn = wx.Button(self, -1, "Intensity Distribution")
+        showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto)
 
-        self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
-        self.vminctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmin), pos=(50, posv),
-                                                                        size=(80, -1),
+        self.slider_label = wx.StaticText(self, -1, "Imin: ")
+        self.vminctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmin), size=(80, -1),
                                                                         min=-200,
                                                                         max=1000000)
         self.vminctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
         # second horizontal band
-        self.slider_label2 = wx.StaticText(self, -1, "Imax: ", (5, posv + 35))
+        self.slider_label2 = wx.StaticText(self, -1, "Imax: ")
 
-        self.vmaxctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmaxmax), pos=(50, posv + 30),
+        self.vmaxctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmaxmax),
                                                             size=(80, -1), min=2, max=1000000)
         self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed)
 
         #         self.slider_label = wx.StaticText(self, -1,
         #             "peak tilt (%): ")
-        self.slider_vmin = wx.Slider(self, -1, pos=(150, posv + 5), size=(220, -1),
+        self.slider_vmin = wx.Slider(self, -1, size=(220, -1),
                             value=int(self.mainframe.vmin),
                             minValue=-int(self.mainframe.vminmax) + 2 * int(self.mainframe.vmin),
                             maxValue=int(self.mainframe.vminmax),
                             style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
+            #            self.slider_vmin.SetTickFreq(500,1)
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
@@ -146,7 +152,7 @@ class ViewColorPanel(wx.Panel):
         # second horizontal band
         #         self.slider_label2 = wx.StaticText(self, -1,
         #             "data size (%): ")
-        self.slider_vmax = wx.Slider(self, -1, pos=(150, posv + 35), size=(220, -1),
+        self.slider_vmax = wx.Slider(self, -1, size=(220, -1),
                                                         value=int(self.mainframe.vmax),
                                                         minValue=int(self.mainframe.vmin) + 1,
                                                         maxValue=int(self.mainframe.vmaxmax),
@@ -158,38 +164,76 @@ class ViewColorPanel(wx.Panel):
         self.slider_vmax.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK,
                                                             self.mainframe.on_slider_ImaxDisplayed)
 
-        self.Iminvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmin), pos=(400, posv + 5))
-        self.Imaxvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmax), pos=(400, posv + 35))
+        self.Iminvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmin))
+        self.Imaxvaltxt = wx.StaticText(self, -1, str(self.mainframe.vmax))
 
-        self.lineXYprofilechck = wx.CheckBox(self, -1, "Enable X Y profiler", (5, posv + 60))
+        self.lineXYprofilechck = wx.CheckBox(self, -1, "Enable X Y profiler")
         InitStateXYProfile = False
         self.lineXYprofilechck.SetValue(InitStateXYProfile)
         self.lineXYprofilechck.Bind(wx.EVT_CHECKBOX, self.OnTogglelineXYprofiles)
         self.plotlineXprofile = InitStateXYProfile
         self.plotlineYprofile = InitStateXYProfile
 
-        self.lineprof_btn = wx.Button(self, -1, "Open LineProfiler", (200, posv + 60), (130, -1))
+        self.lineprof_btn = wx.Button(self, -1, "Open LineProfiler", (130, -1))
         self.lineprof_btn.Bind(wx.EVT_BUTTON, self.OnShowLineProfiler)
 
-        savefig_btn = wx.Button(self, -1, "SaveFig", (5, posv + 150), (80, -1))
+        savefig_btn = wx.Button(self, -1, "SaveFig", (80, 100))
         savefig_btn.Bind(wx.EVT_BUTTON, self.mainframe.OnSaveFigure)
 
-        replot_btn = wx.Button(self, -1, "Replot", (120, posv + 150), (80, -1))
+        replot_btn = wx.Button(self, -1, "Replot", (80, 100))
+        replot_btn.SetFont(wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD))
         replot_btn.Bind(wx.EVT_BUTTON, self.OnReplot)
 
-        self.show2thetachi = wx.CheckBox(self, -1, "Show 2theta Chi", (5, posv + 100))
-        self.detfiletxtctrl = wx.TextCtrl(self, -1, "", (180, posv + 100), (100, -1))
-        self.opendetfilebtn = wx.Button(self, -1, "...", (300, posv + 100))
+        self.show2thetachi = wx.CheckBox(self, -1, "Show 2theta Chi")
+        self.detfiletxtctrl = wx.TextCtrl(self, -1, "", size=(100, -1))
+        self.opendetfilebtn = wx.Button(self, -1, "...", size=(100,-1))
         self.show2thetachi.SetValue(False)
         self.opendetfilebtn.Bind(wx.EVT_BUTTON, self.onOpenDetFile)
 
-        showhisto_btn = wx.Button(self, -1, "Intensity Distribution", (260, 5))
-        showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto)
+        
 
-        self.plotlineprofileframe = None
-        self.plotlineXprofileframe = None
-        self.plotlineYprofileframe = None
-        self.x0, self.y0, self.x2, self.y2 = 200, 200, 1800, 1800
+        # layout
+        hbox1 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox1.Add(luttxt,0,wx.EXPAND,5)
+        hbox1.Add(self.comboLUT,0,wx.EXPAND,5)
+        hbox1.Add(showhisto_btn)
+
+        hboxmin = wx.BoxSizer(wx.HORIZONTAL) 
+        hboxmin.Add(self.slider_label,0, wx.ALL, 5)
+        hboxmin.Add(self.vminctrl,0, wx.ALL, 5)
+        hboxmin.Add(self.slider_vmin,0, wx.ALL, 5)
+        hboxmin.Add(self.Iminvaltxt,0, wx.ALL, 5)
+
+        hboxmax = wx.BoxSizer(wx.HORIZONTAL) 
+        hboxmax.Add(self.slider_label2,0,wx.EXPAND,5)
+        hboxmax.Add(self.vmaxctrl,0,wx.EXPAND,5)
+        hboxmax.Add(self.slider_vmax,0,wx.EXPAND,5)
+        hboxmax.Add(self.Imaxvaltxt)
+
+        hboxprofs= wx.BoxSizer(wx.HORIZONTAL)
+        hboxprofs.Add(self.lineXYprofilechck,0,wx.EXPAND,10)
+        hboxprofs.Add(self.lineprof_btn)
+
+        hbox2= wx.BoxSizer(wx.HORIZONTAL)
+        hbox2.Add(self.show2thetachi,0,wx.EXPAND,10)
+        hbox2.Add(self.detfiletxtctrl,0,wx.EXPAND,10)
+        hbox2.Add(self.opendetfilebtn)
+
+        hboxbtn= wx.BoxSizer(wx.HORIZONTAL)
+        hboxbtn.Add(savefig_btn,0,wx.EXPAND,10)
+        hboxbtn.Add(replot_btn,0,wx.EXPAND|wx.ALL,5)
+
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(hbox1,0, wx.EXPAND,10)
+        vbox.Add(hboxmin,0, wx.EXPAND,5)
+        vbox.Add(hboxmax,0, wx.EXPAND,10)
+        vbox.Add(hboxprofs,0, wx.EXPAND,10)
+        vbox.Add(hbox2,0, wx.EXPAND,10)
+        vbox.Add(hboxbtn,0, wx.EXPAND,10)
+
+        self.SetSizer(vbox)
+
 
         # tooltip
         tp1 = "selection of various intensity mapping color Looking_up table (LUT)"
@@ -589,48 +633,106 @@ class FilterBackGroundPanel(wx.Panel):
         self.ImageTypes = ["Raw", "Blur"]
         self.ImageType = self.ImageTypes[self.ImageType_index]
 
+        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+        
+        sb = wx.StaticBox(self, label="Image Background")
+        #sb.SetFont(font3)
+
         # print("mainframe of FilterBackGroundPanel", self.mainframe)
         # widgets -------------------------
-        self.ComputeBlurredImage = wx.Button(self, -1, "Blur Image", (5, 5))
-        self.ShowblurImagebtn = wx.ToggleButton(self, -1, "Show Blur Image", (100, 5))
-
-        self.SaveBlurredImage = wx.Button(self, -1, "Save Blur Image", (250, 5))
-
-        self.FilterImage = wx.CheckBox(self, -1, "Substract blur as background", (5, 35))
+        self.ComputeBlurredImage = wx.Button(sb, -1, "Blur Image")
+        self.ShowblurImagebtn = wx.ToggleButton(sb, -1, "Show Blur Image")
+        self.SaveBlurredImage = wx.Button(sb, -1, "Save Blur Image",)
+        self.FilterImage = wx.CheckBox(sb, -1, "Substract blur as background")
 
         self.FilterImage.Bind(wx.EVT_CHECKBOX, self.OnSwitchFilterRawImage)
         self.FilterImage.SetValue(False)
 
         self.ComputeBlurredImage.Bind(wx.EVT_BUTTON, self.onComputeBlurImage)
-
         self.ShowblurImagebtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnSwitchBlurRawImage)
         self.SaveBlurredImage.Bind(wx.EVT_BUTTON, self.onSaveBlurImage)
 
-        self.UseImage = wx.CheckBox(self, -1, "Update A = f(A,B) ", (5, 60))
-        self.Bequal = wx.StaticText(self, -1, "B = ", (30, 90))
-        self.imageBctrl = wx.TextCtrl(self, -1, self.mainframe.BImageFilename, (55, 90), (220, -1))
-        self.openImagebtn = wx.Button(self, -1, "...", (290, 88))
+        sb2 = wx.StaticBox(self, label="Image Arithmetics")
+        #sb2.SetFont(font3)
+
+        self.UseImage = wx.CheckBox(sb2, -1, "Update A = f(A,B) ")
+        self.Bequal = wx.StaticText(sb2, -1, "B = ")
+        self.imageBctrl = wx.TextCtrl(sb2, -1, self.mainframe.BImageFilename, (400, -1))
+        self.openImagebtn = wx.Button(sb2, -1, "...")
         self.UseImage.SetValue(False)
         self.openImagebtn.Bind(wx.EVT_BUTTON, self.onGetBImagefilename)
         self.UseImage.Bind(wx.EVT_CHECKBOX, self.OnChangeUseFormula)
 
-        self.usealsoforfit = wx.CheckBox(self, -1, "use also for fit", (270, 60))
+        self.usealsoforfit = wx.CheckBox(sb2, -1, "use also for fit")
         self.usealsoforfit.SetValue(True)
 
-        wx.StaticText(self, -1, "in formula (A: current image)", (30, 125))
-        self.formulatxtctrl = wx.TextCtrl(self, -1, "A-1.1*B", (230, 120), (90, -1))
+        txtform = wx.StaticText(sb2, -1, "in formula (A: current image)")
+        self.formulatxtctrl = wx.TextCtrl(sb2, -1, "A-1.1*B", (150, -1))
 
-        btnsaveformularesult = wx.Button(self, -1, "Save result", (350, 120))
+        btnsaveformularesult = wx.Button(sb2, -1, "Save result")
+        
         btnsaveformularesult.Bind(wx.EVT_BUTTON, self.onSaveFormulaResultImage)
 
-        self.RemoveBlackpeaks = wx.CheckBox(self, -1, "Remove BlackListed Peaks", (5, 150))
-        self.BlackListtoltxt = wx.StaticText(self, -1, "Max. Distance", (250, 152))
-        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(self, -1, "15", pos=(350, 150),
-                                                                size=(80, -1), min=1, max=10000)
-        self.BlackListedPeaks = wx.TextCtrl(self, -1, "", (30, 180), (220, -1))
-        self.openBlackListFile = wx.Button(self, -1, "...", (265, 180))
+        sb3 = wx.StaticBox(self, label='Filter Peaks')
+        self.RemoveBlackpeaks = wx.CheckBox(sb3, -1, "Remove BlackListed Peaks")
+        self.BlackListtoltxt = wx.StaticText(sb3, -1, "Max. Distance")
+        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(sb3, -1, "15", size=(80, -1), min=1, max=10000)
+        self.BlackListedPeaks = wx.TextCtrl(sb3, -1, "", (220, -1))
+        self.openBlackListFile = wx.Button(sb3, -1, "...")
+        
         self.RemoveBlackpeaks.SetValue(False)
         self.openBlackListFile.Bind(wx.EVT_BUTTON, self.onGetBlackListfilename)
+        # layout
+
+        v1box = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        hbox1= wx.BoxSizer(wx.HORIZONTAL)
+        hbox1.Add(self.ComputeBlurredImage,0,wx.EXPAND,10)
+        hbox1.Add(self.ShowblurImagebtn,0,wx.EXPAND|wx.ALL,5)
+        hbox1.Add(self.SaveBlurredImage,0,wx.EXPAND|wx.ALL,5)
+
+        v1box.Add(hbox1,0,wx.EXPAND,5)
+        v1box.Add(self.FilterImage,0, wx.EXPAND,5)
+
+        v2box = wx.StaticBoxSizer(sb2, wx.VERTICAL)
+        hbox2= wx.BoxSizer(wx.HORIZONTAL)
+        hbox2.Add(self.UseImage ,0,wx.EXPAND,10)
+        hbox2.Add(self.usealsoforfit,0,wx.EXPAND|wx.ALL,5)
+
+        hbox3= wx.BoxSizer(wx.HORIZONTAL)
+        hbox3.Add(self.Bequal ,0,wx.EXPAND,10)
+        hbox3.Add(self.imageBctrl,0,wx.EXPAND|wx.ALL,5)
+        hbox3.Add(self.openImagebtn,0,wx.EXPAND|wx.ALL,5)
+
+        hbox4= wx.BoxSizer(wx.HORIZONTAL)
+        hbox4.Add(txtform ,0,wx.EXPAND,10)
+        hbox4.Add(self.formulatxtctrl,0,wx.EXPAND|wx.ALL,5)
+        hbox4.Add(btnsaveformularesult,0,wx.EXPAND|wx.ALL,5)
+
+        v2box.Add(hbox2,0,wx.EXPAND,5)
+        v2box.Add(hbox3,0, wx.EXPAND,5)
+        v2box.Add(hbox4,0, wx.EXPAND,5)
+
+        v3box = wx.StaticBoxSizer(sb3, wx.VERTICAL)
+        hbox5= wx.BoxSizer(wx.HORIZONTAL)
+        hbox5.Add(self.RemoveBlackpeaks ,0,wx.EXPAND,10)
+        hbox5.Add(self.BlackListtoltxt,0,wx.EXPAND|wx.ALL,5)
+        hbox5.Add(self.BlackListRejection_pixeldistanceMax,0,wx.EXPAND|wx.ALL,5)
+
+        hbox6= wx.BoxSizer(wx.HORIZONTAL)
+        hbox6.Add(self.BlackListedPeaks ,0,wx.EXPAND,10)
+        hbox6.Add(self.openBlackListFile,0,wx.EXPAND|wx.ALL,5)
+
+        v3box.Add(hbox5,0,wx.EXPAND,5)
+        v3box.Add(hbox6,0, wx.EXPAND,5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(v1box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(v2box,0, wx.EXPAND,10)
+        vbox.AddSpacer(10)
+        vbox.Add(v3box,0, wx.EXPAND,10)
+
+        self.SetSizer(vbox)
 
         # tooltip
         self.RemoveBlackpeaks.SetToolTipString("Peaks from current PeakSearch belonging to the "
@@ -1967,12 +2069,26 @@ class findLocalMaxima_Meth_1(wx.Panel):
 
         defaultthreshold = pedestal + 500
 
-        mintxt = wx.StaticText(self, -1, "MinimumDistance", (5, 5))
-        self.PNR = wx.SpinCtrl(self, -1, "10", (140, 5), (80, -1), min=2, max=2000)
+        mintxt = wx.StaticText(self, -1, "MinimumDistance")
+        self.PNR = wx.SpinCtrl(self, -1, "10", (80, -1), min=2, max=2000)
 
-        ittxt = wx.StaticText(self, -1, "IntensityThreshold", (5, 35))
-        self.IT = wx.SpinCtrl(self, -1, str(defaultthreshold), (140, 35), (80, -1),
-                                                                            min=-6000, max=3000000)
+        ittxt = wx.StaticText(self, -1, "IntensityThreshold")
+        self.IT = wx.SpinCtrl(self, -1, str(defaultthreshold), (80, -1), min=-6000, max=3000000)
+
+        # layout
+        h1 = wx.BoxSizer(wx.HORIZONTAL)
+        h1.Add(mintxt, 0 , wx.ALL, 5)
+        h1.Add(self.PNR, 0 , wx.ALL, 5)
+
+        h2 = wx.BoxSizer(wx.HORIZONTAL)
+        h2.Add(ittxt,0 , wx.ALL, 5)
+        h2.Add(self.IT,0 , wx.ALL, 5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(h1,0, wx.EXPAND,10)
+        vbox.Add(h2,0, wx.EXPAND,5)
+        
+        self.SetSizer(vbox)
 
         # tooltips
         mintp = "Minimum pixel distances between local maxima"

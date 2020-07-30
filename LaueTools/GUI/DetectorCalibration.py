@@ -103,35 +103,66 @@ class PlotRangePanel(wx.Panel):
 
         print("mainframe in PlotRangePanel", self.mainframe)
 
+        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+
         openbtn = wx.Button(self, -1, "Import Spots List", (5, 5), (200, 60))
+        openbtn.SetFont(font3)
+        
+
+
+        t1 = wx.StaticText(self, -1, "2theta Range:")
+        t2 = wx.StaticText(self, -1, "Chi Range:")
+
+        self.mean2theta = wx.TextCtrl(self, -1, "90", (40, -1))
+        self.meanchi = wx.TextCtrl(self, -1, "0", (40, -1))
+        pm1 = wx.StaticText(self, -1, "+/-")
+        pm2 =wx.StaticText(self, -1, "+/-")
+        self.range2theta = wx.TextCtrl(self, -1, "45")
+        self.rangechi = wx.TextCtrl(self, -1, "40")
+
         openbtn.Bind(wx.EVT_BUTTON, self.opendata)
-
-        pos5b = 75
-
-        t1 = wx.StaticText(self, -1, "2theta Range:", (2, pos5b))
-        t2 = wx.StaticText(self, -1, "Chi Range:", (2, pos5b + 30))
-
-        self.mean2theta = wx.TextCtrl(self, -1, "90", (120, pos5b), (40, -1))
-        self.meanchi = wx.TextCtrl(self, -1, "0", (120, pos5b + 30), (40, -1))
-        wx.StaticText(self, -1, "+/-", (170, pos5b))
-        wx.StaticText(self, -1, "+/-", (170, pos5b + 30))
-        self.range2theta = wx.TextCtrl(self, -1, "45", (200, pos5b))
-        self.rangechi = wx.TextCtrl(self, -1, "40", (200, pos5b + 30))
-
         self.mean2theta.Bind(wx.EVT_TEXT, self.set_init_plot_True)
         self.meanchi.Bind(wx.EVT_TEXT, self.set_init_plot_True)
         self.range2theta.Bind(wx.EVT_TEXT, self.set_init_plot_True)
         self.rangechi.Bind(wx.EVT_TEXT, self.set_init_plot_True)
 
         self.shiftChiOrigin = wx.CheckBox(
-            self, -1, "Shift Chi origin of Exp. Data", (2, pos5b + 60))
+            self, -1, "Shift Chi origin of Exp. Data")
         self.shiftChiOrigin.SetValue(False)
 
-        t5 = wx.StaticText(self, -1, "SpotSize", (2, pos5b+90))
-        self.spotsizefactor = wx.TextCtrl(self, -1, "1.", (200, pos5b+90))
+        t5 = wx.StaticText(self, -1, "SpotSize")
+        self.spotsizefactor = wx.TextCtrl(self, -1, "1.")
 
-        # Warning button id is 52
-        b3 = wx.Button(self, 52, "Update Plot", (5, pos5b+130), (200, 60))
+        # Warning button id is 52 and used 
+        b3 = wx.Button(self, 52, "Update Plot")
+
+        # layout
+        h1box=wx.BoxSizer(wx.HORIZONTAL)
+        h1box.Add(t1,0, wx.EXPAND,10)
+        h1box.Add(self.mean2theta,0, wx.EXPAND,10)
+        h1box.Add(pm1,0, wx.EXPAND,10)
+        h1box.Add(self.range2theta,0, wx.EXPAND,10)
+
+        h2box=wx.BoxSizer(wx.HORIZONTAL)
+        h2box.Add(t2,0, wx.EXPAND,10)
+        h2box.Add(self.meanchi,0, wx.EXPAND,10)
+        h2box.Add(pm2,0, wx.EXPAND,10)
+        h2box.Add(self.rangechi,0, wx.EXPAND,10)
+
+        h3box=wx.BoxSizer(wx.HORIZONTAL)
+        h3box.Add(t5,0, wx.EXPAND,10)
+        h3box.Add(self.spotsizefactor,0, wx.EXPAND,10)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(10)
+        vbox.Add(openbtn,0, wx.EXPAND,10)
+        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(self.shiftChiOrigin,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h3box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(b3,0, wx.EXPAND,10)
+
+        self.SetSizer(vbox)
 
         # tooltips
         tp1 = "raw central value (deg) of 2theta on CCD camera (kf scattered vector is defined by 2theta and chi)"
@@ -160,8 +191,8 @@ class PlotRangePanel(wx.Panel):
 
         b3.SetToolTipString(tpb3)
 
-        openbtn.SetToolTipString('Open peaks list .dat or (resp.) .cor file : without '
-                                            '(resp. with) knowledge of detector calibtation')
+        openbtn.SetToolTipString('Open peaks list .dat (pixel positions and peak props) or .cor file '
+                                            'pixel positions+ scattering angles + peak props + knowledge of detector calibtation')
 
     def set_init_plot_True(self, _):
         print("reset init_plot to True")
@@ -225,53 +256,42 @@ class CrystalParamPanel(wx.Panel):
 
         # print("self.mainframe in CrystalParamPanel", self.mainframe)
         # widgets layout
-        pos6 = 10
-        deltaposx = 2
-        t1 = wx.StaticText(self, -1, "Energy min/max(keV): ", (deltaposx, pos6 - 5))
-        self.eminC = wx.SpinCtrl(
-            self, -1, "5", (150 + deltaposx, pos6 - 5), (60, -1), min=5, max=149)
-        self.emaxC = wx.SpinCtrl(
-            self, -1, "22", (180 + deltaposx + 50, pos6 - 5), (60, -1), min=6, max=150)
+        t1 = wx.StaticText(self, -1, "Energy min/max(keV): ")
+        self.eminC = wx.SpinCtrl( self, -1, "5", min=5, max=149)
+        self.emaxC = wx.SpinCtrl( self, -1, "22", min=6, max=150)
 
-        pos7 = pos6 + 60
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
-        t2 = wx.StaticText(self, -1, "Element", (deltaposx, pos7 - 30))
-        self.comboElem = wx.ComboBox(self, -1, "Si", (150 + deltaposx, pos7 - 30),
+        t2 = wx.StaticText(self, -1, "Element")
+        self.comboElem = wx.ComboBox(self, -1, "Si",
                                         choices=self.listsorted_materials,
                                         style=wx.CB_READONLY)
 
-        t3 = wx.StaticText(self, -1, "Tmatrix", (deltaposx, pos7))  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
-        self.comboBmatrix = wx.ComboBox(self, 2424, "Identity", (150 + deltaposx, pos7),
+        t3 = wx.StaticText(self, -1, "Tmatrix")  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
+        self.comboBmatrix = wx.ComboBox(self, 2424, "Identity",
                                             choices=sorted(DictLT.dict_Transforms.keys()),
                                             style=wx.CB_READONLY)
 
-        pos7b = pos7 + 30
-        t4 = wx.StaticText(self, -1, "Orient Matrix (UB)", (deltaposx, pos7b))
-        self.comboMatrix = wx.ComboBox(self, 2525, "Identity", (150 + deltaposx, pos7b),
+        t4 = wx.StaticText(self, -1, "Orient Matrix (UB)")
+        self.comboMatrix = wx.ComboBox(self, 2525, "Identity",
                                         choices=list(DictLT.dict_Rot.keys()))
 
-        self.btn_mergeUB = wx.Button(self, -1, "set UB with B", (deltaposx + 400, pos7b))
+        self.btn_mergeUB = wx.Button(self, -1, "set UB with B")
 
-        pos7c = pos7 + 65
-        t5 = wx.StaticText(self, -1, "Extinctions", (deltaposx, pos7c))
-        self.comboExtinctions = wx.ComboBox(self, -1, "Diamond", (150 + deltaposx, pos7c),
+        t5 = wx.StaticText(self, -1, "Extinctions")
+        self.comboExtinctions = wx.ComboBox(self, -1, "Diamond",
                                             choices=list(DictLT.dict_Extinc.keys()))
 
         self.comboExtinctions.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeExtinc)
         #         self.comboTransforms.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeTransforms)
 
-        pos7d = pos7 + 100
-        vertical_shift = 7
-        b1 = wx.Button(self, 1010, "Enter UB", (deltaposx, pos7d + vertical_shift), (100, 40))
-        b2 = wx.Button(self, 1011, "Store UB", (deltaposx + 120, pos7d + vertical_shift), (100, 40))
-        btn_sortUBsname = wx.Button(self, 1011, "sort UBs name",
-                                    (deltaposx + 240, pos7d + vertical_shift), (120, 40))
+        b1 = wx.Button(self, 1010, "Enter UB")
+        b2 = wx.Button(self, 1011, "Store UB")
+        btn_sortUBsname = wx.Button(self, 1011, "sort UBs name")
 
-        btnReloadMaterials = wx.Button(self, -1, "Reload Materials",
-                                    (deltaposx + 370, pos7d + vertical_shift), (120, 40))
+        btnReloadMaterials = wx.Button(self, -1, "Reload Materials")
 
         # warning button id =52 is common with an other button
-        b3 = wx.Button(self, 52, "Replot Simul.", (deltaposx, pos7d + 60), (400, 40))
+        b3 = wx.Button(self, 52, "Replot Simul.")
 
         # event handling
         self.emaxC.Bind(wx.EVT_SPINCTRL, self.mainframe.OnCheckEmaxValue)
@@ -285,6 +305,47 @@ class CrystalParamPanel(wx.Panel):
 
         btnReloadMaterials.Bind(wx.EVT_BUTTON, self.OnLoadMaterials)
 
+        # layout
+
+        h1box=wx.BoxSizer(wx.HORIZONTAL)
+        h1box.Add(t1,0, wx.EXPAND|wx.ALL,10)
+        h1box.Add(self.eminC,0, wx.EXPAND|wx.ALL,10)
+        h1box.Add(self.emaxC,0, wx.EXPAND|wx.ALL,10)
+
+        h2box=wx.BoxSizer(wx.HORIZONTAL)
+        h2box.Add(t2,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.comboElem,0, wx.EXPAND|wx.ALL,10)
+
+        h3box=wx.BoxSizer(wx.HORIZONTAL)
+        h3box.Add(t3,0, wx.EXPAND|wx.ALL,10)
+        h3box.Add(self.comboBmatrix,0, wx.EXPAND|wx.ALL,10)
+
+        h4box=wx.BoxSizer(wx.HORIZONTAL)
+        h4box.Add(t4,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(self.comboMatrix,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(self.btn_mergeUB,0, wx.EXPAND|wx.ALL,10)
+
+        h5box=wx.BoxSizer(wx.HORIZONTAL)
+        h5box.Add(t5,0, wx.EXPAND|wx.ALL,10)
+        h5box.Add(self.comboExtinctions,0, wx.EXPAND,10)
+
+        h6box=wx.BoxSizer(wx.HORIZONTAL)
+        h6box.Add(b1,1, wx.EXPAND|wx.ALL,10)
+        h6box.Add(b2,1, wx.EXPAND|wx.ALL,10)
+        h6box.Add(btn_sortUBsname,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(btnReloadMaterials,0, wx.EXPAND|wx.ALL,10)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(10)
+        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h3box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h4box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h5box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h6box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(b3,0, wx.EXPAND,10)
+
+        self.SetSizer(vbox)
         # tootips
         tp1 = "Energy minimum and maximum for simulated Laue Pattern spots"
 
@@ -417,28 +478,31 @@ class CCDParamPanel(wx.Panel):
         #         wx.Button(self, 101, 'Set CCD Param.', (5, 5))
         #         self.Bind(wx.EVT_BUTTON, self.mainframe.OnInputParam, id=101)
 
-        txtpixelsize = wx.StaticText(self, -1, "Pixelsize")
-        txtdetdiam = wx.StaticText(self, -1, "Det. diameter")
+        txtpixelsize = wx.StaticText(self, -1, "Pixelsize (mm) ")
+        txtdetdiam = wx.StaticText(self, -1, "Diameter (mm) ")
 
-        self.pixelsize_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.pixelsize))
-        self.detectordiameter_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.detectordiameter))
+        self.pixelsize_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.pixelsize), size=(150,-1))
+        self.detectordiameter_txtctrl = wx.TextCtrl(self, -1, str(self.mainframe.detectordiameter), size=(150,-1))
 
-        btnaccept = wx.Button(self, -1, "Accept")
+        btnaccept = wx.Button(self, -1, "Accept", size=(-1, 80))
         btnaccept.Bind(wx.EVT_BUTTON, self.onAccept)
 
-        if WXPYTHON4:
-            grid = wx.GridSizer(2, 10, 10)
-        else:
-            grid = wx.GridSizer(3, 2)
+        # layout
+        h1box=wx.BoxSizer(wx.HORIZONTAL)
+        h1box.Add(txtpixelsize,0, wx.EXPAND|wx.ALL,10)
+        h1box.Add(self.pixelsize_txtctrl,0, wx.EXPAND|wx.ALL,10)
 
-        grid.Add(txtpixelsize)
-        grid.Add(self.pixelsize_txtctrl)
-        grid.Add(txtdetdiam)
-        grid.Add(self.detectordiameter_txtctrl)
-        grid.Add(btnaccept)
-        grid.Add(wx.StaticText(self, -1, ""))
+        h2box=wx.BoxSizer(wx.HORIZONTAL)
+        h2box.Add(txtdetdiam,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.detectordiameter_txtctrl,0, wx.EXPAND|wx.ALL,10)
 
-        self.SetSizer(grid)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(10)
+        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(btnaccept,0, wx.EXPAND|wx.ALL,10)
+
+        self.SetSizer(vbox)
 
     def onAccept(self, evt):
         print("accept")
@@ -541,98 +605,152 @@ class MoveCCDandXtal(wx.Panel):
 
         # print("self.mainframe in CCDParamPanel", self.mainframe)
 
-        wx.StaticText(self, -1, "Sample-Detector Distance", (5, 10))
-        wx.Button(self, 10, "-", (5, 30), (20, -1))
-        wx.Button(self, 11, "+", (35, 30), (20, -1))
-        wx.StaticText(self, -1, "step(mm)", (65, 30))
-        self.stepdistance = wx.TextCtrl(self, -1, "0.5", (150, 30), (30, -1))
-        self.cb_dd = wx.CheckBox(self, -1, "fit", (195, 30))
+        t1 = wx.StaticText(self, -1, "Sample-Detector Distance")
+        b10 = wx.Button(self, 10, "-", (20, -1))
+        b11 = wx.Button(self, 11, "+", (20, -1))
+        st1=wx.StaticText(self, -1, "step(mm)")
+        self.stepdistance = wx.TextCtrl(self, -1, "0.5", (30, -1))
+        self.cb_dd = wx.CheckBox(self, -1, "fit")
         self.cb_dd.SetValue(True)
 
-        pos2 = 60
-        wx.StaticText(self, -1, "X center", (5, pos2))
-        wx.Button(self, 20, "-", (5, pos2 + 20), (20, -1))
-        wx.Button(self, 21, "+", (35, pos2 + 20), (20, -1))
-        wx.StaticText(self, -1, "step(pixel)", (65, pos2 + 20))
-        self.stepXcen = wx.TextCtrl(self, -1, "20.", (150, pos2 + 20), (30, -1))
-        self.cb_Xcen = wx.CheckBox(self, -1, "fit", (195, pos2 + 20))
+        t2 = wx.StaticText(self, -1, "X center")
+        b20 = wx.Button(self, 20, "-", (20, -1))
+        b21 = wx.Button(self, 21, "+", (20, -1))
+        st2=wx.StaticText(self, -1, "step(pixel)")
+        self.stepXcen = wx.TextCtrl(self, -1, "20.", (30, -1))
+        self.cb_Xcen = wx.CheckBox(self, -1, "fit")
         self.cb_Xcen.SetValue(True)
 
-        pos3 = 110
-        wx.StaticText(self, -1, "Y center", (5, pos3))
-        wx.Button(self, 30, "-", (5, pos3 + 20), (20, -1))
-        wx.Button(self, 31, "+", (35, pos3 + 20), (20, -1))
-        wx.StaticText(self, -1, "step(pixel)", (65, pos3 + 20))
-        self.stepYcen = wx.TextCtrl(self, -1, "20.", (150, pos3 + 20), (30, -1))
-        self.cb_Ycen = wx.CheckBox(self, -1, "fit", (195, pos3 + 20))
+        t3=wx.StaticText(self, -1, "Y center")
+        b30=wx.Button(self, 30, "-", (20, -1))
+        b31=wx.Button(self, 31, "+", (20, -1))
+        st3=wx.StaticText(self, -1, "step(pixel)")
+        self.stepYcen = wx.TextCtrl(self, -1, "20.",(30, -1))
+        self.cb_Ycen = wx.CheckBox(self, -1, "fit")
         self.cb_Ycen.SetValue(True)
 
-        pos4 = 160
-        wx.StaticText(self, -1, "Angle xbet", (5, pos4))
-        wx.Button(self, 40, "-", (5, pos4 + 20), (20, -1))
-        wx.Button(self, 41, "+", (35, pos4 + 20), (20, -1))
-        wx.StaticText(self, -1, "step(deg)", (65, pos4 + 20))
-        self.stepang1 = wx.TextCtrl(self, -1, "1.", (150, pos4 + 20), (30, -1))
-        self.cb_angle1 = wx.CheckBox(self, -1, "fit", (195, pos4 + 20))
+        t4=wx.StaticText(self, -1, "Angle xbet")
+        b40=wx.Button(self, 40, "-", (20, -1))
+        b41=wx.Button(self, 41, "+", (20, -1))
+        st4=wx.StaticText(self, -1, "step(deg)")
+        self.stepang1 = wx.TextCtrl(self, -1, "1.", (30, -1))
+        self.cb_angle1 = wx.CheckBox(self, -1, "fit")
         self.cb_angle1.SetValue(True)
 
-        pos5 = 210
-        wx.StaticText(self, -1, "Angle xgam", (5, pos5))
-        wx.Button(self, 50, "-", (5, pos5 + 20), (20, -1))
-        wx.Button(self, 51, "+", (35, pos5 + 20), (20, -1))
-        wx.StaticText(self, -1, "step(deg)", (65, pos5 + 20))
-        self.stepang2 = wx.TextCtrl(self, -1, "1.", (150, pos5 + 20), (30, -1))
-        self.cb_angle2 = wx.CheckBox(self, -1, "fit", (195, pos5 + 20))
+        t5=wx.StaticText(self, -1, "Angle xgam")
+        b50=wx.Button(self, 50, "-", (20, -1))
+        b51=wx.Button(self, 51, "+", (20, -1))
+        st5=wx.StaticText(self, -1, "step(deg)")
+        self.stepang2 = wx.TextCtrl(self, -1, "1.", (30, -1))
+        self.cb_angle2 = wx.CheckBox(self, -1, "fit")
         self.cb_angle2.SetValue(True)
 
         # Angles buttons - crystal orientation
-        posx = 280
-        a1 = wx.StaticText(self, -1, "Angle 1", (posx, 10))
-        wx.Button(self, 1000, "-", (posx, 30), (20, -1))
-        wx.Button(self, 1100, "+", (posx + 30, 30), (20, -1))
+        a1 = wx.StaticText(self, -1, "Angle 1")
+        b1000=wx.Button(self, 1000, "-", (20, -1))
+        b1100=wx.Button(self, 1100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, 30))
-        self.angle1 = wx.TextCtrl(self, -1, "1.", (posx + 80, 30), (35, -1))
-        self.cb_theta1 = wx.CheckBox(self, -1, "fit", (posx + 130, 30))
+        self.angle1 = wx.TextCtrl(self, -1, "1.", (35, -1))
+        self.cb_theta1 = wx.CheckBox(self, -1, "fit", )
         self.cb_theta1.SetValue(True)
 
-        wx.StaticText(self, -1, "step(deg)", (posx + 100, 10))
-
-        pos2 = 60
-        a2 = wx.StaticText(self, -1, "Angle2", (posx, pos2))
-        wx.Button(self, 2000, "-", (posx, pos2 + 20), (20, -1))
-        wx.Button(self, 2100, "+", (posx + 30, pos2 + 20), (20, -1))
+        a2 = wx.StaticText(self, -1, "Angle2")
+        b2000=wx.Button(self, 2000, "-", (20, -1))
+        b2100=wx.Button(self, 2100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, pos2+20))
-        self.angle2 = wx.TextCtrl(self, -1, "1.", (posx + 80, pos2 + 20), (35, -1))
-        self.cb_theta2 = wx.CheckBox(self, -1, "fit", (posx + 130, pos2 + 30))
+        self.angle2 = wx.TextCtrl(self, -1, "1.", (35, -1))
+        self.cb_theta2 = wx.CheckBox(self, -1, "fit")
         self.cb_theta2.SetValue(True)
 
-        pos3 = 110
-        a3 = wx.StaticText(self, -1, "Angle 3", (posx, pos3))
-        wx.Button(self, 3000, "-", (posx, pos3 + 20), (20, -1))
-        wx.Button(self, 3100, "+", (posx + 30, pos3 + 20), (20, -1))
+        a3 = wx.StaticText(self, -1, "Angle 3")
+        b3000=wx.Button(self, 3000, "-", (20, -1))
+        b3100=wx.Button(self, 3100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, pos3+20))
-        self.angle3 = wx.TextCtrl(self, -1, "1.", (posx + 80, pos3 + 20), (35, -1))
-        self.cb_theta3 = wx.CheckBox(self, -1, "fit", (posx + 130, pos3 + 30))
+        self.angle3 = wx.TextCtrl(self, -1, "1.", (35, -1))
+        self.cb_theta3 = wx.CheckBox(self, -1, "fit")
         self.cb_theta3.SetValue(True)
 
-        self.EnableRotationLabel = "Select\nAxis\nand\nRotate"
-        self.rotatebtn = wx.Button(self, -1, self.EnableRotationLabel, (posx, 180), (100, 100))
+        self.EnableRotationLabel = "Select Axis && Rotate"
+        self.rotatebtn = wx.Button(self, -1, self.EnableRotationLabel)
         self.rotatebtn.Bind(wx.EVT_BUTTON, self.OnActivateRotation)
-        stepangletxt = wx.StaticText(self, -1, "step(deg)", (posx + 100, 180))
-        self.stepanglerot = wx.TextCtrl(self, -1, "10.", (posx + 100, 210), (35, -1))
+        st9 = stepangletxt = wx.StaticText(self, -1, "step (deg)")
+        self.stepanglerot = wx.TextCtrl(self, -1, "10.")
 
         self.listofparamfitctrl = [self.cb_dd, self.cb_Xcen, self.cb_Ycen, self.cb_angle1,
                                     self.cb_angle2,  # detector param
                                     self.cb_theta1,
                                     self.cb_theta2,
                                     self.cb_theta3]  # delta angle of orientation
+        # layout --------------------------------------------
+        hboxes = [0,0,0,0,0]
+        bminus = [b10,b20,b30,b40,b50]
+        bplus = [b11,b21,b31,b41,b51]
+        steps = [st1,st2,st3,st4,st5]
+        steptxtctrls = [self.stepdistance, self.stepXcen,self.stepYcen,self.stepang1,self.stepang2]
+        chckboxes = self.listofparamfitctrl[:5]
+        for k in range(5):
+            hboxes[k]=wx.BoxSizer(wx.HORIZONTAL)
+            hboxes[k].Add(bminus[k],0, wx.EXPAND|wx.ALL,10)
+            hboxes[k].Add(bplus[k],0, wx.EXPAND|wx.ALL,10)
+            hboxes[k].Add(steps[k],0, wx.EXPAND|wx.ALL,10)
+            hboxes[k].Add(steptxtctrls[k],0, wx.EXPAND|wx.ALL,10)
+            hboxes[k].Add(chckboxes[k],0, wx.EXPAND|wx.ALL,10)
+
+        h2boxes = [0,0,0,0,0]
+        bminus = [b1000,b2000,b3000]
+        bplus = [b1100,b2100,b3100]
+        steptxtctrls = [self.angle1, self.angle2,self.angle3]
+        chckboxes = self.listofparamfitctrl[5:]
+
+        for k in range(3):
+            h2boxes[k]=wx.BoxSizer(wx.HORIZONTAL)
+            h2boxes[k].Add(bminus[k],0, wx.EXPAND|wx.ALL,10)
+            h2boxes[k].Add(bplus[k],0, wx.EXPAND|wx.ALL,10)
+            h2boxes[k].Add(steptxtctrls[k],0, wx.EXPAND|wx.ALL,10)
+            h2boxes[k].Add(chckboxes[k],0, wx.EXPAND|wx.ALL,10)
+
+        hrotbox=wx.BoxSizer(wx.HORIZONTAL)
+        hrotbox.Add(self.rotatebtn,0, wx.EXPAND|wx.ALL,10)
+        hrotbox.Add(st9,0, wx.EXPAND|wx.ALL,10)
+        hrotbox.Add(self.stepanglerot,0, wx.EXPAND|wx.ALL,10)
+        
+        vdetbox = wx.BoxSizer(wx.VERTICAL)
+        vdetbox.Add(t1,0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(hboxes[0],0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(t2,0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(hboxes[1],0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(t3,0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(hboxes[2],0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(t4,0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(hboxes[3],0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(t5,0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(hboxes[4],0, wx.EXPAND|wx.ALL,2)
+
+        vangbox = wx.BoxSizer(wx.VERTICAL)
+        vangbox.Add(a1,0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(h2boxes[0],0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(a2,0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(h2boxes[1],0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(a3,0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(h2boxes[2],0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(hrotbox,0, wx.EXPAND|wx.ALL,2)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(vdetbox,0, wx.EXPAND|wx.ALL,10)
+        hbox.Add(vangbox,0, wx.EXPAND|wx.ALL,10)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(2)
+        vbox.Add(hbox,0)
+        
+        self.SetSizer(vbox)
 
         # tooltips
         a3.SetToolTipString("Angle 3: angle around z axis")
         a1.SetToolTipString("Angle 1: angle around y axis (horizontal and perp. to incoming beam)")
         a2.SetToolTipString("Angle 2: angle around x axis (// incoming beam")
 
-        rottip = ("Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
+        rottip = ("[For 2theta/chi coordinates]\n Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
         rottip += 'Click on a point in plot to select an invariant Laue spot by rotation. Then press "+" or "-" keys to rotation the pattern.\n'
         rottip += "Step angle can be adjusted (default 10 degrees).\n"
         rottip += "Press the Rotate button to disable the rotation and enable other functionnalities."
@@ -1054,7 +1172,8 @@ class MainCalibrationFrame(wx.Frame):
         self.display_current()
 
     def setwidgets(self):
-        # drag laue pattern
+        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+
         self.press = None
 
         # BUTTONS, PLOT and CONTROL
@@ -1098,21 +1217,22 @@ class MainCalibrationFrame(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.OnStoreMatrix, id=1011)  # in crytalparampanel
 
-        self.btnsavecalib = wx.Button(self.panel, 1012, "Save Calib", (1050, 600), (100, 40))# calibration parameters + orientation UBmatrix
+        self.btnsavecalib = wx.Button(self.panel, 1012, "Save Calib", size=(-1, 80))# calibration parameters + orientation UBmatrix
         self.Bind(wx.EVT_BUTTON, self.OnSaveCalib, id=1012)
 
-        self.btnsaveresults = wx.Button(self.panel, 1013, "Save Results", (1050, 700), (100, 40))  # produces file with results
+        self.btnsaveresults = wx.Button(self.panel, 1013, "Save Results", size=(-1, 80))  # produces file with results
         self.Bind(wx.EVT_BUTTON, self.OnWriteResults, id=1013)
 
-        self.startfit = wx.Button(self.panel, 505, "Start FIT", size=(150, 60))  # (950, 200), )
+        self.startfit = wx.Button(self.panel, 505, "Start FIT", size=(150, 80)) 
+        self.startfit.SetFont(font3)
         self.Bind(wx.EVT_BUTTON, self.StartFit, id=505)
 
-        self.cb_gotoresults = wx.CheckBox(self.panel, -1, "GOTO fit results")  # , (970, 280))
-        self.use_weights = wx.CheckBox(self.panel, -1, "use weights")  # , (970, 310))
+        self.cb_gotoresults = wx.CheckBox(self.panel, -1, "GOTO fit results")  
+        self.use_weights = wx.CheckBox(self.panel, -1, "use weights")  
         self.use_weights.SetValue(False)
         self.cb_gotoresults.SetValue(True)
 
-        self.undogotobtn = wx.Button(self.panel, -1, "Undo\nlast\nGOTO", size=(80, 60))  # ,(950, 200), )
+        self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(80, 80))  
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
         # replot simul button (one button in two panels)
@@ -1135,26 +1255,30 @@ class MainCalibrationFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnDecreaseAngle3, id=3000)
         self.Bind(wx.EVT_BUTTON, self.OnIncreaseAngle3, id=3100)
 
-        self.btnmanuallinks = wx.Button(self.panel, -1, "Manual Links", size=(-1, 40))
+        self.btnmanuallinks = wx.Button(self.panel, -1, "Manual Links", size=(-1, 80))
         self.btnmanuallinks.Bind(wx.EVT_BUTTON, self.OnLinkSpots)
         self.btnmanuallinks.Enable(False)
 
-        self.btnautolinks = wx.Button(self.panel, -1, "Auto. Links", size=(150, 40))
+        self.btnautolinks = wx.Button(self.panel, -1, "Auto. Links", size=(150, 80))
+        self.btnautolinks.SetFont(font3)
         self.btnautolinks.Bind(wx.EVT_BUTTON, self.OnLinkSpotsAutomatic)
+
 
         self.txtangletolerance = wx.StaticText(self.panel, -1, "Angle Tolerance(deg)")
         self.AngleMatchingTolerance = wx.TextCtrl(self.panel, -1, "0.5")
 
-        self.btnshowlinks = wx.Button(self.panel, -1, "Filter Links")
+        self.btnshowlinks = wx.Button(self.panel, -1, "Filter Links", size=(-1, 80))
         self.btnshowlinks.Bind(wx.EVT_BUTTON, self.OnShowAndFilter)
 
-        self.btnswitchspace = wx.Button(self.panel, 102, "Switch Space", size=(150, 40))
+        self.btnswitchspace = wx.Button(self.panel, 102, "Switch Space", size=(150, 80))
+        self.btnswitchspace.SetFont(font3)
         self.Bind(wx.EVT_BUTTON, self.OnSwitchPlot, id=102)
 
-        self.btn_label_theospot = wx.ToggleButton(self.panel, 104, "Label Exp. spot", size=(150, 40))
-        self.btn_label_expspot = wx.ToggleButton(self.panel, 106, "Label Simul. spot", size=(150, 40))
+        self.peakpropstxt = wx.StaticText(self.panel, -1, "Draw peak props.   ")
+        self.btn_label_theospot = wx.ToggleButton(self.panel, 104, "Exp. spot")
+        self.btn_label_expspot = wx.ToggleButton(self.panel, 106, "Simul. spot")
 
-        self.resetAnnotationBtn = wx.Button(self.panel, -1, "Reset Labels", size=(100, 40))
+        self.resetAnnotationBtn = wx.Button(self.panel, -1, "Reset")
         self.resetAnnotationBtn.Bind(wx.EVT_BUTTON, self.OnResetAnnotations)
 
         self.defaultColor = self.GetBackgroundColour()
@@ -1240,28 +1364,32 @@ class MainCalibrationFrame(wx.Frame):
         vbox.Add(self.toolbar, 0, wx.EXPAND)
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add(self.btnswitchspace, 0, wx.ALL, 5)
-        btnSizer.Add(self.btnmanuallinks, 0, wx.ALL, 5)
-        btnSizer.Add(self.btnautolinks, 0, wx.ALL, 5)
+        btnSizer.Add(self.btnswitchspace, 1, wx.EXPAND|wx.ALL, 5)
+        btnSizer.Add(wx.StaticText(self.panel, -1, "    "), 0, wx.ALL, 5)
+        
+        btnSizer.Add(self.btnautolinks, 1, wx.EXPAND|wx.ALL, 5)
+        btnSizer.Add(self.btnmanuallinks, 1, wx.EXPAND|wx.ALL, 5)
+        btnSizer.Add(self.btnshowlinks, 1, wx.EXPAND|wx.ALL, 5)
         btnSizer.Add(self.txtangletolerance, 0, wx.ALL, 5)
         btnSizer.Add(self.AngleMatchingTolerance, 0, wx.ALL, 5)
-        btnSizer.Add(self.btnshowlinks, 0, wx.ALL, 5)
-        btnSizer.Add(wx.StaticText(self.panel, -1, "              "), 0, wx.ALL, 5)
-        btnSizer.Add(self.btnsaveresults, 0, wx.ALL, 5)
-        btnSizer.Add(self.btnsavecalib, 0, wx.ALL, 5)
+
+        btnSizer.Add(wx.StaticText(self.panel, -1, "      "), 0, wx.ALL, 5)
+        btnSizer.Add(self.btnsaveresults, 0, wx.EXPAND|wx.ALL, 5)
+        btnSizer.Add(self.btnsavecalib, 1, wx.EXPAND|wx.ALL, 5)
 
         btnSizer.AddSpacer(5)
 
         hboxlabel = wx.BoxSizer(wx.HORIZONTAL)
-        hboxlabel.Add(self.btn_label_theospot, 0, wx.ALL, 0)
-        hboxlabel.Add(self.btn_label_expspot, 0, wx.ALL, 0)
-        hboxlabel.Add(self.resetAnnotationBtn, 0, wx.ALL, 0)
+        hboxlabel.Add(self.peakpropstxt, 0, wx.ALL, 5)
+        hboxlabel.Add(self.btn_label_theospot, 0, wx.ALL, 5)
+        hboxlabel.Add(self.btn_label_expspot, 0, wx.ALL, 5)
+        hboxlabel.Add(self.resetAnnotationBtn, 0, wx.ALL, 5)
 
         hboxfit = wx.BoxSizer(wx.HORIZONTAL)
-        hboxfit.Add(self.startfit, 0, wx.ALL, 0)
-        hboxfit.Add(self.use_weights, 0, wx.ALL, 0)
-        hboxfit.Add(self.cb_gotoresults, 0, wx.ALL, 0)
-        hboxfit.Add(self.undogotobtn, 0, wx.ALL, 0)
+        hboxfit.Add(self.startfit, 1, wx.EXPAND|wx.ALL, 5)
+        hboxfit.Add(self.use_weights, 1, wx.ALL, 5)
+        hboxfit.Add(self.cb_gotoresults, 1, wx.ALL, 5)
+        hboxfit.Add(self.undogotobtn, 1, wx.ALL, 5)
 
         vboxfit2 = wx.BoxSizer(wx.VERTICAL)
         vboxfit2.Add(self.txtresidues, 0, wx.ALL, 0)
@@ -1283,6 +1411,7 @@ class MainCalibrationFrame(wx.Frame):
         vbox2.Add(self.parametersdisplaypanel, 0, wx.EXPAND, 0)
         vbox2.Add(wx.StaticLine(self.panel, -1, size=(-1, 10), style=wx.LI_HORIZONTAL),
                                                                 0, wx.EXPAND|wx.ALL, 5)
+        vbox2.AddSpacer(5)
         vbox2.Add(hboxfit, 0, wx.EXPAND, 0)
         vbox2.Add(hboxfit2, 0, wx.EXPAND, 0)
 

@@ -12,6 +12,18 @@ else:
     import dict_LaueTools as DictLT
     import generaltools as GT
 
+if wx.__version__ < "4.":
+    WXPYTHON4 = False
+else:
+    WXPYTHON4 = True
+    wx.OPEN = wx.FD_OPEN
+    wx.CHANGE_DIR = wx.FD_CHANGE_DIR
+
+    def sttip(argself, strtip):
+        return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
+    wx.Window.SetToolTipString = sttip
+
 
 # --- ---------------  Binary image File parameters
 class CCDFileParameters(wx.Dialog):
@@ -22,16 +34,14 @@ class CCDFileParameters(wx.Dialog):
         """
         initialize board window
         """
-        wx.Dialog.__init__(self, parent, _id, title, size=(660, 440), style=wx.RESIZE_BORDER)
+        wx.Dialog.__init__(self, parent, _id, title, size=(800, 600), style=wx.RESIZE_BORDER)
         self.parent = parent
         #print("self.parent", self.parent)
 
-        txt = wx.StaticText(self, -1, "Choose Readout parameters of CCD image file", (50, 10))
+        txt = wx.StaticText(self, -1, "Choose readout parameters of CCD image file")
         font = wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.BOLD)
         txt.SetFont(font)
         txt.SetForegroundColour((255, 0, 0))
-
-        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(650, 440), pos=(5, 40))
 
         dict_CCD = DictLT.dict_CCD
         self.allCCD_names = list(dict_CCD.keys())
@@ -58,9 +68,7 @@ class CCDFileParameters(wx.Dialog):
 
         self.controltext = []
 
-        posy = 15
-
-        a0 = wx.StaticText(self.panel, -1, "CCD Image File type", (15, posy))
+        a0 = wx.StaticText(self, -1, "CCD Image File type")
         a0.SetFont(font3)
 
         self.allCCD_names = GT.put_on_top_list(("MARCCD165",
@@ -72,45 +80,82 @@ class CCDFileParameters(wx.Dialog):
                                             self.allCCD_names,
                                             forceinsertion=True)
 
-        self.comboCCD = wx.ComboBox(self.panel, -1, self.CCDLabel, (320, posy - 5),
-                                    size=(180, -1), choices=self.allCCD_names, style=wx.CB_READONLY)
+        self.comboCCD = wx.ComboBox(self,
+                                    -1,
+                                    self.CCDLabel,
+                                    size=(180, -1),
+                                    choices=self.allCCD_names,
+                                    style=wx.CB_READONLY)
 
         self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
 
-        a1 = wx.StaticText(self.panel, -1, "parameter", (15, posy + 45))
-        a2 = wx.StaticText(self.panel, -1, "current value", (150, posy + 45))
-        a3 = wx.StaticText(self.panel, -1, "initial value", (340, posy + 45))
-        a4 = wx.StaticText(self.panel, -1, "unit", (540, posy + 45))
+        a1 = wx.StaticText(self, -1, "parameter")
+        a2 = wx.StaticText(self, -1, "current value")
+        a3 = wx.StaticText(self, -1, "initial value")
+        a4 = wx.StaticText(self, -1, "unit")
 
         for text in [a1, a2, a3, a4]:
             text.SetFont(font3)
 
-        com = wx.StaticText(self.panel, -1, "Comments", (5, posy + 245))
+        com = wx.StaticText(self, -1, "Comments")
         com.SetFont(font3)
 
-        self.posyvalues = 80
-
-        for kk, param in enumerate(self.paramdetector):
-            wx.StaticText(self.panel, -1, param, (15, self.posyvalues + 5 + 30 * kk))
-            wx.StaticText(self.panel, -1, str(self.value[kk]), (340, self.posyvalues + 5 + 30 * kk))
-            wx.StaticText(self.panel, -1, self.units[kk], (540, self.posyvalues + 5 + 30 * kk))
-
-        self.comments = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE, size=(580, 50), pos=(10, 280))
+        self.comments = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=(580, 50))
         self.comments.SetValue(DictLT.dict_CCD[self.CCDLabel][-1])
 
         self.DisplayValues(1)
 
-        btnaccept = wx.Button(self.panel, 3, "Accept", (40, 340), (300, 40))
-        self.Bind(wx.EVT_BUTTON, self.OnAccept, id=3)
+        btnaccept = wx.Button(self, -1, "Accept", (300, 40))
+        btnaccept.Bind(wx.EVT_BUTTON, self.OnAccept)
         btnaccept.SetDefault()
 
-        wx.Button(self.panel, 4, "Cancel", (400, 340), (150, 40))
-        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=4)
+        btncancel= wx.Button(self, -1, "Cancel", (150, 40))
+        btncancel.Bind(wx.EVT_BUTTON, self.OnCancel)
 
         self.keepon = False
 
+        if WXPYTHON4:
+            grid = wx.FlexGridSizer(4, 7, 10)
+        else:
+            grid = wx.FlexGridSizer(4, 7)
+
+        grid.Add(a1)
+        grid.Add(a2)
+        grid.Add(a3)
+        grid.Add(a4)
+        for krow in range(6):
+            grid.Add(wx.StaticText(self, -1, self.paramdetector[krow]))
+            grid.Add(self.controltext[krow])
+            grid.Add(wx.StaticText(self, -1, str(self.value[krow])))
+            grid.Add(wx.StaticText(self, -1, self.units[krow]))
+
+        hboxcombo = wx.BoxSizer(wx.HORIZONTAL)
+        hboxcombo.Add(a0)
+        hboxcombo.Add(self.comboCCD)
+
+        hboxbtn = wx.BoxSizer(wx.HORIZONTAL) 
+        hboxbtn.Add(btnaccept)
+        hboxbtn.Add(btncancel)  
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(txt)
+        vbox.Add(hboxcombo)
+        vbox.Add(grid)
+        vbox.Add(com)
+        vbox.Add(self.comments)
+        vbox.Add(hboxbtn)
+
+        self.SetSizer(vbox)
+
+
         # tooltip
         btnaccept.SetToolTipString("Accept")
+
+    #        self.Show(True)
+    #        self.Centre()
+
+
+
 
     def readCCDparams(self):
         """ read CCD parameters from self.CCDLabel and set value for display"""
@@ -134,14 +179,16 @@ class CCDFileParameters(wx.Dialog):
                     self.file_extension)
         #print("self.value", self.value)
 
+
     def DisplayValues(self, _):
         """
         display and set values of parameters
         """
         for kk, _ in enumerate(self.paramdetector):
-            self.controltext.append(wx.TextCtrl(self.panel, -1, str(self.value[kk]),
-                                                    (150, self.posyvalues + 30 * kk),
-                                                    (150, -1)))
+            self.controltext.append(
+                wx.TextCtrl(self,
+                                -1,
+                                str(self.value[kk])))
 
     def DeleteValues(self, _):
         """
@@ -149,7 +196,7 @@ class CCDFileParameters(wx.Dialog):
         """
         for kk, _ in enumerate(self.paramdetector):
             self.controltext.append(
-                wx.TextCtrl(self.panel, -1, str(None), (150, self.posyvalues + 30 * kk), (150, -1)))
+                wx.TextCtrl(self, -1, str(None)))
 
     def EnterComboCCD(self, event):
         """ select detector item """
