@@ -63,7 +63,8 @@ PEAKSEARCHDICT_Convolve = {"PixelNearRadius": 10,
 # }
 
 IOimagefuncs = ['Add_Images', 'Add_Images2', 'SumImages', 'getIndex_fromfilename', 'get_imagesize',
-'getpixelValue', 'getwildcardstring', 'libtiff_ctypes', 'listfile', 'readCCDimage', 'read_header_marccd',
+'getpixelValue', 'getwildcardstring',# 'libtiff_ctypes'
+ 'listfile', 'readCCDimage', 'read_header_marccd',
  'read_header_marccd2', 'read_header_scmos', 'read_motorsposition_fromheader', 'readheader', 'readoneimage', 'readoneimage_band', 'readoneimage_crop', 'readoneimage_crop_fast', 'readoneimage_full', 'readoneimage_manycrops',
  'readrectangle_in_image', 'setfilename', 'stringint', 'write_rawbinary', 'writeimage','getfilename']
 
