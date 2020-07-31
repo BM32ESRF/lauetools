@@ -62,11 +62,11 @@ else:
 
 
 class TreePanel(wx.Panel):
-    def __init__(self, parent, scantype=None):
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+    def __init__(self, parent, scantype=None, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent=parent, id=id)
         #     def __init__(self, parent, id, title):
         #         wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(450, 350))
-
+        
         self.parent = parent
         self.scantype = scantype
         self.frameparent = self.parent.GetParent()
@@ -97,9 +97,13 @@ class TreePanel(wx.Panel):
             return
         scan_index = int(selected_item)
         print("click on ", scan_index)
+        print("selected_item ", dir(item))
 
-        self.frameparent.scan_index = scan_index
-        self.frameparent.ReadScan_SpecFile(scan_index)
+        self.frameparent.ReadScan_SpecFile(scan_index, resetlistcounters=True)
+        if self.scantype == 'MESH':
+            self.frameparent.scan_index_mesh = scan_index
+        elif self.scantype == 'ASCAN':
+            self.frameparent.scan_index_ascan = scan_index
 
 
 # --- ---------------  Plot limits board  parameters
@@ -171,7 +175,8 @@ class MainFrame(wx.Frame):
 
         self.folderpath_specfile, self.specfilename = None, None
 
-        self.detectorname = "Monitor"
+        self.detectorname_mesh = "Monitor"
+        self.detectorname_ascan = "Monitor"
         self.columns_name = ["Monitor", "fluoHg"]
         self.normalizeintensity = False
 
@@ -236,7 +241,7 @@ class MainFrame(wx.Frame):
 
         self.stbar0 = wx.StatusBar(self.panel)
 
-        self.plot = ImshowPanel(self.panel,
+        self.plotmeshpanel = ImshowPanel(self.panel,
                                 -1,
                                 "test_plot",
                                 z_values,
@@ -245,8 +250,17 @@ class MainFrame(wx.Frame):
                                 posarray_twomotors=posmotor,
                                 absolute_motorposition_unit="mm")
 
-        self.treespecfiles = TreePanel(self.panel, scantype="MESH")
-        self.treeacanspecfiles = TreePanel(self.panel, scantype="ASCAN")
+        self.plotascanpanel = PlotPanel(self.panel,
+                                -1,
+                                "test_plot",
+                                np.arange(150),
+                                Imageindices=Imageindices,
+                                posmotorname="xmotor",
+                                posarray_motors=np.arange(150),
+                                absolute_motorposition_unit="mm")
+
+        self.treemesh = TreePanel(self.panel, scantype="MESH", id=0)
+        self.treeascan = TreePanel(self.panel, scantype="ASCAN", id=1)
 
         self.updatelistbtn = wx.Button(self.panel, -1, "Update scans list")
         self.updatelistbtn.Bind(wx.EVT_BUTTON, self.onUpdateSpecFile)
@@ -255,19 +269,14 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
         self.toggleBtn = wx.Button(self.panel, wx.ID_ANY, "Real Time Plot")
         self.toggleBtn.Bind(wx.EVT_BUTTON, self.onToggle)
-        #         self.toggleBtn.Bind(wx.EVT_BUTTON, self.onOnlinePlot)
-
-        #         self.stopbtn = wx.Button(self.panel, wx.ID_ANY, "Stop")
-        #         self.stopbtn.Bind(wx.EVT_BUTTON, self.onStopTimer)
-        #         self.stopbtn.Disable()
 
         # --- ----------tooltip
         self.updatelistbtn.SetToolTipString("Refresh list of scan from spec file")
         self.toggleBtn.SetToolTipString("On/Off Real time plot")
         # --- ----------layout
         hbox0 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox0.Add(self.treespecfiles, 1, wx.LEFT | wx.TOP | wx.GROW)
-        hbox0.Add(self.treeacanspecfiles, 0, wx.EXPAND)
+        hbox0.Add(self.treemesh, 1, wx.LEFT | wx.TOP | wx.GROW)
+        hbox0.Add(self.treeascan, 0, wx.EXPAND)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(hbox0, 1, wx.LEFT | wx.TOP | wx.GROW)
@@ -277,7 +286,8 @@ class MainFrame(wx.Frame):
 
         self.hbox = wx.BoxSizer(wx.HORIZONTAL)
         self.hbox.Add(vbox, 0, wx.EXPAND)
-        self.hbox.Add(self.plot, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Add(self.plotmeshpanel, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Add(self.plotascanpanel, 1, wx.LEFT | wx.TOP | wx.GROW)
 
         bigvbox = wx.BoxSizer(wx.VERTICAL)
         bigvbox.Add(self.hbox, 1, wx.LEFT | wx.TOP | wx.GROW)
@@ -301,7 +311,7 @@ class MainFrame(wx.Frame):
 
             outputfile = file.GetPath()
 
-            #             currentfig = self.plot.fig
+            #             currentfig = self.plotmeshpanel.fig
             #             currentfig.savefig(outputfile)
             #             print "Image saved in ", outputfile + '.png'
 
@@ -347,6 +357,7 @@ class MainFrame(wx.Frame):
         return userProvidedFilename
 
     def onUpdateSpecFile(self, _):
+        """ update scan list  """
 
         self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
@@ -371,6 +382,7 @@ class MainFrame(wx.Frame):
         wx.CallAfter(self.fill_tree)
 
     def OnOpenSpecFile(self, _):
+        """ in menu :  File/open spec file  """
 
         folder = wx.FileDialog(self,
                                 "Select spec file",
@@ -382,32 +394,36 @@ class MainFrame(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
 
             self.fullpath_specfile = folder.GetPath()
-
-            #             print "folder.GetPath()", abs_fullpath
-
             self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
+        # simply update list fo scans 
         if (self.specfilename == self.last_specfilename and self.specfilename is not None):
             self.onUpdateSpecFile(1)
 
-        self.readspecfile(self.fullpath_specfile)
+        self.get_listmesh(self.fullpath_specfile)
 
-        #         print dir(self.treespecfiles.tree)
+        self.get_listascan(self.fullpath_specfile)
 
         if (self.specfilename != self.last_specfilename and self.specfilename is not None):
             print("\n\ndeleting last old items\n\n")
-            self.treespecfiles.tree.DeleteAllItems()
-            wx.CallAfter(self.treespecfiles.maketree)
+            self.treemesh.tree.DeleteAllItems()
+            wx.CallAfter(self.treemesh.maketree)
 
-        #         print "dtt", dir(self.treespecfiles.tree)
+            self.treeascan.tree.DeleteAllItems()
+            wx.CallAfter(self.treeascan.maketree)
+
         self.listmeshtoAdd = self.listmesh
+        self.listascantoAdd = self.listascan
         wx.CallAfter(self.fill_tree)
 
     def fill_tree(self):
         for meshelems in self.listmeshtoAdd:
-            self.treespecfiles.tree.AppendItem(self.treespecfiles.root, str(meshelems[0]))
+            self.treemesh.tree.AppendItem(self.treemesh.root, str(meshelems[0]))
+        for ascanelems in self.listascantoAdd:
+            self.treeascan.tree.AppendItem(self.treeascan.root, str(ascanelems[0]))
 
-    def readspecfile(self, fullpathspecfilename):
+
+    def get_listmesh(self, fullpathspecfilename):
         samespecfile = False
         if self.specfilename != self.last_specfilename:
             samespecfile = True
@@ -427,6 +443,11 @@ class MainFrame(wx.Frame):
 
         listmeshall = getmeshscan_from_specfile(fullpathspecfilename)
 
+        if listmeshall == []:
+            print('No mesh scan in %s'%fullpathspecfilename)
+            self.listmesh = []
+            return
+
         list_meshscan_indices = []
         for ms in listmeshall:
             if ms[0] not in list_lastmeshscan_indices:
@@ -444,136 +465,325 @@ class MainFrame(wx.Frame):
         print("indstart_newmeshes", indstart_newmeshes)
         self.listmesh = listmeshall[indstart_newmeshes:]
 
-    def ReadScan_SpecFile(self, scan_index):
+    def get_listascan(self, fullpathspecfilename):
+        samespecfile = False
+        if self.specfilename != self.last_specfilename:
+            samespecfile = True
+            self.listascan = None
+
+        lastscan_listascan = 0
+        list_lastascan_indices = []
+        if self.listascan is not None:
+            print("self.listascan already exists")
+            print("self.listascan", self.listascan)
+            list_lastascan_indices = []
+            for ms in self.listascan:
+                list_lastascan_indices.append(ms[0])
+            lastscan_listascan = max(list_lastascan_indices)
+
+        print("lastscan_listascan", lastscan_listascan)
+
+        listascanall = getascan_from_specfile(fullpathspecfilename)
+
+        if listascanall == []:
+            print('No mesh scan in %s'%fullpathspecfilename)
+            self.listascan = []
+            return
+
+        list_ascanscan_indices = []
+        for ms in listascanall:
+            if ms[0] not in list_lastascan_indices:
+                list_ascanscan_indices.append(ms[0])
+
+        print("list_ascanscan_indices", list_ascanscan_indices)
+
+        if list_ascanscan_indices[-1] != lastscan_listascan and not samespecfile:
+            print("adding only new ascanes from file %s" % self.fullpath_specfile)
+            indstart_newascanes = np.searchsorted(list_ascanscan_indices, lastscan_listascan - 1)
+        else:
+            indstart_newascanes = 0
+
+        print("listascanall", listascanall)
+        print("indstart_newascanes", indstart_newascanes)
+        self.listascan = listascanall[indstart_newascanes:]
+
+    def ReadScan_SpecFile(self, scan_index, resetlistcounters=True):
         """
-        read scan data in spec file and fill data for a updated figure plot
+        read a SINGLE scan data in spec file and fill data for a updated figure plot
         """
-        detectorname = self.detectorname
+        detectorname_ascan = self.detectorname_ascan
+        detectorname_mesh = self.detectorname_mesh
 
         scanheader, data = ReadSpec(self.fullpath_specfile, scan_index)
         tit = str(scanheader)
 
-        print("spec command", tit)
+        self.scantype = tit.split()[2]
 
-        print("tit.split()")
+        print("spec command    :", tit)
 
-        titlesplit = tit.split()
-        # minmotor1 = float(titlesplit[4])
-        # maxmotor1 = float(titlesplit[5])
-        # minmotor2 = float(titlesplit[8])
-        # maxmotor2 = float(titlesplit[9])
+        print("scan type  :", self.scantype)
 
-        # counter and key name of data
-        columns_name = list(data.keys())
-        self.columns_name = sorted(columns_name)
-        # motor names
-        motor1 = tit.split()[3]
-        motor2 = tit.split()[7]
-        # motor positions
-        posmotor1 = np.fix(data[motor1] * 100000) / 100000
-        posmotor2 = np.fix(data[motor2] * 100000) / 100000
+        if self.scantype in ('ascan',):
 
-        # nb of steps in both directions
-        nb1 = int(tit.split()[6]) + 1
-        nb2 = int(tit.split()[10]) + 1
-        # current nb of collected points in the mesh
-        nbacc = len(data[list(data.keys())[0]])
-        print("nb of points accumulated  :", nbacc)
 
-        counterintensity1D = data[detectorname]
+            titlesplit = tit.split()
 
-        if self.normalizeintensity:
-            data_I0 = data["Monitor"]
-            exposureTime = data["Seconds"]
-            datay = counterintensity1D
+            # motor names
+            motor1 = tit.split()[3]
 
-            # self.MonitorOffset  in counts / sec
+            # motor positions
+            posmotor1 = np.fix(data[motor1] * 100000) / 100000
 
-            counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+            # nb of steps in both directions
+            nb1 = int(tit.split()[6]) + 1
 
-        print("building arrays")
-        if nb2 * nb1 == nbacc:
-            print("scan is finished")
-            data_z_values = np.reshape(counterintensity1D, (nb2, nb1))
-            try:
-                data_img = np.reshape(data["img"], (nb2, nb1))
-            except KeyError:
-                print("'img' column doesn't exist! Add fake dummy 0 value")
-                data_img = np.zeros((nb2, nb1))
-            posmotorsinfo = np.reshape(np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2))
-            scan_in_progress = False
+            # current nb of collected points in the mesh
+            nbacc = len(data[list(data.keys())[0]])
+            print("nb of points accumulated  :", nbacc)
 
+            counterintensity1D = data[detectorname_ascan]
+
+            if self.normalizeintensity:
+                data_I0 = data["Monitor"]
+                exposureTime = data["Seconds"]
+                datay = counterintensity1D
+
+                # self.MonitorOffset  in counts / sec
+
+                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+
+            print("building arrays")
+            if nb1 == nbacc:
+                print("scan is finished")
+                data_z_values = counterintensity1D
+                try:
+                    data_img = data["img"]
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img = np.zeros(nb1)
+                posmotorsinfo = np.array(posmotor1)
+                scan_in_progress = False
+
+            else:
+                print("scan has been aborted")
+                print("filling data with zeros...")
+                # intensity array
+                zz = np.zeros(nb1)
+                zz.put(range(nbacc), counterintensity1D)
+                data_z_values = zz
+                # image index array
+                data_img = np.zeros(nb1)
+                try:
+                    data_img.put(range(nbacc), data["img"])
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img.put(range(nbacc), 0)
+                # motors positions
+                ar_posmotor1 = np.zeros(nb1)
+                ar_posmotor1.put(range(nbacc), posmotor1)
+                #                     ar_posmotor1 = reshape(ar_posmotor1, (nb2, nb1))
+
+                posmotorsinfo = np.array(ar_posmotor1)
+
+                scan_in_progress = True
+
+            AddedArrayInfo = data_img
+
+            datatype = "scalar"
+
+            Apptitle = "%s\nascan #%d" % (self.specfilename, scan_index)
+
+            print("title", Apptitle)
+
+            self.flat_data_z_values = counterintensity1D
+            self.flat_motor1 = posmotor1
+
+            self.scancommand = tit
+            self.minmotor1 = float(titlesplit[4])
+            self.maxmotor1 = float(titlesplit[5])
+
+            scancommandextremmotorspositions = [self.minmotor1,
+                                                self.maxmotor1]
+
+            if resetlistcounters:
+                # counter and key name of data
+                columns_name = list(data.keys())
+                columns_name = sorted(columns_name)
+                self.plotascanpanel.combocounters.Clear()
+                self.plotascanpanel.combocounters.AppendItems(columns_name)
+
+            self.update_fig_1D(data_z_values,
+                                posmotorsinfo,
+                                motor1,
+                                Apptitle,
+                                data_img,
+                                detectorname_ascan,
+                                scancommandextremmotorspositions)
+
+            return scan_in_progress
+
+        elif self.scantype in ('mesh',):
+
+            titlesplit = tit.split()
+            # minmotor1 = float(titlesplit[4])
+            # maxmotor1 = float(titlesplit[5])
+            # minmotor2 = float(titlesplit[8])
+            # maxmotor2 = float(titlesplit[9])
+
+            # motor names
+            motor1 = tit.split()[3]
+            motor2 = tit.split()[7]
+            # motor positions
+            posmotor1 = np.fix(data[motor1] * 100000) / 100000
+            posmotor2 = np.fix(data[motor2] * 100000) / 100000
+
+            # nb of steps in both directions
+            nb1 = int(tit.split()[6]) + 1
+            nb2 = int(tit.split()[10]) + 1
+            # current nb of collected points in the mesh
+            nbacc = len(data[list(data.keys())[0]])
+            print("nb of points accumulated  :", nbacc)
+
+            counterintensity1D = data[detectorname_mesh]
+
+            if self.normalizeintensity:
+                data_I0 = data["Monitor"]
+                exposureTime = data["Seconds"]
+                datay = counterintensity1D
+
+                # self.MonitorOffset  in counts / sec
+
+                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+
+            print("building arrays")
+            if nb2 * nb1 == nbacc:
+                print("scan is finished")
+                data_z_values = np.reshape(counterintensity1D, (nb2, nb1))
+                try:
+                    data_img = np.reshape(data["img"], (nb2, nb1))
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img = np.zeros((nb2, nb1))
+                posmotorsinfo = np.reshape(np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2))
+                scan_in_progress = False
+
+            else:
+                print("scan has been aborted")
+                print("filling data with zeros...")
+                # intensity array
+                zz = np.zeros(nb2 * nb1)
+                zz.put(range(nbacc), counterintensity1D)
+                data_z_values = np.reshape(zz, (nb2, nb1))
+                # image index array
+                data_img = np.zeros(nb2 * nb1)
+                try:
+                    data_img.put(range(nbacc), data["img"])
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img.put(range(nbacc), 0)
+                data_img = np.reshape(data_img, (nb2, nb1))
+                # motors positions
+                ar_posmotor1 = np.zeros(nb2 * nb1)
+                ar_posmotor1.put(range(nbacc), posmotor1)
+                #                     ar_posmotor1 = reshape(ar_posmotor1, (nb2, nb1))
+
+                ar_posmotor2 = np.zeros(nb2 * nb1)
+                ar_posmotor2.put(range(nbacc), posmotor2)
+                #                     ar_posmotor2 = reshape(ar_posmotor2, (nb2, nb1))
+
+                posmotorsinfo = np.array([ar_posmotor1, ar_posmotor2]).T
+
+                posmotorsinfo = np.reshape(posmotorsinfo, (nb2, nb1, 2))
+                scan_in_progress = True
+
+            AddedArrayInfo = data_img
+
+            datatype = "scalar"
+
+            #         print "bothmotors", posmotorsinfo
+            #         print 'nb2,nb1', nb2, nb1
+            #         print posmotorsinfo.shape
+
+            #         print "posmotorsinfo", posmotorsinfo
+
+            Apptitle = "%s\nmesh scan #%d" % (self.specfilename, scan_index)
+
+            print("title", Apptitle)
+
+            self.flat_data_z_values = counterintensity1D
+            self.flat_motor1 = posmotor1
+            self.flat_motor2 = posmotor2
+
+            self.scancommand = tit
+            self.minmotor1 = float(titlesplit[4])
+            self.maxmotor1 = float(titlesplit[5])
+            self.minmotor2 = float(titlesplit[8])
+            self.maxmotor2 = float(titlesplit[9])
+
+            scancommandextremmotorspositions = [self.minmotor1,
+                                                self.maxmotor1,
+                                                self.minmotor2,
+                                                self.maxmotor2]
+            
+            if resetlistcounters:
+                # counter and key name of data
+                columns_name = list(data.keys())
+                columns_name = sorted(columns_name)
+                self.plotmeshpanel.combocounters.Clear()
+                self.plotmeshpanel.combocounters.AppendItems(columns_name)
+
+            self.update_fig(data_z_values,
+                                posmotorsinfo,
+                                motor1,
+                                motor2,
+                                Apptitle,
+                                data_img,
+                                detectorname_mesh,
+                                scancommandextremmotorspositions)
+
+            return scan_in_progress
+
+    def update_fig_1D(self,
+                    data_z_values,
+                    posmotorsinfo,
+                    motor1,
+                    Apptitle,
+                    data_img,
+                    detectorname,
+                    scancommandextremmotorspositions):
+        """update for ascan fig and plot"""
+        #         self.plot.fig.clear()
+
+        self.plotascanpanel.data = data_z_values
+        self.plotascanpanel.posarray_motors = posmotorsinfo
+        self.plotascanpanel.motor1name = motor1
+        self.plotascanpanel.posmotorname = motor1
+        self.plotascanpanel.absolute_motorposition_unit = "mm"
+        self.plotascanpanel.title = Apptitle
+        self.plotascanpanel.Imageindices = data_img
+
+        (self.plotascanpanel.minmotor1,
+            self.plotascanpanel.maxmotor1
+        ) = scancommandextremmotorspositions
+
+        self.plotascanpanel.xylabels = ("column index", "row index")
+        self.plotascanpanel.datatype = "scalar"
+
+        if self.plotmeshpanel.colorbar is not None:
+            self.plotmeshpanel.colorbar_label = detectorname
+            (self.plotascanpanel.myplot, _, self.plotascanpanel.data) = makefig_update(
+                self.plotascanpanel.fig, self.plotascanpanel.myplot, None, data_z_values, datadims=1)
         else:
-            print("scan has been aborted")
-            print("filling data with zeros...")
-            # intensity array
-            zz = np.zeros(nb2 * nb1)
-            zz.put(range(nbacc), counterintensity1D)
-            data_z_values = np.reshape(zz, (nb2, nb1))
-            # image index array
-            data_img = np.zeros(nb2 * nb1)
-            try:
-                data_img.put(range(nbacc), data["img"])
-            except KeyError:
-                print("'img' column doesn't exist! Add fake dummy 0 value")
-                data_img.put(range(nbacc), 0)
-            data_img = np.reshape(data_img, (nb2, nb1))
-            # motors positions
-            ar_posmotor1 = np.zeros(nb2 * nb1)
-            ar_posmotor1.put(range(nbacc), posmotor1)
-            #                     ar_posmotor1 = reshape(ar_posmotor1, (nb2, nb1))
+            print("self.plotascanpanel.colorbar is None")
+            self.plotascanpanel.create_axes()
+            self.plotascanpanel.data_to_Display = self.plotascanpanel.data
 
-            ar_posmotor2 = np.zeros(nb2 * nb1)
-            ar_posmotor2.put(range(nbacc), posmotor2)
-            #                     ar_posmotor2 = reshape(ar_posmotor2, (nb2, nb1))
+            self.plotascanpanel.clear_axes_create_plot1D()
 
-            posmotorsinfo = np.array([ar_posmotor1, ar_posmotor2]).T
+        # reset ticks and motors positions  ---------------
 
-            posmotorsinfo = np.reshape(posmotorsinfo, (nb2, nb1, 2))
-            scan_in_progress = True
-
-        AddedArrayInfo = data_img
-
-        datatype = "scalar"
-
-        #         print "bothmotors", posmotorsinfo
-        #         print 'nb2,nb1', nb2, nb1
-        #         print posmotorsinfo.shape
-
-        #         print "posmotorsinfo", posmotorsinfo
-
-        Apptitle = "%s\nmesh scan #%d" % (self.specfilename, scan_index)
-
-        print("title", Apptitle)
-
-        self.flat_data_z_values = counterintensity1D
-        self.flat_motor1 = posmotor1
-        self.flat_motor2 = posmotor2
-
-        self.scancommand = tit
-        self.minmotor1 = float(titlesplit[4])
-        self.maxmotor1 = float(titlesplit[5])
-        self.minmotor2 = float(titlesplit[8])
-        self.maxmotor2 = float(titlesplit[9])
-
-        scancommandextremmotorspositions = [self.minmotor1,
-                                            self.maxmotor1,
-                                            self.minmotor2,
-                                            self.maxmotor2]
-
-        self.plot.combocounters.Clear()
-        self.plot.combocounters.AppendItems(self.columns_name)
-
-        self.update_fig(data_z_values,
-                            posmotorsinfo,
-                            motor1,
-                            motor2,
-                            Apptitle,
-                            data_img,
-                            detectorname,
-                            scancommandextremmotorspositions)
-
-        return scan_in_progress
+        self.plotascanpanel.draw_fig()
+        return
 
     def update_fig(self,
                     data_z_values,
@@ -584,39 +794,39 @@ class MainFrame(wx.Frame):
                     data_img,
                     detectorname,
                     scancommandextremmotorspositions):
-        """update fig and plot"""
+        """update fro mesh scan fig and plot"""
         #         self.plot.fig.clear()
 
-        self.plot.data = data_z_values
-        self.plot.posarray_twomotors = posmotorsinfo
-        self.plot.motor1name, self.plot.motor2name = motor1, motor2
-        self.plot.absolute_motorposition_unit = "mm"
-        self.plot.title = Apptitle
-        self.plot.Imageindices = data_img
+        self.plotmeshpanel.data = data_z_values
+        self.plotmeshpanel.posarray_twomotors = posmotorsinfo
+        self.plotmeshpanel.motor1name, self.plotmeshpanel.motor2name = motor1, motor2
+        self.plotmeshpanel.absolute_motorposition_unit = "mm"
+        self.plotmeshpanel.title = Apptitle
+        self.plotmeshpanel.Imageindices = data_img
 
-        (self.plot.minmotor1,
-            self.plot.maxmotor1,
-            self.plot.minmotor2,
-            self.plot.maxmotor2,
+        (self.plotmeshpanel.minmotor1,
+            self.plotmeshpanel.maxmotor1,
+            self.plotmeshpanel.minmotor2,
+            self.plotmeshpanel.maxmotor2,
         ) = scancommandextremmotorspositions
 
-        self.plot.xylabels = ("column index", "row index")
-        self.plot.datatype = "scalar"
+        self.plotmeshpanel.xylabels = ("column index", "row index")
+        self.plotmeshpanel.datatype = "scalar"
 
-        if self.plot.colorbar is not None:
-            self.plot.colorbar_label = detectorname
-            (self.plot.myplot, self.plot.colorbar, self.plot.data) = makefig_update(
-                self.plot.fig, self.plot.myplot, self.plot.colorbar, data_z_values)
+        if self.plotmeshpanel.colorbar is not None:
+            self.plotmeshpanel.colorbar_label = detectorname
+            (self.plotmeshpanel.myplot, self.plotmeshpanel.colorbar, self.plotmeshpanel.data) = makefig_update(
+                self.plotmeshpanel.fig, self.plotmeshpanel.myplot, self.plotmeshpanel.colorbar, data_z_values)
         else:
-            print("self.plot.colorbar is None")
-            self.plot.create_axes()
+            print("self.plotmeshpanel.colorbar is None")
+            self.plotmeshpanel.create_axes()
 
-            self.plot.calc_norm_minmax_values(self.plot.data)
-            self.plot.clear_axes_create_imshow()
+            self.plotmeshpanel.calc_norm_minmax_values(self.plotmeshpanel.data)
+            self.plotmeshpanel.clear_axes_create_imshow()
 
         # reset ticks and motors positions  ---------------
 
-        self.plot.draw_fig()
+        self.plotmeshpanel.draw_fig()
         return
 
     def onToggle(self, event):
@@ -650,77 +860,20 @@ class MainFrame(wx.Frame):
         """
         print("\nupdated: ")
         print(time.ctime())
+        if self.scantype in ('mesh',):
+            scan_index = self.scan_index_mesh
+        elif self.scantype in ('ascan',):
+            scan_index = self.scan_index_ascan
+
         if self.scan_in_progress:
-            self.scan_in_progress = self.ReadScan_SpecFile(self.scan_index)
+            self.scan_in_progress = self.ReadScan_SpecFile(scan_index, resetlistcounters=False)
             return True
         else:
-            print("waiting for data  for scan :%d" % self.scan_index)
+            print("waiting for data  for scan :%d" % scan_index)
             # stop the first timer
             return False
 
-    #     def onStopTimer(self, evt):
-    #         self.timer.Stop()
-    #         print "EVT_TIMER timer stoped\n"
-    # #         del self.timer
-    #         self.stopbtn.Disable()
-    #         self.scan_in_progress = False
-    #         self.toggleBtn.SetLabel("OnLinePlot")
-    #         self.OnFlyMode = False
-
-    def onOnlinePlot(self, evt):
-        """
-        not used
-        """
-        USETHREAD = 1
-        if USETHREAD:
-            # with a thread 2----------------------------------------
-            from . GUI import threadGUI2 as TG
-
-            self.worker = None
-            self.results = None
-            self.scan_in_progress = True
-            fctparams = [self.update2, (evt,), {}]
-
-            self.TGframe = TG.ThreadHandlingFrame(self,
-                                                    -1,
-                                                    threadFunctionParams=fctparams,
-                                                    parentAttributeName_Result="results",
-                                                    parentNextFunction=self.plot.canvas.draw)
-            self.TGframe.OnStart(1)
-            self.TGframe.Show(True)
-
-            # will set self.UBs_MRs to the output of INDEX.getUBs_and_MatchingRate
-            return
-
-    def update2(self, _, worker=None):
-        """
-        not used
-        update at each time step time
-        """
-        print("\nupdated: ")
-        print(time.ctime())
-        WORKEREXISTS = False
-        if worker is not None:
-            WORKEREXISTS = True
-        while self.scan_in_progress:
-            self.scan_in_progress = self.ReadScan_SpecFile(self.scan_index)
-            if WORKEREXISTS and self.scan_in_progress:
-                if worker._want_abort:
-                    self.scan_in_progress = False
-                    worker.callbackfct(None)
-                    return
-
-            print("waiting for data  for scan :%d" % self.scan_index)
-        if WORKEREXISTS:
-            worker.fctOutputResults = "OK"
-
-            print("finished!")
-            print("setting worker.fctOutputResults to", worker.fctOutputResults)
-            worker.callbackfct("COMPLETED")
-        return "OK"
-
-
-def makefig_update(fig, myplot, cbar, data):
+def makefig_update(fig, myplot, cbar, data, datadim=2):
     if myplot:
         print("\n\n\nmyplot exists\n\n\n")
         # data *= 2  # change data, so there is change in output (look at colorbar)
@@ -729,10 +882,34 @@ def makefig_update(fig, myplot, cbar, data):
         # cbar.update_normal(myplot) #cbar is updated automatically
     else:
         ax = fig.add_subplot(111)
-        myplot = ax.imshow(data)
-        cbar = fig.colorbar(myplot)
+        if datadim == 2:
+            myplot = ax.imshow(data)
+            cbar = fig.colorbar(myplot)
+        else:
+            datax, datay = data
+            myplot = ax.plot(datax, datay)
     return myplot, cbar, data
 
+def getascan_from_specfile(filename):
+    print("getascan_from_specfile")
+    f = open(filename, "r")
+    listascan = []
+
+    linepos = 0
+    while 1:
+        line = f.readline()
+        if not line:
+            break
+        if line.startswith("#S"):
+            #             print "line", line
+            linesplit = line.split()
+            if linesplit[2] == "ascan":
+                #                 print "line", line
+                scan_index = int(linesplit[1])
+                listascan.append([scan_index, linepos, f.tell(), line])
+
+        linepos += 1
+    return listascan
 
 def getmeshscan_from_specfile(filename):
     print("getmeshscan_from_specfile")
@@ -762,13 +939,221 @@ def getmeshscan_from_specfile(filename):
 
     return listmesh
 
+class PlotPanel(wx.Panel):
+    """
+    Class to show 1D array intensity data
+    """
+
+    def __init__(self, parent, _id, title, dataarray, posarray_motors=None,
+                                                        posmotorname=None,
+                                                        datatype="scalar",
+                                                        Imageindices=None,
+                                                        absolute_motorposition_unit="micron",
+                                                        colorbar_label="Fluo counts",
+                                                        stepindex=1,
+                                                        xylabels=None):
+        """
+        plot 1D plot of dataarray
+        """
+
+        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+
+        self.parent = parent
+        print("parent", parent)
+
+        self.frameparent = parent.GetParent()
+
+        self.data = dataarray
+        self.data_to_Display = self.data
+
+        self.title = title
+        self.datatype = datatype
+
+        self.posarray_motors = posarray_motors
+        self.posmotorname = posmotorname
+        self.detectorname = 'default'
+
+        self.init_figurecanvas()
+        self.create_main_panel()
+
+        self.create_axes()
+        self.calc_norm_minmax_values(self.data)
+
+        self.clear_axes_create_plot1D()
+
+        self.draw_fig()
+
+    def draw_fig(self):
+        print("in draw_fig()    ascan")
+        self.fig.set_canvas(self.canvas)
+
+        # reset ticks and motors positions  ---------------
+
+        self.canvas.draw()
+
+    def init_figurecanvas(self):
+        self.dpi = 100
+        self.figsize = 4
+        self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi)
+        self.canvas = FigCanvas(self, -1, self.fig)
+        self.canvas.mpl_connect("key_press_event", self.onKeyPressed)
+        self.canvas.mpl_connect("button_press_event", self.onClick)
+
+    def create_axes(self):
+        self.axes = self.fig.add_subplot(111)
+
+    def create_main_panel(self):
+        """
+        set main panel of PlotPanel
+        """
+        self.toolbar = NavigationToolbar(self.canvas)
+        self.normalizechckbox = wx.CheckBox(self, -1, "Normalize")
+        self.normalizechckbox.SetValue(False)
+        self.normalizechckbox.Bind(wx.EVT_CHECKBOX, self.OnNormalizeData)
+
+        self.I0offsettxt = wx.StaticText(self, -1, "Mon. offset (cts/sec) ")
+        self.I0offsetctrl = wx.TextCtrl(self, -1, "0.0")
+
+        self.scaletype = "Linear"
+        scaletxt = wx.StaticText(self, -1, "Scale")
+        self.comboscale = wx.ComboBox(self, -1, self.scaletype, choices=["Linear", "Log10"],
+                                                                            size=(-1, 40))
+
+        self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
+        countertxt = wx.StaticText(self, -1, "counter")
+
+        print("self.frameparent.columns_name", self.frameparent.columns_name)
+        sortedcounterslist = sorted(self.frameparent.columns_name)
+        self.frameparent.columns_name.sort()
+        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname_ascan, #choices=sortedcounterslist,
+                                                        choices=self.frameparent.columns_name,
+                                                        size=(-1, 40), #style=wx.CB_READONLY)
+                                                        style=wx.TE_PROCESS_ENTER)
+
+        self.combocounters.Bind(wx.EVT_COMBOBOX, self.OnChangeCounter)
+        self.combocounters.Bind(wx.EVT_TEXT_ENTER, self.OnChangeCounter)
+
+        # --- --------layout
+        htoolbar2 = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar2.Add(countertxt, 0)
+        htoolbar2.Add(self.combocounters, 0)
+        htoolbar2.Add(self.normalizechckbox, 0)
+        htoolbar2.Add(self.I0offsettxt, 0)
+        htoolbar2.Add(self.I0offsetctrl, 0)
+
+        htoolbar = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar.Add(self.toolbar, 0)
+        htoolbar.Add(scaletxt, 0)
+        htoolbar.Add(self.comboscale, 0)
+
+        self.vbox = wx.BoxSizer(wx.VERTICAL)
+        self.vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.vbox.Add(htoolbar2, 0, wx.EXPAND)
+        self.vbox.Add(htoolbar, 0, wx.EXPAND)
+
+        self.SetSizer(self.vbox)
+
+    def OnAbout(self, event):
+        pass
+
+    def OnNormalizeData(self, _):
+        pass
+
+        self.frameparent.normalizeintensity = not self.frameparent.normalizeintensity
+
+        # self.frameparent.MonitorOffset = float(self.I0offsetctrl.GetValue())
+
+        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_ascan, resetlistcounters=False)
+
+        # TODO: divide self.data_to_display by monitor data or other counter
+
+    def onClick(self, event):
+        """ onclick
+        """
+        pass
+        # print(event.button)
+        # if event.inaxes:
+        #     self.centerx, self.centery = event.xdata, event.ydata
+        #     print("current clicked positions", self.centerx, self.centery)
+        # if event.button == 3:
+        #     self.movingxy(False)
+
+    def onKeyPressed(self, event):
+        pass
+
+        # key = event.key
+        # print("key ==> ", key)
+
+        # if key == "escape":
+
+        #     ret = wx.MessageBox("Are you sure to quit?", "Question",
+        #                             wx.YES_NO | wx.NO_DEFAULT, self)
+
+        #     if ret == wx.YES:
+        #         self.Close()
+
+        # elif key == "p":  # 'p'
+
+        #     self.movingxy(True)
+
+        #     return
+
+    def OnChangeScale(self, _):
+        self.scaletype = str(self.comboscale.GetValue())
+        self.normalizeplot()
+        self.canvas.draw()
+
+    def OnChangeCounter(self, _):
+        self.detectorname = self.combocounters.GetValue()
+
+        self.frameparent.detectorname_ascan = self.detectorname
+
+        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_ascan, resetlistcounters=False)
+
+    def normalizeplot(self):
+        #TODO: 
+        pass
+
+    def OnSave(self, _):
+        # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
+        #    self.OnSave(event)
+        if self.askUserForFilename():
+            fig = self.plotmeshpanel.get_figure()
+            fig.savefig(os.path.join(str(self.dirname), str(self.filename)))
+            print("Image saved in ", os.path.join(self.dirname, self.filename) + ".png")
+
+    def calc_norm_minmax_values(self, data):
+
+        self.data_to_Display = data
+
+    def clear_axes_create_plot1D(self):
+        """
+        init axes
+        """
+        if self.data_to_Display is None:
+            return
+
+        # clear the axes and replot everything
+        self.axes.cla()
+        self.axes.set_title(self.title)
+        #         self.axes.set_autoscale_on(True)
+        if self.datatype == "scalar":
+
+            print("ploting")
+
+            print("self.data_to_Display.shape", self.data_to_Display.shape)
+            self.myplot = self.axes.plot(self.posarray_motors, self.data_to_Display)
+            self.axes.grid(True)
+            self.axes.set_xlabel(self.posmotorname)
+            self.axes.set_ylabel(self.detectorname)
+
 
 class ImshowPanel(wx.Panel):
     """
     Class to show 2D array intensity data
     """
 
-    def __init__( self, parent, _id, title, dataarray, posarray_twomotors=None,
+    def __init__(self, parent, _id, title, dataarray, posarray_twomotors=None,
                                                         posmotorname=(None, None),
                                                         datatype="scalar",
                                                         absolutecornerindices=None,
@@ -844,7 +1229,7 @@ class ImshowPanel(wx.Panel):
         self.draw_fig()
 
     def draw_fig(self):
-        print("in draw_fig()")
+        print("in draw_fig()   mesh scan")
 
         self.set_motorspositions_parameters()
         #         print "self.fromindex_to_pixelpos_x", self.fromindex_to_pixelpos_x
@@ -899,8 +1284,6 @@ class ImshowPanel(wx.Panel):
         #         self.fig.canvas.mpl_connect('motion_notify_event', self.onMotion_ToolTip)
 
         self.toolbar = NavigationToolbar(self.canvas)
-
-        #         self.calc_norm_minmax_values()
 
         self.IminDisplayed = 0
         self.ImaxDisplayed = 100
@@ -964,7 +1347,7 @@ class ImshowPanel(wx.Panel):
 
         print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
-        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname,
+        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname_mesh,
                                                         choices=sortedcounterslist,
                                                         size=(-1, 40),
                                                         style=wx.TE_PROCESS_ENTER)
@@ -1030,7 +1413,7 @@ class ImshowPanel(wx.Panel):
 
         self.frameparent.MonitorOffset = float(self.I0offsetctrl.GetValue())
 
-        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index)
+        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_mesh, resetlistcounters=False)
 
     def onClick(self, event):
         """ onclick
@@ -1063,27 +1446,21 @@ class ImshowPanel(wx.Panel):
 
                 print(
                     "SPEC COMMAND:\nmv %s %.5f %s %.5f"
-                    % (
-                        self.motor1name,
+                    % (self.motor1name,
                         current_posmotor1,
                         self.motor2name,
-                        current_posmotor2,
-                    )
-                )
+                        current_posmotor2))
 
                 sentence = (
                     "%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
-                    % (
-                        self.motor1name,
+                    % (self.motor1name,
                         current_posmotor1,
                         self.motor2name,
                         current_posmotor2,
                         self.motor1name,
                         current_posmotor1,
                         self.motor2name,
-                        current_posmotor2,
-                    )
-                )
+                        current_posmotor2))
 
                 command = "mv %s %.5f %s %.5f" % (self.motor1name,
                                                 current_posmotor1,
@@ -1094,14 +1471,8 @@ class ImshowPanel(wx.Panel):
                     wx.MessageBox(sentence + "\n" + command, "INFO")
 
                 # WARNING could do some instabilities to station ??
-                msgdialog = MessageCommand(
-                    self,
-                    -1,
-                    "motors command",
-                    sentence=sentence,
-                    speccommand=command,
-                    specconnection=None,
-                )
+                msgdialog = MessageCommand( self, -1, "motors command",
+                    sentence=sentence, speccommand=command, specconnection=None)
                 msgdialog.ShowModal()
 
     def onKeyPressed(self, event):
@@ -1152,13 +1523,12 @@ class ImshowPanel(wx.Panel):
         self.canvas.draw()
 
     def OnChangeCounter(self, _):
-        #         print "OnChangeCounter"
 
         self.detectorname = self.combocounters.GetValue()
 
-        self.frameparent.detectorname = self.detectorname
+        self.frameparent.detectorname_mesh = self.detectorname
 
-        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index)
+        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_mesh, resetlistcounters=False)
 
     def OnSliderMin(self, _):
 
@@ -1198,20 +1568,12 @@ class ImshowPanel(wx.Panel):
         # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
         #    self.OnSave(event)
         if self.askUserForFilename():
-            fig = self.plotPanel.get_figure()
+            fig = self.plotmeshpanel.get_figure()
             fig.savefig(os.path.join(str(self.dirname), str(self.filename)))
             print("Image saved in ", os.path.join(self.dirname, self.filename) + ".png")
 
     def calc_norm_minmax_values(self, data):
-        #         if self.posarray_twomotors is not None:
-        #             self.maxvals = np.amax(self.posarray_twomotors)
-        #             self.minvals = np.amin(self.posarray_twomotors)
-        #
-        #
-        # #             print 'self.posarray_twomotors', self.posarray_twomotors
-        #             print 'self.posarray_twomotors max ', self.maxvals
-        #             print 'self.posarray_twomotors min ', self.minvals
-
+ 
         self.data_to_Display = data
         self.cNorm = None
 
@@ -1264,14 +1626,12 @@ class ImshowPanel(wx.Panel):
             print("ploting")
 
             print("self.data_to_Display.shape", self.data_to_Display.shape)
-            self.myplot = self.axes.imshow(
-                self.data_to_Display,
-                cmap=self.cmap,
-                interpolation="nearest",
-                norm=self.cNorm,
-                aspect="equal",
-                #                              extent=self.extent,
-                origin=self.origin)
+            self.myplot = self.axes.imshow(self.data_to_Display, cmap=self.cmap,
+                                            interpolation="nearest",
+                                            norm=self.cNorm,
+                                            aspect="equal",
+                                            #                              extent=self.extent,
+                                            origin=self.origin)
 
             if self.XORIGINLIST[self.flagxorigin % 2] == "right":
                 self.axes.set_xlim(self.axes.get_xlim()[::-1])
@@ -1338,6 +1698,8 @@ class ImshowPanel(wx.Panel):
 
         print("first motor total range", rangeX)
         print("second motor total range", rangeY)
+
+        print('self.data.shape ...>', self.data.shape)
 
         self.numrows, self.numcols = self.data.shape[:2]
 
@@ -1421,14 +1783,8 @@ class ImshowPanel(wx.Panel):
                 #                 print "posmotor1[col],posmotor2[row]", posmotor1[col], posmotor2[row]
 
                 sentence0 = ("j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], z_intensity = %s, ImageIndex: %d"
-                                % (col,
-                                    row,
-                                    self.motor1name,
-                                    posmotor1[col],
-                                    self.motor2name,
-                                    posmotor2[row],
-                                    str(z),
-                                    Imageindex))
+                                % (col, row, self.motor1name, posmotor1[col],
+                                    self.motor2name, posmotor2[row], str(z), Imageindex))
 
                 sentence = "POSITION (micron) from: "
                 sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % (self.motor1name,
