@@ -107,8 +107,6 @@ class PlotRangePanel(wx.Panel):
 
         openbtn = wx.Button(self, -1, "Import Spots List", (5, 5), (200, 60))
         openbtn.SetFont(font3)
-        
-
 
         t1 = wx.StaticText(self, -1, "2theta Range:")
         t2 = wx.StaticText(self, -1, "Chi Range:")
@@ -116,7 +114,7 @@ class PlotRangePanel(wx.Panel):
         self.mean2theta = wx.TextCtrl(self, -1, "90", (40, -1))
         self.meanchi = wx.TextCtrl(self, -1, "0", (40, -1))
         pm1 = wx.StaticText(self, -1, "+/-")
-        pm2 =wx.StaticText(self, -1, "+/-")
+        pm2 = wx.StaticText(self, -1, "+/-")
         self.range2theta = wx.TextCtrl(self, -1, "45")
         self.rangechi = wx.TextCtrl(self, -1, "40")
 
@@ -133,34 +131,34 @@ class PlotRangePanel(wx.Panel):
         t5 = wx.StaticText(self, -1, "SpotSize")
         self.spotsizefactor = wx.TextCtrl(self, -1, "1.")
 
-        # Warning button id is 52 and used 
+        # Warning button id is 52 and used
         b3 = wx.Button(self, 52, "Update Plot")
 
         # layout
-        h1box=wx.BoxSizer(wx.HORIZONTAL)
-        h1box.Add(t1,0, wx.EXPAND,10)
-        h1box.Add(self.mean2theta,0, wx.EXPAND,10)
-        h1box.Add(pm1,0, wx.EXPAND,10)
-        h1box.Add(self.range2theta,0, wx.EXPAND,10)
+        h1box = wx.BoxSizer(wx.HORIZONTAL)
+        h1box.Add(t1, 0, wx.EXPAND, 10)
+        h1box.Add(self.mean2theta, 0, wx.EXPAND, 10)
+        h1box.Add(pm1, 0, wx.EXPAND, 10)
+        h1box.Add(self.range2theta, 0, wx.EXPAND, 10)
 
-        h2box=wx.BoxSizer(wx.HORIZONTAL)
-        h2box.Add(t2,0, wx.EXPAND,10)
-        h2box.Add(self.meanchi,0, wx.EXPAND,10)
-        h2box.Add(pm2,0, wx.EXPAND,10)
-        h2box.Add(self.rangechi,0, wx.EXPAND,10)
+        h2box = wx.BoxSizer(wx.HORIZONTAL)
+        h2box.Add(t2, 0, wx.EXPAND, 10)
+        h2box.Add(self.meanchi, 0, wx.EXPAND, 10)
+        h2box.Add(pm2, 0, wx.EXPAND, 10)
+        h2box.Add(self.rangechi, 0, wx.EXPAND, 10)
 
-        h3box=wx.BoxSizer(wx.HORIZONTAL)
-        h3box.Add(t5,0, wx.EXPAND,10)
-        h3box.Add(self.spotsizefactor,0, wx.EXPAND,10)
+        h3box = wx.BoxSizer(wx.HORIZONTAL)
+        h3box.Add(t5, 0, wx.EXPAND, 10)
+        h3box.Add(self.spotsizefactor, 0, wx.EXPAND, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(10)
-        vbox.Add(openbtn,0, wx.EXPAND,10)
-        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(self.shiftChiOrigin,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h3box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(b3,0, wx.EXPAND,10)
+        vbox.Add(openbtn, 0, wx.EXPAND, 10)
+        vbox.Add(h1box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h2box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(self.shiftChiOrigin, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h3box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(b3, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
 
@@ -308,42 +306,42 @@ class CrystalParamPanel(wx.Panel):
         # layout
 
         h1box=wx.BoxSizer(wx.HORIZONTAL)
-        h1box.Add(t1,0, wx.EXPAND|wx.ALL,10)
-        h1box.Add(self.eminC,0, wx.EXPAND|wx.ALL,10)
-        h1box.Add(self.emaxC,0, wx.EXPAND|wx.ALL,10)
+        h1box.Add(t1, 0, wx.EXPAND|wx.ALL, 10)
+        h1box.Add(self.eminC, 0, wx.EXPAND|wx.ALL, 10)
+        h1box.Add(self.emaxC, 0, wx.EXPAND|wx.ALL, 10)
 
         h2box=wx.BoxSizer(wx.HORIZONTAL)
-        h2box.Add(t2,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(self.comboElem,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(t2, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.comboElem, 0, wx.EXPAND|wx.ALL, 10)
 
         h3box=wx.BoxSizer(wx.HORIZONTAL)
-        h3box.Add(t3,0, wx.EXPAND|wx.ALL,10)
-        h3box.Add(self.comboBmatrix,0, wx.EXPAND|wx.ALL,10)
+        h3box.Add(t3, 0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(self.comboBmatrix, 0, wx.EXPAND|wx.ALL, 10)
 
         h4box=wx.BoxSizer(wx.HORIZONTAL)
-        h4box.Add(t4,0, wx.EXPAND|wx.ALL,10)
-        h4box.Add(self.comboMatrix,0, wx.EXPAND|wx.ALL,10)
-        h4box.Add(self.btn_mergeUB,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(t4, 0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.comboMatrix, 0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.btn_mergeUB, 0, wx.EXPAND|wx.ALL, 10)
 
         h5box=wx.BoxSizer(wx.HORIZONTAL)
-        h5box.Add(t5,0, wx.EXPAND|wx.ALL,10)
-        h5box.Add(self.comboExtinctions,0, wx.EXPAND,10)
+        h5box.Add(t5, 0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.comboExtinctions, 0, wx.EXPAND, 10)
 
         h6box=wx.BoxSizer(wx.HORIZONTAL)
-        h6box.Add(b1,1, wx.EXPAND|wx.ALL,10)
-        h6box.Add(b2,1, wx.EXPAND|wx.ALL,10)
-        h6box.Add(btn_sortUBsname,0, wx.EXPAND|wx.ALL,10)
-        h6box.Add(btnReloadMaterials,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(b1,1, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(b2,1, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(btn_sortUBsname, 0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(btnReloadMaterials, 0, wx.EXPAND|wx.ALL, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(10)
-        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h3box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h4box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h5box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h6box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(b3,0, wx.EXPAND,10)
+        vbox.Add(h1box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h2box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h3box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h4box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h5box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h6box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(b3, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
         # tootips
@@ -489,18 +487,18 @@ class CCDParamPanel(wx.Panel):
 
         # layout
         h1box=wx.BoxSizer(wx.HORIZONTAL)
-        h1box.Add(txtpixelsize,0, wx.EXPAND|wx.ALL,10)
-        h1box.Add(self.pixelsize_txtctrl,0, wx.EXPAND|wx.ALL,10)
+        h1box.Add(txtpixelsize, 0, wx.EXPAND|wx.ALL, 10)
+        h1box.Add(self.pixelsize_txtctrl, 0, wx.EXPAND|wx.ALL, 10)
 
         h2box=wx.BoxSizer(wx.HORIZONTAL)
-        h2box.Add(txtdetdiam,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(self.detectordiameter_txtctrl,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(txtdetdiam, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.detectordiameter_txtctrl, 0, wx.EXPAND|wx.ALL, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(10)
-        vbox.Add(h1box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(h2box,0, wx.EXPAND|wx.ALL,10)
-        vbox.Add(btnaccept,0, wx.EXPAND|wx.ALL,10)
+        vbox.Add(h1box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h2box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(btnaccept, 0, wx.EXPAND|wx.ALL, 10)
 
         self.SetSizer(vbox)
 
@@ -608,7 +606,7 @@ class MoveCCDandXtal(wx.Panel):
         t1 = wx.StaticText(self, -1, "Sample-Detector Distance")
         b10 = wx.Button(self, 10, "-", (20, -1))
         b11 = wx.Button(self, 11, "+", (20, -1))
-        st1=wx.StaticText(self, -1, "step(mm)")
+        st1 = wx.StaticText(self, -1, "step(mm)")
         self.stepdistance = wx.TextCtrl(self, -1, "0.5", (30, -1))
         self.cb_dd = wx.CheckBox(self, -1, "fit")
         self.cb_dd.SetValue(True)
@@ -616,55 +614,55 @@ class MoveCCDandXtal(wx.Panel):
         t2 = wx.StaticText(self, -1, "X center")
         b20 = wx.Button(self, 20, "-", (20, -1))
         b21 = wx.Button(self, 21, "+", (20, -1))
-        st2=wx.StaticText(self, -1, "step(pixel)")
+        st2 = wx.StaticText(self, -1, "step(pixel)")
         self.stepXcen = wx.TextCtrl(self, -1, "20.", (30, -1))
         self.cb_Xcen = wx.CheckBox(self, -1, "fit")
         self.cb_Xcen.SetValue(True)
 
-        t3=wx.StaticText(self, -1, "Y center")
-        b30=wx.Button(self, 30, "-", (20, -1))
-        b31=wx.Button(self, 31, "+", (20, -1))
-        st3=wx.StaticText(self, -1, "step(pixel)")
+        t3 = wx.StaticText(self, -1, "Y center")
+        b30 = wx.Button(self, 30, "-", (20, -1))
+        b31 = wx.Button(self, 31, "+", (20, -1))
+        st3 = wx.StaticText(self, -1, "step(pixel)")
         self.stepYcen = wx.TextCtrl(self, -1, "20.",(30, -1))
         self.cb_Ycen = wx.CheckBox(self, -1, "fit")
         self.cb_Ycen.SetValue(True)
 
-        t4=wx.StaticText(self, -1, "Angle xbet")
-        b40=wx.Button(self, 40, "-", (20, -1))
-        b41=wx.Button(self, 41, "+", (20, -1))
-        st4=wx.StaticText(self, -1, "step(deg)")
+        t4 = wx.StaticText(self, -1, "Angle xbet")
+        b40 = wx.Button(self, 40, "-", (20, -1))
+        b41 = wx.Button(self, 41, "+", (20, -1))
+        st4 = wx.StaticText(self, -1, "step(deg)")
         self.stepang1 = wx.TextCtrl(self, -1, "1.", (30, -1))
         self.cb_angle1 = wx.CheckBox(self, -1, "fit")
         self.cb_angle1.SetValue(True)
 
-        t5=wx.StaticText(self, -1, "Angle xgam")
-        b50=wx.Button(self, 50, "-", (20, -1))
-        b51=wx.Button(self, 51, "+", (20, -1))
-        st5=wx.StaticText(self, -1, "step(deg)")
+        t5 = wx.StaticText(self, -1, "Angle xgam")
+        b50 = wx.Button(self, 50, "-", (20, -1))
+        b51 = wx.Button(self, 51, "+", (20, -1))
+        st5 = wx.StaticText(self, -1, "step(deg)")
         self.stepang2 = wx.TextCtrl(self, -1, "1.", (30, -1))
         self.cb_angle2 = wx.CheckBox(self, -1, "fit")
         self.cb_angle2.SetValue(True)
 
         # Angles buttons - crystal orientation
         a1 = wx.StaticText(self, -1, "Angle 1")
-        b1000=wx.Button(self, 1000, "-", (20, -1))
-        b1100=wx.Button(self, 1100, "+", (20, -1))
+        b1000 = wx.Button(self, 1000, "-", (20, -1))
+        b1100 = wx.Button(self, 1100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, 30))
         self.angle1 = wx.TextCtrl(self, -1, "1.", (35, -1))
         self.cb_theta1 = wx.CheckBox(self, -1, "fit", )
         self.cb_theta1.SetValue(True)
 
         a2 = wx.StaticText(self, -1, "Angle2")
-        b2000=wx.Button(self, 2000, "-", (20, -1))
-        b2100=wx.Button(self, 2100, "+", (20, -1))
+        b2000 = wx.Button(self, 2000, "-", (20, -1))
+        b2100 = wx.Button(self, 2100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, pos2+20))
         self.angle2 = wx.TextCtrl(self, -1, "1.", (35, -1))
         self.cb_theta2 = wx.CheckBox(self, -1, "fit")
         self.cb_theta2.SetValue(True)
 
         a3 = wx.StaticText(self, -1, "Angle 3")
-        b3000=wx.Button(self, 3000, "-", (20, -1))
-        b3100=wx.Button(self, 3100, "+", (20, -1))
+        b3000 = wx.Button(self, 3000, "-", (20, -1))
+        b3100 = wx.Button(self, 3100, "+", (20, -1))
         # wx.StaticText(self, -1, 'step(deg)',(960, pos3+20))
         self.angle3 = wx.TextCtrl(self, -1, "1.", (35, -1))
         self.cb_theta3 = wx.CheckBox(self, -1, "fit")
@@ -682,67 +680,67 @@ class MoveCCDandXtal(wx.Panel):
                                     self.cb_theta2,
                                     self.cb_theta3]  # delta angle of orientation
         # layout --------------------------------------------
-        hboxes = [0,0,0,0,0]
-        bminus = [b10,b20,b30,b40,b50]
-        bplus = [b11,b21,b31,b41,b51]
-        steps = [st1,st2,st3,st4,st5]
-        steptxtctrls = [self.stepdistance, self.stepXcen,self.stepYcen,self.stepang1,self.stepang2]
+        hboxes = [0, 0, 0, 0, 0]
+        bminus = [b10, b20, b30, b40, b50]
+        bplus = [b11, b21, b31, b41, b51]
+        steps = [st1, st2, st3, st4, st5]
+        steptxtctrls = [self.stepdistance, self.stepXcen, self.stepYcen, self.stepang1, self.stepang2]
         chckboxes = self.listofparamfitctrl[:5]
         for k in range(5):
-            hboxes[k]=wx.BoxSizer(wx.HORIZONTAL)
-            hboxes[k].Add(bminus[k],0, wx.EXPAND|wx.ALL,10)
-            hboxes[k].Add(bplus[k],0, wx.EXPAND|wx.ALL,10)
-            hboxes[k].Add(steps[k],0, wx.EXPAND|wx.ALL,10)
-            hboxes[k].Add(steptxtctrls[k],0, wx.EXPAND|wx.ALL,10)
-            hboxes[k].Add(chckboxes[k],0, wx.EXPAND|wx.ALL,10)
+            hboxes[k] = wx.BoxSizer(wx.HORIZONTAL)
+            hboxes[k].Add(bminus[k], 0, wx.EXPAND|wx.ALL, 10)
+            hboxes[k].Add(bplus[k], 0, wx.EXPAND|wx.ALL, 10)
+            hboxes[k].Add(steps[k], 0, wx.EXPAND|wx.ALL, 10)
+            hboxes[k].Add(steptxtctrls[k], 0, wx.EXPAND|wx.ALL, 10)
+            hboxes[k].Add(chckboxes[k], 0, wx.EXPAND|wx.ALL, 10)
 
-        h2boxes = [0,0,0,0,0]
-        bminus = [b1000,b2000,b3000]
-        bplus = [b1100,b2100,b3100]
-        steptxtctrls = [self.angle1, self.angle2,self.angle3]
+        h2boxes = [0, 0, 0, 0, 0]
+        bminus = [b1000, b2000, b3000]
+        bplus = [b1100, b2100, b3100]
+        steptxtctrls = [self.angle1, self.angle2, self.angle3]
         chckboxes = self.listofparamfitctrl[5:]
 
         for k in range(3):
-            h2boxes[k]=wx.BoxSizer(wx.HORIZONTAL)
-            h2boxes[k].Add(bminus[k],0, wx.EXPAND|wx.ALL,10)
-            h2boxes[k].Add(bplus[k],0, wx.EXPAND|wx.ALL,10)
-            h2boxes[k].Add(steptxtctrls[k],0, wx.EXPAND|wx.ALL,10)
-            h2boxes[k].Add(chckboxes[k],0, wx.EXPAND|wx.ALL,10)
+            h2boxes[k] = wx.BoxSizer(wx.HORIZONTAL)
+            h2boxes[k].Add(bminus[k], 0, wx.EXPAND|wx.ALL, 10)
+            h2boxes[k].Add(bplus[k], 0, wx.EXPAND|wx.ALL, 10)
+            h2boxes[k].Add(steptxtctrls[k], 0, wx.EXPAND|wx.ALL, 10)
+            h2boxes[k].Add(chckboxes[k], 0, wx.EXPAND|wx.ALL, 10)
 
         hrotbox=wx.BoxSizer(wx.HORIZONTAL)
-        hrotbox.Add(self.rotatebtn,0, wx.EXPAND|wx.ALL,10)
-        hrotbox.Add(st9,0, wx.EXPAND|wx.ALL,10)
-        hrotbox.Add(self.stepanglerot,0, wx.EXPAND|wx.ALL,10)
-        
+        hrotbox.Add(self.rotatebtn, 0, wx.EXPAND|wx.ALL, 10)
+        hrotbox.Add(st9, 0, wx.EXPAND|wx.ALL, 10)
+        hrotbox.Add(self.stepanglerot, 0, wx.EXPAND|wx.ALL, 10)
+
         vdetbox = wx.BoxSizer(wx.VERTICAL)
-        vdetbox.Add(t1,0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(hboxes[0],0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(t2,0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(hboxes[1],0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(t3,0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(hboxes[2],0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(t4,0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(hboxes[3],0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(t5,0, wx.EXPAND|wx.ALL,2)
-        vdetbox.Add(hboxes[4],0, wx.EXPAND|wx.ALL,2)
+        vdetbox.Add(t1, 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(hboxes[0], 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(t2, 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(hboxes[1], 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(t3, 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(hboxes[2], 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(t4, 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(hboxes[3], 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(t5, 0, wx.EXPAND|wx.ALL, 2)
+        vdetbox.Add(hboxes[4], 0, wx.EXPAND|wx.ALL, 2)
 
         vangbox = wx.BoxSizer(wx.VERTICAL)
-        vangbox.Add(a1,0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(h2boxes[0],0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(a2,0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(h2boxes[1],0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(a3,0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(h2boxes[2],0, wx.EXPAND|wx.ALL,2)
-        vangbox.Add(hrotbox,0, wx.EXPAND|wx.ALL,2)
+        vangbox.Add(a1, 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(h2boxes[0], 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(a2, 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(h2boxes[1], 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(a3, 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(h2boxes[2], 0, wx.EXPAND|wx.ALL, 2)
+        vangbox.Add(hrotbox, 0, wx.EXPAND|wx.ALL, 2)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(vdetbox,0, wx.EXPAND|wx.ALL,10)
-        hbox.Add(vangbox,0, wx.EXPAND|wx.ALL,10)
+        hbox.Add(vdetbox, 0, wx.EXPAND|wx.ALL, 10)
+        hbox.Add(vangbox, 0, wx.EXPAND|wx.ALL, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(2)
-        vbox.Add(hbox,0)
-        
+        vbox.Add(hbox, 0)
+
         self.SetSizer(vbox)
 
         # tooltips
@@ -1223,16 +1221,16 @@ class MainCalibrationFrame(wx.Frame):
         self.btnsaveresults = wx.Button(self.panel, 1013, "Save Results", size=(-1, 80))  # produces file with results
         self.Bind(wx.EVT_BUTTON, self.OnWriteResults, id=1013)
 
-        self.startfit = wx.Button(self.panel, 505, "Start FIT", size=(150, 80)) 
+        self.startfit = wx.Button(self.panel, 505, "Start FIT", size=(150, 80))
         self.startfit.SetFont(font3)
         self.Bind(wx.EVT_BUTTON, self.StartFit, id=505)
 
-        self.cb_gotoresults = wx.CheckBox(self.panel, -1, "GOTO fit results")  
-        self.use_weights = wx.CheckBox(self.panel, -1, "use weights")  
+        self.cb_gotoresults = wx.CheckBox(self.panel, -1, "GOTO fit results")
+        self.use_weights = wx.CheckBox(self.panel, -1, "use weights")
         self.use_weights.SetValue(False)
         self.cb_gotoresults.SetValue(True)
 
-        self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(80, 80))  
+        self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(80, 80))
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
         # replot simul button (one button in two panels)
@@ -1366,7 +1364,7 @@ class MainCalibrationFrame(wx.Frame):
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add(self.btnswitchspace, 1, wx.EXPAND|wx.ALL, 5)
         btnSizer.Add(wx.StaticText(self.panel, -1, "    "), 0, wx.ALL, 5)
-        
+
         btnSizer.Add(self.btnautolinks, 1, wx.EXPAND|wx.ALL, 5)
         btnSizer.Add(self.btnmanuallinks, 1, wx.EXPAND|wx.ALL, 5)
         btnSizer.Add(self.btnshowlinks, 1, wx.EXPAND|wx.ALL, 5)
@@ -1684,7 +1682,7 @@ class MainCalibrationFrame(wx.Frame):
             print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
         print('theo', np.array([twicetheta, chi]).T)
-        print('exp' ,np.array([self.twicetheta, self.chi]).T)
+        print('exp' , np.array([self.twicetheta, self.chi]).T)
 
         Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                         self.twicetheta / 2.0,
@@ -2451,7 +2449,7 @@ class MainCalibrationFrame(wx.Frame):
     #         helptstr += 'Or list of Matrices'
     #         dlg = wx.TextEntryDialog(self, helptstr, 'Calibration- Orientation Matrix elements Entry')
     #
-    #         _param = '[[1,0,0],[0, 1,0],[0, 0,1]]'
+    #         _param = '[[1, 0, 0],[0, 1, 0],[0, 0,1]]'
     #         dlg.SetValue(_param)
     #         if dlg.ShowModal() == wx.ID_OK:
     #             paramraw = str(dlg.GetValue())
@@ -2490,7 +2488,7 @@ class MainCalibrationFrame(wx.Frame):
         helptstr += "Or list of Matrices"
         dlg = wx.TextEntryDialog(self, helptstr, "Calibration- Orientation Matrix elements Entry")
 
-        _param = "[[1,0,0],[0, 1,0],[0, 0,1]]"
+        _param = "[[1, 0, 0],[0, 1, 0],[0, 0,1]]"
         dlg.SetValue(_param)
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
@@ -2715,7 +2713,7 @@ class MainCalibrationFrame(wx.Frame):
     def OnDecreaseAngle2(self, event):
         """decrease angle1  (rotation around X axis LaueTools = incoming beam)"""
         a2 = float(self.moveccdandxtal.angle2.GetValue()) * DEG
-        # mat = np.array([[math.cos(a2),0, math.sin(-a2)],[0, 1,0],[math.sin(a2),0, math.cos(a2)]])  #in LaueTools Frame
+        # mat = np.array([[math.cos(a2), 0, math.sin(-a2)],[0, 1, 0],[math.sin(a2), 0, math.cos(a2)]])  #in LaueTools Frame
         mat = np.array([[1, 0, 0],
                         [0, math.cos(a2), -math.sin(a2)],
                         [0, math.sin(a2), math.cos(a2)]])  # in XMAS and fitOrient
@@ -2727,7 +2725,7 @@ class MainCalibrationFrame(wx.Frame):
     def OnIncreaseAngle2(self, event):
 
         a2 = float(self.moveccdandxtal.angle2.GetValue()) * DEG
-        # mat = np.array([[math.cos(a2),0, math.sin(a2)],[0, 1,0],[-math.sin(a2),0, math.cos(a2)]]) in LaueTools Frame
+        # mat = np.array([[math.cos(a2), 0, math.sin(a2)],[0, 1, 0],[-math.sin(a2), 0, math.cos(a2)]]) in LaueTools Frame
         mat = np.array([[1, 0, 0],
                         [0, math.cos(a2), math.sin(a2)],
                         [0, math.sin(-a2), math.cos(a2)]])  # in XMAS and fitOrient
@@ -2882,7 +2880,7 @@ class MainCalibrationFrame(wx.Frame):
             if self.kf_direction in ("Z>0", "X>0", 'X<0') and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
                 print('SINGLEGRAIN')
-                print(self.CCDParam[:5],self.kf_direction, removeharmonics,pixelsize,self.framedim)
+                print(self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
 
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,

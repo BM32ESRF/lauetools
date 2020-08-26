@@ -1809,17 +1809,20 @@ def createselecteddata(tupledata_theta_chi_I, _listofselectedpts, _indicespotmax
     return (_dataselected, _nbmax)
 
 
-def ReadSpec(fname, scan):
+def ReadSpec(fname, scan, outputdate=False):
     """
     Procedure very based on that of Vincent Favre Nicolin procedure
+
+    return :
+    scan title = spec command (str), dict of data (key=counter name, val= values), [data (str)]
     """
     f = open(fname, "r")
 
-    s = "#S %i" % scan
+    s = "#S %d" % scan
     title = 0
 
     bigmca = []
-
+    # spec command with motors, steps and exposure
     while 1:
         title = f.readline()
         if s == title[0 : len(s)]:
@@ -1827,6 +1830,17 @@ def ReadSpec(fname, scan):
         if len(title) == 0:
             break
     print(title)
+    # date -----------------
+    date = 'unknown'
+    s = "#D"
+    while 1:
+        line = f.readline()
+        if s == line[0:len(s)]:
+            date = line[3:]
+            break
+        if len(line) == 0:
+            break
+    # data   (dict with key= counter column name) -------------
     s = "#L"
     coltit = 0
 
@@ -1901,8 +1915,10 @@ def ReadSpec(fname, scan):
             a[j] = d[coltit[i]][j]
         d[coltit[i]] = deepcopy(a)
     f.close()
-
-    return title, d
+    if outputdate:
+        return title, d, date
+    else:
+        return title, d
 
 
 # --- -----  read write Parameters file

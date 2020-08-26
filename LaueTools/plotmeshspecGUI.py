@@ -60,22 +60,39 @@ else:
     import generaltools as GT
     from IOLaueTools import ReadSpec
 
+import wx.lib.agw.customtreectrl as CT
+
 
 class TreePanel(wx.Panel):
-    def __init__(self, parent, scantype=None, id=wx.ID_ANY):
-        wx.Panel.__init__(self, parent=parent, id=id)
-        #     def __init__(self, parent, id, title):
-        #         wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(450, 350))
-        
+    """ class of tree organisation of scans
+
+    granparent class must provide  ReadScan_SpecFile()
+
+    sets granparent scan_index_mesh  or scan_index_ascan to selected item index
+    """
+    def __init__(self, parent, scantype=None, _id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent=parent, id=_id)
+
         self.parent = parent
         self.scantype = scantype
         self.frameparent = self.parent.GetParent()
-        self.tree = wx.TreeCtrl(self, -1, wx.DefaultPosition, (-1, -1),
-                                                            wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
+        # self.tree = wx.TreeCtrl(self, -1, wx.DefaultPosition, (-1, -1),
+        #                                                     wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
+        # agwStyle=wx.TR_DEFAULT_STYLE
+        self.tree = CT.CustomTreeCtrl(self, -1, agwStyle=wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS | wx.TR_MULTIPLE)
 
         self.maketree()
 
+        # multiple selection ------
+        self.keypressed = None
+        self.multiitems = False
+        self.set_selected_indices = set()
+        self.multipleselectionOn = False
+        # --------------------
+
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
+        #self.tree.Bind(wx.EVT_TREE_SEL_CHANGING, self.OnSelChanged)
+        self.tree.Bind(wx.EVT_TREE_KEY_DOWN, self.OnkeyPressed)
 
         # wx.EVT_TREE_ITEM_RIGHT_CLICK
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -84,26 +101,130 @@ class TreePanel(wx.Panel):
 
         self.SetSizer(vbox)
 
-    #         self.Centre()
-
     def maketree(self):
         self.root = self.tree.AddRoot("SpecFiles")
         self.tree.AppendItem(self.root, str(self.scantype))
 
-    def OnSelChanged(self, event):
-        item = event.GetItem()
-        selected_item = self.tree.GetItemText(item)
-        if selected_item in (str(self.scantype),):
-            return
-        scan_index = int(selected_item)
-        print("click on ", scan_index)
-        print("selected_item ", dir(item))
+    def OnkeyPressed(self, event):
+        #print(dir(event))
+        key = event.GetKeyCode()
+        # print('key pressed is ', key)
+        if key == wx.WXK_SHIFT:
+            self.multiitems = True
+            self.keypressed = 'shift'
+            print('shift')
+            self.set_selected_indices = set()
+        elif key == wx.WXK_RAW_CONTROL:
+            print('ctrl')
+            self.multiitems = True
+            self.keypressed = 'ctrl'
 
-        self.frameparent.ReadScan_SpecFile(scan_index, resetlistcounters=True)
-        if self.scantype == 'MESH':
-            self.frameparent.scan_index_mesh = scan_index
-        elif self.scantype == 'ASCAN':
-            self.frameparent.scan_index_ascan = scan_index
+        elif key == wx.WXK_DOWN:
+            # arrow down
+            if self.scantype == 'ASCAN':
+                nbascans = len(self.frameparent.list_ascanscan_indices)
+                #print('self.frameparent.list_ascanscan_indices', self.frameparent.list_ascanscan_indices)
+                poslastscan = self.frameparent.list_ascanscan_indices.index(self.last_sel_scan_index)
+                #print('poslastscan', poslastscan)
+                newascanindex = self.frameparent.list_ascanscan_indices[min(poslastscan + 1, nbascans - 1)]
+                #print('newascanindex', newascanindex)
+
+                self.OnSelChanged(event, scan_index=newascanindex)
+
+            elif self.scantype == 'MESH':
+                nbmeshes = len(self.frameparent.list_meshscan_indices)
+                #print('self.frameparent.list_meshscan_indices', self.frameparent.list_meshscan_indices)
+                poslastscan = self.frameparent.list_meshscan_indices.index(self.last_sel_scan_index)
+                #print('poslastscan', poslastscan)
+                newmeshindex = self.frameparent.list_meshscan_indices[min(poslastscan + 1, nbmeshes - 1)]
+                #print('newmeshindex', newmeshindex)
+
+                self.OnSelChanged(event, scan_index=newmeshindex)
+
+        elif key == wx.WXK_UP:
+            if self.scantype == 'ASCAN':
+                nbascans = len(self.frameparent.list_ascanscan_indices)
+                poslastscan = self.frameparent.list_ascanscan_indices.index(self.last_sel_scan_index)
+                newascanindex = self.frameparent.list_ascanscan_indices[max(poslastscan - 1, 0)]
+
+                self.OnSelChanged(event, scan_index=newascanindex)
+
+            elif self.scantype == 'MESH':
+                nbmeshes = len(self.frameparent.list_meshscan_indices)
+                poslastscan = self.frameparent.list_meshscan_indices.index(self.last_sel_scan_index)
+                newmeshindex = self.frameparent.list_meshscan_indices[max(poslastscan - 1, 0)]
+
+                self.OnSelChanged(event, scan_index=newmeshindex)
+            
+        elif key in (83, '83','s'):
+            print('\n\ns   !!!!\n\n\n')
+            self.keypressed = 's'
+            self.set_selected_indices = set()
+            self.multipleselectionOn = not self.multipleselectionOn
+            if self.multipleselectionOn and self.scantype == 'ASCAN':
+                self.frameparent.txtselectionmode.SetLabel('Selection Mode: Multi')
+            else:
+                self.frameparent.txtselectionmode.SetLabel('Selection Mode: Single')
+
+            #self.frameparent.ReadMultipleScans(self.set_selected_indices, resetlistcounters=True)
+
+    def OnSelChanged(self, event, scan_index=None):
+
+        if scan_index is None:
+            item = event.GetItem()
+            selected_item = self.tree.GetItemText(item)
+            if selected_item in (str(self.scantype), ):
+                return
+            scan_index = int(selected_item)
+            print("click on ", scan_index)
+            #print("selected_item ", dir(item))
+
+        if self.multipleselectionOn and self.scantype == 'ASCAN': #self.keypressed == 's':
+
+            if self.set_selected_indices is None:
+                self.set_selected_indices=set([scan_index])
+
+                print('first self.set_selected_indices in  selection mode',self.set_selected_indices)
+
+            if scan_index not in self.set_selected_indices:
+
+                self.set_selected_indices.add(scan_index)
+                self.last_sel_scan_index = scan_index
+            else:
+                self.set_selected_indices.remove(scan_index)
+            #print("self.set_selected_indices", self.set_selected_indices)
+            #self.keypressed = None
+
+            print('self.set_selected_indices in  selection mode',self.set_selected_indices)
+
+            self.frameparent.ReadMultipleScans(self.set_selected_indices, resetlistcounters=True)
+
+            print('ssssss')
+
+        elif not self.keypressed in ('shift', 'ctrl'):  # single selection
+            print('Single selection MODE')
+            self.set_selected_indices=set([scan_index])
+
+            self.frameparent.ReadScan_SpecFile(scan_index, resetlistcounters=True)
+            if self.scantype == 'MESH':
+                self.frameparent.scan_index_mesh = scan_index
+            elif self.scantype == 'ASCAN':
+                self.frameparent.scan_index_ascan = scan_index
+                
+            self.last_sel_scan_index = scan_index
+
+        # tooltip----------------
+        speccommand = self.frameparent.scancommand
+        date = self.frameparent.scan_date
+        # print('speccommand', speccommand)
+        # print('date',date)
+        tooltip = "%s %s" % (speccommand, date)
+        #print('tooltip',tooltip)
+        event.GetEventObject().SetToolTipString(tooltip)
+        event.Skip()
+        #------------------
+
+        print("self.set_selected_indices", self.set_selected_indices)
 
 
 # --- ---------------  Plot limits board  parameters
@@ -234,9 +355,9 @@ class MainFrame(wx.Frame):
 
         #         z_values = None
 
-        self.stbar = self.CreateStatusBar(3)
+        self.stbar = self.CreateStatusBar(4)
 
-        self.stbar.SetStatusWidths([180, -1, -1])
+        self.stbar.SetStatusWidths([180, -1, -1, -1])
         #         print dir(self.stbar)
 
         self.stbar0 = wx.StatusBar(self.panel)
@@ -259,11 +380,13 @@ class MainFrame(wx.Frame):
                                 posarray_motors=np.arange(150),
                                 absolute_motorposition_unit="mm")
 
-        self.treemesh = TreePanel(self.panel, scantype="MESH", id=0)
-        self.treeascan = TreePanel(self.panel, scantype="ASCAN", id=1)
+        self.treemesh = TreePanel(self.panel, scantype="MESH", _id=0)
+        self.treeascan = TreePanel(self.panel, scantype="ASCAN", _id=1)
 
         self.updatelistbtn = wx.Button(self.panel, -1, "Update scans list")
         self.updatelistbtn.Bind(wx.EVT_BUTTON, self.onUpdateSpecFile)
+
+        self.txtselectionmode = wx.StaticText(self.panel,-1,'Selection mode: Single')
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
@@ -273,6 +396,7 @@ class MainFrame(wx.Frame):
         # --- ----------tooltip
         self.updatelistbtn.SetToolTipString("Refresh list of scan from spec file")
         self.toggleBtn.SetToolTipString("On/Off Real time plot")
+        self.txtselectionmode.SetToolTipString("Press s to toggle single/multi ascan selection")
         # --- ----------layout
         hbox0 = wx.BoxSizer(wx.HORIZONTAL)
         hbox0.Add(self.treemesh, 1, wx.LEFT | wx.TOP | wx.GROW)
@@ -281,6 +405,7 @@ class MainFrame(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(hbox0, 1, wx.LEFT | wx.TOP | wx.GROW)
         vbox.Add(self.updatelistbtn, 0, wx.BOTTOM)
+        vbox.Add(self.txtselectionmode, 0, wx.BOTTOM)
         vbox.Add(self.toggleBtn, 0, wx.BOTTOM)
         #         vbox.Add(self.stopbtn, 0, wx.BOTTOM)
 
@@ -381,6 +506,10 @@ class MainFrame(wx.Frame):
 
         wx.CallAfter(self.fill_tree)
 
+        self.treemesh.set_selected_indices = set()
+        self.treeascan.set_selected_indices = set()
+
+
     def OnOpenSpecFile(self, _):
         """ in menu :  File/open spec file  """
 
@@ -465,6 +594,8 @@ class MainFrame(wx.Frame):
         print("indstart_newmeshes", indstart_newmeshes)
         self.listmesh = listmeshall[indstart_newmeshes:]
 
+        self.list_meshscan_indices = list_meshscan_indices
+
     def get_listascan(self, fullpathspecfilename):
         samespecfile = False
         if self.specfilename != self.last_specfilename:
@@ -507,6 +638,147 @@ class MainFrame(wx.Frame):
         print("indstart_newascanes", indstart_newascanes)
         self.listascan = listascanall[indstart_newascanes:]
 
+        self.list_ascanscan_indices = list_ascanscan_indices
+
+    def ReadMultipleScans(self, scan_indices, resetlistcounters=True):
+        """
+        read a multiple scans data in spec file and fill data for a updated figure plot
+        """
+        #superimposition of ASCAN only
+        detectorname_ascan = self.detectorname_ascan
+        detectorname_mesh = self.detectorname_mesh
+
+        motorselected = None
+
+        zvalues = []
+        motorsvalues = []
+        scanindexvalues = []
+
+        #self.fullpath_specfile = '/home/micha/LaueProjects/Laue_SpecLogFiles/laue.28Nov18'
+        #scan_indices = np.arange(12,20+1)
+
+        for k, scan_idx in enumerate(scan_indices):
+
+            scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_idx, outputdate=True)
+            tit = str(scanheader)
+
+            self.scantype = tit.split()[2]
+
+            if self.scantype not in ('ascan',):
+                continue
+
+            titlesplit = tit.split()
+            movingmotor = tit.split()[3]
+            # motor names
+            if k == 0:
+                motorselected = movingmotor
+            motor2 = None
+
+            if movingmotor != motorselected:
+                print("moving motor of scan %d (%s )is not %s!"%(scan_idx,movingmotor,motorselected))
+                continue
+            
+            scanindexvalues.append(scan_idx)
+
+            # motor positions
+            posmotor1 = np.fix(data[motorselected] * 100000) / 100000
+
+            # nb of steps in both directions
+            nb1 = int(tit.split()[6]) + 1
+
+            # current nb of collected points in the mesh
+            nbacc = len(data[list(data.keys())[0]])
+            print("nb of points accumulated  :", nbacc)
+
+            counterintensity1D = data[detectorname_ascan]
+
+            if self.normalizeintensity:
+                data_I0 = data["Monitor"]
+                exposureTime = data["Seconds"]
+                datay = counterintensity1D
+
+                # self.MonitorOffset  in counts / sec
+
+                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+
+            print("building arrays [multiple scans]")
+            if nb1 == nbacc:
+                print("scan is finished")
+                data_z_values = counterintensity1D
+                try:
+                    data_img = data["img"]
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img = np.zeros(nb1)
+                posmotorsinfo = np.array(posmotor1)
+                scan_in_progress = False
+
+            else:
+                print("scan has been aborted")
+                print("filling data with zeros...")
+                # intensity array
+                zz = np.zeros(nb1)
+                zz.put(range(nbacc), counterintensity1D)
+                data_z_values = zz
+                # image index array
+                data_img = np.zeros(nb1)
+                try:
+                    data_img.put(range(nbacc), data["img"])
+                except KeyError:
+                    print("'img' column doesn't exist! Add fake dummy 0 value")
+                    data_img.put(range(nbacc), 0)
+                # motors positions
+                ar_posmotor1 = np.zeros(nb1)
+                ar_posmotor1.put(range(nbacc), posmotor1)
+                #                     ar_posmotor1 = reshape(ar_posmotor1, (nb2, nb1))
+
+                posmotorsinfo = np.array(ar_posmotor1)
+
+                scan_in_progress = True
+
+            print('\n================ compilation of scan data ============')
+            zvalues.append(data_z_values)
+            motorsvalues.append(posmotorsinfo)
+
+
+        #AddedArrayInfo = data_img
+
+        #datatype = "scalar"
+
+        Apptitle = "%s\n Multiple ascan #%s" % (self.specfilename, str(scanindexvalues))
+
+        print("title", Apptitle)
+
+        #--------------------
+        self.flat_data_z_values = None #counterintensity1D
+        self.flat_motor1 = None #motorselected
+
+        self.scancommand = tit
+        self.minmotor1 = float(titlesplit[4])
+        self.maxmotor1 = float(titlesplit[5])
+        scancommandextremmotorspositions = [self.minmotor1,
+                                            self.maxmotor1]
+        
+        self.update_fig_1D(zvalues,
+                            motorsvalues,
+                            motorselected,
+                            Apptitle,
+                            data_img,
+                            detectorname_ascan,
+                            scancommandextremmotorspositions,
+                            multipleplots=True,
+                            listscanindex=scanindexvalues)
+
+        if resetlistcounters:
+            # counter and key name of data
+            columns_name = list(data.keys())
+            columns_name = sorted(columns_name)
+            self.plotascanpanel.combocounters.Clear()
+            self.plotascanpanel.combocounters.AppendItems(columns_name)
+
+
+        return scan_in_progress
+
     def ReadScan_SpecFile(self, scan_index, resetlistcounters=True):
         """
         read a SINGLE scan data in spec file and fill data for a updated figure plot
@@ -514,7 +786,7 @@ class MainFrame(wx.Frame):
         detectorname_ascan = self.detectorname_ascan
         detectorname_mesh = self.detectorname_mesh
 
-        scanheader, data = ReadSpec(self.fullpath_specfile, scan_index)
+        scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_index, outputdate=True)
         tit = str(scanheader)
 
         self.scantype = tit.split()[2]
@@ -523,13 +795,15 @@ class MainFrame(wx.Frame):
 
         print("scan type  :", self.scantype)
 
-        if self.scantype in ('ascan',):
+        Apptitle =''
 
+        if self.scantype in ('ascan',):
 
             titlesplit = tit.split()
 
             # motor names
             motor1 = tit.split()[3]
+            motor2 = None
 
             # motor positions
             posmotor1 = np.fix(data[motor1] * 100000) / 100000
@@ -541,8 +815,14 @@ class MainFrame(wx.Frame):
             nbacc = len(data[list(data.keys())[0]])
             print("nb of points accumulated  :", nbacc)
 
-            counterintensity1D = data[detectorname_ascan]
 
+            if detectorname_ascan not in data:
+                Apptitle += '%s NOT AVAILABLE\n'%detectorname_ascan
+                detectorname_ascan = 'Monitor'
+                
+
+            counterintensity1D = data[detectorname_ascan]
+            
             if self.normalizeintensity:
                 data_I0 = data["Monitor"]
                 exposureTime = data["Seconds"]
@@ -591,9 +871,9 @@ class MainFrame(wx.Frame):
 
             datatype = "scalar"
 
-            Apptitle = "%s\nascan #%d" % (self.specfilename, scan_index)
+            Apptitle += "%s\nascan #%d" % (self.specfilename, scan_index)
 
-            print("title", Apptitle)
+            # print("Apptitle ", Apptitle)
 
             self.flat_data_z_values = counterintensity1D
             self.flat_motor1 = posmotor1
@@ -644,6 +924,10 @@ class MainFrame(wx.Frame):
             nbacc = len(data[list(data.keys())[0]])
             print("nb of points accumulated  :", nbacc)
 
+            if detectorname_mesh not in data:
+                Apptitle += '%s NOT AVAILABLE\n'%detectorname_mesh
+                detectorname_mesh = 'Monitor'
+                
             counterintensity1D = data[detectorname_mesh]
 
             if self.normalizeintensity:
@@ -706,7 +990,7 @@ class MainFrame(wx.Frame):
 
             #         print "posmotorsinfo", posmotorsinfo
 
-            Apptitle = "%s\nmesh scan #%d" % (self.specfilename, scan_index)
+            Apptitle += "%s\nmesh scan #%d" % (self.specfilename, scan_index)
 
             print("title", Apptitle)
 
@@ -750,7 +1034,9 @@ class MainFrame(wx.Frame):
                     Apptitle,
                     data_img,
                     detectorname,
-                    scancommandextremmotorspositions):
+                    scancommandextremmotorspositions,
+                    multipleplots=False,
+                    listscanindex = None):
         """update for ascan fig and plot"""
         #         self.plot.fig.clear()
 
@@ -760,7 +1046,11 @@ class MainFrame(wx.Frame):
         self.plotascanpanel.posmotorname = motor1
         self.plotascanpanel.absolute_motorposition_unit = "mm"
         self.plotascanpanel.title = Apptitle
+        self.plotascanpanel.detectorname = detectorname
         self.plotascanpanel.Imageindices = data_img
+        self.plotascanpanel.multipleplots = multipleplots
+        self.plotascanpanel.listscanindex = listscanindex
+
 
         (self.plotascanpanel.minmotor1,
             self.plotascanpanel.maxmotor1
@@ -772,7 +1062,7 @@ class MainFrame(wx.Frame):
         if self.plotmeshpanel.colorbar is not None:
             self.plotmeshpanel.colorbar_label = detectorname
             (self.plotascanpanel.myplot, _, self.plotascanpanel.data) = makefig_update(
-                self.plotascanpanel.fig, self.plotascanpanel.myplot, None, data_z_values, datadims=1)
+                self.plotascanpanel.fig, self.plotascanpanel.myplot, None, data_z_values, datadim=1)
         else:
             print("self.plotascanpanel.colorbar is None")
             self.plotascanpanel.create_axes()
@@ -803,6 +1093,7 @@ class MainFrame(wx.Frame):
         self.plotmeshpanel.absolute_motorposition_unit = "mm"
         self.plotmeshpanel.title = Apptitle
         self.plotmeshpanel.Imageindices = data_img
+        self.plotmeshpanel.detectorname = detectorname
 
         (self.plotmeshpanel.minmotor1,
             self.plotmeshpanel.maxmotor1,
@@ -951,7 +1242,8 @@ class PlotPanel(wx.Panel):
                                                         absolute_motorposition_unit="micron",
                                                         colorbar_label="Fluo counts",
                                                         stepindex=1,
-                                                        xylabels=None):
+                                                        xylabels=None,
+                                                        listscanindex=None):
         """
         plot 1D plot of dataarray
         """
@@ -971,7 +1263,10 @@ class PlotPanel(wx.Panel):
 
         self.posarray_motors = posarray_motors
         self.posmotorname = posmotorname
-        self.detectorname = 'default'
+        self.detectorname = 'Monitor'
+
+        self.multipleplots = False
+        self.listscanindex = listscanindex
 
         self.init_figurecanvas()
         self.create_main_panel()
@@ -984,7 +1279,7 @@ class PlotPanel(wx.Panel):
         self.draw_fig()
 
     def draw_fig(self):
-        print("in draw_fig()    ascan")
+        # print("in draw_fig()    ascan")
         self.fig.set_canvas(self.canvas)
 
         # reset ticks and motors positions  ---------------
@@ -1025,7 +1320,7 @@ class PlotPanel(wx.Panel):
         print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
         self.frameparent.columns_name.sort()
-        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname_ascan, #choices=sortedcounterslist,
+        self.combocounters = wx.ComboBox(self, -1, self.detectorname, #choices=sortedcounterslist,
                                                         choices=self.frameparent.columns_name,
                                                         size=(-1, 40), #style=wx.CB_READONLY)
                                                         style=wx.TE_PROCESS_ENTER)
@@ -1107,8 +1402,10 @@ class PlotPanel(wx.Panel):
         self.detectorname = self.combocounters.GetValue()
 
         self.frameparent.detectorname_ascan = self.detectorname
-
-        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_ascan, resetlistcounters=False)
+        if not self.multipleplots:
+            self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_ascan, resetlistcounters=False)
+        else:
+            self.frameparent.ReadMultipleScans(self.frameparent.treeascan.set_selected_indices, resetlistcounters=False)
 
     def normalizeplot(self):
         #TODO: 
@@ -1139,13 +1436,38 @@ class PlotPanel(wx.Panel):
         #         self.axes.set_autoscale_on(True)
         if self.datatype == "scalar":
 
-            print("ploting")
+            # print("ploting")
+            
+            if not self.multipleplots:
+                # print("self.data_to_Display.shape", self.data_to_Display.shape)
+                self.myplot = self.axes.plot(self.posarray_motors, self.data_to_Display)
 
-            print("self.data_to_Display.shape", self.data_to_Display.shape)
-            self.myplot = self.axes.plot(self.posarray_motors, self.data_to_Display)
+                self.axes.format_coord = self.format_coord_single
+
+            else:
+                nbscans = len(self.listscanindex)
+                print('nb of scans to plot : ', nbscans)
+                for k in range(nbscans):
+                    self.axes.plot(self.posarray_motors[k], self.data_to_Display[k])
+
+                self.axes.legend(self.listscanindex)
             self.axes.grid(True)
             self.axes.set_xlabel(self.posmotorname)
             self.axes.set_ylabel(self.detectorname)
+
+            if 'NOT AVAILABLE' in self.title:
+                misstext = self.title[:self.title.find('AVAILABLE')+9]
+                self.axes.text(0.5, 0.5, misstext,
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        fontsize=20, color='red',
+                        transform=self.axes.transAxes)
+
+
+    def format_coord_single(self, x, y):
+
+        self.frameparent.stbar.SetStatusText('(x,y) = (%f, %f)' % (x, y), 3)
+        return
 
 
 class ImshowPanel(wx.Panel):
@@ -1194,6 +1516,8 @@ class ImshowPanel(wx.Panel):
         self.absolutecornerindices = absolutecornerindices
         self.title = title
         self.Imageindices = Imageindices
+
+        self.detectorname = 'Monitor'
 
         self.cNorm = None
         self.myplot = None
@@ -1347,7 +1671,7 @@ class ImshowPanel(wx.Panel):
 
         print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
-        self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname_mesh,
+        self.combocounters = wx.ComboBox(self, -1, self.detectorname, #self.frameparent.detectorname_mesh
                                                         choices=sortedcounterslist,
                                                         size=(-1, 40),
                                                         style=wx.TE_PROCESS_ENTER)
@@ -1471,7 +1795,7 @@ class ImshowPanel(wx.Panel):
                     wx.MessageBox(sentence + "\n" + command, "INFO")
 
                 # WARNING could do some instabilities to station ??
-                msgdialog = MessageCommand( self, -1, "motors command",
+                msgdialog = MessageCommand(self, -1, "motors command",
                     sentence=sentence, speccommand=command, specconnection=None)
                 msgdialog.ShowModal()
 
@@ -1523,6 +1847,7 @@ class ImshowPanel(wx.Panel):
         self.canvas.draw()
 
     def OnChangeCounter(self, _):
+        """ read selected counter column in currentr scan data and spec file"""
 
         self.detectorname = self.combocounters.GetValue()
 
@@ -1531,7 +1856,7 @@ class ImshowPanel(wx.Panel):
         self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_mesh, resetlistcounters=False)
 
     def OnSliderMin(self, _):
-
+        """ normalize plot according to vmin"""
         self.IminDisplayed = int(self.slider_min.GetValue())
         if self.IminDisplayed > self.ImaxDisplayed:
             self.slider_min.SetValue(self.ImaxDisplayed - 1)
@@ -1541,6 +1866,7 @@ class ImshowPanel(wx.Panel):
         self.canvas.draw()
 
     def OnSliderMax(self, _):
+        """ normalize plot according to vmax"""
         self.ImaxDisplayed = int(self.slider_max.GetValue())
         if self.ImaxDisplayed < self.IminDisplayed:
             self.slider_max.SetValue(self.IminDisplayed + 1)
@@ -1549,6 +1875,7 @@ class ImshowPanel(wx.Panel):
         self.canvas.draw()
 
     def normalizeplot(self):
+        """normalize intensity scale according to GUI widgets parameters"""
 
         vmin = self.minvals + self.IminDisplayed * self.deltavals
         vmax = self.minvals + self.ImaxDisplayed * self.deltavals
@@ -1565,6 +1892,7 @@ class ImshowPanel(wx.Panel):
         self.myplot.set_norm(self.cNorm)
 
     def OnSave(self, _):
+        """save image """
         # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
         #    self.OnSave(event)
         if self.askUserForFilename():
@@ -1573,6 +1901,7 @@ class ImshowPanel(wx.Panel):
             print("Image saved in ", os.path.join(self.dirname, self.filename) + ".png")
 
     def calc_norm_minmax_values(self, data):
+        """ set self.self.cNorm  and self.maxvals,  self.minvals from data"""
  
         self.data_to_Display = data
         self.cNorm = None
@@ -1599,6 +1928,7 @@ class ImshowPanel(wx.Panel):
     #         colorVal = scalarMap.to_rgba(values[idx])
 
     def forceAspect(self, aspect=1.0):
+        """ force image plot aspect ratio"""
         im = self.axes.get_images()
         extent = im[0].get_extent()
         self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
@@ -1635,6 +1965,15 @@ class ImshowPanel(wx.Panel):
 
             if self.XORIGINLIST[self.flagxorigin % 2] == "right":
                 self.axes.set_xlim(self.axes.get_xlim()[::-1])
+
+            
+            if 'NOT AVAILABLE' in self.title:
+                misstext = self.title[:self.title.find('AVAILABLE')+9]
+                self.axes.text(0.5, 0.5, misstext,
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        fontsize=20, color='red',
+                        transform=self.axes.transAxes)
 
     def fromindex_to_pixelpos_x_absolute(self, index, _):
         # absolute positions ticks
