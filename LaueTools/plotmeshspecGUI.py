@@ -650,6 +650,11 @@ class MainFrame(wx.Frame):
 
         motorselected = None
 
+        # trial ----------------
+        # scattermode = True
+        scattermode=False
+        # -------------------
+
         zvalues = []
         motorsvalues = []
         scanindexvalues = []
@@ -759,7 +764,8 @@ class MainFrame(wx.Frame):
         scancommandextremmotorspositions = [self.minmotor1,
                                             self.maxmotor1]
         
-        self.update_fig_1D(zvalues,
+        if not scattermode:
+            self.update_fig_1D(zvalues,
                             motorsvalues,
                             motorselected,
                             Apptitle,
@@ -768,6 +774,22 @@ class MainFrame(wx.Frame):
                             scancommandextremmotorspositions,
                             multipleplots=True,
                             listscanindex=scanindexvalues)
+        else:  #scattermode
+
+
+            print('zvalues', zvalues)
+            print('motorsvalues', motorsvalues)
+            
+            self.update_fig_2D(zvalues,
+                                motorsvalues,
+                                motorselected,
+                                'scan index',
+                                Apptitle,
+                                data_img,
+                                detectorname_ascan,
+                                scancommandextremmotorspositions,
+                                imshowmode=False,
+                                listscanindex=scanindexvalues)
 
         if resetlistcounters:
             # counter and key name of data
@@ -775,7 +797,6 @@ class MainFrame(wx.Frame):
             columns_name = sorted(columns_name)
             self.plotascanpanel.combocounters.Clear()
             self.plotascanpanel.combocounters.AppendItems(columns_name)
-
 
         return scan_in_progress
 
@@ -1016,14 +1037,15 @@ class MainFrame(wx.Frame):
                 self.plotmeshpanel.combocounters.Clear()
                 self.plotmeshpanel.combocounters.AppendItems(columns_name)
 
-            self.update_fig(data_z_values,
+            self.update_fig_2D(data_z_values,
                                 posmotorsinfo,
                                 motor1,
                                 motor2,
                                 Apptitle,
                                 data_img,
                                 detectorname_mesh,
-                                scancommandextremmotorspositions)
+                                scancommandextremmotorspositions,
+                                imshowmode=True)
 
             return scan_in_progress
 
@@ -1052,9 +1074,7 @@ class MainFrame(wx.Frame):
         self.plotascanpanel.listscanindex = listscanindex
 
 
-        (self.plotascanpanel.minmotor1,
-            self.plotascanpanel.maxmotor1
-        ) = scancommandextremmotorspositions
+        (self.plotascanpanel.minmotor1, self.plotascanpanel.maxmotor1) = scancommandextremmotorspositions
 
         self.plotascanpanel.xylabels = ("column index", "row index")
         self.plotascanpanel.datatype = "scalar"
@@ -1063,7 +1083,7 @@ class MainFrame(wx.Frame):
             self.plotmeshpanel.colorbar_label = detectorname
             (self.plotascanpanel.myplot, _, self.plotascanpanel.data) = makefig_update(
                 self.plotascanpanel.fig, self.plotascanpanel.myplot, None, data_z_values, datadim=1)
-        else:
+        else:  #update for 1D ascan or multiple
             print("self.plotascanpanel.colorbar is None")
             self.plotascanpanel.create_axes()
             self.plotascanpanel.data_to_Display = self.plotascanpanel.data
@@ -1075,7 +1095,7 @@ class MainFrame(wx.Frame):
         self.plotascanpanel.draw_fig()
         return
 
-    def update_fig(self,
+    def update_fig_2D(self,
                     data_z_values,
                     posmotorsinfo,
                     motor1,
@@ -1083,8 +1103,16 @@ class MainFrame(wx.Frame):
                     Apptitle,
                     data_img,
                     detectorname,
-                    scancommandextremmotorspositions):
-        """update fro mesh scan fig and plot"""
+                    scancommandextremmotorspositions,
+                    imshowmode=True,
+                    listscanindex=None):
+        """update from mesh scan fig and plot
+        data_z_values: 2D array of values
+        posmotorsinfo: 2D array of motors positions  x, y 
+        motor1, motor2: str names of motors   (x or fast motor, y or slow motor)
+
+        if imshowmode is Falsze (scattermode): listscanindex must  be provided with list of scan 
+        index along y axis and also obviously data_z_values = list of z values and   posmotorsinfo list of x values"""
         #         self.plot.fig.clear()
 
         self.plotmeshpanel.data = data_z_values
@@ -1094,12 +1122,16 @@ class MainFrame(wx.Frame):
         self.plotmeshpanel.title = Apptitle
         self.plotmeshpanel.Imageindices = data_img
         self.plotmeshpanel.detectorname = detectorname
+        self.plotmeshpanel.imshowmode = imshowmode
 
-        (self.plotmeshpanel.minmotor1,
-            self.plotmeshpanel.maxmotor1,
-            self.plotmeshpanel.minmotor2,
-            self.plotmeshpanel.maxmotor2,
-        ) = scancommandextremmotorspositions
+        if not imshowmode:
+            self.plotmeshpanel.listscanindex = listscanindex
+        else:
+            (self.plotmeshpanel.minmotor1,
+                self.plotmeshpanel.maxmotor1,
+                self.plotmeshpanel.minmotor2,
+                self.plotmeshpanel.maxmotor2,
+            ) = scancommandextremmotorspositions
 
         self.plotmeshpanel.xylabels = ("column index", "row index")
         self.plotmeshpanel.datatype = "scalar"
@@ -1111,9 +1143,8 @@ class MainFrame(wx.Frame):
         else:
             print("self.plotmeshpanel.colorbar is None")
             self.plotmeshpanel.create_axes()
-
             self.plotmeshpanel.calc_norm_minmax_values(self.plotmeshpanel.data)
-            self.plotmeshpanel.clear_axes_create_imshow()
+            self.plotmeshpanel.clear_axes_create_plot2D(imshowmode=imshowmode)
 
         # reset ticks and motors positions  ---------------
 
@@ -1425,7 +1456,7 @@ class PlotPanel(wx.Panel):
 
     def clear_axes_create_plot1D(self):
         """
-        init axes
+        init axes.plot()
         """
         if self.data_to_Display is None:
             return
@@ -1441,9 +1472,6 @@ class PlotPanel(wx.Panel):
             if not self.multipleplots:
                 # print("self.data_to_Display.shape", self.data_to_Display.shape)
                 self.myplot = self.axes.plot(self.posarray_motors, self.data_to_Display)
-
-                self.axes.format_coord = self.format_coord_single
-
             else:
                 nbscans = len(self.listscanindex)
                 print('nb of scans to plot : ', nbscans)
@@ -1454,6 +1482,7 @@ class PlotPanel(wx.Panel):
             self.axes.grid(True)
             self.axes.set_xlabel(self.posmotorname)
             self.axes.set_ylabel(self.detectorname)
+            self.axes.format_coord = self.format_coord_single
 
             if 'NOT AVAILABLE' in self.title:
                 misstext = self.title[:self.title.find('AVAILABLE')+9]
@@ -1483,7 +1512,8 @@ class ImshowPanel(wx.Panel):
                                                         absolute_motorposition_unit="micron",
                                                         colorbar_label="Fluo counts",
                                                         stepindex=1,
-                                                        xylabels=None):
+                                                        xylabels=None,
+                                                        imshowmode=True):
         """
         plot 2D plot of dataarray
         """
@@ -1501,19 +1531,23 @@ class ImshowPanel(wx.Panel):
 
         self.posarray_twomotors = posarray_twomotors
 
-        print(self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
-        print(self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1])
-        self.minmotor1, self.minmotor2 = posarray_twomotors[0, 0]
-        self.maxmotor1, self.maxmotor2 = posarray_twomotors[-1, -1]
+        self.imshowmode=imshowmode
+        if self.imshowmode:
+            print(self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
+            print(self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1])
+            self.minmotor1, self.minmotor2 = posarray_twomotors[0, 0]
+            self.maxmotor1, self.maxmotor2 = posarray_twomotors[-1, -1]
+            self.absolute_motorposition_unit = absolute_motorposition_unit
+            self.absolutecornerindices = absolutecornerindices
 
         if posmotorname is not None:
             self.motor1name, self.motor2name = posmotorname
 
-        self.absolute_motorposition_unit = absolute_motorposition_unit
+        
         #         print "dataarray", dataarray
         self.datatype = datatype
 
-        self.absolutecornerindices = absolutecornerindices
+        
         self.title = title
         self.Imageindices = Imageindices
 
@@ -1544,7 +1578,7 @@ class ImshowPanel(wx.Panel):
         self.cmap = GT.GIST_EARTH_R
 
         self.calc_norm_minmax_values(self.data)
-        self.clear_axes_create_imshow()
+        self.clear_axes_create_plot2D()
 
         if USE_COLOR_BAR:
             self.colorbar_label = colorbar_label
@@ -1553,8 +1587,15 @@ class ImshowPanel(wx.Panel):
         self.draw_fig()
 
     def draw_fig(self):
-        print("in draw_fig()   mesh scan")
+        
 
+        if not self.imshowmode:
+            print("in draw_fig()   scatter mode")
+            self.fig.set_canvas(self.canvas)
+            self.canvas.draw()
+            return
+                
+        print("in draw_fig()   mesh scan")
         self.set_motorspositions_parameters()
         #         print "self.fromindex_to_pixelpos_x", self.fromindex_to_pixelpos_x
         #
@@ -1770,26 +1811,17 @@ class ImshowPanel(wx.Panel):
 
                 print(
                     "SPEC COMMAND:\nmv %s %.5f %s %.5f"
-                    % (self.motor1name,
-                        current_posmotor1,
-                        self.motor2name,
-                        current_posmotor2))
+                    % (self.motor1name, current_posmotor1,
+                        self.motor2name, current_posmotor2))
 
                 sentence = (
                     "%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
-                    % (self.motor1name,
-                        current_posmotor1,
-                        self.motor2name,
-                        current_posmotor2,
-                        self.motor1name,
-                        current_posmotor1,
-                        self.motor2name,
-                        current_posmotor2))
+                    % (self.motor1name, current_posmotor1, self.motor2name,
+                        current_posmotor2, self.motor1name, current_posmotor1,
+                        self.motor2name, current_posmotor2))
 
-                command = "mv %s %.5f %s %.5f" % (self.motor1name,
-                                                current_posmotor1,
-                                                self.motor2name,
-                                                current_posmotor2)
+                command = "mv %s %.5f %s %.5f" % (self.motor1name, current_posmotor1,
+                                                self.motor2name, current_posmotor2)
 
                 if msgbox:
                     wx.MessageBox(sentence + "\n" + command, "INFO")
@@ -1877,6 +1909,11 @@ class ImshowPanel(wx.Panel):
     def normalizeplot(self):
         """normalize intensity scale according to GUI widgets parameters"""
 
+        print('self.minvals', self.minvals)
+        print('self.maxvals', self.maxvals)
+        print('self.IminDisplayed', self.IminDisplayed)
+        print('self.ImaxDisplayed',self.ImaxDisplayed)
+
         vmin = self.minvals + self.IminDisplayed * self.deltavals
         vmax = self.minvals + self.ImaxDisplayed * self.deltavals
 
@@ -1911,36 +1948,83 @@ class ImshowPanel(wx.Panel):
 
         print("plot of datatype = %s" % self.datatype)
 
-        self.maxvals = np.amax(self.data_to_Display)
-        self.minvals = np.amin(self.data_to_Display)
+        if not self.imshowmode:
 
+            list_z_values = self.data
+            list_x_values = self.posarray_twomotors # in reality  list of x's of different lengths
+            l_idx = self.listscanindex
+            list_y_values = []
+            
+            minx = list_x_values[0][0]
+            maxx = list_x_values[0][-1]
+            miny = 0
+            maxy = 1
+            maxnbelems = 0
+            x = []
+            y = []
+            z = []
+            for k, li in enumerate(list_z_values):
+
+                list_y_values.append(k * np.ones(len(li)))
+                # list_y_values.append(l_idx[k] * np.ones(len(li)))
+
+                llx = list_x_values[k]
+                lly = list_y_values[k]
+                llz = list_z_values[k]
+                minx = min(minx, min(llx))
+                miny = min(miny, min(lly))
+                maxx = max(maxx, max(llx))
+                maxy = max(maxy, max(lly))
+                maxnbelems = max(maxnbelems, len(llx))
+
+                x = x + llx.tolist()
+                y = y + lly.tolist()
+                z = z + llz.tolist()
+
+                self.x,self.y = x, z
+                #self.axes.scatter(list_x_values[k], list_y_values[k], c=list_z_values[k], marker='h', s=50)
+
+            print('minx, maxx', minx, maxx)
+            print('miny, maxy', miny, maxy)
+            from scipy.interpolate import griddata
+
+            # define grid.  
+            nx = 60 # int(maxnbelems * 10)
+            ny = 30   # len(l_idx) * 20            
+            xi = np.linspace(minx, maxx, nx)
+            yi = np.linspace(0, len(l_idx) - 1, ny)
+
+            print(('xi', xi))
+            print(('yi', yi))
+            # grid the data.
+            zi = griddata((x, y), z, (xi[None,:], yi[:, None]), method='cubic')
+
+            print('zi[0]', zi[0])
+            print('zi[:,0]', zi[:, 0])
+
+            self.data_to_Display = zi
+
+        data_wo_nan = self.data_to_Display[np.logical_not(np.isnan(self.data_to_Display))]
+        self.maxvals = np.amax(data_wo_nan)
+        self.minvals = np.amin(data_wo_nan)
         self.deltavals = (self.maxvals - self.minvals) / 100.0
 
-        #             from matplotlib.colors import colorConverter
-
-        #             import matplotlib.pyplot as plt
-        #             import matplotlib.cm as cmx
-        #             jet = cm = plt.get_cmap('jet')
         self.cNorm = colors.Normalize(vmin=self.minvals, vmax=self.maxvals)
 
-    #             scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
-    #             print scalarMap.get_clim()
-    #         colorVal = scalarMap.to_rgba(values[idx])
 
-    def forceAspect(self, aspect=1.0):
-        """ force image plot aspect ratio"""
-        im = self.axes.get_images()
-        extent = im[0].get_extent()
-        self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
+    # def forceAspect(self, aspect=1.0):
+    #     """ force image plot aspect ratio"""
+    #     im = self.axes.get_images()
+    #     extent = im[0].get_extent()
+    #     self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
 
     def re_init_colorbar(self):
-
         #             print dir(self.colorbar)
         self.colorbar.set_label(self.colorbar_label)
         self.colorbar.set_clim(vmin=self.minvals, vmax=self.maxvals)
         self.colorbar.draw_all()
 
-    def clear_axes_create_imshow(self):
+    def clear_axes_create_plot2D(self, imshowmode=True):
         """
         init axes
         """
@@ -1955,18 +2039,28 @@ class ImshowPanel(wx.Panel):
 
             print("ploting")
 
-            print("self.data_to_Display.shape", self.data_to_Display.shape)
-            self.myplot = self.axes.imshow(self.data_to_Display, cmap=self.cmap,
-                                            interpolation="nearest",
-                                            norm=self.cNorm,
-                                            aspect="equal",
-                                            #                              extent=self.extent,
-                                            origin=self.origin)
+            if imshowmode:
+                print("self.data_to_Display.shape", self.data_to_Display.shape)
+                self.myplot = self.axes.imshow(self.data_to_Display, cmap=self.cmap,
+                                                interpolation="nearest",
+                                                norm=self.cNorm,
+                                                aspect="equal",
+                                                #                              extent=self.extent,
+                                                origin=self.origin)
 
-            if self.XORIGINLIST[self.flagxorigin % 2] == "right":
-                self.axes.set_xlim(self.axes.get_xlim()[::-1])
+                if self.XORIGINLIST[self.flagxorigin % 2] == "right":
+                    self.axes.set_xlim(self.axes.get_xlim()[::-1])
+            else:  # scattermode
+                self.cmap.set_bad(color='red')
 
-            
+                self.myplot = self.axes.imshow(self.data_to_Display, cmap=self.cmap,
+                                                interpolation="nearest",
+                                                #norm=self.cNorm,
+                                                aspect="equal",
+                                                #                              extent=self.extent,
+                                                #origin=self.origin)
+                                                )
+
             if 'NOT AVAILABLE' in self.title:
                 misstext = self.title[:self.title.find('AVAILABLE')+9]
                 self.axes.text(0.5, 0.5, misstext,
@@ -2012,7 +2106,6 @@ class ImshowPanel(wx.Panel):
         return np.fix((index * self.step_y) * 10000.0) / 10000.0
 
     #         return np.fix((index * self.step_y) * 100.) / 100.
-
 
     def set_motorspositions_parameters(self):
         self.posmotors = self.posarray_twomotors
