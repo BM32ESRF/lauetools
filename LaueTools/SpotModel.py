@@ -8,7 +8,7 @@ class Spot(object):
 
     def __init__(self, data, listoffields):
         for val, field in zip(data, listoffields):
-            self.__setattr__(field, val)
+            self.__setattr__(field, float(val))
 
 
 #            print "%s field is :" % field, self.__getattribute__(field)
