@@ -36,18 +36,19 @@ if wx.__version__ >= "3.0.0":
     from matplotlib.widgets import RectangleSelector
 
 try:
-    from ObjectListView import ObjectListView, ColumnDefn #, GroupListView
+    from ObjectListView2 import ObjectListView, ColumnDefn #, GroupListView
 
     ObjectListView_Present = True
 except ImportError:
-    print("ObjectListView not found. You may like to install it ?")
-    print("unzip ObjectListView-1.2.zip in lauetools/trunk")
-    print("or download it at:")
-    print("http://objectlistview.sourceforge.net/samples/ObjectListView-1.2.zip")
-    print("from the website:")
-    print("https://pypi.python.org/pypi/ObjectListView")
-    print("and type (linux): (sudo) python setup.py install")
     ObjectListView_Present = False
+
+if not ObjectListView_Present:
+    try:
+        from ObjectListView import ObjectListView, ColumnDefn #, GroupListView
+        ObjectListView_Present = True
+    except ImportError:
+        print("ObjectListView is missing! You may want to have it: pip install ObjectListView")
+        ObjectListView_Present = False
 
 # LaueTools modules
 if sys.version_info.major == 3:
@@ -2544,6 +2545,8 @@ class PeakListOLV(wx.Panel):
 
         self.myOlv = ObjectListView(self, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
         self.myOlv.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnClickRow)
+         
+        self.myOlv.EnableSorting()
 
         if self.mainframe.peaklistPixels is not None:
             self.updateView(1)
@@ -2600,17 +2603,14 @@ class PeakListOLV(wx.Panel):
     #        self.myOlv.RemoveObject(self.myOlv.GetObjectAt(indexObject))
 
     def InitObjectListView(self):
-        #        self.myOlv.SetColumns([
-        #            ColumnDefn("Title", "left", 120, self.listofields[0]),
-        #            ColumnDefn("Size (MB)", "center", 100, self.listofields[1]), #stringConverter="%.1f"),
-        #            ColumnDefn("Last Played", "left", 100, self.listofields[2]), # stringConverter="%d-%m-%Y"),
-        #            ColumnDefn("Rating", "center", 100, self.listofields[3])
-        #        ])
+
         if self.allspots is not None:
 
             # columns definition
             coldef = [ColumnDefn(field, DICT_FIELDS_ALIGN[field], DICT_FIELDS_SIZE[field], field)
                 for field in self.listoffields]
+            
+            
             self.myOlv.SetColumns(coldef)
             self.myOlv.SetObjects(self.allspots)
 
@@ -2746,7 +2746,7 @@ class PeakListOLV(wx.Panel):
 
             #            self.mainframe.toggleBtnCrop.SetLabel("UnCrop Data")
             self.mainframe.CropIsOn = True
-            self.mainframe.centerx, self.mainframe.centery = Y, X
+            self.mainframe.centerx, self.mainframe.centery = int(Y), int(X)
             self.mainframe.boxx, self.mainframe.boxy = (int(self.boxsizey.GetValue()),
                                                         int(self.boxsizex.GetValue()))
 
@@ -2765,7 +2765,7 @@ class PeakListOLV(wx.Panel):
             self.mainframe.updatePlotTitle()
             self.mainframe.canvas.draw()
 
-        else:  # show zoomed in region of peak is OFF
+        else:
             self.mainframe.CropIsOn = False
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
             self.mainframe.reinit_aftercrop_draw()
