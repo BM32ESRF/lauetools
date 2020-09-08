@@ -2981,7 +2981,8 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 label = np.repeat(jj, n2 * n3, axis=1).reshape((n0, n1, n2, n3))
 
                 #                print 'label', label
-
+                #
+                # max value of background
                 datminimum = scind.measurements.maximum(mosaic, label, np.arange(n0 * n1))
                 datminimums = np.repeat(datminimum.reshape((n0, n1)), n2 * n3, axis=1).reshape((n0, 
                                                                                         n1, n2, n3))
@@ -3668,17 +3669,16 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
 
     if selectedcounters have  Imean_multiple, Imax_multiple, Iptp_multiple, then array will subdivided
     according to nbdivsions = (n1,n2) ie n1*n2 subarrays.
-    n1 divisions along slow axis (Y, vert), n2 along fast axis (X, horiz) 
+    n1 divisions along slow axis (Y, vert), n2 along fast axis (X, horiz)
 
     param  = (dirname, filename, imageindex, peaklist, boxsize_row, boxsize_line)
 
-    peaklist : list of pixel X pixel Y (horiz, vert)   . For multiple detector : box around [[X, Y]] will be split 
+    peaklist : list of pixel X pixel Y (horiz, vert)   . For multiple detector : box around [[X, Y]] will be split
     boxsize_row = half boxsize (in pixel) // pixel X axis horiz
     boxsize_line = half boxsize (in pixel) // pixel Y axis vert
-    
     """
     (dirname, filename, imageindex, peaklist, boxsize_row, boxsize_line) = param
-    
+
     #    print "selectedcounters", selectedcounters
 
     nbpeaks = len(peaklist)
