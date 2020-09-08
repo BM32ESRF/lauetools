@@ -6,6 +6,22 @@ import os
 import sys
 import time
 
+import matplotlib
+
+matplotlib.use("WXAgg")
+
+from matplotlib import __version__ as matplotlibversion
+import matplotlib as mpl
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
+                                                    NavigationToolbar2WxAgg as NavigationToolbar)
+
+import matplotlib.colors as colors
+from matplotlib.axes import Axes
+from matplotlib.ticker import FuncFormatter
+
+from pylab import cm as pcm
+
 import wx
 
 # if wx.__version__ < "4.0.2":
@@ -33,20 +49,6 @@ else:
     wx.Window.SetToolTipString = sttip
 
 import numpy as np
-
-import matplotlib as mpl
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
-                                                    NavigationToolbar2WxAgg as NavigationToolbar)
-
-import matplotlib.colors as colors
-from matplotlib.axes import Axes
-from matplotlib.ticker import FuncFormatter
-
-from pylab import cm as pcm
-
-# mpl.use("WXAgg")
-
 
 try:
     from SpecClient_gevent import SpecCommand
@@ -287,12 +289,11 @@ class MessageCommand(wx.Dialog):
 
 class MainFrame(wx.Frame):
     """
-    Class to show CCD frame pixel intensities
-    and provide tools for searching peaks
+    Class main GUI
     """
 
-    def __init__(self, parent, _id, title, size=4):
-        wx.Frame.__init__(self, parent, _id, title, size=(600, 1000))
+    def __init__(self, parent, _id, title):
+        wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
 
         self.folderpath_specfile, self.specfilename = None, None
 
@@ -300,8 +301,9 @@ class MainFrame(wx.Frame):
         self.detectorname_ascan = "Monitor"
         self.columns_name = ["Monitor", "fluoHg"]
         self.normalizeintensity = False
-
+            
         self.createMenuBar()
+
         self.create_main_panel()
 
         self.listmesh = None
@@ -2264,6 +2266,15 @@ class MyApp(wx.App):
         return True
 
 
+def start():
+    """ launcher of plotmeshspecGUI as module"""
+    GUIApp = wx.App()
+    frame = MainFrame(None, -1, "plotmeshspecGUI.py")
+    frame.Show()
+    GUIApp.MainLoop()
+
+
 if __name__ == "__main__":
-    app = MyApp(0)
-    app.MainLoop()
+    start()
+
+
