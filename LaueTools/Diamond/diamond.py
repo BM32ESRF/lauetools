@@ -1815,13 +1815,6 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         TIFF.imsave(imagefilename, mosaic2)
 
-    #        out.show()
-    #
-    #        out.save(imagefilename, mode="I;16")
-    #
-    #        mosaic3 = Image.new("I;16",mosaicsize)
-    #
-
     if return_mosaic_filename:
         return (outfilename, imagefilename)
     else:
@@ -1844,6 +1837,15 @@ def build_Ipix_vs_img_table(indimg,
                             nbdigits=4,
                             xypic_from_LaueTools_Peak_Search_datfile=1,
                             xypic_from_Imagej=0):
+    """ read pixel intensity values of several images
+    indimg:  list of image indices
+    imfile_path: path to image file
+    imfile_prefix: prefix of image filename (filename without index and file extension)
+    filespotlist_sample: peaks list file 
+    return:
+    
+    DipsData, xy_LT, outfilename, filenamepckl
+    """
 
     # utilise xypic sortis du peak search LaueTools,
     # decales de 1 pixel en x y par rapport au xypic affiches par Imagej
