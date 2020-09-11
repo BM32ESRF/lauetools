@@ -36,7 +36,7 @@ else:
 
 try:
     from multigrain import filter_peaks, index_refine_calib_one_image
-except ImportError:
+except (ImportError, SyntaxError):
     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
 if sys.version_info.major == 3:
