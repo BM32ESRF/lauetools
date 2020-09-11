@@ -58,7 +58,7 @@ if sys.version_info.major == 3:
     from .. import generaltools as GT
     from .. import readmccd as RMCCD
     from . import Plot1DFrame as PLOT1D
-    from .. import plotmeshspecGUI as PMSG
+    from .. import MessageCommand as MC
     from .. import IOimagefile as IOimage
     from .. import imageprocessing as ImProc
 else:
@@ -66,7 +66,7 @@ else:
     import generaltools as GT
     import readmccd as RMCCD
     import Plot1DFrame as PLOT1D
-    import plotmeshspecGUI as PMSG
+    import MessageCommand as MC
     import IOimagefile as IOimage
     import imageprocessing as ImProc
 
@@ -2084,7 +2084,7 @@ class ImshowFrame(wx.Frame):
 
             #                     wx.MessageBox(sentence, 'INFO')
 
-            msgdialog = PMSG.MessageCommand(self,
+            msgdialog = MC.MessageCommand(self,
                                             -1,
                                             "motors command",
                                             sentence=sentence,
@@ -3699,10 +3699,10 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
         if 'multiple' not in counter: 
             CountersData[counter] = np.zeros(nbpeaks)
         else:
-            ny,nx = ndivisions
-            CountersData[counter] = np.zeros((nbpeaks,nx*ny))
+            ny, nx = ndivisions
+            CountersData[counter] = np.zeros((nbpeaks, nx*ny))
 
-            CountersData["posmax_multiple"] = np.zeros((nbpeaks,nx*ny,2))
+            CountersData["posmax_multiple"] = np.zeros((nbpeaks, nx*ny, 2))
     CountersData["Monitor"] = 1.0
     CountersData["ExposureTime"] = 1000.0  # milliseconds
 
