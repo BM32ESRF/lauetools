@@ -838,7 +838,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         #         print tabXY
         #         print index_todelete
 
-        tabIsorted = np.delete(tabIsorted, index_todelete, axis=0)
+        tabIsorted = np.delete(tabIsorted, tuple(index_todelete), axis=0)
 
         print(
             "\n{} peaks found after removing duplicates minimum intermaxima distance = {})".format(

@@ -1304,7 +1304,7 @@ def purgeClosePoints2(peaklist, maxdistance, verbose=0):
         print("index si, fi where distmatrix < pixeldistance", si, fi)
         print("index_todelete", index_todelete)
 
-    purged_pklist = np.delete(peaklist, index_todelete, axis=0)  # np.delete
+    purged_pklist = np.delete(peaklist, tuple(index_todelete), axis=0)
     return purged_pklist, index_todelete
 
 
