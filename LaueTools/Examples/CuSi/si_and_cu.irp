@@ -1,0 +1,35 @@
+[IndexRefine]
+nb materials = 2
+key material_0 = Si
+nbgrainstofind_0 = 1
+emin_0 = 5
+emax_0 = 25
+matchingrate threshold ial_0 = 100.0
+angletollut_0 = 0.5
+matchingrate angle tol_0 = 0.5
+nbmaxprobed_0 = 10
+minimumnumbermatches_0 = 6
+central spots indices_0 = [0]
+resolutionangstrom_0 = False
+nlutmax_0 = 4
+setcentralspotshkl_0 = None
+useintensityweights_0 = True
+nbspotstoindex_0 = 1000
+list matching tol angles_0 = [.2, .1, 0.05]
+key material_1 = Cu
+nbgrainstofind_1 = 1
+emin_1 = 5
+emax_1 = 25
+matchingrate threshold ial_1 = 100.0
+angletollut_1 = 0.5
+matchingrate angle tol_1 = 0.5
+nbmaxprobed_1 = 10
+minimumnumbermatches_1 = 6
+central spots indices_1 = [0]
+resolutionangstrom_1 = False
+nlutmax_1 = 4
+setcentralspotshkl_1 = None
+useintensityweights_1 = True
+nbspotstoindex_1 = 1000
+list matching tol angles_1 = [.2, .1, 0.05]
+
