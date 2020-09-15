@@ -713,6 +713,9 @@ class SimulationPlotFrame(wx.Frame):
             self.X_offset = 0
             self.Y_offset = 0
 
+            self.ylim = (-500, 500)
+            self.xlim = (-500, 500)
+
             center_detframe = [self.X_offsetfluoframe, self.Y_offsetfluoframe]
 
             # range rectangle in ydet et zdet frame
@@ -749,12 +752,25 @@ class SimulationPlotFrame(wx.Frame):
             line_segments_hor = LineCollection(segs_hor, linestyle="solid", colors="r")
             self.axes.add_collection(line_segments_hor)
 
-            arrows = [patches.YAArrow(self.fig, (pt_lb_prime[0], pt_lb_prime[1]),
-                            (center_detframe[0], center_detframe[1]), fc="g",
-                            width=0.3, headwidth=0.9, alpha=0.5),
-                    patches.YAArrow(self.fig, (pt_zaxis_prime[0], pt_zaxis_prime[1]),
-                            (center_detframe[0], center_detframe[1]), fc="r",
-                            width=0.3, headwidth=0.9, alpha=0.5)]
+            # arrows = [patches.YAArrow(self.fig, (pt_lb_prime[0], pt_lb_prime[1]),
+            #                 (center_detframe[0], center_detframe[1]), fc="g",
+            #                 width=0.3, headwidth=0.9, alpha=0.5),
+            #         patches.YAArrow(self.fig, (pt_zaxis_prime[0], pt_zaxis_prime[1]),
+            #                 (center_detframe[0], center_detframe[1]), fc="r",
+            #                 width=0.3, headwidth=0.9, alpha=0.5)]
+
+            # Ydetarrow
+            x1b, y1b = (center_detframe[0], center_detframe[1])  # base
+            x1t, y1t = (pt_lb_prime[0], pt_lb_prime[1])  # tip
+
+            # Zdetarrow
+            #x2b, y2b = (center_detframe[0], center_detframe[1])  # base
+            x2t, y2t = (pt_zaxis_prime[0], pt_zaxis_prime[1])  # tip
+            
+            arrows = [patches.FancyArrow(x1b, y1b, x1t - x1b, y1t - y1b, fc="g",
+                            width=0.3, head_width=0.9, alpha=0.5),
+                    patches.FancyArrow(x1b, y1b, x2t - x1b,y2t - y1b, fc="r",
+                            width=0.3, head_width=0.9, alpha=0.5)]
 
             for ar in arrows:
                 self.axes.add_patch(ar)
@@ -903,10 +919,16 @@ class SimulationPlotFrame(wx.Frame):
                 self.ylim = (-.75, .75)
                 self.xlim = (-.6, .6)
             elif "XYmar" in self.datatype:
+
+
                 self.axes.set_xlabel("X (pixel)")
                 self.axes.set_ylabel("Y (pixel)")
+
+                if self.showFluoDetectorFrame:
+                    self.ylim = (-500, 500)
+                    self.xlim = (-500, 500)
                 # marccd and roper convention
-                if self.CCDLabel in ("MARCCD165", "PRINCETON"):
+                elif self.CCDLabel in ("MARCCD165", "PRINCETON"):
                     self.ylim = (2048, 0)
                     self.xlim = (0, 2048)
                 elif self.CCDLabel in ("sCMOS", "sCMOS_fliplr"):
