@@ -1015,6 +1015,17 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
 
+    :param XY1: list of 2D elements
+    :param XY2: list of 2D elements
+    :param dist_tolerance: largest distance (in unit of XY1, XY2) to consider two elements close enough
+    :param samelist: boolean, default is False (when XY1 and XY2 are different). False if XY1=XY2 to 
+    find closed spots in a single list of points
+
+    :return:
+    [0] ind_XY1: index of points in XY1 which are seen in XY2
+    [1]  ind_XY2: index of points in XY2 which are seen in XY1
+    [2] boolean: True if at least point belong to XY1 and XY2. False if no common points are found (within the tolerance)
+
     example:
     pA =  [[0, 0], [0, 1], [1, 2], [10, 3], [1, 20], [5, 3]]
     pB= [[14, 1], [1, 2], [1, 20], [15, 1]]
@@ -1059,7 +1070,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
 def sortclosestpoints(pt0, pts):
     """return pt index in pts sorted by increasing distance from pt0
 
-    cartesian metrics
+    Note: cartesian distance
     """
     x1, y1 = pt0
 
@@ -1100,7 +1111,7 @@ def sortclosestspots(kf0, kfs, dist_tolerance):
 
 def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
     """
-    remove in XY1 spots list , the spots which are present in XY2 spots list
+    remove the spots in XY1 spots list which are present in XY2 spots list
     within the cartesian distance dist_tolerance
 
     XY1 : array([[x1,x2,...],[y1,y2,...]])
@@ -1117,7 +1128,6 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
 
     #    print "coord_1", coord_1
     #    print "coord_2", coord_2
-
     # print("coord12", coord12)
 
     tabdist = ssd.squareform(ssd.pdist(coord12, metric="euclidean"))
@@ -1202,7 +1212,6 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
     and digital image processing methods)
 
     TODO: to generalise to cartesian distance
-
     """
     coord = np.array([Twicetheta, Chi]).T
     angular_tab = calculdist_from_thetachi(coord, coord)
@@ -1314,6 +1323,7 @@ def getCommonSpots(file1, file2, toldistance, dirname=None, data1=None, fulloutp
 
     if data1 is provided, file1 is not read
 
+    fulloutput: True, return all results
     """
     if data1 is None:
         data1 = IOLT.read_Peaklist(file1, dirname)
@@ -1380,8 +1390,8 @@ def computingFunction(fileindexrange, Parameters_dict=None, saveObject=0):
     return commonspotsnb
 
 
-def LaueSpotsCorrelator_multiprocessing(
-    fileindexrange, imageindexref, Parameters_dict=None, saveObject=0, nb_of_cpu=5):
+def LaueSpotsCorrelator_multiprocessing(fileindexrange, imageindexref, Parameters_dict=None,
+                                        saveObject=0, nb_of_cpu=5):
     """
     launch several processes in parallel
     """
@@ -1556,6 +1566,7 @@ def closest_array_elements(i, j, array2Dshape, maxdist=1, startingindex=0):
 
     tabindices = np.arange(startingindex, startingindex + n1*n2).reshape((n1, n2))
     return closeelem_ij, tabindices[closeelem_ij], distfrom_ij[closeelem_ij]
+
     
 def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, existingabsindices=None):
     """ find closest and prior element of 2D array from given i,j
@@ -1575,10 +1586,10 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
     # filter if asked
     # check if surrounding elements in absoluteindices are available in existingabsindices
     if bool(existingabsindices):
-        absoluteindices= []
+        absoluteindices = []
         cli = []
         clj = []
-        dist=[]
+        dist = []
         for k, abselem in enumerate(_absoluteindices):
             if abselem in existingabsindices:
                 absoluteindices.append(abselem)
