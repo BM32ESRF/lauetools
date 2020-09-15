@@ -872,7 +872,7 @@ class MainFrame_indexrefine(wx.Frame):
         """
         print("OnStart in index_Refine.py MainFrame class")
 
-        # read .irp file ---------------------------
+        #-------- field 12  :  read .irp file ---------------------------
         fileirp = self.list_txtctrl[12].GetValue()
         print("read index refine parameters in:")
 
@@ -895,12 +895,14 @@ class MainFrame_indexrefine(wx.Frame):
         if (not self.fitFolderExists() or not self.corFolderExists() or not self.datFolderExists()):
             print("some folder missing ")
             return
-
+        #-------  field 3 & 4  : PeakList Filename (for prefix) & PeakList Filename suffix ----------
         fileprefix = self.list_txtctrl[3].GetValue()
         filesuffix = self.list_txtctrl[4].GetValue()
 
+        #-------  field 5 : Nbdigits in index filename --------------
         nbdigits_filename = self.getnbdigits()
-
+            
+        #-------  field 1, 2 & 3: PeakList .dat Folder, .cor folder & .fit folder  ----------
         filepathdat = self.list_txtctrl[0].GetValue()
         filepathcor = self.list_txtctrl[1].GetValue()
         filepathout = self.list_txtctrl[2].GetValue()
@@ -908,6 +910,7 @@ class MainFrame_indexrefine(wx.Frame):
         print("filepathcor", filepathcor)
         print("filepathout", filepathout)
 
+        #-------  field 9 : Detector Calibration File (.det) --------------
         filedet = self.list_txtctrl[9].GetValue()
 
         # checking if at least one peak list filename with prefix exist
@@ -954,7 +957,7 @@ class MainFrame_indexrefine(wx.Frame):
         Index_Refine_Parameters_dict["Results Folder"] = filepathout
 
         Index_Refine_Parameters_dict["dict params list"] = self.dict_param_list
-
+        #-------  field 6 : Start Image index or List indices File --------------
         startindexstr = self.list_txtctrl[6].GetValue()
         enable_finalandstepindex = True
         if startindexstr.startswith(('[', '(', '{')):
@@ -973,6 +976,7 @@ class MainFrame_indexrefine(wx.Frame):
             startindex = startindexstr
             enable_finalandstepindex = False
 
+        #-------  fields 7 & 8 : Final Image index and  Image index step --------------
         if enable_finalandstepindex:
             try:
                 finalindex = int(self.list_txtctrl[7].GetValue())
@@ -986,19 +990,24 @@ class MainFrame_indexrefine(wx.Frame):
 
         fileindexrange = (startindex, finalindex, stepindex)
 
+        # ------ check boxes ------------------------------
+        #   ----  Index n using n-1 results  ---
         use_previous_results = self.previousreschk.GetValue()
+        #   ----  (Re)Analyse (overwrite results)  ---
         reanalyse = self.chck_renanalyse.GetValue()
+        #   ----  Update preexisting results  ---
         updatefitfiles = self.updatefitfiles.GetValue()
 
+        # ------  field 11: Minimum matching rate 
+        MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
+        print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
+
+        #---------------  field 10 : Guesses Matrix(ces) (.mat, .mats, .ubs)
         # read file containing guessed UB matrix or params to check orientation in .ubs file to check potential matching --------------
         # before doing (maybe long) indexation from scratch
         guessedMatricesFile = str(self.list_txtctrl[10].GetValue())
         print("guessedMatricesFile", guessedMatricesFile)
-        # -----------------------------------------------------------------------
-
-        # corresponding minimum matching rate -----------------------------------------------
-        MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
-        print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
+        
         if guessedMatricesFile not in ("None", "none"):
             print("Reading general file for guessed UB solutions")
 
@@ -1021,6 +1030,7 @@ class MainFrame_indexrefine(wx.Frame):
         # ----------------------------------------------------------------------
 
         # ----- selecting part of peaks that belong to "refposfile"
+        #------------  field 13: ---- 'Selected Peaks from File -----------------
         rsl = self.list_txtctrl[13].GetValue()
         if rsl in ('None', "None", 'none', "none"):
             Index_Refine_Parameters_dict['Reference Spots List'] = None
