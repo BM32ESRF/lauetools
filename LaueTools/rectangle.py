@@ -1196,7 +1196,7 @@ if __name__ == '__main__':
 # #     arrows = [patches.Arrow(pt_lb[0], pt_lb[1], pt_lt[0] - pt_lb[0], pt_lt[1] - pt_lb[1], fc='g', width=2.0, alpha=0.5),
 # #                patches.Arrow(pt_lb[0], pt_lb[1], pt_rb[0] - pt_lb[0], pt_rb[1] - pt_lb[1], fc='g', width=0.5, alpha=0.5)]
 # 
-# 
+#   # TODO use FancyArrow see SimulFrame.py
     arrows = [patches.YAArrow(fig, (pt_rb[0], pt_rb[1]), (pt_lb[0], pt_lb[1]),
                               fc='b', width=0.1, headwidth=.3, linestyle='dashed', alpha=0.5),
                patches.YAArrow(fig, (pt_lt[0], pt_lt[1]), (pt_lb[0], pt_lb[1]),

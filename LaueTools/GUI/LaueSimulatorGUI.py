@@ -41,7 +41,7 @@ if sys.version_info.major == 3:
     from . SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     from .. import CrystalParameters as CP
     from .. import multigrainsSimulator as MGS
-    from .. import readmccd as RMCCD
+    from .. import IOimagefile as IOimage
     from .. import indexingImageMatching as IMM
 
 else:
@@ -49,7 +49,7 @@ else:
     from GUI.SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     import CrystalParameters as CP
     import multigrainsSimulator as MGS
-    import readmccd as RMCCD
+    import IOimagefile as IOimage
     import indexingImageMatching as IMM
 
 

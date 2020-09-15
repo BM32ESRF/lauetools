@@ -67,6 +67,7 @@ class SimulationPlotFrame(wx.Frame):
         self.datatype = self.data[5]
         if self.datatype.endswith('fluo'):
             self.showFluoDetectorFrameTools = True
+            self.showFluoDetectorFrame = True
 
         self.ImageArray = ImageArray
         self.data_dict = {}
@@ -709,13 +710,16 @@ class SimulationPlotFrame(wx.Frame):
 
         if self.showFluoDetectorFrame:
             print("show Fluodetector frame in side")
+            # do not forget to set pixelsize = 1 (mm) and detector distance 50 mm
+            # xcen ycen xet xgam = 0
             # not in Marccd big nb of pixels convention
             self.X_offset = 0
             self.Y_offset = 0
 
-            self.ylim = (-500, 500)
-            self.xlim = (-500, 500)
-
+            if self.init_plot:
+                self.ylim = (-200, 200)
+                self.xlim = (-200, 200)
+            
             center_detframe = [self.X_offsetfluoframe, self.Y_offsetfluoframe]
 
             # range rectangle in ydet et zdet frame
@@ -920,13 +924,13 @@ class SimulationPlotFrame(wx.Frame):
                 self.xlim = (-.6, .6)
             elif "XYmar" in self.datatype:
 
-
                 self.axes.set_xlabel("X (pixel)")
                 self.axes.set_ylabel("Y (pixel)")
 
                 if self.showFluoDetectorFrame:
-                    self.ylim = (-500, 500)
-                    self.xlim = (-500, 500)
+                    
+                    self.ylim = (-200, 200)
+                    self.xlim = (-200, 200)
                 # marccd and roper convention
                 elif self.CCDLabel in ("MARCCD165", "PRINCETON"):
                     self.ylim = (2048, 0)
