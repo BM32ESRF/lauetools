@@ -778,7 +778,7 @@ class spotsset:
             useabsoluteindex = self.absolute_index
 
         print("***nb of selected spots in AssignHKL*****", len(useabsoluteindex))
-        print("selected_expdata", selected_expdata)
+        #print("selected_expdata", selected_expdata)
         print('matrix', matrix)
 
         AssignationHKL_res, nbtheospots, missingRefs = self.getSpotsLinks(matrix,
@@ -1080,7 +1080,7 @@ class spotsset:
 
         # default minimum matching rate to start refinement steps
         # (normally very small to accept a UB solution coming from self.UBstack
-        # if self.UBstack is feeded by previous results or checkorientation parameters (.ubs file)
+        # if self.UBstack is fed by previous results or checkorientation parameters (.ubs file)
         # MATCHINGRATE_FOR_PREVIOUSRESULTS is reset to the user value
         MATCHINGRATE_FOR_PREVIOUSRESULTS = 1.0
 
@@ -1546,20 +1546,22 @@ class spotsset:
                                     % (grain_index, Matching_rate))
                                 print("---------------------------------------------\n")
                             # this grain is considered now as indexed
-                            # corresponding spots will be no more used for next indexation
+                            # corresponding spots will be no more used for the next indexation
                             self.indexedgrains.append(grain_index)
 
                             # find single representation of UB and reset h,k,l accordingly
                             if set_central_spots_hkl is None and CP.hasCubicSymmetry(self.key_material,
                                                                         dictmaterials=self.dict_Materials):
 
-                                #                                 matrix = self.dict_grain_matrix[grain_index]
+                                # Transform matrix and recompute everything
+                                #  TODO: this operation should/could be avoided when using CheckOrientation (given orientation or equivalently precise values of HKL)
                                 matrix = self.refinedUBmatrix
                                 UBsingle, transfmat = FO.find_lowest_Euler_Angles_matrix(matrix)
 
-                                # update matrix
+                                # update self.dict_grain_matrix[grain_index] (used later to write results in file)
                                 self.dict_grain_matrix[grain_index] = UBsingle
-
+                                 
+                                # recompute HKL according to this new matrix
                                 datafamily = self.getSpotsFamilyallData(grain_index)
                                 index, H, K, L = np.take(datafamily, (0, -6, -5, -4), axis=1).T
 
@@ -2249,7 +2251,7 @@ class spotsset:
         data_1grain_raw = self.getSpotsFamilyallData(grain_index)
 
         print('\n\n *******data_1grain_raw.shape in refineUBSpotsFamily', data_1grain_raw.shape)
-        print('data_1grain_raw[0]', data_1grain_raw)
+        #print('data_1grain_raw[0]', data_1grain_raw)
         if isinstance(nbSpotsToIndex, int):
             data_1grain = data_1grain_raw[:nbSpotsToIndex]
         else:
@@ -4723,6 +4725,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     MinimumMatchingRate = Index_Refine_Parameters_dict["MinimumMatchingRate"]
 
     CheckOrientations = None
+    #--------  reading .mat .mats or .ubs file  . see field 'Guessed Matrix(ces) ...' in Index_Refine.py
     if "CheckOrientation" in Index_Refine_Parameters_dict:
         CheckOrientationsFile = Index_Refine_Parameters_dict["CheckOrientation"]
         CheckOrientations = IOLT.readCheckOrientationsFile(CheckOrientationsFile)
@@ -5130,13 +5133,13 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             # test if orientation material energy max can index
             # -----------------------------------------
 
-            # from ubs file
+            # from .ubs file
             CheckOrientationParams = None
             if CheckOrientations is not None:
                 for UBsparams in CheckOrientations:
                     print("UBsparams", UBsparams)
                     print("key_material", key_material)
-                    print("key_material", type(key_material))
+                    #print("key_material", type(key_material))
                     if key_material in UBsparams:
                         print("yaouuh")
                         CheckOrientationParams = [UBsparams]
