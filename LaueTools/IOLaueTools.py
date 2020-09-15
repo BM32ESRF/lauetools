@@ -1679,12 +1679,12 @@ def readdataasmatrices(fileobject):
                 listelem.append(val)
                 nbElements += 1
 
-    #         print 'listelem', listelem
+                print('listelem', listelem)
 
     if (nbElements % 9) != 0:
         raise ValueError("Number of elements is not a multiple of 9")
 
-    nbMatrices = nbElements / 9
+    nbMatrices = nbElements // 9
     matrices = np.array(listelem, dtype=float).reshape((nbMatrices, 3, 3))
 
     return nbMatrices, matrices, nblines - 1, posfile
@@ -2620,6 +2620,7 @@ if __name__ == "__main__":
 
     filepath = "checkubs.ubs"
     filepath = "SiHgCdTe.ubs"
+    filepath = "/home/micha/LaueToolsPy3/LaueTools/Examples/CuSi/testUBS.ubs"
     res = readCheckOrientationsFile(filepath)
 
 
