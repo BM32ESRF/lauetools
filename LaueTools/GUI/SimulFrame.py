@@ -733,7 +733,7 @@ class SimulationPlotFrame(wx.Frame):
             from matplotlib.collections import LineCollection
             import matplotlib.patches as patches
             if sys.version_info.major == 3:
-                from . import rectangle as rect
+                from .. import rectangle as rect
             else:
                 import rectangle as rect
 
