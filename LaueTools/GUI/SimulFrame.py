@@ -712,13 +712,17 @@ class SimulationPlotFrame(wx.Frame):
             print("show Fluodetector frame in side")
             # do not forget to set pixelsize = 1 (mm) and detector distance 50 mm
             # xcen ycen xet xgam = 0
+            # this configuration corresponds to laue spots coming from the sample and hitting the observer
+            # and the fluo detector. zdet up (tilted by 40 deg to the right)
+            # and ydet to the right (tilted by 40 deg) and going down
+            
             # not in Marccd big nb of pixels convention
             self.X_offset = 0
             self.Y_offset = 0
 
             if self.init_plot:
                 self.ylim = (-200, 200)
-                self.xlim = (-200, 200)
+                self.xlim = (200, -200)
             
             center_detframe = [self.X_offsetfluoframe, self.Y_offsetfluoframe]
 
@@ -930,7 +934,7 @@ class SimulationPlotFrame(wx.Frame):
                 if self.showFluoDetectorFrame:
                     
                     self.ylim = (-200, 200)
-                    self.xlim = (-200, 200)
+                    self.xlim = (200, -200)
                 # marccd and roper convention
                 elif self.CCDLabel in ("MARCCD165", "PRINCETON"):
                     self.ylim = (2048, 0)
