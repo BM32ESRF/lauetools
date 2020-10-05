@@ -4750,7 +4750,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     else:
         todump = dictRes
 
-    encodingdigits = "%%0%dd" % nbdigits
+    #encodingdigits = "%%0%dd" % nbdigits
 
     # --- ----------------
     totalnb_grains = 0
@@ -4898,7 +4898,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # if renanalysz is not checked, will only considered image and index
         # for which correspondind .res does not exist
         if not reanalyse:
-            resfilename = prefixfilename + encodingdigits % imageindex + ".res"
+            resfilename = prefixfilename + str(imageindex).zfill(nbdigits) + ".res"
             if resfilename in list_resfiles_in_folder:
                 printcyan("file %s exists, corresponding .dat or .cor file is already indexed !!"
                     % resfilename)
@@ -4907,7 +4907,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # So it will use .det to compute 2theta chi scattering angles and write a .cor file
         if suffixfilename.endswith(".dat"):
             # print("CCDCalibdict eeeeee.dat", CCDCalibdict)
-            datfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
+            datfilename = prefixfilename + str(imageindex).zfill(nbdigits) + suffixfilename
 
             dirname_in = Index_Refine_Parameters_dict["PeakList Folder"]
 
@@ -4940,7 +4940,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         # consider peaks from .cor file (that could have been created at the previous branch from .dat file)
         elif suffixfilename == ".cor":
             # print("CCDCalibdict fffffff.cor", CCDCalibdict)
-            corfilename = prefixfilename + encodingdigits % imageindex + suffixfilename
+            corfilename = prefixfilename + str(imageindex).zfill(nbdigits) + suffixfilename
             dirname_in = Index_Refine_Parameters_dict["PeakListCor Folder"]
 
             if not os.path.exists(os.path.join(dirname_in, corfilename)):
@@ -5159,7 +5159,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 # this threshold comes from the GUI index_Refine.py
                 MINIMUM_MATCHING_RATE = MinimumMatchingRate
 
-                fitfilename = (prefixfilename + encodingdigits % imageindex
+                fitfilename = (prefixfilename + str(imageindex).zfill(nbdigits)
                     + "_g%d.fit" % material_index)
 
                 (list_indexedgrains_indices, _, _,
