@@ -269,6 +269,10 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
                                                     Acceptable_LowestValue=0,
                                                     ijindices_array=ijindices_array)
 
+            if cov is not None and verbose:
+                print('params  solution ', params)
+                print('\n\n *****\n covariance matrix    --- ', cov.tolist())
+
         elif fitfunc == "lorentzian":
             params, cov, infodict, errmsg = fit2d_l.lorentzfit(Data[k_image],
                                                                 err=None,

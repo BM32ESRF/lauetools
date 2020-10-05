@@ -5,17 +5,11 @@ module to fit 2d value in array
 still in development for fit of multiple peaks in ROI
 """
 
-import os
 import sys
 import pylab as p
 import numpy as np
 
 from scipy import optimize, stats
-
-try:
-    import Image as II
-except:
-    print("module Image / PIL is not installed")
 
 from matplotlib.ticker import FuncFormatter
 
@@ -41,8 +35,7 @@ def gaussian(height, center_x, center_y, width_x, width_y):
     width_x = float(width_x)
     width_y = float(width_y)
     return lambda x, y: height * np.exp(
-        -(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2
-    )
+        -(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
 
 def moments(data):
@@ -73,7 +66,7 @@ def fitgaussian(data):
 def momentsr(data, circle, rotate, vheight):
     """Returns (height, amplitude, x, y, width_x, width_y, rotation angle)
     the gaussian parameters of a 2D distribution by calculating its
-    moments.  Depending on the input parameters, will only output 
+    moments.  Depending on the input parameters, will only output
     a subset of the above"""
     total = data.sum() * 1.0
     X, Y = np.indices(data.shape)
@@ -153,8 +146,7 @@ def twodgaussian(inpars, circle, rotate, vheight):
             + str(inpars)
             + " and you've input: "
             + str(inpars_old)
-            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight)
-        )
+            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight))
 
     def rotgauss(x, y):
         if rotate == 1:
@@ -164,8 +156,7 @@ def twodgaussian(inpars, circle, rotate, vheight):
             xp = x
             yp = y
         g = height + amplitude * np.exp(
-            -(((rcen_x - xp) / width_x) ** 2 + ((rcen_y - yp) / width_y) ** 2) / 2.0
-        )
+            -(((rcen_x - xp) / width_x) ** 2 + ((rcen_y - yp) / width_y) ** 2) / 2.0)
         return g
 
     return rotgauss
@@ -276,25 +267,12 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
         xp_2 = x * np.cos(rota_2) - y * np.sin(rota_2)
         yp_2 = x * np.sin(rota_2) + y * np.cos(rota_2)
 
-        g = (
-            height_1
-            + amplitude_1
-            * np.exp(
-                -(
-                    ((rcen_x_1 - xp_1) / width_x_1) ** 2
-                    + ((rcen_y_1 - yp_1) / width_y_1) ** 2
-                )
-                / 2.0
-            )
+        g = (height_1 + amplitude_1
+            * np.exp(-(((rcen_x_1 - xp_1) / width_x_1) ** 2
+                    + ((rcen_y_1 - yp_1) / width_y_1) ** 2)/ 2.0)
             + amplitude_2
-            * np.exp(
-                -(
-                    ((rcen_x_2 - xp_2) / width_x_2) ** 2
-                    + ((rcen_y_2 - yp_2) / width_y_2) ** 2
-                )
-                / 2.0
-            )
-        )
+            * np.exp(-(((rcen_x_2 - xp_2) / width_x_2) ** 2
+                    + ((rcen_y_2 - yp_2) / width_y_2) ** 2)/ 2.0))
 
         return g
 
@@ -306,21 +284,10 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
     # return rotgauss_2
 
 
-def gaussfit(
-    data,
-    err=None,
-    params=[],
-    autoderiv=1,
-    return_all=0,
-    circle=0,
-    rotate=1,
-    vheight=1,
-    xtol=0.0000001,
-    Acceptable_HighestValue=False,
-    Acceptable_LowestValue=False,
-    ijindices_array=None,
-    usecythonmodule=USE_CYTHON,
-):
+def gaussfit( data, err=None, params=[], autoderiv=1, return_all=0, circle=0,
+    rotate=1, vheight=1, xtol=0.0000001, Acceptable_HighestValue=False,
+    Acceptable_LowestValue=False, ijindices_array=None,
+    usecythonmodule=USE_CYTHON, computerrorbars=False):
     """
     Gaussian fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
 
@@ -341,9 +308,9 @@ def gaussfit(
             by setting rotate=0
         vheight=1 - default allows a variable height-above-zero, i.e. an additive constant
             for the Gaussian function.  Can remove first parameter by setting this to 0
-            
+
         Acceptable_HighestValue: if not False, pixel intensity level above which the pixel has a zero weight
-        Acceptable_LowestValue: if not False, pixel intensity level below which the pixel has a zero weight 
+        Acceptable_LowestValue: if not False, pixel intensity level below which the pixel has a zero weight
 
     Output:
         Default output is a set of Gaussian parameters with the same shape as the input parameters
@@ -373,28 +340,46 @@ def gaussfit(
     if not usecythonmodule:
         if err is None:
             errorfunction = lambda p: np.ravel(
-                (twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data)
-            )
+                (twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data))
         else:
             errorfunction = lambda p: np.ravel(
                 (twodgaussian(p, circle, rotate, vheight)(*ijindices_array) - data)
-                * err
-            )
+                * err)
     else:
         n1, n2 = data.shape
-        errorfunction = lambda p: np.ravel(
-            (gaussian2D.twodgaussian_cython(n1, n2, p) - data)
-        )
+        errorfunction = lambda p: np.ravel((gaussian2D.twodgaussian_cython(n1, n2, p) - data))
 
     if autoderiv == 0:
-        # the analytic derivative, while not terribly difficult, is less efficient and useful. 
+        # the analytic derivative, while not terribly difficult, is less efficient and useful.
         # I only bothered putting it here because I was instructed to do so for a class project.
         #  - please ask if you would like    # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
         (p, cov, infodict, errmsg, success) = optimize.leastsq(
-            errorfunction, params, full_output=1, xtol=xtol
-        )
+            errorfunction, params, full_output=1, xtol=xtol)
+
+        if computerrorbars:
+            # https://stackoverflow.com/questions/14581358/getting-standard-errors-on-fitted-parameters-using-the-optimize-leastsq-method-i/21844726
+ 
+            n1, n2 = data.shape
+
+            if (n1*n2 > len(p)) and cov is not None:
+                s_sq = (errorfunction(p)**2).sum()/(n1*n2-len(p))
+                pcov = cov * s_sq
+            else:
+                pcov = np.inf
+
+            error = []
+            for i in range(len(p)):
+                try:
+                    error.append(np.absolute(pcov[i][i])**0.5)
+                except:
+                    error.append(0.00)
+            pfit_leastsq = p
+            perr_leastsq = np.array(error)
+
+            print("pfit_leastsq", pfit_leastsq)
+            print("perr_leastsq", perr_leastsq)
 
     if return_all == 0:
         return p
@@ -402,17 +387,8 @@ def gaussfit(
         return p, cov, infodict, errmsg
 
 
-def gaussfit_2peaks(
-    data,
-    err=None,
-    params=[],
-    autoderiv=1,
-    return_all=0,
-    circle=0,
-    rotate=1,
-    vheight=1,
-    xtol=0.0000001,
-):
+def gaussfit_2peaks( data, err=None, params=[], autoderiv=1, return_all=0,
+                                                circle=0, rotate=1, vheight=1, xtol=0.0000001):
     """
     two Gaussians fitter with the ability to fit a variety of
     different forms of 2-dimensional gaussian.
@@ -448,22 +424,17 @@ def gaussfit_2peaks(
         # params = (momentsr(data,circle,rotate,vheight))
     if err is None:
         errorfunction = lambda p: np.ravel(
-            (
-                twodgaussian_2peaks(p, circle, rotate, vheight)(*np.indices(data.shape))
-                - data
-            )
-        )
+            (twodgaussian_2peaks(p, circle, rotate, vheight)(*np.indices(data.shape))
+                - data))
     else:
         errorfunction = lambda p: np.ravel(
             (twodgaussian(p, circle, rotate, vheight)(*np.indices(data.shape)) - data)
-            / err
-        )
+            / err)
     if autoderiv == 0:
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
         p, cov, infodict, errmsg, success = optimize.leastsq(
-            errorfunction, params, full_output=1, xtol=xtol
-        )
+            errorfunction, params, full_output=1, xtol=xtol)
     if return_all == 0:
         return p
     elif return_all == 1:
@@ -484,20 +455,14 @@ def create2Dgaussiandata():
     ax = p.gca()
     (height, x, y, width_x, width_y) = params
 
-    p.text(
-        0.95,
-        0.05,
+    p.text(0.95, 0.05,
         """
     x : %.1f
     y : %.1f
     width_x : %.1f
     width_y : %.1f"""
-        % (x, y, width_x, width_y),
-        fontsize=16,
-        horizontalalignment="right",
-        verticalalignment="bottom",
-        transform=ax.transAxes,
-    )
+        % (x, y, width_x, width_y), fontsize=16, horizontalalignment="right",
+        verticalalignment="bottom", transform=ax.transAxes)
 
     p.show()
 
@@ -515,9 +480,7 @@ if __name__ == "__main__":
         circle = 0
         rotate = 1
         vheight = 1
-        data = twodgaussian(inpars, circle, rotate, vheight)(
-            Xin, Yin
-        ) + 10 * np.random.random(Xin.shape)
+        data = twodgaussian(inpars, circle, rotate, vheight)(Xin, Yin) + 10 * np.random.random(Xin.shape)
         # -------------------------------------
 
     # fifi='Zr_A169_0220.mccd'
@@ -593,8 +556,7 @@ if __name__ == "__main__":
     # startingparams=[start_baseline,start_amplitude,start_j,start_i,start_sigma1,start_sigma2,start_anglerot,
     # start_baseline,start_amplitude,start_j,start_i,start_sigma1,start_sigma2,start_anglerot]
 
-    startingparams = [
-        start_baseline,
+    startingparams = [start_baseline,
         start_amplitude_1,
         peak_1[1] - (center_pixel[1] - yboxsize),
         peak_1[0] - (center_pixel[0] - xboxsize),
@@ -606,8 +568,7 @@ if __name__ == "__main__":
         peak_2[0] - (center_pixel[0] - xboxsize),
         start_sigma1,
         start_sigma2,
-        start_anglerot,
-    ]
+        start_anglerot]
 
     print("startingparams")
     print(startingparams[:7])
@@ -616,57 +577,38 @@ if __name__ == "__main__":
     if 0:  # all(dat>0):
         print("logscale")  # matshow seems slow !
         p.matshow(
-            np.log(dat), cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper"
-        )
+            np.log(dat), cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper")
     else:
-        p.imshow(
-            np.log(dat + 0.000000000000001),
-            cmap=GT.GIST_EARTH_R,
+        p.imshow(np.log(dat + 0.000000000000001), cmap=GT.GIST_EARTH_R,
             interpolation="nearest",
-            origin="upper",
-        )
+            origin="upper")
 
     # fit one peak
-    params, cov, infodict, errmsg = gaussfit_2peaks(
-        dat,
-        err=None,
+    params, cov, infodict, errmsg = gaussfit_2peaks(dat, err=None,
         params=startingparams,
         autoderiv=1,
         return_all=1,
         circle=0,
         rotate=1,
-        vheight=1,
-    )
+        vheight=1)
 
     print("\n *****fitting results ************\n")
     print("background intensity:            %.2f" % params[0])
     print("Peak amplitude above background        %.2f" % params[1])
-    print(
-        "pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0])
-    )
-    print(
-        "pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1])
-    )
+    print("pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0]))
+    print("pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1]))
     print("std 1,std 2 (pix)            ( %.2f , %.2f )" % (params[4], params[5]))
-    print(
-        "e=min(std1,std2)/max(std1,std2)        %.3f"
-        % (min(params[4], params[5]) / max(params[4], params[5]))
-    )
+    print("e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[4], params[5]) / max(params[4], params[5])))
     print("Rotation angle (deg)            %.2f\n\n" % (params[6] % 360))
 
     print("background intensity:            %.2f" % params[0])
     print("Peak amplitude above background        %.2f" % params[7])
-    print(
-        "pixel position (X)            %.2f" % (params[9] - xboxsize + center_pixel[0])
-    )
-    print(
-        "pixel position (Y)            %.2f" % (params[8] - yboxsize + center_pixel[1])
-    )
+    print("pixel position (X)            %.2f" % (params[9] - xboxsize + center_pixel[0]))
+    print("pixel position (Y)            %.2f" % (params[8] - yboxsize + center_pixel[1]))
     print("std 1,std 2 (pix)            ( %.2f , %.2f )" % (params[10], params[11]))
-    print(
-        "e=min(std1,std2)/max(std1,std2)        %.3f"
-        % (min(params[10], params[11]) / max(params[10], params[11]))
-    )
+    print("e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[10], params[11]) / max(params[10], params[11])))
     print("Rotation angle (deg)            %.2f" % (params[12] % 360))
     print("************************************\n")
     # print params
@@ -686,9 +628,7 @@ if __name__ == "__main__":
     # fit1=twodgaussian(params1,0,1,1)
     # fit2=twodgaussian(params2,0,1,1)
     # fit3=twodgaussian(params3,0,1,1)
-    isointensity = np.logspace(
-        np.log(params[0] * 0.5), np.log(max(params[1], params[7])), 40
-    )
+    isointensity = np.logspace(np.log(params[0] * 0.5), np.log(max(params[1], params[7])), 40)
     p.contour(fit_1(*np.indices(dat.shape)), isointensity, cmap=GT.COPPER)
     # contour(fit(*indices(dat.shape))+fit1(*indices(dat.shape))+fit2(*indices(dat.shape))+fit3(*indices(dat.shape)), isointensity,cmap=cm.copper)
     ax = p.gca()
