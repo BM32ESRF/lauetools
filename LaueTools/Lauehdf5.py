@@ -102,6 +102,29 @@ class DevStrain(Tab.IsDescription):
     devstrain_13_2 = Tab.Float32Col()
     devstrain_12_2 = Tab.Float32Col()
 
+class DevStrainSample(Tab.IsDescription):
+    fileindex = Tab.UInt16Col()
+    devstrainsample_11_0 = Tab.Float32Col()
+    devstrainsample_22_0 = Tab.Float32Col()
+    devstrainsample_33_0 = Tab.Float32Col()
+    devstrainsample_23_0 = Tab.Float32Col()
+    devstrainsample_13_0 = Tab.Float32Col()
+    devstrainsample_12_0 = Tab.Float32Col()
+
+    devstrainsample_11_1 = Tab.Float32Col()
+    devstrainsample_22_1 = Tab.Float32Col()
+    devstrainsample_33_1 = Tab.Float32Col()
+    devstrainsample_23_1 = Tab.Float32Col()
+    devstrainsample_13_1 = Tab.Float32Col()
+    devstrainsample_12_1 = Tab.Float32Col()
+
+    devstrainsample_11_2 = Tab.Float32Col()
+    devstrainsample_22_2 = Tab.Float32Col()
+    devstrainsample_33_2 = Tab.Float32Col()
+    devstrainsample_23_2 = Tab.Float32Col()
+    devstrainsample_13_2 = Tab.Float32Col()
+    devstrainsample_12_2 = Tab.Float32Col()
+
 
 # Define a user record to characterize some kind of particles
 class SpotsList(Tab.IsDescription):
@@ -143,6 +166,12 @@ class AllIndexedSpots(Tab.IsDescription):
     devstrain_23 = Tab.Float32Col()
     devstrain_13 = Tab.Float32Col()
     devstrain_12 = Tab.Float32Col()
+    devstrainsample_11 = Tab.Float32Col()
+    devstrainsample_22 = Tab.Float32Col()
+    devstrainsample_33 = Tab.Float32Col()
+    devstrainsample_23 = Tab.Float32Col()
+    devstrainsample_13 = Tab.Float32Col()
+    devstrainsample_12 = Tab.Float32Col()
     peak_amplitude = Tab.Float32Col()
     peak_background = Tab.Float32Col()
     peak_width1 = Tab.Float32Col()
@@ -175,6 +204,15 @@ list_devstrain_element = [
     "devstrain_23",
     "devstrain_13",
     "devstrain_12",
+]
+
+list_devstrainsample_element = [
+    "devstrainsample_11",
+    "devstrainsample_22",
+    "devstrainsample_33",
+    "devstrainsample_23",
+    "devstrainsample_13",
+    "devstrainsample_12",
 ]
 
 pos_voigt = [0, 4, 8, 5, 2, 1]
@@ -279,8 +317,10 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
     if len(dicts) == 5:
         dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
+    elif len(dicts) == 6:
+        _, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
     else:
-        dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
+        _, dictMat, dictMR, dictNB, dictstrain, dictstrain_sample, dictspots = dicts
 
     keys_indexfile = sorted(dictMat.keys())
 
@@ -435,6 +475,43 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
         tabledev.flush()
         # -------------------------------------
 
+    if 1:  # Class DevStrain
+        #        # Create a new group under "/" (root)
+        #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
+
+        # Create one table on it
+        tabledevS = h5file.createTable(group_images, "DevstrainSample_matrices", DevStrainSample,
+                                                                            "UB Matrices elements")
+        # Fill the table with data
+        indexedDevS = tabledevS.row
+
+        for key_image in keys_indexfile:
+            indexedDevS["fileindex"] = key_image
+            nbmatrices = len(dictstrain[key_image])
+            grainindex = 0
+            while grainindex < max_nb_grains:
+                devstrainsamplematrix = np.zeros(6)
+                if grainindex < nbmatrices:
+                    exp_dev = dictstrain_sample[key_image][grainindex]
+                else:
+                    exp_dev = 0
+                if isinstance(exp_dev, (int, float)):
+                    # go to the next key_image
+                    break
+
+                devstrainsamplematrix = np.take(np.ravel(exp_dev), pos_voigt)
+                for k, strain_element in enumerate(list_devstrainsample_element):
+                    indexedDevS[strain_element + "_%d" % grainindex] = devstrainsamplematrix[k]
+
+                grainindex += 1
+
+            # Insert a new particle record
+            indexedDevS.append()
+
+            # -------------------------------
+        tabledevS.flush()
+        # -------------------------------------
+
     if 1:  # class AllIndexedSpots
 
         group_spots = h5file.createGroup("/", "Allspots", "All spots information")
@@ -473,6 +550,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
                 allIndexedSpots["NbindexedSpots"] = 0
                 UBmatrix = np.zeros(9)
                 devstrainmatrix = np.zeros(6)
+                devstrainsamplematrix = np.zeros(6)
 
                 #                print "spot index", elem[0]
                 #                print "grainindex", int(elem[1])
@@ -490,6 +568,9 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
                 for k, strain_element in enumerate(list_devstrain_element):
                     allIndexedSpots[strain_element] = devstrainmatrix[k]
+
+                for k, strainS_element in enumerate(list_devstrainsample_element):
+                    allIndexedSpots[strainS_element] = devstrainsamplematrix[k]
 
                 #                allIndexedSpots['peak_amplitude'] =
 
@@ -536,8 +617,10 @@ def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
 
     if len(dicts) == 5:
         dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
-    else:
+    elif len(dicts) == 6:
         _, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
+    else:
+        _, dictMat, dictMR, dictNB, dictstrain, dictstrain_sample, dictspots = dicts
 
     keys_indexfile = sorted(dictMat.keys())
 
@@ -588,6 +671,7 @@ def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
             allIndexedSpots["NbindexedSpots"] = 0
             UBmatrix = np.zeros(9)
             devstrainmatrix = np.zeros(6)
+            devstrainsamplematrix = np.zeros(6)
 
             #                print "spot index", elem[0]
             #                print "grainindex", int(elem[1])
@@ -605,6 +689,9 @@ def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
 
             for k, strain_element in enumerate(list_devstrain_element):
                 allIndexedSpots[strain_element] = devstrainmatrix[k]
+
+            for k, strainS_element in enumerate(list_devstrainsample_element):
+                    allIndexedSpots[strainS_element] = devstrainsamplematrix[k]
 
             #                allIndexedSpots['peak_amplitude'] =
 
@@ -788,6 +875,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
                 UBmatrix_flat = np.zeros(9)
                 devstrainmatrix = np.zeros(6)
+                devstrainsamplematrix = np.zeros(6)
                 #
                 #                print "spot index", elem[0]
                 #                print "grainindex", int(elem[1])
@@ -805,6 +893,9 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
                 for kk, strain_element in enumerate(list_devstrain_element):
                     allIndexedSpots[strain_element] = devstrainmatrix[kk]
+
+                for kk, strainS_element in enumerate(list_devstrainsample_element):
+                    allIndexedSpots[strainS_element] = devstrainsamplematrix[kk]
 
                 allIndexedSpots.append()
 
@@ -2122,8 +2213,6 @@ def query_twopeaks_location(tableallspots, peak1, peak2, radius1=5.0, radius2=5.
         set2 = set(tab2[:, 0])
 
     fileindex_sorted = np.sort(list(set.intersection(set1, set2)))
-    #        print "fileindex_sorted", fileindex_sorted
-    #        print "fileindex_sorted", type(fileindex_sorted)
 
     if len(fileindex_sorted) == 0:
         return []
@@ -2213,10 +2302,6 @@ def get_UBs(tableUB, fileindex, nbgrains=3):
 
     mats = np.array(mat[0])
 
-    #    print mats
-    #    print np.reshape(mats[0], (3, 3))
-    #    print np.reshape(mats[1], (3, 3))
-    #    print np.reshape(mats[2], (3, 3))
     return mats.reshape((3, 3, 3))
 
 
