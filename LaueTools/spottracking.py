@@ -109,7 +109,8 @@ def getSpotsAssociations(spotlist_XY, ref_list_XY, maxdistancetolerance=5,
 
 
 def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
-                                                                        thresholddistances=(10,50)):
+                                                                        thresholddistances=(10, 50),
+                                                                        verbose=0):
     """
     return rearranged and shortened list of spots properties (data_theta, Chi, posx, posy, dataintensity)
     if pixel positions (posx, posy) are in referenceList
@@ -175,10 +176,10 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
                                                                     minimum_seconddistance,
                                                                     None,
                                                                     None)
-
-        print("corresp", corresp)
-        # isolated spots in spotlist
-        print("isolated_spots_in_spotlist", isolated_spots_in_spotlist)
+        if verbose:
+            print("corresp", corresp)
+            # isolated spots in spotlist
+            print("isolated_spots_in_spotlist", isolated_spots_in_spotlist)
 
     data = np.array([data_theta, Chi, posx, posy, dataintensity]).T
 
@@ -186,14 +187,14 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
     # according to index in ref list
     arg_ind = np.argsort(corresp_array[:, 1])
 
-    print("arg_ind", arg_ind)
+    
 
     # spot index in current list sorted according to order in ref. list
     new_order_spotindices = np.array(corresp_array[arg_ind][:, 0], dtype=np.int)
-
-    print("new_order_spotindices", new_order_spotindices)
-
-    print("data.shape", data.shape)
+    if verbose:
+        print("arg_ind", arg_ind)
+        print("new_order_spotindices", new_order_spotindices)
+        print("data.shape", data.shape)
 
     resorted_data = np.take(data, new_order_spotindices, axis=0)
 
