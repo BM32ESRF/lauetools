@@ -558,6 +558,9 @@ class MainFrame_indexrefine(wx.Frame):
         self.updatefitfiles = wx.CheckBox(self.panel, -1, "Update preexisting results")
         self.updatefitfiles.SetValue(False)
 
+        self.verbosemode = wx.CheckBox(self.panel, -1, "Verbose mode")
+        self.verbosemode.SetValue(True)
+
         #          bouton STARTdfd
         btnStart = wx.Button(
             self.panel, -1, "START INDEX and REFINE (files .fit in OutPutFolder)", size=(-1, 60))
@@ -570,6 +573,7 @@ class MainFrame_indexrefine(wx.Frame):
         hfinal.AddSpacer(30)
         hfinal.Add(self.chck_renanalyse, 0)
         hfinal.Add(self.updatefitfiles, 0, wx.EXPAND)
+        hfinal.Add(self.verbosemode, 0, wx.EXPAND)
 
         hmap = wx.BoxSizer(wx.HORIZONTAL)
         hmap.Add(txt_mapshape, 0)
@@ -601,7 +605,7 @@ class MainFrame_indexrefine(wx.Frame):
             "Create .irp file containing parameters to index & refine peaks list")
         self.previousreschk.SetToolTipString("If checked, for indexing the current image n, "
         "first check if orientation matrix of image n-1 is a good guess before starting "
-        "an indexation from scratch (according to .irp file)")
+        "an indexation from scratch (according to .irp file). 'Guessed Matrix(ces) must be None'")
         tipcpus = "nb of cores to use to index&refine all peaks list files"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
@@ -998,6 +1002,9 @@ class MainFrame_indexrefine(wx.Frame):
         #   ----  Update preexisting results  ---
         updatefitfiles = self.updatefitfiles.GetValue()
 
+
+        verbosemode = self.verbosemode.GetValue()
+
         # ------  field 11: Minimum matching rate 
         MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
         print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
@@ -1008,8 +1015,12 @@ class MainFrame_indexrefine(wx.Frame):
         guessedMatricesFile = str(self.list_txtctrl[10].GetValue())
         print("guessedMatricesFile", guessedMatricesFile)
         
-        if guessedMatricesFile not in ("None", "none"):
+        if guessedMatricesFile not in ("None", "none", 'NONE'):
             print("Reading general file for guessed UB solutions")
+
+            if use_previous_results:
+                wx.MessageBox('"index n using n-1 results" can be checked if "Guessed Matrix(ces)" is None', 'INFO')
+                return
 
             # read list or single matrix (ces) in GUI field
             if not guessedMatricesFile.endswith(".ubs"):
@@ -1026,7 +1037,8 @@ class MainFrame_indexrefine(wx.Frame):
             Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
         else:
             # we are sure to be less than that!
-            Index_Refine_Parameters_dict["MinimumMatchingRate"] = 101.0
+            Index_Refine_Parameters_dict["MinimumMatchingRate"] = max(0.123456,MinimumMatchingRate)
+
         # ----------------------------------------------------------------------
 
         # ----- selecting part of peaks that belong to "refposfile"
@@ -1089,7 +1101,7 @@ class MainFrame_indexrefine(wx.Frame):
             output_index_fileseries_3 = ISS.index_fileseries_3(fileindexrange,
                                     Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
                                     saveObject=0,
-                                    verbose=0,
+                                    verbose=verbosemode,
                                     nb_materials=NB_MATERIALS,
                                     build_hdf5=True,
                                     prefixfortitle=fileprefix,
@@ -1111,7 +1123,7 @@ class MainFrame_indexrefine(wx.Frame):
                                         dirname_dictRes=filepathout,
                                         Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
                                         saveObject=0,
-                                        verbose=0,
+                                        verbose=verbosemode,
                                         nb_materials=NB_MATERIALS,
                                         nb_of_cpu=nb_cpus,
                                         build_hdf5=True,
@@ -1178,7 +1190,6 @@ initialparameters["stepindex"] = 1
 initialparameters["filter_peaks_index_refine_calib"] = 1
 # highest accepted pixdev of fit
 initialparameters["maxpixdev_filter_peaks_index_refine_calib"] = 0.7
-
 initialparameters["GuessedUBMatrix"] = "None"
 initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
@@ -1191,12 +1202,17 @@ if 1:
     initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
     initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
     initialparameters["PeakList Filename Prefix"] = "SiCustrain"
-    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
+    #initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "si_and_cu.irp")
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["Detector Calibration File .det"] = None
     initialparameters["nbdigits"] = 0
-    initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
-                                                            "corfiles", "SiCustrain5_Cu20spots.fit")
+    # initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+    #                                                         "corfiles", "SiCustrain5_Cu20spots.fit")
+    initialparameters["Selected Peaks from File"] = 'None'
+    initialparameters["startingindex"] = 0
+    initialparameters["finalindex"] = 1
+    initialparameters["stepindex"] = 1
 
 
 # prepare sorted list of values
