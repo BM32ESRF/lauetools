@@ -74,7 +74,7 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     y1 = np.maximum(0, ypic - boxsizey)
     y2 = np.minimum(arrayshape[1], ypic + boxsizey)
 
-    imin, imax, jmin, jmax = y1, y2, x1, x2
+    imin, imax, jmin, jmax = int(y1), int(y2), int(x1), int(x2)
 
     return imin, imax, jmin, jmax
 
@@ -187,8 +187,6 @@ def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
     framedim = framedim[1], framedim[0]
     imin, imax, jmin, jmax = getindices2cropArray(center, boxsize, framedim, flipxycenter=1)
 
-    #    print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
-
     fulldata = D_array
     array_short = fulldata[imin:imax, jmin:jmax]
 
@@ -204,7 +202,7 @@ def minmax(D_array, center, boxsize, framedim=(2048, 2048), withmaxpos=False):
         return [mini_in_ROI, maxi_in_ROI]
 
 
-def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True):
+def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True, verbose=0):
     r"""
     return  min max XYposmin, XYposmax values in ROI
 
@@ -229,7 +227,7 @@ def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True
                                                                         flipxycenter=flipxycenter)
     imin, imax, jmin, jmax = indicesborders
 
-    print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
+    if verbose > 0: print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
     datacropped = data2d[imin:imax, jmin:jmax]
 
     # mini, maxi, posmin, posmax

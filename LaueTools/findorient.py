@@ -564,7 +564,7 @@ def computeUnique_UBmatrix(UBmat):
     return matLTmin, transfmat
 
 
-def find_lowest_Euler_Angles_matrix(mat):
+def find_lowest_Euler_Angles_matrix(mat, verbose=0):
     """
     gives columns of a* b* c* on x y z with lowest Euler angles
     .. note:: corrected 08 Nov 11 by O. Robach
@@ -630,9 +630,10 @@ def find_lowest_Euler_Angles_matrix(mat):
     # #    print sign(inner(cross(mat[:,0], mat[:,1]),mat[:,2]))
     # #    sign0 = sign(inner(cross(matfinal[:,0], matfinal[:,1]),matfinal[:,2]))
     # #        print sign0
-    print("transform matrix to matrix with lowest Euler Angles")
-    print("start \n", mat)
-    print("final \n", matfinal)
+    if verbose:
+        print("transform matrix to matrix with lowest Euler Angles")
+        print("start \n", mat)
+        print("final \n", matfinal)
 
     # matrix to transform hkl's
     transfmat = LA.inv((np.dot(LA.inv(mat), matfinal).round(decimals=1)))
@@ -1188,14 +1189,14 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
         print("planes_pairs", planes_pairs)
         print("\n Lattice Planes pairs found within %.3f and close to %.9f deg"
             % (angular_tolerance_Recognition, angle_query))
-        if len(plane_1) > 1:
+        if nbplane_1 > 1:
             for k, pair in enumerate(planes_pairs):
                 print("< ", pair[0], " , ",
                             pair[1], " > = %.2f, AngDev %.2f" % (closest_angles_values[k],
                             AngDev[k]))
         else:
-            print("< ", planes_pairs[0], "  ,  ",
-                        planes_pairs[1], " > = %.6f " % closest_angles_values)
+            print("< ", planes_pairs[0][0], "  ,  ",
+                        planes_pairs[0][1], " > = %.6f " % closest_angles_values)
     return (planes_pairs, closest_angles_values), LUT
 
 
