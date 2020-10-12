@@ -595,7 +595,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
 
 # ---- ----------------------Strain computations --------------
-def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
+def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a", verbose=0):
     r"""
     Computes deviatoric strain and new direct (real) lattice parameters
     from matrix newUBmat (rotation and deformation)
@@ -651,8 +651,8 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
         index_constant_length = 1
     if constantlength == "c":
         index_constant_length = 2
-
-    print("For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
+    if verbose:
+        print("For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
         % (constantlength, latticeparams[index_constant_length]))
     ratio = (latticeparams[index_constant_length]
         / lattice_parameter_direct_strain[index_constant_length])
@@ -660,7 +660,8 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a"):
     lattice_parameter_direct_strain[1] *= ratio
     lattice_parameter_direct_strain[2] *= ratio
 
-    print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
+    if verbose:
+        print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
 
     return devstrain, lattice_parameter_direct_strain
 
@@ -693,7 +694,7 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
     return devstrain, deviatoricstrain_sampleframe, lattice_parameters
 
 
-def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
+def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams, verbose=0):
     r"""
     # starting B0matrix corresponding to the unit cell   -----
         latticeparams = DictLT.dict_Materials[key_material][1]
@@ -701,7 +702,7 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
 
         q = newUBmat B0 G*
     """
-    print("new UBs matrix in q= UBs G (s for strain)")
+    if verbose: print("new UBs matrix in q= UBs G (s for strain)")
 
     Bstar_s = np.dot(newUBmat, B0matrix)
     #     print Bstar_s
@@ -716,11 +717,11 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams):
     # keeping non rotating part (symmetrical)
     strain_direct = (Trans + Trans.T) / 2.0 - np.eye(3)
 
-    print("strain_direct", strain_direct)
+    if verbose: print("strain_direct", strain_direct)
 
     devstrain = strain_direct - np.trace(strain_direct) / 3.0 * np.eye(3)
 
-    print("deviatoric strain", devstrain)
+    if verbose: print("deviatoric strain", devstrain)
 
     return devstrain, lattice_parameter_direct_strain
 
