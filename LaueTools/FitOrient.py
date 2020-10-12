@@ -345,64 +345,56 @@ def error_function_on_demand_calibration(
         return distanceterm, deltamat, newmatrix, spotsData
 
 
-def fit_on_demand_calibration(
-    starting_param,
-    miller,
-    allparameters,
-    _error_function_on_demand_calibration,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    vecteurref=IDENTITYMATRIX,
-    pureRotation=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    kf_direction="Z>0",
-    **kwd):
+def fit_on_demand_calibration(starting_param, miller, allparameters,
+                                _error_function_on_demand_calibration,
+                                arr_indexvaryingparameters,
+                                nspots,
+                                pixX,
+                                pixY,
+                                initrot=IDENTITYMATRIX,
+                                vecteurref=IDENTITYMATRIX,
+                                pureRotation=1,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0",
+                                **kwd):
     """
     #All miller indices must be entered in miller,
     selection is done in xy_from_Quat with nspots (array of indices)
     """
-    parameters = [
-        "distance (mm)",
-        "Xcen (pixel)",
-        "Ycen (pixel)",
-        "Angle1 (deg)",
-        "Angle2 (deg)",
-        "theta1",
-        "theta2",
-        "theta3",
-    ]
+    parameters = ["distance (mm)",
+                "Xcen (pixel)",
+                "Ycen (pixel)",
+                "Angle1 (deg)",
+                "Angle2 (deg)",
+                "theta1",
+                "theta2",
+                "theta3"]
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
     param_calib_0 = starting_param
     if verbose:
         print(
             "\n\n***************************\nfirst error with initial values of:",
-            parameters_being_fitted,
-            " \n\n***************************\n",
-        )
+            parameters_being_fitted, " \n\n***************************\n")
 
-        _error_function_on_demand_calibration(
-            param_calib_0,
-            miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            nspots,
-            pixX,
-            pixY,
-            initrot=initrot,
-            vecteurref=vecteurref,
-            pureRotation=pureRotation,
-            verbose=1,
-            pixelsize=pixelsize,
-            dim=dim,
-            weights=weights,
-            kf_direction=kf_direction)
+        _error_function_on_demand_calibration(param_calib_0,
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                nspots,
+                                                pixX,
+                                                pixY,
+                                                initrot=initrot,
+                                                vecteurref=vecteurref,
+                                                pureRotation=pureRotation,
+                                                verbose=1,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                kf_direction=kf_direction)
 
         print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted,
             "\n\n***************************\n")
@@ -563,18 +555,6 @@ def error_function_on_demand_strain(param_strain,
     # print "**mean distanceterm   ",mean(distanceterm),"    ********"
 
     if verbose:
-        # print "param_strain in error_function_on_demand_strain",param_strain
-        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
-        # print "X",X
-        # print "pixX",pixX
-        # print "Y",Y
-        # print "pixY",pixY
-        # print "newmatrix",newmatrix
-        # print "Bmat",Bmat
-        # print "deltamat",deltamat
-        # print "initrot",initrot
-        # print "param_orient",param_calib
-        # print "distanceterm",distanceterm
         if weights is not None:
             print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
         else:
@@ -621,9 +601,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
 
     if index_of_rot_in_arr_indexvaryingparameters_1[0] in arr_indexvaryingparameters:
         ind1 = np.where(
-            arr_indexvaryingparameters
-            == index_of_rot_in_arr_indexvaryingparameters_1[0]
-        )[0][0]
+            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[0])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a1 = param_strain[ind1] * DEG
         else:
@@ -635,9 +613,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
 
     if index_of_rot_in_arr_indexvaryingparameters_1[1] in arr_indexvaryingparameters:
         ind2 = np.where(
-            arr_indexvaryingparameters
-            == index_of_rot_in_arr_indexvaryingparameters_1[1]
-        )[0][0]
+            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[1])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a2 = param_strain[ind2] * DEG
         else:
@@ -648,7 +624,8 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
                         [0, np.sin(-a2), np.cos(a2)]])
 
     if index_of_rot_in_arr_indexvaryingparameters_1[2] in arr_indexvaryingparameters:
-        ind3 = np.where(arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[2])[0][0]
+        ind3 = np.where(
+            arr_indexvaryingparameters == index_of_rot_in_arr_indexvaryingparameters_1[2])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a3 = param_strain[ind3] * DEG
         else:
@@ -676,8 +653,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     if index_of_rot_in_arr_indexvaryingparameters_2[1] in arr_indexvaryingparameters:
         ind2 = np.where(
             arr_indexvaryingparameters
-            == index_of_rot_in_arr_indexvaryingparameters_2[1]
-        )[0][0]
+            == index_of_rot_in_arr_indexvaryingparameters_2[1])[0][0]
         if len(arr_indexvaryingparameters) > 1:
             a2 = param_strain[ind2] * DEG
         else:
@@ -765,18 +741,6 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     # print "**mean distanceterm   ",mean(distanceterm),"    ********"
 
     if verbose:
-        # print "param_strain in error_function_on_demand_strain",param_strain
-        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
-        # print "X",X
-        # print "pixX",pixX
-        # print "Y",Y
-        # print "pixY",pixY
-        # print "newmatrix",newmatrix
-        # print "Bmat",Bmat
-        # print "deltamat",deltamat
-        # print "initrot",initrot
-        # print "param_orient",param_calib
-        # print "distanceterm",distanceterm
         if weights is not None:
             print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
         else:
@@ -818,10 +782,9 @@ def fit_on_demand_strain(starting_param,
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     param_strain_0 = starting_param
-    if 1: #verbose:
+    if verbose:
         print("\n\n***************************\nfirst error with initial values of:",
-            parameters_being_fitted,
-            " \n\n***************************\n")
+            parameters_being_fitted, " \n\n***************************\n")
 
         _error_function_on_demand_strain(param_strain_0,
                                         miller,
@@ -882,7 +845,7 @@ def fit_on_demand_strain(starting_param,
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if 1:#verbose:
+        if verbose:
             print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
             _error_function_on_demand_strain(strain_sol,
                                             miller,
@@ -946,39 +909,36 @@ def plot_refinement_oneparameter(starting_param,
     # designed for rotation angle
     res = []
     for angle in np.linspace(mini, maxi, nbsteps) + param_calib_0:
-        residues = _error_function_on_demand_calibration(
-            np.array([angle]),
-            miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            nspots,
-            pixX,
-            pixY,
-            initrot=initrot,
-            vecteurref=vecteurref,
-            pureRotation=pureRotation,
-            verbose=0,
-            pixelsize=pixelsize,
-            weights=weights,
-            kf_direction=kf_direction,
-        )
+        residues = _error_function_on_demand_calibration(np.array([angle]),
+                                                        miller,
+                                                        allparameters,
+                                                        arr_indexvaryingparameters,
+                                                        nspots,
+                                                        pixX,
+                                                        pixY,
+                                                        initrot=initrot,
+                                                        vecteurref=vecteurref,
+                                                        pureRotation=pureRotation,
+                                                        verbose=0,
+                                                        pixelsize=pixelsize,
+                                                        weights=weights,
+                                                        kf_direction=kf_direction)
         # print "mean(residues)",mean(residues)
         res.append([angle, np.mean(residues)])
 
     return res
 
 
-def error_function_XCEN(
-    param_calib,
-    DATA_Q,
-    allparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    pureRotation=1,
-    verbose=0,
-    pixelsize=165.0 / 2048):
+def error_function_XCEN(param_calib,
+                        DATA_Q,
+                        allparameters,
+                        nspots,
+                        pixX,
+                        pixY,
+                        initrot=IDENTITYMATRIX,
+                        pureRotation=1,
+                        verbose=0,
+                        pixelsize=165.0 / 2048):
     """
     seems to be useless ?
     """
@@ -1013,19 +973,18 @@ def error_function_XCEN(
         return distanceterm
 
 
-def fitXCEN(
-    starting_param,
-    miller,
-    allparameters,
-    _error_function_XCEN,
-    nspots,
-    pixX,
-    pixY,
-    initrot=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1.0]]),
-    pureRotation=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    **kwd):
+def fitXCEN(starting_param,
+                    miller,
+                    allparameters,
+                    _error_function_XCEN,
+                    nspots,
+                    pixX,
+                    pixY,
+                    initrot=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1.0]]),
+                    pureRotation=1,
+                    verbose=0,
+                    pixelsize=165.0 / 2048,
+                    **kwd):
     """
     #All miller indices must be entered in miller,
     selection is done in xy_from_Quat with nspots (array of indices)
@@ -1118,7 +1077,7 @@ def fit_on_demand_strain_2grains(starting_param,
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     init_strain_values = starting_param
-    if 1:  # verbose:
+    if verbose:
         print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
 
@@ -1159,21 +1118,20 @@ def fit_on_demand_strain_2grains(starting_param,
     #     pixX = np.array(pixX, dtype=np.float64)
     #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
-    res = leastsq(_error_function_on_demand_strain_2grains,
-        init_strain_values,
-        args=(
-            miller,
-            allparameters,
-            arr_indexvaryingparameters,
-            absolutespotsindices,
-            pixX,
-            pixY,
-        ),  # args=(rre,ertetr,) last , is important!
-        maxfev=5000,
-        full_output=1,
-        xtol=1.0e-11,
-        epsfcn=0.0,
-        **kwd)
+    res = leastsq(error_function_on_demand_strain_2grains,
+                init_strain_values,
+                args=(
+                    miller,
+                    allparameters,
+                    arr_indexvaryingparameters,
+                    absolutespotsindices,
+                    pixX,
+                    pixY),  # args=(rre,ertetr,) last , is important!
+                maxfev=5000,
+                full_output=1,
+                xtol=1.0e-11,
+                epsfcn=0.0,
+                **kwd)
 
     strain_sol = res[0]
 
@@ -1187,7 +1145,7 @@ def fit_on_demand_strain_2grains(starting_param,
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if 1:  # verbose:
+        if verbose:
             print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")
             _error_function_on_demand_strain_2grains(strain_sol,
                                                     miller,
@@ -1363,11 +1321,9 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
 
         if verbose:
             print("**   grain %d   distance residues = " % grain_index,
-                distanceterm,
-                "    ********")
+                distanceterm, "    ********")
             print("**   grain %d   mean distance residue = " % grain_index,
-                np.mean(distanceterm),
-                "    ********")
+                np.mean(distanceterm), "    ********")
         #             print "twthe, chi", twthe, chi
         distances_vector_list.append(distanceterm)
 
@@ -1379,18 +1335,6 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
         alldistances_array = distances_vector_list[0]
 
     if verbose:
-        # print "varying_parameters_values in error_function_on_demand_strain",varying_parameters_values
-        # print "arr_indexvaryingparameters",arr_indexvaryingparameters
-        # print "Xmodel",Xmodel
-        # print "pixX",pixX
-        # print "Ymodel",Ymodel
-        # print "pixY",pixY
-        # print "newmatrix",newmatrix
-        # print "B0matrix",B0matrix
-        # print "deltamat",deltamat
-        # print "initrot",initrot
-        # print "param_orient",param_calib
-        # print "distanceterm",distanceterm
         if weights is not None:
             print("***********mean weighted pixel deviation   ",
                 np.mean(alldistances_array), "    ********")
@@ -1678,7 +1622,7 @@ def fit_function_general(varying_parameters_values_array,
     
     """
 
-    if 1:  # verbose:
+    if verbose:
         print("\n\n******************\nfirst error with initial values of:",
             varying_parameters_keys, " \n\n***************************\n")
 
@@ -1741,9 +1685,8 @@ def fit_function_general(varying_parameters_values_array,
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if 1:  # verbose:
-            print(
-                "\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
+        if verbose:
+            print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
             )
             alldata = error_function_general(refined_values,
                                                 varying_parameters_keys,
