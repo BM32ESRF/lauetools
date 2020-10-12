@@ -47,7 +47,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                                                                             data_sat=None,
                                                                             data_props=None,
                                                                             rectpix=0,  # RECTPIX
-                                                                            dirname_output=None):
+                                                                            dirname_output=None,
+                                                                            verbose=0):
     """
     Write .cor file containing data
     one line   of header
@@ -131,7 +132,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         outputfile.write("\n# From: %s" % initialfilename)
 
     # metadata on detector position and nature
-    print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
+    if verbose: print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
     if param is not None:
         outputfile.write("\n# Calibration parameters")
         # param is a list
@@ -148,7 +149,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                 raise ValueError("5 or 6 calibration parameters are needed!")
         # param is a dict : CCDCalibdict
         elif isinstance(param, dict):
-            print("param is a dict!")
+            if verbose: print("param is a dict!")
             for key in CCD_CALIBRATION_PARAMETERS:
                 # print('key in CCD_CALIBRATION_PARAMETERS', key)
                 if key in param:
@@ -1419,7 +1420,7 @@ def readListofMatrices(fullpathtoFile):
     if (nbElements % 9) != 0:
         raise ValueError("Number of elements is not a multiple of 9")
 
-    nbMatrices = nbElements / 9
+    nbMatrices = nbElements // 9
     matrices = np.array(listelem, dtype=float).reshape((nbMatrices, 3, 3))
     return nbMatrices, matrices
 

@@ -75,7 +75,7 @@ def stringint(k, n):
     return res
 
 # --- ---------------- read images functions
-def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
+def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0):
     r"""
     reconstruct filename string from imagefilename and update filename index with imageindex
 
@@ -146,12 +146,12 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
             indexnodigit = 0
             while len(prefixwithindex_list) > 0:
                 lastelem = prefixwithindex_list.pop(-1)
-                print("lastelem", lastelem)
+                if verbose>0: print("lastelem", lastelem)
                 if not lastelem.isdigit():
                     break
                 indexnodigit += 1
             prefix = prefixwihtindex[:-(indexnodigit)]
-            print("prefix", prefix)
+            if verbose > 0: print("prefix", prefix)
             imagefilename = prefix + "{}.tif".format(imageindex)
 
         else:
@@ -176,7 +176,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None):
     return imagefilename
 
 
-def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimageindex=-1):
+def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimageindex=-1, verbose=0):
     r"""
     get integer index from imagefilename string
 
@@ -192,7 +192,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
         if imagefilename.endswith("tiff"):
             ext = "tiff"
             lenext = 5
-        print(imagefilename)
+        if verbose > 0: print('imagefilename', imagefilename)
         if nbdigits is not None:
             if imagefilename.endswith(ext):
                 imageindex = int(imagefilename[-(lenext + nbdigits) : -(lenext)])
@@ -384,7 +384,7 @@ def read_header_marccd2(filename):
     return dataset_comments, expo_time
 
 
-def read_header_scmos(filename):
+def read_header_scmos(filename, verbose=0):
     r"""
     return string of parameters comments and exposure time
     found in header in scmis image file .tif
@@ -403,7 +403,7 @@ def read_header_scmos(filename):
 
     dictpar = {}
     strcom = img.tag[270][0]
-    print('read_header_scmos', strcom, type(strcom))
+    if verbose>0: print('read_header_scmos', strcom, type(strcom))
 
     si = strcom.index("(")
     fi = strcom.index(")")
@@ -502,7 +502,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     USE_RAW_METHOD = False
 
-    print("CCDLabel in readCCDimage", CCDLabel)
+    if verbose > 1: print("CCDLabel in readCCDimage", CCDLabel)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
@@ -511,7 +511,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei'):
 
-            print('----> Using fabio ... to open %s\n'%filename)
+            if verbose > 1: print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
             if dirname is not None:
@@ -545,15 +545,15 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         else:
             hdf5file = Tab.openFile(pathtofile)
 
-        print("opening hdf5 stacked data table")
+        if verbose > 0: print("opening hdf5 stacked data table")
         alldata = hdf5file.root.entry.data.data
-        print("alldata.shape", alldata.shape)
+        if verbose > 0: print("alldata.shape", alldata.shape)
 
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
     elif LIBTIFF_EXISTS:
-        print("----> Using libtiff...")
+        if verbose > 1: print("----> Using libtiff...")
         if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "FRELONID15_corrected", "VHR_PSI",
                             "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
 
@@ -573,9 +573,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             USE_RAW_METHOD = True
 
     elif PIL_EXISTS:
-        print("using PIL's module Image")
+        if verbose > 1:print("using PIL's module Image")
         if CCDLabel in ("sCMOS", "MARCCD165"):
-            print('PIL is too slow. Better install libtiff or fabio. Meanwhile ...')
+            if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile ...')
             USE_RAW_METHOD = True
         elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
             # data are compressed!
@@ -590,7 +590,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     # RAW method knowing or deducing offsetheader and dataformat
     if USE_RAW_METHOD:
-        print("----> not using libtiff, nor fabio, nor PIL!!!  ")
+        if verbose > 1: print("----> not using libtiff, nor fabio, nor PIL!!!  ")
         if CCDLabel in ("MARCCD165",):
             print("for MARCCD not using libtiff, raw method ...")
             # offsetheader may change ...
@@ -608,7 +608,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 nbpixels = 1528
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
         elif CCDLabel in ("sCMOS",):
-            print("for sCMOS not using libtiff, raw method ...")
+            if verbose > 0: print("for sCMOS not using libtiff, raw method ...")
             # offsetheader may change ...
             filesize = os.path.getsize(os.path.join(dirname, filename))
             offsetheader = filesize - 2016*2018 * 2
@@ -624,24 +624,24 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             dataimage = dataimage.byteswap()
 
         if CCDLabel in ("EIGER_4Munstacked",):
-            print("framedim", framedim)
-            print("offsetheader", offsetheader)
-            print("formatdata", formatdata)
-
             dataimage = np.ma.masked_where(dataimage > 4000000, dataimage)
+            if verbose > 0:
+                print("framedim", framedim)
+                print("offsetheader", offsetheader)
+                print("formatdata", formatdata)
+                print("dataimage", dataimage)
 
-            print("dataimage", dataimage)
-
-    if verbose:
+    if verbose > 0:
         print("CCDLabel: ", CCDLabel)
         print("nb of pixels", np.shape(dataimage))
 
     # need to reshape data from 1D to 2D
     try:
         if len(dataimage.shape) == 1:
-            print("nb elements", len(dataimage))
-            print("framedim", framedim)
-            print("framedim nb of elements", framedim[0] * framedim[1])
+            if verbose > 0:
+                print("nb elements", len(dataimage))
+                print("framedim", framedim)
+                print("framedim nb of elements", framedim[0] * framedim[1])
             dataimage = np.reshape(dataimage, framedim)
     except ValueError:
         raise ValueError(
@@ -654,7 +654,6 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif fliprot == "VHR_Feb13":
         #            self.dataimage_ROI = np.rot90(self.dataimage_ROI, k=3)
-        # TODO: do we need this left and right flip ?
         dataimage = np.fliplr(dataimage)
 
     elif fliprot == "sCMOS_fliplr":
@@ -671,7 +670,6 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     elif fliprot == "frelon2":
         dataimage = np.flipud(dataimage)
 
-    #     print "framedim",framedim, fliprot
     return dataimage, framedim, fliprot
 
 
@@ -754,7 +752,7 @@ def readoneimage_band(filename,
 
 
 def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
-                                                    firstElemIndex=0, lastElemIndex=2047):
+                                                    firstElemIndex=0, lastElemIndex=2047, verbose=0):
     r""" Returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
 
     with respect to firstElemIndex and lastElemIndex.
@@ -767,10 +765,10 @@ def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
     :return: dataimage : 1D array image data pixel intensity
     """
     (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
-
-    print("framedim read from DictLT.dict_CCD in readoneimage_crop_fast()", framedim)
-    print("formatdata", formatdata)
-    print("offsetheader", offsetheader)
+    if verbose > 0:
+        print("framedim read from DictLT.dict_CCD in readoneimage_crop_fast()", framedim)
+        print("formatdata", formatdata)
+        print("offsetheader", offsetheader)
 
     if dirname is None:
         dirname = os.curdir
@@ -814,7 +812,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     """
     (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
 
-    if verbose:
+    if verbose > 0:
         print("framedim read from DictLT.dict_CCD in readrectangle_in_image()", framedim)
         print("formatdata", formatdata)
         print("offsetheader", offsetheader)
@@ -830,7 +828,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     if formatdata in ("uint32",):
         nbBytesPerElement = 4
 
-    if verbose:
+    if verbose > 0:
         print("fullpathfilename", fullpathfilename)
     try:
         filesize = os.path.getsize(fullpathfilename)
@@ -841,7 +839,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     # uint16
     offsetheader = filesize - (framedim[0] * framedim[1]) * nbBytesPerElement
 
-    if verbose:
+    if verbose > 0:
         print("calculated offset of header from file size...", offsetheader)
 
     x = int(pixx)
@@ -865,7 +863,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     lineFirstElemIndex = ypixmin
     lineLastElemIndex = ypixmax
 
-    if verbose:
+    if verbose > 0:
         print("lineFirstElemIndex", lineFirstElemIndex)
         print("lineLastElemIndex", lineLastElemIndex)
 
@@ -881,14 +879,10 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
 
     band2D = np.reshape(band, (nblines, framedim[1]))
 
-    # dataimage2D = np.zeros(framedim)
-
-    if verbose:
-        print("band2D.shape", band2D.shape)
-
     rectangle2D = band2D[:, xpixmin : xpixmax + 1]
 
-    if verbose:
+    if verbose > 0:
+        print("band2D.shape", band2D.shape)
         print("rectangle2D.shape", rectangle2D.shape)
 
     return rectangle2D
@@ -930,7 +924,8 @@ def readoneimage_crop(filename, center, halfboxsize, CCDLabel="PRINCETON", dirna
 
 def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLabel="MARCCD165",
                                                                         addImax=False,
-                                                                        use_data_corrected=None):
+                                                                        use_data_corrected=None,
+                                                                        verbose=0):
     r"""
     reads 1 image and extract many regions
     centered on center_pixel with xyboxsize dimensions in pixel unit
@@ -973,8 +968,9 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
     Data = []
 
     Imax = []
-
-    print("framedim in readoneimage_manycrops", framedim)
+        
+    if verbose > 0:
+        print("framedim in readoneimage_manycrops", framedim)
     framedim = framedim[1], framedim[0]
 
     for center in centers:
@@ -1001,7 +997,7 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
     else:
         return Data
 
-def writeimage(outputname, _header, data, dataformat=np.uint16):
+def writeimage(outputname, _header, data, dataformat=np.uint16, verbose=0):
     r"""
     from data 1d array of integers
     with header coming from a f.open('imagefile'); f.read(headersize);f.close()
@@ -1013,10 +1009,10 @@ def writeimage(outputname, _header, data, dataformat=np.uint16):
     data = np.array(data, dtype=dataformat)
     data.tofile(newfile)
     newfile.close()
-    print("image written in ", outputname)
+    if verbose > 0: print("image written in ", outputname)
 
 
-def write_rawbinary(outputname, data, dataformat=np.uint16):
+def write_rawbinary(outputname, data, dataformat=np.uint16, verbose=0):
     r"""
     write a binary file without header of a 2D array
 
@@ -1027,7 +1023,7 @@ def write_rawbinary(outputname, data, dataformat=np.uint16):
     data.tofile(newfile)
 
     newfile.close()
-    print("image written in ", outputname)
+    if verbose > 0: print("image written in ", outputname)
 
 
 def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
