@@ -5,7 +5,7 @@ $Grain
 $Material
 Si
 $EnergyMax
-22
+25
 $MatchingThreshold
 50
 $Matrix
@@ -17,7 +17,7 @@ $Grain
 $Material
 Cu
 $EnergyMax
-22
+25
 $MatchingThreshold
 10
 $Matrix
