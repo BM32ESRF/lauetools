@@ -490,7 +490,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
 
 
 def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
-                            n, key_material, MaxRadiusHKL=False,
+                                            n, key_material, MaxRadiusHKL=False,
                                             hkl1=None,#FindO.HKL_CUBIC_UP3,
                                             hkl2=None,
                                             LUT=None,
@@ -529,6 +529,14 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     """
 
     print('--------*****   matrices_from_onespot_hkl()   ******-----------')
+    # print('input param',spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
+    #                                         n, key_material, MaxRadiusHKL,
+    #                                         hkl1, hkl2, LUT, allow_restrictedLUT,
+    #                                         verbose, dictmaterials,
+    #                                         LUT_with_rules,
+    #                                         excludespotspairs)
+    #verbose = 1
+    if verbose: "---- mode verbose = 1 --------"
     if verbose:
         print('\n\n***  in matrices_from_onespot_hkl\n\n')
         print("LUT_tol_angle", LUT_tol_angle)
@@ -570,7 +578,7 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     # default LUT or entered LUT as argument in function call
     else:
         # LUT will be used in next calculations and not recomputed
-        print("Using specific LUT in matrices_from_onespot_hkl()")
+        if verbose: print("Using specific LUT in matrices_from_onespot_hkl()")
 
     # in case of hkl is a single 3D vector
     if len(hkl1.shape) == 1:
@@ -609,11 +617,17 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     coords_exp = np.array([twiceTheta_exp, Chi_exp]).T
     coord_central_spot = coords_exp[spot_index]
 
-    #print("PPs_list in matrices_from_onespot_hkl", PPs_list)
+    # if spot_index >=0:
+    #     print('\nspot_index of matrices_from_onespot_hkl() !!!!!')
+    #     print("len PPs_list in matrices_from_onespot_hkl", len(PPs_list))
+    #     print('spot_index', spot_index)
+    #     print('excludespotspairs',excludespotspairs)
+        #print('coord_central_spot, coords_exp, B,excludespotspairs', coord_central_spot, coords_exp, B,excludespotspairs)
     Matrices_Res = Loop_on_PlanesPairs_and_Get_Matrices(PPs_list, spot_index,
                                                             coord_central_spot, coords_exp, B,
                                                             verbose=verbose,
                                                             excludespotspairs=excludespotspairs)
+    #if spot_index == 4: print('Matrices_Res', Matrices_Res)
     if verbose:
         print('LUT in matrices_from_onespot_hkl', LUT)
 
@@ -680,8 +694,6 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
 
     coords_exp = np.array([twiceTheta, Chi]).T
     coord_central_spot = coords_exp[spot_index]
-
-    
 
     return Loop_on_PlanesPairs_and_Get_Matrices(PPs_list, spot_index, coord_central_spot,
                                             coords_exp, B0, verbose=verbose,
@@ -990,7 +1002,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
     :return: matrix_list, pairplanes, pairspots
 
     .. note::
-        Used in FileSeries
+        USED in FileSeries
         USED in manual indexation
         USED in autoindexation
 
@@ -1002,7 +1014,9 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
     matrix_list = []
     pairplanes = []
 
-    currentspotindex = -1
+    if PP_list == []:
+        print('in Loop_on_PlanesPairs_and_Get_Matrices(), PP_list is empty')
+        return matrix_list, pairplanes, pairspots
 
     # loop over all possible pairs of planes found in LUT
     for k, PP in enumerate(PP_list):
@@ -1010,15 +1024,15 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
         hkls, spotindex_2, nbplanepairs = PP
 
         # skip already probed pair of spots
-        #print('excludespotspairs', excludespotspairs)
-        if [spotindex_2, spot_index] in excludespotspairs:
+        if [spotindex_2, spot_index] in excludespotspairs or [spot_index, spotindex_2] in excludespotspairs:
             continue
 
-        print("** --\nLooking up for the %d planes pairs in LUT from exp. spots "
-                    "(%d, %d): " % (nbplanepairs, spot_index, spotindex_2))
+        if spotindex_2 == spot_index:
+            continue
 
-        if spotindex_2 != currentspotindex:
-            currentspotindex = spotindex_2
+        if verbose:
+            print("** --\nLooking up for the %d planes pairs in LUT from exp. spots "
+                        "(%d, %d): " % (nbplanepairs, spot_index, spotindex_2))
 
         excludespotspairs.append([spotindex_2,spot_index])
         excludespotspairs.append([spot_index, spotindex_2])
@@ -1857,7 +1871,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     if spot_index_central is a list of spot index, then only one successful result is return per spot
     """
     if verbosedetails:
-        print("print details")
+        print('\n  -------   mode verbosedetails  ---------------')
+        print("print details\n")
 
     nbofpeaks = len(Tab_angl_dist) - 1  # nbmaxprobed-1
 
@@ -1899,7 +1914,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     # filling hkl central spots list
     set_central_spots_hkl_list = [None for ll in list(range(len(list_spot_central_indices)))]
 
-    print("set_central_spots_hkl", set_central_spots_hkl)
+    if verbosedetails: print("set_central_spots_hkl", set_central_spots_hkl)
 
     if set_central_spots_hkl not in (None, "None"):
         print("set_central_spots_hkl is not None in getOrientMatrices()")
@@ -1920,8 +1935,9 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 if ll < len(set_central_spots_hkl):
                     set_central_spots_hkl_list[ll] = set_central_spots_hkl[ll]
 
-    print("set_central_spots_hkl_list", set_central_spots_hkl_list)
-    print("cubicSymmetry", cubicSymmetry)
+    if verbosedetails:
+        print("set_central_spots_hkl_list", set_central_spots_hkl_list)
+        print("cubicSymmetry", cubicSymmetry)
 
     if detectorparameters["kf_direction"] == "X>0":
         allow_restrictedLUT = False
@@ -1931,7 +1947,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     #     if cubicSymmetry:
     #         hkl1s = FindO.HKL_CUBIC
 
-    print("LUT_tol_angle", LUT_tol_angle)
+    if verbosedetails: print("LUT_tol_angle", LUT_tol_angle)
 
     if gauge:
         gaugecount = 0
@@ -1941,6 +1957,9 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     hkl2 = None
     LUTcubic = None
     LUTspecific = None
+
+    first_cspot_idx = list_spot_central_indices[0]
+    excludespotspairs = [[first_cspot_idx, first_cspot_idx]]
 
     # --- loop over central spots -------------------------------------------------------
     for k_centspot_index, spot_index_central in enumerate(list_spot_central_indices):
@@ -1957,22 +1976,24 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
             hkl = set_central_spots_hkl_list[k_centspot_index]
 
         # if hkl for central spots IS defined
-        print("hkl in getOrientMatrices", hkl, type(hkl))
+        #print("hkl in getOrientMatrices", hkl, type(hkl))
         if hkl is "None":
             hkl = None
+
         if hkl is not None:
 
             # find some potential matrices from recognised distances
             # in LUT by assuming hkl of spot_index_central
 
             # compute a specific LUT from 1 hkl and hkls up to n
-            print("using LUTspecific")
-            if LUTspecific is not None:
-                print("LUTspecific is not None for k_centspot_index %d in getOrientMatrices()"
-                    % k_centspot_index)
-            else:
-                print("LUTspecific is None for k_centspot_index %d in getOrientMatrices()"
-                    % k_centspot_index)
+            if verbosedetails:
+                print("using LUTspecific")
+                if LUTspecific is not None:
+                    print("LUTspecific is not None for k_centspot_index %d in getOrientMatrices()"
+                        % k_centspot_index)
+                else:
+                    print("LUTspecific is None for k_centspot_index %d in getOrientMatrices()"
+                        % k_centspot_index)
 
             ((list_orient_matrix, planes, pairspots),
             hkl2,
@@ -1998,12 +2019,13 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:
                 # compute a specific LUT from 1 hkl and hkls up to n
-                print("using LUTcubic")
-                if LUTcubic is not None:
-                    print("LUTcubic is not None for k_centspot_index %d in getOrientMatrices()"
-                        % k_centspot_index)
-                else:
-                    print("LUTcubic is None for k_centspot_index %d in getOrientMatrices()" % k_centspot_index)
+                if verbosedetails:
+                    print("using LUTcubic")
+                    if LUTcubic is not None:
+                        print("LUTcubic is not None for k_centspot_index %d in getOrientMatrices()"
+                            % k_centspot_index)
+                    else:
+                        print("LUTcubic is None for k_centspot_index %d in getOrientMatrices()" % k_centspot_index)
 
                 if n == 3:
                     hkl1 = FindO.HKL_CUBIC_UP3
@@ -2040,7 +2062,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                             dictmaterials=dictmaterials,
                                                             LUT_with_rules=LUT_with_rules,
                                                             excludespotspairs=excludespotspairs)
-            # general crystallographic structures cases (except then cubic structure)
+            # general crystallographic structures cases (excluding then cubic structure)
             else:
                 # --- building angles reference Look up table (LUT) from B and n
                 if LUT is None:
@@ -2068,7 +2090,9 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                                     LUT=LUT,
                                                                     verbose=verbose,
                                                                     excludespotspairs=excludespotspairs)
-
+        if len(list_orient_matrix) == 0:
+            print('\n\n ----- len(list_orient_matrix)  is 0 \n\n', len(list_orient_matrix))
+        
         if gauge:
             # TODO: VERY DIRTY...
             gaugecount = (k_centspot_index + 1) * nbofpeaks
@@ -2094,7 +2118,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         for mat_ind in list(range(len(list_orient_matrix))):
 
             #             print "calculating matching with exp. Data for matrix condidate index=%d" % mat_ind
-
+            #print('mat_ind %d,\n list_orient_matrix[mat_ind]'%mat_ind, list_orient_matrix[mat_ind])
             # compute matching (indexation) rate
             AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                         twiceTheta_exp,
@@ -2121,7 +2145,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
                 spotindex2 = pairspots[mat_ind][1]
                 if currentspotindex2 != spotindex2:
-                    print("calculating matching rates of solutions for exp. spots", pairspots[mat_ind])
+                    if verbose:
+                        print("calculating matching rates of solutions for exp. spots", pairspots[mat_ind])
                     currentspotindex2 = spotindex2
 
                 solutions_matorient_index.append(mat_ind)
@@ -2308,7 +2333,8 @@ def build_AnglesLUT(B0matrix, n, MaxRadiusHKL=False, cubicSymmetry=False, applyE
 def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
                                     MaxRadiusHKL=False,
                                     cubicSymmetry=False,
-                                    applyExtinctionRules=None):
+                                    applyExtinctionRules=None,
+                                    verbose=0):
     r"""
     build a Look-up-table from the 6 lattice parameters (a,b,c,alpha,beta,gamma) up to index n
     (higher miller plane [n,n,n])
@@ -2323,11 +2349,13 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
     """
     a, b, c, AA, BB, CC = latticeparameters
 
+    
     print("\n------ build_AnglesLUT_fromlatticeparameters -------\n")
-    print(latticeparameters)
-    print("and n=%d" % n)
-    print("MaxRadiusHKL", MaxRadiusHKL)
-    print("cubicSymmetry", cubicSymmetry)
+    if verbose:
+        print('latticeparameters', latticeparameters)
+        print("and n=%d" % n)
+        print("MaxRadiusHKL", MaxRadiusHKL)
+        print("cubicSymmetry", cubicSymmetry)
 
     # metric tensor
     Gstar_metric = CP.Gstar_from_directlatticeparams(a, b, c, AA, BB, CC)
@@ -2341,7 +2369,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
         nb0 = len(hkl_all)
         hkl_all = CP.ApplyExtinctionrules(hkl_all, applyExtinctionRules)
         nb1 = len(hkl_all)
-        print('%d hkls have been removed over %d.\nNow LUT contains %d hkls' % (nb0-nb1, nb0, nb1))
+        if verbose: print('%d hkls have been removed over %d.\nNow LUT contains %d hkls' % (nb0-nb1, nb0, nb1))
 
         # print('hkl_all')
         # print(hkl_all)
@@ -2354,7 +2382,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
         H, K, L = hkl_all.T
         xs, ys, zs = np.dot(B0matrix, hkl_all.T) # vector G* in x,y,z Angst-1
 
-        print('nb of nodes', len(xs))
+        if verbose: print('nb of nodes', len(xs))
         maxxs, maxys, maxzs = np.amax(xs), np.amax(ys), np.amax(zs)
         mindist = min(maxxs, maxys, maxzs)
 
@@ -2363,7 +2391,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
         Kf = K[cond]
         Lf = L[cond]
 
-        print('nb of nodes after resolution filtering %d\n'%len(Hf))
+        if verbose: print('nb of nodes after resolution filtering %d\n'%len(Hf))
 
         # HKLnorm = np.sqrt(np.sum(hkl_all ** 2, axis=1))
 
