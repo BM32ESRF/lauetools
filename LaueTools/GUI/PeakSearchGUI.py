@@ -4951,6 +4951,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         center_pixel = np.round(self.centerx), np.round(self.centery)
 
+        # trick:  ask to fit the same peak twice to use mutlipeaks fitting procedure...
         peaklist = np.array([center_pixel, center_pixel])
         boxsize = xboxsize, yboxsize = self.boxsize_fit, self.boxsize_fit
 
