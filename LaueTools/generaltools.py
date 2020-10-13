@@ -1586,6 +1586,7 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
     # filter if asked
     # check if surrounding elements in absoluteindices are available in existingabsindices
     if bool(existingabsindices):
+            
         absoluteindices = []
         cli = []
         clj = []
@@ -1597,12 +1598,15 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
                 clj.append(_clj[k])
                 dist.append(_dist[k])
 
+        dist=np.array(dist)
+
         close_ij = (cli, clj)
     else:
         absoluteindices, dist = _absoluteindices, _dist
         close_ij = (_cli, _clj)
 
     ic, jc = close_ij
+    
     b = np.argmin(dist)
     return [ic[b], jc[b]], absoluteindices[b], dist[b]
 
