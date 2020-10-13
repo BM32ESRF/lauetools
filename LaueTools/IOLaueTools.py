@@ -1326,7 +1326,7 @@ def read3linesasMatrix(fileobject):
                 val = float(elem)
                 listelem.append(val)
 
-        print("listelem", listelem)
+        #print("listelem", listelem)
 
         matrix[i, :] = np.array(listelem, dtype=float)
         iline += 1
@@ -1571,7 +1571,7 @@ def readCheckOrientationsFile(fullpathtoFile):
         if line.startswith("$"):
             if line.startswith("$FileIndex"):
                 line = str(f.readline())
-                print("$FileIndex: ", line)
+                #print("$FileIndex: ", line)
                 list_indices = getfileindex(line)
                 Current_CheckOrientationParameters[0] = list_indices
                 known_values[0] = True
@@ -1607,19 +1607,18 @@ def readCheckOrientationsFile(fullpathtoFile):
                 lineindex += 1
             elif line.startswith("$Matrix"):
                 nbMatrices, matrices, nblines, posfile = readdataasmatrices(f)
-                print("nbMatrices,matrices, nblines, posfile",
-                    nbMatrices,
-                    matrices,
-                    nblines,
-                    posfile)
+                #print("nbMatrices,matrices, nblines, posfile",
+                    # nbMatrices,
+                    # matrices,
+                    # nblines,
+                    # posfile)
 
                 Current_CheckOrientationParameters[5] = matrices
                 known_values[5] = True
                 List_posMatrices.append(lineindex)
 
-                print("Current_CheckOrientationParameters",
-                    Current_CheckOrientationParameters)
-                print("known_values", known_values)
+                #print("Current_CheckOrientationParameters", Current_CheckOrientationParameters)
+                #print("known_values", known_values)
 
                 List_CheckOrientations.append(copy.copy(Current_CheckOrientationParameters))
 
@@ -1636,12 +1635,12 @@ def readCheckOrientationsFile(fullpathtoFile):
 
 
 def getfileindex(str_expression):
-    print("str_expression", str_expression)
+    #print("str_expression", str_expression)
     if str_expression.strip() in ("all", "All"):
         return -1
 
     list_val = str_expression.strip("[]()\n").split(",")
-    print("list_val", list_val)
+    #print("list_val", list_val)
     integerlist = [int(float(elem)) for elem in list_val]
     return integerlist
 
@@ -1658,7 +1657,7 @@ def readdataasmatrices(fileobject):
 
     while True:
         line = str(fileobject.readline())
-        print("line matrix", line)
+        #print("line matrix", line)
         if line.startswith("$"):
             break
         if line.strip() in ("END",):

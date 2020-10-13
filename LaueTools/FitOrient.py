@@ -1139,7 +1139,7 @@ def fit_on_demand_strain_2grains(starting_param,
     #     print "code results", res[-1]
     print("nb iterations", res[2]["nfev"])
 
-    if 1:  # verbose:
+    if verbose:
         print("strain_sol", strain_sol)
 
     if res[-1] not in (1, 2, 3, 4, 5):
