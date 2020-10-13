@@ -1081,7 +1081,6 @@ class MainFrame_indexrefine(wx.Frame):
             object_to_set.initialparameters["stepindex"] = stepindex
 
         print("start indexing multifiles")
-        #NB_MATERIALS = 2
 
         NB_MATERIALS = len(self.dict_param_list)
 
@@ -1098,7 +1097,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         flagcompleted = True
         if nb_cpus == 1:
-            output_index_fileseries_3 = ISS.index_fileseries_3(fileindexrange,
+            multiple_results = ISS.index_fileseries_3(fileindexrange,
                                     Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
                                     saveObject=0,
                                     verbose=verbosemode,
@@ -1110,8 +1109,8 @@ class MainFrame_indexrefine(wx.Frame):
                                     updatefitfiles=updatefitfiles,
                                     CCDCalibdict=CCDCalibdict)
 
-            if output_index_fileseries_3 is not None:
-                # dictRes, outputdict_filename = output_index_fileseries_3
+            if multiple_results is not None:
+                # dictRes, outputdict_filename = multiple_results
                 pass
             else:
                 wx.MessageBox("Indexation and Refinement not completed.\n An error occured "
@@ -1119,7 +1118,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         elif nb_cpus > 1:
             print("Using %d processors" % nb_cpus)
-            flagcompleted = ISS.indexing_multiprocessing(fileindexrange,
+            multiple_results = ISS.indexing_multiprocessing(fileindexrange,
                                         dirname_dictRes=filepathout,
                                         Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
                                         saveObject=0,
@@ -1139,7 +1138,7 @@ class MainFrame_indexrefine(wx.Frame):
             wx.MessageBox("Indexation and Refinement not completed.\n Check the prefixfilename "
                 "of .dat file! Launch the task with only one CPU", "INFO")
 
-        return
+        return multiple_results
 
 
 def fill_list_valueparamIR(initialparameters):
