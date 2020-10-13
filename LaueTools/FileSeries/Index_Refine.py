@@ -1201,16 +1201,15 @@ if 1:
     initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
     initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
     initialparameters["PeakList Filename Prefix"] = "SiCustrain"
-    #initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "cusi.irp")
-    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "si_and_cu.irp")
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "sicu.irp")
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["Detector Calibration File .det"] = None
     initialparameters["nbdigits"] = 0
-    # initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
-    #                                                         "corfiles", "SiCustrain5_Cu20spots.fit")
+    initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+                                                          "corfiles", "SiCustrain5_Cu20spots.fit")
     initialparameters["Selected Peaks from File"] = 'None'
     initialparameters["startingindex"] = 0
-    initialparameters["finalindex"] = 1
+    initialparameters["finalindex"] = 5
     initialparameters["stepindex"] = 1
 
 
