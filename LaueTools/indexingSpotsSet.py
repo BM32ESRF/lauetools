@@ -1477,8 +1477,8 @@ class spotsset:
                 if Matching_rate is not None:
                     GoodRefinement = (Matching_rate > MINIMUM_MATCHINGRATE) or (
                         nb_updates >= 6)
-                    print("GoodRefinement condition is ", GoodRefinement)
-                    print("nb_updates %d compared to 6" % nb_updates)
+                    # print("GoodRefinement condition is ", GoodRefinement)
+                    # print("nb_updates %d compared to 6" % nb_updates)
 
                 # --------------------------------
                 # case of poor matching rate (after refinement and making links)
@@ -1629,7 +1629,7 @@ class spotsset:
                                 NeedtoProvideNewMatrices = True
 
                             # tagging and inhibiting exp spot too much ambiguous
-                            MissingRef_grain_index = self.LabelMissingReflections(grain_index, 0.5)
+                            MissingRef_grain_index = self.LabelMissingReflections(grain_index, 0.5, verbose=verbose)
                             self.MissingRefindexedgrains.append(MissingRef_grain_index)
 
                             self.dict_indexedgrains_material[grain_index] = key_material
@@ -1699,7 +1699,7 @@ class spotsset:
             print('\n------- end of  updateIndexationDict()  -------\n')
         return nb_updates
 
-    def LabelMissingReflections(self, grain_index, angle_tol):
+    def LabelMissingReflections(self, grain_index, angle_tol, verbose=0):
         """
         tag or index closest exp. spots (can be many) for each missing reflection
         as belonging to missing part of grain_index
@@ -1730,11 +1730,12 @@ class spotsset:
                 # keep the spot data and add theo info
                 self.indexed_spots_dict[exp_index][-6:] = [hh, kk, ll, energy, MissingRef_grain_index, 1]
 
-        print("Experimental experimental spots indices which are not indexed",
-                                                                        close_spots[:, 0])
-        print("Missing reflections grainindex is %d for indexed grainindex %d"
-                                                % (MissingRef_grain_index, grain_index))
-        print("within angular tolerance %.3f" % angle_tol)
+        if verbose:
+            print("Experimental experimental spots indices which are not indexed",
+                                                                            close_spots[:, 0])
+            print("Missing reflections grainindex is %d for indexed grainindex %d"
+                                                    % (MissingRef_grain_index, grain_index))
+            print("within angular tolerance %.3f" % angle_tol)
 
         return MissingRef_grain_index
 
@@ -4543,18 +4544,123 @@ def mergeDictRes(list_of_dictfiles, outputfilename="MergedRes", dirname=None):
 
     return dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictstrain_sample, dictspots
 
-
 list_produced_files = []
 
-
 def log_result(result):
-
     if len(result) == 2:
         print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
         list_produced_files.append(str(result[1]))
 
     print("mylog print")
 
+
+def indexFilesSeries(filepathdat, filepathcor, filepathout,
+                    fileprefix, filesuffix, nbdigits_filename,
+                    startindex, finalindex, stepindex,
+                    filedet,
+                     guessedMatricesFile, MinimumMatchingRate,
+                     fileirp,
+                     spottrackingfile,
+                     nb_cpus,
+                     reanalyse,
+                     use_previous_results,
+                     updatefitfiles):
+    """ index laue spots of several peakslist files using multiprocessing 
+    
+    """
+    verbose=0
+
+    dict_param_list = readIndexRefineConfigFile(fileirp)
+    NB_MATERIALS = len(dict_param_list)
+
+    CCDCalibdict = None
+    if filesuffix in ('.dat',):
+        CCDCalibdict = IOLT.readCalib_det_file(filedet)
+
+    Index_Refine_Parameters_dict= {}
+
+    Index_Refine_Parameters_dict["CCDCalibdict"] = CCDCalibdict
+    Index_Refine_Parameters_dict["PeakList Folder"] = filepathdat
+    Index_Refine_Parameters_dict["PeakListCor Folder"] = filepathcor
+    Index_Refine_Parameters_dict["nbdigits"] = nbdigits_filename
+    Index_Refine_Parameters_dict["prefixfilename"] = fileprefix
+    Index_Refine_Parameters_dict["suffixfilename"] = filesuffix
+    Index_Refine_Parameters_dict["prefixdictResname"] = fileprefix + "_dict_"
+
+    Index_Refine_Parameters_dict["PeakListFit Folder"] = filepathout
+    Index_Refine_Parameters_dict["Results Folder"] = filepathout
+
+    Index_Refine_Parameters_dict["dict params list"] = dict_param_list
+    Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
+    if guessedMatricesFile not in ("None", "none", 'NONE', None):
+        print("Reading general file for guessed UB solutions")
+
+        assert use_previous_results is False
+
+    # read list .mats or single matrix .mat or material, matrix,..., .ubs file
+    if guessedMatricesFile is not None:
+        if not guessedMatricesFile.endswith(".ubs"):
+            _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
+
+            print("guessedmatrix", guessedSolutions)
+            Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
+        # read .ubs file
+        else:
+            Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
+
+    # spot tracking
+    Index_Refine_Parameters_dict['mapshape'] = (1000,1)
+    Index_Refine_Parameters_dict['Reference Spots List'] = spottrackingfile
+
+    fileindexrange = (startindex, finalindex, stepindex)
+    #------------------------------------------------------------------------
+    t00 = time.time()
+
+
+    max_nb_cpus = multiprocessing.cpu_count()
+    nb_cpus = min(nb_cpus, max_nb_cpus)
+
+    if nb_cpus > 1:
+        print('using %d cpu(s)'%nb_cpus)
+        fileindexdivision = GT.getlist_fileindexrange_multiprocessing(startindex, finalindex, nb_cpus)
+        print('dispatch of fileindex ',fileindexdivision)
+
+        saveObject = None
+        index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
+                                                saveObject,
+                                                verbose,
+                                                NB_MATERIALS,
+                                                False,
+                                                fileprefix,
+                                                reanalyse,
+                                                use_previous_results,
+                                                updatefitfiles,
+                                                CCDCalibdict)
+
+        pool = multiprocessing.Pool(nb_cpus)
+        multiple_results = pool.map(index_fileseries_3, fileindexdivision)
+
+    if nb_cpus == 1:
+        print('using %d cpu(s)'%nb_cpus)
+
+        index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
+                                                saveObject,
+                                                verbose,
+                                                NB_MATERIALS,
+                                                False,
+                                                fileprefix,
+                                                reanalyse,
+                                                use_previous_results,
+                                                updatefitfiles,
+                                                CCDCalibdict)
+
+
+        multiple_results = index_fileseries_3(fileindexrange)
+
+    t_mp = time.time() - t00
+    print("Execution time : %.2f" % t_mp)
+
+    return multiple_results
 
 def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_Parameters_dict=None,
                                                                     verbose=0,
@@ -4581,9 +4687,26 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
     except:
         raise ValueError("Need 2 file indices (integers) in fileindexrange=(indexstart, indexfinal)")
 
-    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
-
     saveObject = 0
+
+    if nb_of_cpu == 1:
+        print('using 1 cpu')
+
+        index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
+                                                saveObject,
+                                                verbose,
+                                                nb_materials,
+                                                False,
+                                                prefixfortitle,
+                                                reanalyse,
+                                                use_previous_results,
+                                                updatefitfiles,
+                                                CCDCalibdict)
+
+
+        multiple_results = index_fileseries_3(fileindexrange)
+
+    fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
     t00 = time.time()
 
@@ -4600,12 +4723,16 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
 
     print("fileindexdivision", fileindexdivision)
 
-    pool = multiprocessing.Pool()
-    for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
-        pool.apply_async(index_fileseries_3, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
+    pool = multiprocessing.Pool(nb_of_cpu)
+    multiple_results = pool.map(index_fileseries_3, fileindexdivision)
 
-    pool.close()
-    pool.join()
+
+    # pool = multiprocessing.Pool()
+    # for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
+    #     pool.apply_async(index_fileseries_3, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
+
+    # pool.close()
+    # pool.join()
 
     t_mp = time.time() - t00
     print("Execution time : %.2f" % t_mp)
@@ -4633,8 +4760,6 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
             "by using only one CPU!")
         print("\n******************\n")
 
-        return flag_completed, flag_completed_HDF5
-
     if build_hdf5:
         try:
             if sys.version_info.major == 3:
@@ -4657,7 +4782,7 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
                                                 % (prefixfortitle, index_start, index_final),
                                                 output_dirname=dirname_dictRes)
 
-        return flag_completed, flag_completed_HDF5
+    return multiple_results, flag_completed, flag_completed_HDF5
 
 
 def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
@@ -4685,6 +4810,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     """
     p = multiprocessing.current_process()
     print("Starting:", p.name, p.pid)
+
+    print('to analyse : ',fileindexrange)
 
     #     ANGLE_TOL_REMOVE_PEAKS = 0.5
 
@@ -4993,10 +5120,13 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                     if imageindex != firstindex:
                         i, j = np.where(maptableindices == imageindex)
                         #(iprior, jprior), imageindexprior, _
+
+                        maxdistance = max(indexstep*2, mapshape[0]+1)  # to get some candidates
+
                         (_, _), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
-                                                        maxdist=indexstep*2,  # to get some candidates
+                                                        maxdist=maxdistance,  
                                                         startingindex=mapfirstimageindex,
-                                                        existingabsindices=refposfiles.keys())
+                                                        existingabsindices=list(refposfiles.keys()))
                         print('best located refpositions for imageindex = %d'%imageindexprior)
 
                         refposfile = refposfiles[imageindexprior]
@@ -5244,8 +5374,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             #     if dict_LUT_material[key_material] is not None:
             #         dict_LUT_material[key_material] = DataSet.LUT
 
-            print("DataSet.indexedgrains", DataSet.indexedgrains)
-            print("DataSet.indexedgrains_material", DataSet.dict_indexedgrains_material)
+            # print("DataSet.indexedgrains", DataSet.indexedgrains)
+            # print("DataSet.indexedgrains_material", DataSet.dict_indexedgrains_material)
             nbgrains_indexed = len(DataSet.indexedgrains)
 
             DataSet.writecorFile_unindexedSpots(corfilename=corfilename,
