@@ -610,7 +610,7 @@ class MainFrame_indexrefine(wx.Frame):
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
 
-        tipshape = "List of nb of steps in two (resp. three) directions for 2D (resp. 3D) map. Only use when tracking spots positions with 'Selected Peaks from File' : [41,21] or [15,8,100]"
+        tipshape = "List of dimensions of raster scan  in two (resp. three) directions for 2D (resp. 3D) map. Example: [41,21] or [15,8,100]. Only used when tracking spots positions with 'Selected Peaks from File' is not None "
         txt_mapshape.SetToolTipString(tipshape)
         self.txtctrl_mapshape.SetToolTipString(tipshape)
 
@@ -1208,6 +1208,25 @@ if 1:
     initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
                                                           "corfiles", "SiCustrain5_Cu20spots.fit")
     initialparameters["Selected Peaks from File"] = 'None'
+    initialparameters["startingindex"] = 0
+    initialparameters["finalindex"] = 5
+    initialparameters["stepindex"] = 1
+
+# for local test:
+if 0:
+    MainFolder = '/home/micha/LaueProjects/SiSibulle_Lukas'
+    print("MainFolder", MainFolder)
+    initialparameters["PeakList Folder"] = MainFolder
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
+    initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
+    initialparameters["PeakList Filename Prefix"] = "LukasHR_"
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "SiSi.irp")
+    initialparameters["PeakList Filename Suffix"] = ".dat"
+    initialparameters["Detector Calibration File .det"] = '/home/micha/LaueProjects/SiSibulle_Lukas/calibSilukas.det'
+    initialparameters["nbdigits"] = 4
+    initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+                                                          "corfiles", "SiCustrain5_Cu20spots.fit")
+    initialparameters["Selected Peaks from File"] = '/home/micha/LaueProjects/SiSibulle_Lukas/SiLukas_acceptedspots.cor'
     initialparameters["startingindex"] = 0
     initialparameters["finalindex"] = 5
     initialparameters["stepindex"] = 1
