@@ -315,12 +315,16 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
     with open(os.path.join(dirname_dictRes, filename_dictRes), "rb") as f:
         dicts = pickle.load(f)
 
+    print('there are %d dicts '%len(dicts))
     if len(dicts) == 5:
         dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
     elif len(dicts) == 6:
         _, dictMat, dictMR, dictNB, dictstrain, dictspots = dicts
     else:
+        
         _, dictMat, dictMR, dictNB, dictstrain, dictstrain_sample, dictspots = dicts
+
+        print('dictstrain_sample',dictstrain_sample)
 
     keys_indexfile = sorted(dictMat.keys())
 
@@ -475,7 +479,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
         tabledev.flush()
         # -------------------------------------
 
-    if 1:  # Class DevStrain
+    if 1:  # Class DevStrain  sample frame
         #        # Create a new group under "/" (root)
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
@@ -487,7 +491,8 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
         for key_image in keys_indexfile:
             indexedDevS["fileindex"] = key_image
-            nbmatrices = len(dictstrain[key_image])
+            print("dictstrain_sample[key_image]", dictstrain_sample[key_image])
+            nbmatrices = len(dictstrain_sample[key_image])
             grainindex = 0
             while grainindex < max_nb_grains:
                 devstrainsamplematrix = np.zeros(6)
