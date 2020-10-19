@@ -257,18 +257,6 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         # this is a B matrix used in  q= U B G* formalism
         # this matrix represents also an initial orientation
 
-        # old way
-        # InitMat = Bmatrix
-        # # matrix of additional dilatation in Reciprocal space of a* b* c* of the lattice giving the proper length of a*,b*,c*
-        # mat_dilatinRS = np.array([[Laue_classic_param[1][0],0, 0],[0, Laue_classic_param[1][1],0],[0, 0,Laue_classic_param[1][2]]])  # in a* b* c* frame
-
-        # # Rotation matrix from initial orientation to the given orientation   Newpostion = R oldposition    in x, y,z frame
-        # matOrient_pure = np.array(Laue_classic_param[2])
-        # # full matrix containing
-
-        # matOrient = np.dot(matOrient_pure, np.dot(InitMat, mat_dilatinRS))  # U * B *(diagonal three elements reciprocal dilatation matrix)
-        # print "matOrient in dosimulation_parametric",matOrient
-
         # Calculates matOrient which is U*B in q = U*B*Gstar
         matOrient = np.dot(GrainSimulParam[2], GrainSimulParam[0])
 
@@ -366,8 +354,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
             # for rotation around axis expressed in any frame
             if Transform_listparam[0] in ("r_axis", "r_axis_c", "r_axis_d", "r_axis_d_slipsystem"):
                 # print "angle, axis",angle_list[ChildGrain_index],axis_list[ChildGrain_index]
-                qvectors_ChildGrain = GT.rotate_around_u(
-                                                            Qvectors_ParentGrain[0],
+                qvectors_ChildGrain = GT.rotate_around_u(Qvectors_ParentGrain[0],
                                                             angle_list[ChildGrain_index],
                                                             u=axis_list[ChildGrain_index])
                 # list of spot which are on camera(without harmonics)
@@ -414,13 +401,6 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 # list of spots for a child grain (on camera + without harmonics)
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
-                # if 0:
-                #     print(" 10 first transpose(Qvectors_ParentGrain[0])",
-                #         Qvectors_ParentGrain[0][:10])
-                #     print(np.shape(qvectors_ChildGrain))
-                #     print("GrainSimulParam", GrainSimulParam)
-                #     print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
-
             else:
                 # no transformation
                 pass
@@ -436,8 +416,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
             # filter spots to keep those in camera, filter harmonics
             try:
                 # print("kf_direction = (in dosimulationparametric)", kf_direction)
-                if kf_direction == "Z>0" or isinstance(
-                    kf_direction, list):  # or isinstance(kf_direction, np.array):
+                if kf_direction == "Z>0" or isinstance(kf_direction, list):  # or isinstance(kf_direction, np.array):
                     Laue_spot_list = LAUE.filterLaueSpots(spots2pi,
                                                     fileOK=0,
                                                     fastcompute=0,
