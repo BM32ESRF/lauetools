@@ -666,7 +666,7 @@ def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a", 
     return devstrain, lattice_parameter_direct_strain
 
 
-def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmaterials=dict_Materials):
+def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmaterials=dict_Materials, verbose=0):
     r"""
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
@@ -680,9 +680,9 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
 
     (devstrain, lattice_parameters) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
     # overwrite and rescale possibly lattice lengthes
-    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength)
-
-    print("final lattice_parameters", lattice_parameters)
+    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength, verbose=verbose)
+    if verbose:
+        print("final lattice_parameters", lattice_parameters)
 
     deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(devstrain, UBmat)
 
@@ -727,7 +727,8 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams, verbose=0):
 
 
 def computeLatticeParameters_from_UB(UBmatrix, key_material,
-                                            constantlength="a", dictmaterials=dict_Materials):
+                                            constantlength="a", dictmaterials=dict_Materials,
+                                            verbose=0):
     r"""
     Computes  direct (real) lattice parameters
     from matrix UBmatrix (rotation and deformation)
@@ -747,16 +748,18 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
     if constantlength == "c":
         index_constant_length = 2
 
-    print(
-        "For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
-        % (constantlength, latticeparams[index_constant_length]))
+    
     ratio = (latticeparams[index_constant_length]
         / lattice_parameter_direct_strain[index_constant_length])
     lattice_parameter_direct_strain[0] *= ratio
     lattice_parameter_direct_strain[1] *= ratio
     lattice_parameter_direct_strain[2] *= ratio
 
-    print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
+    if verbose:
+        print(
+            "For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
+            % (constantlength, latticeparams[index_constant_length]))
+        print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
 
     return lattice_parameter_direct_strain
 
@@ -1316,7 +1319,7 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stre
         deviatoricStrain_sampleframe)
 
 
-def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # OR
+def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=0):  # OR
     r"""
     Orthonormalisation of matrix with to a*,b*,c* as columns
 
@@ -1348,12 +1351,12 @@ def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=1):  # O
 
     if matstarlab is not None:
         matstarlabOND = np.hstack((astar0, bstar0, cstar0)).transpose()
-        if verbose:
+        if verbose > 1:
             print("exiting CP.matstarlab_to_matstarlabOND")
         return matstarlabOND
     elif matLT3x3 is not None:
         matLT3x3OND = np.column_stack((astar0, bstar0, cstar0))
-        if verbose:
+        if verbose > 1:
             print("matLT3x3OND = ", matLT3x3OND)
             print("exiting CP.matstarlab_to_matstarlabOND")
         return matLT3x3OND
