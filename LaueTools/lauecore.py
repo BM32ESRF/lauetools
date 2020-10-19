@@ -1026,7 +1026,8 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
                                     detectordiameter=DEFAULT_DETECTOR_DIAMETER,
                                     pixelsize=165.0 / 2048,
                                     dim=(2048, 2048),
-                                    linestowrite=[[""]]):
+                                    linestowrite=[[""]],
+                                    verbose=0):
     r""" Calculates list of grains spots on camera and without harmonics
     and on CCD camera from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
@@ -1232,7 +1233,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
             totalnbspots += len(oncam_2theta)
 
-    print('total number of spots for all the %d grain(s) in filterLaueSpots():  '%nbofgrains, totalnbspots)
+    if verbose: print('total number of spots for all the %d grain(s) in filterLaueSpots():  '%nbofgrains, totalnbspots)
     if totalnbspots == 0:
         return
     # outputs and returns
