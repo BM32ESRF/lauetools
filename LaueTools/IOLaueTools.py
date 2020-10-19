@@ -60,15 +60,15 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     :return: outputfilename
 
-    sortedexit    : 1 sort peaks by intensity for the outputfile
-                    0 sorting not needed (e.g. sorting already done in input file)
+    :param sortedexit: - 1 sort peaks by intensity for the outputfile
+                - 0 do not sort (e.g. sorting already done in input .dat file . see dataintensity inpu parameter)
 
-    overwrite        : 1 overwrite existing file
+    :param overwrite: 1 overwrite existing file
                         0 write a file with '_new' added in the name
 
-    rectpix      :   to deal with non squared pixel: ypixelsize = xpixelsize * (1.0 + rectpix)
+    :param rectpix:   to deal with non squared pixel: ypixelsize = xpixelsize * (1.0 + rectpix)
 
-    :param data_props: [array of dataproperties, list columns name]
+    :param data_props: [array of dataproperties, list columns name]  (ie  peak sizes, pixdev etc...  see .dat file)
 
     if data_sat list, add column to .cor file to mark saturated peaks
     """
@@ -93,11 +93,14 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         format_string += "   %d"
         list_of_data += [data_sat]
     if data_props:
+        print('preparing spots props "list_of_data"')
         data_peaks, columnnames = data_props
         for k in range(len(columnnames)):
             firstline += " %s" % columnnames[k]
             format_string += "   %.06f"
+            # TODO clarify ???
             list_of_data += [data_peaks[:, k]]
+            #list_of_data += [data_peaks[k, :]]
 
     firstline += "\n"
 
@@ -116,9 +119,12 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile.write(firstline)
 
-    # print('nbspots', nbspots)
-    # print('len(list_of_data)', len(list_of_data))
+    #print('nbspots', nbspots)
+    #print('len(list_of_data)', len(list_of_data))
     ldata = [elem for elem in list_of_data]
+    #for elem in ldata:
+        #print('len ---', len(elem))
+        #print('elem ---', elem)
     if PYTHON3:
         liststrs = [format_string % tuple(list(zip(*ldata))[i]) for i in range(nbspots)]
         #liststrs = [format_string % tuple(list(zip((*list_of_data)))[i]) for i in range(nbspots)]
@@ -642,14 +648,14 @@ def addPeaks_in_Peaklist(
 
         if line.startswith("#"):
             incomments = True
-            print(line)
+            #print(line)
             comments += line
 
         elif incomments:
             break
     f.close()
 
-    print(merged_data.shape)
+    #print(merged_data.shape)
 
     if filename_out is None:
         filename_out == filename_in
@@ -1251,7 +1257,7 @@ def readfitfile_comments(fitfilepath):
     return dictcomments
 
 
-def convert_fit_to_cor(fitfilepath):
+def convert_fit_to_cor(fitfilepath, verbose=0):
     """ convert .fit file to .cor file"""
 
     col_2theta, col_chi = 9, 10
@@ -1263,9 +1269,10 @@ def convert_fit_to_cor(fitfilepath):
     folder, filename = os.path.split(fitfilepath)
     prefixfilename = filename.rsplit(".", 1)[0]
 
-    print('\n in convert_fit_to_cor')
-    print('filename', filename)
-    print('prefixfilename: %s\n'%prefixfilename)
+    if verbose:
+        print('\n in convert_fit_to_cor')
+        print('filename', filename)
+        print('prefixfilename: %s\n'%prefixfilename)
 
     # read .fit file
     res = readfitfile_multigrains(fitfilepath)
@@ -1273,7 +1280,7 @@ def convert_fit_to_cor(fitfilepath):
     alldata = res[4]
 
     #   (nb spots,  nb properties/spots)  sorted by grainindex
-    print('alldata.shape', alldata.shape)
+    if verbose: print('alldata.shape', alldata.shape)
 
     (twicetheta, chi,
     data_x, data_y, dataintensity) = (alldata[:, col_2theta], alldata[:, col_chi],
@@ -1567,7 +1574,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     lineindex = 0
     while 1:
         line = f.readline()
-        print(line)
+        print("line file.ubs",line)
         if line.startswith("$"):
             if line.startswith("$FileIndex"):
                 line = str(f.readline())
@@ -1679,7 +1686,7 @@ def readdataasmatrices(fileobject):
                 listelem.append(val)
                 nbElements += 1
 
-                print('listelem', listelem)
+                #print('listelem', listelem)
 
     if (nbElements % 9) != 0:
         raise ValueError("Number of elements is not a multiple of 9")
@@ -2175,6 +2182,8 @@ def read_indexationfile(filename, grainindex_mat=0):
     Read indexation file created by lauetools with extension .res
 
     Return arrays of all colums [spot# grainindex 2theta chi pixX pixY intensity h k l energy]
+
+    .. todo:: adapt matrix reader to new file .res format
 
     """
     with open(filename, 'r') as f:
