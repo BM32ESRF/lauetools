@@ -120,7 +120,7 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
     #TODO accept also .dat
 
     return:
-    - rearranged 5 elements of data, nb of elements = nb of common pts
+    - rearranged 5 elements of data (data_theta, Chi, posx, posy, dataintensity), nb of elements = nb of common pts
     - new_order_spotindices: selection of indices in original data 
     - isolated_spots_in_spotlist: indices of spot in data without association,
     - isolated_spots_in_reflist: indices of spot in referenceList without association
@@ -130,7 +130,7 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
         if referenceList.endswith('.cor'):
             data_ref = IOLT.readfile_cor(referenceList)
 
-            posx_ref, posy_ref = data_ref[3:5]
+            posx_ref, posy_ref = data_ref[3:5] # data_ref[0] is all data
 
             referenceList = np.array([posx_ref, posy_ref]).T
             referenceListHKL = None
