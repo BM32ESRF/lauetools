@@ -1018,8 +1018,8 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     :param XY1: list of 2D elements
     :param XY2: list of 2D elements
     :param dist_tolerance: largest distance (in unit of XY1, XY2) to consider two elements close enough
-    :param samelist: boolean, default is False (when XY1 and XY2 are different). False if XY1=XY2 to 
-    find closed spots in a single list of points
+    :param samelist: boolean, default is False (when XY1 and XY2 are different). True if XY1=XY2 to 
+    find close spots in a single list of points
 
     :return:
     [0] ind_XY1: index of points in XY1 which are seen in XY2
@@ -1060,10 +1060,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
         # print('closest distance:', dist[ind_XY1, ind_XY2])
         WITHINTOLERANCE = False
     else:
-        if not samelist:
-            ind_XY1, ind_XY2 = resmin[0][0], resmin[1][0]
-        else:
-            ind_XY1, ind_XY2 = resmin[0], resmin[1]
+        ind_XY1, ind_XY2 = resmin[0], resmin[1]
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
 
