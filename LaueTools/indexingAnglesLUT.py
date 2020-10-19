@@ -528,7 +528,7 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
         * Used in AutoIndexation  (if max setA < max setB)
     """
 
-    print('--------*****   matrices_from_onespot_hkl()   ******-----------')
+    
     # print('input param',spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
     #                                         n, key_material, MaxRadiusHKL,
     #                                         hkl1, hkl2, LUT, allow_restrictedLUT,
@@ -536,7 +536,9 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     #                                         LUT_with_rules,
     #                                         excludespotspairs)
     #verbose = 1
-    if verbose: "---- mode verbose = 1 --------"
+    if verbose:
+        print("---- mode verbose = 1 --------")
+        print('--------*****   matrices_from_onespot_hkl()   ******-----------')
     if verbose:
         print('\n\n***  in matrices_from_onespot_hkl\n\n')
         print("LUT_tol_angle", LUT_tol_angle)
@@ -914,10 +916,11 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
     .. todo::
         conflict between key_material and B ...
     """
-
-    # print("using UBs_from_twospotsdistance()")
-    # print("coords_1", coords_1)
-    # print("coords_2", coords_2)
+    if verbose:
+        print("using UBs_from_twospotsdistance()")
+        print("coords_1", coords_1)
+        print("coords_2", coords_2)
+        
     PPs_list = []
 
     if set_hkl_1 is None:
@@ -1008,7 +1011,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
     coords  :  2theta chi spots coordinates
     """
-    print("** --Loop_on_PlanesPairs_and_Get_Matrices() --**")
+    if verbose: print("** --Loop_on_PlanesPairs_and_Get_Matrices() --**")
 
     pairspots = []
     matrix_list = []
@@ -1963,9 +1966,10 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
     # --- loop over central spots -------------------------------------------------------
     for k_centspot_index, spot_index_central in enumerate(list_spot_central_indices):
-        print("*---****-----getOrientMatrices() ------------------------------------*")
-        print("Calculating all possible matrices from exp spot #%d and the %d other(s)"
-            % (spot_index_central, nbofpeaks))
+        if verbose:
+            print("*---****-----getOrientMatrices() ------------------------------------*")
+            print("Calculating all possible matrices from exp spot #%d and the %d other(s)"
+                % (spot_index_central, nbofpeaks))
         # list_orient_matrix, planes, pairspots = matrices_from_onespot(spot_index_central,
         # LUT_tol_angle,
         # Tab_angl_dist,
