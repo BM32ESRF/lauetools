@@ -69,8 +69,7 @@ class OrientMatrix:
             self.matrix = matrix
             self.eulers = None
             if np.array(matrix).shape != (3, 3):
-                raise ValueError("the following object is not a 3x3 matrix !"
-                ).with_traceback(matrix)
+                raise ValueError("the following object is not a 3x3 matrix !").with_traceback(matrix)
         elif eulers is not None:
             self.eulers = eulers
             self.matrix = GT.fromEULERangles_toMatrix(eulers)
@@ -4557,9 +4556,11 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
                      reanalyse,
                      use_previous_results,
                      updatefitfiles,
+                     trackingmode=False,
+                     build_hdf5=True,
                      verbose=0):
-    """ index laue spots of several peakslist files using multiprocessing 
-    
+    """ index laue spots of several peakslist files using multiprocessing
+
     """
     dict_param_list = readIndexRefineConfigFile(fileirp)
     NB_MATERIALS = len(dict_param_list)
@@ -4568,7 +4569,7 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
     if filesuffix in ('.dat',):
         CCDCalibdict = IOLT.readCalib_det_file(filedet)
 
-    Index_Refine_Parameters_dict= {}
+    Index_Refine_Parameters_dict = {}
 
     Index_Refine_Parameters_dict["CCDCalibdict"] = CCDCalibdict
     Index_Refine_Parameters_dict["PeakList Folder"] = filepathdat
@@ -4583,10 +4584,13 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
 
     Index_Refine_Parameters_dict["dict params list"] = dict_param_list
     Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
+
     if guessedMatricesFile not in ("None", "none", 'NONE', None):
         print("Reading general file for guessed UB solutions")
 
         assert use_previous_results is False
+    else:
+        guessedMatricesFile = None
 
     # read list .mats or single matrix .mat or material, matrix,..., .ubs file
     if guessedMatricesFile is not None:
@@ -4599,9 +4603,11 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
         else:
             Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
 
-    # spot tracking
-    Index_Refine_Parameters_dict['mapshape'] = (1000,1)
+    # spot restriction or tracking
+    Index_Refine_Parameters_dict['mapshape'] = (1000, 1)
     Index_Refine_Parameters_dict['Reference Spots List'] = spottrackingfile
+
+    Index_Refine_Parameters_dict['trackingmode'] = trackingmode
 
     fileindexrange = (startindex, finalindex, stepindex)
     #------------------------------------------------------------------------
@@ -4614,7 +4620,7 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
     if nb_cpus > 1:
         print('using %d cpu(s)'%nb_cpus)
         fileindexdivision = GT.getlist_fileindexrange_multiprocessing(startindex, finalindex, nb_cpus)
-        print('dispatch of fileindex ',fileindexdivision)
+        print('dispatch of fileindex ', fileindexdivision)
 
         saveObject = None
         index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
@@ -4632,14 +4638,14 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
         multiple_results = pool.map(index_fileseries_3, fileindexdivision)
 
     if nb_cpus == 1:
-        print('using %d cpu(s)'%nb_cpus)
-            
+        print('using only one cpu')
+
         saveObject = None
         index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
                                                 saveObject,
                                                 verbose,
                                                 NB_MATERIALS,
-                                                False,
+                                                build_hdf5,
                                                 fileprefix,
                                                 reanalyse,
                                                 use_previous_results,
@@ -4647,12 +4653,42 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
                                                 CCDCalibdict)
 
 
-        multiple_results = index_fileseries_3(fileindexrange)
+        results, output_mergeddicts_filename = index_fileseries_3(fileindexrange)
+        multiple_results = [results]
+        
 
     t_mp = time.time() - t00
     print("Execution time : %.2f" % t_mp)
 
-    return multiple_results
+    if nb_cpus>1:
+        print('nb of results', len(multiple_results))
+        print('multiple_results[0]', multiple_results[0])
+
+        # now building summary files (pickled dict and hdf5)
+        output_mergeddicts_filename = "%s_dict_%04d_%04d" % (fileprefix, startindex, finalindex)
+
+        list_produced_files = []
+        for elem in multiple_results:
+            list_produced_files.append(elem[1])
+
+        print("\n\n -------  Building dict summary   --------------\n")
+        mergeDictRes(list_produced_files, outputfilename=output_mergeddicts_filename,
+                                                                            dirname=filepathout)
+
+        if build_hdf5:
+            if sys.version_info.major == 3:
+                import LaueTools.Lauehdf5 as LaueHDF5
+            else:
+                import Lauehdf5 as LaueHDF5
+
+            print("\n\n -------  Building hdf5 file   --------------\n")
+
+            LaueHDF5.build_hdf5(output_mergeddicts_filename, dirname_dictRes=filepathout,
+                                                        output_hdf5_filename="dictSUMMARY_%s%04d_%04d.h5"
+                                                        % (fileprefix, startindex, finalindex),
+                                                        output_dirname=filepathout)
+
+    return multiple_results, output_mergeddicts_filename
 
 def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_Parameters_dict=None,
                                                                     verbose=0,
@@ -4688,7 +4724,7 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
                                                 saveObject,
                                                 verbose,
                                                 nb_materials,
-                                                False,
+                                                True,
                                                 prefixfortitle,
                                                 reanalyse,
                                                 use_previous_results,
@@ -4697,6 +4733,8 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
 
 
         multiple_results = index_fileseries_3(fileindexrange)
+
+        return multiple_results
 
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
@@ -4715,18 +4753,8 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
 
     print("fileindexdivision", fileindexdivision)
 
-    # pool = multiprocessing.Pool(nb_of_cpu)
-    # multiple_results = pool.map(index_fileseries_3, fileindexdivision)
-
     with multiprocessing.Pool(nb_of_cpu) as pool:
         multiple_results = pool.map(index_fileseries_3, fileindexdivision)
-
-    # pool = multiprocessing.Pool()
-    # for ii in list(range(len(fileindexdivision))):  # range(nb_of_cpu):
-    #     pool.apply_async(index_fileseries_3, args=(fileindexdivision[ii],), callback=log_result)  # make our results with a map call
-
-    # pool.close()
-    # pool.join()
 
         t_mp = time.time() - t00
         print("Execution time : %.2f" % t_mp)
@@ -4737,14 +4765,13 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
     output_mergeddicts_filename = "%s_dict_%04d_%04d" % (prefixfortitle, index_start, index_final)
 
     list_produced_files = []
-    for elem in fileindexdivision:
-        filen = "%s_dict_%04d_%04d" % (prefixfortitle, elem[0], elem[1])
-        list_produced_files.append(str(filen))
+    for elem in multiple_results:
+        list_produced_files.append(elem[1])
 
     flag_completed = False
     flag_completed_HDF5 = False
     try:
-        print("intermediate dict_files", list_produced_files)
+        #print("intermediate dict_files", list_produced_files)
         mergeDictRes(list_produced_files, outputfilename=output_mergeddicts_filename,
                                                                         dirname=dirname_dictRes)
 
@@ -4803,8 +4830,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     :param nb_materials: number of materials used in predefined list Index_Refine_Parameters_dict
     :type nb_materials: int
     """
-    # TODO  to put in Index_Refine_Parameters_dict
-    trackingmode = 0
 
     p = multiprocessing.current_process()
     print("Starting:", p.name, p.pid)
@@ -5004,8 +5029,11 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     # mapshape
     # initial index can differ from firstindex used to scan some data images
     mapfirstimageindex = fileindexrange[0]
-
+        
+    trackingmode = False
     if refpositionfilepath is not None:
+        trackingmode = Index_Refine_Parameters_dict["trackingmode"]
+
         if trackingmode:
             # dict of refposfile at the beginning of each line (nb of lines = mapshape[0])
             print('\n-------Spots Tracking Mode -------\n')
@@ -5227,22 +5255,22 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             previousResults = None
             # ------------------------------------------------
-            # index image n using n-1 result 
+            # index image n using n-1 result
             #------------------------------------------------
             # read a guessed orientation matrix in dictMat
             # TODO we could think about first  checkorientation and if not successfulthen previous results 
             if use_previous_results and CheckOrientations is None:
-                
+
                 if verbose:
                     print("use_previous_result:  True")
                     print("current index", imageindex)
                 
                 # TODO: to improve find the closest analysed solution in sample map and 2D or 1D image index list
                 if previousindex in dictMat:
-                    
+
                     GuessedUBMatrices = dictMat[previousindex]
                     print("previous analysed index", previousindex)
-                print('GuessedUBMatrices',GuessedUBMatrices)
+                print('GuessedUBMatrices', GuessedUBMatrices)
                 if imageindex >= nstart and GuessedUBMatrices is not 0:
                     # first matrix only
 
@@ -5281,9 +5309,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 #         previousResults = None
                 #         break
                 CheckOrientationParams = [CheckOrientations[k_checkUB]]
-                
+
                 previousResults = None
-            #----------------------------------------------------------------       
+            #----------------------------------------------------------------
             # check orientation from previous results already written in corresponding .fit file
             # ----------------------------------------------------
             elif updatefitfiles:
@@ -5384,7 +5412,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 dictNB[imageindex][grainindex] = DataSet.dict_grain_matching_rate[grainindex][0]
                 dictstrain[imageindex][grainindex] = DataSet.dict_grain_devstrain[grainindex]
                 dictstrain_sample[imageindex][grainindex] = DataSet.dict_grain_devstrain_sample[grainindex]
-                
 
         if verbose:
             print("dictMaterial", dictMaterial)
@@ -5404,23 +5431,20 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 pickle.dump(todump, f)
 
         previousindex = imageindex
-
+    
+    # pickle LUT
     with open(os.path.join(ResultsFolder, "LUT"), "wb") as f:
         pickle.dump(DataSet.LUT, f)
 
+    # pickle dict
     print('WRITING DICT: %s'%outputdict_filename)
     with open(os.path.join(ResultsFolder, outputdict_filename), "wb") as f:
         pickle.dump(todump, f)
-
-        #        DataSet.plotallgrains()
 
         print("************************\n\n\n\nCompleted process for %s:"
             % str([nstart, nend, fileindexrange[2]]),
             p.name,
             p.pid)
-
-        #     with open(os.path.join(ResultsFolder, 'indexrefine.log'), 'a') as logfile:
-        #         logfile.write(outputdict_filename)
 
         if build_hdf5:
             if sys.version_info.major == 3:
@@ -5628,7 +5652,7 @@ if __name__ == "__main__":
     updatefitfiles = False
 
 
-    multiple_results = indexFilesSeries(filepathdat, filepathcor, filepathout,
+    multiple_results, filedict = indexFilesSeries(filepathdat, filepathcor, filepathout,
                         fileprefix, filesuffix, nbdigits_filename,
                         startindex, finalindex, stepindex,
                         filedet,

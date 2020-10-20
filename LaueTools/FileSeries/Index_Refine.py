@@ -93,7 +93,7 @@ TIP_IR = ["Folder containing indexed Peaks List .dat files",
     "full path to a file (.mat or .mats) containing one or several guessed orientation matrix(ces) or check orientation parameters file (.ubs) to be tested prior to indexation from scratch",
     "Minimum matching rate (nb of matches/ nb of theoritical spots) to consider that test with Guessed Matrix(ces) is positive and then start directly refinement of this solution. (so indexation from scratch is skipped).\n If higher than 100, then test of guessed solution orientation matrix(ces) will be skipped",
     "Full path to .irp file containing index & refine parameters",
-    "Full path to a refined peakslist .fit file to restrict refinement to those peaks",
+    "Full path to a peakslist (.fit or .cor files) to restrict refinement to some particular peaks only",
 ]
 
 DICT_TOOLTIP = {}
@@ -545,6 +545,10 @@ class MainFrame_indexrefine(wx.Frame):
         txt_mapshape = wx.StaticText(self.panel, -1, "Map Shape")
         self.txtctrl_mapshape = wx.TextCtrl(self.panel, -1, "(1000,1)")
 
+        self.trackingmode = wx.CheckBox(self.panel, -1, "Tracking mode")
+        self.trackingmode.SetValue(False)
+
+
         grid.Add(Createcfgbtn)
         grid.Add(self.previousreschk)
 
@@ -577,7 +581,8 @@ class MainFrame_indexrefine(wx.Frame):
 
         hmap = wx.BoxSizer(wx.HORIZONTAL)
         hmap.Add(txt_mapshape, 0)
-        hmap.Add(self.txtctrl_mapshape, 0)
+        hmap.Add(self.txtctrl_mapshape, 0) 
+        hmap.Add(self.trackingmode, 0)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
@@ -1043,6 +1048,10 @@ class MainFrame_indexrefine(wx.Frame):
 
         # ----- selecting part of peaks that belong to "refposfile"
         #------------  field 13: ---- 'Selected Peaks from File -----------------
+        # if spots positions evolve  for successive images
+        trackingmode = self.trackingmode.GetValue()
+        Index_Refine_Parameters_dict['trackingmode'] = trackingmode
+        
         rsl = self.list_txtctrl[13].GetValue()
         if rsl in ('None', "None", 'none', "none"):
             Index_Refine_Parameters_dict['Reference Spots List'] = None
@@ -1082,9 +1091,9 @@ class MainFrame_indexrefine(wx.Frame):
 
         print("start indexing multifiles")
 
-        NB_MATERIALS = len(self.dict_param_list)
+        # NB_MATERIALS = len(self.dict_param_list)
 
-        print('self.dict_param_list', self.dict_param_list)
+        # print('self.dict_param_list', self.dict_param_list)
 
         try:
             nb_cpus = int(self.txtctrl_cpus.GetValue())
@@ -1095,50 +1104,21 @@ class MainFrame_indexrefine(wx.Frame):
             wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
             return
 
-        flagcompleted = True
-        if nb_cpus == 1:
-            multiple_results = ISS.index_fileseries_3(fileindexrange,
-                                    Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                                    saveObject=0,
-                                    verbose=verbosemode,
-                                    nb_materials=NB_MATERIALS,
-                                    build_hdf5=True,
-                                    prefixfortitle=fileprefix,
-                                    reanalyse=reanalyse,
-                                    use_previous_results=use_previous_results,
-                                    updatefitfiles=updatefitfiles,
-                                    CCDCalibdict=CCDCalibdict)
-
-            if multiple_results is not None:
-                # dictRes, outputdict_filename = multiple_results
-                pass
-            else:
-                wx.MessageBox("Indexation and Refinement not completed.\n An error occured "
-                    "during the procedure\n" + "See stdout or terminal window for details.", "INFO")
-
-        elif nb_cpus > 1:
-            print("Using %d processors" % nb_cpus)
-            multiple_results = ISS.indexing_multiprocessing(fileindexrange,
-                                        dirname_dictRes=filepathout,
-                                        Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
-                                        saveObject=0,
-                                        verbose=verbosemode,
-                                        nb_materials=NB_MATERIALS,
-                                        nb_of_cpu=nb_cpus,
-                                        build_hdf5=True,
-                                        prefixfortitle=fileprefix,
-                                        reanalyse=reanalyse,
-                                        use_previous_results=use_previous_results,
-                                        updatefitfiles=updatefitfiles,
-                                        CCDCalibdict=CCDCalibdict)
-
-            print("flagcompleted", flagcompleted)
-            if not flagcompleted:
-                print("\n\n ****** \nIndexation and Refinement not completed\n***********\n\n")
-            wx.MessageBox("Indexation and Refinement not completed.\n Check the prefixfilename "
-                "of .dat file! Launch the task with only one CPU", "INFO")
-
-        return multiple_results
+        ISS.indexFilesSeries(filepathdat, filepathcor, filepathout,
+                    fileprefix, filesuffix, nbdigits_filename,
+                    startindex, finalindex, stepindex,
+                    filedet,
+                     guessedMatricesFile, MinimumMatchingRate,
+                     fileirp,
+                     Index_Refine_Parameters_dict['Reference Spots List'],
+                     nb_cpus,
+                     reanalyse,
+                     use_previous_results,
+                     updatefitfiles,
+                     trackingmode=trackingmode,
+                     build_hdf5=True,
+                     verbose=verbosemode)
+        return
 
 
 def fill_list_valueparamIR(initialparameters):
@@ -1205,8 +1185,8 @@ if 1:
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["Detector Calibration File .det"] = None
     initialparameters["nbdigits"] = 0
-    initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
-                                                          "corfiles", "SiCustrain5_Cu20spots.fit")
+    # initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+    #                                                       "corfiles", "SiCustrain5_Cu20spots.fit")
     initialparameters["Selected Peaks from File"] = 'None'
     initialparameters["startingindex"] = 0
     initialparameters["finalindex"] = 5
