@@ -74,9 +74,7 @@ def SimulateResult_withMiller(grain, emin, emax, defaultParam, pixelsize=165.0 /
     Spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=0,
-                                fileOK=0,
                                 verbose=0,
                                 kf_direction="Z>0")
 
@@ -130,9 +128,7 @@ def simulate_theo(grain, emax, emin, paramDet, pixelsize, dim):
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=0,
-                                fileOK=0,
                                 verbose=0,
                                 kf_direction=kf_direction)
 
@@ -1500,9 +1496,7 @@ if __name__ == "__main__":
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [GrainSimulParam],
-                                1,
                                 fastcompute=0,
-                                fileOK=0,
                                 verbose=0,
                                 kf_direction=kf_direction)
 
