@@ -3717,6 +3717,11 @@ class MainPeakSearchFrame(wx.Frame):
             self.nbdigits = None
 
         self.setfilename()
+
+        if not self.imagefilename in os.listdir(self.dirname):
+            print("%s is missing!"%self.imagefilename)
+            return
+
         self.read_data()
 
         if (self.ImageFilterpanel.FilterImage and self.ImageFilterpanel.ImageType == "Raw"):
