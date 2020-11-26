@@ -2753,7 +2753,7 @@ class spotsset:
             for keycol in range(6, 6 + nb_add_props):
                 header_addprops += ' %s' % invdict[keycol]
             # print('header_addprops',header_addprops)
-            header = header[:-1]+header_addprops
+            header = header+header_addprops
 
         header = header + " intensity h k l Energy\n"
 
@@ -4510,7 +4510,7 @@ def mergeDictRes(list_of_dictfiles, outputfilename="MergedRes", dirname=None):
         else:
             dMater, dMat, dMR, dNB, dstrain, dstrain_sample, dspots = Res
 
-        print("dstrain_sample for %s"%_file, dstrain_sample)
+        #print("dstrain_sample for %s"%_file, dstrain_sample)
 
         dictMaterial = dict(list(dMater.items()) + list(dictMaterial.items()))
         dictMat = dict(list(dMat.items()) + list(dictMat.items()))
@@ -4520,9 +4520,7 @@ def mergeDictRes(list_of_dictfiles, outputfilename="MergedRes", dirname=None):
         dictstrain_sample = dict(list(dstrain_sample.items()) + list(dictstrain_sample.items()))
         dictspots = dict(list(dspots.items()) + list(dictspots.items()))
 
-        print('dictstrain_sample after merging ',dictstrain_sample)
-
-    
+        #print('dictstrain_sample after merging ',dictstrain_sample)
 
     tuple_dicts = dictMaterial, dictMat, dictMR, dictNB, dictstrain, dictstrain_sample, dictspots
 
@@ -4834,7 +4832,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     p = multiprocessing.current_process()
     print("Starting:", p.name, p.pid)
 
-    print('to analyse : ',fileindexrange)
+    print('to analyse : ', fileindexrange)
 
     #     ANGLE_TOL_REMOVE_PEAKS = 0.5
 
@@ -5142,7 +5140,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                             maxdistance = max(indexstep*2, mapshape[0]+1)  # to get some candidates
 
                             (_, _), imageindexprior, _ = GT.best_prior_array_element(i, j, mapshape,
-                                                            maxdist=maxdistance,  
+                                                            maxdist=maxdistance,
                                                             startingindex=mapfirstimageindex,
                                                             existingabsindices=list(refposfiles.keys()))
                             print('best located refpositions for imageindex = %d'%imageindexprior)
@@ -5431,7 +5429,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 pickle.dump(todump, f)
 
         previousindex = imageindex
-    
+
     # pickle LUT
     with open(os.path.join(ResultsFolder, "LUT"), "wb") as f:
         pickle.dump(DataSet.LUT, f)
@@ -5626,9 +5624,9 @@ if __name__ == "__main__":
 
     #  fields like on the GUI   FileSeries/Index_Refine.py
 
-    filepathdat=MainFolder
-    filepathcor=os.path.join(MainFolder, "corfiles")
-    filepathout=os.path.join(MainFolder, "fitfiles")
+    filepathdat = MainFolder
+    filepathcor = os.path.join(MainFolder, "corfiles")
+    filepathout = os.path.join(MainFolder, "fitfiles")
 
     fileprefix="LukasHR_"
     filesuffix='.dat'
