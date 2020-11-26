@@ -204,9 +204,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         spots2pi = LAUE.getLaueSpots(DictLT.CST_ENERGYKEV / emax,
                                         DictLT.CST_ENERGYKEV / emin,
                                         [GrainSimulParam],  # bracket because of a list of one grain
-                                        [[""]],
                                         fastcompute=0,
-                                        fileOK=0,
                                         verbose=0,
                                         kf_direction=kf_direction,
                                         dictmaterials=dictmaterials)
@@ -565,15 +563,6 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                         kf_direction=kf_direction)[:2]
                     posx = posx.tolist()
                     posy = posy.tolist()
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
-
-                    #                     posx = [spot.Xcam for spot in  Laue_spot_list[0]]
-                    #                     posy = [spot.Ycam for spot in  Laue_spot_list[0]]
-
-                    # vecRR = [spot.Qxyz for spot in Laue_spot_list[0]]  # uf_lab in JSM frame
-
-                    # print "twicetheta",twicetheta
-                    # print "2*th0",(2*theta0).tolist()
 
                     list_twicetheta.append(twicetheta)
                     list_chi.append(chi)
