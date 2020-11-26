@@ -381,10 +381,8 @@ class RecognitionResultCheckBox(wx.Frame):
             spots2pi = LT.getLaueSpots(DictLT.CST_ENERGYKEV / float(emax),
                                         DictLT.CST_ENERGYKEV / float(emin),
                                         [grain],
-                                        [[""]],
                                         fastcompute=1,
                                         ResolutionAngstrom=self.ResolutionAngstrom,
-                                        fileOK=0,
                                         verbose=0,
                                         dictmaterials=self.StorageDict['dict_Materials'])
             # print('spots2pi',spots2pi)
