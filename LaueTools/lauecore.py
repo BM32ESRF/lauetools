@@ -224,7 +224,6 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     kmax = GT.properinteger(OCrot[1] + 1.0 / lambdamin / normbstar / cosangleb)
     lmax = GT.properinteger(OCrot[2] + 1.0 / lambdamin / normcstar / cosanglec)
 
-    # print "hmM, kmM, lmM",[hmin, hmax, kmin, kmax, lmin, lmax]
     # SECURITY -1
     Hmin = min(hmin, hmax) - 1
     Kmin = min(kmin, kmax) - 1
@@ -235,9 +234,6 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     Hmax = max(hmin, hmax) + 2
     Kmax = max(kmin, kmax) + 2
     Lmax = max(lmin, lmax) + 2
-
-    # print "Hmin, Kmin, Lmin",Hmin, Kmin, Lmin
-    # print "Hmax, Kmax, Lmax",Hmax, Kmax, Lmax
 
     try:
         list_hkl_limits = [[int(Hmin), int(Hmax)],
@@ -318,12 +314,10 @@ def parse_grainparameters(SingleCrystalParams):
     return Bmatrix, Extinc, Orientmatrix, key_for_dict
 
 
-def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
-                                            kf_direction=DEFAULT_TOP_GEOMETRY,
+def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GEOMETRY,
                                             OpeningAngleCollection=22.0,
                                             fastcompute=0,
                                             ResolutionAngstrom=False,
-                                            fileOK=1,
                                             verbose=1,
                                             dictmaterials=None):
     r"""
@@ -365,9 +359,6 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
         * None, all reflections will be calculated that can be time-consuming for large unit cell
 
-    :param linestowrite: list of [string] that can be write in file or display in
-        stdout. Example: [[""]] or [["**********"],["lauetools"]]
-
     :return:
         * list of [Qx,Qy,Qz]s for each grain, list of [H,K,L]s for each grain (fastcompute = 0)
 
@@ -382,7 +373,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         done later with filterLaueSpots()
 
     .. note:: lauetools laboratory frame is in this case:
-        x// ki (center of ewald sphere has neagtive x component)
+        x// ki (center of ewald sphere has negative x component)
         z perp to x and belonging to the plane defined by x and dd vectors
         (where dd vector is the smallest vector joining sample impact point and points on CCD plane)
         y is perpendicular to x and z
@@ -396,14 +387,6 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
             raise ValueError("wavelengthes must be positive and ordered")
     else:
         raise ValueError("wavelengthes must have numerical values")
-
-    if isinstance(linestowrite, (int, float, str)):
-        linestowrite = [[""]]
-
-    if (not isinstance(linestowrite, list)
-        or not isinstance(linestowrite[-1], list)
-        or not isinstance(linestowrite[-1][0], str)):
-        raise ValueError("Missing list of string")
 
     if not isinstance(crystalsParams, list):
         raise ValueError("Grains parameters list is not correct. It Must be: [grain] for 1 grain or [grain1, grain2] for 2 grains...")
@@ -427,23 +410,6 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         if verbose:
             print("# grain:  ", i, " made of ", key_material)
             print(" crystal parameters:", crystalsParams[i])
-        if fileOK:
-            linestowrite.append(["%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"])
-            linestowrite.append(["grain no ", str(i), " made of ", key_material,
-                                " default lattice parameter ",
-                                str(dictmaterials[crystalsParams[i][3]][1]),])
-            linestowrite.append(["(vec* basis in lab. frame, real lattice lengthes expansion, "
-            "orientation matrix, atomic number):"])
-            linestowrite.append(["(orientation angles have no meanings here since orienation "
-            "is given by a quaternion extracted from openGL, see below)"])
-            for elem in crystalsParams[i]:
-                linestowrite.append([str(elem)])
-        # print dictmaterials[crystalsParams[i][3]]
-
-    if fileOK:
-        linestowrite.append(["************------------------------------------***************"])
-        linestowrite.append(["energy range: ", str(CST_ENERGYKEV / wlM), " - ",
-                                        str(CST_ENERGYKEV / wlm), " keV",])
 
     wholelistvecfiltered = []
     wholelistindicesfiltered = []
@@ -525,8 +491,6 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
         table_vec = table_vec[cond_Xnegativeonly]
 
-        #         print "len(table_vec)", len(table_vec)
-
         # Kf direction selection
         # top reflection 2theta = 90
         if kf_direction == "Z>0":
@@ -537,9 +501,11 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         # side reflection  2theta = 90
         elif kf_direction == "Y<0":
             KF_condit = listrotvec_Y < 0
+        
         # x > -R transmission 2theta = 0
         elif kf_direction == "X>0":
             KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0)
+        
         # x < -R back reflection 2theta = 180
         elif kf_direction == "X<0":
             KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0)
@@ -590,9 +556,9 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
         # last condition could be perhaps put before on
         # listrotvec_X[listrotvec_Z > 0]...
         Condit = np.logical_and(np.logical_and(
-                ((listrotvec_X * 2.0 / wlm + arraysquare) <= 0.0),
-                ((listrotvec_X * 2.0 / wlM + arraysquare) > 0.0),
-            ), (KF_condit))
+                                        ((listrotvec_X * 2.0 / wlm + arraysquare) <= 0.0),
+                                        ((listrotvec_X * 2.0 / wlM + arraysquare) > 0.0),
+                                    ), (KF_condit))
         #   print "nb of spots in spheres and in towards CCD region", len(np.where(Condit == True)[0])
 
         if fastcompute == 0:
@@ -642,16 +608,8 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
                 print("# grain: ", i)
                 print("Number of spots for # grain ", i, ": ", len(listvecfiltered))
 
-            if fileOK:
-                linestowrite.append(["# grain :", str(i)])
-                linestowrite.append(["Orientation matrix given as input :", str(Orientmatrix)])
-                linestowrite.append(["Number of spots for # grain  ",
-                        str(i), ": ", str(len(listvecfiltered))])
-                linestowrite.append(["*****-------------*****"])
-
         # only q vectors are calculated, not Miller indices
         elif fastcompute == 1:
-            #            print 'Using fastcompute mode'
 
             if ResolutionAngstrom:
 
@@ -667,7 +625,6 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
 
                 Condit = np.logical_and(Condit, ConditResolution)
 
-            # print "Condit", Condit
             fil_X = np.compress(Condit, listrotvec_X)
             fil_Y = np.compress(Condit, listrotvec_Y)
             fil_Z = np.compress(Condit, listrotvec_Z)
@@ -675,20 +632,13 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, linestowrite,
             # to return
             listvecfiltered = np.transpose(np.array([fil_X, fil_Y, fil_Z]))
             wholelistvecfiltered.append(listvecfiltered)
-            # wholelistindicesfiltered is empty
+            # and wholelistindicesfiltered (hkl) is empty
 
             if verbose:
                 print("Orientation matrix", Orientmatrix)
                 print("# grain: ", i)
                 print("Rotating all spots")
                 print("Nb of spots for # grain  ", i, ": ", len(listvecfiltered))
-
-            if fileOK:
-                linestowrite.append(["# grain :", str(i)])
-                linestowrite.append(["Orientation matrix given as input :", str(Orientmatrix)])
-                linestowrite.append(["Number of spots for # grain  ", str(i), ": ",
-                        str(len(listvecfiltered))])
-                linestowrite.append(["*****-------------*****"])
 
     return wholelistvecfiltered, wholelistindicesfiltered
 
@@ -762,13 +712,7 @@ def create_spot_np(Qxyz, miller, detectordistance, allattributes=False,
     #     if spotty.Qxyz[2] > 0:
     normkout = np.sqrt(np.sum(kout ** 2, axis=1))
 
-    #     print "kout[:, 0]", kout[:, 0]
-    #     print "len(kout[:, 0])", len(kout[:, 0])
-    #     print "normkout", normkout
-    #     print "len(normkout)", len(normkout)
-
     Twicetheta = np.arccos((kout[:, 0]) / normkout) / DEG
-    #        spotty.Chi = math.atan(spotty.Qxyz[1] * 1. / spotty.Qxyz[2]) / DEG
     Chi = np.arctan2(kout[:, 1] * 1.0, kout[:, 2]) / DEG
 
     Energy = EwaldRadius * CST_ENERGYKEV
@@ -1285,8 +1229,9 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
 
                 tuple of lists 2theta, chi          if fastcompute=1
 
-    .. warning::
-        NOT USED  (only tentatively on matching rate)
+    .. note::
+        USED in detectorCalibration...simulate_theo
+        and tentatively on matching rate)
     """
     VecX = veccoord[:, 0] * 1.0
     VecY = veccoord[:, 1] * 1.0
@@ -1417,10 +1362,6 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
         #         oncam_chi = np.arctan2(1. * oncam_vecY, oncam_vecZ)
         # TODO: replace by arctan2(1. * oncam_vecY ,oncam_vecZ) ??
 
-        #        print "oncam_2theta", oncam_2theta
-        #        print "oncam_chi", oncam_chi
-        #        print "len(oncam)", len(oncam_2theta)
-
     if fastcompute == 0:
         # list spots data
         return TwthetaChiEnergyMillers_list_one_grain
@@ -1469,12 +1410,12 @@ def get2ThetaChi_geometry(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTO
     listspot = []
     options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
 
-    dictcase = {"Z>0": create_spot,
-                "Y>0": create_spot_side_pos,
-                "Y<0": create_spot_side_neg,
-                "X>0": create_spot_front,
-                "X<0": create_spot_back,
-                "4PI": create_spot_4pi}
+    dictcase = {"Z>0": create_spot,   # top reflection geom
+                "Y>0": create_spot_side_pos,  # side + reflection geom
+                "Y<0": create_spot_side_neg,  # side - reflection geom
+                "X>0": create_spot_front, # transmission geom
+                "X<0": create_spot_back,  # back reflection geom
+                "4PI": create_spot_4pi}   # all spots
 
     for position, indices in zip(oncam_vec, oncam_HKL):
         try:
@@ -1518,6 +1459,7 @@ def get2ThetaChi_geometry_full_np(oncam_vec, oncam_HKL, detectordistance=DEFAULT
 
     .. note::
         * USED in lauecore.filterLaueSpots_full_np
+        * USED in DetectorCalibration.simultate_theo
 
     .. todo::
         * Only geometry Z>0 (top reflection) and X>0 (transmission) are vectorized by numpy
@@ -1614,7 +1556,7 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     # norms of Q vectors
     Qn = 1.0 * np.sqrt(Qsquare)
 
-    twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn, labXMAS=0)
+    twthe, chi = LTGeo.from_qunit_to_twchi(tQ / Qn)
 
     X, Y, _ = LTGeo.calc_xycam_from2thetachi(twthe,
                                                 chi,
@@ -1640,20 +1582,15 @@ def emptylists(n):
     return [[] for k in list(range(n))]
 
 
-def SimulateLaue_merge(
-    grains,
-    emin,
-    emax,
-    detectorparameters,
-    only_2thetachi=True,
-    output_nb_spots=False,
-    kf_direction=DEFAULT_TOP_GEOMETRY,
-    ResolutionAngstrom=False,
-    removeharmonics=0,
-    pixelsize=165 / 2048.0,
-    dim=(2048, 2048),
-    detectordiameter=None,
-    dictmaterials=dict_Materials):
+def SimulateLaue_merge( grains, emin, emax, detectorparameters, only_2thetachi=True,
+                                                output_nb_spots=False,
+                                                kf_direction=DEFAULT_TOP_GEOMETRY,
+                                                ResolutionAngstrom=False,
+                                                removeharmonics=0,
+                                                pixelsize=165 / 2048.0,
+                                                dim=(2048, 2048),
+                                                detectordiameter=None,
+                                                dictmaterials=dict_Materials):
     r"""
     Simulates Laue pattern full data from a list of grains and concatenate results data
 
@@ -1797,7 +1734,8 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
                                                             dim=(2048, 2048),
                                                             detectordiameter=None,
                                                             force_extinction=None,
-                                                            dictmaterials=dict_Materials):
+                                                            dictmaterials=dict_Materials,
+                                                            version=1):
     r"""Computes Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal
 
@@ -1824,24 +1762,16 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
         DETECTORDIAMETER = pixelsize * dim[0]
     else:
         DETECTORDIAMETER = detectordiameter
-    # use DEFAULT_TOP_GEOMETRY <=> kf_direction = 'Z>0'
-
-    #     print "grain", grain
 
     key_material = grain[3]
 
     grain = CP.Prepare_Grain(
         key_material, grain[2], force_extinction=force_extinction, dictmaterials=dictmaterials)
 
-    #     print "grain", grain
-    #     print "grain in SimulateResult()", grain
-
     Spots2pi = getLaueSpots(CST_ENERGYKEV / emax,
                             CST_ENERGYKEV / emin,
                             [grain],
-                            [[""]],
                             fastcompute=0,
-                            fileOK=0,
                             verbose=0,
                             kf_direction=kf_direction,
                             ResolutionAngstrom=ResolutionAngstrom,
@@ -1871,7 +1801,7 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
                                                 detectorparameters,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
-                                                kf_direction=kf_direction)[:2]
+                                                kf_direction=kf_direction, version=version)[:2]
 
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
@@ -1913,21 +1843,14 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
     grain = CP.Prepare_Grain(key_material, grain[2],
                                     force_extinction=force_extinction, dictmaterials=dictmaterials)
 
-    # print("grain in SimulateResult()", grain)
-
     Qxyz, HKL = getLaueSpots(CST_ENERGYKEV / emax,
                             CST_ENERGYKEV / emin,
                             [grain],
-                            [[""]],
                             fastcompute=0,
-                            fileOK=0,
                             verbose=0,
                             kf_direction=kf_direction,
                             ResolutionAngstrom=ResolutionAngstrom,
                             dictmaterials=dictmaterials)
-
-    #     print "Qxyz", Qxyz
-    #     print "HKL", HKL
 
     # list of spot which are on camera (with harmonics)
     TwthetaChiEnergyMillers_list_one_grain_wo_harmonics = filterLaueSpots_full_np(
@@ -1940,14 +1863,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 HarmonicsRemoval=0,
                                                 pixelsize=pixelsize)
 
-    #     print "TwthetaChiEnergyMillers_list_one_grain_wo_harmonics", TwthetaChiEnergyMillers_list_one_grain_wo_harmonics
-
     Twicetheta, Chi, Energy, Miller_ind = TwthetaChiEnergyMillers_list_one_grain_wo_harmonics[:4]
-
-    #     print 'len(Twicetheta)', len(Twicetheta)
-    #     print 'len(Chi)', len(Chi)
-    #     print 'len(Energy)', len(Energy)
-    #     print 'len(Miller_ind)', len(Miller_ind)
 
     posx, posy = LTGeo.calc_xycam_from2thetachi(Twicetheta,
                                                 Chi,
@@ -1955,7 +1871,6 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 kf_direction=kf_direction)[:2]
-
 
     if removeharmonics:
         # remove harmonics:
@@ -2005,10 +1920,8 @@ def SimulateResult(grain, emin, emax, simulparameters,
     spots2pi = getLaueSpots(CST_ENERGYKEV / emax,
                             CST_ENERGYKEV / emin,
                             [grain],
-                            [[""]],
                             fastcompute=fastcompute,
                             ResolutionAngstrom=ResolutionAngstrom,
-                            fileOK=0,
                             verbose=0,
                             kf_direction=kf_direction,
                             dictmaterials=dictmaterials)
@@ -2107,8 +2020,8 @@ def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotL
     .. warning:: In test. NOT USED anywhere !!???
     """
 
-    vecind = getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin, grain, 1,
-                    fileOK=0, fastcompute=0, kf_direction=kf_direction,
+    vecind = getLaueSpots(CST_ENERGYKEV / emax, CST_ENERGYKEV / emin, grain,
+                    fastcompute=0, kf_direction=kf_direction,
                     verbose=verbose, ResolutionAngstrom=ResolutionAngstrom,
                     dictmaterials=dictmaterials)
 
