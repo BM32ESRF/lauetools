@@ -184,36 +184,30 @@ class AllIndexedSpots(Tab.IsDescription):
     PixMax = Tab.Float32Col()
 
 
-list_ub_element = [
-    "UB11",
-    "UB12",
-    "UB13",
-    "UB21",
-    "UB22",
-    "UB23",
-    "UB31",
-    "UB32",
-    "UB33",
-]
+list_ub_element = ["UB11",
+                    "UB12",
+                    "UB13",
+                    "UB21",
+                    "UB22",
+                    "UB23",
+                    "UB31",
+                    "UB32",
+                    "UB33"]
 
 
-list_devstrain_element = [
-    "devstrain_11",
-    "devstrain_22",
-    "devstrain_33",
-    "devstrain_23",
-    "devstrain_13",
-    "devstrain_12",
-]
+list_devstrain_element = ["devstrain_11",
+                        "devstrain_22",
+                        "devstrain_33",
+                        "devstrain_23",
+                        "devstrain_13",
+                        "devstrain_12"]
 
-list_devstrainsample_element = [
-    "devstrainsample_11",
-    "devstrainsample_22",
-    "devstrainsample_33",
-    "devstrainsample_23",
-    "devstrainsample_13",
-    "devstrainsample_12",
-]
+list_devstrainsample_element = ["devstrainsample_11",
+                                "devstrainsample_22",
+                                "devstrainsample_33",
+                                "devstrainsample_23",
+                                "devstrainsample_13",
+                                "devstrainsample_12"]
 
 pos_voigt = [0, 4, 8, 5, 2, 1]
 
@@ -491,7 +485,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
         for key_image in keys_indexfile:
             indexedDevS["fileindex"] = key_image
-            print("dictstrain_sample[key_image]", dictstrain_sample[key_image])
+            #print("dictstrain_sample[key_image]", dictstrain_sample[key_image])
             nbmatrices = len(dictstrain_sample[key_image])
             grainindex = 0
             while grainindex < max_nb_grains:
