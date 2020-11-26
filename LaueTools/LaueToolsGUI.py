@@ -1114,7 +1114,7 @@ class LaueToolsGUImainframe(wx.Frame):
         calibframe = MainCalibrationFrame(self, -1, "Detector Calibration Board",
                                     initialParameter, file_peaks=file_peaks,
                                     pixelsize=pixelsize, dim=framedim,
-                                    kf_direction='Z>0', fliprot=geomoperator)
+                                    kf_direction=self.kf_direction, fliprot=geomoperator)
         calibframe.Show(True)
 
     def OnCliquesFinding(self, _):
