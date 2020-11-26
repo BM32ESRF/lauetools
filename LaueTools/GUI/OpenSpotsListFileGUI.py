@@ -295,7 +295,7 @@ class SetGeneralLaueGeometry(wx.Dialog):
 
         self.combogeo = wx.ComboBox(self, -1, str(initialGeo), size=(-1, 40),
                                     choices=["Top Reflection (2theta=90)",
-                                            "Transmission (2theta=0",
+                                            "Transmission (2theta=0)",
                                             "Back Reflection (2theta=180)"],
                                     style=wx.CB_READONLY)
 
@@ -345,7 +345,7 @@ class SetGeneralLaueGeometry(wx.Dialog):
         """
         LaueGeometry = self.combogeo.GetValue()
 
-        if LaueGeometry == "Transmission":
+        if LaueGeometry == "Transmission (2theta=0)":
             kf_direction = "X>0"
         elif LaueGeometry == "Top Reflection (2theta=90)":
             kf_direction = "Z>0"
