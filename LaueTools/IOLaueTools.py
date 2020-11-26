@@ -138,7 +138,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         outputfile.write("\n# From: %s" % initialfilename)
 
     # metadata on detector position and nature
-    if verbose: print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
+    if verbose:
+        print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
     if param is not None:
         outputfile.write("\n# Calibration parameters")
         # param is a list
@@ -155,7 +156,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
                 raise ValueError("5 or 6 calibration parameters are needed!")
         # param is a dict : CCDCalibdict
         elif isinstance(param, dict):
-            if verbose: print("param is a dict!")
+            if verbose:
+                print("param is a dict!")
             for key in CCD_CALIBRATION_PARAMETERS:
                 # print('key in CCD_CALIBRATION_PARAMETERS', key)
                 if key in param:
@@ -263,7 +265,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             _, data_I, data_2theta, data_chi, data_pixX, data_pixY = alldata.T
             data_theta = data_2theta / 2.0
         elif nbcolumns > 6:  # .cor file with additional spots properties
-            data_2theta, data_chi, data_pixX, data_pixY, data_I= alldata.T[:5]
+            data_2theta, data_chi, data_pixX, data_pixY, data_I = alldata.T[:5]
             data_theta = data_2theta / 2.0
     elif nb_peaks == 1:
         if nbcolumns == 3:
@@ -556,7 +558,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         # need to set fake data
         (peak_X, peak_Y, peak_I) = Data_array.T
         (peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-        Xdev, Ydev, peak_bkg) =  np.zeros((6, nbpeaks))
+        Xdev, Ydev, peak_bkg) = np.zeros((6, nbpeaks))
         Ipixmax = 500*np.ones(nbpeaks)
 
     outputfile = open(os.path.join(dirname, outputfilename), "w")
@@ -1077,7 +1079,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 eulerfound = 1
                 lineeuler = iline + 1
 
-                print('matrixfound',matrixfound)
+                print('matrixfound', matrixfound)
 
             if matrixfound:
                 for jline_matrix in list(range(3)):
@@ -1280,7 +1282,8 @@ def convert_fit_to_cor(fitfilepath, verbose=0):
     alldata = res[4]
 
     #   (nb spots,  nb properties/spots)  sorted by grainindex
-    if verbose: print('alldata.shape', alldata.shape)
+    if verbose:
+        print('alldata.shape', alldata.shape)
 
     (twicetheta, chi,
     data_x, data_y, dataintensity) = (alldata[:, col_2theta], alldata[:, col_chi],
@@ -1471,11 +1474,9 @@ def readCheckOrientationsFile(fullpathtoFile):
     When using this file, current fileindex will be searched among the  Fileindex3 sets.
     If found, guessed Material and matrices will be then tested before indexation from scratch
 
-    return:
+    return: list of CheckOrientation
 
-    List_CheckOrientations
-
-    where each element is a list of:
+    where each CheckOrientation is a list of:
     - File index (list or -2 for all images)
     - Grain index
     - Material
@@ -1483,6 +1484,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     - MatchingThreshold
     - Matrix(ces)
 
+    .. note:: this .ubs file must be accompanied by .irp with the same nb of materials in the same order (to perform the refinement)
 
     example.ubs--------
     $FileIndex
@@ -1574,7 +1576,7 @@ def readCheckOrientationsFile(fullpathtoFile):
     lineindex = 0
     while 1:
         line = f.readline()
-        print("line file.ubs",line)
+        #print("line file.ubs",line)
         if line.startswith("$"):
             if line.startswith("$FileIndex"):
                 line = str(f.readline())
@@ -1672,8 +1674,6 @@ def readdataasmatrices(fileobject):
             break
         lines.append(line)
         nblines += 1
-    #         if nblines == 5:
-    #             break
 
     listelem = []
     for line in lines:
@@ -1821,7 +1821,7 @@ def ReadSpec(fname, scan, outputdate=False):
     Procedure very based on that of Vincent Favre Nicolin procedure
 
     return :
-    scan title = spec command (str), dict of data (key=counter name, val= values), [data (str)]
+    spec command (str), dict of data (key=counter name, val= values), and optionnaly [date (str)]
     """
     f = open(fname, "r")
 
@@ -2620,12 +2620,6 @@ class LT_fitfile:
 
 
 if __name__ == "__main__":
-    #     filepath='liste.mats'
-    #     mat = readListofMatrices(filepath)
-    #
-    #     filepath='list1.mats'
-    #     mat = readListofMatrices(filepath)
-    #     print "mat",mat
 
     filepath = "checkubs.ubs"
     filepath = "SiHgCdTe.ubs"
