@@ -1516,8 +1516,7 @@ class MainCalibrationFrame(wx.Frame):
         if self.plotrangepanel.shiftChiOrigin.GetValue():
             originChi = float(self.plotrangepanel.meanchi.GetValue())
 
-        dataselected = IOLT.createselecteddata(
-                                            (twicetheta, chi + originChi, dataintensity),
+        dataselected = IOLT.createselecteddata((twicetheta, chi + originChi, dataintensity),
                                             np.arange(nbexpspots),
                                             nbexpspots)[0]
 
@@ -1673,6 +1672,7 @@ class MainCalibrationFrame(wx.Frame):
 
         # theoretical data
         twicetheta, chi, Miller_ind, posx, posy, _ = self.simulate_theo(removeharmonics=1)
+        
         # experimental data (set exp. spots attributes)
         self.ReadExperimentData()
 
@@ -1959,6 +1959,7 @@ class MainCalibrationFrame(wx.Frame):
         print("indices of simulated spots(selection in whole Data_Q list)", sim_indices)
         print("Experimental pixX, pixY", pixX, pixY)
         print("self.UBmatrix", self.UBmatrix)
+        print("self.kf_direction", self.kf_direction)
 
         pureRotation = 0  # OR, was 1
 
@@ -1996,6 +1997,10 @@ class MainCalibrationFrame(wx.Frame):
         print("Initial residues", residues)
         print("---------------------------------------------------\n")
 
+        diag = None
+
+        # if self.kf_direction in ('X>0', 'X<0'):
+        #     diag = [1,1,1,1,10,1,1,1]
         results = FitO.fit_on_demand_calibration(initial_values,
                                                 Data_Q,
                                                 allparameters,
@@ -2011,7 +2016,8 @@ class MainCalibrationFrame(wx.Frame):
                                                 dim=self.framedim,
                                                 verbose=0,
                                                 weights=weights,
-                                                kf_direction=self.kf_direction)
+                                                kf_direction=self.kf_direction,
+                                                diag=diag)
 
         print("\n********************\n       Results of Fit        \n********************")
         print("results", results)
@@ -2151,7 +2157,7 @@ class MainCalibrationFrame(wx.Frame):
             # update exp and theo data
             self.update_data(event)
 
-            print("self.linkedspots at the end of StartFit ", self.linkedspots)
+            #print("self.linkedspots at the end of StartFit ", self.linkedspots)
             self.linkedspotsAfterFit = copy.copy(self.linkedspots)
             self.linkExpMillerAfterFit = copy.copy(self.linkExpMiller)
             self.linkIntensityAfterFit = copy.copy(self.linkIntensity)
@@ -2824,9 +2830,8 @@ class MainCalibrationFrame(wx.Frame):
         return:
         twicetheta, chi, self.Miller_ind, posx, posy, Energy
         """
-        # print "self.UBmatrix",self.UBmatrix
-        # print "misorientation UBmatrix",self.deltamatrix
-
+        print('entering simulate_theo() --------\n\n')
+        print('self.kf_direction', self.kf_direction)
         ResolutionAngstrom = None
 
         self.Extinctions = DictLT.dict_Extinc[self.crystalparampanel.comboExtinctions.GetValue()]
@@ -2853,7 +2858,7 @@ class MainCalibrationFrame(wx.Frame):
 
         pixelsize = self.pixelsize
 
-        self.define_kf_direction()
+        #self.define_kf_direction()
 
         self.emin = self.crystalparampanel.eminC.GetValue()
         self.emax = self.crystalparampanel.emaxC.GetValue()
@@ -2880,7 +2885,7 @@ class MainCalibrationFrame(wx.Frame):
             if self.kf_direction in ("Z>0", "X>0", 'X<0') and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
                 print('SINGLEGRAIN')
-                print(self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
+                print('parameters for SimulateLaue_full_np', self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
 
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,
@@ -2948,6 +2953,8 @@ class MainCalibrationFrame(wx.Frame):
                                                 detectordiameter=diameter_for_simulation * 1.25)
 
             print("nb of spots", len(twicetheta))
+        
+        print('End of simulate_theo() ------------\n\n')
 
         return twicetheta, chi, self.Miller_ind, posx, posy, Energy
 
@@ -3120,6 +3127,7 @@ class MainCalibrationFrame(wx.Frame):
 
         # restore the zoom limits(unless they're for an empty plot)
         if xlim != (0.0, 1.0) or ylim != (0.0, 1.0):
+            print('xlim, ylim', xlim, ylim)
             self.axes.set_xlim(xlim)
             self.axes.set_ylim(ylim)
 
@@ -3473,9 +3481,7 @@ class MainCalibrationFrame(wx.Frame):
                     spots2pi = LAUE.getLaueSpots(DictLT.CST_ENERGYKEV / emax,
                                                 DictLT.CST_ENERGYKEV / emin,
                                                 [grain],
-                                                [[""]],
                                                 fastcompute=1,
-                                                fileOK=0,
                                                 verbose=0,
                                                 dictmaterials=self.dict_Materials)
                     # 2theta, chi of spot which are on camera(with harmonics)
@@ -3973,6 +3979,32 @@ def givesharmonics(E, _, Emax):
     return multiples_E
 
 
+def start():
+    """ start of GUI for module launch"""
+    initialParameter = {}
+    #initialParameter["CCDParam"] = [71, 1039.42, 1095, 0.0085, -0.981]
+    initialParameter["CCDParam"] = [71, 0, 0, 0.0, -0.0]
+    initialParameter["detectordiameter"] = 165.0
+    initialParameter["CCDLabel"] = "MARCCD165"
+    initialParameter["filename"] = "Ge0001.dat"
+    initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
+    initialParameter["dict_Materials"] = DictLT.dict_Materials
+
+    filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
+    CalibGUIApp = wx.App()
+    CalibGUIFrame = MainCalibrationFrame(None, -1, "Detector Calibration Board", initialParameter,
+                                                        file_peaks=filepathname,
+                                                        pixelsize=0.079142,
+                                                        datatype="2thetachi",
+                                                        dim=(2048, 2048),
+                                                        fliprot="no",
+                                                        kf_direction='X>0',
+                                                        data_added=None)
+
+    CalibGUIFrame.Show()
+
+    CalibGUIApp.MainLoop()
+    
 if __name__ == "__main__":
 
     initialParameter = {}
@@ -3994,7 +4026,8 @@ if __name__ == "__main__":
                                                         datatype="2thetachi",
                                                         dim=(2048, 2048),
                                                         fliprot="no",
-                                                        data_added=None)
+                                                        data_added=None,
+                                                        kf_direction='X>0')
 
     CalibGUIFrame.Show()
 
