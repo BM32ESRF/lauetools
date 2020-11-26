@@ -95,7 +95,8 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
     elif CCDLabel in ("sCMOS", "sCMOS_fliplr"):
         #default file extension for sCMOS camera
         ext = "tif"
-        lenext = 4 #length of extension including '.'
+        lenext = 4  #length of extension including '.'
+
         if imagefilename.endswith("tiff"):
             ext = "tiff"
             lenext = 5
@@ -103,8 +104,13 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
 
         if nbdigits is not None:
             if imagefilename.endswith(ext):
-                imagefilename = imagefilename[: -(lenext + nbdigits)] + "{:04d}.{}".format(
-                    imageindex, ext)
+                #imagefilename = imagefilename[: - (lenext + nbdigits)] + "{:04d}.{}".format(imageindex, ext)
+
+                #imagefilename = imagefilename[: - (lenext + nbdigits)].zfill(nbdigits) + "%s" % ext
+
+                prepart = str(imagefilename).rsplit('.',1)[0]
+                prefix, digitpart = str(prepart).split('_', 1)
+                imagefilename = prefix + "_" + str(imageindex).zfill(nbdigits) + "." + ext
             elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
         # no zero padded index for filename
@@ -195,7 +201,12 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
         if verbose > 0: print('imagefilename', imagefilename)
         if nbdigits is not None:
             if imagefilename.endswith(ext):
-                imageindex = int(imagefilename[-(lenext + nbdigits) : -(lenext)])
+                #imageindex = int(imagefilename[-(lenext + nbdigits): - (lenext)])
+                prepart = str(imagefilename).rsplit('.',1)[0]
+                digitpart = str(prepart).split('_',1)[-1]
+                print("prepart", prepart)
+                print("digitpart",digitpart)
+                imageindex = int(digitpart)
             elif imagefilename.endswith(ext+".gz"):
                 imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
         else:
