@@ -200,7 +200,7 @@ def calculdist_from_thetachi(listpoints1, listpoints2):
 if NUMBAINSTALLED:
 
     @njit(fastmath=True, parallel=True)
-    def mycalcangle(a,b):
+    def mycalcangle(a, b):
 
         Lo1 = a[0]*DEG / 2.0
         Lo2 = b[0]*DEG / 2.0
@@ -323,13 +323,13 @@ def tensile_along_u(v, tensile, u="zsample"):
     real_expansion_coef = tensile
     if u == "zsample":
         # u direction traction in q space in absolute frame
-        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])  
+        direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])
     else:
         # normalized axis vector u
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
         # u direction traction in q space in absolute frame
-        direction_traction = np.array(UU) / nUU 
+        direction_traction = np.array(UU) / nUU
 
     # u must be normalized
     scalaruv = np.inner(v, direction_traction)  # array of all scalar product (u, v)
@@ -1018,7 +1018,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     :param XY1: list of 2D elements
     :param XY2: list of 2D elements
     :param dist_tolerance: largest distance (in unit of XY1, XY2) to consider two elements close enough
-    :param samelist: boolean, default is False (when XY1 and XY2 are different). True if XY1=XY2 to 
+    :param samelist: boolean, default is False (when XY1 and XY2 are different). True if XY1=XY2 to
     find close spots in a single list of points
 
     :return:
@@ -1082,7 +1082,7 @@ def sortclosestpoints(pt0, pts):
     sortedistances = dist[sortedindices]
 
     return sortedindices, sortedistances
-    
+
 def sortclosestspots(kf0, kfs, dist_tolerance):
     """return spot or scattered vector kf (2theta, chi) index in kfs sorted by increasing angular distance from kf0
 
@@ -1558,13 +1558,13 @@ def closest_array_elements(i, j, array2Dshape, maxdist=1, startingindex=0):
     n1, n2 = array2Dshape
     ii, jj = np.indices(array2Dshape)
     distfrom_ij = np.hypot(ii - i, jj - j)
-    cond = np.logical_and(distfrom_ij <= maxdist,distfrom_ij > 0 )
+    cond = np.logical_and(distfrom_ij <= maxdist, distfrom_ij > 0)
     closeelem_ij = np.where(cond)
 
-    tabindices = np.arange(startingindex, startingindex + n1*n2).reshape((n1, n2))
+    tabindices = np.arange(startingindex, startingindex + n1 * n2).reshape((n1, n2))
     return closeelem_ij, tabindices[closeelem_ij], distfrom_ij[closeelem_ij]
 
-    
+
 def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, existingabsindices=None):
     """ find closest and prior element of 2D array from given i,j
 
@@ -1583,7 +1583,7 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
     # filter if asked
     # check if surrounding elements in absoluteindices are available in existingabsindices
     if bool(existingabsindices):
-            
+
         absoluteindices = []
         cli = []
         clj = []
@@ -1595,7 +1595,7 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
                 clj.append(_clj[k])
                 dist.append(_dist[k])
 
-        dist=np.array(dist)
+        dist = np.array(dist)
 
         close_ij = (cli, clj)
     else:
@@ -1603,7 +1603,7 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
         close_ij = (_cli, _clj)
 
     ic, jc = close_ij
-    
+
     b = np.argmin(dist)
     return [ic[b], jc[b]], absoluteindices[b], dist[b]
 
@@ -1820,7 +1820,7 @@ def to2Darray(a, n2):
 
 def splitarray(a, ndivisions):
     """ split array into several subarrays
-    
+
     ndivisions: tuple of (n1divisions,n2divisions)
     n1divisions and resp. n2divisions subarrayarrays
     along first axis (slow axis) and resp. second axis (fast axis)
@@ -2067,19 +2067,15 @@ def matRot(axis, angle):
     unitvec = axis / norm
 
     syme = np.outer(unitvec, unitvec)
-    antisyme = np.array(
-        [
-            [0, -unitvec[2], unitvec[1]],
-            [unitvec[2], 0.0, -unitvec[0]],
-            [-unitvec[1], unitvec[0], 0.0],
-        ]
-    )
+    antisyme = np.array([[0, -unitvec[2], unitvec[1]],
+                    [unitvec[2], 0.0, -unitvec[0]],
+                    [-unitvec[1], unitvec[0], 0.0]])
     angrad = angle * DEG
 
     return (np.cos(angrad) * IDENTITYMATRIX
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
-        
+
 def propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False):
     """
     propose one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta, chi =0)
@@ -2092,7 +2088,7 @@ def propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False):
     # print('qdir',qdir)
 
     n_hklcentral = np.sqrt(np.sum(hkl_central**2))
-    axrot1 = np.cross(hkl_central,np.array([-1, 0, 0]))
+    axrot1 = np.cross(hkl_central, np.array([-1, 0, 0]))
     angrot1 = np.arccos(np.dot(hkl_central, np.array([-1, 0, 0])) / n_hklcentral) / DEG
     matrot1 = matRot(axrot1, angrot1)
     matrot2 = matRot([0, 1, 0], 90. - target2theta / 2.)  # positive angle between qdir and -x
@@ -2415,7 +2411,7 @@ def fromMatrix_to_EulerAngles(mat):
 #    return phi1, PHI, phi2
 
 
-def getdirectbasiscosines( UBmatrix_array, B0=np.eye(3), frame="sample",
+def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame="sample",
                                                     vec1=[1, 0, 0], vec2=[0, 1, 0], vec3=[0, 0, 1]):
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
