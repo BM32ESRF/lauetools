@@ -13,7 +13,7 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import sys
 
-from scipy.optimize import leastsq
+from scipy.optimize import leastsq, least_squares
 import numpy as np
 
 np.set_printoptions(precision=15)
@@ -97,22 +97,13 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_ind
     """
 
     allparameters.put(varying_parameter_indices, varying_parameter_values)
-    #     detect = allparameters[0]
-    #     xcen = allparameters[1]
-    #     ycen = allparameters[2]
-    #     the0 = allparameters[3]
-    #     gam = allparameters[4]
+
     calibration_parameters = allparameters[:5]
-    angle_Quat = allparameters[5:8]  # three angles of quaternion
+    
 
     # selecting nspots of DATA_Q
-    #     print "DATA_Q in xy_from_Quat", DATA_Q
-    #     print "nspots", nspots
-    #     print "len(DATA_Q)", len(DATA_Q)
     DATAQ = np.take(DATA_Q, nspots, axis=0)
     trQ = np.transpose(DATAQ)  # np.array(Hs, Ks,Ls) for further computations
-
-    #     print "DATAQ in xy_from_Quat", DATAQ
 
     if initrot is not None:
 
@@ -133,17 +124,21 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_ind
         print("I DONT LIKE INITROT == None")
         print("this must mean that INITROT = Identity ?...")
 
+    if 0:
+        angle_Quat = allparameters[5:8]  # three angles of quaternion
         # with sample rotation
-    # print "3 angles representation of quaternion",angle_Quat
-    Quat = GT.from3rotangles_toQuat(angle_Quat)
-    # print "Quat",Quat
-    matfromQuat = np.array(GT.fromQuat_to_MatrixRot(Quat))
-    #     print "matfromQuat", matfromQuat
+        # print "3 angles representation of quaternion",angle_Quat
+        Quat = GT.from3rotangles_toQuat(angle_Quat)
+        # print "Quat",Quat
+        matfromQuat = np.array(GT.fromQuat_to_MatrixRot(Quat))
+        #     print "matfromQuat", matfromQuat
+    else:
+        matfromQuat = np.eye(3)
 
     Qrot = np.dot(matfromQuat, trQ)  # lattice rotation due to quaternion
     Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
 
-    twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn, labXMAS=labXMAS)
+    twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn)
     if verbose:
         print("matfromQuat", matfromQuat)
         print("tDATA_Q", np.transpose(DATA_Q))
@@ -228,30 +223,31 @@ def calc_XY_pixelpositions(calibration_parameters, DATA_Q, nspots, UBmatrix=None
     return X, Y, theta, R
 
 
-def error_function_on_demand_calibration(
-    param_calib,
-    DATA_Q,
-    allparameters,
-    arr_indexvaryingparameters,
-    nspots,
-    pixX,
-    pixY,
-    initrot=IDENTITYMATRIX,
-    vecteurref=IDENTITYMATRIX,
-    pureRotation=1,
-    verbose=0,
-    pixelsize=165.0 / 2048,
-    dim=(2048, 2048),
-    weights=None,
-    allspots_info=0,
-    kf_direction="Z>0",
-):
+def error_function_on_demand_calibration(param_calib,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots,
+                                        pixX,
+                                        pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        vecteurref=IDENTITYMATRIX,
+                                        pureRotation=1,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        allspots_info=0,
+                                        kf_direction="Z>0"):
     """
     #All miller indices must be entered in DATA_Q,
     selection is done in xy_from_Quat with nspots (array of indices)
     # param_orient is three elements array representation of quaternion
     """
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
+
+    invsq2 = 1 / np.sqrt(2)
+    AXIS1,AXIS2, AXIS3 = np.array([[invsq2,-.5,.5],[invsq2,.5,-.5],[0,invsq2,invsq2]])
 
     if 5 in arr_indexvaryingparameters:
         ind1 = np.where(arr_indexvaryingparameters == 5)[0][0]
@@ -260,9 +256,11 @@ def error_function_on_demand_calibration(
         else:
             a1 = param_calib[0] * DEG
         # print "a1 (rad)= ",a1
-        mat1 = np.array(
-            [[np.cos(a1), 0, np.sin(a1)], [0, 1, 0], [-np.sin(a1), 0, np.cos(a1)]]
-        )
+        mat1 = np.array([[np.cos(a1), 0, np.sin(a1)],               
+                            [0, 1, 0],
+                            [-np.sin(a1), 0, np.cos(a1)]])
+
+        mat1 = GT.matRot(AXIS1, a1/DEG)
 
     if 6 in arr_indexvaryingparameters:
         ind2 = np.where(arr_indexvaryingparameters == 6)[0][0]
@@ -271,9 +269,11 @@ def error_function_on_demand_calibration(
         else:
             a2 = param_calib[0] * DEG
         # print "a2 (rad)= ",a2
-        mat2 = np.array(
-            [[1, 0, 0], [0, np.cos(a2), np.sin(a2)], [0, np.sin(-a2), np.cos(a2)]]
-        )
+        mat2 = np.array([[1, 0, 0],
+                        [0, np.cos(a2), np.sin(a2)],
+                        [0, np.sin(-a2), np.cos(a2)]])
+
+        mat2 = GT.matRot(AXIS2, a2/DEG)
 
     if 7 in arr_indexvaryingparameters:
         ind3 = np.where(arr_indexvaryingparameters == 7)[0][0]
@@ -281,9 +281,11 @@ def error_function_on_demand_calibration(
             a3 = param_calib[ind3] * DEG
         else:
             a3 = param_calib[0] * DEG
-        mat3 = np.array(
-            [[np.cos(a3), -np.sin(a3), 0], [np.sin(a3), np.cos(a3), 0], [0, 0, 1]]
-        )
+        mat3 = np.array([[np.cos(a3), -np.sin(a3), 0],
+                        [np.sin(a3), np.cos(a3), 0],
+                        [0, 0, 1]])
+
+        mat3 = GT.matRot(AXIS3, a3/DEG)
 
     deltamat = np.dot(mat3, np.dot(mat2, mat1))
     newmatrix = np.dot(deltamat, initrot)
@@ -307,9 +309,7 @@ def error_function_on_demand_calibration(
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
-    if (
-        weights is not None
-    ):  # take into account the exp. spots intensity as weight in cost distance function
+    if (weights is not None):  # take into account the exp. spots intensity as weight in cost distance function
         allweights = np.sum(weights)
         distanceterm = distanceterm * weights / allweights
         # print "**mean weighted distanceterm   ",mean(distanceterm),"    ********"
@@ -412,14 +412,27 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                                                         0,
                                                         kf_direction)
 
+    
+
+    calib_sol2 = least_squares(_error_function_on_demand_calibration,
+                                param_calib_0,
+                                args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
+                              tr_solver = 'exact',
+                              x_scale = [1,1,1,1,.1,1,1,1], max_nfev=None)
+
+    print("\nLEAST_SQUARES")
+    #print("calib_sol2", calib_sol2['x'])
+    print(calib_sol2['x'])
+    print('mean residues', np.mean(calib_sol2['fun']))
+    
+    return calib_sol2['x']
+
     # LEASTSQUARE
     calib_sol = leastsq(_error_function_on_demand_calibration,
                             param_calib_0,
                             args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
                             maxfev=5000,
                             **kwd)  # args=(rre,ertetr,) last , is important!
-
-    # print "calib_sol",calib_sol
 
     if calib_sol[-1] in (1, 2, 3, 4, 5):
         if verbose:
