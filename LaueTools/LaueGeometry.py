@@ -110,9 +110,10 @@ norme = GT.norme_vec
 def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, verbose=0,
                                                                     pixelsize=165.0 / 2048,
                                                                     rectpix=RECTPIX,
-                                                                    kf_direction="Z>0"):
+                                                                    kf_direction="Z>0",
+                                                                    version=1):
     r"""
-    Computes unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame of scattered beam :math:`k_f`
+    Computes scattered unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame corresponding to :math:`k_f`
     (angle scattering angles 2theta and chi) from X, Y pixel Laue spot position
 
     Unit vector uf correspond to normalized kf vector: q = kf - ki
@@ -138,13 +139,24 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
 
     # transmission geometry
     if kf_direction in ("X>0",):
-        return calc_uflab_trans(xcam,
+        if version == 1:
+            return calc_uflab_trans(xcam,
                                 ycam,
                                 calib,
                                 returnAngles=returnAngles,
                                 verbose=verbose,
                                 pixelsize=pixelsize,
                                 rectpix=rectpix)
+        elif version == 2:
+            return calc_uflab_trans_2(xcam,
+                                ycam,
+                                calib,
+                                returnAngles=returnAngles,
+                                verbose=verbose,
+                                pixelsize=pixelsize,
+                                rectpix=rectpix)
+
+    # back reflection geometry
     elif kf_direction in ("X<0",):
         return calc_uflab_back(xcam,
                                 ycam,
@@ -325,6 +337,106 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
     else:  # default return
         return twicetheta, chi
 
+def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048,
+                                        rectpix=RECTPIX):
+    r"""
+    compute :math:`2 \theta` and :math:`\chi` scattering angles or **uf** and **kf** vectors
+    from lists of X and Y Laue spots positions
+    in TRANSMISSION geometry
+
+    in LaueToolsFrame
+    see calc_xycam_transmission_2
+
+    :param xcam: list of pixel X position
+    :type xcam: list of floats
+    :param ycam: list of pixel Y position
+    :type ycam: list of floats
+    :param calib: list of 5 calibration parameters
+
+    :returns:
+        - if returnAngles=1   : twicetheta, chi   *(default)*
+        - if returnAngles!=1  : uflab, IMlab
+
+    # TODO: add offset like in reflection geometry
+    """
+    print("transmission GEOMETRY")
+    detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
+
+    cosbeta = np.cos(xbet * DEG)
+    sinbeta = np.sin(xbet * DEG)   
+
+    cosgam = np.cos(xgam * DEG)
+    singam = np.sin(xgam * DEG)
+
+    xcam1 = (np.array(xcam) - xcen) * pixelsize
+    ycam1 = (np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)
+
+    # coordinates (mm) along tilted by gamma of X' Y' 
+    # xcam1 = cosgam * xca0 + singam * yca0
+    # ycam1 = -singam * xca0 + cosgam * yca0
+
+    xca0 = cosgam * xcam1 - singam * ycam1
+    yca0 = singam * xcam1 + cosgam * ycam1
+
+    # I centre
+    # O centre of origin of pixel CCD
+    # M belong to CCD plane
+    # IM is parallel to kf
+
+    # for Z>0 top reflection geometry IOlab = detect * array([0.0, cosbeta, sinbeta])
+    
+    # But Here for transmission X>0
+    # xca0 length  along x pixel direction (w/o gamma correction)
+    # yca0 legnth  along y pixel direction  (// Z) (w/o gamma correction)
+    # OMlab = array([-xca0*sinbeta, -xca0*cosbeta, yca0])
+    # yca0 = OMlab[:, 2]
+    # if sinbeta != 0.0:
+    #     xca0 = -OMlab[:, 0] / sinbeta
+    # else:
+    #     xca0 = -OMlab[:, 1] / cosbeta
+    # and
+    # IOlab = distance_IO * np.array([cosbeta, -sinbeta,0])
+
+    xO, yO, zO = detect * np.array([cosbeta, -sinbeta,0])
+
+    
+    xOM = -xca0*sinbeta
+    yOM = -xca0*cosbeta
+    zOM = yca0
+
+    # IMlab = IOlab + OMlab
+    xM = xO + xOM
+    yM = yO + yOM
+    zM = zO + zOM
+    IMlab = np.array([xM, yM, zM]).T
+
+    # norm of IM vector
+    # nIMlab=sqrt(dot(IMlab,IMlab))
+    nIMlab = 1.0 * np.sqrt(xM ** 2 + yM ** 2 + zM ** 2)
+
+    # print transpose(array([xM,yM,zM])) # vector joining source and pt on CCD in abs frame
+    # print nIMlab #distance source pt on CCD (mm)
+
+    uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
+    # print "uflab",uflab
+    EPS = 1e-17
+
+    print("transmission mode ", uflab[:, 0])
+
+    chi = np.arctan2(yM, zM) / DEG
+    twicetheta = np.arccos(uflab[:, 0]) / DEG
+
+    if verbose:
+        print("chi_JSM", chi)
+        print("2theta", twicetheta)
+
+    if returnAngles != 1:
+        return uflab, IMlab
+    else:  # default return
+        return twicetheta, chi
+
 def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
                                         verbose=0,
                                         pixelsize=165.0 / 2048,
@@ -445,7 +557,7 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
     th0 (theta in degrees)
     Energy (energy in keV)
 
-    :param uflab: list or array of [qx,qy,qz] (q vector)
+    :param uflab: list or array of [kf_x,kf_y,kf_z] (kf or uf unit vector)
     :type uflab: list or array (length must > 1)
 
     :param calib: list 5 detector calibration parameters
@@ -563,7 +675,7 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
                                                                             pixelsize=165.0 / 2048,
                                                                             rectpix=RECTPIX):
     r"""
-    Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
+    Computes Laue spots position x and y in pixels units (in CCD frame) from scattered vector kf or uf
 
     As calc_xycam() but in BACK REFLECTION geometry
 
@@ -625,10 +737,6 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
         return uflab, IMlab
     else:  # default return
         return twicetheta, chi
-
-
-
-
     """
     distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
@@ -742,8 +850,7 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, retu
                                                                             pixelsize=165.0 / 2048,
                                                                             rectpix=RECTPIX):
     r"""
-    Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q
-
+    Computes Laue spots position x and y in pixels units (in CCD frame) from scattered vector uf or kf
     As calc_xycam() but in TRANSMISSION geometry
     """
 
@@ -855,10 +962,131 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, retu
     else:
         return xcam, ycam, th0
 
+def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose=0, returnIpM=False,
+                                                                            pixelsize=165.0 / 2048,
+                                                                            rectpix=RECTPIX,
+                                                                            convert2LTframe=True):
+    r"""
+    Computes Laue spots position x and y in pixels units (in CCD frame) from scattered vector uf or kf
+    As calc_xycam() but in TRANSMISSION geometry
+
+    X // ki incoming beam
+    Z vertical
+    Y = Z ^ X (pointing towards the door, or at the left hand side when riding incoming x-ray)
+
+    without gamma correction, X' // pixel Xcam and Y' // pixel Ycam
+    X' tilted by xbet from -Y
+    Y' = Z
+
+    WARNING: uflabframe0 must be converted in LaueTools frame in this function, if uflab components in this module frame  (Y // ki , X towards the wall, Z vertical)...
+    """
+    if convert2LTframe:
+        ux, uy, uz = uflabframe0.T
+        uflab=np.array([uy, -ux, uz]).T
+
+    distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
+
+    cosbeta = np.cos(xbet * DEG)
+    sinbeta = np.sin(xbet * DEG)
+
+    # IOlab: vector joining O nearest point of CCD plane and I (origin of lab frame and emission source)
+
+    IOlab = distance_IO * np.array([cosbeta, -sinbeta,0])
+
+    # unitary normal vector of CCD plane
+    # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
+    unlab = IOlab / np.sqrt(np.dot(IOlab, IOlab))
+
+    # normalization of all input uflab
+    norme_uflab = np.sqrt(np.sum(uflab ** 2, axis=1))
+    uflab = uflab / np.reshape(norme_uflab, (len(norme_uflab), 1))
+
+    # un is orthogonal to any vector joining O and a point M lying in the CCD frame plane
+    scal = np.dot(uflab, unlab)
+    normeIMlab = distance_IO / scal
+
+    # IMlab = normeIMlab*uflab
+    IMlab = uflab * np.reshape(normeIMlab, (len(normeIMlab), 1))
+
+    OMlab = IMlab - IOlab
+
+    #    print "OMlab", OMlab
+
+    # to check
+    # if offset not in (None, 0, 0.0):  # offset input in millimeter
+    #     # OO'=II'-(II'.un)un  # 1 vector
+    #     # dd'=  dd - II'.un # scalar
+    #     # I'M= dd'/(uf.un) uf # n vector
+    #     # I'O'= dd' un # 1 vector
+    #     # O'M=I'M - I'O' # n vector
+    #     # OM = OO' + O'M # n vector
+    #     IIprime = offset
+    #     IIprime_un = np.dot(IIprime, unlab)
+    #     OOprime = IIprime - IIprime_un * unlab
+    #     ddprime = distance_IO + IIprime_un
+    #     IprimeM_norm = ddprime / scal
+    #     IprimeM = uflab * np.reshape(IprimeM_norm, (len(uflab), 1))
+    #     IprimeOprime = ddprime * unlab
+    #     OMlab = OOprime + IprimeM - IprimeOprime
+
+    #     if verbose:
+    #         print("IIprime", IIprime)
+    #         print("IIprime_un", IIprime_un)
+    #         print("OOprime", OOprime)
+    #         print("IprimeM_norm", IprimeM_norm)
+    #         print("IprimeM", IprimeM)
+    #         print("dd", distance_IO)
+    #         print("dd'", ddprime)
+    #         print("OM", OMlab)
+
+    #     if returnIpM:
+    #         return IprimeM
+
+    # for Z>0 top reflection geometry :
+    # OMlab = array([xca0, yca0*sinbeta, -yca0*cosbeta])
+    
+    # Here for transmission X>0
+    # xca0 length  along x pixel direction (w/o gamma correction)
+    # yca0 legnth  along y pixel direction  (// Z) (w/o gamma correction)
+    # OMlab = array([-xca0*sinbeta, -xca0*cosbeta, yca0])
+    yca0 = OMlab[:, 2]
+    if sinbeta != 0.0:
+        xca0 = -OMlab[:, 0] / sinbeta
+    else:
+        xca0 = -OMlab[:, 1] / cosbeta
+    # zca0 = 0  (along dir normal to detector)
+
+    cosgam = np.cos(xgam * DEG)
+    singam = np.sin(xgam * DEG)
+
+    # coordinates (mm) along tilted by gamma of X' Y' 
+    xcam1 = cosgam * xca0 + singam * yca0
+    ycam1 = -singam * xca0 + cosgam * yca0
+
+    # same coordinates but in pixel units
+    # taking into account the point of normal incidence (xcen,ycen) in pixels unit
+    xcam = xcen + xcam1 / pixelsize
+    ycam = ycen + ycam1 / (pixelsize * (1.0 + rectpix))
+
+    twicetheta = (1 / DEG) * np.arccos(uflab[:, 0])
+    th0 = twicetheta / 2.0
+
+    # q = kf - ki    ki // X
+    qf = uflab - np.array([1.0, 0.0, 0.0])
+    norme_qflab = np.sqrt(np.sum(qf ** 2, axis=1))
+
+    Energy = CST_CONV_LAMBDA_KEV * norme_qflab ** 2 / (2.0 * np.sin(th0 * DEG))
+
+    if energy:
+        return xcam, ycam, th0, Energy
+    else:
+        return xcam, ycam, th0
+
+
 
 def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
                                                         pixelsize=165.0 / 2048,
-                                                        kf_direction="Z>0"):
+                                                        kf_direction="Z>0", version=1):
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
@@ -883,7 +1111,10 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
         # TODO raise ValueError, print "not checked yet"
         return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("X>0",):  # transmission
-        return calc_xycam_transmission(uflab, calib, offset=offset, pixelsize=pixelsize)
+        if version == 1:
+            return calc_xycam_transmission(uflab, calib, offset=offset, pixelsize=pixelsize)
+        elif version == 2:
+            return calc_xycam_transmission_2(uflab, calib, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("X<0",):  # back-reflection
         # patch JSM March 2020
         return calc_xycam_backreflection(uflab, calib, offset=offset, pixelsize=pixelsize)
@@ -1674,12 +1905,6 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
     if verbose:
         print("file :%s" % filename)
         print("containing %d peaks" % nb_peaks)
-        # print data_xyI
-
-    # default
-    # data_x=data_xyI[:,0]
-    # data_y=data_xyI[:,1]
-    # data_I=data_xyI[:,2]
 
     if filename.split(".")[-1] in ("pik", "peaks"):
         data_x = data_xyI[:, 0]  # + 0.5  # 0.5 for being closer to XMAS peaks position
@@ -1736,6 +1961,7 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
 
         data_x = xynew[:, 0]
         data_y = xynew[:, 1]
+
     # ----compute scattering angles2theta and chi --------------------------
     twicethetaraw, chiraw = calc_uflab(data_x, data_y, param_det[:5], returnAngles=1,
                                                                         pixelsize=pixelsize,
