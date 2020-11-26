@@ -163,9 +163,7 @@ def Plot_compare_gnomon(Angles, Xgnomon_data, Ygnomon_data, key_material=14,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=1,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
     # 2theta,chi of spot which are on camera (with harmonics)
@@ -253,9 +251,7 @@ def Plot_compare_gnomondata(Angles,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=1,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
 
@@ -321,9 +317,7 @@ def Plot_compare_2thetachi(Angles,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=1,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
 
@@ -397,9 +391,7 @@ def Plot_compare_2thetachi_multi(list_Angles,
         spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                         CST_ENERGYKEV / emin,
                                         [grain],
-                                        1,
                                         fastcompute=1,
-                                        fileOK=0,
                                         verbose=0,
                                         dictmaterials=dictmaterials)
         # 2theta,chi of spot which are on camera (with harmonics)
@@ -894,9 +886,7 @@ def Hough_peak_position(Angles,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=1,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
     # 2theta,chi of spot which are on camera (with harmonics)
@@ -1123,9 +1113,7 @@ def Hough_peak_position_fast(Angles,
         spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                     CST_ENERGYKEV / emin,
                                     [grain],
-                                    1,
                                     fastcompute=1,
-                                    fileOK=0,
                                     verbose=0,
                                     dictmaterials=dictmaterials)
 
@@ -1541,9 +1529,7 @@ def StickLabel_on_exp_peaks(Angles,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=0,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
 
