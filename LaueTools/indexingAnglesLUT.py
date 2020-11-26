@@ -90,9 +90,7 @@ def Plot_compare_2thetachi(Angles,
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                 CST_ENERGYKEV / emin,
                                 [grain],
-                                1,
                                 fastcompute=1,
-                                fileOK=0,
                                 verbose=0,
                                 dictmaterials=dictmaterials)
 
@@ -166,9 +164,7 @@ def Plot_compare_2thetachi_multi(list_Angles,
         spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
                                     CST_ENERGYKEV / emin,
                                     [grain],
-                                    1,
                                     fastcompute=1,
-                                    fileOK=0,
                                     verbose=0,
                                     dictmaterials=dictmaterials)
         # 2theta,chi of spot which are on camera (with harmonics)
