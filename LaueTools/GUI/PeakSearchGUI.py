@@ -123,27 +123,29 @@ class ViewColorPanel(wx.Panel):
         showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto)
 
         self.slider_label = wx.StaticText(self, -1, "Imin: ")
-        self.vminctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmin), size=(80, -1),
-                                                                        min=-200,
+        self.vminminctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vminmin), size=(80, -1),
+                                                                        min=-1000,
                                                                         max=1000000)
-        self.vminctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
+        self.vminminctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
+
+        self.vmiddlectrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmiddle), size=(80, -1),
+                                                                        min=-1000000,
+                                                                        max=1000000)
+        self.vmiddlectrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
         # second horizontal band
         self.slider_label2 = wx.StaticText(self, -1, "Imax: ")
 
-        self.vmaxctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmaxmax),
-                                                            size=(80, -1), min=2, max=1000000)
-        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed)
+        self.vmaxmaxctrl = wx.SpinCtrl(self, -1, str(self.mainframe.vmaxmax),
+                                                            size=(80, -1), min=-1000, max=1000000)
+        self.vmaxmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
-        #         self.slider_label = wx.StaticText(self, -1,
-        #             "peak tilt (%): ")
         self.slider_vmin = wx.Slider(self, -1, size=(220, -1),
                             value=int(self.mainframe.vmin),
-                            minValue=-int(self.mainframe.vminmax) + 2 * int(self.mainframe.vmin),
-                            maxValue=int(self.mainframe.vminmax),
+                            minValue=int(self.mainframe.vminmin),
+                            maxValue=int(self.mainframe.vmiddle),
                             style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
-            #            self.slider_vmin.SetTickFreq(500,1)
             self.slider_vmin.SetTickFreq(500)
         else:
             self.slider_vmin.SetTickFreq(500, 1)
@@ -151,11 +153,9 @@ class ViewColorPanel(wx.Panel):
                                                         self.mainframe.on_slider_IminDisplayed)
 
         # second horizontal band
-        #         self.slider_label2 = wx.StaticText(self, -1,
-        #             "data size (%): ")
         self.slider_vmax = wx.Slider(self, -1, size=(220, -1),
                                                         value=int(self.mainframe.vmax),
-                                                        minValue=int(self.mainframe.vmin) + 1,
+                                                        minValue=int(self.mainframe.vmiddle),
                                                         maxValue=int(self.mainframe.vmaxmax),
                                                         style=wx.SL_AUTOTICKS)  # | wx.SL_LABELS)
         if WXPYTHON4:
@@ -187,54 +187,51 @@ class ViewColorPanel(wx.Panel):
 
         self.show2thetachi = wx.CheckBox(self, -1, "Show 2theta Chi")
         self.detfiletxtctrl = wx.TextCtrl(self, -1, "", size=(100, -1))
-        self.opendetfilebtn = wx.Button(self, -1, "...", size=(100,-1))
+        self.opendetfilebtn = wx.Button(self, -1, "...", size=(100, -1))
         self.show2thetachi.SetValue(False)
         self.opendetfilebtn.Bind(wx.EVT_BUTTON, self.onOpenDetFile)
 
-        
-
         # layout
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox1.Add(luttxt,0,wx.EXPAND,5)
-        hbox1.Add(self.comboLUT,0,wx.EXPAND,5)
+        hbox1.Add(luttxt, 0, wx.EXPAND, 5)
+        hbox1.Add(self.comboLUT, 0, wx.EXPAND, 5)
         hbox1.Add(showhisto_btn)
 
-        hboxmin = wx.BoxSizer(wx.HORIZONTAL) 
-        hboxmin.Add(self.slider_label,0, wx.ALL, 5)
-        hboxmin.Add(self.vminctrl,0, wx.ALL, 5)
-        hboxmin.Add(self.slider_vmin,0, wx.ALL, 5)
-        hboxmin.Add(self.Iminvaltxt,0, wx.ALL, 5)
+        hboxmin = wx.BoxSizer(wx.HORIZONTAL)
+        hboxmin.Add(self.slider_label, 0, wx.ALL, 5)
+        hboxmin.Add(self.Iminvaltxt, 0, wx.ALL, 5)
+        hboxmin.Add(self.slider_vmin, 0, wx.ALL, 5)
 
-        hboxmax = wx.BoxSizer(wx.HORIZONTAL) 
-        hboxmax.Add(self.slider_label2,0,wx.EXPAND,5)
-        hboxmax.Add(self.vmaxctrl,0,wx.EXPAND,5)
-        hboxmax.Add(self.slider_vmax,0,wx.EXPAND,5)
-        hboxmax.Add(self.Imaxvaltxt)
+        hboxmax = wx.BoxSizer(wx.HORIZONTAL)
+        hboxmax.Add(self.slider_label2, 0, wx.ALL, 5)
+        hboxmax.Add(self.Imaxvaltxt, 0, wx.ALL, 5)
+        hboxmax.Add(self.slider_vmax, 0, wx.ALL, 5)
 
-        hboxprofs= wx.BoxSizer(wx.HORIZONTAL)
-        hboxprofs.Add(self.lineXYprofilechck,0,wx.EXPAND,10)
+        hboxprofs = wx.BoxSizer(wx.HORIZONTAL)
+        hboxprofs.Add(self.lineXYprofilechck, 0, wx.EXPAND, 10)
         hboxprofs.Add(self.lineprof_btn)
 
-        hbox2= wx.BoxSizer(wx.HORIZONTAL)
-        hbox2.Add(self.show2thetachi,0,wx.EXPAND,10)
-        hbox2.Add(self.detfiletxtctrl,0,wx.EXPAND,10)
+        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox2.Add(self.show2thetachi, 0, wx.EXPAND, 10)
+        hbox2.Add(self.detfiletxtctrl, 0, wx.EXPAND, 10)
         hbox2.Add(self.opendetfilebtn)
 
-        hboxbtn= wx.BoxSizer(wx.HORIZONTAL)
-        hboxbtn.Add(savefig_btn,0,wx.EXPAND,10)
-        hboxbtn.Add(replot_btn,0,wx.EXPAND|wx.ALL,5)
-
+        hboxbtn = wx.BoxSizer(wx.HORIZONTAL)
+        hboxbtn.Add(savefig_btn, 0, wx.EXPAND, 10)
+        hboxbtn.Add(replot_btn, 0, wx.EXPAND|wx.ALL, 5)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(hbox1,0, wx.EXPAND,10)
-        vbox.Add(hboxmin,0, wx.EXPAND,5)
-        vbox.Add(hboxmax,0, wx.EXPAND,10)
-        vbox.Add(hboxprofs,0, wx.EXPAND,10)
-        vbox.Add(hbox2,0, wx.EXPAND,10)
-        vbox.Add(hboxbtn,0, wx.EXPAND,10)
+        vbox.Add(hbox1, 0, wx.EXPAND, 10)
+        vbox.Add(self.vminminctrl, 0)
+        vbox.Add(hboxmin, 0, wx.EXPAND, 5)
+        vbox.Add(self.vmiddlectrl, 0)
+        vbox.Add(hboxmax, 0, wx.EXPAND, 10)
+        vbox.Add(self.vmaxmaxctrl, 0)
+        vbox.Add(hboxprofs, 0, wx.EXPAND, 10)
+        vbox.Add(hbox2, 0, wx.EXPAND, 10)
+        vbox.Add(hboxbtn, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
-
 
         # tooltip
         tp1 = "selection of various intensity mapping color Looking_up table (LUT)"
@@ -244,16 +241,20 @@ class ViewColorPanel(wx.Panel):
 
         showhisto_btn.SetToolTipString("Show histogram of pixel intensity distribution of raw image")
 
-        tp2 = "Coarse color scale intensity: min and max"
+        tp2a = "color scale minimum value"
+        tp2 = "color scale: minimum value of minimum slider value"
+        tp2b = "color scale maximum value"
+        tp2c = "color scale: maximum value of maximum slider value"
 
-        self.slider_label.SetToolTipString(tp2)
-        self.vminctrl.SetToolTipString(tp2)
-        self.slider_label2.SetToolTipString(tp2)
-        self.vmaxctrl.SetToolTipString(tp2)
+        self.slider_label.SetToolTipString(tp2a)
+        self.vminminctrl.SetToolTipString(tp2)
+        self.slider_label2.SetToolTipString(tp2b)
+        self.vmaxmaxctrl.SetToolTipString(tp2c)
+        self.vmiddlectrl.SetToolTipString("color scale: maximum value of minimum slider value and also minimum value of maximum slider value)
 
-        tp3 = "fine color scale intensity minimum"
+        tp3 = "minimum slider: fine color scale intensity minimum"
         self.slider_vmin.SetToolTipString(tp3)
-        tp4 = "fine color scale intensity maximum"
+        tp4 = "maximum slider: fine color scale intensity maximum"
         self.slider_vmax.SetToolTipString(tp4)
 
         tpmin = "current color scale intensity minimum"
@@ -1620,6 +1621,8 @@ class ROISelection(wx.Panel):
 
 class PlotPeakListPanel(wx.Panel):
     """panel class to handle peaks list within GUI
+
+    IN DEV, NOT USED
     """
     def __init__(self, parent):
 
@@ -1640,7 +1643,6 @@ class PlotPeakListPanel(wx.Panel):
         self.comboLUT.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeLUT)
 
         posv = 40
-
         self.slider_label = wx.StaticText(self, -1, "Imin: ", (5, posv + 5))
         self.vminctrl = wx.SpinCtrl(self, -1, "0", pos=(50, posv), size=(80, -1),
                                                                             min=-200, max=100000)
@@ -1971,16 +1973,9 @@ class PlotPeakListPanel(wx.Panel):
         return
 
     def updateLineXYProfile(self, event):
-        #         print "updateLineXYProfile()"
-        #
-        #         print "self.plotlineXprofileframe", self.plotlineXprofileframe
-        #
-        #         print "event updateLineXYProfile", event
 
         if self.plotlineXprofileframe is not None:
             x, y, zx, zy = self.getlineXYprofiledata(event)
-
-            #             print "x, y, zx, zy", x, y, zx, zy
 
             if len(x) != len(zx) or len(y) != len(zy):
                 print("STRANGE")
@@ -1989,11 +1984,7 @@ class PlotPeakListPanel(wx.Panel):
             xyc = self.getclickposition(event)
             if xyc:
                 self.xc, self.yc = xyc
-            #         print "x", x
-            #             print "xmin=", min(x)
-            #             print "xmax=", max(x)
-            #             print "Imin=", min(zi)
-            #             print "Imax=", max(zi)
+    
             lineXprofileframe = self.plotlineXprofileframe
 
             lineXprofileframe.line.set_data(x, zx)
@@ -2012,11 +2003,7 @@ class PlotPeakListPanel(wx.Panel):
             xyc = self.getclickposition(event)
             if xyc:
                 self.xc, self.yc = xyc
-            #         print "x", x
-            #             print "xmin=", min(x)
-            #             print "xmax=", max(x)
-            #             print "Imin=", min(zi)
-            #             print "Imax=", max(zi)
+ 
             lineYprofileframe = self.plotlineYprofileframe
 
             lineYprofileframe.line.set_data(y, zy)
@@ -2029,11 +2016,7 @@ class PlotPeakListPanel(wx.Panel):
         if self.plotlineprofileframe is not None:
 
             x, zi = self.getlineprofiledata(self.x0, self.y0, self.x2, self.y2)
-            #         print "x", x
-            #             print "xmin=", min(x)
-            #             print "xmax=", max(x)
-            #             print "Imin=", min(zi)
-            #             print "Imax=", max(zi)
+  
             lineprofileframe = self.plotlineprofileframe
 
             lineprofileframe.line.set_data(x, zi)
@@ -2152,7 +2135,7 @@ class findLocalMaxima_Meth_3(wx.Panel):
         ComputeConvolvedData()
         Show_ConvolvedImage()
         Show_Image()
-        OnSpinCtrl_ImaxDisplayed()
+        OnSpinCtrl_IminDisplayed()
         dataimage_ROI
         dataimage_ROI_display
         """
@@ -2189,7 +2172,7 @@ class findLocalMaxima_Meth_3(wx.Panel):
 
         vmaxtxt = wx.StaticText(self, -1, "Max. Intensity", (190, 110 - posv))
         self.vmaxctrl = wx.SpinCtrl(self, -1, "65000", (290, 112 - posv), min=2, max=10000000)
-        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_ImaxDisplayed)
+        self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
         ittxt = wx.StaticText(self, -1, "Intensity Threshold (raw data)", (5, 152 - posv))
         ittxt2 = wx.StaticText(self, -1, "with respect to local background", (5, 172 - posv))
@@ -3818,15 +3801,17 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 CCDLabel=self.CCDlabel)
 
         if self.CCDlabel in ("sCMOS", "sCMOS_fliplr"):
-            self.vmin = 1000
-            self.vmax = 5000
-            self.vminmax = 2000
+            self.vminmin = 0
+            self.vmiddle = 1010
             self.vmaxmax = 10000
+            self.vmin = 1000
+            self.vmax = 2000
         else:
-            self.vmin = 100
-            self.vmax = 1000
-            self.vminmax = 300
-            self.vmaxmax = 2000
+            self.vminmin = -100
+            self.vmiddle = 100
+            self.vmaxmax = 10000
+            self.vmin = 0
+            self.vmax = 2000
 
     # ---   --- DISPLAY IMAGE
     def OnCheckPlotValues(self, _):
@@ -3892,7 +3877,8 @@ class MainPeakSearchFrame(wx.Frame):
         # highest pixel intensity
         #        self.ImaxDisplayed = DictLT.dict_CCD[self.CCDlabel][2]
         # value defined
-        self.ImaxDisplayed = self.viewingLUTpanel.vmaxctrl.GetValue()
+        self.ImaxDisplayed = self.viewingLUTpanel.slider_vmax.GetValue()
+        self.IminDisplayed = self.viewingLUTpanel.slider_vmin.GetValue()
 
         self.myplot = self.axes.imshow(self.dataimage_ROI_display,  # aspect = 'equal',
                                     interpolation="nearest",
@@ -3920,7 +3906,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.myplot.set_data(self.dataimage_ROI_display)
 
-        self.OnSpinCtrl_ImaxDisplayed(event)
+        self.OnSpinCtrl_IminDisplayed(event)
 
         # update line profiler
         self.viewingLUTpanel.showprofiles(event)
@@ -3951,7 +3937,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.updatePlotTitle(datatype=datatype)
         self.myplot.set_data(self.dataimage_ROI_display)
 
-        self.OnSpinCtrl_ImaxDisplayed(event)
+        self.OnSpinCtrl_IminDisplayed(event)
 
     def updatePlotTitle(self, datatype=None):
         """update plot title
@@ -4455,14 +4441,14 @@ class MainPeakSearchFrame(wx.Frame):
         self.update_draw(event)
 
     def OnSpinCtrl_IminDisplayed(self, event):
-        IminDisplayed = self.viewingLUTpanel.vminctrl.GetValue()
-        ImaxDisplayed = self.viewingLUTpanel.vmaxctrl.GetValue()
+        vminmin = self.viewingLUTpanel.vminminctrl.GetValue()
+        vmaxmax = self.viewingLUTpanel.vmaxmaxctrl.GetValue()
+        vmiddle = self.viewingLUTpanel.vmiddlectrl.GetValue()
 
-        if IminDisplayed >= ImaxDisplayed:
-            IminDisplayed = ImaxDisplayed - 1
-
-        self.viewingLUTpanel.slider_vmin.SetMin(int(IminDisplayed))
-        #         self.viewingLUTpanel.slider_vmax.SetMin(int(IminDisplayed))
+        self.viewingLUTpanel.slider_vmin.SetMin(int(vminmin))
+        self.viewingLUTpanel.slider_vmin.SetMax(int(vmiddle))
+        self.viewingLUTpanel.slider_vmax.SetMin(int(vmiddle))
+        self.viewingLUTpanel.slider_vmax.SetMax(int(vmaxmax))
         self.update_draw(event)
 
     def on_slider_ImaxDisplayed(self, event):
@@ -4479,30 +4465,30 @@ class MainPeakSearchFrame(wx.Frame):
         self.displayIMinMax()
         self.update_draw(event)
 
-    def OnSpinCtrl_ImaxDisplayed(self, event):
-        """on change Imax by spin control
-        """
-        #        print "OnSpinCtrl_ImaxDisplayed !!!"
+    # def OnSpinCtrl_ImaxDisplayed(self, event):
+    #     """on change Imax by spin control
+    #     """
+    #     #        print "OnSpinCtrl_ImaxDisplayed !!!"
 
-        if self.current_data_display == "Raw Image" and not self.OnFlyMode:
-            IminDisplayed = self.viewingLUTpanel.vminctrl.GetValue()
-            ImaxDisplayed = self.viewingLUTpanel.vmaxctrl.GetValue()
+    #     if self.current_data_display == "Raw Image" and not self.OnFlyMode:
+    #         IminDisplayed = self.viewingLUTpanel.slider_vmin.GetValue()
+    #         ImaxDisplayed = self.viewingLUTpanel.slider_vmax.GetValue()
 
-            if IminDisplayed >= ImaxDisplayed:
-                ImaxDisplayed = IminDisplayed + 1
+    #         if IminDisplayed >= ImaxDisplayed:
+    #             ImaxDisplayed = IminDisplayed + 1
 
-            self.viewingLUTpanel.slider_vmax.SetMax(int(ImaxDisplayed))
-        #             self.viewingLUTpanel.slider_vmin.SetMax(int(ImaxDisplayed))
+    #         self.viewingLUTpanel.slider_vmax.SetMax(int(ImaxDisplayed))
+    #     #             self.viewingLUTpanel.slider_vmin.SetMax(int(ImaxDisplayed))
 
-        #            print "raw image ImaxDisplayed"
-        elif self.current_data_display == "Convolved Image":
+    #     #            print "raw image ImaxDisplayed"
+    #     elif self.current_data_display == "Convolved Image":
 
-            self.ImaxDisplayed = self.page3.vmaxctrl.GetValue()
-        #            print "Convolved image ImaxDisplayed"
+    #         self.ImaxDisplayed = self.page3.vmaxctrl.GetValue()
+    #     #            print "Convolved image ImaxDisplayed"
 
-        #        print "self.ImaxDisplayed in OnSpinCtrl_ImaxDisplayed", self.ImaxDisplayed
+    #     #        print "self.ImaxDisplayed in OnSpinCtrl_ImaxDisplayed", self.ImaxDisplayed
 
-        self.update_draw(event)
+    #     self.update_draw(event)
 
     def Get_XYI_from_fit2dpeaksfile(self, filename):
         """
