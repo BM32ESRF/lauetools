@@ -412,13 +412,20 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                                                         0,
                                                         kf_direction)
 
-    
-
+    # For transmission geometry , changing gam scale is useful
+    # x_scale = [1,1,1,1,.1,1,1,1]  1 except for xgam .1
+    xscale = np.ones(len(arr_indexvaryingparameters))
+    try:
+        posgam = arr_indexvaryingparameters.tolist().index(4)
+        xscale[posgam] = .1
+    except ValueError:
+        pass
+    #------------------------
     calib_sol2 = least_squares(_error_function_on_demand_calibration,
                                 param_calib_0,
                                 args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
                               tr_solver = 'exact',
-                              x_scale = [1,1,1,1,.1,1,1,1], max_nfev=None)
+                              x_scale=xscale, max_nfev=None)
 
     print("\nLEAST_SQUARES")
     #print("calib_sol2", calib_sol2['x'])
