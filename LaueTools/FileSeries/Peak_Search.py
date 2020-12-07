@@ -788,26 +788,34 @@ class MainFrame_peaksearch(wx.Frame):
         # dict_param['listrois']=[(723,1530,35,35),(723,1530,5,5),(723,1538,7,7),(673,1769,15,41),]
         # dict_param['IntensityThreshold']=1000
         if nb_cpus == 1:
-            RMCCD.peaksearch_fileseries(fileindexrange, filenameprefix, suffix=suffix,
-                                                                        nbdigits=nbdigits,
-                                                                        dirname_in=dirname_in,
-                                                                        outputname=None,
-                                                                        dirname_out=dirname_out,
-                                                                        CCDLABEL=self.CCDlabel,
-                                                                        KF_DIRECTION="Z>0",
-                                                                        dictPeakSearch=dict_param)
+            RMCCD.peaksearch_fileseries(fileindexrange, filenameprefix=filenameprefix,
+                                                        suffix=suffix,
+                                                        nbdigits=nbdigits,
+                                                        dirname_in=dirname_in,
+                                                        outputname=None,
+                                                        dirname_out=dirname_out,
+                                                        CCDLABEL=self.CCDlabel,
+                                                        KF_DIRECTION="Z>0",
+                                                        dictPeakSearch=dict_param,
+                                                        verbose=0,
+                                                        writeResultDicts=0,
+                                                        computetime=1)
         else:
-            RMCCD.peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix=suffix,
-                                                                        nbdigits=nbdigits,
-                                                                        dirname_in=dirname_in,
-                                                                        outputname=None,
-                                                                        dirname_out=dirname_out,
-                                                                        CCDLABEL=self.CCDlabel,
-                                                                        KF_DIRECTION="Z>0",
-                                                                        dictPeakSearch=dict_param,
-                                                                        nb_of_cpu=nb_cpus)
+            RMCCD.peaksearch_multiprocessing(fileindexrange, filenameprefix=filenameprefix,
+                                                            suffix=suffix,
+                                                            nbdigits=nbdigits,
+                                                            dirname_in=dirname_in,
+                                                            outputname=None,
+                                                            dirname_out=dirname_out,
+                                                            CCDLABEL=self.CCDlabel,
+                                                            KF_DIRECTION="Z>0",
+                                                            dictPeakSearch=dict_param,
+                                                            nb_of_cpu=nb_cpus,
+                                                            verbose=0,
+                                                            writeResultDicts=0)
 
 def start():
+    """ launcher """
     LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
     print("LaueToolProjectFolder in main", LaueToolsProjectFolder)
 
