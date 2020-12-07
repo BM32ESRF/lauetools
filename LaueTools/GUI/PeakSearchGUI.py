@@ -250,7 +250,7 @@ class ViewColorPanel(wx.Panel):
         self.vminminctrl.SetToolTipString(tp2)
         self.slider_label2.SetToolTipString(tp2b)
         self.vmaxmaxctrl.SetToolTipString(tp2c)
-        self.vmiddlectrl.SetToolTipString("color scale: maximum value of minimum slider value and also minimum value of maximum slider value)
+        self.vmiddlectrl.SetToolTipString("color scale: maximum value of minimum slider value and also minimum value of maximum slider value")
 
         tp3 = "minimum slider: fine color scale intensity minimum"
         self.slider_vmin.SetToolTipString(tp3)
