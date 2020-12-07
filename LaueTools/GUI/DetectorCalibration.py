@@ -3989,6 +3989,9 @@ def start():
     initialParameter["filename"] = "Ge0001.dat"
     initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
     initialParameter["dict_Materials"] = DictLT.dict_Materials
+    kf_direction = 'X>0'
+
+    kf_direction = 'Z>0'
 
     filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
     CalibGUIApp = wx.App()
@@ -3998,7 +4001,7 @@ def start():
                                                         datatype="2thetachi",
                                                         dim=(2048, 2048),
                                                         fliprot="no",
-                                                        kf_direction='X>0',
+                                                        kf_direction=kf_direction,
                                                         data_added=None)
 
     CalibGUIFrame.Show()
@@ -4019,6 +4022,10 @@ if __name__ == "__main__":
     #    initialParameter['imagefilename'] = 'SS_0171.mccd'
     #    initialParameter['dirname'] = '/home/micha/lauetools/trunk'
 
+    kf_direction = 'X>0'
+
+    kf_direction = 'Z>0'
+
     CalibGUIApp = wx.App()
     CalibGUIFrame = MainCalibrationFrame(None, -1, "Detector Calibration Board", initialParameter,
                                                         file_peaks=filepathname,
@@ -4027,7 +4034,7 @@ if __name__ == "__main__":
                                                         dim=(2048, 2048),
                                                         fliprot="no",
                                                         data_added=None,
-                                                        kf_direction='X>0')
+                                                        kf_direction=kf_direction)
 
     CalibGUIFrame.Show()
 
