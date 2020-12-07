@@ -1295,7 +1295,7 @@ def compute_autobackground_image(dataimage, boxsizefilter=10):
 
 
 def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaexpression="A-B",
-                                                        usemask=True):
+                                                        usemask=True, verbose=0):
     r"""
     return 2D array of initial image data without background given by bkg_image data
 
@@ -1314,8 +1314,9 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
     SaturationLevel = DictLT.dict_CCD[CCDlabel][2]
     dataformat = DictLT.dict_CCD[CCDlabel][5]
 
-    print("framedim in computefilteredimage ", framedim)
-    print("CCDlabel in computefilteredimage ", CCDlabel)
+    if verbose:
+        print("framedim in computefilteredimage ", framedim)
+        print("CCDlabel in computefilteredimage ", CCDlabel)
     #
     #     if CCDlabel in ('EDF',):
     #         return dataimage
