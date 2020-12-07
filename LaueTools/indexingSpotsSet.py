@@ -4653,12 +4653,12 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
 
         results, output_mergeddicts_filename = index_fileseries_3(fileindexrange)
         multiple_results = [results]
-        
+
 
     t_mp = time.time() - t00
     print("Execution time : %.2f" % t_mp)
 
-    if nb_cpus>1:
+    if nb_cpus > 1:
         print('nb of results', len(multiple_results))
         print('multiple_results[0]', multiple_results[0])
 
