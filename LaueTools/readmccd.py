@@ -989,7 +989,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                                                 stackimageindex=stackimageindex,
                                                 CCDLabel=CCDLabel,
                                                 dirname=None,
-                                                verbose=1)
+                                                verbose=verbose)
         
         if verbose: print("image from filename {} read!".format(filename))
 
@@ -1019,7 +1019,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         if verbose: print("Using Data_for_localMaxima for local maxima search: --->", Data_for_localMaxima)
         # compute and remove background from this image
         if Data_for_localMaxima == "auto_background":
-            print("computing background from current image ", filename)
+            if verbose:
+                print("computing background from current image ", filename)
             backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10)
             # basic substraction
             usemask = True
@@ -1567,7 +1568,7 @@ def set_rois_file(filepathstr):
 
 # --- -------------- multiple file peak search
 def peaksearch_fileseries(fileindexrange,
-                            filenameprefix,
+                            filenameprefix="",
                             suffix="",
                             nbdigits=4,
                             dirname_in="/home/micha/LaueProjects/AxelUO2",
@@ -1576,10 +1577,14 @@ def peaksearch_fileseries(fileindexrange,
                             CCDLABEL="MARCCD165",
                             KF_DIRECTION="Z>0",  # not used yet
                             dictPeakSearch=None,
-                            verbose=0):
+                            verbose=0,
+                            writeResultDicts=0,
+                            computetime=0):
     r"""
     peaksearch function to be called for multi or single processing
     """
+    if computetime:
+        t0 = ttt.time()
     print('\n\n ***** Starting peaksearch_fileseries()  *****\n\n')
     # peak search Parameters update from .psp file
     if isinstance(dictPeakSearch, dict):
@@ -1599,12 +1604,9 @@ def peaksearch_fileseries(fileindexrange,
     # ----handle reading of filename
     # special case for _mar.tif files...
     if nbdigits in ("varying",):
-        # DEFAULT_DIGITSENCODING = 4
-        # encodingdigits = "{" + ":0{}".format(DEFAULT_DIGITSENCODING) + "}"
         pass
     # normal case
     else:
-        # encodingdigits = "{" + ":0{}".format(int(nbdigits)) + "}"
         nbdigits = int(nbdigits)
 
     if suffix == "":
@@ -1614,8 +1616,6 @@ def peaksearch_fileseries(fileindexrange,
         filenameprefix_in = os.path.join(dirname_in, filenameprefix)
     else:
         filenameprefix_in = filenameprefix
-
-    # filename_wo_path = filenameprefix_in.split("/")[-1]
 
     if outputname != None:
         prefix_outputname = outputname
@@ -1639,20 +1639,17 @@ def peaksearch_fileseries(fileindexrange,
 
         fullpath_backgroundimage = PEAKSEARCHDICT_Convolve["Data_for_localMaxima"]
 
-
-        # dirname_bkg, imagefilename_bkg = os.path.split(fullpath_backgroundimage)
-
-        # CCDlabel_bkg = CCDLABEL
-
-        # (dataimage_bkg, _, _) = IOimage.readCCDimage(imagefilename_bkg,
-        #                                                             CCDLabel=CCDlabel_bkg,
-        #                                                             dirname=dirname_bkg)
-
         BackgroundImageCreated = True
 
-    for fileindex in list(range(fileindexrange[0],
+    DictPeaksList = {}
+    file_ix, nb_empty_files = 0, 0  # nb of probed file, nb of zero peaks file
+    listimageindices = list(range(fileindexrange[0],
                         fileindexrange[1] + 1,
-                        fileindexrange[2])):
+                        fileindexrange[2]))
+    nbimages = len(listimageindices)
+    nbstepsprogress = 5
+    progressstep = 0
+    for fileindex in listimageindices:
         # TODO to move this branching elsewhere (readmccd)
         if suffix.endswith("_mar.tif"):
             filename_in = IOimage.setfilename(filenameprefix_in + "{}".format(fileindex) + suffix,
@@ -1682,18 +1679,7 @@ def peaksearch_fileseries(fileindexrange,
                 raise ValueError('Missing "formulaexpression" to operate on images before '
                                 'peaksearch in peaksearch_fileseries()')
 
-            # saturationlevel = DictLT.dict_CCD[CCDLABEL][2]
-
-            # dataimage_corrected = applyformula_on_images(dataimage_raw,
-            #                                             dataimage_bkg,
-            #                                             formulaexpression=formulaexpression,
-            #                                             SaturationLevel=saturationlevel,
-            #                                             clipintensities=True)
-
             if verbose: print("using {} in peaksearch_fileseries".format(formulaexpression))
-
-            #             print 'Imin Imax dataimage_raw', np.amin(A), np.amax(A)
-            #             print 'Imin Imax dataimage_bkg', np.amin(B), np.amax(B)
 
             # for finding local maxima in image from formula
             PEAKSEARCHDICT_Convolve["Data_for_localMaxima"] = fullpath_backgroundimage
@@ -1702,8 +1688,6 @@ def peaksearch_fileseries(fileindexrange,
             PEAKSEARCHDICT_Convolve["reject_negative_baseline"] = False
             PEAKSEARCHDICT_Convolve["formulaexpression"] = formulaexpression
             PEAKSEARCHDICT_Convolve["Fit_with_Data_for_localMaxima"] = True
-
-        #             print 'Imin Imax dataimage_corrected', np.amin(dataimage_corrected), np.amax(dataimage_corrected)
 
         # --------------------------
         # launch peaksearch
@@ -1715,6 +1699,8 @@ def peaksearch_fileseries(fileindexrange,
 
         if Res in (False, None):
             print("No peak found for image file: ", filename_in)
+
+            nb_empty_files += 1
         #             Isorted, fitpeak, localpeak = None, None, None
         else:  # write file with comments
             Isorted, _, _ = Res[:3]
@@ -1739,8 +1725,19 @@ def peaksearch_fileseries(fileindexrange,
                                         overwrite=1,
                                         initialfilename=filename_in,
                                         comments=params_comments)
+            if writeResultDicts:                            
+                DictPeaksList[fileindex] = Isorted
+
+        progress = int(np.floor(file_ix/nbimages*nbstepsprogress))
+        if progress > progressstep:
+            print('Imageindex: %d, Task Progress : %.2f %%' % (fileindex, file_ix / nbimages * 100))
+            progressstep += 1
+        file_ix += 1
 
     print("\n\n\n*******************\n\n\n task of peaksearch COMPLETED!")
+    if computetime:
+        print('Execution time %.2f sec'%(ttt.time()-t0))
+    return DictPeaksList, file_ix, nb_empty_files
 
 
 def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigits=4,
@@ -1750,7 +1747,9 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
                                                     CCDLABEL="MARCCD165",
                                                     KF_DIRECTION="Z>0",
                                                     dictPeakSearch=None,
-                                                    nb_of_cpu=2):
+                                                    nb_of_cpu=2,
+                                                    verbose=0,
+                                                    writeResultDicts=0):
     r"""
     launch several processes in parallel
     """
@@ -1763,13 +1762,20 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
     except:
         raise ValueError("Need 2 file indices integers in fileindexrange=(indexstart, indexfinal)")
 
+    t00 = ttt.time()
+
+    max_nb_cpus = multiprocessing.cpu_count()
+    nb_cpus = min(nb_of_cpu, max_nb_cpus)
+
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
-    
-    jobs = []
-    for ii in list(range(nb_of_cpu)):
-        proc = multiprocessing.Process(target=peaksearch_fileseries,
-                                        args=(fileindexdivision[ii],
-                                            filenameprefix,
+
+    if nb_cpus > 1:
+        print('using %d cpu(s)'%nb_cpus)
+        fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_cpus)
+        nbimages = index_final - index_start + 1
+        print('dispatch of fileindex ', fileindexdivision)
+        
+        peaksearch_fileseries.__defaults__ = (filenameprefix,
                                             suffix,
                                             nbdigits,
                                             dirname_in,
@@ -1777,9 +1783,34 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
                                             dirname_out,
                                             CCDLABEL,
                                             KF_DIRECTION,
-                                            dictPeakSearch))
-        jobs.append(proc)
-        proc.start()
+                                            dictPeakSearch,
+                                            verbose,
+                                            writeResultDicts,
+                                            0) # compute execution time / task
+
+        pool = multiprocessing.Pool(nb_of_cpu)
+        multiple_results = pool.map(peaksearch_fileseries, fileindexdivision)
+
+        # DictPeaksList, file_ix, nb_empty_files = multiple_results
+
+    t_mp = ttt.time() - t00
+    print("Execution time : %.2f" % t_mp)
+
+    if nb_cpus > 1:
+        nbtreatedimages = 0
+        nbzeropeaksimages = 0
+        for mres in multiple_results:
+            print('nb treated files, nb zero peaks file', mres[1], mres[2])
+            nbtreatedimages += mres[1]
+            nbzeropeaksimages += mres[2]
+        if nbzeropeaksimages != 0:
+            print('total nb of zero peaks file', nbzeropeaksimages)
+        else:
+            print('all %s images contain at least one peak'%nbtreatedimages)
+
+        # TODO  see end of indexFilesSeries()  to write a log file or hdf5 file with peaks props and other stas, nb of peaks per file, average nb , min and max number
+
+    return multiple_results, nbtreatedimages, nbzeropeaksimages
 
 
 def peaklist_dict(prefixfilename, startindex, finalindex, dirname=None):
