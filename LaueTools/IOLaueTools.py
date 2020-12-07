@@ -500,7 +500,8 @@ def readStringOfIterable(striter):
 def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                                                         initialfilename=None,
                                                         comments=None,
-                                                        dirname=None):
+                                                        dirname=None,
+                                                        verbose=0):
     """
     Write .dat file
 
@@ -614,8 +615,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
     outputfile.close()
 
-    print("table of %d peak(s) with %d columns has been written in \n%s"
-        % (nbpeaks, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
+    if verbose:
+        print("table of %d peak(s) with %d columns has been written in \n%s"
+            % (nbpeaks, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
 
     return os.path.join(os.path.abspath(dirname), outputfilename)
 

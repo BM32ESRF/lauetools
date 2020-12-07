@@ -642,14 +642,14 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 print("formatdata", formatdata)
                 print("dataimage", dataimage)
 
-    if verbose > 0:
+    if verbose:
         print("CCDLabel: ", CCDLabel)
         print("nb of pixels", np.shape(dataimage))
 
     # need to reshape data from 1D to 2D
     try:
         if len(dataimage.shape) == 1:
-            if verbose > 0:
+            if verbose:
                 print("nb elements", len(dataimage))
                 print("framedim", framedim)
                 print("framedim nb of elements", framedim[0] * framedim[1])
