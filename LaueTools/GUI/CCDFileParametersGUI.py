@@ -109,7 +109,7 @@ class CCDFileParameters(wx.Dialog):
         btnaccept.Bind(wx.EVT_BUTTON, self.OnAccept)
         btnaccept.SetDefault()
 
-        btncancel= wx.Button(self, -1, "Cancel", (150, 40))
+        btncancel = wx.Button(self, -1, "Cancel", (150, 40))
         btncancel.Bind(wx.EVT_BUTTON, self.OnCancel)
 
         self.keepon = False
@@ -133,9 +133,9 @@ class CCDFileParameters(wx.Dialog):
         hboxcombo.Add(a0)
         hboxcombo.Add(self.comboCCD)
 
-        hboxbtn = wx.BoxSizer(wx.HORIZONTAL) 
+        hboxbtn = wx.BoxSizer(wx.HORIZONTAL)
         hboxbtn.Add(btnaccept)
-        hboxbtn.Add(btncancel)  
+        hboxbtn.Add(btncancel)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(txt)
@@ -147,18 +147,13 @@ class CCDFileParameters(wx.Dialog):
 
         self.SetSizer(vbox)
 
-
         # tooltip
         btnaccept.SetToolTipString("Accept")
 
-    #        self.Show(True)
-    #        self.Centre()
-
-
-
-
     def readCCDparams(self):
-        """ read CCD parameters from self.CCDLabel and set value for display"""
+        """ read CCD parameters from self.CCDLabel
+        
+        set self.value"""
         CCDparams = DictLT.dict_CCD[str(self.CCDLabel)]
 
         # TODO add framedim and pixelsize as CCD parameters better than as Detector parameters
@@ -183,20 +178,21 @@ class CCDFileParameters(wx.Dialog):
     def DisplayValues(self, _):
         """
         display and set values of parameters
-        """
-        for kk, _ in enumerate(self.paramdetector):
-            self.controltext.append(
-                wx.TextCtrl(self,
-                                -1,
-                                str(self.value[kk])))
 
+        set self.controltext list
+        """
+        if self.controltext == []:
+            for kk, _ in enumerate(self.paramdetector):
+                self.controltext.append(wx.TextCtrl(self, -1, str(self.value[kk])))
+        else:
+            for kk, _ in enumerate(self.paramdetector):
+                self.controltext[kk].SetValue(str(self.value[kk]))
     def DeleteValues(self, _):
         """
         set parameters to zero or None
         """
         for kk, _ in enumerate(self.paramdetector):
-            self.controltext.append(
-                wx.TextCtrl(self, -1, str(None)))
+            self.controltext.append(wx.TextCtrl(self, -1, str(None)))
 
     def EnterComboCCD(self, event):
         """ select detector item """

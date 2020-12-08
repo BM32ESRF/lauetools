@@ -598,6 +598,10 @@ class Plot_RefineFrame(wx.Frame):
         'Within "angular tolerance" each exp. spot will get the hkl of the nearest simulated '
         'spot. Indexed spots will not belong to the peaks list for further indexation.')
 
+        self.pointButton6.SetToolTipString('Draw on plot experimental props (intensity, spot index) of clicked spot')
+
+        self.pointButton7.SetToolTipString('Draw on plot theoretical  props (Miller indices, energy (keV)) of clicked spot')
+
         self.UpdateFromRefinement.SetToolTipString("If checked, update the plot of simulated spots "
         "according to the last refined model.")
 
@@ -624,7 +628,7 @@ class Plot_RefineFrame(wx.Frame):
         self.svbutton.SetToolTipString("write .fit file with spots belonging "
         "to the current indexation")
 
-        self.switchCoordinatesbtn.SetToolTipString("Switch coordinates: Scattering Angles/pixels")
+        self.switchCoordinatesbtn.SetToolTipString("Switch coordinates: Scattering Angles (2theta, chi)/pixels (X,Y)")
 
         fittip = "Parameters to be refined:\n"
         fittip += "--- Global: Crystal orientation and Strain of reciprocal vectors\n"

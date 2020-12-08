@@ -3810,7 +3810,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.vminmin = -100
             self.vmiddle = 100
             self.vmaxmax = 10000
-            self.vmin = 0
+            self.vmin = 1
             self.vmax = 2000
 
     # ---   --- DISPLAY IMAGE
