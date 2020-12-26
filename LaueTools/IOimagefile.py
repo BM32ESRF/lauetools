@@ -109,7 +109,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
                 #imagefilename = imagefilename[: - (lenext + nbdigits)].zfill(nbdigits) + "%s" % ext
 
                 prepart = str(imagefilename).rsplit('.',1)[0]
-                prefix, digitpart = str(prepart).split('_', 1)
+                prefix, digitpart = str(prepart).rsplit('_', 1)
                 imagefilename = prefix + "_" + str(imageindex).zfill(nbdigits) + "." + ext
             elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
@@ -117,7 +117,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         else:
             if imagefilename.endswith(ext):
                 prefix, _ = imagefilename.split(".")
-                prefix0 = prefix.split("_")[0]
+                prefix0 = prefix.rsplit("_")[0]
                 if imageindex > 9999:
                     imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
                 else:
@@ -141,7 +141,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
             sname2 = sname[-2] + "_" + sname[-1]
             prefix = imagefilename.rstrip(sname2)
         else:
-            prefix = imagefilename.split("_")[0]
+            prefix = imagefilename.rsplit("_")[0]
         imagefilename = prefix + "_{}_mar.tif".format(imageindex)
 
     # special case for image id15 frelon corrected form distorsion
@@ -203,7 +203,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
             if imagefilename.endswith(ext):
                 #imageindex = int(imagefilename[-(lenext + nbdigits): - (lenext)])
                 prepart = str(imagefilename).rsplit('.',1)[0]
-                digitpart = str(prepart).split('_',1)[-1]
+                digitpart = str(prepart).rsplit('_',1)[-1]
                 print("prepart", prepart)
                 print("digitpart",digitpart)
                 imageindex = int(digitpart)
@@ -211,8 +211,8 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
         else:
             if imagefilename.endswith(ext):
-                prefix, _ = imagefilename.split(".")
-                imageindex = int(prefix.split("_")[1])
+                prefix, _ = imagefilename.rsplit(".")
+                imageindex = int(prefix.rsplit("_")[1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
     elif CCDLabel in ("EIGER_4Mstack",):
