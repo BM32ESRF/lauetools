@@ -209,12 +209,12 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.showplotBox = wx.CheckBox(self, -1, "Plot Best result")
         self.showplotBox.SetValue(False)
         self.indexation_index = 0
-        self.config_irp_filename = (self.DataPlot_filename[:-4] + "_%d.irp" % self.indexation_index)
+        self.config_irp_filename = (self.DataPlot_filename[: -4] + "_%d.irp" % self.indexation_index)
         spcftxt= wx.StaticText(self, -1, "Saving parameters in config file")
         self.output_irp = wx.TextCtrl(self, -1, "%s" % self.config_irp_filename,
                                      size=(250, -1))
 
-        self.StartButton = wx.Button(self, -1, "Start", size=(-1,80))
+        self.StartButton = wx.Button(self, -1, "Start", size=(-1, 80))
         self.StartButton.SetFont(font3)
         quitbtn = wx.Button(self, 2, "Quit", size=(-1, 80))
         self.textprocess = wx.StaticText(self, -1, "                     ")
@@ -222,7 +222,6 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.StartButton.Bind(wx.EVT_BUTTON, self.OnStart)
         quitbtn.Bind(wx.EVT_BUTTON, self.OnQuit)
-        
 
         self.sb = self.CreateStatusBar()
 
@@ -234,80 +233,80 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # layout
         h1box = wx.BoxSizer(wx.HORIZONTAL)
-        h1box.Add(mssstxt,0, wx.EXPAND,10)
-        h1box.Add(self.nbspotmaxformatching,0, wx.EXPAND,10)
+        h1box.Add(mssstxt,0, wx.EXPAND, 10)
+        h1box.Add(self.nbspotmaxformatching,0, wx.EXPAND, 10)
 
         h2box = wx.BoxSizer(wx.HORIZONTAL)
-        h2box.Add(self.setAchck,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(cstxt,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(self.spotlistA,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(self.sethklchck ,0, wx.EXPAND|wx.ALL,10)
-        h2box.Add(self.sethklcentral,0, wx.EXPAND|wx.ALL,10)
+        h2box.Add(self.setAchck,0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(cstxt,0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.spotlistA,0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.sethklchck ,0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.sethklcentral,0, wx.EXPAND|wx.ALL, 10)
 
         h3box = wx.BoxSizer(wx.HORIZONTAL)
-        h3box.Add(self.setBchck,0, wx.EXPAND|wx.ALL,10)
-        h3box.Add(rsstxt,0, wx.EXPAND|wx.ALL,10)
-        h3box.Add(self.spotlistB,0, wx.EXPAND|wx.ALL,10)
+        h3box.Add(self.setBchck,0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(rsstxt,0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(self.spotlistB,0, wx.EXPAND|wx.ALL, 10)
 
         h4box = wx.BoxSizer(wx.HORIZONTAL)
-        h4box.Add(drtatxt,0, wx.EXPAND|wx.ALL,10)
-        h4box.Add(self.DRTA,0, wx.EXPAND|wx.ALL,10)
-        h4box.Add(luttxt,0, wx.EXPAND|wx.ALL,10)
-        h4box.Add(self.nLUT,0, wx.EXPAND|wx.ALL,10)
+        h4box.Add(drtatxt,0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.DRTA,0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(luttxt,0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.nLUT,0, wx.EXPAND|wx.ALL, 10)
 
         h5box = wx.BoxSizer(wx.HORIZONTAL)
-        h5box.Add(elemtxt,0, wx.EXPAND|wx.ALL,10)
-        h5box.Add(self.combokeymaterial,0, wx.EXPAND|wx.ALL,10)
-        h5box.Add(self.refresh,0, wx.EXPAND|wx.ALL,10)
-        h5box.Add(self.applyrulesLUT,0, wx.EXPAND|wx.ALL,10)
+        h5box.Add(elemtxt,0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.combokeymaterial,0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.refresh,0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.applyrulesLUT,0, wx.EXPAND|wx.ALL, 10)
 
         h6box = wx.BoxSizer(wx.HORIZONTAL)
-        h6box.Add(mtatxt,0, wx.EXPAND|wx.ALL,10)
-        h6box.Add(self.MTA,0, wx.EXPAND|wx.ALL,10)
-        h6box.Add(emaxtxt,0, wx.EXPAND|wx.ALL,10)
-        h6box.Add(self.emax,0, wx.EXPAND|wx.ALL,10)
+        h6box.Add(mtatxt,0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(self.MTA,0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(emaxtxt,0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(self.emax,0, wx.EXPAND|wx.ALL, 10)
 
         h7box = wx.BoxSizer(wx.HORIZONTAL)
-        h7box.Add(resangtxt,0, wx.EXPAND|wx.ALL,10)
-        h7box.Add(self.ResolutionAngstromctrl,0, wx.EXPAND|wx.ALL,10)
-        h7box.Add(mnmstxt,0, wx.EXPAND|wx.ALL,10)
-        h7box.Add(self.MNMS,0, wx.EXPAND|wx.ALL,10)
+        h7box.Add(resangtxt,0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(self.ResolutionAngstromctrl,0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(mnmstxt,0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(self.MNMS,0, wx.EXPAND|wx.ALL, 10)
 
         h8box = wx.BoxSizer(wx.HORIZONTAL)
-        h8box.Add(self.filterMatrix,0, wx.EXPAND,10)
-        h8box.Add(self.verbose,0, wx.EXPAND,10)
+        h8box.Add(self.filterMatrix,0, wx.EXPAND, 10)
+        h8box.Add(self.verbose,0, wx.EXPAND, 10)
 
         h9box = wx.BoxSizer(wx.HORIZONTAL)
-        h9box.Add(spcftxt,0, wx.EXPAND,10)
-        h9box.Add(self.output_irp,0, wx.EXPAND,10)
+        h9box.Add(spcftxt,0, wx.EXPAND, 10)
+        h9box.Add(self.output_irp,0, wx.EXPAND, 10)
 
         h10box = wx.BoxSizer(wx.HORIZONTAL)
-        h10box.Add(self.StartButton,1, wx.EXPAND,10)
-        h10box.Add(quitbtn,0, wx.EXPAND,10)
-        h10box.Add(self.textprocess,0, wx.EXPAND,10)
-        h10box.Add(self.gauge,0, wx.EXPAND,10)
+        h10box.Add(self.StartButton,1, wx.EXPAND, 10)
+        h10box.Add(quitbtn,0, wx.EXPAND, 10)
+        h10box.Add(self.textprocess,0, wx.EXPAND, 10)
+        h10box.Add(self.gauge,0, wx.EXPAND, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(txtcf,0, wx.EXPAND,10)
-        vbox.Add(h1box,0, wx.EXPAND,10)
+        vbox.Add(txtcf,0, wx.EXPAND, 10)
+        vbox.Add(h1box,0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(title1,0, wx.EXPAND,10)
-        vbox.Add(h2box,0, wx.EXPAND,10)
-        vbox.Add(h3box,0, wx.EXPAND,10)
+        vbox.Add(title1,0, wx.EXPAND, 10)
+        vbox.Add(h2box,0, wx.EXPAND, 10)
+        vbox.Add(h3box,0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(lutrectxt,0, wx.EXPAND,10)
-        vbox.Add(h4box,0, wx.EXPAND,10)
-        vbox.Add(h5box,0, wx.EXPAND,10)
+        vbox.Add(lutrectxt,0, wx.EXPAND, 10)
+        vbox.Add(h4box,0, wx.EXPAND, 10)
+        vbox.Add(h5box,0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(matchtxt,0, wx.EXPAND,10)
-        vbox.Add(h6box,0, wx.EXPAND,10)
-        vbox.Add(h7box,0, wx.EXPAND,10)
+        vbox.Add(matchtxt,0, wx.EXPAND, 10)
+        vbox.Add(h6box,0, wx.EXPAND, 10)
+        vbox.Add(h7box,0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(pptxt,0, wx.EXPAND,10)
-        vbox.Add(h8box,0, wx.EXPAND,10)
-        vbox.Add(self.showplotBox,0, wx.EXPAND,10)
-        vbox.Add(h9box,0, wx.EXPAND,10)
-        vbox.Add(h10box,0, wx.EXPAND,10)
+        vbox.Add(pptxt,0, wx.EXPAND, 10)
+        vbox.Add(h8box,0, wx.EXPAND, 10)
+        vbox.Add(self.showplotBox,0, wx.EXPAND, 10)
+        vbox.Add(h9box,0, wx.EXPAND, 10)
+        vbox.Add(h10box,0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
 
@@ -720,7 +719,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # autoindexation core procedure
         # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials']
-        excludespotspairs = [[0,0]]
+        excludespotspairs = [[0, 0]]
+        print('spotssettype', spotssettype)
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
@@ -752,6 +752,15 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             # and spotsB is checked
             if spotssettype in ('listsetA', ):
                 spotsB = spot_index_central
+            print('arguments of  getOrientMatrices_fromTwoSets()')
+            print("--->",spot_index_central, spotsB,
+                                                energy_max, self.select_theta, self.select_chi,
+                                                n, self.key_material, rough_tolangle,
+                                                detectorparameters,
+                                                set_central_spots_hkl,
+                                                Minimum_MatchesNb,
+                                                LUT_with_rules,
+                                                excludespotspairs)
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
                                                 n, self.key_material, rough_tolangle,
