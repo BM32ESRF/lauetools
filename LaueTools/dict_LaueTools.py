@@ -106,8 +106,9 @@ dict_Materials = {
     "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
     "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite", ],
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
-    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
-    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
+    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no" ],  # SG 136 (87 deg Celsius)  Rutile
+    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile"],  # SG 136 (87 deg Celsius)  Rutile
+    "ZnCuOCl": ["ZnCuOCl", [6.839,6.839 , 14.08, 90.0, 90, 120.0], "no"],
 }
 
 dict_Materials_short = {
