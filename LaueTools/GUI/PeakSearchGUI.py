@@ -2044,19 +2044,21 @@ class findLocalMaxima_Meth_1(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.methodnumber = 1
-
-        CCDlabel = parent.GetParent().GetParent().CCDlabel
+        mainframe = parent.GetParent().GetParent()
+        CCDlabel = mainframe.CCDlabel
         if CCDlabel.startswith("sCMOS"):
             pedestal = 1000
         else:
             pedestal = 0
 
-        defaultthreshold = pedestal + 500
+        #defaultthreshold = pedestal + 500
+        _, defaultthreshold = mainframe.gethisto()
 
         mintxt = wx.StaticText(self, -1, "MinimumDistance")
         self.PNR = wx.SpinCtrl(self, -1, "10", (80, -1), min=2, max=2000)
 
         ittxt = wx.StaticText(self, -1, "IntensityThreshold")
+
         self.IT = wx.SpinCtrl(self, -1, str(defaultthreshold), (80, -1), min=-6000, max=3000000)
 
         # layout
@@ -4600,11 +4602,26 @@ class MainPeakSearchFrame(wx.Frame):
 
         PListsBoard.Show(True)
 
-    def ShowHisto(self, _):
+    def gethisto(self, nbhotpixels=1000):
+        """compute intensity histogram and minimum intensity of the 'nbhotpixels' most intense pixels """
         mini = np.amin(self.dataimage_ROI)
         maxi = np.amax(self.dataimage_ROI)
-        histo = np.histogram(np.ravel(self.dataimage_ROI), 100, range=(mini, maxi))  # N,bins
-        plothisto = HISTOPLOT.HistogramPlot(self, -1, self.imagefilename, "Intensity", histo, logscale=1)
+        ravI = np.ravel(self.dataimage_ROI)
+        histo = np.histogram(ravI, 100, range=(mini, maxi))  # N,bins
+
+        csum = np.cumsum(histo[0])
+        nbtot = np.size(ravI)
+        bb = np.where(csum > nbtot - nbhotpixels)[0][0]
+        th = histo[1][bb]
+        # print('nbtot',nbtot)
+        # print('bb', bb)
+        # print('bins[bb]', th)
+        return histo, int(th)
+
+    def ShowHisto(self, _):
+        histo, _ = self.gethisto()
+        
+        plothisto = HISTOPLOT.HistogramPlot(self, -1, self.imagefilename, "Intensity: ", histo, logscale=1)
 
         plothisto.Show(True)
 
