@@ -1804,7 +1804,7 @@ class LaueToolsGUImainframe(wx.Frame):
         wcd0 += ("Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf|hdf5(*.h5)|*.h5|All files(*)|*")
 
         try:
-            wcd = getwildcardstring(self.CCDLabel)
+            wcd = getwildcardstring("*")
         except:
             wcd = wcd0
 
