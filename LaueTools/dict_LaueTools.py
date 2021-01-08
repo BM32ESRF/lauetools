@@ -101,10 +101,12 @@ dict_Materials = {
     "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
     "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
     "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
+    "feldspath": ["feldspath", [8.59, 12.985,7.213, 90, 116., 90], 'no'], 
     "hexagonal": ["hexagonal", [1.0, 1.0, 3.0, 90, 90, 120.0], "no"],
     "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
     "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
-    "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite", ],
+    "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite",],
+    "Y2SiO5": ["Y2SiO5", [10.34, 6.689, 12.38, 90.0, 102.5, 90.0], "no", ],  # SG 15  I2/a
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
     "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no" ],  # SG 136 (87 deg Celsius)  Rutile
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile"],  # SG 136 (87 deg Celsius)  Rutile
@@ -342,7 +344,10 @@ def getwildcardstring(CCDlabel):
 
     extensions = copy.copy(ALL_EXTENSIONS)
     infos = copy.copy(INFO_EXTENSIONS)
-    chosen_extension = dict_CCD[CCDlabel][7]
+    if CCDlabel != '*':
+        chosen_extension = dict_CCD[CCDlabel][7]
+    else:
+        chosen_extension = ''
 
     if chosen_extension in ALL_EXTENSIONS:
         index = ALL_EXTENSIONS.index(chosen_extension)
