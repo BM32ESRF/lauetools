@@ -258,7 +258,7 @@ class Plot_RefineFrame(wx.Frame):
             self.selectedAbsoluteSpotIndices_init = DataToIndex["current_exp_spot_index_list"]
             self.selectedAbsoluteSpotIndices = copy.copy(self.selectedAbsoluteSpotIndices_init)
 
-        self.setDatacoordinates()
+        self.setcoordinates()
 
         self.Millerindices = None
         self.Data_index_expspot = np.arange(len(self.Data_X))
@@ -904,7 +904,7 @@ class Plot_RefineFrame(wx.Frame):
 
             self.OnReplot(evt)
 
-    def setDatacoordinates(self):
+    def setcoordinates(self):
         """ set coordinates of spots depending on chosen representing space 'self.datatype' """
         if self.datatype == "2thetachi":
             #             self.tth, self.chi = self.Data_X, self.Data_Y
@@ -955,7 +955,7 @@ class Plot_RefineFrame(wx.Frame):
             print("was pixels")
             self.datatype = "2thetachi"
 
-        self.setDatacoordinates()
+        self.setcoordinates()
 
         print("space coordinates is now:", self.datatype)
         self.datatype_unchanged = False
@@ -1120,9 +1120,8 @@ class Plot_RefineFrame(wx.Frame):
 
                 # if exp. spot is close enough
                 if _distanceexp < closedistance:
-                    # print("\nthe nearest exp point is at(%.2f,%.2f)" % (x, y))
-                    print("with info annote_exp", annote_exp)
                     tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
+                    print('found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
                     self.updateStatusBar(x, y, annote_exp, spottype="exp")
 
                     self.highlightexpspot = annote_exp[0]
@@ -1157,7 +1156,8 @@ class Plot_RefineFrame(wx.Frame):
                     theoindex = np.where(np.sum(np.hypot(hkls-hkl0,0),axis=1)<0.01)[0]
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
-                    print('theo index : %d, annote_theo'%theoindex, annote_theo)
+                    hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0],annote_theo[0][1],annote_theo[0][2])
+                    print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
                 else:
                     self.sb.SetStatusText("", 0)
                     tip_theo = ""
@@ -1455,18 +1455,6 @@ class Plot_RefineFrame(wx.Frame):
         print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
         print('refine_indexed_spots', refine_indexed_spots)
 
-        # for val in list(refine_indexed_spots.values()):
-        #     if val[2] is not None:
-        #         localspotindex = val[0]
-        #         # print('localspotindex',localspotindex)
-        #         absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
-
-        #         listofpairs.append([absolute_spot_index, val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-        #         linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
-        #         linkIntensity.append(dataintensity_exp[localspotindex])
-        #         linkResidues.append([absolute_spot_index, val[1], Resi[val[1]]])
-        #         # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
-
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
@@ -1492,8 +1480,6 @@ class Plot_RefineFrame(wx.Frame):
         self.fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues(deg)"]
 
         print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
-
-        # self.Data_X, self.Data_Y = np.transpose(np.array(Dataxy))
 
         self.plotlinks = self.linkedspots_link
         self._replot()
@@ -2955,15 +2941,20 @@ class Plot_RefineFrame(wx.Frame):
         # plot experimental spots linked to 1 theo. spot)
         # ---------------------------------------------------------------
         if self.plotlinks is not None:
-            absspotindices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int)
-            print('absspotindices',absspotindices)
-            if self.datatype == "2thetachi":
-                Xlink = self.data_2thetachi[0][absspotindices]
-                Ylink = self.data_2thetachi[1][absspotindices]
+            exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int)
+            #print('exp_indices in yellow links plot ',exp_indices)
 
+            # experimental spots selection -------------------------------------
+            AllData = self.IndexationParameters["AllDataToIndex"]
+            if self.datatype == "2thetachi":
+                Xlink = np.take(2.0 * AllData["data_theta"], exp_indices)
+                Ylink = np.take(AllData["data_chi"], exp_indices)
             elif self.datatype == "pixels":
-                Xlink = self.pixelX[absspotindices] - X_offset
-                Ylink = self.pixelY[absspotindices] - Y_offset
+                pixX = np.take(AllData["data_pixX"], exp_indices)
+                pixY = np.take(AllData["data_pixY"], exp_indices)
+
+                Xlink = pixX - X_offset
+                Ylink = pixY - Y_offset
 
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
@@ -3171,13 +3162,13 @@ class Plot_RefineFrame(wx.Frame):
         # self.linkIntensity_link
         # self.linkResidues_link
         # self.Energy_Exp_spot
-        print('self.linkExpMiller_link', self.linkExpMiller_link)
+        #print('self.linkExpMiller_link', self.linkExpMiller_link)
 
         Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int)[:, 1:4]
         List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int)
         Energy_Exp_spot = self.Energy_Exp_spot
 
-        print("List_Exp_spot_close in Spot_MillerAttribution", List_Exp_spot_close)
+        #print("List_Exp_spot_close in Spot_MillerAttribution", List_Exp_spot_close)
 
         # Updating the DB ------------------
         if self.Bmat is None and self.Umat is None:
