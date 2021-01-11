@@ -88,10 +88,6 @@ else:
     import IOimagefile as IOimage
     import imageprocessing as ImProc
 
-LaueToolsProjectFolder = os.path.split(__file__)[0]
-
-print("LaueToolsProjectFolder", LaueToolsProjectFolder)
-
 
 class ViewColorPanel(wx.Panel):
     """class to play with color LUT and intensity scale
@@ -5480,11 +5476,13 @@ class MainPeakSearchFrame(wx.Frame):
 
 
 def start_func():
+    startfolder = os.path.split(__file__)[0]
+
     dictParameters = {}
     # MarCCD
     dictParameters["imagefilename"] = "Ge_blanc_0000.mccd"
     #     initialParameter['dirname'] = '/home/micha/lauetools/trunk'
-    dictParameters["dirname"] = LaueToolsProjectFolder
+    dictParameters["dirname"] = startfolder
     dictParameters["mapsLUT"] = "OrRd"
     dictParameters["CCDLabel"] = "MARCCD165"
     dictParameters["title"] = "PeakSearch Board"
