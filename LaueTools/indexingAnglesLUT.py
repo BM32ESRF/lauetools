@@ -43,7 +43,7 @@ try:
         import angulardist
     USE_CYTHON = True
 except ImportError:
-    print("Cython compiled module for fast computation of angular distance is not installed!")
+    #print("-- warning. Cython compiled module for fast computation of angular distance is not installed!")
     USE_CYTHON = False
 
 try:
@@ -781,6 +781,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
         WORKEREXIST = 1
     # loop over orient matrix given from LUT recognition for one central spot
     nb_UB_matrices = len(list_orient_matrix)
+    # TODO: use multiprocessing if nb_UB_matrices > 1000
     for mat_ind in list(range(nb_UB_matrices)):
         if WORKEREXIST:
             #             print "there is a worker !!"
@@ -824,6 +825,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
 
             #             print "mat_ind: %d" % mat_ind
             #             print "AngRes", AngRes
+            # mat_ind, pairspots[mat_ind], planes[mat_ind], [nbclose, nballres, std_closematch], 100.0 * nbclose / nballres are the output for each evaluated matrix
+            
             solutions_matorient_index.append(mat_ind)
             solutions_spotscouple.append(pairspots[mat_ind])
             solutions_hklcouple.append(planes[mat_ind])

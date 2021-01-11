@@ -24,11 +24,11 @@ try:
     else:
         import gaussian2D
 
+
     USE_CYTHON = True
 except ImportError:
-    print("Cython compiled module 'gaussian2D' for fast computation is not installed!")
+    #print("warning. Cython compiled module 'gaussian2D' for fast computation is not installed!")
     USE_CYTHON = False
-
 
 def gaussian(height, center_x, center_y, width_x, width_y):
     """Returns a gaussian function with the given parameters"""
@@ -59,7 +59,7 @@ def fitgaussian(data):
     the gaussian parameters of a 2D distribution found by a fit"""
     params = moments(data)
     errorfunction = lambda p: np.ravel(gaussian(*p)(*np.indices(data.shape)) - data)
-    p, success = optimize.leastsq(errorfunction, params)
+    p, _ = optimize.leastsq(errorfunction, params)
     return p
 
 

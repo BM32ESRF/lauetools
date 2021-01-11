@@ -46,7 +46,7 @@ try:
 
     USE_CYTHON = True
 except ImportError:
-    print("Cython compiled module for fast computation of Laue spots is not installed!")
+    #print("-- warning. Cython compiled module for fast computation of Laue spots is not installed!")
     USE_CYTHON = False
 
 DEG = np.pi / 180.0

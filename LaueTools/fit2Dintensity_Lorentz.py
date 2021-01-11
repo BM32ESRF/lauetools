@@ -1,26 +1,17 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from pylab import *
-from numpy import *
-from scipy import optimize, stats
-
-
-try:
-    import Image as II
-except:
-    print("module Image / PIL is not installed")
-
-from matplotlib.ticker import *
-
+import numpy as np
+import scipy.optimize as sciopt
+import pylab as p
 
 if sys.version_info.major == 3:
     from . import generaltools as GT
+
     from . import IOimagefile as IOimage
 else:
     import generaltools as GT
     import IOimagefile as IOimage
-
 
 def lorentzian(height, center_x, center_y, width_x, width_y):
     """Returns a gaussian function with the given parameters"""
@@ -35,13 +26,13 @@ def moments(data):
     the gaussian parameters of a 2D distribution by calculating its
     moments """
     total = data.sum()
-    X, Y = indices(data.shape)
+    X, Y = np.indices(data.shape)
     x = (X * data).sum() / total
     y = (Y * data).sum() / total
     col = data[:, int(y)]
-    width_x = sqrt(abs((arange(col.size) - y) ** 2 * col).sum() / col.sum())
+    width_x = np.sqrt(abs((np.arange(col.size) - y) ** 2 * col).sum() / col.sum())
     row = data[int(x), :]
-    width_y = sqrt(abs((arange(row.size) - x) ** 2 * row).sum() / row.sum())
+    width_y = np.sqrt(abs((np.arange(row.size) - x) ** 2 * row).sum() / row.sum())
     height = data.max()
     return height, x, y, width_x, width_y
 
@@ -50,8 +41,8 @@ def fitlorentzian(data):
     """Returns (height, x, y, width_x, width_y)
     the lorentzian parameters of a 2D distribution found by a fit"""
     params = moments(data)
-    errorfunction = lambda p: ravel(lorentzian(*p)(*indices(data.shape)) - data)
-    p, success = optimize.leastsq(errorfunction, params)
+    errorfunction = lambda p: np.ravel(lorentzian(*p)(*np.indices(data.shape)) - data)
+    p, _ = sciopt.leastsq(errorfunction, params)
     return p
 
 
@@ -127,19 +118,16 @@ def twodlorentzian(inpars, circle, rotate, vheight):
         width_y = float(width_y)
     if rotate == 1:
         rota = inpars.pop(0)
-        rota = pi / 180.0 * float(rota)
-        rcen_x = center_x * cos(rota) - center_y * sin(rota)
-        rcen_y = center_x * sin(rota) + center_y * cos(rota)
+        rota = np.pi / 180.0 * float(rota)
+        rcen_x = center_x * np.cos(rota) - center_y * np.sin(rota)
+        rcen_y = center_x * np.sin(rota) + center_y * np.cos(rota)
     else:
         rcen_x = center_x
         rcen_y = center_y
     if len(inpars) > 0:
-        raise ValueError(
-            "There are still input parameters:"
-            + str(inpars)
-            + " and you've input: "
-            + str(inpars_old)
-            + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight))
+        raise ValueError("There are still input parameters:"
+            + str(inpars) + " and you've input: "
+            + str(inpars_old) + " circle=%d, rotate=%d, vheight=%d" % (circle, rotate, vheight))
 
     def rotlorentz(x, y):
         """
@@ -147,29 +135,24 @@ def twodlorentzian(inpars, circle, rotate, vheight):
 
         """
         if rotate == 1:
-            xp = x * cos(rota) - y * sin(rota)
-            yp = x * sin(rota) + y * cos(rota)
+            xp = x * np.cos(rota) - y * np.sin(rota)
+            yp = x * np.sin(rota) + y * np.cos(rota)
         else:
             xp = x
             yp = y
         # g = height+amplitude/( 1 + 4*(x-rcen_x)**2/width_x +  4*(y-rcen_y)**2/width_y  )
         g = height + amplitude / (1.0 + 4 * (xp - rcen_x) ** 2 / width_x) / (
-            1 + 4 * (yp - rcen_y) ** 2 / width_y
-        )
+            1 + 4 * (yp - rcen_y) ** 2 / width_y)
         return g
 
     return rotlorentz
 
 
-def lorentzfit(data,
-    err=None,
-    params=[],
-    autoderiv=1,
-    return_all=0,
-    circle=0,
-    rotate=1,
-    vheight=1,
-    xtol=0.0000001):
+def lorentzfit(data, err=None, params=[], autoderiv=1, return_all=0,
+                                                        circle=0,
+                                                        rotate=1,
+                                                        vheight=1,
+                                                        xtol=0.0000001):
     """
     Lorentzian fitter with the ability to fit a variety of different forms of 2-dimensional gaussian.
 
@@ -202,67 +185,30 @@ def lorentzfit(data,
     if params == []:
         params = momentsr(data, circle, rotate, vheight)
     if err is None:
-        errorfunction = lambda p: ravel(
-            (twodlorentzian(p, circle, rotate, vheight)(*indices(data.shape)) - data)
-        )
+        errorfunction = lambda p: np.ravel(
+            (twodlorentzian(p, circle, rotate, vheight)(*np.indices(data.shape)) - data))
     else:
-        errorfunction = lambda p: ravel(
-            (twodlorentzian(p, circle, rotate, vheight)(*indices(data.shape)) - data)
-            / err
-        )
+        errorfunction = lambda p: np.ravel(
+            (twodlorentzian(p, circle, rotate, vheight)(*np.indices(data.shape)) - data) / err)
     if autoderiv == 0:
         # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
         # putting it here because I was instructed to do so for a class project - please ask if you would like
         # this feature implemented
         raise ValueError("I'm sorry, I haven't implemented this feature yet.")
     else:
-        p, cov, infodict, errmsg, success = optimize.leastsq(
-            errorfunction, params, full_output=1, xtol=xtol
-        )
+        p, cov, infodict, errmsg, _ = sciopt.leastsq(
+            errorfunction, params, full_output=1, xtol=xtol)
     if return_all == 0:
         return p
     elif return_all == 1:
         return p, cov, infodict, errmsg
-
-
-if 0:
-    # Create the gaussian data
-    Xin, Yin = mgrid[0:201, 0:201]
-    data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + random.random(Xin.shape)
-
-    matshow(data, cmap=GT.GIST_EARTH_R)
-
-    params = fitgaussian(data)
-    fit = gaussian(*params)
-
-    contour(fit(*indices(data.shape)), cmap=GT.COPPER)
-    ax = gca()
-    (height, x, y, width_x, width_y) = params
-
-    text(
-        0.95,
-        0.05,
-        """
-    x : %.1f
-    y : %.1f
-    width_x : %.1f
-    width_y : %.1f"""
-        % (x, y, width_x, width_y),
-        fontsize=16,
-        horizontalalignment="right",
-        verticalalignment="bottom",
-        transform=ax.transAxes,
-    )
-
-    show()
-
 
 if __name__ == "__main__":
 
     if 0:
         # Create the gaussian data
         # -----------------------------------------------------
-        Xin, Yin = mgrid[0:201, 0:201]
+        Xin, Yin = np.mgrid[0:201, 0:201]
         # data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + random.random(Xin.shape)
         # inpars = (height,amplitude,center_x,center_y,width_x,width_y,rota)
         inpars = (0, 200, 50, 50, 10, 40, 45)
@@ -270,9 +216,7 @@ if __name__ == "__main__":
         circle = 0
         rotate = 1
         vheight = 1
-        data = twodlorentzian(inpars, circle, rotate, vheight)(
-            Xin, Yin
-        ) + 10 * random.random(Xin.shape)
+        data = twodlorentzian(inpars, circle, rotate, vheight)(Xin, Yin) + 10 * np.random.random(Xin.shape)
         # -------------------------------------
 
     fifi = "Zr_A169_0220.mccd"
@@ -286,10 +230,10 @@ if __name__ == "__main__":
 
     dat = IOimage.readoneimage_crop(fifi, center_pixel, (xboxsize, yboxsize))
 
-    def fromindex_to_pixelpos_x(index, pos):
+    def fromindex_to_pixelpos_x(index, _):
         return center_pixel[0] - xboxsize + index
 
-    def fromindex_to_pixelpos_y(index, pos):
+    def fromindex_to_pixelpos_y(index, _):
         return center_pixel[1] - yboxsize + index
 
     # ax = axes()
@@ -298,61 +242,48 @@ if __name__ == "__main__":
     # imshow(dat,interpolation='nearest')#,origin='lower')
     # show()
 
-    start_baseline = amin(dat)
+    start_baseline = np.amin(dat)
     # start_j,start_i=yboxsize,xboxsize # from input center
-    start_j, start_i = (
-        argmax(dat) // dat.shape[1],
-        argmax(dat) % dat.shape[1],
-    )  # from maximum intensity in dat
+    start_j, start_i = (np.argmax(dat) // dat.shape[1], np.argmax(dat) % dat.shape[1])  # from maximum intensity in dat
     # start_amplitude=amax(dat)-start_baseline
     start_amplitude = dat[start_j, start_i] - start_baseline
     start_sigma1, start_sigma2 = 10, 5
     start_anglerot = 0
-    startingparams = [
-        start_baseline,
-        start_amplitude,
-        start_j,
-        start_i,
-        start_sigma1,
-        start_sigma2,
-        start_anglerot,
-    ]
+    startingparams = [start_baseline,
+                        start_amplitude,
+                        start_j,
+                        start_i,
+                        start_sigma1,
+                        start_sigma2,
+                        start_anglerot]
 
     print("startingparams")
     print(startingparams)
 
     if all(dat > 0):
         print("logscale")
-        matshow(log(dat), cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper")
+        p.matshow(np.log(dat), cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper")
     else:
-        imshow(dat, cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper")
+        p.imshow(dat, cmap=GT.GIST_EARTH_R, interpolation="nearest", origin="upper")
 
-    params, cov, infodict, errmsg = lorentzfit(
-        dat,
-        err=None,
-        params=startingparams,
-        autoderiv=1,
-        return_all=1,
-        circle=0,
-        rotate=1,
-        vheight=1,
-    )
+    params, cov, infodict, errmsg = lorentzfit(dat,
+                                            err=None,
+                                            params=startingparams,
+                                            autoderiv=1,
+                                            return_all=1,
+                                            circle=0,
+                                            rotate=1,
+                                            vheight=1)
 
     print("\n *****fitting results with Lorentzian************\n")
     print(params)
     print("background intensity:            %.2f" % params[0])
     print("Peak amplitude above background        %.2f" % params[1])
-    print(
-        "pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0])
-    )
-    print(
-        "pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1])
-    )
+    print("pixel position (X)            %.2f" % (params[3] - xboxsize + center_pixel[0]))
+    print("pixel position (Y)            %.2f" % (params[2] - yboxsize + center_pixel[1]))
     print("std 1,std 2 (pix)            ( %.2f , %.2f )" % (params[4], params[5]))
-    print(
-        "e=min(std1,std2)/max(std1,std2)        %.3f"
-        % (min(params[4], params[5]) / max(params[4], params[5]))
-    )
+    print("e=min(std1,std2)/max(std1,std2)        %.3f"
+        % (min(params[4], params[5]) / max(params[4], params[5])))
     print("Rotation angle (deg)            %.2f" % (params[6] % 360))
     print("************************************\n")
     print(params)
@@ -373,12 +304,12 @@ if __name__ == "__main__":
     # fit2=twodlorentzian(params2,0,1,1)
     # fit3=twodlorentzian(params3,0,1,1)
 
-    isointensity = linspace(1000, amax(dat), 20)
-    contour(fit(*indices(dat.shape)), isointensity, cmap=GT.COPPER)
+    isointensity = np.linspace(1000, np.amax(dat), 20)
+    p.contour(fit(*np.indices(dat.shape)), isointensity, cmap=GT.COPPER)
     # contour(fit(*indices(dat.shape))+fit1(*indices(dat.shape))+fit2(*indices(dat.shape))+fit3(*indices(dat.shape)), isointensity,cmap=cm.copper)
-    ax = gca()
-    ax.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x))
-    ax.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y))
+    ax = p.gca()
+    ax.xaxis.set_major_formatter(p.FuncFormatter(fromindex_to_pixelpos_x))
+    ax.yaxis.set_major_formatter(p.FuncFormatter(fromindex_to_pixelpos_y))
     # (height, x, y, width_x, width_y) = params
 
     # text(0.95, 0.05, """
@@ -389,4 +320,4 @@ if __name__ == "__main__":
     # fontsize=16, horizontalalignment='right',
     # verticalalignment='bottom', transform=ax.transAxes)
 
-    show()
+    p.show()

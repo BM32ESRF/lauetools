@@ -52,7 +52,7 @@ import numpy as np
 try:
     from SpecClient_gevent import SpecCommand
 except ImportError:
-    print('spec control software and SpecClient_gevent missing ?')
+    print('-- warning. spec control software and SpecClient_gevent missing ? (normal, if you are not at the beamline')
 
 if sys.version_info.major == 3:
     from . import generaltools as GT

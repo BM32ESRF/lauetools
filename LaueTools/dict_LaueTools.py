@@ -15,13 +15,9 @@ import re
 
 import numpy as np
 
-# LAUETOOLSFOLDER = os.getcwd()
-
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
-
-print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
-
-WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
+# print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
+# WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
 
 ##------------------------------------------------------------------------
 # --- -----------  Element-materials library

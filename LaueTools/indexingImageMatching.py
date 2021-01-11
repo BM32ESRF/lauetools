@@ -21,9 +21,10 @@ import pickle
 import scipy.ndimage as NDI
 
 try:
+
     import Image
 except:
-    print("module Image / PIL is not installed")
+    print("-- warning: module Image or PIL is not installed, but only used for templateimagematching")
 import pylab as p
 
 
@@ -31,6 +32,7 @@ import numpy as np
 
 try:
     import ImageFilter  # should contain JSM filter in the future
+
 except ImportError:
     import PIL.ImageFilter as ImageFilter
 
@@ -42,9 +44,10 @@ if sys.version_info.major == 3:
     from . import generaltools as GT
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT
-    from . annot import AnnoteFinder
+    from .annot import AnnoteFinder
     from . import IOimagefile as IOimage
     from . import imageprocessing as ImProc
+
 else:
     import lauecore as LAUE
     import CrystalParameters as CP
@@ -880,7 +883,7 @@ def Hough_peak_position(Angles,
         mymat = GT.fromEULERangles_toMatrix([angle_X, angle_Y, angle_Z])
 
     # PATCH to use correctly getLaueSpots() of laue6
-    grain = CP.Prepare_Grain(key_material, mymat,dictmaterials=dictmaterials)
+    grain = CP.Prepare_Grain(key_material, mymat, dictmaterials=dictmaterials)
 
     # array(vec) and array(indices) of spots exiting the crystal in 2pi steradian (Z>0)
     spots2pi = LAUE.getLaueSpots(CST_ENERGYKEV / emax,
@@ -984,9 +987,7 @@ def Hough_peak_position(Angles,
     #                                    connectivity=1)
 
     jsmdata = np.array(list(mikeclipjsm.getdata()))
-    indices_peak = np.where(jsmdata >= 32)[
-        0
-    ]  # intensity threshold for hough pixel to be selected
+    indices_peak = np.where(jsmdata >= 32)[0]  # intensity threshold for hough pixel to be selected
     # nb of hough pixels above the intensity threshold
     nbpeaks = len(indices_peak)
     # we have enough points to select the nb_of_peaks most intense

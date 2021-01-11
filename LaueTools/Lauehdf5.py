@@ -4,8 +4,8 @@ import pickle
 import numpy as np
 import pylab as pp
 import scipy.ndimage as SCI
-
 import tables as Tab
+
 if Tab.__version__ >= "3.4.3":
     Tab.openFile = Tab.open_file
     Tab.File.createGroup = Tab.File.create_group

@@ -20,7 +20,6 @@ import configparser as CONF
 
 import numpy as np
 
-
 # lauetools modules
 if sys.version_info.major == 3:
     from . import fit2Dintensity as fit2d
@@ -30,6 +29,7 @@ if sys.version_info.major == 3:
     from . import IOimagefile as IOimage
     from . import dict_LaueTools as DictLT
     from . import imageprocessing as ImProc
+
 else:
     import fit2Dintensity as fit2d
     import fit2Dintensity_Lorentz as fit2d_l

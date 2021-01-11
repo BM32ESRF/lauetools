@@ -45,9 +45,9 @@ try:
 
     USE_CYTHON = True
 except ImportError:
-    print("Cython compiled 'angulardist' module for fast computation of "
-                                                            "angular distance is not installed!")
-    print("Using default module")
+    # print("-- warning. Cython compiled 'angulardist' module for fast computation of "
+    #                                                         "angular distance is not installed!")
+    # print("Using default module")
     USE_CYTHON = False
 
 

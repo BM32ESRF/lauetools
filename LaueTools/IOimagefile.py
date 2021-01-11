@@ -16,7 +16,10 @@ import struct
 
 # third party modules
 try:
-    import fabio
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",category=FutureWarning)
+        import fabio
 
     FABIO_EXISTS = True
 except ImportError:

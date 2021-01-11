@@ -14,20 +14,20 @@ from copy import copy
 try:
     import Image
 except ImportError:
-    print("module Image / PIL is not installed")
+    print("-- warning. module Image or PIL is not installed but only for command line mosaic builder (mosaic.py)")
 
 try:
     import wx
 except ImportError:
-    print("wx is not installed! Could be some trouble from this lack...")
+    print("-- wx is not installed! Could be some trouble from this lack if you use GUIs...")
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
-    print("you are using wxpython3 ....")
+    print("-- OK! You are using wxpython3 ....")
 
 else:
     WXPYTHON4 = True
-    print("you are using wxpython4 ....")
+    print("-- OK! You are using wxpython4 ....")
     wx.OPEN = wx.FD_OPEN
 
     def sttip(argself, strtip):
@@ -3883,9 +3883,7 @@ if __name__ == "__main__":
             sep = dir_file.rfind("/")  # in unix
             meanvalues = 0
             didi = dir_file[: sep + 1]
-            allprefix, fileextension = dir_file[sep + 1 :].split(
-                "."
-            )  # dfjghk_####    and mccd
+            allprefix, fileextension = dir_file[sep + 1 :].split(".")  # dfjghk_####    and mccd
 
             prefix = allprefix[:-4]
             startind, endind = int(startind), int(endind)
@@ -3904,9 +3902,7 @@ if __name__ == "__main__":
             sep = dir_file.rfind("/")  # in unix
             didi = dir_file[: sep + 1]
             # allprefix=dir_file[sep+1:].split('.')[0] # dfjghk_####.mccd
-            allprefix, fileextension = dir_file[sep + 1 :].split(
-                "."
-            )  # dfjghk_####    and mccd
+            allprefix, fileextension = dir_file[sep + 1 :].split(".")  # dfjghk_####    and mccd
             prefix = allprefix[:-4]
             startind, endind = int(startind), int(endind)
             nb_lines, xpic, ypic, boxsize_row, boxsize_line = list(map(int,

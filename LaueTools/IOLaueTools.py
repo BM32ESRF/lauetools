@@ -25,11 +25,11 @@ np.set_printoptions(precision=15)
 if sys.version_info.major == 3:
     from . dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
     PYTHON3 = True
-    print('you are using python 3')
+    print('-- OK! You are using python 3')
 else:
     from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
     PYTHON3 = False
-    print('you are using python 2. Better install python 3')
+    print('-- OK! you are using python 2 but tetter install python 3')
 
 DEFAULT_CCDLABEL = 'sCMOS'
 

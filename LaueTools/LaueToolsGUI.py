@@ -37,6 +37,12 @@ from matplotlib import __version__ as matplotlibversion
 import numpy as np
 import wx
 
+print('----------------------------------------------')
+print('-----              Welcome            --------')
+print('-----                 to              --------')
+print('-----             LaueTools           --------')
+print('----------------------------------------------')
+
 if wx.__version__ < "4.":
     WXPYTHON4 = False
 else:
@@ -46,14 +52,16 @@ else:
     import wx.adv as wxadv
 
 if sys.version_info.major == 3:
-    from . indexingImageMatching import ComputeGnomon_2
-    from . indexingSpotsSet import spotsset
-    from . lauecore import SimulateResult
+
+    from .indexingImageMatching import ComputeGnomon_2
+    from .indexingSpotsSet import spotsset
+    from .lauecore import SimulateResult
     from . graingraph import give_bestclique
-    from . LaueGeometry import Compute_data2thetachi
-    from . GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
+    from .LaueGeometry import Compute_data2thetachi
+    from .GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
+
     from . CrystalParameters import calc_B_RR
-    from . IOLaueTools import writefile_cor, createselecteddata
+    from .IOLaueTools import writefile_cor, createselecteddata
     from . dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
                                     dict_Transforms, dict_Vect, dict_Rot,
                                     dict_Eul, list_CCD_file_extensions,
@@ -95,6 +103,14 @@ else:
                                                     OpenCorfile, SetGeneralLaueGeometry)
     from GUI.ManualIndexFrame import ManualIndexFrame
     from GUI.MatrixEditor import MatrixEditor_Dialog
+LaueToolsProjectFolder = os.path.split(__file__)[0]
+
+print("-- LaueTools Project Folder is", LaueToolsProjectFolder)
+print('\n----------------------------------------------')
+print('-----              Enjoy              --------')
+print('-----        Laue microdiffraction    --------')
+print('-----    CRG-IF BM32 beamline at ESRF --------')
+print('----------------------------------------------')
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
@@ -112,9 +128,7 @@ DEFAULT_DETECTORPARAMETERS = [77.088, 1012.45, 1049.92, 0.423, 0.172]  # bin 2x2
 ID_FILE_OPEN = 101
 ID_FILE_EXIT = 103
 
-LaueToolsProjectFolder = os.path.split(__file__)[0]
 
-print("LaueToolsProjectFolder", LaueToolsProjectFolder)
 
 try:
     modifiedTime = os.path.getmtime(os.path.join(LaueToolsProjectFolder, "LaueToolsGUI.py"))
@@ -2079,9 +2093,10 @@ if WXPYTHON4:
         def __init__(self, parent, duration=2000):
             # pick a splash image file you have in the working folder
             image_file = os.path.join(LaueToolsProjectFolder, "icons", "transmissionLaue_fcc_111.png")
-            print("image_file", image_file)
+            # print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
+
             wxadv.SplashScreen(bmp, wxadv.SPLASH_CENTRE_ON_PARENT | wxadv.SPLASH_TIMEOUT,
                                                                         duration,
                                                                         parent,
@@ -2099,9 +2114,10 @@ else:
 
             image_file = os.path.join(LaueToolsProjectFolder,
                 os.path.join("icons", "transmissionLaue_fcc_111.png"))
-            print("image_file", image_file)
+            # print("image_file", image_file)
             bmp = wx.Bitmap(image_file)
             # covers the parent frame
+
             wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_PARENT | wx.SPLASH_TIMEOUT, duration,
                                                                                 parent,
                                                                                 wx.ID_ANY)
