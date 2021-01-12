@@ -22,7 +22,9 @@ import generaltools as GT
 import IOLaueTools as IOLT
 
 import dict_LaueTools as DictLT
-from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
+#from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
+from mosaic import ImshowFrame_Scalar, ImshowFrame
+
 
 from numpy.linalg import inv
 
@@ -35,11 +37,9 @@ omega_sample_frame = 40.0
 if omega_sample_frame != None:
     omegadeg = omega_sample_frame * np.pi / 180.0
     # rotation de -omega autour de l'axe x pour repasser dans Rsample
-    mat_from_lab_to_sample_frame = np.array(
-        [[1.0, 0.0, 0.0],
-        [0.0, np.cos(omegadeg), np.sin(omegadeg)],
-        [0.0, -np.sin(omegadeg), np.cos(omegadeg)]]
-    )
+    mat_from_lab_to_sample_frame = np.array([[1.0, 0.0, 0.0],
+                                            [0.0, np.cos(omegadeg), np.sin(omegadeg)],
+                                            [0.0, -np.sin(omegadeg), np.cos(omegadeg)]])
 else:
     mat_from_lab_to_sample_frame = np.eye(3)  # put
 #------------------------------
@@ -84,22 +84,13 @@ def dlat_to_rlat(dlat):
     """
 
     rlat = np.zeros(6)
-
-
     # compute volume of real lattice cell
 
-    volume = (
-        dlat[0]
-        * dlat[1]
-        * dlat[2]
-        * np.sqrt(
-            1
-            + 2 * np.cos(dlat[3]) * np.cos(dlat[4]) * np.cos(dlat[5])
+    volume = (dlat[0] * dlat[1] * dlat[2]
+        * np.sqrt(1 + 2 * np.cos(dlat[3]) * np.cos(dlat[4]) * np.cos(dlat[5])
             - np.cos(dlat[3]) * np.cos(dlat[3])
             - np.cos(dlat[4]) * np.cos(dlat[4])
-            - np.cos(dlat[5]) * np.cos(dlat[5])
-        )
-    )
+            - np.cos(dlat[5]) * np.cos(dlat[5])))
 
     # compute reciprocal lattice parameters
 
@@ -107,14 +98,11 @@ def dlat_to_rlat(dlat):
     rlat[1] = dlat[0] * dlat[2] * np.sin(dlat[4]) / volume
     rlat[2] = dlat[0] * dlat[1] * np.sin(dlat[5]) / volume
     rlat[3] = np.arccos(
-        (np.cos(dlat[4]) * np.cos(dlat[5]) - np.cos(dlat[3])) / (np.sin(dlat[4]) * np.sin(dlat[5]))
-    )
+        (np.cos(dlat[4]) * np.cos(dlat[5]) - np.cos(dlat[3])) / (np.sin(dlat[4]) * np.sin(dlat[5])))
     rlat[4] = np.arccos(
-        (np.cos(dlat[3]) * np.cos(dlat[5]) - np.cos(dlat[4])) / (np.sin(dlat[3]) * np.sin(dlat[5]))
-    )
+        (np.cos(dlat[3]) * np.cos(dlat[5]) - np.cos(dlat[4])) / (np.sin(dlat[3]) * np.sin(dlat[5])))
     rlat[5] = np.arccos(
-        (np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5])) / (np.sin(dlat[3]) * np.sin(dlat[4]))
-    )
+        (np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5])) / (np.sin(dlat[3]) * np.sin(dlat[4])))
 
     return rlat
 
@@ -183,27 +171,25 @@ def epsmat_to_epsline(epsmat):  # 29May13
     return epsline
 
 def matstarlab_to_deviatoric_strain_sample(matstarlab, 
-                                           omega0 = omega_sample_frame, 
-                                           version = 2, 
-                                           returnmore = False,
-                                           reference_element_for_lattice_parameters = "Ge"):
+                                           omega0=omega_sample_frame, 
+                                           version=2, 
+                                           returnmore=False,
+                                           reference_element_for_lattice_parameters="Ge"):
     #29May13
-    epsp_crystal , dlatrdeg = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
+    epsp_crystal, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
                                             version = version, 
                                             reference_element_for_lattice_parameters = reference_element_for_lattice_parameters)
-            
+
     epsp_sample =  transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
                                                                   epsp_crystal,
                                                                   omega0 = omega0)
-    if returnmore == False : return(epsp_sample)
-    
-    else : return(epsp_sample, epsp_crystal)   # add epsp_crystal
+    if returnmore == False:
+        return(epsp_sample)
+    else:
+        return(epsp_sample, epsp_crystal)   # add epsp_crystal
 
 
-
-def matstarlab_to_deviatoric_strain_crystal(
-    matstarlab, version=2, elem_label="Ge"
-):
+def matstarlab_to_deviatoric_strain_crystal(matstarlab, version=2, elem_label="Ge"):
     # 29May13
     """
     # version = 1 : simplified calculation for initially cubic unit cell
@@ -236,10 +222,7 @@ def matstarlab_to_deviatoric_strain_crystal(
     elif version == 2:  # for any symmetry of unit cell
 
         # reference lattice parameters with angles in degrees
-        dlat0_deg = np.array(
-            DictLT.dict_Materials[elem_label][1],
-            dtype=float,
-        )
+        dlat0_deg = np.array(DictLT.dict_Materials[elem_label][1], dtype=float)
         dlat0 = deg_to_rad(dlat0_deg)
 
         # print dlat0.round(decimals = 4)
@@ -297,9 +280,7 @@ def sort_list_decreasing_column(data_str, colnum):
     return data_str2
 
 
-def hkl_to_xystereo(
-    hkl0, polar_axis=[0.0, 0.0, 1.0], down_axis=[1.0, 0.0, 0.0], return_more=None
-):
+def hkl_to_xystereo(hkl0, polar_axis=[0.0, 0.0, 1.0], down_axis=[1.0, 0.0, 0.0], return_more=None):
 
     uq = hkl0 / norme(hkl0)
     uz = polar_axis / norme(polar_axis)
@@ -326,8 +307,8 @@ def hkl_to_xystereo(
 
 if 0:  # ## test 1  #29May13
 
-    # mat3x3 = array([[1.0,0.01,0.0],[0.0,0.99995,0.0],[0.0,0.0,1.0]])
-    # mat3x3 = array([[1.,0.01,0.02],[0.,1.,0.03],[0.,0.,1.]])
+    # mat3x3 = np.array([[1.0,0.01,0.0],[0.0,0.99995,0.0],[0.0,0.0,1.0]])
+    # mat3x3 = np.array([[1.,0.01,0.02],[0.,1.,0.03],[0.,0.,1.]])
     mat3x3 = np.array([[1.0, 0.01, 0.02], [0.0, 1.05, 0.03], [0.0, 0.0, 1.03]])
     print("mat3x3")
     print(mat3x3)
@@ -341,15 +322,13 @@ if 0:  # ## test 1  #29May13
     print("version 2 = use B matrix")
 
     epsp1, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(
-        matstarlab, version=1, reference_element_for_lattice_parameters="Ge"
-    )
+        matstarlab, version=1, reference_element_for_lattice_parameters="Ge")
     print("version 1 :")
     print("deviatoric strain aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-4 units)")
     print((epsp1 * 10.0).round(decimals=2))
 
     epsp1, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(
-        matstarlab, version=2, reference_element_for_lattice_parameters="Ge"
-    )
+        matstarlab, version=2, reference_element_for_lattice_parameters="Ge")
 
     print("version 2 :")
     print("deviatoric strain aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-4 units)")
@@ -364,8 +343,7 @@ if 0:  # ## test 1  #29May13
     # print matstarlabLT
 
     epsp1, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(
-        matstarlabLT, version=2, reference_element_for_lattice_parameters="Ge"
-    )
+        matstarlabLT, version=2, reference_element_for_lattice_parameters="Ge")
 
     print("version 2 : using matstarlabLT")
     print("deviatoric strain aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-4 units)")
@@ -378,8 +356,7 @@ if 0:  # ## test 1  #29May13
     matstarsample = GT.mat3x3_to_matline(matstarsample3x3)
 
     epsp1, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(
-        matstarsample, version=2, reference_element_for_lattice_parameters="Ge"
-    )
+        matstarsample, version=2, reference_element_for_lattice_parameters="Ge")
 
     print("version 2 : using matstarsample")
     print("deviatoric strain aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-4 units)")
@@ -387,12 +364,10 @@ if 0:  # ## test 1  #29May13
 
     print("strain in sample frame")
     print("version 2 :")
-    epsp_sample_v1 = CP.matstarlab_to_deviatoric_strain_sample(
-        matstarlab,
-        omega0=40.0,
-        version=2,
-        reference_element_for_lattice_parameters="Ge",
-    )
+    epsp_sample_v1 = CP.matstarlab_to_deviatoric_strain_sample(matstarlab,
+                                                    omega0=40.0,
+                                                    version=2,
+                                                    reference_element_for_lattice_parameters="Ge")
     print("deviatoric strain xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-4 units)")
     print((epsp_sample_v1 * 10.0).round(decimals=2))
 
@@ -440,8 +415,6 @@ if 0:  # ## test 3
 
     klmk
 
-##********************************************************************************************************************************
-
 
 def sort_peaks_decreasing_int(data_str, colnum):
 
@@ -460,20 +433,15 @@ def sort_peaks_decreasing_int(data_str, colnum):
     return data_str2
 
 # uses a number of invisible parameters set in param.py
-def serial_indexerefine_multigrain(
-    filepathdat,
-    fileprefix,
-    indimg,
-    filesuffix,
-    filefitcalib,
-    filepathout,
-    filefitref=None,
-):
+def serial_indexerefine_multigrain( filepathdat, fileprefix, indimg, filesuffix,
+                                                    filefitcalib,
+                                                    filepathout,
+                                                    filefitref=None):
 
     nimg = len(indimg)
-    ngrains_found = zeros(nimg, int)
-    npeaks = zeros((nimg, PAR.ngrains_index_refine), int)
-    pixdev = zeros((nimg, PAR.ngrains_index_refine), float)
+    ngrains_found = np.zeros(nimg, int)
+    npeaks = np.zeros((nimg, PAR.ngrains_index_refine), int)
+    pixdev = np.zeros((nimg, PAR.ngrains_index_refine), float)
 
     proposed_matrix = None
 
@@ -490,21 +458,17 @@ def serial_indexerefine_multigrain(
     for i in indimg:
         print("i = ", i)
         # filename = filelist[i]
-        filedat1 = os.path.join(
-            filepathdat,
-            fileprefix
-            + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
-            + filesuffix,
-        )
+        filedat1 = os.path.join(filepathdat,
+                            fileprefix
+                            + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
+                            + filesuffix)
         print("image in :")
         print(filedat1)
         # print "saving fit in :"
-        filefit = (
-            fileprefix
-            + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
-            + PAR.add_str_index_refine
-            + ".fit"
-        )
+        filefit = (fileprefix
+                    + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
+                    + PAR.add_str_index_refine
+                    + ".fit")
         
 
         modgraph.savindexfit = os.path.join(filepathout, filefit)
@@ -513,14 +477,12 @@ def serial_indexerefine_multigrain(
         if not PAR.overwrite_index_refine:
             while filefit in os.listdir(filepathout):
                 print("warning : change name to avoid overwrite")
-                filefit = (
-                    fileprefix
-                    + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
-                    + PAR.add_str_index_refine
-                    + "_new_"
-                    + str(j)
-                    + ".fit"
-                )
+                filefit = (fileprefix
+                            + rmccd.stringint(i, PAR.number_of_digits_in_image_name)
+                            + PAR.add_str_index_refine
+                            + "_new_"
+                            + str(j)
+                            + ".fit")
                 print(filepathout + filefit)
                 import module_graphique as modgraph
 
@@ -530,15 +492,12 @@ def serial_indexerefine_multigrain(
         filefit_withdir = filepathout + filefit
         print(PAR.elem_label_index_refine)
 
-        filefitmg, ngrains_found[k], npeaks[k, :], pixdev[
-            k, :
-        ] = index_refine_multigrain_one_image(
-            filedat1,
-            PAR.elem_label_index_refine,
-            filefitcalib,
-            ngrains=PAR.ngrains_index_refine,
-            proposed_matrix=proposed_matrix,
-        )
+        filefitmg, ngrains_found[k], npeaks[k, :], pixdev[k, :] = index_refine_multigrain_one_image(
+                                                filedat1,
+                                                PAR.elem_label_index_refine,
+                                                filefitcalib,
+                                                ngrains=PAR.ngrains_index_refine,
+                                                proposed_matrix=proposed_matrix)
 
         if filepathout != filepathdat:
             print("filefitmg", filefitmg)
@@ -556,7 +515,7 @@ def serial_indexerefine_multigrain(
 
 def build_xy_list_by_hand(outputfullpath, nx, ny, xfast, yfast, xstep, ystep,
             startindex=modgraph.indimg[0],
-            lastindex=modgraph.indimg[-1], ):
+            lastindex=modgraph.indimg[-1]):
     """
     write a file with image index and x and y sample positions
     """
@@ -582,7 +541,7 @@ def build_xy_list_by_hand(outputfullpath, nx, ny, xfast, yfast, xstep, ystep,
     indimg = np.arange((nx) * (ny)) + startindex
     data_list = np.column_stack((indimg, xylist_new))
 
-    print("data_list",data_list)
+    print("data_list", data_list)
 
     header = "img 0, xech 1, yech 2"
 
@@ -592,7 +551,7 @@ def build_xy_list_by_hand(outputfullpath, nx, ny, xfast, yfast, xstep, ystep,
     # print("np.__version__",np.__version__)
     # if np.__version__<'1.7':
     # outputfile.write(header+" \n")
-    np.savetxt(outputfullpath, data_list, fmt="%.4f",header=header,comments='')
+    np.savetxt(outputfullpath, data_list, fmt="%.4f",header=header, comments='')
 
     outputfile.close()
 
@@ -605,7 +564,7 @@ import struct
 def get_xyzech(filepathim, fileprefix, indimg, filesuffix, filepathout):
 
     nimg = len(indimg)
-    data_list = zeros((nimg, 6), float)
+    data_list = np.zeros((nimg, 6), float)
     fileim = ""
 
     # ROPER only - use hexedit to find hexadecimal location of stored floats
@@ -617,12 +576,10 @@ def get_xyzech(filepathim, fileprefix, indimg, filesuffix, filepathout):
         print(filepathim)
         print(fileprefix)
         print(filesuffix)
-        fileim = os.path.join(
-            filepathim,
-            fileprefix
-            + rmccd.stringint(k, PAR.number_of_digits_in_image_name)
-            + filesuffix,
-        )
+        fileim = os.path.join(filepathim,
+                            fileprefix
+                            + rmccd.stringint(k, PAR.number_of_digits_in_image_name)
+                            + filesuffix)
         print(fileim)
 
         f = open(fileim, "rb")
@@ -684,15 +641,13 @@ def get_xyzech(filepathim, fileprefix, indimg, filesuffix, filepathout):
         import module_graphique as modgraph
 
         print(modgraph.outfilenamexyz)
-        outfilename = os.path.join(
-            modgraph.outfilenamexyz,
-            fileprefix
-            + str(modgraph.indimg[0])
-            + "_to_"
-            + str(modgraph.indimg[-1])
-            + ".dat",
-        )
-        print(outfilename)
+        outfilename = os.path.join(modgraph.outfilenamexyz,
+                                fileprefix
+                                + str(modgraph.indimg[0])
+                                + "_to_"
+                                + str(modgraph.indimg[-1])
+                                + ".dat")
+        print('outfilename', outfilename)
         outputfile = open(outfilename, "w")
         outputfile.write(header)
         np.savetxt(outputfile, data_list, fmt="%.4f", header=header, comments='')
@@ -709,20 +664,14 @@ except ImportError:
     print("You have to import module_graphique.py")
 
 
-def build_summary(
-    fileindex_list,
-    filepathfit,
-    fileprefix,
-    filesuffix,
-    filexyz,
-    startindex=modgraph.indimg[0],
-    finalindex=modgraph.indimg[-1],
-    number_of_digits_in_image_name=4,
-    nbtopspots=10,
-    outputprefix="_SUMMARY_",
-    folderoutput=modgraph.outfilename,
-    default_file=None,
-):  # 29May13
+def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
+                                                        startindex=modgraph.indimg[0],
+                                                        finalindex=modgraph.indimg[-1],
+                                                        number_of_digits_in_image_name=4,
+                                                        nbtopspots=10,
+                                                        outputprefix="_SUMMARY_",
+                                                        folderoutput=modgraph.outfilename,
+                                                        default_file=None):  # 29May13
     """
     write a file containing the sumary of results from a set .fit file
     fileindex_list: list of file index
@@ -759,11 +708,11 @@ def build_summary(
     # read xyz position file
     posxyz = np.loadtxt(filexyz, skiprows=1)
     xy = posxyz[:, 1:3]
-    imgxy = np.array(posxyz[:, 0],dtype=np.int16)
+    imgxy = np.array(posxyz[:, 0], dtype=np.int16)
     dxy = xy - xy[0, :]  # *1000.0
 
-    print("imgxy",imgxy)
-    print("dxy",dxy)
+    print("imgxy", imgxy)
+    print("dxy", dxy)
 
     list_files_in_folder = os.listdir(filepathfit)
     import re
@@ -772,7 +721,7 @@ def build_summary(
     list_fitfiles_in_folder = list(filter(test.search, list_files_in_folder))
 
     # encodingdigits = "%%0%dd" % int(number_of_digits_in_image_name)
-    print("fileindex_list",fileindex_list)
+    print("fileindex_list", fileindex_list)
     # loop for reading each .fit file
     for fileindex in fileindex_list:
         ind0 = np.where(imgxy == fileindex)
@@ -798,24 +747,22 @@ def build_summary(
         # read .fit file
         #         res1 = readlt_fit_mg(filefitmg, verbose=1, readmore=True)
 
-        res1 = IOLT.readfitfile_multigrains(
-            filefitmg,
-            verbose=1,
-            readmore=True,
-            fileextensionmarker=".cor",
-        )
+        res1 = IOLT.readfitfile_multigrains(filefitmg,
+                                            verbose=1,
+                                            readmore=True,
+                                            fileextensionmarker=".cor")
 
         print("res1", res1)
 
         if res1 != 0:
-            ( gnumlist, npeaks, indstart, matstarlab, data_fit,
+            (gnumlist, npeaks, indstart, matstarlab, data_fit,
                             calib, pixdev, strain6, euler, ) = res1
 
             if len(pixdev) == 0:
                 pixdev = np.zeros_like(gnumlist)
 
             ngrains = len(gnumlist)
-            print("ngrains",ngrains)
+            print("ngrains", ngrains)
             # print indstart
             intensity = np.zeros(ngrains, np.float)
             if ngrains > 1:
@@ -836,8 +783,8 @@ def build_summary(
             # print shape(imnumlist)
             # print shape(gnumlist)
             # print shape(dxylist)
-            res = np.column_stack( ( imnumlist, gnumlist, npeaks, pixdev, intensity,
-                                    dxylist, matstarlab, strain6, euler, ) )
+            res = np.column_stack((imnumlist, gnumlist, npeaks, pixdev, intensity,
+                                    dxylist, matstarlab, strain6, euler))
 
             # print imnumlist
             print("intensity in build_summary()", intensity)
@@ -858,20 +805,16 @@ def build_summary(
     print("shape allres")
     print(np.shape(allres))
     print(folderoutput)
-    print(
-        fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex))
-    )
+    print(fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
     header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, euler 22:25  \n"
 
     try:
         import module_graphique as modgraph
 
-        fullpath_summary_filename = os.path.join(
-            folderoutput,
-            fileprefix
-            + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)),
-        )
+        fullpath_summary_filename = os.path.join( folderoutput,
+                            fileprefix
+                            + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
         print("fullpath_summary_filename", fullpath_summary_filename)
         modgraph.filesumbeforecolumn = fullpath_summary_filename
@@ -887,9 +830,7 @@ def build_summary(
     return allres, fullpath_summary_filename
 
 
-def read_summary_file(
-    filesum,
-    read_all_cols="yes",
+def read_summary_file( filesum, read_all_cols="yes",
     list_column_names=[ "img", "gnumloc", "npeaks", "pixdev", "intensity",
         "dxymicrons_0", "dxymicrons_1",
         "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3",
@@ -926,12 +867,9 @@ def read_summary_file(
         "res_shear_stress_10",
         "res_shear_stress_11",
         "max_rss",
-        "von_mises",
-    ],
-):
+        "von_mises"]):
     """
     used by plot_maps2
-
     """
     # 29May13
     print("reading summary file")
@@ -992,7 +930,7 @@ def twomat_to_rotation_Emeric(matstarlab1, matstarlab2, omega0=40.0):
 
     # ATTENTION : Orthomormalisation avant de faire le calcul
     # matmisor = dot(np.linalg.inv(matref.transpose()),matmes.transpose())
-    matmisor = dot(matref, matmes.T)  # cf cas CK
+    matmisor = np.dot(matref, matmes.T)  # cf cas CK
 
     toto = (matmisor[0, 0] + matmisor[1, 1] + matmisor[2, 2] - 1.0) / 2.0
     # 2 + 2* toto = 2 + trace - 1 =  1 + trace
@@ -1010,18 +948,16 @@ def twomat_to_rotation_Emeric(matstarlab1, matstarlab2, omega0=40.0):
     ry = (matmisor[2, 0] - matmisor[0, 2]) / toto1
     rz = (matmisor[0, 1] - matmisor[1, 0]) / toto1
 
-    vecRodrigues_sample = np.array(
-        [rx, ry, rz]
-    )  # axe de rotation en coordonnees sample
+    vecRodrigues_sample = np.array([rx, ry, rz])  # axe de rotation en coordonnees sample
 
     theta = theta * 180.0 / np.pi
 
-    return (vecRodrigues_sample, theta)
+    return vecRodrigues_sample, theta
 
-def glide_systems_to_schmid_tensors(n_ref = np.array([1.,1.,1.]), 
-                                    b_ref = np.array([1.,-1.,0.]),
-                                    verbose = 0,
-                                    returnmore = 0):
+def glide_systems_to_schmid_tensors(n_ref=np.array([1., 1., 1.]), 
+                                    b_ref=np.array([1., -1., 0.]),
+                                    verbose=0,
+                                    returnmore=0):
     #29May13
     """
     only for cubic systems
@@ -1033,58 +969,61 @@ def glide_systems_to_schmid_tensors(n_ref = np.array([1.,1.,1.]),
     allop = DictLT.OpSymArray
     indgoodop = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47])
     goodop = allop[indgoodop]
-    
-    hkl_2 = np.row_stack((n_ref,b_ref))
-    normehkl = np.zeros(2,float)
-    
-    uqref = np.zeros((2,3), float)
+
+    hkl_2 = np.row_stack((n_ref, b_ref))
+    normehkl = np.zeros(2, float)
+
+    uqref = np.zeros((2, 3), float)
     for i in range(2):
-            normehkl[i] = norme(hkl_2[i,:])
-            uqref[i,:] = hkl_2[i,:] / normehkl[i]
-            
-    uqall = np.zeros((2,nop,3),float)
+        normehkl[i] = norme(hkl_2[i, :])
+        uqref[i, :] = hkl_2[i, :] / normehkl[i]
+
+    uqall = np.zeros((2, nop, 3), float)
     for j in range(2):  # j=0 : n, j=1 : b
-            for k in range(nop):
-                    uqall[j,k,:] = np.dot(goodop[k],uqref[j,:])
-                    
-    isdouble = np.zeros(nop,int)    
+        for k in range(nop):
+            uqall[j, k, :] = np.dot(goodop[k], uqref[j, :])
+
+    isdouble = np.zeros(nop, int)    
     for k in range(nop):
         #print "k = ", k
-        un_ref = uqall[0,k,:]
-        ub_ref = uqall[1,k,:]
-        for j in range(k+1,nop):
+        un_ref = uqall[0, k, :]
+        ub_ref = uqall[1, k, :]
+        for j in range(k + 1, nop):
             #print "j = ", j
-            dun = norme(np.cross(un_ref,uqall[0,j,:]))
-            dub = norme(np.cross(ub_ref,uqall[1,j,:]))
+            dun = norme(np.cross(un_ref, uqall[0, j, :]))
+            dub = norme(np.cross(ub_ref, uqall[1, j, :]))
             dun_dub = dun + dub
-            if dun_dub < 0.01 : isdouble[j]=1
+            if dun_dub < 0.01:
+                isdouble[j] = 1
     print(isdouble)
-    
+
     ind0 = np.where(isdouble == 0)
     print(ind0[0])
-    uqall = uqall[:,ind0[0],:]
+    uqall = uqall[:, ind0[0], :]
 
     nop2 = 12
 
-    st1 = np.zeros((nop2, 3, 3),float)
-    hkl_n =  uqall[0, :, :]*normehkl[0]
-    hkl_b =  uqall[1, :, :]*normehkl[1]
-    if verbose : print("n b schmid_tensor [line1, line2, line3]")
+    st1 = np.zeros((nop2, 3, 3), float)
+    hkl_n = uqall[0, :, :]*normehkl[0]
+    hkl_b = uqall[1, :, :]*normehkl[1]
+    if verbose:
+        print("n b schmid_tensor [line1, line2, line3]")
     for k in range(nop2):
-        un_colonne = uqall[0, k, :].reshape(3,1)
-        ub_ligne = uqall[1, k, :].reshape(1,3)
-        st1[k,:,:]= np.dot(un_colonne, ub_ligne)        
-        if verbose : print(uqall[0, k, :]*normehkl[0], uqall[1,k,:]*normehkl[1], st1[k,:,:].reshape(1,9).round(decimals=3))
+        un_colonne = uqall[0, k, :].reshape(3, 1)
+        ub_ligne = uqall[1, k, :].reshape(1, 3)
+        st1[k, :, :] = np.dot(un_colonne, ub_ligne)        
+        if verbose:
+            print(uqall[0, k, :]*normehkl[0], uqall[1, k, :] * normehkl[1], st1[k, :, :].reshape(1, 9).round(decimals=3))
 
-    if returnmore == 0 :
-        return(st1)
-    else :
-        return(st1,hkl_n,hkl_b)
+    if returnmore == 0:
+        return st1
+    else:
+        return st1,hkl_n, hkl_b
 
 def read_stiffness_file(filestf): #29May13
     """
     # units = 1e11 N/m2
-    # dans les fichiers stf de XMAS les cij sont en 1e11 N/m2 
+    # dans les fichiers stf de XMAS les cij sont en 1e11 N/m2
     """
     c_tensor = np.loadtxt(filestf, skiprows = 1)
     c_tensor = np.array(c_tensor, dtype = float)
@@ -1092,8 +1031,8 @@ def read_stiffness_file(filestf): #29May13
     print(np.shape(c_tensor))
     print("stiffness tensor C, 1e11 N/m2 (100 GPa) units")
     print(c_tensor)
-    
-    return(c_tensor)
+
+    return c_tensor
 
 
 def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matrot, uqref_cr) : # return_matrix = "yes", return_cosines = "no") : #, xyz_sample_azimut):
@@ -1131,7 +1070,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     uqref_cr = np.zeros((3, 3), np.float)
     # uqref_cr 3 vecteurs 001 101 111 en colonnes
     for i in range(3):
-            uqref_cr[:, i] = hkl_3[i, :] / norme(hkl_3[i, :])
+        uqref_cr[:, i] = hkl_3[i, :] / norme(hkl_3[i, :])
 
     cos01 = np.inner(uqref_cr[:, 0], uqref_cr[:, 1])
     cos02 = np.inner(uqref_cr[:, 0], uqref_cr[:, 2])
@@ -1185,8 +1124,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     for k in range(nop):
         matk_lab[k] = np.dot(mat, allop[k])
         # retour a un triedre direct si indirect
-        if k not in indgoodop :
-            # print "yoho"
+        if k not in indgoodop:
             matk_lab[k, :, 2] = -matk_lab[k, :, 2]
         uqrefk_lab = np.dot(matk_lab[k], uqref_cr)
         for j in range(3):
@@ -1243,18 +1181,20 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     opsymres = []
     rankres = []
     for i in ind3[0]:
-            op1 = int(round(data3_sorted[i, 0], 1))
-            rank1 = int(round(data3_sorted[i, -1], 1))
-            opsymres.append(op1)
-            rankres.append(rank1)
-            # print "opsym =" , op1
-            # print matk_lab[op1].round(decimals=4)
+        op1 = int(round(data3_sorted[i, 0], 1))
+        rank1 = int(round(data3_sorted[i, -1], 1))
+        opsymres.append(op1)
+        rankres.append(rank1)
+        # print "opsym =" , op1
+        # print matk_lab[op1].round(decimals=4)
 
     opsymres = np.array(opsymres, dtype=np.int)
     # print opsymres
 
-    if 0 in opsymres : op1 = 0
-    else : op1 = opsymres[0]
+    if 0 in opsymres:
+        op1 = 0
+    else:
+        op1 = opsymres[0]
 
     matONDnew = matk_lab[op1]
     opres = np.dot(np.linalg.inv(mat), matONDnew)
@@ -1268,11 +1208,11 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     abcstar_on_xyzsample = CP.matstarlab_to_matstarsample3x3(matstarlabnew)
     xyzsample_on_abcstar = np.linalg.inv(abcstar_on_xyzsample)
 
-    print('matdef',matdef)
-    print('np.linalg.inv(matdef)',np.linalg.inv(matdef))
-    print('matdef2',matdef2)
-    print('(np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3))',(np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3)))
-    print('np.dot(np.linalg.inv(matdef), matdef2)',np.dot(np.linalg.inv(matdef), matdef2))
+    print('matdef', matdef)
+    print('np.linalg.inv(matdef)', np.linalg.inv(matdef))
+    print('matdef2', matdef2)
+    print('(np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3))', (np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3)))
+    print('np.dot(np.linalg.inv(matdef), matdef2)', np.dot(np.linalg.inv(matdef), matdef2))
 
     transfmat = np.linalg.inv(np.dot(np.linalg.inv(matdef), matdef2))
 
@@ -1285,11 +1225,13 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     # print "initial" , matstarlab.round(decimals=4)
     # print "final ", matstarlabnew.round(decimals=4)
 
-    if verbose :
+    if verbose:
         print("op sym , rank, cos ", op1, ranknum[rankres[0]], cosangall[rankres[0]].round(decimals=3))
 
-    if ranknum[rankres[0]] < 48 : cos_end = cosangall[rankres[0]]
-    else : cos_end = -cosangall[rankres[0]]
+    if ranknum[rankres[0]] < 48:
+        cos_end = cosangall[rankres[0]]
+    else:
+        cos_end = -cosangall[rankres[0]]
 
     cos_end_abs = abs(cos_end)
     if (cos_end_abs[0] < cos0) | (cos_end_abs[1] < cos1) | (cos_end_abs[2] < cos2):
@@ -1299,7 +1241,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
 
     # print "new crystal coordinates of axis_pole :"
     uq = np.dot(xyzsample_on_abcstar, upole_sample)
-    if verbose :
+    if verbose:
         print("uq :")
         print(uq.round(decimals=4))
         print("uqref_cr :")
@@ -1323,9 +1265,9 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     return(matstarlabnew, transfmat, rgb_pole)
 
 def mat_to_rlat(matstarlab):
-    
+
     rlat = np.zeros(6, np.float)
-    
+
     astarlab = matstarlab[0:3]
     bstarlab = matstarlab[3:6]
     cstarlab = matstarlab[6:9]
@@ -1338,7 +1280,7 @@ def mat_to_rlat(matstarlab):
 
     #print "rlat = ",rlat
 
-    return(rlat)
+    return rlat
 
 
 def matstarlab_to_matdirlab3x3(matstarlab): #29May13
@@ -1346,54 +1288,49 @@ def matstarlab_to_matdirlab3x3(matstarlab): #29May13
     rlat = mat_to_rlat(matstarlab)
     #print rlat
     vol = CP.vol_cell(rlat, angles_in_deg=0)
-    
-    astar1 = matstarlab[:3]
-    bstar1 = matstarlab[3:6]
+
+    astar1 = matstarlab[: 3]
+    bstar1 = matstarlab[3: 6]
     cstar1 = matstarlab[6:]
-    
-    adir = np.cross(bstar1,cstar1)/vol
-    bdir = np.cross(cstar1,astar1)/vol
-    cdir = np.cross(astar1,bstar1)/vol
+
+    adir = np.cross(bstar1, cstar1) / vol
+    bdir = np.cross(cstar1, astar1) / vol
+    cdir = np.cross(astar1, bstar1) / vol
 
     matdirlab3x3 = np.column_stack((adir, bdir, cdir))
 
-    #print " matdirlab3x3 =\n", matdirlab3x3.round(decimals=6)
-    
     return(matdirlab3x3, rlat)
 
 def dlat_to_Bstar(dlat): #29May13
-
     """
         # Xcart = Bstar*Xcrist_rec
-        # changement de coordonnees pour le vecteur X entre 
+        # changement de coordonnees pour le vecteur X entre
         # le repere de la maille reciproque Rcrist_rec
         # et le repere OND Rcart associe a Rcrist_rec
         # dlat  direct lattice parameters
         # rlat  reciprocal lattice parameters
         # en radians
     """
-
-    Bstar = np.zeros((3,3),dtype=np.float)
+    Bstar = np.zeros((3, 3), dtype=np.float)
     rlat = dlat_to_rlat(dlat)
-    
-    Bstar[0,0] = rlat[0]
-    Bstar[0,1] = rlat[1]*np.cos(rlat[5])
-    Bstar[1,1] = rlat[1]*np.sin(rlat[5])
-    Bstar[0,2] = rlat[2]*np.cos(rlat[4])
-    Bstar[1,2] = -rlat[2]*np.sin(rlat[4])*np.cos(dlat[3])
-    Bstar[2,2] = 1.0/dlat[2]
-    
-    return(Bstar)    
 
-def matstarlab_to_matdirONDsample3x3(matstarlab, 
-                                     omega0 = None, # was PAR.omega_sample_frame
-                                     mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame
-                                     ): #29May13
-    
+    Bstar[0, 0] = rlat[0]
+    Bstar[0, 1] = rlat[1] * np.cos(rlat[5])
+    Bstar[1, 1] = rlat[1] * np.sin(rlat[5])
+    Bstar[0, 2] = rlat[2] * np.cos(rlat[4])
+    Bstar[1, 2] = -rlat[2] * np.sin(rlat[4]) * np.cos(dlat[3])
+    Bstar[2, 2] = 1.0 / dlat[2]
+
+    return Bstar
+
+def matstarlab_to_matdirONDsample3x3(matstarlab,
+                                     omega0=None, # was PAR.omega_sample_frame
+                                     mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame): #29May13
+
     # uc unit cell
     # dir direct
     # uc_dir_OND : cartesian frame obtained by orthonormalizing direct unit cell
-    
+
     matdirlab3x3, rlat = matstarlab_to_matdirlab3x3(matstarlab)
     # dir_bmatrix = uc_dir on uc_dir_OND
 
@@ -1401,72 +1338,71 @@ def matstarlab_to_matdirONDsample3x3(matstarlab,
 
     # matdirONDlab3x3 = uc_dir_OND on lab
 
-    matdirONDlab3x3 = np.dot(matdirlab3x3,np.linalg.inv(dir_bmatrix))
-    
-    if (omega0 is not None)&(mat_from_lab_to_sample_frame is None) : # deprecated - only for retrocompatibility
-        omega = omega0*PI/180.0
+    matdirONDlab3x3 = np.dot(matdirlab3x3, np.linalg.inv(dir_bmatrix))
+
+    if (omega0 is not None)&(mat_from_lab_to_sample_frame is None): # deprecated - only for retrocompatibility
+        omega = omega0*np.pi / 180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],
-                                        [0.0,np.cos(omega),np.sin(omega)],
-                                        [0.0,-np.sin(omega),np.cos(omega)]])
+        mat_from_lab_to_sample_frame = np.array([[1.0, 0.0, 0.0],
+                                        [0.0, np.cos(omega), np.sin(omega)],
+                                        [0.0, -np.sin(omega), np.cos(omega)]])
 
     # matdirONDsample3x3 = uc_dir_OND on sample
     # rsample = matdirONDsample3x3 * ruc_dir_OND
-    
-    matdirONDsample3x3 = np.dot(mat_from_lab_to_sample_frame,matdirONDlab3x3)
-    
-    return(matdirONDsample3x3)   
+
+    matdirONDsample3x3 = np.dot(mat_from_lab_to_sample_frame, matdirONDlab3x3)
+
+    return matdirONDsample3x3
 
 def transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
                                           tensor_crystal_line,
-                                          omega0 = None, # was PAR.omega_sample_frame,
-                                          mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame
-                                    ):
-    #29May13                                                                  
+                                          omega0=None, # was PAR.omega_sample_frame,
+                                          mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame):
+    #29May13
     """
     start from stress or strain tensor
     as 6 coord vector
     """
     tensor_crystal_3x3 = epsline_to_epsmat(tensor_crystal_line)
-       
-    matdirONDsample3x3 =  matstarlab_to_matdirONDsample3x3(matstarlab, 
-                                                           omega0 = omega0,
-                                                           mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame)
+
+    matdirONDsample3x3 = matstarlab_to_matdirONDsample3x3(matstarlab, omega0=omega0,
+                                            mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame)
 
     # changement de base pour tenseur d'ordre 2
 
-    toto = np.dot(tensor_crystal_3x3 , matdirONDsample3x3.transpose())
+    toto = np.dot(tensor_crystal_3x3, matdirONDsample3x3.transpose())
 
-    tensor_sample_3x3 = np.dot(matdirONDsample3x3,toto)
+    tensor_sample_3x3 = np.dot(matdirONDsample3x3, toto)
 
     tensor_sample_line = epsmat_to_epsline(tensor_sample_3x3)
-    
-    return(tensor_sample_line)
+
+    return tensor_sample_line
 
 def matstarlab_to_deviatoric_strain_sample(matstarlab, 
-                                omega0 = None, # was PAR.omega_sample_frame, 
-                                mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame,
-                                version = 2, 
-                                returnmore = False,
-                                elem_label = "Ge"):
+                                omega0=None, # was PAR.omega_sample_frame,
+                                mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame,
+                                version=2,
+                                returnmore=False,
+                                elem_label="Ge"):
     #29May13
-    epsp_crystal , dlatrdeg = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
-                                            version = version, 
-                                            elem_label = elem_label)
-            
-    epsp_sample =  transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
-                                                                  epsp_crystal,
-                                                                  omega0 = omega0,
-                                                                  mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame)
-    if returnmore == False : return(epsp_sample)
-    
-    else : return(epsp_sample, epsp_crystal)   # add epsp_crystal
+    epsp_crystal, _ = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
+                                            version=version,
+                                            elem_label=elem_label)
+
+    epsp_sample = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
+                                                epsp_crystal,
+                                                omega0=omega0,
+                                                mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame)
+    if returnmore == False:
+        return epsp_sample
+
+    else: return(epsp_sample, epsp_crystal)   # add epsp_crystal
 
 def deviatoric_strain_crystal_to_stress_crystal(c_tensor, eps_crystal_line): #29May13
 
     """
-    Voigt Notation 
-    C = 6x6 matrix 
+    Voigt Notation
+    C = 6x6 matrix
     (C n'est pas un tenseur d'ordre 2 => regle de changement de repere ne s'applique pas a C)
     (il faut la notation Pedersen cf mail Consonni pour fabriquer un tenseur d'ordre 2 a partir de C)
     sigma = dot (C, gamma)
@@ -1475,20 +1411,20 @@ def deviatoric_strain_crystal_to_stress_crystal(c_tensor, eps_crystal_line): #29
     gam3 = eps33
     gam4 = 2 eps23
     gam5 = 2 eps13
-    gam6 = 2 eps12    
-    
+    gam6 = 2 eps12
+
     cij in 1e11 N/m2 = 100 GPa units
     epsij in 1e-3 units
     sigma in 0.1 GPa = 100 MPa units
     """
-    fact1 = np.array([1.,1.,1.,2.,2.,2.])
+    fact1 = np.array([1., 1., 1., 2., 2., 2.])
     gam_cryst = np.multiply(eps_crystal_line, fact1)
     sigma_crystal_line = np.dot(c_tensor, gam_cryst)
     #print eps_crystal_line
     #print gam_cryst
     #print sigma_crystal_line
-    
-    return(sigma_crystal_line)
+
+    return sigma_crystal_line
 
 def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
     #29May13
@@ -1497,12 +1433,12 @@ def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
     # eds R.I. Barabash and G.E. Ice
     sig = sigma_crystal_line*1.0
     von_mises = (sig[0]-sig[1])*(sig[0]-sig[1]) + \
-                (sig[1]-sig[2])*(sig[1]-sig[2]) +\
+                (sig[1]-sig[2])*(sig[1]-sig[2]) + \
                 (sig[2]-sig[0])*(sig[2]-sig[0]) + \
                 6.* (sig[3]*sig[3] + sig[4]*sig[4] + sig[5]*sig[5])
     von_mises = von_mises / 2.
     von_mises = np.sqrt(von_mises)
-    return(von_mises)
+    return von_mises
 
 def deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(sigma_crystal_line, schmid_tensors):
     #29May13
@@ -1510,11 +1446,10 @@ def deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(sigma_cry
     sigma_crystal_3x3 = epsline_to_epsmat(sigma_crystal_line)
     tau_all = np.zeros(nop2, float)
     for k in range(nop2):
-        tau_all[k] = (np.multiply(schmid_tensors[k],sigma_crystal_3x3)).sum()
-        
-    #print tau_all
-    return(tau_all)
-    
+        tau_all[k] = (np.multiply(schmid_tensors[k], sigma_crystal_3x3)).sum()
+
+    return tau_all
+
 def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
     #29May13
     # cf formula (4.17) in book chapter by N. Tamura p 143
@@ -1522,47 +1457,45 @@ def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
     # eds R.I. Barabash and G.E. Ice
     sig = sigma_crystal_line*1.0
     von_mises = (sig[0]-sig[1])*(sig[0]-sig[1]) + \
-                (sig[1]-sig[2])*(sig[1]-sig[2]) +\
+                (sig[1]-sig[2])*(sig[1]-sig[2]) + \
                 (sig[2]-sig[0])*(sig[2]-sig[0]) + \
                 6.* (sig[3]*sig[3] + sig[4]*sig[4] + sig[5]*sig[5])
     von_mises = von_mises / 2.
     von_mises = np.sqrt(von_mises)
-    return(von_mises)
-           
+    return von_mises
+
 def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
     #23May16
     # formula (1) from Chen et al. Geology 2014
     # cf formula (4.14) in book chapter by N. Tamura p 142
     # book "strain and dislocation gradients from diffraction"
     # eds R.I. Barabash and G.E. Ice
-    
+
     eps = epsilon_crystal_line*1.
     toto = (eps[0]-eps[1])*(eps[0]-eps[1]) + \
                 (eps[1]-eps[2])*(eps[1]-eps[2]) +\
                 (eps[2]-eps[0])*(eps[2]-eps[0]) + \
                 6.* (eps[3]*eps[3] + eps[4]*eps[4] + eps[5]*eps[5])
     toto = toto / 2.
-    eq_strain = (2./3.) * np.sqrt(toto)
-    return(eq_strain)    
+    eq_strain = (2. / 3.) * np.sqrt(toto)
+    return eq_strain
 
-def add_columns_to_summary_file_new(
-    filesum,
-    elem_label="Ge",
-    filestf=None,
-    omega_sample_frame=40.0,
-    verbose=0,
-    include_misorientation=0,
-    filefitref_for_orientation=None,  # seulement pour include_misorientation = 1
-    include_strain=1,  # 0 seulement pour mat2spots ou fit calib ou EBSD
-    # les 4 options suivantes seulement pour
-    #  include_misorientation = 1
-    # et filefitref_for_orientation = None
-    filter_mean_matrix_by_pixdev_and_npeaks=1,
-    maxpixdev_for_mean_matrix=0.25,
-    minnpeaks_for_mean_matrix=20,
-    filter_mean_matrix_by_intensity=0,
-    minintensity_for_mean_matrix=20000.0,
-):  # 29May13
+def add_columns_to_summary_file_new(filesum,
+                            elem_label="Ge",
+                            filestf=None,
+                            omega_sample_frame=40.0,
+                            verbose=0,
+                            include_misorientation=0,
+                            filefitref_for_orientation=None,  # seulement pour include_misorientation = 1
+                            include_strain=1,  # 0 seulement pour mat2spots ou fit calib ou EBSD
+                            # les 4 options suivantes seulement pour
+                            #  include_misorientation = 1
+                            # et filefitref_for_orientation = None
+                            filter_mean_matrix_by_pixdev_and_npeaks=1,
+                            maxpixdev_for_mean_matrix=0.25,
+                            minnpeaks_for_mean_matrix=20,
+                            filter_mean_matrix_by_intensity=0,
+                            minintensity_for_mean_matrix=20000.0):  # 29May13
 
     """
     filesum previously generated with build_summary
@@ -1577,7 +1510,7 @@ def add_columns_to_summary_file_new(
         von mises stress
         resolved shear stress RSS on glide planes
         max RSS
-        
+
         if include_misorientation :  # seulement pour les analyses mono-grain
             add  :
                 misorientation angle
@@ -1591,8 +1524,6 @@ def add_columns_to_summary_file_new(
        add rgbxyz_lab  - utile pour departager macles avec axe de maclage suivant x, y, ou z sample
        24Jan14 : enleve strain columns
     """
-    #
-
     data1, list_column_names, nameline0 = read_summary_file(filesum)
 
     data_1 = np.array(data1, dtype=float)
@@ -1602,14 +1533,12 @@ def add_columns_to_summary_file_new(
 
     list_col_names2 = list_column_names
 
-    list_col_names_orient = [
-        "rgb_x_sample",
-        "rgb_y_sample",
-        "rgb_z_sample",
-        "rgb_x_lab",
-        "rgb_y_lab",
-        "rgb_z_lab",
-    ]
+    list_col_names_orient = ["rgb_x_sample",
+                            "rgb_y_sample",
+                            "rgb_z_sample",
+                            "rgb_x_lab",
+                            "rgb_y_lab",
+                            "rgb_z_lab"]
 
     number_col_orient = np.array([3, 3, 3, 3, 3, 3])
 
@@ -1620,15 +1549,13 @@ def add_columns_to_summary_file_new(
 
     if include_strain:
 
-        list_col_names_strain = [
-            "strain6_crystal",
-            "strain6_sample",
-            "stress6_crystal",
-            "stress6_sample",
-            "res_shear_stress",
-            "max_rss",
-            "von_mises",
-        ]
+        list_col_names_strain = ["strain6_crystal",
+                                "strain6_sample",
+                                "stress6_crystal",
+                                "stress6_sample",
+                                "res_shear_stress",
+                                "max_rss",
+                                "von_mises"]
         number_col_strain = np.array([6, 6, 6, 6, 12])
 
         for k in range(len(number_col_strain)):
@@ -1644,16 +1571,11 @@ def add_columns_to_summary_file_new(
     for i in range(len(list_col_names2)):
         header2 = header2 + list_col_names2[i] + " "
 
-    header = (
-        nameline0
-        + ", rgb_x_sample, rgb_y_sample, rgb_z_sample, rgb_x_lab, rgb_y_lab, rgb_z_lab"
-    )
+    header = (nameline0+ ", rgb_x_sample, rgb_y_sample, rgb_z_sample, rgb_x_lab, rgb_y_lab, rgb_z_lab")
 
     if include_strain:
-        header = (
-            header
-            + ", strain6_crystal,  strain6_sample, stress6_crystal, stress6_sample, res_shear_stress_12, max_rss, von_mises"
-        )
+        header = (header
+            + ", strain6_crystal,  strain6_sample, stress6_crystal, stress6_sample, res_shear_stress_12, max_rss, von_mises")
 
     if include_misorientation:
         header = header + ", misorientation_angle, w_mrad_0, w_mrad_1, w_mrad_2 \n"
@@ -1678,12 +1600,9 @@ def add_columns_to_summary_file_new(
     omegarad = omega_sample_frame * np.pi / 180.0
     ylab_sample_coord = np.array([0.0, np.cos(omegarad), -np.sin(omegarad)])
     zlab_sample_coord = np.array([0.0, np.sin(omegarad), np.cos(omegarad)])
-    print(
-        "x y z sample - sample coord : ",
-        xsample_sample_coord,
-        ysample_sample_coord,
-        zsample_sample_coord,
-    )
+    print("x y z sample - sample coord : ", xsample_sample_coord,
+                                            ysample_sample_coord,
+                                            zsample_sample_coord)
     print("y z lab - sample coord : ", ylab_sample_coord, zlab_sample_coord)
 
     numig = np.shape(data_1)[0]
@@ -1730,17 +1649,14 @@ def add_columns_to_summary_file_new(
                 print("filter matmean by pixdev and npeaks")
                 indfilt = np.where(
                     (pixdev_list < maxpixdev_for_mean_matrix)
-                    & (npeaks_list > minnpeaks_for_mean_matrix)
-                )
+                    & (npeaks_list > minnpeaks_for_mean_matrix))
                 matstarlabref = (mat_list[indfilt[0]]).mean(axis=0)
                 print("number of points used to calculate matmean", len(indfilt[0]))
 
             elif filter_mean_matrix_by_intensity:
                 print("filter matmean by intensity")
-                indfilt = np.where(
-                    (intensity_list > minintensity_for_mean_matrix)
-                    & (npeaks_list > 0.0)
-                )
+                indfilt = np.where((intensity_list > minintensity_for_mean_matrix)
+                    & (npeaks_list > 0.0))
                 matstarlabref = (mat_list[indfilt[0]]).mean(axis=0)
                 print("number of points used to calculate matmean", len(indfilt[0]))
 
@@ -1751,9 +1667,8 @@ def add_columns_to_summary_file_new(
         #            matmean = ((mat_list[indfilt[0]])[-10:]).mean(axis=0)   # test pour data Keckes
 
         else:
-            matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(
-                filefitref_for_orientation, readmore=True
-            )
+            matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(filefitref_for_orientation,
+                                                                readmore=True)
 
     #        matmean3x3 = GT.matline_to_mat3x3(matmean)
 
@@ -1764,117 +1679,76 @@ def add_columns_to_summary_file_new(
             matstarlab = mat_list[i, :]
             # print "x"
             matstarlabnew, transfmat, rgb_x[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, xsample_sample_coord
-            )
+                matstarlab, xsample_sample_coord)
             rgb_xlab[i, :] = rgb_x[i, :] * 1.0
             # print "y"
             matstarlabnew, transfmat, rgb_y[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, ysample_sample_coord
-            )
-            matstarlabnew, transfmat, rgb_ylab[
-                i, :
-            ] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
+                matstarlab, ysample_sample_coord)
+            matstarlabnew, transfmat, rgb_ylab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
             # print "z"
-            matstarlabnew, transfmat, rgb_z[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, zsample_sample_coord
-            )
-            matstarlabnew, transfmat, rgb_zlab[
-                i, :
-            ] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
+            matstarlabnew, transfmat, rgb_z[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zsample_sample_coord)
+            matstarlabnew, transfmat, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
 
             if include_strain:
-                epsp_sample[i, :], epsp_crystal[
-                    i, :
-                ] = matstarlab_to_deviatoric_strain_sample(
-                    matstarlab,
-                    omega0=omega_sample_frame,
-                    version=2,
-                    returnmore=True,
-                    elem_label=elem_label,
-                )
+                epsp_sample[i, :], epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
+                                                            matstarlab,
+                                                            omega0=omega_sample_frame,
+                                                            version=2,
+                                                            returnmore=True,
+                                                            elem_label=elem_label)
 
                 sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
-                                                c_tensor, epsp_crystal[i, :] )
-                sigma_sample[
-                    i, :
-                ] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                    matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame
-                )
+                                                c_tensor, epsp_crystal[i, :])
+                sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
+                                        matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
 
-                von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(
-                    sigma_crystal[i, :]
-                )
+                von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
 
-                tau1[
-                    i, :
-                ] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                    sigma_crystal[i, :], schmid_tensors
-                )
+                tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
+                    sigma_crystal[i, :], schmid_tensors)
                 maxrss[i] = abs(tau1[i, :]).max()
 
             if include_misorientation:
                 #                mat2 = GT.matline_to_mat3x3(matstarlab)
                 #                vec_crystal, vec_lab, misorientation_angle[i] = twomat_to_rotation(matmean3x3,mat2, verbose = 0)
 
-                (
-                    vecRodrigues_sample,
-                    misorientation_angle[i],
-                ) = twomat_to_rotation_Emeric(
-                    matstarlabref, matstarlab, omega0=omega_sample_frame
-                )
+                (vecRodrigues_sample, misorientation_angle[i]) = twomat_to_rotation_Emeric(
+                                            matstarlabref, matstarlab, omega0=omega_sample_frame)
                 omegaxyz[i, :] = vecRodrigues_sample * 2.0 * 1000.0  # unites = mrad
                 # misorientation_angle : unites = degres
-                print(
-                    round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2)
-                )
+                print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
             #                if k == 5 : return()
 
             if verbose:
                 print(matstarlab)
                 if include_strain:
-                    print(
-                        "deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)"
-                    )
+                    print("deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
                     print(epsp_crystal.round(decimals=2))
-                    print(
-                        "deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)"
-                    )
+                    print("deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)")
                     print(epsp_sample[i, :].round(decimals=2))
 
-                    print(
-                        "deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)"
-                    )
+                    print("deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)")
                     print(sigma_crystal[i, :].round(decimals=2))
 
-                    print(
-                        "deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)"
-                    )
+                    print("deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)")
                     print(sigma_sample[i, :].round(decimals=2))
 
-                    print(
-                        "Von Mises equivalent Stress (100 MPa units)",
-                        round(von_mises[i], 3),
-                    )
-                    print(
-                        "RSS resolved shear stresses on glide planes (100 MPa units) : "
-                    )
+                    print("Von Mises equivalent Stress (100 MPa units)",
+                        round(von_mises[i], 3))
+                    print("RSS resolved shear stresses on glide planes (100 MPa units) : ")
                     print(tau1[i, :].round(decimals=3))
                     print("Max RSS : ", round(maxrss[i], 3))
         k = k + 1
 
     # numig here for debug with smaller numig
-    data_list = np.column_stack(
-        (data_1[:numig, :], rgb_x, rgb_y, rgb_z, rgb_xlab, rgb_ylab, rgb_zlab)
-    )
+    data_list = np.column_stack((data_1[:numig, :], rgb_x, rgb_y, rgb_z, rgb_xlab, rgb_ylab, rgb_zlab))
 
     if include_strain:
-        data_list = np.column_stack( ( data_list, epsp_crystal, epsp_sample, sigma_crystal, sigma_sample, tau1, maxrss, von_mises, ) )
+        data_list = np.column_stack((data_list, epsp_crystal, epsp_sample, sigma_crystal, sigma_sample, tau1, maxrss, von_mises))
 
     if include_misorientation:
         data_list = np.column_stack((data_list, misorientation_angle, omegaxyz))
-        data_list = data_list[
-            indfilt2[0], :
-        ]  # enleve les images avec zero grain indexe
+        data_list = data_list[indfilt2[0], :]  # enleve les images avec zero grain indexe
 
     add_str = "_add_columns"
     if filefitref_for_orientation != None:
@@ -1887,15 +1761,13 @@ def add_columns_to_summary_file_new(
     outputfile = open(outfilesum, "w")
     outputfile.write(header)
     outputfile.write(header2)
-    np.savetxt(outputfile, data_list, fmt="%.6f", header=header+header2,comments='')
+    np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
     outputfile.close()
 
     return outfilesum
 
 
-def add_columns_to_summary_file(
-    filesum, elem_label="Ge", filestf=None, verbose=0
-):  # 29May13
+def add_columns_to_summary_file(filesum, elem_label="Ge", filestf=None, verbose=0):  # 29May13
 
     """
     filesum previously generated with build_summary
@@ -1916,20 +1788,18 @@ def add_columns_to_summary_file(
 
     data_1 = np.array(data_1, dtype=float)
 
-    list_col_names = [
-        "strain6_sample",
-        "rgb_x_sample",
-        "rgb_z_sample",
-        "stress6_crystal",
-        "stress6_sample",
-        "res_shear_stress",
-        "max_rss",
-        "von_mises",
-    ]
+    list_col_names = ["strain6_sample",
+                    "rgb_x_sample",
+                    "rgb_z_sample",
+                    "stress6_crystal",
+                    "stress6_sample",
+                    "res_shear_stress",
+                    "max_rss",
+                    "von_mises"]
 
     list_col_names2 = list_column_names
 
-    number_col = array([6, 3, 3, 6, 6, 12])
+    number_col = np.array([6, 3, 3, 6, 6, 12])
 
     for k in range(6):
         for i in range(number_col[k]):
@@ -1948,12 +1818,10 @@ def add_columns_to_summary_file(
 
     print(header2.split())
 
-    header = (
-        nameline0
-        + ", strain_6sample 25:31, rgb_x_sample 31:34, rgb_z_sample 34:37, \
+    header = (nameline0 +
+    ", strain_6sample 25:31, rgb_x_sample 31:34, rgb_z_sample 34:37, \
 stress6_crystal 37:43 , stress6_sample 43:49, res_shear_stress 49:61, \
-max_rss 61, von_mises 62 \n"
-    )
+max_rss 61, von_mises 62 \n")
 
     print(header)
 
@@ -1964,22 +1832,22 @@ max_rss 61, von_mises 62 \n"
     if filestf != None:
         c_tensor = read_stiffness_file(filestf)
 
-    axis_pole_sample_z = array([0.0, 0.0, 1.0])
-    axis_pole_sample_x = array([1.0, 0.0, 0.0])
+    axis_pole_sample_z = np.array([0.0, 0.0, 1.0])
+    axis_pole_sample_x = np.array([1.0, 0.0, 0.0])
     print("pole axes 1, 2 - sample coord : ", axis_pole_sample_x, axis_pole_sample_z)
 
-    numig = shape(data_1)[0]
+    numig = np.shape(data_1)[0]
 
     # numig = 10
 
-    rgb_z = zeros((numig, 3), float)
-    rgb_x = zeros((numig, 3), float)
-    epsp_sample = zeros((numig, 6), float)
-    sigma_crystal = zeros((numig, 6), float)
-    sigma_sample = zeros((numig, 6), float)
-    tau1 = zeros((numig, 12), float)
-    von_mises = zeros(numig, float)
-    maxrss = zeros(numig, float)
+    rgb_z = np.zeros((numig, 3), float)
+    rgb_x = np.zeros((numig, 3), float)
+    epsp_sample = np.zeros((numig, 6), float)
+    sigma_crystal = np.zeros((numig, 6), float)
+    sigma_sample = np.zeros((numig, 6), float)
+    tau1 = np.zeros((numig, 12), float)
+    von_mises = np.zeros(numig, float)
+    maxrss = np.zeros(numig, float)
 
     for i in range(numig):
         print(i)
@@ -1987,83 +1855,57 @@ max_rss 61, von_mises 62 \n"
             matstarlab = data_1[i, 7:16]
             # print "z"
             matstarlabnew, transfmat, rgb_z[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, axis_pole_sample_z
-            )
+                matstarlab, axis_pole_sample_z)
             # print "x"
             matstarlabnew, transfmat, rgb_x[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, axis_pole_sample_x
-            )
+                matstarlab, axis_pole_sample_x)
 
             epsp_sample[i, :], epsp_crystal = matstarlab_to_deviatoric_strain_sample(
                 matstarlab,
                 omega0=40.0,
                 version=2,
                 returnmore=True,
-                reference_element_for_lattice_parameters=elem_label,
-            )
+                reference_element_for_lattice_parameters=elem_label)
 
-            sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
-                c_tensor, epsp_crystal
-            )
-            sigma_sample[
-                i, :
-            ] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                matstarlab, sigma_crystal[i, :], omega0=40.0
-            )
+            sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(c_tensor, epsp_crystal)
+            sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
+                matstarlab, sigma_crystal[i, :], omega0=40.0)
 
-            von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(
-                sigma_crystal[i, :]
-            )
+            von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
 
-            tau1[
-                i, :
-            ] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                sigma_crystal[i, :], schmid_tensors
-            )
+            tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
+                sigma_crystal[i, :], schmid_tensors)
             maxrss[i] = abs(tau1[i, :]).max()
 
             if verbose:
                 print(matstarlab)
-                print(
-                    "deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)"
-                )
+                print("deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
                 print(epsp_crystal.round(decimals=2))
                 print(
-                    "deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)"
-                )
+                    "deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)")
                 print(epsp_sample[i, :].round(decimals=2))
 
-                print(
-                    "deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)"
-                )
+                print("deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)")
                 print(sigma_crystal[i, :].round(decimals=2))
 
-                print(
-                    "deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)"
-                )
+                print("deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)")
                 print(sigma_sample[i, :].round(decimals=2))
 
-                print(
-                    "Von Mises equivalent Stress (100 MPa units)",
-                    round(von_mises[i], 3),
-                )
+                print("Von Mises equivalent Stress (100 MPa units)",
+                    round(von_mises[i], 3),)
                 print("RSS resolved shear stresses on glide planes (100 MPa units) : ")
                 print(tau1[i, :].round(decimals=3))
                 print("Max RSS : ", round(maxrss[i], 3))
 
-    data_list = column_stack(
-        (
-            data_1[:numig, :],
-            epsp_sample,
-            rgb_x,
-            rgb_z,
-            sigma_crystal,
-            sigma_sample,
-            tau1,
-            maxrss,
-            von_mises,
-        )
-    )
+    data_list = column_stack((data_1[:numig, :],
+                            epsp_sample,
+                            rgb_x,
+                            rgb_z,
+                            sigma_crystal,
+                            sigma_sample,
+                            tau1,
+                            maxrss,
+                            von_mises))
     print("filesum", filesum)
     outfilesum = filesum.rstrip(".dat") + "_add_columns.dat"
     import module_graphique as modgraph
@@ -2073,7 +1915,7 @@ max_rss 61, von_mises 62 \n"
     outputfile = open(outfilesum, "w")
     outputfile.write(header)
     outputfile.write(header2)
-    np.savetxt(outputfile, data_list, fmt="%.6f", header=header+header2,comments='')
+    np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
     outputfile.close()
 
     return outfilesum
@@ -2093,20 +1935,19 @@ def plot_orientation_triangle_color_code():
 
     for i in range(numrand1 + 1):
         for j in range(numrand1 + 1):
-            col1 = zeros(3, float)
+            col1 = np.zeros(3, float)
             uq = (1.0 - range001[i]) * uqref_cr[:, 0] + range001[i] * (
-                angrange[j] * uqref_cr[:, 1] + (1.0 - angrange[j]) * uqref_cr[:, 2]
-            )
+                angrange[j] * uqref_cr[:, 1] + (1.0 - angrange[j]) * uqref_cr[:, 2])
             uq = uq / norme(uq)
 
             qsxy = hkl_to_xystereo(uq, down_axis=[0.0, -1.0, 0.0])
             # RGB coordinates
-            rgb_pole = zeros(3, float)
+            rgb_pole = np.zeros(3, float)
 
             # blue : distance in q space between M tq OM = uq et le plan 001 101 passant par O
-            rgb_pole[2] = abs(inner(uq, uqn_b)) / abs(inner(uqref_cr[:, 2], uqn_b))
-            rgb_pole[1] = abs(inner(uq, uqn_g)) / abs(inner(uqref_cr[:, 1], uqn_g))
-            rgb_pole[0] = abs(inner(uq, uqn_r)) / abs(inner(uqref_cr[:, 0], uqn_r))
+            rgb_pole[2] = abs(np.inner(uq, uqn_b)) / abs(np.inner(uqref_cr[:, 2], uqn_b))
+            rgb_pole[1] = abs(np.inner(uq, uqn_g)) / abs(np.inner(uqref_cr[:, 1], uqn_g))
+            rgb_pole[0] = abs(np.inner(uq, uqn_r)) / abs(np.inner(uqref_cr[:, 0], uqn_r))
 
             # normalize
             # convention OR LT
@@ -2338,12 +2179,11 @@ DEFAULT_PLOTMAPS_PARAMETERS_DICT = {  # used by plot_maps2
 
 def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM May 2017
     """
-    used by plot_maps2 
+    used by plot_maps2
 
     grain_index  = "indexing rank" of grain selected for mapping (for multigrain Laue patterns)
-    first grain = grain with most intense spot  
+    first grain = grain with most intense spot
     first grain has gnumloc = 0  (LT summary files)
-    
     maptype =  "fit"
             or "euler3" or "rgb_x_sample"
             or "strain6_crystal" or "strain6_sample"
@@ -2461,10 +2301,10 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     # ngraphlabels = subplot number -1 for putting xlabel and ylabel on axes
     dict_nplot = {
         "euler3": [3, 3, 1, 1, 1, 0, ["rgb_euler"]],
-        "rgb_x_sample": [ 9, 9, 3, 1, 3, 0,
-            [ "x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample", ],
+        "rgb_x_sample": [9, 9, 3, 1, 3, 0,
+            ["x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample"],
         ],
-        "orientation": [ 9, 9, 3, 1, 3, 0, [
+        "orientation": [9, 9, 3, 1, 3, 0, [
                 "x_sample",
                 "y_sample",
                 "z_sample",
@@ -2482,7 +2322,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         "stress6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
         "stress6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
         "w_mrad": [3, 9, 3, 1, 3, 0, ["WX", "WY", "WZ"]],
-        "res_shear_stress": [ 12, 36, 12, 3, 4, 8, [
+        "res_shear_stress": [12, 36, 12, 3, 4, 8, [
                 "rss0",
                 "rss1",
                 "rss2",
@@ -2699,14 +2539,14 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         nb_lines, nb_col = z_values.shape  # tocheck
         dict_param = {"datasigntype": datasigntype}
         Tabindices1D = np.ravel(map_imageindex_array)
-        plotobjet = ImshowFrame( App_parent, -1, "%s %s" % (maptype, columnname),
+        plotobjet = ImshowFrame(App_parent, -1, "%s %s" % (maptype, columnname),
                                 z_values, cmap=GT.ORRD, interpolation="nearest",
                                 origin="upper", Imageindices=Tabindices1D,
                                 nb_row=nb_col, nb_lines=nb_lines, stepindex=1,
                                 boxsize_row=1, boxsize_line=1,
                                 imagename=columnname, mosaic=0,
                                 datatype=None,
-                                dict_param=dict_param, )
+                                dict_param=dict_param)
         plotobjet.Show(True)
 
         if App_parent is not None:
@@ -2719,14 +2559,14 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
 def plot_map_new(dict_params, App_parent=None):  # 29May13
     """
         # gnumloc  = "indexing rank" of grain selected for mapping (for multigrain Laue patterns)
-        first grain = grain with most intense spot  
+        first grain = grain with most intense spot
         first grain has gnumloc = 0  (LT summary files)
         first grain has gnumloc = 1 (XMAS summary files (rebuilt))
 
         filetype = "LT" or "XMAS"
-        maptype =  "fit" 
-                or "euler3" or "rgb_x_sample"     
-                or "strain6_crystal" or "strain6_sample" 
+        maptype =  "fit"
+                or "euler3" or "rgb_x_sample"
+                or "strain6_crystal" or "strain6_sample"
                 or "stress6_crystal" or "stress6_sample"
                 or "res_shear_stress"
                 or 'max_rss'
@@ -2885,18 +2725,16 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
                     print("converting misorientation angle into mrad")
                     misor_list = misor_list * math.pi / 180.0 * 1000.0
                 indm = where(misor_list < d["max_misorientation"])
-                print(
-                    "filtering out img with large misorientation > ",
-                    d["max_misorientation"],
-                )
+                print("filtering out img with large misorientation > ",
+                    d["max_misorientation"])
                 print("nimg with low misorientation : ", shape(indm)[1])
 
         gnumlist = np.array(data_list[:, indgnumloc], dtype=int)
         pixdevlist = data_list[:, indpixdev]
         npeakslist = np.array(data_list[:, indnpeaks], dtype=int)
     else:
-        gnumlist = zeros(numig, int)
-        pixdevlist = zeros(numig, int)
+        gnumlist = np.zeros(numig, int)
+        pixdevlist = np.zeros(numig, int)
         npeakslist = ones(numig, int) * 25
 
     # key = maptype , nb_values, nplot
@@ -2914,28 +2752,18 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         "stress6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
         "stress6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
         "w_mrad": [3, 9, 3, 1, 3, 0, ["WX", "WY", "WZ"]],
-        "res_shear_stress": [
-            12,
-            36,
-            12,
-            3,
-            4,
-            8,
-            [
-                "rss0",
-                "rss1",
-                "rss2",
-                "rss3",
-                "rss4",
-                "rss5",
-                "rss6",
-                "rss7",
-                "rss8",
-                "rss9",
-                "rss10",
-                "rss11",
-            ],
-        ],
+        "res_shear_stress": [12, 36, 12, 3, 4, 8, ["rss0",
+                                                    "rss1",
+                                                    "rss2",
+                                                    "rss3",
+                                                    "rss4",
+                                                    "rss5",
+                                                    "rss6",
+                                                    "rss7",
+                                                    "rss8",
+                                                    "rss9",
+                                                    "rss10",
+                                                    "rss11"]],
         "max_rss": [1, 3, 1, 1, 1, 0, ["max_rss"]],
         "von_mises": [1, 3, 1, 1, 1, 0, ["von Mises stress"]],
         "misorientation_angle": [1, 3, 1, 1, 1, 0, ["misorientation angle"]],
@@ -2943,8 +2771,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         "maxpixdev": [1, 3, 1, 1, 1, 0, ["maxpixdev"]],
         "stdpixdev": [1, 3, 1, 1, 1, 0, ["stdpixdev"]],
         "fit": [2, 6, 2, 1, 2, 0, ["npeaks", "pixdev"]],
-        "dalf": [1, 3, 1, 1, 1, 0, ["delta_alf exp-theor"]],
-    }
+        "dalf": [1, 3, 1, 1, 1, 0, ["delta_alf exp-theor"]]}
 
     nb_values = dict_nplot[d["maptype"]][0]
     if d["maptype"] != "fit":
@@ -2990,17 +2817,15 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
     if abs(d["map_rotation"]) > 0.1:
         print("rotating map clockwise by : ", d["map_rotation"], "degrees")
-        filexyz_new, xylim_new = rotate_map(
-            filexyz, d["map_rotation"], xylim=d["xylim"]
-        )
+        filexyz_new, xylim_new = rotate_map(filexyz, d["map_rotation"], xylim=d["xylim"])
 
     map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(filexyz_new)
 
     nlines = shape(map_imageindex_array)[0]
     ncol = shape(map_imageindex_array)[1]
     nplot = dict_nplot[d["maptype"]][1]
-    plotdat = zeros((nlines, ncol, nplot), float)
-    datarray_info = zeros((nlines, ncol, nplot), float)
+    plotdat = np.zeros((nlines, ncol, nplot), float)
+    datarray_info = np.zeros((nlines, ncol, nplot), float)
     ARRAY_INFO_FILLED = False
 
     print("grain : ", d["probed_grainindex"])
@@ -3010,24 +2835,17 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         print("filtering :")
         print("maxpixdev ", d["maxpixdev_forfilter"])
         print("minnpeaks ", d["minnpeaks_forfilter"])
-        indf = where(
-            (gnumlist == d["probed_grainindex"])
+        indf = np.where((gnumlist == d["probed_grainindex"])
             & (pixdevlist < d["maxpixdev_forfilter"])
-            & (npeakslist > d["minnpeaks_forfilter"])
-        )
+            & (npeakslist > d["minnpeaks_forfilter"]))
     elif d["filter_on_intensity"]:
         print("filter_on_intensity")
-        indf = where(
-            (gnumlist == d["probed_grainindex"])
+        indf = np.where((gnumlist == d["probed_grainindex"])
             & (npeakslist > 0)
-            & (intensitylist > d["min_intensity_forfilter"])
-        )
+            & (intensitylist > d["min_intensity_forfilter"]))
     else:
         print("default filtering")
         indf = where((gnumlist == d["probed_grainindex"]) & (npeakslist > 0))
-
-    # print 'indf', indf
-    # print 'indf[0]', indf[0]
 
     # filtered data
     data_list2 = data_list[indf[0], :]
@@ -3037,7 +2855,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         ang0 = 360.0
         ang1 = arctan(sqrt(2.0)) * 180.0 / np.pi
         ang2 = 180.0
-        ang012 = array([ang0, ang1, ang2])
+        ang012 = np.array([ang0, ang1, ang2])
         print(euler3[0, :])
         euler3norm = euler3 / ang012
         print(euler3norm[0, :])
@@ -3049,7 +2867,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         rgbxyz = data_list2[:, indcolplot]
 
     elif d["maptype"] == "fit":
-        default_color_for_missing = array([1.0, 0.8, 0.8])
+        default_color_for_missing = np.array([1.0, 0.8, 0.8])
         if d["color_for_missing"] == None:
             color0 = default_color_for_missing
         else:
@@ -3112,7 +2930,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         print("maptype", maptype)
         #            if maptype in ['max_rss','von_mises','misorientation_angle', "intensity"]:
         if nb_values == 1:
-            default_color_for_missing = array(
+            default_color_for_missing = np.array(
                 [1.0, 0.8, 0.8]
             )  # pink = color for missing data
             if d["color_for_missing"] == None:
@@ -3135,7 +2953,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
                 else:
                     print("wx wy wz")
             #                color_filtered = np.array([0.5,0.5,0.5])
-            color_filtered = zeros(3, float)
+            color_filtered = np.zeros(3, float)
             color_grid = "w"
             if d["low_npeaks_as_missing"]:
                 color_filtered = np.array([0.0, 0.0, 0.0])
@@ -3201,7 +3019,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         xylist = np.array(data_list2[:, indxech : indxech + 2], dtype=float)
     else:
         npeakslist = ones(numig2, int) * 25
-        xylist = zeros((numig2, 2), float)
+        xylist = np.zeros((numig2, 2), float)
 
     dxystep_abs = abs(dxystep)
 
@@ -3247,10 +3065,10 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
             if d["low_npeaks_as_red_in_npeaks_map"] != None:
                 if npeakslist2[i] < d["low_npeaks_as_red_in_npeaks_map"]:
-                    plotdat[iref, jref, 0:3] = array([1.0, 0.0, 0.0])
+                    plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
             else:
                 if npeakslist2[i] < npeaksmin_forplot:
-                    plotdat[iref, jref, 0:3] = array([1.0, 0.0, 0.0])
+                    plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
 
             plotdat[iref, jref, 3:6] = (pixdevmax_forplot - pixdevlist2[i]) / (
                 pixdevmax_forplot - pixdevmin_forplot
@@ -3258,15 +3076,15 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
             if d["high_pixdev_as_blue_and_red_in_pixdev_map"] != None:
                 if pixdevlist2[i] > 0.25:
-                    plotdat[iref, jref, 3:6] = array([0.0, 0.0, 1.0])
+                    plotdat[iref, jref, 3:6] = np.array([0.0, 0.0, 1.0])
                 if pixdevlist2[i] > 0.5:
-                    plotdat[iref, jref, 3:6] = array([1.0, 0.0, 0.0])
+                    plotdat[iref, jref, 3:6] = np.array([1.0, 0.0, 0.0])
             else:
                 if pixdevlist2[i] > pixdevmax_forplot:
-                    plotdat[iref, jref, 3:6] = array([1.0, 0.0, 0.0])
+                    plotdat[iref, jref, 3:6] = np.array([1.0, 0.0, 0.0])
                 if d["low_pixdev_as_green_in_pixdev_map"] != None:
                     if (pixdevlist2[i] < 0.25) & (npeakslist2[i] > 20):
-                        plotdat[iref, jref, 3:6] = array([0.0, 1.0, 0.0])
+                        plotdat[iref, jref, 3:6] = np.array([0.0, 1.0, 0.0])
 
             valnbpeaks = npeakslist2[i]
             valpixdev = pixdevlist2[i]
@@ -3331,17 +3149,17 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
         # reperage de l'ordre des images dans la carto
     # #                if imglist[i]==min(imglist) :
-    # #                    plotdat[iref, jref, :] = array([1., 0., 0.])
+    # #                    plotdat[iref, jref, :] = np.array([1., 0., 0.])
     # #                if imglist[i]==min(imglist)+ncol-1 :
-    # #                    plotdat[iref, jref, :] = array([0., 1., 0.])
+    # #                    plotdat[iref, jref, :] = np.array([0., 1., 0.])
     # #                if imglist[i]==max(imglist) :
-    # #                    plotdat[iref, jref, :] = array([0., 0., 1.])
-    # plotdat[iref, jref, :] = array([1.0, 1.0, 1.0])*float(imglist[i])/max(imglist)
+    # #                    plotdat[iref, jref, :] = np.array([0., 0., 1.])
+    # plotdat[iref, jref, :] = np.array([1.0, 1.0, 1.0])*float(imglist[i])/max(imglist)
     # print plotdat[iref, jref, :]
 
     # extent corrected 06Feb13
-    xrange1 = array([0.0, ncol * dxystep[0]])
-    yrange1 = array([0.0, nlines * dxystep[1]])
+    xrange1 = np.array([0.0, ncol * dxystep[0]])
+    yrange1 = np.array([0.0, nlines * dxystep[1]])
     xmin, xmax = min(xrange1), max(xrange1)
     ymin, ymax = min(yrange1), max(yrange1)
     extent = xmin, xmax, ymin, ymax
@@ -3482,12 +3300,6 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
             colorbar_label=colorbar_label,
         )
 
-        #    plo = ImshowFrameNew(App_parent, -1, strname, plotdat[:, :, 3 * j:3 * (j + 1)],
-        #                                  dataarray_info=AddedArrayInfo,
-        #                                  datatype=datatype,
-        #                                  extent=extent, xylabels=("dxech (microns)", "dyech (microns)"),
-        #                                  Imageindices=map_imageindex_array)
-
         if App_parent is not None:
             if App_parent.list_of_windows not in ([],):
                 App_parent.list_of_windows.append(plo)
@@ -3618,10 +3430,10 @@ def class_data_into_grainnum(
     img_list = np.array(sorted_list[:, 1], dtype=int)
     gnumloc_list = np.array(sorted_list[:, 2], dtype=int)
 
-    has_grain_num = zeros(nmax, int)
-    is_ref = zeros(nmax, int)
-    grain_size = zeros(nmax, int)
-    global_gnum = zeros(nmax, int)
+    has_grain_num = np.zeros(nmax, int)
+    is_ref = np.zeros(nmax, int)
+    grain_size = np.zeros(nmax, int)
+    global_gnum = np.zeros(nmax, int)
     gnum = 0
     for i in range(nmax):
         if has_grain_num[i] == 0:
@@ -3711,7 +3523,7 @@ def class_data_into_grainnum(
 
     # renumerotation des grains pour classement par taille decroissante May13
     gnumlist = list(range(gnumtot))
-    gsizelist = zeros(gnumtot, int)
+    gsizelist = np.zeros(gnumtot, int)
 
     for key, value in dict_grains.items():
         gsizelist[key] = value[0]
@@ -3897,7 +3709,7 @@ def read_dict_grains(
         dict_values_names = dict_values_names + toto
 
     ndict = len(dict_values_names)
-    linepos_list = zeros(ndict + 1, dtype=int)
+    linepos_list = np.zeros(ndict + 1, dtype=int)
 
     f = open(filegrains, "r")
     i = 0
@@ -4034,7 +3846,7 @@ def neighbors_list(img, map_imgnum, verbose=0):  # 29May13
         # print listpix
 
         listpix2 = np.array(listpix, dtype=int)
-        list_neighbors = zeros(5, int)
+        list_neighbors = np.zeros(5, int)
         for i in range(shape(listpix2)[0]):
             list_neighbors[i] = map_imgnum[listpix2[i, 0], listpix2[i, 1]]
         if verbose:
@@ -4093,9 +3905,9 @@ def find_grain_edges(filegrains, filexyz):  # 29May13
 
         list_img = dict_grains[gnum][3]
         nimg = len(list_img)
-        list_edge = zeros(nimg, dtype=int)
-        list_edge_restricted = zeros(nimg, dtype=int)
-        bitwise = array([1, 2, 4, 8])
+        list_edge = np.zeros(nimg, dtype=int)
+        list_edge_restricted = np.zeros(nimg, dtype=int)
+        bitwise = np.array([1, 2, 4, 8])
 
         print("gnum = ", gnum)
         print(dict_values_names[3])
@@ -4103,8 +3915,8 @@ def find_grain_edges(filegrains, filexyz):  # 29May13
         print(dict_values_names[4])
         print(dict_grains[gnum][4])
 
-        list_line = zeros(nimg, dtype=int)
-        list_col = zeros(nimg, dtype=int)
+        list_line = np.zeros(nimg, dtype=int)
+        list_col = np.zeros(nimg, dtype=int)
 
         gnumloc_list = np.array(dict_grains[gnum][4], dtype=float)
 
@@ -4118,8 +3930,8 @@ def find_grain_edges(filegrains, filexyz):  # 29May13
         # print "gnumloc_mean_int = ", gnumloc_mean_int
 
         for i in range(nimg):
-            edge1 = zeros(4, dtype=int)
-            edge2 = zeros(4, dtype=int)
+            edge1 = np.zeros(4, dtype=int)
+            edge2 = np.zeros(4, dtype=int)
             img = list_img[i]
             gnumloc = dict_grains[gnum][4][i]
 
@@ -4392,7 +4204,7 @@ def add_intragrain_rotations_to_dict_grains(filesum, filegrains):  # 29May13
     for key, value in dict_grains.items():
         nimg = value[indgrainsize_d]
         print("gnum ", key, "gsize", nimg)  # , "\n", value[3],"\n", value[4]
-        matstarlab_ig = zeros((nimg, 9), dtype=float)
+        matstarlab_ig = np.zeros((nimg, 9), dtype=float)
         img_list_d = np.array(value[indimg_d], dtype=int)
         gnumloc_list_d = np.array(value[indgnumloc_d], dtype=int)
 
@@ -4411,9 +4223,9 @@ def add_intragrain_rotations_to_dict_grains(filesum, filegrains):  # 29May13
 
         dict_grains2[key].append(matstarlab_mean.round(decimals=6))
 
-        vec_crystal = zeros((nimg, 3), float)
-        vec_lab = zeros((nimg, 3), float)
-        angle1 = zeros(nimg, float)
+        vec_crystal = np.zeros((nimg, 3), float)
+        vec_lab = np.zeros((nimg, 3), float)
+        angle1 = np.zeros(nimg, float)
         matmean3x3 = GT.matline_to_mat3x3(matstarlab_mean)
         for k in range(nimg):
             mat2 = GT.matline_to_mat3x3(matstarlab_ig[k, :])
@@ -4670,10 +4482,10 @@ def twomat_to_rotation(mat1, mat2, verbose=1):
 
 if 0:  # creation du fichier resume des positions des 4 pics pour toutes les images
 
-    hkl4C = array(
+    hkl4C = np.array(
         [[4.0, 0.0, -2.0], [2.0, 0.0, 0.0], [5.0, -1.0, -1.0], [4.0, -2.0, -4.0]]
     )
-    xy4C = array(
+    xy4C = np.array(
         [
             [878.241, 1039.591],
             [197.199, 1196.644],
@@ -4694,7 +4506,7 @@ if 0:  # creation du fichier resume des positions des 4 pics pour toutes les ima
 
     numim = imgend - imgstart + 1
 
-    xy4all = zeros((numim, 8), float)
+    xy4all = np.zeros((numim, 8), float)
 
     for i in range(numim):
         filedat1 = filepathdat + fileprefix + rmccd.stringint(imgnum[i], 4) + filesuffix
@@ -4737,16 +4549,16 @@ if 0:  # matrices a partir des positions de 2 pics de HKL connus
     # npic1, npic2 = 0, 2
     npic1, npic2 = 1, 3
 
-    # hkl = array([hkl4A[npic1,:],hkl4A[npic2,:]])
-    # hkl = array([hkl4B[npic1,:],hkl4B[npic2,:]])
-    hkl = array([hkl4C[npic1, :], hkl4C[npic2, :]])
-    matstarlab_all = zeros((nimg, 9), float)
+    # hkl = np.array([hkl4A[npic1,:],hkl4A[npic2,:]])
+    # hkl = np.array([hkl4B[npic1,:],hkl4B[npic2,:]])
+    hkl = np.array([hkl4C[npic1, :], hkl4C[npic2, :]])
+    matstarlab_all = np.zeros((nimg, 9), float)
 
     xy2 = column_stack(
         (xy4all[:, npic1 * 2 : npic1 * 2 + 2], xy4all[:, npic2 * 2 : npic2 * 2 + 2])
     )
 
-    isbadimg = zeros(nimg, int)
+    isbadimg = np.zeros(nimg, int)
     for i in range(nimg):
         xydat = xy2[i, :].reshape(2, 2)
         if xydat.all() != 0.0:
@@ -4781,9 +4593,9 @@ if 0:  # desorientation par rapport a la matrice moyenne
 
     # nimg = 10
 
-    vec_crystal = zeros((nimg, 3), float)
-    vec_lab = zeros((nimg, 3), float)
-    angle1 = zeros(nimg, float)
+    vec_crystal = np.zeros((nimg, 3), float)
+    vec_lab = np.zeros((nimg, 3), float)
+    angle1 = np.zeros(nimg, float)
     matmean = matall.mean(axis=0)
 
     print("matmean = ", matmean)
@@ -4809,7 +4621,7 @@ def uflab_to_2thetachi(uflab):
 
     # 23May11 : go to JSM convention for chi
 
-    uflabyz = array([0.0, uflab[1], uflab[2]])
+    uflabyz = np.array([0.0, uflab[1], uflab[2]])
     # chi = angle entre uflab et la projection de uflab sur le plan ylab, zlab
     # chi2 = (180.0/math.pi)*arctan(uflab[0]/norme(uflabyz))
 
@@ -4854,7 +4666,7 @@ def uflab_to_xycam_gen(uflab, calib, uflab_cen, pixelsize=0.08056640625):
 
     PI = math.pi
 
-    uilab = array([0.0, 1.0, 0.0])
+    uilab = np.array([0.0, 1.0, 0.0])
 
     xbetrad = xbet * PI / 180.0
     xgamrad = xgam * PI / 180.0
@@ -4864,7 +4676,7 @@ def uflab_to_xycam_gen(uflab, calib, uflab_cen, pixelsize=0.08056640625):
     cosgam = cos(-xgamrad)
     singam = sin(-xgamrad)
 
-    uflab_cen2 = zeros(3, float)
+    uflab_cen2 = np.zeros(3, float)
     tthrad0 = acos(uflab_cen[1])
     tthrad = tthrad0 - xbetrad
     uflab_cen2[1] = cos(tthrad)
@@ -4882,7 +4694,7 @@ def uflab_to_xycam_gen(uflab, calib, uflab_cen, pixelsize=0.08056640625):
 
     normeIMlab = detect / inner(uflab, uflab_cen2)
 
-    # uflab1 = array([-uflab[0],uflab[1],uflab[2]])
+    # uflab1 = np.array([-uflab[0],uflab[1],uflab[2]])
 
     # uflab1 = uflab*1.0
 
@@ -4918,7 +4730,7 @@ def uflab_to_xycam_gen(uflab, calib, uflab_cen, pixelsize=0.08056640625):
     xcam = xcen + xcam1 / pixelsize
     ycam = ycen + ycam1 / pixelsize
 
-    # uflabyz = array([0.0, uflab1[1],uflab1[2]])
+    # uflabyz = np.array([0.0, uflab1[1],uflab1[2]])
     # chi = angle entre uflab et la projection de uflab sur le plan ylab, zlab
 
     # chi = (180.0/PI)*arctan(uflab1[0]/norme(uflabyz))
@@ -4928,7 +4740,7 @@ def uflab_to_xycam_gen(uflab, calib, uflab_cen, pixelsize=0.08056640625):
     # print "2theta, theta, chi en deg", twicetheta , chi, twicetheta/2.0
     # print "xcam, ycam = ", xcam, ycam
 
-    xycam = array([xcam, ycam])
+    xycam = np.array([xcam, ycam])
 
     return xycam
 
@@ -4964,17 +4776,17 @@ def spotlist_gen(
     # Rlab z vers le haut, x vers le back, y vers l'aval
 
     if diagr == "side":
-        uflab_cen = array([-1.0, 0.0, 0.0])
+        uflab_cen = np.array([-1.0, 0.0, 0.0])
     if diagr == "top":
-        uflab_cen = array([0.0, 0.0, 1.0])
+        uflab_cen = np.array([0.0, 0.0, 1.0])
     if diagr == "halfback":  # 2theta = 118
         # 0 -sin28 cos28
         tth = 28 * math.pi / 180.0
-        uflab_cen = array([0.0, -sin(tth), cos(tth)])
+        uflab_cen = np.array([0.0, -sin(tth), cos(tth)])
 
     uflab_cen = uflab_cen / norme(uflab_cen)
 
-    uilab = array([0.0, 1.0, 0.0])
+    uilab =  np.array([0.0, 1.0, 0.0])
 
     uqlab_cen = uflab_cen - uilab
     uqlab_cen = uqlab_cen / norme(uqlab_cen)
@@ -4990,13 +4802,13 @@ def spotlist_gen(
 
     # print "cosangle = ", cosangle
 
-    hkl = zeros((nmaxspots, 3), int)
-    uflab = zeros((nmaxspots, 3), float)
-    xy = zeros((nmaxspots, 2), float)
-    Etheor = zeros(nmaxspots, float)
-    ththeor = zeros(nmaxspots, float)
-    tth = zeros(nmaxspots, float)
-    chi = zeros(nmaxspots, float)
+    hkl = np.zeros((nmaxspots, 3), int)
+    uflab = np.zeros((nmaxspots, 3), float)
+    xy = np.zeros((nmaxspots, 2), float)
+    Etheor = np.zeros(nmaxspots, float)
+    ththeor = np.zeros(nmaxspots, float)
+    tth = np.zeros(nmaxspots, float)
+    chi = np.zeros(nmaxspots, float)
 
     dlatapprox = 1.0 / norme(mat[0:3])
     print("dlatapprox = ", dlatapprox)
@@ -5013,57 +4825,45 @@ def spotlist_gen(
             if (not (K - H) % 2) | (cryst_struct == "BCC"):
                 for L in range(-Hmax, Hmax):
                     if (not (L - H) % 2) | (cryst_struct == "BCC"):
-                        if (
-                            (cryst_struct == "FCC")
-                            | (
-                                (cryst_struct == "diamond")
-                                & ((H % 2) | ((not H % 2) & (not (H + K + L) % 4)))
-                            )
-                            | ((cryst_struct == "BCC") & (not (H + K + L) % 2))
-                        ):
+                        if ((cryst_struct == "FCC")
+                            | ((cryst_struct == "diamond")
+                                & ((H % 2) | ((not H % 2) & (not (H + K + L) % 4))))
+                            | ((cryst_struct == "BCC") & (not (H + K + L) % 2))):
                             # print "hkl =", H,K,L
-                            qlab = (
-                                float(H) * mat[0:3]
-                                + float(K) * mat[3:6]
-                                + float(L) * mat[6:]
-                            )
+                            qlab = (float(H) * mat[0: 3]
+                                + float(K) * mat[3: 6]
+                                + float(L) * mat[6:])
                             if norme(qlab) > 1.0e-5:
                                 uqlab = qlab / norme(qlab)
                                 cosangle2 = inner(uqlab, uqlab_cen)
                                 sintheta = -inner(uqlab, uilab)
                                 if (sintheta > 0.0) & (cosangle2 > cosangle):
                                     # print "reachable reflection"
-                                    Etheor[nspot] = (
-                                        DictLT.E_eV_fois_lambda_nm
+                                    Etheor[nspot] = (DictLT.E_eV_fois_lambda_nm
                                         * norme(qlab)
-                                        / (2 * sintheta)
-                                    )
+                                        / (2 * sintheta))
                                     ththeor[nspot] = (180.0 / math.pi) * arcsin(
-                                        sintheta
-                                    )
+                                        sintheta)
                                     # print "Etheor = ", Etheor[nspot]
                                     if (Etheor[nspot] > (Emin * 1000.0)) & (
-                                        Etheor[nspot] < (Emax * 1000.0)
-                                    ):
+                                        Etheor[nspot] < (Emax * 1000.0)):
                                         uflabtheor = uilab + 2 * sintheta * uqlab
                                         chi[nspot], tth[nspot] = uflab_to_2thetachi(
-                                            uflabtheor
-                                        )
+                                            uflabtheor)
                                         if (diagr == "side") & (chi[nspot] > 0.0):
                                             chi[nspot] = chi[nspot] - 180.0
                                         test = inner(uflabtheor, uflab_cen)
                                         # print "hkl =", H,K,L
                                         # print "uflabtheor.uflab_cen = ",test
                                         if test > cosangle:
-                                            hkl[nspot, :] = array([H, K, L])
+                                            hkl[nspot, :] =  np.array([H, K, L])
                                             uflab[nspot, :] = uflabtheor
                                             # top diagram use xbet xgam close to zero
                                             xy[nspot, :] = uflab_to_xycam_gen(
                                                 uflab[nspot, :],
                                                 calib,
                                                 uflab_cen,
-                                                pixelsize=pixelsize,
-                                            )
+                                                pixelsize=pixelsize)
                                             nspot = nspot + 1
 
     if remove_harmonics == "yes":
@@ -5119,4 +4919,3 @@ def spotlist_gen(
     print(shape(spotlist2))
 
     return spotlist2
-

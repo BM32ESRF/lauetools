@@ -7,7 +7,7 @@ initial @author: odile32
 revised and refactored by JS Micha in September 2019 for python3 compatibility
 
 .. todo::
-    still a lot of refactoring to do
+    still a lot of refactorings to do
 """
 
 import os
@@ -38,7 +38,7 @@ if sys.version_info.major == 3:
     from .. import generaltools as GT
     from .. import tifffile as TIFF
     from . import spec_reader as SR
-    from . import IOimagefile as IOimage
+    from .. import IOimagefile as IOimage
 
     # WARNING  looped imports
     from . import multigrain as MG
@@ -1841,9 +1841,9 @@ def build_Ipix_vs_img_table(indimg,
     indimg:  list of image indices
     imfile_path: path to image file
     imfile_prefix: prefix of image filename (filename without index and file extension)
-    filespotlist_sample: peaks list file 
+    filespotlist_sample: peaks list file
     return:
-    
+
     DipsData, xy_LT, outfilename, filenamepckl
     """
 
@@ -2097,7 +2097,7 @@ def serial_Ipix_vs_img(imfile_path,
                                         filedat=None,
                                         xypic=None,
                                         xylist=xylist,
-                                        CCDlabel=CCDlabel)
+                                        ccdlabel=CCDlabel)
 
         file_Ipix_vs_img_list.append(filename)
 
@@ -5198,8 +5198,7 @@ def convert_JSM_fitfile_into_OR_fitfile(filefit, min_matLT=True, verbose=0,
                     j = j + 1
             if calibfound & (i == linecalib):
                 calib = np.array(
-                    line.rstrip("\n").replace("[", "").replace("]", "").split(",")[:5], dtype=float
-                )
+                    line.rstrip("\n").replace("[", "").replace("]", "").split(",")[:5], dtype=float)
                 if verbose:
                     print("calib = ", calib)
             if pixdevfound & (i == linepixdev):

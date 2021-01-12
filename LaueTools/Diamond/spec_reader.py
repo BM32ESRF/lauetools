@@ -4,6 +4,7 @@
 # 2016-11-23
 # Sam Tardif (samuel.tardif@gmail.com)
 # Python3 compatibility by Nils Blanc
+# spec_reader.py
 
 import numpy as np
 
@@ -249,106 +250,107 @@ class Scan(SpecFile):
 
             # read the scan header
             #      print "header = "
-        while l[0] == '#':
-            try:
-                self.__param__()[l[1]](l)
-            except KeyError:
-                if verbose:
-                    print(("unprocessed line:\n" + l))
-            l = f.readline()
-          #        print l,
-
-          # finally read the data (comments at the end are also read and added to the comment attribute)
-        data = [list(map(float, l.split()))]
-        l = f.readline()
-        while l != '\n' and l != '':
-            if l[0] == '#' and l[1] != 'C':
-                break
-            if l[0] == '#':
+            while l[0] == '#':
                 try:
                     self.__param__()[l[1]](l)
                 except KeyError:
                     if verbose:
                         print(("unprocessed line:\n" + l))
-            else:
-                data.append(list(map(float, l.split())))
+
+                l = f.readline()
+            #        print l,
+
+            # finally read the data (comments at the end are also read and added to the comment attribute)
+            data = [list(map(float, l.split()))]
             l = f.readline()
-
-        # now get the data for each scan in the list
-        if len(scan_numbers) > 0:
-            for scan_number in scan_numbers[1:]:
-                # now try to find the scan
-                f.seek(spec_file.scan_dict[scan_number])
+            while l != '\n' and l != '':
+                if l[0] == '#' and l[1] != 'C':
+                    break
+                if l[0] == '#':
+                    try:
+                        self.__param__()[l[1]](l)
+                    except KeyError:
+                        if verbose:
+                            print(("unprocessed line:\n" + l))
+                else:
+                    data.append(list(map(float, l.split())))
                 l = f.readline()
-            if verbose:
-                print(("reading scan " + l))
 
-            # check that we actually concatenate similar scans !
-            similar_scan = (l.split()[2] == self.type)
-            if len(self.args) > 1:
-                try:
-                    similar_scan = similar_scan * (l.split()[3] == self.args[0])
-                except ValueError:
-                    similar_scan = False
-            if len(self.args) > 5:
-                try:
-                    similar_scan = similar_scan * (l.split()[6] == self.args[3])
-                except ValueError:
-                    similar_scan = False
-
-            if similar_scan:
-                # read pass the scan header
-                while l[0] == '#':
+            # now get the data for each scan in the list
+            if len(scan_numbers) > 0:
+                for scan_number in scan_numbers[1:]:
+                    # now try to find the scan
+                    f.seek(spec_file.scan_dict[scan_number])
                     l = f.readline()
+                    if verbose:
+                        print(("reading scan " + l))
 
-                # finally read the data (comments at the end are also read and added to the comment attribute)
-                data.append(list(map(float, l.split())))
-                l = f.readline()
-                while l != '\n' and l != '':
-                    if l[0] == '#' and l[1] != 'C':
-                        break
-                    if l[0] == '#':
+                    # check that we actually concatenate similar scans !
+                    similar_scan = (l.split()[2] == self.type)
+                    if len(self.args) > 1:
                         try:
-                            self.__param__()[l[1]](l)
-                        except KeyError:
-                            if verbose:
-                                print(("unprocessed line:\n" + l))
-                    else:
+                            similar_scan = similar_scan * (l.split()[3] == self.args[0])
+                        except ValueError:
+                            similar_scan = False
+                    if len(self.args) > 5:
+                        try:
+                            similar_scan = similar_scan * (l.split()[6] == self.args[3])
+                        except ValueError:
+                            similar_scan = False
+
+                    if similar_scan:
+                        # read pass the scan header
+                        while l[0] == '#':
+                            l = f.readline()
+
+                        # finally read the data (comments at the end are also read and added to the comment attribute)
                         data.append(list(map(float, l.split())))
-                    l = f.readline()
-            else:
-                print("not all scans are the same type")
+                        l = f.readline()
+                        while l != '\n' and l != '':
+                            if l[0] == '#' and l[1] != 'C':
+                                break
+                            if l[0] == '#':
+                                try:
+                                    self.__param__()[l[1]](l)
+                                except KeyError:
+                                    if verbose:
+                                        print(("unprocessed line:\n" + l))
+                            else:
+                                data.append(list(map(float, l.split())))
+                            l = f.readline()
+                    else:
+                        print("not all scans are the same type")
 
-          # set the data as attributes with the counter name
-        for i in range(len(self.counters)):
-            #print(i,range(len(self.counters)),self, self.counters[i], np.asarray(data).shape, np.asarray(data), data)
-            setattr(self, self.counters[i], np.asarray(data)[:, i])
-
-
-        # make the motors/positions dictionary
-        # usual case
-        if len(self.__motorslabels__.split()) == len(self.__positions__.split()):
-            self.motors = dict(list(zip(self.__motorslabels__.split(), list(map(float, self.__positions__.split())))))
-        # when some motors names have spaces and there is a second line (small o) to describe them
-        elif len(self.__motorslabelsnospace__.split()) == len(self.__positions__.split()):
-            self.motors = dict(list(zip(self.__motorslabelsnospace__.split(),
-                                      list(map(float, self.__positions__.split())))))
-
-        #TEST : attribute-like dictionary
-        # removed due to conflicts when a motor was also a counter
-        #    for motor in self.motors:
-        #                setattr(self, motor, self.motors[motor])
+            # set the data as attributes with the counter name
+            for i in range(len(self.counters)):
+                #print(i,range(len(self.counters)),self, self.counters[i], np.asarray(data).shape, np.asarray(data), data)
+                setattr(self, self.counters[i], np.asarray(data)[:, i])
 
 
-        # small sanity check, sometimes N is diffrent from the actual number of columns
-        # which is known to trouble GUIs like Newplot and PyMCA
-        if self.N != len(self.counters):
-            print(("Watch out! There are %i counters in the scan but SPEC knows only N = %i !!" % (len(self.counters), self.N)))
+            # make the motors/positions dictionary
+            # usual case
+            if len(self.__motorslabels__.split()) == len(self.__positions__.split()):
+                self.motors = dict(list(zip(self.__motorslabels__.split(), list(map(float, self.__positions__.split())))))
+            # when some motors names have spaces and there is a second line (small o) to describe them
+            elif len(self.__motorslabelsnospace__.split()) == len(self.__positions__.split()):
+                self.motors = dict(list(zip(self.__motorslabelsnospace__.split(),
+                                        list(map(float, self.__positions__.split())))))
 
-        if hasattr(self, 'Epoch'):
-            self.tstart = self.Epoch[0]
-            self.tend = self.Epoch[-1]
-            self.duration = self.tend - self.tstart
-            self.time_per_point = self.duration/len(self.Epoch)
+            #TEST : attribute-like dictionary
+            # removed due to conflicts when a motor was also a counter
+            #    for motor in self.motors:
+            #                setattr(self, motor, self.motors[motor])
+
+
+            # small sanity check, sometimes N is diffrent from the actual number of columns
+            # which is known to trouble GUIs like Newplot and PyMCA
+            if self.N != len(self.counters):
+                print(("Watch out! There are %i counters in the scan but SPEC knows only N = %i !!" % (len(self.counters), self.N)))
+
+            if hasattr(self, 'Epoch'):
+                self.tstart = self.Epoch[0]
+                self.tend = self.Epoch[-1]
+                self.duration = self.tend - self.tstart
+                self.time_per_point = self.duration/len(self.Epoch)
 #class Scan2D(Scan):
   #def __init__(self, spec_file, scan_number_list, verbose = verbose):
