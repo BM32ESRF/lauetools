@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
+plotrefineGUI is a GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
 This module belongs to the open source LaueTools project with a free code repository at
 https://gitlab.esrf.fr/micha/lauetools
