@@ -435,7 +435,7 @@ def getthftheo(dictDipsTheo, profileindex, diamondbranchindex):
     branchlocation = np.where(dictDipsTheo.iloc[profileindex]["#branchDia"] == diamondbranchindex)[0]
     #     print branchlocation
     thf_theo = dictDipsTheo.iloc[profileindex]["thf_theo"][branchlocation]
-    print('thf_theo',thf_theo)
+    print('thf_theo', thf_theo)
     if isinstance(thf_theo, np.ndarray):
         thf_theo = thf_theo[0]
     return thf_theo
@@ -911,11 +911,7 @@ def fitprof(xdat, ydat, p0, titre, xtitre=None, ytitre=None, plotlin=0, plotlog=
 
     xexp = np.array(xdat, dtype=float)
     yexp = np.array(ydat, dtype=float)
-    # print "xexp =", xexp
-    # print "yexp =", yexp
-    # print "len(xexp) = ",len(xexp)
-    # print "len(yexp) = ",len(yexp)
-
+    
     # gaussian + line
     # same parameters as in newplot for background and gaussian
 
@@ -1192,8 +1188,7 @@ def plot_map_simple(filexyz,
 
     fig1 = p.figure(1, figsize=(15, 10))
     ax = p.subplot(111)
-    #            print p.setp(fig1)
-    #            print p.getp(fig1)
+
     imrgb = p.imshow(plotdat[:, :, :], interpolation="nearest", extent=extent)
     #            print p.setp(imrgb)
 
@@ -1236,8 +1231,7 @@ def plot_spot_traj(img_list,
     index_high_int2 = np.where(
         (Intensity_list > threshold_factor_for_traj * max(Intensity_list))
         & (abs(xyfit_list[:, 0] - float(xpic)) < xboxsize)
-        & (abs(xyfit_list[:, 1] - float(ypic)) < yboxsize)
-    )
+        & (abs(xyfit_list[:, 1] - float(ypic)) < yboxsize))
     #        print "index_high_int2 =", index_high_int2
     xyfit_list_high_int2 = xyfit_list[index_high_int2]
     #        xymax_list_high_int2 = xymax_list[index_high_int2]
@@ -1253,11 +1247,8 @@ def plot_spot_traj(img_list,
     print("xymoy2 =", xymoy2.round(decimals=2))
     print("threshold_factor_for_traj =", threshold_factor_for_traj)
 
-    n_high_int2 = len(index_high_int2[0])
     if titre is not None:
         titre2 = titre + "\n" + "x-y peak position for high intensity points only"
-        # titre2 = titre2 + "\n"+ 'img ' + str(img_list[index_high_int2[0][0]])\
-        #        + ' to '+ str(img_list[index_high_int2[0][n_high_int2-1]])
 
     if overlay == "no":
         p.figure()
@@ -1315,8 +1306,6 @@ def build_mosaic_and_fit_spot_position(indimg,
                                         mon_in_scan=None):
     """
     calib : to convert xyfit of spot into 2sintheta
-
-
     """
 
     pixelsize = DictLT.dict_CCD[CCDlabel][1]
@@ -1409,7 +1398,7 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         print("image file : ", fileim)
 
-        dataimage, framedim, fliprot = IOimage.readCCDimage(fileim, CCDLabel=CCDlabel, dirname=None)
+        dataimage, _, _ = IOimage.readCCDimage(fileim, CCDLabel=CCDlabel, dirname=None)
 
         #        print np.shape(dataimage)
 
@@ -1474,9 +1463,8 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         #        print "px0 =", px0
 
-        px, residux = fitprof(
-            xx, xprof, px0, "x-profile " + str(kk), "xpix", "intensity", plotlin=0, plotlog=0, printp1=0
-        )
+        px, _ = fitprof(
+            xx, xprof, px0, "x-profile " + str(kk), "xpix", "intensity", plotlin=0, plotlog=0, printp1=0)
 
         guess_ypic = yy[np.argmax(yprof)]
         guess_height = float(max(yprof) - min(yprof))
@@ -1485,9 +1473,8 @@ def build_mosaic_and_fit_spot_position(indimg,
         py0 = [guess_height, guess_ypic, 2.0, guess_constant, 0.0]
         # print "py0 =", py0
 
-        py, residuy = fitprof(
-            yy, yprof, py0, "y-profile " + str(kk), "ypix", "intensity", plotlin=0, plotlog=0, printp1=0
-        )
+        py, _ = fitprof(
+            yy, yprof, py0, "y-profile " + str(kk), "ypix", "intensity", plotlin=0, plotlog=0, printp1=0)
 
         xyfit_list[kim, :] = np.array([px[1], py[1]])
 
@@ -1529,8 +1516,6 @@ def build_mosaic_and_fit_spot_position(indimg,
             Ipixmax = Imax * 1
 
         Itot = (np.array(data5, dtype=int)).sum(axis=0)
-        #        print "Itot : ", Itot
-
         Ibox_list[kim] = Itot
 
         if subtract_background:
@@ -1596,9 +1581,7 @@ def build_mosaic_and_fit_spot_position(indimg,
                     if transform_op == "rot180":
                         databox = np.rot90(databox, k=2)
 
-            mosaic[
-                ky * 2 * yboxsize : (ky + 1) * 2 * yboxsize, kx * 2 * xboxsize : (kx + 1) * 2 * xboxsize
-            ] = databox
+            mosaic[ky * 2 * yboxsize : (ky + 1) * 2 * yboxsize, kx * 2 * xboxsize : (kx + 1) * 2 * xboxsize] = databox
 
         #            mosaic2.paste(region,(kx*2*xboxsize,ky*2*yboxsize,(kx+1)*2*xboxsize,(ky+1)*2*yboxsize))
         # if kx == 0 :
@@ -1648,27 +1631,14 @@ def build_mosaic_and_fit_spot_position(indimg,
     print("image at max = ", img_list[np.argmax(Ibox_list)])
     print("spot position at max = ", xyfit_list[np.argmax(Ibox_list)].round(decimals=2))
 
-    outfilename = (filepathout
-                    + imfile_prefix
-                    + str(min(img_list))
-                    + "to"
-                    + str(max(img_list))
-                    + "_"
-                    + str(xpic)
-                    + "_"
-                    + str(ypic)
-                    + "_box"
-                    + str(xboxsize)
-                    + "x"
-                    + str(yboxsize)
-                    + "y"
-                    + ".dat")
+    outfilename = (filepathout + imfile_prefix + str(min(img_list)) + "to" + str(max(img_list))
+                    + "_" + str(xpic) + "_" + str(ypic) + "_box" + str(xboxsize)
+                    + "x" + str(yboxsize) + "y" + ".dat")
 
     print("filename for output results", outfilename)
 
     toto = np.column_stack(
-        (img_list, Ibox_list, xyfit_list, xywidth_list, Imax_list, xymax_list, twosintheta_list * 1000.0)
-    )
+        (img_list, Ibox_list, xyfit_list, xywidth_list, Imax_list, xymax_list, twosintheta_list * 1000.0))
     # print toto
     header = "img 0, Ibox 1, xyfit 2:4, widthxy 4:6 Imax 6, xymax 7:9 twosintheta_x1000 9 "
     header2 = "img Ibox xfit yfit xwidth ywidth Imax xmax ymax twosintheta_x1000 "
@@ -1700,8 +1670,7 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         # print "px0 =", px0
         px, residux = fitprof(
-            xx, xprof, px0, "x-profile sumimage", "xpix", "intensity", plotlin=1, plotlog=1, printp1=1
-        )
+            xx, xprof, px0, "x-profile sumimage", "xpix", "intensity", plotlin=1, plotlog=1, printp1=1)
 
         guess_ypic = yy[np.argmax(yprof)]
         guess_height = float(max(yprof) - min(yprof))
@@ -1711,8 +1680,7 @@ def build_mosaic_and_fit_spot_position(indimg,
         # print "py0 =", py0
 
         py, residuy = fitprof(
-            yy, yprof, py0, "y-profile sumimage", "ypix", "intensity", plotlin=1, plotlog=1, printp1=1
-        )
+            yy, yprof, py0, "y-profile sumimage", "ypix", "intensity", plotlin=1, plotlog=1, printp1=1)
 
     if plot_map_Ibox:
         titre1 = titre + " integrated intensity"
@@ -3134,7 +3102,7 @@ def build_dict_Edia_vs_thf(filespot,
                     uflab = uilab + 2 * sintheta * uqlab
 
                     if 0:  # ancienne version du calcul de fpol
-                        chi, tth = MG.uflab_to_2thetachi(uflab)
+                        _, tth = MG.uflab_to_2thetachi(uflab)
                         un = np.cross(uilab, uqlab)
                         un = un / norme(un)
                         fsig = np.inner(un, xlab)
@@ -3538,8 +3506,7 @@ def plot_Edia_vs_thf(fileEdia,
                 #            print color_list[j]
                 #            print intensity_threshold_list[j+1], intensity_threshold_list[j]
                 ind1 = np.where(
-                    (int_list > intensity_threshold_list[j + 1]) & (int_list < intensity_threshold_list[j])
-                )
+                    (int_list > intensity_threshold_list[j + 1]) & (int_list < intensity_threshold_list[j]))
                 if len(ind1[0]) > 0:
                     #                print int_list[ind1[0]]
                     #                print ind1[0]
@@ -3616,108 +3583,107 @@ def plot_Edia_vs_thf(fileEdia,
             nspots_sample = nsample_max
         Etheor_sample = data_sample[:, 9] / 1000.0
 
-        if (dict_dips_exp is None) & (filediplinks is None):
-            for i_spot in range(nspots_sample):
-                ax.axvline(x=Etheor_sample[i_spot], color="k")
-                label1 = str(i_spot) + "," + str(numdat[ii_spot])
-                ax.text(Etheor_sample[i_spot],
-                    thf_max + 0.1,
-                    label1,
-                    rotation="vertical",
-                    verticalalignment="bottom",
-                    fontsize=16)
+        # if (dict_dips_exp is None) & (filediplinks is None):
+        #     for i_spot in range(nspots_sample):
+        #         ax.axvline(x=Etheor_sample[i_spot], color="k")
+        #         label1 = str(i_spot) + "," + str(numdat[ii_spot])
+        #         ax.text(Etheor_sample[i_spot],
+        #             thf_max + 0.1,
+        #             label1,
+        #             rotation="vertical",
+        #             verticalalignment="bottom",
+        #             fontsize=16)
 
-            print("vertical lines labelled by numHKL, numdat")
-            print("several numHKL per numdat if harmonics")
+        #     print("vertical lines labelled by numHKL, numdat")
+        #     print("several numHKL per numdat if harmonics")
 
         #  not used anymore
-        ndip = 0
-        if dict_dips_exp is not None:  # dips from dict_dips_exp
-            for i_spot in range(nspots_sample):
-                ax.axvline(x=Etheor_sample[i_spot], color="k")
-                # print numdat[i_spot]
-                ax.text(Etheor_sample[i_spot],
-                    thf_max + 0.1,
-                    str(i_spot),
-                    rotation="vertical",
-                    verticalalignment="bottom",
-                    fontsize=16)
-                if numdat[i_spot] in list(dict_dips_exp.keys()):  # &(i<16):
-                    for imgnum in dict_dips_exp[numdat[i_spot]]:
-                        ax.plot(
-                            Etheor_sample[i_spot], thf_range_Ge[imgnum], "s", ms=20, mec="k", mfc="None", mew=3
-                        )
-                        # label1 = str(ndip) # +"-"+str(ndia)
-                        label1 = str(numdat[i_spot])
-                        ax.text(Etheor_sample[i_spot],
-                            thf_range_Ge[imgnum],
-                            label1,
-                            fontsize=16,
-                            color="k",
-                            horizontalalignment="center",
-                            verticalalignment="center")
-                        label1 = str(imgnum) + "---"
-                        ax.text(Etheor_sample[i_spot],
-                            thf_range_Ge[imgnum],
-                            label1,
-                            fontsize=16,
-                            color="k",
-                            horizontalalignment="right",
-                            verticalalignment="center")
+        # ndip = 0
+        # if dict_dips_exp is not None:  # dips from dict_dips_exp
+        #     for i_spot in range(nspots_sample):
+        #         ax.axvline(x=Etheor_sample[i_spot], color="k")
+        #         # print numdat[i_spot]
+        #         ax.text(Etheor_sample[i_spot],
+        #             thf_max + 0.1,
+        #             str(i_spot),
+        #             rotation="vertical",
+        #             verticalalignment="bottom",
+        #             fontsize=16)
+        #         if numdat[i_spot] in list(dict_dips_exp.keys()):  # &(i<16):
+        #             for imgnum in dict_dips_exp[numdat[i_spot]]:
+        #                 ax.plot(
+        #                     Etheor_sample[i_spot], thf_range_Ge[imgnum], "s", ms=20, mec="k", mfc="None", mew=3)
+        #                 # label1 = str(ndip) # +"-"+str(ndia)
+        #                 label1 = str(numdat[i_spot])
+        #                 ax.text(Etheor_sample[i_spot],
+        #                     thf_range_Ge[imgnum],
+        #                     label1,
+        #                     fontsize=16,
+        #                     color="k",
+        #                     horizontalalignment="center",
+        #                     verticalalignment="center")
+        #                 label1 = str(imgnum) + "---"
+        #                 ax.text(Etheor_sample[i_spot],
+        #                     thf_range_Ge[imgnum],
+        #                     label1,
+        #                     fontsize=16,
+        #                     color="k",
+        #                     horizontalalignment="right",
+        #                     verticalalignment="center")
 
-                        ndip = ndip + 1
+        #                 ndip = ndip + 1
 
-                        print("dips labelled by their numdat, same numdat for harmonics")
+        #                 print("dips labelled by their numdat, same numdat for harmonics")
                         
         #  not used anymore
-        if filediplinks is not None:  # dips from dip_links.txt
-            print("k 0, numdat 1, ndia 2, img 3, confidence 4 depth 5")
-            diplinks = np.loadtxt(filediplinks, skiprows=1)
-            diplinks = np.array(diplinks.round(decimals=0), dtype=int)
-            ind0 = np.where(diplinks[:, 4] >= 1)
-            if len(ind0[0]) > 0:
-                diplinks = diplinks[ind0[0]]
-            print(diplinks)
-            ndiplinks = np.shape(diplinks)[0]
-            print(np.shape(diplinks))
-            #            print thf_in_scan
-            #            print img_in_scan
-            for i_link in range(ndiplinks):
-                numdat = diplinks[i_link, 1]
-                k = diplinks[i_link, 0]
-                imgnum = diplinks[i_link, 3]
-                #                print imgnum
-                #                print img_in_scan[0]
-                #                print type(imgnum)
-                #                print type(img_in_scan[0])
-                ndia = diplinks[i_link, 2]
-                ax.axvline(x=Etheor_sample[k], color="k")
+        # if filediplinks is not None:  # dips from dip_links.txt
+        #     print("k 0, numdat 1, ndia 2, img 3, confidence 4 depth 5")
+        #     diplinks = np.loadtxt(filediplinks, skiprows=1)
+        #     diplinks = np.array(diplinks.round(decimals=0), dtype=int)
+        #     ind0 = np.where(diplinks[:, 4] >= 1)
+        #     if len(ind0[0]) > 0:
+        #         diplinks = diplinks[ind0[0]]
+        #     print(diplinks)
+        #     ndiplinks = np.shape(diplinks)[0]
+        #     print(np.shape(diplinks))
+        #     #            print thf_in_scan
+        #     #            print img_in_scan
+        #     for i_link in range(ndiplinks):
+        #         numdat = diplinks[i_link, 1]
+        #         k = diplinks[i_link, 0]
+        #         imgnum = diplinks[i_link, 3]
+        #         #                print imgnum
+        #         #                print img_in_scan[0]
+        #         #                print type(imgnum)
+        #         #                print type(img_in_scan[0])
+        #         ndia = diplinks[i_link, 2]
+        #         ax.axvline(x=Etheor_sample[k], color="k")
 
-                thf_value = thf_in_scan[imgnum - img_in_scan[0]]
+        #         thf_value = thf_in_scan[imgnum - img_in_scan[0]]
 
-                ax.text(Etheor_sample[k],
-                                thf_max + dylim,
-                                str(k),
-                                rotation="vertical",
-                                verticalalignment="bottom",
-                                fontsize=16)
-                ax.plot(Etheor_sample[k], thf_value, "s", ms=25, mec=colordia[ndia], mfc="None", mew=3)
-                label1 = "---" + str(ndia)
-                ax.text(Etheor_sample[k],
-                            thf_value,
-                            label1,
-                            fontsize=16,
-                            color=colordia[ndia],
-                            horizontalalignment="left",
-                            verticalalignment="center")
-                label1 = str(numdat)
-                ax.text(Etheor_sample[k],
-                                thf_value,
-                                label1,
-                                fontsize=16,
-                                color="k",
-                                horizontalalignment="center",
-                                verticalalignment="center")
+        #         ax.text(Etheor_sample[k],
+        #                         thf_max + dylim,
+        #                         str(k),
+        #                         rotation="vertical",
+        #                         verticalalignment="bottom",
+        #                         fontsize=16)
+        #         ax.plot(Etheor_sample[k], thf_value, "s", ms=25, mec=colordia[ndia], mfc="None", mew=3)
+        #         label1 = "---" + str(ndia)
+        #         ax.text(Etheor_sample[k],
+        #                     thf_value,
+        #                     label1,
+        #                     fontsize=16,
+        #                     color=colordia[ndia],
+        #                     horizontalalignment="left",
+        #                     verticalalignment="center")
+        #         label1 = str(numdat)
+        #         ax.text(Etheor_sample[k],
+        #                         thf_value,
+        #                         label1,
+        #                         fontsize=16,
+        #                         color="k",
+        #                         horizontalalignment="center",
+        #                         verticalalignment="center")
 
         ax.set_xlim(Emin, Emax)
         ax.set_ylim(thf_min - dylim, thf_max + dylim)
