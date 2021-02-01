@@ -15,13 +15,11 @@ import sys
 import os
 import copy
 import time as ttt
-
-import configparser as CONF
-
 import numpy as np
 
 # lauetools modules
 if sys.version_info.major == 3:
+    import configparser as CONF
     from . import fit2Dintensity as fit2d
     from . import fit2Dintensity_Lorentz as fit2d_l
     from . import generaltools as GT
@@ -31,6 +29,7 @@ if sys.version_info.major == 3:
     from . import imageprocessing as ImProc
 
 else:
+    import ConfigParser as CONF
     import fit2Dintensity as fit2d
     import fit2Dintensity_Lorentz as fit2d_l
     import generaltools as GT
