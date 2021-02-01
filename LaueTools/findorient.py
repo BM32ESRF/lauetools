@@ -661,18 +661,15 @@ def GenerateLookUpTable(hkl_all, Gstar):
     Generate Look Up Table of angles between hkl directions
     for an unit cell defined by (reciprocal) metric tensor Gstar
 
-    inputs:
+    :param hkl_all:    array of [h,k,l]
+    :param Gstar:    3*3 array
 
-    hkl_all            :    array of [h,k,l]
-    Gstar            :    3*3 array
-
-    outputs:
-
-    sorted_ind            : array of indices of original indy array when sorting the array of angles
-    sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
-    indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
-    tab_side_size        : size of the square pairs angles matrix
-    hkl_all    :  input hkls set used
+    :return: LUT (5-tuple)
+        - sorted_ind: array of indices of original indy array when sorting the array of angles
+        - sorted_angles: angles between all pairs of hkl in hkl_all sorted in increasing order
+        - indy: array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
+        - tab_side_size: size of the square pairs angles matrix
+        - hkl_all:  input hkls set used
     """
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl_all, hkl_all, Gstar)
@@ -850,14 +847,16 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, 
     build reference angles LUT from all mutual angular distances
     between hkls of two different sets
 
-    n    : highest hkls order
+    :param n: highest hkls order
 
-    latticeparams        : 6 [direct space] lattice parameters of
+    :param latticeparams: 6 [direct space] lattice parameters of
                         element, material or structure label
                         [a,b,c,alpha, beta,gamma] (angles in degrees)
 
-    CheckAndUseCubicSymmetry  : False  to not restrict the LUT
+    :param CheckAndUseCubicSymmetry: False  to not restrict the LUT
                                 True   to restrict LUT (allowed only for cubic crystal)
+
+    :return: LUT (5-tuple)
 
     .. todo::
         to be replaced by build_AnglesLUT() of indexingAnglesLUT module
@@ -882,17 +881,24 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, 
 
     return LUT
 
-
-def Build_Cubic_shortLUTs(latticeparameters, nLUT=5, applyExtinctionRules=None):
+def computesortedangles(latticeparameters, nLUT=5, applyExtinctionRules=None):
     """build reference angles in several short range (to be used for cliques search)
     """
     lut = buildLUT_fromLatticeParams(latticeparameters, nLUT, applyExtinctionRules)
-    sangles = lut[1]
+    sangles = lut[1]  #sorted angles
     # limitsAngles
     Anglemin, Anglemax = 19, 90
     esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
     # sorted array of angles
     sortedangles = np.array(sorted(list(set(esangles.tolist()))))
+    return sortedangles, sangles, Anglemin, Anglemax
+
+def Build_Cubic_shortLUTs(latticeparameters, nLUT=5, applyExtinctionRules=None):
+    """build reference angles in several short range (to be used for cliques search)
+    """
+
+    sortedangles, sangles, Anglemin, Anglemax = computesortedangles(latticeparameters,
+                                                                nLUT, applyExtinctionRules)
 
     import pickle
 
