@@ -2,7 +2,7 @@
 Module to deduce from distances recognition in mutual pair distance matrix
 the adjaceny matrix from which graph theory's algorithms can produce
 set of spots highly connected to each other, hence spos likely
-to belong to the same grain 
+to belong to the same grain
 
 Tabledistance comes from most important planes (and intense reflection) in cubic structure up to family plane (321)
 
@@ -24,7 +24,7 @@ try:
     import networkx as NX
 except ImportError:
     print("\n***********************************************************")
-    print( "networkx module is missing! Please install it !")
+    print("networkx module is missing! Please install it !")
     print("***********************************************************\n")
 
 if sys.version_info.major == 3:
@@ -86,7 +86,7 @@ def read_disttable(picklefilename=None):
         ar_distances = read_LUT(picklefilename)
         print("Cubic distance table read from a pickled file %s"%picklefilename)
     else:
-        ar_distances = np.array([ 8.13000011, 10.02499962, 10.89299965, 11.48999977, 14.76299953, 15.79300022, 17.02400017,
+        ar_distances = np.array([8.13000011, 10.02499962, 10.89299965, 11.48999977, 14.76299953, 15.79300022, 17.02400017,
         17.54800034, 17.71500015, 18.43499947, 19.10700035, 19.2859993, 19.47100067, 21.61700058, 21.78700066,
         22.20800018, 24.09499931, 25.23900032, 25.35199928, 25.84199905, 26.56500053, 27.0170002,
         27.26600075, 29.20599937, 29.49600029, 30.0, 31.00300026, 31.48200035, 31.94799995, 32.31200027,
@@ -123,7 +123,7 @@ def TableDistance_exp(filename, nb_of_spots, col_Int=4):
     """
     #(alldata, data_theta, data_chi, data_pixX, data_pixY, data_I, detParam)
     data = IOLT.readfile_cor(filename)
-    data_theta, data_chi, data_I = data[1],data[2],data[5]
+    data_theta, data_chi, data_I = data[1], data[2], data[5]
     nbp = len(data_theta)
 
     if nb_of_spots > 0:
@@ -149,7 +149,7 @@ def TableDistance_exp(filename, nb_of_spots, col_Int=4):
     return angulardisttable, upto
 
 
-def create_AdjencyMatrix(Tabledistance, ReferenceTable, ang_tol, nb_of_spots):
+def create_AdjencyMatrix(Tabledistance, ReferenceTable, ang_tol, nb_of_spots, verbose=0):
     """
     Creates Adjency Matrix from:
         Tabledistance: matrix of mutual inter angular distance
@@ -171,7 +171,7 @@ def create_AdjencyMatrix(Tabledistance, ReferenceTable, ang_tol, nb_of_spots):
     # enthought python 2.4
     # john=map(lambda elem: mytab.put(1,    GT.find_closest(ReferenceTable ,Tabledistance[elem],ang_tol)[1]  +elem*nb_of_spots),  arange(nb_of_spots) )
     # enthought python 2.5 (reversed order of args!!)
-    john = [mytab.put(
+    adjtab1D = [mytab.put(
             GT.find_closest(ReferenceTable, Tabledistance[elem], ang_tol)[1] + elem * nb_of_spots, 1)
             for elem in np.arange(nb_of_spots)]
 
@@ -189,7 +189,8 @@ def create_AdjencyMatrix(Tabledistance, ReferenceTable, ang_tol, nb_of_spots):
     # mytab.put(posy,what)
 
     adjencymat = np.reshape(mytab, (nb_of_spots, nb_of_spots))
-    # print "john",john
+    if verbose:
+        print("adjtab1D", adjtab1D)
     print("... Done !")
 
     """
@@ -223,6 +224,7 @@ def flatnestedlist(list_of_lists):
 def bestclique_oneNode(CliquesList, displaybest=0):
     """
     Returns the largest (in size) clique containing the spot cliques list the largest one
+
     """
     # list of clique length
     Clength_list = np.array(list(map(len, CliquesList)))
@@ -264,13 +266,17 @@ def bestclique_oneNode(CliquesList, displaybest=0):
 
 def give_bestclique(filename, nb_of_spots, ang_tol, nodes=0, col_Int=-1,
                                         LUTfilename=None, verbose=0):
-    """ from file list data
+    """ from peakslist file, it gives the sets of spots belonging to cliques according to a structure (given bu the LUT)
+
+    if LUTfilename is None (default) then cubic structure is given
+
+    .. note:: spot indices are those of file (whatever some spots have been already indexed)
     """
-    # reading table of distance reference for recognition
+    # reading reference table of distances for recognition
     ar_distances = read_disttable(picklefilename=LUTfilename)
     # print "ar_distances",ardistances
 
-    # reading data i.e. list of spots from .cor file (2the,chi,x,y,I)
+    # reading experimental data i.e. list of spots from .cor file (2the,chi,x,y,I)
     if verbose:
         print("data file: %s" % filename)
     Tabledistance, nb_of_spots = TableDistance_exp(filename, nb_of_spots, col_Int=col_Int)
@@ -330,7 +336,7 @@ def test(plot=0):
     print("noise", noise)
 
     # GGraw = NX.from_whatever(bigmat, create_using=NX.Graph()) #old syntax
-    GGraw = NX.to_networkx_graph(bigmat, create_using=NX.Graph())
+    # GGraw = NX.to_networkx_graph(bigmat, create_using=NX.Graph())
     # GGnoise = NX.from_whatever(np.bitwise_xor(bigmat, noise), create_using=NX.Graph()) #old syntax
     GGnoise = NX.to_networkx_graph(np.bitwise_xor(bigmat, noise), create_using=NX.Graph())
 
@@ -430,23 +436,23 @@ if __name__ == "__main__":
     Grains=NX.Graph()
 
     def update_graph(Graph,list_spot):
-        
+
         if len(list_spot)>0:
             NX.Graph.add_nodes_from(list_spot)
             shift_r=list_spot[1:]+list_spot[:1]
-            
+
             edges=np.transpose(np.array([list_spot,shift_r]))
 
             NX.Graph.add_edges_from(edges)
 
     def update_graph2(Graph,list_spot):
         lon=len(list_spot)
-        
+
         if lon>0:
             #print "listspot",list_spot
             NX.Graph.add_nodes_from(list_spot)
             edges=np.take(array(list_spot),NX.complete_graph(lon).edges())
-            
+
             NX.Graph.add_edges_from(edges)
 
     for m in range(6):
