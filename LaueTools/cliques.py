@@ -15,8 +15,12 @@ else:
     wx.OPEN = wx.FD_OPEN
 if sys.version_info.major == 3:
     from . import graingraph as GraGra
+    from . import findorient as FO
+    from . import dict_LaueTools as DictLT
 else:
     import graingraph as GraGra
+    import findorient as FO
+    import dict_LaueTools as DictLT
 
 # --- ---------------------  CLIQUES board
 class CliquesFindingBoard(wx.Frame):
@@ -66,8 +70,11 @@ class CliquesFindingBoard(wx.Frame):
         self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
         wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
 
-        wx.StaticText(self.panel, -1, "Load AnglesLUT file ", (15, 175))
-        loadanglesbtn = wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
+        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (260, 170), (60, 30))
+        compsavebtn.Bind(wx.EVT_BUTTON, self.OnComputeSaveAnglesFile)
+
+        wx.StaticText(self.panel, -1, "Angle list (default 'CUBIC'):", (15, 175))
+        loadanglesbtn = wx.Button(self.panel, -1, "Load" (180, 170), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
 
         self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 215))
@@ -80,6 +87,24 @@ class CliquesFindingBoard(wx.Frame):
 
         self.Show(True)
         self.Centre()
+
+    def OnComputeSaveAnglesFile(self, _):
+        # open dialog  for structur
+        key_material = 'Ti'
+        nLUT = 5
+
+        latticeparameters = DictLT.dict_Materials[key_material][1]
+
+        sortedangles = FO.computesortedangles(latticeparameters, nLUT)
+
+        import pickle
+
+        self.LUTfilename = '%s_nlut%d.angles'%(key_material,nLUT)
+        with open(self.LUTfilename, "wb") as f:
+            pickle.dump(sortedangles, f)
+
+        print('Sorted angles written in %s'%self.LUTfilename)
+
 
     def OnLoadAnglesFile(self, _):
         # load specific lut angles
