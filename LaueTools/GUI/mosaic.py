@@ -2,7 +2,7 @@
 """
 Module for 2D rearrangement to be displayed as map of given quantities
 
-mosaic.py belong to the LaueTools Software
+mosaic.py belongs to the LaueTools Software
 
 May 2019
 """
@@ -1071,7 +1071,7 @@ class ImshowFrame(wx.Frame):
         datatype = Intensity, PositionX, PositionY, RadialPosition
 
         """
-        print("\n\n*****\nCREATING PLOT of 2D Map of Scalar data\n****\n")
+        print("\n\n*****\nCREATING PLOT of 2D Map of Scalar data: %s\n****\n"%title)
         # dat=dat.reshape(((self.nb_row)*2*self.boxsize_row,(self.nb_lines)*2*self.boxsize_line))
         self.appFrame = wx.Frame.__init__(self, parent, _id, title, size=(900, 700))
 
@@ -1120,6 +1120,8 @@ class ImshowFrame(wx.Frame):
         self.nb_lines = nb_lines
         self.boxsize_row = boxsize_row
         self.boxsize_line = boxsize_line
+        print('nb_row  nb_lines', nb_row, nb_lines)
+        print('boxsize_row  boxsize_line',boxsize_row, boxsize_line)
         self.stepindex = stepindex
         self.imagename = imagename
         self.currentpointedImageIndex = None
@@ -1171,8 +1173,9 @@ class ImshowFrame(wx.Frame):
                 self.LastLUT = "seismic"
 
         self.palette.set_bad(color="black")
-
+        self.colorbar = None
         self.LastLUT = self.palette
+        self.plotgrid = False
 
         self.IminDisplayed = 0
         self.ImaxDisplayed = 100
@@ -1245,6 +1248,10 @@ class ImshowFrame(wx.Frame):
 
         self.comboaspect.Bind(wx.EVT_COMBOBOX, self.OnChangeAspect)
         self.comboaspect.Bind(wx.EVT_TEXT_ENTER, self.OnChangeAspect)
+
+        self.chckgrid = wx.CheckBox(self.panel, -1, "Grid")
+        self.chckgrid.SetValue(self.plotgrid)
+        self.chckgrid.Bind(wx.EVT_CHECKBOX, self.Oncheckgrid)
 
         if self.datatype in ("Intensity", "PositionX", "PositionY"):
             self.bkgchckbox = wx.CheckBox(self.panel, -1, "Substract Background")
@@ -1335,6 +1342,7 @@ class ImshowFrame(wx.Frame):
         h0box.Add(self.comboaspect, 0)
         h0box.Add(self.scaletxt, 0)
         h0box.Add(self.comboscale, 0)
+        h0box.Add(self.chckgrid, 0)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.slidertxt_min, 0)
@@ -1688,6 +1696,10 @@ class ImshowFrame(wx.Frame):
     def getMeanLevel(self):
         return np.mean(self.data)
 
+    def Oncheckgrid(self, _):
+        self.plotgrid = not self.plotgrid
+        self._replot()
+
     def OnSubstractBackground(self, _):
         self.removebackground = not self.removebackground
 
@@ -1946,7 +1958,26 @@ class ImshowFrame(wx.Frame):
                                             cmap=self.LastLUT,
                                             interpolation="nearest",
                                             origin=self.originYaxis)
-            self.colorbar = self.fig.colorbar(self.myplot)
+            if self.colorbar is None:                                
+                self.colorbar = self.fig.colorbar(self.myplot)
+
+
+            if self.plotgrid:
+                # adding grid to separate imagelet
+                from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
+                # Change major ticks to show every n pixels along x and along y.
+                self.axes.xaxis.set_major_locator(MultipleLocator(2*self.boxsize_row+1))
+                self.axes.yaxis.set_major_locator(MultipleLocator(2*self.boxsize_line+1))
+
+                # Change minor ticks to show every 5. (20/4 = 5)
+                #self.axes.xaxis.set_minor_locator(AutoMinorLocator(4))
+                #self.axes.yaxis.set_minor_locator(AutoMinorLocator(4))
+
+                # Turn grid on for both major and minor ticks and style minor slightly
+                # differently.
+                self.axes.grid(which='major', color='#0e2f44', linestyle='-')
+                #self.axes.grid(which='minor', color='#CCCCCC', linestyle=':')
+
         self.axes.xaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_x))
         self.axes.yaxis.set_major_formatter(FuncFormatter(fromindex_to_pixelpos_y))
 
@@ -1954,7 +1985,6 @@ class ImshowFrame(wx.Frame):
         font0.set_size("x-small")
 
         self.axes.set_title("%s\n" % self.imagename)
-        self.axes.grid(True)
 
         self.axes.set_aspect("auto")
 
