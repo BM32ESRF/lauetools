@@ -3,7 +3,7 @@ import wx
 try:
     from SpecClient_gevent import SpecCommand
 except ImportError:
-    print('-- warning. spec control software and SpecClient_gevent missing ? (normal if you are not at the beamline')
+    print('-- warning. spec control software and SpecClient_gevent missing ? (normal if you are not at the beamline)')
 
 # --- ---------------  Plot limits board  parameters
 class MessageCommand(wx.Dialog):
