@@ -16,7 +16,6 @@ from __future__ import division
 
 import math
 import sys
-import builtins
 
 import numpy as np
 
@@ -24,6 +23,7 @@ np.set_printoptions(precision=15)
 
 # LaueTools modules
 if sys.version_info.major == 3:
+    import builtins
     from . import CrystalParameters as CP
     from . import generaltools as GT
     from . import IOLaueTools as IOLT
@@ -491,6 +491,11 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
 
         table_vec = table_vec[cond_Xnegativeonly]
 
+        if sys.version_info.major == 3:
+            listObj = builtins.list
+        else:
+            listObj = list
+
         # Kf direction selection
         # top reflection 2theta = 90
         if kf_direction == "Z>0":
@@ -501,11 +506,11 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
         # side reflection  2theta = 90
         elif kf_direction == "Y<0":
             KF_condit = listrotvec_Y < 0
-        
+
         # x > -R transmission 2theta = 0
         elif kf_direction == "X>0":
             KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) > 0)
-        
+
         # x < -R back reflection 2theta = 180
         elif kf_direction == "X<0":
             KF_condit = (listrotvec_X + 1.0 / (2.0 * np.abs(listrotvec_X) / arraysquare) < 0)
@@ -514,7 +519,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
             KF_condit = np.ones_like(listrotvec_X) * True
         # user's definition of mean kf vector
         # [2theta , chi]= / kf = [cos2theta,sin2theta*sinchi,sin2theta*coschi]
-        elif isinstance(kf_direction, (builtins.list, np.array)):
+        elif isinstance(kf_direction, (listObj, np.array)):
             print("\nUSING user defined LauePattern Region\n")
             if len(kf_direction) != 2:
                 raise ValueError("kf_direction must be defined by a list of two angles !")
