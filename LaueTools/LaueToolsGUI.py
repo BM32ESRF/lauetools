@@ -60,7 +60,8 @@ if sys.version_info.major == 3:
     from .LaueGeometry import Compute_data2thetachi
     from .GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
 
-    from . CrystalParameters import calc_B_RR
+    from .CrystalParameters import calc_B_RR
+    from .findorient import computesortedangles
     from .IOLaueTools import writefile_cor, createselecteddata
     from . dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
                                     dict_Transforms, dict_Vect, dict_Rot,
@@ -148,9 +149,9 @@ class LaueToolsGUImainframe(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
 
-        self.SetIcon(
-            wx.Icon(os.path.join(projectfolder, "icons", "transmissionLaue_fcc_111.png"),
-                wx.BITMAP_TYPE_PNG))
+        # self.SetIcon(
+        #     wx.Icon(os.path.join(projectfolder, "icons", "transmissionLaue_fcc_111.png"),
+        #         wx.BITMAP_TYPE_PNG))
 
         self.filename = filename
         self.dirname = projectfolder
@@ -1993,6 +1994,9 @@ class CliquesFindingBoard(wx.Frame):
         self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
         wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
 
+        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (260, 170), (60, 30))
+        compsavebtn.Bind(wx.EVT_BUTTON, self.OnComputeSaveAnglesFile)
+
         wx.StaticText(self.panel, -1, "Load AnglesLUT file ", (15, 175))
         loadanglesbtn = wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
@@ -2007,6 +2011,23 @@ class CliquesFindingBoard(wx.Frame):
 
         self.Show(True)
         self.Centre()
+
+    def OnComputeSaveAnglesFile(self, _):
+        # open dialog  for structure
+        key_material = 'Ti'
+        nLUT = 4
+
+        latticeparameters = dict_Materials[key_material][1]
+        print('computing angles in material: %s.\n-- Wait a bit --'%key_material)
+        sortedangles = computesortedangles(latticeparameters, nLUT)
+
+        import pickle
+
+        self.LUTfilename = '%s_nlut%d.angles'%(key_material,nLUT)
+        with open(self.LUTfilename, "wb") as f:
+            pickle.dump(sortedangles, f)
+
+        print('Sorted angles written in %s'%self.LUTfilename)
 
     def OnLoadAnglesFile(self, _):
         """ load specific lut angles """
