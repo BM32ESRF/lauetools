@@ -83,7 +83,7 @@ LIST_TXTPARAM_FILE_INDEXREFINE = ["Peak List .dat Folder",
 TIP_IR = ["Folder containing indexed Peaks List .dat files",
     "Folder containing (results) Peaks List .cor files",
     "Folder containing (results) indexed Peaks List .fit files",
-    "Prefix for .fit files filename prefix####suffix where #### are digits of file index",
+    "Prefix for .fit files filename prefix####suffix where #### are digits of file index. Check the value of 'nbdigits' for a correct automatic recognition of prefix from full file name",
     'peak list filename suffix. ".dat" or ".cor"',
     "maximum nb of digits for zero padding of filename index.(e.g. nb of # in prefix####.dat)\n0 for no zero padding.",
     "starting file index (integer) or full path (str) to a file with list of file indices",
@@ -392,7 +392,7 @@ class PageMaterialPanel(wx.Panel):
 
         if kk in (1, 11):
             try:
-                v = int(val)
+                _ = int(val)
             except ValueError:
                 wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be integer"
                     % self.list_txtparamIR[kk], "Error")
@@ -1174,7 +1174,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 1:
+if 0:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1190,6 +1190,23 @@ if 1:
     initialparameters["Selected Peaks from File"] = 'None'
     initialparameters["startingindex"] = 0
     initialparameters["finalindex"] = 5
+    initialparameters["stepindex"] = 1
+# for local test    guessUBmatrices on 3 grains   
+if 1:
+    MainFolder = '/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/T40'
+    print("MainFolder", MainFolder)
+    initialparameters["PeakList Folder"] = os.path.join(MainFolder, "datfiles")
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
+    initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
+    initialparameters["PeakList Filename Prefix"] = "T40N20_"
+    initialparameters["IndexRefine Parameters File"] = "/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/T40/datfiles/T40N20.irp"
+    initialparameters["PeakList Filename Suffix"] = ".dat"
+    initialparameters["Detector Calibration File .det"] = '/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/calibLaura20Nov20.det'
+    initialparameters["nbdigits"] = 4
+    initialparameters["Selected Peaks from File"] = 'None'
+
+    initialparameters["startingindex"] = 8
+    initialparameters["finalindex"] = 10
     initialparameters["stepindex"] = 1
 
 # for local test:
