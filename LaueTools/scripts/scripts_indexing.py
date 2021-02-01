@@ -376,9 +376,7 @@ def Test_getOrients_AnglesMatching():
 
     angleTolerance_LUT = 0.1
     MatchingRate_Angle_Tol = 0.001
-    Matching_Threshold_Stop = (
-        50.0
-    )  # minimum to stop the loop for searching potential solution
+    Matching_Threshold_Stop = (50.0)  # minimum to stop the loop for searching potential solution
 
     # create a fake data file of randomly oriented crystal
     if readfile is None:
@@ -388,20 +386,17 @@ def Test_getOrients_AnglesMatching():
         addspots = 0
         #        removespots = None
         #        addspots = None
-        file_to_index = createFakeData(
-            key_material,
-            nbgrains,
-            outputfilename=outputfilename,
-            removespots=removespots,
-            addspots=addspots,
-        )
+        file_to_index = createFakeData(key_material,
+                                        nbgrains,
+                                        outputfilename=outputfilename,
+                                        removespots=removespots,
+                                        addspots=addspots)
     else:
         file_to_index = readfile
 
     # read data
     data_theta, Chi, posx, posy, dataintensity, detectorparameters = IOLT.readfile_cor(
-        file_to_index
-    )[1:]
+        file_to_index)[1:]
     tth = 2 * data_theta
 
     exp_data = np.array([tth, Chi])
@@ -415,21 +410,19 @@ def Test_getOrients_AnglesMatching():
 
     nbmax_probed = min(nbmax_probed, len(data_theta))
 
-    matrix, score, Threshold_reached = IAL.getOrients_AnglesLUT(
-        spot_index_central,
-        table_angdist[:nbmax_probed, :nbmax_probed],
-        tth,
-        Chi,
-        Matching_Threshold_Stop=Matching_Threshold_Stop,
-        n=3,  # up  to (332)
-        B=B,  # for cubic
-        LUT=None,
-        angleTolerance_LUT=angleTolerance_LUT,
-        MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
-        key_material=key_material,
-        emax=emax,
-        verbose=0,
-    )
+    matrix, score, Threshold_reached = IAL.getOrients_AnglesLUT(spot_index_central,
+                                                    table_angdist[:nbmax_probed, :nbmax_probed],
+                                                    tth,
+                                                    Chi,
+                                                    Matching_Threshold_Stop=Matching_Threshold_Stop,
+                                                    n=3,  # up  to (332)
+                                                    B=B,  # for cubic
+                                                    LUT=None,
+                                                    angleTolerance_LUT=angleTolerance_LUT,
+                                                    MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
+                                                    key_material=key_material,
+                                                    emax=emax,
+                                                    verbose=0)
     #
     #    bestmat, stats_res = ISS.MergeSortand_RemoveDuplicates(bestmat, stats_res, Nb_criterium,
     #                                                           tol=0.0001, allpermu=True)
@@ -460,8 +453,7 @@ def plotgrains(listmat, key_material, emax, file_to_index="toto.cor"):
 
         grain = [np.eye(3), EXTINCTION, mat, key_material]
 
-        (
-            Twicetheta_theo,
+        (Twicetheta_theo,
             Chi_theo,
             Miller_ind_theo,
             posx_theo,
@@ -503,9 +495,7 @@ def plotgrains(listmat, key_material, emax, file_to_index="toto.cor"):
 
         if file_to_index is not None:
             # all exp spots
-            p.scatter(
-                tth_exp, Chi_exp, s=40, c="w", marker="o", faceted=True, alpha=0.5
-            )
+            p.scatter(tth_exp, Chi_exp, s=40, c="w", marker="o", faceted=True, alpha=0.5)
 
         # simul spots
         p.scatter(
