@@ -643,7 +643,7 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
                                 connectivity=connectivity,
                                 returnfloatmeanpos=0)
 
-    if not peak:
+    if len(peak)==0:
         return None
 
     peak = (peak[:, 0], peak[:, 1])
@@ -958,7 +958,7 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
 
     purged_pklist, index_todelete = GT.purgeClosePoints2(th_peaklist, pixeldistance)
 
-    purged_amp = np.delete(th_ar_amp, index_todelete)
+    purged_amp = np.delete(th_ar_amp, tuple(index_todelete))
     print(
         "{} local maxima found after removing duplicates (minimum intermaxima distance = {})".format(
             len(purged_amp), pixeldistance))
