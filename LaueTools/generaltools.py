@@ -2102,7 +2102,7 @@ def propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False):
 
 def getRotationAngleFrom2Matrices(A, B):
     """
-    return rotation angle of operator R between two pure rotations A,B: B=RA
+    return rotation angle (in degree) of operator R between two pure rotations A,B: B=RA
     tr(R)=1+2cos(theta)
     with R = BA-1
     """

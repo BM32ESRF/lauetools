@@ -975,7 +975,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
     if type(query_angle) not in (type(5), type(5.5), type(np.arange(0.0, 2.0, 3.0)[0])):
         angle_query = query_angle[0]
 
-    print('angle_query', angle_query)
+    # print('angle_query', angle_query)
 
     # Find matching
 

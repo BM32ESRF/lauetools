@@ -2065,9 +2065,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 # Rules = dictmaterials[key_material][2]
                 # hkl1 = CP.ApplyExtinctionrules(np.array(hkl1), Rules)
 
-                (list_orient_matrix,
-                    planes,
-                    pairspots,
+                (list_orient_matrix, planes, pairspots,
                 ), hkl2, LUTcubic = matrices_from_onespot_hkl(spot_index_central,
                                                             LUT_tol_angle,
                                                             Tab_angl_dist,
@@ -2114,7 +2112,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                                     excludespotspairs=excludespotspairs)
         if len(list_orient_matrix) == 0:
             print('\n\n ----- len(list_orient_matrix)  is 0 \n\n', len(list_orient_matrix))
-        
+
         if gauge:
             # TODO: VERY DIRTY...
             gaugecount = (k_centspot_index + 1) * nbofpeaks
@@ -2225,7 +2223,6 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 print("- increase angular tolerances (distance recognition and/or matching)")
                 print("- increase nbofpeaks (ISSS: Intense spot set size)")
                 print("- increase Energy max")
-        print("\n")
 
     # Consider immediately (if any) a list of a priori known matrices
     if addMatrix is not None:
@@ -2375,7 +2372,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
     a, b, c, AA, BB, CC = latticeparameters
 
     
-    print("\n------ build_AnglesLUT_fromlatticeparameters -------\n")
+    print("\n------ build_AnglesLUT_fromlatticeparameters -------")
     if verbose:
         print('latticeparameters', latticeparameters)
         print("and n=%d" % n)
