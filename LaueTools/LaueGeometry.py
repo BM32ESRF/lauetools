@@ -2089,11 +2089,11 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
 
 
 def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffix="",
-                                                                            nbdigits=4,
-                                                                            dirname_in=None,
-                                                                            dirname_out=None,
-                                                                            pixelsize=165.0 / 2048,
-                                                                            fliprot="no"):
+            nbdigits=4,
+            dirname_in=None,
+            dirname_out=None,
+            pixelsize=165.0 / 2048,
+            fliprot="no"):
     r"""
     convert a serie of peaks list ascii files to .cor files (adding scattering angles).
 

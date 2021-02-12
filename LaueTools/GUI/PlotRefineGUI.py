@@ -515,6 +515,13 @@ class Plot_RefineFrame(wx.Frame):
         self.fitTrecip = wx.CheckBox(self.panel, -1, "Fit Global operator")
         self.fitTrecip.SetValue(True)
 
+        self.fitycen = wx.CheckBox(self.panel, -1, "Fit depth")
+        self.fitycen.SetValue(True)
+
+        self.sampledepthtxt = wx.StaticText(self.panel, -1, "Sample depth")
+        # self.matr_ctrl = wx.TextCtrl(self.parampanel, -1,'0.5',(350, 40))
+        self.sampledepthctrl = wx.TextCtrl(self.panel, -1, '0', size=(30,-1))
+
         self.fitorient1 = wx.CheckBox(self.panel, -1, "Orient. 1")
         self.fitorient1.SetValue(False)
         self.fitorient2 = wx.CheckBox(self.panel, -1, "Orient. 2")
@@ -754,6 +761,12 @@ class Plot_RefineFrame(wx.Frame):
         hbox5.Add(self.use_weights, 0, wx.ALL)
         hbox5.Add(self.incrementfilename, 0, wx.ALL)
 
+        hbox6 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox6.Add(self.fitTrecip, 0, wx.ALL)
+        hbox6.Add(self.fitycen, 5, wx.ALL)
+        hbox6.Add(self.sampledepthtxt, 5, wx.ALL)
+        hbox6.Add(self.sampledepthctrl, 5, wx.ALL)
+
         sizerparam = wx.BoxSizer(wx.VERTICAL)
         sizerparam.Add(hbox2, 0, wx.ALL)
         sizerparam.Add(hbox, 0, wx.ALL)
@@ -769,7 +782,7 @@ class Plot_RefineFrame(wx.Frame):
 
         sizerparam.Add(self.txtuserefine, 1, wx.ALIGN_CENTER_HORIZONTAL)
         sizerparam.Add(self.title1, 0, wx.ALL)
-        sizerparam.Add(self.fitTrecip, 0, wx.ALL)
+        sizerparam.Add(hbox6, 0, wx.ALL)
         sizerparam.Add(fitparamSizer, 0, wx.ALL)
         sizerparam.Add(fitparam2Sizer, 0, wx.ALL)
         sizerparam.Add(fitparam3Sizer, 0, wx.ALL)
@@ -1644,6 +1657,13 @@ class Plot_RefineFrame(wx.Frame):
             # -------------------------------------------------------
 
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
+
+            # change ycen if grain is below the surface:
+            # depth is counted positively below surface in microns
+            depth = float(self.sampledepthctrl.GetValue())
+            depth_along_beam = depth / np.sin(40 * np.pi / 180.)
+            delta_ycen = depth_along_beam/1000./self.pixelsize
+            allparameters[2] += delta_ycen
 
             # nspots = np.arange(nb_pairs)
             # miller = Data_Q
