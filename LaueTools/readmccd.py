@@ -1149,18 +1149,28 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
     # -----------------------------------------------
 
     # remove black listed peaks option
+    # and update peaklist
     if Remove_BlackListedPeaks_fromfile is not None:
+        XY_OK = False
+        if Remove_BlackListedPeaks_fromfile.endswith('.dat'):
 
-        data_peak_blacklisted = IOLT.read_Peaklist(Remove_BlackListedPeaks_fromfile, dirname=None)
+            data_peak_blacklisted = IOLT.read_Peaklist(Remove_BlackListedPeaks_fromfile, dirname=None)
+            if len(peaklist) > 1 and len(data_peak_blacklisted) > 1:
 
-        #         print "data_peak_blacklisted", data_peak_blacklisted
+                XY_blacklisted = data_peak_blacklisted[:, :2].T
+                
+                XY_OK = True
+        elif Remove_BlackListedPeaks_fromfile.endswith('.fit'):
+            allgrainsspotsdata = IOLT.readfile_fit(Remove_BlackListedPeaks_fromfile)[4]
 
-        if len(peaklist) > 1 and len(data_peak_blacklisted) > 1:
+            if len(peaklist) > 1 and len(allgrainsspotsdata) > 1:
 
-            XY_blacklisted = data_peak_blacklisted[:, :2].T
-
-            X, Y = peaklist[:, :2].T
-
+                XY_blacklisted = allgrainsspotsdata[:, 7:9].T
+                
+                XY_OK = True
+        
+        if XY_OK:  #
+            X, Y = peaklist[:,:2].T
             (peakX, _, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
                                                         dist_tolerance=maxPixelDistanceRejection,
                                                         verbose=0)
