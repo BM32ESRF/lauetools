@@ -1130,77 +1130,85 @@ def calc_epsp(dlat):
 
 def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
     r"""
-    qxyzLT= UB B0 q_a*b*c*
+    Compute strain components in sample frame:
+    Zsample perpendicular to sample surface
+    Xsample in the same plane thanZ and incoming vector, Xsample is tilted by sampletilt from incoming beam (XLauetools)
+    Ysample is horizontal and equal to Ylauetools
 
-    if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
+    :param strain: 3x3 symmetric array describing the strain in crystal frame
+    :param UBmat: 3x3 array, orientation matrix
+    :param sampletilt: float, tilt angle in degree
+    :return: 3x3 symmetric array describing the strain in sample frame
+ 
+    .. note::
+        qxyzLT= UB B0 q_a*b*c*
 
-    Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
+        if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
 
-    qxyzLT=P q sample  (P = (cos40,0,-sin40),(0,1,0),(sin40,0,cos40))
+        Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
 
-    then:
+        qxyzLT=P q sample  (P = (cos40,0,-sin40),(0,1,0),(sin40,0,cos40))
 
-    operator_sample= P-1 UB operator_crystal UB-1 P
+        then:
 
-    sampletilt in degree
-
+        operator_sample= P-1 UB operator_crystal UB-1 P
     """
     P = GT.matRot([0, 1, 0], -sampletilt)
     #    M = np.dot(np.linalg.inv(P), UBmat)
-    M = np.dot(P.transpose(), UBmat)  # matrice unitaire : inverse = transposee
+    # P pure rotation matrix : inverse = transposed
+    M = np.dot(P.transpose(), UBmat) 
     invM = np.dot(np.linalg.inv(UBmat), P)
 
     strain_sampleframe = np.dot(M, np.dot(strain, invM))
 
     return strain_sampleframe
 
+# def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
+#     r"""
+#     qxyzLT= UB B0 q_a*b*c*
 
-def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
-    r"""
-    qxyzLT= UB B0 q_a*b*c*
+#     if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
 
-    if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
+#     Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
 
-    Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
+#     operator_LT= UB operator_crystal UB-1
 
-    operator_LT= UB operator_crystal UB-1
+#     """
+#     strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
 
-    """
-    strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
-
-    return strain_LaueToolsframe
+#     return strain_LaueToolsframe
 
 
-def strain_from_crystal_to_sample_frame(
-    deviat_strain, UBmat, omega0=40.0, LaueToolsFrame_for_UBmat=False):
-    r"""
-    Compute deviatoric strain in sample frame from orientation matrix
+# def strain_from_crystal_to_sample_frame(
+#     deviat_strain, UBmat, omega0=40.0, LaueToolsFrame_for_UBmat=False):
+#     r"""
+#     Compute deviatoric strain in sample frame from orientation matrix
 
-    :param deviat_strain: symetric deviatoric strain tensor (matrix 3x3)
-    :param UBmat: orientation matrix with strain
+#     :param deviat_strain: symetric deviatoric strain tensor (matrix 3x3)
+#     :param UBmat: orientation matrix with strain
 
-    :param LaueToolsFrame_for_UBmat: must be False if UBmat is the orientation matrix expressed in OR lab frame
+#     :param LaueToolsFrame_for_UBmat: must be False if UBmat is the orientation matrix expressed in OR lab frame
 
-    :param omega0: tilt angle of the sample surface with respect to the incoming beam  (in degrees)
-    """
-    if not LaueToolsFrame_for_UBmat:
-        # from matstarlab in Odile's frame
-        matstarlab = UBmat
-        if len(matstarlab) != 3:
-            raise TypeError("strain_from_crystal_to_sample_frame function "
-                "needs 3x3 orientation matrix")
-    else:
-        # from UB matrix in Lauetools frame
-        matstarlab = matstarlabLaueTools_to_matstarlabOR(
-            np.array(UBmat), returnMatrixInLine=False)
+#     :param omega0: tilt angle of the sample surface with respect to the incoming beam  (in degrees)
+#     """
+#     if not LaueToolsFrame_for_UBmat:
+#         # from matstarlab in Odile's frame
+#         matstarlab = UBmat
+#         if len(matstarlab) != 3:
+#             raise TypeError("strain_from_crystal_to_sample_frame function "
+#                 "needs 3x3 orientation matrix")
+#     else:
+#         # from UB matrix in Lauetools frame
+#         matstarlab = matstarlabLaueTools_to_matstarlabOR(
+#             np.array(UBmat), returnMatrixInLine=False)
 
-    matdirONDsample = matstarlab_to_matdirONDsample(
-        matstarlab, omega0=omega0, matrix_in_LaueToolsFrame=False)
+#     matdirONDsample = matstarlab_to_matdirONDsample(
+#         matstarlab, omega0=omega0, matrix_in_LaueToolsFrame=False)
 
-    deviatoric_strain_sampleframe = np.dot(
-        matdirONDsample, np.dot(deviat_strain, matdirONDsample.T))
+#     deviatoric_strain_sampleframe = np.dot(
+#         matdirONDsample, np.dot(deviat_strain, matdirONDsample.T))
 
-    return deviatoric_strain_sampleframe
+#     return deviatoric_strain_sampleframe
 
 
 def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stresszz=0",
