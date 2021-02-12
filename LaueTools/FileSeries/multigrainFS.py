@@ -5,32 +5,35 @@ from time import time, asctime
 import numpy as np
 import math
 import matplotlib.pylab as p
-import module_graphique as modgraph
 
 sys.path.append("..")
 
-import LaueGeometry as F2TC
-import readmccd as rmccd
-import LaueAutoAnalysis as LAA
-import indexingAnglesLUT as INDEX
+if sys.version_info.major == 3:
+    import FileSeries.module_graphique as modgraph
 
-import findorient as FindO
+    import LaueTools.LaueGeometry as F2TC
+    print('LaueGeometry is from lauetools distribution at :',F2TC.__file__)
+    import LaueTools.readmccd as rmccd
+    import LaueTools.LaueAutoAnalysis as LAA
+    import LaueTools.indexingAnglesLUT as INDEX
 
-import CrystalParameters as CP
-from generaltools import norme_vec as norme
-import generaltools as GT
-import IOLaueTools as IOLT
+    import LaueTools.findorient as FindO
 
-import dict_LaueTools as DictLT
-#from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
-from mosaic import ImshowFrame_Scalar, ImshowFrame
+    import LaueTools.CrystalParameters as CP
+    from LaueTools.generaltools import norme_vec as norme
+    import LaueTools.generaltools as GT
+    import LaueTools.IOLaueTools as IOLT
+
+    import LaueTools.dict_LaueTools as DictLT
+    #from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
+    from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
 
 
 from numpy.linalg import inv
 
 # TODO   to refactor -------------------
 # set invisible parameters for serial_peak_search, serial_index_refine_multigrain
-import param_multigrain as PAR
+import FileSeries.param_multigrain as PAR
 
 omega_sample_frame = 40.0
 
