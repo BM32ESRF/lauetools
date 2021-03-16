@@ -603,16 +603,16 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             dataimage = np.array(im.getdata()).reshape(framedim)
 
     # RAW method knowing or deducing offsetheader and dataformat
-    if USE_RAW_METHOD:
-        if verbose > 1: print("----> not using libtiff, nor fabio, nor PIL!!!  ")
+    if 1:#USE_RAW_METHOD:
+        print("----> !!! not using libtiff, nor fabio, nor PIL!!!  ")
         if CCDLabel in ("MARCCD165",):
             print("for MARCCD not using libtiff, raw method ...")
             # offsetheader may change ...
-            #filesize = os.path.getsize(os.path.join(dirname, filename))
+            #filesize=getfilesize(dirname, filename)
             offsetheader = 4096 #filesize - 2048*2048 * 2
         # offset header varying
         elif CCDLabel.startswith("ImageStar_raw"):
-            filesize = os.path.getsize(os.path.join(dirname, filename))
+            filesize=getfilesize(dirname, filename)
             bytes_per_pixels = 2
             if CCDLabel.endswith("32bits"):
                 bytes_per_pixels = 4
@@ -624,7 +624,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         elif CCDLabel in ("sCMOS",):
             if verbose > 0: print("for sCMOS not using libtiff, raw method ...")
             # offsetheader may change ...
-            filesize = os.path.getsize(os.path.join(dirname, filename))
+            filesize=getfilesize(dirname, filename)
             offsetheader = filesize - 2016*2018 * 2
 
         dataimage = readoneimage(filename,
@@ -686,6 +686,12 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     return dataimage, framedim, fliprot
 
+def getfilesize(dirname,filename):
+    if dirname is not None:
+        filesize = os.path.getsize(os.path.join(dirname, filename))
+    else:
+        filesize = os.path.getsize(filename)
+    return filesize
 
 def readoneimage(filename, framedim=(2048, 2048), dirname=None, offset=4096, formatdata="uint16"):
     r""" returns a 1d array of integers from a binary image file (full data)
