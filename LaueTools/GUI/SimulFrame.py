@@ -163,10 +163,10 @@ class SimulationPlotFrame(wx.Frame):
             self.sidefluodetector_btn = wx.Button(self.panel, -1, "FluoDetectorFrame")
             self.txtoffset = wx.StaticText(self.panel, -1, "Fluo frame origin")
             self.txtoffsetX = wx.StaticText(self.panel, -1, "X", size=(80, -1))
-            self.offsetXtxtctrl = wx.TextCtrl(self.panel, -1, "0.0", size=(75, -1))
+            self.offsetXtxtctrl = wx.TextCtrl(self.panel, -1, "0.0", size=(75, -1), style= wx.TE_PROCESS_ENTER)
 
             self.txtoffsetY = wx.StaticText(self.panel, -1, "Y", size=(80, -1))
-            self.offsetYtxtctrl = wx.TextCtrl(self.panel, -1, "0.0", size=(75, -1))
+            self.offsetYtxtctrl = wx.TextCtrl(self.panel, -1, "0.0", size=(75, -1), style= wx.TE_PROCESS_ENTER)
 
             self.sidefluodetector_btn.Bind(wx.EVT_BUTTON, self.OnSideFluoDetector)
             self.offsetXtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnterOffsetX)
