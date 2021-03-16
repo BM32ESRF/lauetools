@@ -121,30 +121,14 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
     :param offsetposition: integer, 0 for no offset, 1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0), 2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)
     :param use_data_corrected: tuple of 3 elements, Enter data instead of reading data from file:
                          fulldata, framedim, fliprot
-                         where fulldata is a ndarray
+                         where fulldata is a 2D ndarray
     :return: list of results:   bkg,  amp  (gaussian height-bkg), X , Y, major axis standard deviation, minor axis standard deviation,
                                 major axis tilt angle / Ox
     .. todo:: setting list of initial guesses can be improve with
         scipy.ndimages of a concatenate array of multiple slices?
     """
     if verbose > 0: print("addImax", addImax)
-    #     print "entrance of readoneimage_multiROIfit", (filename,
-    #                              centers,
-    #                              boxsize,
-    #                              CCDLabel,
-    #                              baseline,
-    #                              startangles,
-    #                              start_sigma1,
-    #                              start_sigma2,
-    #                              position_start,
-    #                              fitfunc,
-    #                              showfitresults,
-    #                              offsetposition,
-    #                              verbose,
-    #                              xtol,
-    #                              addImax,
-    #                              use_data_corrected)
-
+    
     # read data (several arrays)
     ResData = IOimage.readoneimage_manycrops(filename,
                                     centers,
