@@ -45,6 +45,7 @@ else:
     from matchingrate import getProximity
 
 # --- -------------------  Recognition Results
+import wx.lib.scrolledpanel as scrolled
 class RecognitionResultCheckBox(wx.Frame):
     """
     Class GUI frame displaying the list of matching results from indexation
@@ -83,7 +84,8 @@ class RecognitionResultCheckBox(wx.Frame):
         if mainframe is not None:
             self.mainframe = mainframe
         else:
-            self.mainframe = parent.parent
+            if parent is not None:
+                self.mainframe = parent.parent
 
         # print("RecognitionResultCheckBox my parent is ", self.parent)
 
@@ -114,48 +116,60 @@ class RecognitionResultCheckBox(wx.Frame):
         self.data_2thetachi = data_2thetachi
 
         self.DataSet = DataSetObject
-        print("self.DataSet.detectordiameter in init RecognitionResultCheckBox",
+        if self.DataSet is not None:
+            print("self.DataSet.detectordiameter in init RecognitionResultCheckBox",
                                                                     self.DataSet.detectordiameter)
 
         self.init_GUI2()
         self.Show(True)
 
     def init_GUI2(self):
-
-        wx.Frame.__init__(self, self.parent, self._id, self.titlew,
-                        size=(2000, 50 + 20 * self.nbPotentialSolutions + 120))
-        panel = wx.Panel(self, -1)
-
-        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        txt = wx.StaticText(panel, -1, "Select Potential Solutions to Check & Plot & Refine")
-        txt.SetFont(font3)
-
-        if WXPYTHON4:
-            # cols, vgap, hgap
-            vbox3 = wx.GridSizer(6, 5, 10)
+        if self.nbPotentialSolutions < 7:
+            height = 100
+        elif self.nbPotentialSolutions < 15:
+            height = 250
         else:
-            vbox3 = wx.GridSizer(5, 6)
+            height = 400
+        frame = wx.Frame.__init__(self, self.parent, self._id, self.titlew,
+                        size=(1000, height+200))
 
-        txtmatched = wx.StaticText(panel, -1, "Matched")
-        txttheomax = wx.StaticText(panel, -1, "Expected")
-        txtmr = wx.StaticText(panel, -1, "Matching Rate(%)")
-        txtstd = wx.StaticText(panel, -1, "std. dev.(deg)")
+        panel = wx.Panel(self, wx.ID_ANY, size=(1000, height))
 
-        vbox3.AddMany(
-            [(wx.StaticText(panel, -1, "   "), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-            (wx.StaticText(panel, -1, "#Matrix"), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-                            (txtmatched, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-        (txttheomax, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-        (txtmr, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL),
-        (txtstd, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)])
+        # -----------Scrolled panel stuff
+        self.scrolled_panel = scrolled.ScrolledPanel(panel, -1, 
+                                 style=wx.TAB_TRAVERSAL, name="panel1", size=(1000, height))
 
-        print("stats_residues in RecognitionResultCheckBox", self.stats_residues)
+        vbox3 = wx.BoxSizer(wx.VERTICAL)
+
+        txtmatched = wx.StaticText(self.scrolled_panel, -1, "Matched")
+        txttheomax = wx.StaticText(self.scrolled_panel, -1, "Expected")
+        txtmr = wx.StaticText(self.scrolled_panel, -1, "Matching Rate(%)")
+        txtstd = wx.StaticText(self.scrolled_panel, -1, "std. dev.(deg)")
+
+        sp = 80
+
+        hboxres = wx.BoxSizer(wx.HORIZONTAL)
+        hboxres.Add(wx.StaticText(self.scrolled_panel, -1, "   "))
+        hboxres.AddSpacer(sp)
+        hboxres.Add(wx.StaticText(self.scrolled_panel, -1, "#Matrix"))
+        hboxres.AddSpacer(sp)
+        hboxres.Add(txtmatched)
+        hboxres.AddSpacer(45)
+        hboxres.Add(txttheomax)
+        hboxres.AddSpacer(20)
+        hboxres.Add(txtmr)
+        hboxres.AddSpacer(5)
+        hboxres.Add(txtstd)
+        vbox3.Add(hboxres)
+
+        #print("stats_residues in RecognitionResultCheckBox", self.stats_residues)
         self.solutionline = []
-        self.cb = []
+        self.cb=[]
+        
         for k in range(self.nbPotentialSolutions):
 
             nmatched, nmax, std = self.stats_residues[k][:3]
-            print("resss",nmatched, nmax, std)
+            #print("resss",nmatched, nmax, std)
             mattchingrate = nmatched / nmax * 100
 
             if mattchingrate >= 50.:
@@ -164,27 +178,49 @@ class RecognitionResultCheckBox(wx.Frame):
                 color = (255, 255, 255)
 
             # txtind = wx.StaticText(panel, -1, "%d" % k)
-            txtind = ST.GenStaticText(panel, -1, "   %d   " % k)
+            txtind = ST.GenStaticText(self.scrolled_panel, -1, "   %d   " % k)
             txtind.SetBackgroundColour(color)
 
-            self.cb.append(wx.CheckBox(panel, -1))
+            self.cb.append(wx.CheckBox(self.scrolled_panel, -1))
             self.cb[k].SetValue(False)
 
             styletxt = wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL
 
             txtstats = []
-            txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmatched)))
-            txtstats.append(ST.GenStaticText(panel, -1, "%d"%int(nmax)))
-            txtstats.append(ST.GenStaticText(panel, -1, "%.2f"%float(mattchingrate)))
-            txtstats.append(ST.GenStaticText(panel, -1, "%.2f"%float(std)))
+            txtstats.append(ST.GenStaticText(self.scrolled_panel, -1, "%d"%int(nmatched)))
+            txtstats.append(ST.GenStaticText(self.scrolled_panel, -1, "%d"%int(nmax)))
+            txtstats.append(ST.GenStaticText(self.scrolled_panel, -1, "%.2f"%float(mattchingrate)))
+            txtstats.append(ST.GenStaticText(self.scrolled_panel, -1, "%.2f"%float(std)))
             for kt in range(4):
                 txtstats[kt].SetBackgroundColour(color)
-            vbox3.AddMany([(self.cb[k], 0, styletxt),
-                        (txtind, 0, styletxt),
-                        (txtstats[0], 0, styletxt),
-                        (txtstats[1], 0, styletxt),
-                        (txtstats[2], 0, styletxt),
-                        (txtstats[3], 0, styletxt)])
+
+            sp =80
+
+            hboxres = wx.BoxSizer(wx.HORIZONTAL)
+            hboxres.Add(self.cb[k], 0, styletxt)
+            hboxres.AddSpacer(sp)
+            hboxres.Add(txtind, 0, styletxt)
+            hboxres.AddSpacer(110)
+            hboxres.Add(txtstats[0], 0, styletxt)
+            hboxres.AddSpacer(110)
+            hboxres.Add(txtstats[1], 0, styletxt)
+            hboxres.AddSpacer(sp)
+            hboxres.Add(txtstats[2], 0, styletxt)
+            hboxres.AddSpacer(sp)
+            hboxres.Add(txtstats[3], 0, styletxt)
+            hboxres.AddSpacer(50)
+
+            vbox3.Add(hboxres)
+
+        self.scrolled_panel.SetAutoLayout(1)
+        self.scrolled_panel.SetupScrolling()
+
+        self.scrolled_panel.SetSizer(vbox3)
+        #----------------------
+
+        font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+        txt = wx.StaticText(panel, -1, "Select Potential Solutions to Check & Plot & Refine")
+        txt.SetFont(font3)
 
         emintxt = wx.StaticText(panel, -1, "Energy min: ")
         self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150, size=(70, -1))
@@ -201,6 +237,7 @@ class RecognitionResultCheckBox(wx.Frame):
         quitbtn = wx.Button(panel, -1, "Quit", size=(-1, 50))
         quitbtn.Bind(wx.EVT_BUTTON, self.OnQuit)
 
+        # layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(plotbtn, 1, wx.ALL)
         hbox.Add(simulbtn, 1, wx.ALL)
@@ -216,15 +253,15 @@ class RecognitionResultCheckBox(wx.Frame):
         sizerparam = wx.BoxSizer(wx.VERTICAL)
         sizerparam.Add(txt, 0, wx.ALIGN_CENTER_HORIZONTAL)
         sizerparam.AddSpacer(5)
-        sizerparam.Add(vbox3, 0, wx.ALL)
+        sizerparam.Add(self.scrolled_panel, 0, wx.ALL)
         sizerparam.AddSpacer(10)
         sizerparam.Add(hbox2, 0)
         sizerparam.Add(hbox3, 0)
         sizerparam.Add(hbox, 0, wx.EXPAND)
 
         panel.SetSizer(sizerparam)
-        
-        sizerparam.Fit(self)
+
+        #sizerparam.Fit(self)
 
         #---------  tooltip
         simulbtn.SetToolTipString('Simulate and Plot Laue Pattern of the 4 children of a selected '
@@ -473,3 +510,26 @@ class RecognitionResultCheckBox(wx.Frame):
         RRCB.TwicethetaChi_solution = self.TwicethetaChi_solution
 
         return True
+
+def start():
+    """ test only of the GUI layout"""
+    GUIApp = wx.App()
+
+    import numpy as np
+    nbsol = 40
+    stats_residues = np.arange(4*nbsol).reshape((nbsol,4))
+    data = None
+    DRTA = 5
+    MATR = None
+    IndexationParameters={}
+    IndexationParameters["paramsimul"]=None
+    IndexationParameters["bestmatrices"]=None
+    frame = RecognitionResultCheckBox(None, -1, 'test', stats_residues, data, DRTA, MATR, IndexationParameters=IndexationParameters)
+    frame.Show()
+
+
+    GUIApp.MainLoop()
+
+
+if __name__ == "__main__":
+    start()
