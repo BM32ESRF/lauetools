@@ -926,8 +926,8 @@ class BrowseCropPanel(wx.Panel):
         imagemaxtxt = wx.StaticText(self, -1, "Max: ")
         steptxt = wx.StaticText(self, -1, "Nb images/line: ")
         self.imagemintxtctrl = wx.TextCtrl(self, -1, "0", size=(100, -1), style=wx.TE_PROCESS_ENTER)
-        self.imagemaxtxtctrl = wx.TextCtrl(self, -1, str(self.imageindexmax), size=(100, -1),
-                                                                        style=wx.TE_PROCESS_ENTER)
+        self.imagemaxtxtctrl = wx.TextCtrl(self, -1,
+        str(self.imageindexmax), size=(100, -1), style=wx.TE_PROCESS_ENTER)
         self.imagemintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.mainframe.OnChangeImageMin)
         self.imagemaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.mainframe.OnChangeImageMax)
 
