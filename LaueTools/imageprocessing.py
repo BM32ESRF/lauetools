@@ -70,6 +70,8 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     else:
         boxsizex, boxsizey = halfboxsizeROI
 
+    # TODO check also  if xpic and ypic is within framedim 
+
     x1 = np.maximum(0, xpic - boxsizex)
     x2 = np.minimum(arrayshape[0], xpic + boxsizex)
     y1 = np.maximum(0, ypic - boxsizey)
