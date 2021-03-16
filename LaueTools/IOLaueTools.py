@@ -1827,6 +1827,8 @@ def ReadSpec(fname, scan, outputdate=False):
     """
     f = open(fname, "r")
 
+    print('ReadSpec of IOLaueTools.py')
+
     s = "#S %d" % scan
     title = 0
 
@@ -1870,8 +1872,12 @@ def ReadSpec(fname, scan, outputdate=False):
         if len(l) < 2:
             break
 
-        if l[:2] == "#C":
-            if not l.startswith("#C tiltcomp:"):
+        if l[:2] == "#C":            
+            # deal with#C Thu Feb 25 23:54:05 2021.  Erreur com with laueT.
+            if 'Erreur com' in l:
+                print('line error #C :',l)
+                continue
+            elif not l.startswith("#C tiltcomp:"):
                 print("Scan aborted after %d point(s)" % ii)
                 break
             else:
