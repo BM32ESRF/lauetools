@@ -1094,7 +1094,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
 
     if LUT is None:
         # GenerateLookUpTable
-        print("Calculating LUT in PlanePairs_from2sets()")
+        if verbose: print("Calculating LUT in PlanePairs_from2sets()")
         if LUT_with_rules:
             rules = (None, dictmaterials[key_material][2])
         else:
