@@ -523,7 +523,6 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
         * Used in FileSeries
         * Used in AutoIndexation  (if max setA < max setB)
     """
-
     
     # print('input param',spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
     #                                         n, key_material, MaxRadiusHKL,
@@ -683,6 +682,9 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
                                                         applyExtinctionRules=applyExtinctionRules)
 
     for spotindex_2, angle in enumerate(Distances_from_central_spot):
+        if angle ==0.0:
+            continue
+            
         if verbose:
             print("\n-*-*-*----------------------------------------------------")
             print("k,angle = ", spotindex_2, angle)
@@ -690,7 +692,7 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
 
         hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=0, verbose=verbose)  # LUT is provided !
 
-        if hkls is not None and (spot_index != spotindex_2):
+        if hkls is not None:
             nbpairs = len(hkls)
             PPs_list.append([hkls, spotindex_2, nbpairs])
             if verbose:
@@ -1490,7 +1492,7 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
                                             minimumNbMatches=15,
                                             LUT_with_rules=True):
     """find orientation matrices and scores from the mutual angles recognition
-    from two spots Sets
+    in a subset of spots
 
     LUT_with_rules:
 
@@ -2036,7 +2038,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                         LUT_with_rules=LUT_with_rules,
                                                         excludespotspairs=excludespotspairs)
 
-        # if hkl for central spots IS NOT defined
+        # if hkl for central spots IS NOT known
         else:
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:
