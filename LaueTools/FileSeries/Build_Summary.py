@@ -12,6 +12,9 @@ import copy
 
 sys.path.append("..")
 
+import matplotlib
+matplotlib.use("WXAgg")
+
 import wx
 
 if wx.__version__ < "4.":
@@ -27,13 +30,26 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
-from dict_LaueTools import LAUETOOLSFOLDER
+if sys.version_info.major == 3:
+    import LaueTools.dict_LaueTools as dictLT
+else:
+    import dict_LaueTools as dictLT
+
+LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
 LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
 print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
-import FileSeries.multigrainFS as MGFS
-import FileSeries.module_graphique as modgraph
-import param_multigrain as PAR
+from . import multigrainFS as MGFS
+from . import module_graphique as modgraph
+from . import param_multigrain as PAR
+
+# #import FileSeries.multigrainFS as MGFS
+# import FileSeries.module_graphique as modgraph
+# import param_multigrain as PAR
+
+# TODO refactor without modgraph
+# TODO refactor without PAR
+
 
 try:
     import tables
@@ -43,26 +59,23 @@ except IOError:
     print("Unable to load tables module from pytables...")
     PYTABLES_EXISTS = False
 
-LIST_TXTPARAM_BS = [
-    "Folder .fit file",
-    "Folder Result file",
-    "prefix .fit file",
-    ".fit suffix",
-    "Nbdigits filename",
-    "startindex",
-    "finalindex",
-    "stepindex",
-    "stiffness file (.stf)",
-    "Material",
-    "file xyz",
-    "nx",
-    "ny",
-    "fast axis",
-    "stepxy",
-]
+LIST_TXTPARAM_BS = ["Folder .fit file",
+                    "Folder Result file",
+                    "prefix .fit file",
+                    ".fit suffix",
+                    "Nbdigits filename",
+                    "startindex",
+                    "finalindex",
+                    "stepindex",
+                    "stiffness file (.stf)",
+                    "Material",
+                    "file xyz",
+                    "nx",
+                    "ny",
+                    "fast axis",
+                    "stepxy"]
 
-TIP_BS = [
-    "Folder containing indexed Peaks List .fit files",
+TIP_BS = ["Folder containing indexed Peaks List .fit files",
     "Folder to write summary files",
     "Prefix for .fit files filename prefix####.fit",
     'file suffix. Default ".fit"',
@@ -92,9 +105,7 @@ DICT_TOOLTIP[
 
 class MainFrame_BuildSummary(wx.Frame):
     def __init__(self, parent, _id, title, _initialparameters):
-        wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 700)
-        )
+        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 700))
 
         self.initialparameters = _initialparameters
         print('self.initialparameters', self.initialparameters)
@@ -143,13 +154,11 @@ class MainFrame_BuildSummary(wx.Frame):
                 elif kk == 1:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_results_folder)
                     btnbrowse.SetToolTipString(
-                        "Select output folder for summary results files"
-                    )
+                        "Select output folder for summary results files")
                 elif kk == 2:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepathout_fit)
                     btnbrowse.SetToolTipString(
-                        "Select one .fit file to get (and guess) the generic prefix of all .fit filenames"
-                    )
+                        "Select one .fit file to get (and guess) the generic prefix of all .fit filenames")
                 elif kk == 8:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_stiffnessfile)
                     btnbrowse.SetToolTipString("Select stiffness .stf file")
@@ -169,9 +178,7 @@ class MainFrame_BuildSummary(wx.Frame):
         #         none10 = wx.StaticText(self.panel, -1, "")
         #         grid.Add(none10)
 
-        txt_fileparameters = wx.StaticText(
-            self.panel, -1, "Step 1 : Build (index,x,y) file"
-        )
+        txt_fileparameters = wx.StaticText(self.panel, -1, "Step 1 : Build (index,x,y) file")
         grid.Add(txt_fileparameters)
         font = wx.Font(12, wx.MODERN, wx.ITALIC, wx.NORMAL)
         txt_fileparameters.SetFont(font)
@@ -181,24 +188,19 @@ class MainFrame_BuildSummary(wx.Frame):
         grid.Add(txt_none_2)
 
         btn_fabrication_to_hand = wx.Button(
-            self.panel, -1, "Build manually", size=(200, -1)
-        )
+            self.panel, -1, "Build manually", size=(200, -1))
         grid.Add(btn_fabrication_to_hand)
         btn_fabrication_to_hand.Bind(wx.EVT_BUTTON, self.OnbuildManually)
         btn_fabrication_with_image = wx.Button(
-            self.panel, -1, "Build from Images Info", size=(200, -1)
-        )
+            self.panel, -1, "Build from Images Info", size=(200, -1))
         btn_fabrication_with_image.Disable()
         grid.Add(btn_fabrication_with_image)
         btn_fabrication_with_image.Bind(
-            wx.EVT_BUTTON, self.Onbtn_fabrication_with_image
-        )
+            wx.EVT_BUTTON, self.Onbtn_fabrication_with_image)
         txt_none_3 = wx.StaticText(self.panel, -1, "")
         grid.Add(txt_none_3)
 
-        txt_buildsummary = wx.StaticText(
-            self.panel, -1, "Step 2 : Build summary files "
-        )
+        txt_buildsummary = wx.StaticText(self.panel, -1, "Step 2 : Build summary files ")
         grid.Add(txt_buildsummary)
 
         txt_buildsummary.SetFont(font)
@@ -229,12 +231,9 @@ class MainFrame_BuildSummary(wx.Frame):
         self.Layout()
 
         # tooltips ----------
-        btn_fabrication_to_hand.SetToolTipString(
-            "Create a 3 columns file: image_index, x, y"
-        )
+        btn_fabrication_to_hand.SetToolTipString("Create a 3 columns file: image_index, x, y")
         btnStart.SetToolTipString(
-            "Start reading all .fit files and build summary files in folder results"
-        )
+            "Start reading all .fit files and build summary files in folder results")
 
         self.builddatfile.SetToolTipString("Build an ASCII summary file with extension .dat")
         self.buildhdf5.SetToolTipString("Build a hdf5 file system file")
@@ -259,11 +258,9 @@ class MainFrame_BuildSummary(wx.Frame):
             self.list_txtctrl[1].SetValue(abspath)
 
     def OnbtnBrowse_filepathout_fit(self, evt):
-        folder = wx.FileDialog(
-            self,
+        folder = wx.FileDialog(self,
             "Select refined Peaklist File .fit for catching prefix",
-            wildcard="Refined PeakList (*.fit)|*.fit|All files(*)|*",
-        )
+            wildcard="Refined PeakList (*.fit)|*.fit|All files(*)|*",)
 
         if folder.ShowModal() == wx.ID_OK:
 
@@ -281,11 +278,8 @@ class MainFrame_BuildSummary(wx.Frame):
             self.list_txtctrl[2].SetValue(intension[:-nbdigits])
 
     def OnbtnBrowse_stiffnessfile(self, evt):
-        folder = wx.FileDialog(
-            self,
-            "Select stiffness file .stf",
-            wildcard="stiffness file (*.stf)|*.stf|All files(*)|*",
-        )
+        folder = wx.FileDialog(self,"Select stiffness file .stf",
+            wildcard="stiffness file (*.stf)|*.stf|All files(*)|*",)
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[8].SetValue(folder.GetPath())
@@ -300,8 +294,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
     def OnbuildManually(self, event):
         PSboard = Manual_XYZfilecreation_Frame(
-            self, -1, "File sample XYZ position: Manual creation Board"
-        )
+            self, -1, "File sample XYZ position: Manual creation Board")
         PSboard.Show(True)
 
     def Onbtn_fabrication_with_image(self, event):
@@ -341,45 +334,39 @@ class MainFrame_BuildSummary(wx.Frame):
         if self.builddatfile.GetValue():
 
             allres, fullpath_summary_filename = MGFS.build_summary(
-                image_indices,
-                folderfitfiles,
-                prefix,
-                suffix,
-                filexyz,
-                startindex=startindex,
-                finalindex=finalindex,
-                number_of_digits_in_image_name=nbdigits_for_zero_padding,
-                folderoutput=folderresult,
-                default_file=DEFAULT_FILE,
-            )
+                                    image_indices,
+                                    folderfitfiles,
+                                    prefix,
+                                    suffix,
+                                    filexyz,
+                                    startindex=startindex,
+                                    finalindex=finalindex,
+                                    number_of_digits_in_image_name=nbdigits_for_zero_padding,
+                                    folderoutput=folderresult,
+                                    default_file=DEFAULT_FILE)
 
             print("fullpath_summary_filename", fullpath_summary_filename)
 
             fullpath_summary_filename = MGFS.add_columns_to_summary_file_new(
-                fullpath_summary_filename,
-                elem_label=key_material,
-                filestf=stiffnessfile,
-            )
+                                                    fullpath_summary_filename,
+                                                    elem_label=key_material,
+                                                    filestf=stiffnessfile)
 
-            wx.MessageBox(
-                "Operation Successful! \t \t Summary file created here: %s"
-                % fullpath_summary_filename
-            )
+            wx.MessageBox("Operation Successful! \t \t Summary file created here: %s"
+                % fullpath_summary_filename)
         if self.buildhdf5.GetValue():
             from Lauehdf5 import Add_allspotsSummary_from_fitfiles
 
             "\n\n ****** \nBuilding a hdf5 summary file\n*********  \n\n"
             Summary_HDF5_filename = prefix + ".h5"
-            Add_allspotsSummary_from_fitfiles(
-                Summary_HDF5_filename,
-                prefix,
-                folderfitfiles,
-                image_indices,
-                Summary_HDF5_dirname=folderfitfiles,
-                number_of_digits_in_image_name=4,
-                filesuffix=".fit",
-                nb_of_spots_per_image=300,
-            )
+            Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename,
+                                                prefix,
+                                                folderfitfiles,
+                                                image_indices,
+                                                Summary_HDF5_dirname=folderfitfiles,
+                                                number_of_digits_in_image_name=4,
+                                                filesuffix=".fit",
+                                                nb_of_spots_per_image=300)
 
 
 class Manual_XYZfilecreation_Frame(wx.Frame):
@@ -387,9 +374,8 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
     GUI class for setting parameters to build xyz file 
     """
     def __init__(self, parent, _id, title):
-        wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(350, 300)
-        )
+        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition,
+                                                        wx.Size(350, 300))
         self.parent = parent
         self.panel = wx.Panel(self)
 
@@ -405,8 +391,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         proposedfilexyname = '{}_{}_to_{}_xy.dat'.format(
                             self.parent.list_txtctrl[2].GetValue(),
                             self.parent.list_txtctrl[5].GetValue(),
-                            self.parent.list_txtctrl[6].GetValue()
-                            )
+                            self.parent.list_txtctrl[6].GetValue())
         self.parent.initialparameters[10] = os.path.join(self.parent.list_txtctrl[1].GetValue(),
                                                 proposedfilexyname)
 
@@ -423,9 +408,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
 
                 grid.Add(wx.Button(self.panel, kk + 9, "?", size=(25, 25)))
 
-        self.Bind(
-            wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathout(self), id=12
-        )
+        self.Bind(wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathout(self), id=12)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filepathout(self), id=13)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_fileprefix(self), id=14)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filesuffix(self), id=15)
@@ -443,8 +426,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         #         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_ystep(self), id=25)
 
         btnStart_BS_fabricationHand = wx.Button(
-            self.panel, -1, "Create File with array Index,X,Y", size=(-1, 60)
-        )
+            self.panel, -1, "Create File with array Index,X,Y", size=(-1, 60))
 
         btnStart_BS_fabricationHand.Bind(wx.EVT_BUTTON, self.start_manualXYZ)
         #layout---
@@ -453,8 +435,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         vbox.Add(btnStart_BS_fabricationHand, 0, wx.EXPAND)
 
         self.help = wx.TextCtrl(
-            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(250, 100)
-        )
+            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(250, 100))
         vbox.Add(self.help, 1, wx.EXPAND)
 
         self.panel.SetSizer(vbox, wx.EXPAND)
@@ -550,8 +531,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
             self.parent.list_txtctrl[10].SetValue(outfilename)
 
             wx.MessageBox(
-                "Operation Successful! \t \t Filexyz created: %s" % outfilename
-            )
+                "Operation Successful! \t \t Filexyz created: %s" % outfilename)
         else:
             wx.MessageBox("Files's path or input datas are missing!")
 
@@ -561,8 +541,7 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
 class New_indimg(wx.Frame):
     def __init__(self, parent, _id, title, list_txtctrl_hand):
         wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(700, 700)
-        )
+            self, parent, _id, title, wx.DefaultPosition, wx.Size(700, 700))
 
         self.panel = wx.Panel(self)
         if WXPYTHON4:
@@ -583,8 +562,7 @@ class New_indimg(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nbpicture1(self), id=10)
         self.Bind(
-            wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nblastpicture(self), id=11
-        )
+            wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nblastpicture(self), id=11)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_increment(self), id=12)
 
         btnOK = wx.Button(self.panel, -1, "OK")
@@ -594,8 +572,7 @@ class New_indimg(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
         self.help = wx.TextCtrl(
-            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300)
-        )
+            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300))
         vbox.Add(self.help, 0, wx.EXPAND)
 
         self.panel.SetSizer(vbox, wx.EXPAND)
@@ -616,17 +593,13 @@ class New_indimg(wx.Frame):
         modgraph.nbpicture1 = int(self.list_txtctrl_new[0].GetValue())
         modgraph.nblastpicture = int(self.list_txtctrl_new[1].GetValue())
         modgraph.increment = int(self.list_txtctrl_new[2].GetValue())
-        list_txtctrl_hand[6].SetValue(
-            str(
-                "range("
+        list_txtctrl_hand[6].SetValue(str("range("
                 + str(self.list_txtctrl_new[0].GetValue())
                 + ","
                 + str(self.list_txtctrl_new[1].GetValue())
                 + ","
                 + str(self.list_txtctrl_new[2].GetValue())
-                + ")"
-            )
-        )
+                + ")"))
         self.Destroy()
 
 
@@ -635,9 +608,7 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
     Non used GUI class to extract in a clever way map parameters ...
     """
     def __init__(self, parent, _id, title, objet_BSi, manag, list_txtctrl):
-        wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 900)
-        )
+        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 900))
 
         self.panel = wx.Panel(self)
         if WXPYTHON4:
@@ -683,24 +654,18 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filepathim(self), id=25)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnchangeindimg(self), id=26)
         self.Bind(
-            wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathout(self), id=12
-        )
+            wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathout(self), id=12)
         self.Bind(wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathim(self), id=17)
 
         btnStart_BS_fabricationImage = wx.Button(self.panel, -1, "START")
         grid.Add(btnStart_BS_fabricationImage)
         btnStart_BS_fabricationImage.Bind(
-            wx.EVT_BUTTON,
-            lambda event: self.OnbtnStart_BS_fabricationImage(
-                self, manag, objet_BSi, list_txtctrl
-            ),
-        )
-
+            wx.EVT_BUTTON,lambda event: self.OnbtnStart_BS_fabricationImage(
+                self, manag, objet_BSi, list_txtctrl))
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
         self.help = wx.TextCtrl(
-            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300)
-        )
+            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300))
         vbox.Add(self.help, 0, wx.EXPAND)
 
         self.panel.SetSizer(vbox, wx.EXPAND)
@@ -746,36 +711,26 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
         check = 1
         for k in range(2, 8):
             if k == 5:
-                objet_BSi.list_valueparamBSi[k] = int(
-                    self.list_txtctrl_image[k].GetValue()
-                )
-                PAR.number_of_digits_in_image_name = int(
-                    self.list_txtctrl_image[k].GetValue()
-                )
-                list_txtctrl[k].SetValue(str(self.list_txtctrl_image[k].GetValue()))
+                valtxt = self.list_txtctrl_image[k].GetValue()
+                objet_BSi.list_valueparamBSi[k] = int(valtxt)
+                number_of_digits_in_image_name = int(valtxt)
+                list_txtctrl[k].SetValue(str(valtxt))
             elif k != 6:
                 objet_BSi.list_valueparamBSi[k] = str(
-                    self.list_txtctrl_image[k].GetValue()
-                )
+                    self.list_txtctrl_image[k].GetValue())
             else:
                 objet_BSi.list_valueparamBSi[k] = modgraph.indimg
-                list_txtctrl[k].SetValue(
-                    (
-                        "range"
+                list_txtctrl[k].SetValue(("range"
                         + "("
                         + str(modgraph.nbpicture1)
                         + ","
                         + str(modgraph.nblastpicture)
                         + ","
                         + str(modgraph.increment)
-                        + ")"
-                    )
-                )
-            if (
-                objet_BSi.list_valueparamBSi[k] is None
+                        + ")"))
+            if (objet_BSi.list_valueparamBSi[k] is None
                 or objet_BSi.list_valueparamBSi[k] == "None"
-                or objet_BSi.list_valueparamBSi[k] == ""
-            ):
+                or objet_BSi.list_valueparamBSi[k] == ""):
                 check = 0
 
         objet_BSi.list_valueparamBSi[9] = objet_BSi.list_valueparamBSi[3]
@@ -786,17 +741,14 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
         modgraph.outfilenamexy = str(objet_BSi.list_valueparamBSi[2]) + "xyz_"
         if check == 1:
             objet_BSi.list_valueparamBSi[8] = MGFS.get_xyzech(
-                objet_BSi.list_valueparamBSi[7],
-                objet_BSi.list_valueparamBSi[3],
-                modgraph.indimg,
-                objet_BSi.list_valueparamBSi[4],
-                modgraph.outfilenamexy,
-            )
+                                        objet_BSi.list_valueparamBSi[7],
+                                        objet_BSi.list_valueparamBSi[3],
+                                        modgraph.indimg,
+                                        objet_BSi.list_valueparamBSi[4],
+                                        modgraph.outfilenamexy)
             list_txtctrl[1].SetValue(str(objet_BSi.list_valueparamBSi[8]))
-            wx.MessageBox(
-                "Operation Successful! Files created here: %s"
-                % (modgraph.outfilenamexy)
-            )
+            wx.MessageBox("Operation Successful! Files created here: %s"
+                % (modgraph.outfilenamexy))
         else:
             wx.MessageBox("Files's path or input datas are missing!")
         self.Destroy()
@@ -833,8 +785,7 @@ def fill_list_valueparamBS(initialparameters_dict):
         initialparameters_dict["Map shape"][1],
         initialparameters_dict["Map shape"][0],
         initialparameters_dict["fast axis: x or y"],
-        initialparameters_dict["(stepX, stepY) microns"],
-    ]
+        initialparameters_dict["(stepX, stepY) microns"]]
     return list_valueparam_BS
 
 
@@ -848,10 +799,8 @@ print("MainFolder", MainFolder)
 
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
 
-initialparameters["file xyz"] = os.path.join(
-    MainFolder, "fitfiles", "CuSi_xy_0_to_14.dat"
-)
-initialparameters["IndexRefine PeakList Prefix"] = "cusi_"
+initialparameters["file xyz"] = os.path.join(MainFolder, "fitfiles", "SiCustrain_0_to_5_xy.dat")
+initialparameters["IndexRefine PeakList Prefix"] = "SiCustrain"
 initialparameters["IndexRefine PeakList Suffix"] = ".fit"
 
 initialparameters["Map shape"] = (5, 3)  # (nb lines, nb images per line)
@@ -860,7 +809,7 @@ initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
 initialparameters["Material"] = "Si"
 initialparameters["stiffness file"] = os.path.join(MainFolder, "si.stf")
 
-initialparameters["nbdigits"] = 4
+initialparameters["nbdigits"] = 0
 initialparameters["startingindex"] = 0
 initialparameters["finalindex"] = 5
 initialparameters["stepindex"] = 1
@@ -868,17 +817,12 @@ initialparameters["fast axis: x or y"] = "x"
 
 list_valueparamBS = fill_list_valueparamBS(initialparameters)
 
-DEFAULT_FILE = os.path.join(
-    initialparameters["IndexRefine PeakList Folder"], "nanox2_400_0000.fit"
-)
+DEFAULT_FILE = os.path.join(initialparameters["IndexRefine PeakList Folder"],
+                                            "nanox2_400_0000.fit")
 
 if __name__ == "__main__":
-
-
-
     BuildSummaryApp = wx.App()
-    BSFrame = MainFrame_BuildSummary(
-        None, -1, "Build Summary Parameters Board", list_valueparamBS
-    )
+    BSFrame = MainFrame_BuildSummary(None, -1,
+                                "Build Summary Parameters Board", list_valueparamBS)
     BSFrame.Show(True)
     BuildSummaryApp.MainLoop()

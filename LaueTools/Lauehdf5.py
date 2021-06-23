@@ -5,6 +5,7 @@ import numpy as np
 import pylab as pp
 import scipy.ndimage as SCI
 import tables as Tab
+import h5py 
 
 if Tab.__version__ >= "3.4.3":
     Tab.openFile = Tab.open_file
@@ -13,7 +14,10 @@ if Tab.__version__ >= "3.4.3":
     Tab.File.createArray = Tab.File.create_array
 
 if sys.version_info.major == 3:
-    from . import generaltools as GT
+    #from . import generaltools as GT
+    
+    import LaueTools.generaltools as GT
+
     from . import readmccd as RMCCD
     from . import IOLaueTools as IOLT
     from . import dict_LaueTools as DictLT
@@ -1262,20 +1266,32 @@ class TableMap:
         self.peaklistcor_extension = PEAKLISTCOR_EXTENSION
 
     def readfile(self, filename, modify=1):
-        self.hdf = ReadMapFile(filename, modify=modify)
+        """ read hdf5 file and look for Laue analysis data """
+        self.hdf = ReadMapFile(filename, modify=0)
+
+        print('self.hdf %s'%self.hdf)
+
+        # self.tableallspotsNode = "/Allspots/total_spots"
+        # self.tableUBNode = "/Indexation/UB_matrices"
+        # self.tableMRNode = "/Indexation/matching_rate"
+
+        # self.tableallspotsNode = self.hdf["/Allspots/total_spots"]
+        # self.tableUBNode = self.hdf["/Indexation/UB_matrices"]
+        # self.tableMRNode = self.hdf["/Indexation/matching_rate"]
+
         try:
-            self.tableallspotsNode = self.hdf.getNode("/Allspots/total_spots")
+            self.tableallspotsNode = self.hdf.get_node("/Allspots/total_spots")
         except Tab.NoSuchNodeError:
             print("Missing Node containing spots Data")
             self.tableallspotsNode = None
 
         try:
-            self.tableUBNode = self.hdf.getNode("/Indexation/UB_matrices_LT")
+            self.tableUBNode = self.hdf.get_node("/Indexation/UB_matrices")
         except Tab.NoSuchNodeError:
             print("Missing Node containing UB matrix data")
             self.tableUBNode = None
         try:
-            self.tableMRNode = self.hdf.getNode("/Indexation/matching_rate")
+            self.tableMRNode = self.hdf.get_node("/Indexation/matching_rate")
         except Tab.NoSuchNodeError:
             print("Missing Node containing spots Indexation Quality")
             self.tableMRNode = None
@@ -1291,16 +1307,15 @@ class TableMap:
         if self.tableallspotsNode is not None:
             self.field_Spots = self.tableallspotsNode.colnames
 
-        self.nb_images = self.tableUBNode.nrows
+        self.nb_images = self.tableUBNode.shape[0]
 
         print("nb of images", self.nb_images)
 
         print("reset manually nb of images to 1681 !!!")
-        self.nb_images = 1681
+        self.nb_images =500
         # TODO to be more general
         self.starting_index = min(self.tableMRNode.read(field="fileindex"))
-
-        self.final_index = self.tableUBNode.nrows
+        self.final_index = max(self.tableMRNode.read(field="fileindex"))
 
     # --- ------------  Query ------------------
     def peak_location(self, XY, radius=5.0, otherinfo=None):
@@ -1528,7 +1543,7 @@ class TableMap:
         """
         sentence = """fileindex == %d"""
 
-        queryanswer = self.tableMRNode.readWhere(sentence % fileindex)
+        queryanswer = self.tableMRNode.read_where(sentence % fileindex)
 
         #         print 'queryanswer',queryanswer
         if len(queryanswer) > 0:
@@ -1545,7 +1560,7 @@ class TableMap:
         """
         sentence = """fileindex == %d"""
 
-        queryanswer = self.tableMRNode.readWhere(sentence % fileindex)
+        queryanswer = self.tableMRNode.read_where(sentence % fileindex)
         if len(queryanswer) > 0:
             tupleelems = list(queryanswer[0])
 
@@ -1575,7 +1590,7 @@ class TableMap:
         """
         sentence = """fileindex == %d"""
 
-        queryanswer = self.tableMRNode.readWhere(sentence % fileindex)
+        queryanswer = self.tableMRNode.read_where(sentence % fileindex)
         if len(queryanswer) > 0:
             grainsNB = list(queryanswer[0])[3:6]
             # TODO check if the order is the same as tableMRNode.colnames
@@ -1603,7 +1618,7 @@ class TableMap:
 
         sentence = """fileindex == %d"""
 
-        queryanswer = self.tableUBNode.readWhere(sentence % fileindex)
+        queryanswer = self.tableUBNode.read_where(sentence % fileindex)
         #         print fileindex, queryanswer
         if len(queryanswer) > 0:
             tupleelems = list(queryanswer[0])[:-1]
@@ -1859,9 +1874,8 @@ class TableMap:
 
         print(self.kwds_fitpeaks)
 
-        params = RMCCD.readoneimage_multiROIfit(
-            filename, centers, boxsize, **self.kwds_fitpeaks
-        )[0]
+        params = RMCCD.readoneimage_multiROIfit(filename, centers, boxsize,
+                                    **self.kwds_fitpeaks)[0]
 
         par = np.array(params)
 
@@ -2014,8 +2028,7 @@ DEFAULT_DICT_NONINDEXEDSPOTS_VALUES = {"H": 10000,
                                         "PixDev_x": -1,
                                         "PixDev_y": -1}
 
-DEFAULT_TO_RESET = ([
-        DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["H"],
+DEFAULT_TO_RESET = ([DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["H"],
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["K"],
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["L"],
         DEFAULT_DICT_NONINDEXEDSPOTS_VALUES["MatchingRate"],
@@ -2036,7 +2049,10 @@ class TabletoQuery:
     def __init__(self, tableofdata, tabletypename):
         self.table = tableofdata
         self.fields = tableofdata.colnames
-        self.nbdata = tableofdata.nrows
+        nb_cols = len(self.fields)
+        nb_rows = tableofdata.nrows
+        # nb of rows or 'data'
+        self.nbdata = nb_rows
         self.tabletypename = tabletypename
 
     #        self.parenttable = parent.tableofdata
@@ -2414,13 +2430,18 @@ def ReadMap(hfd5_filename):
     return tableUB, tableMR, tableallspots
 
 
-def ReadMapFile(hfd5_filename, modify=1):
+def ReadMapFile(hfd5_filename, modify=0):
     print("opening hdf5 file: %s" % hfd5_filename)
 
     if modify:
         hdf5file = Tab.openFile(hfd5_filename, "a")
     else:
-        hdf5file = Tab.openFile(hfd5_filename)
+        hdf5file = Tab.openFile(hfd5_filename, 'r')
+
+    # if modify:
+    #     hdf5file = h5py.File(hfd5_filename, "a")
+    # else:
+    #     hdf5file = h5py.File(hfd5_filename)
 
     return hdf5file
 

@@ -10,20 +10,16 @@ sys.path.append("..")
 
 if sys.version_info.major == 3:
     import FileSeries.module_graphique as modgraph
-
     import LaueTools.LaueGeometry as F2TC
     print('LaueGeometry is from lauetools distribution at :',F2TC.__file__)
     import LaueTools.readmccd as rmccd
     import LaueTools.LaueAutoAnalysis as LAA
     import LaueTools.indexingAnglesLUT as INDEX
-
     import LaueTools.findorient as FindO
-
     import LaueTools.CrystalParameters as CP
     from LaueTools.generaltools import norme_vec as norme
     import LaueTools.generaltools as GT
     import LaueTools.IOLaueTools as IOLT
-
     import LaueTools.dict_LaueTools as DictLT
     #from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
     from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
@@ -108,7 +104,6 @@ def dlat_to_rlat(dlat):
         (np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5])) / (np.sin(dlat[3]) * np.sin(dlat[4])))
 
     return rlat
-
 
 
 def rad_to_deg(dlat):
@@ -680,8 +675,8 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     fileindex_list: list of file index
 
     # mean local grain intensity is taken over the most intense ntopspots spots
-    nbtopspots = 10 
-    
+    nbtopspots = 10
+
     number_of_digits_in_image_name :  nb of 0 padded integer formatting
                                     example: for 4  , then 56 => 0056
                                     0 to simpliest integer formatting (not zero padding)
@@ -813,7 +808,7 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, euler 22:25  \n"
 
     try:
-        import module_graphique as modgraph
+        from . import module_graphique as modgraph
 
         fullpath_summary_filename = os.path.join( folderoutput,
                             fileprefix
@@ -2543,8 +2538,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         dict_param = {"datasigntype": datasigntype}
         Tabindices1D = np.ravel(map_imageindex_array)
         plotobjet = ImshowFrame(App_parent, -1, "%s %s" % (maptype, columnname),
-                                z_values, cmap=GT.ORRD, interpolation="nearest",
-                                origin="upper", Imageindices=Tabindices1D,
+                                z_values, Imageindices=Tabindices1D,
                                 nb_row=nb_col, nb_lines=nb_lines, stepindex=1,
                                 boxsize_row=1, boxsize_line=1,
                                 imagename=columnname, mosaic=0,
@@ -3289,19 +3283,14 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
         ar_posmotor = reshape(ar_posmotor, (nlines, ncol, 2))
 
-        plo = ImshowFrame_Scalar(
-            App_parent,
-            -1,
-            strname,
-            z_values,
-            dataarray_info=ar_posmotor,
-            datatype=datatype,
-            xylabels=("dxech (microns)", "dyech (microns)"),
-            posmotorname=("Xsample", "Ysample"),
-            Imageindices=map_imageindex_array,
-            absolute_motorposition_unit="micron",
-            colorbar_label=colorbar_label,
-        )
+        plo = ImshowFrame_Scalar(App_parent, -1, strname, z_values,
+                                dataarray_info=ar_posmotor,
+                                datatype=datatype,
+                                xylabels=("dxech (microns)", "dyech (microns)"),
+                                posmotorname=("Xsample", "Ysample"),
+                                Imageindices=map_imageindex_array,
+                                absolute_motorposition_unit="micron",
+                                colorbar_label=colorbar_label)
 
         if App_parent is not None:
             if App_parent.list_of_windows not in ([],):
