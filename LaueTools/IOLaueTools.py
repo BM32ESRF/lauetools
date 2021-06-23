@@ -39,16 +39,17 @@ def convert2corfile():
     pass
 
 
-def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity, param=None,
-                                                                            initialfilename=None,
-                                                                            comments=None,
-                                                                            sortedexit=0,
-                                                                            overwrite=1,
-                                                                            data_sat=None,
-                                                                            data_props=None,
-                                                                            rectpix=0,  # RECTPIX
-                                                                            dirname_output=None,
-                                                                            verbose=0):
+def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity,
+                                            param=None,
+                                            initialfilename=None,
+                                            comments=None,
+                                            sortedexit=0,
+                                            overwrite=1,
+                                            data_sat=None,
+                                            data_props=None,
+                                            rectpix=0,  # RECTPIX
+                                            dirname_output=None,
+                                            verbose=0):
     """
     Write .cor file containing data
     one line   of header
@@ -208,17 +209,17 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made of 5 columns
 
-    2theta chi pixX pixY I
-
-    NOTE: detector parameters has been used previously to compute 2theta and chi (angles of kf)
-    from pixX and pixY, ie 2theta chi are detector position independent
-    (see find2thetachi for definition of kf)
+    2theta chi pixX pixY 
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
             data_pixX, data_pixY,
             data_I,                            # intensity
             detector parameters
+
+    NOTE: detector parameters has been used previously to compute 2theta and chi (angles of kf)
+    from pixX and pixY, ie 2theta chi are detector position independent
+    (see find2thetachi for definition of kf)
 
     #TODO: output 2theta ?
     """
@@ -504,6 +505,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                                                         verbose=0):
     """
     Write .dat file
+
+    :param dirname: output file dirname
+
 
     containing data
     one line   of header
