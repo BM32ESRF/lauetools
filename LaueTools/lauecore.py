@@ -1818,7 +1818,8 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                                 dim=(2048, 2048),
                                                                 detectordiameter=None,
                                                                 force_extinction=None,
-                                                                dictmaterials=dict_Materials):
+                                                                dictmaterials=dict_Materials,
+                                                                verbose=0):
     r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
@@ -1880,7 +1881,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
     if removeharmonics:
         # remove harmonics:
         _, _, tokeep = GT.removeClosePoints(posx, posy, 0.05)
-        print('removeharmonics = 1 in SimulateLaue_full_np() tokeep',tokeep)
+        if verbose: print('removeharmonics = 1 in SimulateLaue_full_np() tokeep',tokeep)
 
         s_tth = Twicetheta[tokeep]
         s_chi = Chi[tokeep]
