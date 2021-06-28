@@ -1889,8 +1889,8 @@ class ImshowFrame(wx.Frame):
             vmin = self.minvals
             vmax = self.maxvals
 
-        print("\nvmin", vmin)
-        print("vmax", vmax, " \n")
+        # print("\nvmin", vmin)
+        # print("vmax", vmax, " \n")
 
         if self.scaletype == "Linear":
 
