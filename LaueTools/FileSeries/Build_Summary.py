@@ -364,7 +364,7 @@ class MainFrame_BuildSummary(wx.Frame):
                                                 folderfitfiles,
                                                 image_indices,
                                                 Summary_HDF5_dirname=folderfitfiles,
-                                                number_of_digits_in_image_name=4,
+                                                number_of_digits_in_image_name=nbdigits_for_zero_padding,
                                                 filesuffix=".fit",
                                                 nb_of_spots_per_image=300)
 
