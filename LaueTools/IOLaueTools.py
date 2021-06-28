@@ -1085,7 +1085,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 eulerfound = 1
                 lineeuler = iline + 1
 
-                print('matrixfound', matrixfound)
+                print('Eulers Angles found', eulerfound)
 
             if matrixfound:
                 for jline_matrix in list(range(3)):
