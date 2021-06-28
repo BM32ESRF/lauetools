@@ -28,7 +28,7 @@ from wx.lib.agw.shapedbutton import SButton
 
 sys.path.append("..")
 
-import FileSeries.multigrainFS as MGFS
+from . import multigrainFS as MGFS
 
 list_txtparamPM = ["Map Summary File", "File xyz", "maptype"]
 
@@ -62,8 +62,7 @@ class MainFrame_plotmaps(wx.Frame):
         btnbrowse1.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filesum)
 
         self.summarypath_folder = wx.TextCtrl(
-            self.panel, -1, folderpath, size=(400, -1)
-        )
+            self.panel, -1, folderpath, size=(400, -1))
         self.summarypath_file = wx.TextCtrl(self.panel, -1, summaryfile, size=(400, -1))
 
         hbox1summaryfile = wx.BoxSizer(wx.HORIZONTAL)
@@ -77,11 +76,9 @@ class MainFrame_plotmaps(wx.Frame):
         btnbrowse2.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filexyz)
 
         self.filexyzpath_folder = wx.TextCtrl(
-            self.panel, -1, folderpathxyz, size=(400, -1)
-        )
+            self.panel, -1, folderpathxyz, size=(400, -1))
         self.filexyzpath_file = wx.TextCtrl(
-            self.panel, -1, summaryfilexyz, size=(400, -1)
-        )
+            self.panel, -1, summaryfilexyz, size=(400, -1))
 
         hbox3summaryfile = wx.BoxSizer(wx.HORIZONTAL)
         hbox3summaryfile.Add(btnbrowse2, 0, wx.ALL)
@@ -100,8 +97,7 @@ class MainFrame_plotmaps(wx.Frame):
         self.choice_maptype.Bind(wx.EVT_CHOICE, self.Onchoice_maptype)
 
         self.btnclearwindows = wx.Button(
-            self.panel, -1, "Clear Windows", size=(200, -1)
-        )
+            self.panel, -1, "Clear Windows", size=(200, -1))
         self.btnclearwindows.Bind(wx.EVT_BUTTON, self.OnClearChildWindows)
 
         vbox5 = wx.BoxSizer(wx.VERTICAL)
@@ -134,8 +130,7 @@ class MainFrame_plotmaps(wx.Frame):
 
         # tooltip
         txt_summary.SetToolTipString(
-            "File elaborated by Build_Summary.py module as a summary of all images analysis"
-        )
+            "File elaborated by Build_Summary.py module as a summary of all images analysis")
         btnbrowse1.SetToolTipString(
             "Browse to find : File elaborated by Build_Summary.py module as a summary of all images analysis"
         )
@@ -180,15 +175,13 @@ class MainFrame_plotmaps(wx.Frame):
         self.dict_params["File xyz"] = filexyz_path
 
         self.dict_params["maptype"] = self.choice_maptype.GetString(
-            self.choice_maptype.GetSelection()
-        )
+            self.choice_maptype.GetSelection())
 
         return self.dict_params
 
     def Onchoice_maptype(self, event):
         self.dict_params["maptype"] = self.choice_maptype.GetString(
-            self.choice_maptype.GetSelection()
-        )
+            self.choice_maptype.GetSelection())
 
     def OnbtnBrowse_filesum(self, event):
         folder = wx.FileDialog(self, "os.path.dirname(guest)")
@@ -218,7 +211,6 @@ class Stock_parameters_PlotMaps:
         self.list_txtparamPM = _list_txtparamPM
         self.dict_params = _list_valueparamPM
 
-
 initialparameters = {}
 
 LaueToolsProjectFolder = os.path.dirname(os.path.abspath(os.curdir))
@@ -231,21 +223,19 @@ print(("MainFolder", MainFolder))
 
 initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
 initialparameters["Map Summary File"] = os.path.join(
-    MainFolder, "fitfiles", "nanox2_400__SUMMARY_0_to_5_add_columns.dat"
-)
+    MainFolder, "fitfiles", "nanox2_400__SUMMARY_0_to_5_add_columns.dat")
 initialparameters["File xyz"] = os.path.join(
-    MainFolder, "fitfiles", "nanox2_400__xy_0_to_5.dat"
-)
+    MainFolder, "fitfiles", "nanox2_400__xy_0_to_5.dat")
 initialparameters["maptype"] = "fit"
 initialparameters["filetype"] = "LT"
 
 initialparameters["Map shape"] = (31, 41)  # (nb lines, nb images per line)
 
 initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
+
 MainFolder = "/home/micha/LaueProjects/LeBaudy"
 initialparameters["Map Summary File"] = os.path.join(
-    MainFolder, "mappos1__SUMMARY_0_to_1425_add_columns.dat"
-)
+    MainFolder, "mappos1__SUMMARY_0_to_1425_add_columns.dat")
 initialparameters["File xyz"] = os.path.join(MainFolder, "mappos1__xy_0_to_1425.dat")
 
 initialparameters["stiffness file"] = os.path.join(MainFolder, "si.stf")
@@ -256,19 +246,21 @@ initialparameters["finalindex"] = 5
 initialparameters["stepindex"] = 1
 initialparameters["fast axis: x or y"] = "x"
 
+print(os.path.abspath(__file__))
+absmodulefolder = os.path.split(os.path.abspath(__file__))[0]
+LaueToolsProjectFolder = os.path.split(absmodulefolder)[0]
+
+MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "UO2")
+initialparameters["Map Summary File"] = os.path.join(MainFolder, "UO2_SUMMARY_0_to_609.dat")
+initialparameters["File xyz"] = os.path.join(MainFolder, "xy_0_609.dat")
+
 # MainFolder = '/home/micha/LaueProjects/LeBaudy'
 # initialparameters['Map Summary File'] = os.path.join(MainFolder,
 #                                            'mappos1__SUMMARY_0_to_1425_add_columns.dat')
 # initialparameters['File xyz'] = os.path.join(MainFolder, 'mappos1__xy_0_to_1425.dat')
 # initialparameters['stiffness file'] = os.path.join(MainFolder, 'si.stf')
 
-
-list_valueparamPM = [
-    initialparameters["Map Summary File"],
-    initialparameters["File xyz"],
-    "fit",
-]
-
+list_valueparamPM = [initialparameters["Map Summary File"], initialparameters["File xyz"], "fit"]
 
 def prepare_params_for_plot(list_val, list_key=None):
     if list_key is None:
@@ -276,10 +268,7 @@ def prepare_params_for_plot(list_val, list_key=None):
 
     if len(list_val) != len(list_key):
         sentence = "Lengthes of list_val and list_key differ in prepare_params_for_plot() in Plot_maps\n"
-        sentence += "Nb_of_parameters= %d, Nb of values %d !!!\n" % (
-            len(list_key),
-            len(list_val),
-        )
+        sentence += "Nb_of_parameters= %d, Nb of values %d !!!\n" % (len(list_key), len(list_val))
         sentence += "Please check the number of parameters for Plot_Maps inputs"
         raise ValueError(sentence)
 
