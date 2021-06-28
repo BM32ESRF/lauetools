@@ -659,7 +659,7 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
     :param ang_tol: angular tolerance in degrees to accept or reject a exp. and theo pair
     :type ang_tol: scalar
 
-    :param detectorparameters: Dictionary of detector parameters (key, value) that must constain:
+    :param detectorparameters: Dictionary of detector parameters (key, value) that must contain:
                             'kf_direction' , general position of detector plane
                             'detectordistance', detector distance (mm)
                             'detectordiameter', detector diameter (mm)
