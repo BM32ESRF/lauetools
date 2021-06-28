@@ -60,7 +60,8 @@ if sys.version_info.major == 3:
     from .LaueGeometry import Compute_data2thetachi
     from .GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
 
-    from .CrystalParameters import calc_B_RR
+    #from .CrystalParameters import calc_B_RR
+    from LaueTools.CrystalParameters import calc_B_RR
     from .findorient import computesortedangles
     from .IOLaueTools import writefile_cor, createselecteddata
     from . dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
