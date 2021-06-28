@@ -161,7 +161,6 @@ def twodgaussian(inpars, circle, rotate, vheight):
 
     return rotgauss
 
-
 def twodgaussian_2peaks(inpars, circle, rotate, vheight):
     """Returns a 2d gaussian function of the form:
     x' = cos(rota) * x - sin(rota) * y
