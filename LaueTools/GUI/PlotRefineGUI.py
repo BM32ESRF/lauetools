@@ -3527,26 +3527,26 @@ class FitResultsBoard(wx.Dialog):
 
         self.txtnbresidues = wx.StaticText(self.background, -1, texttnbresidues)
         self.initlat = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
         self.finallat = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
         self.ub = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.b0 = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.devstraincryst = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.devstrainsample = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.Ts = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
         self.fullstrainsample = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
 
         self.HKLxyz_names = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
         self.HKLxyz = wx.TextCtrl(
-            self.background, style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
 
         self.initlat.SetValue(textil)
         self.finallat.SetValue(textrl)
@@ -3559,7 +3559,7 @@ class FitResultsBoard(wx.Dialog):
         self.HKLxyz_names.SetValue(textHKLxyz_names)
         self.HKLxyz.SetValue(textHKLxyz)
 
-        if 1:
+        if 0:
             self.devstrainsample.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
             self.initlat.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
             self.finallat.Bind(wx.EVT_TEXT_ENTER, self.onNothing)
