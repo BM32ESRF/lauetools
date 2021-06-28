@@ -17,11 +17,10 @@ if sys.version_info.major == 3:
     #from . import generaltools as GT
     
     import LaueTools.generaltools as GT
-
-    from . import readmccd as RMCCD
-    from . import IOLaueTools as IOLT
-    from . import dict_LaueTools as DictLT
-    from . import orientations as ORI
+    import LaueTools.readmccd as RMCCD
+    import LaueTools.IOLaueTools as IOLT
+    import LaueTools.dict_LaueTools as DictLT
+    import LaueTools.orientations as ORI
 else:
 
     import generaltools as GT
@@ -229,11 +228,11 @@ pos_voigt = [0, 4, 8, 5, 2, 1]
 #    filename = "testdict.h5"
 #    imagefilename_prefix = 'tsv1234_'
 #    # Open a file in "w"rite mode
-#    h5file = Tab.openFile(filename, mode="w", title="Test file my data")
+#     = Tab.openFile(filename, mode="w", title="Test file my data")
 #    # Create a new group under "/" (root)
-#    group_images = h5file.createGroup("/", 'Images', 'Detector information')
+#    group_images = .createGroup("/", 'Images', 'Detector information')
 #    # Create one table on it
-#    table = h5file.createTable(group_images, 'matching_rate_Si', IndexedImage, "Readout example")
+#    table = h5file.create_table(group_images, 'matching_rate_Si', IndexedImage, "Readout example")
 #    # Fill the table with 10 particles
 #    indexedImage = table.row
 #    keys_indexfile = dictMat.keys()[:200]
@@ -247,7 +246,7 @@ pos_voigt = [0, 4, 8, 5, 2, 1]
 #        indexedImage.append()
 #
 #        group_spots = h5file.createGroup("/Images", 'spots%06d' % key_image, 'experimental spots information')
-#        table_spots = h5file.createTable(group_spots, 'spots_table', SpotsList, "spots table list")
+#        table_spots = h5file.create_table(group_spots, 'spots_table', SpotsList, "spots table list")
 #        spotslist = table_spots.row
 #        for elem in dictspots[key_image][0]:  # 1 grain
 #            spotslist['spotindex'] = elem[0]
@@ -260,7 +259,7 @@ pos_voigt = [0, 4, 8, 5, 2, 1]
 #
 #    group_spots = h5file.createGroup("/", 'Allspots', 'All spots information')
 #
-#    tableallspots = h5file.createTable(group_spots, 'total_spots', AllIndexedSpots, "Readout example")
+#    tableallspots = h5file.create_table(group_spots, 'total_spots', AllIndexedSpots, "Readout example")
 #    # Fill the table with 10 particles
 #    allIndexedSpots = tableallspots.row
 #    keys_indexfile = dictMat.keys()
@@ -338,16 +337,19 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
     # Open a file in "w"rite mode
     full_output_path = os.path.join(output_dirname, output_hdf5_filename)
-    h5file = Tab.openFile(full_output_path, mode="w", title="%s" % imagefilename_prefix)
+    #h5file = Tab.openFile(full_output_path, mode="w", title="%s" % imagefilename_prefix)
+    h5file = Tab.open_file(full_output_path, mode="w", title="%s" % imagefilename_prefix)
 
     keys_indexfile = keys_indexfile[:nb_of_images]
     # ----------------------------------------
     if 1:  # Class IndexedImage
         # Create a new group under "/" (root)
-        group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
+        #group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
+        group_images = h5file.create_group("/", "Indexation", "Indexation figure")
+
 
         # Create one table on it
-        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
+        table = h5file.create_table(group_images, "matching_rate", IndexedImage, "indexation rate")
         # Fill the table with data
         indexedImage = table.row
 
@@ -374,7 +376,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB = h5file.createTable(group_images, "UB_matrices", Matrices, "UB Matrices elements")
+        tableUB = h5file.create_table(group_images, "UB_matrices", Matrices, "UB Matrices elements")
         # Fill the table with data
         indexedUB = tableUB.row
         print("using Lauehdf5.....")
@@ -415,7 +417,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB_array = h5file.createTable(group_images, "UB_matrices_array", Matrices_array,
+        tableUB_array = h5file.create_table(group_images, "UB_matrices_array", Matrices_array,
                                                                             "UB Matrices elements")
         # Fill the table with data
         indexedUB_ar = tableUB_array.row
@@ -445,7 +447,7 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
         #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tabledev = h5file.createTable(group_images, "Devstrain_matrices", DevStrain,
+        tabledev = h5file.create_table(group_images, "Devstrain_matrices", DevStrain,
                                                                             "UB Matrices elements")
         # Fill the table with data
         indexedDev = tabledev.row
@@ -479,10 +481,10 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
     if 1:  # Class DevStrain  sample frame
         #        # Create a new group under "/" (root)
-        #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
+        #        group_images = h5file.create_group("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tabledevS = h5file.createTable(group_images, "DevstrainSample_matrices", DevStrainSample,
+        tabledevS = h5file.create_table(group_images, "DevstrainSample_matrices", DevStrainSample,
                                                                             "UB Matrices elements")
         # Fill the table with data
         indexedDevS = tabledevS.row
@@ -517,9 +519,9 @@ def build_hdf5( filename_dictRes, dirname_dictRes=None, output_hdf5_filename="di
 
     if 1:  # class AllIndexedSpots
 
-        group_spots = h5file.createGroup("/", "Allspots", "All spots information")
+        group_spots = h5file.create_group("/", "Allspots", "All spots information")
 
-        tableallspots = h5file.createTable(group_spots,
+        tableallspots = h5file.create_table(group_spots,
                                             "total_spots",
                                             AllIndexedSpots,
                                             "Readout example",
@@ -641,9 +643,9 @@ def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
 
     keys_indexfile = keys_indexfile[:nb_of_images]
 
-    group_spots = h5file.createGroup("/", "Allspots", "All spots information")
+    group_spots = h5file.create_group("/", "Allspots", "All spots information")
 
-    tableallspots = h5file.createTable(group_spots, "total_spots", AllIndexedSpots,
+    tableallspots = h5file.create_table(group_spots, "total_spots", AllIndexedSpots,
                                                 "Readout example",
                                                 expectedrows=nb_of_images * nb_of_spots_per_image)
 
@@ -733,57 +735,57 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
         full_HDF5_output_path = os.path.join(Summary_HDF5_dirname, Summary_HDF5_filename)
 
     # Open a file in 'append' mode
-    h5file = Tab.openFile(full_HDF5_output_path, mode="a", title="%s" % "allspots")
+    h5file = Tab.open_file(full_HDF5_output_path, mode="a", title="%s" % "allspots")
 
     nb_of_images = len(fileindex_list)
 
     try:
-        tableallspots = h5file.getNode("/Allspots/total_spots")
+        tableallspots = h5file.get_node("/Allspots/total_spots")
         Node_tableallspots_alreadyExists = True
     except Tab.NodeError:
         Node_tableallspots_alreadyExists = False
 
     if not Node_tableallspots_alreadyExists:
 
-        group_spots = h5file.createGroup("/", "Allspots", "All spots information")
-        tableallspots = h5file.createTable( group_spots, "total_spots", AllIndexedSpots,
+        group_spots = h5file.create_group("/", "Allspots", "All spots information")
+        tableallspots = h5file.create_table( group_spots, "total_spots", AllIndexedSpots,
                                     "Readout example",
                                     expectedrows=max(nb_of_images * nb_of_spots_per_image, 10000))
 
     allIndexedSpots = tableallspots.row
 
     try:
-        table = h5file.getNode("/Indexation/matching_rate")
+        table = h5file.get_node("/Indexation/matching_rate")
         Node_tableimage_alreadyExists = True
     except Tab.NodeError:
         Node_tableimage_alreadyExists = False
 
     if not Node_tableimage_alreadyExists:
 
-        group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
-        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
+        group_images = h5file.create_group("/", "Indexation", "Indexation figure")
+        table = h5file.create_table(group_images, "matching_rate", IndexedImage, "indexation rate")
 
     indexedImage = table.row
 
     try:
-        tableUB = h5file.getNode("/Indexation/UB_matrices_LT")
+        tableUB = h5file.get_node("/Indexation/UB_matrices_LT")
         Node_tableUB_alreadyExists = True
     except Tab.NodeError:
         Node_tableUB_alreadyExists = False
 
     if not Node_tableUB_alreadyExists:
-        tableUB = h5file.createTable(group_images, "UB_matrices_LT", Matrices, "UB Matrices elements")
+        tableUB = h5file.create_table(group_images, "UB_matrices_LT", Matrices, "UB Matrices elements")
 
     indexedUB = tableUB.row
 
     try:
-        tableUB_sample = h5file.getNode("/Indexation/UB_matrices_SampleFrame")
+        tableUB_sample = h5file.get_node("/Indexation/UB_matrices_SampleFrame")
         Node_tableUB_alreadyExists = True
     except Tab.NodeError:
         Node_tableUB_alreadyExists = False
 
     if not Node_tableUB_alreadyExists:
-        tableUB_sample = h5file.createTable(group_images, "UB_matrices_SampleFrame", Matrices,
+        tableUB_sample = h5file.create_table(group_images, "UB_matrices_SampleFrame", Matrices,
                                                                             "UB Matrices elements")
 
     indexedUB_sample = tableUB_sample.row
@@ -810,7 +812,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
                 # rows = self.tableallspots.getWhereList('fileindex == %d' % fileindex)
                 rowpos = np.where(allindices == fileindex)[0]
                 for row_to_delete in rowpos:
-                    tableallspots.removeRows(row_to_delete)
+                    tableallspots.remove_rows(row_to_delete)
 
         _filename = prefix_fitfiles + encodingdigits % fileindex + filesuffix
 
@@ -830,18 +832,11 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
         #         print "resIndexed", resIndexed
 
         if resIndexed != 0:
-            (list_indexedgrains_indices,
-                list_nb_indexed_peaks,
-                list_starting_rows_in_data,
-                all_UBmats_flat,
-                allgrains_spotsdata,
-                calibJSM,
-                list_pixdev,
-                list_strain6,
-                list_euler,
-            ) = resIndexed
+            (list_indexedgrains_indices, list_nb_indexed_peaks, list_starting_rows_in_data,
+                all_UBmats_flat, allgrains_spotsdata, calibJSM,
+                list_pixdev, list_strain6, list_euler, ) = resIndexed
 
-            print("list_pixdev", list_pixdev)
+            print("read hdf5 : list_pixdev", list_pixdev)
             if len(list_pixdev) == 0:
                 print("setting pixdev to -1 for file: %s" % _filename)
                 list_pixdev = [-1 for kkk in range(len(list_indexedgrains_indices))]
@@ -859,13 +854,9 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
                 (allIndexedSpots["spotindex"],
                     allIndexedSpots["intensity"],
-                    allIndexedSpots["H"],
-                    allIndexedSpots["K"],
-                    allIndexedSpots["L"],
-                    allIndexedSpots["twotheta"],
-                    allIndexedSpots["chi"],
-                    allIndexedSpots["pixX"],
-                    allIndexedSpots["pixY"],
+                    allIndexedSpots["H"], allIndexedSpots["K"], allIndexedSpots["L"],
+                    allIndexedSpots["twotheta"], allIndexedSpots["chi"],
+                    allIndexedSpots["pixX"], allIndexedSpots["pixY"],
                     allIndexedSpots["energy"],
                     allIndexedSpots["grainindex"],
                     allIndexedSpots["PixDev"],
@@ -936,15 +927,11 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
             (allIndexedSpots["spotindex"],
                 allIndexedSpots["intensity"],
-                allIndexedSpots["twotheta"],
-                allIndexedSpots["chi"],
-                allIndexedSpots["pixX"],
-                allIndexedSpots["pixY"],
+                allIndexedSpots["twotheta"], allIndexedSpots["chi"],
+                allIndexedSpots["pixX"], allIndexedSpots["pixY"],
             ) = spot_data
 
-            (allIndexedSpots["H"],
-                allIndexedSpots["K"],
-                allIndexedSpots["L"],
+            (allIndexedSpots["H"], allIndexedSpots["K"], allIndexedSpots["L"],
                 allIndexedSpots["energy"],
                 allIndexedSpots["grainindex"],
                 allIndexedSpots["PixDev"],
@@ -977,6 +964,8 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
     #
     # Close (and flush) the file
     h5file.close()
+
+    print('Summary file is built!: %s'%full_HDF5_output_path)
 
 
 def build_hdf5_fromSummaryFile(
@@ -1039,10 +1028,10 @@ def build_hdf5_fromSummaryFile(
     # ----------------------------------------
     if 1:  # Class IndexedImage
         # Create a new group under "/" (root)
-        group_images = h5file.createGroup("/", "Indexation", "Indexation figure")
+        group_images = h5file.create_group("/", "Indexation", "Indexation figure")
 
         # Create one table on it
-        table = h5file.createTable(group_images, "matching_rate", IndexedImage, "indexation rate")
+        table = h5file.create_table(group_images, "matching_rate", IndexedImage, "indexation rate")
         # Fill the table with data
         indexedImage = table.row
 
@@ -1073,10 +1062,10 @@ def build_hdf5_fromSummaryFile(
     # ----------------------------------------
     if 1:  # Class Matrices
         #        # Create a new group under "/" (root)
-        #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
+        #        group_images = h5file.create_group("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB = h5file.createTable(group_images,
+        tableUB = h5file.create_table(group_images,
                                     "UB_matrices",
                                     Matrices,
                                     "matstarlab UB Matrices elements in OR frame")
@@ -1111,10 +1100,10 @@ def build_hdf5_fromSummaryFile(
     # test
     if 1:  # Class Matrices_array
         #        # Create a new group under "/" (root)
-        #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
+        #        group_images = h5file.create_group("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tableUB_array = h5file.createTable(group_images, "UB_matrices_array", Matrices_array,
+        tableUB_array = h5file.create_table(group_images, "UB_matrices_array", Matrices_array,
                                                                             "UB Matrices elements")
         # Fill the table with data
         indexedUB_ar = tableUB_array.row
@@ -1143,10 +1132,10 @@ def build_hdf5_fromSummaryFile(
 
     if 1:  # Class DevStrain
         #        # Create a new group under "/" (root)
-        #        group_images = h5file.createGroup("/", 'Indexation', 'Indexation figure')
+        #        group_images = h5file.create_group("/", 'Indexation', 'Indexation figure')
 
         # Create one table on it
-        tabledev = h5file.createTable(group_images, "Deviatoric_strain", DevStrain, "voigt notation")
+        tabledev = h5file.create_table(group_images, "Deviatoric_strain", DevStrain, "voigt notation")
         # Fill the table with data
         indexedDev = tabledev.row
 
