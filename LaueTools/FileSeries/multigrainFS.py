@@ -9,7 +9,7 @@ import matplotlib.pylab as p
 sys.path.append("..")
 
 if sys.version_info.major == 3:
-    import FileSeries.module_graphique as modgraph
+    import LaueTools.FileSeries.module_graphique as modgraph
     import LaueTools.LaueGeometry as F2TC
     print('LaueGeometry is from lauetools distribution at :',F2TC.__file__)
     import LaueTools.readmccd as rmccd
@@ -840,30 +840,9 @@ def read_summary_file( filesum, read_all_cols="yes",
         "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
         "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2",
         "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
-        "stress6_crystal_0",
-        "stress6_crystal_1",
-        "stress6_crystal_2",
-        "stress6_crystal_3",
-        "stress6_crystal_4",
-        "stress6_crystal_5",
-        "stress6_sample_0",
-        "stress6_sample_1",
-        "stress6_sample_2",
-        "stress6_sample_3",
-        "stress6_sample_4",
-        "stress6_sample_5",
-        "res_shear_stress_0",
-        "res_shear_stress_1",
-        "res_shear_stress_2",
-        "res_shear_stress_3",
-        "res_shear_stress_4",
-        "res_shear_stress_5",
-        "res_shear_stress_6",
-        "res_shear_stress_7",
-        "res_shear_stress_8",
-        "res_shear_stress_9",
-        "res_shear_stress_10",
-        "res_shear_stress_11",
+        "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
+        "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
+        "res_shear_stress_0", "res_shear_stress_1", "res_shear_stress_2", "res_shear_stress_3", "res_shear_stress_4", "res_shear_stress_5", "res_shear_stress_6", "res_shear_stress_7", "res_shear_stress_8", "res_shear_stress_9", "res_shear_stress_10", "res_shear_stress_11",
         "max_rss",
         "von_mises"]):
     """
@@ -886,14 +865,14 @@ def read_summary_file( filesum, read_all_cols="yes",
     finally:
         f.close()
 
-    print(nameline0)
-    print(nameline1)
+    # print(nameline0)
+    # print(nameline1)
     listname = nameline1.split()
 
     data_sum = np.loadtxt(filesum, skiprows=2)
 
     if read_all_cols == "yes":
-        print("shape(data_sum) = ", np.shape(data_sum))
+        print("shape of summarised data :", np.shape(data_sum))
         return (data_sum, listname, nameline0)
 
     else:
@@ -1206,11 +1185,11 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     abcstar_on_xyzsample = CP.matstarlab_to_matstarsample3x3(matstarlabnew)
     xyzsample_on_abcstar = np.linalg.inv(abcstar_on_xyzsample)
 
-    print('matdef', matdef)
-    print('np.linalg.inv(matdef)', np.linalg.inv(matdef))
-    print('matdef2', matdef2)
-    print('(np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3))', (np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3)))
-    print('np.dot(np.linalg.inv(matdef), matdef2)', np.dot(np.linalg.inv(matdef), matdef2))
+    # print('matdef', matdef)
+    # print('np.linalg.inv(matdef)', np.linalg.inv(matdef))
+    # print('matdef2', matdef2)
+    # print('(np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3))', (np.dot(np.linalg.inv(matdef), matdef2).round(decimals=3)))
+    # print('np.dot(np.linalg.inv(matdef), matdef2)', np.dot(np.linalg.inv(matdef), matdef2))
 
     transfmat = np.linalg.inv(np.dot(np.linalg.inv(matdef), matdef2))
 
@@ -2195,7 +2174,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
 
     d.update(dict_params)
 
-    print("\n\nENTERING plot_map_new()\n\n")
+    print("\n\nENTERING plot_map_new2()\n\n")
 
     print(d["Map Summary File"], d["File xyz"], d["maptype"], d["filetype"])
     print(d["subtract_mean"], d["probed_grainindex"], d["filter_on_pixdev_and_npeaks"])
@@ -2265,8 +2244,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         "max_rss",
         "von_mises",  # 58 and # 59
         "misorientation_angle",
-        "dalf",
-    ]
+        "dalf"]
 
     #               list_column_names=['img', 'gnumloc', 'npeaks', 'pixdev',
     #         'intensity', 'dxymicrons_0', 'dxymicrons_1',
@@ -2300,41 +2278,28 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     dict_nplot = {
         "euler3": [3, 3, 1, 1, 1, 0, ["rgb_euler"]],
         "rgb_x_sample": [9, 9, 3, 1, 3, 0,
-            ["x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample"],
-        ],
-        "orientation": [9, 9, 3, 1, 3, 0, [
-                "x_sample",
-                "y_sample",
-                "z_sample",
-                "x_sample",
-                "y_sample",
-                "z_sample",
-                "x_sample",
-                "y_sample",
-                "z_sample",
-            ],
-        ],
+            ["x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample", "x_sample", "y_sample", "z_sample"]],
+        "orientation": [9, 9, 3, 1, 3, 0, ["x_sample",
+                                        "y_sample",
+                                        "z_sample",
+                                        "x_sample",
+                                        "y_sample",
+                                        "z_sample",
+                                        "x_sample",
+                                        "y_sample",
+                                        "z_sample",
+            ]],
         "rgb_x_lab": [9, 9, 3, 1, 3, 0, ["x_lab", "y_lab", "z_lab"]],
         "strain6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
         "strain6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
         "stress6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
         "stress6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
         "w_mrad": [3, 9, 3, 1, 3, 0, ["WX", "WY", "WZ"]],
-        "res_shear_stress": [12, 36, 12, 3, 4, 8, [
-                "rss0",
-                "rss1",
-                "rss2",
-                "rss3",
-                "rss4",
-                "rss5",
-                "rss6",
-                "rss7",
-                "rss8",
+        "res_shear_stress": [12, 36, 12, 3, 4, 8,
+        ["rss0", "rss1", "rss2", "rss3", "rss4", "rss5", "rss6", "rss7", "rss8",
                 "rss9",
                 "rss10",
-                "rss11",
-            ],
-        ],
+                "rss11"]],
         "max_rss": [1, 3, 1, 1, 1, 0, ["max_rss"]],
         "von_mises": [1, 3, 1, 1, 1, 0, ["von Mises stress"]],
         "misorientation_angle": [1, 3, 1, 1, 1, 0, ["misorientation angle"]],
@@ -2342,8 +2307,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         "maxpixdev": [1, 3, 1, 1, 1, 0, ["maxpixdev"]],
         "stdpixdev": [1, 3, 1, 1, 1, 0, ["stdpixdev"]],
         "fit": [2, 6, 2, 1, 2, 0, ["npeaks", "pixdev"]],
-        "dalf": [1, 3, 1, 1, 1, 0, ["delta_alf exp-theor"]],
-    }
+        "dalf": [1, 3, 1, 1, 1, 0, ["delta_alf exp-theor"]]}
 
     #  NB : misorientation_angle column seulement pour analyse mono-grain
     # NB : dalf column seulement pour mat2spots ou fit calib
@@ -2364,22 +2328,28 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
 
     data_list = np.array(data, dtype=float)
 
-    print("Data of strain  \n\n************\n")
     print("data.shape", data_list.shape)
     print("shape = ((nb images)* nb grains , nb of data columns)")
     nbgrains = int(np.amax(data_list[:, 1]) + 1)
     nb_images = int(data_list.shape[0] / nbgrains)
 
-    print("nb of grains per image", nbgrains)
-    print("nb of images", nb_images)
+    imgesindices = set()
 
+    print("maximum nb of grains per image", nbgrains)
+    #print("nb of images", nb_images)
+
+    # sort data according to their grain number
     grains_data = []
-    for grainindex in range(nbgrains):
-        grains_data.append(data_list[grainindex::nbgrains, :])
+    for g_ix in range(nbgrains):
+        posg = np.where(data_list[:,1]==float(g_ix))[0]
+        grains_data.append(np.take(data_list, posg, axis =0))
 
-    print("first image of grains_data[0]", grains_data[0][0])
-    print("len(first image of grains_data[0])", len(grains_data[0][0]))
-    print("grains_data[0].shape", grains_data[0].shape)
+    print('grain 0 data', grains_data[0])
+    #print('grain 1 data', grains_data[1])
+
+    # print("first image of grains_data[0]", grains_data[0][0])
+    # print("len(first image of grains_data[0])", len(grains_data[0][0]))
+    # print("grains_data[0].shape", grains_data[0].shape)
 
     #         if maptype in ('strain6_crystal','strain6_sample','stress6_crystal','stress6_sample'):
     #             nb_components = 6
@@ -2450,7 +2420,41 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     #         elif maptype == 'dalf':
     #             colmin, nbdatacolumns=64,1
 
-    zvalues_Ncomponents = grains_data[grain_index][:, colmin : colmin + nbdatacolumns]
+    filexyz = d["File xyz"]
+    map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(filexyz)
+
+    #         print "map_imageindex_array",map_imageindex_array
+    
+
+    # Normal convention
+    map_imageindex_array = np.flipud(map_imageindex_array)
+
+    # print('map_imageindex_array',map_imageindex_array)
+    # print("map_imageindex_array.shape", map_imageindex_array.shape)
+
+    nlines, ncol = map_imageindex_array.shape
+
+    # print("nlines,ncol", nlines, ncol)
+    #         print "z_values.shape",z_values.shape
+    # print('nbdatacolumns',nbdatacolumns)
+    # print('colmin',colmin)
+    zvalues_Ncomponents = np.full((nlines*ncol,nbdatacolumns), np.NaN)
+
+    grainsdata = grains_data[grain_index]
+
+    # print('grainsdata[:4]',grainsdata[:4])
+
+    expimagesindices = grainsdata[:,0]
+    exp_ix = 0
+    for k in range(nlines*ncol):
+        if k in expimagesindices:
+            zvalues_Ncomponents[k]=grainsdata[exp_ix][colmin : colmin + nbdatacolumns]
+            exp_ix+=1  
+
+    # print('DATA to be plot')
+    # print(zvalues_Ncomponents[:4])
+
+    zvalues_Ncomponents = np.ma.masked_invalid(zvalues_Ncomponents)
 
     if maptype == "orientation":
         nbdatacolumns = 9
@@ -2466,20 +2470,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         print("cosines_array [0]", cosines_array[0])
         print("cosines_array.shape", cosines_array.shape)
 
-    filexyz = d["File xyz"]
-    map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(filexyz)
-
-    #         print "map_imageindex_array",map_imageindex_array
-    print("map_imageindex_array.shape", map_imageindex_array.shape)
-
-    # Normal convention
-    map_imageindex_array = np.flipud(map_imageindex_array)
-
-    nlines = np.shape(map_imageindex_array)[0]
-    ncol = np.shape(map_imageindex_array)[1]
-
-    print("nlines,ncol", nlines, ncol)
-    #         print "z_values.shape",z_values.shape
+    
 
     for index_component in range(nbdatacolumns):
 
@@ -2489,19 +2480,17 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
             z_values = cosines_array.reshape((nlines, ncol, 9))[:, :, index_component]
             print("z_values.shape", z_values.shape)
             plot_maptype_list[index_component] = (
-                str(list_vecs[index_component / 3]) + plot_maptype_list[index_component]
-            )
+                str(list_vecs[index_component // 3]) + plot_maptype_list[index_component])
             colorbar_label = plot_maptype_list[index_component]
         elif datatype in ("scalar", "symetricscalar"):
-            print("consider datatype=", datatype)
+            print("considered datatype=", datatype)
             colorbar_label = columnname
             zvalues = zvalues_Ncomponents[:, index_component]
             z_values = zvalues.reshape((nlines, ncol))
 
         elif datatype == "RGBvector":
             zvalues = zvalues_Ncomponents[
-                :, index_component * 3 : (index_component + 1) * 3
-            ]
+                :, index_component * 3 : (index_component + 1) * 3]
             z_values = zvalues.reshape((nlines, ncol, 3))
 
         print("scalar columnname", columnname)
@@ -2588,67 +2577,19 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         "npeaks",
         "pixdev",
         "intensity",
-        "dxymicrons_0",
-        "dxymicrons_1",
-        "matstarlab_0",
-        "matstarlab_1",
-        "matstarlab_2",
-        "matstarlab_3",
-        "matstarlab_4",
-        "matstarlab_5",
-        "matstarlab_6",
-        "matstarlab_7",
-        "matstarlab_8",
-        "strain6_crystal_0",
-        "strain6_crystal_1",
-        "strain6_crystal_2",
-        "strain6_crystal_3",
-        "strain6_crystal_4",
-        "strain6_crystal_5",
-        "euler3_0",
-        "euler3_1",
-        "euler3_2",
-        "strain6_sample_0",
-        "strain6_sample_1",
-        "strain6_sample_2",
-        "strain6_sample_3",
-        "strain6_sample_4",
-        "strain6_sample_5",
-        "rgb_x_sample_0",
-        "rgb_x_sample_1",
-        "rgb_x_sample_2",
-        "rgb_z_sample_0",
-        "rgb_z_sample_1",
-        "rgb_z_sample_2",
-        "stress6_crystal_0",
-        "stress6_crystal_1",
-        "stress6_crystal_2",
-        "stress6_crystal_3",
-        "stress6_crystal_4",
-        "stress6_crystal_5",
-        "stress6_sample_0",
-        "stress6_sample_1",
-        "stress6_sample_2",
-        "stress6_sample_3",
-        "stress6_sample_4",
-        "stress6_sample_5",
-        "res_shear_stress_0",
-        "res_shear_stress_1",
-        "res_shear_stress_2",
-        "res_shear_stress_3",
-        "res_shear_stress_4",
-        "res_shear_stress_5",
-        "res_shear_stress_6",
-        "res_shear_stress_7",
-        "res_shear_stress_8",
-        "res_shear_stress_9",
-        "res_shear_stress_10",
-        "res_shear_stress_11",
+        "dxymicrons_0", "dxymicrons_1",
+        "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3", "matstarlab_4", "matstarlab_5", "matstarlab_6", "matstarlab_7", "matstarlab_8",
+        "strain6_crystal_0", "strain6_crystal_1", "strain6_crystal_2", "strain6_crystal_3", "strain6_crystal_4", "strain6_crystal_5",
+        "euler3_0", "euler3_1", "euler3_2",
+        "strain6_sample_0", "strain6_sample_1", "strain6_sample_2", "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
+        "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2", "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
+        "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
+        "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
+        "res_shear_stress_0", "res_shear_stress_1", "res_shear_stress_2", "res_shear_stress_3", "res_shear_stress_4", "res_shear_stress_5", "res_shear_stress_6", "res_shear_stress_7", "res_shear_stress_8", "res_shear_stress_9", "res_shear_stress_10", "res_shear_stress_11",
         "max_rss",
         "von_mises",
         "misorientation_angle",
-        "dalf",
-    ]
+        "dalf"]
 
     #  NB : misorientation_angle column seulement pour analyse mono-grain
     # NB : dalf column seulement pour mat2spots ou fit calib
@@ -2669,9 +2610,9 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
     print("data.shape", data_list.shape)
     print("shape = ((nb images)* nb grains , nb of data columns)")
     nbgrains = int(np.amax(data_list[:, 1]) + 1)
-    nb_images = data_list.shape[0] / nbgrains
+    nb_images = data_list.shape[0] // nbgrains
 
-    print("nb of grains per image", type(nbgrains))
+    print("maximum nb of grains per image", nbgrains)
     print("nb of images", nb_images)
 
     grains_data = []
@@ -2695,9 +2636,9 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
     print("second grain, first image strain6_crystal", strain6_crystal[1][0])
     print("second grain, last image strain6_crystal", strain6_crystal[1][-1])
 
-    numig = shape(data_list)[0]
+    numig = np.shape(data_list)[0]
     print(numig)
-    ndata_cols = shape(data_list)[1]
+    ndata_cols = np.shape(data_list)[1]
     print(ndata_cols)
 
     indimg = listname.index("img")
@@ -2927,9 +2868,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
         print("maptype", maptype)
         #            if maptype in ['max_rss','von_mises','misorientation_angle', "intensity"]:
         if nb_values == 1:
-            default_color_for_missing = np.array(
-                [1.0, 0.8, 0.8]
-            )  # pink = color for missing data
+            default_color_for_missing = np.array([1.0, 0.8, 0.8])  # pink = color for missing data
             if d["color_for_missing"] == None:
                 color0 = default_color_for_missing
             else:
@@ -2941,9 +2880,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
                 color_filtered = np.array([1.0, 0.8, 0.8])
         else:
             for j in range(nb_values):
-                plotdat[
-                    :, :, 3 * j : 3 * (j + 1)
-                ] = 0.0  # black = color for missing data
+                plotdat[:, :, 3 * j : 3 * (j + 1)] = 0.0  # black = color for missing data
             if maptype != "dalf":
                 if maptype != "w_mrad":
                     print("xx xy xz yy yz zz")
@@ -2970,8 +2907,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
         list_plot = data_list2[:, indcolplot]
         if (maptype == "misorientation_angle") & (
-            d["use_mrad_for_misorientation"] == "yes"
-        ):
+            d["use_mrad_for_misorientation"] == "yes"):
             print("converting misorientation angle into mrad")
             list_plot = list_plot * np.pi / 180.0 * 1000.0
         print(shape(list_plot))
@@ -3055,8 +2991,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
             #                 print "npeaksmax_forplot", npeaksmax_forplot
             #                 print "npeaksmin_forplot", npeaksmin_forplot
             plotdat[iref, jref, 0:3] = (npeakslist2[i] - npeaksmin_forplot) / (
-                npeaksmax_forplot - npeaksmin_forplot
-            )
+                npeaksmax_forplot - npeaksmin_forplot)
 
             # print 'pixdevlist2[i]',pixdevlist2[i]
 
@@ -3068,8 +3003,7 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
                     plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
 
             plotdat[iref, jref, 3:6] = (pixdevmax_forplot - pixdevlist2[i]) / (
-                pixdevmax_forplot - pixdevmin_forplot
-            )
+                pixdevmax_forplot - pixdevmin_forplot)
 
             if d["high_pixdev_as_blue_and_red_in_pixdev_map"] != None:
                 if pixdevlist2[i] > 0.25:
@@ -3085,14 +3019,12 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
 
             valnbpeaks = npeakslist2[i]
             valpixdev = pixdevlist2[i]
-            datarray_info[iref, jref, :] = [
-                valnbpeaks,
-                valnbpeaks,
-                valnbpeaks,
-                valpixdev,
-                valpixdev,
-                valpixdev,
-            ]
+            datarray_info[iref, jref, :] = [valnbpeaks,
+                                            valnbpeaks,
+                                            valnbpeaks,
+                                            valpixdev,
+                                            valpixdev,
+                                            valpixdev]
             ARRAY_INFO_FILLED = True
 
         #                elif maptype in ['max_rss','von_mises', "misorientation_angle", "intensity"]:
@@ -3104,15 +3036,12 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
             else:
                 for j in range(3):
                     plotdat[iref, jref, j] = (list_plot_max - list_plot[i]) / (
-                        list_plot_max - list_plot_min
-                    )
+                        list_plot_max - list_plot_min)
 
             val_singlevalue = list_plot[i]
-            datarray_info[iref, jref, :] = [
-                val_singlevalue,
-                val_singlevalue,
-                val_singlevalue,
-            ]
+            datarray_info[iref, jref, :] = [val_singlevalue,
+                                            val_singlevalue,
+                                            val_singlevalue]
 
             ARRAY_INFO_FILLED = True
 
@@ -3120,16 +3049,13 @@ def plot_map_new(dict_params, App_parent=None):  # 29May13
             for j in range(nb_values):
                 if list_plot[i, j] > list_plot_max[j]:
                     plotdat[iref, jref, 3 * j : 3 * j + 3] = d[
-                        "color_for_max_strain_positive"
-                    ]
+                        "color_for_max_strain_positive"]
                 elif list_plot[i, j] < list_plot_min[j]:
                     plotdat[iref, jref, 3 * j : 3 * j + 3] = d[
-                        "color_for_max_strain_negative"
-                    ]
+                        "color_for_max_strain_negative"]
                 else:
                     toto = (list_plot[i, j] - list_plot_min[j]) / (
-                        list_plot_max[j] - list_plot_min[j]
-                    )
+                        list_plot_max[j] - list_plot_min[j])
                     plotdat[iref, jref, 3 * j : 3 * j + 3] = np.array(cmap(toto))[:3]
 
                 val = list_plot[i, j]
@@ -3353,9 +3279,7 @@ def rotate_map(filexyz, map_rotation, xylim=None):
     return (filexyz_new, xylim_new)
 
 
-def class_data_into_grainnum(
-    filesum, filepathout, tol1=0.1, test_mode="yes"
-):  # 29May13
+def class_data_into_grainnum(filesum, filepathout, tol1=0.1, test_mode="yes"):  # 29May13
 
     data_list, listname, nameline0 = read_summary_file(filesum)
 
@@ -3480,16 +3404,14 @@ def class_data_into_grainnum(
                 print("range*1000 ", range_rgb.round(decimals=3))
                 print("\n")
 
-                dict_grains[gnum] = [
-                    grain_size[i],
-                    ind_in_grain_list,
-                    ig_in_grain_list,
-                    img_in_grain_list,
-                    gnumloc_in_grain_list,
-                    mean_rgb.round(decimals=3),
-                    std_rgb.round(decimals=3),
-                    range_rgb.round(decimals=3),
-                ]
+                dict_grains[gnum] = [grain_size[i],
+                                    ind_in_grain_list,
+                                    ig_in_grain_list,
+                                    img_in_grain_list,
+                                    gnumloc_in_grain_list,
+                                    mean_rgb.round(decimals=3),
+                                    std_rgb.round(decimals=3),
+                                    range_rgb.round(decimals=3)]
 
                 gnum = gnum + 1
 
@@ -3500,16 +3422,14 @@ def class_data_into_grainnum(
     gnumtot = gnum
 
     # print dict_grains
-    dict_values_names = [
-        "grain size",
-        "ind_in_grain_list",
-        "ig_in_grain_list",
-        "img_in_grain_list",
-        "gnumloc_in_grain_list",
-        "mean_rgb",
-        "std_rgb *1000",
-        "range_rgb *1000",
-    ]
+    dict_values_names = ["grain size",
+                        "ind_in_grain_list",
+                        "ig_in_grain_list",
+                        "img_in_grain_list",
+                        "gnumloc_in_grain_list",
+                        "mean_rgb",
+                        "std_rgb *1000",
+                        "range_rgb *1000"]
 
     ndict = len(dict_values_names)
 
@@ -3536,16 +3456,12 @@ def class_data_into_grainnum(
     #            print key,value[i]
     #    klmdqs
 
-    ig_list = column_stack(
-        (
-            np.array(sorted_list[:, :3], dtype=int),
-            is_ref,
-            has_grain_num,
-            global_gnum,
-            grain_size,
-            list(range(nmax)),
-        )
-    )
+    ig_list = column_stack((np.array(sorted_list[:, :3], dtype=int),
+                            is_ref,
+                            has_grain_num,
+                            global_gnum,
+                            grain_size,
+                            list(range(nmax))))
 
     header = "ig 0, img 1, local_gnum 2, is_ref 3, has_grain_num 4, global_gnum 5, grain_size 6, igsort 7"
     print(header)
@@ -3610,9 +3526,8 @@ def class_data_into_grainnum(
     return dict_grains2
 
 
-def read_dict_grains(
-    filegrains, dict_with_edges="no", dict_with_all_cols="no", dict_with_all_cols2="no"
-):  # 29May13
+def read_dict_grains(filegrains, dict_with_edges="no", dict_with_all_cols="no",
+                                dict_with_all_cols2="no"):  # 29May13
     """
     read grain dictionnary file created by class_data_into_grainnum
     or appended by find_grain_edges
@@ -3628,71 +3543,34 @@ def read_dict_grains(
 
     # 0 1 2 3 4 int
     # 5 6 7 float
-    dict_values_names = [
-        "grain size",
-        "ind_in_grain_list",
-        "ig_in_grain_list",
-        "img_in_grain_list",
-        "gnumloc_in_grain_list",
-        "mean_rgb",
-        "std_rgb *1000",
-        "range_rgb *1000",
-    ]
+    dict_values_names = ["grain size",
+                        "ind_in_grain_list",
+                        "ig_in_grain_list",
+                        "img_in_grain_list",
+                        "gnumloc_in_grain_list",
+                        "mean_rgb",
+                        "std_rgb *1000",
+                        "range_rgb *1000"]
 
     if dict_with_edges == "yes":
         # 8 9 10 int
         # 11 float
         # 12 int
         # pixels des frontieres etendues, pixel_line_position pixel_column_position pixel_edge_type
-        toto = [
-            "list_line",
-            "list_col",
-            "list_edge",
-            "gnumloc_mean",
-            "list_edge_restricted",
-        ]
+        toto = ["list_line", "list_col", "list_edge", "gnumloc_mean", "list_edge_restricted"]
         dict_values_names = dict_values_names + toto
 
     if dict_with_all_cols == "yes":
         # 13 int
         # 14 : 48 float
-        toto = [
-            "npeaks",
-            "pixdev",
-            "intensity",
-            "strain6_crystal_0",
-            "strain6_crystal_1",
-            "strain6_crystal_2",
-            "strain6_crystal_3",
-            "strain6_crystal_4",
-            "strain6_crystal_5",
-            "strain6_sample_0",
-            "strain6_sample_1",
-            "strain6_sample_2",
-            "strain6_sample_3",
-            "strain6_sample_4",
-            "strain6_sample_5",
-            "rgb_x_sample_0",
-            "rgb_x_sample_1",
-            "rgb_x_sample_2",
-            "rgb_z_sample_0",
-            "rgb_z_sample_1",
-            "rgb_z_sample_2",
-            "stress6_crystal_0",
-            "stress6_crystal_1",
-            "stress6_crystal_2",
-            "stress6_crystal_3",
-            "stress6_crystal_4",
-            "stress6_crystal_5",
-            "stress6_sample_0",
-            "stress6_sample_1",
-            "stress6_sample_2",
-            "stress6_sample_3",
-            "stress6_sample_4",
-            "stress6_sample_5",
+        toto = ["npeaks", "pixdev", "intensity",
+            "strain6_crystal_0", "strain6_crystal_1", "strain6_crystal_2", "strain6_crystal_3", "strain6_crystal_4", "strain6_crystal_5",
+            "strain6_sample_0", "strain6_sample_1", "strain6_sample_2", "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
+            "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2", "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
+            "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
+            "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
             "max_rss",
-            "von_mises",
-        ]
+            "von_mises"]
         dict_values_names = dict_values_names + toto
 
     if dict_with_all_cols2 == "yes":
@@ -3873,17 +3751,15 @@ def find_grain_edges(filegrains, filexyz):  # 29May13
     ngrains = len(list(dict_grains.keys()))
 
     # pixtype, indtest
-    dict_neigh = {
-        0: [1, 2, 3, 4],
-        1: [2, 3, 4],
-        2: [1, 3, 4],
-        4: [1, 2, 4],
-        8: [1, 2, 3],
-        5: [2, 4],
-        6: [1, 4],
-        9: [2, 3],
-        10: [1, 3],
-    }
+    dict_neigh = {0: [1, 2, 3, 4],
+                    1: [2, 3, 4],
+                    2: [1, 3, 4],
+                    4: [1, 2, 4],
+                    8: [1, 2, 3],
+                    5: [2, 4],
+                    6: [1, 4],
+                    9: [2, 3],
+                    10: [1, 3]}
 
     # test
     # ngrains = 2
@@ -3975,13 +3851,7 @@ def find_grain_edges(filegrains, filexyz):  # 29May13
     # edge_type_pix = 1 a 15 pour pixel sur frontiere
     # 1 2 4 8 code les frontieres right left top bottom
     # somme bitwise des codes si plusieurs bords du pixel sont frontiere simultanement
-    toto = [
-        "list_line",
-        "list_col",
-        "list_edge",
-        "gnumloc_mean",
-        "list_edge_restricted",
-    ]
+    toto = ["list_line", "list_col", "list_edge", "gnumloc_mean", "list_edge_restricted"]
     dict_values_names = dict_values_names + toto
 
     ndict = len(dict_values_names)
@@ -4017,39 +3887,13 @@ def fill_dict_grains(filesum, filegrains):  # 29May13
         "npeaks",
         "pixdev",
         "intensity",
-        "strain6_crystal_0",
-        "strain6_crystal_1",
-        "strain6_crystal_2",
-        "strain6_crystal_3",
-        "strain6_crystal_4",
-        "strain6_crystal_5",
-        "strain6_sample_0",
-        "strain6_sample_1",
-        "strain6_sample_2",
-        "strain6_sample_3",
-        "strain6_sample_4",
-        "strain6_sample_5",
-        "rgb_x_sample_0",
-        "rgb_x_sample_1",
-        "rgb_x_sample_2",
-        "rgb_z_sample_0",
-        "rgb_z_sample_1",
-        "rgb_z_sample_2",
-        "stress6_crystal_0",
-        "stress6_crystal_1",
-        "stress6_crystal_2",
-        "stress6_crystal_3",
-        "stress6_crystal_4",
-        "stress6_crystal_5",
-        "stress6_sample_0",
-        "stress6_sample_1",
-        "stress6_sample_2",
-        "stress6_sample_3",
-        "stress6_sample_4",
-        "stress6_sample_5",
+        "strain6_crystal_0", "strain6_crystal_1", "strain6_crystal_2", "strain6_crystal_3", "strain6_crystal_4", "strain6_crystal_5",
+        "strain6_sample_0", "strain6_sample_1", "strain6_sample_2", "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
+        "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2", "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
+        "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
+        "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
         "max_rss",
-        "von_mises",
-    ]
+        "von_mises"]
 
     print(len(list_column_names_to_add))
 
@@ -4084,8 +3928,7 @@ def fill_dict_grains(filesum, filegrains):  # 29May13
         print(col_name)
         if col_name == "npeaks":  # int
             data_col_add = np.array(
-                data_list[:, indcoladd].round(decimals=0), dtype=int
-            )
+                data_list[:, indcoladd].round(decimals=0), dtype=int)
             for key, value in dict_grains.items():
                 print(key, value[indgrainsize_d])  # , "\n", value[3],"\n", value[4]
                 list1 = []
@@ -4093,8 +3936,7 @@ def fill_dict_grains(filesum, filegrains):  # 29May13
                 for i in range(nimg):
                     ind1 = where(
                         (img_list == value[indimg_d][i])
-                        & (gnumloc_list == value[indgnumloc_d][i])
-                    )
+                        & (gnumloc_list == value[indgnumloc_d][i]))
                     # print ind1[0][0]
                     j = ind1[0][0]
                     list1.append(data_col_add[j])
@@ -4114,8 +3956,7 @@ def fill_dict_grains(filesum, filegrains):  # 29May13
                 for i in range(nimg):
                     ind1 = where(
                         (img_list == value[indimg_d][i])
-                        & (gnumloc_list == value[indgnumloc_d][i])
-                    )
+                        & (gnumloc_list == value[indgnumloc_d][i]))
                     # print ind1[0][0]
                     j = ind1[0][0]
                     list1.append(round(data_col_add[j], ndec))
@@ -4149,8 +3990,7 @@ def fill_dict_grains(filesum, filegrains):  # 29May13
 def add_intragrain_rotations_to_dict_grains(filesum, filegrains):  # 29May13
 
     dict_grains, dict_values_names = read_dict_grains(
-        filegrains, dict_with_edges="yes", dict_with_all_cols="yes"
-    )
+        filegrains, dict_with_edges="yes", dict_with_all_cols="yes")
 
     print(dict_values_names)
 
@@ -4202,8 +4042,7 @@ def add_intragrain_rotations_to_dict_grains(filesum, filegrains):  # 29May13
 
         for i in range(nimg):
             ind1 = where(
-                (img_list == img_list_d[i]) & (gnumloc_list == gnumloc_list_d[i])
-            )
+                (img_list == img_list_d[i]) & (gnumloc_list == gnumloc_list_d[i]))
             # print ind1
             # print ind1[0][0]
             j = ind1[0][0]
@@ -4222,18 +4061,15 @@ def add_intragrain_rotations_to_dict_grains(filesum, filegrains):  # 29May13
         for k in range(nimg):
             mat2 = GT.matline_to_mat3x3(matstarlab_ig[k, :])
             vec_crystal[k, :], vec_lab[k, :], angle1[k] = twomat_to_rotation(
-                matmean3x3, mat2, verbose=0
-            )
+                matmean3x3, mat2, verbose=0)
             # if k == 5 : return()
 
         dict_grains2[key].append(angle1.round(decimals=3))
         print("angle1 : mean, std, min, max")
-        print(
-            round(angle1.mean(), 3),
+        print(round(angle1.mean(), 3),
             round(angle1.std(), 3),
             round(angle1.min(), 3),
-            round(angle1.max(), 3),
-        )
+            round(angle1.max(), 3))
 
     #        print "new dict entries"
     #        print dict_grains2[key][indmat_d]
@@ -4280,12 +4116,10 @@ def list_edge_lines(pixel_edge_code):  # 29May13
     # x y cad col line
     # key = bit number
     # 0 : 1, 1 : 2, 2 : 4, 3 : 8
-    dict_edge_lines = {
-        0: [[1, 0], [1, 1]],
-        1: [[0, 0], [0, 1]],
-        2: [[0, 1], [1, 1]],
-        3: [[0, 0], [1, 0]],
-    }
+    dict_edge_lines = {0: [[1, 0], [1, 1]],
+                        1: [[0, 0], [0, 1]],
+                        2: [[0, 1], [1, 1]],
+                        3: [[0, 0], [1, 0]]}
 
     list_edge_lines = []
     for bit1 in range(4):
@@ -4331,8 +4165,7 @@ if 1:  # dict_edge_lines  #29May13
 def plot_strain_stress_color_bar(bar_legend="strain"):
 
     # Make a colorbar as a separate figure. (for strain maps)
-    cdict = {
-        "red": ((0.0, 0.0, 0.0), (0.5, 0.0, 0.0), (1.0, 1.0, 0.0)),
+    cdict = {"red": ((0.0, 0.0, 0.0), (0.5, 0.0, 0.0), (1.0, 1.0, 0.0)),
         "green": ((0.0, 0.0, 1.0), (0.5, 0.0, 0.0), (1.0, 0.0, 0.0)),
         "blue": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
     }
@@ -4366,16 +4199,12 @@ def plot_strain_stress_color_bar(bar_legend="strain"):
     # standalone colorbar.  There are many more kwargs, but the
     # following gives a basic continuous colorbar with ticks
     # and labels.
-    cb1 = mpl.colorbar.ColorbarBase(
-        ax1,
-        cmap=cmap,
-        norm=norm,
-        extend="both",
-        # ticks = [0.,0.1,0.2, 0.25],
-        ticks=[-0.2, 0.0, 0.2],
-        spacing="proportional",
-        orientation="horizontal",
-    )
+    cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=norm,
+                                extend="both",
+                                # ticks = [0.,0.1,0.2, 0.25],
+                                ticks=[-0.2, 0.0, 0.2],
+                                spacing="proportional",
+                                orientation="horizontal")
 
     # cb1.set_label('rotation angle (degrees)', fontsize = 20)
     if bar_legend == "strain":
