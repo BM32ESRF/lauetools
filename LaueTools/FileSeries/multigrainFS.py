@@ -3,6 +3,8 @@ import os, sys
 import site
 from time import time, asctime
 import numpy as np
+from numpy.linalg import inv
+
 import math
 import matplotlib.pylab as p
 
@@ -13,7 +15,7 @@ if sys.version_info.major == 3:
     import LaueTools.LaueGeometry as F2TC
     print('LaueGeometry is from lauetools distribution at :',F2TC.__file__)
     import LaueTools.readmccd as rmccd
-    import LaueTools.LaueAutoAnalysis as LAA
+    #import LaueTools.LaueAutoAnalysis as LAA
     import LaueTools.indexingAnglesLUT as INDEX
     import LaueTools.findorient as FindO
     import LaueTools.CrystalParameters as CP
@@ -24,12 +26,9 @@ if sys.version_info.major == 3:
     #from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
     from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
 
-
-from numpy.linalg import inv
-
 # TODO   to refactor -------------------
 # set invisible parameters for serial_peak_search, serial_index_refine_multigrain
-import FileSeries.param_multigrain as PAR
+import LaueTools.FileSeries.param_multigrain as PAR
 
 omega_sample_frame = 40.0
 
