@@ -6,6 +6,8 @@ Created on Tue Jul  2 11:20:21 2013
 
 from initially T. Cerba
 
+lasr revision June 2021
+
 """
 import os
 import sys
@@ -28,10 +30,9 @@ from wx.lib.agw.shapedbutton import SButton
 
 sys.path.append("..")
 
-from . import multigrainFS as MGFS
+import LaueTools.FileSeries.multigrainFS as MGFS
 
 list_txtparamPM = ["Map Summary File", "File xyz", "maptype"]
-
 list_txtparamPM_type_dict = {"Map Summary File": str, "File xyz": str, "maptype": str}
 
 
