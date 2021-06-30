@@ -88,8 +88,8 @@ class MainFrame_plotmaps(wx.Frame):
         txt_mapparameters = wx.StaticText(self.panel, -1, "Map Type ")
         txt_mapparameters.SetFont(font)
 
-        self.choice_maptype = wx.Choice( self.panel, -1,
-                        choices=[ "fit", "strain6_crystal", "rgb_x_sample",
+        self.choice_maptype = wx.Choice(self.panel, -1,
+                        choices=["fit", "strain6_crystal", "rgb_x_sample",
                         "strain6_sample", "euler3", "stress6_crystal", "stress6_sample",
                         "res_shear_stress", "max_rss", "von_mises", "w_mrad", ], )
         self.choice_maptype.SetSelection(0)
@@ -146,7 +146,7 @@ class MainFrame_plotmaps(wx.Frame):
 
         self.btnclearwindows.SetToolTipString("Clear Previous plotting windows")
 
-    def OnClearChildWindows(self, evt):
+    def OnClearChildWindows(self, _):
         print("killing child windows!")
         #         print "list_of_windows", self.list_of_windows
         for child in self.list_of_windows:
@@ -179,25 +179,25 @@ class MainFrame_plotmaps(wx.Frame):
 
         return self.dict_params
 
-    def Onchoice_maptype(self, event):
+    def Onchoice_maptype(self, _):
         self.dict_params["maptype"] = self.choice_maptype.GetString(
             self.choice_maptype.GetSelection())
 
-    def OnbtnBrowse_filesum(self, event):
+    def OnbtnBrowse_filesum(self, _):
         folder = wx.FileDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
             fold, filen = os.path.split(folder.GetPath())
             self.summarypath_folder.SetValue(fold)
             self.summarypath_file.SetValue(filen)
 
-    def OnbtnBrowse_filexyz(self, event):
+    def OnbtnBrowse_filexyz(self, _):
         folder = wx.FileDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
             fold, filen = os.path.split(folder.GetPath())
             self.filexyzpath_folder.SetValue(fold)
             self.filexyzpath_file.SetValue(filen)
 
-    def OnPlot(self, event):
+    def OnPlot(self, _):
         dictpars = self.OnReadParameters()
         print(("self.dict_params", self.dict_params))
 
