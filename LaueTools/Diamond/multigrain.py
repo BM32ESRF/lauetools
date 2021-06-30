@@ -41,7 +41,6 @@ if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
     # set invisible parameters for serial_peak_search, serial_index_refine_multigrain
     from .. import param_multigrain as PAR
-    from .. IOLaueTools import readfitfile_multigrains
     from .. import lauecore as LAUE
     
 else:
@@ -55,11 +54,10 @@ else:
     import CrystalParameters as CP
     from generaltools import norme_vec as norme
     import generaltools as GT
-    import readwriteASCII as RWASCII
+    import IOLaueTools as RWASCII
     import dict_LaueTools as DictLT
     # set invisible parameters for serial_peak_search, serial_index_refine_multigrain
     import param_multigrain as PAR
-    from readwriteASCII import readfitfile_multigrains
     import lauecore as LAUE
 
 
@@ -325,25 +323,22 @@ def dlat_to_rlat(dlat) :
     # Compute reciprocal lattice parameters. The convention used is that
     # a[i]*b[j] = d[ij], i.e. no 2PI's in reciprocal lattice.
     """
-
     # compute volume of real lattice cell 
-
-    volume = dlat[0]*dlat[1]*dlat[2]*sqrt(1+2*cos(dlat[3])*cos(dlat[4])*cos(dlat[5])
-             -cos(dlat[3])*cos(dlat[3])
-             -cos(dlat[4])*cos(dlat[4])
-             -cos(dlat[5])*cos(dlat[5]))
+    volume = dlat[0]*dlat[1]*dlat[2]*np.sqrt(1+2*np.cos(dlat[3])*np.cos(dlat[4])*np.cos(dlat[5])
+             -np.cos(dlat[3])*np.cos(dlat[3])
+             -np.cos(dlat[4])*np.cos(dlat[4])
+             -np.cos(dlat[5])*np.cos(dlat[5]))
 
     # compute reciprocal lattice parameters 
-
-    rlat[0] = dlat[1]*dlat[2]*sin(dlat[3])/volume
-    rlat[1] = dlat[0]*dlat[2]*sin(dlat[4])/volume
-    rlat[2] = dlat[0]*dlat[1]*sin(dlat[5])/volume
-    rlat[3] = arccos((cos(dlat[4])*cos(dlat[5])-cos(dlat[3]))
-                   /(sin(dlat[4])*sin(dlat[5])))
-    rlat[4] = arccos((cos(dlat[3])*cos(dlat[5])-cos(dlat[4]))
-                   /(sin(dlat[3])*sin(dlat[5])))
-    rlat[5] = arccos((cos(dlat[3])*cos(dlat[4])-cos(dlat[5]))
-                   /(sin(dlat[3])*sin(dlat[4])))
+    rlat[0] = dlat[1]*dlat[2]*np.sin(dlat[3])/volume
+    rlat[1] = dlat[0]*dlat[2]*np.sin(dlat[4])/volume
+    rlat[2] = dlat[0]*dlat[1]*np.sin(dlat[5])/volume
+    rlat[3] = np.arccos((np.np.cos(dlat[4])*np.cos(dlat[5])-np.cos(dlat[3]))
+                   /(np.sin(dlat[4])*np.sin(dlat[5])))
+    rlat[4] = np.arccos((np.cos(dlat[3])*np.cos(dlat[5])-np.cos(dlat[4]))
+                   /(np.sin(dlat[3])*np.sin(dlat[5])))
+    rlat[5] = np.arccos((np.cos(dlat[3])*np.cos(dlat[4])-np.cos(dlat[5]))
+                   /(np.np.sin(dlat[3])*np.np.sin(dlat[4])))
 
     return(rlat)
     
@@ -357,9 +352,9 @@ def mat_to_rlat(matstarlab):
     rlat[0] = norme(astarlab)
     rlat[1] = norme(bstarlab)
     rlat[2] = norme(cstarlab)
-    rlat[5] = arccos(inner(astarlab, bstarlab) / (rlat[0] * rlat[1]))
-    rlat[4] = arccos(inner(cstarlab, astarlab) / (rlat[2] * rlat[0]))
-    rlat[3] = arccos(inner(bstarlab, cstarlab) / (rlat[1] * rlat[2]))
+    rlat[5] = np.arccos(inner(astarlab, bstarlab) / (rlat[0] * rlat[1]))
+    rlat[4] = np.arccos(inner(cstarlab, astarlab) / (rlat[2] * rlat[0]))
+    rlat[3] = np.arccos(inner(bstarlab, cstarlab) / (rlat[1] * rlat[2]))
 
     #print "rlat = ",rlat
 
@@ -444,36 +439,36 @@ def dlat_to_Bstar(dlat): #29May13
     rlat = dlat_to_rlat(dlat)
     
     Bstar[0,0] = rlat[0]
-    Bstar[0,1] = rlat[1]*cos(rlat[5])
-    Bstar[1,1] = rlat[1]*sin(rlat[5])
-    Bstar[0,2] = rlat[2]*cos(rlat[4])
-    Bstar[1,2] = -rlat[2]*sin(rlat[4])*cos(dlat[3])
+    Bstar[0,1] = rlat[1]*np.cos(rlat[5])
+    Bstar[1,1] = rlat[1]*np.sin(rlat[5])
+    Bstar[0,2] = rlat[2]*np.cos(rlat[4])
+    Bstar[1,2] = -rlat[2]*np.sin(rlat[4])*np.cos(dlat[3])
     Bstar[2,2] = 1.0/dlat[2]
     
     return(Bstar)
 
 def rlat_to_Bstar(rlat): #29May13
     
-        """
-        # Xcart = Bstar*Xcrist_rec
-        # changement de coordonnees pour le vecteur X entre 
-        # le repere de la maille reciproque Rcrist_rec
-        # et le repere OND Rcart associe a Rcrist_rec
-        # rlat  reciprocal lattice parameters
-        # dlat  direct lattice parameters
-        # en radians
-        """
-        Bstar = zeros((3,3),dtype=float)
-        dlat = dlat_to_rlat(rlat)
-        
-        Bstar[0,0] = rlat[0]
-        Bstar[0,1] = rlat[1]*cos(rlat[5])
-        Bstar[1,1] = rlat[1]*sin(rlat[5])
-        Bstar[0,2] = rlat[2]*cos(rlat[4])
-        Bstar[1,2] = -rlat[2]*sin(rlat[4])*cos(dlat[3])
-        Bstar[2,2] = 1.0/dlat[2]
-        
-        return(Bstar)
+    """
+    # Xcart = Bstar*Xcrist_rec
+    # changement de coordonnees pour le vecteur X entre 
+    # le repere de la maille reciproque Rcrist_rec
+    # et le repere OND Rcart associe a Rcrist_rec
+    # rlat  reciprocal lattice parameters
+    # dlat  direct lattice parameters
+    # en radians
+    """
+    Bstar = zeros((3,3),dtype=float)
+    dlat = dlat_to_rlat(rlat)
+    
+    Bstar[0,0] = rlat[0]
+    Bstar[0,1] = rlat[1]*np.cos(rlat[5])
+    Bstar[1,1] = rlat[1]*np.sin(rlat[5])
+    Bstar[0,2] = rlat[2]*np.cos(rlat[4])
+    Bstar[1,2] = -rlat[2]*np.sin(rlat[4])*np.cos(dlat[3])
+    Bstar[2,2] = 1.0/dlat[2]
+    
+    return(Bstar)
         
 def matstarlab_to_deviatoric_strain_crystal(matstarlab, 
                                             version = 2, 
@@ -662,7 +657,7 @@ def deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(sigma_cry
     sigma_crystal_3x3 = epsline_to_epsmat(sigma_crystal_line)
     tau_all = zeros(nop2, float)
     for k in range(nop2):
-        tau_all[k] = (multiply(schmid_tensors[k],sigma_crystal_3x3)).sum()
+        tau_all[k] = (np.multiply(schmid_tensors[k],sigma_crystal_3x3)).sum()
         
     #print tau_all
     return(tau_all)
@@ -678,7 +673,7 @@ def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
                 (sig[2]-sig[0])*(sig[2]-sig[0]) + \
                 6.* (sig[3]*sig[3] + sig[4]*sig[4] + sig[5]*sig[5])
     von_mises = von_mises / 2.
-    von_mises = sqrt(von_mises)
+    von_mises = np.sqrt(von_mises)
     return(von_mises)
            
 def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
@@ -694,7 +689,7 @@ def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
                 (eps[2]-eps[0])*(eps[2]-eps[0]) + \
                 6.* (eps[3]*eps[3] + eps[4]*eps[4] + eps[5]*eps[5])
     toto = toto / 2.
-    eq_strain = (2./3.) * sqrt(toto)
+    eq_strain = (2./3.) * np.sqrt(toto)
     return(eq_strain)
            
 def uflab_to_xycam(uflab, 
@@ -724,10 +719,10 @@ def uflab_to_xycam(uflab,
     xbetrad = xbet * PI / 180.0
     xgamrad = xgam * PI / 180.0
     
-    cosbeta = cos(PI / 2. - xbetrad)
-    sinbeta = sin(PI / 2. - xbetrad)
-    cosgam = cos(-xgamrad)
-    singam = sin(-xgamrad)
+    cosbeta = np.cos(PI / 2. - xbetrad)
+    sinbeta = np.sin(PI / 2. - xbetrad)
+    cosgam = np.cos(-xgamrad)
+    singam = np.sin(-xgamrad)
    
     IOlab = detect * np.array([0.0, cosbeta, sinbeta])
     
@@ -755,8 +750,8 @@ def uflab_to_xycam(uflab,
     uflabyz = array([0.0, uflab1[1], uflab1[2]])
     # chi = angle entre uflab et la projection de uflab sur le plan ylab, zlab
     
-    chi = (180.0 / PI) * arctan(uflab1[0] / norme(uflabyz))
-    twicetheta = (180.0 / PI) * arccos(uflab1[1])
+    chi = (180.0 / PI) * np.arctan(uflab1[0] / norme(uflabyz))
+    twicetheta = (180.0 / PI) * np.arccos(uflab1[1])
     th0 = twicetheta / 2.0
     
     #print "2theta, theta, chi en deg", twicetheta , chi, twicetheta/2.0
@@ -825,7 +820,7 @@ def omega_sample_frame_to_mat_from_lab_to_sample_frame() :
     omega = omega0*PI/180.0
     
     # rotation de -omega autour de l'axe x pour repasser dans Rsample
-    PAR.mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+    PAR.mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
 
     print("MG.PAR.mat_from_lab_to_sample_frame = \n", PAR.mat_from_lab_to_sample_frame)
  
@@ -852,7 +847,7 @@ def matstarlab_to_matdirONDsample3x3(matstarlab,
     if (omega0  is  not None)&(mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
         omega = omega0*PI/180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
 
     # matdirONDsample3x3 = uc_dir_OND on sample
     # rsample = matdirONDsample3x3 * ruc_dir_OND
@@ -903,9 +898,7 @@ def transform_2nd_order_tensor_from_sample_frame_to_crystal_frame(matstarlab,
                                                            mat_from_lab_to_sample_frame = mat_from_lab_to_sample_frame)
 
     # changement de base pour tenseur d'ordre 2
-
 #    toto = dot(tensor_crystal_3x3 , matdirONDsample3x3.transpose())
-
 #    tensor_sample_3x3 = dot(matdirONDsample3x3,toto)
     
     toto = dot(tensor_sample_3x3 , matdirONDsample3x3)
@@ -1194,9 +1187,6 @@ def read_xmas_txt_file_from_seq_file(filexmas,
         print(data_sum_select_col[:5,:])
         
         return(data_sum_select_col, list_column_names, npts)   
-        
-
-
 
 if 0 : # find symmetry operations with det > 1
     allop = DictLT.OpSymArray
@@ -1225,7 +1215,7 @@ def matstarlab_to_matstarsample3x3(matstarlab,
     if (omega  is  not None)&(mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
         omega = omega*PI/180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
         
     matstarsample3x3 = dot(mat_from_lab_to_sample_frame, matstarlab3x3)
     
@@ -1240,13 +1230,13 @@ def matstarsample3x3_to_matstarlab(matstarsample3x3,
     if (omega  is  not None)&(mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
         omega = omega*PI/180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
    
     mat_from_sample_to_lab_frame = transpose(mat_from_lab_to_sample_frame)
 
 #    # rotation de -omega autour de l'axe x pour repasser dans Rsample
 #    omega = omega*PI/180.0
-#    matrot = array([[1.0,0.0,0.0],[0.0,cos(omega),-sin(omega)],[0.0,sin(omega),cos(omega)]])
+#    matrot = array([[1.0,0.0,0.0],[0.0,np.cos(omega),-np.sin(omega)],[0.0,np.sin(omega),np.cos(omega)]])
 
     matstarlab3x3 = dot(mat_from_sample_to_lab_frame,matstarsample3x3)
 
@@ -1270,7 +1260,7 @@ def fromMatrix_toQuat(matrix):
         toto = abs(toto)
         #print matrix
         
-    soso = sqrt(toto) * 2.0
+    soso = np.sqrt(toto) * 2.0
     qx = (mat[9] - mat[6])/soso
     qy = (mat[2] - mat[8])/soso
     qz = (mat[4] - mat[1])/soso
@@ -1281,17 +1271,17 @@ def fromQuat_to_vecangle(quat):
     """ from quat = [vec,scalar] = [sin angle/2 (unitvec(x,y,z)), cos angle/2]
     gives unitvec and angle of rotation around unitvec
     """
-    normvectpart=math.sqrt(quat[0]**2+quat[1]**2+quat[2]**2+quat[3]**2)
+    normvectpart=np.sqrt(quat[0]**2+quat[1]**2+quat[2]**2+quat[3]**2)
     #print "nor",normvectpart
-    angle=math.acos(quat[3]/normvectpart)*2.0 # in radians
-    unitvec=array(quat[:3])/math.sin(angle/2.0)/normvectpart
+    angle=np.arccos(quat[3]/normvectpart)*2.0 # in radians
+    unitvec=array(quat[:3])/np.sin(angle/2.0)/normvectpart
     return unitvec,angle
 
 def fromvecangle_to_Quat(unitvec,angle):
     # angle in radians
     quat = zeros(4,float)
-    quat[3] = cos(angle/2.0)
-    quat[:3] = sin(angle/2.0)*unitvec
+    quat[3] = np.cos(angle/2.0)
+    quat[:3] = np.sin(angle/2.0)*unitvec
     return(quat)
 
 def from_axis_vecangle_to_mat(vlab, ang1):
@@ -1307,7 +1297,7 @@ def from_axis_vecangle_to_mat(vlab, ang1):
     vlab = vlab/norme(vlab)
     ang1 = ang1 * PI/180.0
     rotv= array([[0.,-vlab[2],vlab[1]],[vlab[2],0.,-vlab[0]],[-vlab[1],vlab[0],0.0]])
-    matrot = cos(ang1)*eye(3) + (1-cos(ang1))* outer(vlab,vlab)+ sin(ang1)*rotv
+    matrot = np.cos(ang1)*eye(3) + (1-np.cos(ang1))* outer(vlab,vlab)+ np.sin(ang1)*rotv
     #print "matrot = ", matrot
     return(matrot) 
  
@@ -1330,7 +1320,6 @@ def from_axis_to_reflection_matrix(axis):
     mat[2,1] = mat[1,2] *1.
     
     return(mat)  
-   
 
 
 def init_numbers_for_crystal_opsym_and_first_stereo_sector(elem_label = "Si") :
@@ -1479,17 +1468,9 @@ def plot_orientation_half_circle_color_code(elem_label = "m_zirconia"):
             
             p.plot(qsxy[0],qsxy[1],marker = 'o', markerfacecolor = rgb_pole, markeredgecolor = rgb_pole, markersize = 5, clip_on = False)     
 
-    dict_vectors_rec = {"a*" : [1.,0.,0.],
-                        "-a*" : [-1.,0.,0.],
-                         "c*" : [0.,0.,1.],
-                       "a*+b*" : [1.,1.,0.],
-                        "a*+c*" : [1.,0.,1.],
-                        "-a*+b*" : [-1.,1.,0.],
-                        "-a*+c*" : [-1.,0.,1.],
-                        "b*+c*" : [0.,1.,1.],
-                        "a*+b*+c*" : [1.,1.,1.],
-                        "-a*+b*+c*" : [-1.,1.,1.],
-                    }
+    dict_vectors_rec = {"a*" : [1.,0.,0.], "-a*" : [-1.,0.,0.], "c*" : [0.,0.,1.], "a*+b*" : [1.,1.,0.],
+                        "a*+c*" : [1.,0.,1.], "-a*+b*" : [-1.,1.,0.], "-a*+c*" : [-1.,0.,1.], "b*+c*" : [0.,1.,1.],
+                        "a*+b*+c*" : [1.,1.,1.], "-a*+b*+c*" : [-1.,1.,1.]}
                     
     dlatdeg = np.array(DictLT.dict_Materials[elem_label][1], dtype = float)
     print("direct lattice parameters angstroms degrees = \n ", dlatdeg)    
@@ -1580,13 +1561,13 @@ def matstarlab_to_orientation_color_rgb(matstarlab,
         if (omega  is  not None)&(mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
             omega = omega*PI/180.0
             # rotation de -omega autour de l'axe x pour repasser dans Rsample
-            mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+            mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
 
         mat_from_sample_to_lab_frame = transpose(mat_from_lab_to_sample_frame)
                         
 #        omega = omega*PI/180.0 
 #        # rotation de omega autour de l'axe x pour repasser dans Rlab
-#        matrot = array([[1.0,0.0,0.0],[0.0,cos(omega),-sin(omega)],[0.0,sin(omega),cos(omega)]])
+#        matrot = array([[1.0,0.0,0.0],[0.0,np.cos(omega),-np.sin(omega)],[0.0,np.sin(omega),np.cos(omega)]])
 
         verbose = 0
 #
@@ -1669,23 +1650,14 @@ def matstarlab_to_orientation_color_rgb(matstarlab,
         #print data1_sorted.round(decimals = 3)
 
         ind1 = where(abs(data1_sorted[:,np1]-data1_sorted[0,np1])<1e-3)
-
         #print ind1
-
         data2_sorted = sort_list_decreasing_column(data1_sorted[ind1[0],:], np2)
-
         #print data2_sorted.round(decimals = 3)
-
         ind2 = where(abs(data2_sorted[:,np2]-data2_sorted[0,np2])<1e-3)
-
         #print ind2
-
         data3_sorted = sort_list_decreasing_column(data2_sorted[ind2[0],:], np3)
-
         #print data3_sorted.round(decimals = 3)
-
         ind3 = where(abs(data3_sorted[:,np3]-data3_sorted[0,np3])<1e-3)
-
         #print ind3
 
         #print "initial matrix abcstar_on_xyzlab"
@@ -1812,8 +1784,6 @@ def remove_duplicates(data, dtol = 0.01):
         return(datanew)
         
 
-
-
 ##********************************************************************************************************************************
 
 def test_if_cubic(elem_label) :
@@ -1851,26 +1821,13 @@ def test_if_monoclinic(elem_label) :
     else : return(0)
 
 
-def test_index_refine(filedat, 
-                      paramdetector_top, 
-                      proposed_matrix=None, 
-                      check_grain_presence=None, 
-                      paramtofit="strain", 
-                      elem_label="UO2", 
-                      grainnum=1,
-                      remove_sat=0, 
-                      elim_worst_pixdev=1, 
-                      maxpixdev=1.0,
-                      spot_index_central=[0, 1, 2, 3, 4, 5],
-                      nbmax_probed=20, 
-                      energy_max=22,
-                      rough_tolangle=0.5 , 
-                      fine_tolangle=0.2, 
-                      Nb_criterium=15,
-                      NBRP=1, 
-                      mark_bad_spots=0, 
-                      boolctrl = '1' * 8, 
-                      CCDlabel = "MARCCD165",
+def test_index_refine(filedat, paramdetector_top, proposed_matrix=None, 
+                      check_grain_presence=None, paramtofit="strain", elem_label="UO2", 
+                      grainnum=1, remove_sat=0, elim_worst_pixdev=1, 
+                      maxpixdev=1.0, spot_index_central=[0, 1, 2, 3, 4, 5], nbmax_probed=20, 
+                      energy_max=22, rough_tolangle=0.5 , fine_tolangle=0.2, 
+                      Nb_criterium=15, NBRP=1, mark_bad_spots=0, 
+                      boolctrl = '1' * 8, CCDlabel = "MARCCD165",
                       use_weights=False,  # les parametres marques par * sont muets dans serial_index_refine
                       nLUT = 3,  #*
                       LUT = None, #*
@@ -2079,9 +2036,7 @@ def test_index_refine(filedat,
             
             print("GetStrainOrient in test_index_refine")
     
-            res1 = LAA.GetStrainOrient(orientmatrix,
-                                               Bmatrix,
-                                               elem_label,
+            res1 = LAA.GetStrainOrient(orientmatrix, Bmatrix, elem_label,
                                                emax_simul,
                                                veryclose_angletol,
                                                data,
@@ -2187,10 +2142,10 @@ def test_index_refine(filedat,
 
         print(paramdetector_top)
         
-        res = LAA.GetCalibParameter(emax_simul, veryclose_angletol, elem_label, \
-                    UBmat, paramdetector_top, data, \
-                    pixelsize=pixelsize, dim=dim, boolctrl=boolctrl, \
-                    use_weights=use_weights, addoutput=1)
+        res = LAA.GetCalibParameter(emax_simul, veryclose_angletol, elem_label,
+                                UBmat, paramdetector_top, data, 
+                                pixelsize=pixelsize, dim=dim, boolctrl=boolctrl,
+                                use_weights=use_weights, addoutput=1)
         
         newparam, UBmat_2, pixdev_2, nfit_2, pixdev_list, spotnum_hkl_2 = res
         
@@ -2588,15 +2543,15 @@ def sort_peaks_decreasing_int(data_str, colnum):
 ##    /* phi = GRAINIMAGELIST[NGRAINIMAGE].EULER[0] / RAD;
 ##    theta = GRAINIMAGELIST[NGRAINIMAGE].EULER[1]/ RAD;
 ##    psi = GRAINIMAGELIST[NGRAINIMAGE].EULER[2]/ RAD;
-##    b[0][0] = cos(psi)*cos(phi)- cos(theta)*sin(phi)*sin(psi);
-##    b[0][1] = cos(psi)*sin(phi)+ cos(theta)*cos(phi)*sin(psi);
-##    b[0][2] = sin(psi)*sin(theta);
-##    b[1][0] = -sin(psi)*cos(phi)-cos(theta)*sin(phi)*cos(psi);
-##    b[1][1] = -sin(psi)*sin(phi)+cos(theta)*cos(phi)*cos(psi);
-##    b[1][2] = cos(psi)*sin(theta);
-##    b[2][0] = sin(theta)*sin(phi);
-##    b[2][1] = -sin(theta)*cos(phi);
-##    b[2][2] = cos(theta);
+##    b[0][0] = np.cos(psi)*np.cos(phi)- np.cos(theta)*np.sin(phi)*np.sin(psi);
+##    b[0][1] = np.cos(psi)*np.sin(phi)+ np.cos(theta)*np.cos(phi)*np.sin(psi);
+##    b[0][2] = np.sin(psi)*np.sin(theta);
+##    b[1][0] = -np.sin(psi)*np.cos(phi)-np.cos(theta)*np.sin(phi)*np.cos(psi);
+##    b[1][1] = -np.sin(psi)*np.sin(phi)+np.cos(theta)*np.cos(phi)*np.cos(psi);
+##    b[1][2] = np.cos(psi)*np.sin(theta);
+##    b[2][0] = np.sin(theta)*np.sin(phi);
+##    b[2][1] = -np.sin(theta)*np.cos(phi);
+##    b[2][2] = np.cos(theta);
 
 def calc_Euler_angles(mat3x3):
         
@@ -2622,7 +2577,7 @@ def calc_Euler_angles(mat3x3):
                         euler[0] = -euler[0]
     else :
         # psi */ 
-        toto = sqrt(1 - mat[2, 2] * mat[2, 2]) # sin theta - >0 */
+        toto = np.sqrt(1 - mat[2, 2] * mat[2, 2]) # sin theta - >0 */
         euler[2] = RAD * acos(mat[1, 2] / toto)
         # phi */    
         euler[0] = RAD * acos(-mat[2, 1] / toto)
@@ -2685,7 +2640,7 @@ def calc_Euler_angles_Emeric(mat3x3):
                         euler[0] = -euler[0]
     else :
         # psi */
-        toto = sqrt(1 - mat[2, 2] * mat[2, 2]) # sin theta - >0 */
+        toto = np.sqrt(1 - mat[2, 2] * mat[2, 2]) # sin theta - >0 */
         euler[2] = RAD * acos(mat[1, 2] / toto)
         # phi */   
         euler[0] = RAD * acos(-mat[2, 1] / toto)
@@ -2707,15 +2662,15 @@ def calc_matrix_from_Euler_angles_EBSD(euler3_rad) :
     PHI = euler3_rad[1]
     phi2 = euler3_rad[2]
     
-    g11 = cos(phi1)*cos(phi2) - sin(phi1)*sin(phi2)*cos(PHI)
-    g12 = sin(phi1)*cos(phi2) + cos(phi1)*sin(phi2)*cos(PHI)
-    g13 = sin(phi2)*sin(PHI)
-    g21 = -cos(phi1)*sin(phi2) - sin(phi1)*cos(phi2)*cos(PHI)
-    g22 = -sin(phi1)*sin(phi2) + cos(phi1)*cos(phi2)*cos(PHI)
-    g23 = cos(phi2)*sin(PHI)
-    g31 = sin(phi1)*sin(PHI)
-    g32 = -cos(phi1)*sin(PHI)
-    g33 = cos(PHI)
+    g11 = np.cos(phi1)*np.cos(phi2) - np.sin(phi1)*np.sin(phi2)*np.cos(PHI)
+    g12 = np.sin(phi1)*np.cos(phi2) + np.cos(phi1)*np.sin(phi2)*np.cos(PHI)
+    g13 = np.sin(phi2)*np.sin(PHI)
+    g21 = -np.cos(phi1)*np.sin(phi2) - np.sin(phi1)*np.cos(phi2)*np.cos(PHI)
+    g22 = -np.sin(phi1)*np.sin(phi2) + np.cos(phi1)*np.cos(phi2)*np.cos(PHI)
+    g23 = np.cos(phi2)*np.sin(PHI)
+    g31 = np.sin(phi1)*np.sin(PHI)
+    g32 = -np.cos(phi1)*np.sin(PHI)
+    g33 = np.cos(PHI)
 
     # g = abc en ligne sur xyz
     
@@ -2747,15 +2702,15 @@ def calc_matrix_from_Euler_angles_EBSD(euler3_rad) :
 #    PHI = euler3_rad[1]
 #    phi2 = euler3_rad[2]
 #    
-#    g11 = cos(phi1)*cos(phi2) - sin(phi1)*sin(phi2)*cos(PHI)
-#    g12 = sin(phi1)*cos(phi2) + cos(phi1)*sin(phi2)*cos(PHI)
-#    g13 = sin(phi2)*sin(PHI)
-#    g21 = -cos(phi1)*sin(phi2) - sin(phi1)*cos(phi2)*cos(PHI)
-#    g22 = -sin(phi1)*sin(phi2) + cos(phi1)*cos(phi2)*cos(PHI)
-#    g23 = cos(phi2)*sin(PHI)
-#    g31 = sin(phi1)*sin(PHI)
-#    g32 = -cos(phi1)*sin(PHI)
-#    g33 = cos(PHI)
+#    g11 = np.cos(phi1)*np.cos(phi2) - np.sin(phi1)*np.sin(phi2)*np.cos(PHI)
+#    g12 = np.sin(phi1)*np.cos(phi2) + np.cos(phi1)*np.sin(phi2)*np.cos(PHI)
+#    g13 = np.sin(phi2)*np.sin(PHI)
+#    g21 = -np.cos(phi1)*np.sin(phi2) - np.sin(phi1)*np.cos(phi2)*np.cos(PHI)
+#    g22 = -np.sin(phi1)*np.sin(phi2) + np.cos(phi1)*np.cos(phi2)*np.cos(PHI)
+#    g23 = np.cos(phi2)*np.sin(PHI)
+#    g31 = np.sin(phi1)*np.sin(PHI)
+#    g32 = -np.cos(phi1)*np.sin(PHI)
+#    g33 = np.cos(PHI)
 #
 #    # g = abc en ligne sur xyz, matrice orthonormee
 #    
@@ -2955,7 +2910,7 @@ def convert_xmas_str_to_LT_fit(filestr,
     pixdev_list = zeros(npics, float)
     Etheor_list = zeros(npics, float)
     for i in range(npics):
-        pixdev_list[i] = sqrt(data_str_all[i, 5] * data_str_all[i, 5] + data_str_all[i, 6] * data_str_all[i, 6])
+        pixdev_list[i] = np.sqrt(data_str_all[i, 5] * data_str_all[i, 5] + data_str_all[i, 6] * data_str_all[i, 6])
 
     data_str_all = column_stack((data_str_all, index2, pixdev_list, Etheor_list))
     #data_str_all : index1 11, pixdev 12
@@ -3073,7 +3028,7 @@ def find_common_peaks(xy1,
 #        print xy2
         dxyall = xy1[j]-xy2
 #        print dxyall
-        dxyall2 = multiply(dxyall, dxyall)
+        dxyall2 = np.multiply(dxyall, dxyall)
 #        print dxyall2
         if ncols > 1 :
             dxyall2sum = dxyall2.sum(axis=1)
@@ -6141,15 +6096,15 @@ def add_columns_to_summary_file(filesum,
     if (PAR.omega_sample_frame  is  not None)&(PAR.mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
         omega =  PAR.omega_sample_frame *PI/180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
-        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),sin(omega)],[0.0,-sin(omega),cos(omega)]])
+        mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,np.cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
     
     else :   mat_from_lab_to_sample_frame =  PAR.mat_from_lab_to_sample_frame 
     
     mat_from_sample_to_lab_frame = transpose(mat_from_lab_to_sample_frame)
       
 #    omegarad = PAR.omega_sample_frame * PI/180.
-#    ylab_sample_coord = array([0.,cos(omegarad),-sin(omegarad)])
-#    zlab_sample_coord = array([0.,sin(omegarad),cos(omegarad)])
+#    ylab_sample_coord = array([0.,np.cos(omegarad),-np.sin(omegarad)])
+#    zlab_sample_coord = array([0.,np.sin(omegarad),np.cos(omegarad)])
 
     xlab_sample_coord = mat_from_sample_to_lab_frame[0,:]
     ylab_sample_coord = mat_from_sample_to_lab_frame[1,:]
@@ -6924,8 +6879,8 @@ def rotate_map(filexyz, xylim = None):
     xylist =  data_1[:,1:3]
     print(xylist[:3,:])
     
-    sin_rot = sin(PAR.map_rotation*PI/180.0)
-    cos_rot = cos(PAR.map_rotation*PI/180.0)
+    sin_rot = np.sin(PAR.map_rotation*PI/180.0)
+    cos_rot = np.cos(PAR.map_rotation*PI/180.0)
     sin_rot = int(round(sin_rot,0))
     cos_rot = int(round(cos_rot,0))
     if (abs(sin_rot) != 1)&(sin_rot != 0) :
@@ -7416,7 +7371,7 @@ def plot_map(filesum,
         if maptype == "euler3" : 
             euler3 = data_list2[:,indcolplot]
             ang0 = 360.0
-            ang1 = arctan(sqrt(2.0))*180.0/PI
+            ang1 = np.arctan(np.sqrt(2.0))*180.0/PI
             ang2 = 180.0
             ang012 = array([ang0, ang1, ang2])
             print(euler3[0,:])
@@ -9985,10 +9940,10 @@ def xycam_to_uflab(xycam,
     xbetrad = xbet * PI/180.0
     xgamrad = xgam * PI/180.0
 
-    cosbeta=cos(PI/2.-xbetrad)
-    sinbeta=sin(PI/2.-xbetrad)
-    cosgam=cos(-xgamrad)
-    singam=sin(-xgamrad)
+    cosbeta=np.cos(PI/2.-xbetrad)
+    sinbeta=np.sin(PI/2.-xbetrad)
+    cosgam=np.cos(-xgamrad)
+    singam=np.sin(-xgamrad)
 
     xcam1=(xycam[0]-xcen)*pixelsize
     
@@ -10006,8 +9961,8 @@ def xycam_to_uflab(xycam,
     uflabyz = array([0.0, uflab[1],uflab[2]])    
     # chi = angle entre uflab et la projection de uflab sur le plan ylab, zlab
     
-    chi2 = (180.0/PI)*arctan(uflab[0]/norme(uflabyz))
-    twicetheta2 = (180.0/PI)*arccos(uflab[1])
+    chi2 = (180.0/PI)*np.arctan(uflab[0]/norme(uflabyz))
+    twicetheta2 = (180.0/PI)*np.arccos(uflab[1])
     
 ##    chi3 = (180.0/PI)*arccos(inner(uflab,uflabyz)/norme(uflabyz))*sign(uflab[0])
 
@@ -10038,7 +9993,7 @@ def xycam_to_uqlab(xycam,
     
 #    uqlab= (uflab-uilab)/(2.0*sin(twotheta/2.0))
     
-    uqlab= (uflab-uilab)/(2.0*sqrt( (1.0-inner(uflab,uilab))/2.0 ))
+    uqlab= (uflab-uilab)/(2.0*np.sqrt( (1.0-inner(uflab,uilab))/2.0 ))
 
     return(uqlab)
     
@@ -10135,7 +10090,7 @@ def two_spots_to_mat_gen(hkl,
 #        #thlab = arccos(inner(uflab,uilab))*90.0/PI
 #        #print "th from uflab, uilab in deg", thlab
 #
-#        uqlab[i,:]= (uflab-uilab)/(2.0*sqrt( (1.0-inner(uflab,uilab))/2.0 ))
+#        uqlab[i,:]= (uflab-uilab)/(2.0*np.sqrt( (1.0-inner(uflab,uilab))/2.0 ))
 
 
     if verbose :
@@ -10146,8 +10101,8 @@ def two_spots_to_mat_gen(hkl,
         print("inner(uqlab[0,:],uqlab[1,:]) = ", inner(uqlab[0,:],uqlab[1,:]))
         print("inner(uq1_cart_star,uq2_cart_star) = ", inner(uq1_cart_star,uq2_cart_star))
     
-    alfexp=arccos(inner(uqlab[0,:],uqlab[1,:]))
-    alftheor=arccos(inner(uq1_cart_star,uq2_cart_star))
+    alfexp=np.arccos(inner(uqlab[0,:],uqlab[1,:]))
+    alftheor=np.arccos(inner(uq1_cart_star,uq2_cart_star))
     delta_alf = (alfexp-alftheor)*1000.0
     
     if verbose :
@@ -10232,7 +10187,7 @@ def two_spots_to_mat(hkl,
 #        #thlab = arccos(inner(uflab,uilab))*90.0/PI
 #        #print "th from uflab, uilab in deg", thlab
 #
-#        uqlab[i,:]= (uflab-uilab)/(2.0*sqrt( (1.0-inner(uflab,uilab))/2.0 ))
+#        uqlab[i,:]= (uflab-uilab)/(2.0*np.sqrt( (1.0-inner(uflab,uilab))/2.0 ))
 
 
         print("uqcr = \n" , uqcr.round(decimals = 4))
@@ -10241,8 +10196,8 @@ def two_spots_to_mat(hkl,
         print("inner(uqlab[0,:],uqlab[1,:]) = ", inner(uqlab[0,:],uqlab[1,:]))
         print("inner(uqcr[0,:],uqcr[1,:]) = ", inner(uqcr[0,:],uqcr[1,:]))
         
-    alfexp=arccos(inner(uqlab[0,:],uqlab[1,:]))
-    alftheor=arccos(inner(uqcr[0,:],uqcr[1,:]))
+    alfexp=np.arccos(inner(uqlab[0,:],uqlab[1,:]))
+    alftheor=np.arccos(inner(uqcr[0,:],uqcr[1,:]))
     delta_alf = (alfexp-alftheor)*1000.0   
     
     if verbose :
@@ -10464,9 +10419,9 @@ def uflab_to_2thetachi(uflab):
     # JSM convention : angle dans le plan xz entre les projections de uflab suivant x et suivant z
     # OR change sign of chi
     EPS = 1E-17
-    chi2 = (180.0/PI)*arctan( uflab[0]/(uflab[2]+EPS)) # JSM convention
+    chi2 = (180.0/PI)*np.arctan( uflab[0]/(uflab[2]+EPS)) # JSM convention
     
-    twicetheta2 = (180.0/PI)*arccos(uflab[1])
+    twicetheta2 = (180.0/PI)*np.arccos(uflab[1])
     
 ##    chi3 = (180.0/PI)*arccos(inner(uflab,uflabyz)/norme(uflabyz))*sign(uflab[0])
 
@@ -10508,17 +10463,17 @@ def uflab_to_xycam_gen(uflab,
     xbetrad = xbet * PI/180.0
     xgamrad = xgam * PI/180.0
     
-    cosbeta=cos(PI/2.-xbetrad)
-    sinbeta=sin(PI/2.-xbetrad)
-    cosgam=cos(-xgamrad)
-    singam=sin(-xgamrad)
+    cosbeta=np.cos(PI/2.-xbetrad)
+    sinbeta=np.sin(PI/2.-xbetrad)
+    cosgam=np.cos(-xgamrad)
+    singam=np.sin(-xgamrad)
 
     uflab_cen2 = zeros(3,float)
     tthrad0 = acos(uflab_cen[1])
     tthrad = tthrad0 - xbetrad
-    uflab_cen2[1] = cos(tthrad)
-    uflab_cen2[0] = uflab_cen[0]/sin(tthrad0)*sin(tthrad)
-    uflab_cen2[2] = uflab_cen[2]/sin(tthrad0)*sin(tthrad)
+    uflab_cen2[1] = np.cos(tthrad)
+    uflab_cen2[0] = uflab_cen[0]/np.sin(tthrad0)*np.sin(tthrad)
+    uflab_cen2[2] = uflab_cen[2]/np.sin(tthrad0)*np.sin(tthrad)
     
     #print "norme(uflab_cen2) = ", norme(uflab_cen2)
    
@@ -10662,7 +10617,7 @@ def mat_and_hkl_to_Etheor_ththeor_uqlab(matstarlab = None,
         if (sintheta > 0.0):
             #print "reachable reflection"
             Etheor_eV = DictLT.E_eV_fois_lambda_nm*norme(qlab)/(2*sintheta)
-            ththeor_deg = (180./PI)*arcsin(sintheta)
+            ththeor_deg = (180./PI)*np.arcsin(sintheta)
         else :
             Etheor_eV = 0.
             ththeor_deg = 0.
@@ -10708,7 +10663,7 @@ def spotlist_gen(Emin_keV,
     
     nmaxspots = 1000    
     limangle = 70
-    cosangle = cos(limangle*PI/180.0)
+    cosangle = np.cos(limangle*PI/180.0)
 
     mat = matwithlatpar_inv_nm
     
@@ -10721,7 +10676,7 @@ def spotlist_gen(Emin_keV,
     if diagr == 'halfback':  # 2theta = 118
         # 0 -sin28 cos28
         tth = 28 * PI/180.0
-        uflab_cen = array([0.0,-sin(tth), cos(tth)])
+        uflab_cen = array([0.0,-np.sin(tth), np.cos(tth)])
 
     uflab_cen = uflab_cen / norme(uflab_cen)
 
@@ -10784,7 +10739,7 @@ def spotlist_gen(Emin_keV,
                                 if cosangle2 > cosangle :
                                     Etheor[nspot] = Etheor_eV
                                     ththeor[nspot] = ththeor_deg
-                                    sintheta = sin(ththeor_deg*PI/180.)
+                                    sintheta = np.sin(ththeor_deg*PI/180.)
                                     #print "Etheor = ", Etheor[nspot]
                                     if (Etheor[nspot] > (Emin_eV))&(Etheor[nspot] < (Emax_eV)):                            
                                         uflabtheor = uilab + 2*sintheta*uqlab[nspot]
@@ -10868,7 +10823,7 @@ def spotlist_360(Emin_keV,
         
     nmaxspots = 800    
     limangle = 90.
-    sinangle = sin(limangle*PI/180.)
+    sinangle = np.sin(limangle*PI/180.)
 
     mat = matwithlatpar_inv_nm
 
@@ -10942,9 +10897,9 @@ def spotlist_360(Emin_keV,
 #                                        un = cross(uilab,uqlab)
 #                                        un = un / norme(un)
 #                                        fsig = inner(un,xlab)
-#                                        fpi = sqrt(1-fsig*fsig)
-#                                        cos2theta = cos(tth[nspot]*PI/180.0)
-#                                        fpol[nspot] = sqrt(fsig*fsig + fpi*fpi*cos2theta*cos2theta)
+#                                        fpi = np.sqrt(1-fsig*fsig)
+#                                        cos2theta = np.cos(tth[nspot]*PI/180.0)
+#                                        fpol[nspot] = np.sqrt(fsig*fsig + fpi*fpi*cos2theta*cos2theta)
                                         nspot = nspot + 1
 #                            else :
 #                                print "warning : norme(qlab) < 1e-5 in spotlist_360"
@@ -11189,7 +11144,7 @@ def plot_diagr2(xy, hkl = None,
         titre = 'side diagram : \n' + view_orientation
         p.axvline(x=0)
         p.axhline(y=0)
-        tg40 = tan(40.*PI/180.)
+        tg40 = np.tan(40.*PI/180.)
         yy = np.array([ymin0, ymax0])
         xx =  yy*tg40
         if (view_orientation == "observer_at_sample_xcam_right_ycam_down"):
@@ -11457,14 +11412,14 @@ def four_spots_to_mat_new(quad,
     
     matB123[0,0] = 1.
     cos_gamma = inner(uqlab[0,:],uqlab[1,:])
-    sin_gamma = sqrt(1.-cos_gamma*cos_gamma)
+    sin_gamma = np.sqrt(1.-cos_gamma*cos_gamma)
     matB123[0,1] = cos_gamma
     matB123[1,1] = sin_gamma
     cos_beta = inner(uqlab[0,:],uqlab[2,:])
     matB123[0,2] = cos_beta
     cos_alpha = inner(uqlab[1,:],uqlab[2,:])
     matB123[1,2] = (cos_alpha - cos_beta * cos_gamma)/sin_gamma
-    matB123[2,2] = sqrt(1- matB123[0,2]*matB123[0,2] - matB123[1,2]* matB123[1,2])
+    matB123[2,2] = np.sqrt(1- matB123[0,2]*matB123[0,2] - matB123[1,2]* matB123[1,2])
     
     if verbose :
         print("matB123 sans les longueurs = \n", matB123.round(decimals=3)) 
@@ -11545,13 +11500,13 @@ def four_spots_to_mat(quad,
         #thlab = arccos(inner(uflab,uilab))*90.0/PI
         #print "th from uflab, uilab in deg", thlab
 
-#        uqlab[i,:]= (uflab-uilab)/(2.0*sqrt( (1.0-inner(uflab,uilab))/2.0 ))
+#        uqlab[i,:]= (uflab-uilab)/(2.0*np.sqrt( (1.0-inner(uflab,uilab))/2.0 ))
 
     for j in range(4):
         for k in range(4):
             if (k>j):
-                alfexp[j,k]=arccos(inner(uqlab[j,:],uqlab[k,:]))
-                alftheor[j,k]=arccos(inner(uqcr[j,:],uqcr[k,:]))
+                alfexp[j,k]=np.arccos(inner(uqlab[j,:],uqlab[k,:]))
+                alftheor[j,k]=np.arccos(inner(uqcr[j,:],uqcr[k,:]))
                 #print "alfexp/alftheor (j,k) =", j, k, alfexp[j,k]/alftheor[j,k]
 #            else :
 #                alfexp[j,k]=0.0
@@ -11588,13 +11543,13 @@ def four_spots_to_mat(quad,
     a14 = alfexp[0,3]
     a24 = alfexp[1,3]
 
-    C3 = (cos(a23)-cos(a12)*cos(a13))/sin(a12)
+    C3 = (np.cos(a23)-np.cos(a12)*np.cos(a13))/np.sin(a12)
 
-    C4 = (cos(a24)-cos(a12)*cos(a14))/sin(a12)
+    C4 = (np.cos(a24)-np.cos(a12)*np.cos(a14))/np.sin(a12)
 
-    costheta3 = signecostheta3*sqrt(1.0-cos(a13)*cos(a13)-C3*C3)
+    costheta3 = signecostheta3*np.sqrt(1.0-np.cos(a13)*np.cos(a13)-C3*C3)
 
-    costheta4 = signecostheta4*sqrt(1.0-cos(a14)*cos(a14)-C4*C4)
+    costheta4 = signecostheta4*np.sqrt(1.0-np.cos(a14)*np.cos(a14)-C4*C4)
 
     if ((abs(signecostheta3)<1e-3)|(abs(signecostheta4)<1e-3)):
         print("pb : costheta3 or costheta4 at zero : exiting")
@@ -11606,11 +11561,11 @@ def four_spots_to_mat(quad,
 
     #print "C4*rcos34-C3", C4*rcos34-C3
 
-    q3surq2 = h24*sin(a12)/(h34*(C4*rcos34-C3))    
+    q3surq2 = h24*np.sin(a12)/(h34*(C4*rcos34-C3))    
 
     #print "q3surq2", q3surq2
 
-    q1surq3 = (h34/h14)*((cos(a12)/sin(a12))*(C3-C4*rcos34)+rcos34*cos(a14)-cos(a13))
+    q1surq3 = (h34/h14)*((np.cos(a12)/np.sin(a12))*(C3-C4*rcos34)+rcos34*np.cos(a14)-np.cos(a13))
 
     q3surq1 = 1.0/q1surq3
 
@@ -13131,7 +13086,7 @@ def calc_all_Schmid(matstarlab,
                 uq112[k,:] = cross(uqall[0,k,:],uqall[1,k,:])
                 cosalf = inner(uq112[k,:],uq_spot)
                 #print cosalf
-                sinalf[k] = sqrt(1.0 - cosalf*cosalf)
+                sinalf[k] = np.sqrt(1.0 - cosalf*cosalf)
                 #print sinalf[k]
                 dq_axis[k,:] = cross(uq112[k,:],uq_spot)
                 #print dq_axis[k,:]
@@ -13172,11 +13127,11 @@ def calc_all_Schmid(matstarlab,
                                 dxycam[k,:] = xycam1 - xycam0
                                 dxy[k] = norme(dxycam[k,:])
                                 if dxycam[k,0] !=0.0 :
-                                        tilt_dysdx[k] = -arctan(dxycam[k,1]/dxycam[k,0])*RAD
+                                        tilt_dysdx[k] = -np.arctan(dxycam[k,1]/dxycam[k,0])*RAD
                                 else :
                                         tilt_dysdx[k] = 90.0
                                        
-        uq112 = uq112 * sqrt(6.0)
+        uq112 = uq112 * np.sqrt(6.0)
                 
         schmid = zeros(nop, float)
         ubs = zeros(nop,float)
@@ -13188,7 +13143,7 @@ def calc_all_Schmid(matstarlab,
                 #print ub.round(decimals=2)
                 ublab = dot(matstarlab3x3,ub)
                 #print ublab.round(decimals=2)             
-                ubs[k] = sqrt((s_lab[0]*ublab[0])**2 + (s_lab[1]*ublab[1])**2 + (s_lab[2]*ublab[2])**2)
+                ubs[k] = np.sqrt((s_lab[0]*ublab[0])**2 + (s_lab[1]*ublab[1])**2 + (s_lab[2]*ublab[2])**2)
                 #print round(ubs[k],3)
 
         print("opsym 0, HKLplane 1:4, HKLdir 4:7, HKL112 7:10")
@@ -13321,7 +13276,7 @@ def calc_all_Schmid(matstarlab,
                                 xycam1 = uqlab_to_xycam(uqlab,calib)
                                 dxycam2[k,:] = xycam1 - xycam0
                                 if dxycam2[k,0] !=0.0 :
-                                        tilt_dysdx2[k] = -arctan(dxycam2[k,1]/dxycam2[k,0])*RAD
+                                        tilt_dysdx2[k] = -np.arctan(dxycam2[k,1]/dxycam2[k,0])*RAD
                                 else :
                                         tilt_dysdx2[k] = 90.0
                 print("elongation for other rotations : axes : x, z1b, z1n")
@@ -13545,14 +13500,14 @@ def plot_GB(matstarlab,
                 gt_hkl[j,:] = cross(uGBcr,un)
                 gt_hkl[j,:] = gt_hkl[j,:] / norme(gt_hkl[j,:])
                 uL = hkl_L[j]/norme(hkl_L[j])
-                f_edge[j] = 100.0 * (90.0 - 180.0/math.pi * arccos(abs(inner(gt_hkl[j,:],uL))))/90.0
+                f_edge[j] = 100.0 * (90.0 - 180.0/math.pi * np.arccos(abs(inner(gt_hkl[j,:],uL))))/90.0
                 gt_xyz[j] = hkl_to_xyz_sample(matstarlab,gt_hkl[j])
                 ub_xyz[j] = hkl_to_xyz_sample(matstarlab,ub[j])
                 if y_axis_of_plot_xyzsample  is  not None :
                         gt_xyznew[j] = dot(mat2,gt_xyz[j])
                         ub_xyznew[j] = dot(mat2,ub_xyz[j])
                         if gt_xyznew[j,0] != 0.0 :
-                                gt_tilt[j] = 180.0/math.pi * arctan(gt_xyznew[j,1]/gt_xyznew[j,0])
+                                gt_tilt[j] = 180.0/math.pi * np.arctan(gt_xyznew[j,1]/gt_xyznew[j,0])
                         else :
                                 gt_tilt[j] = 0.0
         
