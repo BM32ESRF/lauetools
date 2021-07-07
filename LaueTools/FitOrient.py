@@ -45,10 +45,8 @@ def remove_harmonic(hkl, uflab, yz):
 
     for i in list(range(nn)):
         if isbadpeak[i] == 0:
-            # print "i=", i
             for j in list(range(i + 1, nn)):
                 if isbadpeak[j] == 0:
-                    # print "j=", j
                     if GT.norme_vec(uflab[j, :] - uflab[i, :]) < toluf:
                         isbadpeak[j] = 1
                         # print "harmonics :"
@@ -99,7 +97,6 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_ind
     allparameters.put(varying_parameter_indices, varying_parameter_values)
 
     calibration_parameters = allparameters[:5]
-    
 
     # selecting nspots of DATA_Q
     DATAQ = np.take(DATA_Q, nspots, axis=0)
