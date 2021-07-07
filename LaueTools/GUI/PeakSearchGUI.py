@@ -5054,10 +5054,7 @@ class MainPeakSearchFrame(wx.Frame):
             if np.all(dat_ROIpeak > 0):
                 print("logscale")
 
-                ploplo = IMSHOW.ImshowFrame(self,
-                                            -1,
-                                            self.imagefilename,
-                                            dat_ROIpeak,
+                ploplo = IMSHOW.ImshowFrame(self, -1, self.imagefilename, dat_ROIpeak,
                                             center=center_pixel,
                                             boxsize=(xboxsize, yboxsize),
                                             fitfunc=fitfunc,
@@ -5068,10 +5065,7 @@ class MainPeakSearchFrame(wx.Frame):
                                             logscale=1)
 
             else:
-                ploplo = IMSHOW.ImshowFrame(self,
-                                            -1,
-                                            self.imagefilename,
-                                            dat_ROIpeak,
+                ploplo = IMSHOW.ImshowFrame(self, -1, self.imagefilename, dat_ROIpeak,
                                             center=center_pixel,
                                             boxsize=(xboxsize, yboxsize),
                                             fitfunc=fitfunc,
