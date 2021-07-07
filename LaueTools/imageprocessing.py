@@ -1340,8 +1340,8 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
         mask_radius = min(framedim[0] // 2, framedim[1] // 2) - 15
         center, minvalue = (framedim[0] // 2, framedim[1] // 2), 0
 
-        print("mask_radius", mask_radius)
-        print("center", center)
+        # print("mask_radius", mask_radius)
+        # print("center", center)
 
         dataarray2D_without_background = filterimage(dataimage, framedim,
                                                     blurredimage=bkg_image,
