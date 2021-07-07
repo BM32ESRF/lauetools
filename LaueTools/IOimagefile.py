@@ -603,7 +603,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             dataimage = np.array(im.getdata()).reshape(framedim)
 
     # RAW method knowing or deducing offsetheader and dataformat
-    if 1:#USE_RAW_METHOD:
+    else:#USE_RAW_METHOD:
         print("----> !!! not using libtiff, nor fabio, nor PIL!!!  ")
         if CCDLabel in ("MARCCD165",):
             print("for MARCCD not using libtiff, raw method ...")
