@@ -875,13 +875,17 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                 - estimating the background around a peak
                 - shifting array in second method of local maxima search (shifted arrays)
 
-    :param IntensityThreshold: integer, pixel intensity level above which potential peaks are kept for fitting position procedure. For local maxima method 0 and 1, this level is relative to zero intensity. For local maxima method 2, this level is relative to lowest intensity in the ROI (local background). Advice: start with high value, because if too high, few peaks are found (only the most important), and if too low, too many local maxima are found leading to time consuming fitting procedure.
+    :param IntensityThreshold: integer, pixel intensity level above which potential peaks are kept for fitting position procedure. For local maxima method 0 and 1, this level is relative to zero intensity. For local maxima method 2, this level is relative to lowest intensity in the ROI (local background).
+    
+    .. note:: Start with high value, because if too high, few peaks are found (only the most important), and if too low, too many local maxima are found leading to time consuming fitting procedure.
 
     :param thresholdConvolve: integer, pixel intensity level in convolved image above which potential peaks are kept for fitting position procedure. This threshold step on convolved image is applied prior to the local threshold step with IntensityThreshold on initial image (with respect to the local background)
 
     :param paramsHat: mexican hat kernel parameters (see :func:`LocalMaxima_ndimage`)
 
-    :param PixelNearRadius: integer, pixel distance between two regions considered as peaks. Advice: start rather with a large value. If too low, there are very much peaks duplicates and this is very time consuming.
+    :param PixelNearRadius: integer, pixel distance between two regions considered as peaks.
+    
+    .. note:: Start rather with a large value. If too low, there are very much peaks duplicates and this is very time consuming.
 
     :param local_maxima_search_method: integer, Select method for find the local maxima, each of them will fitted
                             - 0   extract all pixel above intensity threshold
@@ -892,9 +896,11 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
 
     :param Saturation_value_flatpeak: saturation value of detector for local maxima search method 1
 
-    :param Remove_BlackListedPeaks_fromfile: None or full file path to a peaklist file containing peaks
-                                            that will be deleted in peak list resulting from
-                                            the local maxima search procedure (prior to peak refinement)
+    :param Remove_BlackListedPeaks_fromfile:
+        - None
+        - file fullpath, str,  to a peaklist file containing peaks that will be deleted in peak list resulting from
+        the local maxima search procedure (prior to peak refinement)
+        - ndarray of nx2 X Y pixels cooordinates (avoid reading file in peaksearch series)
 
     :param maxPixelDistanceRejection: maximum distance between black listed peaks and current peaks
                                     (found by peak search) to be rejected
@@ -911,13 +917,13 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                             and refined peak position
 
     :param position_definition: due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values:
-        - 0    no offset (python numpy convention)
-        - 1   XMAS offset
-        - 2   fit2d offset
+        - 0   no offset (python numpy convention)
+        - 1   XMAS offset (first pixel is counted as located at 1 instead of 0)
+        - 2   fit2d offset (obsolete)
 
-    :param return_histo: 0   3 output elements
-                        : 1   4 elemts, last one is histogram of data
-                        : 2   4 elemts, last one is the nb of raw blob found after convolution and threshold
+    :param return_histo: - 0   3 output elements
+                         - 1   4 elemts, last one is histogram of data
+                         - 2   4 elemts, last one is the nb of raw blob found after convolution and threshold
 
     :param Data_for_localMaxima:  object to be used only for initial step of finding local maxima (blobs) search
                                 (and not necessarly for peaks fitting procedure):
@@ -1132,29 +1138,20 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                 len(peaklist), nb_peaks_before))
     # -----------------------------------------------
 
+    #-------------------------------------------------
     # remove black listed peaks option
     # and update peaklist
-    if Remove_BlackListedPeaks_fromfile is not None:
-        XY_OK = False
-        if Remove_BlackListedPeaks_fromfile.endswith('.dat'):
+    if Remove_BlackListedPeaks_fromfile is not None and len(peaklist)>1:
+        if not isinstance(Remove_BlackListedPeaks_fromfile, str):
+            # array of XY  shape = (n,2)
+            XY_blacklisted = Remove_BlackListedPeaks_fromfile
 
-            data_peak_blacklisted = IOLT.read_Peaklist(Remove_BlackListedPeaks_fromfile, dirname=None)
-            if len(peaklist) > 1 and len(data_peak_blacklisted) > 1:
-
-                XY_blacklisted = data_peak_blacklisted[:, :2].T
-                
-                XY_OK = True
-        elif Remove_BlackListedPeaks_fromfile.endswith('.fit'):
-            allgrainsspotsdata = IOLT.readfile_fit(Remove_BlackListedPeaks_fromfile)[4]
-
-            if len(peaklist) > 1 and len(allgrainsspotsdata) > 1:
-
-                XY_blacklisted = allgrainsspotsdata[:, 7:9].T
-                
-                XY_OK = True
+        elif Remove_BlackListedPeaks_fromfile.endswith(('.dat', '.fit')):
+            XY_blacklisted = Get_blacklisted_spots(Remove_BlackListedPeaks_fromfile)
         
-        if XY_OK:  #
-            X, Y = peaklist[:,:2].T
+        if XY_blacklisted is None: print('No or only 1 Blacklisted spots found...')
+        else:  #
+            X, Y = peaklist[:, :2].T
             (peakX, _, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
                                                         dist_tolerance=maxPixelDistanceRejection,
                                                         verbose=0)
@@ -1167,16 +1164,11 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                     npeak_before,
                     Remove_BlackListedPeaks_fromfile))
 
-            #             print "peaklist before", peaklist
-            #             print "peakX, peakY blacklisted", XY_blacklisted
-
             peaklist = np.take(peaklist, tokeep, axis=0)
             Ipixmax = Ipixmax[tokeep]
-
-    #             print "peaklist after blacklist removal", peaklist
+    #-------------------------------------------------
 
     # ---- ----------- no FITTING ----------------------------
-
     # NO FIT  and return raw list of local maxima
     if fit_peaks_gaussian == 0:
 
@@ -1227,11 +1219,6 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         print("{} local maxima found".format(len(peaklist)))
         print("\n Fitting of each local maxima\n")
 
-    #    print "framedim", framedim
-    #    print "offset", offset
-    #    print "formatdata", formatdata
-    #    print "fliprot", fliprot
-
     if center is not None:
         position_start = "centers"
     else:
@@ -1264,6 +1251,23 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                                 use_data_corrected=Data_to_Fit,
                                 reject_negative_baseline=reject_negative_baseline)
 
+def Get_blacklisted_spots(filename):
+    XY_blacklisted = None
+    if filename.endswith('.dat'):
+
+        data_peak_blacklisted = IOLT.read_Peaklist(filename, dirname=None)
+        if len(data_peak_blacklisted) > 1:
+
+            XY_blacklisted = data_peak_blacklisted[:, :2].T
+            
+    elif filename.endswith('.fit'):
+        allgrainsspotsdata = IOLT.readfile_fit(filename)[4]
+
+        if len(allgrainsspotsdata) > 1:
+
+            XY_blacklisted = allgrainsspotsdata[:, 7:9].T
+            
+    return XY_blacklisted
 
 def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpeaklist=None,
                                                         dictPeakSearch={},
@@ -1633,6 +1637,12 @@ def peaksearch_fileseries(fileindexrange,
         fullpath_backgroundimage = PEAKSEARCHDICT_Convolve["Data_for_localMaxima"]
 
         BackgroundImageCreated = True
+
+    # create
+    blspots = PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"]
+    if blspots is not None:
+        PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"] = Get_blacklisted_spots(blspots)
+        # print('blackspots',PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"])
 
     DictPeaksList = {}
     file_ix, nb_empty_files = 0, 0  # nb of probed file, nb of zero peaks file
