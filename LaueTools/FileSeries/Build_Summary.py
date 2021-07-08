@@ -41,11 +41,9 @@ print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 from . import multigrainFS as MGFS
 from . import module_graphique as modgraph
-from . import param_multigrain as PAR
 
 # #import FileSeries.multigrainFS as MGFS
 # import FileSeries.module_graphique as modgraph
-# import param_multigrain as PAR
 
 # TODO refactor without modgraph
 # TODO refactor without PAR
@@ -232,13 +230,12 @@ class MainFrame_BuildSummary(wx.Frame):
 
         # tooltips ----------
         btn_fabrication_to_hand.SetToolTipString("Create a 3 columns file: image_index, x, y")
-        btnStart.SetToolTipString(
-            "Start reading all .fit files and build summary files in folder results")
+        btnStart.SetToolTipString("Start reading all .fit files and build summary files in folder results")
 
         self.builddatfile.SetToolTipString("Build an ASCII summary file with extension .dat")
         self.buildhdf5.SetToolTipString("Build a hdf5 file system file")
 
-    def OnbtnBrowse_fitfilesfolder(self, evt):
+    def OnbtnBrowse_fitfilesfolder(self, _):
         folder = wx.DirDialog(self, "Select folder for refined peaklist .fit files")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -249,7 +246,7 @@ class MainFrame_BuildSummary(wx.Frame):
             mainpath = os.path.split(abspath)[0]
             self.list_txtctrl[1].SetValue(mainpath)
 
-    def OnbtnBrowse_results_folder(self, evt):
+    def OnbtnBrowse_results_folder(self, _):
         folder = wx.DirDialog(self, "Select folder for writing summary results")
         if folder.ShowModal() == wx.ID_OK:
 
@@ -257,7 +254,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
             self.list_txtctrl[1].SetValue(abspath)
 
-    def OnbtnBrowse_filepathout_fit(self, evt):
+    def OnbtnBrowse_filepathout_fit(self, _):
         folder = wx.FileDialog(self,
             "Select refined Peaklist File .fit for catching prefix",
             wildcard="Refined PeakList (*.fit)|*.fit|All files(*)|*",)
@@ -265,11 +262,7 @@ class MainFrame_BuildSummary(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
 
             abspath = folder.GetPath()
-
-            #             print "folder.GetPath()", abspath
-
             filename = os.path.split(abspath)[-1]
-            #             print "filename", filename
             intension, extension = filename.split(".")
 
             self.list_txtctrl[3].SetValue("." + extension)
@@ -277,34 +270,28 @@ class MainFrame_BuildSummary(wx.Frame):
             nbdigits = int(self.list_txtctrl[4].GetValue())
             self.list_txtctrl[2].SetValue(intension[:-nbdigits])
 
-    def OnbtnBrowse_stiffnessfile(self, evt):
-        folder = wx.FileDialog(self,"Select stiffness file .stf",
-            wildcard="stiffness file (*.stf)|*.stf|All files(*)|*",)
+    def OnbtnBrowse_stiffnessfile(self, _):
+        folder = wx.FileDialog(self, "Select stiffness file .stf",
+            wildcard="stiffness file (*.stf)|*.stf|All files(*)|*")
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[8].SetValue(folder.GetPath())
 
-    def OnbtnChangeparameters(self, event, objet_BS, objet_BSi):
+    def OnbtnChangeparameters(self, _):
 
         wx.MessageBox("Sorry! This will be implemented very soon!", "INFO")
         return
-        # PSboard = SetParametersFrame(self, -1, 'New parameters',
-        #                                       objet_BS, objet_BSi, self.list_txtctrl)
-        # PSboard.Show(True)
 
-    def OnbuildManually(self, event):
+    def OnbuildManually(self, _):
         PSboard = Manual_XYZfilecreation_Frame(
             self, -1, "File sample XYZ position: Manual creation Board")
         PSboard.Show(True)
 
-    def Onbtn_fabrication_with_image(self, event):
+    def Onbtn_fabrication_with_image(self, _):
         wx.MessageBox("Sorry! This will be implemented very soon!", "INFO")
         return
-        # PSboard = SetParameters_BuildSummary_fabricationImage(self, -1,
-        #                 'Entryparameters_fabricationimage')
-        # PSboard.Show(True)
 
-    def OnCreateSummary(self, event):
+    def OnCreateSummary(self, _):
 
         if not self.builddatfile.GetValue() and not self.buildhdf5.GetValue():
             wx.MessageBox("Check at least one type of summary file!", "Error")
@@ -333,7 +320,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
         if self.builddatfile.GetValue():
 
-            allres, fullpath_summary_filename = MGFS.build_summary(
+            _, fullpath_summary_filename = MGFS.build_summary(
                                     image_indices,
                                     folderfitfiles,
                                     prefix,
@@ -413,23 +400,19 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_fileprefix(self), id=14)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filesuffix(self), id=15)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nbdigits(self), id=16)
-        #         self.Bind(wx.EVT_BUTTON, lambda event: self.OnbtnChange_indimg(self), id=25)
 
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_indimg(self), id=17)
-        #       id = 16 correspond à la lignée qui saute, donc pas d'association avec bouton
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onfilexyz_help(self), id=19)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nx(self), id=20)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_ny(self), id=21)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_xfast(self), id=22)
-        #         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_yfast(self), id=23)
         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_xstep(self), id=23)
-        #         self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_ystep(self), id=25)
 
         btnStart_BS_fabricationHand = wx.Button(
             self.panel, -1, "Create File with array Index,X,Y", size=(-1, 60))
 
         btnStart_BS_fabricationHand.Bind(wx.EVT_BUTTON, self.start_manualXYZ)
-        #layout---
+        #layout---------------------------
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
         vbox.Add(btnStart_BS_fabricationHand, 0, wx.EXPAND)
@@ -440,38 +423,33 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
 
         self.panel.SetSizer(vbox, wx.EXPAND)
 
-    def Onbtnhelp_nbdigits(self, event):
+    def Onbtnhelp_nbdigits(self, _):
         helpstring = "a remplir"
         self.help.SetValue(str(helpstring))
 
-    def Onbtnhelp_filepathout(self, event):
+    def Onbtnhelp_filepathout(self, _):
         helpstring = "a remplir"
         self.help.SetValue(str(helpstring))
 
-    def Onfilexyz_help(self, event):
+    def Onfilexyz_help(self, _):
         helpstring = "file xyz : full path to file xy with 3 columns (imagefile_index x y)"
         self.help.SetValue(str(helpstring))
 
-    def Onbtnhelp_nx(self, event):
+    def Onbtnhelp_nx(self, _):
         helpstring = 'Number of images (points) per line along the "fast axis" (X (resp Y) axis is "fast axis" is set to "x" resp. "y"))'
         self.help.SetValue(str(helpstring))
 
-    def Onbtnhelp_ny(self, event):
+    def Onbtnhelp_ny(self, _):
         helpstring = 'Number of images (points) per column along the "slow axis"'
         self.help.SetValue(str(helpstring))
 
-    def Onbtnhelp_xfast(self, event):
+    def Onbtnhelp_xfast(self, _):
         helpstring = 'sample direction for fast motor axis: "x"or "y"'
         self.help.SetValue(str(helpstring))
 
-    #     def Onbtnhelp_yfast(self, event):
-    #         helpstring = 'sample direction for slow motor axis'
-    #         self.help.SetValue(str(helpstring))
-    def Onbtnhelp_xstep(self, event):
+    def Onbtnhelp_xstep(self, _):
         helpstring = "steps (Dx,Dy) along resp. fast and slow axes in micrometer. Dx and Dy can be negative.\n"
-        helpstring += (
-            "By increasing image index position along fast axis increases by Dx.\n"
-        )
+        helpstring += "By increasing image index position along fast axis increases by Dx.\n"
         helpstring += "Between each line position along slow axis increases by Dy"
         self.help.SetValue(str(helpstring))
 
@@ -481,16 +459,16 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
     #     def Onbtnhelp_indimg(self, event):
     #         helpstring = 'a remplir'
     #         self.help.SetValue(str(helpstring))
-    def OnbtnBrowse_filepathout(self, event):
+    def OnbtnBrowse_filepathout(self, _):
         folder = wx.DirDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
             self.list_txtctrl_manual[2].SetValue(folder.GetPath())
 
-    def OnbtnChange_indimg(self, event):
+    def OnbtnChange_indimg(self, _):
         PSboard = New_indimg(None, -1, "New indimg", self.list_txtctrl_manual)
         PSboard.Show(True)
 
-    def start_manualXYZ(self, event):
+    def start_manualXYZ(self, _):
         """
         read parameters and launch creation of file xy
         """
@@ -518,13 +496,13 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
 
         print(self.parent.list_txtctrl)
 
-        prefix = str(self.parent.list_txtctrl[2].GetValue())
+        # prefix = str(self.parent.list_txtctrl[2].GetValue())
 
         outfilename = str(self.list_txtctrl_manual[0].GetValue())
 
         if check == 1:
             # writing filexyz with xy for map sample description in
-            MGFS.build_xy_list_by_hand( outfilename, nx, ny, xfast, yfast, xstep, ystep,
+            MGFS.build_xy_list_by_hand(outfilename, nx, ny, xfast, yfast, xstep, ystep,
                         startindex=int(self.parent.list_txtctrl[5].GetValue()),
                         lastindex=int(self.parent.list_txtctrl[6].GetValue()), )
 
@@ -577,19 +555,19 @@ class New_indimg(wx.Frame):
 
         self.panel.SetSizer(vbox, wx.EXPAND)
 
-    def Onbtnhelp_nbpicture1(self, event):
+    def Onbtnhelp_nbpicture1(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_nblastpicture(self, event):
+    def Onbtnhelp_nblastpicture(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_increment(self, event):
+    def Onbtnhelp_increment(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def OnbtnOK(self, event, list_txtctrl_hand):
+    def OnbtnOK(self, _, list_txtctrl_hand):
         modgraph.nbpicture1 = int(self.list_txtctrl_new[0].GetValue())
         modgraph.nblastpicture = int(self.list_txtctrl_new[1].GetValue())
         modgraph.increment = int(self.list_txtctrl_new[2].GetValue())
@@ -647,20 +625,20 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
                 self.list_txtctrl_image.append("")
 
         print("list_txt_image", self.list_txtctrl_image)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filepathout(self), id=20)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_fileprefix(self), id=21)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filesuffix(self), id=22)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nbdigits(self), id=23)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_filepathim(self), id=25)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnchangeindimg(self), id=26)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filepathout(self), id=20)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_fileprefix(self), id=21)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filesuffix(self), id=22)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_nbdigits(self), id=23)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filepathim(self), id=25)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnchangeindimg(self), id=26)
         self.Bind(
-            wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathout(self), id=12)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.OnbtnBrowse_filepathim(self), id=17)
+            wx.EVT_BUTTON, lambda _: self.OnbtnBrowse_filepathout(self), id=12)
+        self.Bind(wx.EVT_BUTTON, lambda _: self.OnbtnBrowse_filepathim(self), id=17)
 
         btnStart_BS_fabricationImage = wx.Button(self.panel, -1, "START")
         grid.Add(btnStart_BS_fabricationImage)
         btnStart_BS_fabricationImage.Bind(
-            wx.EVT_BUTTON,lambda event: self.OnbtnStart_BS_fabricationImage(
+            wx.EVT_BUTTON,lambda _: self.OnbtnStart_BS_fabricationImage(
                 self, manag, objet_BSi, list_txtctrl))
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
@@ -670,41 +648,41 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
 
         self.panel.SetSizer(vbox, wx.EXPAND)
 
-    def Onbtnhelp_fileprefix(self, event):
+    def Onbtnhelp_fileprefix(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_filesuffix(self, event):
+    def Onbtnhelp_filesuffix(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_filepathim(self, event):
+    def Onbtnhelp_filepathim(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_filepathout(self, event):
+    def Onbtnhelp_filepathout(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnhelp_nbdigits(self, event):
+    def Onbtnhelp_nbdigits(self, _):
         txt = "a remplir"
         self.help.SetValue(str(txt))
 
-    def Onbtnchangeindimg(self, event):
+    def Onbtnchangeindimg(self, _):
         PSboard = New_indimg(None, -1, "Enter indimg", self.list_txtctrl_image)
         PSboard.Show(True)
 
-    def OnbtnBrowse_filepathim(self, event):
+    def OnbtnBrowse_filepathim(self, _):
         folder = wx.DirDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
             self.list_txtctrl_image[7].SetValue(folder.GetPath())
 
-    def OnbtnBrowse_filepathout(self, event):
+    def OnbtnBrowse_filepathout(self, _):
         folder = wx.DirDialog(self, "os.path.dirname(guest)")
         if folder.ShowModal() == wx.ID_OK:
             self.list_txtctrl_image[2].SetValue(folder.GetPath())
 
-    def OnbtnStart_BS_fabricationImage(self, event, manag, objet_BSi, list_txtctrl):
+    def OnbtnStart_BS_fabricationImage(self, _, manag, objet_BSi, list_txtctrl):
         manag.Activate_BuildSummary()
         manag.matrice_callfunctions[2, 2] = 2
 
@@ -713,7 +691,7 @@ class SetParameters_BuildSummary_fabricationImage(wx.Frame):
             if k == 5:
                 valtxt = self.list_txtctrl_image[k].GetValue()
                 objet_BSi.list_valueparamBSi[k] = int(valtxt)
-                number_of_digits_in_image_name = int(valtxt)
+                # number_of_digits_in_image_name = int(valtxt)
                 list_txtctrl[k].SetValue(str(valtxt))
             elif k != 6:
                 objet_BSi.list_valueparamBSi[k] = str(
@@ -820,9 +798,13 @@ list_valueparamBS = fill_list_valueparamBS(initialparameters)
 DEFAULT_FILE = os.path.join(initialparameters["IndexRefine PeakList Folder"],
                                             "nanox2_400_0000.fit")
 
-if __name__ == "__main__":
+def start():
     BuildSummaryApp = wx.App()
     BSFrame = MainFrame_BuildSummary(None, -1,
                                 "Build Summary Parameters Board", list_valueparamBS)
     BSFrame.Show(True)
     BuildSummaryApp.MainLoop()
+
+if __name__ == "__main__":
+
+    start()

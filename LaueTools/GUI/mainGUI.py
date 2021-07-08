@@ -54,34 +54,32 @@ else:
 
     import wx.adv as wxadv
 
-if sys.version_info.major == 3:
+from LaueTools.indexingImageMatching import ComputeGnomon_2
+from LaueTools.indexingSpotsSet import spotsset
+from LaueTools.lauecore import SimulateResult
+from LaueTools.graingraph import give_bestclique
+from LaueTools.LaueGeometry import Compute_data2thetachi
+from LaueTools.GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
 
-    from LaueTools.indexingImageMatching import ComputeGnomon_2
-    from LaueTools.indexingSpotsSet import spotsset
-    from LaueTools.lauecore import SimulateResult
-    from LaueTools.graingraph import give_bestclique
-    from LaueTools.LaueGeometry import Compute_data2thetachi
-    from LaueTools.GUI.LaueSimulatorGUI import parametric_Grain_Dialog3
-
-    from LaueTools.CrystalParameters import calc_B_RR
-    from LaueTools.findorient import computesortedangles
-    from LaueTools.IOLaueTools import writefile_cor, createselecteddata
-    from LaueTools.dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
-                                    dict_Transforms, dict_Vect, dict_Rot,
-                                    dict_Eul, list_CCD_file_extensions,
-                                    readDict, getwildcardstring, LAUETOOLSFOLDER)
-    from LaueTools.GUI.PeakSearchGUI import MainPeakSearchFrame
-    from LaueTools.GUI.DetectorParameters import autoDetectDetectorType
-    from LaueTools.GUI.DetectorCalibration import MainCalibrationFrame
-    from LaueTools.GUI.CCDFileParametersGUI import CCDFileParameters
-    import LaueTools.matchingrate as matchingrate
-    from LaueTools.GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
-    from LaueTools.GUI.B0matrixLatticeEditor import B0MatrixEditor
-    from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    from LaueTools.GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList, Launch_DetectorParamBoard,
-                                                    OpenCorfile, SetGeneralLaueGeometry)
-    from LaueTools.GUI.ManualIndexFrame import ManualIndexFrame
-    from LaueTools.GUI.MatrixEditor import MatrixEditor_Dialog
+from LaueTools.CrystalParameters import calc_B_RR
+from LaueTools.findorient import computesortedangles
+from LaueTools.IOLaueTools import writefile_cor, createselecteddata
+from LaueTools.dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict_Extinc,
+                                dict_Transforms, dict_Vect, dict_Rot,
+                                dict_Eul, list_CCD_file_extensions,
+                                readDict, getwildcardstring, LAUETOOLSFOLDER)
+from LaueTools.GUI.PeakSearchGUI import MainPeakSearchFrame
+from LaueTools.GUI.DetectorParameters import autoDetectDetectorType
+from LaueTools.GUI.DetectorCalibration import MainCalibrationFrame
+from LaueTools.GUI.CCDFileParametersGUI import CCDFileParameters
+import LaueTools.matchingrate as matchingrate
+from LaueTools.GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
+from LaueTools.GUI.B0matrixLatticeEditor import B0MatrixEditor
+from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
+from LaueTools.GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList, Launch_DetectorParamBoard,
+                                                OpenCorfile, SetGeneralLaueGeometry)
+from LaueTools.GUI.ManualIndexFrame import ManualIndexFrame
+from LaueTools.GUI.MatrixEditor import MatrixEditor_Dialog
 
 LaueToolsProjectFolder = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 

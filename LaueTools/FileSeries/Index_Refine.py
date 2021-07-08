@@ -40,9 +40,9 @@ except (ImportError, SyntaxError):
     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
 if sys.version_info.major == 3:
-    from .. import IOLaueTools as IOLT
-    from .. import indexingSpotsSet as ISS
-    from .. import dict_LaueTools as dictLT
+    import LaueTools.IOLaueTools as IOLT
+    import LaueTools.indexingSpotsSet as ISS
+    import LaueTools.dict_LaueTools as dictLT
 else:
     import IOLaueTools as IOLT
     import indexingSpotsSet as ISS
@@ -790,15 +790,14 @@ class MainFrame_indexrefine(wx.Frame):
                 self.referencefiledat_purged = filter_peaks(referencefiledat_init,
                                                         maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
                 #(calib_fitfilename, npeaks_LT, pixdev_LT,
-                calib_fitfilename, *_ = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
+                calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
             else:
                 raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
                 "used for calibration is no more used in Index_refine()")
 
         else:
             # (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image
-            calib_fitfilename, *_ = index_refine_calib_one_image(
-                self.referencefiledat_purged, filedet=filedet)
+            calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
 
         self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
         print("CCDcalibrationReference .fit file : %s" % calib_fitfilename)
@@ -1234,18 +1233,4 @@ def start():
     IndexRefineSeriesApp.MainLoop()
 
 if __name__ == "__main__":
-
-    #     if 0:
-    #         MainFolder = '/media/data3D/data/2013/July13/MA1724/'
-    #
-    #         initialparameters['PeakList Folder'] = MainFolder + 'Snsurfscan/datfiles'
-    #         initialparameters['IndexRefine PeakList Folder'] = MainFolder + 'Snsurfscan/fitfiles'
-    #         initialparameters['PeakListCor Folder'] = MainFolder + 'Snsurfscan/corfiles'
-    #         initialparameters['PeakList Filename Prefix'] = 'SnsurfscanBig_'
-    #         initialparameters['IndexRefine Parameters File'] = MainFolder + 'Snsurfscan/indexSn.irp'
-    #         initialparameters['Detector Calibration File .det'] = MainFolder + 'Gemono/GeMAR_HallJul13.det'
-    #         initialparameters['Detector Calibration File (.dat)'] = MainFolder + 'Gemono/Ge_0005_LT_1.dat'
-
-    # -----------------------------------------------------------
-
     start()

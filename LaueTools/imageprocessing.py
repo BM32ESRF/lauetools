@@ -70,12 +70,12 @@ def getindices2cropArray(center, halfboxsizeROI, arrayshape, flipxycenter=False)
     else:
         boxsizex, boxsizey = halfboxsizeROI
 
-    # TODO check also  if xpic and ypic is within framedim 
+    # TODO check also  if xpic and ypic is within framedim
 
-    x1 = np.maximum(0, xpic - boxsizex)
-    x2 = np.minimum(arrayshape[0], xpic + boxsizex)
-    y1 = np.maximum(0, ypic - boxsizey)
-    y2 = np.minimum(arrayshape[1], ypic + boxsizey)
+    x1 = max(0, xpic - boxsizex)
+    x2 = min(arrayshape[0], xpic + boxsizex)
+    y1 = max(0, ypic - boxsizey)
+    y2 = min(arrayshape[1], ypic + boxsizey)
 
     imin, imax, jmin, jmax = int(y1), int(y2), int(x1), int(x2)
 
@@ -645,7 +645,7 @@ def LocalMaxima_KernelConvolution(Data, framedim=(2048, 2048),
                                 connectivity=connectivity,
                                 returnfloatmeanpos=0)
 
-    if len(peak)==0:
+    if len(peak) == 0:
         return None
 
     peak = (peak[:, 0], peak[:, 1])
