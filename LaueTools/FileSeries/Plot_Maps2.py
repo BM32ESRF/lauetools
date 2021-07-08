@@ -281,12 +281,13 @@ def prepare_params_for_plot(list_val, list_key=None):
 
     return resdict
 
-
-if __name__ == "__main__":
-
+def start():
     dict_parameters = prepare_params_for_plot(list_valueparamPM)
-
     PlotMapsApp = wx.App()
     PMFrame = MainFrame_plotmaps(None, -1, "Plot_Maps2.py GUI Board", dict_parameters)
     PMFrame.Show(True)
     PlotMapsApp.MainLoop()
+
+
+if __name__ == "__main__":
+    start()

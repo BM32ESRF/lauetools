@@ -210,7 +210,6 @@ class IndexRefineParameters(wx.Frame):
                 self.materialpages_list.pop(nb_tabs - (tabindex + 1))
 
             self.nb_of_materials = len(self.materialpages_list)
-    #             print dir(self.nb)
 
     def OnTabChange(self, evt):
         """ nothing particular implemented  """
@@ -462,9 +461,7 @@ class MainFrame_indexrefine(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, size=(900, 650))
 
         self.initialparameters = _initialparameters
-
         self.parent = parent
-
         self.dict_param_list = {}
         self.nb_of_materials = 1
 
@@ -581,7 +578,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         hmap = wx.BoxSizer(wx.HORIZONTAL)
         hmap.Add(txt_mapshape, 0)
-        hmap.Add(self.txtctrl_mapshape, 0) 
+        hmap.Add(self.txtctrl_mapshape, 0)
         hmap.Add(self.trackingmode, 0)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -698,7 +695,7 @@ class MainFrame_indexrefine(wx.Frame):
         """
         try:
             val = int(self.list_txtctrl[5].GetValue())
-            testpos = math.sqrt(val)
+            _ = math.sqrt(val)
         except ValueError:
             wx.MessageBox("nb of digits in filename must be a positive integer! Please check the "
                                                                     "corresponding field!", "Info")
@@ -712,13 +709,6 @@ class MainFrame_indexrefine(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
 
             self.list_txtctrl[9].SetValue(folder.GetPath())
-
-    #     def OnbtnBrowse_fileReferenceCalibrationdat(self, event):
-    #         folder = wx.FileDialog(self, "Select Peaklist File .dat of Calibration Reference",
-    #                                wildcard='PeakList (*.dat)|*.dat|All files(*)|*')
-    #         if folder.ShowModal() == wx.ID_OK:
-    #
-    #             self.list_txtctrl[10].SetValue(folder.GetPath())
 
     def OnbtnBrowse_matsfile(self, _):
         """ get .mats file fullpath and set corresponding txtctrl"""
@@ -800,15 +790,14 @@ class MainFrame_indexrefine(wx.Frame):
                 self.referencefiledat_purged = filter_peaks(referencefiledat_init,
                                                         maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
                 #(calib_fitfilename, npeaks_LT, pixdev_LT,
-                (calib_fitfilename, _, _,
-                ) = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
+                calib_fitfilename, *_ = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)
             else:
                 raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
                 "used for calibration is no more used in Index_refine()")
 
         else:
             # (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image
-            (calib_fitfilename, _, _) = index_refine_calib_one_image(
+            calib_fitfilename, *_ = index_refine_calib_one_image(
                 self.referencefiledat_purged, filedet=filedet)
 
         self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
@@ -910,7 +899,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         #-------  field 5 : Nbdigits in index filename --------------
         nbdigits_filename = self.getnbdigits()
-            
+
         #-------  field 1, 2 & 3: PeakList .dat Folder, .cor folder & .fit folder  ----------
         filepathdat = self.list_txtctrl[0].GetValue()
         filepathcor = self.list_txtctrl[1].GetValue()
@@ -1010,7 +999,7 @@ class MainFrame_indexrefine(wx.Frame):
 
         verbosemode = self.verbosemode.GetValue()
 
-        # ------  field 11: Minimum matching rate 
+        # ------  field 11: Minimum matching rate
         MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
         print("MinimumMatchingRate to avoid starting general indexation is ", MinimumMatchingRate)
 
@@ -1019,7 +1008,7 @@ class MainFrame_indexrefine(wx.Frame):
         # before doing (maybe long) indexation from scratch
         guessedMatricesFile = str(self.list_txtctrl[10].GetValue())
         print("guessedMatricesFile", guessedMatricesFile)
-        
+
         if guessedMatricesFile not in ("None", "none", 'NONE'):
             print("Reading general file for guessed UB solutions")
 
@@ -1042,7 +1031,7 @@ class MainFrame_indexrefine(wx.Frame):
             Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
         else:
             # we are sure to be less than that!
-            Index_Refine_Parameters_dict["MinimumMatchingRate"] = max(0.123456,MinimumMatchingRate)
+            Index_Refine_Parameters_dict["MinimumMatchingRate"] = max(0.123456, MinimumMatchingRate)
 
         # ----------------------------------------------------------------------
 
@@ -1051,7 +1040,7 @@ class MainFrame_indexrefine(wx.Frame):
         # if spots positions evolve  for successive images
         trackingmode = self.trackingmode.GetValue()
         Index_Refine_Parameters_dict['trackingmode'] = trackingmode
-        
+
         rsl = self.list_txtctrl[13].GetValue()
         if rsl in ('None', "None", 'none', "none"):
             Index_Refine_Parameters_dict['Reference Spots List'] = None
@@ -1191,7 +1180,7 @@ if 0:
     initialparameters["startingindex"] = 0
     initialparameters["finalindex"] = 5
     initialparameters["stepindex"] = 1
-# for local test    guessUBmatrices on 3 grains   
+# for local test    guessUBmatrices on 3 grains
 if 1:
     MainFolder = '/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/T40'
     print("MainFolder", MainFolder)

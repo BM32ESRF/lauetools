@@ -1259,11 +1259,16 @@ def Get_blacklisted_spots(filename):
         if len(data_peak_blacklisted) > 1:
 
             XY_blacklisted = data_peak_blacklisted[:, :2].T
-            
-    elif filename.endswith('.fit'):
-        allgrainsspotsdata = IOLT.readfile_fit(filename)[4]
 
-        if len(allgrainsspotsdata) > 1:
+    elif filename.endswith('.fit'):
+        resdata = IOLT.readfile_fit(filename)
+        if resdata is not None:
+            allgrainsspotsdata = resdata[4]
+            nspots = len(allgrainsspotsdata)
+        else:
+            nspots = 0
+
+        if nspots > 1:
 
             XY_blacklisted = allgrainsspotsdata[:, 7:9].T
             
@@ -1591,7 +1596,7 @@ def peaksearch_fileseries(fileindexrange,
     if "MinPeakSize" not in PEAKSEARCHDICT_Convolve:
         PEAKSEARCHDICT_Convolve["MinPeakSize"] = 0.65
         PEAKSEARCHDICT_Convolve["MaxPeakSize"] = 3.
-        print("Default values for minimal and maximal peaksize are used!. Resp. 0.65 and 3 pixels.")
+        if verbose: print("Default values for minimal and maximal peaksize are used!. Resp. 0.65 and 3 pixels.")
 
     PEAKSEARCHDICT_Convolve["PeakSizeRange"] = (copy.copy(PEAKSEARCHDICT_Convolve["MinPeakSize"]),
                                                 copy.copy(PEAKSEARCHDICT_Convolve["MaxPeakSize"]))
@@ -1642,7 +1647,8 @@ def peaksearch_fileseries(fileindexrange,
     blspots = PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"]
     if blspots is not None:
         PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"] = Get_blacklisted_spots(blspots)
-        # print('blackspots',PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"])
+        if PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"] is None:
+            print('Warning!! blacklisted spots file may not be well read! blacked spots list is empty', PEAKSEARCHDICT_Convolve["Remove_BlackListedPeaks_fromfile"])
 
     DictPeaksList = {}
     file_ix, nb_empty_files = 0, 0  # nb of probed file, nb of zero peaks file

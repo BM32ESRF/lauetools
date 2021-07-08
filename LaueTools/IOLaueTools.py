@@ -920,7 +920,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         euler                    : list of 3 Euler Angles for each grain
 
     """
-    print("reading fit file %s by readfitfile_multigrains.py of IOLaueTools (formerly readwriteASCII): " % fitfilename)
+    if verbose:
+        print("reading fit file %s by readfitfile_multigrains.py of IOLaueTools (formerly readwriteASCII): " % fitfilename)
 
     columns_headers = []
 
@@ -939,6 +940,9 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 "# Unindexed and unrefined"):
                 nbgrains += 1
                 linepos_grain_list.append(lineindex)
+            else:
+                print('Warning !! Strange extension file for the first line of %s'%fitfilename)
+                return None
             lineindex += 1
     finally:
         linepos_grain_list.append(lineindex)
@@ -951,7 +955,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     # nothing has been indexed
     if nbgrains == 0:
-        return 0
+        return None
 
     list_indexedgrains_indices = list(range(nbgrains))
 
@@ -1879,7 +1883,7 @@ def ReadSpec(fname, scan, outputdate=False):
         if l[:2] == "#C":            
             # deal with#C Thu Feb 25 23:54:05 2021.  Erreur com with laueT.
             if 'Erreur com' in l:
-                print('line error #C :',l)
+                print('line error #C :', l)
                 continue
             elif not l.startswith("#C tiltcomp:"):
                 print("Scan aborted after %d point(s)" % ii)
