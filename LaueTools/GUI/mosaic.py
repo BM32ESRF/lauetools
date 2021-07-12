@@ -2611,7 +2611,7 @@ def myformattime():
                                                 tt.tm_sec)
 
 
-def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=None):
+def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=None, verbose=0):
     """
     build mosaic image from arrangement of image ROI data taken from selected images
     """
@@ -2699,8 +2699,9 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
         try:
             framedimraw = DictLT.dict_CCD[ccdlabel][0]
             fliprot = DictLT.dict_CCD[ccdlabel][3]
-            print("framedim of ccdlabel", framedimraw, ccdlabel)
-            print("fliprot", fliprot)
+            if verbose > 0:
+                print("framedim of ccdlabel", framedimraw, ccdlabel)
+                print("fliprot", fliprot)
 
             center_pixel = (xpic, ypic)
             if fliprot in ("sCMOS_fliplr",):
@@ -2714,13 +2715,13 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                             flipxycenter=0)
                 imin, imax, jmin, jmax = indicesborders
 
-                print("indicesborders", indicesborders)
+                if verbose > 0: print("indicesborders", indicesborders)
 
                 # avoid to wrong indices when slicing the data
                 imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                             framedim=framedimraw)
 
-                print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
+                if verbose > 0:print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
                 # new fast way to read specific area in file directly
                 datacrop = IOimage.readrectangle_in_image(filename,
                                                         xpic,
@@ -2738,13 +2739,13 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                             flipxycenter=0)
                 imin, imax, jmin, jmax = indicesborders
 
-                print("indicesborders", indicesborders)
+                if verbose > 0: print("indicesborders", indicesborders)
 
                 # avoid to wrong indices when slicing the data
                 imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                             framedim=framedimraw)
 
-                print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
+                if verbose > 0: print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
 
                 datawhole, fdim, flrot = IOimage.readCCDimage(filename, ccdlabel)
                 datacrop = datawhole[imin:imax, jmin:jmax]
@@ -2814,7 +2815,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             #                 print "rawdat.shape", rawdat.shape
 
             if dict_param["NormalizeWithMonitor"]:
-                print("monitor", monitor)
+                if verbose > 0: print("monitor", monitor)
                 monitor = np.where(monitor <= 0.0, 1.0, monitor)
 
             CountersData[counter + "2D"] = dat
