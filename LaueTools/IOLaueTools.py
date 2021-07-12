@@ -931,22 +931,21 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     nbgrains = 0
     linepos_grain_list = []
     lineindex = 1
+    WrongExtension = False
     try:
         for line in f:
-            #             _line = line.rstrip(("\n", '\r', '\t'))
             _line = line.rstrip(string.whitespace)
-
-            if _line.endswith(fileextensionmarker) and not _line.startswith(
-                "# Unindexed and unrefined"):
-                nbgrains += 1
-                linepos_grain_list.append(lineindex)
-            else:
-                print('Warning !! Strange extension file for the first line of %s'%fitfilename)
-                return None
+            if not _line.startswith("# Unindexed and unrefined"):
+                if _line.endswith(fileextensionmarker):
+                    nbgrains += 1
+                    linepos_grain_list.append(lineindex)
+                else:
+                    WrongExtension = True
             lineindex += 1
+        if WrongExtension:
+            print('Warning !! Strange extension file for the first line of %s'%fitfilename)
     finally:
         linepos_grain_list.append(lineindex)
-        #         print "found grains and close file"
         f.close()
 
     if verbose:
@@ -979,12 +978,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     UBmat = np.zeros((3, 3), dtype=np.float)
     strain = np.zeros((3, 3), dtype=np.float)
 
-    #     n = linepos_grain_list[grain_index]
-    #         # print "n = ", n
-    #         # Now, to skip to line n (with the first line being line 0), just do
-    #         f.seek(line_offset[n])
-    #         # print f.readline()
-    #         f.seek(line_offset[n + 1])
     matrixfound = 0
     calibfound = 0
     calibfoundJSM = 0
@@ -995,16 +988,11 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     linepixdev = 0
     #linestrain = 0
     lineeuler = 0
-    #list1 = []
-    #linestartspot = 10000
-    #lineendspot = 10000
 
     f = open(fitfilename, "r")
     unindexedspots = False
     for grain_index in list(range(nbgrains)):
-        #         print "read data for grain_index %d" % grain_index
-        #         print linepos_grain_list[grain_index + 1]
-        #         print linepos_grain_list[grain_index]
+
         iline = linepos_grain_list[grain_index]
 
         nb_indexed_spots = 0
@@ -1053,7 +1041,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                             line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
                     dataspots = np.array(dataspots, dtype=np.float)
-                #                     print "got dataspots!"
 
                 elif nb_UNindexed_spots > 0:
                     nbspots = nb_UNindexed_spots
@@ -1221,7 +1208,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         return _res
 
 def readfitfile_comments(fitfilepath):
-    """read comments and return corresponding strings
+    """read comments in .fit file and return corresponding strings
     #CCDLabel
     #pixelsize
     #Frame dimensions
