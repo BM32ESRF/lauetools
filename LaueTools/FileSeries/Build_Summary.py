@@ -40,21 +40,15 @@ LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
 print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 from . import multigrainFS as MGFS
-from . import module_graphique as modgraph
 
 # #import FileSeries.multigrainFS as MGFS
-# import FileSeries.module_graphique as modgraph
-
-# TODO refactor without modgraph
-# TODO refactor without PAR
-
 
 try:
     import tables
 
     PYTABLES_EXISTS = True
 except IOError:
-    print("Unable to load tables module from pytables...")
+    print("Unable to load tables module from pytables... Try install vitables by \n pip install vitables")
     PYTABLES_EXISTS = False
 
 LIST_TXTPARAM_BS = ["Folder .fit file",
@@ -314,10 +308,6 @@ class MainFrame_BuildSummary(wx.Frame):
 
         filexyz = str(self.list_txtctrl[10].GetValue())
 
-        #         if not os.path.exists(str(objet_BS.list_valueparamBS[0]) + 'summary_new'):
-        #                 os.makedirs(str(objet_BS.list_valueparamBS[0]) + 'summary_new')
-        #         modgraph.outfilename = (str(objet_BS.list_valueparamBS[0]) + 'summary_new')
-
         if self.builddatfile.GetValue():
 
             _, fullpath_summary_filename = MGFS.build_summary(
@@ -464,10 +454,6 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
             self.list_txtctrl_manual[2].SetValue(folder.GetPath())
 
-    def OnbtnChange_indimg(self, _):
-        PSboard = New_indimg(None, -1, "New indimg", self.list_txtctrl_manual)
-        PSboard.Show(True)
-
     def start_manualXYZ(self, _):
         """
         read parameters and launch creation of file xy
@@ -513,222 +499,6 @@ class Manual_XYZfilecreation_Frame(wx.Frame):
         else:
             wx.MessageBox("Files's path or input datas are missing!")
 
-        self.Destroy()
-
-
-class New_indimg(wx.Frame):
-    def __init__(self, parent, _id, title, list_txtctrl_hand):
-        wx.Frame.__init__(
-            self, parent, _id, title, wx.DefaultPosition, wx.Size(700, 700))
-
-        self.panel = wx.Panel(self)
-        if WXPYTHON4:
-            grid = wx.FlexGridSizer(3, 10, 10)
-        else:
-            grid = wx.FlexGridSizer(5, 3)
-        grid.SetFlexibleDirection(wx.HORIZONTAL)
-
-        self.list_txtctrl_new = []
-        self.list_indimg = ["Nbpicture1", "Nblastpicture", "increment"]
-
-        for kk, elem in enumerate(self.list_indimg):
-            grid.Add(wx.StaticText(self.panel, -1, elem))
-            self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(500, 25))
-            self.list_txtctrl_new.append(self.txtctrl)
-            grid.Add(self.txtctrl)
-            grid.Add(wx.Button(self.panel, kk + 10, "?", size=(25, 25)))
-
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nbpicture1(self), id=10)
-        self.Bind(
-            wx.EVT_BUTTON, lambda event: self.Onbtnhelp_nblastpicture(self), id=11)
-        self.Bind(wx.EVT_BUTTON, lambda event: self.Onbtnhelp_increment(self), id=12)
-
-        btnOK = wx.Button(self.panel, -1, "OK")
-        grid.Add(btnOK)
-        btnOK.Bind(wx.EVT_BUTTON, lambda event: self.OnbtnOK(self, list_txtctrl_hand))
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(grid, 0, wx.EXPAND)
-        self.help = wx.TextCtrl(
-            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300))
-        vbox.Add(self.help, 0, wx.EXPAND)
-
-        self.panel.SetSizer(vbox, wx.EXPAND)
-
-    def Onbtnhelp_nbpicture1(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_nblastpicture(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_increment(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def OnbtnOK(self, _, list_txtctrl_hand):
-        modgraph.nbpicture1 = int(self.list_txtctrl_new[0].GetValue())
-        modgraph.nblastpicture = int(self.list_txtctrl_new[1].GetValue())
-        modgraph.increment = int(self.list_txtctrl_new[2].GetValue())
-        list_txtctrl_hand[6].SetValue(str("range("
-                + str(self.list_txtctrl_new[0].GetValue())
-                + ","
-                + str(self.list_txtctrl_new[1].GetValue())
-                + ","
-                + str(self.list_txtctrl_new[2].GetValue())
-                + ")"))
-        self.Destroy()
-
-
-class SetParameters_BuildSummary_fabricationImage(wx.Frame):
-    """
-    Non used GUI class to extract in a clever way map parameters ...
-    """
-    def __init__(self, parent, _id, title, objet_BSi, manag, list_txtctrl):
-        wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 900))
-
-        self.panel = wx.Panel(self)
-        if WXPYTHON4:
-            grid = wx.FlexGridSizer(4, 10, 10)
-        else:
-            grid = wx.FlexGridSizer(6, 4)
-
-        grid.SetFlexibleDirection(wx.HORIZONTAL)
-
-        self.list_txtctrl_image = []
-
-        for kk, elem in enumerate(objet_BSi.list_txtparamBSi):
-            if kk > 1 and kk < 8:
-                if kk != 6:
-                    grid.Add(wx.StaticText(self.panel, -1, elem))
-                    self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(500, 25))
-                    self.txtctrl.SetValue(str(objet_BSi.list_valueparamBSi[kk]))
-                    self.list_txtctrl_image.append(self.txtctrl)
-                    grid.Add(self.txtctrl)
-                    if kk == 2 or kk == 7:
-                        grid.Add(wx.Button(self.panel, kk + 10, "Browse"))
-                    else:
-                        nothing = wx.StaticText(self.panel, -1, "")
-                        grid.Add(nothing)
-                    grid.Add(wx.Button(self.panel, kk + 18, "?", size=(25, 25)))
-                else:
-                    grid.Add(wx.StaticText(self.panel, -1, elem))
-                    self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(500, 25))
-                    self.txtctrl.SetValue(str(objet_BSi.list_valueparamBSi[kk]))
-                    self.list_txtctrl_image.append(self.txtctrl)
-                    grid.Add(self.txtctrl)
-                    grid.Add(wx.Button(self.panel, 26, "Change Indimg"))
-                    nothing = wx.StaticText(self.panel, -1, "")
-                    grid.Add(nothing)
-            else:
-                self.list_txtctrl_image.append("")
-
-        print("list_txt_image", self.list_txtctrl_image)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filepathout(self), id=20)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_fileprefix(self), id=21)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filesuffix(self), id=22)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_nbdigits(self), id=23)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnhelp_filepathim(self), id=25)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.Onbtnchangeindimg(self), id=26)
-        self.Bind(
-            wx.EVT_BUTTON, lambda _: self.OnbtnBrowse_filepathout(self), id=12)
-        self.Bind(wx.EVT_BUTTON, lambda _: self.OnbtnBrowse_filepathim(self), id=17)
-
-        btnStart_BS_fabricationImage = wx.Button(self.panel, -1, "START")
-        grid.Add(btnStart_BS_fabricationImage)
-        btnStart_BS_fabricationImage.Bind(
-            wx.EVT_BUTTON,lambda _: self.OnbtnStart_BS_fabricationImage(
-                self, manag, objet_BSi, list_txtctrl))
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(grid, 0, wx.EXPAND)
-        self.help = wx.TextCtrl(
-            self.panel, -1, "", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(100, 300))
-        vbox.Add(self.help, 0, wx.EXPAND)
-
-        self.panel.SetSizer(vbox, wx.EXPAND)
-
-    def Onbtnhelp_fileprefix(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_filesuffix(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_filepathim(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_filepathout(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnhelp_nbdigits(self, _):
-        txt = "a remplir"
-        self.help.SetValue(str(txt))
-
-    def Onbtnchangeindimg(self, _):
-        PSboard = New_indimg(None, -1, "Enter indimg", self.list_txtctrl_image)
-        PSboard.Show(True)
-
-    def OnbtnBrowse_filepathim(self, _):
-        folder = wx.DirDialog(self, "os.path.dirname(guest)")
-        if folder.ShowModal() == wx.ID_OK:
-            self.list_txtctrl_image[7].SetValue(folder.GetPath())
-
-    def OnbtnBrowse_filepathout(self, _):
-        folder = wx.DirDialog(self, "os.path.dirname(guest)")
-        if folder.ShowModal() == wx.ID_OK:
-            self.list_txtctrl_image[2].SetValue(folder.GetPath())
-
-    def OnbtnStart_BS_fabricationImage(self, _, manag, objet_BSi, list_txtctrl):
-        manag.Activate_BuildSummary()
-        manag.matrice_callfunctions[2, 2] = 2
-
-        check = 1
-        for k in range(2, 8):
-            if k == 5:
-                valtxt = self.list_txtctrl_image[k].GetValue()
-                objet_BSi.list_valueparamBSi[k] = int(valtxt)
-                # number_of_digits_in_image_name = int(valtxt)
-                list_txtctrl[k].SetValue(str(valtxt))
-            elif k != 6:
-                objet_BSi.list_valueparamBSi[k] = str(
-                    self.list_txtctrl_image[k].GetValue())
-            else:
-                objet_BSi.list_valueparamBSi[k] = modgraph.indimg
-                list_txtctrl[k].SetValue(("range"
-                        + "("
-                        + str(modgraph.nbpicture1)
-                        + ","
-                        + str(modgraph.nblastpicture)
-                        + ","
-                        + str(modgraph.increment)
-                        + ")"))
-            if (objet_BSi.list_valueparamBSi[k] is None
-                or objet_BSi.list_valueparamBSi[k] == "None"
-                or objet_BSi.list_valueparamBSi[k] == ""):
-                check = 0
-
-        objet_BSi.list_valueparamBSi[9] = objet_BSi.list_valueparamBSi[3]
-        objet_BSi.list_valueparamBSi[10] = objet_BSi.list_valueparamBSi[4]
-
-        if not os.path.exists(str(objet_BSi.list_valueparamBSi[2]) + "xyz_"):
-            os.makedirs(str(objet_BSi.list_valueparamBSi[2] + "xyz_"))
-        modgraph.outfilenamexy = str(objet_BSi.list_valueparamBSi[2]) + "xyz_"
-        if check == 1:
-            objet_BSi.list_valueparamBSi[8] = MGFS.get_xyzech(
-                                        objet_BSi.list_valueparamBSi[7],
-                                        objet_BSi.list_valueparamBSi[3],
-                                        modgraph.indimg,
-                                        objet_BSi.list_valueparamBSi[4],
-                                        modgraph.outfilenamexy)
-            list_txtctrl[1].SetValue(str(objet_BSi.list_valueparamBSi[8]))
-            wx.MessageBox("Operation Successful! Files created here: %s"
-                % (modgraph.outfilenamexy))
-        else:
-            wx.MessageBox("Files's path or input datas are missing!")
         self.Destroy()
 
 
