@@ -823,7 +823,7 @@ def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
 
 def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=None,
                                                                             CCDLabel="MARCCD165",
-                                                                            verbose=True):
+                                                                            verbose=0):
     r"""
     returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
     centered on pixx, pixy
