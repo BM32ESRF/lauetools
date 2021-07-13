@@ -681,12 +681,12 @@ def addPeaks_in_Peaklist(
     return merged_data
 
 
-def readfile_dat(filename_in, dirname=None):
+def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
     """ call simply read_Peaklist()"""
-    return read_Peaklist(filename_in, dirname=dirname)
+    return read_Peaklist(filename_in, dirname=dirname, returnnbpeaks=returnnbpeaks)
 
 
-def read_Peaklist(filename_in, dirname=None, output_columnsname=False):
+def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbpeaks = False):
     """
     read peak list .dat file and return the entire array of spots data
 
@@ -698,13 +698,31 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False):
 
     SKIPROWS = 1
 
-    data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS)
+    with open(filename_in) as f:
+        lineindex=0
+        commentfound = False
+        while not commentfound:
+            _line = f.readline()
+            if _line.startswith('# File created'):
+                nbdatarows = lineindex-1
+            elif _line.startswith('# Comments: nb of peaks'):
+                nbpeaks = int(_line.split('peaks')[-1])
+            elif _line.startswith('# Remove_BlackListedPeaks_fromfile'):
+                commentfound = True
+            lineindex+=1
+
+
+        # File created at
+    data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
 
     if output_columnsname:
         f = open(filename_in, 'r')
         output_columnsname = f.readline().split()
         f.close()
         return data_peak, output_columnsname
+
+    if returnnbpeaks:
+        return data_peak, nbdatarows
 
     return data_peak
 

@@ -1786,7 +1786,6 @@ def matxmas_to_matstarlab(satocr, calib):
     matrot = np.array([[1.0, 0.0, 0.0],
             [0.0, np.cos(omega), np.sin(omega)],
             [0.0, -np.sin(omega), np.cos(omega)]])
-    # print "matrot \n" , matrot
 
     labtocr = np.dot(matrot, satocrnorm)
     astarlab = labtocr[:, 0]
@@ -1806,7 +1805,7 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
                                                         kf_direction="Z>0",
                                                         verbose=1,
                                                         pixelsize=165.0 / 2048,
-                                                        dim=(2048, 2048),  # only for peaks coming from fit2d doing an y direction inversion
+                                                        dim=(2048, 2048),
                                                         saturation=0,
                                                         forceextension_lines_to_extract=None,
                                                         col_isbadspot=None,
@@ -1829,19 +1828,16 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
     :param kf_direction: label of detection geometry (CCD position): 'Z>0','X>0',...
     :type kf_direction: string
 
-
     :param sorting_intensity: 'yes' sort spots list by decreasing intensity
-
 
     saturation = 0 : do not read Ipixmax column of DAT file from LaueTools peaksearch
     saturation > 0 : read Ipixmax column and create data_sat list
     data_sat[i] = 1 if Ipixmax[i]> saturation, =0 otherwise
 
-    Note: _nblines_headertoskip =0 for .pik file (no header at all)
-            _nblines_headertoskip =1 for .peaks coming from fit2d
-
     col_Ipixmax = 10 for .dat from LT peak search using method "Local Maxima"
     (TODO : bug in Ipixmax for method "convolve")
+
+    :returns: twicetheta, chi, dataintensity, data_x, data_y  [, other data]
     """
     col_X, col_Y, col_I = tuple_column_X_Y_I
 
@@ -1850,42 +1846,42 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
     if forceextension_lines_to_extract is not None:
         extension = "forcedextension"
 
-    if extension == "pik":  # no header
+    if extension == "pik":  # no header  # TODO to remove
         nbline = 0
         data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=nbline)
-    elif extension == "peaks":  # single line header
+    elif extension == "peaks":  # single line header   # TODO to remove
         data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
 
     elif extension in ("dat", "DAT"):  # peak list single line header
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
+        alldata, nbpeaks = IOLT.readfile_dat(filename, returnnbpeaks=True)
+        print('nbpeaks', nbpeaks)
+        print('alldata', alldata)
+        if nbpeaks > 1:
+            data_xyI = np.take(alldata, (0, 1, 3), axis=1)
+        elif nbpeaks == 1:
+            data_xyI = np.take(alldata, (0, 1, 3), axis=0)
+
+        #data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
         print("nb of spots and columns in .dat file", data_xyI.shape)
 
         if saturation:
-            data_Ipixmax = np.loadtxt(filename, usecols=-1, skiprows=1)
-            # print "Ipixmax ",data_Ipixmax
+            data_Ipixmax = alldata[:,-1]
             indsat = np.where(data_Ipixmax >= saturation)
-            # print indsat
             data_sat = np.zeros(len(data_Ipixmax), dtype=np.int)
             data_sat[indsat[0]] = 1
-            # print data_sat
 
             if col_isbadspot is not None:
-                data_isbadspot = np.loadtxt(filename, usecols=col_isbadspot, skiprows=1)
-                print(data_isbadspot)
-
-        # mike.close()
+                data_isbadspot = alldata[:,col_isbadspot]
+                #print(data_isbadspot)
 
     elif extension == "forcedextension":
-        # mike=scipy.io.array_import.get_open_file(filename)
-        # mike.readline()
-        # data_xyI=scipy.io.array_import.read_array(filename,columns=(col_X,col_Y,col_I),lines=forceextension_lines_to_extract)
         data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
-        # mike.close()
     elif extension == "cor":  # single line header
+        # TODO use better  IOLT function...
         try:
             data_xyI = np.loadtxt(filename, usecols=(2, 3, 4), skiprows=1)
         except:
-            raise ValueError("%s does contain just one header line" % filename)
+            raise ValueError("%s can not be read" % filename)
     else:
         raise ValueError("Unknown file extension for %s" % filename)
 
