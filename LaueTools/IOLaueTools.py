@@ -209,7 +209,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made of 5 columns
 
-    2theta chi pixX pixY 
+    2theta chi pixX pixY
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
@@ -686,7 +686,7 @@ def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
     return read_Peaklist(filename_in, dirname=dirname, returnnbpeaks=returnnbpeaks)
 
 
-def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbpeaks = False):
+def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbpeaks=False):
     """
     read peak list .dat file and return the entire array of spots data
 
@@ -698,33 +698,35 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
 
     SKIPROWS = 1
 
-    with open(filename_in) as f:
-        lineindex=0
+    with open(filename_in, 'r') as ff:
+        lineindex = 0
         commentfound = False
         while not commentfound:
-            _line = f.readline()
+            _line = ff.readline()
+
+            if lineindex == 0:
+                columnsname = _line.split()
+
             if _line.startswith('# File created'):
                 nbdatarows = lineindex-1
+                commentfound = True
             elif _line.startswith('# Comments: nb of peaks'):
                 nbpeaks = int(_line.split('peaks')[-1])
             elif _line.startswith('# Remove_BlackListedPeaks_fromfile'):
                 commentfound = True
-            lineindex+=1
-
+                
+            lineindex += 1
 
         # File created at
     data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
 
     if output_columnsname:
-        f = open(filename_in, 'r')
-        output_columnsname = f.readline().split()
-        f.close()
-        return data_peak, output_columnsname
+        return data_peak, columnsname
 
-    if returnnbpeaks:
+    elif returnnbpeaks:
         return data_peak, nbdatarows
-
-    return data_peak
+    else:
+        return data_peak
 
 
 def writefitfile(outputfilename,
@@ -1244,7 +1246,7 @@ def readfitfile_comments(fitfilepath):
         nblines += 1
     f.seek(0)
     lineindex = 0
-    while(lineindex < nblines):
+    while lineindex < nblines:
         line = f.readline()
         # print('lineeeeeeeeee', line)
         if ccdlabelflag:

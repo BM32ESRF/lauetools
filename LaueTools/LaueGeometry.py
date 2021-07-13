@@ -365,7 +365,7 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
     cosbeta = np.cos(xbet * DEG)
-    sinbeta = np.sin(xbet * DEG)   
+    sinbeta = np.sin(xbet * DEG)
 
     cosgam = np.cos(xgam * DEG)
     singam = np.sin(xgam * DEG)
@@ -373,7 +373,7 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
     xcam1 = (np.array(xcam) - xcen) * pixelsize
     ycam1 = (np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)
 
-    # coordinates (mm) along tilted by gamma of X' Y' 
+    # coordinates (mm) along tilted by gamma of X' Y'
     # xcam1 = cosgam * xca0 + singam * yca0
     # ycam1 = -singam * xca0 + cosgam * yca0
 
@@ -386,7 +386,7 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
     # IM is parallel to kf
 
     # for Z>0 top reflection geometry IOlab = detect * array([0.0, cosbeta, sinbeta])
-    
+
     # But Here for transmission X>0
     # xca0 length  along x pixel direction (w/o gamma correction)
     # yca0 legnth  along y pixel direction  (// Z) (w/o gamma correction)
@@ -399,9 +399,8 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
     # and
     # IOlab = distance_IO * np.array([cosbeta, -sinbeta,0])
 
-    xO, yO, zO = detect * np.array([cosbeta, -sinbeta,0])
+    xO, yO, zO = detect * np.array([cosbeta, -sinbeta, 0])
 
-    
     xOM = -xca0*sinbeta
     yOM = -xca0*cosbeta
     zOM = yca0
@@ -982,7 +981,7 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
     """
     if convert2LTframe:
         ux, uy, uz = uflabframe0.T
-        uflab=np.array([uy, -ux, uz]).T
+        uflab = np.array([uy, -ux, uz]).T
 
     distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
 
@@ -991,7 +990,7 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
 
     # IOlab: vector joining O nearest point of CCD plane and I (origin of lab frame and emission source)
 
-    IOlab = distance_IO * np.array([cosbeta, -sinbeta,0])
+    IOlab = distance_IO * np.array([cosbeta, -sinbeta, 0])
 
     # unitary normal vector of CCD plane
     # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
@@ -1044,7 +1043,7 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
 
     # for Z>0 top reflection geometry :
     # OMlab = array([xca0, yca0*sinbeta, -yca0*cosbeta])
-    
+
     # Here for transmission X>0
     # xca0 length  along x pixel direction (w/o gamma correction)
     # yca0 legnth  along y pixel direction  (// Z) (w/o gamma correction)
@@ -1059,7 +1058,7 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
     cosgam = np.cos(xgam * DEG)
     singam = np.sin(xgam * DEG)
 
-    # coordinates (mm) along tilted by gamma of X' Y' 
+    # coordinates (mm) along tilted by gamma of X' Y'
     xcam1 = cosgam * xca0 + singam * yca0
     ycam1 = -singam * xca0 + cosgam * yca0
 
@@ -1799,9 +1798,7 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
-                                                        sorting_intensity="yes",
-                                                        param=None,
+def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None,
                                                         kf_direction="Z>0",
                                                         verbose=1,
                                                         pixelsize=165.0 / 2048,
@@ -1811,17 +1808,12 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
                                                         col_isbadspot=None,
                                                         alpha_xray_incidence_correction=None):
     r"""
-    Converts spot positions x,y to scattering angles 2theta, chi from a list of peaks
+    Read a file and convert spot positions x,y to scattering angles 2theta, chi according to detector parameters
 
     :param filename: fullpath to peaks list ASCII file
     :type filename: string
 
-    :param tuple_column_X_Y_I: tuple with column indices of spots X, Y (pixels on CCD) and intensity
-    :type tuple_column_X_Y_I: 3 elements
-
-    :param _nblines_headertoskip: nb of line to skip before reading an array of data in ascii file
-
-    :param param: list of CCD calibration parameters [det, xcen, ycen, xbet, xgam]
+    :param detectorparams: list of CCD calibration parameters [det, xcen, ycen, xbet, xgam]
     :param pixelsize: pixelsize in mm
     :param dim: (nb pixels x, nb pixels y)
 
@@ -1839,18 +1831,13 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
 
     :returns: twicetheta, chi, dataintensity, data_x, data_y  [, other data]
     """
-    col_X, col_Y, col_I = tuple_column_X_Y_I
-
     extension = filename.split(".")[-1]
 
     if forceextension_lines_to_extract is not None:
         extension = "forcedextension"
 
-    if extension == "pik":  # no header  # TODO to remove
-        nbline = 0
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=nbline)
-    elif extension == "peaks":  # single line header   # TODO to remove
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
+    if extension == "peaks":  # single line header   # TODO to remove
+        data_xyI = np.loadtxt(filename, usecols=(0, 1, 2), skiprows=1)
 
     elif extension in ("dat", "DAT"):  # peak list single line header
         alldata, nbpeaks = IOLT.readfile_dat(filename, returnnbpeaks=True)
@@ -1861,21 +1848,20 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
         elif nbpeaks == 1:
             data_xyI = np.take(alldata, (0, 1, 3), axis=0)
 
-        #data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
         print("nb of spots and columns in .dat file", data_xyI.shape)
 
         if saturation:
-            data_Ipixmax = alldata[:,-1]
+            data_Ipixmax = alldata[:, -1]
             indsat = np.where(data_Ipixmax >= saturation)
             data_sat = np.zeros(len(data_Ipixmax), dtype=np.int)
             data_sat[indsat[0]] = 1
 
             if col_isbadspot is not None:
-                data_isbadspot = alldata[:,col_isbadspot]
+                data_isbadspot = alldata[:, col_isbadspot]
                 #print(data_isbadspot)
 
     elif extension == "forcedextension":
-        data_xyI = np.loadtxt(filename, usecols=(col_X, col_Y, col_I), skiprows=1)
+        data_xyI = np.loadtxt(filename, usecols=(0, 1, 2), skiprows=1)
     elif extension == "cor":  # single line header
         # TODO use better  IOLT function...
         try:
@@ -1893,10 +1879,10 @@ def Compute_data2thetachi(filename, tuple_column_X_Y_I, _nblines_headertoskip,
     else:
         nb_peaks = sha[0]
 
-    if param is None:
-        raise ValueError("Missing param arg in Compute_data2thetachi() of find2thetachi module")
+    if detectorparams is None:
+        raise ValueError("Missing detectorparams arg in Compute_data2thetachi() of find2thetachi module")
     else:
-        param_det = param
+        param_det = detectorparams
 
     if verbose:
         print("file :%s" % filename)
@@ -2032,10 +2018,8 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
             pixelsize = CCDCalibdict["xpixelsize"]
 
     (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
-                                                                            (0, 1, 3),
-                                                                            1,
-                                                                            sorting_intensity="yes",
-                                                                            param=calibparam,
+                                                               sorting_intensity="yes",
+                                                                            detectorparams=calibparam,
                                                                             pixelsize=pixelsize)
     if add_props:
         rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)

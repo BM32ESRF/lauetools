@@ -4492,10 +4492,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         useless ?
         """
-        return F2TC.Compute_data2thetachi(filename,
-                                            (0, 1, 2),
-                                            1,
-                                            sorting_intensity="yes",
+        return F2TC.Compute_data2thetachi(filename, sorting_intensity="yes",
                                             param=self.parent.defaultParam,
                                             pixelsize=self.parent.pixelsize,
                                             dim=self.parent.dim,  # only for peaks coming from fit2d doing an y direction inversion

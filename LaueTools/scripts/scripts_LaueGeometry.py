@@ -303,11 +303,8 @@ def test_correction_1():
     param = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]  # Nov 09 J. Villanova BM32
     peaksfilename = "SS_0170.peaks"
     twicetheta, chi, dataintensity, data_x, data_y = LGeo.Compute_data2thetachi(
-        peaksfilename,
-        (0, 1, 2),
-        1,  # 1 for .peaks
-        sorting_intensity="yes",
-        param=param)
+        peaksfilename, sorting_intensity="yes",
+        detectorparams=param)
 
     print(twicetheta)
     IOLT.writefile_cor("polyZrO2_test", twicetheta, chi, data_x, data_y,
@@ -324,10 +321,8 @@ def test_correction_2():
     param = [69.66221, 895.29492, 960.78674, 0.84324, -0.32201]  # Nov 09 J. Villanova BM32
     peaksfilename = "Ge.peaks"
     twicetheta, chi, dataintensity, data_x, data_y = LGeo.Compute_data2thetachi(peaksfilename,
-                                                                    (0, 1, 2),
-                                                                    1,  # 1 for .peaks
                                                                     sorting_intensity="yes",
-                                                                    param=param)
+                                                                    detectorparams=param)
 
     print(twicetheta)
     IOLT.writefile_cor("Ge_test", twicetheta, chi, data_x, data_y,
@@ -344,10 +339,8 @@ def test_correction_3():
     param = [69.66055, 895.27118, 960.77417, 0.8415, -0.31818]  # Nov 09 J. Villanova BM32
     peaksfilename = "Ge_run41_1_0003.peaks"
     twicetheta, chi, dataintensity, data_x, data_y = LGeo.Compute_data2thetachi(peaksfilename,
-                                                                    (0, 1, 2),
-                                                                    1,  # 1 for .peaks
                                                                     sorting_intensity="yes",
-                                                                    param=param)
+                                                                    detectorparams=param)
 
     print(twicetheta)
     IOLT.writefile_cor("Ge_run41_1_0003",
@@ -544,13 +537,6 @@ if __name__ == "__main__":
         nblines_headertoskip = 0
         Intensitysorted = 0 # =1 if intensity sorting must be done for the outputfile, =0 means that sorting already done in input file or sorting not needed
 
-        # filename=prefix+indexfile+suffix
-
-        # twicetheta,chi,dataintensity,data_x,data_y=Compute_data2thetachi(filename,(col_X,col_Y,col_I),nblines_headertoskip)
-
-        # plotXY2thetachi(data_x,data_y,twicetheta,chi,mostintense=200)
-        # IOLT.writefile_cor(prefix+indexfile,twicetheta,chi,data_x,data_y,sortedexit=Intensitysorted)
-
     # for doing a files serie
     def series():
         """
@@ -559,7 +545,7 @@ if __name__ == "__main__":
         for index in list(range(620, 1276)):
             filename = prefix + "%04d" % index + suffix
             twicetheta, chi, dataintensity, data_x, data_y = LGeo.Compute_data2thetachi(
-                filename, (col_X, col_Y, col_I), nblines_headertoskip)
+                filename)
             IOLT.writefile_cor(prefix + "%04d" % index,
                                     twicetheta,
                                     chi,

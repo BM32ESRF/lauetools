@@ -510,11 +510,8 @@ class LaueToolsGUImainframe(wx.Frame):
         print("self.defaultParam after", self.defaultParam)
 
         (twicetheta, chi, dataintensity,
-        data_x, data_y) = Compute_data2thetachi(fullpathfile,
-                                                    (0, 1, 3),
-                                                    1,
-                                                    sorting_intensity="yes",
-                                                    param=self.defaultParam,
+        data_x, data_y) = Compute_data2thetachi(fullpathfile, sorting_intensity="yes",
+                                                    detectorparams=self.defaultParam,
                                                     pixelsize=self.pixelsize,
                                                     kf_direction=self.kf_direction)
 

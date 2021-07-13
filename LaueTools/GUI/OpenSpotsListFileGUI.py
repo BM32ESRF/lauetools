@@ -234,11 +234,8 @@ def OnOpenPeakList(parent):
         # compute 2theta and chi according to detector calibration geometry
         (twicetheta, chi, dataintensity,
             data_x, data_y) = F2TC.Compute_data2thetachi(
-                                                DataPlot_filename,
-                                                (0, 1, 3),
-                                                1,
-                                                sorting_intensity="yes",
-                                                param=parent.defaultParam,
+                                                DataPlot_filename, sorting_intensity="yes",
+                                                detectorparams=parent.defaultParam,
                                                 pixelsize=parent.pixelsize,
                                                 kf_direction=parent.kf_direction)
         # write .cor file

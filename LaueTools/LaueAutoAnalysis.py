@@ -572,10 +572,8 @@ def test_indexation_refinement_Ge():
 
     twicetheta, chi, dataintensity, data_x, data_y = F2TC.Compute_data2thetachi(
                                         os.path.join(dirname, DataPlot_filename),
-                                        (0, 1, 3),
-                                        1,  # 2 for centroid intensity, 3 for integrated  intensity
                                         sorting_intensity="yes",
-                                        param=defaultParam,
+                                        detectorparams=defaultParam,
                                         pixelsize=pixelsize)
 
     prefix, _ = DataPlot_filename.split(".")
@@ -953,14 +951,6 @@ def RefineCalibParameters(linkedspots,
     ##self.deltamatrix = np.eye(3) # identity
     # self.vecteurref is unchanged
 
-    ## update exp data
-    # twicetheta, chi, dataintensity = F2TC.Compute_data2thetachi(self.filename,
-    # (0, 1, 3),
-    # 0,
-    # param = self.paramDet,
-    # pixelsize = pixelsize,
-    # dim = dim # only for peaks coming from fit2d doing an y direction inversion
-    # )[:3]
     if addoutput:
         return allresults, newmatrix, dataresults, residues_nonweighted
     else:
@@ -1021,12 +1011,7 @@ def test_peaksearch_index_refine():
 
     dat_filename = prefix + ".dat"
 
-    twicetheta, chi, dataintensity, data_x, data_y = F2TC.Compute_data2thetachi(dat_filename,
-                                                                            (0, 1, 3),
-                                                                            0,
-                                                                            sorting_intensity="yes",
-                                                                            param=defaultParam,
-                                                                            pixelsize=pixelsize)
+    twicetheta, chi, dataintensity, data_x, data_y = F2TC.Compute_data2thetachi(dat_filename,sorting_intensity="yes", detectorparams=defaultParam, pixelsize=pixelsize)
 
     prefix, _ = dat_filename.split(".")
     # writing .cor file
@@ -1337,12 +1322,7 @@ def test_calibration_refinement():
 
     print("current directory", os.curdir)
 
-    twicetheta, chi, dataintensity, data_x, data_y = F2TC.Compute_data2thetachi(dat_filename,
-                                                                            (0, 1, 3),
-                                                                            0,
-                                                                            sorting_intensity="yes",
-                                                                            param=defaultParam,
-                                                                            pixelsize=pixelsize)
+    twicetheta, chi, dataintensity, data_x, data_y = F2TC.Compute_data2thetachi(dat_filename,sorting_intensity="yes", detectorparams=defaultParam,pixelsize=pixelsize)
     # file_peaks = prefix + ".dat"
     # data = (twicetheta, chi, dataintensity, file_peaks)
     # Data_X, Data_Y, Data_I, File_NAME = data # 2theta and chi are now meant as X and Y

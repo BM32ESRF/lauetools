@@ -1288,16 +1288,7 @@ class Plot_RefineFrame(wx.Frame):
         # ---------  theoretical data
         # (twicetheta, chi, Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
         (twicetheta, chi, Miller_ind, _, _, energy) = self.Simulate_Pattern()
-
-        # whole experimental data
-        # twicetheta_exp, chi_exp, dataintensity_exp = F2TC.Compute_data2thetachi(self.filename,
-        # (0, 1, self.colI),
-        # 0,
-        # param = self.paramDet,
-        # pixelsize = self.pixelsize,
-        # framedim = self.framedim # only for peaks coming from fit2d doing an y direction inversion
-        # )[:3]
-
+        
         # selected exp. spots ------------------
         # starting from(may be filtered) experimental data
         if self.datatype == "2thetachi":

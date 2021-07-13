@@ -305,31 +305,31 @@ class CrystalParamPanel(wx.Panel):
 
         # layout
 
-        h1box=wx.BoxSizer(wx.HORIZONTAL)
+        h1box = wx.BoxSizer(wx.HORIZONTAL)
         h1box.Add(t1, 0, wx.EXPAND|wx.ALL, 10)
         h1box.Add(self.eminC, 0, wx.EXPAND|wx.ALL, 10)
         h1box.Add(self.emaxC, 0, wx.EXPAND|wx.ALL, 10)
 
-        h2box=wx.BoxSizer(wx.HORIZONTAL)
+        h2box = wx.BoxSizer(wx.HORIZONTAL)
         h2box.Add(t2, 0, wx.EXPAND|wx.ALL, 10)
         h2box.Add(self.comboElem, 0, wx.EXPAND|wx.ALL, 10)
 
-        h3box=wx.BoxSizer(wx.HORIZONTAL)
+        h3box = wx.BoxSizer(wx.HORIZONTAL)
         h3box.Add(t3, 0, wx.EXPAND|wx.ALL, 10)
         h3box.Add(self.comboBmatrix, 0, wx.EXPAND|wx.ALL, 10)
 
-        h4box=wx.BoxSizer(wx.HORIZONTAL)
+        h4box = wx.BoxSizer(wx.HORIZONTAL)
         h4box.Add(t4, 0, wx.EXPAND|wx.ALL, 10)
         h4box.Add(self.comboMatrix, 0, wx.EXPAND|wx.ALL, 10)
         h4box.Add(self.btn_mergeUB, 0, wx.EXPAND|wx.ALL, 10)
 
-        h5box=wx.BoxSizer(wx.HORIZONTAL)
+        h5box = wx.BoxSizer(wx.HORIZONTAL)
         h5box.Add(t5, 0, wx.EXPAND|wx.ALL, 10)
         h5box.Add(self.comboExtinctions, 0, wx.EXPAND, 10)
 
-        h6box=wx.BoxSizer(wx.HORIZONTAL)
-        h6box.Add(b1,1, wx.EXPAND|wx.ALL, 10)
-        h6box.Add(b2,1, wx.EXPAND|wx.ALL, 10)
+        h6box = wx.BoxSizer(wx.HORIZONTAL)
+        h6box.Add(b1, 1, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(b2, 1, wx.EXPAND|wx.ALL, 10)
         h6box.Add(btn_sortUBsname, 0, wx.EXPAND|wx.ALL, 10)
         h6box.Add(btnReloadMaterials, 0, wx.EXPAND|wx.ALL, 10)
 
@@ -1450,19 +1450,11 @@ class MainCalibrationFrame(wx.Frame):
         print('self.kf_direction', self.kf_direction)
 
         if extension in ("dat", "DAT"):
-            colI = 3
-            col2theta = 0
-            colChi = 1
 
-            (twicetheta,
-                chi,
-                dataintensity,
+            (twicetheta, chi, dataintensity,
                 data_x,
                 data_y,
-            ) = F2TC.Compute_data2thetachi(filepath,
-                                            (col2theta, colChi, colI),
-                                            0,
-                                            param=self.CCDParam,
+            ) = F2TC.Compute_data2thetachi(filepath, detectorparams=self.CCDParam,
                                             pixelsize=self.pixelsize,
                                             kf_direction=self.kf_direction)
             self.initialParameter['filename.cor'] = None
@@ -2171,10 +2163,8 @@ class MainCalibrationFrame(wx.Frame):
 
         (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
                                                             fullpathfilename,
-                                                            (0, 1, 3),
-                                                            1,
                                                             sorting_intensity="yes",
-                                                            param=self.CCDParam,
+                                                            detectorparams=self.CCDParam,
                                                             pixelsize=self.pixelsize,
                                                             kf_direction=self.kf_direction)
 
@@ -2953,7 +2943,7 @@ class MainCalibrationFrame(wx.Frame):
                                                 detectordiameter=diameter_for_simulation * 1.25)
 
             print("nb of spots", len(twicetheta))
-        
+
         print('End of simulate_theo() ------------\n\n')
 
         return twicetheta, chi, self.Miller_ind, posx, posy, Energy
@@ -4007,7 +3997,7 @@ def start():
     CalibGUIFrame.Show()
 
     CalibGUIApp.MainLoop()
-    
+
 if __name__ == "__main__":
 
     initialParameter = {}

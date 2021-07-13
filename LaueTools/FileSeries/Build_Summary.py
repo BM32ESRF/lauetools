@@ -348,7 +348,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
 class Manual_XYZfilecreation_Frame(wx.Frame):
     """
-    GUI class for setting parameters to build xyz file 
+    GUI class for setting parameters to build xyz file
     """
     def __init__(self, parent, _id, title):
         wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition,
