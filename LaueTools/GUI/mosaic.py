@@ -52,10 +52,9 @@ import matplotlib as mpl
 import matplotlib.cm as mplcm
 from pylab import cm as pcm
 
-import tifffile as TIFF
-
 # LaueTools modules
 if sys.version_info.major == 3:
+    from .. import tifffile as TIFF
     from .. import dict_LaueTools as DictLT
     from .. import generaltools as GT
     from .. import readmccd as RMCCD
