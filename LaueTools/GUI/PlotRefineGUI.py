@@ -53,7 +53,6 @@ if sys.version_info.major == 3:
     from . import LaueSpotsEditor as LSEditor
     from .. import indexingSpotsSet as ISS
     from .. import matchingrate
-    from .. import readmccd as RMCCD
     from .. import imageprocessing as ImProc
     from .. import orientations as ORI
     from .. import IOimagefile as IOimage
@@ -67,7 +66,6 @@ else:
     import GUI.LaueSpotsEditor as LSEditor
     import indexingSpotsSet as ISS
     import matchingrate
-    import readmccd as RMCCD
     import imageprocessing as ImProc
     import orientations as ORI
     import IOimagefile as IOimage

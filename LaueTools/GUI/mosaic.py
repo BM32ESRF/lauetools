@@ -52,6 +52,8 @@ import matplotlib as mpl
 import matplotlib.cm as mplcm
 from pylab import cm as pcm
 
+import tifffile as TIFF
+
 # LaueTools modules
 if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
@@ -1416,6 +1418,9 @@ class ImshowFrame(wx.Frame):
         SaveDatamenu = FileMenu.Append(wx.ID_ANY, "&Save Data", "Save Data")
         self.Bind(wx.EVT_MENU, self.SaveData, SaveDatamenu)
 
+        openDatamenu = FileMenu.Append(wx.ID_ANY, "&Open Data", "Open Data")
+        self.Bind(wx.EVT_MENU, self.OpenData, openDatamenu)
+
         CloseMenu = FileMenu.Append(wx.ID_ANY, "&Close", "Close Application")
         self.Bind(wx.EVT_MENU, self.OnQuit, CloseMenu)
 
@@ -1476,7 +1481,7 @@ class ImshowFrame(wx.Frame):
         info.SetName("LaueTools")
         info.SetVersion("6.0")
         info.SetDescription(description)
-        info.SetCopyright("(C) 2016 Jean-Sebastien Micha")
+        info.SetCopyright("(C) 2021 Jean-Sebastien Micha")
         info.SetWebSite("http://www.esrf.eu/UsersAndScience/Experiments/CRG/BM32/")
         info.SetLicence(licence)
         info.AddDeveloper("Jean-Sebastien Micha")
@@ -1488,29 +1493,67 @@ class ImshowFrame(wx.Frame):
         event.Skip()
 
     def OnSave(self, _):
+        """  save image as png or tiff (for mosaic)"""
 
-        dlg = wx.TextEntryDialog(self, "Enter filename for image", "Saving in png format")
+        dlg = wx.TextEntryDialog(self, "Enter filename for image with extension (.png, .tiff)", "Saving image")
 
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetValue())
-
-            fig = self.plotPanel.get_figure()
             if self.dirname is None:
                 self.dirname = os.path.curdir
 
-            if filename.endswith(".png"):
-                filename = filename[:-4]
-
             fullpath = os.path.join(str(self.dirname), str(filename))
 
-            fig.savefig(fullpath)
-            print("Image saved in ", fullpath)
-
+            if fullpath.endswith('.png'):
+                self.axes.get_figure().savefig(fullpath)
+                print("Image saved in ", fullpath)
+            elif fullpath.endswith('.tiff'):  # TODO convert better float to uint16
+                datint = np.array(self.data, dtype=np.uint16)
+                TIFF.imsave(fullpath, datint)
+                print("Image saved in tiff format ", fullpath)
         dlg.Destroy()
 
     def SaveData(self, _):
         wx.MessageBox("To be implemented, but data are automatically saved in the same folder "
                                                                 "than the images one", "INFO")
+
+    def OpenData(self, _):
+
+        if self.askUserForFilename():
+            fpath = os.path.join(self.dirname, self.filename)
+            print("Read file ", fpath)
+
+            with open(fpath, 'r') as f:
+                d = np.loadtxt(f, skiprows=4)
+
+                dshape = (41,34)
+                dshape = (34,41)
+
+                dataarray = d[:,-1].reshape(dshape)
+                title ='test'
+                Imageindices = d[:,0].reshape(dshape)
+                imagename = 'test0006.mccd'
+
+                nb_row, nb_lines = dshape
+
+            self.dataraw = copy(dataarray)
+            # data to be displayed
+            self.data = dataarray
+            #self.datatype = datatype
+
+            #self.absolutecornerindices = absolutecornerindices
+            self.title = title
+            self.Imageindices = Imageindices
+            self.nb_columns = nb_row
+            self.nb_lines = nb_lines
+            #self.boxsize_row = boxsize_row
+            #self.boxsize_line = boxsize_line
+            #print('nb_row  nb_lines', nb_row, nb_lines)
+            #print('boxsize_row  boxsize_line',boxsize_row, boxsize_line)
+            #self.stepindex = stepindex
+            self.imagename = imagename
+
+            self._replot()
 
     def askUserForFilename(self, **dialogOptions):
         dialog = wx.FileDialog(self, **dialogOptions)
@@ -1754,8 +1797,8 @@ class ImshowFrame(wx.Frame):
         #         print 'xDATA',xDATA
 
         (n0, n1) = self.dataraw.shape
-        dataX_2D = xDATA.reshape((n0, n1))
-        dataY_2D = yDATA.reshape((n0, n1))
+        # dataX_2D = xDATA.reshape((n0, n1))
+        # dataY_2D = yDATA.reshape((n0, n1))
         masked_2D = maskedrows.reshape((n0, n1))
 
         mask = masked_2D.mask
@@ -1799,17 +1842,9 @@ class ImshowFrame(wx.Frame):
 
         fittedPeaksData = self.dict_param["FilteredfittedPeaksData"]
 
-        (peak_X,
-            peak_Y,
-            peak_I,
-            peak_fwaxmaj,
-            peak_fwaxmin,
-            peak_inclination,
-            Xdev,
-            Ydev,
-            peak_bkg,
-            maskedrows,
-        ) = fittedPeaksData.T
+        (peak_X, peak_Y, peak_I,
+            peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+            Xdev, Ydev, peak_bkg, maskedrows, ) = fittedPeaksData.T
 
         cond = (peak_I - peak_bkg) < maskthreshold
         to_reject0 = np.where(cond)[0]
@@ -1840,16 +1875,9 @@ class ImshowFrame(wx.Frame):
         FilterX = np.ma.masked_where(BoolToMask, FilterX0)
 
         # all peaks list building
-        fittedPeaksData = np.ma.array([peak_X,
-                                        peak_Y,
-                                        peak_I,
-                                        peak_fwaxmaj,
-                                        peak_fwaxmin,
-                                        peak_inclination,
-                                        Xdev,
-                                        Ydev,
-                                        peak_bkg,
-                                        FilterX]).T
+        fittedPeaksData = np.ma.array([peak_X, peak_Y, peak_I,
+                                        peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                                        Xdev, Ydev, peak_bkg, FilterX]).T
 
         FilteredfittedPeaksData = np.ma.mask_rowcols(fittedPeaksData, axis=0)
 
@@ -2019,25 +2047,15 @@ class ImshowFrame(wx.Frame):
     def onClick(self, event):
         """ on mouse click
         """
-        #        print 'clicked on mouse'
-
         self.centerx, self.centery = event.xdata, event.ydata
 
         if event.inaxes:
             if event.button in (2, 3):
                 self.OnRightButtonMousePressed(1)
 
-        #            print("inaxes", event)
-        #             print("inaxes", event.x, event.y)
-        #             print("inaxes", event.xdata, event.ydata)
-        #             self.centerx, self.centery = event.xdata, event.ydata
-
         else:
             pass
 
-    #            print("out axes", event)
-    #            print("out axes", event.x, event.y)
-    #            print("out axes", event.xdata, event.ydata)
 
     def OnRightButtonMousePressed(self, _):
         self.DisplayXYZMotorsPositions()
@@ -2057,7 +2075,6 @@ class ImshowFrame(wx.Frame):
 
         fullpathtoimagefile = os.path.join(imagesfolder, imagefilename)
         xyzech, expotime = IOimage.read_motorsposition_fromheader(fullpathtoimagefile)
-        #         print "xyzech",xyzech
         return xyzech
 
     def DisplayXYZMotorsPositions(self):
@@ -2294,10 +2311,8 @@ class ImshowFrame(wx.Frame):
 
         relativeImageindex = self.tabindices[indi, indj]
 
-        #         print 'relativeindex',relativeImageindex
         absoluteImageIndex = self.Imageindices[relativeImageindex]
 
-        #         print "absoluteImageIndex",absoluteImageIndex
         return absoluteImageIndex
 
     def format_coord(self, x, y):
@@ -2318,7 +2333,6 @@ class ImshowFrame(wx.Frame):
         #         print "self.tabindices", self.tabindices
         if col >= 0 and col < numcols and row >= 0 and row < numrows:
 
-            #             print "x,y in format_coord",x,y
             # print int(y/(2*self.boxsize_row)),int(x/(2*self.boxsize_line))
 
             if self.mosaic:
@@ -2433,16 +2447,6 @@ class ImshowFrame(wx.Frame):
         print("with value:", val_ROI)
 
     def getROIproperties(self):
-        #         im = self.axes.get_images()
-        #         extent = im[0].get_extent()
-        #         print "extent",extent
-        #         xmin,xmax,ymin,ymax=extent
-        #
-        #         indlb = self.getImageIndexfromxy(xmin, ymin)
-        #         indrb = self.getImageIndexfromxy(xmax, ymin)
-        #         indlt = self.getImageIndexfromxy(xmin, ymax)
-        #         indrt = self.getImageIndexfromxy(xmax, ymax)
-        #         print "indlb,indrb,indlt,indrt",indlb,indrb,indlt,indrt
 
         xlimits = self.axes.get_xlim()
         ylimits = self.axes.get_ylim()
@@ -2811,14 +2815,13 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             elif counter == "ptp":
                 dat = np.amax(np.amax(mosaic, axis=2), axis=2) - np.amin(np.amin(mosaic, axis=2), axis=2)
 
-            #                 print "rawdat",rawdat
-            #                 print "rawdat.shape", rawdat.shape
-
             if dict_param["NormalizeWithMonitor"]:
                 if verbose > 0: print("monitor", monitor)
                 monitor = np.where(monitor <= 0.0, 1.0, monitor)
 
             CountersData[counter + "2D"] = dat
+
+            print('\n\n********  ->>>> dat.shape', dat.shape)
 
             if plot:
 
@@ -2833,35 +2836,38 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                     mosaic=0,
                                     dict_param=dict_param)
 
-                #            plapla.dirname = self.dirname
-
                 plapla.Show()
 
-                np.savetxt("%s_2D" % counter + "_%s" % myformattime(), dat)
+                #np.savetxt("%s_2D" % counter + "_%s" % myformattime(), dat)
 
                 parent.list_of_windows.append(plapla)
 
             nbimages = len(np.arange(startind, endind + 1))
 
-            # Instens monitors selection
+            # Intens monitors selection
             Intens = np.ravel(dat)
             Intens = Intens[:nbimages]
 
             tabindices1D = tabindices[:nbimages]
+            ii,jj = np.indices(dat.shape)
 
             XYdat = [tabindices1D, Intens]
+
+            XYdatsaved = [tabindices1D, np.ravel(ii), np.ravel(jj), Intens]
 
             CountersData[counter + "1D"] = XYdat
 
             outfilename = os.path.join(outputfolder, "%s" % (counter + "_1D"))
-
-            np.savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat).T)
+            with open(outfilename + "_%s" % myformattime(), 'w') as f:
+                f.write('#File generated by mosaic.py. Date: %s\n'%myformattime())
+                f.write('#Datatype: %s\n'%title)
+                f.write('#Original 2D dimensions shape: (fast, slow) (%d, %d)\n'%(dat.shape[1], dat.shape[0]))
+                f.write('#image fastindex slowindex intensity\n')
+                np.savetxt(f, np.array(XYdatsaved).T)
 
             if plot:
 
-                plotI = PLOT1D.Plot1DFrame(parent,
-                                            -1,
-                                            counter + " Intensity",
+                plotI = PLOT1D.Plot1DFrame(parent, -1, counter + " Intensity",
                                             title + " Intensity",
                                             XYdat,
                                             logscale=0)
@@ -2875,9 +2881,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             #                 title = '%s indexrange [%06d-%06d]' % (counter, startind, endind)
 
             dat = mosaic.transpose((0, 3, 1, 2))
-
-            #            print "shape dat", shape(dat)
-
             dat = dat.reshape((nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1)))
 
             CountersData[counter + "2D"] = dat
@@ -2915,9 +2918,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
             jj = np.arange(n0 * n1).reshape((n0, n1))
             label = np.repeat(jj, n2 * n3, axis=1).reshape((n0, n1, n2, n3))
-
-            #                print 'label', label
-            #
+            
             # max value of background
             datminimum = scind.measurements.maximum(mosaic, label, np.arange(n0 * n1))
             datminimums = np.repeat(datminimum.reshape((n0, n1)), n2 * n3, axis=1).reshape((n0, 
@@ -2939,27 +2940,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             imageindex = datmaximumpos[:, 0] * n1 + datmaximumpos[:, 1] + startind
             posmax = datmaximumpos[:, 2:] + np.array([jmin, imin])
 
-            #                    datmaximum = scind.measurements.maximum(mosaic, label, arange(n0 * n1))
-            #                    print "res maximum", datmaximum
-            #                    dat = datmaximum.reshape((n0, n1))
-
-            #                    print "res maximum", datminimum
-            #                print "res datcenterofmass", datcenterofmass
-            #                print "res datcenterofmass2", datcenterofmass2
-            #                print "res datmaximumpos", datmaximumpos
-            # #
-            #                print "imageindex", imageindex
-            #                print 'posmax', posmax
-
-            meanposmax_local = np.mean(datmaximumpos[:, 2:], axis=0)
+            # meanposmax_local = np.mean(datmaximumpos[:, 2:], axis=0)
             meanposmax_global = np.mean(posmax, axis=0)
 
-            #                print "meanposmax_local", meanposmax_local
-            #                print "meanposmax_global", meanposmax_global
 
-            relative_posmax = posmax - meanposmax_global
 
-            #                    print "relative_posmax", relative_posmax
+            # relative_posmax = posmax - meanposmax_global
 
             nbimages = len(np.arange(startind, endind + 1))
             # ---------------------------------------------------
@@ -3012,10 +2998,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             # plot 1D graph  ( X or Y as fct 1D index in data )
             if plot and counter == "Position XY":
 
-                plotX = PLOT1D.Plot1DFrame(parent,
-                                            -1,
-                                            counter + "Xpos",
-                                            title + "Xpos",
+                plotX = PLOT1D.Plot1DFrame(parent, -1, counter + "Xpos", title + "Xpos",
                                             XYdat_x,
                                             logscale=0)
                 plotX.Show(True)
@@ -3026,10 +3009,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 parent.list_of_windows.append(plotX)
 
-                plotY = PLOT1D.Plot1DFrame(parent,
-                                            -1,
-                                            counter + "Ypos",
-                                            title + "Ypos",
+                plotY = PLOT1D.Plot1DFrame(parent, -1, counter + "Ypos", title + "Ypos",
                                             XYdat_y,
                                             logscale=0)
                 plotY.Show(True)
@@ -3553,8 +3533,6 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
                     CountersData["posY"][grain_index, k] = yDATA
 
     return CountersData
-
-
 
 
 def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",

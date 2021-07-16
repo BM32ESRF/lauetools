@@ -34,7 +34,7 @@ import matplotlib
 
 matplotlib.use("WXAgg")
 
-from matplotlib import __version__ as matplotlibversion
+#from matplotlib import __version__ as matplotlibversion
 
 import numpy as np
 import wx

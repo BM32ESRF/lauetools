@@ -14,11 +14,11 @@ import sys
 import copy
 
 import matplotlib
-from matplotlib import __version__ as matplotlibversion
 
 matplotlib.use("WXAgg")
 
 from matplotlib.figure import Figure
+from matplotlib import __version__ as matplotlibversion
 
 from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
                                                 NavigationToolbar2WxAgg as NavigationToolbar)
