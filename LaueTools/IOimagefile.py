@@ -523,7 +523,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
-                        "Rayonix MX170-HS", 'psl_weiwei'):
+                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021'):
 
             if verbose > 1: print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
@@ -567,7 +567,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         framedim = dataimage.shape
 
     elif LIBTIFF_EXISTS:
-        if verbose > 1: print("----> Using libtiff...")
+        if verbose > 1:
+            print("----> Using libtiff...")
         if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "FRELONID15_corrected", "VHR_PSI",
                             "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
 
@@ -603,7 +604,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             dataimage = np.array(im.getdata()).reshape(framedim)
 
     # RAW method knowing or deducing offsetheader and dataformat
-    else:#USE_RAW_METHOD:
+    if USE_RAW_METHOD:
         print("----> !!! not using libtiff, nor fabio, nor PIL!!!  ")
         if CCDLabel in ("MARCCD165",):
             print("for MARCCD not using libtiff, raw method ...")
@@ -621,6 +622,13 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             if CCDLabel in ("ImageStar_1528x1528",):
                 nbpixels = 1528
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
+        
+        elif CCDLabel == "ImageStar_dia_2021":
+            filesize=getfilesize(dirname, filename)
+            bytes_per_pixels = 2
+            nbpixels = 3056
+
+            offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
         elif CCDLabel in ("sCMOS",):
             if verbose > 0: print("for sCMOS not using libtiff, raw method ...")
             # offsetheader may change ...
@@ -632,6 +640,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                                 dirname=dirname,
                                 offset=offsetheader,
                                 formatdata=formatdata)
+
+        print("dataimage",dataimage)
 
         if CCDLabel in ("FRELONID15_corrected",):
 
@@ -679,6 +689,10 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif fliprot == "vhrdiamond":  # july 2012 close to diamond monochromator crystal
         dataimage = np.rot90(dataimage, k=3)
+        dataimage = np.fliplr(dataimage)
+
+    elif fliprot == "Imagestar_dia_2021":  # starting Feb july 2021 close to diamond monochromator crystal
+        dataimage = np.rot90(dataimage, k=1)
         dataimage = np.fliplr(dataimage)
 
     elif fliprot == "frelon2":
