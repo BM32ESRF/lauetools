@@ -433,6 +433,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'psl_weiwei'
                 elif abs(ps-0.031) <= 0.002:
                     ccdlabel = 'VHR_Feb13'
+                elif abs(ps-0.022) <= 0.002:
+                    ccdlabel = 'ImageStar_dia_2021'
                 CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib
@@ -549,7 +551,6 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
     if nbpeaks == 1:
         Data_array = np.array([Data_array, Data_array])
-
 
     if nbcolumns == 10:
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
