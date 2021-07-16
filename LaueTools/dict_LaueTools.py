@@ -284,6 +284,7 @@ dict_CCD = {
     "ImageStar_1528x1528": ((1528, 1528), 0.044, 65535, "vhr", 4096, "uint16", "Imagestar photonics Science close to diamond May 2018  extension is mar.tiff  non remapping 1528x1528", "tiff"),
     "ImageDeathStar": ((1500, 1500), 0.044, 65535, "VHR_Feb13", 4096, "uint16", "Imagestar photonics Science close to sample, mounting similar to MARCCD, Sep14", "tif"),
     "ImageStar_raw": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint16", "raw image GISAXS BM32 November 2014 .tif", "tif"),
+    "ImageStar_dia_2021": ((3056, 3056), 0.022, 65535, "ImageStar_dia_2021", 4096, "uint16", "Imagestar photonics Science close to diamond March13  extension is mar.tiff", "tif"),
     "VHR_diamond_Mar13": ((2594, 2774), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Mar13 frame size is lower than VHR_diamond", "tiff"),
     "VHR": ((2594, 3764), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Jun 12 2theta axis displayed is horizontal, no problem with fit from PeakSearchGUI", "tiff"),
     "VHR_Feb13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "tiff"),

@@ -1841,8 +1841,8 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
 
     elif extension in ("dat", "DAT"):  # peak list single line header
         alldata, nbpeaks = IOLT.readfile_dat(filename, returnnbpeaks=True)
-        print('nbpeaks', nbpeaks)
-        print('alldata', alldata)
+        # print('nbpeaks', nbpeaks)
+        # print('alldata', alldata)
         if nbpeaks > 1:
             data_xyI = np.take(alldata, (0, 1, 3), axis=1)
         elif nbpeaks == 1:
