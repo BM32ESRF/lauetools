@@ -90,10 +90,10 @@ TIP_IR = ["Folder containing indexed Peaks List .dat files",
     "final file index (integer). Not considered if starting file index is a list of indices or a path to a file",
     "incremental step file index (integer). Not considered if starting file index is a list of indices or a path to a file",
     "full path to detector calibration .det file containing detector plane position and angles parameters\nNot used if PeakList Filename Suffix is .cor",
-    "full path to a file (.mat or .mats) containing one or several guessed orientation matrix(ces) or check orientation parameters file (.ubs) to be tested prior to indexation from scratch",
+    "full path to a file (.mat or .mats) containing one or several guessed orientation matrix(ces) or check orientation parameters file (.ubs) to be tested prior to indexation from scratch. Default: None",
     "Minimum matching rate (nb of matches/ nb of theoritical spots) to consider that test with Guessed Matrix(ces) is positive and then start directly refinement of this solution. (so indexation from scratch is skipped).\n If higher than 100, then test of guessed solution orientation matrix(ces) will be skipped",
     "Full path to .irp file containing index & refine parameters",
-    "Full path to a peakslist (.fit or .cor files) to restrict refinement to some particular peaks only",
+    "Full path to a peakslist (.fit or .cor files) to restrict refinement to some particular peaks only. Default: None",
 ]
 
 DICT_TOOLTIP = {}
@@ -458,7 +458,7 @@ class MainFrame_indexrefine(wx.Frame):
 
     def __init__(self, parent, _id, title, _initialparameters, objet_IR):
         print('entering MainFrame_indexrefine')
-        wx.Frame.__init__(self, parent, _id, title, size=(900, 650))
+        wx.Frame.__init__(self, parent, _id, title)#, size=(900, 650))
 
         self.initialparameters = _initialparameters
         self.parent = parent
@@ -472,6 +472,7 @@ class MainFrame_indexrefine(wx.Frame):
             grid = wx.FlexGridSizer(14, 3, 10, 10)
 
         grid.SetFlexibleDirection(wx.HORIZONTAL)
+        grid.AddGrowableCol(1, 0)
         self.panel = wx.Panel(self)
 
         dict_tooltip = DICT_TOOLTIP
@@ -486,10 +487,10 @@ class MainFrame_indexrefine(wx.Frame):
             # print("kk,txt_elem", kk, txt_elem)
             # print("objet_IR.list_valueparamIR[kk]", objet_IR.list_valueparamIR[kk])
 
-            self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(500, 25))
+            self.txtctrl = wx.TextCtrl(self.panel, -1, size=(500, 25))
             self.txtctrl.SetValue(str(objet_IR.list_valueparamIR[kk]))
             self.list_txtctrl.append(self.txtctrl)
-            grid.Add(self.txtctrl)
+            grid.Add(self.txtctrl, wx.EXPAND)
 
             if txt_elem in keys_list_dicttooltip:
 
@@ -546,7 +547,7 @@ class MainFrame_indexrefine(wx.Frame):
         self.trackingmode.SetValue(False)
 
 
-        grid.Add(Createcfgbtn)
+        grid.Add(Createcfgbtn, wx.EXPAND)
         grid.Add(self.previousreschk)
 
         # multiprocessing handling
@@ -592,15 +593,13 @@ class MainFrame_indexrefine(wx.Frame):
         self.Layout()
 
         # tooltips
-        sentencereanaylse = "If not checked, indexation will be performed for images "
-        "for which corresponding .res file is missing.\n"
-        sentencereanaylse += "If checked, indexation will be (re)performed and overwrite "
-        "all .fit and .res files (if any)."
+        sentencereanaylse = "If not checked, indexation will be performed for images for which corresponding .res file is missing.\n"
+        sentencereanaylse += "If checked, indexation will be (re)performed and results will be overwritten (.fit and .res files (if any))."
         self.chck_renanalyse.SetToolTipString(sentencereanaylse)
 
         sentenceupdate = ("If checked, indexation and refinement will be performed again\n")
         sentenceupdate += "by checking first the orientation already existing in corresponding fit file\n"
-        sentenceupdate += '(matching rate of checked matrix must be higher than the above "Minimum Matching Rate").'
+        sentenceupdate += '(the matching rate of checked matrix must be higher than that set above in "Minimum Matching Rate").'
         self.updatefitfiles.SetToolTipString(sentenceupdate)
 
         Createcfgbtn.SetToolTipString(
@@ -612,11 +611,13 @@ class MainFrame_indexrefine(wx.Frame):
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
 
-        tipshape = "List of dimensions of raster scan  in two (resp. three) directions for 2D (resp. 3D) map. Example: [41,21] or [15,8,100]. Only used when tracking spots positions with 'Selected Peaks from File' is not None "
+        tipshape = "List of dimensions of the experimental sample raster scan  in two (resp. three) directions for 2D (resp. 3D) map. Example: [41,21] or [15,8,100].\n This is only used when 'tracking mode' is activated to track spots positions defined by 'Selected Peaks from File' (not None) "
         txt_mapshape.SetToolTipString(tipshape)
         self.txtctrl_mapshape.SetToolTipString(tipshape)
 
         btnStart.SetToolTipString("Start indexing & refining all the peaks list files")
+
+        self.trackingmode.SetToolTipString("Track spots positions defined in 'Selected Peaks from file' over the raster scan if spots move from one image to an other.")
 
     def OnbtnBrowse_filepathdat(self, _):
         """ select file
