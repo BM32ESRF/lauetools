@@ -164,7 +164,7 @@ class PeakSearchParameters(wx.Frame):
             wxtxt = wx.StaticText(self.panel, -1, text_field)
             grid.Add(wxtxt)
 
-            self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(100, 25))
+            self.txtctrl = wx.TextCtrl(self.panel, -1, "", size=(-1, 25))
             self.list_txtctrl.append(self.txtctrl)
             grid.Add(self.txtctrl)
 
@@ -425,19 +425,18 @@ class MainFrame_peaksearch(wx.Frame):
                 grid.Add(btnbrowse)
                 if kk == 0:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepath)
-                    btnbrowse.SetToolTipString("Select Folder containing image files")
+                    btnbrowse.SetToolTipString("Select Folder containing image files (.tif, .mccd)")
                 elif kk == 1:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filepathout)
                     btnbrowse.SetToolTipString(
-                        "Select Folder containing results peaks list .dat files")
+                        "Select Folder to write results (peaks list .dat files) if different to that proposed automatically")
                 elif kk == 2:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_CCDfileimage)
                     btnbrowse.SetToolTipString(
                         "Select one image file to get (and guess) the generic prefix of all image filenames")
                 elif kk == 8:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_bkgfile)
-                    btnbrowse.SetToolTipString(
-                        "Select image file to be used as background")
+                    btnbrowse.SetToolTipString("Select image file to be used as background")
                 elif kk == 9:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_Blacklistfile)
                     btnbrowse.SetToolTipString(
@@ -445,13 +444,13 @@ class MainFrame_peaksearch(wx.Frame):
                 elif kk == 10:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_ROIslistfile)
                     btnbrowse.SetToolTipString(
-                        "Select ROIs list .rois file to restrict peaksearch in theses regions")
+                        "Select ROIs list .rois file to restrict peaksearch in these regions")
                 elif kk == 11:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_pspfile)
-                    btnbrowse.SetToolTipString("Select .psp file containing Peak Search parameters to be applied on all images")
+                    btnbrowse.SetToolTipString("Select .psp file containing Peak Search Parameters to be applied on all images")
 
             elif kk == 3:
-                self.comboCCD = wx.ComboBox(self.panel, -1, "MARCCD165", size=(150, -1),
+                self.comboCCD = wx.ComboBox(self.panel, -1, "sCMOS", size=(150, -1),
                                                                 choices=self.allMaterialsnames,
                                                                 style=wx.CB_READONLY)
                 self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
@@ -461,7 +460,7 @@ class MainFrame_peaksearch(wx.Frame):
                 grid.Add(nothing)
             #grid.Add(wx.Button(self.panel, kk + 12, "?", size=(25, 25)))
 
-        Createcfgbtn = wx.Button(self.panel, -1, "Edit/Create .psp file", size=(150, -1))
+        Createcfgbtn = wx.Button(self.panel, -1, "Create .psp file", size=(150, -1))
         Createcfgbtn.Bind(wx.EVT_BUTTON, self.OnCreatePSP)
 
         # multiprocessing handling
@@ -470,7 +469,7 @@ class MainFrame_peaksearch(wx.Frame):
 
         # button START
         btnStart = wx.Button(self.panel, -1,
-                            "START PEAK SEARCH (Peaklist files .dat in OutPutFolder)",
+                            "START PEAK SEARCH (Peaklist files .dat in OutputFolder)",
                             size=(300, 50))
 
         btnStart.Bind(wx.EVT_BUTTON, self.OnStart)
@@ -517,8 +516,6 @@ class MainFrame_peaksearch(wx.Frame):
                 print("key = %s is not in dict_param.keys()" % key)
                 listvals.append(None)
 
-        #         print "listvals", listvals
-
         PSPboard = PeakSearchParameters(self, -1, "PeakSearch Parameters",
                                                     (LIST_TXTPARAMS, listvals, LIST_UNITSPARAMS))
         PSPboard.Show(True)
@@ -526,13 +523,8 @@ class MainFrame_peaksearch(wx.Frame):
     def OnbtnBrowse_filepath(self, _):
         folder = wx.DirDialog(self, "Select a folder containing images")
         if folder.ShowModal() == wx.ID_OK:
-
             abspath = folder.GetPath()
-
             self.list_txtctrl[0].SetValue(abspath)
-
-            #             mainpath, lastpath = os.path.split(abspath)
-
             self.list_txtctrl[1].SetValue(os.path.join(abspath, "datfiles"))
 
     def OnbtnBrowse_filepathout(self, _):
@@ -544,13 +536,9 @@ class MainFrame_peaksearch(wx.Frame):
     def OnbtnBrowse_CCDfileimage(self, _):
         folder = wx.FileDialog(self, "Select CCD Image file")
         if folder.ShowModal() == wx.ID_OK:
-
             abspath = folder.GetPath()
-
             filename = os.path.split(abspath)[-1]
-            #             print "filename", filename
             intension, extension = filename.split(".")
-
             try:
                 nbdigits = int(self.list_txtctrl[4].GetValue())
             except ValueError:
@@ -784,7 +772,6 @@ class MainFrame_peaksearch(wx.Frame):
 
         # check the first imagefile to read:
         #         print "dict_param in file series", dict_param
-
         # dict_param['listrois']=[(723,1530,35,35),(723,1530,5,5),(723,1538,7,7),(673,1769,15,41),]
         # dict_param['IntensityThreshold']=1000
         if nb_cpus == 1:
@@ -853,15 +840,6 @@ def start():
                                                                         initialparameters, Stock_PS)
     PeakSearchSeries.Show()
     PeakSearchSeriesApp.MainLoop()
-
-    # LaueToolsGUIApp = wx.App()
-    # LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
-    #                                         projectfolder=LaueToolsProjectFolder)
-    # LaueToolsframe.Show()
-
-    # MySplash(LaueToolsframe, duration=500)
-
-    # LaueToolsGUIApp.MainLoop()
 
 if __name__ == "__main__":
 
