@@ -131,7 +131,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.filename = filename
         self.dirname = projectfolder
         #print("self.dirname", self.dirname)
-        self.writefolder = self.dirname
+        self.writefolder = None
         self.consolefile = consolefile
 
         # --- begin of general layout -------------------
