@@ -4794,8 +4794,11 @@ class MainPeakSearchFrame(wx.Frame):
 
         #         print "self.dirname",self.dirname
 
-        if self.dirname is not None:
+        if self.dirname is not None and self.writefolder is None:
             outputfolder = self.dirname
+            if not os.access(outputfolder,os.W_OK):
+                self.OnFolderPreferences(1)
+                outputfolder = self.writefolder
         else:
             outputfolder = self.writefolder
 
@@ -4815,7 +4818,7 @@ class MainPeakSearchFrame(wx.Frame):
                                 comments=comments_in_file,
                                 initialfilename=os.path.join(self.dirname, self.imagefilename))
         # writing ascii peaksearch parameters
-        pspfile_fullpath = os.path.join(self.dirname, "PeakSearch_%s.psp" % finalfilename)
+        pspfile_fullpath = os.path.join(outputfolder, "PeakSearch_%s.psp" % finalfilename)
 
         if self.dict_param is not None:
 
@@ -4844,7 +4847,7 @@ class MainPeakSearchFrame(wx.Frame):
         
         if self.peaklistPixels is None:
             wx.MessageBox("Peak list is empty !", "INFO")
-        
+
         print("Saving list of rois from peaks")
         
         prefix, _ = self.imagefilename.rsplit(".", 1)
