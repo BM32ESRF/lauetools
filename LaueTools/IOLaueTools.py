@@ -112,9 +112,9 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
         # to write in decreasing order of intensity (col intensity =4)
         print("rearranging exp. spots order according to intensity")
         arraydata = np.array(list_of_data).T
-        sortedintensity = np.argsort(arraydata[:, 4])[::-1]
+        s_ix = np.argsort(arraydata[:, 4])[::-1]
 
-        sortedarray = arraydata[sortedintensity]
+        sortedarray = arraydata[s_ix]
 
         list_of_data = sortedarray.T
 
@@ -715,11 +715,11 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
                 nbpeaks = int(_line.split('peaks')[-1])
             elif _line.startswith('# Remove_BlackListedPeaks_fromfile'):
                 commentfound = True
-                
+
             lineindex += 1
-        
+
     data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
-    if len(data_peak.shape)==1:
+    if len(data_peak.shape) == 1:
         foundNpeaks = 1
     else:
         foundNpeaks = len(data_peak)
