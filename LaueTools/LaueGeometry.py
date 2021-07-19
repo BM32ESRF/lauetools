@@ -1996,7 +1996,7 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
-    :param calibparam: list of 5 CCD cakibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
+    :param calibparam: list of 5 CCD calibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
 
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
 
@@ -2022,12 +2022,17 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
                                                                             detectorparams=calibparam,
                                                                             pixelsize=pixelsize)
     if add_props:
-        rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
-        # need to sort data by intensity (col 2)
-        sortedind = np.argsort(rawdata[:, 2])[:: -1]
-        data = rawdata[sortedind]
+        if len(twicetheta)>1:
+            rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
+            # need to sort data by intensity (col 2)
+            sortedind = np.argsort(rawdata[:, 2])[:: -1]
+            data = rawdata[sortedind]
 
-        add_props = (data[:, 4:], allcolnames[4:])
+            add_props = (data[:, 4:], allcolnames[4:])
+        else:
+            rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
+            # need to sort data by intensity (col 2)
+            add_props = (np.array([rawdata[4:]]), allcolnames[4:])
 
     # TODO: handle windowsOS path syntax
     filename_wo_path = filename.split("/")[-1]
