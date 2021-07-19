@@ -717,15 +717,19 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
                 commentfound = True
                 
             lineindex += 1
-
-        # File created at
+        
     data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
+    if len(data_peak.shape)==1:
+        foundNpeaks = 1
+    else:
+        foundNpeaks = len(data_peak)
+
 
     if output_columnsname:
         return data_peak, columnsname
 
     elif returnnbpeaks:
-        return data_peak, nbdatarows
+        return data_peak, foundNpeaks
     else:
         return data_peak
 
