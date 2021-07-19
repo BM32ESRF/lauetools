@@ -32,7 +32,7 @@ try:
 
     libtiff_ctypes.suppress_warnings()
     LIBTIFF_EXISTS = True
-except ImportError:
+except (ImportError, ValueError):
     print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images")
     LIBTIFF_EXISTS = False
 
