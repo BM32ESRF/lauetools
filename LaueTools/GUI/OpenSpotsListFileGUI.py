@@ -74,6 +74,23 @@ def askUserForFilename(parent, **dialogOptions):
     dialog.Destroy()
     return userProvidedFilename
 
+def askUserForDirname(parent):
+    """
+    provide a dialog to browse the folders and files
+    """
+    dialog = wx.DirDialog(parent, message="Choose a folder for results", defaultPath=parent.dirname)
+    if dialog.ShowModal() == wx.ID_OK:
+        # self.filename = dialog.GetFilename()
+        # #self.dirname = dialog.GetDirectory()
+
+        allpath = dialog.GetPath()
+        print(allpath)
+        writefolder = allpath
+
+    dialog.Destroy()
+    return writefolder
+
+
 def OpenCorfile(filename, parent):
     """
     Read a .cor file with 5 columns 2theta chi pixX pixY I
@@ -89,12 +106,8 @@ def OpenCorfile(filename, parent):
     kf_direction_from_file, CCDLabel = parent.kf_direction_from_file, parent.CCDLabel
 
     print('Opening %s'%filename)
-    (Current_peak_data,
-        data_theta,
-        data_chi,
-        data_pixX,
-        data_pixY,
-        data_I,
+    (Current_peak_data, data_theta, data_chi,
+        data_pixX, data_pixY, data_I,
         calib,
         CCDCalibDict,
     ) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
@@ -238,16 +251,18 @@ def OnOpenPeakList(parent):
                                                 detectorparams=parent.defaultParam,
                                                 pixelsize=parent.pixelsize,
                                                 kf_direction=parent.kf_direction)
+
+        if parent.writefolder is None and not os.access(parent.dirname, os.W_OK):
+            parent.writefolder = askUserForDirname(parent)
+            print('choosing %s as folder for results  => ', parent.writefolder)
+
         # write .cor file
-        IOLT.writefile_cor("dat_" + prefix,
-                            twicetheta,
-                            chi,
-                            data_x,
-                            data_y,
+        IOLT.writefile_cor("dat_" + prefix, twicetheta, chi, data_x, data_y,
                             dataintensity,
                             sortedexit=0,
                             param=parent.defaultParam + [parent.pixelsize],
                             initialfilename=DataPlot_filename,
+                            dirname_output=parent.writefolder
                         )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
 
         print("%s has been created with defaultparameter" % ("dat_" + prefix + ".cor"))

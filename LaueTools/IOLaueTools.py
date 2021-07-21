@@ -85,6 +85,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile = open(os.path.join(dirname_output, outputfilename), "w")
 
+
     firstline = "2theta chi X Y I"
     format_string = "%.06f   %.06f   %.06f   %.06f   %.03f"
     list_of_data = [twicetheta, chi, data_x, data_y, dataintensity]

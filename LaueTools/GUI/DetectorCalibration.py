@@ -1063,6 +1063,8 @@ class MainCalibrationFrame(wx.Frame):
         self.filename = file_peaks # could be .dat or .cor file
         # to interact with LaueToolsGUI
         self.DataPlot_filename = self.filename
+        self.dirname = self.initialParameter["dirname"]
+        self.writefolder = None
 
         self.pixelsize = pixelsize
         self.framedim = dim
@@ -1083,8 +1085,6 @@ class MainCalibrationFrame(wx.Frame):
         self.nbsuccess = 0
         self.nbclick_dist = 1
         self.nbclick_zone = 1
-
-        self.dirname = self.initialParameter["dirname"]
 
         self.recognition_possible = True
         self.toshow = []
@@ -1444,16 +1444,22 @@ class MainCalibrationFrame(wx.Frame):
         extension = self.filename.split(".")[-1]
 
         print('\n\nReadExperimentData()  \n\n')
+        print('self.writefolder', self.writefolder)
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         filepath = os.path.join(self.dirname, self.filename)
         print('filepath', filepath)
         print('self.kf_direction', self.kf_direction)
 
+        if not os.access(self.dirname, os.W_OK):
+            if self.writefolder is None:
+                self.writefolder = OSLFGUI.askUserForDirname(self)
+            print('choosing %s as folder for results  => '%self.writefolder)
+        else:
+            self.writefolder = self.dirname
+
         if extension in ("dat", "DAT"):
 
-            (twicetheta, chi, dataintensity,
-                data_x,
-                data_y,
+            (twicetheta, chi, dataintensity, data_x, data_y,
             ) = F2TC.Compute_data2thetachi(filepath, detectorparams=self.CCDParam,
                                             pixelsize=self.pixelsize,
                                             kf_direction=self.kf_direction)
@@ -1482,7 +1488,7 @@ class MainCalibrationFrame(wx.Frame):
             IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
                                                         initialfilename=self.filename,
                                                         comments=None,
-                                                        dirname=self.dirname)
+                                                        dirname=self.writefolder)
             self.initialParameter['filename.dat'] = os.path.join(self.dirname, outputprefix+'.dat')
             # next time in ReadExperimentData  this branch (.cor) won't be used
             self.filename = self.initialParameter['filename.dat']
@@ -1531,7 +1537,10 @@ class MainCalibrationFrame(wx.Frame):
 
             dd, xcen, ycen, xbet, xgam = self.CCDParam
 
-            outputfile = open(self.filenameCalib, "w")
+            print('chosen   :  self.filenameCalib', self.filenameCalib)
+
+            outputfile = open(os.path.join(self.writefolder,self.filenameCalib), "w")
+
             text = "%.5f, %.4f, %.4f, %.7f, %.7f, %.8f, %.0f, %.0f\n" % (round(dd, 3),
                                                                         round(xcen, 2),
                                                                         round(ycen, 2),
@@ -1568,7 +1577,7 @@ class MainCalibrationFrame(wx.Frame):
         dlg.Destroy()
 
         if self.filenameCalib is not None:
-            fullname = os.path.join(os.getcwd(), self.filenameCalib)
+            fullname = os.path.join(self.writefolder, self.filenameCalib)
             wx.MessageBox("Calibration file written in %s" % fullname, "INFO")
 
             #             # remove .cor file with old CCD geometry parameters
@@ -2107,7 +2116,7 @@ class MainCalibrationFrame(wx.Frame):
             self.deltamatrix = np.eye(3)  # identity
             # self.B0matrix is unchanged
 
-            # OR
+            # start ---  OR   ---------
             UBB0 = np.dot(self.UBmatrix, self.B0matrix)
 
             Umat = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=self.UBmatrix)
@@ -2143,8 +2152,7 @@ class MainCalibrationFrame(wx.Frame):
                 sampletilt=40.0)
             self.HKLxyz_names = list_HKL_names
             self.HKLxyz = HKL_xyz
-
-            # end OR
+            # end -------  OR   ------------
 
             # update exp and theo data
             self.update_data(event)
@@ -2168,19 +2176,19 @@ class MainCalibrationFrame(wx.Frame):
                                                             pixelsize=self.pixelsize,
                                                             kf_direction=self.kf_direction)
 
-        filename = os.path.split(fullpathfilename)[1]
+        folder, filename = os.path.split(fullpathfilename)
         prefix = filename.split(".")[0]
 
-        IOLT.writefile_cor(prefix,
-                        twicetheta,
-                        chi,
-                        data_x,
-                        data_y,
+        if self.writefolder is None and not os.access(folder, os.W_OK):
+            self.writefolder = OSLFGUI.askUserForDirname(self)
+
+        IOLT.writefile_cor(prefix, twicetheta, chi, data_x, data_y,
                         dataintensity,
                         sortedexit=0,
                         param=self.CCDParam + [self.pixelsize],
                         initialfilename=self.filename,
-                        dirname_output=os.getcwd())  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+                        dirname_output=self.writefolder)  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+        
         print("%s has been updated" % (prefix + ".cor"))
         self.initialParameter["filename.cor"] = prefix + ".cor"
 
@@ -2203,7 +2211,16 @@ class MainCalibrationFrame(wx.Frame):
             self.savedindex += 1
             suffix = "_%d" % self.savedindex
 
-        outputfilename = (self.filename.split(".")[0] + suffix + ".fit")
+        outputfilename = self.filename.split(".")[0] + suffix + ".fit"
+        folder, filename = os.path.split(outputfilename)
+
+        print("self.writefolder",self.writefolder)
+        print("folder",folder)
+
+        if self.writefolder is None:
+            self.writefolder = OSLFGUI.askUserForDirname(self)
+            
+        outputfilename = os.path.join(self.writefolder,filename)
 
         indExp = np.array(self.linkedspotsAfterFit[:, 0], dtype=np.int)
         _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int))[1:4]
@@ -2310,9 +2327,7 @@ class MainCalibrationFrame(wx.Frame):
                         modulecaller="DetectorCalibration.py",
                         refinementtype="CCD Geometry")
 
-        fullname = os.path.join(os.getcwd(), outputfilename)
-
-        wx.MessageBox("Fit results saved in %s" % fullname, "INFO")
+        wx.MessageBox("Fit results saved in %s" % outputfilename, "INFO")
 
         if self.parent:
             # update main GUI CCD geometrical parameters
@@ -3973,14 +3988,12 @@ def start():
     """ start of GUI for module launch"""
     initialParameter = {}
     #initialParameter["CCDParam"] = [71, 1039.42, 1095, 0.0085, -0.981]
-    initialParameter["CCDParam"] = [71, 0, 0, 0.0, -0.0]
+    initialParameter["CCDParam"] = [71, 1000, 1000, 0.0, -0.0]
     initialParameter["detectordiameter"] = 165.0
     initialParameter["CCDLabel"] = "MARCCD165"
     initialParameter["filename"] = "Ge0001.dat"
     initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
     initialParameter["dict_Materials"] = DictLT.dict_Materials
-    kf_direction = 'X>0'
-
     kf_direction = 'Z>0'
 
     filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
