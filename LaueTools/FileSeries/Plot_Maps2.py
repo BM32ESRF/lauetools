@@ -97,12 +97,19 @@ class MainFrame_plotmaps(wx.Frame):
 
         self.choice_maptype.Bind(wx.EVT_CHOICE, self.Onchoice_maptype)
 
+        grainindextxt = wx.StaticText(self.panel, -1, "grain index")
+        self.grainindexctrl = wx.SpinCtrl(self.panel, -1, '0',size=(60, -1), min=0, max=5)
+
         self.btnclearwindows = wx.Button(
             self.panel, -1, "Clear Windows", size=(200, -1))
         self.btnclearwindows.Bind(wx.EVT_BUTTON, self.OnClearChildWindows)
 
+        hbox0 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox0.Add(grainindextxt, 0, wx.ALL)
+        hbox0.Add(self.grainindexctrl, 1, wx.EXPAND)
         vbox5 = wx.BoxSizer(wx.VERTICAL)
         vbox5.Add(self.choice_maptype, 0, wx.EXPAND)
+        vbox5.Add(hbox0, 0, wx.EXPAND)
         vbox5.Add(self.btnclearwindows, 0, wx.ALL)
 
         btnplot = SButton(self.panel, -1, "PLOT", size=(-1, 60))
@@ -203,7 +210,7 @@ class MainFrame_plotmaps(wx.Frame):
         print(("self.dict_params", self.dict_params))
 
         maptype = dictpars["maptype"]
-        grain_index = 0
+        grain_index = int(self.grainindexctrl.GetValue())
         MGFS.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
 
 
