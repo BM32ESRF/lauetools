@@ -203,7 +203,7 @@ class PlotRangePanel(wx.Panel):
 
         selectedFile = self.mainframe.DataPlot_filename
 
-        print("Selected file ", selectedFile)
+        print("open data Selected file ", selectedFile)
 
         self.mainframe.initialParameter["dirname"] = self.mainframe.dirname
         self.mainframe.initialParameter["filename"] = selectedFile
@@ -1045,6 +1045,10 @@ class MainCalibrationFrame(wx.Frame):
                 kf_direction="Z>0",
                 fliprot="no",
                 data_added=None):
+        """ init
+
+        lot of parameters in _initialParameter dict
+        :param file_peaks: fullpath to peaks list file"""
 
         wx.Frame.__init__(self, parent, _id, title, size=(1200, 830))
 
@@ -1441,14 +1445,17 @@ class MainCalibrationFrame(wx.Frame):
         self.Data_index_expspot
         self.data_x, self.data_y
         """
-        extension = self.filename.split(".")[-1]
-
         print('\n\nReadExperimentData()  \n\n')
-        print('self.writefolder', self.writefolder)
+
         print("self.CCDParam in ReadExperimentData()", self.CCDParam)
+        print('self.kf_direction', self.kf_direction)
+
+        datfilename = self.filename
+
+        extension = self.filename.split(".")[-1]
+        print('self.writefolder', self.writefolder)
         filepath = os.path.join(self.dirname, self.filename)
         print('filepath', filepath)
-        print('self.kf_direction', self.kf_direction)
 
         if not os.access(self.dirname, os.W_OK):
             if self.writefolder is None:

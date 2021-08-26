@@ -272,17 +272,21 @@ def OnOpenPeakList(parent):
         parent.kf_direction_from_file = parent.kf_direction
 
         file_extension = "cor"
-        DataPlot_filename = "dat_" + prefix + "." + file_extension
+        DataPlot_filename = os.path.join(parent.writefolder, "dat_" + prefix + "." + file_extension)
         # WARNING: this file will be read in the next "if" clause
 
     # for .cor file ------------------------------
     if file_extension == "cor":
         # read peak list and detector calibration parameters
+        folder, filen = os.path.split(DataPlot_filename)
+        if parent.writefolder is None and not os.access(folder, os.W_OK):
+            parent.writefolder = askUserForDirname(parent)
+            print('choosing %s as folder for results  => ', parent.writefolder) 
+
         OpenCorfile(DataPlot_filename, parent)
 
         parent.DataPlot_filename = DataPlot_filename
         parent.filename = parent.DataPlot_filename
-
 
 
 # --- -------------------- general Laue Geometry settings
