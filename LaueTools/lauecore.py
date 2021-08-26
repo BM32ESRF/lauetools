@@ -243,6 +243,8 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     except ValueError:
         return None
 
+def joel():
+    print("hello joel")
 
 def genHKL_np(listn, Extinc):
     r"""
