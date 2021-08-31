@@ -76,10 +76,11 @@ import LaueTools.matchingrate as matchingrate
 from LaueTools.GUI.AutoindexationGUI import DistanceScreeningIndexationBoard
 from LaueTools.GUI.B0matrixLatticeEditor import B0MatrixEditor
 from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-from LaueTools.GUI.OpenSpotsListFileGUI import (askUserForFilename, OnOpenPeakList, Launch_DetectorParamBoard,
+from LaueTools.GUI.OpenSpotsListFileGUI import (askUserForFilename, OpenPeakList, Launch_DetectorParamBoard,
                                                 OpenCorfile, SetGeneralLaueGeometry)
 from LaueTools.GUI.ManualIndexFrame import ManualIndexFrame
 from LaueTools.GUI.MatrixEditor import MatrixEditor_Dialog
+import LaueTools.GUI.OpenSpotsListFileGUI as OSLFGUI
 
 LaueToolsProjectFolder = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
@@ -132,6 +133,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.dirname = projectfolder
         #print("self.dirname", self.dirname)
         self.writefolder = None
+        self.resetwf = False
         self.consolefile = consolefile
 
         # --- begin of general layout -------------------
@@ -397,10 +399,6 @@ class LaueToolsGUImainframe(wx.Frame):
                 prefix, ext1, ext2 = self.DataPlot_filename.rsplit(".", 2)
                 file_extension = ext1 + "." + ext2
 
-            #print("prefix", prefix)
-
-            #print("extension", file_extension)
-
             if file_extension in list_CCD_file_extensions:
 
                 detectedCCDlabel = autoDetectDetectorType(file_extension)
@@ -426,9 +424,9 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = 20
 
-                peakserchframe = MainPeakSearchFrame(self, -1, initialParameter,
+                peaksearchframe = MainPeakSearchFrame(self, -1, initialParameter,
                                                                         "peaksearch Board")
-                peakserchframe.Show(True)
+                peaksearchframe.Show(True)
 
     #                    self.DataPlot_filename = ploimage.peaks_filename
 
@@ -437,7 +435,7 @@ class LaueToolsGUImainframe(wx.Frame):
         for further use (indexation)
         """
         # read peak list and detector calibration parameters
-        OnOpenPeakList(self)
+        OpenPeakList(self)
 
         # ---------------------------------------------
         self.filename = self.DataPlot_filename
@@ -581,7 +579,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         call the board to define destination folder to  write files
         """
-        PB = PreferencesBoard(self, -1, "Folder Preferences Board")
+        PB = PreferencesBoard(self, -1, "Writing Results Folder Preferences Board")
         PB.ShowModal()
         PB.Destroy()
 
@@ -618,7 +616,8 @@ class LaueToolsGUImainframe(wx.Frame):
             return
 
         #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
-
+        self.indexation_parameters["writefolder"] = self.writefolder
+        self.indexation_parameters["dirname"] = self.dirname
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -741,7 +740,8 @@ class LaueToolsGUImainframe(wx.Frame):
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
         #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
-
+        self.indexation_parameters["writefolder"] = self.writefolder
+        self.indexation_parameters["dirname"] = self.dirname
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -834,7 +834,8 @@ class LaueToolsGUImainframe(wx.Frame):
             return
 
         #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
-
+        self.indexation_parameters["writefolder"] = self.writefolder
+        self.indexation_parameters["dirname"] = self.dirname
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -921,7 +922,8 @@ class LaueToolsGUImainframe(wx.Frame):
             return
 
         print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
-
+        self.indexation_parameters["writefolder"] = self.writefolder
+        self.indexation_parameters["dirname"] = self.dirname
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -1016,7 +1018,8 @@ class LaueToolsGUImainframe(wx.Frame):
         #         self.indexation_parameters['AllDataToIndex'] is already set
         #         self.indexation_parameters ={}
         print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
-
+        self.indexation_parameters["writefolder"] = self.writefolder
+        self.indexation_parameters["dirname"] = self.dirname
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -1076,7 +1079,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Method launching Calibration Board
         """
-        starting_param = [100, 1000, 1000, 0, 0]
+        starting_param = [77, 1000, 1000, 0, 0]
 
         print("Starting param", starting_param)
 
@@ -1883,41 +1886,67 @@ class PreferencesBoard(wx.Dialog):
     """
     def __init__(self, parent, _id, title):
 
-        wx.Dialog.__init__(self, parent, _id, title, size=(600, 200))
+        wx.Dialog.__init__(self, parent, _id, title, size=(700, 350))
 
         panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 190), pos=(5, 5))
 
         self.parent = parent
-
+        self.dirname = os.path.abspath(parent.dirname)
         self.writefolder = None
         # widgets ----------
-        self.samefolder = wx.RadioButton(panel, -1, "Images folder", (25, 15))
-        self.userdefinedrelfolder = wx.RadioButton(panel, -1, "path relative to lauetools", (25, 55))
-        self.userdefinedabsfolder = wx.RadioButton(panel, -1, "absolute path", (25, 95))
+        wf = parent.writefolder
+        if parent.writefolder is None:
+            wf = 'None'
+        wx.StaticText(panel,-1, "Current writing folder: %s"%wf, (25, 15))
+        wx.StaticText(panel,-1, "Set results folder to:", (25, 55))
+        self.samefolder = wx.RadioButton(panel, -1, "same folder as images or peaks lists when loading them (Be careful of write access!)", (25, 95))
+        self.askfolder = wx.RadioButton(panel, -1, "user selected folder when loading a new image or peak list", (25, 135))
+        self.userdefinedrelfolder = wx.RadioButton(panel, -1, "path relative to lauetools", (25, 175))
+        self.userdefinedabsfolder = wx.RadioButton(panel, -1, "absolute path", (25, 215))
         self.samefolder.SetValue(True)
 
-        self.relativepathname = wx.TextCtrl(panel, -1, "./analysis", (250, 50), (340, -1))
-        self.abspathname = wx.TextCtrl(panel, -1, "/myhome/myfolder", (250, 90), (340, -1))
+        self.relativepathname = wx.TextCtrl(panel, -1, "./analysis", (250, 170), (340, -1))
+        self.abspathname = wx.TextCtrl(panel, -1, self.dirname, (250, 210), (340, -1))
+        self.browsebtn = wx.Button(panel, -1,'...', (600, 210), (60, -1))
 
-        wx.Button(panel, 1, "Accept", (15, 150), (90, 40))
+        self.browsebtn.Bind(wx.EVT_BUTTON, self.onBrowseFolder)
+
+        wx.Button(panel, 1, "Accept", (15, 250), (90, 40))
         self.Bind(wx.EVT_BUTTON, self.OnAccept, id=1)
 
-        wx.Button(panel, 2, "Quit", (150, 150), (90, 40))
+        wx.Button(panel, 2, "Quit", (150, 250), (90, 40))
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
+
+    def onBrowseFolder(self, _):
+        folder = OSLFGUI.askUserForDirname(self)
+        self.abspathname.SetValue(str(folder))
 
     def OnAccept(self, _):
         """ accept and set parent folders correspondingly and quit """
+        resetwf = False
         if self.samefolder.GetValue():
             self.writefolder = "."
+        elif self.askfolder.GetValue():
+            self.writefolder = None
+            resetwf = True
         elif self.userdefinedrelfolder.GetValue():
             self.writefolder = os.path.join(LAUETOOLSFOLDER,
                                             str(self.relativepathname.GetValue())[2:])
         elif self.userdefinedabsfolder.GetValue():
             self.writefolder = str(self.abspathname.GetValue())
 
-        self.parent.writefolder = self.writefolder
-
-        self.Close()
+        if self.writefolder is not None:
+            abspath = os.path.abspath(self.writefolder)
+            if not os.access(abspath, os.W_OK):
+                wx.MessageBox('Not writable folder: %s'%abspath,'Error')
+            else:
+                self.parent.writefolder = self.writefolder
+                self.resetwf = resetwf
+                self.Close()
+        else:
+            self.parent.writefolder = self.writefolder
+            self.resetwf = resetwf
+            self.Close()
 
     def OnQuit(self, _):
         """ quit """

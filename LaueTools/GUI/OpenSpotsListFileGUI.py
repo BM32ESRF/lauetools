@@ -205,7 +205,7 @@ def Launch_DetectorParamBoard(parent):
     DPBoard.Destroy()
 
 
-def OnOpenPeakList(parent):
+def OpenPeakList(parent):
     """
     Load Peak list data (.dat or .cor)
 
@@ -221,6 +221,9 @@ def OnOpenPeakList(parent):
         - PeakListDatFileName  .dat file
         - DataPlot_filename
     """
+    if parent.resetwf is True:
+        parent.writefolder = parent.dirname
+
     if askUserForFilename(parent, style=wx.OPEN, **defaultFileDialogOptions(parent.dirname)):
         # print "Current directory in OnOpenPeakList()",self.dirname
         os.chdir(parent.dirname)

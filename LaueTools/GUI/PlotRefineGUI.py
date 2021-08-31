@@ -56,6 +56,8 @@ if sys.version_info.major == 3:
     from .. import imageprocessing as ImProc
     from .. import orientations as ORI
     from .. import IOimagefile as IOimage
+    from . import OpenSpotsListFileGUI as OSLFGUI
+
 else:
     import CrystalParameters as CP
     import IOLaueTools as IOLT
@@ -69,6 +71,7 @@ else:
     import imageprocessing as ImProc
     import orientations as ORI
     import IOimagefile as IOimage
+    import OpenSpotsListFileGUI as OSLFGUI
 
 
 # class MessageDataBox(wx.Dialog):
@@ -235,7 +238,7 @@ class Plot_RefineFrame(wx.Frame):
         if IndexationParameters is not None:
             # all data to be indexed in this board
             #             AllData = self.IndexationParameters['AllDataToIndex']
-
+            self.dirname = self.IndexationParameters["dirname"]
             DataToIndex = self.IndexationParameters["DataToIndex"]
             print("\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
                                                                     len(DataToIndex["data_theta"]))
@@ -1117,7 +1120,7 @@ class Plot_RefineFrame(wx.Frame):
             if not collisionFound_exp and not collisionFound_theo:
                 self.tooltip.SetTip(tip)
                 return
-                
+
             tip_exp = ""
             tip_theo = ""
             if self.datatype == "2thetachi":
@@ -1150,7 +1153,7 @@ class Plot_RefineFrame(wx.Frame):
                 if _distancetheo < closedistance:
                     # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
                     # print("with info (hkl, other coordinates, energy)", annote_theo)
-                    
+
                     tip_theo = "[h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
                     if self.datatype == "pixels":
                         tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
@@ -1164,10 +1167,10 @@ class Plot_RefineFrame(wx.Frame):
                     hkl0 = annote_theo[0]
                     #print('hkl0',hkl0)
                     hkls = self.data_theo[2]
-                    theoindex = np.where(np.sum(np.hypot(hkls-hkl0,0),axis=1)<0.01)[0]
+                    theoindex = np.where(np.sum(np.hypot(hkls - hkl0,0), axis=1) < 0.01)[0]
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
-                    hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0],annote_theo[0][1],annote_theo[0][2])
+                    hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
                     print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
                 else:
                     self.sb.SetStatusText("", 0)
@@ -1917,48 +1920,7 @@ class Plot_RefineFrame(wx.Frame):
         self.HKLxyz_names = list_HKL_names
         self.HKLxyz = HKL_xyz
 
-        # Message box Window displaying results
-
-        #
-        #
-        #         txt = 'Mean Pixel Deviation: %.3f\n' % np.mean(residues_non_weighted)
-        #         txt += 'Number of fitted spots: %d\n' % nb_pairs
-        #
-        #         txt += '\nDeviatoric Strain(10-3 units) direct crystal frame\n'
-        #         for k in range(3):
-        #             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_round[k])
-        #
-        #         txt += 'Deviatoric Strain(10-3 units) sample frame (tilt=40deg)\n'
-        #         for k in range(3):
-        #             txt += '%.3f   %.3f   %.3f\n' % tuple(devstrain_sampleframe_round[k])
-        #
-        #         txt += '\n'
-        #         txt += 'Initial Lattice Parameters\n'
-        #         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
-        #         for name, val in zip(paramcellname, latticeparams):
-        #             txt += '%s\t\t%.6f\n' % (name, val)
-        #
-        #         txt += '\n'
-        #         txt += 'Final Lattice Parameters\n'
-        #         paramcellname = ['  a', '  b', '  c', 'alpha', 'beta', 'gamma']
-        #         for name, val in zip(paramcellname, lattice_parameter_direct_strain):
-        #             txt += '%s\t\t%.6f\n' % (name, val)
-        #
-        #         if Tsresults is not None:
-        #             print "Tsresults", Tsresults
-        #
-        #             Ts = Tsresults[2]
-        #
-        #             Tsvalues = [Ts[0, 0], Ts[0, 1], Ts[0, 2], Ts[1, 1], Ts[1, 2], Ts[2, 2]]
-        #             txt += '\n'
-        #             txt += 'Final Transform Parameters\n'
-        #             transformelements = ['  Ts00', '  Ts01', '  Ts02', 'Ts11', 'Ts12', 'Ts22']
-        #             for name, val in zip(transformelements, Tsvalues):
-        #                 txt += '%s\t\t%.6f\n' % (name, val)
-        #
-        #         wx.MessageBox(txt, 'REFINEMENT RESULTS')
-
-        # ---------------------------------------------------
+        
         texts_dict = {}
 
         txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (self.DataPlot_filename,
@@ -2602,55 +2564,27 @@ class Plot_RefineFrame(wx.Frame):
         if self.Tsresults is not None:
             dict_matrices["Ts"] = self.Tsresults
 
-        dlg = wx.TextEntryDialog(self, "Enter fit File name : \n",
-                                                            "Saving Calibration Parameters Entry")
+        if self.IndexationParameters["writefolder"] is None:
+            self.IndexationParameters["writefolder"] = OSLFGUI.askUserForDirname(self)
+
+
+        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n",
+                                                            "Saving refined peaks list")
         dlg.SetValue("%s" % outputfilename)
         filenamefit = None
         if dlg.ShowModal() == wx.ID_OK:
             filenamefit = str(dlg.GetValue())
+            fullpath = os.path.abspath(os.path.join(self.IndexationParameters["writefolder"],filenamefit))
 
         dlg.Destroy()
 
-        IOLT.writefitfile(filenamefit, datatooutput, len(indExp), meanresidues=np.mean(residues),
+        IOLT.writefitfile(fullpath, datatooutput, len(indExp), meanresidues=np.mean(residues),
                             PeakListFilename=self.DataPlot_filename,
                             columnsname=columnsname,
                             dict_matrices=dict_matrices,
                             modulecaller="LaueToolsGUI.py")
 
-        #         header = '# Strain and Orientation Refinement of: %s\n' % (LaueToolsframe.DataPlot_filename)
-        #         header += '# File created at %s with LaueToolsGUI.py\n' % (time.asctime())
-        #         header += '# Number of indexed spots: %d\n' % len(indExp)
-        #         header += '# Mean Deviation(pixel): %.3f\n' % np.mean(residues)
-        #         if fullresults:
-        #             header += '#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n'
-        #         else:
-        #             header += '#spot_index Intensity h k l pixDev\n'
-        #         outputfile = open(outputfilename, 'w')
-        #         outputfile.write(header)
-        #         np.savetxt(outputfile, datatooutput, fmt='%.6f')
-        #         outputfile.write('#UB matrix in q= (UB) B0 G*\n')
-        # #            outputfile.write(str(self.UBB0mat) + '\n')
-        #         outputfile.write(str(self.UBmat) + '\n')
-        #         outputfile.write('#B0 matrix in q= UB (B0) G*\n')
-        #         outputfile.write(str(self.B0matrix) + '\n')
-        #         outputfile.write('#UBB0 matrix in q= (UB B0) G*\n')
-        #         outputfile.write(str(self.UBB0mat) + '\n')
-        #         outputfile.write('#deviatoric strain(10-3 unit)\n')
-        #         outputfile.write(str(self.deviatoricstrain * 1000.) + '\n')
-        #
-        #         if addCCDparams:
-        #             outputfile.write('#CCDLabel\n')
-        #             outputfile.write(self.CCDLabel + '\n')
-        #             outputfile.write('#DetectorParameters\n')
-        #             outputfile.write(str(self.CCDcalib) + '\n')
-        #             outputfile.write('#pixelsize\n')
-        #             outputfile.write(str(self.pixelsize) + '\n')
-        #             outputfile.write('#Frame dimensions\n')
-        #             outputfile.write(str(self.framedim) + '\n')
-        #
-        #         outputfile.close()
-
-        wx.MessageBox("Fit results saved in %s" % filenamefit, "INFO")
+        wx.MessageBox("Fit results saved in %s" % fullpath, "INFO")
 
     def Simulate_Pattern(self):
         """

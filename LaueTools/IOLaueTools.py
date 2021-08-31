@@ -85,6 +85,10 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     outputfile = open(os.path.join(dirname_output, outputfilename), "w")
 
+    if not os.access(dirname_output, os.W_OK):
+        print('Can not write in the folder: %s'%dirname_output)
+        print('File .cor is not written !')
+        return None
 
     firstline = "2theta chi X Y I"
     format_string = "%.06f   %.06f   %.06f   %.06f   %.03f"
@@ -745,7 +749,9 @@ def writefitfile(outputfilename,
                  modulecaller=None,
                  refinementtype="Strain and Orientation"):
     """
-    write a .fit file:
+    write a .fit file
+    
+    :param outputfilename: full path of outputfilename
     """
     # HEADER
     header = "%s Refinement from experimental file: %s\n" % (refinementtype, PeakListFilename)

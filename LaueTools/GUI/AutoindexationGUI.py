@@ -11,7 +11,7 @@ https://gitlab.esrf.fr/micha/lauetools
 
 import sys
 import time
-
+import os
 import wx
 import numpy as np
 
@@ -40,6 +40,7 @@ if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
     from . PlotRefineGUI import Plot_RefineFrame
     from . ResultsIndexationGUI import RecognitionResultCheckBox
+    from . import OpenSpotsListFileGUI as OSLFGUI
 
 else:
     import lauecore as LT
@@ -51,6 +52,7 @@ else:
     import dict_LaueTools as DictLT
     from GUI.PlotRefineGUI import Plot_RefineFrame
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
+    import OpenSpotsListFileGUI as OSLFGUI
 
 
 # --- ----------------   Classical Indexation Board
@@ -58,6 +60,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     """
     Class of GUI for the automatic indexation board of
     a single peak list with a single material or structure
+
+    called also autoindexation
     """
     def __init__(self, parent, _id, indexation_parameters, title,
                                         StorageDict=None, DataSetObject=None):
@@ -105,6 +109,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.IndexationParameters = indexation_parameters
         self.IndexationParameters["Filename"] = indexation_parameters["DataPlot_filename"]
+        self.dirname = indexation_parameters["dirname"]
         self.IndexationParameters["DataPlot_filename"] = indexation_parameters["DataPlot_filename"]
         self.IndexationParameters["current_processedgrain"] = indexation_parameters["current_processedgrain"]
         self.IndexationParameters["mainAppframe"] = indexation_parameters["mainAppframe"]
@@ -233,80 +238,80 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # layout
         h1box = wx.BoxSizer(wx.HORIZONTAL)
-        h1box.Add(mssstxt,0, wx.EXPAND, 10)
-        h1box.Add(self.nbspotmaxformatching,0, wx.EXPAND, 10)
+        h1box.Add(mssstxt, 0, wx.EXPAND, 10)
+        h1box.Add(self.nbspotmaxformatching, 0, wx.EXPAND, 10)
 
         h2box = wx.BoxSizer(wx.HORIZONTAL)
-        h2box.Add(self.setAchck,0, wx.EXPAND|wx.ALL, 10)
-        h2box.Add(cstxt,0, wx.EXPAND|wx.ALL, 10)
-        h2box.Add(self.spotlistA,0, wx.EXPAND|wx.ALL, 10)
-        h2box.Add(self.sethklchck ,0, wx.EXPAND|wx.ALL, 10)
-        h2box.Add(self.sethklcentral,0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.setAchck, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(cstxt, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.spotlistA, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.sethklchck, 0, wx.EXPAND|wx.ALL, 10)
+        h2box.Add(self.sethklcentral, 0, wx.EXPAND|wx.ALL, 10)
 
         h3box = wx.BoxSizer(wx.HORIZONTAL)
-        h3box.Add(self.setBchck,0, wx.EXPAND|wx.ALL, 10)
-        h3box.Add(rsstxt,0, wx.EXPAND|wx.ALL, 10)
-        h3box.Add(self.spotlistB,0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(self.setBchck, 0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(rsstxt, 0, wx.EXPAND|wx.ALL, 10)
+        h3box.Add(self.spotlistB, 0, wx.EXPAND|wx.ALL, 10)
 
         h4box = wx.BoxSizer(wx.HORIZONTAL)
-        h4box.Add(drtatxt,0, wx.EXPAND|wx.ALL, 10)
-        h4box.Add(self.DRTA,0, wx.EXPAND|wx.ALL, 10)
-        h4box.Add(luttxt,0, wx.EXPAND|wx.ALL, 10)
-        h4box.Add(self.nLUT,0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(drtatxt, 0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.DRTA, 0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(luttxt, 0, wx.EXPAND|wx.ALL, 10)
+        h4box.Add(self.nLUT, 0, wx.EXPAND|wx.ALL, 10)
 
         h5box = wx.BoxSizer(wx.HORIZONTAL)
-        h5box.Add(elemtxt,0, wx.EXPAND|wx.ALL, 10)
-        h5box.Add(self.combokeymaterial,0, wx.EXPAND|wx.ALL, 10)
-        h5box.Add(self.refresh,0, wx.EXPAND|wx.ALL, 10)
-        h5box.Add(self.applyrulesLUT,0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(elemtxt, 0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.combokeymaterial, 0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.refresh, 0, wx.EXPAND|wx.ALL, 10)
+        h5box.Add(self.applyrulesLUT, 0, wx.EXPAND|wx.ALL, 10)
 
         h6box = wx.BoxSizer(wx.HORIZONTAL)
-        h6box.Add(mtatxt,0, wx.EXPAND|wx.ALL, 10)
-        h6box.Add(self.MTA,0, wx.EXPAND|wx.ALL, 10)
-        h6box.Add(emaxtxt,0, wx.EXPAND|wx.ALL, 10)
-        h6box.Add(self.emax,0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(mtatxt, 0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(self.MTA, 0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(emaxtxt, 0, wx.EXPAND|wx.ALL, 10)
+        h6box.Add(self.emax, 0, wx.EXPAND|wx.ALL, 10)
 
         h7box = wx.BoxSizer(wx.HORIZONTAL)
-        h7box.Add(resangtxt,0, wx.EXPAND|wx.ALL, 10)
-        h7box.Add(self.ResolutionAngstromctrl,0, wx.EXPAND|wx.ALL, 10)
-        h7box.Add(mnmstxt,0, wx.EXPAND|wx.ALL, 10)
-        h7box.Add(self.MNMS,0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(resangtxt, 0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(self.ResolutionAngstromctrl, 0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(mnmstxt, 0, wx.EXPAND|wx.ALL, 10)
+        h7box.Add(self.MNMS, 0, wx.EXPAND|wx.ALL, 10)
 
         h8box = wx.BoxSizer(wx.HORIZONTAL)
-        h8box.Add(self.filterMatrix,0, wx.EXPAND, 10)
-        h8box.Add(self.verbose,0, wx.EXPAND, 10)
+        h8box.Add(self.filterMatrix, 0, wx.EXPAND, 10)
+        h8box.Add(self.verbose, 0, wx.EXPAND, 10)
 
         h9box = wx.BoxSizer(wx.HORIZONTAL)
-        h9box.Add(spcftxt,0, wx.EXPAND, 10)
-        h9box.Add(self.output_irp,0, wx.EXPAND, 10)
+        h9box.Add(spcftxt, 0, wx.EXPAND, 10)
+        h9box.Add(self.output_irp, 0, wx.EXPAND, 10)
 
         h10box = wx.BoxSizer(wx.HORIZONTAL)
-        h10box.Add(self.StartButton,1, wx.EXPAND, 10)
-        h10box.Add(quitbtn,0, wx.EXPAND, 10)
-        h10box.Add(self.textprocess,0, wx.EXPAND, 10)
-        h10box.Add(self.gauge,0, wx.EXPAND, 10)
+        h10box.Add(self.StartButton, 1, wx.EXPAND, 10)
+        h10box.Add(quitbtn, 0, wx.EXPAND, 10)
+        h10box.Add(self.textprocess, 0, wx.EXPAND, 10)
+        h10box.Add(self.gauge, 0, wx.EXPAND, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(txtcf,0, wx.EXPAND, 10)
-        vbox.Add(h1box,0, wx.EXPAND, 10)
+        vbox.Add(txtcf, 0, wx.EXPAND, 10)
+        vbox.Add(h1box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(title1,0, wx.EXPAND, 10)
-        vbox.Add(h2box,0, wx.EXPAND, 10)
-        vbox.Add(h3box,0, wx.EXPAND, 10)
+        vbox.Add(title1, 0, wx.EXPAND, 10)
+        vbox.Add(h2box, 0, wx.EXPAND, 10)
+        vbox.Add(h3box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(lutrectxt,0, wx.EXPAND, 10)
-        vbox.Add(h4box,0, wx.EXPAND, 10)
-        vbox.Add(h5box,0, wx.EXPAND, 10)
+        vbox.Add(lutrectxt, 0, wx.EXPAND, 10)
+        vbox.Add(h4box, 0, wx.EXPAND, 10)
+        vbox.Add(h5box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(matchtxt,0, wx.EXPAND, 10)
-        vbox.Add(h6box,0, wx.EXPAND, 10)
-        vbox.Add(h7box,0, wx.EXPAND, 10)
+        vbox.Add(matchtxt, 0, wx.EXPAND, 10)
+        vbox.Add(h6box, 0, wx.EXPAND, 10)
+        vbox.Add(h7box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(pptxt,0, wx.EXPAND, 10)
-        vbox.Add(h8box,0, wx.EXPAND, 10)
-        vbox.Add(self.showplotBox,0, wx.EXPAND, 10)
-        vbox.Add(h9box,0, wx.EXPAND, 10)
-        vbox.Add(h10box,0, wx.EXPAND, 10)
+        vbox.Add(pptxt, 0, wx.EXPAND, 10)
+        vbox.Add(h8box, 0, wx.EXPAND, 10)
+        vbox.Add(self.showplotBox, 0, wx.EXPAND, 10)
+        vbox.Add(h9box, 0, wx.EXPAND, 10)
+        vbox.Add(h10box, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
 
@@ -406,26 +411,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         # first element is omitted
         List_options = ISS.LIST_OPTIONS_INDEXREFINE[1:]
-        # save config file .irp
-        #         LIST_OPTIONS_INDEXREFINE =['nb materials',
-        #                             'key material',
-        #                              'nbGrainstoFind',
-        #                              'emin',
-        #                             'emax',
-        #                             'MATCHINGRATE THRESHOLD IAL',
-        #                             'AngleTolLUT',
-        #                             'MATCHINGRATE ANGLE TOL',
-        #                             'NBMAXPROBED',
-        #                             'MinimumNumberMatches',
-        #                             'central spots indices',
-        #                             'ResolutionAngstrom',
-        #                             'nLUTmax',
-        #                             'setCentralSpotsHKL',
-        #                             'UseIntensityWeights',
-        #                             'nbSpotsToIndex',
-        #                             'List Matching Tol Angles',
-        #                             'Spots Order Reference File']
-
+        
         sethklcentral = "None"
         self.spotsorder = "None"
         if self.sethklchck.GetValue():
@@ -682,7 +668,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         LUT_with_rules = self.applyrulesLUT.GetValue()
 
         self.getparams_for_irpfile()
-        self.Save_irp_configfile(outputfile=self.output_irp.GetValue())
+        if self.IndexationParameters["writefolder"] is None:
+            self.IndexationParameters["writefolder"] = OSLFGUI.askUserForDirname(self)
+        fullpathirp = os.path.join(self.IndexationParameters["writefolder"],self.output_irp.GetValue())
+        self.Save_irp_configfile(outputfile=fullpathirp)
 
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
