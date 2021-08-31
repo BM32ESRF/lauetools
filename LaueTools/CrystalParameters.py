@@ -115,6 +115,11 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond = cond1 * cond2
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
+    elif Extinc == "SG166":
+        cond = (-H + K + L) % 3 == 0
+        array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
+        
+
     elif Extinc == "Ti2AlN":
         # wurtzite condition
         condfirst = (H == K) * ((L % 2) != 0)
