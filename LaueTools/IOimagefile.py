@@ -104,7 +104,6 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
             ext = "tiff"
             lenext = 5
         # zero padded index for filename
-
         if nbdigits is not None:
             if imagefilename.endswith(ext):
                 #imagefilename = imagefilename[: - (lenext + nbdigits)] + "{:04d}.{}".format(imageindex, ext)
@@ -113,7 +112,10 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
 
                 prepart = str(imagefilename).rsplit('.',1)[0]
                 prefix, digitpart = str(prepart).rsplit('_', 1)
-                imagefilename = prefix + "_" + str(imageindex).zfill(nbdigits) + "." + ext
+
+                current_nbdigits = len(digitpart)
+                imagefilename = prefix + "_" + str(imageindex).zfill(current_nbdigits) + "." + ext
+                
             elif imagefilename.endswith(ext+".gz"):
                 imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
         # no zero padded index for filename
@@ -338,11 +340,12 @@ def readheader(filename, offset=4096, CCDLabel="MARCCD165"):
         filesize = os.path.getsize(filename)
         framedim = DictLT.dict_CCD[CCDLabel][0]
         offset = filesize - np.prod(framedim) * 2
-    f = open(filename, "rb")
-    myheader = f.read(offset)
-    myheader.replace("\x00", " ")
+    elif CCDLabel.startswith("MARCCD165"):
+        offset = 4096
+    with open(filename, "rb") as f:
+        myheader = f.read(offset)
+        #myheader.replace("\x00", " ")
 
-    f.close()
     return myheader
 
 
