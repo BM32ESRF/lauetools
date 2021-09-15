@@ -2898,8 +2898,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                     mosaic=1,
                                     dict_param=dict_param)
 
-                #            ploplo.dirname = self.dirname
-
                 ploplo.Show()
 
                 outfilename = os.path.join(outputfolder, "%s" % ("MOSAIC_image_Plot"))
@@ -2941,8 +2939,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
             # meanposmax_local = np.mean(datmaximumpos[:, 2:], axis=0)
             meanposmax_global = np.mean(posmax, axis=0)
-
-
 
             # relative_posmax = posmax - meanposmax_global
 
@@ -3036,8 +3032,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                         dict_param=dict_param,
                                         datatype="PositionX")
 
-                #            plapla.dirname = self.dirname
-
                 plot2DX.Show()
 
                 np.savetxt("%s_2D_X_" % counter + "_%s" % myformattime(), dataX_2D)
@@ -3058,8 +3052,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                         mosaic=0,
                                         dict_param=dict_param,
                                         datatype="PositionY")
-
-                #            plapla.dirname = self.dirname
 
                 plot2DY.Show()
 
@@ -3091,8 +3083,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                             dict_param=dict_param,
                                             datatype="RadialPosition")
 
-                #            plapla.dirname = self.dirname
-
                 plot2Dradial.Show()
 
                 np.savetxt("%s_2D_radial_" % counter + "_%s" % myformattime(), radialdistance_2D)
@@ -3117,8 +3107,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                             mosaic=0,
                                             dict_param=dict_param,
                                             datatype="PositionX")
-
-                #            plapla.dirname = self.dirname
 
                 plot2Dpeaksize.Show()
 
@@ -3145,8 +3133,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                 mosaic=0,
                                                 dict_param=dict_param,
                                                 datatype="PositionX")
-
-                #            plapla.dirname = self.dirname
 
                 plot2Dpeaksize.Show()
 
@@ -3183,7 +3169,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 dict_param["dataVector"] = [VectorX, VectorY, pixelCenter]
                 datatypevector = "Vector"
 
-                plot2Dpeaksize = ImshowFrame(parent, -1, "image 2D vector %s" % counter,
+                plotvec = ImshowFrame(parent, -1, "image 2D vector %s" % counter,
                                                 NormVector,
                                                 Imageindices=tabindices,
                                                 nb_row=nb_col,
@@ -3196,17 +3182,11 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                 dict_param=dict_param,
                                                 datatype=datatypevector)
 
-                #            plapla.dirname = self.dirname
+                plotvec.Show()
 
-                plot2Dpeaksize.Show()
-
-                np.savetxt("%s_2D_quiver_" % counter + "_%s" % myformattime(), maxpeaksize2D)
-
-                parent.list_of_windows.append(plot2Dpeaksize)
+                parent.list_of_windows.append(plotvec)
 
     return CountersData
-
-
 
 
 def FitPeakOnMap(mosaic,
