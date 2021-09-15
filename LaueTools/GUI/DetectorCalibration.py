@@ -80,7 +80,7 @@ else:
     import CrystalParameters as CP
     import GUI.DetectorParameters as DP
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import GUI.OpenSpotsListFileGUI as OSLFGUI
+    import OpenSpotsListFileGUI as OSLFGUI
     import orientations as ORI
 
 
@@ -94,8 +94,7 @@ class PlotRangePanel(wx.Panel):
     class for panel dealing with plot range and kf_direction
     """
     def __init__(self, parent):
-        """
-        """
+        """ init """
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.mainframe = parent.GetParent().GetParent()
@@ -199,13 +198,13 @@ class PlotRangePanel(wx.Panel):
     def opendata(self, evt):
         """import list of spots
         """
-        OSLFGUI.OnOpenPeakList(self.mainframe)
+        OSLFGUI.OpenPeakList(self.mainframe)
 
         selectedFile = self.mainframe.DataPlot_filename
 
         print("open data Selected file ", selectedFile)
 
-        self.mainframe.initialParameter["dirname"] = self.mainframe.dirname
+        self.mainframe.initialParameter["dirname"] = self.mainframe.dirnamepklist
         self.mainframe.initialParameter["filename"] = selectedFile
 
         # prefix_filename, extension_filename = self.DataPlot_filename.split('.')
@@ -216,7 +215,7 @@ class PlotRangePanel(wx.Panel):
         if prefix_filename.startswith("dat_"):
             CalibrationFile = prefix_filename[4:] + ".dat"
 
-            if not CalibrationFile in os.listdir(self.mainframe.dirname):
+            if not CalibrationFile in os.listdir(self.mainframe.dirnamepklist):
                 wx.MessageBox('%s corresponding to the .dat file (all peaks properties) of '
                 '%s is missing. \nPlease, change the name of %s (remove "dat_" for instance) '
                     'to work with %s but without peaks properties (shape, size, Imax, etc...)' %(CalibrationFile, selectedFile, selectedFile, selectedFile), 'Info')
@@ -1067,8 +1066,9 @@ class MainCalibrationFrame(wx.Frame):
         self.filename = file_peaks # could be .dat or .cor file
         # to interact with LaueToolsGUI
         self.DataPlot_filename = self.filename
-        self.dirname = self.initialParameter["dirname"]
+        self.dirnamepklist = self.initialParameter["dirname"]
         self.writefolder = None
+        self.resetwf = False
 
         self.pixelsize = pixelsize
         self.framedim = dim
@@ -1431,7 +1431,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def ReadExperimentData(self):
         """
-        - open self.filename (self.dirname)
+        - open self.filename (self.dirnamepklist)
         - take into account:
         self.CCDParam
         self.pixelsize
@@ -1454,15 +1454,15 @@ class MainCalibrationFrame(wx.Frame):
 
         extension = self.filename.split(".")[-1]
         print('self.writefolder', self.writefolder)
-        filepath = os.path.join(self.dirname, self.filename)
+        filepath = os.path.join(self.dirnamepklist, self.filename)
         print('filepath', filepath)
 
-        if not os.access(self.dirname, os.W_OK):
+        if not os.access(self.dirnamepklist, os.W_OK):
             if self.writefolder is None:
                 self.writefolder = OSLFGUI.askUserForDirname(self)
             print('choosing %s as folder for results  => '%self.writefolder)
         else:
-            self.writefolder = self.dirname
+            self.writefolder = self.dirnamepklist
 
         if extension in ("dat", "DAT"):
 
@@ -1496,7 +1496,7 @@ class MainCalibrationFrame(wx.Frame):
                                                         initialfilename=self.filename,
                                                         comments=None,
                                                         dirname=self.writefolder)
-            self.initialParameter['filename.dat'] = os.path.join(self.dirname, outputprefix+'.dat')
+            self.initialParameter['filename.dat'] = os.path.join(self.dirnamepklist, outputprefix+'.dat')
             # next time in ReadExperimentData  this branch (.cor) won't be used
             self.filename = self.initialParameter['filename.dat']
 
