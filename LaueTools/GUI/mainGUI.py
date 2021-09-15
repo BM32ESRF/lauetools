@@ -131,6 +131,10 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.filename = filename
         self.dirname = projectfolder
+        self.filenamepklist = filename
+        self.dirnamepklist = projectfolder
+        self.imgfilename = None
+        self.imgdirname = projectfolder
         #print("self.dirname", self.dirname)
         self.writefolder = None
         self.resetwf = False
@@ -383,20 +387,13 @@ class LaueToolsGUImainframe(wx.Frame):
         ask user to select folder and image file
         and launch the peak search board(class PeakSearchFrame)
         """
-        if askUserForFilename(self, style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
+        if askUserForFilename(self, filetype = 'image', style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
 
-            os.chdir(self.dirname)
-            #print("self.dirname", self.dirname)
-            print(os.curdir)
-
-            self.DataPlot_filename = str(self.filename)
-            #print("Current file   :", self.DataPlot_filename)
-
-            nbparts = len(self.DataPlot_filename.split("."))
+            nbparts = len(self.imgfilename.split("."))
             if nbparts == 2:
-                prefix, file_extension = self.DataPlot_filename.rsplit(".", 1)
+                _, file_extension = self.imgfilename.rsplit(".", 1)
             elif nbparts == 3:
-                prefix, ext1, ext2 = self.DataPlot_filename.rsplit(".", 2)
+                _, ext1, ext2 = self.imgfilename.rsplit(".", 2)
                 file_extension = ext1 + "." + ext2
 
             if file_extension in list_CCD_file_extensions:
@@ -410,8 +407,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
                 initialParameter = {}
                 initialParameter["title"] = "peaksearch Board"
-                initialParameter["imagefilename"] = self.filename
-                initialParameter["dirname"] = self.dirname
+                initialParameter["imagefilename"] = self.imgfilename
+                initialParameter["dirname"] = self.imgdirname
                 initialParameter["mapsLUT"] = "OrRd"
                 initialParameter["CCDLabel"] = self.CCDLabel
                 initialParameter["writefolder"] = self.writefolder
@@ -428,7 +425,6 @@ class LaueToolsGUImainframe(wx.Frame):
                                                                         "peaksearch Board")
                 peaksearchframe.Show(True)
 
-    #                    self.DataPlot_filename = ploimage.peaks_filename
 
     def OnOpenPeakList(self, _):
         """ Open peak list either .dat or .cor file and initinalize peak list
@@ -438,7 +434,7 @@ class LaueToolsGUImainframe(wx.Frame):
         OpenPeakList(self)
 
         # ---------------------------------------------
-        self.filename = self.DataPlot_filename
+        self.filenamepklist = self.DataPlot_filename
 
         self.set_gnomonic_data()
         # ---------------------------------------------
@@ -497,7 +493,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         prefix, file_extension = self.DataPlot_filename.rsplit(".", 1)
 
-        os.chdir(self.dirname)
+        #os.chdir(self.dirname)
 
         fullpathfile = os.path.join(self.dirname, self.DataPlot_filename)
 
@@ -1512,9 +1508,13 @@ class LaueToolsGUImainframe(wx.Frame):
 
         print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
 
-        self.dirname = os.path.split(os.path.abspath(defaultdatafile))[0]
-        print('self.dirname', self.dirname)
-        os.chdir(self.dirname)
+        self.dirnamepklist = os.path.split(os.path.abspath(defaultdatafile))[0]
+        print('self.dirnamepklist', self.dirnamepklist)
+        self.filenamepklist = DEFAULTFILE
+        if os.access(self.filenamepklist, os.W_OK):
+            self.writefolder = self.dirnamepklist
+        else:
+            self.writefolder = OSLFGUI.askUserForDirname(self)
 
         self.DataPlot_filename = DEFAULTFILE
 
@@ -1523,7 +1523,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.set_gnomonic_data()
 
         # ---------------------------------------------
-        self.filename = self.DataPlot_filename
+        self.filenamepklist = self.DataPlot_filename
         self.init_DataSet()
 
         # create DB spots(dictionary)
@@ -1541,7 +1541,8 @@ class LaueToolsGUImainframe(wx.Frame):
         # DataSetObject init
         self.DataSet = spotsset()
         # get spots scattering angles,X,Y positions from .cor file
-        warningflag = self.DataSet.importdatafromfile(self.filename)
+        fullpath = os.path.join(self.dirnamepklist, self.filenamepklist)
+        warningflag = self.DataSet.importdatafromfile(fullpath)
         if warningflag:
             wx.MessageBox(warningflag + 'Please set an other Laue geometry if needed from the menu!', 'Info')
         self.DataSet.pixelsize = self.pixelsize
@@ -1553,7 +1554,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """display spots list prpos in main LaueToolsGUI window
         """
         # -----------------------------------------------
-        textfile = open(os.path.join(self.dirname, self.DataPlot_filename), "r")
+        textfile = open(os.path.join(self.dirnamepklist, self.filenamepklist), "r")
         String_in_File_Data = textfile.read()
         self.control.SetValue(String_in_File_Data)
         textfile.close()
