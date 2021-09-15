@@ -2099,7 +2099,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                     cubicSymmetry=cubicSymmetry,
                                                     applyExtinctionRules=Rules)
 
-                print("using general non cubic LUT")
+                if verbose: print("using general non cubic LUT")
                 # find some potential matrices from recognised distances in LUT
                 (list_orient_matrix, planes, pairspots) = matrices_from_onespot_new(
                                                                     spot_index_central,
