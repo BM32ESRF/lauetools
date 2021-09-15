@@ -127,6 +127,9 @@ class DetectorParameters(wx.Dialog):
         """
         wcd = "Calibration file(*.det)|*.det|All files(*)|*"
         _dir = os.getcwd()
+        if self.parent is not None:
+            if self.parent.dirnamepklist is not None:
+                _dir = self.parent.dirnamepklist
         open_dlg = wx.FileDialog(self,
                                 message="Choose a file",
                                 defaultDir=_dir,
@@ -164,7 +167,7 @@ class DetectorParameters(wx.Dialog):
                 dlg.ShowModal()
 
         open_dlg.Destroy()
-        os.chdir(_dir)
+        #os.chdir(_dir)
 
     def OnSaveCalib(self, _):
         """
