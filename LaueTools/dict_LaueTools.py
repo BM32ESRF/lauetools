@@ -96,11 +96,12 @@ dict_Materials = {
     "YAG": ["YAG", [9.2, 9.2, 9.2, 90, 90, 90], "no"],
     "Cu6Sn5_tetra": ["Cu6Sn5_tetra", [3.608, 3.608, 5.037, 90, 90, 90], "no"],
     "Cu6Sn5_monoclinic": ["Cu6Sn5_monoclinic", [11.02, 7.28, 9.827, 90, 98.84, 90], "no", ],
-    "Sn": ["Sn", [5.83, 5.83, 3.18, 90, 90, 90], "h+k+l=2n"], # we may add hhl: 2h+l=4n
+    "Sn_beta": ["Sn_beta", [5.83, 5.83, 3.18, 90, 90, 90], "SG141"],
+    "Sn_beta_all": ["Sn_all", [5.83, 5.83, 3.18, 90, 90, 90], "no"], 
     "Sb": ["Sb", [4.3, 4.3, 11.3, 90, 90, 120], "no"],
     "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
     "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
-    "feldspath": ["feldspath", [8.59, 12.985,7.213, 90, 116., 90], 'no'], 
+    "feldspath": ["feldspath", [8.59, 12.985, 7.213, 90, 116., 90], 'no'],
     "hexagonal": ["hexagonal", [1.0, 1.0, 3.0, 90, 90, 120.0], "no"],
     "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
     "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
@@ -109,7 +110,8 @@ dict_Materials = {
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
     "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no" ],  # SG 136 (87 deg Celsius)  Rutile
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile"],  # SG 136 (87 deg Celsius)  Rutile
-    "ZnCuOCl": ["ZnCuOCl", [6.839, 6.839 , 14.08, 90.0, 90, 120.0], "SG166"],
+    "ZnCuOCl": ["ZnCuOCl", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "SG166"],
+    "ZnCuOCl_all": ["ZnCuOCl_all", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "no"],
 }
 
 dict_Materials_short = {
@@ -419,7 +421,9 @@ dict_Extinc = {
     "Ti2AlN": "Ti2AlN",
     "Al2O3_rhombo":"Al2O3_rhombo",
     "VO2_mono2":"VO2_mono2",
-    "rutile":"rutile"
+    "rutile": "rutile",
+    "SG227": "SG227",
+    "SG141": "SG141"
 }
 
 dict_Extinc_inv = {
@@ -438,7 +442,9 @@ dict_Extinc_inv = {
     "Ti2AlN": "Ti2AlN",
     "Al2O3_rhombo":"Al2O3_rhombo",
     "VO2_mono2":"VO2_mono2",
-    "rutile":"rutile"
+    "rutile":"rutile",
+    "SG227": "SG227",
+    "SG141": "SG141"
 }
 
 # --- -------------- Transforms 3x3 Matrix
