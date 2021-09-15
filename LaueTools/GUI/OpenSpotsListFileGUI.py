@@ -51,11 +51,12 @@ def defaultFileDialogOptions(dirname):
                 defaultDir=dirname,
                 wildcard=wcd)
 
-def askUserForFilename(parent, **dialogOptions):
+def askUserForFilename(parent, filetype = 'peaklist', **dialogOptions):
     """
     provide a dialog to browse the folders and files
 
-    set self.dirname, self.filename
+    set parent.dirnamepklist, parent.filenamepklist
+    
     returns boolean userProvidedFilename
     """
     dialog = wx.FileDialog(parent, **dialogOptions)
@@ -67,7 +68,10 @@ def askUserForFilename(parent, **dialogOptions):
         allpath = dialog.GetPath()
         print(allpath)
 
-        parent.dirname, parent.filename = os.path.split(allpath)
+        if filetype == 'peaklist':
+            parent.dirnamepklist, parent.filenamepklist = os.path.split(allpath)
+        elif filetype == 'image':
+            parent.imgdirname, parent.imgfilename = os.path.split(allpath)
 
     else:
         userProvidedFilename = False
@@ -78,7 +82,7 @@ def askUserForDirname(parent):
     """
     provide a dialog to browse the folders and files
     """
-    dialog = wx.DirDialog(parent, message="Choose a folder for results", defaultPath=parent.dirname)
+    dialog = wx.DirDialog(parent, message="Choose a folder for results", defaultPath=parent.dirnamepklist)
     if dialog.ShowModal() == wx.ID_OK:
         # self.filename = dialog.GetFilename()
         # #self.dirname = dialog.GetDirectory()
@@ -105,7 +109,7 @@ def OpenCorfile(filename, parent):
     """
     kf_direction_from_file, CCDLabel = parent.kf_direction_from_file, parent.CCDLabel
 
-    print('Opening %s'%filename)
+    print('Opening .cor file %s'%filename)
     (Current_peak_data, data_theta, data_chi,
         data_pixX, data_pixY, data_I,
         calib,
@@ -210,8 +214,8 @@ def OpenPeakList(parent):
     Load Peak list data (.dat or .cor)
 
     set parent attributes:
-        - dirname
-        - filename   .dat file or .cor file (built from .dat file)
+        - dirnamepklist   
+        - filenamepklist   .dat file or .cor file (built from .dat file)
         - defaultParam
         - pixelsize
         - framedim
@@ -222,18 +226,18 @@ def OpenPeakList(parent):
         - DataPlot_filename
     """
     if parent.resetwf is True:
-        parent.writefolder = parent.dirname
+        parent.writefolder = parent.dirnamepklist
 
-    if askUserForFilename(parent, style=wx.OPEN, **defaultFileDialogOptions(parent.dirname)):
-        # print "Current directory in OnOpenPeakList()",self.dirname
-        os.chdir(parent.dirname)
+    if askUserForFilename(parent, style=wx.OPEN, **defaultFileDialogOptions(parent.dirnamepklist)):
 
         # print String_in_File_Data # in stdout/stderr
-        DataPlot_filename = str(parent.filename)
+        DataPlot_filename = str(parent.filenamepklist)
+        fullpathfilename = os.path.join(parent.dirnamepklist, parent.filenamepklist)
         print("Current file   :", DataPlot_filename)
+        print("dirname   :", parent.dirnamepklist)
 
         prefix, file_extension = DataPlot_filename.rsplit(".", 1)
-
+        
     if file_extension in ("dat", "DAT"):
 
         # open .det file to compute 2thea and chi scattering angles and write .cor file
@@ -250,46 +254,52 @@ def OpenPeakList(parent):
         # compute 2theta and chi according to detector calibration geometry
         (twicetheta, chi, dataintensity,
             data_x, data_y) = F2TC.Compute_data2thetachi(
-                                                DataPlot_filename, sorting_intensity="yes",
+                                                fullpathfilename, sorting_intensity="yes",
                                                 detectorparams=parent.defaultParam,
                                                 pixelsize=parent.pixelsize,
                                                 kf_direction=parent.kf_direction)
 
-        if parent.writefolder is None and not os.access(parent.dirname, os.W_OK):
+        if not os.access(parent.dirnamepklist, os.W_OK):
             parent.writefolder = askUserForDirname(parent)
             print('choosing %s as folder for results  => ', parent.writefolder)
+        else:
+            parent.writefolder = parent.dirnamepklist
 
         # write .cor file
-        IOLT.writefile_cor("dat_" + prefix, twicetheta, chi, data_x, data_y,
-                            dataintensity,
-                            sortedexit=0,
+        prefixfilename = "dat_" + prefix
+        IOLT.writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y,
+                            dataintensity, sortedexit=0,
                             param=parent.defaultParam + [parent.pixelsize],
                             initialfilename=DataPlot_filename,
-                            dirname_output=parent.writefolder
-                        )  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+                            dirname_output=parent.writefolder)
 
-        print("%s has been created with defaultparameter" % ("dat_" + prefix + ".cor"))
-        print("%s" % str(parent.defaultParam))
+        print("%s has been created\n in folder %s"%("dat_" + prefix + ".cor", parent.writefolder))
+        print("with defaultparameter\n %s" % str(parent.defaultParam))
 
         parent.PeakListDatFileName = copy.copy(DataPlot_filename)
         parent.kf_direction_from_file = parent.kf_direction
 
         file_extension = "cor"
-        DataPlot_filename = os.path.join(parent.writefolder, "dat_" + prefix + "." + file_extension)
-        # WARNING: this file will be read in the next "if" clause
+
+        fullpathfilename = os.path.join(parent.writefolder, "dat_" + prefix + "." + file_extension)
+        parent.filenamepklist = fullpathfilename
+        # WARNING: this file will be read just below in the next "if" clause !
 
     # for .cor file ------------------------------
     if file_extension == "cor":
         # read peak list and detector calibration parameters
-        folder, filen = os.path.split(DataPlot_filename)
-        if parent.writefolder is None and not os.access(folder, os.W_OK):
+        folder, filen = os.path.split(fullpathfilename)
+        if not os.access(folder, os.W_OK):
             parent.writefolder = askUserForDirname(parent)
-            print('choosing %s as folder for results  => ', parent.writefolder) 
+            print('choosing %s as folder for results  => ', parent.writefolder)
+        else:
+            parent.writefolder = parent.dirnamepklist
 
-        OpenCorfile(DataPlot_filename, parent)
+        OpenCorfile(fullpathfilename, parent)
 
-        parent.DataPlot_filename = DataPlot_filename
-        parent.filename = parent.DataPlot_filename
+        parent.DataPlot_filename = filen
+        parent.filenamepklist = parent.DataPlot_filename
+        parent.dirnamepklist = folder
 
 
 # --- -------------------- general Laue Geometry settings
