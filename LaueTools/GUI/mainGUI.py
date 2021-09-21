@@ -1506,12 +1506,13 @@ class LaueToolsGUImainframe(wx.Frame):
         DEFAULTFILE = "defaultGe0001.cor"
         defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
 
-        print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
+        #print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
 
         self.dirnamepklist = os.path.split(os.path.abspath(defaultdatafile))[0]
         print('self.dirnamepklist', self.dirnamepklist)
         self.filenamepklist = DEFAULTFILE
-        if os.access(self.filenamepklist, os.W_OK):
+        print('self.filenamepklist', self.filenamepklist)
+        if os.access(defaultdatafile, os.W_OK):
             self.writefolder = self.dirnamepklist
         else:
             self.writefolder = OSLFGUI.askUserForDirname(self)
