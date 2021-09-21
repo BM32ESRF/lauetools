@@ -517,7 +517,7 @@ class Plot_RefineFrame(wx.Frame):
         self.fitTrecip.SetValue(True)
 
         self.fitycen = wx.CheckBox(self.panel, -1, "Fit depth")
-        self.fitycen.SetValue(True)
+        self.fitycen.SetValue(False)
 
         self.sampledepthtxt = wx.StaticText(self.panel, -1, "Sample depth")
         # self.matr_ctrl = wx.TextCtrl(self.parampanel, -1,'0.5',(350, 40))
@@ -672,6 +672,8 @@ class Plot_RefineFrame(wx.Frame):
         self.Ts11chck.SetToolTipString(fittip)
         self.Ts12chck.SetToolTipString(fittip)
         self.Ts22chck.SetToolTipString(fittip)
+
+        self.fitycen.SetToolTipString('Refine also ycen (detector geometry parameter) to take into accound sample depth wrt depth of Ge reference sample during calibration. NOT IMPLEMENTED YET !')
 
         self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
 
@@ -1639,8 +1641,9 @@ class Plot_RefineFrame(wx.Frame):
         if self.fitTrecip.GetValue():
             # --------------------------------------------------------
             # fitting procedure refining right distortion of UB
-            # q = Rot x,y,z_refined) UBinit Trecip_refined B0 G*
-            # Trecip refined is ((1,refined,refined),(0,refined,refined),(0,0,refined))
+            # q = (Rot x,y,z_refined) UBinit (Trecip_refined) B0 G*
+            # (Trecip refined) is operator triangular up: ((1,refined_#,refined_#),(0,refined_22,refined_#),(0,0,refined_33))
+            # (Rot x,y,z_refined)  =  3 elementary rotations small angles 
             # -------------------------------------------------------
 
             # starting B0matrix corresponding to the unit cell   -----
@@ -1648,6 +1651,7 @@ class Plot_RefineFrame(wx.Frame):
             self.B0matrix = CP.calc_B_RR(latticeparams)
             # -------------------------------------------------------
 
+            # initial distorsion is  1 1 0 0 0  = refined_22,refined_33, 0,0,0
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
 
             # change ycen if grain is below the surface:
@@ -1664,12 +1668,14 @@ class Plot_RefineFrame(wx.Frame):
             initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0])
             arr_indexvaryingparameters = np.arange(5, 13)
 
+            if self.fitycen.GetValue():
+                initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, allparameters[2]])
+                arr_indexvaryingparameters = np.append(np.arange(5, 13), 2)
+
             print("\nInitial error--------------------------------------\n")
 
-            print("initial_values, Data_Q, allparameters, arr_indexvaryingparameters,etc")
-            print(initial_values, Data_Q, allparameters, arr_indexvaryingparameters,
-                    sim_indices, pixX, pixY, starting_orientmatrix, self.B0matrix,
-                    0, 1, self.pixelsize, self.framedim, weights, self.kf_direction)
+            print("initial_values, allparameters, arr_indexvaryingparameters")
+            print(initial_values, allparameters, arr_indexvaryingparameters)
 
             residues, deltamat, _ = FitO.error_function_on_demand_strain(
                                                                     initial_values,
@@ -1688,7 +1694,7 @@ class Plot_RefineFrame(wx.Frame):
                                                                     weights=weights,
                                                                     kf_direction=self.kf_direction)
 
-            print("Initial residues", residues)
+            print("mean Initial residues", np.mean(residues))
             print("---------------------------------------------------\n")
 
             results = FitO.fit_on_demand_strain(initial_values,
@@ -1703,9 +1709,11 @@ class Plot_RefineFrame(wx.Frame):
                                                     Bmat=self.B0matrix,
                                                     pixelsize=self.pixelsize,
                                                     dim=self.framedim,
-                                                    verbose=0,
+                                                    verbose=1,
                                                     weights=weights,
                                                     kf_direction=self.kf_direction)
+
+            
 
             print("\n********************\n       Results of Fit        \n********************")
             print("results", results)
@@ -1763,6 +1771,11 @@ class Plot_RefineFrame(wx.Frame):
                                             [0, 0, param_strain_sol[1]]])
             print("varyingstrain results")
             print(self.varyingstrain)
+
+            if self.fitycen.GetValue():
+                print("fitted ycen", param_strain_sol[8])
+                print('calib ref. ycen: ', allparameters[2])
+                print('delta ycen: ', param_strain_sol[8] - allparameters[2])
 
             self.newUmat = np.dot(deltamat, starting_orientmatrix)
 
