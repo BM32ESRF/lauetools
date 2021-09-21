@@ -490,9 +490,11 @@ def error_function_on_demand_strain(param_strain,
 
     """
 
+    print('param_strain in error_function_on_demand_strain', param_strain)
+
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
 
-    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last fro roatation
+    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last for rotation
     index_of_rot_in_arr_indexvaryingparameters = [10, 11, 12]
 
     if index_of_rot_in_arr_indexvaryingparameters[0] in arr_indexvaryingparameters:
@@ -546,7 +548,12 @@ def error_function_on_demand_strain(param_strain,
 
     patchallparam = allparameters.tolist()
 
+    #    5  detector parameters  +   3  angles   +  5 strain components
     ally = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
+
+    if 2 in arr_indexvaryingparameters:
+        ally[2]=param_strain[-1]
+
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
     X, Y, _, _ = xy_from_Quat(allparameters[:5],
@@ -568,8 +575,6 @@ def error_function_on_demand_strain(param_strain,
     if weights is not None:
         allweights = np.sum(weights)
         distanceterm = distanceterm * weights / allweights
-        # print "**mean weighted distanceterm   ",mean(distanceterm),"    ********"
-    # print "**mean distanceterm   ",mean(distanceterm),"    ********"
 
     if verbose:
         if weights is not None:
@@ -784,6 +789,7 @@ def fit_on_demand_strain(starting_param,
                                 dim=(2048, 2048),
                                 weights=None,
                                 kf_direction="Z>0",
+                                fitycen=False,
                                 **kwd):
     """
     To use it:
@@ -799,6 +805,8 @@ def fit_on_demand_strain(starting_param,
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
 
     param_strain_0 = starting_param
+
+    print('\n\nstarting_param',starting_param)
     if verbose:
         print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
@@ -813,7 +821,7 @@ def fit_on_demand_strain(starting_param,
                                         initrot=initrot,
                                         Bmat=Bmat,
                                         pureRotation=pureRotation,
-                                        verbose=1,
+                                        verbose=0,
                                         pixelsize=pixelsize,
                                         dim=dim,
                                         weights=weights,
@@ -835,10 +843,6 @@ def fit_on_demand_strain(starting_param,
                                                     weights,
                                                     kf_direction)
 
-    #     print "_error_function_on_demand_strain.func_defaults", _error_function_on_demand_strain.func_defaults
-
-    #     pixX = np.array(pixX, dtype=np.float64)
-    #     pixY = np.array(pixY, dtype=np.float64)
     # LEASTSQUARE
     res = leastsq(_error_function_on_demand_strain,
                     param_strain_0,
@@ -847,11 +851,39 @@ def fit_on_demand_strain(starting_param,
                     full_output=1,
                     xtol=1.0e-11,
                     epsfcn=0.0,
-                    **kwd)  # args=(rre,ertetr,) last , is important!
+                    **kwd)
+
+
+    #---------------------  other least square  ------------------                
+    # For ycen fitting together strain component, changing ycen scale is useful
+    # x_scale = [1,1,1,1,.1,1,1,1]  1 except for xgam .1
+    xscale = np.ones(len(arr_indexvaryingparameters))
+    try:
+        xscale[-1] = 100
+    except ValueError:
+        pass
+    
+    if 0:
+        #------------------------
+        # from scipy.optimize import leastsq, least_squares
+
+        calib_sol2 = least_squares(_error_function_on_demand_strain,
+                                    param_strain_0,
+                                    args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
+                                tr_solver = 'exact',
+                                x_scale=xscale, max_nfev=None)
+
+        print("\nLEAST_SQUARES")
+        #print("calib_sol2", calib_sol2['x'])
+        print(calib_sol2['x'])
+        print('mean residues', np.mean(calib_sol2['fun']))
+        
+        #return calib_sol2['x']
+        #---------------------  other least square  ------------------                
+
 
     strain_sol = res[0]
 
-    #     print "res", res
     print("code results", res[-1])
     print("nb iterations", res[2]["nfev"])
     print("mesg", res[-2])
