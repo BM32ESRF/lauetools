@@ -39,7 +39,7 @@ LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
 LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
 print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
-from . import multigrainFS as MGFS
+from LaueTools.FileSeries import multigrainFS as MGFS
 
 # #import FileSeries.multigrainFS as MGFS
 
@@ -75,8 +75,8 @@ TIP_BS = ["Folder containing indexed Peaks List .fit files",
     "starting file index (integer)",
     "final file index (integer)",
     "incremental step file index (integer)",
-    "full path to stiffness file .stf for single material",
-    "Material",
+    "full path to stiffness file .stf (for single material stress evaluation)",
+    "Material (for single material stress evaluation)",
     "file xyz : full path to file xy with 3 columns (imagefile_index x y)",
     'nb of images along x direction (nb of columns, nb of images per line).\nNumber of images (points) per line along the "fast axis"',
     'nb of images along y direction (nb of lines along x)\n.Number of images (points) per row along the "slow axis"',
@@ -90,15 +90,12 @@ for key, tip in zip(LIST_TXTPARAM_BS, TIP_BS):
 
 
 DICT_TOOLTIP["Material"] = "Material : Material"
-DICT_TOOLTIP[
-    "file xyz"
-] = "file xyz : full path to file xy with 3 columns (imagefile_index x y)"
-
+DICT_TOOLTIP["file xyz"] = "file xyz : full path to file xy with 3 columns (imagefile_index x y)"
 
 class MainFrame_BuildSummary(wx.Frame):
     def __init__(self, parent, _id, title, _initialparameters):
         wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 700))
-
+        self.parent = parent
         self.initialparameters = _initialparameters
         print('self.initialparameters', self.initialparameters)
         file_xyz = self.initialparameters[10]
@@ -112,7 +109,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
         grid.SetFlexibleDirection(wx.HORIZONTAL)
 
-        txt_fields = LIST_TXTPARAM_BS[:9] + ["Material", "file xyz"]
+        txt_fields = LIST_TXTPARAM_BS[:9] + ["Material", "file xy"]
 
         val_fields = copy.copy(_initialparameters[:9])
         val_fields.append("Si")
@@ -137,7 +134,7 @@ class MainFrame_BuildSummary(wx.Frame):
             grid.Add(self.txtctrl)
 
             self.list_txtctrl.append(self.txtctrl)
-            if kk in (0, 1, 2, 8):
+            if kk in (0, 1, 2, 8, 10):
                 btnbrowse = wx.Button(self.panel, -1, "Browse")
                 grid.Add(btnbrowse)
                 if kk == 0:
@@ -154,48 +151,26 @@ class MainFrame_BuildSummary(wx.Frame):
                 elif kk == 8:
                     btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_stiffnessfile)
                     btnbrowse.SetToolTipString("Select stiffness .stf file")
+                
+                elif kk == 10:
+                    btnbrowse.Bind(wx.EVT_BUTTON, self.OnbtnBrowse_filexy)
+                    btnbrowse.SetToolTipString("Select a filexy.dat (3 columnes ascii file: image index, x, y ")
 
             else:
                 nothing = wx.StaticText(self.panel, -1, "")
                 grid.Add(nothing)
-
-        #         btnChangeparameters = wx.Button(self.panel, -1, "Change parameters")
-        #         grid.Add(btnChangeparameters)
-        #         btnChangeparameters.Bind(wx.EVT_BUTTON, self.OnbtnChangeparameters)
-        #
-        #         none8 = wx.StaticText(self.panel, -1, "")
-        #         grid.Add(none8)
-        #         none9 = wx.StaticText(self.panel, -1, "")
-        #         grid.Add(none9)
-        #         none10 = wx.StaticText(self.panel, -1, "")
-        #         grid.Add(none10)
-
-        txt_fileparameters = wx.StaticText(self.panel, -1, "Step 1 : Build (index,x,y) file")
-        grid.Add(txt_fileparameters)
-        font = wx.Font(12, wx.MODERN, wx.ITALIC, wx.NORMAL)
-        txt_fileparameters.SetFont(font)
-        txt_none = wx.StaticText(self.panel, -1, "")
-        txt_none_2 = wx.StaticText(self.panel, -1, "")
-        grid.Add(txt_none)
-        grid.Add(txt_none_2)
-
+       
         btn_fabrication_to_hand = wx.Button(
-            self.panel, -1, "Build manually", size=(200, -1))
+            self.panel, -1, "Build file xy manually", size=(200, -1))
+
+        grid.Add(wx.StaticText(self.panel, -1, ""))
         grid.Add(btn_fabrication_to_hand)
+        txt_none = wx.StaticText(self.panel, -1, "")
+        grid.Add(txt_none)
+        
         btn_fabrication_to_hand.Bind(wx.EVT_BUTTON, self.OnbuildManually)
-        btn_fabrication_with_image = wx.Button(
-            self.panel, -1, "Build from Images Info", size=(200, -1))
-        btn_fabrication_with_image.Disable()
-        grid.Add(btn_fabrication_with_image)
-        btn_fabrication_with_image.Bind(
-            wx.EVT_BUTTON, self.Onbtn_fabrication_with_image)
-        txt_none_3 = wx.StaticText(self.panel, -1, "")
-        grid.Add(txt_none_3)
 
-        txt_buildsummary = wx.StaticText(self.panel, -1, "Step 2 : Build summary files ")
-        grid.Add(txt_buildsummary)
-
-        txt_buildsummary.SetFont(font)
+        grid.Add(wx.StaticText(self.panel, -1, ""))
         self.builddatfile = wx.CheckBox(self.panel, -1, "Build .dat file")
         self.builddatfile.SetValue(True)
         self.buildhdf5 = wx.CheckBox(self.panel, -1, "Build .hdf5 file")
@@ -209,7 +184,7 @@ class MainFrame_BuildSummary(wx.Frame):
         grid.Add(self.builddatfile)
         grid.Add(self.buildhdf5)
 
-        btnStart = wx.Button(self.panel, -1, "CREATE FILE(s)", size=(-1, 60))
+        btnStart = wx.Button(self.panel, -1, "BUILD SUMMARY FILE(s)", size=(-1, 60))
 
         btnStart.Bind(wx.EVT_BUTTON, self.OnCreateSummary)
 
@@ -265,11 +240,18 @@ class MainFrame_BuildSummary(wx.Frame):
             self.list_txtctrl[2].SetValue(intension[:-nbdigits])
 
     def OnbtnBrowse_stiffnessfile(self, _):
-        folder = wx.FileDialog(self, "Select stiffness file .stf",
+        ff = wx.FileDialog(self, "Select stiffness file .stf",
             wildcard="stiffness file (*.stf)|*.stf|All files(*)|*")
-        if folder.ShowModal() == wx.ID_OK:
+        if ff.ShowModal() == wx.ID_OK:
 
-            self.list_txtctrl[8].SetValue(folder.GetPath())
+            self.list_txtctrl[8].SetValue(ff.GetPath())
+
+    def OnbtnBrowse_filexy(self, _):
+        ff = wx.FileDialog(self, "Select file xy .dat",
+            wildcard="filexy file (*.dat)|*.dat|All files(*)|*")
+        if ff.ShowModal() == wx.ID_OK:
+
+            self.list_txtctrl[10].SetValue(ff.GetPath())
 
     def OnbtnChangeparameters(self, _):
 
@@ -308,9 +290,12 @@ class MainFrame_BuildSummary(wx.Frame):
 
         filexyz = str(self.list_txtctrl[10].GetValue())
 
-        if self.builddatfile.GetValue():
+        
 
-            _, fullpath_summary_filename = MGFS.build_summary(
+
+        if self.builddatfile.GetValue():
+            try:
+                _, fullpath_summary_filename = MGFS.build_summary(
                                     image_indices,
                                     folderfitfiles,
                                     prefix,
@@ -322,15 +307,23 @@ class MainFrame_BuildSummary(wx.Frame):
                                     folderoutput=folderresult,
                                     default_file=DEFAULT_FILE)
 
-            print("fullpath_summary_filename", fullpath_summary_filename)
+                print("fullpath_summary_filename", fullpath_summary_filename)
 
-            fullpath_summary_filename = MGFS.add_columns_to_summary_file_new(
-                                                    fullpath_summary_filename,
-                                                    elem_label=key_material,
-                                                    filestf=stiffnessfile)
+                fullpath_summary_filename = MGFS.add_columns_to_summary_file_new(
+                                                        fullpath_summary_filename,
+                                                        elem_label=key_material,
+                                                        filestf=stiffnessfile)
 
-            wx.MessageBox("Operation Successful! \t \t Summary file created here: %s"
-                % fullpath_summary_filename)
+                wx.MessageBox("Operation Successful! \t \t Summary file created here: %s"
+                    % fullpath_summary_filename)
+
+                if self.parent is not None:
+                    object_to_set = self.parent
+                    object_to_set.initialparameters["Map Summary File"] = fullpath_summary_filename
+                    object_to_set.initialparameters["File xyz"] = filexyz
+
+            except ValueError as err:
+                wx.MessageBox("%s"%str(err))
         if self.buildhdf5.GetValue():
             from Lauehdf5 import Add_allspotsSummary_from_fitfiles
 
@@ -344,7 +337,6 @@ class MainFrame_BuildSummary(wx.Frame):
                                                 number_of_digits_in_image_name=nbdigits_for_zero_padding,
                                                 filesuffix=".fit",
                                                 nb_of_spots_per_image=300)
-
 
 class Manual_XYZfilecreation_Frame(wx.Frame):
     """
