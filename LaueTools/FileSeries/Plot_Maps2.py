@@ -41,7 +41,7 @@ class MainFrame_plotmaps(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 2000))
 
         self.dict_params = dict_params
-
+        self.parent = parent
         self.list_of_windows = []
         self.list_txtctrl_new = []
         print((self.dict_params))
