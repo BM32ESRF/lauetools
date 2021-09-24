@@ -59,14 +59,12 @@ class PanelManager2(aui.AuiNotebook):
         # menu.Append(addexpe)
 
         menu = wx.Menu()
-        
-        
+
         addsimu= menu.Append(wx.ID_ANY, "Simulation","")
         addsimu.SetBitmap(mycons.get_icon_bmp("pencil.png"))
 
         addexpe = menu.Append(wx.ID_ANY, "Experiment","")
         addexpe.SetBitmap(mycons.get_icon_bmp("harddrive.png"))
-        
 
         menu.Bind(wx.EVT_MENU, self.OnNewPageSimulation, addsimu)
         menu.Bind(wx.EVT_MENU, self.OnNewPageExperiment, addexpe)
