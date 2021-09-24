@@ -14,12 +14,12 @@ path_to_daxm = os.path.abspath(os.path.dirname(__file__))
 if path_to_daxm not in sys.path:
     print("Adding DAXM to the PATH...", path_to_daxm)
     print(path_to_daxm)
-    sys.path.insert(0,path_to_daxm)
+    sys.path.insert(0, path_to_daxm)
 
 path_to_lauetools = os.path.dirname(path_to_daxm)
 if path_to_lauetools not in sys.path:
-    print("Adding lauetools to the PATH...",path_to_lauetools)
-    sys.path.insert(0,path_to_lauetools)
+    print("Adding lauetools to the PATH...", path_to_lauetools)
+    sys.path.insert(0, path_to_lauetools)
 
 import wx
 import pprint
@@ -40,7 +40,6 @@ from gui.panels.manager import PanelManager2 as PanelManager
 #import LaueTools.Daxm.gui.icons.icon_manager as mycons
 import gui.icons.icon_manager as mycons
 
-
 class MainWindow(wx.Frame):
     """
     class of the main window of DAXM Analyzer GUI
@@ -51,31 +50,31 @@ class MainWindow(wx.Frame):
         self._mainbox = wx.BoxSizer()
 
         self.SetIcon(mycons.get_icon("logo_IF.png"))
-        
+
         font = self.GetFont()
         font.SetPointSize(9)
         self.SetFont(font)
 
         self.CreatePanelManager()
-        
+
         self.CreateStatusBar()
-                
+
     def Run(self):
-        
+
         self.Show(True)
 
     def SetStatusText(self, msg):
-        
+
         self.statusbar.SetStatusText(msg)  
-    
+
     def CreateStatusBar(self):
-        
+
         self.statusbar = wx.Frame.CreateStatusBar(self, 1) 
-    
+
         pub.subscribe(self.SetStatusText, 'set_status_text')
-    
+
     def CreatePanelManager(self):
-        
+
         self.manager = PanelManager(self)
 
         self._mainbox.Add(self.manager, 1, wx.EXPAND)
@@ -85,34 +84,34 @@ class MainWindow(wx.Frame):
         self._mainbox.Layout()
         self._mainbox.Fit(self)
         self.Fit()
-        
+
     def OnAbout(self, e):
-        
+
         dlg = wx.MessageDialog(self, "... work in progress...", "About 3D Laue Micro-Diffraction GUI", wx.OK)
         dlg.ShowModal() # Show it
         dlg.Destroy() # finally destroy it when finished.
-        
+
     def OnExit(self,e):
         self.Close(True)  # Close the frame.  
-    
+
 
 def showSplashScreen(duration=1500):
-    
+
     bmp = mycons.get_image_bmp("splash_screen_small.png")
-    
+
     SplashScreen(bmp, splash_options,
                  duration, None, -1, wx.DefaultPosition, wx.DefaultSize,
                  wx.BORDER_SIMPLE | wx.STAY_ON_TOP)
-    
+
     wx.Yield()
     wx.Sleep(1)
-         
-if __name__ == '__main__':      
+
+def start():
     app = wx.App(False)
     frame = MainWindow(None, "3D Laue Micro-Diffraction Analyzer")
     showSplashScreen()
     frame.Run()
     app.MainLoop()
-        
-        
-        
+    
+if __name__ == '__main__':
+    start()
