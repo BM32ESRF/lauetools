@@ -480,7 +480,9 @@ class MainFrame_indexrefine(wx.Frame):
 
         self.list_txtctrl = []
 
-        for kk, txt_elem in enumerate(objet_IR.list_txtparamIR):
+        vals = fill_list_valueparamIR(_initialparameters)
+
+        for kk, txt_elem in enumerate(LIST_TXTPARAM_FILE_INDEXREFINE):
             txt = wx.StaticText(self.panel, -1, "     %s" % txt_elem)
             grid.Add(txt)
 
@@ -488,7 +490,7 @@ class MainFrame_indexrefine(wx.Frame):
             # print("objet_IR.list_valueparamIR[kk]", objet_IR.list_valueparamIR[kk])
 
             self.txtctrl = wx.TextCtrl(self.panel, -1, size=(500, 25))
-            self.txtctrl.SetValue(str(objet_IR.list_valueparamIR[kk]))
+            self.txtctrl.SetValue(str(vals[kk]))
             self.list_txtctrl.append(self.txtctrl)
             grid.Add(self.txtctrl, wx.EXPAND)
 
@@ -1060,7 +1062,7 @@ class MainFrame_indexrefine(wx.Frame):
                 Index_Refine_Parameters_dict['mapshape'] = mapshape
 
         if self.parent is not None:
-            object_to_set = self.parent  # IR
+            object_to_set = self.parent
 
             print("object_to_set.initialparameters", object_to_set.initialparameters)
 
