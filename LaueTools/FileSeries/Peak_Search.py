@@ -450,7 +450,7 @@ class MainFrame_peaksearch(wx.Frame):
                     btnbrowse.SetToolTipString("Select .psp file containing Peak Search Parameters to be applied on all images")
 
             elif kk == 3:
-                self.comboCCD = wx.ComboBox(self.panel, -1, "sCMOS", size=(150, -1),
+                self.comboCCD = wx.ComboBox(self.panel, -1, _initialparameters["CCDLabel"], size=(150, -1),
                                                                 choices=self.allMaterialsnames,
                                                                 style=wx.CB_READONLY)
                 self.comboCCD.Bind(wx.EVT_COMBOBOX, self.EnterComboCCD)
@@ -706,7 +706,7 @@ class MainFrame_peaksearch(wx.Frame):
         if self.parent is not None:
             parent = self.parent  # IR
 
-            print("parent.initialparameters", parent.initialparameters)
+            # print("parent.initialparameters", parent.initialparameters)
 
             parent.initialparameters["ImageFolder"] = dirname_in
             parent.initialparameters["Output Folder (Peaklist)"] = dirname_out
@@ -717,15 +717,13 @@ class MainFrame_peaksearch(wx.Frame):
             parent.initialparameters["IndexRefine PeakList Folder"] = os.path.join(os.path.dirname(dirname_out), "fitfiles")
             parent.initialparameters["PeakListCor Folder"] = os.path.join(os.path.dirname(dirname_out), "corfiles")
             parent.initialparameters["PeakList Filename Prefix"] = filenameprefix
-            parent.initialparameters["IndexRefine Parameters File"] = os.path.join(os.path.dirname(dirname_out), "None")
-            parent.initialparameters["Detector Calibration File .det"] = os.path.join(os.path.dirname(dirname_out), "None")
-            parent.initialparameters["Detector Calibration File (.dat)"] = os.path.join(os.path.dirname(dirname_out), "None")
-            parent.initialparameters["PeakList Filename Suffix"] = ".dat"
 
             parent.initialparameters["startingindex"] = imageindexmin
             parent.initialparameters["finalindex"] = imageindexmax
             parent.initialparameters["nbdigits"] = nbdigits_resultfiles
             parent.initialparameters["stepindex"] = stepimage
+
+            # print("AFTER start pressed button: parent.initialparameters", parent.initialparameters)
 
         #        progressMax = 100
         #        dialog = wx.ProgressDialog("A progress box", "Time remaining", progressMax,
@@ -801,38 +799,36 @@ class MainFrame_peaksearch(wx.Frame):
                                                             verbose=0,
                                                             writeResultDicts=0)
 
+
+LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
+print("LaueToolProjectFolder in main", LaueToolsProjectFolder)
+MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
+print("MainFolder in main", MainFolder)
+
+initialparameters = {}
+initialparameters["ImageFolder"] = MainFolder
+initialparameters["Output Folder (Peaklist)"] = os.path.join(MainFolder, "datfiles")
+initialparameters["ImageFilename Prefix"] = "nanox2_400_"
+initialparameters["ImageFilename Suffix"] = ".mccd"
+initialparameters["PeakSearch Parameters File"] = os.path.join(
+    MainFolder, "PeakSearch_nanox2_400_0000_LT_4.psp")
+initialparameters["CCDLabel"] = "MARCCD165"
+initialparameters["BackgroundRemoval"] = "auto"
+initialparameters["BlackListed Peaks File"] = None
+initialparameters["Selected ROIs File"] = None
+
+list_valueparamPS = [initialparameters["ImageFolder"],
+                    initialparameters["Output Folder (Peaklist)"],
+                    initialparameters["ImageFilename Prefix"],
+                    initialparameters["ImageFilename Suffix"],
+                    4, 0, 5, 1,
+                    initialparameters["BackgroundRemoval"],
+                    initialparameters["BlackListed Peaks File"],
+                    initialparameters["Selected ROIs File"],
+                    initialparameters["PeakSearch Parameters File"]]
+
 def start():
     """ launcher """
-    LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
-    print("LaueToolProjectFolder in main", LaueToolsProjectFolder)
-
-    MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "GeGaN")
-
-    print("MainFolder in m ain", MainFolder)
-
-    initialparameters = {}
-    initialparameters["ImageFolder"] = MainFolder
-    initialparameters["Output Folder (Peaklist)"] = os.path.join(MainFolder, "datfiles")
-    initialparameters["ImageFilename Prefix"] = "nanox2_400_"
-    initialparameters["ImageFilename Suffix"] = ".mccd"
-    initialparameters["PeakSearch Parameters File"] = os.path.join(
-        MainFolder, "PeakSearch_nanox2_400_0000_LT_4.psp")
-    initialparameters["CCDLabel"] = "MARCCD165"
-    initialparameters["BackgroundRemoval"] = "auto"
-    initialparameters["BlackListed Peaks File"] = None
-    initialparameters["Selected ROIs File"] = None
-
-    list_valueparamPS = [initialparameters["ImageFolder"],
-                        initialparameters["Output Folder (Peaklist)"],
-                        initialparameters["ImageFilename Prefix"],
-                        initialparameters["ImageFilename Suffix"],
-                        4, 0, 5, 1,
-                        initialparameters["BackgroundRemoval"],
-                        initialparameters["BlackListed Peaks File"],
-                        initialparameters["Selected ROIs File"],
-                        initialparameters["PeakSearch Parameters File"]]
-
-
     Stock_PS = Stock_parameters_PeakSearch(LIST_TXTPARAM_FILE_PS, list_valueparamPS)
 
     PeakSearchSeriesApp = wx.App()
