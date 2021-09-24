@@ -798,7 +798,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
     if Node_tableallspots_alreadyExists:
         allindices = tableallspots.read(field="fileindex")
-        print("fileindex already present", allindices)
+        # print("fileindex already present", allindices)
 
     encodingdigits = "%%0%dd" % int(number_of_digits_in_image_name)
     # loop for reading each .fit file
