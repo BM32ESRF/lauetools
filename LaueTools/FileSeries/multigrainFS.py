@@ -654,7 +654,6 @@ def get_xyzech(filepathim, fileprefix, indimg, filesuffix, filepathout):
 
     return outfilename
 
-
 try:
     import module_graphique as modgraph
 except ImportError:
@@ -693,7 +692,6 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
             lcn = list_col_names[k] + "_" + str(nbcol)
             list_col_names2 += [lcn]
 
-    # print list_col_names2
     header2 = ""
     for i in range(total_nb_cols):
         header2 = header2 + list_col_names2[i] + " "
@@ -711,6 +709,10 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     print("imgxy", imgxy)
     print("dxy", dxy)
 
+    # if nb of elems in file xy is less than nb of images to be compiled for the summary
+    if len(dxy) < len(fileindex_list):
+        raise ValueError("Map from filexy file has %d elements which is smaller than the %d .fit files to compile !"%(len(dxy), len(fileindex_list)))
+
     list_files_in_folder = os.listdir(filepathfit)
     import re
 
@@ -722,6 +724,7 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     # loop for reading each .fit file
     for fileindex in fileindex_list:
         ind0 = np.where(imgxy == fileindex)
+
         print("dxy = ", dxy[ind0[0], :])
         _filename = fileprefix +  str(fileindex).zfill(int(number_of_digits_in_image_name)) + filesuffix
 
@@ -731,10 +734,8 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
             res[0] = fileindex
 
             if iloop == 0:
-                #                 print "res", res
                 allres = res
             else:
-                #                 print "res iloop diff 0",res
                 allres = np.row_stack((allres, res))
             continue
 
@@ -745,11 +746,11 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
         #         res1 = readlt_fit_mg(filefitmg, verbose=1, readmore=True)
 
         res1 = IOLT.readfitfile_multigrains(filefitmg,
-                                            verbose=1,
+                                            verbose=0,
                                             readmore=True,
                                             fileextensionmarker=".cor")
 
-        print("res1", res1)
+        # print("res1  from readfitfile_multigrains in build_summary()", res1)
 
         if res1 != 0:
             (gnumlist, npeaks, indstart, matstarlab, data_fit,
@@ -774,7 +775,8 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
 
             imnumlist = np.ones(ngrains, int) * fileindex
             dxylist = np.multiply(np.ones((ngrains, 2), np.float), dxy[ind0[0], :])
-            # print dxylist
+            print(dxylist)
+
 
             # print shape(strain6)
             # print shape(imnumlist)
@@ -809,7 +811,7 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     try:
         from . import module_graphique as modgraph
 
-        fullpath_summary_filename = os.path.join( folderoutput,
+        fullpath_summary_filename = os.path.join(folderoutput,
                             fileprefix
                             + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
@@ -1504,8 +1506,8 @@ def add_columns_to_summary_file_new(filesum,
 
     data_1 = np.array(data1, dtype=float)
 
-    print("data_1", data_1)
-    print("data_1.shape", data_1.shape)
+    # print("data_1 in add_columns_to_summary_file_new()", data_1)
+    # print("data_1.shape", data_1.shape)
 
     list_col_names2 = list_column_names
 
@@ -1735,8 +1737,8 @@ def add_columns_to_summary_file_new(filesum,
     outfilesum = filesum.rstrip(".dat") + add_str + ".dat"
     print(outfilesum)
     outputfile = open(outfilesum, "w")
-    outputfile.write(header)
-    outputfile.write(header2)
+    # outputfile.write(header)
+    # outputfile.write(header2)
     np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
     outputfile.close()
 
@@ -1952,11 +1954,15 @@ def plot_orientation_triangle_color_code():
 def calc_map_imgnum(filexyz):  # 31May13
     """
     used by plot_maps2
+
+    # TODO: works well if slow axis dim is > 1 ...
     """
 
     # setup location of images in map based on xech yech + map pixel size
     # permet pixels rectangulaires
     # permet cartos incompletes
+    # # BM32 : maps with dxech > 0 and dyech >0 : start at lower left corner on sample
+    # d2scan xy not allowed only dscan x or dscan y
 
     print("\n\n  HELLO \n\n")
 
@@ -1978,7 +1984,7 @@ def calc_map_imgnum(filexyz):  # 31May13
     fast_axis = indfast[0][0]
     print(fast_axis)
     nintfast = dxymax[fast_axis] / dxyfast[fast_axis]
-    # print nintfast
+    print(nintfast)
     nintfast = int(round(nintfast, 0))
     print(nintfast)
     nptsfast = nintfast + 1
@@ -1996,10 +2002,6 @@ def calc_map_imgnum(filexyz):  # 31May13
 
     print("nptstot from file : ", data_1[-1, 0] - data_1[0, 0] + 1)
     print("npstot from nptsslow*nptsfast : ", nptsslow * nptsfast)
-
-    # BM32 : maps with dxech > 0 and dyech >0 : start at lower left corner on sample
-
-    # d2scan xy not allowed only dscan x or dscan y
 
     dxystep = dxyfast + dxyslow
 
@@ -2094,10 +2096,8 @@ def calc_map_imgnum(filexyz):  # 31May13
         # print impos
         map_imgnum[impos[0], impos[1]] = imnum
 
-    # print "map_imgnum"
-    # print map_imgnum
 
-    return (map_imgnum, dxystep, pixsize, impos_start)
+    return map_imgnum, dxystep, pixsize, impos_start
 
 
 # from matplotlib import mpl
@@ -2421,9 +2421,6 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
 
     filexyz = d["File xyz"]
     map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(filexyz)
-
-    #         print "map_imageindex_array",map_imageindex_array
-    
 
     # Normal convention
     map_imageindex_array = np.flipud(map_imageindex_array)
