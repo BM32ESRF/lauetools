@@ -490,7 +490,7 @@ def error_function_on_demand_strain(param_strain,
 
     """
 
-    print('param_strain in error_function_on_demand_strain', param_strain)
+    #print('param_strain in error_function_on_demand_strain', param_strain)
 
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
 
