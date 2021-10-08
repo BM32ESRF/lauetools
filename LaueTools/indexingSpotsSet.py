@@ -1163,7 +1163,7 @@ class spotsset:
         # these matrices can come from previously indexed Laue Pattern
         if previousResults is not None:
             # previousResults = (nbAddMatrices, addMatrices, MRs, NBs)
-            
+
             _, addMatrices, _, _ = previousResults
             if verbose:
                 print("considering previousResults with addMatrix", addMatrices)
