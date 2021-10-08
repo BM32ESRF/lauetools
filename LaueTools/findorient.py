@@ -404,6 +404,9 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     three possible frames: lauetools , XMASlab, XMASsample
 
     WARNING! only valid for cubic unit cell!
+
+    USED in proposematrix and Allproposedmatrix, but used only in scripts (not tested)
+    IndexingAngkesLUT.matrices_from_onespot() but not used anymore (obsolete)
     """
     h1 = hkl1[0]
     k1 = hkl1[1]

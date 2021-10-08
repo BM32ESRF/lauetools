@@ -987,7 +987,8 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
                                                 verbose=verbose,
                                                 LUT_with_rules=LUT_with_rules)
 
-        print("found planes pairs")
+        if hkls is not None:
+            print("nb found planes pairs :" % len(hkls))
 
     if hkls is not None and (spot_index_1 != spot_index_2):
         nbpairs = len(hkls)
@@ -1011,7 +1012,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
                                                     verbose=0, single_coords_2=False,
                                                     excludespotspairs=None):
     r"""
-    loop on possible planes couples (PP) from recognised distances from a single spot (spotindex)
+    loop on possible planes couples (PP) from recognised distances from a single spot (of index spot_index)
 
     :param excludespotspairs:  list of pair of spot indices already taken into account
 
@@ -1053,7 +1054,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             print("** --\nLooking up for the %d planes pairs in LUT from exp. spots "
                         "(%d, %d): " % (nbplanepairs, spot_index, spotindex_2))
 
-        excludespotspairs.append([spotindex_2,spot_index])
+        excludespotspairs.append([spotindex_2, spot_index])
         excludespotspairs.append([spot_index, spotindex_2])
 
         if single_coords_2:
@@ -1096,7 +1097,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             matrix = FindO.OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
                                                         verbose="no", frame="lauetools")
 
-            # print "matrix",matrix
+            #print("matrix",matrix)
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
 
@@ -2038,7 +2039,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                         LUT_with_rules=LUT_with_rules,
                                                         excludespotspairs=excludespotspairs)
 
-        # if hkl for central spots IS NOT known
+        # if hkl for central spots IS NOT known  (si is None...)
         else:
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:
@@ -2128,7 +2129,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         solutions_matchingscores = []
         solutions_matchingrate = []
 
-        if verbose:
+        if verbosedetails:
             print("len(list_orient_matrix)", len(list_orient_matrix))
             # print "key_material",key_material
             # print "\n"
@@ -2138,9 +2139,6 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         # --- loop over orient matrix given from LUT recognition for one central spot
         currentspotindex2 = -1
         for mat_ind in list(range(len(list_orient_matrix))):
-
-            #             print "calculating matching with exp. Data for matrix condidate index=%d" % mat_ind
-            #print('mat_ind %d,\n list_orient_matrix[mat_ind]'%mat_ind, list_orient_matrix[mat_ind])
             # compute matching (indexation) rate
             AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                         twiceTheta_exp,
@@ -2164,6 +2162,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                         % (mat_ind, nbclose, nballres, std_closematch, mean_residue,
                                     max_residue, nbclose ** 2 * 1.0 / nballres / std_closematch),
                         "    ", str(planes[mat_ind]), "  ", pairspots[mat_ind])
+                    print("matrix ==", list_orient_matrix[mat_ind])
 
                 spotindex2 = pairspots[mat_ind][1]
                 if currentspotindex2 != spotindex2:
@@ -2174,7 +2173,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 solutions_matorient_index.append(mat_ind)
                 solutions_spotscouple.append(pairspots[mat_ind])
                 solutions_hklcouple.append(planes[mat_ind])
-                #                 solutions_matchingscores.append([nbclose, nballres, mean_residue])
+                # solutions_matchingscores.append([nbclose, nballres, mean_residue])
                 solutions_matchingscores.append([nbclose, nballres, std_closematch])
                 solutions_matchingrate.append(100.0 * nbclose / nballres)
                 # print list_orient_matrix[mat_ind]
@@ -2187,12 +2186,14 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         # for one central spot if there are at least one potential solution
         if len(BestScores_per_centralspot[k_centspot_index]) > 0:
 
-            #             print "Got one solution for k_centspot_index: %d" % k_centspot_index
-
+            # print "Got one solution for k_centspot_index: %d" % k_centspot_index
             # sort results
+            # rank = np.lexsort(keys=(BestScores_per_centralspot[k_centspot_index][:, 2],
+            #         BestScores_per_centralspot[k_centspot_index][:, 0]
+            #         * 1.0 / BestScores_per_centralspot[k_centspot_index][:, 1]))[::-1]
+
             rank = np.lexsort(keys=(BestScores_per_centralspot[k_centspot_index][:, 2],
-                    BestScores_per_centralspot[k_centspot_index][:, 0]
-                    * 1.0 / BestScores_per_centralspot[k_centspot_index][:, 1]))[::-1]
+                   1./np.array(solutions_matchingrate)))
 
             hall_of_fame = BestScores_per_centralspot[k_centspot_index][rank]
 
@@ -2217,7 +2218,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                 List_Scores.append(bestscores)
 
         else:
-            print("No orientation matrix found with nb of matches larger than %d"
+            print("Sorry! No orientation matrix found with nb of matches larger than %d"
                 % Minimum_Nb_Matches)
             if verbose:
                 print("Try to:")
