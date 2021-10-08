@@ -24,6 +24,7 @@ LAUETOOLSFOLDER = os.path.split(__file__)[0]
 #-------------------------------------------------------------------------
 # label, a,b,c,alpha, beta, gamma  in real space lattice, extinction rules label
 dict_Materials = {
+    "Ag": ["Ag", [4.085, 4.085, 4.085, 90, 90, 90], "fcc"],  # confirmed by IM2NP
     "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
     "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
     "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
@@ -84,6 +85,7 @@ dict_Materials = {
     "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
     "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
     "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
+    "In_distorted": ["In_distorted", [3.251700, 3.251133, 4.818608, 89.982926, 90.007213, 95.379102],"h+k+l=2n"],
     "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
     "In2Bi": ["In2Bi", [5.496, 5.496, 6.585, 90, 90, 120], "no"],  # GS 194
     "In_epsilon": ["In_epsilon", [3.47, 3.47, 4.49, 90, 90, 90], "no"], #"h+k+l=2n"],  # GS 
