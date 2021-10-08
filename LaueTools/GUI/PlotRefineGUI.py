@@ -401,8 +401,6 @@ class Plot_RefineFrame(wx.Frame):
 
         self.toolbar = NavigationToolbar(self.canvas)
 
-        #         self.sb = self.CreateStatusBar()
-
         self.sb = wx.StatusBar(self, -1)
         self.sb.SetFieldsCount(2)
         self.SetStatusBar(self.sb)
@@ -432,17 +430,19 @@ class Plot_RefineFrame(wx.Frame):
         self.switchCoordinatesbtn.Bind(wx.EVT_BUTTON, self.OnSwitchCoords)
         self.datatype_unchanged = True
 
-        self.imagescalebtn = wx.Button(self.panel, -1, "Set Image && Scale")
+        self.imagescalebtn = wx.Button(self.panel, -1, "Load Image")
         self.imagescalebtn.Bind(wx.EVT_BUTTON, self.onSetImageScale)
 
-        self.noisebtn = wx.Button(self.panel, -1, "Noise")
+        self.noisebtn = wx.Button(self.panel, -1, "Add Noise")
         self.noisebtn.Bind(wx.EVT_BUTTON, self.onSetNoise)
 
         self.enterUBbtn = wx.Button(self.panel, -1, "Enter Matrix")
         self.enterUBbtn.Bind(wx.EVT_BUTTON, self.onEnterMatrix)
 
+        self.txt2 = wx.StaticText(self.panel, -1, "Spot Size")
+        self.spotsize_ctrl = wx.TextCtrl(self.panel, -1, '1')
+
         self.txt1 = wx.StaticText(self.panel, -1, "Match. Ang. Tol.")
-        # self.matr_ctrl = wx.TextCtrl(self.parampanel, -1,'0.5',(350, 40))
         self.matr_ctrl = wx.TextCtrl(self.panel, -1, str(self.MATR))
 
         self.eminmaxtxt = wx.StaticText(self.panel, -1, "Energy min. and max.(keV): ")
@@ -745,6 +745,8 @@ class Plot_RefineFrame(wx.Frame):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.txt1, 0, wx.ALL)
         hbox.Add(self.matr_ctrl, 0, wx.ALL)
+        hbox.Add(self.txt2, 0, wx.ALL)
+        hbox.Add(self.spotsize_ctrl, 0, wx.ALL)
 
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         hbox2.Add(self.btnfilterdata, 0, wx.ALL)
@@ -2795,7 +2797,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # image array
         if self.ImageArray is not None and self.datatype == "pixels":
-                
+
             # array to display: raw
             print('self.data_dict["removebckg"]',self.data_dict["removebckg"])
             if not self.data_dict["removebckg"]:
@@ -2803,14 +2805,14 @@ class Plot_RefineFrame(wx.Frame):
             # array to display: raw - bkg
             else:
                 if self.ImageArrayMinusBckg is None:
-                    # compute 
+                    # compute
                     backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
                                                                             boxsizefilter=10)
                     # basic substraction
                     self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
                                                             backgroundimage, self.CCDLabel,
                                                             usemask=True, formulaexpression='A-B')
-                    
+
                 self.ImageArray = self.ImageArrayMinusBckg
 
             self.myplot = self.axes.imshow(self.ImageArray, interpolation="nearest", origin="upper")
@@ -2873,9 +2875,11 @@ class Plot_RefineFrame(wx.Frame):
         # ---------------------------------------------------------------
         if self.datatype == "2thetachi":
 
+            coefsize = float(self.spotsize_ctrl.GetValue())
+
             self.axes.scatter(self.data_2thetachi[0],
                                 self.data_2thetachi[1],
-                                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                                s=coefsize*self.Data_I / np.amax(self.Data_I) * 100.0,
                                 alpha=0.5)
 
         elif self.datatype == "pixels":

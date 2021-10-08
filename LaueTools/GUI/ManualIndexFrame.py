@@ -162,7 +162,6 @@ class ManualIndexFrame(wx.Frame):
         self.UBs_MRs, self.bestmat = None, None
         self.TwicethetaChi_solution = None
 
-
         # depending of datatype self.Data_X, self.Data_Y can be 2theta, chi or gnomonX,gnomonY, or pixelX,pixelY
         # print "data",data
         # Data_X, Data_Y, Data_I, File_NAME = data
@@ -382,7 +381,7 @@ class ManualIndexFrame(wx.Frame):
         self.filterDatabtn = wx.Button(self.panel, -1, "Filter Exp. Data")
         self.filterDatabtn.Bind(wx.EVT_BUTTON, self.BuildDataDict)
 
-        self.imagescalebtn = wx.Button(self.panel, -1, "Set Image Scale")
+        self.imagescalebtn = wx.Button(self.panel, -1, "Load Image")
         self.imagescalebtn.Bind(wx.EVT_BUTTON, self.onSetImageScale)
         self.imagescalebtn.Disable()
         if self.datatype == "pixels":

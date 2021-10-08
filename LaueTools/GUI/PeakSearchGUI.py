@@ -2936,6 +2936,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.bbox = (0, 200, 0, 200)
 
         self.canvas.mpl_connect("motion_notify_event", self.mouse_move)
+        
         if WXPYTHON4:
             self.Bind(wx.EVT_PAINT, self.OnPaint)
         else:

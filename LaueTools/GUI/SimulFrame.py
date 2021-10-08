@@ -147,7 +147,7 @@ class SimulationPlotFrame(wx.Frame):
         self.pixeldist_btn = wx.Button(self.panel, -1, "GetPixelDistance")
         # self.pointButton3 = wx.ToggleButton(self.panel, 3, 'Show indices')
         self.drawindicesBtn = wx.ToggleButton(self.panel, 4, "Draw indices")
-        self.setImageScalebtn = wx.Button(self.panel, -1, "Set Image && Scale")
+        self.setImageScalebtn = wx.Button(self.panel, -1, "Load Image")
         #  self.pointButton5 = wx.Button(self.panel, 5, 'Save Plot')
         self.pointButton6 = wx.Button(self.panel, -1, "Quit")
         self.defaultColor = self.GetBackgroundColour()
