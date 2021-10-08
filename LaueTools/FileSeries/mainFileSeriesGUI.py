@@ -440,8 +440,17 @@ if 0:
     # manager = Manager_callfunctions(matrice_callfunctions, Stock_PS, Stock_IR, Stock_BS, Stock_BSi, Stock_PM, Stock_SG, Stock_PG)
     #     calc = IR.calcul(Stock_IR)
 
-if __name__ == "__main__":
+def start():
     app = wx.App()
+
+
+    print('initialparameters at entrance Mainwindow')
+    frame = MainWindow(None, -1, 'Laue File Series Analysis', initialparameters)
+    frame.Show(True)
+    app.MainLoop()
+
+if __name__ == "__main__":
+    start()
 
 
     print('initialparameters at entrance Mainwindow')

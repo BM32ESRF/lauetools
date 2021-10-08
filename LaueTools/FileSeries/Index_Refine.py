@@ -1165,7 +1165,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 0:
+if 1:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1173,6 +1173,7 @@ if 0:
     initialparameters["PeakListCor Folder"] = os.path.join(MainFolder, "corfiles")
     initialparameters["PeakList Filename Prefix"] = "SiCustrain"
     initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "sicu.irp")
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder, "corfiles","/home/micha/LaueToolsPy3/LaueTools/Examples/CuSi/corfiles/cuonly.irp")
     initialparameters["PeakList Filename Suffix"] = ".cor"
     initialparameters["Detector Calibration File .det"] = None
     initialparameters["nbdigits"] = 0
@@ -1182,8 +1183,9 @@ if 0:
     initialparameters["startingindex"] = 0
     initialparameters["finalindex"] = 5
     initialparameters["stepindex"] = 1
+    initialparameters["GuessedUBMatrix"]='/home/micha/LaueToolsPy3/LaueTools/Examples/CuSi/Cumatrix.mat'
 # for local test    guessUBmatrices on 3 grains
-if 1:
+if 0:
     MainFolder = '/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/T40'
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "datfiles")

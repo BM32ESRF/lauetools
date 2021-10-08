@@ -1695,7 +1695,6 @@ def add_columns_to_summary_file_new(filesum,
                 omegaxyz[i, :] = vecRodrigues_sample * 2.0 * 1000.0  # unites = mrad
                 # misorientation_angle : unites = degres
                 print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
-            #                if k == 5 : return()
 
             if verbose:
                 print(matstarlab)
