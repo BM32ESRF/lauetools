@@ -113,10 +113,8 @@ def test():
     indexpoint1 = 0  # default = 0
     indexpoint2 = 1  # default = 1
     ang = 0.1
-    print(
-        "For spots #%d and #%d in data"
-        % (recog[indexpoint1][-1], recog[indexpoint2][-1])
-    )
+    print("For spots #%d and #%d in data"
+        % (recog[indexpoint1][-1], recog[indexpoint2][-1]))
     print("Angular tolerance: %.2f deg" % ang)
     FO.proposematrix(indexpoint1, indexpoint2, recog, ang)
     print("------------------------\n")
