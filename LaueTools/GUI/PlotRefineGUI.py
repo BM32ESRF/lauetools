@@ -1728,7 +1728,7 @@ class Plot_RefineFrame(wx.Frame):
             self.fitresults = True
 
             print("\nFinal error--------------------------------------\n")
-            residues, deltamat, _ = FitO.error_function_on_demand_strain(
+            residues, deltamat, refinedUB = FitO.error_function_on_demand_strain(
                                                                     results,
                                                                     Data_Q,
                                                                     allparameters,
@@ -1784,6 +1784,7 @@ class Plot_RefineFrame(wx.Frame):
             # building UBmat(= newmatrix)
             self.newUBmat = np.dot(self.newUmat, self.varyingstrain)
             print("newUBmat", self.newUBmat)
+            print("refinedUB",refinedUB)
 
             self.constantlength = "a"
 
