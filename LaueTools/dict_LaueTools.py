@@ -43,6 +43,7 @@ dict_Materials = {
     "Ge_compressedhydro": ["Ge_compressedhydro", [5.64, 5.64, 5.64, 90, 90, 90.0], "dia", ],  # Ge compressed hydrostatically
     "GaAs": ["GaAs", [5.65325, 5.65325, 5.65325, 90, 90, 90], "dia"],  # AsGa
     "GaAs_wurtz": ["GaAs_wurtz", [5.65325, 5.65325, 5.9, 90, 90, 90], "wurtzite"],  # AsGa
+    "ZrUO2_corium": ["ZrUO2_corium", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
     "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
     "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
