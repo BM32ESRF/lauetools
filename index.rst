@@ -1,7 +1,7 @@
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-Last revision (March 2020)
+Last revision (Sept 2021)
 
 LaueTools code and documentation at:
 
@@ -40,6 +40,9 @@ Normally, in a command window (if environment variables are well set) 3 main GUI
 	> lauetools   for the main GUI
 	> peaksearch  for batch Laue pattern peak search processing
 	> indexrefine   for batch Laue pattern indexing and unit cell (strain) refinement
+	> buildsummary    to compile all results from indexrefine analysis
+	> plotmap    to plot 2D map of structural quantities from file built previously
+	> plotmeshgui   to plot 2D map from counters values in (spec) logfile
 
 To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
 
