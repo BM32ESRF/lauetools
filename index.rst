@@ -5,7 +5,8 @@ Last revision (March 2020)
 
 LaueTools code and documentation at:
 
-https://lauetools.readthedocs.io/en/latest/index.html
+https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
+
 
 1- Download LaueTools code
 ***************************
