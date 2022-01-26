@@ -1057,7 +1057,8 @@ class spotsset:
                                                                 previousResults=None,
                                                                 CheckOrientations=None,
                                                                 corfilename=None,
-                                                                dirnameout_fitfile=None):
+                                                                dirnameout_fitfile=None,
+                                                                depth=0.):
         r"""
         General class method to index a set of experimental spots.
 
@@ -1468,7 +1469,8 @@ class spotsset:
                                                                     self.dict_grain_matrix[grain_index],
                                                                     use_weights=self.UseIntensityWeights,
                                                                     nbSpotsToIndex=self.nbSpotsToIndex,
-                                                                    verbose=verbose)
+                                                                    verbose=verbose,
+                                                                    depth=depth)
                 refinedTs = None
                 # --- ----------------------------
 
@@ -2258,7 +2260,8 @@ class spotsset:
 
     def refineUBSpotsFamily(self, grain_index, initial_matrix, use_weights=1,
                                                             nbSpotsToIndex="all",
-                                                            verbose=0):
+                                                            verbose=0,
+                                                            depth=0.):
         r"""
         refine UB matrix of spots family belonging to grain being indexed
 
@@ -2356,7 +2359,8 @@ class spotsset:
                                                                 pixelsize=self.pixelsize,
                                                                 dim=self.dim,
                                                                 weights=weights,
-                                                                kf_direction=self.kf_direction)
+                                                                kf_direction=self.kf_direction,
+                                                                depth=depth)
         #print("Initial residues", residues)
         #print("---------------------------------------------------\n")
 
@@ -2374,7 +2378,8 @@ class spotsset:
                                             dim=self.dim,
                                             verbose=0,
                                             weights=weights,
-                                            kf_direction=self.kf_direction)
+                                            kf_direction=self.kf_direction,
+                                            depth=depth)
 
         #    print "\n********************\n       Results of Fit        \n********************"
         #    print "results", results
@@ -2396,7 +2401,8 @@ class spotsset:
                                                         pixelsize=self.pixelsize,
                                                         dim=self.dim,
                                                         weights=None,
-                                                        kf_direction=self.kf_direction)
+                                                        kf_direction=self.kf_direction,
+                                                        depth=depth)
 
         # building B mat
         param_strain_sol = results
