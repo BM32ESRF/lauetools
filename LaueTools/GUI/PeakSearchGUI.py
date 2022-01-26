@@ -632,7 +632,7 @@ class FilterBackGroundPanel(wx.Panel):
         self.ImageType = self.ImageTypes[self.ImageType_index]
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
-        
+
         sb = wx.StaticBox(self, label="Image Background")
         #sb.SetFont(font3)
 
@@ -668,7 +668,7 @@ class FilterBackGroundPanel(wx.Panel):
         self.formulatxtctrl = wx.TextCtrl(sb2, -1, "A-1.1*B", (150, -1))
 
         btnsaveformularesult = wx.Button(sb2, -1, "Save result")
-        
+
         btnsaveformularesult.Bind(wx.EVT_BUTTON, self.onSaveFormulaResultImage)
 
         sb3 = wx.StaticBox(self, label='Filter Peaks')
@@ -677,58 +677,58 @@ class FilterBackGroundPanel(wx.Panel):
         self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(sb3, -1, "15", size=(80, -1), min=1, max=10000)
         self.BlackListedPeaks = wx.TextCtrl(sb3, -1, "", (220, -1))
         self.openBlackListFile = wx.Button(sb3, -1, "...")
-        
+
         self.RemoveBlackpeaks.SetValue(False)
         self.openBlackListFile.Bind(wx.EVT_BUTTON, self.onGetBlackListfilename)
         # layout
 
         v1box = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        hbox1= wx.BoxSizer(wx.HORIZONTAL)
-        hbox1.Add(self.ComputeBlurredImage,0,wx.EXPAND,10)
-        hbox1.Add(self.ShowblurImagebtn,0,wx.EXPAND|wx.ALL,5)
-        hbox1.Add(self.SaveBlurredImage,0,wx.EXPAND|wx.ALL,5)
+        hbox1 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox1.Add(self.ComputeBlurredImage, 0, wx.EXPAND, 10)
+        hbox1.Add(self.ShowblurImagebtn, 0, wx.EXPAND|wx.ALL, 5)
+        hbox1.Add(self.SaveBlurredImage, 0, wx.EXPAND|wx.ALL, 5)
 
-        v1box.Add(hbox1,0,wx.EXPAND,5)
-        v1box.Add(self.FilterImage,0, wx.EXPAND,5)
+        v1box.Add(hbox1, 0, wx.EXPAND, 5)
+        v1box.Add(self.FilterImage, 0, wx.EXPAND, 5)
 
         v2box = wx.StaticBoxSizer(sb2, wx.VERTICAL)
-        hbox2= wx.BoxSizer(wx.HORIZONTAL)
-        hbox2.Add(self.UseImage ,0,wx.EXPAND,10)
-        hbox2.Add(self.usealsoforfit,0,wx.EXPAND|wx.ALL,5)
+        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox2.Add(self.UseImage, 0, wx.EXPAND, 10)
+        hbox2.Add(self.usealsoforfit, 0, wx.EXPAND|wx.ALL, 5)
 
-        hbox3= wx.BoxSizer(wx.HORIZONTAL)
-        hbox3.Add(self.Bequal ,0,wx.EXPAND,10)
-        hbox3.Add(self.imageBctrl,0,wx.EXPAND|wx.ALL,5)
-        hbox3.Add(self.openImagebtn,0,wx.EXPAND|wx.ALL,5)
+        hbox3 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox3.Add(self.Bequal, 0, wx.EXPAND, 10)
+        hbox3.Add(self.imageBctrl, 0, wx.EXPAND|wx.ALL, 5)
+        hbox3.Add(self.openImagebtn, 0, wx.EXPAND|wx.ALL, 5)
 
-        hbox4= wx.BoxSizer(wx.HORIZONTAL)
-        hbox4.Add(txtform ,0,wx.EXPAND,10)
-        hbox4.Add(self.formulatxtctrl,0,wx.EXPAND|wx.ALL,5)
-        hbox4.Add(btnsaveformularesult,0,wx.EXPAND|wx.ALL,5)
+        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox4.Add(txtform, 0, wx.EXPAND, 10)
+        hbox4.Add(self.formulatxtctrl, 0, wx.EXPAND|wx.ALL, 5)
+        hbox4.Add(btnsaveformularesult, 0, wx.EXPAND|wx.ALL, 5)
 
-        v2box.Add(hbox2,0,wx.EXPAND,5)
-        v2box.Add(hbox3,0, wx.EXPAND,5)
-        v2box.Add(hbox4,0, wx.EXPAND,5)
+        v2box.Add(hbox2, 0, wx.EXPAND, 5)
+        v2box.Add(hbox3, 0, wx.EXPAND, 5)
+        v2box.Add(hbox4, 0, wx.EXPAND, 5)
 
         v3box = wx.StaticBoxSizer(sb3, wx.VERTICAL)
         hbox5= wx.BoxSizer(wx.HORIZONTAL)
-        hbox5.Add(self.RemoveBlackpeaks ,0,wx.EXPAND,10)
-        hbox5.Add(self.BlackListtoltxt,0,wx.EXPAND|wx.ALL,5)
-        hbox5.Add(self.BlackListRejection_pixeldistanceMax,0,wx.EXPAND|wx.ALL,5)
+        hbox5.Add(self.RemoveBlackpeaks, 0,wx.EXPAND, 10)
+        hbox5.Add(self.BlackListtoltxt, 0, wx.EXPAND|wx.ALL, 5)
+        hbox5.Add(self.BlackListRejection_pixeldistanceMax, 0, wx.EXPAND|wx.ALL, 5)
 
         hbox6= wx.BoxSizer(wx.HORIZONTAL)
-        hbox6.Add(self.BlackListedPeaks ,0,wx.EXPAND,10)
-        hbox6.Add(self.openBlackListFile,0,wx.EXPAND|wx.ALL,5)
+        hbox6.Add(self.BlackListedPeaks, 0, wx.EXPAND, 10)
+        hbox6.Add(self.openBlackListFile, 0, wx.EXPAND|wx.ALL, 5)
 
-        v3box.Add(hbox5,0,wx.EXPAND,5)
-        v3box.Add(hbox6,0, wx.EXPAND,5)
+        v3box.Add(hbox5, 0, wx.EXPAND, 5)
+        v3box.Add(hbox6, 0, wx.EXPAND, 5)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(v1box,0, wx.EXPAND,10)
+        vbox.Add(v1box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(v2box,0, wx.EXPAND,10)
+        vbox.Add(v2box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
-        vbox.Add(v3box,0, wx.EXPAND,10)
+        vbox.Add(v3box, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
 
@@ -4614,7 +4614,7 @@ class MainPeakSearchFrame(wx.Frame):
 
     def ShowHisto(self, _):
         histo, _ = self.gethisto()
-        
+
         plothisto = HISTOPLOT.HistogramPlot(self, -1, self.imagefilename, "Intensity: ", histo, logscale=1)
 
         plothisto.Show(True)
@@ -4797,7 +4797,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         if self.dirname is not None and self.writefolder is None:
             outputfolder = self.dirname
-            if not os.access(outputfolder,os.W_OK):
+            if not os.access(outputfolder, os.W_OK):
                 self.OnFolderPreferences(1)
                 outputfolder = self.writefolder
         else:
@@ -4845,12 +4845,12 @@ class MainPeakSearchFrame(wx.Frame):
         """
         save rois list from current peaks list with boxsize of fitting procedure
         """
-        
+
         if self.peaklistPixels is None:
             wx.MessageBox("Peak list is empty !", "INFO")
 
         print("Saving list of rois from peaks")
-        
+
         prefix, _ = self.imagefilename.rsplit(".", 1)
         finalfilename = prefix + "_LT_%d" % self.file_index_increment
 
