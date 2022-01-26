@@ -319,7 +319,6 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
 
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     # print "uflab",uflab
-    EPS = 1e-17
 
     print("transmission mode ", uflab[:, 1])
 
@@ -420,7 +419,6 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
 
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     # print "uflab",uflab
-    EPS = 1e-17
 
     print("transmission mode ", uflab[:, 0])
 
@@ -2022,7 +2020,7 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
                                                                             detectorparams=calibparam,
                                                                             pixelsize=pixelsize)
     if add_props:
-        if len(twicetheta)>1:
+        if len(twicetheta) > 1:
             rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
             # need to sort data by intensity (col 2)
             sortedind = np.argsort(rawdata[:, 2])[:: -1]
