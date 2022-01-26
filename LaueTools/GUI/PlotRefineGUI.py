@@ -521,7 +521,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.sampledepthtxt = wx.StaticText(self.panel, -1, "Sample depth")
         # self.matr_ctrl = wx.TextCtrl(self.parampanel, -1,'0.5',(350, 40))
-        self.sampledepthctrl = wx.TextCtrl(self.panel, -1, '0', size=(30,-1))
+        self.sampledepthctrl = wx.TextCtrl(self.panel, -1, '0', size=(30, -1))  # in microns!
 
         self.fitorient1 = wx.CheckBox(self.panel, -1, "Orient. 1")
         self.fitorient1.SetValue(False)
@@ -676,6 +676,8 @@ class Plot_RefineFrame(wx.Frame):
         self.fitycen.SetToolTipString('Refine also ycen (detector geometry parameter) to take into accound sample depth wrt depth of Ge reference sample during calibration. NOT IMPLEMENTED YET !')
 
         self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
+
+        self.sampledepthctrl.SetToolTipString('depth in micrometre = 10-3 mm)')
 
     def _layout(self):
         """ layout
@@ -1171,7 +1173,7 @@ class Plot_RefineFrame(wx.Frame):
                     hkl0 = annote_theo[0]
                     #print('hkl0',hkl0)
                     hkls = self.data_theo[2]
-                    theoindex = np.where(np.sum(np.hypot(hkls - hkl0,0), axis=1) < 0.01)[0]
+                    theoindex = np.where(np.sum(np.hypot(hkls - hkl0, 0), axis=1) < 0.01)[0]
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
                     hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
@@ -1293,7 +1295,7 @@ class Plot_RefineFrame(wx.Frame):
         # ---------  theoretical data
         # (twicetheta, chi, Miller_ind, posx, posy, energy) = self.Simulate_Pattern()
         (twicetheta, chi, Miller_ind, _, _, energy) = self.Simulate_Pattern()
-        
+
         # selected exp. spots ------------------
         # starting from(may be filtered) experimental data
         if self.datatype == "2thetachi":
@@ -1645,7 +1647,7 @@ class Plot_RefineFrame(wx.Frame):
             # fitting procedure refining right distortion of UB
             # q = (Rot x,y,z_refined) UBinit (Trecip_refined) B0 G*
             # (Trecip refined) is operator triangular up: ((1,refined_#,refined_#),(0,refined_22,refined_#),(0,0,refined_33))
-            # (Rot x,y,z_refined)  =  3 elementary rotations small angles 
+            # (Rot x,y,z_refined)  =  3 elementary rotations small angles
             # -------------------------------------------------------
 
             # starting B0matrix corresponding to the unit cell   -----
@@ -1656,7 +1658,7 @@ class Plot_RefineFrame(wx.Frame):
             # initial distorsion is  1 1 0 0 0  = refined_22,refined_33, 0,0,0
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
 
-            # change ycen if grain is below the surface:
+            # change ycen if grain is below the surface (NOT ALONG beam direction (ybeam)):
             # depth is counted positively below surface in microns
             depth = float(self.sampledepthctrl.GetValue())
             depth_along_beam = depth / np.sin(40 * np.pi / 180.)
@@ -1715,7 +1717,7 @@ class Plot_RefineFrame(wx.Frame):
                                                     weights=weights,
                                                     kf_direction=self.kf_direction)
 
-            
+
 
             print("\n********************\n       Results of Fit        \n********************")
             print("results", results)
@@ -1784,7 +1786,7 @@ class Plot_RefineFrame(wx.Frame):
             # building UBmat(= newmatrix)
             self.newUBmat = np.dot(self.newUmat, self.varyingstrain)
             print("newUBmat", self.newUBmat)
-            print("refinedUB",refinedUB)
+            print("refinedUB", refinedUB)
 
             self.constantlength = "a"
 
@@ -1936,7 +1938,6 @@ class Plot_RefineFrame(wx.Frame):
         self.HKLxyz_names = list_HKL_names
         self.HKLxyz = HKL_xyz
 
-        
         texts_dict = {}
 
         txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (self.DataPlot_filename,
@@ -2542,8 +2543,10 @@ class Plot_RefineFrame(wx.Frame):
             Xexp = AllDataToIndex["data_pixX"][indExp]
             Yexp = AllDataToIndex["data_pixY"][indExp]
 
+
             Columns = [indExp, intens, _h, _k, _l, residues, Energytheo, Xexp, Yexp, twtheexp,
                                         chiexp, Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz]
+
             columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
 
         else:  # old only 5 columns in .fit file
@@ -2590,7 +2593,7 @@ class Plot_RefineFrame(wx.Frame):
         filenamefit = None
         if dlg.ShowModal() == wx.ID_OK:
             filenamefit = str(dlg.GetValue())
-            fullpath = os.path.abspath(os.path.join(self.IndexationParameters["writefolder"],filenamefit))
+            fullpath = os.path.abspath(os.path.join(self.IndexationParameters["writefolder"], filenamefit))
 
         dlg.Destroy()
 
@@ -2800,7 +2803,7 @@ class Plot_RefineFrame(wx.Frame):
         if self.ImageArray is not None and self.datatype == "pixels":
 
             # array to display: raw
-            print('self.data_dict["removebckg"]',self.data_dict["removebckg"])
+            print('self.data_dict["removebckg"]', self.data_dict["removebckg"])
             if not self.data_dict["removebckg"]:
                 self.ImageArray = self.ImageArrayInit
             # array to display: raw - bkg
@@ -2920,7 +2923,7 @@ class Plot_RefineFrame(wx.Frame):
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
         if self.highlighttheospot is not None:
-            iHL= self.highlighttheospot
+            iHL = self.highlighttheospot
             XtheoHL, YtheoHL = self.data_theo_displayed[0][iHL], self.data_theo_displayed[1][iHL]
             self.axes.scatter(XtheoHL, YtheoHL, s=100., alpha=0.5, c='k', marker='X')
 
@@ -3653,7 +3656,6 @@ class IntensityScaleBoard(wx.Dialog):
         self.chck_removebckg = wx.CheckBox(self, -1, "Remove Background", pos=(145, posv + 70))
         self.chck_removebckg.SetValue(False)
 
-        
         wx.StaticText(self, -1, "Image:", pos=(5, posv + 107))
         wx.StaticText(self, -1, "folder:", pos=(70, posv + 107))
         wx.StaticText(self, -1, "filename:", pos=(70, posv + 137))
