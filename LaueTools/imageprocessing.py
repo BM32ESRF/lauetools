@@ -1097,7 +1097,8 @@ def shiftarrays_accum(Data_array, n, dimensions=1, diags=0):
         return shift_zero, allleft, allright
 
 def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, framedim=None,
-                                                                                    verbose=False):
+                                                                                    verbose=False,
+                                                                                    outputIpixmax=False):
     r"""
     return center of mass of each blobs composes by pixels above IntensityThreshold
 
@@ -1125,7 +1126,6 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
                 print('max intensity in dataroi', np.amax(dataroi))
                 print('min intensity in dataroi', np.amin(dataroi))
                 print('IntensityThreshold', IntensityThreshold)
-
 
             # other way equivalent
             # print("framedim in LocalMaxima_from_thresholdarray", framedim)
@@ -1181,15 +1181,25 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
         if nf == 0:
             return None
 
-        meanpos = np.array(ndimage.measurements.maximum_position(Data, ll, np.arange(1, nf + 1)),
-            dtype=float)
+        meanpos = np.array(ndimage.measurements.maximum_position(Data, ll, np.arange(1, nf + 1)))
 
-        if len(np.shape(meanpos)) > 1:
+        if len(np.shape(meanpos)) > 1:  # more than 1 peak
             meanpos = np.fliplr(meanpos)
-        else:
+        else:  # found a single peak
             meanpos = np.roll(meanpos, 1)
 
-    return meanpos
+    if outputIpixmax:
+        if len(np.shape(meanpos)) > 1:
+            print('meanpos' ,meanpos)
+            JJ, II = meanpos.T
+            Ipixmax = Data[II, JJ]
+            print('Ipixmax', Ipixmax)
+        else:
+            meanpos, Data[meanpos[1], meanpos[0]]
+        return meanpos, Ipixmax
+
+    else:
+        return meanpos
 
 
 def localmaxima(DataArray, n, diags=1, verbose=0):
