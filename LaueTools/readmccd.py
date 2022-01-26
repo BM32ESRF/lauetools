@@ -127,7 +127,8 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
     .. todo:: setting list of initial guesses can be improve with
         scipy.ndimages of a concatenate array of multiple slices?
     """
-    if verbose > 0: print("addImax", addImax)
+    if 1:#verbose > 0:
+        print("addImax", addImax)
     
     # read data (several arrays)
     ResData = IOimage.readoneimage_manycrops(filename,
@@ -852,7 +853,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                                                 NumberMaxofFits=5000,
                                                 reject_negative_baseline=True,
                                                 formulaexpression="A-1.1*B",
-                                                listrois=None):
+                                                listrois=None,
+                                                outputIpixmax=True):
     r"""
     Find local intensity maxima as starting position for fittinng and return peaklist.
 
@@ -942,6 +944,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
 
     :param reject_negative_baseline:  True  reject refined peak result if intensity baseline (local background) is negative
                                         (2D model is maybe not suitable)
+
+    :param outputIpixmax: compute maximal pixel intensity for all peaks found
 
     :return:  -  peak list sorted by decreasing (integrated intensity - fitted bkg)
                 -peak_X,peak_Y,peak_I,peak_fwaxmaj,peak_fwaxmin,peak_inclination,Xdev,Ydev,peak_bkg
@@ -1038,16 +1042,18 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
     if local_maxima_search_method in (0, "0"):
 
         if verbose: print("Using simple intensity thresholding to detect local maxima (method 1/3)")
-        peaklist = ImProc.LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold,
+        res = ImProc.LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold,
                                                     rois=listrois,
-                                                    framedim=framedim)
-
-        if peaklist is not None:
-            if verbose > 1: print("len(peaklist)", len(peaklist))
-
-            Ipixmax = np.ones(len(peaklist)) * IntensityThreshold
-
-            ComputeIpixmax = False
+                                                    framedim=framedim,
+                                                    outputIpixmax=outputIpixmax)
+        if res is not None:
+            if outputIpixmax:
+                peaklist, Ipixmax = res
+                ComputeIpixmax = True
+            else:
+                peaklist = res
+                Ipixmax = np.ones(len(peaklist)) * IntensityThreshold
+                ComputeIpixmax = False
 
     # second method ----------- "Local Maxima in a box by shift array method"
     if local_maxima_search_method in (1, "1"):
@@ -1213,7 +1219,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
 
     else:
         raise ValueError("optional fit_peaks_gaussian value is not understood! Must be 0,1 or 2")
-        
+
     if verbose:
         print("\n*****************")
         print("{} local maxima found".format(len(peaklist)))
