@@ -1821,7 +1821,8 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                                 detectordiameter=None,
                                                                 force_extinction=None,
                                                                 dictmaterials=dict_Materials,
-                                                                verbose=0):
+                                                                verbose=0,
+                                                                depth=None): 
     r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
@@ -1831,6 +1832,7 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
 
     :param removeharmonics: 1, remove harmonics spots and keep fondamental spots
                             (with lowest Miller indices)
+    :param depth: depth (in microns) of the sample point that produces Laue pattern. Default = 0 (impact point at sample surface). Positive depth towards inside the sample  (// k_i)
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
@@ -1871,14 +1873,26 @@ def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEF
                                                 HarmonicsRemoval=0,
                                                 pixelsize=pixelsize)
 
-    Twicetheta, Chi, Energy, Miller_ind = TwthetaChiEnergyMillers_list_one_grain_wo_harmonics[:4]
+    Twicetheta_zerodepth, Chi_zerodepth, Energy, Miller_ind = TwthetaChiEnergyMillers_list_one_grain_wo_harmonics[:4]
 
-    posx, posy = LTGeo.calc_xycam_from2thetachi(Twicetheta,
-                                                Chi,
+    posx_zerodepth, posy_zerodepth = LTGeo.calc_xycam_from2thetachi(Twicetheta_zerodepth,
+                                                Chi_zerodepth,
                                                 detectorparameters,
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 kf_direction=kf_direction)[:2]
+
+    if depth is not None:
+        posx, posy = posx_zerodepth, posy_zerodepth + depth/1000./pixelsize
+        Twicetheta, Chi = LTGeo.calc_uflab(posx, posy, detectorparameters,
+                                                offset=0, returnAngles=1,
+                                                verbose=0,
+                                                pixelsize=pixelsize,
+                                                rectpix=0,
+                                                kf_direction=kf_direction)
+    else:
+        posx, posy = posx_zerodepth, posy_zerodepth
+        Twicetheta, Chi = Twicetheta_zerodepth, Chi_zerodepth
 
     if removeharmonics:
         # remove harmonics:
