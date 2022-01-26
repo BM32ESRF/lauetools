@@ -474,20 +474,22 @@ def error_function_on_demand_strain(param_strain,
                                         pixelsize=165.0 / 2048.,
                                         dim=(2048, 2048),
                                         weights=None,
-                                        kf_direction="Z>0"):
+                                        kf_direction="Z>0",
+                                        depth=0.):
     """
-    #All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
-    # allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
-    # param_strain must contain values of one or many parameters of allparameters
-    #
-    #   strain = param_strain[:5]
-    #   deltaangles = param_strain[5:8]
-    #   arr_indexvaryingparameters = array of position of parameters whose values are in param_strain
-    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit strain without orientation refinement
-    #    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12]) for strain AND orientation refinement
-    #   in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
+    All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat with nspots (array of indices)
+    allparameters must contain 5 detector calibration parameters + 5 parameters of strain + 3 angles of elementary rotation
+    param_strain must contain values of one or many parameters of allparameters
+    strain = param_strain[:5]
+    deltaangles = param_strain[5:8]
+    arr_indexvaryingparameters = array of position of parameters whose values are in param_strain
+    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9]) for only fit strain without orientation refinement
+    e.g.: arr_indexvaryingparameters = array([5,6,7,8,9, 10,11,12]) for strain AND orientation refinement
+    in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
     Bmat=  B0 matrix
 
+    :param depth: depth in microns under sample surface (vertically) (not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this depth (expressed in pixel)
+    Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
     """
 
     #print('param_strain in error_function_on_demand_strain', param_strain)
@@ -570,7 +572,7 @@ def error_function_on_demand_strain(param_strain,
                                 dim=dim,
                                 kf_direction=kf_direction)
 
-    distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
+    distanceterm = np.sqrt((X - pixX) ** 2 + (Y + depth/1000./pixelsize/np.sin(40.*DEG)- pixY) ** 2)
 
     if weights is not None:
         allweights = np.sum(weights)
@@ -790,6 +792,7 @@ def fit_on_demand_strain(starting_param,
                                 weights=None,
                                 kf_direction="Z>0",
                                 fitycen=False,
+                                depth=0,
                                 **kwd):
     """
     To use it:
@@ -806,7 +809,7 @@ def fit_on_demand_strain(starting_param,
 
     param_strain_0 = starting_param
 
-    print('\n\nstarting_param',starting_param)
+    print('\n\nstarting_param', starting_param)
     if verbose:
         print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
@@ -825,7 +828,8 @@ def fit_on_demand_strain(starting_param,
                                         pixelsize=pixelsize,
                                         dim=dim,
                                         weights=weights,
-                                        kf_direction=kf_direction)
+                                        kf_direction=kf_direction,
+                                        depth=depth)
 
         print("\n\n***************************\nFitting parameters:  ",
             parameters_being_fitted,
@@ -841,7 +845,8 @@ def fit_on_demand_strain(starting_param,
                                                     pixelsize,
                                                     dim,
                                                     weights,
-                                                    kf_direction)
+                                                    kf_direction,
+                                                    depth)
 
     # LEASTSQUARE
     res = leastsq(_error_function_on_demand_strain,
@@ -853,8 +858,7 @@ def fit_on_demand_strain(starting_param,
                     epsfcn=0.0,
                     **kwd)
 
-
-    #---------------------  other least square  ------------------                
+    #---------------------  other least square  ------------------
     # For ycen fitting together strain component, changing ycen scale is useful
     # x_scale = [1,1,1,1,.1,1,1,1]  1 except for xgam .1
     xscale = np.ones(len(arr_indexvaryingparameters))
@@ -862,7 +866,7 @@ def fit_on_demand_strain(starting_param,
         xscale[-1] = 100
     except ValueError:
         pass
-    
+
     if 0:
         #------------------------
         # from scipy.optimize import leastsq, least_squares
@@ -870,14 +874,14 @@ def fit_on_demand_strain(starting_param,
         calib_sol2 = least_squares(_error_function_on_demand_strain,
                                     param_strain_0,
                                     args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
-                                tr_solver = 'exact',
+                                tr_solver='exact',
                                 x_scale=xscale, max_nfev=None)
 
         print("\nLEAST_SQUARES")
         #print("calib_sol2", calib_sol2['x'])
         print(calib_sol2['x'])
         print('mean residues', np.mean(calib_sol2['fun']))
-        
+
         #return calib_sol2['x']
         #---------------------  other least square  ------------------                
 
@@ -910,7 +914,8 @@ def fit_on_demand_strain(starting_param,
                                             pixelsize=pixelsize,
                                             dim=dim,
                                             weights=weights,
-                                            kf_direction=kf_direction)
+                                            kf_direction=kf_direction,
+                                            depth=depth)
         return strain_sol
 
 
