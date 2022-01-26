@@ -1058,7 +1058,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 GrainName_list.append(line.rstrip("\n"))
 
                 iline += 1
-            elif line.startswith(("spot#", "#spot", "##spot")):
+            elif line.startswith(("spot#", "#spot", "##spot", "# Spot")):
                 if not unindexedspots:
                     columns_headers = line.replace("#", "").split()
 
