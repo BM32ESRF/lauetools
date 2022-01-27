@@ -519,7 +519,11 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     USE_RAW_METHOD = False
 
-    if verbose > 1: print("CCDLabel in readCCDimage", CCDLabel)
+    if verbose > 1:
+        print("CCDLabel in readCCDimage", CCDLabel)
+        print('FABIO_EXISTS',FABIO_EXISTS)
+        print('LIBTIFF_EXISTS',LIBTIFF_EXISTS)
+        print('PIL_EXISTS',PIL_EXISTS)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
@@ -527,7 +531,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021'):
 
-            if verbose > 1: print('----> Using fabio ... to open %s\n'%filename)
+            if verbose > 1:
+                print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
             if dirname is not None:
@@ -590,7 +595,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             USE_RAW_METHOD = True
 
     elif PIL_EXISTS:
-        if verbose > 1:print("using PIL's module Image")
+        if verbose > 1:
+            print("using PIL's module Image")
         if CCDLabel in ("sCMOS", "MARCCD165", "sCMOS_16M"):
             if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile ...')
             USE_RAW_METHOD = True
