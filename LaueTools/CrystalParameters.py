@@ -236,6 +236,12 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond = cond1 * cond2 * cond3
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
+    elif Extinc == "137":
+        cond2 = (L) % 2 == 0
+        cond3 = (H + K + L) % 2 == 0
+        cond =  cond2 * cond3
+        array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
+
     elif Extinc == "VO2_mono":
         cond1a = K == 0
         cond1b = (L) % 2 != 0
