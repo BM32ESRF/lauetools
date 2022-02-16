@@ -1,6 +1,4 @@
 # Simple minded model objects for Laue spots
-
-
 class Spot(object):
     """
     Simple minded object that represents a fitted laue spot
@@ -13,10 +11,8 @@ class Spot(object):
 
 #            print "%s field is :" % field, self.__getattribute__(field)
 
-
 #    def GetSizeInMb(self):
 #        return self.sizeInBytes / (1024.0 * 1024.0)
-
 
 def GetAllspots(listofdata, listoffields):
     """
