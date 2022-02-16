@@ -6,7 +6,7 @@ with a free code repository at at gitlab.esrf.fr
 
 https://gitlab.esrf.fr/micha/lauetools
 
-J. S. Micha July 2021
+J. S. Micha Jan 2022
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
 
@@ -51,15 +51,14 @@ except ImportError:
 
 if sys.version_info.major == 3:
     import LaueTools.generaltools as GT
-    from LaueTools.IOLaueTools import ReadSpec
+    from LaueTools.IOLaueTools import ReadSpec, ReadHdf5
     import LaueTools.MessageCommand as MC
 else:
     import generaltools as GT
-    from IOLaueTools import ReadSpec
+    from IOLaueTools import ReadSpec,ReadHdf5
     import MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
-
 
 class TreePanel(wx.Panel):
     """ class of tree organisation of scans
@@ -153,8 +152,8 @@ class TreePanel(wx.Panel):
                 newmeshindex = self.frameparent.list_meshscan_indices[max(poslastscan - 1, 0)]
 
                 self.OnSelChanged(event, scan_index=newmeshindex)
-            
-        elif key in (83, '83','s'):
+
+        elif key in (83, '83', 's'):
             print('\n\ns   !!!!\n\n\n')
             self.keypressed = 's'
             self.set_selected_indices = set()
@@ -180,9 +179,9 @@ class TreePanel(wx.Panel):
         if self.multipleselectionOn and self.scantype == 'ASCAN': #self.keypressed == 's':
 
             if self.set_selected_indices is None:
-                self.set_selected_indices=set([scan_index])
+                self.set_selected_indices = set([scan_index])
 
-                print('first self.set_selected_indices in  selection mode',self.set_selected_indices)
+                print('first self.set_selected_indices in  selection mode', self.set_selected_indices)
 
             if scan_index not in self.set_selected_indices:
 
@@ -193,7 +192,7 @@ class TreePanel(wx.Panel):
             #print("self.set_selected_indices", self.set_selected_indices)
             #self.keypressed = None
 
-            print('self.set_selected_indices in  selection mode',self.set_selected_indices)
+            print('self.set_selected_indices in  selection mode', self.set_selected_indices)
 
             self.frameparent.ReadMultipleScans(self.set_selected_indices, resetlistcounters=True)
 
@@ -201,14 +200,14 @@ class TreePanel(wx.Panel):
 
         elif not self.keypressed in ('shift', 'ctrl'):  # single selection
             print('Single selection MODE')
-            self.set_selected_indices=set([scan_index])
+            self.set_selected_indices = set([scan_index])
 
             self.frameparent.ReadScan_SpecFile(scan_index, resetlistcounters=True)
             if self.scantype == 'MESH':
                 self.frameparent.scan_index_mesh = scan_index
             elif self.scantype == 'ASCAN':
                 self.frameparent.scan_index_ascan = scan_index
-                
+
             self.last_sel_scan_index = scan_index
 
         # tooltip----------------
@@ -234,12 +233,13 @@ class MainFrame(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
 
         self.folderpath_specfile, self.specfilename = None, None
-
+        self.folderpath_hdf5file, self.hdf5filename = None, None
+        
         self.detectorname_mesh = "Monitor"
         self.detectorname_ascan = "Monitor"
-        self.columns_name = ["Monitor", "fluoHg"]
+        self.columns_name = ["Monitor", "fluo"]
         self.normalizeintensity = False
-            
+
         self.createMenuBar()
 
         self.create_main_panel()
@@ -251,9 +251,11 @@ class MainFrame(wx.Frame):
 
         filemenu = wx.Menu()
         menuSpecFile = filemenu.Append(-1, "Open spec file", "Open a spec file")
+        menuHdf5File = filemenu.Append(-1, "Open hdf5 file", "Open a hdf5 file (ESRF Bliss made)")
         menuSetPreference = filemenu.Append(-1, "Folder Preferences", "Set folder Preferences")
         savemeshdata = filemenu.Append(-1, "Save Data", "Save current 2D data")
         self.Bind(wx.EVT_MENU, self.OnOpenSpecFile, menuSpecFile)
+        self.Bind(wx.EVT_MENU, self.OnOpenHdf5File, menuHdf5File)
         self.Bind(wx.EVT_MENU, self.OnSaveData, savemeshdata)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuSetPreference)
 
@@ -450,9 +452,47 @@ class MainFrame(wx.Frame):
         self.treeascan.set_selected_indices = set()
 
 
+    def OnOpenHdf5File(self, _):
+        """ in menu :  File/open hdf5 file  """
+        self.filetype = 'hdf5'
+
+        folder = wx.FileDialog(self, "Select hdf5 file",
+                                wildcard="Bliss ESRF hdf5 (*.h5)|*.h5|All files(*)|*",
+                                defaultDir=str(self.folderpath_hdf5file),
+                                defaultFile=str(self.hdf5filename))
+
+        self.last_hdf5filename = self.hdf5filename
+        if folder.ShowModal() == wx.ID_OK:
+
+            self.fullpath_hdf5file = folder.GetPath()
+            self.folderpath_hdf5file, self.hdf5filename = os.path.split(self.fullpath_hdf5file)
+
+        # simply update list fo scans
+        if (self.hdf5filename == self.last_hdf5filename and self.hdf5filename is not None):
+            self.onUpdatehdf5File(1)
+
+        self.get_listmesh(self.fullpath_hdf5file)
+
+        # self.get_listascan(self.fullpath_hdf5file)
+        self.listascan = []
+
+        self.list_ascanscan_indices = []
+
+        if (self.hdf5filename != self.last_hdf5filename and self.hdf5filename is not None):
+            print("\n\ndeleting last old items\n\n")
+            self.treemesh.tree.DeleteAllItems()
+            wx.CallAfter(self.treemesh.maketree)
+
+            self.treeascan.tree.DeleteAllItems()
+            wx.CallAfter(self.treeascan.maketree)
+
+        self.listmeshtoAdd = self.listmesh
+        self.listascantoAdd = self.listascan
+        wx.CallAfter(self.fill_tree)
+
     def OnOpenSpecFile(self, _):
         """ in menu :  File/open spec file  """
-
+        self.filetype = 'spec'
         folder = wx.FileDialog(self,
                                 "Select spec file",
                                 wildcard="BM32 Specfile (laue.*)|laue.*|All files(*)|*",
@@ -465,7 +505,7 @@ class MainFrame(wx.Frame):
             self.fullpath_specfile = folder.GetPath()
             self.folderpath_specfile, self.specfilename = os.path.split(self.fullpath_specfile)
 
-        # simply update list fo scans 
+        # simply update list fo scans
         if (self.specfilename == self.last_specfilename and self.specfilename is not None):
             self.onUpdateSpecFile(1)
 
@@ -492,11 +532,16 @@ class MainFrame(wx.Frame):
             self.treeascan.tree.AppendItem(self.treeascan.root, str(ascanelems[0]))
 
 
-    def get_listmesh(self, fullpathspecfilename):
-        samespecfile = False
-        if self.specfilename != self.last_specfilename:
-            samespecfile = True
-            self.listmesh = None
+    def get_listmesh(self, fullpathfilename):
+        samefile = False
+        if self.filetype=='spec':
+            if self.specfilename != self.last_specfilename:
+                samefile = True
+                self.listmesh = None
+        elif self.filetype=='hdf5':
+            if self.hdf5filename != self.last_hdf5filename:
+                samefile = True
+                self.listmesh = None
 
         lastscan_listmesh = 0
         list_lastmeshscan_indices = []
@@ -510,36 +555,70 @@ class MainFrame(wx.Frame):
 
         print("lastscan_listmesh", lastscan_listmesh)
 
-        listmeshall = getmeshscan_from_specfile(fullpathspecfilename)
+        if self.filetype=='spec':
+            listmeshall = getmeshscan_from_specfile(fullpathfilename)
 
-        if listmeshall == []:
-            print('No mesh scan in %s'%fullpathspecfilename)
-            self.listmesh = []
-            return
+            if listmeshall == []:
+                print('No mesh scan in %s'%fullpathfilename)
+                self.listmesh = []
+                return
 
-        list_meshscan_indices = []
-        for ms in listmeshall:
-            if ms[0] not in list_lastmeshscan_indices:
-                list_meshscan_indices.append(ms[0])
+            list_meshscan_indices = []
+            for ms in listmeshall:
+                if ms[0] not in list_lastmeshscan_indices:
+                    list_meshscan_indices.append(ms[0])
 
-        print("list_meshscan_indices", list_meshscan_indices)
+            print("list_meshscan_indices", list_meshscan_indices)
 
-        if list_meshscan_indices[-1] != lastscan_listmesh and not samespecfile:
-            print("adding only new meshes from file %s" % self.fullpath_specfile)
-            indstart_newmeshes = np.searchsorted(list_meshscan_indices, lastscan_listmesh - 1)
-        else:
-            indstart_newmeshes = 0
+            if list_meshscan_indices[-1] != lastscan_listmesh and not samefile:
+                print("adding only new meshes from file %s" % self.fullpath_specfile)
+                indstart_newmeshes = np.searchsorted(list_meshscan_indices, lastscan_listmesh - 1)
+            else:
+                indstart_newmeshes = 0
 
-        print("listmeshall", listmeshall)
-        print("indstart_newmeshes", indstart_newmeshes)
-        self.listmesh = listmeshall[indstart_newmeshes:]
+            print("listmeshall", listmeshall)
+            print("indstart_newmeshes", indstart_newmeshes)
 
-        self.list_meshscan_indices = list_meshscan_indices
+            self.listmesh = listmeshall[indstart_newmeshes:]
+            self.list_meshscan_indices = list_meshscan_indices
+
+            print('self.listmesh', self.listmesh)
+            print('self.list_meshscan_indices', self.list_meshscan_indices)
+        
+        if self.filetype=='hdf5':
+            listmeshall = getmeshscan_from_hdf5file(fullpathfilename)
+
+            if listmeshall == []:
+                print('No mesh scan in %s'%fullpathfilename)
+                self.listmesh = []
+                return
+
+            list_meshscan_indices = []
+            for ms in listmeshall:
+                if ms[0] not in list_lastmeshscan_indices:
+                    list_meshscan_indices.append(ms[0])
+
+            print("list_meshscan_indices", list_meshscan_indices)
+
+            if list_meshscan_indices[-1] != lastscan_listmesh and not samefile:
+                print("adding only new meshes from file %s" % self.fullpath_specfile)
+                indstart_newmeshes = np.searchsorted(list_meshscan_indices, lastscan_listmesh - 1)
+            else:
+                indstart_newmeshes = 0
+
+            print("listmeshall", listmeshall)
+            print("indstart_newmeshes", indstart_newmeshes)
+
+            self.listmesh = listmeshall[indstart_newmeshes:]
+            self.list_meshscan_indices = list_meshscan_indices
+
+            print('hdf5 self.listmesh', self.listmesh)
+            print('hdf5 self.list_meshscan_indices', self.list_meshscan_indices)
 
     def get_listascan(self, fullpathspecfilename):
-        samespecfile = False
+        samefile = False
         if self.specfilename != self.last_specfilename:
-            samespecfile = True
+            samefile = True
             self.listascan = None
 
         lastscan_listascan = 0
@@ -568,7 +647,7 @@ class MainFrame(wx.Frame):
 
         print("list_ascanscan_indices", list_ascanscan_indices)
 
-        if list_ascanscan_indices[-1] != lastscan_listascan and not samespecfile:
+        if list_ascanscan_indices[-1] != lastscan_listascan and not samefile:
             print("adding only new ascanes from file %s" % self.fullpath_specfile)
             indstart_newascanes = np.searchsorted(list_ascanscan_indices, lastscan_listascan - 1)
         else:
@@ -592,7 +671,7 @@ class MainFrame(wx.Frame):
 
         # trial ----------------
         # scattermode = True
-        scattermode=False
+        scattermode = False
         # -------------------
 
         zvalues = []
@@ -620,9 +699,9 @@ class MainFrame(wx.Frame):
             motor2 = None
 
             if movingmotor != motorselected:
-                print("moving motor of scan %d (%s )is not %s!"%(scan_idx,movingmotor,motorselected))
+                print("moving motor of scan %d (%s )is not %s!"%(scan_idx, movingmotor,motorselected))
                 continue
-            
+
             scanindexvalues.append(scan_idx)
 
             # motor positions
@@ -703,7 +782,7 @@ class MainFrame(wx.Frame):
         self.maxmotor1 = float(titlesplit[5])
         scancommandextremmotorspositions = [self.minmotor1,
                                             self.maxmotor1]
-        
+
         if not scattermode:
             self.update_fig_1D(zvalues,
                             motorsvalues,
@@ -719,7 +798,7 @@ class MainFrame(wx.Frame):
 
             print('zvalues', zvalues)
             print('motorsvalues', motorsvalues)
-            
+
             self.update_fig_2D(zvalues,
                                 motorsvalues,
                                 motorselected,
@@ -743,20 +822,43 @@ class MainFrame(wx.Frame):
     def ReadScan_SpecFile(self, scan_index, resetlistcounters=True):
         """
         read a SINGLE scan data in spec file and fill data for a updated figure plot
+        requires:
+        self.fullpath_specfile
+        self.detectorname_ascan
+        self.detectorname_mesh
+        self.normalizeintensity
+        self.MonitorOffset
+        self.specfilename
+        self.plotascanpanel
+
+        sets:
+        self.scantype
+        self.flat_data_z_values
+        self.flat_motor1
+
+        self.scancommand 
+        self.minmotor1
+        self.maxmotor1
+        and for meshscan
+        self.minmotor2 = float(titlesplit[8])
+            self.maxmotor2 = float(titlesplit[9])
         """
         detectorname_ascan = self.detectorname_ascan
         detectorname_mesh = self.detectorname_mesh
-
-        scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_index, outputdate=True)
-        tit = str(scanheader)
-
-        self.scantype = tit.split()[2]
+        if self.filetype=='spec':
+            scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_index, outputdate=True)
+            tit = str(scanheader)
+            self.scantype = tit.split()[2]
+        elif self.filetype=='hdf5':
+            scanheader, data, self.scan_date = ReadHdf5(self.fullpath_hdf5file, scan_index, outputdate=True)
+            tit = str(scanheader)
+            self.scantype = tit.split()[0]
 
         print("spec command    :", tit)
 
         print("scan type  :", self.scantype)
 
-        Apptitle =''
+        Apptitle = ''
 
         if self.scantype in ('ascan',):
 
@@ -780,10 +882,9 @@ class MainFrame(wx.Frame):
             if detectorname_ascan not in data:
                 Apptitle += '%s NOT AVAILABLE\n'%detectorname_ascan
                 detectorname_ascan = 'Monitor'
-                
 
             counterintensity1D = data[detectorname_ascan]
-            
+
             if self.normalizeintensity:
                 data_I0 = data["Monitor"]
                 exposureTime = data["Seconds"]
@@ -863,7 +964,7 @@ class MainFrame(wx.Frame):
 
             return scan_in_progress
 
-        elif self.scantype in ('mesh',):
+        elif self.scantype in ('mesh','amesh'):
 
             titlesplit = tit.split()
             # minmotor1 = float(titlesplit[4])
@@ -871,24 +972,40 @@ class MainFrame(wx.Frame):
             # minmotor2 = float(titlesplit[8])
             # maxmotor2 = float(titlesplit[9])
 
-            # motor names
-            motor1 = tit.split()[3]
-            motor2 = tit.split()[7]
+            if self.filetype=='spec':
+                # motor names
+                motor1 = tit.split()[3]
+                motor2 = tit.split()[7]
+
+
+                # nb of steps in both directions
+                nb1 = int(tit.split()[6]) + 1
+                nb2 = int(tit.split()[10]) + 1
+            else:
+                # motor names
+                motor1 = tit.split()[1]
+                motor2 = tit.split()[5]
+
+
+                # nb of steps in both directions
+                nb1 = int(tit.split()[4]) + 1
+                nb2 = int(tit.split()[8]) + 1
+
             # motor positions
             posmotor1 = np.fix(data[motor1] * 100000) / 100000
             posmotor2 = np.fix(data[motor2] * 100000) / 100000
-
-            # nb of steps in both directions
-            nb1 = int(tit.split()[6]) + 1
-            nb2 = int(tit.split()[10]) + 1
             # current nb of collected points in the mesh
             nbacc = len(data[list(data.keys())[0]])
             print("nb of points accumulated  :", nbacc)
 
             if detectorname_mesh not in data:
                 Apptitle += '%s NOT AVAILABLE\n'%detectorname_mesh
-                detectorname_mesh = 'Monitor'
+                if self.filetype == 'spec':
+                    detectorname_mesh = 'Monitor'
                 
+                else:
+                    detectorname_mesh = 'epoch'
+
             counterintensity1D = data[detectorname_mesh]
 
             if self.normalizeintensity:
@@ -950,9 +1067,11 @@ class MainFrame(wx.Frame):
             #         print posmotorsinfo.shape
 
             #         print "posmotorsinfo", posmotorsinfo
-
-            Apptitle += "%s\nmesh scan #%d" % (self.specfilename, scan_index)
-
+            if self.filetype=='spec':
+                Apptitle += "%s\nmesh scan #%d" % (self.specfilename, scan_index)
+            else:
+                Apptitle += "%s\nmesh scan #%d" % (self.hdf5filename, scan_index)
+                
             print("title", Apptitle)
 
             self.flat_data_z_values = counterintensity1D
@@ -960,16 +1079,23 @@ class MainFrame(wx.Frame):
             self.flat_motor2 = posmotor2
 
             self.scancommand = tit
-            self.minmotor1 = float(titlesplit[4])
-            self.maxmotor1 = float(titlesplit[5])
-            self.minmotor2 = float(titlesplit[8])
-            self.maxmotor2 = float(titlesplit[9])
+
+            if self.filetype=='spec':
+                self.minmotor1 = float(titlesplit[4])
+                self.maxmotor1 = float(titlesplit[5])
+                self.minmotor2 = float(titlesplit[8])
+                self.maxmotor2 = float(titlesplit[9])
+            else:
+                self.minmotor1 = float(titlesplit[2])
+                self.maxmotor1 = float(titlesplit[3])
+                self.minmotor2 = float(titlesplit[6])
+                self.maxmotor2 = float(titlesplit[7])
 
             scancommandextremmotorspositions = [self.minmotor1,
                                                 self.maxmotor1,
                                                 self.minmotor2,
                                                 self.maxmotor2]
-            
+
             if resetlistcounters:
                 # counter and key name of data
                 columns_name = list(data.keys())
@@ -998,7 +1124,7 @@ class MainFrame(wx.Frame):
                     detectorname,
                     scancommandextremmotorspositions,
                     multipleplots=False,
-                    listscanindex = None):
+                    listscanindex=None):
         """update for ascan fig and plot"""
         #         self.plot.fig.clear()
 
@@ -1048,10 +1174,10 @@ class MainFrame(wx.Frame):
                     listscanindex=None):
         """update from mesh scan fig and plot
         data_z_values: 2D array of values
-        posmotorsinfo: 2D array of motors positions  x, y 
+        posmotorsinfo: 2D array of motors positions  x, y
         motor1, motor2: str names of motors   (x or fast motor, y or slow motor)
 
-        if imshowmode is Falsze (scattermode): listscanindex must  be provided with list of scan 
+        if imshowmode is Falsze (scattermode): listscanindex must  be provided with list of scan
         index along y axis and also obviously data_z_values = list of z values and   posmotorsinfo list of x values"""
         #         self.plot.fig.clear()
 
@@ -1198,6 +1324,26 @@ def getmeshscan_from_specfile(filename):
     print("%s contains %d mesh scans" % (filename, len(listmesh)))
 
     #     print "listmesh", listmesh
+
+    return listmesh
+
+def getmeshscan_from_hdf5file(filename):
+
+    import h5py
+
+    print("getmeshscan_from_hdf5file")
+    f = h5py.File(filename,'r')
+    
+    scanslist = sorted([int(kk[:-2]) for kk in f.keys()])  # removing .1 at the end of nb scan
+    print('scanslist',scanslist)
+    listmesh = []
+    for i_s in scanslist:
+        scancommand= f['%d'%i_s+'.1']['title'].value
+        print('scancommand', scancommand)
+        if 'amesh' in scancommand:
+            listmesh.append([i_s,None,None,'#S %d %s'%(i_s, scancommand)])
+
+    print("%s contains %d mesh scans" % (filename, len(listmesh)))
 
     return listmesh
 
@@ -1379,7 +1525,7 @@ class PlotPanel(wx.Panel):
             self.frameparent.ReadMultipleScans(self.frameparent.treeascan.set_selected_indices, resetlistcounters=False)
 
     def normalizeplot(self):
-        #TODO: 
+        #TODO:
         pass
 
     def OnSave(self, _):
@@ -1408,7 +1554,7 @@ class PlotPanel(wx.Panel):
         if self.datatype == "scalar":
 
             # print("ploting")
-            
+
             if not self.multipleplots:
                 # print("self.data_to_Display.shape", self.data_to_Display.shape)
                 self.myplot = self.axes.plot(self.posarray_motors, self.data_to_Display)
@@ -1437,7 +1583,6 @@ class PlotPanel(wx.Panel):
 
         self.frameparent.stbar.SetStatusText('(x,y) = (%f, %f)' % (x, y), 3)
         return
-
 
 class ImshowPanel(wx.Panel):
     """
@@ -1471,7 +1616,7 @@ class ImshowPanel(wx.Panel):
 
         self.posarray_twomotors = posarray_twomotors
 
-        self.imshowmode=imshowmode
+        self.imshowmode = imshowmode
         if self.imshowmode:
             print(self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
             print(self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1])
@@ -1483,11 +1628,9 @@ class ImshowPanel(wx.Panel):
         if posmotorname is not None:
             self.motor1name, self.motor2name = posmotorname
 
-        
         #         print "dataarray", dataarray
         self.datatype = datatype
 
-        
         self.title = title
         self.Imageindices = Imageindices
 
@@ -1527,14 +1670,13 @@ class ImshowPanel(wx.Panel):
         self.draw_fig()
 
     def draw_fig(self):
-        
 
         if not self.imshowmode:
             print("in draw_fig()   scatter mode")
             self.fig.set_canvas(self.canvas)
             self.canvas.draw()
             return
-                
+
         print("in draw_fig()   mesh scan")
         self.set_motorspositions_parameters()
         #         print "self.fromindex_to_pixelpos_x", self.fromindex_to_pixelpos_x
@@ -1852,7 +1994,7 @@ class ImshowPanel(wx.Panel):
         print('self.minvals', self.minvals)
         print('self.maxvals', self.maxvals)
         print('self.IminDisplayed', self.IminDisplayed)
-        print('self.ImaxDisplayed',self.ImaxDisplayed)
+        print('self.ImaxDisplayed', self.ImaxDisplayed)
 
         vmin = self.minvals + self.IminDisplayed * self.deltavals
         vmax = self.minvals + self.ImaxDisplayed * self.deltavals
@@ -1879,7 +2021,7 @@ class ImshowPanel(wx.Panel):
 
     def calc_norm_minmax_values(self, data):
         """ set self.self.cNorm  and self.maxvals,  self.minvals from data"""
- 
+
         self.data_to_Display = data
         self.cNorm = None
 
@@ -1894,7 +2036,7 @@ class ImshowPanel(wx.Panel):
             list_x_values = self.posarray_twomotors # in reality  list of x's of different lengths
             l_idx = self.listscanindex
             list_y_values = []
-            
+
             minx = list_x_values[0][0]
             maxx = list_x_values[0][-1]
             miny = 0
@@ -1921,23 +2063,23 @@ class ImshowPanel(wx.Panel):
                 y = y + lly.tolist()
                 z = z + llz.tolist()
 
-                self.x,self.y = x, z
+                self.x, self.y = x, z
                 #self.axes.scatter(list_x_values[k], list_y_values[k], c=list_z_values[k], marker='h', s=50)
 
             print('minx, maxx', minx, maxx)
             print('miny, maxy', miny, maxy)
             from scipy.interpolate import griddata
 
-            # define grid.  
+            # define grid.
             nx = 60 # int(maxnbelems * 10)
-            ny = 30   # len(l_idx) * 20            
+            ny = 30   # len(l_idx) * 20
             xi = np.linspace(minx, maxx, nx)
             yi = np.linspace(0, len(l_idx) - 1, ny)
 
             print(('xi', xi))
             print(('yi', yi))
             # grid the data.
-            zi = griddata((x, y), z, (xi[None,:], yi[:, None]), method='cubic')
+            zi = griddata((x, y), z, (xi[None, :], yi[:, None]), method='cubic')
 
             print('zi[0]', zi[0])
             print('zi[:,0]', zi[:, 0])
@@ -2214,5 +2356,3 @@ def start():
 
 if __name__ == "__main__":
     start()
-
-
