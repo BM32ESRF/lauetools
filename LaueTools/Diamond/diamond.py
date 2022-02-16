@@ -135,7 +135,7 @@ def dipSearch(data_Dips, stdmax=0.03, scan=None, DipDepthThreshold=0.06, pedesta
 
     DipsArray = []
 
-    n, m = np.shape(data_Dips)
+    _, m = np.shape(data_Dips)
     nbprofiles = m - 1
     # normaize data with monitor and first element of intensity profile
     ndata_Dips = normalizeprofile_multipledips(data_Dips, pedestal, scan.Monitor, scan.monitoroffset)
@@ -246,7 +246,7 @@ def readDiamondScan(spec_file_path, scanindex, MonitorOffset=0, exportcountersda
         print("recalculated img_in_scan")
         print(img_in_scan)
 
-    mon_in_scan = scan.Monitor
+    _ = scan.Monitor
 
     thf_in_scan = scan.thf
 
@@ -393,7 +393,7 @@ def plotDiamondBranchAbacus(diamondbranchIndex, abacusfilepath,
         ax1.set_title(title1, fontsize=14)
         ax1.grid()
 
-        fig, ax2 = p.subplots()
+        _, ax2 = p.subplots()
 
         ax2.plot(thf_list[ind1], tth_list[ind1], "ro-", ms=5)
         ax2.set_ylabel("tth (deg)")
@@ -404,7 +404,7 @@ def plotDiamondBranchAbacus(diamondbranchIndex, abacusfilepath,
         ax2.set_title(title1, fontsize=14)
         ax2.grid()
 
-        fig, ax3 = p.subplots()
+        _, ax3 = p.subplots()
 
         ax3.plot(thf_list[ind1], chi_list[ind1], "ro-", ms=5)
         ax3.set_ylabel("chi (deg)")
@@ -415,7 +415,7 @@ def plotDiamondBranchAbacus(diamondbranchIndex, abacusfilepath,
         ax3.set_title(title1, fontsize=14)
         ax3.grid()
 
-        fig, ax4 = p.subplots()
+        _, ax4 = p.subplots()
 
         ax4.plot(thf_list[ind1], sign_uflabz[ind1], "ro-", ms=5)
         ax4.set_ylabel("signe uflab_z")
@@ -499,7 +499,7 @@ def plotSingleProfilewithDips(dictProfileswithdips, pdspotwh, profileindex):
 
     mydip, avgdip, avgdip2, fdip, peakpos = dictProfileswithdips[k_prof]
 
-    fig, ax = p.subplots(figsize=(12, 3))
+    _, ax = p.subplots(figsize=(12, 3))
     ax.plot(mydip, label="normalized")
 
     ax.vlines(peakpos, np.amin(mydip), np.amax(mydip), color="g")
@@ -508,7 +508,7 @@ def plotSingleProfilewithDips(dictProfileswithdips, pdspotwh, profileindex):
     ax.set_title("#profile (k_prof) %d #spot (spotindex): %d" % (k_prof, spotindex))
     ax.grid()
 
-    fig, ax = p.subplots(figsize=(12, 3))
+    _, ax = p.subplots(figsize=(12, 3))
     ax.plot(mydip, label="norm.")
     ax.plot(avgdip, label="avg.")
     ax.plot(avgdip2, label="no noise")
@@ -517,7 +517,7 @@ def plotSingleProfilewithDips(dictProfileswithdips, pdspotwh, profileindex):
     ax.legend()
     ax.grid()
 
-    fig, ax = p.subplots(figsize=(12, 3))
+    _, ax = p.subplots(figsize=(12, 3))
     ax.plot(fdip, label="diff")
     # ax.scatter(peakpos,cprofile[peakpos], c='r')
 
@@ -626,8 +626,8 @@ def build_spotlistref_sample(filefit_sample_max_npeaks=None,
 
     print("res1 = ", res1)
 
-    (gnumlist, npeaks, indstart, matstarlab_all,
-    data_fit_all, calib_all, pixdev, strain6, euler,
+    (_, _, _, _,
+    data_fit_all, _, _, _, _,
     ind_h_x_int_pixdev_Etheor) = res1
 
     res2 = MG.read_any_fitfitfile_multigrain(filefit_sample_min_pixdev,
@@ -640,9 +640,9 @@ def build_spotlistref_sample(filefit_sample_max_npeaks=None,
                                             min_matLT=min_matLT,
                                             check_pixdev_JSM=0)
 
-    (gnumlist2, npeaks2, indstart2, matstarlab_all2,
-    data_fit_all2, calib_all2, pixdev2, strain62, euler2,
-    ind_h_x_int_pixdev_Etheor2) = res2
+    (_, _, _, matstarlab_all2,
+    _, calib_all2, _, _, _,
+    _) = res2
 
     indh = ind_h_x_int_pixdev_Etheor[0]
     indx = ind_h_x_int_pixdev_Etheor[1]
@@ -862,10 +862,10 @@ def fitprof(xdat, ydat, p0, titre, xtitre=None, ytitre=None, plotlin=0, plotlog=
 
     # Distance to the target function
     # errfuncstat = lambda pp, x, y: ((fitfunc(pp,x) -y)/sqrt(abs(y)+equal(abs(y),0)))**2
-    errfunc2 = lambda pp, x, y: ((fitfunc(pp, x) - y) / np.sqrt(abs(y) + np.equal(abs(y), 0))) ** 2
+    _ = lambda pp, x, y: ((fitfunc(pp, x) - y) / np.sqrt(abs(y) + np.equal(abs(y), 0))) ** 2
     errfunc = lambda pp, x, y: ((fitfunc(pp, x) - y)) ** 2
 
-    p1, success = so.leastsq(errfunc, p0, args=(xexp, yexp), xtol=0.00001)
+    p1, _ = so.leastsq(errfunc, p0, args=(xexp, yexp), xtol=0.00001)
 
     residuals = (errfunc(p1, xexp, yexp)).sum() / (yexp ** 2).sum()
 
@@ -919,7 +919,7 @@ def plot_spot_displacement_map(filexyz,
                                 color_for_missing_data=np.array([1.0, 0.8, 0.8]),
                                 arrow_scale=20.0):
 
-    map_imgnum, dxystep, pixsize, impos_start = MG.calc_map_imgnum(filexyz)
+    map_imgnum, dxystep, _, _ = MG.calc_map_imgnum(filexyz)
 
     tt = np.loadtxt(filexyz, skiprows=1)
     xy = tt[:, 1:3]
@@ -946,7 +946,7 @@ def plot_spot_displacement_map(filexyz,
         listxj = []
         listyi = []
 
-    dxystep_abs = abs(dxystep)
+    _ = abs(dxystep)
 
     ind1 = np.where(img_list == imgref)
     xypic_ref = xyfit_list[ind1[0]]
@@ -1011,11 +1011,11 @@ def plot_spot_displacement_map(filexyz,
         maxyi = listyi.max()
         print("zoom : minxj, maxxj, minyi, maxyi : ", minxj, maxxj, minyi, maxyi)
 
-    fig1 = p.figure(1, figsize=(15, 10))
+    _ = p.figure(1, figsize=(15, 10))
     ax = p.subplot(111)
     #            print p.setp(fig1)
     #            print p.getp(fig1)
-    imrgb = p.imshow(plotdat[:, :, :], interpolation="nearest", extent=extent)
+    _ = p.imshow(plotdat[:, :, :], interpolation="nearest", extent=extent)
     #            print p.setp(imrgb)
 
     p.rcParams["lines.markersize"] = 2
@@ -1069,7 +1069,7 @@ def plot_map_simple(filexyz,
                     xylim=None,
                     color_for_missing_data=np.array([1.0, 0.8, 0.8])):
 
-    map_imgnum, dxystep, pixsize, impos_start = MG.calc_map_imgnum(filexyz)
+    map_imgnum, dxystep, _, _ = MG.calc_map_imgnum(filexyz)
 
     tt = np.loadtxt(filexyz, skiprows=1)
     xy = tt[:, 1:3]
@@ -1096,7 +1096,7 @@ def plot_map_simple(filexyz,
         listxj = []
         listyi = []
 
-    dxystep_abs = abs(dxystep)
+    _ = abs(dxystep)
 
     for i in range(numimg):
         ind2 = np.where(map_imgnum == img_list[i])
@@ -1129,10 +1129,10 @@ def plot_map_simple(filexyz,
         maxyi = listyi.max()
         print("zoom : minxj, maxxj, minyi, maxyi : ", minxj, maxxj, minyi, maxyi)
 
-    fig1 = p.figure(1, figsize=(15, 10))
+    _ = p.figure(1, figsize=(15, 10))
     ax = p.subplot(111)
 
-    imrgb = p.imshow(plotdat[:, :, :], interpolation="nearest", extent=extent)
+    _ = p.imshow(plotdat[:, :, :], interpolation="nearest", extent=extent)
     #            print p.setp(imrgb)
 
     if remove_ticklabels_titles == 0:
@@ -1289,7 +1289,7 @@ def build_mosaic_and_fit_spot_position(indimg,
     ky = 0
     kim = 0
 
-    lastkx = 2
+    _ = 2
 
     if xypic_from_LaueTools_Peak_Search_datfile:
         xshift = -1
@@ -1305,7 +1305,7 @@ def build_mosaic_and_fit_spot_position(indimg,
     y2 = ypic + yboxsize + yshift
 
     print("box x1 y1 x2 y2 : ", x1, y1, x2, y2)
-    box = (x1, y1, x2, y2)
+    _ = (x1, y1, x2, y2)
 
     # verifier si je fais le -1 sur xpic ypic ou non
 
@@ -1612,7 +1612,7 @@ def build_mosaic_and_fit_spot_position(indimg,
         px0 = [guess_height, guess_xpic, 2.0, guess_constant, 0.0]
 
         # print "px0 =", px0
-        px, residux = fitprof(
+        px, _ = fitprof(
             xx, xprof, px0, "x-profile sumimage", "xpix", "intensity", plotlin=1, plotlog=1, printp1=1)
 
         guess_ypic = yy[np.argmax(yprof)]
@@ -1622,7 +1622,7 @@ def build_mosaic_and_fit_spot_position(indimg,
         py0 = [guess_height, guess_ypic, 2.0, guess_constant, 0.0]
         # print "py0 =", py0
 
-        py, residuy = fitprof(
+        py, _ = fitprof(
             yy, yprof, py0, "y-profile sumimage", "ypix", "intensity", plotlin=1, plotlog=1, printp1=1)
 
     if plot_map_Ibox:
@@ -1989,7 +1989,7 @@ def serial_Ipix_vs_img(imfile_path,
         xlist = []
         ylist = []
 
-        for key, value in dict_xy_E.items():
+        for _, value in dict_xy_E.items():
             xlist.append(value[3][i])
             ylist.append(value[4][i])
 
@@ -2027,7 +2027,7 @@ def read_xypic_in_file_Ipix_vs_img(file_Ipix_vs_img):
     linepos_list = np.zeros(2, int)
     #    endlinechar = '\r\n' # unix
     #    endlinechar = '\n' # dos
-    endlinechar = MG.PAR.cr_string
+    _ = MG.PAR.cr_string
     try:
         for line in f:
             if line[0] == "#":
@@ -2179,7 +2179,7 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
         if len(ind0[0]) > 0:
             diplinks = diplinks[ind0[0]]
         # print diplinks
-        ndiplinks = np.shape(diplinks)[0]
+        _ = np.shape(diplinks)[0]
         add_str = add_str + "_with_exp_dips"
 
     if file_exp_dia is not None:
@@ -2267,6 +2267,10 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
 
         # if profileindex is a multiple of 10
         # then create figure
+        def tick_function(X):
+            V = fromimageindexTothf(X, scanObject)
+            return ["%.2f" % z for z in V]
+
         if not k_profile_w_harmonics % 10:
 
             fig = p.figure(figsize=figsize)
@@ -2280,17 +2284,13 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
 
             ax2 = ax1.twiny()
 
-            #             def tick_function(X):
-            #                 V = 1/(1+X)
-            #                 return ["%.3f" % z for z in V]
-            new_tick_locations = np.arange(scanObject.img[0], scanObject.img[-1], 100)
+            new_tick_locations = np.linspace(scanObject.img[0], scanObject.img[-1], 5)
             ax2.set_xticks(new_tick_locations)
-            ax2.set_xticklabels(fromimageindexTothf(new_tick_locations, scanObject))
+            ax2.set_xticklabels(tick_function(new_tick_locations))
             ax2.set_xlabel(r"thf")
-            xxthf = fromimageindexTothf(scanObject.img, scanObject)
-            print("xxthf", xxthf)
-            ax2.plot(xxthf, np.ones(len(scanObject.img)))  # Create a dummy plot
-            ax2.cla()
+            #print("xxthf", xxthf)
+            #ax2.plot(xxthf, np.ones(len(scanObject.img)))  # Create a dummy plot
+            # ax2.cla()
 
             if not firsttime:
                 if save_figures:
@@ -2361,17 +2361,17 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
         ax1.text(xx[-1], yy[-1], label1, fontsize=9)
 
         if imgref is not None:
-            ylabel1 = "Ipix/Ipix(imgref =" + str(imgref) + ")"
+            _ = "Ipix/Ipix(imgref =" + str(imgref) + ")"
             if use_npoint_as_x is not None:
                 ax1.axvline(x=refpoint, color="k_profile_w_harmonics")
             else:
                 ax1.axvline(x=imgref, color="k_profile_w_harmonics")
         else:
-            ylabel1 = "Ipix/Ipix(refpoint =" + str(refpoint) + ")"
+            _ = "Ipix/Ipix(refpoint =" + str(refpoint) + ")"
 
         nptmax = len(yy)
 
-        range2 = yy[:nptmax].max() - yy[:nptmax].min()
+        _ = yy[:nptmax].max() - yy[:nptmax].min()
 
         # statistics on normalized and stacked relative intensity variation
         #         firsttime2 = 1
@@ -2451,7 +2451,7 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
                     color1 = "y"
                 colordia.append(color1)
 
-            lim_depth = 0.0
+            _ = 0.0
 
             for i in range(ndips_theor):
                 # print dip_depth_theor[i]
@@ -2672,7 +2672,7 @@ def build_diamond_spotlist_360_v2(thf_list,
             tt = np.ones(nspots, float) * thf
             spotlistref = np.column_stack((spotlist2, tt))
         else:
-            nb_common_peaks, iscommon1, iscommon2 = MG.find_common_peaks(
+            _, _, iscommon2 = MG.find_common_peaks(
                 hklref, hkl2, dxytol=dxytol, verbose=0)
             ind2 = np.where(iscommon2 == 0)
             if len(ind2[0]) > 0:
@@ -2992,7 +2992,7 @@ def build_dict_Edia_vs_thf(filespot,
                         "fpol_list",
                         "Edia_mean_min_max",
                         "thf_mean_min_max"]
-    ndict = len(dict_values_names)
+    _ = len(dict_values_names)
 
     xlab = np.array([1.0, 0.0, 0.0])
 
@@ -3158,17 +3158,12 @@ def read_dict_Edia_vs_thf(fileEdia, verbose=0, read_calibdia=None):  # "old", "n
             "#diamond rotation axis in lab coordinates (corrected)"],
         "new": ["#thf_ref step 3", "#matref step 3", "#uilab step 3", "#vlab step 3"]}
 
-    #    for key, value in dict_string.iteritems():
-    #        print key, value
-    #    jklqd
-
     if read_calibdia is not None:
         string_thf_ref = dict_string[read_calibdia][0]
         string_matref = dict_string[read_calibdia][1]
         string_uilab = dict_string[read_calibdia][2]
         string_vlab = dict_string[read_calibdia][3]
 
-    #         print "string_thf_ref",string_thf_ref
     i = 0
     try:
         for line in f:
@@ -3342,13 +3337,7 @@ def read_dict_Edia_vs_thf(fileEdia, verbose=0, read_calibdia=None):  # "old", "n
 
 
 # ----    -----  plot_Edia_vs_thf
-def plot_Edia_vs_thf(fileEdia,
-                    Emin=5.0,
-                    Emax=22.0,
-                    thf_in_scan=None,
-                    ndia_max=None,
-                    dylim=0.1,
-                    list_ndia=None,
+def plot_Edia_vs_thf(fileEdia, Emin=5.0, Emax=22.0, thf_in_scan=None, ndia_max=None, dylim=0.1, list_ndia=None,
                     filespotlist_sample=None,
                     nsample_max=None,
                     filediplinks=None,  # not used any more
@@ -3385,7 +3374,7 @@ def plot_Edia_vs_thf(fileEdia,
     if read_calibdia is not "new":
         dict_Edia, dict_values_names, thf_list = res
     else:
-        dict_Edia, dict_values_names, thf_list, calibdia = res
+        dict_Edia, dict_values_names, thf_list, _ = res
 
     ndict = len(dict_values_names)
 
@@ -3463,13 +3452,13 @@ def plot_Edia_vs_thf(fileEdia,
             else:
                 ax.scatter(Edia_list[ind0[0]], thf_list[ind0[0]], marker="o", c=list_color, s=50)
                 if show_lines:
-                    linediabranch, = ax.plot(Edia_list[ind0[0]], thf_list[ind0[0]], "-",
+                    _, = ax.plot(Edia_list[ind0[0]], thf_list[ind0[0]], "-",
                                                                         color=list_color[ind2],
                                                                         label=str(i_branch),
                                                                         picker=0.5)
 
                 hkl = np.array(dict_Edia[i_branch][ind_hkldia].round(decimals=0), dtype=int)
-                label1 = str(hkl[0]) + str(hkl[1]) + str(hkl[2]) + " #" + str(i_branch)
+                _ = str(hkl[0]) + str(hkl[1]) + str(hkl[2]) + " #" + str(i_branch)
 
                 yy = thf_list[ind0[0]]
                 xx = Edia_list[ind0[0]]
@@ -3518,12 +3507,12 @@ def plot_Edia_vs_thf(fileEdia,
         print(filespotlist_sample)
         data_sample = np.loadtxt(filespotlist_sample, skiprows=5)
         print("numdat 0, xy_integer 1:3, xy_fit 3:5, hkl 5:8, Ipixmax 8, Etheor 9")
-        nspots_sample = np.shape(data_sample)[0]
-        numdat = np.array(data_sample[:, 0], dtype=int)
+        _ = np.shape(data_sample)[0]
+        _ = np.array(data_sample[:, 0], dtype=int)
 
         if nsample_max is not None:
-            nspots_sample = nsample_max
-        Etheor_sample = data_sample[:, 9] / 1000.0
+            _ = nsample_max
+        _ = data_sample[:, 9] / 1000.0
 
         # if (dict_dips_exp is None) & (filediplinks is None):
         #     for i_spot in range(nspots_sample):
@@ -3560,7 +3549,7 @@ def plot_Edia_vs_thf(fileEdia,
 
             xdata = x_energy
             ydata = y_thf
-            maxd = 5
+            _ = 5
             d = np.sqrt((xdata - event.xdata) ** 2.0 + (ydata - event.ydata) ** 2.0)
             #             ind = np.nonzero(np.less_equal(d, maxd))
             ind = np.argmin(d)
@@ -3583,7 +3572,7 @@ def plot_Edia_vs_thf(fileEdia,
             #     text.set_text(ty)
             ax.set_title(ty, fontsize=13)
 
-        cid = fig.canvas.mpl_connect("button_press_event", onclick)
+        _ = fig.canvas.mpl_connect("button_press_event", onclick)
 
     figfilename = ""
     if savefig:
@@ -3822,7 +3811,7 @@ def build_dict_dips_theor(filespotlist_sample,
     for i in range(nspots_sample):
         Esample = data_sample[i, 9]
         print("i (spotindex)= ", i, "Etheor_sample = ", Esample)
-        dip_found = 0
+        _ = 0
         ndip = 0
         ndia_list = []
         hkldia_list = []
@@ -3866,7 +3855,7 @@ def build_dict_dips_theor(filespotlist_sample,
                     if ((is_double_valued[j] == 1)
                         & (Esample > double_range[j, 0])
                         & (Esample < double_range[j, 1])):
-                        double_dip = 1
+                        _ = 1
                         # print "two dips"
                         # print "double_range = ", double_range[j]
                         # print "Esample = ", Esample
@@ -3963,7 +3952,7 @@ def build_dict_dips_theor(filespotlist_sample,
 
                     else:
                         # print "one dip"
-                        double_dip = 0
+                        _ = 0
                         newy1, slope1 = interpol_new(xylist, Esample)
                         dip_depth1 = dict_Edia[j][1] * newy1[1] * newy1[1]
 
@@ -4334,7 +4323,7 @@ def calc_dEsE_list_v2(filediplinks,
 
     uilab = calibdia[uilab_range]
     vlab = calibdia[vlab_range]
-    matref = calibdia[mat_range]
+    _ = calibdia[mat_range]
     thf_ref = calibdia[thfref_range]
 
     #    xlab = np.array([1.,0.,0.])
@@ -4378,7 +4367,7 @@ def calc_dEsE_list_v2(filediplinks,
 
     npics = len(list(dict_dips_theor.keys()))
 
-    dict_Edia, dict_values_names, thf_list = read_dict_Edia_vs_thf(fileEdia, verbose=0)
+    dict_Edia, _, _ = read_dict_Edia_vs_thf(fileEdia, verbose=0)
 
     allres = np.zeros((ndiplinks, 5), float)
 
@@ -4718,7 +4707,7 @@ def convert_JSM_fitfile_into_OR_fitfile(filefit, min_matLT=True, verbose=0,
             i = i + 1
             # print i
             if line[:5] == "#spot":
-                linecol = line.rstrip("\n")
+                _ = line.rstrip("\n")
                 linestartspot = i + 1
                 if verbose:
                     print(line)
@@ -4800,7 +4789,7 @@ def convert_JSM_fitfile_into_OR_fitfile(filefit, min_matLT=True, verbose=0,
 
     finally:
         f.close()
-        linetot = i
+        _ = i
 
     # print "linetot = ", linetot
 
@@ -5200,8 +5189,8 @@ def build_dict_xy_E(img_list,
         print(key, xyint_ref[key], hkl_ref[key], xyfit_ref[key])
         dict_xy_E[key] = [xyint_ref[key], hkl_ref[key], Etheor_ref[key], [], [], []]  # 0
 
-    nkeys = len(list_spot_keys)
-    nimg = len(img_list)
+    _ = len(list_spot_keys)
+    _ = len(img_list)
 
     kk = 0
     print("img, key, xypic, Etheor, dxypic, dEtheor")
@@ -5242,7 +5231,7 @@ def build_dict_xy_E(img_list,
                                                 min_matLT=min_matLT,
                                                 check_pixdev_JSM=0)
 
-        gnumlist, npeaks, indstart, matstarlab_all, data_fit_all, calib_all, pixdev_all, strain6, euler, ind_h_x_int_pixdev_Etheor = res1
+        _, _, _, matstarlab_all, data_fit_all, calib_all, pixdev_all, _, _, ind_h_x_int_pixdev_Etheor = res1
 
         indh = ind_h_x_int_pixdev_Etheor[0]
         indx = ind_h_x_int_pixdev_Etheor[1]
@@ -5254,7 +5243,7 @@ def build_dict_xy_E(img_list,
         matstarlab = matstarlab_all[0]
         data_fit = np.array(data_fit_all, float)
         calib = calib_all[0]
-        pixdev = pixdev_all[0]
+        _ = pixdev_all[0]
 
         #        matstarlab, data_fit, calib, pixdev = \
         #                        F2TC.readlt_fit(filefit,  min_matLT = True,
@@ -5262,7 +5251,7 @@ def build_dict_xy_E(img_list,
         #                                                          verbose = 0,
         #                                                          verbose2 = 0)
         #      spot# Intensity h k l  pixDev xexp yexp Etheor
-        xyfit_fit = np.array(data_fit[:, ind_xy_in_data_fit], dtype=float)
+        _ = np.array(data_fit[:, ind_xy_in_data_fit], dtype=float)
 
         hkl_fit = np.array(data_fit[:, ind_hkl_in_data_fit].round(decimals=1), dtype=int)
 
@@ -5292,7 +5281,7 @@ def build_dict_xy_E(img_list,
                     print("missing spot found in dat file")
                     xyint_new = xyint_dat[ind1[0][0]]
 
-                    Etheor_new, ththeor_deg, uqlab = MG.mat_and_hkl_to_Etheor_ththeor_uqlab(
+                    Etheor_new, _, _ = MG.mat_and_hkl_to_Etheor_ththeor_uqlab(
                         matwithlatpar_inv_nm=matwithlatpar_inv_nm, hkl=hkl_ref[key])
 
                 #                    Etheor_new = hkl_to_Etheor(matstarlab, hkl_ref[key],
@@ -5619,7 +5608,7 @@ def thf_dip_to_lambda_dia_v2(hkldia, thf_dip, calibdia):
 
     lambda_dia_nm = (2.0 * sintheta) / norme(qlab)
 
-    Edia = DictLT.E_eV_fois_lambda_nm / lambda_dia_nm
+    _ = DictLT.E_eV_fois_lambda_nm / lambda_dia_nm
     #    print "Edia (eV) = ", np.round(Edia,2)
 
     return lambda_dia_nm
