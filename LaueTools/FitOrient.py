@@ -6,7 +6,7 @@ JS Micha Feb 2012
 
 module to fit orientation and strain
 
-http://sourceforge.net/projects/lauetools/
+https://gitlab.esrf.fr/micha/lauetools/
 """
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"

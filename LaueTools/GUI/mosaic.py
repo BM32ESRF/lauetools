@@ -1460,7 +1460,7 @@ class ImshowFrame(wx.Frame):
         description = """mosaic aims mainly at looking at 2D data images and navigating among a set of them (sample map); Mapcanvas is a part of LaueTools toolkit for white beam x-ray microdiffraction Laue Pattern analysis. It allows Simulation & Indexation procedures written in python by Jean-Sebastien MICHA \n  micha@esrf.fr\n\n French CRG-IF beamline \n at BM32 (European Synchrotron Radiation Facility).
 
         Support and help in developing this package:
-        https://sourceforge.net/projects/lauetools
+        https://gitlab.esrf.fr/micha/lauetools/
         """
 
         licence = """mosaic is free software; you can redistribute it and/or modify it 
