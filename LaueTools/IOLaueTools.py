@@ -2,9 +2,9 @@
 """
 module of lauetools project
 
-http://sourceforge.net/projects/lauetools/
+https://gitlab.esrf.fr/micha/lauetools/
 
-JS Micha   May 2019
+JS Micha   Feb 2022
 
 this module gathers functions to read and write ASCII file corresponding
 to various data
@@ -17,6 +17,7 @@ import string
 import copy
 from copy import deepcopy
 import re
+import h5py
 
 import numpy as np
 
@@ -1846,11 +1847,59 @@ def createselecteddata(tupledata_theta_chi_I, _listofselectedpts, _indicespotmax
 
     return (_dataselected, _nbmax)
 
+def parsehdf5time(strtime):
+    """ parse time in hdf5 from bliss file
+    Return  ascii time, epoch time"""
+    sd, _ = strtime.split('+')
+    da,ho = sd.split('T')
+    yy,mm,dd = da.split('-')
+    hh,mi,sec = ho.split(':')
+    starttime = time.strptime('%s %s %s %s:%s:%s'%(yy, mm, dd, hh, mi, sec[:2]), '%Y %m %d %H:%M:%S')
+    return time.asctime(starttime), time.mktime(starttime)
+
+def ReadHdf5(fname, scan, outputdate=False):
+    """extrct data of a scan in a ESRF Bliss made hdf5 file
+
+    :param fname: file object or string (path)
+    :type fname: file object or string
+    :param scan: scan index
+    :type scan: integer
+    :param outputdate: output starting date of the scan in ascii format, defaults to False
+    :type outputdate: bool, optional
+    """
+    if isinstance(fname, str):
+        f = h5py.File(fname, 'r')
+
+    i_scan = '%d' % scan + '.1'
+    print('i_scan', i_scan)
+    print('fname', f)
+    print('fname[i_scan]', f[i_scan])
+    datasetnames = [key for key in f[i_scan]['measurement'].keys()]
+    d = {}
+    for _n in datasetnames:
+        d[_n] = f[i_scan]['measurement'][_n].value
+    # x =  f[i_scan]['measurement']['m0'].value
+    # y = f[i_scan]['measurement']['m1'].value
+    # z = f[i_scan]['measurement']['fluo1'].value
+    title = f[i_scan]['title'].value
+    st = f[i_scan]['start_time'].value
+    et = f[i_scan]['end_time'].value
+    duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
+    
+    print('title', title)
+    print('duration', duration)
+    
+    if not outputdate:
+        return title, d
+    else:
+        return title, d, st
+
 
 def ReadSpec(fname, scan, outputdate=False):
     """
     Procedure very based on that of Vincent Favre Nicolin procedure
 
+    :param scan: scan index (integer)
     return :
     spec command (str), dict of data (key=counter name, val= values), and optionnaly [date (str)]
     """
