@@ -1337,7 +1337,7 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
     #     if framedim not in ((2048, 2048), [2048, 2048]):
     #         raise ValueError, "Background removal still implemented for non squared camera "
     # computing substraction on whole array
-    if CCDlabel in ("sCMOS", "sCMOS_fliplr"):
+    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_fliplr"):
         usemask = False
 
     if usemask:
