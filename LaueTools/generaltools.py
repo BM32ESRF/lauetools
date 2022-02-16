@@ -2076,19 +2076,26 @@ def matRot(axis, angle):
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
 
-def propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False):
+def propose_orientation_from_hkl(HKL, target2theta=90., B0matrix=None, randomrotation=False):
     """
-    propose one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta, chi =0)
+    proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta, chi =0)
 
+    1rst step : put G*=ha*+kb*+lc* along [-1,0,0]
+    2nd step : put it along qdir (defined by target2theta)
     .. note:: tested for cubic lattice
     """
     hkl_central = np.array(HKL)
 
     qdir = np.array([-np.sin(target2theta / 2. * DEG), 0, np.cos(target2theta / 2. * DEG)])
     # print('qdir',qdir)
+    if B0matrix is None: #cubic case
+        n_hklcentral = np.sqrt(np.sum(hkl_central**2))
+        axrot1 = np.cross(hkl_central, np.array([-1, 0, 0]))
+    else:
+        hkl_central = np.dot(B0matrix,hkl_central)
+        n_hklcentral = np.sqrt(np.sum(hkl_central**2))
+        axrot1 = np.cross(hkl_central, np.array([-1, 0, 0]))
 
-    n_hklcentral = np.sqrt(np.sum(hkl_central**2))
-    axrot1 = np.cross(hkl_central, np.array([-1, 0, 0]))
     angrot1 = np.arccos(np.dot(hkl_central, np.array([-1, 0, 0])) / n_hklcentral) / DEG
     matrot1 = matRot(axrot1, angrot1)
     matrot2 = matRot([0, 1, 0], 90. - target2theta / 2.)  # positive angle between qdir and -x
