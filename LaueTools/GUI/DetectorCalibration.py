@@ -272,6 +272,12 @@ class CrystalParamPanel(wx.Panel):
         self.comboMatrix = wx.ComboBox(self, 2525, "Identity",
                                         choices=list(DictLT.dict_Rot.keys()))
 
+        #GT.propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False)
+        self.btncenteronhkl = wx.Button(self, -1, "center on hkl = ")
+        self.tchc = wx.TextCtrl(self, -1, "1", size=(30, -1))
+        self.tckc = wx.TextCtrl(self, -1, "1", size=(30, -1))
+        self.tclc = wx.TextCtrl(self, -1, "1", size=(30, -1))
+
         self.btn_mergeUB = wx.Button(self, -1, "set UB with B")
 
         t5 = wx.StaticText(self, -1, "Extinctions")
@@ -296,6 +302,7 @@ class CrystalParamPanel(wx.Panel):
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeElement)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeBMatrix, id=2424)
         self.btn_mergeUB.Bind(wx.EVT_BUTTON, self.mainframe.onSetOrientMatrix_with_BMatrix)
+        self.btncenteronhkl.Bind(wx.EVT_BUTTON, self.mainframe.onCenterOnhkl)
         self.Bind(wx.EVT_COMBOBOX, self.mainframe.OnChangeMatrix, id=2525)
         self.Bind(wx.EVT_BUTTON, self.mainframe.EnterMatrix, id=1010)
         btn_sortUBsname.Bind(wx.EVT_BUTTON, self.onSortUBsname)
@@ -322,6 +329,13 @@ class CrystalParamPanel(wx.Panel):
         h4box.Add(self.comboMatrix, 0, wx.EXPAND|wx.ALL, 10)
         h4box.Add(self.btn_mergeUB, 0, wx.EXPAND|wx.ALL, 10)
 
+        h4bbox = wx.BoxSizer(wx.HORIZONTAL)
+        h4bbox.Add(wx.StaticText(self, -1, "               "), 0, wx.EXPAND|wx.ALL, 10)
+        h4bbox.Add(self.btncenteronhkl, 0, wx.EXPAND|wx.ALL, 10)
+        h4bbox.Add(self.tchc, 0, wx.EXPAND|wx.ALL, 1)
+        h4bbox.Add(self.tckc, 0, wx.EXPAND|wx.ALL, 1)
+        h4bbox.Add(self.tclc, 0, wx.EXPAND|wx.ALL, 1)
+
         h5box = wx.BoxSizer(wx.HORIZONTAL)
         h5box.Add(t5, 0, wx.EXPAND|wx.ALL, 10)
         h5box.Add(self.comboExtinctions, 0, wx.EXPAND, 10)
@@ -334,12 +348,13 @@ class CrystalParamPanel(wx.Panel):
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(10)
-        vbox.Add(h1box, 0, wx.EXPAND|wx.ALL, 10)
-        vbox.Add(h2box, 0, wx.EXPAND|wx.ALL, 10)
-        vbox.Add(h3box, 0, wx.EXPAND|wx.ALL, 10)
-        vbox.Add(h4box, 0, wx.EXPAND|wx.ALL, 10)
-        vbox.Add(h5box, 0, wx.EXPAND|wx.ALL, 10)
-        vbox.Add(h6box, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(h1box, 0, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(h2box, 0, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(h3box, 0, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(h4box, 0, wx.EXPAND|wx.ALL, 0)
+        vbox.Add(h4bbox, 0, wx.EXPAND|wx.ALL, 0)
+        vbox.Add(h5box, 0, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(h6box, 0, wx.EXPAND|wx.ALL, 5)
         vbox.Add(b3, 0, wx.EXPAND, 10)
 
         self.SetSizer(vbox)
@@ -407,6 +422,8 @@ class CrystalParamPanel(wx.Panel):
 
         tipreloadMat = 'Reload Materials from dict_Materials file'
         btnReloadMaterials.SetToolTipString(tipreloadMat)
+
+        self.btncenteronhkl.SetToolTipString('Orient crystal such as to have hkl at the center of detector frame')
 
     def onSortUBsname(self, _):
         listrot = list(DictLT.dict_Rot.keys())
@@ -2823,6 +2840,16 @@ class MainCalibrationFrame(wx.Frame):
             self.kf_direction = [Central2Theta, CentralChi]
 
         print("kf_direction chosen:", self.kf_direction)
+
+    def onCenterOnhkl(self, evt):
+        cppanel = self.crystalparampanel
+        h = float(cppanel.tchc.GetValue())
+        k = float(cppanel.tckc.GetValue())
+        l = float(cppanel.tclc.GetValue())
+
+        cppanel.UBmatrix = GT.propose_orientation_from_hkl([h, k, l], B0matrix=self.B0matrix)
+
+        self._replot(evt)
 
     def onSetOrientMatrix_with_BMatrix(self, _):
         print("reset orientmatrix by integrating B matrix: OrientMatrix=OrientMatrix*B")
