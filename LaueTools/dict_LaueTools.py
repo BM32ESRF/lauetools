@@ -24,6 +24,7 @@ LAUETOOLSFOLDER = os.path.split(__file__)[0]
 #-------------------------------------------------------------------------
 # label, a,b,c,alpha, beta, gamma  in real space lattice, extinction rules label
 dict_Materials = {
+    "AmbiguousTriclinic": ["AmbiguousTriclinic", [3.9, 4, 4.1, 89, 90, 91], "no"],  # confirmed by IM2NP
     "Ag": ["Ag", [4.085, 4.085, 4.085, 90, 90, 90], "fcc"],  # confirmed by IM2NP
     "Al2O3": ["Al2O3", [4.785, 4.785, 12.991, 90, 90, 120], "Al2O3"],
     "Al2O3_all": ["Al2O3_all", [4.785, 4.785, 12.991, 90, 90, 120], "no"],
@@ -67,6 +68,8 @@ dict_Materials = {
     "ZrO2Y2O3": ["ZrO2Y2O3", [5.1378, 5.1378, 5.1378, 90, 90, 90], "fcc"],
     "ZrO2": ["ZrO2", [5.1505, 5.2116, 5.3173, 90, 99.23, 90], "VO2_mono"],
     "ZrO2fake1": ["ZrO2fake1", [5.1505, 5.048116, 4.988933, 90, 99.23, 90], "VO2_mono"],
+    "ZrO2swapac": ["ZrO2swapac", [5.3173, 5.2116, 5.1505, 90, 99.23, 90], "VO2_mono"],
+    "ZrO2_1200C": ["ZrO2_1200C", [3.6406,3.6406,5.278,90,90,90], "h+k+l=2n"],
     "DIA": ["DIA", [5.0, 5.0, 5.0, 90, 90, 90], "dia", ],  #  small lattice Diamond like Structure
     "DIAs": ["DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
     "FCC": ["FCC", [5.0, 5.0, 5.0, 90, 90, 90], "fcc"],  # small lattice fcc Structure
@@ -111,10 +114,11 @@ dict_Materials = {
     "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite",],
     "Y2SiO5": ["Y2SiO5", [10.34, 6.689, 12.38, 90.0, 102.5, 90.0], "no", ],  # SG 15  I2/a
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
-    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no" ],  # SG 136 (87 deg Celsius)  Rutile
-    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile"],  # SG 136 (87 deg Celsius)  Rutile
+    "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no"], # SG 136 (87 deg Celsius)  Rutile
+    "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile"], # SG 136 (87 deg Celsius)  Rutile
     "ZnCuOCl": ["ZnCuOCl", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "SG166"],
     "ZnCuOCl_all": ["ZnCuOCl_all", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "no"],
+    "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
 }
 
 dict_Materials_short = {
@@ -167,6 +171,7 @@ dict_Materials_short = {
     "quartz_alpha": ["quartz_alpha", [4.913, 4.913, 5.404, 90, 90, 120], "no"],
     "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
     "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
+    "FePS3": ["FePS3", [5,10,7, 90, 107, 90], "no"],
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
     "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
@@ -426,7 +431,8 @@ dict_Extinc = {
     "VO2_mono2":"VO2_mono2",
     "rutile": "rutile",
     "SG227": "SG227",
-    "SG141": "SG141"
+    "SG141": "SG141",
+    "137": "137"
 }
 
 dict_Extinc_inv = {
@@ -447,7 +453,8 @@ dict_Extinc_inv = {
     "VO2_mono2":"VO2_mono2",
     "rutile":"rutile",
     "SG227": "SG227",
-    "SG141": "SG141"
+    "SG141": "SG141",
+    "137": "137"
 }
 
 # --- -------------- Transforms 3x3 Matrix
