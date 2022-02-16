@@ -4,8 +4,7 @@ This module belongs to Lauetools project
 
 JS Micha Feb 2012
 
-http://sourceforge.net/projects/lauetools/
-
+https://gitlab.esrf.fr/micha/lauetools/
 
 #   this module contains general functions to index and refine data and
 #   calibrate detector (on top geometry)
@@ -269,7 +268,7 @@ def RefineUB(linkedspots_link,
         # print "\n********************\n       Results of Fit        \n********************"
         # print "results",results
 
-    if results != None:
+    if results is not None:
 
         # fitresults = True
 
