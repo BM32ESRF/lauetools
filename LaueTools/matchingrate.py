@@ -445,7 +445,7 @@ def getProximity(TwicethetaChi,
     r"""
     :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
     :param data_theta: array of theta angles (of experimental spots)
-    :param data_chi: array of chi (same length!)
+    :param data_chi: array of chi (same length than data_theta!)
 
     :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
 
@@ -454,7 +454,6 @@ def getProximity(TwicethetaChi,
     .. todo::
         * change the input with 2theta angles pnly to avoid confusion
         * remove the option signchi = 1 fixed old convention
-
     """
     # theo simul data
     theodata = array([TwicethetaChi[0] / 2.0, signchi * TwicethetaChi[1]]).T
