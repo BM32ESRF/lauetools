@@ -2219,20 +2219,22 @@ class ImshowFrame(wx.Frame):
         dc.SetPen(wpen)
 
         dc.ResetBoundingBox()
-        if sys.platform not in ("darwin",):
-            if not WXPYTHON4:
-                dc.BeginDrawing()
 
-            x, y, left, right, bottom, top = [int(val) for val in (x, y, left, right, bottom, top)]
+        if 0:  # issue of cursor refreshing when using tunnel ssh
+            if sys.platform not in ("darwin",):
+                if not WXPYTHON4:
+                    dc.BeginDrawing()
 
-            self.erase_cursor()
-            line1 = (x, bottom, x, top)
-            line2 = (left, y, right, y)
-            self.lastInfo = line1, line2, ax, dc
-            dc.DrawLine(*line1)  # draw new
-            dc.DrawLine(*line2)  # draw new
-            if not WXPYTHON4:
-                dc.EndDrawing()
+                x, y, left, right, bottom, top = [int(val) for val in (x, y, left, right, bottom, top)]
+
+                self.erase_cursor()
+                line1 = (x, bottom, x, top)
+                line2 = (left, y, right, y)
+                self.lastInfo = line1, line2, ax, dc
+                dc.DrawLine(*line1)  # draw new
+                dc.DrawLine(*line2)  # draw new
+                if not WXPYTHON4:
+                    dc.EndDrawing()
 
         xabs = int(np.round(event.xdata))
         yabs = int(np.round(event.ydata))

@@ -2937,10 +2937,11 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.canvas.mpl_connect("motion_notify_event", self.mouse_move)
         
-        if WXPYTHON4:
-            self.Bind(wx.EVT_PAINT, self.OnPaint)
-        else:
-            wx.EVT_PAINT(self, self.OnPaint)
+        if 0:
+            if WXPYTHON4:
+                self.Bind(wx.EVT_PAINT, self.OnPaint)
+            else:
+                wx.EVT_PAINT(self, self.OnPaint)
 
         #         self.tooltip = wx.ToolTip(tip='tip with a long %s line and a newline\n' % (' ' * 100))
         self.tooltip = wx.ToolTip(tip="Welcome on peaksearch board of LaueTools")
@@ -4661,22 +4662,23 @@ class MainPeakSearchFrame(wx.Frame):
 
         dc.ResetBoundingBox()
 
-        if sys.platform not in ("darwin",):
-            if not WXPYTHON4:
-                dc.BeginDrawing()
+        if 0:  # refresh display cursor  issue when using tunnel ssh 
+            if sys.platform not in ("darwin",):
+                if not WXPYTHON4:
+                    dc.BeginDrawing()
 
-            x, y, left, right, bottom, top = [int(val) for val in (x, y, left, right, bottom, top)]
+                x, y, left, right, bottom, top = [int(val) for val in (x, y, left, right, bottom, top)]
 
-            self.erase_cursor()
-            line1 = (x, bottom, x, top)
-            line2 = (left, y, right, y)
-            # warning there is a test if lastInfo is a self attribute.
-            # So don't set self.lastInfo in __init__()
-            self.lastInfo = line1, line2, ax, dc
-            dc.DrawLine(*line1)  # draw new
-            dc.DrawLine(*line2)  # draw new
-            if not WXPYTHON4:
-                dc.EndDrawing()
+                self.erase_cursor()
+                line1 = (x, bottom, x, top)
+                line2 = (left, y, right, y)
+                # warning there is a test if lastInfo is a self attribute.
+                # So don't set self.lastInfo in __init__()
+                self.lastInfo = line1, line2, ax, dc
+                dc.DrawLine(*line1)  # draw new
+                dc.DrawLine(*line2)  # draw new
+                if not WXPYTHON4:
+                    dc.EndDrawing()
 
         xabs = int(np.round(event.xdata))
         yabs = int(np.round(event.ydata))
