@@ -771,7 +771,6 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
         index_constant_length = 1
     if constantlength == "c":
         index_constant_length = 2
-
     
     ratio = (latticeparams[index_constant_length]
         / lattice_parameter_direct_strain[index_constant_length])

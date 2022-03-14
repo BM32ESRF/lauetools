@@ -117,7 +117,7 @@ dict_density = {'H' : 0.090,
                 'No': None,
                 'Lr': None,
                 'air':1.225E-3}   
-    
+
 # fluorescence yields
 dict_fluo_yield = { 'B' : 1.7E-3,
                     'C' : 2.8E-3,

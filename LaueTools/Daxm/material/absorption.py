@@ -19,30 +19,30 @@ class MaterialDataError(Exception):
 
 
 def calc_absorption(material, energy=None, absolute=False):
-     
+
     # energy scale
     if energy is None:
         energy = np.arange(1, 30, 0.01)
-        
+
     else:
         energy = np.array(energy)
-    
+
     # load or calculate data
     if is_available_absorption(material):
-        
+
         abscoeff, energy = load_absorption_coeff(material, energy, absolute)
-        
+
         abscoeff_p = [abscoeff]
-        
+
     elif material in dm.dict_mat:
         
         abscoeff, energy, abscoeff_p = calc_absorption_mix(dm.dict_mat[material][0],
                                                            np.array(dm.dict_mat[material][1])*dm.dict_mat[material][2],
                                                            energy)
-        
+
     else:
         raise(MaterialDataError("Absorption of " + material + " is not implemeted!"))
-    
+
     return abscoeff, energy, abscoeff_p
 
 
