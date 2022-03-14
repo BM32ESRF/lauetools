@@ -130,8 +130,8 @@ def twodgaussian(inpars, circle, rotate, vheight):
         width_y = float(width)
     else:
         width_x, width_y = inpars.pop(0), inpars.pop(0)
-        width_x = float(width_x)
-        width_y = float(width_y)
+        width_x = abs(float(width_x))
+        width_y = abs(float(width_y))
     if rotate == 1:
         rota = inpars.pop(0)
         rota = np.pi / 180.0 * float(rota)

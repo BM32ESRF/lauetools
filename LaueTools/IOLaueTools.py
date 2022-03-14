@@ -1851,9 +1851,9 @@ def parsehdf5time(strtime):
     """ parse time in hdf5 from bliss file
     Return  ascii time, epoch time"""
     sd, _ = strtime.split('+')
-    da,ho = sd.split('T')
-    yy,mm,dd = da.split('-')
-    hh,mi,sec = ho.split(':')
+    da, ho = sd.split('T')
+    yy, mm, dd = da.split('-')
+    hh, mi, sec = ho.split(':')
     starttime = time.strptime('%s %s %s %s:%s:%s'%(yy, mm, dd, hh, mi, sec[:2]), '%Y %m %d %H:%M:%S')
     return time.asctime(starttime), time.mktime(starttime)
 

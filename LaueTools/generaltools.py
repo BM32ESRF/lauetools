@@ -1041,21 +1041,21 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     diffx = x1[:, np.newaxis] - x2
     diffy = y1[:, np.newaxis] - y2
 
-    dist = np.hypot(diffx, diffy)
+    _dist = np.hypot(diffx, diffy)
 
     if samelist:
         # add big distance in diagonal
-        np.fill_diagonal(dist, np.amax(dist)+2*dist_tolerance)
+        np.fill_diagonal(_dist, np.amax(_dist)+2*dist_tolerance)
 
-    # print('dist.shape', dist.shape)
-    _, n2 = dist.shape
+    # print('_dist.shape', _dist.shape)
+    _, n2 = _dist.shape
 
-    resmin = np.where(dist <= dist_tolerance)
+    resmin = np.where(_dist <= dist_tolerance)
 
     # closest distance beyond tolerance distance
     #print('resmin in getCommonPts', resmin)
     if len(resmin[0]) == 0:
-        posmin = np.argmin(dist)
+        posmin = np.argmin(_dist)
         ind_XY1, ind_XY2 = posmin // n2, posmin % n2
         # print('closest distance:', dist[ind_XY1, ind_XY2])
         WITHINTOLERANCE = False
@@ -2082,7 +2082,7 @@ def propose_orientation_from_hkl(HKL, target2theta=90., B0matrix=None, randomrot
 
     1rst step : put G*=ha*+kb*+lc* along [-1,0,0]
     2nd step : put it along qdir (defined by target2theta)
-    .. note:: tested for cubic lattice
+    .. warning:: the resulting orientation is not a pure rotation matrix (a bit distortion)
     """
     hkl_central = np.array(HKL)
 
