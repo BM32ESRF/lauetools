@@ -658,7 +658,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                         addImax=ComputeIpixmax,
                                         use_data_corrected=use_data_corrected)
 
-    if verbose:
+    if 1:#verbose:
         print("fitting time for {} peaks is : {:.4f}".format(len(peaklist), ttt.time() - tstart))
         print("nb of results: ", len(ResFit[0]))
 
@@ -672,7 +672,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     #    print "par in fitoneimage_manypeaks", par
 
     if par == []:
-        print("no fitted peaks")
+        print("\n\n no fitted peaks!! \n\n")
         return
 
     peak_bkg = par[:, 0]
@@ -732,7 +732,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # too large peak compared to given threshold
     to_reject7 = np.where(maxpeaksize >= PeakSizeRange[1])[0]
 
-    if verbose:
+    if 1:#verbose:
         print("to_reject", type(to_reject))
         print("to_reject ...(len)", len(to_reject))
         print(np.take(peaklist, to_reject, axis=0))
