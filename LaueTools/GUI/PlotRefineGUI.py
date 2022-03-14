@@ -3959,10 +3959,8 @@ class NoiseLevelBoard(wx.Dialog):
 
         wx.StaticText(self, -1, "RMS Radial pixel noise", pos=(5, posv + 57))
 
-        self.noisetxtctrl = wx.TextCtrl(
-            self, -1, "0", size=(150, -1), pos=(120, posv + 55))
-        self.applynoisebtn = wx.Button(
-            self, -1, "Apply", size=(70, -1), pos=(300, posv + 55))
+        self.noisetxtctrl = wx.TextCtrl(self, -1, "0", size=(150, -1), pos=(120, posv + 55))
+        self.applynoisebtn = wx.Button(self, -1, "Apply", size=(70, -1), pos=(300, posv + 55))
 
         self.applynoisebtn.Bind(wx.EVT_BUTTON, self.onApplyNoise)
 
