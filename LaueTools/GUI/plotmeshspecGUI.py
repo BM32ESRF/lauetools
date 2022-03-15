@@ -538,7 +538,7 @@ class MainFrame(wx.Frame):
             if self.specfilename != self.last_specfilename:
                 samefile = True
                 self.listmesh = None
-        elif self.filetype=='hdf5':
+        elif self.filetype == 'hdf5':
             if self.hdf5filename != self.last_hdf5filename:
                 samefile = True
                 self.listmesh = None
@@ -555,7 +555,7 @@ class MainFrame(wx.Frame):
 
         print("lastscan_listmesh", lastscan_listmesh)
 
-        if self.filetype=='spec':
+        if self.filetype == 'spec':
             listmeshall = getmeshscan_from_specfile(fullpathfilename)
 
             if listmeshall == []:
@@ -585,7 +585,7 @@ class MainFrame(wx.Frame):
             print('self.listmesh', self.listmesh)
             print('self.list_meshscan_indices', self.list_meshscan_indices)
         
-        if self.filetype=='hdf5':
+        if self.filetype == 'hdf5':
             listmeshall = getmeshscan_from_hdf5file(fullpathfilename)
 
             if listmeshall == []:
@@ -822,6 +822,9 @@ class MainFrame(wx.Frame):
     def ReadScan_SpecFile(self, scan_index, resetlistcounters=True):
         """
         read a SINGLE scan data in spec file and fill data for a updated figure plot
+
+        it can be SPEC or HDF5 file
+
         requires:
         self.fullpath_specfile
         self.detectorname_ascan
@@ -849,7 +852,7 @@ class MainFrame(wx.Frame):
             scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_index, outputdate=True)
             tit = str(scanheader)
             self.scantype = tit.split()[2]
-        elif self.filetype=='hdf5':
+        elif self.filetype == 'hdf5':
             scanheader, data, self.scan_date = ReadHdf5(self.fullpath_hdf5file, scan_index, outputdate=True)
             tit = str(scanheader)
             self.scantype = tit.split()[0]
@@ -895,12 +898,15 @@ class MainFrame(wx.Frame):
                 counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
 
             print("building arrays")
+            print('nb1',nb1,'nbacc',nbacc)
             if nb1 == nbacc:
                 print("scan is finished")
                 data_z_values = counterintensity1D
-                try:
+                if 'img' in data:
                     data_img = data["img"]
-                except KeyError:
+                elif 'img_scmos' in data:
+                    data_img = data["img_scmos"]
+                else:
                     print("'img' column doesn't exist! Add fake dummy 0 value")
                     data_img = np.zeros(nb1)
                 posmotorsinfo = np.array(posmotor1)
@@ -915,9 +921,11 @@ class MainFrame(wx.Frame):
                 data_z_values = zz
                 # image index array
                 data_img = np.zeros(nb1)
-                try:
+                if 'img' in data:
                     data_img.put(range(nbacc), data["img"])
-                except KeyError:
+                elif 'img_scmos' in data:
+                    data_img.put(range(nbacc), data["img_scmos"])
+                else:
                     print("'img' column doesn't exist! Add fake dummy 0 value")
                     data_img.put(range(nbacc), 0)
                 # motors positions
@@ -1021,9 +1029,11 @@ class MainFrame(wx.Frame):
             if nb2 * nb1 == nbacc:
                 print("scan is finished")
                 data_z_values = np.reshape(counterintensity1D, (nb2, nb1))
-                try:
+                if 'img' in data:
                     data_img = np.reshape(data["img"], (nb2, nb1))
-                except KeyError:
+                elif 'img_scmos' in data:
+                    data_img = np.reshape(data["img_scmos"], (nb2, nb1))
+                else:
                     print("'img' column doesn't exist! Add fake dummy 0 value")
                     data_img = np.zeros((nb2, nb1))
                 posmotorsinfo = np.reshape(np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2))
@@ -1038,9 +1048,11 @@ class MainFrame(wx.Frame):
                 data_z_values = np.reshape(zz, (nb2, nb1))
                 # image index array
                 data_img = np.zeros(nb2 * nb1)
-                try:
+                if 'img' in data:
                     data_img.put(range(nbacc), data["img"])
-                except KeyError:
+                elif 'img_scmos' in data:
+                    data_img.put(range(nbacc), data["img_scmos"])
+                else:
                     print("'img' column doesn't exist! Add fake dummy 0 value")
                     data_img.put(range(nbacc), 0)
                 data_img = np.reshape(data_img, (nb2, nb1))
@@ -1332,10 +1344,10 @@ def getmeshscan_from_hdf5file(filename):
     import h5py
 
     print("getmeshscan_from_hdf5file")
-    f = h5py.File(filename,'r')
-    
+    f = h5py.File(filename, 'r')
+
     scanslist = sorted([int(kk[:-2]) for kk in f.keys()])  # removing .1 at the end of nb scan
-    print('scanslist',scanslist)
+    print('scanslist', scanslist)
     listmesh = []
     for i_s in scanslist:
         scancommand= f['%d'%i_s+'.1']['title'].value
@@ -1869,8 +1881,8 @@ class ImshowPanel(wx.Panel):
         if event.inaxes:
             self.centerx, self.centery = event.xdata, event.ydata
             print("current clicked positions", self.centerx, self.centery)
-        if event.button == 3:
-            self.movingxy(False)
+        # if event.button == 3:
+        #     self.movingxy(False)
 
     def movingxy(self, msgbox):
         x, y = self.centerx, self.centery
