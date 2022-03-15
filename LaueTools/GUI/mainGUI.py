@@ -1695,7 +1695,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 #                 spotenergy = data_Energy[k] # wrong
                 if self.DataSet.indexed_spots_dict[absoluteindex][-1] == 1:
                     # spot belong to the grain grain_index
-                    spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][7]
+                    spotenergy = self.DataSet.indexed_spots_dict[absoluteindex][9]
 
                 self.indexed_spots[absoluteindex] = self.indexed_spots[absoluteindex][:-1] + [
                                                 data_Miller[k], spotenergy, self.current_processedgrain, 1]
