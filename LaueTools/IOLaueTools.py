@@ -17,7 +17,11 @@ import string
 import copy
 from copy import deepcopy
 import re
-import h5py
+
+try:
+    import h5py
+except ModuleNotFoundError:
+    print('warning: h5py is missing. It is useful for playing with hdf5 for some LaueTools modules. Install it with pip> pip install h5py')
 
 import numpy as np
 
@@ -30,7 +34,7 @@ if sys.version_info.major == 3:
 else:
     from dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
     PYTHON3 = False
-    print('-- OK! you are using python 2 but tetter install python 3')
+    print('-- OK! you are using python 2 but you would better install python 3')
 
 DEFAULT_CCDLABEL = 'sCMOS'
 
