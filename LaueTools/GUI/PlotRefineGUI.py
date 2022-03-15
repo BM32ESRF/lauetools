@@ -2703,6 +2703,7 @@ class Plot_RefineFrame(wx.Frame):
             self.pointButton5.SetBackgroundColour("Green")
             self.listbuttonstate = [1, 0, 0]
             print("\n\n********************\nAccepting Matching...\n********************\n\n")
+            
             self.Spot_MillerAttribution(evt)
         else:
             self.pointButton5.SetBackgroundColour(self.defaultColor)
