@@ -1053,7 +1053,7 @@ class BrowseCropPanel(wx.Panel):
         self.toggleBtn.SetToolTipString("Display automatically the next image with filename "
         "index +1 and keep waiting for the image")
 
-        tpnbdigits = "Image index is encoded in four digits with zero pads. Set to 4 as default. "
+        tpnbdigits = "Minimal Number of digits to encode the integer image index. For instance, if index is encoded with at least 4 digits, with zero padding, set to 4. (default value) "
         "Set to None if image index exceeds 9999. Image filename should contain a "
         "single _ character, e.g. myimage_1234.tif"
         self.txtnbdigits.SetToolTipString(tpnbdigits)
@@ -1124,6 +1124,9 @@ class MosaicAndMonitor(wx.Panel):
 
         self.comboROI.Bind(wx.EVT_COMBOBOX, self.OnChangeROI)
 
+        self.txtnbdigits = wx.StaticText(self, -1, "Nb of digits\nin ImageFilename")
+        self.nbdigitsctrl = wx.TextCtrl(self, -1, "4")
+
         txt3 = wx.StaticText(self, -1, "Counters & Monitors selection")
         txt3.SetFont(font3)
 
@@ -1154,6 +1157,7 @@ class MosaicAndMonitor(wx.Panel):
         self.btnMosaic = wx.Button(self, wx.ID_ANY, "Start", size=(150, 60))
         self.btnMosaic.Bind(wx.EVT_BUTTON, self.OnMosaic)
 
+        #layout
         self.NavigBoxsizer0 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer0.Add(self.boxsizetxt, 0, wx.ALL, 5)
         self.NavigBoxsizer0.Add(self.boxxtxt, 0, wx.ALL, 5)
@@ -1201,6 +1205,11 @@ class MosaicAndMonitor(wx.Panel):
         ROIBoxsizer.Add(self.twtROI, 0, wx.ALL, 5)
         ROIBoxsizer.Add(self.comboROI, 0, wx.ALL, 5)
 
+        ndigitsBoxsizer = wx.BoxSizer(wx.HORIZONTAL)
+        ndigitsBoxsizer.Add(self.txtnbdigits, 0, wx.ALL, 5)
+        ndigitsBoxsizer.Add(self.nbdigitsctrl, 0, wx.ALL, 5)
+        
+
         self.NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer3.Add(self.txtnbimagesperline, 0, wx.ALL, 5)
         self.NavigBoxsizer3.Add(self.stepctrl, 0, wx.ALL, 5)
@@ -1214,6 +1223,8 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
         vbox.Add(ROIBoxsizer, 0, wx.EXPAND)
+        vbox.Add(ndigitsBoxsizer, 0, wx.EXPAND)
+
         vbox.Add(txt3, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer1, 0, wx.EXPAND)
@@ -2778,7 +2789,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.stackedimages = self.initialParameter["stackedimages"]
         self.stackimageindex = self.initialParameter["stackimageindex"]
         self.Nbstackedimages = self.initialParameter["Nbstackedimages"]
-        self.nbdigits = 4
+        self.nbdigits = 4   # sCMOS with bliss
 
         (self.framedim, self.pixelsize, self.saturationvalue, self.fliprot, self.headeroffset,
                 self.dataformat, self.comments,
@@ -3517,6 +3528,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.read_data()
             self.dataimage_ROI_display = self.dataimage_ROI
             self.Show_Image(1)
+            self.lastindex=self.imageindex
             self.imageindex += 1
             self.setfilename()
             return True
@@ -3567,9 +3579,31 @@ class MainPeakSearchFrame(wx.Frame):
         """set filename from self.imagefilename, self.imageindex,
                                                     CCDLabel=self.CCDlabel
         """
+        print('***** \n\nself.image_with_index',self.image_with_index)
+        
         if self.image_with_index:
+            self.misstext=''
+            self.lastimagefilename = self.imagefilename
             self.imagefilename = IOimage.setfilename(self.imagefilename, self.imageindex,
                                                     CCDLabel=self.CCDlabel, nbdigits=self.nbdigits)
+            print('self.imagefilename',self.imagefilename)
+            print('self.dirname',self.dirname)
+            if not self.imagefilename in os.listdir(self.dirname):
+                print("\n\n %s IS MISSING!"%self.imagefilename)
+                self.misstext="MISSING FILE with index %d\nfilename: %s"%(self.imageindex,self.imagefilename)
+
+                self.axes.set_title(self.misstext, color='red')
+
+                self.imageindex = self.lastindex
+                self.imagefilename = self.lastimagefilename
+
+                self.canvas.draw() 
+
+                return False
+
+            self.axes.set_title('', color='black')
+            
+            return True
 
     def OnStepChange(self, _):
         self.ImagesBrowser.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
@@ -3601,7 +3635,9 @@ class MainPeakSearchFrame(wx.Frame):
         #        print self.canvas.GetRect()
         #        print self.canvas.GetScreenRect()
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
+        self.lastindex = self.imageindex
         self.imageindex += self.stepindex
+        
         self.resetfilename_and_plot()
 
     def OnLargeMinus(self, _):
@@ -3609,6 +3645,7 @@ class MainPeakSearchFrame(wx.Frame):
         and read new image and plot
         """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
+        self.lastindex = self.imageindex
         self.imageindex -= self.stepindex
         self.resetfilename_and_plot()
 
@@ -3623,6 +3660,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.stackimageindex += 1
             self.stackimageindex = self.stackimageindex % self.Nbstackedimages
         else:
+            self.lastindex = self.imageindex
             self.imageindex += 1
 
         self.resetfilename_and_plot()
@@ -3631,11 +3669,13 @@ class MainPeakSearchFrame(wx.Frame):
         """decrease  self.imageindex by 1 (horizontal descending to the left in sample raster scan)
         and read new image and plot
         """
+        print('onMinus')
         if self.stackedimages:
             #         if self.CCDlabel in ('EIGER_4Mstack',):
             self.stackimageindex -= 1
             self.stackimageindex = self.stackimageindex % self.Nbstackedimages
         else:
+            self.lastindex = self.imageindex
             self.imageindex -= 1
 
         self.resetfilename_and_plot()
@@ -3697,12 +3737,13 @@ class MainPeakSearchFrame(wx.Frame):
         try:
             self.nbdigits = int(nbd)
         except ValueError:
-            self.nbdigits = None
+            self.nbdigits = 0
+        
+        self.Monitor.nbdigitsctrl.SetValue(str(nbd))
 
-        self.setfilename()
-
-        if not self.imagefilename in os.listdir(self.dirname):
-            print("%s is missing!"%self.imagefilename)
+        fileexists = self.setfilename()
+        print('fileexists',fileexists)
+        if not fileexists:
             return
 
         self.read_data()
@@ -4227,11 +4268,14 @@ class MainPeakSearchFrame(wx.Frame):
         # 2D slice (rectangular)indices extract
         #         selected2Darray_imageindex = None
 
+        nbdigits = int(self.Monitor.nbdigitsctrl.GetValue())
+        self.ImagesBrowser.nbdigitsctrl.SetValue(str(nbdigits))
+
         dict_param = {}
         dirname = dict_param["imagesfolder"] = self.dirname
         dict_param["filename_representative"] = self.imagefilename
         dict_param["CCDLabel"] = self.CCDlabel
-        dict_param["nbdigits"] = self.nbdigits
+        dict_param["nbdigits"] = nbdigits
 
         dict_param["selected2Darray_imageindex"] = selected2Darray_imageindex
         dict_param["pixelX_center"], dict_param["pixelY_center"] = xpic, ypic
