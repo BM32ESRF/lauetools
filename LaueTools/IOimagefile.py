@@ -89,7 +89,8 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
     :return filename: input filename with index replaced by input imageindex
     :rtype: string
     """
-
+    if nbdigits in (0,'0','None'):
+        nbdigits = None
     #     print "imagefilename",imagefilename
     if imagefilename.endswith("mccd"):
         lenext = 5 #length of extension including '.'
@@ -103,30 +104,58 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         if imagefilename.endswith("tiff"):
             ext = "tiff"
             lenext = 5
-        # zero padded index for filename
-        if nbdigits is not None:
-            if imagefilename.endswith(ext):
-                #imagefilename = imagefilename[: - (lenext + nbdigits)] + "{:04d}.{}".format(imageindex, ext)
+        
+        prepart = str(imagefilename).rsplit('.',1)[0]
+        prefix0, strindex = str(prepart).rsplit('_', 1)
 
-                #imagefilename = imagefilename[: - (lenext + nbdigits)].zfill(nbdigits) + "%s" % ext
+        if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
+            SPEC_controlled_SCMOS = True
+            imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+        else:  # bliss psl control of sCMOS
+            SPEC_controlled_SCMOS = False
+            imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
 
-                prepart = str(imagefilename).rsplit('.',1)[0]
-                prefix, digitpart = str(prepart).rsplit('_', 1)
+        # if int(strindex)<1000:
+        #     if len(strindex)<4: # no zero padded
+        #         SPEC_controlled_SCMOS = False
+        #         imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
 
-                current_nbdigits = len(digitpart)
-                imagefilename = prefix + "_" + str(imageindex).zfill(current_nbdigits) + "." + ext
+        #     else:  # 4 only  zeros padded 
+        #         SPEC_controlled_SCMOS = True
+        #         imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+        
+        # # zero padded index for filename
+        # if nbdigits is not None:
+        #     if imagefilename.endswith(ext):
+        #         #imagefilename = imagefilename[: - (lenext + nbdigits)] + "{:04d}.{}".format(imageindex, ext)
+
+        #         #imagefilename = imagefilename[: - (lenext + nbdigits)].zfill(nbdigits) + "%s" % ext
+
+        #         prepart = str(imagefilename).rsplit('.',1)[0]
+        #         prefix, strindex = str(prepart).rsplit('_', 1)
                 
-            elif imagefilename.endswith(ext+".gz"):
-                imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
-        # no zero padded index for filename
-        else:
-            if imagefilename.endswith(ext):
-                prefix, _ = imagefilename.split(".")
-                prefix0 = prefix.rsplit("_")[0]
-                if imageindex > 9999:
-                    imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
-                else:
-                    imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+
+        #         current_nbdigits = len(strindex)
+        #         imagefilename = prefix + "_" + str(imageindex).zfill(current_nbdigits) + "." + ext
+                
+        #     elif imagefilename.endswith(ext+".gz"):
+        #         imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
+        # # no zero padded index for filename
+        # else:
+        #     if imagefilename.endswith(ext):
+        #         prefix, _ = imagefilename.split(".")
+        #         prefix0, strindex = prefix.rsplit("_",1)
+
+        #         if len(strindex)<=4:
+
+        #         if 
+        #         SPEC_controlled_SCMOS = True
+
+        #         # version SPEC and SCMOS up to March 2022
+        #         if imageindex > 9999:
+        #             imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
+        #         else: # 4   0s padding for index < 10000
+        #             imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
 
     elif CCDLabel in ("EIGER_4Mstack",):
         # only stackimageindex is changed not imagefilename
