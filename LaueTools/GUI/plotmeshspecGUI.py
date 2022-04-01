@@ -43,7 +43,12 @@ else:
     wx.Window.SetToolTipString = sttip
 
 import numpy as np
-
+    
+try:
+    import h5py
+except ModuleNotFoundError:
+    print('warning: h5py is missing. It is useful for playing with hdf5 for some LaueTools modules. Install it with pip> pip install h5py')
+    
 try:
     from SpecClient_gevent import SpecCommand
 except ImportError:
@@ -1153,8 +1158,12 @@ class MainFrame(wx.Frame):
             counterintensity1D = data[detectorname_mesh]
 
             if self.normalizeintensity:
-                data_I0 = data["Monitor"]
-                exposureTime = data["Seconds"]
+                if self.filetype == 'spec':
+                    data_I0 = data["Monitor"]
+                    exposureTime = data["Seconds"]
+                else:
+                    data_I0 = data["mon"]
+                    exposureTime = data["integration_time"]
                 datay = counterintensity1D
 
                 # self.MonitorOffset  in counts / sec
@@ -1477,41 +1486,39 @@ def getmeshscan_from_specfile(filename):
 
 def getmeshscan_from_hdf5file(filename):
 
-    import h5py
-
     print("getmeshscan_from_hdf5file  %s"%filename)
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
-    f = h5py.File(filename, 'r')
+    with h5py.File(filename, 'r') as f:
 
-    listkeys = [kk for kk in f.keys()]
-    print('hdf5 keys',listkeys)
-    nbkeys = len(listkeys)
-    
-    # if key =   #########_int.int  then it is a pointer to a file ########.h5
-    # if key =   int.int    this file contains truly the data
-    #  #########   =  collectionname_datasetname
-    listprops = []
-    idx_key=0
-    while idx_key<nbkeys:
-        _key = listkeys[idx_key]
-        objlink = f.get(_key, getlink=True)
-        props = None
-        if isinstance(objlink, h5py._hl.group.ExternalLink):
-            
-            lowlevelpath = objlink.filename
-            print('key = %s is External link to %s'%(_key,lowlevelpath))
-            foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
-            if foundfile:
-                # removing string before _interger.integer
-                _modified_key = _key.rsplit('_',1)[-1]
-                props = getscanprops_lowest_hdf5(foundfile, _modified_key)
-        elif isinstance(objlink, h5py._hl.group.HardLink):
-            print('key = %s is Hard link to '%(_key))
-            props = getscanprops_lowest_hdf5(filename, _key)
-        if props is not None:
-            listprops.append(props)
-        idx_key+=1
+        listkeys = [kk for kk in f.keys()]
+        print('hdf5 keys',listkeys)
+        nbkeys = len(listkeys)
+        
+        # if key =   #########_int.int  then it is a pointer to a file ########.h5
+        # if key =   int.int    this file contains truly the data
+        #  #########   =  collectionname_datasetname
+        listprops = []
+        idx_key=0
+        while idx_key<nbkeys:
+            _key = listkeys[idx_key]
+            objlink = f.get(_key, getlink=True)
+            props = None
+            if isinstance(objlink, h5py._hl.group.ExternalLink):
+                
+                lowlevelpath = objlink.filename
+                print('key = %s is External link to %s'%(_key,lowlevelpath))
+                foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
+                if foundfile:
+                    # removing string before _interger.integer
+                    _modified_key = _key.rsplit('_',1)[-1]
+                    props = getscanprops_lowest_hdf5(foundfile, _modified_key)
+            elif isinstance(objlink, h5py._hl.group.HardLink):
+                print('key = %s is Hard link to '%(_key))
+                props = getscanprops_lowest_hdf5(filename, _key)
+            if props is not None:
+                listprops.append(props)
+            idx_key+=1
 
     #print('listprops',listprops)
     # sorting by increasing date
@@ -1545,15 +1552,16 @@ def findlowesthdf5file(filename, mainfolder='.', verbose=0):
     return foundfile
 
 def getscanprops_lowest_hdf5(filename, key, onlymesh=True):
-    import h5py
     #print('\n\nterminal hdf5 file')
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
     f = h5py.File(filename, 'r')
 
     idx, postfix = key.split('.')
-    scancommand = f['%s.%s'%(idx,postfix)]['title'].value
-    startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
+    # scancommand = f['%s.%s'%(idx,postfix)]['title'].value
+    # startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
+    scancommand = f['%s.%s'%(idx,postfix)]['title'][()]
+    startdate = f['%s.%s'%(idx,postfix)]['start_time'][()]
     props = None
     if onlymesh:
         if 'amesh' in scancommand:
@@ -1563,8 +1571,6 @@ def getscanprops_lowest_hdf5(filename, key, onlymesh=True):
     return props
 
 def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
-
-    import h5py
 
     print("getmeshscan_from_hdf5file  %s"%filename)
     _,ext = filename.rsplit('.',1)
@@ -1625,7 +1631,8 @@ def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
     for i_s, ppost in zip(idx, pofix):
         print('%d.%s'%(i_s,ppost))
         
-        scancommand = f['%d.%s'%(i_s,ppost)]['title'].value
+        #scancommand = f['%d.%s'%(i_s,ppost)]['title'].value
+        scancommand = f['%d.%s'%(i_s,ppost)]['title'][()]
         print('scancommand', scancommand)
         if 'amesh' in scancommand:
             listmesh.append([i_s, None, None,'#S %s_%d %s'%(ffname, i_s, scancommand)])
