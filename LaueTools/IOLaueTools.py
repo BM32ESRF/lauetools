@@ -1871,32 +1871,33 @@ def ReadHdf5_v2(fname, scan, outputdate=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    if isinstance(fname, str):
-        f = h5py.File(fname, 'r')
+    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    i_scan = '%d' % scan + '.1'
-    print('i_scan', i_scan)
-    print('fname', f)
-    print('fname[i_scan]', f[i_scan])
-    datasetnames = [key for key in f[i_scan]['measurement'].keys()]
-    d = {}
-    for _n in datasetnames:
-        d[_n] = f[i_scan]['measurement'][_n].value
-    # x =  f[i_scan]['measurement']['m0'].value
-    # y = f[i_scan]['measurement']['m1'].value
-    # z = f[i_scan]['measurement']['fluo1'].value
-    title = f[i_scan]['title'].value
-    st = f[i_scan]['start_time'].value
-    et = f[i_scan]['end_time'].value
-    duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
-    
-    print('title', title)
-    print('duration', duration)
-    
-    if not outputdate:
-        return title, d
-    else:
-        return title, d, st
+    with h5py.File(fname, 'r') as f:
+
+        i_scan = '%d' % scan + '.1'
+        print('i_scan', i_scan)
+        print('fname', f)
+        print('fname[i_scan]', f[i_scan])
+        datasetnames = [key for key in f[i_scan]['measurement'].keys()]
+        d = {}
+        for _n in datasetnames:
+            d[_n] = f[i_scan]['measurement'][_n].value
+        # x =  f[i_scan]['measurement']['m0'].value
+        # y = f[i_scan]['measurement']['m1'].value
+        # z = f[i_scan]['measurement']['fluo1'].value
+        title = f[i_scan]['title'].value
+        st = f[i_scan]['start_time'].value
+        et = f[i_scan]['end_time'].value
+        duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
+        
+        print('title', title)
+        print('duration', duration)
+        
+        if not outputdate:
+            return title, d
+        else:
+            return title, d, st
 
 def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
     """access to a low level hdf5 file and read data corresponding to the key 
@@ -1925,12 +1926,52 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
         assert len(_ix)==1
         general_id, idx, postfix, startdate, commandtitle, fullpath = listkeyprops[_ix[0]]
         
-        f = h5py.File(fullpath, 'r')
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        with h5py.File(fullpath, 'r') as f:
 
-        i_scan = '%s.%s'%(idx, postfix)
-        # print('i_scan', i_scan)
-        # print('fname', f)
-        # print('fname[i_scan]', f[i_scan])
+            i_scan = '%s.%s'%(idx, postfix)
+            # print('i_scan', i_scan)
+            # print('fname', f)
+            # print('fname[i_scan]', f[i_scan])
+            datasetnames = [key for key in f[i_scan]['measurement'].keys()]
+            d = {}
+            for _n in datasetnames:
+                d[_n] = f[i_scan]['measurement'][_n].value
+            # x =  f[i_scan]['measurement']['m0'].value
+            # y = f[i_scan]['measurement']['m1'].value
+            # z = f[i_scan]['measurement']['fluo1'].value
+            title = f[i_scan]['title'].value
+            st = f[i_scan]['start_time'].value
+            et = f[i_scan]['end_time'].value
+            duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
+            
+            print('title', title)
+            print('duration', duration)
+            
+        if not outputdate:
+            return title, d
+        else:
+            return title, d, st
+
+
+def ReadHdf5(fname, scan, outputdate=False):
+    """extract data of a scan in a ESRF Bliss made hdf5 file when key are formatted as int.1
+
+    :param fname: file object or string (path)
+    :type fname: file object or string
+    :param scan: string for scan id  (key in hdf5 file)
+    :type scan: integer
+    :param outputdate: output starting date of the scan in ascii format, defaults to False
+    :type outputdate: bool, optional
+    """
+    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+
+    with h5py.File(fname, 'r') as f:
+
+        i_scan = '%d' % scan + '.1'
+        print('i_scan', i_scan)
+        print('fname', f)
+        print('fname[i_scan]', f[i_scan])
         datasetnames = [key for key in f[i_scan]['measurement'].keys()]
         d = {}
         for _n in datasetnames:
@@ -1946,48 +1987,10 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
         print('title', title)
         print('duration', duration)
         
-    if not outputdate:
-        return title, d
-    else:
-        return title, d, st
-
-
-def ReadHdf5(fname, scan, outputdate=False):
-    """extract data of a scan in a ESRF Bliss made hdf5 file when key are formatted as int.1
-
-    :param fname: file object or string (path)
-    :type fname: file object or string
-    :param scan: string for scan id  (key in hdf5 file)
-    :type scan: integer
-    :param outputdate: output starting date of the scan in ascii format, defaults to False
-    :type outputdate: bool, optional
-    """
-    if isinstance(fname, str):
-        f = h5py.File(fname, 'r')
-
-    i_scan = '%d' % scan + '.1'
-    print('i_scan', i_scan)
-    print('fname', f)
-    print('fname[i_scan]', f[i_scan])
-    datasetnames = [key for key in f[i_scan]['measurement'].keys()]
-    d = {}
-    for _n in datasetnames:
-        d[_n] = f[i_scan]['measurement'][_n].value
-    # x =  f[i_scan]['measurement']['m0'].value
-    # y = f[i_scan]['measurement']['m1'].value
-    # z = f[i_scan]['measurement']['fluo1'].value
-    title = f[i_scan]['title'].value
-    st = f[i_scan]['start_time'].value
-    et = f[i_scan]['end_time'].value
-    duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
-    
-    print('title', title)
-    print('duration', duration)
-    
-    if not outputdate:
-        return title, d
-    else:
-        return title, d, st
+        if not outputdate:
+            return title, d
+        else:
+            return title, d, st
 
 
 def ReadSpec(fname, scan, outputdate=False):
