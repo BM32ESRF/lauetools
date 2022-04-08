@@ -136,12 +136,12 @@ class TreePanel(wx.Panel):
 
             elif self.scantype == 'MESH':
                 if self.frameparent.filetype == 'spec':
-                    print('self.frameparent.list_meshscan_indices',self.frameparent.list_meshscan_indices)
+                    #print('self.frameparent.list_meshscan_indices',self.frameparent.list_meshscan_indices)
                     #nbmeshes = len(self.frameparent.list_meshscan_indices)
                     poslastscan = self.frameparent.list_meshscan_indices.index(self.last_sel_scan_index)
-                    print('poslastscan',poslastscan)
+                    #print('poslastscan',poslastscan)
                     newmeshindex = self.frameparent.list_meshscan_indices[max(poslastscan + 1, 0)]
-                    print('newmeshindex',newmeshindex)
+                    #print('newmeshindex',newmeshindex)
 
                     self.OnSelChanged(event, scan_index=newmeshindex)
 
@@ -171,7 +171,7 @@ class TreePanel(wx.Panel):
 
                     self.OnSelChanged(event, scan_index=newmeshindex)
                 else:
-                    print('self.last_item',self.last_item)
+                    #print('self.last_item',self.last_item)
                     # print('self.frameparent.list_meshscan_indices',self.frameparent.list_meshscan_indices)
                     # nbmeshes = len(self.frameparent.list_meshscan_indices)
                     # poslastscan = self.frameparent.list_meshscan_indices.index(self.last_sel_scan_index)
@@ -204,6 +204,8 @@ class TreePanel(wx.Panel):
 
     def OnSelChanged(self, event, scan_index=None):
         print('***\n OnSelChanged  filetype = %s\n***'%self.frameparent.filetype)
+        self.frameparent.plotmeshpanel.fig.clear() # to do for wxpython 4.1.1
+        
         if self.frameparent.filetype == 'spec':
             self.SelChangedSpec(event, scan_index=scan_index)
         else:
@@ -267,14 +269,14 @@ class TreePanel(wx.Panel):
         date = self.frameparent.scan_date
         # print('speccommand', speccommand)
         # print('date',date)
-        tooltip = "%s %s" % (speccommand, date)
+        tooltip = "command: %s\n date: %s" % (speccommand, date)
         #print('tooltip',tooltip)
         event.GetEventObject().SetToolTipString(tooltip)
         event.Skip()
         #------------------
     
     def SelChangedSpec(self, event, scan_index=None):     
-        print('\n\n OnSelChanged')
+        print('\n\n OnSelChangedSpec')
         if scan_index is None:
             print('scan_index',scan_index)
             item = event.GetItem()
@@ -324,7 +326,7 @@ class TreePanel(wx.Panel):
         date = self.frameparent.scan_date
         # print('speccommand', speccommand)
         # print('date',date)
-        tooltip = "%s %s" % (speccommand, date)
+        tooltip = "%s\ndate: %s" % (speccommand, date)
         #print('tooltip',tooltip)
         event.GetEventObject().SetToolTipString(tooltip)
         event.Skip()
@@ -397,8 +399,9 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
     def OnAbout(self, _):
-        print("open spec file")
-        pass
+        pyversion='%s.%s'%(sys.version_info.major,sys.version_info.minor)
+        wx.MessageBox('LaueTools module:\nPlot mesh scan recorded on logfile either by SPEC software (<2022) or BLISS hdf5 format (>2021)\n---------------\npython version : %s\nh5py version: %s'%(pyversion,h5py.__version__),'INFO')
+        
 
     def OnExit(self, evt):
         pass
@@ -702,7 +705,7 @@ class MainFrame(wx.Frame):
                 if ms[0] not in list_lastmeshscan_indices:
                     list_meshscan_indices.append(ms[0])
 
-            print("list_meshscan_indices", list_meshscan_indices)
+            # print("list_meshscan_indices", list_meshscan_indices)
 
             if list_meshscan_indices[-1] != lastscan_listmesh and not samefile:
                 print("adding only new meshes from file %s" % self.fullpath_specfile)
@@ -710,8 +713,8 @@ class MainFrame(wx.Frame):
             else:
                 indstart_newmeshes = 0
 
-            print("listmeshall", listmeshall)
-            print("indstart_newmeshes", indstart_newmeshes)
+            # print("listmeshall", listmeshall)
+            # print("indstart_newmeshes", indstart_newmeshes)
 
             self.listmesh = listmeshall[indstart_newmeshes:]
             self.list_meshscan_indices = list_meshscan_indices
@@ -998,9 +1001,8 @@ class MainFrame(wx.Frame):
             
             self.scantype = 'amesh'
 
-        print("spec command    :", tit)
-
-        print("scan type  :", self.scantype)
+        # print("splec/bliss" command    :", tit)
+        # print("scan type  :", self.scantype)
 
         Apptitle = ''
 
@@ -1446,10 +1448,8 @@ def getascan_from_specfile(filename):
         if not line:
             break
         if line.startswith("#S"):
-            #             print "line", line
             linesplit = line.split()
             if linesplit[2] == "ascan":
-                #                 print "line", line
                 scan_index = int(linesplit[1])
                 listascan.append([scan_index, linepos, f.tell(), line])
 
@@ -1467,10 +1467,8 @@ def getmeshscan_from_specfile(filename):
         if not line:
             break
         if line.startswith("#S"):
-            #             print "line", line
             linesplit = line.split()
             if linesplit[2] == "mesh":
-                #                 print "line", line
                 scan_index = int(linesplit[1])
                 listmesh.append([scan_index, linepos, f.tell(), line])
 
@@ -1480,7 +1478,6 @@ def getmeshscan_from_specfile(filename):
     print("%d lines have been read" % (linepos))
     print("%s contains %d mesh scans" % (filename, len(listmesh)))
 
-    #     print "listmesh", listmesh
 
     return listmesh
 
@@ -1520,12 +1517,16 @@ def getmeshscan_from_hdf5file(filename):
                 listprops.append(props)
             idx_key+=1
 
-    #print('listprops',listprops)
+    # print('listprops',listprops)
+    if listprops == []:
+        wx.MessageBox('No mesh scan in the file: %s'%filename,'INFO')
+        return []
+
     # sorting by increasing date
     ar_lp = np.array(listprops, dtype=object)
     s_ix=np.argsort(ar_lp[:,3])
     sortedlistprops = ar_lp[s_ix]
-    print('sortedlistprops',sortedlistprops)
+    #print('sortedlistprops',sortedlistprops)
     
     return sortedlistprops
 
@@ -1555,19 +1556,23 @@ def getscanprops_lowest_hdf5(filename, key, onlymesh=True):
     #print('\n\nterminal hdf5 file')
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
-    f = h5py.File(filename, 'r')
+    with h5py.File(filename, 'r') as f:
 
-    idx, postfix = key.split('.')
-    # scancommand = f['%s.%s'%(idx,postfix)]['title'].value
-    # startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
-    scancommand = f['%s.%s'%(idx,postfix)]['title'][()]
-    startdate = f['%s.%s'%(idx,postfix)]['start_time'][()]
-    props = None
-    if onlymesh:
-        if 'amesh' in scancommand:
-            keyfilename = ffname[:-3]  #  removing .h5
-            props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
- 
+        idx, postfix = key.split('.')
+        #print('reading key %s'%key)
+        if h5py.__version__<'3.0':
+            #maybe [()] is enough without decoding
+            scancommand = f['%s.%s'%(idx,postfix)]['title'].value
+            startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
+        else:
+            #print('%s.%s'%(idx,postfix))
+            scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
+            startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
+        props = None
+        if onlymesh:
+            if 'amesh' in scancommand:
+                keyfilename = ffname[:-3]  #  removing .h5
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
     return props
 
 def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
@@ -1575,29 +1580,29 @@ def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
     print("getmeshscan_from_hdf5file  %s"%filename)
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
-    f = h5py.File(filename, 'r')
+    with h5py.File(filename, 'r') as f:
 
-    listkeys = [kk for kk in f.keys()]
-    print('hdf5 keys',listkeys)
+        listkeys = [kk for kk in f.keys()]
+        #print('hdf5 keys',listkeys)
 
-    testkey = listkeys[0]
-    # if key =   #########_int.int  then it is a pointer to a file ########.h5
-    # if key =   int.int    this file contains truly the data
-    #  #########   =  collectionname_datasetname
+        testkey = listkeys[0]
+        # if key =   #########_int.int  then it is a pointer to a file ########.h5
+        # if key =   int.int    this file contains truly the data
+        #  #########   =  collectionname_datasetname
 
-    if '_' in testkey:
-        print('file %s is a master hdf5 file')
-        hdf5file, idx = testkey.rsplit('_',1)
-        subfile = '%s.%s'%(hdf5file,ext)
-        print('it is pointing to file: ',subfile)
-        # the subfile is normally in a subfolder ######## when recording data on server
-        # here we consider that all h5 files are in the same folder
+        if '_' in testkey:
+            print('file %s is a master hdf5 file')
+            hdf5file, idx = testkey.rsplit('_',1)
+            subfile = '%s.%s'%(hdf5file,ext)
+            print('it is pointing to file: ',subfile)
+            # the subfile is normally in a subfolder ######## when recording data on server
+            # here we consider that all h5 files are in the same folder
 
-        attemptedsubfile = os.path.join(headname, subfile)
-        print('Trying to open: ', attemptedsubfile)
-        return getmeshscan_from_hdf5file_old(attemptedsubfile, formerfilename=subfile)
-    else:
-        print('\n\nterminal hdf5 file')
+            attemptedsubfile = os.path.join(headname, subfile)
+            print('Trying to open: ', attemptedsubfile)
+            return getmeshscan_from_hdf5file_old(attemptedsubfile, formerfilename=subfile)
+        else:
+            print('\n\nterminal hdf5 file')
 
     # list of integers
     #scanslist = sorted([int(kk[:-2]) for kk in f.keys()])  # removing .1 at the end of nb scan
@@ -1617,23 +1622,13 @@ def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
 
     print('scanslist', ar_idx)
     listmesh = []
-    # for i_s in scanslist:
-    #     scancommand = f['%d'%i_s+'.1']['title'].value
-    #     print('scancommand', scancommand)
-    #     if 'amesh' in scancommand:
-    #         listmesh.append([i_s, None, None,'#S %d %s'%(i_s, scancommand)])
-    # print([kkk for kkk in f.keys()])
-    # print([kkk for kkk in f['1.1'].keys()])
-    # print( f['1.1']['title'])
-    # print( 'dir',dir(f['1.1']['title']))
-    # print( f['1.1/title'].value)
-    # print( f['1.1']['title'].value)
+    
     for i_s, ppost in zip(idx, pofix):
-        print('%d.%s'%(i_s,ppost))
+        #print('%d.%s'%(i_s,ppost))
         
         #scancommand = f['%d.%s'%(i_s,ppost)]['title'].value
         scancommand = f['%d.%s'%(i_s,ppost)]['title'][()]
-        print('scancommand', scancommand)
+        #print('scancommand', scancommand)
         if 'amesh' in scancommand:
             listmesh.append([i_s, None, None,'#S %s_%d %s'%(ffname, i_s, scancommand)])
 
@@ -1662,7 +1657,7 @@ class PlotPanel(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.parent = parent
-        print("parent", parent)
+        #print("parent", parent)
 
         self.frameparent = parent.GetParent()
 
@@ -1728,7 +1723,7 @@ class PlotPanel(wx.Panel):
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
         countertxt = wx.StaticText(self, -1, "counter")
 
-        print("self.frameparent.columns_name", self.frameparent.columns_name)
+        #print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
         self.frameparent.columns_name.sort()
         self.combocounters = wx.ComboBox(self, -1, self.detectorname, #choices=sortedcounterslist,
@@ -1777,32 +1772,9 @@ class PlotPanel(wx.Panel):
         """ onclick
         """
         pass
-        # print(event.button)
-        # if event.inaxes:
-        #     self.centerx, self.centery = event.xdata, event.ydata
-        #     print("current clicked positions", self.centerx, self.centery)
-        # if event.button == 3:
-        #     self.movingxy(False)
 
     def onKeyPressed(self, event):
         pass
-
-        # key = event.key
-        # print("key ==> ", key)
-
-        # if key == "escape":
-
-        #     ret = wx.MessageBox("Are you sure to quit?", "Question",
-        #                             wx.YES_NO | wx.NO_DEFAULT, self)
-
-        #     if ret == wx.YES:
-        #         self.Close()
-
-        # elif key == "p":  # 'p'
-
-        #     self.movingxy(True)
-
-        #     return
 
     def OnChangeScale(self, _):
         self.scaletype = str(self.comboscale.GetValue())
@@ -1823,8 +1795,6 @@ class PlotPanel(wx.Panel):
         pass
 
     def OnSave(self, _):
-        # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
-        #    self.OnSave(event)
         if self.askUserForFilename():
             fig = self.plotmeshpanel.get_figure()
             fig.savefig(os.path.join(str(self.dirname), str(self.filename)))
@@ -1846,8 +1816,6 @@ class PlotPanel(wx.Panel):
         self.axes.set_title(self.title)
         #         self.axes.set_autoscale_on(True)
         if self.datatype == "scalar":
-
-            # print("ploting")
 
             if not self.multipleplots:
                 # print("self.data_to_Display.shape", self.data_to_Display.shape)
@@ -1902,7 +1870,7 @@ class ImshowPanel(wx.Panel):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.parent = parent
-        print("parent", parent)
+        #print("parent", parent)
 
         self.frameparent = parent.GetParent()
 
@@ -1913,8 +1881,8 @@ class ImshowPanel(wx.Panel):
 
         self.imshowmode = imshowmode
         if self.imshowmode:
-            print(self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
-            print(self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1])
+            # print(self.posarray_twomotors[0, 0], self.posarray_twomotors[0, -1])
+            # print(self.posarray_twomotors[-1, 0], self.posarray_twomotors[-1, -1])
             self.minmotor1, self.minmotor2 = posarray_twomotors[0, 0]
             self.maxmotor1, self.maxmotor2 = posarray_twomotors[-1, -1]
             self.absolute_motorposition_unit = absolute_motorposition_unit
@@ -1923,7 +1891,6 @@ class ImshowPanel(wx.Panel):
         if posmotorname is not None:
             self.motor1name, self.motor2name = posmotorname
 
-        #         print "dataarray", dataarray
         self.datatype = datatype
 
         self.title = title
@@ -2014,8 +1981,6 @@ class ImshowPanel(wx.Panel):
         self.canvas.mpl_connect("key_press_event", self.onKeyPressed)
         self.canvas.mpl_connect("button_press_event", self.onClick)
 
-    #         print "self.canvas", dir(self.canvas)
-
     def create_axes(self):
         self.axes = self.fig.add_subplot(111)
 
@@ -2023,12 +1988,6 @@ class ImshowPanel(wx.Panel):
         """
         set main panel of ImshowPanel
         """
-        #         self.tooltip = wx.ToolTip(tip='tip with a long %s line and a newline\n' % (' ' * 100))
-        #         self.canvas.SetToolTip(self.tooltip)
-        #         self.tooltip.Enable(False)
-        #         self.tooltip.SetDelay(0)
-        #         self.fig.canvas.mpl_connect('motion_notify_event', self.onMotion_ToolTip)
-
         self.toolbar = NavigationToolbar(self.canvas)
 
         self.IminDisplayed = 0
@@ -2091,7 +2050,7 @@ class ImshowPanel(wx.Panel):
 
         countertxt = wx.StaticText(self, -1, "counter")
 
-        print("self.frameparent.columns_name", self.frameparent.columns_name)
+        #print("self.frameparent.columns_name", self.frameparent.columns_name)
         sortedcounterslist = sorted(self.frameparent.columns_name)
         self.combocounters = wx.ComboBox(self, -1, self.frameparent.detectorname_mesh,
                                                         choices=sortedcounterslist,
@@ -2164,10 +2123,10 @@ class ImshowPanel(wx.Panel):
     def onClick(self, event):
         """ onclick
         """
-        print(event.button)
+        #print(event.button)
         if event.inaxes:
             self.centerx, self.centery = event.xdata, event.ydata
-            print("current clicked positions", self.centerx, self.centery)
+            #print("current clicked positions", self.centerx, self.centery)
         # if event.button == 3:
         #     self.movingxy(False)
 
@@ -2190,10 +2149,9 @@ class ImshowPanel(wx.Panel):
                 current_posmotor1 = posmotor1[col]
                 current_posmotor2 = posmotor2[row]
 
-                print(
-                    "SPEC COMMAND:\nmv %s %.5f %s %.5f"
-                    % (self.motor1name, current_posmotor1,
-                        self.motor2name, current_posmotor2))
+                # print("SPEC COMMAND:\nmv %s %.5f %s %.5f"
+                #     % (self.motor1name, current_posmotor1,
+                #         self.motor2name, current_posmotor2))
 
                 sentence = (
                     "%s=%.6f\n%s=%.6f\n\nSPEC COMMAND to move to this point:\n\nmv %s %.5f %s %.5f"
@@ -2290,10 +2248,10 @@ class ImshowPanel(wx.Panel):
     def normalizeplot(self):
         """normalize intensity scale according to GUI widgets parameters"""
 
-        print('self.minvals', self.minvals)
-        print('self.maxvals', self.maxvals)
-        print('self.IminDisplayed', self.IminDisplayed)
-        print('self.ImaxDisplayed', self.ImaxDisplayed)
+        # print('self.minvals', self.minvals)
+        # print('self.maxvals', self.maxvals)
+        # print('self.IminDisplayed', self.IminDisplayed)
+        # print('self.ImaxDisplayed', self.ImaxDisplayed)
 
         vmin = self.minvals + self.IminDisplayed * self.deltavals
         vmax = self.minvals + self.ImaxDisplayed * self.deltavals
@@ -2311,8 +2269,6 @@ class ImshowPanel(wx.Panel):
 
     def OnSave(self, _):
         """save image """
-        # if self.askUserForFilename(defaultFile='truc', style=wx.SAVE,**self.defaultFileDialogOptions()):
-        #    self.OnSave(event)
         if self.askUserForFilename():
             fig = self.plotmeshpanel.get_figure()
             fig.savefig(os.path.join(str(self.dirname), str(self.filename)))
@@ -2365,8 +2321,8 @@ class ImshowPanel(wx.Panel):
                 self.x, self.y = x, z
                 #self.axes.scatter(list_x_values[k], list_y_values[k], c=list_z_values[k], marker='h', s=50)
 
-            print('minx, maxx', minx, maxx)
-            print('miny, maxy', miny, maxy)
+            # print('minx, maxx', minx, maxx)
+            # print('miny, maxy', miny, maxy)
             from scipy.interpolate import griddata
 
             # define grid.
@@ -2375,13 +2331,13 @@ class ImshowPanel(wx.Panel):
             xi = np.linspace(minx, maxx, nx)
             yi = np.linspace(0, len(l_idx) - 1, ny)
 
-            print(('xi', xi))
-            print(('yi', yi))
+            # print(('xi', xi))
+            # print(('yi', yi))
             # grid the data.
             zi = griddata((x, y), z, (xi[None, :], yi[:, None]), method='cubic')
 
-            print('zi[0]', zi[0])
-            print('zi[:,0]', zi[:, 0])
+            # print('zi[0]', zi[0])
+            # print('zi[:,0]', zi[:, 0])
 
             self.data_to_Display = zi
 
@@ -2400,7 +2356,6 @@ class ImshowPanel(wx.Panel):
     #     self.axes.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
 
     def re_init_colorbar(self):
-        #             print dir(self.colorbar)
         self.colorbar.set_label(self.colorbar_label)
         self.colorbar.set_clim(vmin=self.minvals, vmax=self.maxvals)
         self.colorbar.draw_all()
@@ -2417,11 +2372,8 @@ class ImshowPanel(wx.Panel):
         self.axes.set_title(self.title)
         #         self.axes.set_autoscale_on(True)
         if self.datatype == "scalar":
-
-            #print("ploting")
-
             if imshowmode:
-                print("self.data_to_Display.shape", self.data_to_Display.shape)
+                #print("self.data_to_Display.shape", self.data_to_Display.shape)
                 self.myplot = self.axes.imshow(self.data_to_Display, cmap=self.cmap,
                                                 interpolation="nearest",
                                                 norm=self.cNorm,
@@ -2453,8 +2405,6 @@ class ImshowPanel(wx.Panel):
     def fromindex_to_pixelpos_x_absolute(self, index, _):
         # absolute positions ticks
         step_factor = self.step_factor
-        #         print "step_factor", step_factor
-        #         print "self.step_x", self.step_x
         return (np.fix((index * self.step_x / step_factor + self.posmotor1[0]) * 100000.0)
             / 100000.0)
 
@@ -2524,19 +2474,11 @@ class ImshowPanel(wx.Panel):
         self.posmotor1 = self.posmotors[0, :, 0]
         self.posmotor2 = self.posmotors[:, 0, 1]
 
-        #         print "starting motor1 %f %s" % (initmotor1, self.absolute_motorposition_unit)
-        #         print "starting motor2 %f %s" % (initmotor2, self.absolute_motorposition_unit)
-
-        #             print 'posmotor1', posmotor1
-        #             print 'posmotor2', posmotor2
 
         nby, nbx = self.posmotors.shape[:2]
 
         self.poscenter_motor1 = self.posmotor1[nbx // 2]
         self.poscenter_motor2 = self.posmotor2[nby // 2]
-
-        #         print "center motor1", self.poscenter_motor1
-        #         print "center motor2", self.poscenter_motor2
 
         # x= fast motor  (first in spec scan)
         # y slow motor (second in spec scan)
@@ -2558,15 +2500,8 @@ class ImshowPanel(wx.Panel):
             self.step_x = self.step_x * self.step_factor
             self.step_y = self.step_y * self.step_factor
 
-    #         print "step_x %f micron " % (self.step_x)
-    #         print "step_y %f micron " % (self.step_y)
-
     #         nb_of_microns_x = round((self.posmotor1[-1] - self.posmotor1[0]) * self.step_factor)
-    #         nb_of_microns_y = round((self.posmotor2[-1] - self.posmotor2[0]) * self.step_factor)
-
-    #         print "nb_points_y,nb_points_x", nby, nbx
-    #         print "nb_of_microns_x", nb_of_microns_x
-    #         print "nb_of_microns_y", nb_of_microns_y
+    #         nb_of_microns_y = round((self.posmotor2[-1] - self.posmotor2[0]) * self.step_factor
 
     def format_coord(self, x, y):
 
@@ -2580,22 +2515,16 @@ class ImshowPanel(wx.Panel):
         step_factor = self.step_factor
         poscenter_motor1, poscenter_motor2 = (self.poscenter_motor1, self.poscenter_motor2)
 
-        #         print "x,y before in col and row", x, y
         if col >= 0 and col < numcols and row >= 0 and row < numrows:
             z = self.data[row, col]
-            #                 print "z", z
-            #             print "\nx,y,row,col", x, y, row, col
+
             Imageindex = tabindices[row, col]
             if posmotors is None:
-                #                     print "self.posarray_twomotors is None"
                 sentence0 = "x=%1.4f, y=%1.4f, val=%s, ImageIndex: %d" % (x, y, str(z), Imageindex)
                 sentence_corner = ""
                 sentence_center = ""
                 sentence = "No motors positions"
             else:
-                #                 print "col,row= ", col, row
-                #                 print "posmotor1[col],posmotor2[row]", posmotor1[col], posmotor2[row]
-
                 sentence0 = ("j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], z_intensity = %s, ImageIndex: %d"
                                 % (col, row, self.motor1name, posmotor1[col],
                                     self.motor2name, posmotor2[row], str(z), Imageindex))
