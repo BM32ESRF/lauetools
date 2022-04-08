@@ -23,11 +23,11 @@ except ImportError:
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
-    print("-- OK! You are using wxpython3 ....")
+    #print("-- OK! You are using wxpython3 ....")
 
 else:
     WXPYTHON4 = True
-    print("-- OK! You are using wxpython4 ....")
+    #print("-- OK! You are using wxpython4 ....")
     wx.OPEN = wx.FD_OPEN
 
     def sttip(argself, strtip):
