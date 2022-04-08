@@ -1882,13 +1882,16 @@ def ReadHdf5_v2(fname, scan, outputdate=False):
         datasetnames = [key for key in f[i_scan]['measurement'].keys()]
         d = {}
         for _n in datasetnames:
-            d[_n] = f[i_scan]['measurement'][_n].value
-        # x =  f[i_scan]['measurement']['m0'].value
-        # y = f[i_scan]['measurement']['m1'].value
-        # z = f[i_scan]['measurement']['fluo1'].value
-        title = f[i_scan]['title'].value
-        st = f[i_scan]['start_time'].value
-        et = f[i_scan]['end_time'].value
+            d[_n] = f[i_scan]['measurement'][_n][()]
+
+        if h5py.__version__>='3':
+            title = f[i_scan]['title'][()].decode('UTF-8')
+            st = f[i_scan]['start_time'][()].decode('UTF-8')
+            et = f[i_scan]['end_time'][()].decode('UTF-8')
+        else:
+            title = f[i_scan]['title'].value
+            st = f[i_scan]['start_time'].value
+            et = f[i_scan]['end_time'].value
         duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
         
         print('title', title)
@@ -1936,13 +1939,16 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
             datasetnames = [key for key in f[i_scan]['measurement'].keys()]
             d = {}
             for _n in datasetnames:
-                d[_n] = f[i_scan]['measurement'][_n].value
-            # x =  f[i_scan]['measurement']['m0'].value
-            # y = f[i_scan]['measurement']['m1'].value
-            # z = f[i_scan]['measurement']['fluo1'].value
-            title = f[i_scan]['title'].value
-            st = f[i_scan]['start_time'].value
-            et = f[i_scan]['end_time'].value
+                d[_n] = f[i_scan]['measurement'][_n][()]
+            
+            if h5py.__version__>='3':
+                title = f[i_scan]['title'][()].decode('UTF-8')
+                st = f[i_scan]['start_time'][()].decode('UTF-8')
+                et = f[i_scan]['end_time'][()].decode('UTF-8')
+            else:
+                title = f[i_scan]['title'].value
+                st = f[i_scan]['start_time'].value
+                et = f[i_scan]['end_time'].value
             duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
             
             print('title', title)
@@ -1975,13 +1981,16 @@ def ReadHdf5(fname, scan, outputdate=False):
         datasetnames = [key for key in f[i_scan]['measurement'].keys()]
         d = {}
         for _n in datasetnames:
-            d[_n] = f[i_scan]['measurement'][_n].value
-        # x =  f[i_scan]['measurement']['m0'].value
-        # y = f[i_scan]['measurement']['m1'].value
-        # z = f[i_scan]['measurement']['fluo1'].value
-        title = f[i_scan]['title'].value
-        st = f[i_scan]['start_time'].value
-        et = f[i_scan]['end_time'].value
+            d[_n] = f[i_scan]['measurement'][_n][()]
+
+        if h5py.__version__>='3':
+            title = f[i_scan]['title'][()].decode('UTF-8')
+            st = f[i_scan]['start_time'][()].decode('UTF-8')
+            et = f[i_scan]['end_time'][()].decode('UTF-8')
+        else:
+            title = f[i_scan]['title'].value
+            st = f[i_scan]['start_time'].value
+            et = f[i_scan]['end_time'].value
         duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
         
         print('title', title)
