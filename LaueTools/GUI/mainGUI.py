@@ -19,6 +19,10 @@ mailto: micha --+at-+- esrf --+dot-+- fr
 from __future__ import absolute_import, division
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
+import pkg_resources
+__version__ = pkg_resources.get_distribution('LaueTools').version
+
+
 
 import time
 import sys
@@ -84,12 +88,17 @@ import LaueTools.GUI.OpenSpotsListFileGUI as OSLFGUI
 
 LaueToolsProjectFolder = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
+pyversion='%s.%s'%(sys.version_info.major,sys.version_info.minor)
+
 print("-- LaueTools Project main folder is", LaueToolsProjectFolder)
 print('\n----------------------------------------------')
 print('-----              Enjoy              --------')
 print('-----        Laue microdiffraction    --------')
 print('-----    CRG-IF BM32 beamline at ESRF --------')
 print('----------------------------------------------')
+print('------LaueTools version --- %s'%__version__)
+print('------python version --- %s'%pyversion)
+print('------Wxpython version ----%s'%wx.__version__)
 
 SIZE_PLOTTOOLS = (8, 6)
 # --- ------------   CONSTANTS
@@ -379,7 +388,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # LaueToolsGUImainframe.SetTitle overrides wx.Frame.SetTitle, so we have to
         # call it using super:
         super(LaueToolsGUImainframe, self).SetTitle(
-            "LaueToolsGUI    Simulation & Indexation Program         %s" % self.filename)
+            "LaueToolsGUI    Simulation & Indexation Program         %s %s" % (self.filename,__version__))
 
     # --- -------- Main FUNCTIONS called from MENU and submenus
     def OnOpenImage(self, _):
