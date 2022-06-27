@@ -15,7 +15,7 @@ import wx
 class FilePickerButton(wx.Button):
 
     # Constructor
-    def __init__(self, parent, default_dir, wildcard, style=wx.FD_DEFAULT_STYLE):
+    def __init__(self, parent, default_dir, wildcard, style=wx.FD_DEFAULT_STYLE, tip=''):
         wx.Button.__init__(self, parent, label="...", style=wx.BU_EXACTFIT)
 
         self._parent = parent
@@ -24,6 +24,8 @@ class FilePickerButton(wx.Button):
         self.default = default_dir
         self.style = style
         self.wildcard = wildcard
+
+        self.tip=tip
 
         self.Bind(wx.EVT_BUTTON, self._OnPushButton)
 
@@ -43,7 +45,7 @@ class FilePickerButton(wx.Button):
     # Event handlers
     def _OnPushButton(self, event):
 
-        dlg = wx.FileDialog(self._parent, message="Select a file",
+        dlg = wx.FileDialog(self._parent, message="Select a file: "+self.tip,
                             defaultDir=self.default,
                             defaultFile="",
                             wildcard=self.wildcard,
@@ -70,14 +72,15 @@ class FilePickerButton(wx.Button):
 
 
 class FileSelectOpen(wx.BoxSizer):
-
-    def __init__(self, parent, label, value, wildcard=wx.FileSelectorDefaultWildcardStr):
+    """ gui class to select a file (spec or hdf) to be opened"""
+    def __init__(self, parent, label, value, wildcard=wx.FileSelectorDefaultWildcardStr, tip=''):
         wx.BoxSizer.__init__(self, wx.HORIZONTAL)
 
         self._parent = parent
         self._observers = []
 
         self.value = value
+        self.tip=tip
 
         self._label = wx.StaticText(self._parent, label=label)
         self._text = wx.TextCtrl(self._parent, style=wx.TE_PROCESS_ENTER)
@@ -93,6 +96,9 @@ class FileSelectOpen(wx.BoxSizer):
         # bindings
         self._button.Bind_to(self._OnPushButton)
         self._text.Bind(wx.EVT_TEXT_ENTER, self._OnTextEnter)
+
+        #tool tip
+        self._text.SetToolTipString(self.tip)
 
     # Setters
     def SetValue(self, fn):
