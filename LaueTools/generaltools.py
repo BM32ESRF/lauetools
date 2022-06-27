@@ -1863,7 +1863,7 @@ def splitarray(a, ndivisions):
     if remainder1 == 0:
         b = np.vsplit(a, n1divisions)
     else:
-        print('m1', m1)
+        #print('m1', m1)
         b = np.vsplit(a[:n1divisions * m1, :], n1divisions)
 
     b1 = np.array(b)
