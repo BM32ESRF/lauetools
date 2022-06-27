@@ -8,9 +8,9 @@
 
 import numpy as np
 
-
 class SpecFile:
     """
+    better use  versions of  spec_reader or logfile_reader
 
     Simple class to read SPEC file. The main purposes are :
     (i) read the header and initiate the relevant properties
