@@ -56,11 +56,14 @@ except ImportError:
 
 if sys.version_info.major == 3:
     import LaueTools.generaltools as GT
-    from LaueTools.IOLaueTools import ReadSpec, ReadHdf5, readdata_from_hdf5key
+    from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
     import LaueTools.MessageCommand as MC
+    import LaueTools.IOLaueTools as IOLT
+    import LaueTools.Daxm.contrib.spec_reader as spec_reader
+
 else:
     import generaltools as GT
-    from IOLaueTools import ReadSpec,ReadHdf5, readdata_from_hdf5key
+    from LaueTools.Daxm.contrib.spec_reader import ReadSpec,ReadHdf5, readdata_from_hdf5key
     import MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
@@ -226,7 +229,7 @@ class TreePanel(wx.Panel):
         print("item selected: ", selected_item)
         #print("selected_item ", dir(item))
         
-        # multipe selection with ascan's
+        # multipe selection with ascan's  NOT YET WORKING....
         if self.multipleselectionOn and self.scantype == 'ASCAN': #self.keypressed == 's':
 
             if self.set_selected_indices is None:
@@ -334,12 +337,10 @@ class TreePanel(wx.Panel):
 
         print("self.set_selected_indices", self.set_selected_indices)
 
-
 class MainFrame(wx.Frame):
     """
     Class main GUI
     """
-
     def __init__(self, parent, _id, title):
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
 
@@ -402,7 +403,6 @@ class MainFrame(wx.Frame):
         pyversion='%s.%s'%(sys.version_info.major,sys.version_info.minor)
         wx.MessageBox('LaueTools module:\nPlot mesh scan recorded on logfile either by SPEC software (<2022) or BLISS hdf5 format (>2021)\n---------------\npython version : %s\nh5py version: %s'%(pyversion,h5py.__version__),'INFO')
         
-
     def OnExit(self, evt):
         pass
 
@@ -424,20 +424,14 @@ class MainFrame(wx.Frame):
 
         self.stbar0 = wx.StatusBar(self.panel)
 
-        self.plotmeshpanel = ImshowPanel(self.panel,
-                                -1,
-                                "test_plot",
-                                z_values,
+        self.plotmeshpanel = ImshowPanel(self.panel, -1, "test_plot", z_values,
                                 Imageindices=Imageindices,
                                 posmotorname=("xmotor", "ymotor"),
                                 posarray_twomotors=posmotor,
                                 absolute_motorposition_unit="mm",
                                 filetype=self.filetype)
 
-        self.plotascanpanel = PlotPanel(self.panel,
-                                -1,
-                                "test_plot",
-                                np.arange(150),
+        self.plotascanpanel = PlotPanel(self.panel, -1, "test_plot", np.arange(150),
                                 Imageindices=Imageindices,
                                 posmotorname="xmotor",
                                 posarray_motors=np.arange(150),
@@ -723,7 +717,7 @@ class MainFrame(wx.Frame):
             print('self.list_meshscan_indices', self.list_meshscan_indices)
         
         if self.filetype == 'hdf5':
-            listmeshall  = getmeshscan_from_hdf5file(fullpathfilename)
+            listmeshall  = spec_reader.getmeshscan_from_hdf5file(fullpathfilename)
 
             if listmeshall == []:
                 print('No mesh scan in %s'%fullpathfilename)
@@ -995,8 +989,10 @@ class MainFrame(wx.Frame):
             self.scantype = tit.split()[2]
 
         elif self.filetype == 'hdf5':  # only mesh now
-            #print('in ReadScan_SpecFile for hdf5 branch') 
-            tit, data, self.scan_date= readdata_from_hdf5key(self.listmesh, scan_index, outputdate=True)
+            print('in ReadScan_SpecFile for hdf5 branch')
+
+            print('scan_index',scan_index)
+            tit, data, posmotors, fullpath, self.scan_date= readdata_from_hdf5key(self.listmesh, scan_index, outputdate=True)
             # scanheader, data, self.scan_date = ReadHdf5(self.fullpath_hdf5file, scan_index, outputdate=True)
             
             self.scantype = 'amesh'
@@ -1480,161 +1476,6 @@ def getmeshscan_from_specfile(filename):
 
 
     return listmesh
-
-def getmeshscan_from_hdf5file(filename):
-
-    print("getmeshscan_from_hdf5file  %s"%filename)
-    _,ext = filename.rsplit('.',1)
-    headname, ffname = os.path.split(filename)
-    with h5py.File(filename, 'r') as f:
-
-        listkeys = [kk for kk in f.keys()]
-        print('hdf5 keys',listkeys)
-        nbkeys = len(listkeys)
-        
-        # if key =   #########_int.int  then it is a pointer to a file ########.h5
-        # if key =   int.int    this file contains truly the data
-        #  #########   =  collectionname_datasetname
-        listprops = []
-        idx_key=0
-        while idx_key<nbkeys:
-            _key = listkeys[idx_key]
-            objlink = f.get(_key, getlink=True)
-            props = None
-            if isinstance(objlink, h5py._hl.group.ExternalLink):
-                
-                lowlevelpath = objlink.filename
-                print('key = %s is External link to %s'%(_key,lowlevelpath))
-                foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
-                if foundfile:
-                    # removing string before _interger.integer
-                    _modified_key = _key.rsplit('_',1)[-1]
-                    props = getscanprops_lowest_hdf5(foundfile, _modified_key)
-            elif isinstance(objlink, h5py._hl.group.HardLink):
-                print('key = %s is Hard link to '%(_key))
-                props = getscanprops_lowest_hdf5(filename, _key)
-            if props is not None:
-                listprops.append(props)
-            idx_key+=1
-
-    # print('listprops',listprops)
-    if listprops == []:
-        wx.MessageBox('No mesh scan in the file: %s'%filename,'INFO')
-        return []
-
-    # sorting by increasing date
-    ar_lp = np.array(listprops, dtype=object)
-    s_ix=np.argsort(ar_lp[:,3])
-    sortedlistprops = ar_lp[s_ix]
-    #print('sortedlistprops',sortedlistprops)
-    
-    return sortedlistprops
-
-def findlowesthdf5file(filename, mainfolder='.', verbose=0):
-    """ find the lowest hdf5 file pointing
-    To be improved to consider relative path
-    """
-    
-    foundfile = None
-    _, ffname = os.path.split(filename)
-    absfolder = os.path.abspath(mainfolder)
-    relativepath = os.path.join(absfolder,filename)
-    if verbose:
-        print('filename',filename)
-        print('relativepath', relativepath)
-        print('ffname',ffname)
-        print('absfolder',absfolder)
-    if os.path.exists(relativepath): # relative path from current folder
-        foundfile = relativepath
-    elif ffname in os.listdir(absfolder): #local folder
-        foundfile = os.path.join(absfolder,ffname)
-    if verbose:
-        print('foundfile',foundfile)
-    return foundfile
-
-def getscanprops_lowest_hdf5(filename, key, onlymesh=True):
-    #print('\n\nterminal hdf5 file')
-    _,ext = filename.rsplit('.',1)
-    headname, ffname = os.path.split(filename)
-    with h5py.File(filename, 'r') as f:
-
-        idx, postfix = key.split('.')
-        #print('reading key %s'%key)
-        if h5py.__version__<'3.0':
-            #maybe [()] is enough without decoding
-            scancommand = f['%s.%s'%(idx,postfix)]['title'].value
-            startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
-        else:
-            #print('%s.%s'%(idx,postfix))
-            scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
-            startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
-        props = None
-        if onlymesh:
-            if 'amesh' in scancommand:
-                keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-    return props
-
-def getmeshscan_from_hdf5file_old(filename, formerfilename=None):
-
-    print("getmeshscan_from_hdf5file  %s"%filename)
-    _,ext = filename.rsplit('.',1)
-    headname, ffname = os.path.split(filename)
-    with h5py.File(filename, 'r') as f:
-
-        listkeys = [kk for kk in f.keys()]
-        #print('hdf5 keys',listkeys)
-
-        testkey = listkeys[0]
-        # if key =   #########_int.int  then it is a pointer to a file ########.h5
-        # if key =   int.int    this file contains truly the data
-        #  #########   =  collectionname_datasetname
-
-        if '_' in testkey:
-            print('file %s is a master hdf5 file')
-            hdf5file, idx = testkey.rsplit('_',1)
-            subfile = '%s.%s'%(hdf5file,ext)
-            print('it is pointing to file: ',subfile)
-            # the subfile is normally in a subfolder ######## when recording data on server
-            # here we consider that all h5 files are in the same folder
-
-            attemptedsubfile = os.path.join(headname, subfile)
-            print('Trying to open: ', attemptedsubfile)
-            return getmeshscan_from_hdf5file_old(attemptedsubfile, formerfilename=subfile)
-        else:
-            print('\n\nterminal hdf5 file')
-
-    # list of integers
-    #scanslist = sorted([int(kk[:-2]) for kk in f.keys()])  # removing .1 at the end of nb scan
-    listscanindex, listpostfix = [], []
-    for kk in f.keys():
-        idx, postfix = kk.split('.')
-        listscanindex.append(int(idx))
-        listpostfix.append(postfix)
-
-    ar_idx = np.array(listscanindex)
-    ar_postfix = np.array(listpostfix, dtype=object)
-
-    s_idx = np.argsort(ar_idx)
-
-    idx = ar_idx[s_idx]
-    pofix = ar_postfix[s_idx]
-
-    print('scanslist', ar_idx)
-    listmesh = []
-    
-    for i_s, ppost in zip(idx, pofix):
-        #print('%d.%s'%(i_s,ppost))
-        
-        #scancommand = f['%d.%s'%(i_s,ppost)]['title'].value
-        scancommand = f['%d.%s'%(i_s,ppost)]['title'][()]
-        #print('scancommand', scancommand)
-        if 'amesh' in scancommand:
-            listmesh.append([i_s, None, None,'#S %s_%d %s'%(ffname, i_s, scancommand)])
-
-    print("%s contains %d mesh scans" % (filename, len(listmesh)))
-
-    return listmesh, filename
 
 class PlotPanel(wx.Panel):
     """
