@@ -49,7 +49,9 @@ class InputDetector(wx.StaticBoxSizer):
         # widgets
         self.ccd_cbx = LabelComboBox(self._parent, label="Name:  ", value="sCMOS", choices=dlt.dict_CCD.keys())
 
-        self.geo_fs = FileSelectOpen(self._parent, "Parameter file:", "", "LaueTools detector file (*.det)|*.det")
+        self.geo_fs = FileSelectOpen(self._parent, "Parameter file:", "",
+                                    "LaueTools detector file (*.det)|*.det",
+                                    tip='Calibration file *.det')
 
         self.manual_chk = wx.CheckBox(self._parent, wx.ID_ANY, "user-defined:")
 
