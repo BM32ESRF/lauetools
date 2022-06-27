@@ -163,10 +163,9 @@ class ImshowFrame(wx.Frame):
 
         self.canvas.draw()
 
-
-if __name__ == "__main__":
+def start():
     title = "test"
-
+    import wx
     dataarray = np.random.randint(65000, size=(301, 301))
 
     kwds = {"interpolation": "nearest"}
@@ -180,3 +179,5 @@ if __name__ == "__main__":
     PSGUIframe.Show()
 
     PSGUIApp.MainLoop()
+if __name__ == "__main__":
+    start()
