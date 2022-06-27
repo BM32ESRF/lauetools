@@ -446,7 +446,7 @@ def plot_map2(filesum,
         print(ncolplot,  nplot, ngraph, ngraphline, ngraphcol, ngraphlabels)  
         print("list of labels",  list_of_labels)      
                 
-        palette = copy(dict_nplot[maptype][10])        
+        palette = copy.copy(dict_nplot[maptype][10])        
 
         color_under = dict_nplot[maptype][7]
         color_over = dict_nplot[maptype][8]
