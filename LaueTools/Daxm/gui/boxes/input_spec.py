@@ -16,9 +16,8 @@ from LaueTools.Daxm.gui.widgets.file import FileSelectOpen
 from LaueTools.Daxm.gui.widgets.combobox import LabelComboBox
 from LaueTools.Daxm.gui.widgets.spin import LabelSpinCtrl
 
-
 class InputSpec(wx.StaticBoxSizer):
-
+    """ Gui class to open spec file or bliss hdf  (used in Load DLaue Scan)"""
     # Constructors
     def __init__(self, parent, label="Spec"):
         mainbox = wx.StaticBox(parent, wx.ID_ANY, label)
@@ -47,9 +46,10 @@ class InputSpec(wx.StaticBoxSizer):
 
     def Create(self):
 
-        self.spec_fs = FileSelectOpen(self._parent, "Spec file:", "")
+        self.spec_fs = FileSelectOpen(self._parent, "Spec file:", "", tip='Load spec or bliss hdf5 file')
 
-        self.cmd_cbx = LabelComboBox(self._parent, "Scan:  ", choices=["xxxx ascan yf xxxx xxxx xxxx xxxx"])
+        self.cmd_cbx = LabelComboBox(self._parent, "Scan:  ", tip='list of wire scans from spec or hdf file',
+                                    choices=["xxxx ascan yf xxxx xxxx xxxx xxxx"])
 
         self.manual_chk = wx.CheckBox(self._parent, wx.ID_ANY, "user-defined:")
 
@@ -214,7 +214,7 @@ class InputSpec(wx.StaticBoxSizer):
 
     # Event handlers
     def OnSelectFile(self, event):
-
+        """ start the spec or hdf5 file reader """
         self.spec = spr.SpecFile(event.GetValue())
 
         self.SetScanList()
@@ -274,7 +274,7 @@ class InputSpec2(InputSpec):
         InputSpec.__init__(self, parent, label=label)
 
         # Create
-        self.img_fs = FileSelectOpen(self._parent, "First image:", "")
+        self.img_fs = FileSelectOpen(self._parent, "First image:", "", tip="select first image of wire daxm scan")
 
         self.AddSpacer(10)
         self.Add(self.img_fs,  0, wx.EXPAND | wx.LEFT | wx.RIGHT, 15)
