@@ -8,10 +8,21 @@ __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
 import wx
+if wx.__version__ < "4.":
+    WXPYTHON4 = False
+else:
+    WXPYTHON4 = True
+    wx.OPEN = wx.FD_OPEN
+
+    def sttip(argself, strtip):
+        return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
+    wx.Window.SetToolTipString = sttip
 
 class LabelComboBox(wx.BoxSizer):
     
-    def __init__(self, parent, label, value="", choices=(), style=wx.DEFAULT, flag=wx.ALL, size=(-1,-1)):
+    def __init__(self, parent, label, value="", choices=(), style=wx.DEFAULT,
+                                        flag=wx.ALL, size=(-1,-1), tip=''):
         wx.BoxSizer.__init__(self, wx.HORIZONTAL)
         
         self.parent = parent
@@ -25,6 +36,9 @@ class LabelComboBox(wx.BoxSizer):
         self.Add(self.cbx,   1, wx.FIXED_MINSIZE)
         
         self.cbx.Bind(wx.EVT_COMBOBOX, self.OnSelect)
+
+        #tooltip
+        self.cbx.SetToolTipString(tip)
 
     def GetValue(self):
         
