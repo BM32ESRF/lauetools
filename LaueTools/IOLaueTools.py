@@ -966,26 +966,43 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     f = open(fitfilename, "r")
 
-    # search for each start of grain dat
+    # search for each start of grain data
     nbgrains = 0
     linepos_grain_list = []
     lineindex = 1
     WrongExtension = False
-    try:
-        for line in f:
-            _line = line.rstrip(string.whitespace)
-            if not _line.startswith("# Unindexed and unrefined"):
-                if _line.endswith(fileextensionmarker):
-                    nbgrains += 1
-                    linepos_grain_list.append(lineindex)
-                else:
-                    WrongExtension = True
-            lineindex += 1
-        if WrongExtension:
-            print('Warning !! Strange extension file for the first line of %s'%fitfilename)
-    finally:
-        linepos_grain_list.append(lineindex)
-        f.close()
+
+    for line in f:
+        _line = line.rstrip(string.whitespace)
+        #if not _line.startswith("# Unindexed and unrefined"):
+        #    if _line.endswith(fileextensionmarker):
+        #        nbgrains += 1
+        #        linepos_grain_list.append(lineindex)
+        #    else:
+        #        WrongExtension = True
+        if _line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
+            print('got a grain!')
+            linepos_grain_list.append(lineindex)
+            nbgrains += 1
+            
+        lineindex += 1
+    linepos_grain_list.append(lineindex)
+
+    # try:
+    #     for line in f:
+    #         _line = line.rstrip(string.whitespace)
+    #         if not _line.startswith("# Unindexed and unrefined"):
+    #             if _line.endswith(fileextensionmarker):
+    #                 nbgrains += 1
+    #                 linepos_grain_list.append(lineindex)
+    #             else:
+    #                 WrongExtension = True
+    #         lineindex += 1
+    #     if WrongExtension:
+    #         print('Warning !! Strange extension file for the first line of %s'%fitfilename)
+    # finally:
+    #     linepos_grain_list.append(lineindex)
+    #     f.close()
 
     if verbose:
         print("nbgrains = ", nbgrains)
@@ -1041,11 +1058,11 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             line = f.readline()
             #             print "iline =%d line" % iline, line
             if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-                # print("iline =%d line" % iline, line)
+                print("iline =%d line" % iline, line)
                 try:
                     nb_indexed_spots = int(line.split(":")[-1])
                 except ValueError:
-                    print("number of indexed should places after ':' ")
+                    print("number of indexed spots should placed after ':' ")
 
             elif line.startswith(("# Number of unindexed spots", "#Number of unindexed spots")):
                 nb_indexed_spots = 0
@@ -1851,274 +1868,9 @@ def createselecteddata(tupledata_theta_chi_I, _listofselectedpts, _indicespotmax
 
     return (_dataselected, _nbmax)
 
-def parsehdf5time(strtime):
-    """ parse time in hdf5 from bliss file
-    Return  ascii time, epoch time"""
-    sd, _ = strtime.split('+')
-    da, ho = sd.split('T')
-    yy, mm, dd = da.split('-')
-    hh, mi, sec = ho.split(':')
-    starttime = time.strptime('%s %s %s %s:%s:%s'%(yy, mm, dd, hh, mi, sec[:2]), '%Y %m %d %H:%M:%S')
-    return time.asctime(starttime), time.mktime(starttime)
-
-def ReadHdf5_v2(fname, scan, outputdate=False):
-    """extract data of a scan in a ESRF Bliss made hdf5 file
-
-    :param fname: file object or string (path)
-    :type fname: file object or string
-    :param scan: scan index
-    :type scan: integer
-    :param outputdate: output starting date of the scan in ascii format, defaults to False
-    :type outputdate: bool, optional
-    """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-
-    with h5py.File(fname, 'r') as f:
-
-        i_scan = '%d' % scan + '.1'
-        print('i_scan', i_scan)
-        print('fname', f)
-        print('fname[i_scan]', f[i_scan])
-        datasetnames = [key for key in f[i_scan]['measurement'].keys()]
-        d = {}
-        for _n in datasetnames:
-            d[_n] = f[i_scan]['measurement'][_n][()]
-
-        if h5py.__version__>='3':
-            title = f[i_scan]['title'][()].decode('UTF-8')
-            st = f[i_scan]['start_time'][()].decode('UTF-8')
-            et = f[i_scan]['end_time'][()].decode('UTF-8')
-        else:
-            title = f[i_scan]['title'].value
-            st = f[i_scan]['start_time'].value
-            et = f[i_scan]['end_time'].value
-        duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
-        
-        print('title', title)
-        print('duration', duration)
-        
-        if not outputdate:
-            return title, d
-        else:
-            return title, d, st
-
-def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
-    """access to a low level hdf5 file and read data corresponding to the key 
-
-    :param listkeyprops: array of strings which lists all the keys (see getmeshscan_from_hdf5file() of plotmeshspecGUI.py). Each element is:
-    props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-    :type fname: file object or string
-    :param scan: string for scan id  (key in hdf5 file)
-    :type scan: integer
-    :param outputdate: output starting date of the scan in ascii format, defaults to False
-    :type outputdate: bool, optional
-    """
-    # print('key',key)
-    # print('listkeyprops[:,0]',listkeyprops[:,0])
-
-    _ix = np.where(listkeyprops[:,0]==key)[0]
-
-    # print('_ix',_ix)
-    # print('listkeyprops[_ix]', listkeyprops[_ix])
-
-    if len(_ix)==0:
-        title ='Not Reachable'
-        d={}
-        st =''
-    else:
-        assert len(_ix)==1
-        general_id, idx, postfix, startdate, commandtitle, fullpath = listkeyprops[_ix[0]]
-        
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        with h5py.File(fullpath, 'r') as f:
-
-            i_scan = '%s.%s'%(idx, postfix)
-            # print('i_scan', i_scan)
-            # print('fname', f)
-            # print('fname[i_scan]', f[i_scan])
-            datasetnames = [key for key in f[i_scan]['measurement'].keys()]
-            d = {}
-            for _n in datasetnames:
-                d[_n] = f[i_scan]['measurement'][_n][()]
-            
-            if h5py.__version__>='3':
-                title = f[i_scan]['title'][()].decode('UTF-8')
-                st = f[i_scan]['start_time'][()].decode('UTF-8')
-                et = f[i_scan]['end_time'][()].decode('UTF-8')
-            else:
-                title = f[i_scan]['title'].value
-                st = f[i_scan]['start_time'].value
-                et = f[i_scan]['end_time'].value
-            duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
-            
-            print('title', title)
-            print('duration', duration)
-            
-        if not outputdate:
-            return title, d
-        else:
-            return title, d, st
 
 
-def ReadHdf5(fname, scan, outputdate=False):
-    """extract data of a scan in a ESRF Bliss made hdf5 file when key are formatted as int.1
 
-    :param fname: file object or string (path)
-    :type fname: file object or string
-    :param scan: string for scan id  (key in hdf5 file)
-    :type scan: integer
-    :param outputdate: output starting date of the scan in ascii format, defaults to False
-    :type outputdate: bool, optional
-    """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-
-    with h5py.File(fname, 'r') as f:
-
-        i_scan = '%d' % scan + '.1'
-        print('i_scan', i_scan)
-        print('fname', f)
-        print('fname[i_scan]', f[i_scan])
-        datasetnames = [key for key in f[i_scan]['measurement'].keys()]
-        d = {}
-        for _n in datasetnames:
-            d[_n] = f[i_scan]['measurement'][_n][()]
-
-        if h5py.__version__>='3':
-            title = f[i_scan]['title'][()].decode('UTF-8')
-            st = f[i_scan]['start_time'][()].decode('UTF-8')
-            et = f[i_scan]['end_time'][()].decode('UTF-8')
-        else:
-            title = f[i_scan]['title'].value
-            st = f[i_scan]['start_time'].value
-            et = f[i_scan]['end_time'].value
-        duration = parsehdf5time(et)[1] - parsehdf5time(st)[1]
-        
-        print('title', title)
-        print('duration', duration)
-        
-        if not outputdate:
-            return title, d
-        else:
-            return title, d, st
-
-
-def ReadSpec(fname, scan, outputdate=False):
-    """
-    Procedure very based on that of Vincent Favre Nicolin procedure
-
-    :param scan: scan index (integer)
-    return :
-    spec command (str), dict of data (key=counter name, val= values), and optionnaly [date (str)]
-    """
-    f = open(fname, "r")
-
-    print('ReadSpec of IOLaueTools.py')
-
-    s = "#S %d" % scan
-    title = 0
-
-    bigmca = []
-    # spec command with motors, steps and exposure
-    while 1:
-        title = f.readline()
-        if s == title[0 : len(s)]:
-            break
-        if len(title) == 0:
-            break
-    print(title)
-    # date -----------------
-    date = 'unknown'
-    s = "#D"
-    while 1:
-        line = f.readline()
-        if s == line[0:len(s)]:
-            date = line[3:]
-            break
-        if len(line) == 0:
-            break
-    # data   (dict with key= counter column name) -------------
-    s = "#L"
-    coltit = 0
-
-    while 1:
-        coltit = f.readline()
-        if s == coltit[0 : len(s)]:
-            break
-        if len(coltit) == 0:
-            break
-    d = {}
-    coltit = coltit.split()
-    for i in list(range(1, len(coltit))):
-        d[coltit[i]] = []
-
-    ii = 0
-    while 1:  # reading data
-        l = f.readline()
-        if len(l) < 2:
-            break
-
-        if l[:2] == "#C":            
-            # deal with#C Thu Feb 25 23:54:05 2021.  Erreur com with laueT.
-            if 'Erreur com' in l:
-                print('line error #C :', l)
-                continue
-            elif not l.startswith("#C tiltcomp:"):
-                print("Scan aborted after %d point(s)" % ii)
-                break
-            else:
-                print(l)
-        if l[0] == "#":
-            continue
-        l = l.split()
-        # print "l",l
-        #         print "coltit", coltit
-        # print "nb columns",len(coltit)-1
-        if l[0] != "@A":
-            for i in list(range(1, len(coltit))):
-                d[coltit[i]].append(float(l[i - 1]))
-        else:
-            # print "reading mca data array for one point"
-            bill = np.zeros((128, 16))  # 2048=128*16
-            mcadata = []
-            l[-1] = l[-1][:-1]
-            mcadata.append(np.array(l[1:]))
-            bill[0] = np.array(np.array(l[1:]), dtype=np.int16)
-            # fist line has its first element = '@A'
-            if ii % 10 == 0:
-                print("%d" % ii)
-            for k in list(range(1, 127)):  # first and last line off , each line contains 16 integers
-                l = f.readline()
-
-                l = l.split()
-                l[-1] = l[-1][:-1]
-                mcadata.append(np.array(l[:16]))
-                # print "uihuihui ",k,"   ",array(l)
-                bill[k] = np.array(np.array(l[:16]), dtype=np.int16)
-            # last line doesn't finish with \
-            l = f.readline()
-            l = l.split()
-            # print array(l)
-            mcadata.append(np.array(l))
-            bill[-1] = np.array(np.array(l), dtype=np.int16)
-
-            # bill=array(mcadata,dtype=uint16)
-            bigmca.append(np.ravel(bill))
-            ii += 1
-
-            d["mca"] = np.array(bigmca)
-
-    nb = len(d[coltit[1]])  # nb of points
-    # print "nb",nb
-    for i in list(range(1, len(coltit))):
-        a = np.zeros(nb, dtype=float)
-        for j in list(range(nb)):
-            a[j] = d[coltit[i]][j]
-        d[coltit[i]] = deepcopy(a)
-    f.close()
-    if outputdate:
-        return title, d, date
-    else:
-        return title, d
 
 
 # --- -----  read write Parameters file
