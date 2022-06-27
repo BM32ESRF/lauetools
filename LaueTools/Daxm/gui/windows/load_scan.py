@@ -13,6 +13,17 @@ __path__ = os.path.dirname(__file__)
 
 import wx
 
+if wx.__version__ < "4.":
+    WXPYTHON4 = False
+else:
+    WXPYTHON4 = True
+    wx.OPEN = wx.FD_OPEN
+
+    def sttip(argself, strtip):
+        return wx.Window.SetToolTip(argself, wx.ToolTip(strtip))
+
+    wx.Window.SetToolTipString = sttip
+
 import LaueTools.readmccd as rmccd
 
 from LaueTools.Daxm.gui.icons import icon_manager as mycons
@@ -55,9 +66,11 @@ class LoadScan(wx.Dialog):
 
         self.SetIcon(mycons.get_icon("logo_IF.png"))
 
+        DEFAULTFILE='/home/micha/LaueProjects/DAXM/BN16_JBMolin_IH_MA_53/calib0_calib_ok.scan'
         # widgets
         self.wgt_file = FileSelectOpen(self, "From file: ", "",
-                                       wildcard="(*.scan)|*.scan")
+                                       wildcard="(*.scan)|*.scan",
+                                       tip='Load already built DAXM summary file .scan\n%s'%DEFAULTFILE)
 
         self.ckb_manual = wx.CheckBox(self, wx.ID_ANY, label="Manually:")
 
