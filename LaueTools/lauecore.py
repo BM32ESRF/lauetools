@@ -1813,16 +1813,17 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
 
-def SimulateLaue_full_np(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP_GEOMETRY,
-                                                                ResolutionAngstrom=False,
-                                                                removeharmonics=0,
-                                                                pixelsize=165 / 2048.0,
-                                                                dim=(2048, 2048),
-                                                                detectordiameter=None,
-                                                                force_extinction=None,
-                                                                dictmaterials=dict_Materials,
-                                                                verbose=0,
-                                                                depth=None): 
+def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
+                                            kf_direction=DEFAULT_TOP_GEOMETRY,
+                                            ResolutionAngstrom=False,
+                                            removeharmonics=0,
+                                            pixelsize=165 / 2048.0,
+                                            dim=(2048, 2048),
+                                            detectordiameter=None,
+                                            force_extinction=None,
+                                            dictmaterials=dict_Materials,
+                                            verbose=0,
+                                            depth=None): 
     r"""Compute Laue Pattern spots positions, scattering angles, miller indices
                             for a SINGLE grain or Xtal using numpy vectorization
 
