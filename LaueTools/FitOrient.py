@@ -64,16 +64,17 @@ def remove_harmonic(hkl, uflab, yz):
     return (hkl2, uflab2, yz2, nspots2, isbadpeak)
 
 
-def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_indices,
-                                                                        allparameters,
-                                                                        initrot=None,
-                                                                        vecteurref=IDENTITYMATRIX,
-                                                                        pureRotation=0,
-                                                                        labXMAS=0,
-                                                                        verbose=0,
-                                                                        pixelsize=165.0 / 2048,
-                                                                        dim=(2048, 2048),
-                                                                        kf_direction="Z>0"):
+def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
+                                            varying_parameter_indices,
+                                            allparameters,
+                                            initrot=None,
+                                            vecteurref=IDENTITYMATRIX,
+                                            pureRotation=0,
+                                            labXMAS=0,
+                                            verbose=0,
+                                            pixelsize=165.0 / 2048,
+                                            dim=(2048, 2048),
+                                            kf_direction="Z>0"):
     """
     compute x and y pixel positions of Laue spots given hkl list
 
@@ -136,7 +137,7 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots, varying_parameter_ind
     Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
 
     twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn)
-    if verbose:
+    if verbose>1:
         print("matfromQuat", matfromQuat)
         print("tDATA_Q", np.transpose(DATA_Q))
         print("Qrot", Qrot)
@@ -286,6 +287,7 @@ def error_function_on_demand_calibration(param_calib,
 
     deltamat = np.dot(mat3, np.dot(mat2, mat1))
     newmatrix = np.dot(deltamat, initrot)
+    #print('newmatrix',newmatrix)
 
     # three last parameters are orientation angles in quaternion expression
     onlydetectorindices = arr_indexvaryingparameters[arr_indexvaryingparameters < 5]
@@ -314,20 +316,11 @@ def error_function_on_demand_calibration(param_calib,
 
     if allspots_info == 0:
         if verbose:
-            # print "X",X
-            # print "pixX",pixX
-            # print "Y",Y
-            # print "pixY",pixY
-            # print "param_orient",param_calib
-            # print "distanceterm",distanceterm
-            # print "*****************mean distanceterm   ",mean(distanceterm),"    ********"
-            # print "newmatrix", newmatrix
             return distanceterm, deltamat, newmatrix
-
         else:
             return distanceterm
 
-    elif allspots_info == 1:
+    if allspots_info == 1:
         Xtheo = X
         Ytheo = Y
         Xexp = pixX
@@ -356,6 +349,7 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                                 dim=(2048, 2048),
                                 weights=None,
                                 kf_direction="Z>0",
+                                returnallinfos = False,
                                 **kwd):
     """
     #All miller indices must be entered in miller,
@@ -377,7 +371,7 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
             "\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
 
-        _error_function_on_demand_calibration(param_calib_0,
+        error_init=_error_function_on_demand_calibration(param_calib_0,
                                                 miller,
                                                 allparameters,
                                                 arr_indexvaryingparameters,
@@ -395,6 +389,7 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
 
         print("\n\n***************************\nFitting parameters:  ", parameters_being_fitted,
             "\n\n***************************\n")
+        print('mean error_init',np.mean(error_init[0]))
         # NEEDS AT LEAST 5 spots (len of nspots)
         print("With initial values", param_calib_0)
 
@@ -424,12 +419,35 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                               tr_solver = 'exact',
                               x_scale=xscale, max_nfev=None)
 
-    print("\nLEAST_SQUARES")
-    #print("calib_sol2", calib_sol2['x'])
-    print(calib_sol2['x'])
+    print("\n-------LEAST_SQUARES method RESULTS ----------")
+    #print("calib_sol2", calib_sol2)
+    print("calib_sol2['x']",calib_sol2['x'])
     print('mean residues', np.mean(calib_sol2['fun']))
-    
-    return calib_sol2['x']
+    print('\n-------------------------------------\n')
+
+    finalallresults = _error_function_on_demand_calibration(calib_sol2['x'],
+                                                miller,
+                                                allparameters,
+                                                arr_indexvaryingparameters,
+                                                nspots,
+                                                pixX,
+                                                pixY,
+                                                initrot=initrot,
+                                                pureRotation=pureRotation,
+                                                verbose=verbose,
+                                                pixelsize=pixelsize,
+                                                dim=dim,
+                                                weights=weights,
+                                                kf_direction=kf_direction,
+                                                allspots_info=1)
+    if verbose:
+        print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")    
+        print('finalallresults', finalallresults)
+
+    if returnallinfos:
+        return calib_sol2['x'], finalallresults
+    else:
+        return calib_sol2['x']
 
     # LEASTSQUARE
     calib_sol = leastsq(_error_function_on_demand_calibration,
