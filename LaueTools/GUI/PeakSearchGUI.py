@@ -1075,7 +1075,7 @@ class MosaicAndMonitor(wx.Panel):
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
-        txt1 = wx.StaticText(self, -1, "Image pixel ROI selection")
+        txt1 = wx.StaticText(self, -1, "Image pixel Single ROI selection")
         txt1.SetFont(font3)
 
         self.boxsizetxt = wx.StaticText(self, -1, "boxsize:")
@@ -1124,8 +1124,8 @@ class MosaicAndMonitor(wx.Panel):
 
         self.comboROI.Bind(wx.EVT_COMBOBOX, self.OnChangeROI)
 
-        self.txtnbdigits = wx.StaticText(self, -1, "Nb of digits\nin ImageFilename")
-        self.nbdigitsctrl = wx.TextCtrl(self, -1, "4")
+        self.txtnbdigits = wx.StaticText(self, -1, "#digits")
+        self.nbdigitsctrl = wx.TextCtrl(self, -1, "4", size=(20,-1))
 
         txt3 = wx.StaticText(self, -1, "Counters & Monitors selection")
         txt3.SetFont(font3)
@@ -1190,6 +1190,8 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer2.Add(self.lastindexctrl, 0, wx.ALL, 5)
         self.NavigBoxsizer2.Add(self.stepimageindex, 0, wx.ALL, 5)
         self.NavigBoxsizer2.Add(self.stepimageindexctrl, 0, wx.ALL, 5)
+        self.NavigBoxsizer2.Add(self.txtnbdigits, 0, wx.ALL, 5)
+        self.NavigBoxsizer2.Add(self.nbdigitsctrl, 0, wx.ALL, 5)
 
         NavigBoxsizer2b = wx.BoxSizer(wx.HORIZONTAL)
         NavigBoxsizer2b.Add(self.rectangleindexradiobtn, 0, wx.ALL, 5)
@@ -1205,11 +1207,6 @@ class MosaicAndMonitor(wx.Panel):
         ROIBoxsizer.Add(self.twtROI, 0, wx.ALL, 5)
         ROIBoxsizer.Add(self.comboROI, 0, wx.ALL, 5)
 
-        ndigitsBoxsizer = wx.BoxSizer(wx.HORIZONTAL)
-        ndigitsBoxsizer.Add(self.txtnbdigits, 0, wx.ALL, 5)
-        ndigitsBoxsizer.Add(self.nbdigitsctrl, 0, wx.ALL, 5)
-        
-
         self.NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer3.Add(self.txtnbimagesperline, 0, wx.ALL, 5)
         self.NavigBoxsizer3.Add(self.stepctrl, 0, wx.ALL, 5)
@@ -1223,7 +1220,6 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
         vbox.Add(ROIBoxsizer, 0, wx.EXPAND)
-        vbox.Add(ndigitsBoxsizer, 0, wx.EXPAND)
 
         vbox.Add(txt3, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer, 0, wx.EXPAND)
@@ -1297,6 +1293,10 @@ class MosaicAndMonitor(wx.Panel):
         "PEAK-TO-PEAK (or Peak-to-Valley) pixel intensity found selected ROI as a function of image index")
         self.maxposcounter.SetToolTipString("Plot X and Y center of mass of the pixel intensity "
         "distribution of the ROI")
+
+        tpdigits = 'nb of digits for zero padding in image filename'
+        self.txtnbdigits.SetToolTipString(tpdigits)
+        self.nbdigitsctrl.SetToolTipString(tpdigits)
 
     #     def onSortROIname(self, evt):
     #         listROI = self.dict_ROI.keys()
@@ -1395,6 +1395,11 @@ class ROISelection(wx.Panel):
         txt3 = wx.StaticText(self, -1, "Export ROIs")
         txt3.SetFont(font3)
 
+        txt4 = wx.StaticText(self, -1, "Collect Data from ROIs")
+        txt4.SetFont(font3)
+        self.collectbtn = wx.Button(self, wx.ID_ANY, "start collect")
+        self.collectbtn.Bind(wx.EVT_BUTTON, self.onstartcollectrois)
+
         self.saveROIbtn = wx.Button(self, wx.ID_ANY, "Save ROIs in file")
         self.saveROIbtn.Bind(wx.EVT_BUTTON, self.onSaveROIs)
         self.sendROItoSPECbtn = wx.Button(self, wx.ID_ANY, "Send ROIs->SPEC")
@@ -1409,7 +1414,6 @@ class ROISelection(wx.Panel):
         NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         NavigBoxsizer2.Add(self.ROIfromPeaklistbtn, 0, wx.ALL, 5)
         NavigBoxsizer2.Add(self.ROIfromManualtbtn, 0, wx.ALL, 5)
-        NavigBoxsizer2.Add(self.centerROIbtn, 0, wx.ALL, 5)
 
         NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
         NavigBoxsizer3.Add(self.saveROIbtn, 0, wx.ALL, 5)
@@ -1423,6 +1427,8 @@ class ROISelection(wx.Panel):
         vbox.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
         vbox.Add(txt3, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(txt4, 0, wx.EXPAND)
+        vbox.Add(self.collectbtn, 0, wx.EXPAND)
 
         self.SetSizer(vbox)
 
@@ -1443,6 +1449,65 @@ class ROISelection(wx.Panel):
 
         self.ROIfromManualtbtn.SetToolTipString(
             'Select with mouse a rectangle: Accept with "q", delete with "d"')
+    
+    def onstartcollectrois(self,_):
+        folder, filename = '/home/micha/LaueProjects/MapSn', 'SnsurfscanBig_1382.mccd'
+        listimages= np.arange(0,1383)   # 41 images/line and aborted
+        nbimagesperline = 41
+        import pickle
+        imagefilename = filename
+
+        nbimages = len(listimages)
+
+        Xc, Yc = 1000,1400
+        hboxX,hboxY = 300,300
+        ndivisions = (4,20)  # y, x 
+        nrois = ndivisions[0]*ndivisions[1]
+
+        multidtector = []
+        maxposs = np.zeros((nbimages,nrois, 2))
+        k=0
+        for idx in listimages:
+            
+            if idx % 10 == 0: print(" image %d / %d  "%(idx, listimages[-1]))
+            filename = imagefilename[:-10]+'_%04d'%idx + '.mccd'
+            print('filename', filename)
+            
+            param = (folder, filename, idx,[[Xc, Yc]], hboxX,hboxY)
+            cdata = MOS.CollectData_oneImage(param, folder,selectedcounters=['Imax_multiple'], ndivisions=ndivisions)
+            maxIs = cdata['Imax_multiple'][0]
+            multidtector.append(maxIs)
+            
+            if 0:  #max pixel position
+                cd = MOS.CollectData_oneImage(param, folder, selectedcounters=['posmax_multiple'],
+                                                                                            ndivisions=ndivisions)
+                maxposs[k]= cd['posmax_multiple'][0]
+            if idx % 200 == 0:  # partial pickeling to be optimised
+                dets = np.array(multidtector)
+                kk = 0
+                alldets=[]
+                for i in range(ndivisions[0]):
+                    for j in range(ndivisions[1]):
+                        singledet = GT.to2Darray(dets[:,kk],nbimagesperline)
+                        alldets.append(singledet)
+                        kk+=1
+                with open(os.path.join(folder,'alldets_%d.pickle'%k),'wb') as f:
+                    pickle.dump(alldets, f)
+            
+            k+=1
+            
+        dets = np.array(multidtector)
+        maxs = np.array(maxposs)
+
+        kk = 0
+        alldets=[]
+        for i in range(ndivisions[0]):
+            for j in range(ndivisions[1]):
+                singledet = GT.to2Darray(dets[:,kk],nbimagesperline)
+                alldets.append(singledet)
+                kk+=1
+        with open(os.path.join(folder,'alldets.pickle'),'wb') as f:
+            pickle.dump(alldets, f)
 
     def buildROIsarray(self):
         ROIslist = []
