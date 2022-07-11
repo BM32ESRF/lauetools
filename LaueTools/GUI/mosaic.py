@@ -9,7 +9,7 @@ May 2019
 import os
 import time
 import sys
-from copy import copy
+import copy
 
 try:
     import Image
@@ -1109,7 +1109,7 @@ class ImshowFrame(wx.Frame):
         self.fig.canvas.mpl_connect("button_press_event", self.onClick)
         self.fig.canvas.mpl_connect("key_press_event", self.onKeyPressed)
 
-        self.dataraw = copy(dataarray)
+        self.dataraw =copy.copy(dataarray)
         # data to be displayed
         self.data = dataarray
         self.datatype = datatype
@@ -1127,12 +1127,12 @@ class ImshowFrame(wx.Frame):
         self.imagename = imagename
         self.currentpointedImageIndex = None
 
-        self.dict_param = copy(dict_param)
+        self.dict_param = copy.copy(dict_param)
 
         if "dataVector" in dict_param:
             print("BINGO !!")
-            self.dataVectorinit = copy(dict_param["dataVector"])
-            self.dataVectorinit_shifted = copy(dict_param["dataVector"])
+            self.dataVectorinit = copy.copy(dict_param["dataVector"])
+            self.dataVectorinit_shifted = copy.copy(dict_param["dataVector"])
 
         self.dirname = None
         self.filename = None
@@ -1167,10 +1167,10 @@ class ImshowFrame(wx.Frame):
             self.palette = dict_param["palette"]
         else:
             if self.datasigntype == "positive":
-                self.palette = copy(GT.ORRD)
+                self.palette = copy.copy(GT.ORRD)
                 self.LastLUT = "OrRd"
             else:
-                self.palette = copy(GT.SEISMIC)
+                self.palette = copy.copy(GT.SEISMIC)
                 self.LastLUT = "seismic"
 
         self.palette.set_bad(color="black")
@@ -1535,7 +1535,7 @@ class ImshowFrame(wx.Frame):
 
                 nb_row, nb_lines = dshape
 
-            self.dataraw = copy(dataarray)
+            self.dataraw = copy.copy(dataarray)
             # data to be displayed
             self.data = dataarray
             #self.datatype = datatype
@@ -2884,6 +2884,8 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             dat = mosaic.transpose((0, 3, 1, 2))
             dat = dat.reshape((nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1)))
 
+            dat_dims = (nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1))
+
             CountersData[counter + "2D"] = dat
 
             if plot:
@@ -2903,8 +2905,18 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 ploplo.Show()
 
                 outfilename = os.path.join(outputfolder, "%s" % ("MOSAIC_image_Plot"))
+                fullpathout=outfilename + "_%s" % myformattime()
 
-                np.savetxt(outfilename + "_%s" % myformattime(), dat)
+                headerstr='# datatype: MOSAIC\n# dims: %d %d\n# tabindices: %s\n'%(dat_dims[0],dat_dims[1], str(tabindices))
+                headerstr+='# nb_col: %d\n# nb_lines: %d\n'%(nb_col,nb_lines)
+                headerstr+='# boxsize_col: %d\n# boxsize_line: %d\n'%(boxsize_col,boxsize_line)
+                headerstr+='# title: %s\n'%title
+
+                
+                f=open(fullpathout,'w')
+                f.write(headerstr)
+
+                np.savetxt(fullpathout, dat)
 
                 parent.list_of_windows.append(ploplo)
 
@@ -3385,7 +3397,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
 
     nbpeaks = len(peaklist)
 
-    print("nbpeaks", nbpeaks)
+    #print("nbpeaks", nbpeaks)
     print("peaklist", peaklist)
 
     startind, endind = int(startind), int(endind)
@@ -3537,7 +3549,7 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
 
     nbpeaks = len(peaklist)
 
-    print("nbpeaks", nbpeaks)
+    #print("nbpeaks", nbpeaks)
     #     print 'peaklist', peaklist
 
     boxsize_row, boxsize_line = list(map(int, [boxsize_row, boxsize_line]))
