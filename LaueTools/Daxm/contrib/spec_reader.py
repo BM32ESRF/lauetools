@@ -289,7 +289,8 @@ class SpecFile:
                 print("could not find the file {}".format(spec_file))
         elif filetype == 'hdf5':
             selp, allp = getwirescan_from_hdf5file(spec_file, collectallscans=collectallscans,
-                                                            onlywirescan=onlywirescan, onlymesh=onlywirescan)
+                                                            onlywirescan=onlywirescan, onlymesh=onlywirescan,
+                                                            verbose=0)
             self.scan_dict = get_scandict(selp)
             self.cmd_list = get_cmd_list(selp)
 
@@ -314,6 +315,8 @@ def getmeshscan_from_hdf5file(filename):
     print("getmeshscan_from_hdf5file  %s"%filename)
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
+
+    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     with h5py.File(filename, 'r') as f:
 
         listkeys = [kk for kk in f.keys()]
@@ -370,13 +373,15 @@ def getwirescan_from_hdf5file(filename, verbose=0, collectallscans=True, onlywir
         onlymesh=True
         onlywirescan=True
 
-    print("getwirescan_from_hdf5file  %s"%filename)
+    if verbose: print("getwirescan_from_hdf5file  %s"%filename)
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
+
+    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     with h5py.File(filename, 'r') as f:
 
         listkeys = [kk for kk in f.keys()]
-        print('filename: %s \n hdf5 keys:'%filename, listkeys)
+        if verbose: print('filename: %s \n hdf5 keys:'%filename, listkeys)
         nbkeys = len(listkeys)
         
         # if key =   #########_int.int  then it is a pointer to a file ########.h5
@@ -410,7 +415,7 @@ def getwirescan_from_hdf5file(filename, verbose=0, collectallscans=True, onlywir
                 listprops.append(props)
             idx_key+=1
 
-    print('allprops',allprops)
+    #print('allprops',allprops)
     if listprops == []:
         #wx.MessageBox('No mesh scan in the file: %s'%filename,'INFO')
         print('\n\n*******\nNo wire scan in the file: %s\n**********\n'%filename)
@@ -458,6 +463,8 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
     #print('\n\nterminal hdf5 file')
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
+
+    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     with h5py.File(filename, 'r') as f:
 
         idx, postfix = key.split('.')
@@ -682,8 +689,8 @@ class Scan_hdf5(SpecFile):
     Definition:
     -----------
     Scan(spec_file, scan_numbers, verbose = False)
-     > spec_file as SpecFile object or string (in this case a SpecFile object will be instanced)
-     > scan_numbers as integer or as tuple/list/array of integer
+     > hdf5 file (string) created by BLISS
+     > scan_keys   string  WARNING!  single key for the moment!
 
     Attributes:
     -----------
@@ -734,7 +741,7 @@ class Scan_hdf5(SpecFile):
         if type(spec_file) == str:
             spec_file = SpecFile(spec_file, filetype='hdf5')
         self.file = spec_file.file
-        try:
+        try:  # WARNING single key for the moment
             len_scan_number = len(scan_keys)  # it is a list of scan
         except TypeError:
             scan_keys = [scan_keys, ]  # it is a simple scan, we make a len 0 list
@@ -746,14 +753,14 @@ class Scan_hdf5(SpecFile):
         self.__positions__ = ""  # list the values of all motors
         self.__config__ = ""  # list the values of the UB matrix config
         self.scan_keys = scan_keys
-        self.command = scan_keys
+        
         self.comments = ""
 
         print('beginning of __init__ of scan_hdf5')
         selp, allp = getwirescan_from_hdf5file(spec_file.file, onlywirescan=onlywirescan, collectallscans=collectallscans, onlymesh=onlymesh)
         tit, data, posmotors, fullpath, scan_date= readdata_from_hdf5key(selp, scan_keys, outputdate=True)
 
-        if 1:#verbose:
+        if verbose:
             print('tit',tit)
             print('posmotors',posmotors)
             print('scan_date',scan_date)
@@ -765,7 +772,13 @@ class Scan_hdf5(SpecFile):
             setattr(self, key, val)
 
         self.fullpath = fullpath
+        
+        scanindex= int(scan_keys.rsplit('_',1)[-1])
+        basepath = os.path.split(fullpath)[0]
+        self.scanfolder = os.path.join(basepath, 'scan_%04d'%scanindex)
         self.motors = posmotors
+        self.command = tit
+        self.scan_date = scan_date
 
         # small sanity check, sometimes N is diffrent from the actual number of columns
         # which is known to trouble GUIs like Newplot and PyMCA
