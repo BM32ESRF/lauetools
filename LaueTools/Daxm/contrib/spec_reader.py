@@ -1,9 +1,11 @@
-# SPEC reader
-# 2016-11-23
+# SPEC and BLISS reader
+# initially 2016-11-23
 # Sam Tardif (samuel.tardif@gmail.com)
 # Python3 compatibility by Nils Blanc
-# Modified to store scan lines by L. Renversade
-# added to read hdf5 file by J.S. Micha
+# Modified to store scan lines by L. Renversade (2018)
+# added functions to read hdf5 file by J.S. Micha (2022)
+
+""" this file in intended to be name logfilereader.py and be located in main lauetools folder"""
 
 import copy
 import os
@@ -17,7 +19,7 @@ except ModuleNotFoundError:
 
 def ReadSpec(fname, scan, outputdate=False):
     """
-    Procedure very based on that of Vincent Favre Nicolin procedure
+    Procedure very based on that of Vincent Favre-Nicolin (ESRF) procedure
 
     :param scan: scan index (integer)
     return :
@@ -154,6 +156,8 @@ class SpecFile:
     --------
     # read the specfile
     In : sf = SpecFile('./lineup0.dat')
+
+    author: S. Tardif
     """
 
     # dictionary definitions for handling the spec identifiers
@@ -342,10 +346,10 @@ def getmeshscan_from_hdf5file(filename):
                 if foundfile:
                     # removing string before _interger.integer
                     _modified_key = _key.rsplit('_',1)[-1]
-                    props, isselected = getscanprops_lowest_hdf5(foundfile, _modified_key)
+                    props, isselected = getscanprops_lowest_hdf5(foundfile, _modified_key, collectallscans=False, onlymesh=True)
             elif isinstance(objlink, h5py._hl.group.HardLink):
                 print('key = %s is Hard link to '%(_key))
-                props, isselected = getscanprops_lowest_hdf5(filename, _key)
+                props, isselected = getscanprops_lowest_hdf5(filename, _key, collectallscans=False, onlymesh=True)
             
             allprops.append(props)
 
@@ -554,6 +558,8 @@ class Scan(SpecFile):
 
     # plot two counters vs each others
     In : plot(scan.th,scan.det/scan.IC1)
+
+    author: L. Renversade
     """
 
     def __init__(self, spec_file, scan_numbers, verbose=False, filetype='spec'):
@@ -692,6 +698,8 @@ class Scan_hdf5(SpecFile):
      > hdf5 file (string) created by BLISS
      > scan_keys   string  WARNING!  single key for the moment!
 
+    # not up to date!
+    
     Attributes:
     -----------
     <countername>...data in counter <countername> (see counters for description)
@@ -735,6 +743,8 @@ class Scan_hdf5(SpecFile):
 
     # plot two counters vs each others
     In : plot(scan.th,scan.det/scan.IC1)
+
+    author: J.S. Micha
     """
     def __init__(self, spec_file, scan_keys,collectallscans=True,
                     onlywirescan=False, onlymesh=False, verbose=False):
