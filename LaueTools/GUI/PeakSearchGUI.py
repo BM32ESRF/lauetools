@@ -4612,24 +4612,14 @@ class MainPeakSearchFrame(wx.Frame):
                                         )
 
     def addPeaksMarker(self):
-        print('in addPeaksMarker')
+        #print('in addPeaksMarker')
         if self.plotPeaks is False or self.peaklistPixels is None:
             # delete previous patches:
             if self.largehollowcircles != []:
-            for ar in self.axes.patches:
-                Artist.remove(ar)
+                for ar in self.axes.patches:
+                    Artist.remove(ar)
             #self.axes.patches = []
             return
-
-        # plot some markers at each found blob or peak position
-
-        #        print "self.largehollowcircles", self.largehollowcircles
-        # delete previous patches:
-        #        if self.largehollowcircles != []:
-        #            for pat in self.largehollowcircles:
-        #                self.axes.patches.remove(pat)
-        #            for pat in self.smallredcircles:
-        #                self.axes.patches.remove(pat)
 
         # delete previous patches:
         if self.largehollowcircles != []:
@@ -4659,12 +4649,7 @@ class MainPeakSearchFrame(wx.Frame):
                 self.smallredcircles.append(center_circle)
 
         if self.position_definition == 2:
-            # print "plotting fit2d peaksearch results"
-            # twicetheta, chi, dataintensity, data_x, data_y = Get_XYI_from_fit2dpeaksfile(self, filename)
-            # this empirical crude correction is here only to fit with the display(TODO: why?)
-            # XX = data_x -0.5 -1
-            # YY = data_y -0.5
-            # PointToPlot = np.transpose(np.array([XX,YY]))
+
             PointToPlot = np.zeros(self.peaklistPixels.shape)
             PointToPlot = self.peaklistPixels - np.array([1.5, 0.5])
 
@@ -4701,8 +4686,6 @@ class MainPeakSearchFrame(wx.Frame):
         if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
             del self.axes.patches[-1]
 
-    #            print "deleted rectangle"
-
     def addPatchRectangle(self, X, Y, size=50):
         hsize = size / 2.0
         self.axes.add_patch(Rectangle((X - hsize, Y - hsize), size, size, fill=False))
@@ -4724,9 +4707,7 @@ class MainPeakSearchFrame(wx.Frame):
         nbtot = np.size(ravI)
         bb = np.where(csum > nbtot - nbhotpixels)[0][0]
         th = histo[1][bb]
-        # print('nbtot',nbtot)
-        # print('bb', bb)
-        # print('bins[bb]', th)
+
         return histo, int(th)
 
     def ShowHisto(self, _):
@@ -4874,12 +4855,8 @@ class MainPeakSearchFrame(wx.Frame):
 
     def OnSaveFigure(self, _):
 
-        dlg = wx.FileDialog(self,
-                            "Saving in png format. Choose a file",
-                            self.dirname,
-                            "",
-                            "*.*",
-                            wx.SAVE | wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, "Saving in png format. Choose a file", self.dirname,
+                                                    "", "*.*", wx.SAVE | wx.OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_OK:
             # Open the file for write, write, close
             filename = dlg.GetFilename()
@@ -4911,8 +4888,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         finalfilename = prefix + "_LT_%d" % self.file_index_increment
 
-        #         print "self.dirname",self.dirname
-
         if self.dirname is not None and self.writefolder is None:
             outputfolder = self.dirname
             if not os.access(outputfolder, os.W_OK):
@@ -4920,8 +4895,6 @@ class MainPeakSearchFrame(wx.Frame):
                 outputfolder = self.writefolder
         else:
             outputfolder = self.writefolder
-
-        #         print "self.writefolder",self.writefolder
 
         print("self.peaklistPixels.shape", self.peaklistPixels.shape)
 
@@ -5000,19 +4973,11 @@ class MainPeakSearchFrame(wx.Frame):
 
         in displayed image coordinates: self.centerx, self.centery
         """
-        #         self.boxsize_fit = 10
         self.boxsize_fit = int(self.fitparampanel.boxsize.GetValue())
 
         # boxx, boxy = self.boxsize_fit, self.boxsize_fit
 
         print("self.framedim in onFitOnePeak", self.framedim)
-        #        (min_value, max_value,
-        #         min_position, max_position) = ImProc.getExtrema(self.dataimage_ROI,
-        #                                                     [int(self.centerx), int(self.centery)],
-        #                                                     self.boxsize_fit, (self.framedim[1], self.framedim[0]),
-        #                                                     ROIcoords=0, flipxycenter=1)
-        #        print "min,max,posmin,posmax", (min_value, max_value,
-        #                                        min_position, max_position)
 
         # patch switch: framedim
         framedim = self.framedim[1], self.framedim[0]
@@ -5046,11 +5011,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.last_peakfit_result = np.array([np.round(self.centerx),
                                                     np.round(self.centery),
                                                     max_value,
-                                                    -1.0,
-                                                    -1.0,
-                                                    -1.0,
-                                                    0.0,
-                                                    0.0,
+                                                    -1.0, -1.0, -1.0, 0.0, 0.0,
                                                     min_value,
                                                     max_value])
         else:
@@ -5059,7 +5020,6 @@ class MainPeakSearchFrame(wx.Frame):
         print("got peak with properties:", self.last_peakfit_result)
 
         if self.last_peakfit_result is not None:
-            #             print "last single peak fit results", self.last_peakfit_result
 
             if self.allways_addpeak_chck.GetValue():
                 self.onAddPeaktoPeaklist(1)
@@ -5080,7 +5040,6 @@ class MainPeakSearchFrame(wx.Frame):
 
         filename = self.imagefilename
         dirname = os.path.abspath(self.dirname)
-        #         print "dirname", self.dirname
         CCDLabel = self.CCDlabel
 
         # use image resulting form formula e.g. : A =  A-B
@@ -5112,7 +5071,6 @@ class MainPeakSearchFrame(wx.Frame):
                                             reject_negative_baseline=reject_negative_baseline)
 
         print("tabIsorted", tabIsorted)
-        #        print "params_res", params_res
 
         if tabIsorted is None:
             wx.MessageBox("Sorry. There is not peak around the region you cliked on...", "info")
@@ -5153,16 +5111,10 @@ class MainPeakSearchFrame(wx.Frame):
             indicesborders = RMCCD.getindices2cropArray(center_pixel, [xboxsize, yboxsize],
                                                                         framedim, flipxycenter=0)
             imin, imax, jmin, jmax = indicesborders
-            #             print 'framedim', framedim
-            #             print "indicesborders", indicesborders
 
             # avoid to wrong indices when slicing the data
             imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax, jmin, jmax,
                                                                             framedim=self.framedim)
-
-            #             print "imin, imax, jmin, jmax", imin, imax, jmin, jmax
-            #
-            #             print "self.dataimage_ROI.shape", self.dataimage_ROI.shape
 
             dat_ROIpeak = self.dataimage_ROI[imin:imax, jmin:jmax]
 
@@ -5204,7 +5156,6 @@ class MainPeakSearchFrame(wx.Frame):
     def onAddPeaktoPeaklist(self, _):
         dist_tolerance = 1
 
-        #         print "initial peaklist", self.peaklistPixels
         if self.peaklistPixels is None:
             self.peaklistPixels = self.last_peakfit_result
             newpeak = self.last_peakfit_result
@@ -5223,8 +5174,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             acceptPeak = False
             posclose, dist = GT.FindClosestPoint(XYpeaklist, XY, returndist=1)
-            #            print "dist", dist
-            #            print "posclose", posclose
+
             if dist[posclose] <= dist_tolerance:
                 print("peak at (%d,%d) has been updated" % (XY[0], XY[1]))
 
@@ -5244,14 +5194,10 @@ class MainPeakSearchFrame(wx.Frame):
                 else:
                     data_current_peaks = np.concatenate((data_current_peaks, [newpeak]), axis=0)
 
-            #            print 'data_current_peaks', data_current_peaks
-
             # sort by third column = peak amplitude
             self.peaklistPixels = data_current_peaks[
                 np.argsort(data_current_peaks[:, 2])[::-1]]
 
-        #         print "data_current_peaks"
-        #         print self.peaklistPixels
 
         # update marker display
         self.plotPeaks = True
@@ -5297,12 +5243,9 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             center_pixel = [int(centerXY[0]), int(centerXY[1])]
 
-        #        print "self.peaklistPixels", self.peaklistPixels
 
         index_close, dist = GT.FindClosestPoint(self.peaklistPixels[:, :2], center_pixel,
                                                                                     returndist=1)
-
-        #        print "dist", dist
 
         if np.amin(dist) > TOLERANCE_DIST:
             wx.MessageBox("No Peak in PeakList found close to this pixel position within %d pixels"
