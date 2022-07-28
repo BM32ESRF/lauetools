@@ -973,6 +973,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         #         print "min, max intensity", np.amin(Data), np.amax(Data)
         # TODO to test with VHR
         framedim = Data.shape
+        fliprot = None
         ttread = ttt.time()
 
     # Data are read from image file
@@ -1232,7 +1233,11 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
 
     # if Data_for_localMaxima will be used for refining peak positions
     if Fit_with_Data_for_localMaxima:
-        Data_to_Fit = (Data, framedim, fliprot)
+        try:
+            Data_to_Fit = (Data, framedim, fliprot)
+        except:
+            fliprot = None
+            Data_to_Fit = (Data, framedim, fliprot)
     else:
         Data_to_Fit = None
 
