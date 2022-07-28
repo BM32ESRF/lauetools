@@ -18,11 +18,6 @@ import copy
 from copy import deepcopy
 import re
 
-try:
-    import h5py
-except ModuleNotFoundError:
-    print('warning: h5py is missing. It is useful for playing with hdf5 for some LaueTools modules. Install it with pip> pip install h5py')
-
 import numpy as np
 
 np.set_printoptions(precision=15)
@@ -447,6 +442,9 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'VHR_Feb13'
                 elif abs(ps-0.022) <= 0.002:
                     ccdlabel = 'ImageStar_dia_2021'
+                elif abs(ps-0.44) <= 0.002:
+                    ccdlabel = 'ImageStar_dia_2021_2x2'
+                    
                 CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib

@@ -522,7 +522,7 @@ def readoneimage_full(filename, frametype="mccd", dirname=None):
 
 
 def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-1, verbose=0):
-    r"""Read raw data binary image file.
+    r"""general function to read raw data binary (Laue pattern) image file recorder on 2D detector.
 
     Read raw data binary image file and return pixel intensity 2D array such as
     to fit the data (2theta, chi) scattering angles representation convention.
@@ -558,7 +558,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     if FABIO_EXISTS:
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
-                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021'):
+                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2'):
 
             if verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
@@ -627,7 +627,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         if verbose > 1:
             print("using PIL's module Image")
         if CCDLabel in ("sCMOS", "MARCCD165", "sCMOS_16M"):
-            if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile ...')
+            if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile I will use PIL...')
             USE_RAW_METHOD = True
         elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
             # data are compressed!
@@ -745,7 +745,7 @@ def getfilesize(dirname,filename):
     return filesize
 
 def readoneimage(filename, framedim=(2048, 2048), dirname=None, offset=4096, formatdata="uint16"):
-    r""" returns a 1d array of integers from a binary image file (full data)
+    r""" crude way to open binary image. it returns a 1d array of integers from a binary image file (full data)
 
     :param filename: image file name (full path if dirname=0)
     :type filename: str
