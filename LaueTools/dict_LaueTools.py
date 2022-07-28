@@ -35,6 +35,8 @@ dict_Materials = {
     "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
     "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
     "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
+    "3H-SiC": ["3H-SiC", [4.3596, 4.3596, 4.3596, 90, 90, 90], "dia"],  # zinc blende
+    "4H-SiC": ["4H-SiC", [3.073, 3.073, 10.053, 90, 90, 120], "wurtzite"],  # wurtzite  = 6H-SiC also
     "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
     "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
     "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
@@ -296,6 +298,7 @@ dict_CCD = {
     "ImageDeathStar": ((1500, 1500), 0.044, 65535, "VHR_Feb13", 4096, "uint16", "Imagestar photonics Science close to sample, mounting similar to MARCCD, Sep14", "tif"),
     "ImageStar_raw": ((1500, 1500), 0.044, 64000, "vhr", 872, "uint16", "raw image GISAXS BM32 November 2014 .tif", "tif"),
     "ImageStar_dia_2021": ((3056, 3056), 0.022, 65535, "ImageStar_dia_2021", 4096, "uint16", "Imagestar photonics Science close to diamond March13  extension is mar.tiff", "tif"),
+    "ImageStar_dia_2021_2x2": ((1528, 1528), 0.044, 64000, "ImageStar_dia_2021", 4096, "uint16", "Imagestar photonics Science close to diamond since Feb21", "tif"),
     "VHR_diamond_Mar13": ((2594, 2774), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Mar13 frame size is lower than VHR_diamond", "tiff"),
     "VHR": ((2594, 3764), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Jun 12 2theta axis displayed is horizontal, no problem with fit from PeakSearchGUI", "tiff"),
     "VHR_Feb13": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 4096, "uint16", "vhr settings of Feb13 close to sample 2theta axis displayed is vertical, no problem with fit from PeakSearchGUI", "tiff"),
