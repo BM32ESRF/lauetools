@@ -10,6 +10,8 @@ J. S. Micha Jan 2022
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
 
+
+
 import os
 import sys
 import time
@@ -26,6 +28,8 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import FuncFormatter
 
 from pylab import cm as pcm
+
+import pyperclip
 
 import wx
 
@@ -56,14 +60,17 @@ except ImportError:
 
 if sys.version_info.major == 3:
     import LaueTools.generaltools as GT
-    from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
+    # from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
+    from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
     import LaueTools.MessageCommand as MC
     import LaueTools.IOLaueTools as IOLT
-    import LaueTools.Daxm.contrib.spec_reader as spec_reader
+    # import LaueTools.Daxm.contrib.spec_reader as spec_reader
+    import LaueTools.logfile_reader as logfile_reader
 
 else:
     import generaltools as GT
-    from LaueTools.Daxm.contrib.spec_reader import ReadSpec,ReadHdf5, readdata_from_hdf5key
+    # from LaueTools.Daxm.contrib.spec_reader import ReadSpec,ReadHdf5, readdata_from_hdf5key
+    from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
     import MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
@@ -155,8 +162,6 @@ class TreePanel(wx.Panel):
                         self.OnSelChanged(event, scan_index=nextitem)
                     except AttributeError: # reaching last element!
                         pass
-
-                
 
         elif key == wx.WXK_UP:
             if self.scantype == 'ASCAN':
@@ -717,7 +722,7 @@ class MainFrame(wx.Frame):
             print('self.list_meshscan_indices', self.list_meshscan_indices)
         
         if self.filetype == 'hdf5':
-            listmeshall  = spec_reader.getmeshscan_from_hdf5file(fullpathfilename)
+            listmeshall  = logfile_reader.getmeshscan_from_hdf5file(fullpathfilename)
 
             if listmeshall == []:
                 print('No mesh scan in %s'%fullpathfilename)
@@ -993,6 +998,7 @@ class MainFrame(wx.Frame):
 
             print('scan_index',scan_index)
             tit, data, posmotors, fullpath, self.scan_date= readdata_from_hdf5key(self.listmesh, scan_index, outputdate=True)
+            print('tit',tit)
             # scanheader, data, self.scan_date = ReadHdf5(self.fullpath_hdf5file, scan_index, outputdate=True)
             
             self.scantype = 'amesh'
@@ -2002,19 +2008,22 @@ class ImshowPanel(wx.Panel):
 
                 command = "mv %s %.5f %s %.5f" % (self.motor1name, current_posmotor1,
                                                 self.motor2name, current_posmotor2)
+                commandBliss = "mv(%s,%.5f,%s,%.5f)" % (self.motor1name, current_posmotor1,
+                                                self.motor2name, current_posmotor2)
 
                 if msgbox:
-                    wx.MessageBox(sentence + "\n" + command, "INFO")
+                    wx.MessageBox(sentence + "\nBLISS command\n" + commandBliss, "INFO")
+                    print('command to BLISS',command)
 
                 # WARNING could do some instabilities to station ??
-                msgdialog = MC.MessageCommand(self, -1, "motors command",
-                    sentence=sentence, speccommand=command, specconnection=None)
-                msgdialog.ShowModal()
+                # msgdialog = MC.MessageCommand(self, -1, "motors command",
+                #     sentence=sentence, speccommand=command, specconnection=None)
+                # msgdialog.ShowModal()
 
     def onKeyPressed(self, event):
 
         key = event.key
-        print("key ==> ", key)
+        #print("key ==> ", key)
 
         if key == "escape":
 
@@ -2025,7 +2034,7 @@ class ImshowPanel(wx.Panel):
                 self.Close()
 
         elif key == "p":  # 'p'
-
+            print("in branch key ==> ", key)
             self.movingxy(True)
 
             return
