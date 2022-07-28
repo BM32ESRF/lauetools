@@ -6,6 +6,8 @@
 # Python3 compatibility by Nils Blanc
 # spec_reader.py
 
+""" better use the single module at the root of lauetools: logfile_reader"""
+
 import numpy as np
 
 class SpecFile:
