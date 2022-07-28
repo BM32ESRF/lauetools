@@ -1803,9 +1803,30 @@ def extract_array(indices_center, halfsizes, inputarray2D):
     return inputarray2D[imin : imax + 1, jmin : jmax + 1]
 
 
+def reshapepartial2D(d, targetdim):
+    """ reshape 1D data of size n to 2D one: targetdim where n < targetdim[0]*targetdim[1]
+    targetdim[0] is the fastmotor axis dim size
+    
+    note: similar to to2Darray
+    """
+    dimfast = targetdim[0]
+    n= len(d)
+
+    nblines = n//dimfast
+    ddd = d[:nblines*dimfast].reshape((-1,dimfast))
+    #print('ddd',ddd)
+    lastline = np.zeros(dimfast, dtype=d.dtype)
+    toadd = d[nblines*dimfast:]
+    nadd = len(toadd)
+    lastline[:nadd]=toadd
+    #print(lastline)
+    return np.concatenate((ddd,[lastline]), axis=0)
+
 def to2Darray(a, n2):
     """ return a zero padded array from elements of a and new shape =(n1,n2)
     n2 is the number element in the 2nd axis (fast axis)
+
+    note: similar to reshapepartial2D
     """
     l = len(a)
     dt = a.dtype
