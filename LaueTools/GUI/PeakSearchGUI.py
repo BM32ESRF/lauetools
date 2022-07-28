@@ -23,6 +23,8 @@ from pylab import Rectangle
 from matplotlib.colors import LogNorm
 from matplotlib.patches import Circle
 from matplotlib.patches import Rectangle as PatchRectangle
+from matplotlib.artist import Artist
+
 
 import matplotlib as mpl
 from matplotlib.ticker import FuncFormatter
@@ -4610,10 +4612,13 @@ class MainPeakSearchFrame(wx.Frame):
                                         )
 
     def addPeaksMarker(self):
+        print('in addPeaksMarker')
         if self.plotPeaks is False or self.peaklistPixels is None:
             # delete previous patches:
             if self.largehollowcircles != []:
-                self.axes.patches = []
+            for ar in self.axes.patches:
+                Artist.remove(ar)
+            #self.axes.patches = []
             return
 
         # plot some markers at each found blob or peak position
@@ -4628,7 +4633,9 @@ class MainPeakSearchFrame(wx.Frame):
 
         # delete previous patches:
         if self.largehollowcircles != []:
-            self.axes.patches = []
+            for ar in self.axes.patches:
+                Artist.remove(ar)
+            #self.axes.patches = []
 
         # rebuild circular markers
         self.largehollowcircles = []
