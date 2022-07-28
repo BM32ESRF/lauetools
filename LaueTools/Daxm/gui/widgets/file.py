@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-
-
 """
 
 __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
@@ -10,7 +8,6 @@ __version__ = '$Revision$'
 
 import os
 import wx
-
 
 class FilePickerButton(wx.Button):
 
@@ -72,7 +69,7 @@ class FilePickerButton(wx.Button):
 
 
 class FileSelectOpen(wx.BoxSizer):
-    """ gui class to select a file (spec or hdf) to be opened"""
+    """ gui class to select a file (spec or hdf5) to be opened"""
     def __init__(self, parent, label, value, wildcard=wx.FileSelectorDefaultWildcardStr, tip=''):
         wx.BoxSizer.__init__(self, wx.HORIZONTAL)
 
