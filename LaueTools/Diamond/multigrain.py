@@ -13637,7 +13637,7 @@ def convert_jsm_summary_file_to_or_summary_file(filesum):
     return(outfilesum)    
 
 def ReadSpec(fname,scan):
-   """read spec file . Better reuse the ReadSpec in logfilereader.py (spec_reader)"""
+   """read spec file . Better reuse the ReadSpec in logfile_reader.py (spec_reader)"""
    f=open(fname,'r')
    s="#S %i"%scan
    title=0
