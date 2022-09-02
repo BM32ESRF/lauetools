@@ -450,10 +450,12 @@ def read_header_scmos(filename, verbose=0):
     dictpar = {}
     strcom = img.tag[270][0]
     if verbose>0: print('read_header_scmos', strcom, type(strcom))
-
-    si = strcom.index("(")
-    fi = strcom.index(")")
-    listpar = strcom[si + 1 : fi].split()
+    try:
+        si = strcom.index("(")
+        fi = strcom.index(")")
+        listpar = strcom[si + 1 : fi].split()
+    except:
+        return {}
     #     print "listpar",listpar
     for elem in listpar:
         if "=" in elem:
@@ -556,7 +558,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
-        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M",
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2'):
 
@@ -732,7 +734,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = np.rot90(dataimage, k=1)
         dataimage = np.fliplr(dataimage)
 
-    elif fliprot == "frelon2":
+    elif fliprot in  ("frelon2", "flipud"):
         dataimage = np.flipud(dataimage)
 
     return dataimage, framedim, fliprot
