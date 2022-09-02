@@ -19,6 +19,11 @@ import sys
 import pylab as p
 import numpy as np
 
+import multiprocessing
+from multiprocessing import cpu_count
+from tqdm import tqdm
+import itertools
+
 if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import CrystalParameters as CP
@@ -723,6 +728,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                                                             LUT_with_rules=True,
                                                             excludespotspairs=None):
     """
+    find ub matrices and compute corresponding matching rate from two exp. spots 
+    
     angdist   : scalar
     coords_1   2theta, chi
     twiceTheta_exp :  all 2theta values (to compute matching rate of Laue Patterns)
@@ -783,57 +790,93 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
         WORKEREXIST = 1
     # loop over orient matrix given from LUT recognition for one central spot
     nb_UB_matrices = len(list_orient_matrix)
+
     # TODO: use multiprocessing if nb_UB_matrices > 1000
-    for mat_ind in list(range(nb_UB_matrices)):
-        if WORKEREXIST:
-            #             print "there is a worker !!"
-            if worker._want_abort:
-                print("\n\n!!!!!!! Indexation Aborted \n\n!!!!!!!\n")
-                BestScores_per_centralspot = np.array([])
-                worker.callbackfct(None)
-                return
-        if (mat_ind % 20) == 0:
-            print("Calculating matching with exp. data for matrix #%d / %d" % (mat_ind,
-                                                                                nb_UB_matrices))
-        # compute matching rate and store if high
-        AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
-                                                    twiceTheta_exp,
-                                                    Chi_exp,
-                                                    key_material=key_material,
-                                                    emax=emax,
-                                                    ResolutionAngstrom=ResolutionAngstrom,
-                                                    ang_tol=ang_tol_MR,
-                                                    detectorparameters=detectorparameters,
-                                                    dictmaterials=dictmaterials)
 
-        if AngRes is None:
-            continue
 
-        (allres, _, nbclose, nballres, _, max_residue) = AngRes
+    print('\n\n**** nb_UB_matrices',nb_UB_matrices)
+    # Thanks to Ravi
+    if nb_UB_matrices > 1000:
+        args = zip(list_orient_matrix,
+                   itertools.repeat(twiceTheta_exp),
+                   itertools.repeat(Chi_exp),
+                   itertools.repeat(ang_tol_MR),
+                   itertools.repeat(key_material),
+                   itertools.repeat(5),
+                   itertools.repeat(emax),
+                   itertools.repeat(ResolutionAngstrom),
+                   itertools.repeat(detectorparameters),
+                   itertools.repeat(False),
+                   itertools.repeat(0.999),
+                   itertools.repeat(dictmaterials),
+                   )
+        with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
+            results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=len(list_orient_matrix)))
 
-        if nbclose > Minimum_Nb_Matches:
-            std_closematch = np.std(allres[allres < ang_tol_MR])
-            if verbosedetails:
+        for mat_ind, AngRes in enumerate(results):
+            if AngRes is None:
+                continue
+            (allres, _, nbclose, nballres, _, max_residue) = AngRes
+            if nbclose > Minimum_Nb_Matches:
+                std_closematch = np.std(allres[allres < ang_tol_MR])
+                solutions_matorient_index.append(mat_ind)
+                solutions_spotscouple.append(pairspots[mat_ind])
+                solutions_hklcouple.append(planes[mat_ind])
+                solutions_matchingscores.append([nbclose, nballres, std_closematch])
+                solutions_matchingrate.append(100.0 * nbclose / nballres)
 
-                mean_residue_closematch = np.mean(allres[allres < ang_tol_MR])
-                # max_residue_closematch = np.max(allres[allres < ang_tol_MR])
-                print("mat_ind      nbclose      fullnb      std_closematch     "
-                                "mean_resid  max_resid  figmerit")
-                print("%d        %d       %d       %.3f      %.3f       %.3f        %.3f"
-                    % (mat_ind, nbclose, nballres, std_closematch, mean_residue_closematch,
-                        max_residue,
-                        nbclose ** 2 * 1.0 / nballres / std_closematch), "    ",
-                        str(planes[mat_ind]), "  ", pairspots[mat_ind])
+    else: # usual one cpu way
 
-            #             print "mat_ind: %d" % mat_ind
-            #             print "AngRes", AngRes
-            # mat_ind, pairspots[mat_ind], planes[mat_ind], [nbclose, nballres, std_closematch], 100.0 * nbclose / nballres are the output for each evaluated matrix
-            
-            solutions_matorient_index.append(mat_ind)
-            solutions_spotscouple.append(pairspots[mat_ind])
-            solutions_hklcouple.append(planes[mat_ind])
-            solutions_matchingscores.append([nbclose, nballres, std_closematch])
-            solutions_matchingrate.append(100.0 * nbclose / nballres)
+        for mat_ind in list(range(nb_UB_matrices)):
+            if WORKEREXIST:
+                #             print "there is a worker !!"
+                if worker._want_abort:
+                    print("\n\n!!!!!!! Indexation Aborted \n\n!!!!!!!\n")
+                    BestScores_per_centralspot = np.array([])
+                    worker.callbackfct(None)
+                    return
+            if (mat_ind % 20) == 0:
+                print("Calculating matching with exp. data for matrix #%d / %d" % (mat_ind,
+                                                                                    nb_UB_matrices))
+            # compute matching rate and store if high
+            AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
+                                                        twiceTheta_exp,
+                                                        Chi_exp,
+                                                        key_material=key_material,
+                                                        emax=emax,
+                                                        ResolutionAngstrom=ResolutionAngstrom,
+                                                        ang_tol=ang_tol_MR,
+                                                        detectorparameters=detectorparameters,
+                                                        dictmaterials=dictmaterials)
+
+            if AngRes is None:
+                continue
+
+            (allres, _, nbclose, nballres, _, max_residue) = AngRes
+
+            if nbclose > Minimum_Nb_Matches:
+                std_closematch = np.std(allres[allres < ang_tol_MR])
+                if verbosedetails:
+
+                    mean_residue_closematch = np.mean(allres[allres < ang_tol_MR])
+                    # max_residue_closematch = np.max(allres[allres < ang_tol_MR])
+                    print("mat_ind      nbclose      fullnb      std_closematch     "
+                                    "mean_resid  max_resid  figmerit")
+                    print("%d        %d       %d       %.3f      %.3f       %.3f        %.3f"
+                        % (mat_ind, nbclose, nballres, std_closematch, mean_residue_closematch,
+                            max_residue,
+                            nbclose ** 2 * 1.0 / nballres / std_closematch), "    ",
+                            str(planes[mat_ind]), "  ", pairspots[mat_ind])
+
+                #             print "mat_ind: %d" % mat_ind
+                #             print "AngRes", AngRes
+                # mat_ind, pairspots[mat_ind], planes[mat_ind], [nbclose, nballres, std_closematch], 100.0 * nbclose / nballres are the output for each evaluated matrix
+                
+                solutions_matorient_index.append(mat_ind)
+                solutions_spotscouple.append(pairspots[mat_ind])
+                solutions_hklcouple.append(planes[mat_ind])
+                solutions_matchingscores.append([nbclose, nballres, std_closematch])
+                solutions_matchingrate.append(100.0 * nbclose / nballres)
 
     BestScores_per_centralspot = np.array(solutions_matchingscores)
 
@@ -1664,7 +1707,6 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
 
     :param LUT_with_rules:
 
-
     :return:
         * [0]  list of potential Orientation Matrices (UB)
         * [1]  list of corresponding scores (matching rate, nb of theo. Spots, mean angular deviation over exp and theo. links)
@@ -1688,8 +1730,6 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
     sorted_data1 = np.transpose(np.array([Theta1, Chi1]))
     sorted_data2 = np.transpose(np.array([Theta2, Chi2]))
 
-    # print("sorted_data1", sorted_data1)
-    # print("sorted_data2", sorted_data2)
 
     # maybe useless
     if len(sorted_data1.shape) == 1:
@@ -1719,15 +1759,11 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
                     cubicSymmetry=CP.hasCubicSymmetry(key_material, dictmaterials=dictmaterials),
                     applyExtinctionRules=Rules)
 
-    # ---------   START of INDEXATION  -------------
-    bestmatList = []
-    stats_resList = []
-
+    probedpairs = []
     #spot_index 1 and 2  = absolute index
     # i1,i2 local index to scan selectedspots_ind
 
     SolutionsFound = False
-    probed_pairs = []
     # loop over all possible spots pairs in selected set of spots
     for i1, i2 in GT.mutualpairs(range(len(selectedspots_ind1)),
                                 range(len(selectedspots_ind2))):
@@ -1735,35 +1771,35 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
         spot_index_1 = selectedspots_ind1[i1]
         spot_index_2 = selectedspots_ind2[i2]
 
-        probedpair = [spot_index_1, spot_index_2]
-
         if spot_index_1 == spot_index_2:
             continue
-        if probedpair in probed_pairs:
-            continue
 
+        if [spot_index_1, spot_index_2] not in probedpairs:
+            probedpairs.append([spot_index_1, spot_index_2])
+            # Table of distances is very small (nb selected spots**2)
+            expdistance_2spots = Tabledistance[i1, i2]
+
+    # ---------   START of INDEXATION  -------------
+
+    bestmatList = []
+    stats_resList = []
+    
+    for spot_index_1,spot_index_2 in probedpairs:
         # print("\n**getOrientMatrices_fromTwoSets *\n\ni1,i2, "
         #     "local_spotindex1,local_spotindex2", i1, i2, spot_index_1, spot_index_2)
 
-        All_2thetas = Theta_exp*2.
+        All_2thetas = Theta_exp * 2.
         All_Chis = Chi_exp
 
         coords_1 = All_2thetas[spot_index_1], All_Chis[spot_index_1]
         coords_2 = All_2thetas[spot_index_2], All_Chis[spot_index_2]
 
-        # Table of distances is very small (nb selected spots**2)
-        expdistance_2spots = Tabledistance[i1, i2]
-
-        #print('expdistance_2spots  = ', expdistance_2spots)
-
         UBS_MRS, LUT = getUBs_and_MatchingRate(spot_index_1, spot_index_2, LUT_tol_angle,
                                                     expdistance_2spots,
-                                                    coords_1,
-                                                    coords_2,
+                                                    coords_1, coords_2,
                                                     nLUT,
                                                     B,
-                                                    All_2thetas,
-                                                    All_Chis,
+                                                    All_2thetas, All_Chis,
                                                     LUT=LUT,
                                                     key_material=key_material,
                                                     emax=emax,
@@ -1776,9 +1812,6 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
 
         print('UBS_MRS', UBS_MRS)
 
-        excludespotspairs.append([spot_index_1, spot_index_2])
-        excludespotspairs.append([spot_index_2, spot_index_1])
-
         # no matrices found for this pair i1,i2
         if len(UBS_MRS[0]) == 0:
             print('nb of UBs for this pair [%d, %d]: '%(spot_index_1, spot_index_2), len(UBS_MRS[0]))
@@ -1787,7 +1820,6 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
         bestmat, stats_res = UBS_MRS
 
         if len(bestmat) > 1:
-
             # print("Merging matrices for this pair")
             # print("keep_only_equivalent = %s" % keep_only_equivalent)
             bestmat, stats_res = ISS.MergeSortand_RemoveDuplicates(bestmat,
@@ -2039,7 +2071,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                         LUT_with_rules=LUT_with_rules,
                                                         excludespotspairs=excludespotspairs)
 
-        # if hkl for central spots IS NOT known  (si is None...)
+        # if hkl for central spots IS NOT known  (ie hkl is None...)
         else:
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:
@@ -2129,57 +2161,92 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         solutions_matchingscores = []
         solutions_matchingrate = []
 
-        if verbosedetails:
-            print("len(list_orient_matrix)", len(list_orient_matrix))
-            # print "key_material",key_material
-            # print "\n"
-            print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
-                % (MR_tol_angle))
+        nb_ub_matrices = len(list_orient_matrix)
 
-        # --- loop over orient matrix given from LUT recognition for one central spot
-        currentspotindex2 = -1
-        for mat_ind in list(range(len(list_orient_matrix))):
-            # compute matching (indexation) rate
-            AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
-                                                        twiceTheta_exp,
-                                                        Chi_exp,
-                                                        key_material=key_material,
-                                                        emax=energy_max,
-                                                        ResolutionAngstrom=ResolutionAngstrom,
-                                                        ang_tol=MR_tol_angle,
-                                                        detectorparameters=detectorparameters,
-                                                        dictmaterials=dictmaterials)
+        print("len(list_orient_matrix)", nb_ub_matrices)
 
-            if AngRes is None:
-                continue
+        if nb_ub_matrices>1250:
+            
+            args = zip(list_orient_matrix,
+                    itertools.repeat(twiceTheta_exp),
+                    itertools.repeat(Chi_exp),
+                    itertools.repeat(MR_tol_angle),
+                    itertools.repeat(key_material),
+                    itertools.repeat(5),
+                    itertools.repeat(energy_max),
+                    itertools.repeat(ResolutionAngstrom),
+                    itertools.repeat(detectorparameters),
+                    itertools.repeat(False),
+                    itertools.repeat(0.999),
+                    itertools.repeat(dictmaterials),
+                    )
+            with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
+                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=len(list_orient_matrix)))
 
-            (allres, _, nbclose, nballres, mean_residue, max_residue) = AngRes
-            # store matching rate  if it is high
-            if nbclose >= Minimum_Nb_Matches:
-                std_closematch = np.std(allres[allres < MR_tol_angle])
-                if verbosedetails:
-                    print("%d        %d       %d       %.3f      %.3f       %.3f        %.3f"
-                        % (mat_ind, nbclose, nballres, std_closematch, mean_residue,
-                                    max_residue, nbclose ** 2 * 1.0 / nballres / std_closematch),
-                        "    ", str(planes[mat_ind]), "  ", pairspots[mat_ind])
-                    print("matrix ==", list_orient_matrix[mat_ind])
+            for mat_ind, AngRes in enumerate(results):
+                if AngRes is None:
+                    continue
+                (allres, _, nbclose, nballres, _, max_residue) = AngRes
+                if nbclose > Minimum_Nb_Matches:
+                    std_closematch = np.std(allres[allres < MR_tol_angle])
+                    solutions_matorient_index.append(mat_ind)
+                    solutions_spotscouple.append(pairspots[mat_ind])
+                    solutions_hklcouple.append(planes[mat_ind])
+                    solutions_matchingscores.append([nbclose, nballres, std_closematch])
+                    solutions_matchingrate.append(100.0 * nbclose / nballres)
 
-                spotindex2 = pairspots[mat_ind][1]
-                if currentspotindex2 != spotindex2:
-                    if verbose:
-                        print("calculating matching rates of solutions for exp. spots", pairspots[mat_ind])
-                    currentspotindex2 = spotindex2
+        else:
+            if verbosedetails:
+                
+                # print "key_material",key_material
+                # print "\n"
+                print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
+                    % (MR_tol_angle))
 
-                solutions_matorient_index.append(mat_ind)
-                solutions_spotscouple.append(pairspots[mat_ind])
-                solutions_hklcouple.append(planes[mat_ind])
-                # solutions_matchingscores.append([nbclose, nballres, mean_residue])
-                solutions_matchingscores.append([nbclose, nballres, std_closematch])
-                solutions_matchingrate.append(100.0 * nbclose / nballres)
-                # print list_orient_matrix[mat_ind]
-            else:
-                # print("Poor matching rate for exp. spots",pairspots[mat_ind])
-                pass
+            # --- loop over orient matrix given from LUT recognition for one central spot
+            currentspotindex2 = -1
+            for mat_ind in list(range(len(list_orient_matrix))):
+                # compute matching (indexation) rate
+                AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
+                                                            twiceTheta_exp,
+                                                            Chi_exp,
+                                                            key_material=key_material,
+                                                            emax=energy_max,
+                                                            ResolutionAngstrom=ResolutionAngstrom,
+                                                            ang_tol=MR_tol_angle,
+                                                            detectorparameters=detectorparameters,
+                                                            dictmaterials=dictmaterials)
+
+                if AngRes is None:
+                    continue
+
+                (allres, _, nbclose, nballres, mean_residue, max_residue) = AngRes
+                # store matching rate  if it is high
+                if nbclose >= Minimum_Nb_Matches:
+                    std_closematch = np.std(allres[allres < MR_tol_angle])
+                    if verbosedetails:
+                        print("%d        %d       %d       %.3f      %.3f       %.3f        %.3f"
+                            % (mat_ind, nbclose, nballres, std_closematch, mean_residue,
+                                        max_residue, nbclose ** 2 * 1.0 / nballres / std_closematch),
+                            "    ", str(planes[mat_ind]), "  ", pairspots[mat_ind])
+                        print("matrix ==", list_orient_matrix[mat_ind])
+
+                    spotindex2 = pairspots[mat_ind][1]
+                    if currentspotindex2 != spotindex2:
+                        if verbose:
+                            print("calculating matching rates of solutions for exp. spots", pairspots[mat_ind])
+                        currentspotindex2 = spotindex2
+
+                    solutions_matorient_index.append(mat_ind)
+                    solutions_spotscouple.append(pairspots[mat_ind])
+                    solutions_hklcouple.append(planes[mat_ind])
+                    # solutions_matchingscores.append([nbclose, nballres, mean_residue])
+                    solutions_matchingscores.append([nbclose, nballres, std_closematch])
+                    solutions_matchingrate.append(100.0 * nbclose / nballres)
+                    # print list_orient_matrix[mat_ind]
+                else:
+                    # print("Poor matching rate for exp. spots",pairspots[mat_ind])
+                    pass
 
         BestScores_per_centralspot[k_centspot_index] = np.array(solutions_matchingscores)
 
@@ -2204,7 +2271,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
             # only for plot
             list_UBs_for_plot = np.array(list_orient_matrix)
 
-            #             print "orient_index_fame", orient_index_fame
+            # print "orient_index_fame", orient_index_fame
 
             # print "list_UBs_for_plot",list_UBs_for_plot
 
