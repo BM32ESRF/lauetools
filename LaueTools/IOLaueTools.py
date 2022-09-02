@@ -442,8 +442,13 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'VHR_Feb13'
                 elif abs(ps-0.022) <= 0.002:
                     ccdlabel = 'ImageStar_dia_2021'
-                elif abs(ps-0.44) <= 0.002:
+                elif abs(ps-0.044) <= 0.002:
                     ccdlabel = 'ImageStar_dia_2021_2x2'
+                elif abs(ps-0.0504) <= 0.001:
+                    ccdlabel = 'IMSTAR_bin2'
+                elif abs(ps-0.0252) <= 0.001:
+                    ccdlabel = 'IMSTAR_bin1'
+
 
                 CCDcalib['CCDLabel'] = ccdlabel
 
