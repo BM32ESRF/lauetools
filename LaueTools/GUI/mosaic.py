@@ -3594,8 +3594,9 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
             CountersData["ExposureTime"] = expo_time
         elif ccdlabel == "sCMOS":
             dictpar = IOimage.read_header_scmos(filename)
-            CountersData["Monitor"] = dictpar["mon"]
-            CountersData["ExposureTime"] = dictpar["exposure"] * 1000  # in milliseconds
+            if dictpar is not {}:
+                CountersData["Monitor"] = dictpar["mon"]
+                CountersData["ExposureTime"] = dictpar["exposure"] * 1000  # in milliseconds
 
         center_pixel = (round(peak[0]), round(peak[1]))
 
