@@ -11,10 +11,10 @@
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/LaueTools.svg)](https://pypi.python.org/pypi/LaueTools/)
 
 
-[![Publish_Conda](https://github.com/ravipurohit1991/lauetoolsnn/actions/workflows/publish_conda.yml/badge.svg)](https://github.com/ravipurohit1991/lauetoolsnn/actions/workflows/publish_conda.yml)
+[![publish_conda_win_mac_linux](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_conda.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_conda.yml)
 [![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
-[![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://conda.anaconda.org/bm32esrf/lauetools)
-[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/installer/conda.svg)](https://conda.anaconda.org/bm32esrf/lauetools)
+[![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://anaconda.org/bm32esrf/lauetools)
+[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/installer/conda.svg)](https://anaconda.org/bm32esrf/lauetools)
 
 
 Welcome to LaueTools's!
