@@ -5,8 +5,5 @@
 # import pytest
 # if __name__ == '__main__':     #enclosing required because of multiprocessing
 
-import LaueTools
+import numpy
 print("LaueTools passed import")
-
-
-import pkg_resources

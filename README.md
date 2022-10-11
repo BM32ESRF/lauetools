@@ -1,4 +1,23 @@
-Welcome to LaueTools's DOCUMENTATION!
+<p align="center">
+  <img width="1000" height="350" src="https://github.com/BM32ESRF/lauetools/blob/main/LaueTools/icons/transmissionLaue.png">
+</p>
+
+
+[![Conda](https://img.shields.io/conda/pn/bm32esrf/lauetools?color=green&label=supported%20platform)](https://anaconda.org/bm32esrf/lauetools)
+
+[![Python package](https://github.com/BM32ESRF/lauetools/actions/workflows/python-package.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/python-package.yml)
+[![Publish_PYPI](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_PYPI.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_PYPI.yml)
+[![PyPI](https://img.shields.io/pypi/v/LaueTools)](https://pypi.python.org/pypi/LaueTools/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/LaueTools.svg)](https://pypi.python.org/pypi/LaueTools/)
+
+
+[![Publish_Conda](https://github.com/ravipurohit1991/lauetoolsnn/actions/workflows/publish_conda.yml/badge.svg)](https://github.com/ravipurohit1991/lauetoolsnn/actions/workflows/publish_conda.yml)
+[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
+[![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://conda.anaconda.org/bm32esrf/lauetools)
+[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/installer/conda.svg)](https://conda.anaconda.org/bm32esrf/lauetools)
+
+
+Welcome to LaueTools's!
 =====================================
 
 Last revision (March 2020)
