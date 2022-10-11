@@ -14,7 +14,7 @@ if sys.version_info.major == 3:
 	'mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start',
 	'daxmgui = LaueTools.daxmgui:start']}
 else:
-  python3entry_points= {}
+    python3entry_points= {}
 
 # this will be displayed on pypi at the front page of the project
 with open("README.md", "r") as fh:
@@ -22,7 +22,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="LaueTools",
-    version="3.0.41",
+    version="3.0.42",
     packages=find_packages(),
     python_requires='>=2.6 , <3.9',
 
