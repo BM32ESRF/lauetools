@@ -1,4 +1,4 @@
-{% set name = "lauetoolsnn" %}
+{% set name = "lauetools" %}
 {% set data = load_setup_py_data() %}
 
 package:
@@ -10,85 +10,52 @@ source:
 
 build:
   entry_points:
-    - lauetoolsnn=lauetoolsnn.lauetoolsneuralnetwork:start
-    - lauenn=lauetoolsnn.lauetoolsneuralnetwork:start
-    - lauenn_addmat=lauetoolsnn.util_scripts.add_material:start
-    - lauenn_mat=lauetoolsnn.util_scripts.add_material:querymat
+    - lauetools = LaueTools.LaueToolsGUI:start
+    - peaksearch = LaueTools.FileSeries.Peak_Search:start
+    - indexrefine = LaueTools.FileSeries.Index_Refine:start
+    - plotmeshGUI = LaueTools.plotmeshspecGUI:start
+    - buildsummary = LaueTools.FileSeries.Build_Summary:start
+    - plotmap = LaueTools.FileSeries.Plot_Maps2:start
+    - mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start
+    - daxmgui = LaueTools.daxmgui:start
   script: {{ PYTHON }} -m pip install --no-deps --no-cache-dir . -vv
   number: 0
   
 requirements:
-  build:
-    - python >=3.7
-    - tqdm
-    - scikit-image
-    - fabio
-    - scikit-learn
-    - tensorflow
-    - h5py
-    - keras
-    - networkx
-    - pyqt
-    - matplotlib-base
-    - scipy
-    - numpy
-    - pip
   host:
-    - python >=3.7
-    - matplotlib-base
-    - keras
-    - scipy
-    - numpy
-    - h5py
-    - tensorflow
-    - pyqt
-    - scikit-learn
-    - fabio
-    - networkx
-    - scikit-image
-    - tqdm
+    - python <3.9
     - pip
   run:
-    - python >=3.7
-    - matplotlib-base >=3.4.2
-    - keras >=2.7.0
-    - scipy >=1.7.0
-    - numpy >=1.18.5
+    - python <3.9
+    - docutils >=0.3
+    - numpy >=1.11.3
+    - scipy >=0.19.0
+    - matplotlib-base >=2.0.0
+    - wxpython >=3.0
+    - networkx >=2.1
     - h5py >=3.1
-    - tensorflow >=2.7.0
-    - pyqt >=5.9
-    - scikit-learn >=0.24.2
-    - fabio >=0.11.0
-    - networkx >=2.6.3
-    - scikit-image >=0.18.0
     - tqdm >=4.60.0
 
 test:
   imports:
-    - lauetoolsnn
-    - keras
+    - LaueTools
     - scipy
     - numpy
     - h5py
-    - tensorflow
-    - PyQt5
-    - sklearn
-    - skimage
-    - fabio
     - networkx
     - tqdm
     
 about:
-  home: https://github.com/ravipurohit1991/lauetoolsnn
-  summary: LaueNN- neural network training and prediction routine to index single and polycrystalline Laue diffraction patterns
+  home: https://github.com/BM32ESRF/lauetools
+  summary: Laue diffraction data analysis tool GUI
   license: MIT
 
 app:
-  entry: lauetoolsnn
+  entry: lauetools
   icon: icon.png
-  summary:  "Neural network workflow for indexation of Laue patterns"
+  summary:  "Laue diffraction data analysis tool GUI"
   type: desk
   
 extra:
   recipe-maintainers:
-    - ravipurohit1991
+    - jsmicha

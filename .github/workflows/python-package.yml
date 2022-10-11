@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
     #python3.6 is creating errors while importing relative path modules, so removing from package build for now
     steps:
     - uses: actions/checkout@v3
