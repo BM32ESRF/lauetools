@@ -1,0 +1,1123 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Indexation of spots data set. &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Indexation of spots data set.</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/Indexation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="indexation-of-spots-data-set">
+<h1>Indexation of spots data set.<a class="headerlink" href="#indexation-of-spots-data-set" title="Permalink to this headline">¶</a></h1>
+<p><strong>Using Class spotsSet and play with spots considered for indexation and
+refinement</strong></p>
+<div class="section" id="this-notebook-is-a-part-of-tutorials-on-lauetools-suite-author-j-s-micha-date-july-2019">
+<h2>This Notebook is a part of Tutorials on LaueTools Suite. Author:J.-S. Micha Date: July 2019<a class="headerlink" href="#this-notebook-is-a-part-of-tutorials-on-lauetools-suite-author-j-s-micha-date-july-2019" title="Permalink to this headline">¶</a></h2>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">copy</span><span class="o">,</span><span class="nn">os</span>
+
+<span class="c1"># third party LaueTools import</span>
+<span class="kn">import</span> <span class="nn">LaueTools.readmccd</span> <span class="k">as</span> <span class="nn">RMCCD</span>
+<span class="kn">import</span> <span class="nn">LaueTools.LaueGeometry</span> <span class="k">as</span> <span class="nn">F2TC</span>
+<span class="kn">import</span> <span class="nn">LaueTools.indexingSpotsSet</span> <span class="k">as</span> <span class="nn">ISS</span>
+<span class="kn">import</span> <span class="nn">LaueTools.IOLaueTools</span> <span class="k">as</span> <span class="nn">RWASCII</span>
+</pre></div>
+</div>
+<pre class="literal-block">
+/home/micha/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from <cite>float</cite> to <cite>np.floating</cite> is deprecated. In future, it will be treated as <cite>np.float64 == np.dtype(float).type</cite>.
+  from ._conv import register_converters as _register_converters
+</pre>
+<pre class="literal-block">
+module Image / PIL is not installed
+LaueToolsProjectFolder /home/micha/LaueToolsPy3/LaueTools
+Cython compiled module 'gaussian2D' for fast computation is not installed!
+module Image / PIL is not installed
+Entering CrystalParameters <strong>**</strong>---<strong>***********************</strong>
+
+
+Cython compiled module for fast computation of Laue spots is not installed!
+Cython compiled 'angulardist' module for fast computation of angular distance is not installed!
+Using default module
+Cython compiled module for fast computation of angular distance is not installed!
+module Image / PIL is not installed
+</pre>
+<p>refinement from guessed solutions with two materials (see script
+IndexingTwinsSeries)</p>
+<div class="section" id="let-s-take-a-simple-example-of-a-single-laue-pattern-from-the-peak-search-we-get-83-spots">
+<h3>Let’s take a simple example of a single Laue Pattern. From the peak search we get 83 spots<a class="headerlink" href="#let-s-take-a-simple-example-of-a-single-laue-pattern-from-the-peak-search-we-get-83-spots" title="Permalink to this headline">¶</a></h3>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">folder</span><span class="o">=</span> <span class="s1">&#39;../Examples/Ge/&#39;</span>
+<span class="n">datfilename</span><span class="o">=</span><span class="s1">&#39;Ge0001.dat&#39;</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">key_material</span><span class="o">=</span><span class="s1">&#39;Ge&#39;</span>
+<span class="n">emin</span><span class="p">,</span> <span class="n">emax</span><span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="mi">23</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># detector geometry and parameters as read from Ge0001.det</span>
+<span class="n">calibration_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mf">69.179</span><span class="p">,</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="mf">0.104</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">]</span>
+<span class="n">CCDCalibdict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;CCDCalibParameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_parameters</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;framedim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;detectordiameter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">165.</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;kf_direction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Z&gt;0&#39;</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;xpixelsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.08057</span>
+<span class="c1"># CCDCalibdict can also be simply build by reading the proper .det file</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;reading geometry calibration file&quot;</span><span class="p">)</span>
+<span class="n">CCDCalibdict</span><span class="o">=</span><span class="n">RWASCII</span><span class="o">.</span><span class="n">readCalib_det_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span><span class="s1">&#39;Ge0001.det&#39;</span><span class="p">))</span>
+<span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;kf_direction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Z&gt;0&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">reading</span> <span class="n">geometry</span> <span class="n">calibration</span> <span class="n">file</span>
+<span class="n">calib</span> <span class="o">=</span>  <span class="p">[</span> <span class="mf">6.91790e+01</span>  <span class="mf">1.05081e+03</span>  <span class="mf">1.11559e+03</span>  <span class="mf">1.04000e-01</span> <span class="o">-</span><span class="mf">2.73000e-01</span>
+  <span class="mf">8.05700e-02</span>  <span class="mf">2.04800e+03</span>  <span class="mf">2.04800e+03</span><span class="p">]</span>
+<span class="n">matrix</span> <span class="o">=</span>  <span class="p">[</span><span class="o">-</span><span class="mf">0.211596</span>  <span class="mf">0.092178</span> <span class="o">-</span><span class="mf">0.973001</span> <span class="o">-</span><span class="mf">0.77574</span>   <span class="mf">0.589743</span>  <span class="mf">0.224568</span>  <span class="mf">0.594521</span>
+  <span class="mf">0.802313</span> <span class="o">-</span><span class="mf">0.053281</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Compute scattering angles from spots pixel positions and detector geometry. Write a .cor file from .dat including these new infos</p>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">F2TC</span><span class="o">.</span><span class="n">convert2corfile</span><span class="p">(</span><span class="n">datfilename</span><span class="p">,</span>
+                         <span class="n">calibration_parameters</span><span class="p">,</span>
+                         <span class="n">dirname_in</span><span class="o">=</span><span class="n">folder</span><span class="p">,</span>
+                        <span class="n">dirname_out</span><span class="o">=</span><span class="n">folder</span><span class="p">,</span>
+                        <span class="n">CCDCalibdict</span><span class="o">=</span><span class="n">CCDCalibdict</span><span class="p">)</span>
+<span class="n">corfilename</span> <span class="o">=</span> <span class="n">datfilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.cor&#39;</span>
+<span class="n">fullpathcorfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span><span class="n">corfilename</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nb</span> <span class="n">of</span> <span class="n">spots</span> <span class="ow">and</span> <span class="n">columns</span> <span class="ow">in</span> <span class="o">.</span><span class="n">dat</span> <span class="n">file</span> <span class="p">(</span><span class="mi">83</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">file</span> <span class="p">:</span><span class="o">../</span><span class="n">Examples</span><span class="o">/</span><span class="n">Ge</span><span class="o">/</span><span class="n">Ge0001</span><span class="o">.</span><span class="n">dat</span>
+<span class="n">containing</span> <span class="mi">83</span> <span class="n">peaks</span>
+<span class="p">(</span><span class="mi">2</span><span class="n">theta</span> <span class="n">chi</span> <span class="n">X</span> <span class="n">Y</span> <span class="n">I</span><span class="p">)</span> <span class="n">written</span> <span class="ow">in</span> <span class="o">../</span><span class="n">Examples</span><span class="o">/</span><span class="n">Ge</span><span class="o">/</span><span class="n">Ge0001</span><span class="o">.</span><span class="n">cor</span>
+</pre></div>
+</div>
+<p>Create an instance of the class spotset. Initialize spots properties to data contained in .cor file</p>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span> <span class="o">=</span> <span class="n">ISS</span><span class="o">.</span><span class="n">spotsset</span><span class="p">()</span>
+
+<span class="n">DataSet</span><span class="o">.</span><span class="n">importdatafromfile</span><span class="p">(</span><span class="n">fullpathcorfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CCDcalib</span> <span class="ow">in</span> <span class="n">readfile_cor</span> <span class="p">{</span><span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="mf">69.179</span><span class="p">,</span> <span class="s1">&#39;xcen&#39;</span><span class="p">:</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="s1">&#39;ycen&#39;</span><span class="p">:</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="s1">&#39;xbet&#39;</span><span class="p">:</span> <span class="mf">0.104</span><span class="p">,</span> <span class="s1">&#39;xgam&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">,</span> <span class="s1">&#39;xpixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;ypixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;CCDLabel&#39;</span><span class="p">:</span> <span class="s1">&#39;sCMOS&#39;</span><span class="p">,</span> <span class="s1">&#39;framedim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2048.0</span><span class="p">,</span> <span class="mf">2048.0</span><span class="p">],</span> <span class="s1">&#39;detectordiameter&#39;</span><span class="p">:</span> <span class="mf">165.00736</span><span class="p">,</span> <span class="s1">&#39;kf_direction&#39;</span><span class="p">:</span> <span class="s1">&#39;Z&gt;0&#39;</span><span class="p">,</span> <span class="s1">&#39;pixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">}</span>
+<span class="n">CCD</span> <span class="n">Detector</span> <span class="n">parameters</span> <span class="n">read</span> <span class="kn">from</span> <span class="nn">.cor</span> <span class="n">file</span>
+<span class="n">CCDcalibdict</span> <span class="p">{</span><span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="mf">69.179</span><span class="p">,</span> <span class="s1">&#39;xcen&#39;</span><span class="p">:</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="s1">&#39;ycen&#39;</span><span class="p">:</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="s1">&#39;xbet&#39;</span><span class="p">:</span> <span class="mf">0.104</span><span class="p">,</span> <span class="s1">&#39;xgam&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">,</span> <span class="s1">&#39;xpixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;ypixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;CCDLabel&#39;</span><span class="p">:</span> <span class="s1">&#39;sCMOS&#39;</span><span class="p">,</span> <span class="s1">&#39;framedim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2048.0</span><span class="p">,</span> <span class="mf">2048.0</span><span class="p">],</span> <span class="s1">&#39;detectordiameter&#39;</span><span class="p">:</span> <span class="mf">165.00736</span><span class="p">,</span> <span class="s1">&#39;kf_direction&#39;</span><span class="p">:</span> <span class="s1">&#39;Z&gt;0&#39;</span><span class="p">,</span> <span class="s1">&#39;pixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kc">True</span>
+</pre></div>
+</div>
+<p>Class methods and attributes rely on a dictionnary of spots properties. key = exprimental spot index, val = spots properties</p>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">DataSet</span><span class="o">.</span><span class="n">indexed_spots_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">78.215821</span><span class="p">,</span> <span class="mf">1.638153</span><span class="p">,</span> <span class="mf">1027.11</span><span class="p">,</span> <span class="mf">1293.28</span><span class="p">,</span> <span class="mf">70931.27</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">64.329767</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.824155</span><span class="p">,</span> <span class="mf">1379.17</span><span class="p">,</span> <span class="mf">1553.58</span><span class="p">,</span> <span class="mf">51933.84</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">68.680451</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.358122</span><span class="p">,</span> <span class="mf">1288.11</span><span class="p">,</span> <span class="mf">1460.16</span><span class="p">,</span> <span class="mf">22795.07</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">105.61498</span><span class="p">,</span> <span class="mf">8.176187</span><span class="p">,</span> <span class="mf">926.22</span><span class="p">,</span> <span class="mf">872.06</span><span class="p">,</span> <span class="mf">19489.69</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mf">103.859791</span><span class="p">,</span> <span class="mf">27.866566</span><span class="p">,</span> <span class="mf">595.46</span><span class="p">,</span> <span class="mf">876.44</span><span class="p">,</span> <span class="mf">19058.79</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">120.59561</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.92066</span><span class="p">,</span> <span class="mf">1183.27</span><span class="p">,</span> <span class="mf">598.92</span><span class="p">,</span> <span class="mf">17182.88</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mf">60.359458</span><span class="p">,</span> <span class="mf">26.483191</span><span class="p">,</span> <span class="mf">626.12</span><span class="p">,</span> <span class="mf">1661.28</span><span class="p">,</span> <span class="mf">15825.39</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mf">56.269853</span><span class="p">,</span> <span class="mf">12.967153</span><span class="p">,</span> <span class="mf">856.14</span><span class="p">,</span> <span class="mf">1702.52</span><span class="p">,</span> <span class="mf">15486.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mf">82.072076</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.89243</span><span class="p">,</span> <span class="mf">1672.67</span><span class="p">,</span> <span class="mf">1258.62</span><span class="p">,</span> <span class="mf">13318.81</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+ <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mf">83.349535</span><span class="p">,</span> <span class="o">-</span><span class="mf">27.458061</span><span class="p">,</span> <span class="mf">1497.4</span><span class="p">,</span> <span class="mf">1224.7</span><span class="p">,</span> <span class="mf">13145.99</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">getUnIndexedSpotsallData</span><span class="p">()[:</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array</span><span class="p">([[</span> <span class="mf">0.0000000e+00</span><span class="p">,</span>  <span class="mf">7.8215821e+01</span><span class="p">,</span>  <span class="mf">1.6381530e+00</span><span class="p">,</span>  <span class="mf">1.0271100e+03</span><span class="p">,</span>
+         <span class="mf">1.2932800e+03</span><span class="p">,</span>  <span class="mf">7.0931270e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">1.0000000e+00</span><span class="p">,</span>  <span class="mf">6.4329767e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0824155e+01</span><span class="p">,</span>  <span class="mf">1.3791700e+03</span><span class="p">,</span>
+         <span class="mf">1.5535800e+03</span><span class="p">,</span>  <span class="mf">5.1933840e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">2.0000000e+00</span><span class="p">,</span>  <span class="mf">6.8680451e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.5358122e+01</span><span class="p">,</span>  <span class="mf">1.2881100e+03</span><span class="p">,</span>
+         <span class="mf">1.4601600e+03</span><span class="p">,</span>  <span class="mf">2.2795070e+04</span><span class="p">]])</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dict_loop</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;MATCHINGRATE_THRESHOLD_IAL&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                   <span class="s1">&#39;MATCHINGRATE_ANGLE_TOL&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+                   <span class="s1">&#39;NBMAXPROBED&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                   <span class="s1">&#39;central spots indices&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,],</span>
+                   <span class="s1">&#39;AngleTolLUT&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                   <span class="s1">&#39;UseIntensityWeights&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                   <span class="s1">&#39;nbSpotsToIndex&#39;</span><span class="p">:</span><span class="mi">10000</span><span class="p">,</span>
+                   <span class="s1">&#39;list matching tol angles&#39;</span><span class="p">:[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.2</span><span class="p">],</span>
+                   <span class="s1">&#39;nlutmax&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span>
+                   <span class="s1">&#39;MinimumNumberMatches&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                   <span class="s1">&#39;MinimumMatchingRate&#39;</span><span class="p">:</span><span class="mi">3</span>
+                   <span class="p">}</span>
+<span class="n">grainindex</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">DataSet</span> <span class="o">=</span> <span class="n">ISS</span><span class="o">.</span><span class="n">spotsset</span><span class="p">()</span>
+
+<span class="n">DataSet</span><span class="o">.</span><span class="n">pixelsize</span> <span class="o">=</span> <span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;xpixelsize&#39;</span><span class="p">]</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;framedim&#39;</span><span class="p">]</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">detectordiameter</span> <span class="o">=</span> <span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;detectordiameter&#39;</span><span class="p">]</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">kf_direction</span> <span class="o">=</span> <span class="n">CCDCalibdict</span><span class="p">[</span><span class="s1">&#39;kf_direction&#39;</span><span class="p">]</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">key_material</span> <span class="o">=</span> <span class="n">key_material</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">emin</span> <span class="o">=</span> <span class="n">emin</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">emax</span> <span class="o">=</span> <span class="n">emax</span>
+</pre></div>
+</div>
+<div class="section" id="normally-we-read-all-spots-data-from-a-cor-file">
+<h4>Normally we read all spots data from a .cor file<a class="headerlink" href="#normally-we-read-all-spots-data-from-a-cor-file" title="Permalink to this headline">¶</a></h4>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">importdatafromfile</span><span class="p">(</span><span class="n">fullpathcorfile</span><span class="p">)</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">emin</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CCDcalib</span> <span class="ow">in</span> <span class="n">readfile_cor</span> <span class="p">{</span><span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="mf">69.179</span><span class="p">,</span> <span class="s1">&#39;xcen&#39;</span><span class="p">:</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="s1">&#39;ycen&#39;</span><span class="p">:</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="s1">&#39;xbet&#39;</span><span class="p">:</span> <span class="mf">0.104</span><span class="p">,</span> <span class="s1">&#39;xgam&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">,</span> <span class="s1">&#39;xpixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;ypixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;CCDLabel&#39;</span><span class="p">:</span> <span class="s1">&#39;sCMOS&#39;</span><span class="p">,</span> <span class="s1">&#39;framedim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2048.0</span><span class="p">,</span> <span class="mf">2048.0</span><span class="p">],</span> <span class="s1">&#39;detectordiameter&#39;</span><span class="p">:</span> <span class="mf">165.00736</span><span class="p">,</span> <span class="s1">&#39;kf_direction&#39;</span><span class="p">:</span> <span class="s1">&#39;Z&gt;0&#39;</span><span class="p">,</span> <span class="s1">&#39;pixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">}</span>
+<span class="n">CCD</span> <span class="n">Detector</span> <span class="n">parameters</span> <span class="n">read</span> <span class="kn">from</span> <span class="nn">.cor</span> <span class="n">file</span>
+<span class="n">CCDcalibdict</span> <span class="p">{</span><span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="mf">69.179</span><span class="p">,</span> <span class="s1">&#39;xcen&#39;</span><span class="p">:</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="s1">&#39;ycen&#39;</span><span class="p">:</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="s1">&#39;xbet&#39;</span><span class="p">:</span> <span class="mf">0.104</span><span class="p">,</span> <span class="s1">&#39;xgam&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">,</span> <span class="s1">&#39;xpixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;ypixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;CCDLabel&#39;</span><span class="p">:</span> <span class="s1">&#39;sCMOS&#39;</span><span class="p">,</span> <span class="s1">&#39;framedim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2048.0</span><span class="p">,</span> <span class="mf">2048.0</span><span class="p">],</span> <span class="s1">&#39;detectordiameter&#39;</span><span class="p">:</span> <span class="mf">165.00736</span><span class="p">,</span> <span class="s1">&#39;kf_direction&#39;</span><span class="p">:</span> <span class="s1">&#39;Z&gt;0&#39;</span><span class="p">,</span> <span class="s1">&#39;pixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">5</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="but-we-can-import-a-custom-list-of-spots-for-example-starting-from-spots-a-the-previous-cor-file">
+<h4>but we can import a custom list of spots. For example, starting from spots a the previous .cor file<a class="headerlink" href="#but-we-can-import-a-custom-list-of-spots-for-example-starting-from-spots-a-the-previous-cor-file" title="Permalink to this headline">¶</a></h4>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Gespots</span> <span class="o">=</span> <span class="n">RWASCII</span><span class="o">.</span><span class="n">readfile_cor</span><span class="p">(</span><span class="n">fullpathcorfile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CCDcalib</span> <span class="ow">in</span> <span class="n">readfile_cor</span> <span class="p">{</span><span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="mf">69.179</span><span class="p">,</span> <span class="s1">&#39;xcen&#39;</span><span class="p">:</span> <span class="mf">1050.81</span><span class="p">,</span> <span class="s1">&#39;ycen&#39;</span><span class="p">:</span> <span class="mf">1115.59</span><span class="p">,</span> <span class="s1">&#39;xbet&#39;</span><span class="p">:</span> <span class="mf">0.104</span><span class="p">,</span> <span class="s1">&#39;xgam&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.273</span><span class="p">,</span> <span class="s1">&#39;xpixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;ypixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">,</span> <span class="s1">&#39;CCDLabel&#39;</span><span class="p">:</span> <span class="s1">&#39;sCMOS&#39;</span><span class="p">,</span> <span class="s1">&#39;framedim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2048.0</span><span class="p">,</span> <span class="mf">2048.0</span><span class="p">],</span> <span class="s1">&#39;detectordiameter&#39;</span><span class="p">:</span> <span class="mf">165.00736</span><span class="p">,</span> <span class="s1">&#39;kf_direction&#39;</span><span class="p">:</span> <span class="s1">&#39;Z&gt;0&#39;</span><span class="p">,</span> <span class="s1">&#39;pixelsize&#39;</span><span class="p">:</span> <span class="mf">0.08057</span><span class="p">}</span>
+<span class="n">CCD</span> <span class="n">Detector</span> <span class="n">parameters</span> <span class="n">read</span> <span class="kn">from</span> <span class="nn">.cor</span> <span class="n">file</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2theta chi X, Y Intensity of the first 7 spots</span>
+<span class="n">Gespots</span><span class="p">[:</span><span class="mi">7</span><span class="p">,:</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array</span><span class="p">([[</span> <span class="mf">7.82158210e+01</span><span class="p">,</span>  <span class="mf">1.63815300e+00</span><span class="p">,</span>  <span class="mf">1.02711000e+03</span><span class="p">,</span>
+         <span class="mf">1.29328000e+03</span><span class="p">,</span>  <span class="mf">7.09312700e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">6.43297670e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.08241550e+01</span><span class="p">,</span>  <span class="mf">1.37917000e+03</span><span class="p">,</span>
+         <span class="mf">1.55358000e+03</span><span class="p">,</span>  <span class="mf">5.19338400e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">6.86804510e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.53581220e+01</span><span class="p">,</span>  <span class="mf">1.28811000e+03</span><span class="p">,</span>
+         <span class="mf">1.46016000e+03</span><span class="p">,</span>  <span class="mf">2.27950700e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">1.05614980e+02</span><span class="p">,</span>  <span class="mf">8.17618700e+00</span><span class="p">,</span>  <span class="mf">9.26220000e+02</span><span class="p">,</span>
+         <span class="mf">8.72060000e+02</span><span class="p">,</span>  <span class="mf">1.94896900e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">1.03859791e+02</span><span class="p">,</span>  <span class="mf">2.78665660e+01</span><span class="p">,</span>  <span class="mf">5.95460000e+02</span><span class="p">,</span>
+         <span class="mf">8.76440000e+02</span><span class="p">,</span>  <span class="mf">1.90587900e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">1.20595610e+02</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.92066000e+00</span><span class="p">,</span>  <span class="mf">1.18327000e+03</span><span class="p">,</span>
+         <span class="mf">5.98920000e+02</span><span class="p">,</span>  <span class="mf">1.71828800e+04</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mf">6.03594580e+01</span><span class="p">,</span>  <span class="mf">2.64831910e+01</span><span class="p">,</span>  <span class="mf">6.26120000e+02</span><span class="p">,</span>
+         <span class="mf">1.66128000e+03</span><span class="p">,</span>  <span class="mf">1.58253900e+04</span><span class="p">]])</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tth</span><span class="p">,</span><span class="n">chi</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">I</span><span class="o">=</span><span class="n">Gespots</span><span class="p">[:,:</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+<span class="n">exp_data_all</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tth</span><span class="p">,</span><span class="n">chi</span><span class="p">,</span><span class="n">I</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">])</span>
+<span class="n">exp_data_all</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">83</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#select some exp spots from absolute index   (6,0,2,30,9,8,20,10,5,1,7,14)</span>
+<span class="n">tth_e</span><span class="p">,</span><span class="n">chi_e</span><span class="p">,</span><span class="n">X_e</span><span class="p">,</span><span class="n">Y_e</span><span class="p">,</span><span class="n">I_e</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">Gespots</span><span class="p">[:,:</span><span class="mi">5</span><span class="p">],(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">14</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">exp_data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tth_e</span><span class="p">,</span><span class="n">chi_e</span><span class="p">,</span><span class="n">I_e</span><span class="p">,</span><span class="n">X_e</span><span class="p">,</span><span class="n">Y_e</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="spots-data-must-be-imported-as-an-array-of-5-elements-2theta-chi-intensity-pixelx-pixely">
+<h3>spots data must be imported as an array of 5 elements: 2theta, chi, Intensity, pixelX, pixelY<a class="headerlink" href="#spots-data-must-be-imported-as-an-array-of-5-elements-2theta-chi-intensity-pixelx-pixely" title="Permalink to this headline">¶</a></h3>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">importdata</span><span class="p">(</span><span class="n">exp_data</span><span class="p">)</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">detectorparameters</span> <span class="o">=</span> <span class="n">calibration_parameters</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">nbspots</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;short_&#39;</span><span class="o">+</span><span class="n">corfilename</span>
+<span class="c1">#DataSet.setSelectedExpSpotsData(0)</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">getSelectedExpSpotsData</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">array</span><span class="p">([[</span> <span class="mf">6.03594580e+01</span><span class="p">,</span>  <span class="mf">7.82158210e+01</span><span class="p">,</span>  <span class="mf">6.86804510e+01</span><span class="p">,</span>
+          <span class="mf">1.08452917e+02</span><span class="p">,</span>  <span class="mf">8.33495350e+01</span><span class="p">,</span>  <span class="mf">8.20720760e+01</span><span class="p">,</span>
+          <span class="mf">8.17712570e+01</span><span class="p">,</span>  <span class="mf">9.17982210e+01</span><span class="p">,</span>  <span class="mf">1.20595610e+02</span><span class="p">,</span>
+          <span class="mf">6.43297670e+01</span><span class="p">,</span>  <span class="mf">5.62698530e+01</span><span class="p">,</span>  <span class="mf">1.14942090e+02</span><span class="p">],</span>
+        <span class="p">[</span> <span class="mf">2.64831910e+01</span><span class="p">,</span>  <span class="mf">1.63815300e+00</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.53581220e+01</span><span class="p">,</span>
+          <span class="mf">3.77494610e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.74580610e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.58924300e+01</span><span class="p">,</span>
+          <span class="mf">3.03824700e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.30994100e+00</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.92066000e+00</span><span class="p">,</span>
+         <span class="o">-</span><span class="mf">2.08241550e+01</span><span class="p">,</span>  <span class="mf">1.29671530e+01</span><span class="p">,</span>  <span class="mf">1.15295700e+01</span><span class="p">],</span>
+        <span class="p">[</span> <span class="mf">1.58253900e+04</span><span class="p">,</span>  <span class="mf">7.09312700e+04</span><span class="p">,</span>  <span class="mf">2.27950700e+04</span><span class="p">,</span>
+          <span class="mf">4.40061000e+03</span><span class="p">,</span>  <span class="mf">1.31459900e+04</span><span class="p">,</span>  <span class="mf">1.33188100e+04</span><span class="p">,</span>
+          <span class="mf">6.13787000e+03</span><span class="p">,</span>  <span class="mf">1.17999300e+04</span><span class="p">,</span>  <span class="mf">1.71828800e+04</span><span class="p">,</span>
+          <span class="mf">5.19338400e+04</span><span class="p">,</span>  <span class="mf">1.54862000e+04</span><span class="p">,</span>  <span class="mf">1.00105200e+04</span><span class="p">]]),</span>
+ <span class="n">array</span><span class="p">([</span> <span class="mi">0</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span>  <span class="mi">3</span><span class="p">,</span>  <span class="mi">4</span><span class="p">,</span>  <span class="mi">5</span><span class="p">,</span>  <span class="mi">6</span><span class="p">,</span>  <span class="mi">7</span><span class="p">,</span>  <span class="mi">8</span><span class="p">,</span>  <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="core-function-to-index-a-set-of-spots">
+<h2>core function to index a set of spots<a class="headerlink" href="#core-function-to-index-a-set-of-spots" title="Permalink to this headline">¶</a></h2>
+<p>by defaut DataSet.getUnIndexedSpotsallData() is called</p>
+<p>if use_file = 0, then current non indexed exp. spots will be considered
+for indexation</p>
+<p>if use_file = 1, reimport data from file and reset also spots
+properties dictionary (i.e. with status unindexed)</p>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">IndexSpotsSet</span><span class="p">(</span><span class="n">fullpathcorfile</span><span class="p">,</span> <span class="n">key_material</span><span class="p">,</span> <span class="n">emin</span><span class="p">,</span> <span class="n">emax</span><span class="p">,</span> <span class="n">dict_loop</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">use_file</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1"># if 1, reimport data from file and reset also spots properties dictionary</span>
+                         <span class="n">IMM</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">LUT</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">n_LUT</span><span class="o">=</span><span class="n">dict_loop</span><span class="p">[</span><span class="s1">&#39;nlutmax&#39;</span><span class="p">],</span><span class="n">angletol_list</span><span class="o">=</span><span class="n">dict_loop</span><span class="p">[</span><span class="s1">&#39;list matching tol angles&#39;</span><span class="p">],</span>
+                        <span class="n">nbGrainstoFind</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                      <span class="n">starting_grainindex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">MatchingRate_List</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">previousResults</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">corfilename</span><span class="o">=</span><span class="n">corfilename</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre class="literal-block">
+self.pixelsize in IndexSpotsSet 0.08057
+ResolutionAngstromLUT in IndexSpotsSet False
+
+ Remaining nb of spots to index for grain #0 : 12
+
+
+ <strong>**</strong>
+start to index grain #0 of Material: Ge
+
+<strong>**</strong>
+
+providing new set of matrices Using Angles LUT template matching
+nbspots 12
+NBMAXPROBED 6
+nbspots 12
+set_central_spots_hkl None
+Computing LUT from material data
+Compute LUT for indexing Ge spots in LauePattern
+Build angles LUT with latticeparameters
+[ 5.657499999999999  5.657499999999999  5.657499999999999
+ 90.                90.                90.               ]
+and n=3
+MaxRadiusHKL False
+cubicSymmetry True
+Central set of exp. spotDistances from spot_index_central_list probed
+self.absolute_index [ 0  1  2  3  4  5  6  7  8  9 10 11]
+spot_index_central_list [0]
+[0]
+LUT is not None when entering getOrientMatrices()
+set_central_spots_hkl None
+set_central_spots_hkl_list [None]
+cubicSymmetry True
+LUT_tol_angle 0.5
+<em>---***</em>------------------------------------------------*
+Calculating all possible matrices from exp spot #0 and the 5 other(s)
+hkl in getOrientMatrices None &lt;class 'NoneType'&gt;
+using LUTcubic
+LUTcubic is None for k_centspot_index 0 in getOrientMatrices()
+hkl1 in matrices_from_onespot_hkl() [[1 0 0]
+ [1 1 0]
+ [1 1 1]
+ [2 1 0]
+ [2 1 1]
+ [2 2 1]
+ [3 1 0]
+ [3 1 1]
+ [3 2 1]
+ [3 2 2]
+ [3 3 1]
+ [3 3 2]]
+Computing hkl2 list for specific or cubic LUT in matrices_from_onespot_hkl()
+Calculating LUT in PlanePairs_from2sets()
+Looking up planes pairs in LUT from exp. spots (0, 1):
+Looking up planes pairs in LUT from exp. spots (0, 2):
+Looking up planes pairs in LUT from exp. spots (0, 3):
+Looking up planes pairs in LUT from exp. spots (0, 4):
+Looking up planes pairs in LUT from exp. spots (0, 5):
+calculating matching rates of solutions for exp. spots [0, 1]
+calculating matching rates of solutions for exp. spots [0, 2]
+calculating matching rates of solutions for exp. spots [0, 3]
+calculating matching rates of solutions for exp. spots [0, 4]
+
+
+return best matrix and matching scores for the one central_spot
+
+-----------------------------------------
+results:
+matrix:                                         matching results
+[-0.211852735694566  0.092255643652867 -0.972937466948891]        res: [20.0, 162.0] 0.014 12.35
+[-0.775856536468367  0.58951816141498   0.22475536073965 ]        spot indices [0 1]
+[ 0.594300563948835  0.802473664571131 -0.053318452339475]        planes [[1.0, 3.0, 2.0], [1.0, 1.0, 1.0]]
+
+Number of matrices found (nb_sol):  1
+set_central_spots_hkl in FindOrientMatrices None
+
+-----------------------------------------
+results:
+matrix:                                         matching results
+[-0.211852735694566  0.092255643652867 -0.972937466948891]        res: [20.0, 162.0] 0.014 12.35
+[-0.775856536468367  0.58951816141498   0.22475536073965 ]        spot indices [0 1]
+[ 0.594300563948835  0.802473664571131 -0.053318452339475]        planes [[1.0, 3.0, 2.0], [1.0, 1.0, 1.0]]
+
+Nb of potential orientation matrice(s) UB found: 1
+[array([[-0.211852735694566,  0.092255643652867, -0.972937466948891],
+       [-0.775856536468367,  0.58951816141498 ,  0.22475536073965 ],
+       [ 0.594300563948835,  0.802473664571131, -0.053318452339475]])]
+Nb of potential UBs  1
+
+Working with a new stack of orientation matrices
+MATCHINGRATE_THRESHOLD_IAL= 100.0
+has not been reached! All potential solutions have been calculated
+taking the first one only.
+bestUB object &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+
+
+---------------refining grain orientation and strain #0-----------------
+
+
+ refining grain #0 step -----0
+
+bestUB &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+matrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+For angular tolerance 0.50 deg
+Nb of pairs found / nb total of expected spots: 12/176
+Matching Rate : 6.82
+Nb missing reflections: 164
+
+grain #0 : 12 links to simulated spots have been found
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+Initial residues [0.053680370172309 0.013739858524874 0.921977335411896 0.403270956234836
+ 0.919825854310187 0.785969463406447 0.565019172757509 1.127873079813964
+ 0.363514793614926 0.412635402450867 0.711008521607465 0.450488584221994]
+---------------------------------------------------
+
+
+
+<strong>***********************</strong>
+first error with initial values of: ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+
+
+<strong>***********************</strong>
+Fitting parameters:   ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+With initial values [1. 1. 0. 0. 0. 0. 0. 0.]
+code results 1
+nb iterations 1767
+mesg Both actual and predicted relative reductions in the sum of squares
+  are at most 0.000000
+strain_sol [ 1.001128981010799e+00  9.993806401299155e-01  8.449040381845989e-04
+ -8.486913595751131e-04  3.520626401662759e-04 -2.714612741167435e-02
+  3.054889720130747e-02  5.311773668297186e-02]
+
+
+ <strong>**********</strong>  End of Fitting  -  Final errors  <strong>**************</strong>
+
+
+<strong>*********mean pixel deviation    0.3158807195732847     ******</strong>
+devstrain, lattice_parameter_direct_strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657424223234738  5.651101185787196  5.661104877237695
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+devstrain1, lattice_parameter_direct_strain1 [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+final lattice_parameters [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+UB and strain refinement completed
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8c98baa20&gt;
+matrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+For angular tolerance 0.50 deg
+Nb of pairs found / nb total of expected spots: 12/177
+Matching Rate : 6.78
+Nb missing reflections: 165
+
+grain #0 : 12 links to simulated spots have been found
+GoodRefinement condition is  True
+nb_updates 12 compared to 6
+
+
+ refining grain #0 step -----1
+
+bestUB &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+matrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+For angular tolerance 0.50 deg
+Nb of pairs found / nb total of expected spots: 12/176
+Matching Rate : 6.82
+Nb missing reflections: 164
+
+grain #0 : 12 links to simulated spots have been found
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+Initial residues [0.053680370172309 0.013739858524874 0.921977335411896 0.403270956234836
+ 0.919825854310187 0.785969463406447 0.565019172757509 1.127873079813964
+ 0.363514793614926 0.412635402450867 0.711008521607465 0.450488584221994]
+---------------------------------------------------
+
+
+
+<strong>***********************</strong>
+first error with initial values of: ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+
+
+<strong>***********************</strong>
+Fitting parameters:   ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+With initial values [1. 1. 0. 0. 0. 0. 0. 0.]
+code results 1
+nb iterations 1767
+mesg Both actual and predicted relative reductions in the sum of squares
+  are at most 0.000000
+strain_sol [ 1.001128981010799e+00  9.993806401299155e-01  8.449040381845989e-04
+ -8.486913595751131e-04  3.520626401662759e-04 -2.714612741167435e-02
+  3.054889720130747e-02  5.311773668297186e-02]
+
+
+ <strong>**********</strong>  End of Fitting  -  Final errors  <strong>**************</strong>
+
+
+<strong>*********mean pixel deviation    0.3158807195732847     ******</strong>
+devstrain, lattice_parameter_direct_strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657424223234738  5.651101185787196  5.661104877237695
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+devstrain1, lattice_parameter_direct_strain1 [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+final lattice_parameters [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+UB and strain refinement completed
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8c98ba9b0&gt;
+matrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+For angular tolerance 0.50 deg
+Nb of pairs found / nb total of expected spots: 12/177
+Matching Rate : 6.78
+Nb missing reflections: 165
+
+grain #0 : 12 links to simulated spots have been found
+GoodRefinement condition is  True
+nb_updates 12 compared to 6
+
+
+ refining grain #0 step -----2
+
+bestUB &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+matrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+For angular tolerance 0.20 deg
+Nb of pairs found / nb total of expected spots: 12/176
+Matching Rate : 6.82
+Nb missing reflections: 164
+
+grain #0 : 12 links to simulated spots have been found
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+Initial residues [0.053680370172309 0.013739858524874 0.921977335411896 0.403270956234836
+ 0.919825854310187 0.785969463406447 0.565019172757509 1.127873079813964
+ 0.363514793614926 0.412635402450867 0.711008521607465 0.450488584221994]
+---------------------------------------------------
+
+
+
+<strong>***********************</strong>
+first error with initial values of: ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+
+
+<strong>***********************</strong>
+Fitting parameters:   ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+With initial values [1. 1. 0. 0. 0. 0. 0. 0.]
+code results 1
+nb iterations 1767
+mesg Both actual and predicted relative reductions in the sum of squares
+  are at most 0.000000
+strain_sol [ 1.001128981010799e+00  9.993806401299155e-01  8.449040381845989e-04
+ -8.486913595751131e-04  3.520626401662759e-04 -2.714612741167435e-02
+  3.054889720130747e-02  5.311773668297186e-02]
+
+
+ <strong>**********</strong>  End of Fitting  -  Final errors  <strong>**************</strong>
+
+
+<strong>*********mean pixel deviation    0.3158807195732847     ******</strong>
+devstrain, lattice_parameter_direct_strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657424223234738  5.651101185787196  5.661104877237695
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+devstrain1, lattice_parameter_direct_strain1 [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+final lattice_parameters [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+UB and strain refinement completed
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8cf573a90&gt;
+matrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+For angular tolerance 0.20 deg
+Nb of pairs found / nb total of expected spots: 12/177
+Matching Rate : 6.78
+Nb missing reflections: 165
+
+grain #0 : 12 links to simulated spots have been found
+GoodRefinement condition is  True
+nb_updates 12 compared to 6
+
+
+ refining grain #0 step -----3
+
+bestUB &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7ddc50&gt;
+matrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211852735694566  0.092255643652867 -0.972937466948891]
+ [-0.775856536468367  0.58951816141498   0.22475536073965 ]
+ [ 0.594300563948835  0.802473664571131 -0.053318452339475]]
+For angular tolerance 0.20 deg
+Nb of pairs found / nb total of expected spots: 12/176
+Matching Rate : 6.82
+Nb missing reflections: 164
+
+grain #0 : 12 links to simulated spots have been found
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+Initial residues [0.053680370172309 0.013739858524874 0.921977335411896 0.403270956234836
+ 0.919825854310187 0.785969463406447 0.565019172757509 1.127873079813964
+ 0.363514793614926 0.412635402450867 0.711008521607465 0.450488584221994]
+---------------------------------------------------
+
+
+
+<strong>***********************</strong>
+first error with initial values of: ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+<strong>*********mean pixel deviation    0.560750282710606     ******</strong>
+
+
+<strong>***********************</strong>
+Fitting parameters:   ['b/a', 'c/a', 'a12', 'a13', 'a23', 'theta1', 'theta2', 'theta3']
+
+<strong>***********************</strong>
+
+With initial values [1. 1. 0. 0. 0. 0. 0. 0.]
+code results 1
+nb iterations 1767
+mesg Both actual and predicted relative reductions in the sum of squares
+  are at most 0.000000
+strain_sol [ 1.001128981010799e+00  9.993806401299155e-01  8.449040381845989e-04
+ -8.486913595751131e-04  3.520626401662759e-04 -2.714612741167435e-02
+  3.054889720130747e-02  5.311773668297186e-02]
+
+
+ <strong>**********</strong>  End of Fitting  -  Final errors  <strong>**************</strong>
+
+
+<strong>*********mean pixel deviation    0.3158807195732847     ******</strong>
+devstrain, lattice_parameter_direct_strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657424223234738  5.651101185787196  5.661104877237695
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+devstrain1, lattice_parameter_direct_strain1 [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]] [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+final lattice_parameters [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+UB and strain refinement completed
+True it is an OrientMatrix object
+Orientation &lt;LaueTools.indexingSpotsSet.OrientMatrix object at 0x7fb8ec7bc128&gt;
+matrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+<strong>*nb of selected spots in AssignHKL***</strong> 12
+UBOrientMatrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+For angular tolerance 0.20 deg
+Nb of pairs found / nb total of expected spots: 12/177
+Matching Rate : 6.78
+Nb missing reflections: 165
+
+grain #0 : 12 links to simulated spots have been found
+GoodRefinement condition is  True
+nb_updates 12 compared to 6
+
+---------------------------------------------
+indexing completed for grain #0 with matching rate 6.78
+---------------------------------------------
+
+transform matrix to matrix with lowest Euler Angles
+start
+ [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+final
+ [[ 0.97230572627369   0.211415207301911  0.091252946262469]
+ [-0.224552051799525  0.77573594328912   0.590041596352251]
+ [ 0.054088075690982 -0.594613709497768  0.803610914885283]]
+hkl [[2. 6. 4.]
+ [3. 3. 3.]
+ [5. 3. 3.]
+ [1. 3. 5.]
+ [6. 2. 4.]
+ [5. 1. 3.]
+ [1. 3. 3.]
+ [6. 4. 6.]
+ [4. 2. 6.]
+ [4. 2. 2.]
+ [3. 5. 3.]
+ [2. 2. 4.]]
+new hkl (min euler angles) [[-4. -2.  6.]
+ [-3. -3.  3.]
+ [-3. -5.  3.]
+ [-5. -1.  3.]
+ [-4. -6.  2.]
+ [-3. -5.  1.]
+ [-3. -1.  3.]
+ [-6. -6.  4.]
+ [-6. -4.  2.]
+ [-2. -4.  2.]
+ [-3. -3.  5.]
+ [-4. -2.  2.]]
+UB before [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+new UB (min euler angles) [[ 0.97230572627369   0.211415207301911  0.091252946262469]
+ [-0.224552051799525  0.77573594328912   0.590041596352251]
+ [ 0.054088075690982 -0.594613709497768  0.803610914885283]]
+writing fit file -------------------------
+for grainindex= 0
+self.dict_grain_matrix[grain_index] [[ 0.97230572627369   0.211415207301911  0.091252946262469]
+ [-0.224552051799525  0.77573594328912   0.590041596352251]
+ [ 0.054088075690982 -0.594613709497768  0.803610914885283]]
+self.refinedUBmatrix [[-0.211415207301911  0.091252946262469 -0.97230572627369 ]
+ [-0.77573594328912   0.590041596352251  0.224552051799525]
+ [ 0.594613709497768  0.803610914885283 -0.054088075690982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+new UBs matrix in q= UBs G (s for strain)
+strain_direct [[-1.339403716515974e-05 -4.138432477238585e-04  3.978226745502020e-04]
+ [-4.138432477238585e-04 -1.131375039302607e-03 -1.517818975573709e-04]
+ [ 3.978226745502020e-04 -1.517818975573709e-04  6.255721962393768e-04]]
+deviatoric strain [[ 0.000159671589578 -0.000413843247724  0.00039782267455 ]
+ [-0.000413843247724 -0.00095830941256  -0.000151781897557]
+ [ 0.00039782267455  -0.000151781897557  0.000798637822982]]
+For comparison: a,b,c are rescaled with respect to the reference value of a = 5.657500 Angstroms
+lattice_parameter_direct_strain [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+final lattice_parameters [ 5.657499999999999  5.651176877860324  5.661180703302433
+ 90.01741959362538  89.9544419036642   90.04747664598754 ]
+File : Ge0001_g0.fit written in /home/micha/LaueToolsPy3/LaueTools/notebooks
+Experimental experimental spots indices which are not indexed []
+Missing reflections grainindex is -100 for indexed grainindex 0
+within angular tolerance 0.500
+
+ Remaining nb of spots to index for grain #1 : 0
+
+12 spots have been indexed over 12
+indexing rate is --- : 100.0 percents
+indexation of short_Ge0001.cor is completed
+for the 1 grain(s) that has(ve) been indexed as requested
+Leaving Index and Refine procedures...
+</pre>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">index_grain_retrieve</span><span class="o">=</span><span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;number of indexed spots&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">DataSet</span><span class="o">.</span><span class="n">getallIndexedSpotsallData</span><span class="p">()[</span><span class="n">index_grain_retrieve</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">number</span> <span class="n">of</span> <span class="n">indexed</span> <span class="n">spots</span> <span class="mi">12</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="results-of-indexation-can-be-found-in-attributes-or-through-methods">
+<h2>Results of indexation can be found in attributes or through methods<a class="headerlink" href="#results-of-indexation-can-be-found-in-attributes-or-through-methods" title="Permalink to this headline">¶</a></h2>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spotsdata</span><span class="o">=</span><span class="n">DataSet</span><span class="o">.</span><span class="n">getSummaryallData</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;first 2 indexed spots properties</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#spot  #grain 2theta chi X Y I h k l Energy&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">spotsdata</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">first</span> <span class="mi">2</span> <span class="n">indexed</span> <span class="n">spots</span> <span class="n">properties</span>
+
+<span class="c1">#spot  #grain 2theta chi X Y I h k l Energy</span>
+<span class="p">[[</span> <span class="mf">0.000000000000000e+00</span>  <span class="mf">0.000000000000000e+00</span>  <span class="mf">6.035945800000000e+01</span>
+   <span class="mf">2.648319100000000e+01</span>  <span class="mf">6.261200000000000e+02</span>  <span class="mf">1.661280000000000e+03</span>
+   <span class="mf">1.582539000000000e+04</span> <span class="o">-</span><span class="mf">4.000000000000000e+00</span> <span class="o">-</span><span class="mf">2.000000000000000e+00</span>
+   <span class="mf">6.000000000000000e+00</span>  <span class="mf">1.632366988464985e+01</span><span class="p">]</span>
+ <span class="p">[</span> <span class="mf">1.000000000000000e+00</span>  <span class="mf">0.000000000000000e+00</span>  <span class="mf">7.821582100000001e+01</span>
+   <span class="mf">1.638153000000000e+00</span>  <span class="mf">1.027110000000000e+03</span>  <span class="mf">1.293280000000000e+03</span>
+   <span class="mf">7.093127000000000e+04</span> <span class="o">-</span><span class="mf">3.000000000000000e+00</span> <span class="o">-</span><span class="mf">3.000000000000000e+00</span>
+   <span class="mf">3.000000000000000e+00</span>  <span class="mf">9.031851548397370e+00</span><span class="p">]]</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#grain  : [Npairs = Nb pairs with tolerance angle </span><span class="si">%.4f</span><span class="s1">, 100*Npairs/Ndirections theo.]&#39;</span><span class="o">%</span><span class="n">dict_loop</span><span class="p">[</span><span class="s1">&#39;list matching tol angles&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">dict_grain_matching_rate</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#grain  : [Npairs = Nb pairs with tolerance angle 0.2000, 100*Npairs/Ndirections theo.]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mf">6.779661016949152</span><span class="p">]}</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#grain  : deviatoric strain&quot;</span><span class="p">)</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">dict_grain_devstrain</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#grain  : deviatoric strain</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">array</span><span class="p">([[</span> <span class="mf">0.000159671589578</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000413843247724</span><span class="p">,</span>  <span class="mf">0.00039782267455</span> <span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="mf">0.000413843247724</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00095830941256</span> <span class="p">,</span> <span class="o">-</span><span class="mf">0.000151781897557</span><span class="p">],</span>
+        <span class="p">[</span> <span class="mf">0.00039782267455</span> <span class="p">,</span> <span class="o">-</span><span class="mf">0.000151781897557</span><span class="p">,</span>  <span class="mf">0.000798637822982</span><span class="p">]])}</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#RefinedUB= DataSet.dict_grain_matrix</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#grain  : refined UB matrix&quot;</span><span class="p">)</span>
+<span class="n">DataSet</span><span class="o">.</span><span class="n">dict_grain_matrix</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#grain  : refined UB matrix</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">array</span><span class="p">([[</span> <span class="mf">0.97230572627369</span> <span class="p">,</span>  <span class="mf">0.211415207301911</span><span class="p">,</span>  <span class="mf">0.091252946262469</span><span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="mf">0.224552051799525</span><span class="p">,</span>  <span class="mf">0.77573594328912</span> <span class="p">,</span>  <span class="mf">0.590041596352251</span><span class="p">],</span>
+        <span class="p">[</span> <span class="mf">0.054088075690982</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.594613709497768</span><span class="p">,</span>  <span class="mf">0.803610914885283</span><span class="p">]])}</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">([</span><span class="n">DataSet</span><span class="o">.</span><span class="n">indexed_spots_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">60.359458</span><span class="p">,</span> <span class="mf">26.483191</span><span class="p">,</span> <span class="mf">626.12</span><span class="p">,</span> <span class="mf">1661.28</span><span class="p">,</span> <span class="mf">15825.39</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">4.</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.</span><span class="p">,</span>  <span class="mf">6.</span><span class="p">]),</span> <span class="mf">16.323669884649853</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">78.215821</span><span class="p">,</span> <span class="mf">1.638153</span><span class="p">,</span> <span class="mf">1027.11</span><span class="p">,</span> <span class="mf">1293.28</span><span class="p">,</span> <span class="mf">70931.27</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.</span><span class="p">,</span>  <span class="mf">3.</span><span class="p">]),</span> <span class="mf">9.03185154839737</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">68.680451</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.358122</span><span class="p">,</span> <span class="mf">1288.11</span><span class="p">,</span> <span class="mf">1460.16</span><span class="p">,</span> <span class="mf">22795.07</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.</span><span class="p">,</span>  <span class="mf">3.</span><span class="p">]),</span> <span class="mf">12.73794897550435</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">108.452917</span><span class="p">,</span> <span class="mf">37.749461</span><span class="p">,</span> <span class="mf">383.77</span><span class="p">,</span> <span class="mf">754.58</span><span class="p">,</span> <span class="mf">4400.61</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">5.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span>  <span class="mf">3.</span><span class="p">]),</span> <span class="mf">7.989738078276174</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mf">83.349535</span><span class="p">,</span> <span class="o">-</span><span class="mf">27.458061</span><span class="p">,</span> <span class="mf">1497.4</span><span class="p">,</span> <span class="mf">1224.7</span><span class="p">,</span> <span class="mf">13145.99</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">4.</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.</span><span class="p">,</span>  <span class="mf">2.</span><span class="p">]),</span> <span class="mf">12.327936233758937</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">82.072076</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.89243</span><span class="p">,</span> <span class="mf">1672.67</span><span class="p">,</span> <span class="mf">1258.62</span><span class="p">,</span> <span class="mf">13318.81</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.</span><span class="p">,</span>  <span class="mf">1.</span><span class="p">]),</span> <span class="mf">9.870774398536632</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mf">81.771257</span><span class="p">,</span> <span class="mf">30.38247</span><span class="p">,</span> <span class="mf">548.25</span><span class="p">,</span> <span class="mf">1260.32</span><span class="p">,</span> <span class="mf">6137.87</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span>  <span class="mf">3.</span><span class="p">]),</span> <span class="mf">7.2986772558942405</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mf">91.798221</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.309941</span><span class="p">,</span> <span class="mf">1176.09</span><span class="p">,</span> <span class="mf">1086.19</span><span class="p">,</span> <span class="mf">11799.93</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">6.</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.</span><span class="p">,</span>  <span class="mf">4.</span><span class="p">]),</span> <span class="mf">14.309911950813975</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mf">120.59561</span><span class="p">,</span> <span class="o">-</span><span class="mf">8.92066</span><span class="p">,</span> <span class="mf">1183.27</span><span class="p">,</span> <span class="mf">598.92</span><span class="p">,</span> <span class="mf">17182.88</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">6.</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.</span><span class="p">,</span>  <span class="mf">2.</span><span class="p">]),</span> <span class="mf">9.435284238042113</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mf">64.329767</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.824155</span><span class="p">,</span> <span class="mf">1379.17</span><span class="p">,</span> <span class="mf">1553.58</span><span class="p">,</span> <span class="mf">51933.84</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.</span><span class="p">,</span>  <span class="mf">2.</span><span class="p">]),</span> <span class="mf">10.087272916663885</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

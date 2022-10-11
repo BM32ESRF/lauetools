@@ -1,0 +1,17 @@
+{
+ "specFile": "/home/renversa/Research/data/nov17_kirchlechner/spec/laue.12Nov17",
+ "scanNumber": 115,
+ "imageFolder": "/home/renversa/Research/data/nov17_kirchlechner/data/sunday/tomo1/line2",
+ "imageOffset": 1000,
+ "imagePrefix": "CuSxx1_N8_line2_",
+ "imageDigits": 4, 
+ "wireTrajAngle": 0.0, 
+ "CCDType": "sCMOS_fliplr",
+ "wire": ["W", "W"],
+ "monitor": "detector",
+ "monitorROI": [1024, 1965, 80, 15],
+ "imageFirstIndex": 0, 
+ "monitorOffset": 10000,
+ "scanCmd": [], 
+ "detCalib": "/home/renversa/Research/data/nov17_kirchlechner/data/Ge/cu_kirchlecher_Ge.det"
+}

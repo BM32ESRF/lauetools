@@ -1,0 +1,58 @@
+.. _FileSeries:
+
+*********************************
+FileSeries GUIs to analyse a set of Laue images
+*********************************
+
+This part is still in development and aims at providing software tools to perform peaksearch, index and refine, and plot results.
+
+==============================
+Peak_Search GUI
+=============================
+
+==============================
+Index_Refine GUI
+=============================
+
+==============================
+Build_Summary GUI
+=============================
+
+==============================
+Plot_Maps GUI
+=============================
+
+===================================================================================
+Module function description: 
+========================================================================================
+
+The next documentation comes from the docstring in the header of function or class definition.
+
+Peak_Search
+--------------------
+
+
+
+.. automodule:: FileSeries.Peak_Search
+   :members:
+
+Index_Refine
+--------------------
+
+
+
+.. automodule:: FileSeries.Index_Refine
+   :members:
+
+Build_Summary
+--------------------
+
+
+
+.. automodule:: FileSeries.Build_Summary
+   :members:
+
+
+
+
+

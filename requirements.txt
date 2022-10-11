@@ -1,0 +1,12 @@
+fabio==0.8.0
+h5py==2.7.1
+imageio==2.3.0
+matplotlib==2.2.2
+networkx==2.1
+numpy==1.14.3
+scikit-image==0.13.1
+scipy==1.1.0
+#tables==3.4.3
+#ViTables==3.0.0
+#wxPython==4.0.1
+

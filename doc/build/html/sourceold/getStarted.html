@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting started &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Getting started</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/sourceold/getStarted.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="launch-graphical-user-interfaces-of-lauetools">
+<h2>Launch Graphical User Interfaces of LaueTools<a class="headerlink" href="#launch-graphical-user-interfaces-of-lauetools" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>start Lauetools GUIs from command line&nbsp;:</li>
+</ul>
+<p>To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter as following</p>
+<blockquote>
+<div><p>Examples:</p>
+<ul class="simple">
+<li>python -m LaueTools.LaueToolsGUI</li>
+<li>python -m LaueTools.GUI.LaueSimulatorGUI</li>
+<li>python -m LaueTools.GUI.PeaksearchGUI</li>
+</ul>
+</div></blockquote>
+<p>The first main GUI, LaueToolsGUI can open also the two last GUIs (LaueSimulatorGUI, PeaksearchGUI)</p>
+<p>There are additional basic GUIs for batch processing located in FileSeries folder:</p>
+<blockquote>
+<div><ul class="simple">
+<li>python -m LaueTools.FileSeries.Peak_Search</li>
+<li>python -m LaueTools.FileSeries.Index_Refine</li>
+<li>python -m LaueTools.FileSeries.Build_summary</li>
+<li>python -m LaueTools.FileSeries.Plot_Maps2</li>
+</ul>
+</div></blockquote>
+<ul>
+<li><p class="first">within interactive python (say, ipython -i), GUI can be started thanks to a start() function:</p>
+<blockquote>
+<div><ul class="simple">
+<li>In [1]&nbsp;: import LaueTools.LaueToolsGUI as LTGUI</li>
+<li>In [2]&nbsp;: LTGUI.start()</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>in the LaueTools folder&nbsp;:</p>
+<ul class="last simple">
+<li>neither &gt; python LaueToolsGUI</li>
+<li>nor in &gt;ipython -i&nbsp;:  &gt; run LaueToolsGUI  will work…</li>
+</ul>
+</div>
+<div class="section" id="use-lauetools-module-as-a-library">
+<h3>Use LaueTools module as a library<a class="headerlink" href="#use-lauetools-module-as-a-library" title="Permalink to this headline">¶</a></h3>
+<p>With pip installation, LaueTools package will be included to python packages. Therefore any module will be callable as the following:</p>
+<blockquote>
+<div><p>-In [1]&nbsp;: import LaueTools.readmccd as rmccd</p>
+<p>-In [2] : rmccd.readCCDimage(‘myimage.tif’)</p>
+</div></blockquote>
+<p>In jupyter-notebook, it is also simple in the same manner:</p>
+<blockquote>
+<div><img alt="../_images/notebook0.jpg" src="../_images/notebook0.jpg" />
+</div></blockquote>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

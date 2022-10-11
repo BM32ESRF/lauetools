@@ -1,0 +1,1506 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Peak Search and Fit (readmccd.py) &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Peak Search and Fit (readmccd.py)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/PeakSearch.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="peak-search-and-fit-readmccd-py">
+<h1>Peak Search and Fit (readmccd.py)<a class="headerlink" href="#peak-search-and-fit-readmccd-py" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-functions">
+<h2>Module functions<a class="headerlink" href="#module-functions" title="Permalink to this headline">¶</a></h2>
+<p>The next documentation comes from the docstring in the header of function or class definition.</p>
+<div class="section" id="module-LaueTools.readmccd">
+<span id="readmccd-py"></span><h3>readmccd.py<a class="headerlink" href="#module-LaueTools.readmccd" title="Permalink to this headline">¶</a></h3>
+<p>readmccd module is made for reading data contained in binary image file
+fully or partially.
+It can process a peak or blob search by various methods
+and refine the peak by a gaussian or lorentzian 2D model</p>
+<p>More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
+March 2020</p>
+<dl class="function">
+<dt id="LaueTools.readmccd.readoneimage_multiROIfit">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">readoneimage_multiROIfit</code><span class="sig-paren">(</span><em>filename</em>, <em>centers</em>, <em>boxsize</em>, <em>stackimageindex=-1</em>, <em>CCDLabel='PRINCETON'</em>, <em>baseline='auto'</em>, <em>startangles=0.0</em>, <em>start_sigma1=1.0</em>, <em>start_sigma2=1.0</em>, <em>position_start='max'</em>, <em>fitfunc='gaussian'</em>, <em>showfitresults=1</em>, <em>offsetposition=0</em>, <em>verbose=0</em>, <em>xtol=1e-08</em>, <em>addImax=False</em>, <em>use_data_corrected=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#readoneimage_multiROIfit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.readoneimage_multiROIfit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit several peaks in one image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> – string, full path to image file</li>
+<li><strong>centers</strong> – list or array like with shape=(n,2)
+list of centers of selected ROI</li>
+<li><strong>boxsize</strong> – (Truly HALF boxsize: fuill boxsize= 2(halfboxsize) +1), iterable 2 elements or integer
+boxsizes [in x, in y] direction or integer to set a square ROI</li>
+<li><strong>baseline</strong> – string, ‘auto’ (ie minimum intensity in ROI) or array of floats</li>
+<li><strong>startangles</strong> – float or iterable of 2 floats, elliptic gaussian angle (major axis with respect to X direction),
+one value or array of values</li>
+<li><strong>start_sigma2</strong> (<em>start_sigma1</em><em>,</em>) – floats, gaussian standard deviation (major and minor axis) in pixel,</li>
+<li><strong>position_start</strong> – string, starting gaussian center:’max’ (position of maximum intensity in ROI),
+“centers” (centre of each ROI)</li>
+<li><strong>offsetposition</strong> – integer, 0 for no offset, 1  XMAS compatible, since XMAS consider first pixel as index 1 (in array, index starts with 0), 2  fit2d, since fit2d for peaksearch put pixel labelled n at the position n+0.5 (between n and n+1)</li>
+<li><strong>use_data_corrected</strong> – tuple of 3 elements, Enter data instead of reading data from file:
+fulldata, framedim, fliprot
+where fulldata is a ndarray</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of results:   bkg,  amp  (gaussian height-bkg), X , Y, major axis standard deviation, minor axis standard deviation,
+major axis tilt angle / Ox</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">setting list of initial guesses can be improve with
+scipy.ndimages of a concatenate array of multiple slices?</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.fitPeakMultiROIs">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">fitPeakMultiROIs</code><span class="sig-paren">(</span><em>Data</em>, <em>centers</em>, <em>FittingParametersDict</em>, <em>showfitresults=True</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#fitPeakMultiROIs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.fitPeakMultiROIs" title="Permalink to this definition">¶</a></dt>
+<dd><p>refine all peaks  guessed to be at center of several ROIs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Data</strong> – list of Data array centered on peaks</li>
+<li><strong>centers</strong> – list of pixels (x,y) positions of ROI centers</li>
+<li><strong>FittingParametersDict</strong> – dict of fitting parameters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">RES_params, RES_cov, RES_infodict, RES_errmsg, start_baseline
+which are all list of refinement results</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.getIntegratedIntensities">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">getIntegratedIntensities</code><span class="sig-paren">(</span><em>fullpathimagefile</em>, <em>list_centers</em>, <em>boxsize</em>, <em>CCDLabel='MARCCD165'</em>, <em>thresholdlevel=0.2</em>, <em>flipxycenter=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#getIntegratedIntensities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.getIntegratedIntensities" title="Permalink to this definition">¶</a></dt>
+<dd><p>read binary image file and compute integrated intensities of peaks
+whose center is given in list_centers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">array whose columns are:
+- integrated intensity
+- absolute minimum intensity threshold
+- nb of pixels composing the peak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.writepeaklist">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">writepeaklist</code><span class="sig-paren">(</span><em>tabpeaks</em>, <em>output_filename</em>, <em>outputfolder=None</em>, <em>comments=None</em>, <em>initialfilename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#writepeaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.writepeaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>write peaks properties and comments in file with extension .dat added</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.fitoneimage_manypeaks">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">fitoneimage_manypeaks</code><span class="sig-paren">(</span><em>filename</em>, <em>peaklist</em>, <em>boxsize</em>, <em>stackimageindex=-1</em>, <em>CCDLabel='PRINCETON'</em>, <em>dirname=None</em>, <em>position_start='max'</em>, <em>type_of_function='gaussian'</em>, <em>guessed_peaksize=(1.0</em>, <em>1.0)</em>, <em>xtol=0.001</em>, <em>FitPixelDev=2.0</em>, <em>Ipixmax=None</em>, <em>MaxIntensity=100000000000</em>, <em>MinIntensity=0</em>, <em>PeakSizeRange=(0</em>, <em>200)</em>, <em>verbose=0</em>, <em>position_definition=1</em>, <em>NumberMaxofFits=500</em>, <em>ComputeIpixmax=False</em>, <em>use_data_corrected=None</em>, <em>reject_negative_baseline=True</em>, <em>purgeDuplicates=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#fitoneimage_manypeaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.fitoneimage_manypeaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit multiple ROI data to get peaks position in a single image</p>
+<p>Ipixmax  :  highest intensity above background in every ROI centered on element of peaklist</p>
+<dl class="docutils">
+<dt>use_data_corrected <span class="classifier-delimiter">:</span> <span class="classifier">enter data instead of reading data from file</span></dt>
+<dd>must be a tuple of 3 elements:
+fulldata, framedim, fliprot
+where fulldata is an ndarray</dd>
+</dl>
+<p>purgeDuplicates    : True   remove duplicates that are close within pixel distance of ‘boxsize’ and keep the most intense peak</p>
+<dl class="docutils">
+<dt>use_data_corrected <span class="classifier-delimiter">:</span> <span class="classifier">enter data instead of reading data from file</span></dt>
+<dd>must be a tuple of 3 elements:
+fulldata, framedim, fliprot
+where fulldata  ndarray</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">used in PeakSearchGUI</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.PeakSearch">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">PeakSearch</code><span class="sig-paren">(</span><em>filename</em>, <em>stackimageindex=-1</em>, <em>CCDLabel='PRINCETON'</em>, <em>center=None</em>, <em>boxsizeROI=(200</em>, <em>200)</em>, <em>PixelNearRadius=5</em>, <em>removeedge=2</em>, <em>IntensityThreshold=400</em>, <em>thresholdConvolve=200</em>, <em>paramsHat=(4</em>, <em>5</em>, <em>2)</em>, <em>boxsize=15</em>, <em>verbose=0</em>, <em>position_definition=1</em>, <em>local_maxima_search_method=1</em>, <em>peakposition_definition='max'</em>, <em>fit_peaks_gaussian=1</em>, <em>xtol=1e-05</em>, <em>return_histo=1</em>, <em>FitPixelDev=25</em>, <em>write_execution_time=1</em>, <em>Saturation_value=65535</em>, <em>Saturation_value_flatpeak=65535</em>, <em>MinIntensity=0</em>, <em>PeakSizeRange=(0</em>, <em>200)</em>, <em>Data_for_localMaxima=None</em>, <em>Fit_with_Data_for_localMaxima=False</em>, <em>Remove_BlackListedPeaks_fromfile=None</em>, <em>maxPixelDistanceRejection=15.0</em>, <em>NumberMaxofFits=5000</em>, <em>reject_negative_baseline=True</em>, <em>formulaexpression='A-1.1*B'</em>, <em>listrois=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#PeakSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.PeakSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local intensity maxima as starting position for fittinng and return peaklist.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> – string, full path to image data file</li>
+<li><strong>stackimageindex</strong> – integer, index corresponding to the position of image data on a stacked images file
+if -1  means single image data w/o stacking</li>
+<li><strong>CCDLabel</strong> – string, label for CCD 2D detector used to read the image data file see dict_LaueTools.py</li>
+<li><strong>center</strong> – position</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">to be removed: position of the ROI center in CCD frame</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>boxsizeROI</strong> – dimensions of the ROI to crop the data array
+only used if center != None</li>
+<li><strong>boxsize</strong> – half length of the selected ROI array centered on each peak, used for:
+- fitting a peak
+- estimating the background around a peak
+- shifting array in second method of local maxima search (shifted arrays)</li>
+<li><strong>IntensityThreshold</strong> – integer, pixel intensity level above which potential peaks are kept for fitting position procedure. For local maxima method 0 and 1, this level is relative to zero intensity. For local maxima method 2, this level is relative to lowest intensity in the ROI (local background). Advice: start with high value, because if too high, few peaks are found (only the most important), and if too low, too many local maxima are found leading to time consuming fitting procedure.</li>
+<li><strong>thresholdConvolve</strong> – integer, pixel intensity level in convolved image above which potential peaks are kept for fitting position procedure. This threshold step on convolved image is applied prior to the local threshold step with IntensityThreshold on initial image (with respect to the local background)</li>
+<li><strong>paramsHat</strong> – mexican hat kernel parameters (see <code class="xref py py-func docutils literal notranslate"><span class="pre">LocalMaxima_ndimage()</span></code>)</li>
+<li><strong>PixelNearRadius</strong> – integer, pixel distance between two regions considered as peaks. Advice: start rather with a large value. If too low, there are very much peaks duplicates and this is very time consuming.</li>
+<li><strong>local_maxima_search_method</strong> – integer, Select method for find the local maxima, each of them will fitted
+- 0   extract all pixel above intensity threshold
+- 1   find pixels are highest than their neighbours in horizontal, vertica and diagonal direction (up to a given pixel distance)
+- 2   find local hot pixels which after numerical convolution give high intensity above threshold (thresholdConvolve) then threshold (IntensityThreshold) on raw data</li>
+<li><strong>peakposition_definition</strong> – ‘max’ or ‘center’  for local_maxima_search_method == 2 to assign to the blob position its hottest pixel position or its center (no weight)</li>
+<li><strong>Saturation_value_flatpeak</strong> – saturation value of detector for local maxima search method 1</li>
+<li><strong>Remove_BlackListedPeaks_fromfile</strong> – None or full file path to a peaklist file containing peaks
+that will be deleted in peak list resulting from
+the local maxima search procedure (prior to peak refinement)</li>
+<li><strong>maxPixelDistanceRejection</strong> – maximum distance between black listed peaks and current peaks
+(found by peak search) to be rejected</li>
+<li><strong>NumberMaxofFits</strong> – highest acceptable number of local maxima peak to be refined with a 2D modelPeakSearch</li>
+<li><strong>fit_peaks_gaussian</strong> – <ul>
+<li>0  no position and shape refinement procedure performed from local maxima (or blob) result</li>
+<li>1  2D gaussian peak refinement</li>
+<li>2  2D lorentzian peak refinement</li>
+</ul>
+</li>
+<li><strong>xtol</strong> – relative error on solution (x vector)  see args for leastsq in scipy.optimize</li>
+<li><strong>FitPixelDev</strong> – largest pixel distance between initial (from local maxima search)
+and refined peak position</li>
+<li><strong>position_definition</strong> – due to various conventional habits when reading array, add some offset to fitdata XMAS or fit2d peak search values:
+- 0    no offset (python numpy convention)
+- 1   XMAS offset
+- 2   fit2d offset</li>
+<li><strong>return_histo</strong> – 0   3 output elements
+: 1   4 elemts, last one is histogram of data
+: 2   4 elemts, last one is the nb of raw blob found after convolution and threshold</li>
+<li><strong>Data_for_localMaxima</strong> – <dl class="docutils">
+<dt>object to be used only for initial step of finding local maxima (blobs) search</dt>
+<dd>(and not necessarly for peaks fitting procedure):</dd>
+</dl>
+<ul>
+<li>ndarray     = array data</li>
+<li>’auto_background’  = calculate and remove background computed from image data itself (read in file ‘filename’)</li>
+<li>path to image file (string)  = B image to be used in a mathematical operation with Ato current image</li>
+</ul>
+</li>
+<li><strong>Fit_with_Data_for_localMaxima</strong> – use ‘Data_for_localMaxima’ object as image when refining peaks position and shape
+with initial peak position guess from local maxima search</li>
+<li><strong>formulaexpression</strong> – string containing A (raw data array image) and B (other data array image)
+expressing mathematical operation,e.g:
+‘A-3.2*B+10000’
+for simple background substraction (with B as background data):
+‘A-B’ or ‘A-alpha*B’ with alpha &gt; 1.</li>
+<li><strong>reject_negative_baseline</strong> – True  reject refined peak result if intensity baseline (local background) is negative
+(2D model is maybe not suitable)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>peak list sorted by decreasing (integrated intensity - fitted bkg)</li>
+</ul>
+<p>-peak_X,peak_Y,peak_I,peak_fwaxmaj,peak_fwaxmin,peak_inclination,Xdev,Ydev,peak_bkg</p>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>for fit_peaks_gaussian == 0 (no fitdata) and local_maxima_search_method==2 (convolution)</dt>
+<dd>if peakposition_definition =’max’ then X,Y,I are from the hottest pixels
+if peakposition_definition =’center’ then X,Y are blob center and I the hottest blob pixel</dd>
+</dl>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">nb of output elements depends on ‘return_histo’ argument</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.peaksearch_on_Image">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">peaksearch_on_Image</code><span class="sig-paren">(</span><em>filename_in</em>, <em>pspfile</em>, <em>background_flag='no'</em>, <em>blacklistpeaklist=None</em>, <em>dictPeakSearch={}</em>, <em>CCDLabel='MARCCD165'</em>, <em>outputfilename=None</em>, <em>psdict_Convolve={'Data_for_localMaxima': 'auto_background'</em>, <em>'FitPixelDev': 2.0</em>, <em>'IntensityThreshold': 10</em>, <em>'NumberMaxofFits': 5000</em>, <em>'PixelNearRadius': 10</em>, <em>'boxsize': 15</em>, <em>'fit_peaks_gaussian': 1</em>, <em>'local_maxima_search_method': 2</em>, <em>'position_definition': 1</em>, <em>'removeedge': 2</em>, <em>'return_histo': 0</em>, <em>'thresholdConvolve': 500</em>, <em>'verbose': 0</em>, <em>'write_execution_time': 0</em>, <em>'xtol': 0.001}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#peaksearch_on_Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.peaksearch_on_Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a peaksearch by using .psp file</p>
+<p># still not very used and checked?
+# missing dictPeakSearch   as function argument for formulaexpression  or dict_param??</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.savePeakSearchConfigFile">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">savePeakSearchConfigFile</code><span class="sig-paren">(</span><em>dict_param</em>, <em>outputfilename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#savePeakSearchConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.savePeakSearchConfigFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>save peak search parameters in .psp file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.readPeakSearchConfigFile">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">readPeakSearchConfigFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#readPeakSearchConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.readPeakSearchConfigFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>read peak search parameters in .psp file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.read_background_flag">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">read_background_flag</code><span class="sig-paren">(</span><em>background_flag</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#read_background_flag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.read_background_flag" title="Permalink to this definition">¶</a></dt>
+<dd><p>interpret the background flag (field used in FileSeries/Peak_Search.py)</p>
+<p>return two values to put in dict_param of peaksearch_series</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.peaksearch_fileseries">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">peaksearch_fileseries</code><span class="sig-paren">(</span><em>fileindexrange</em>, <em>filenameprefix</em>, <em>suffix=''</em>, <em>nbdigits=4</em>, <em>dirname_in='/home/micha/LaueProjects/AxelUO2'</em>, <em>outputname=None</em>, <em>dirname_out=None</em>, <em>CCDLABEL='MARCCD165'</em>, <em>KF_DIRECTION='Z&gt;0'</em>, <em>dictPeakSearch=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#peaksearch_fileseries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.peaksearch_fileseries" title="Permalink to this definition">¶</a></dt>
+<dd><p>peaksearch function to be called for multi or single processing</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.peaksearch_multiprocessing">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">peaksearch_multiprocessing</code><span class="sig-paren">(</span><em>fileindexrange</em>, <em>filenameprefix</em>, <em>suffix=''</em>, <em>nbdigits=4</em>, <em>dirname_in='/home/micha/LaueProjects/AxelUO2'</em>, <em>outputname=None</em>, <em>dirname_out=None</em>, <em>CCDLABEL='MARCCD165'</em>, <em>KF_DIRECTION='Z&gt;0'</em>, <em>dictPeakSearch=None</em>, <em>nb_of_cpu=2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#peaksearch_multiprocessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.peaksearch_multiprocessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch several processes in parallel</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.purgePeaksListFile">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">purgePeaksListFile</code><span class="sig-paren">(</span><em>filename1</em>, <em>blacklisted_XY</em>, <em>dist_tolerance=0.5</em>, <em>dirname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#purgePeaksListFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.purgePeaksListFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove in peaklist .dat file peaks that are in blacklist</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>blacklisted_XY</strong> – [X1,Y1],[X2,Y2]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.write_PurgedPeakListFile">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">write_PurgedPeakListFile</code><span class="sig-paren">(</span><em>filename1</em>, <em>blacklisted_XY</em>, <em>outputfilename</em>, <em>dist_tolerance=0.5</em>, <em>dirname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#write_PurgedPeakListFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.write_PurgedPeakListFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>write a new .dat file where peaks in blacklist are omitted</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.removePeaks_inPeakList">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">removePeaks_inPeakList</code><span class="sig-paren">(</span><em>PeakListfilename</em>, <em>BlackListed_PeakListfilename</em>, <em>outputfilename</em>, <em>dist_tolerance=0.5</em>, <em>dirname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#removePeaks_inPeakList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.removePeaks_inPeakList" title="Permalink to this definition">¶</a></dt>
+<dd><p>read peaks PeakListfilename and remove those in BlackListed_PeakListfilename
+and write a new peak list file</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Not used ??</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.merge_2Peaklist">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">merge_2Peaklist</code><span class="sig-paren">(</span><em>filename1</em>, <em>filename2</em>, <em>dist_tolerance=5</em>, <em>dirname1=None</em>, <em>dirname2=None</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#merge_2Peaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.merge_2Peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>return merge spots data from two peaklists and removed duplicates within dist_tolerance (pixel)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.readmccd.writefile_mergedPeaklist">
+<code class="descclassname">LaueTools.readmccd.</code><code class="descname">writefile_mergedPeaklist</code><span class="sig-paren">(</span><em>filename1</em>, <em>filename2</em>, <em>outputfilename</em>, <em>dist_tolerance=5</em>, <em>dirname1=None</em>, <em>dirname2=None</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/readmccd.html#writefile_mergedPeaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.readmccd.writefile_mergedPeaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>write peaklist file from the merge of spots data from two peaklists
+(and removed duplicates within dist_tolerance (pixel))</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-LaueTools.IOimagefile">
+<span id="ioimagefile-py"></span><h3>IOimagefile.py<a class="headerlink" href="#module-LaueTools.IOimagefile" title="Permalink to this headline">¶</a></h3>
+<p>IOimagefile module is made for reading data contained in binary image file
+fully or partially.</p>
+<p>More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
+March 2020</p>
+<dl class="function">
+<dt id="LaueTools.IOimagefile.stringint">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">stringint</code><span class="sig-paren">(</span><em>k</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#stringint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.stringint" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns string of integer k with n zeros padding
+(by placing zeros before to have n characters)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>k</strong> – integer to convert</li>
+<li><strong>n</strong> – nb of digits for zero padding</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">string of length n containing integer k</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example: 1 -&gt; ‘0001’
+15 -&gt; ‘0015’</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.setfilename">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">setfilename</code><span class="sig-paren">(</span><em>imagefilename</em>, <em>imageindex</em>, <em>nbdigits=4</em>, <em>CCDLabel=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#setfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.setfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>reconstruct filename string from imagefilename and update filename index with imageindex</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>imagefilename</strong> – filename string (full path or not)</li>
+<li><strong>imageindex</strong> (<em>string</em>) – index in filename</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return filename:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first">input filename with index replaced by input imageindex</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">string</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.getIndex_fromfilename">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">getIndex_fromfilename</code><span class="sig-paren">(</span><em>imagefilename</em>, <em>nbdigits=4</em>, <em>CCDLabel=None</em>, <em>stackimageindex=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#getIndex_fromfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.getIndex_fromfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>get integer index from imagefilename string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>imagefilename</strong> – filename string (full path or not)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">file index</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.getfilename">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">getfilename</code><span class="sig-paren">(</span><em>dirname</em>, <em>imfileprefix</em>, <em>imfilesuffix=None</em>, <em>numim=None</em>, <em>nbdigits_filename=4</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#getfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.getfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>to get the global file name (name+path) for given components of the name
+put %4d instead of stringint</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.getwildcardstring">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">getwildcardstring</code><span class="sig-paren">(</span><em>CCDlabel</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#getwildcardstring"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.getwildcardstring" title="Permalink to this definition">¶</a></dt>
+<dd><p>return smart wildcard to open binary CCD image file with priority of CCD type of CCDlabel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>CCDlabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – string label defining the CCD type</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">string from concatenated strings to be used in wxpython open file dialog box</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.getpixelValue">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">getpixelValue</code><span class="sig-paren">(</span><em>filename</em>, <em>x</em>, <em>y</em>, <em>ccdtypegeometry='edf'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#getpixelValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.getpixelValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>return pixel value at x,y</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Very old function. To be checked. Use better readpixelvalue in plotdip.py</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – path to image file</li>
+<li><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – x pixel value</li>
+<li><strong>y</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – y pixel value</li>
+<li><strong>ccdtypegeometry</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – CCD label, defaults to “edf”</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pixel intensity</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)">int</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readheader">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readheader</code><span class="sig-paren">(</span><em>filename</em>, <em>offset=4096</em>, <em>CCDLabel='MARCCD165'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readheader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readheader" title="Permalink to this definition">¶</a></dt>
+<dd><p>return header in a raw format</p>
+<p>default offset for marccd image</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.read_header_marccd">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">read_header_marccd</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#read_header_marccd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.read_header_marccd" title="Permalink to this definition">¶</a></dt>
+<dd><p>return string of parameters found in header in marccd image file .mccd</p>
+<ul class="simple">
+<li>print allsentences  displays the header</li>
+<li>use allsentences.split(‘n’) to get a list</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.read_header_marccd2">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">read_header_marccd2</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#read_header_marccd2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.read_header_marccd2" title="Permalink to this definition">¶</a></dt>
+<dd><p>return string of parameters comments and exposure time
+found in header in marccd image file .mccd</p>
+<ul class="simple">
+<li>print allsentences  displays the header</li>
+<li>use allsentences.split(‘n’) to get a list</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.read_header_scmos">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">read_header_scmos</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#read_header_scmos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.read_header_scmos" title="Permalink to this definition">¶</a></dt>
+<dd><p>return string of parameters comments and exposure time
+found in header in scmis image file .tif</p>
+<ul class="simple">
+<li>print allsentences  displays the header</li>
+<li>use allsentences.split(‘n’) to get a list</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.read_motorsposition_fromheader">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">read_motorsposition_fromheader</code><span class="sig-paren">(</span><em>filename</em>, <em>CCDLabel='MARCCD165'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#read_motorsposition_fromheader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.read_motorsposition_fromheader" title="Permalink to this definition">¶</a></dt>
+<dd><p>return xyzpositions, expo_time from image file header
+available for “MARCCD165”, “sCMOS”, “sCMOS_fliplr”</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage_full">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage_full</code><span class="sig-paren">(</span><em>filename</em>, <em>frametype='mccd'</em>, <em>dirname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage_full"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage_full" title="Permalink to this definition">¶</a></dt>
+<dd><p>too SLOW!
+reads 1 entire image (marCCD format)
+:return: PILimage, image object of PIL module (16 bits integer) and
+arrayofdata: 2D array of intensity
+#TODO: manage framedim like readoneimage() just below</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readCCDimage">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readCCDimage</code><span class="sig-paren">(</span><em>filename</em>, <em>CCDLabel='MARCCD165'</em>, <em>dirname=None</em>, <em>stackimageindex=-1</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readCCDimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readCCDimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read raw data binary image file.</p>
+<p>Read raw data binary image file and return pixel intensity 2D array such as
+to fit the data (2theta, chi) scattering angles representation convention.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – path to image file (fullpath if ` dirname` =None)</li>
+<li><strong>CCDLabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – label, defaults to “MARCCD165”</li>
+<li><strong>dirname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – folder path, defaults to None</li>
+<li><strong>stackimageindex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em>) – index of images bunch, defaults to -1</li>
+<li><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em>) – 0 or 1, defaults to 0</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – if data format and CCD parameters from label are not compatible</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
+<li>dataimage, 2D array image data pixel intensity properly oriented</li>
+<li>framedim, iterable of 2 integers shape of dataimage</li>
+<li>fliprot : string, key for CCD frame transform to orient image</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple of 3 elements</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage</code><span class="sig-paren">(</span><em>filename</em>, <em>framedim=(2048</em>, <em>2048)</em>, <em>dirname=None</em>, <em>offset=4096</em>, <em>formatdata='uint16'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a 1d array of integers from a binary image file (full data)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – image file name (full path if dirname=0)</li>
+<li><strong>framedim</strong> (<em>tuple of 2 integers</em><em>, </em><em>optional</em>) – detector dimensions, defaults to (2048, 2048)</li>
+<li><strong>dirname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – folder path, defaults to None</li>
+<li><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em>) – file header in byte (octet), defaults to 4096</li>
+<li><strong>formatdata</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – numpy format of raw binary image pixel value, defaults to “uint16”</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dataimage : image data pixel intensity</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">1D array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage_band">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage_band</code><span class="sig-paren">(</span><em>filename</em>, <em>framedim=(2048</em>, <em>2048)</em>, <em>dirname=None</em>, <em>offset=4096</em>, <em>line_startindex=0</em>, <em>line_finalindex=2047</em>, <em>formatdata='uint16'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage_band"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage_band" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a 1d array of integers from a binary image file. Data located in band according shape of data (framedim)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> – string
+path to image file (fullpath if <a href="#id1"><span class="problematic" id="id2">`</span></a>dirname`=None)</li>
+<li><strong>offset</strong> – integer
+nb of file header bytes</li>
+<li><strong>framedim</strong> – iterable of 2 integers
+shape of expected 2D data</li>
+<li><strong>formatdata</strong> – string
+key for numpy dtype to decode binary file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dataimage, 1D array, image data pixel intensity</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage_crop_fast">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage_crop_fast</code><span class="sig-paren">(</span><em>filename</em>, <em>dirname=None</em>, <em>CCDLabel='MARCCD165'</em>, <em>firstElemIndex=0</em>, <em>lastElemIndex=2047</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage_crop_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage_crop_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 2d array of integers from a binary image file. Data are taken only from a rectangle</p>
+<p>with respect to firstElemIndex and lastElemIndex.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> – string, path to image file (fullpath if ` dirname`=None)</li>
+<li><strong>offset</strong> – integer, nb of file header bytes</li>
+<li><strong>framedim</strong> – iterable of 2 integers, shape of expected 2D data</li>
+<li><strong>formatdata</strong> – string, key for numpy dtype to decode binary file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dataimage : 1D array image data pixel intensity</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readrectangle_in_image">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readrectangle_in_image</code><span class="sig-paren">(</span><em>filename</em>, <em>pixx</em>, <em>pixy</em>, <em>halfboxx</em>, <em>halfboxy</em>, <em>dirname=None</em>, <em>CCDLabel='MARCCD165'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readrectangle_in_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readrectangle_in_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
+centered on pixx, pixy</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataimage : 2D array, image data pixel intensity</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage_crop">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage_crop</code><span class="sig-paren">(</span><em>filename</em>, <em>center</em>, <em>halfboxsize</em>, <em>CCDLabel='PRINCETON'</em>, <em>dirname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage_crop" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a cropped array of data read in an image file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> – string, path to image file (fullpath if ` dirname`=None)</li>
+<li><strong>center</strong> – iterable of 2 integers, (x,y) pixel coordinates</li>
+<li><strong>halfboxsize</strong> – integer or iterable of 2 integers, ROI half size in both directions</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dataimage : 1D array, image data pixel intensity</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-2">
+<p class="first admonition-title">Todo</p>
+<p class="last">useless?</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.readoneimage_manycrops">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">readoneimage_manycrops</code><span class="sig-paren">(</span><em>filename</em>, <em>centers</em>, <em>boxsize</em>, <em>stackimageindex=-1</em>, <em>CCDLabel='MARCCD165'</em>, <em>addImax=False</em>, <em>use_data_corrected=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#readoneimage_manycrops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.readoneimage_manycrops" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads 1 image and extract many regions
+centered on center_pixel with xyboxsize dimensions in pixel unit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> – string,fullpath to image file</li>
+<li><strong>centers</strong> – list or array of [int,int] centers (x,y) pixel coordinates</li>
+<li><strong>use_data_corrected</strong> – enter data instead of reading data from file
+must be a tuple of 3 elements:
+fulldata, framedim, fliprot
+where fulldata is a numpy.ndarray
+as output by <a class="reference internal" href="#LaueTools.IOimagefile.readCCDimage" title="LaueTools.IOimagefile.readCCDimage"><code class="xref py py-func docutils literal notranslate"><span class="pre">readCCDimage()</span></code></a></li>
+<li><strong>boxsize</strong> – iterable 2 elements or integer
+boxsizes [in x, in y] direction or integer to set a square ROI</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Data, list of 2D array pixel intensity or Data and Imax</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.writeimage">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">writeimage</code><span class="sig-paren">(</span><em>outputname</em>, <em>_header</em>, <em>data</em>, <em>dataformat=&lt;class 'numpy.uint16'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#writeimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.writeimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>from data 1d array of integers
+with header coming from a f.open(‘imagefile’); f.read(headersize);f.close()
+.. warning:: header contain dimensions for subsequent data. Check before the compatibility of
+data with header infos(nb of byte per pixel and array dimensions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.write_rawbinary">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">write_rawbinary</code><span class="sig-paren">(</span><em>outputname</em>, <em>data</em>, <em>dataformat=&lt;class 'numpy.uint16'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#write_rawbinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.write_rawbinary" title="Permalink to this definition">¶</a></dt>
+<dd><p>write a binary file without header of a 2D array</p>
+<p>used ?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.SumImages">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">SumImages</code><span class="sig-paren">(</span><em>prefixname</em>, <em>suffixname</em>, <em>ind_start</em>, <em>ind_end</em>, <em>dirname=None</em>, <em>plot=0</em>, <em>output_filename=None</em>, <em>CCDLabel=None</em>, <em>nbdigits=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#SumImages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.SumImages" title="Permalink to this definition">¶</a></dt>
+<dd><p>sum images and write image with 32 bits per pixel format (4 bytes)</p>
+<p>used?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.Add_Images2">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">Add_Images2</code><span class="sig-paren">(</span><em>prefixname</em>, <em>ind_start</em>, <em>ind_end</em>, <em>plot=0</em>, <em>writefilename=None</em>, <em>CCDLabel='MARCCD165'</em>, <em>average=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#Add_Images2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.Add_Images2" title="Permalink to this definition">¶</a></dt>
+<dd><p>in dev</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.Add_Images">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">Add_Images</code><span class="sig-paren">(</span><em>prefixname</em>, <em>ind_start</em>, <em>ind_end</em>, <em>plot=0</em>, <em>writefilename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#Add_Images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.Add_Images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add continuous sequence of images</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Add_Images2 exists</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>prefixname</strong> – string, prefix common part of name of files</li>
+<li><strong>ind_start</strong> – int, starting image index</li>
+<li><strong>ind_end</strong> – int, final image index</li>
+<li><strong>writefilename</strong> – string, new image filename where to write datastart (with last image file header read)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">datastart, array accumulation of 2D data from each image</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.IOimagefile.get_imagesize">
+<code class="descclassname">LaueTools.IOimagefile.</code><code class="descname">get_imagesize</code><span class="sig-paren">(</span><em>framedim</em>, <em>nbbits_per_pixel</em>, <em>headersize_bytes</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/IOimagefile.html#get_imagesize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.IOimagefile.get_imagesize" title="Permalink to this definition">¶</a></dt>
+<dd><p>return size of image in byte (= 1 octet = 8 bits)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-LaueTools.imageprocessing">
+<span id="imageprocessing-py"></span><h3>imageprocessing.py<a class="headerlink" href="#module-LaueTools.imageprocessing" title="Permalink to this headline">¶</a></h3>
+<p>imageprocessing module is made to modify filter data array</p>
+<p>More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
+March 2020</p>
+<dl class="function">
+<dt id="LaueTools.imageprocessing.getindices2cropArray">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">getindices2cropArray</code><span class="sig-paren">(</span><em>center</em>, <em>halfboxsizeROI</em>, <em>arrayshape</em>, <em>flipxycenter=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#getindices2cropArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.getindices2cropArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>return array indices limits to crop array data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>center</strong> – iterable of 2 elements
+(x,y) pixel center of the ROI</li>
+<li><strong>halfboxsizeROI</strong> – integer or iterable of 2 elements
+half boxsize ROI in two dimensions</li>
+<li><strong>arrayshape</strong> – iterable of 2 integers
+maximal number of pixels in both directions</li>
+<li><strong>flipxycenter</strong> – boolean
+True: swap x and y of center with respect to others
+parameters that remain fixed</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">imin, imax, jmin, jmax : 4 integers
+4 indices allowing to slice a 2D np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-3">
+<p class="first admonition-title">Todo</p>
+<p class="last">merge with check_array_indices()</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.check_array_indices">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">check_array_indices</code><span class="sig-paren">(</span><em>imin</em>, <em>imax</em>, <em>jmin</em>, <em>jmax</em>, <em>framedim=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#check_array_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.check_array_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return 4 indices for array slice compatible with framedim</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>imax</strong><strong>, </strong><strong>jmin</strong><strong>, </strong><strong>jmax</strong> (<em>imin</em><em>,</em>) – 4 integers
+mini. and maxi. indices in both directions</li>
+<li><strong>framedim</strong> – iterable of 2 integers
+shape of the array to be sliced by means of the 4 indices</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">imin, imax, jmin, jmax: 4 integers
+mini. and maxi. indices in both directions</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-4">
+<p class="first admonition-title">Todo</p>
+<p class="last">merge with getindices2cropArray()</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.to8bits">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">to8bits</code><span class="sig-paren">(</span><em>PILimage</em>, <em>normalization_value=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#to8bits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.to8bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert PIL image (16 bits) in 8 bits PIL image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li>[0]  8 bits image</li>
+<li>[1] corresponding pixels value array</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-5">
+<p class="first admonition-title">Todo</p>
+<p class="last">since not used, may be deleted</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.diff_pix">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">diff_pix</code><span class="sig-paren">(</span><em>pix</em>, <em>array_pix</em>, <em>radius=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#diff_pix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.diff_pix" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns
+index in array_pix which is the closest to pix if below the tolerance radius</p>
+<p>array_pix: array of 2d pixel points
+pix: one 2elements pixel point</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.minmax">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">minmax</code><span class="sig-paren">(</span><em>D_array</em>, <em>center</em>, <em>boxsize</em>, <em>framedim=(2048</em>, <em>2048)</em>, <em>withmaxpos=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#minmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.minmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>extract min and max from a 2d array in a ROI</p>
+<p>Obsolete? Still used in LocalMaxima_ShiftArrays()</p>
+<p>Parameters
+D_array : 2D array</p>
+<blockquote>
+<div>data array</div></blockquote>
+<dl class="docutils">
+<dt>center <span class="classifier-delimiter">:</span> <span class="classifier">iterable of 2 integers</span></dt>
+<dd>(x,y) pixel center</dd>
+<dt>boxsize <span class="classifier-delimiter">:</span> <span class="classifier">integer or iterable of 2 integers</span></dt>
+<dd>full boxsize defined in both directions</dd>
+<dt>framedim <span class="classifier-delimiter">:</span> <span class="classifier">iterable of 2 integers</span></dt>
+<dd>shape of D_array</dd>
+</dl>
+<p>Return
+[min, max]: minimium and maximum pixel internsity in ROI
+[min, max],absolute_max_pos : if withmaxpos is True  add in output</p>
+<blockquote>
+<div>the absolute position of the largest pixel</div></blockquote>
+<p>#TODO: replace by scipy.ndimage.extrema
+# see next functions below
+# framedim = from dictionary of CCDs
+D_array shape is flip(framedim)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.getExtrema">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">getExtrema</code><span class="sig-paren">(</span><em>data2d</em>, <em>center</em>, <em>boxsize</em>, <em>framedim</em>, <em>ROIcoords=0</em>, <em>flipxycenter=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#getExtrema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.getExtrema" title="Permalink to this definition">¶</a></dt>
+<dd><p>return  min max XYposmin, XYposmax values in ROI</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ROIcoords</strong> – 1 in local array indices coordinates
+0 in X,Y pixel CCD coordinates</li>
+<li><strong>flipxycenter</strong> – boolean like
+swap input center coordinates</li>
+<li><strong>data2d</strong> – 2D array
+data array as read by <code class="xref py py-func docutils literal notranslate"><span class="pre">readCCDimage()</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">min, max, XYposmin, XYposmax:
+- min : minimum pixel intensity
+- max : maximum pixel intensity
+- XYposmin : list of absolute pixel coordinates of lowest pixel
+- XYposmax : list of absolute pixel coordinates of largest pixel</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.getIntegratedIntensity">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">getIntegratedIntensity</code><span class="sig-paren">(</span><em>data2d</em>, <em>center</em>, <em>boxsize</em>, <em>framedim</em>, <em>thresholdlevel=0.2</em>, <em>flipxycenter=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#getIntegratedIntensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.getIntegratedIntensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>return  crude estimate of integrated intensity of peak above a given relative threshold</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ROIcoords</strong> – 1 in local array indices coordinates
+0 in X,Y pixel CCD coordinates</li>
+<li><strong>flipxycenter</strong> – boolean like
+swap input center coordinates</li>
+<li><strong>data2d</strong> – 2D array
+data array as read by <code class="xref py py-func docutils literal notranslate"><span class="pre">readCCDimage()</span></code></li>
+<li><strong>Thresholdlevel</strong> – relative level above which pixel intensity must be taken into account
+I(p)- minimum&gt; Thresholdlevel* (maximum-minimum)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">integrated intensity, minimum absolute intensity, nbpixels used for the summation</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.getMinMax">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">getMinMax</code><span class="sig-paren">(</span><em>data2d</em>, <em>center</em>, <em>boxsize</em>, <em>framedim</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#getMinMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.getMinMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>return min and max values in ROI</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>data2d <span class="classifier-delimiter">:</span> <span class="classifier">2D array</span></dt>
+<dd>array as read by readCCDimage</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.minmax_fast">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">minmax_fast</code><span class="sig-paren">(</span><em>D_array</em>, <em>centers</em>, <em>boxsize=(25</em>, <em>25)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#minmax_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.minmax_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>extract min (considered as background in boxsize) and intensity at center
+from a 2d array at different places (centers)</p>
+<p>centers is tuple a two array (  array([slow indices]),  array([fast indices]))</p>
+<p>return:</p>
+<p>[0] background values
+[1] intensity value</p>
+<p>used?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.normalize_shape">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">normalize_shape</code><span class="sig-paren">(</span><em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#normalize_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.normalize_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>return shape
+in case a scalar was given:
+return (shape,)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LoG">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LoG</code><span class="sig-paren">(</span><em>r</em>, <em>sigma=None</em>, <em>dim=1</em>, <em>r0=None</em>, <em>peakVal=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LoG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LoG" title="Permalink to this definition">¶</a></dt>
+<dd><p>note:
+returns <em>negative</em> Laplacian-of-Gaussian (aka. mexican hat)
+zero-point will be at sqrt(dim)*sigma
+integral is _always_ 0
+if peakVal is None:  uses “mathematical” “gaussian derived” norm
+if r0 is not None: specify radius of zero-point (IGNORE sigma !!)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LoGArr">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LoGArr</code><span class="sig-paren">(</span><em>shape=(256</em>, <em>256)</em>, <em>r0=None</em>, <em>sigma=None</em>, <em>peakVal=None</em>, <em>orig=None</em>, <em>wrap=0</em>, <em>dtype=&lt;class 'numpy.float32'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LoGArr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LoGArr" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns n-dim Laplacian-of-Gaussian (aka. mexican hat)
+if peakVal   is not None</p>
+<blockquote>
+<div>result max is peakVal</div></blockquote>
+<p>if r0 is not None: specify radius of zero-point (IGNORE sigma !!)</p>
+<p>credits: “Sebastian Haase &lt;<a class="reference external" href="mailto:haase&#37;&#52;&#48;msg&#46;ucsf&#46;edu">haase<span>&#64;</span>msg<span>&#46;</span>ucsf<span>&#46;</span>edu</a>&gt;”</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.radialArr">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">radialArr</code><span class="sig-paren">(</span><em>shape</em>, <em>func</em>, <em>orig=None</em>, <em>wrap=False</em>, <em>dtype=&lt;class 'numpy.float32'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#radialArr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.radialArr" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates and returns radially symmetric function sampled in volume(image) of shape shape
+if orig is None the origin defaults to the center
+func is a 1D function with 1 paramater: r</p>
+<p>if shape is a scalar uses implicitely <cite>(shape,)</cite>
+wrap tells if functions is continued wrapping around image boundaries
+wrap can be True or False or a tuple same length as shape:</p>
+<blockquote>
+<div>then wrap is given for each axis sperately</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LocalMaxima_ndimage">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LocalMaxima_ndimage</code><span class="sig-paren">(</span><em>Data</em>, <em>peakVal=4</em>, <em>boxsize=5</em>, <em>central_radius=2</em>, <em>threshold=1000</em>, <em>connectivity=1</em>, <em>returnfloatmeanpos=0</em>, <em>autothresholdpercentage=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LocalMaxima_ndimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LocalMaxima_ndimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns (float) i,j positions in array of each blob
+(peak, spot, assembly of hot pixels or whatever)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">used only in LocalMaxima_KernelConvolution</p>
+</div>
+<p>inputs</p>
+<dl class="docutils">
+<dt>peakVal, boxsize, central_radius:</dt>
+<dd>parameters for numerical convolution with a mexican-hat-like kernel</dd>
+<dt>threshold:</dt>
+<dd>intensity threshold of filtered Data (by convolution with the kernel)
+above which blob signal will be considered
+if = 0 : take all blobs at the expense of processing time</dd>
+<dt>connectivity :</dt>
+<dd>1 for filled square 3*3 connectivity
+0 for 3*3 star like connectivity</dd>
+<dt>autothresholdpercentage :</dt>
+<dd>threshold in filtered image with respect to the maximum intensity in filtered image</dd>
+</dl>
+<p>output:
+array (n,2): array of 2 indices</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.ConvolvebyKernel">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">ConvolvebyKernel</code><span class="sig-paren">(</span><em>Data</em>, <em>peakVal=4</em>, <em>boxsize=5</em>, <em>central_radius=2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#ConvolvebyKernel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.ConvolvebyKernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convolve Data array witn mexican-hat kernel</p>
+<p>inputs:
+Data                            : 2D array containing pixel intensities
+peakVal &gt; central_radius        : defines pixel distance from box center where weights are positive</p>
+<blockquote>
+<div>(in the middle) and negative farther to converge back to zero</div></blockquote>
+<p>boxsize                            : size of the box</p>
+<p>ouput:
+array  (same shape as Data)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LocalMaxima_KernelConvolution">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LocalMaxima_KernelConvolution</code><span class="sig-paren">(</span><em>Data</em>, <em>framedim=(2048</em>, <em>2048)</em>, <em>peakValConvolve=4</em>, <em>boxsizeConvolve=5</em>, <em>central_radiusConvolve=2</em>, <em>thresholdConvolve=1000</em>, <em>connectivity=1</em>, <em>IntensityThreshold=500</em>, <em>boxsize_for_probing_minimal_value_background=30</em>, <em>return_nb_raw_blobs=0</em>, <em>peakposition_definition='max'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LocalMaxima_KernelConvolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LocalMaxima_KernelConvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>return local maxima (blobs) position and amplitude in Data by using
+convolution with a mexican hat like kernel.</p>
+<dl class="docutils">
+<dt>Two Thresholds are used sequently:</dt>
+<dd><ul class="first last simple">
+<li>thresholdConvolve : level under which intensity of kernel-convolved array is discarded</li>
+<li>IntensityThreshold : level under which blob whose local intensity amplitude in raw array is discarded</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Data</strong> – 2D array containing pixel intensities</li>
+<li><strong>boxsizeConvolve</strong><strong>, </strong><strong>central_radiusConvolve</strong> (<em>peakValConvolve</em><em>,</em>) – convolution kernel parameters</li>
+<li><strong>thresholdConvolve</strong> – minimum threshold (expressed in unit of convolved array intensity)
+under which convoluted blob is rejected.It can be zero
+(all blobs are accepted but time consuming)</li>
+<li><strong>connectivity</strong> – <p>shape of connectivity pattern to consider pixels belonging to the
+same blob.</p>
+<blockquote>
+<div><ul>
+<li>1: filled square  (1 pixel connected to 8 neighbours)</li>
+<li>0: star (4 neighbours in vertical and horizontal direction)</li>
+</ul>
+</div></blockquote>
+</li>
+<li><strong>IntensityThreshold</strong> – minimum local blob amplitude to accept</li>
+<li><strong>boxsize_for_probing_minimal_value_background</strong> – boxsize to evaluate the background
+and the blob amplitude</li>
+<li><strong>peakposition_definition</strong> – string (‘max’ or ‘center’)
+key to assign to the blob position its hottest pixel position
+or its center (no weight)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>peakslist <span class="classifier-delimiter">:</span> <span class="classifier">array like (n,2)</span></dt>
+<dd><p class="first last">list of peaks position (pixel)</p>
+</dd>
+<dt>Ipixmax <span class="classifier-delimiter">:</span> <span class="classifier">array like (n,1) of integer</span></dt>
+<dd><p class="first last">list of highest pixel intensity in the vicinity of each peak</p>
+</dd>
+<dt>npeaks <span class="classifier-delimiter">:</span> <span class="classifier">integer</span></dt>
+<dd><p class="first last">nb of peaks (if return_nb_raw_blobs =1)</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LocalMaxima_ShiftArrays">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LocalMaxima_ShiftArrays</code><span class="sig-paren">(</span><em>Data</em>, <em>framedim=(2048</em>, <em>2048)</em>, <em>IntensityThreshold=500</em>, <em>Saturation_value=65535</em>, <em>boxsize_for_probing_minimal_value_background=30</em>, <em>nb_of_shift=25</em>, <em>pixeldistance_remove_duplicates=25</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LocalMaxima_ShiftArrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LocalMaxima_ShiftArrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>blob search or local maxima search by shift array method (kind of derivative)</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Flat peak (= two neighbouring pixel with rigourouslty the same intensity)
+is not detected</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.shiftarrays_accum">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">shiftarrays_accum</code><span class="sig-paren">(</span><em>Data_array</em>, <em>n</em>, <em>dimensions=1</em>, <em>diags=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#shiftarrays_accum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.shiftarrays_accum" title="Permalink to this definition">¶</a></dt>
+<dd><p>idem than shiftarrays() but with all intermediate shifted arrays
+1D
+returns 3 arrays corresponding to shifted arrays
+by n in two directions and original one
+2D
+returns 5 arrays corresponding to shifted arrays
+by n in two directions and original one</p>
+<p>these arrays are ready for comparison with eg np.greater</p>
+<p>Data_array must have shape (slowdim,fastdim) so that
+slowdim-2*n&gt;=1 and fastdim-2*n&gt;=1
+(ie central array with zero shift has some elements)</p>
+<p>TODO: replace append by a pre allocated array</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">readmccd.localmaxima is better</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.LocalMaxima_from_thresholdarray">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">LocalMaxima_from_thresholdarray</code><span class="sig-paren">(</span><em>Data</em>, <em>IntensityThreshold=400</em>, <em>rois=None</em>, <em>framedim=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#LocalMaxima_from_thresholdarray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.LocalMaxima_from_thresholdarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>return center of mass of each blobs composes by pixels above IntensityThreshold</p>
+<p>if Centers = list of (x,y, halfboxsizex, halfboxsizey)  perform only blob search in theses ROIs</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">center of mass of blob where all intensities are set to 1</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.localmaxima">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">localmaxima</code><span class="sig-paren">(</span><em>DataArray</em>, <em>n</em>, <em>diags=1</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#localmaxima"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.localmaxima" title="Permalink to this definition">¶</a></dt>
+<dd><p>from DataArray 2D  returns (array([i1,i2,…,ip]),array([j1,j2,…,jp]))
+of indices where pixels value is higher in two direction up to n pixels</p>
+<p>this tuple can be easily used after in the following manner:
+DataArray[tupleresult] is an array of the intensity of the hottest pixels in array</p>
+<p>in similar way with only four cardinal directions neighbouring (found in the web):
+import numpy as N
+def local_minima(array2d):</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>return ((array2d &lt;= np.roll(array2d,  1, 0)) &amp;</dt>
+<dd>(array2d &lt;= np.roll(array2d, -1, 0)) &amp;
+(array2d &lt;= np.roll(array2d,  1, 1)) &amp;
+(array2d &lt;= np.roll(array2d, -1, 1)))</dd>
+</dl>
+</div></blockquote>
+<p>WARNING: flat top peak are not detected !!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.gauss_kern">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">gauss_kern</code><span class="sig-paren">(</span><em>size</em>, <em>sizey=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#gauss_kern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.gauss_kern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a normalized 2D gauss kernel array for convolutions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.blur_image">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">blur_image</code><span class="sig-paren">(</span><em>im</em>, <em>n</em>, <em>ny=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#blur_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.blur_image" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>blurs the image by convolving with a gaussian kernel of typical</dt>
+<dd>size n. The optional keyword argument ny allows for a different
+size in the y direction.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.blurCCD">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">blurCCD</code><span class="sig-paren">(</span><em>im</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#blurCCD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.blurCCD" title="Permalink to this definition">¶</a></dt>
+<dd><p>apply a blur filter to image ndarray</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.circularMask">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">circularMask</code><span class="sig-paren">(</span><em>center</em>, <em>radius</em>, <em>arrayshape</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#circularMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.circularMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a boolean ndarray of elem in array inside a mask</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.compute_autobackground_image">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">compute_autobackground_image</code><span class="sig-paren">(</span><em>dataimage</em>, <em>boxsizefilter=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#compute_autobackground_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.compute_autobackground_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>return 2D array of filtered data array
+:param dataimage: array of image data
+:type dataimage: 2D array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.computefilteredimage">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">computefilteredimage</code><span class="sig-paren">(</span><em>dataimage</em>, <em>bkg_image</em>, <em>CCDlabel</em>, <em>kernelsize=5</em>, <em>formulaexpression='A-B'</em>, <em>usemask=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#computefilteredimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.computefilteredimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>return 2D array of initial image data without background given by bkg_image data</p>
+<dl class="docutils">
+<dt>usemask <span class="classifier-delimiter">:</span> <span class="classifier">True  then substract bkg image on masked raw data</span></dt>
+<dd>False  apply formula on all pixels (no mask)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dataimage</strong> (<em>2D array</em>) – array of image data</li>
+<li><strong>bkg_image</strong> (<em>2D array</em>) – array of filtered image data (background)</li>
+<li><strong>CCDlabel</strong> (<em>string</em>) – key for CCD dictionary</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.filterimage">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">filterimage</code><span class="sig-paren">(</span><em>image_array</em>, <em>framedim</em>, <em>blurredimage=None</em>, <em>kernelsize=5</em>, <em>mask_parameters=None</em>, <em>clipvalues=None</em>, <em>imageformat=&lt;class 'numpy.uint16'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#filterimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.filterimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute a difference of images inside a region defined by a mask</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>blurredimage</strong> – ndarray image to substract to image_array</li>
+<li><strong>kernelsize</strong> – pixel size of gaussian kernel if blurredimage is None</li>
+<li><strong>mask_parameters</strong> – circular mask parameter: center=(x,y), radius, value outside mask</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.rebin2Darray">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">rebin2Darray</code><span class="sig-paren">(</span><em>inputarray</em>, <em>bin_dims=(2</em>, <em>2)</em>, <em>operator='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#rebin2Darray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.rebin2Darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>rebin 2D array by applying an operator to define the value of one element from the other</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>operator</strong> – mean, min, max, sum</li>
+<li><strong>bin_dims</strong> – side sizes of binning. (2,3) means 2X3</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.blurCCD_with_binning">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">blurCCD_with_binning</code><span class="sig-paren">(</span><em>im</em>, <em>n</em>, <em>binsize=(2</em>, <em>2)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#blurCCD_with_binning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.blurCCD_with_binning" title="Permalink to this definition">¶</a></dt>
+<dd><p>blur the array by rebinning before and after aplying the filter</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.filter_minimum">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">filter_minimum</code><span class="sig-paren">(</span><em>im</em>, <em>boxsize=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#filter_minimum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.filter_minimum" title="Permalink to this definition">¶</a></dt>
+<dd><p>return filtered image using minimum filter</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.remove_minimum_background">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">remove_minimum_background</code><span class="sig-paren">(</span><em>im</em>, <em>boxsize=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#remove_minimum_background"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.remove_minimum_background" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove to image array the array resulting from minimum_filter</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.plot_image_markers">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">plot_image_markers</code><span class="sig-paren">(</span><em>image</em>, <em>markerpos</em>, <em>position_definition=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#plot_image_markers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.plot_image_markers" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot 2D array (image) with markers at first two columns of (markerpos)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">used in LaueHDF5. Could be better implementation in some notebooks</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.imageprocessing.applyformula_on_images">
+<code class="descclassname">LaueTools.imageprocessing.</code><code class="descname">applyformula_on_images</code><span class="sig-paren">(</span><em>A</em>, <em>B</em>, <em>formulaexpression='A-B'</em>, <em>SaturationLevel=None</em>, <em>clipintensities=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/imageprocessing.html#applyformula_on_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.imageprocessing.applyformula_on_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate image data array from math expression</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>B</strong> (<em>A</em><em>,</em>) – ndarray  of the same shape</li>
+<li><strong>SaturationLevel</strong> – saturation level of intensity</li>
+<li><strong>clipintensities</strong> – clip resulting intensities to zero and saturation value</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

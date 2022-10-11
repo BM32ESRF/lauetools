@@ -1,0 +1,21 @@
+image: python:3.6-slim
+
+before_script:
+    - python -V # Print out python version for debugging
+
+stages:
+    - test
+
+pages:
+  script:
+  - apk --no-cache add py2-pip python-dev
+  - pip install sphinx
+  - apk --no-cache add make
+  - make html
+  - mv _build/html/ public/
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
+

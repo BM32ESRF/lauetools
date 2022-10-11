@@ -1,0 +1,926 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>PeakSearchGUI &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>PeakSearchGUI</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/sourceold/PeakSearchGUI.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="peaksearchgui">
+<span id="id1"></span><h1>PeakSearchGUI<a class="headerlink" href="#peaksearchgui" title="Permalink to this headline">¶</a></h1>
+<p>The module PeakSearchGUI.py is made to provide graphical tools to perform peak search and fitting. It enables also tools to get mosaic from a set of images.</p>
+<div class="section" id="read-images-and-binary-files">
+<h2>Read Images and Binary files<a class="headerlink" href="#read-images-and-binary-files" title="Permalink to this headline">¶</a></h2>
+<p>First select the detector you have used for the data collection in the menu Calibration</p>
+<img alt="../_images/clickcalib.png" src="../_images/clickcalib.png" />
+<p>Choose the correct camera to define the binary image file parameters</p>
+<img alt="../_images/ccdfileselect.png" src="../_images/ccdfileselect.png" />
+<p>View an image by selecting in the Menu  File/Open Image and Peak Search.</p>
+<img alt="../_images/peaksearchBoard.png" src="../_images/peaksearchBoard.png" />
+<p>Then you obtain a board enabling to browse your set of images and to search for peaks</p>
+<a class="reference internal image-reference" href="../_images/peaksearchGUI.png"><img alt="../_images/peaksearchGUI.png" src="../_images/peaksearchGUI.png" style="width: 547.1999999999999px; height: 405.0px;" /></a>
+<p>This board is composed by composed by 4 TOP tabs:</p>
+<ul class="simple">
+<li>parameters of display (View &amp; color)</li>
+<li>Digital image processing (Image &amp; Filter)</li>
+<li>Browse a set of images and select a ROI (Browse &amp; crop)</li>
+<li>Mosaic or image-related monitor from a ROI over a set of images</li>
+</ul>
+<p>And 5 tabs at the middle</p>
+<ul class="simple">
+<li>1 Selection of local maxima search Method</li>
+<li>2 Fitting procedure parameters</li>
+<li>3 Peaks List Manager</li>
+</ul>
+</div>
+<div class="section" id="view-color">
+<h2>View &amp; Color<a class="headerlink" href="#view-color" title="Permalink to this headline">¶</a></h2>
+<p>This panel helps for viewing images with an appropriate color LUT, getting some infos on pixels intensity on the whole image (distribution) or along line (line profilers)</p>
+<ul>
+<li><p class="first">Color Mapping (LUT) of the displayed image. <code class="docutils literal notranslate"><span class="pre">ShowHisto</span></code> displays the histogram of intensity distribution (nb of pixel as a function of pixel intensity)</p>
+<blockquote>
+<div><img alt="../_images/lutparam.png" src="../_images/lutparam.png" />
+</div></blockquote>
+</li>
+<li><p class="first">intensities limits taken into account by the LUT</p>
+<blockquote>
+<div><img alt="../_images/imagedisplaylimits.png" src="../_images/imagedisplaylimits.png" />
+</div></blockquote>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">Open</span> <span class="pre">LineProfiler</span></code>: 1D plot of pixel intensities along a movable-by-user line. And <code class="docutils literal notranslate"><span class="pre">Eneable</span> <span class="pre">X</span> <span class="pre">Y</span> <span class="pre">Profiler</span></code>: 1D plot of pixel intensities along X and Y from a clicked pixel position</p>
+</li>
+</ul>
+<img alt="../_images/profilers.png" src="../_images/profilers.png" />
+</div>
+<div class="section" id="image-filter">
+<h2>Image &amp; Filter<a class="headerlink" href="#image-filter" title="Permalink to this headline">¶</a></h2>
+<p>This panel supplies digital image processing tools to filter current image and particularly remove background.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Blur</span> <span class="pre">Image</span></code> computes the image filtered by a gaussian kernel (similar to a low pass filter). By checking <code class="docutils literal notranslate"><span class="pre">Substract</span> <span class="pre">blur</span> <span class="pre">as</span> <span class="pre">background</span></code> the raw image minus the filtered image can be displayed and used for the local maxima (blob) search.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Calculate</span> <span class="pre">image</span> <span class="pre">with</span> <span class="pre">A</span> <span class="pre">and</span> <span class="pre">B</span></code> allows with an arithmetical formula with A (current image) and B (additional image to be open) the computation of a new image A’ on which will be performed the local maxima (blob) searchChecking. By default this image will not be used to refine the position and shape of local maxima but the former and initial A image. Check <code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">also</span> <span class="pre">for</span> <span class="pre">fit</span></code> to apply the fit procedures on pixel intensities A’.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Save</span> <span class="pre">results</span></code> saves on hard disk the A’ image with the header contains and format of A.</p>
+<blockquote>
+<div><img alt="../_images/imagefilterbckg.png" src="../_images/imagefilterbckg.png" />
+</div></blockquote>
+</div>
+<div class="section" id="browse-crop">
+<h2>Browse &amp; Crop<a class="headerlink" href="#browse-crop" title="Permalink to this headline">¶</a></h2>
+<p>One can navigate on a set of images provided the images file name contains a numerical index with a constant prefix (e.g. myimage_0032.ccd). Navigation with button with small step <code class="docutils literal notranslate"><span class="pre">index-1</span></code> and <code class="docutils literal notranslate"><span class="pre">index+1</span></code> corresponds to consecutive images collected with time or along a line on sample.  Navigation with button with larger step (Nb of images per line (step index)) <code class="docutils literal notranslate"><span class="pre">index-10</span></code> and <code class="docutils literal notranslate"><span class="pre">index+10</span></code> (for instance with larger step equals to 10) permits to look at the images collected along the direction perpendicular to the direction corresponding to the small step.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Go</span> <span class="pre">To</span> <span class="pre">index</span></code> button allows to read directly an image with an other in the same dataset. <code class="docutils literal notranslate"><span class="pre">Auto</span> <span class="pre">index+1</span></code> button will display the next image and wait for it if it is not already in the folder.</p>
+<blockquote>
+<div><img alt="../_images/imagebrowser.png" src="../_images/imagebrowser.png" />
+</div></blockquote>
+<p>To navigate and display faster the image when browsing on a particular region of interest (ROI) of the images, you can crop the data (<code class="docutils literal notranslate"><span class="pre">CropData</span></code>) by specifying the half sizes (<code class="docutils literal notranslate"><span class="pre">boxsize</span></code>) of the cropping box in the two directions.</p>
+<blockquote>
+<div><img alt="../_images/cropdata.png" src="../_images/cropdata.png" />
+</div></blockquote>
+</div>
+<div class="section" id="mosaic-monitor">
+<h2>Mosaic &amp; Monitor<a class="headerlink" href="#mosaic-monitor" title="Permalink to this headline">¶</a></h2>
+<p>Several counters can be defined from pixel intensities in the same ROI (centered a clicked pixel with half box sizes given by user) over a set of images.</p>
+<ul class="simple">
+<li>Mosaic: Recompose a 2D raster scan from the selected ROI of each images as a function of image index</li>
+<li>Mean Value: plot a 1D graph or a 2D raster scan from the mean pixel value in the selected ROI of each images as a function of image index</li>
+<li>Max Value: plot a 1D graph or a 2D raster scan from the maximum pixel value in the selected ROI of each images as a function of image index</li>
+<li>Peak-to-peak Value (or ‘peak to valley’): plot a 1D graph or a 2D raster scan from the largest pixel amplitude value in the selected ROI of each images as a function of image index</li>
+<li>Peak position: plot two 1D graphes of X and Y peak position of the peak in the selected ROI of each images as a function of image index</li>
+</ul>
+</div>
+<div class="section" id="plot-tools">
+<h2>Plot Tools<a class="headerlink" href="#plot-tools" title="Permalink to this headline">¶</a></h2>
+<p>The standard toolbar is provided by the graphical ‘matplotlib’ library with the following features:</p>
+<ul>
+<li><p class="first">A ROI can be set to zoom in the data.</p>
+<blockquote>
+<div><img alt="../_images/zoominrectsmall.png" src="../_images/zoominrectsmall.png" />
+</div></blockquote>
+</li>
+<li><p class="first">This ROI can be moved easily with the pan button</p>
+<blockquote>
+<div><img alt="../_images/panbtnsmall.png" src="../_images/panbtnsmall.png" />
+</div></blockquote>
+</li>
+<li><p class="first">When hovering the mouse on the image pixel position and corresponding intensity are displayed</p>
+<blockquote>
+<div><img alt="../_images/localinfosmall.png" src="../_images/localinfosmall.png" />
+</div></blockquote>
+</li>
+<li><p class="first">Previous selected ROIs are stored and can be recalled by arrows (<code class="docutils literal notranslate"><span class="pre">Home</span></code> icon recalls the initial full image)</p>
+</li>
+</ul>
+<div class="section" id="local-maxima-or-blob-search">
+<h3>Local Maxima or Blob Search<a class="headerlink" href="#local-maxima-or-blob-search" title="Permalink to this headline">¶</a></h3>
+<p>To guess the initial parameters fitting, 3 methods leads to a list of local maxima (or blobs)</p>
+<img alt="../_images/tablocalmaxima.png" src="../_images/tablocalmaxima.png" />
+</div>
+</div>
+<div class="section" id="method-1-pixels-above-a-threshold-on-raw-image">
+<h2>Method 1: pixels above a threshold on raw image<a class="headerlink" href="#method-1-pixels-above-a-threshold-on-raw-image" title="Permalink to this headline">¶</a></h2>
+<p>The basic method consists in considering every pixel higher than <code class="docutils literal notranslate"><span class="pre">intensityThreshold</span></code> as a local maxima pixel.
+If <code class="docutils literal notranslate"><span class="pre">intensityThreshold</span></code> is too high you will get only few pixels at the submit of laue spots.
+If <code class="docutils literal notranslate"><span class="pre">intensityThreshold</span></code> is too small you will too much pixels that you may stuck the software.
+<code class="docutils literal notranslate"><span class="pre">MinimumDistance</span></code> is the smallest distance separating two local maxima.
+A good habit is too check the highest background level (e.g close to the image centre) and set <code class="docutils literal notranslate"><span class="pre">intensityThreshold</span></code> to a larger value. But even in this case if (fluorescence) background varies a lot, you will miss peaks whose maximum intensities are below the threshold… This is why removing the background is mandatory.</p>
+<img alt="../_images/method1small.png" src="../_images/method1small.png" />
+</div>
+<div class="section" id="method-2-hottest-pixel-in-a-box-by-array-shift">
+<h2>Method 2: hottest pixel in a box (by array shift)<a class="headerlink" href="#method-2-hottest-pixel-in-a-box-by-array-shift" title="Permalink to this headline">¶</a></h2>
+<p>Second Method finds the hottest pixel in a small box given by <code class="docutils literal notranslate"><span class="pre">PixelNearRadius</span></code>. It shifts the whole data array in 8 directions and determines every pixel hotter than the others lying in these 8 directions.
+The <strong>thresholding</strong> with the <code class="docutils literal notranslate"><span class="pre">IntensityThreshold</span></code> level is performed on the intensity of these hot pixels <strong>with respect to local background level</strong> (set to the lowest pixel intensity in the box around the hot pixel).
+One drawback of this method is that 2 hot pixels at the top of the peak but with strictly the same intensity are not detected (coincidence or more likely when peak is saturated).</p>
+<img alt="../_images/method2small.png" src="../_images/method2small.png" />
+</div>
+<div class="section" id="method-3-peak-enhancement-by-convolution-on-raw-image">
+<h2>Method 3: Peak enhancement by convolution on raw image<a class="headerlink" href="#method-3-peak-enhancement-by-convolution-on-raw-image" title="Permalink to this headline">¶</a></h2>
+<p>This is the fastest method as soon as you have found the few parameters value (for batch). The <em>Raw image</em> data (unsigned 16 bits integers) are convolved by a 2D gaussian (mexican-hat-like) kernel. The resulting <em>convolved Image</em> (floats) have intense region (called blobs) where pixel intensity 2D profile on raw data is similar to the kernel intensity profile.
+A first threshold with the level <code class="docutils literal notranslate"><span class="pre">ThresholdConvolve</span></code> (float) allows to select enhanced blob above a background. An good estimate of <code class="docutils literal notranslate"><span class="pre">ThresholdConvolve</span></code> value can be found by means of the pixel intensity histogram (<code class="docutils literal notranslate"><span class="pre">ShowHisto</span></code>): it corresponds to the (float) intensity that separates the hottest pixel population that belong to the peak (large abscisssa value) from the weakest one that belong to background.
+With this blobs list, a second thresholding at <code class="docutils literal notranslate"><span class="pre">Intensity</span> <span class="pre">Threshold</span> <span class="pre">(raw</span> <span class="pre">data)</span></code> level is performed in the raw data pixel intensity with respect to local background level (like in method 2).
+<code class="docutils literal notranslate"><span class="pre">PixelNearRadius</span></code> value enables the user to reject too much closed spots.
+<code class="docutils literal notranslate"><span class="pre">Max.Intensity</span></code> value is used for the display of the convolved Image by clicking on <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">Conv.</span> <span class="pre">Image</span></code>. Thresholding can be visualize by checking <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">thresholding</span></code>.</p>
+<img alt="../_images/method3small.png" src="../_images/method3small.png" />
+<div class="section" id="peak-position-fit">
+<h3>Peak Position Fit<a class="headerlink" href="#peak-position-fit" title="Permalink to this headline">¶</a></h3>
+<p>The goal of the peak search is to have systematic values of Laue peaks and intensities. You can decide to fit or not the blob found. The Button <code class="docutils literal notranslate"><span class="pre">Search</span> <span class="pre">All</span> <span class="pre">Peaks</span></code> launches  the local maxima chosen method and apply a fitting procedure (or not) to each found blob. A general peak list is built.
+By clicking close to a Laue spot in the image and clicking on the <code class="docutils literal notranslate"><span class="pre">Fit</span> <span class="pre">Peak</span></code> button, a gaussian fit is performed. This result can be added to the current general peak list with the button <code class="docutils literal notranslate"><span class="pre">Add</span> <span class="pre">Peak</span></code>. Clicking close to a Laue spot that belongs to the peak list (blue circle marker on top of the image) and pressing <code class="docutils literal notranslate"><span class="pre">Remove</span> <span class="pre">Peak</span></code> removes the laue spot from the list.</p>
+<img alt="../_images/finalbtns.png" src="../_images/finalbtns.png" />
+<p>Parameters to choose the fitting model or no fit and to reject or not the fitting result of each peak according to deviation from the initial guessed position (<code class="docutils literal notranslate"><span class="pre">FitPixelDeviation</span></code>).</p>
+<img alt="../_images/selectfitornotsmall.png" src="../_images/selectfitornotsmall.png" />
+<img alt="../_images/fitparam.png" src="../_images/fitparam.png" />
+</div>
+<div class="section" id="module-functions">
+<h3>Module functions<a class="headerlink" href="#module-functions" title="Permalink to this headline">¶</a></h3>
+<p>The next documentation comes from the docstring in the header of function or class definition.</p>
+</div>
+</div>
+<div class="section" id="module-LaueTools.GUI.PeakSearchGUI">
+<span id="peaksearchgui-py-peaksearchboard"></span><h2>PeakSearchGUI.py (PeakSearchBoard)<a class="headerlink" href="#module-LaueTools.GUI.PeakSearchGUI" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">ViewColorPanel</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to play with color LUT and intensity scale</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnReplot">
+<code class="descname">OnReplot</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.OnReplot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnReplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>trigger main self.mainframe.OnReplot(1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.getclickposition">
+<code class="descname">getclickposition</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.getclickposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.getclickposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>return closest pixel integer coordinates to clicked pt</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnShowLineXYProfiler">
+<code class="descname">OnShowLineXYProfiler</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.OnShowLineXYProfiler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnShowLineXYProfiler" title="Permalink to this definition">¶</a></dt>
+<dd><p>show line X and Y profilers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.bestposition">
+<code class="descname">bestposition</code><span class="sig-paren">(</span><em>LINEPROFILE_WIDTH</em>, <em>LINEPROFILE_HEIGHT</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.bestposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.bestposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>return xp, yp (best position)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.restrictxylimits_to_imagearray">
+<code class="descname">restrictxylimits_to_imagearray</code><span class="sig-paren">(</span><em>xmin</em>, <em>ymin</em>, <em>xmax</em>, <em>ymax</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.restrictxylimits_to_imagearray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.restrictxylimits_to_imagearray" title="Permalink to this definition">¶</a></dt>
+<dd><p>return compatible extremal value of x,y
+xmin, ymin, xmax, ymax</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.getlineprofiledata">
+<code class="descname">getlineprofiledata</code><span class="sig-paren">(</span><em>x0</em>, <em>y0</em>, <em>x2</em>, <em>y2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.getlineprofiledata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.getlineprofiledata" title="Permalink to this definition">¶</a></dt>
+<dd><p>get pixel intensities array between two points (x0,y0) and (x2,y2)</p>
+<p>return dataX, dataY</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnShowLineProfiler">
+<code class="descname">OnShowLineProfiler</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.OnShowLineProfiler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.OnShowLineProfiler" title="Permalink to this definition">¶</a></dt>
+<dd><p>show a movable and draggable line profiler and draw line and circle</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.updateLineXYProfile">
+<code class="descname">updateLineXYProfile</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.updateLineXYProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.updateLineXYProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>recompute line section intensity profile
+horizontal (x, zx)
+vertical (y, zy)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.onOpenDetFile">
+<code class="descname">onOpenDetFile</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.onOpenDetFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.onOpenDetFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>open and read .det file with geometry detection calibration parameters</p>
+<p>set self.DetFilename
+set self.mainframe.DetFilename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ViewColorPanel.showImage">
+<code class="descname">showImage</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ViewColorPanel.showImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ViewColorPanel.showImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>branching from button of ViewColorPanel class: show blur/raw image</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">FilterBackGroundPanel</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to handle image background tools</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.Computefilteredimage">
+<code class="descname">Computefilteredimage</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.Computefilteredimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.Computefilteredimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove background if self.blurimage exists</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onComputeBlurImage">
+<code class="descname">onComputeBlurImage</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.onComputeBlurImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onComputeBlurImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute background, blurred, filtered or low frequency spatial image
+from current image</p>
+<p>set self.blurimage</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.OnSwitchBlurRawImage">
+<code class="descname">OnSwitchBlurRawImage</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.OnSwitchBlurRawImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.OnSwitchBlurRawImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>set viewing of raw image (- background) or background (=filtered image)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onSaveBlurImage">
+<code class="descname">onSaveBlurImage</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.onSaveBlurImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onSaveBlurImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>save on hard disk blurred or background image obtained from current image</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onSaveFormulaResultImage">
+<code class="descname">onSaveFormulaResultImage</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.onSaveFormulaResultImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onSaveFormulaResultImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>save image on hard disk of data obtained by arithmetical formula</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onGetBImagefilename">
+<code class="descname">onGetBImagefilename</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.onGetBImagefilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onGetBImagefilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>open image as B image
+set self.BImageFilename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onGetBlackListfilename">
+<code class="descname">onGetBlackListfilename</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.onGetBlackListfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.onGetBlackListfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>open black peakslist file
+set self.BlackListFilename
+set self.mainframe.BlackListFilename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.OnChangeUseFormula">
+<code class="descname">OnChangeUseFormula</code><span class="sig-paren">(</span><em>evt</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FilterBackGroundPanel.OnChangeUseFormula"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel.OnChangeUseFormula" title="Permalink to this definition">¶</a></dt>
+<dd><p>change arithmetical formula</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.BrowseCropPanel">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">BrowseCropPanel</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#BrowseCropPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.BrowseCropPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to handle crop operation on images</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">MosaicAndMonitor</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MosaicAndMonitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor.OnMosaic">
+<code class="descname">OnMosaic</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MosaicAndMonitor.OnMosaic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor.OnMosaic" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch main procedure of computing mosaic and displaying it</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.ROISelection">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">ROISelection</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ROISelection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ROISelection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.ROISelection.onCenterROI">
+<code class="descname">onCenterROI</code><span class="sig-paren">(</span><em>evt</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#ROISelection.onCenterROI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.ROISelection.onCenterROI" title="Permalink to this definition">¶</a></dt>
+<dd><p>simply click and later press q</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">PlotPeakListPanel</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PlotPeakListPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel" title="Permalink to this definition">¶</a></dt>
+<dd><p>panel class to handle peaks list within GUI</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.OnShowLineXYProfiler">
+<code class="descname">OnShowLineXYProfiler</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PlotPeakListPanel.OnShowLineXYProfiler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.OnShowLineXYProfiler" title="Permalink to this definition">¶</a></dt>
+<dd><p>show line X and Y profilers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.getlineprofiledata">
+<code class="descname">getlineprofiledata</code><span class="sig-paren">(</span><em>x0</em>, <em>y0</em>, <em>x2</em>, <em>y2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PlotPeakListPanel.getlineprofiledata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.getlineprofiledata" title="Permalink to this definition">¶</a></dt>
+<dd><p>get pixel intensities array between two points (x0,y0) and (x2,y2)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.OnShowLineProfiler">
+<code class="descname">OnShowLineProfiler</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PlotPeakListPanel.OnShowLineProfiler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel.OnShowLineProfiler" title="Permalink to this definition">¶</a></dt>
+<dd><p>show a movable and draggable line profiler and draw line and circle</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_1">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">findLocalMaxima_Meth_1</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#findLocalMaxima_Meth_1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_1" title="Permalink to this definition">¶</a></dt>
+<dd><p>class of method 1 for local maxima search (intensity threshold)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_2">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">findLocalMaxima_Meth_2</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#findLocalMaxima_Meth_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>class of method parameters for 2nd method of local maxima(shifted arrays)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_3">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">findLocalMaxima_Meth_3</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#findLocalMaxima_Meth_3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_3" title="Permalink to this definition">¶</a></dt>
+<dd><p>class of method 3 for local maxima search (convolution by a mexican hat kernel)</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_3.OnSwitchImageDisplay">
+<code class="descname">OnSwitchImageDisplay</code><span class="sig-paren">(</span><em>evt</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#findLocalMaxima_Meth_3.OnSwitchImageDisplay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.findLocalMaxima_Meth_3.OnSwitchImageDisplay" title="Permalink to this definition">¶</a></dt>
+<dd><p>switch between raw and convolved image display (performed by MainPeakSearchFrame class)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.FitParametersPanel">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">FitParametersPanel</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#FitParametersPanel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.FitParametersPanel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.PeakListOLV">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">PeakListOLV</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PeakListOLV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PeakListOLV" title="Permalink to this definition">¶</a></dt>
+<dd><p>panel embedding an ObjectListViewer from ObjectListView module</p>
+<p>need of:
+self.grangranparent.peaklistPixels
+self.grangranparent.onRemovePeaktoPeaklist
+self.grangranparent.OnReplot
+self.grangranparent.framedim
+and lot of other things with mainframe…</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.PeakListOLV.OnRemove">
+<code class="descname">OnRemove</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#PeakListOLV.OnRemove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.PeakListOLV.OnRemove" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove one element corresponding to the current highlighted row</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame">
+<em class="property">class </em><code class="descclassname">LaueTools.GUI.PeakSearchGUI.</code><code class="descname">MainPeakSearchFrame</code><span class="sig-paren">(</span><em>parent</em>, <em>_id</em>, <em>_initialParameter</em>, <em>title</em>, <em>size=4</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to show CCD frame pixel intensities
+and provide tools for searching peaks</p>
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.create_main_panel">
+<code class="descname">create_main_panel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.create_main_panel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.create_main_panel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the main panel with all the controls on it:
+* mpl canvas
+* mpl navigation toolbar
+* Control panel for interaction</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.toplayout2">
+<code class="descname">toplayout2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.toplayout2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.toplayout2" title="Permalink to this definition">¶</a></dt>
+<dd><p>init top notebook tabs for image visualisation and processing</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.line_select_callback">
+<code class="descname">line_select_callback</code><span class="sig-paren">(</span><em>eclick</em>, <em>erelease</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.line_select_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.line_select_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>eclick and erelease are the press and release events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnTabChange_nb0">
+<code class="descname">OnTabChange_nb0</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnTabChange_nb0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnTabChange_nb0" title="Permalink to this definition">¶</a></dt>
+<dd><p>handling changing tab of top notebook</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.askUserForDirname">
+<code class="descname">askUserForDirname</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.askUserForDirname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.askUserForDirname" title="Permalink to this definition">¶</a></dt>
+<dd><p>provide a dialog to browse the folders and files</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSetFileCCDParam">
+<code class="descname">OnSetFileCCDParam</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnSetFileCCDParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSetFileCCDParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enter manually CCD file params
+Launch Entry dialog</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSetPlotSize">
+<code class="descname">OnSetPlotSize</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnSetPlotSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSetPlotSize" title="Permalink to this definition">¶</a></dt>
+<dd><p>set marker size</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onClick">
+<code class="descname">onClick</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onClick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onClick" title="Permalink to this definition">¶</a></dt>
+<dd><p>onclick</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onPick">
+<code class="descname">onPick</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onPick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onPick" title="Permalink to this definition">¶</a></dt>
+<dd><p>on pick</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onKeyPressed">
+<code class="descname">onKeyPressed</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onKeyPressed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onKeyPressed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle key pressed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.gettime">
+<code class="descname">gettime</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.gettime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.gettime" title="Permalink to this definition">¶</a></dt>
+<dd><p>set self.currentime to current time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onToggle">
+<code class="descname">onToggle</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onToggle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onToggle" title="Permalink to this definition">¶</a></dt>
+<dd><p>handling on auto index button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onToggleCrop">
+<code class="descname">onToggleCrop</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onToggleCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onToggleCrop" title="Permalink to this definition">¶</a></dt>
+<dd><p>activate/deactivate crop image mode</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update at each time step time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.CurrentFileIsReady">
+<code class="descname">CurrentFileIsReady</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.CurrentFileIsReady"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.CurrentFileIsReady" title="Permalink to this definition">¶</a></dt>
+<dd><p>return True if self.imagefilename is in folder and entire (correct size)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getIndex_fromfilename">
+<code class="descname">getIndex_fromfilename</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.getIndex_fromfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getIndex_fromfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>get index of image from the image filename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.setfilename">
+<code class="descname">setfilename</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.setfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.setfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>set filename from self.imagefilename, self.imageindex,
+CCDLabel=self.CCDlabel</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnLargePlus">
+<code class="descname">OnLargePlus</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnLargePlus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnLargePlus" title="Permalink to this definition">¶</a></dt>
+<dd><p>increase self.imageindex by self.stepindex (vertical descending in sample raster scan)
+and read new image and plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnLargeMinus">
+<code class="descname">OnLargeMinus</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnLargeMinus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnLargeMinus" title="Permalink to this definition">¶</a></dt>
+<dd><p>decrease self.imageindex by self.stepindex (vertical ascendindg in sample raster scan)
+and read new image and plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnPlus">
+<code class="descname">OnPlus</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnPlus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnPlus" title="Permalink to this definition">¶</a></dt>
+<dd><p>increase  self.imageindex by 1 (horizontal ascending to the right in sample raster scan)
+and read new image and plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnMinus">
+<code class="descname">OnMinus</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnMinus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnMinus" title="Permalink to this definition">¶</a></dt>
+<dd><p>decrease  self.imageindex by 1 (horizontal descending to the left in sample raster scan)
+and read new image and plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnGoto">
+<code class="descname">OnGoto</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnGoto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnGoto" title="Permalink to this definition">¶</a></dt>
+<dd><p>read image with selected self.imageindex and plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onChangeIndex_slider_imagevert">
+<code class="descname">onChangeIndex_slider_imagevert</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onChangeIndex_slider_imagevert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onChangeIndex_slider_imagevert" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot new image obtained by new index changed by vertical (slow axis) slider</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.read_data">
+<code class="descname">read_data</code><span class="sig-paren">(</span><em>secondaryImage=False</em>, <em>secondaryImagefilename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.read_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.read_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>read binary image file</p>
+<dl class="docutils">
+<dt>if secondaryImage update</dt>
+<dd>self.dataimage_ROI_B</dd>
+<dt>else update</dt>
+<dd>self.dataimage_ROI</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnCheckPlotValues">
+<code class="descname">OnCheckPlotValues</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnCheckPlotValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnCheckPlotValues" title="Permalink to this definition">¶</a></dt>
+<dd><p>enable or disable drawing of numerical pixel intensity value on plot</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.PlotValues">
+<code class="descname">PlotValues</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.PlotValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.PlotValues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw numerical pixel intensity value on plot
+if self.numvalues_chck is True</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.init_figure_draw">
+<code class="descname">init_figure_draw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.init_figure_draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.init_figure_draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>init the figure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Show_Image">
+<code class="descname">Show_Image</code><span class="sig-paren">(</span><em>event</em>, <em>datatype='Raw Image'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.Show_Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Show_Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>show self.dataimage_ROI_display</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Show_ConvolvedImage">
+<code class="descname">Show_ConvolvedImage</code><span class="sig-paren">(</span><em>event</em>, <em>datatype='Convolved Image'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.Show_ConvolvedImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Show_ConvolvedImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>set displayed data to be convolved data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.updatePlotTitle">
+<code class="descname">updatePlotTitle</code><span class="sig-paren">(</span><em>datatype=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.updatePlotTitle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.updatePlotTitle" title="Permalink to this definition">¶</a></dt>
+<dd><p>update plot title</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.normalizeplot">
+<code class="descname">normalizeplot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.normalizeplot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.normalizeplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize current displayed array according to vmin vmax sliders</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.update_draw">
+<code class="descname">update_draw</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.update_draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.update_draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>update 2D plot taken into account change of LUT table and vmin vamax values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getDisplayedImageSize">
+<code class="descname">getDisplayedImageSize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.getDisplayedImageSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getDisplayedImageSize" title="Permalink to this definition">¶</a></dt>
+<dd><p>get xmin, xmax, ymin, ymax from current displayed image</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.set_circleradius">
+<code class="descname">set_circleradius</code><span class="sig-paren">(</span><em>self.viewingLUTpanel.drg.artists</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.set_circleradius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.set_circleradius" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.activateCrop">
+<code class="descname">activateCrop</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.activateCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.activateCrop" title="Permalink to this definition">¶</a></dt>
+<dd><p>set boxx and boxy from ctrls</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.readdata_updateplot_aftercrop_uncrop">
+<code class="descname">readdata_updateplot_aftercrop_uncrop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.readdata_updateplot_aftercrop_uncrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.readdata_updateplot_aftercrop_uncrop" title="Permalink to this definition">¶</a></dt>
+<dd><p>read data and update data to be displayed and redraw</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.reinit_aftercrop_draw">
+<code class="descname">reinit_aftercrop_draw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.reinit_aftercrop_draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.reinit_aftercrop_draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>reinit the figure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.buildMosaic">
+<code class="descname">buildMosaic</code><span class="sig-paren">(</span><em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.buildMosaic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.buildMosaic" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch MOS.buildMosaic3() with GUI inputs as arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onMotion_ToolTip">
+<code class="descname">onMotion_ToolTip</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onMotion_ToolTip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onMotion_ToolTip" title="Permalink to this definition">¶</a></dt>
+<dd><p>tool tip to show data when mouse hovers on plot
+Some pixels at the image border could not be detected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSpinCtrl_ImaxDisplayed">
+<code class="descname">OnSpinCtrl_ImaxDisplayed</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnSpinCtrl_ImaxDisplayed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnSpinCtrl_ImaxDisplayed" title="Permalink to this definition">¶</a></dt>
+<dd><p>on change Imax by spin control</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Get_XYI_from_fit2dpeaksfile">
+<code class="descname">Get_XYI_from_fit2dpeaksfile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.Get_XYI_from_fit2dpeaksfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.Get_XYI_from_fit2dpeaksfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>useless ?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.draw_cursor">
+<code class="descname">draw_cursor</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.draw_cursor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.draw_cursor" title="Permalink to this definition">¶</a></dt>
+<dd><p>event is a MplEvent.  Draw a cursor over the axes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getConvolvedData">
+<code class="descname">getConvolvedData</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.getConvolvedData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getConvolvedData" title="Permalink to this definition">¶</a></dt>
+<dd><p>convolve data according to check value of</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.SavePeakList_PSPfile">
+<code class="descname">SavePeakList_PSPfile</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.SavePeakList_PSPfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.SavePeakList_PSPfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>save peak list and save .psp file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onSaveROIsList">
+<code class="descname">onSaveROIsList</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onSaveROIsList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onSaveROIsList" title="Permalink to this definition">¶</a></dt>
+<dd><p>save rois list from current peaks list with boxsize of fitting procedure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onFitOnePeak">
+<code class="descname">onFitOnePeak</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onFitOnePeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onFitOnePeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit one peak centered on where user has clicked</p>
+<p>in displayed image coordinates: self.centerx, self.centery</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnFit">
+<code class="descname">OnFit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnFit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnFit" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit image array in a ROI with a 2D gaussian shape</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onRemovePeaktoPeaklist">
+<code class="descname">onRemovePeaktoPeaklist</code><span class="sig-paren">(</span><em>_</em>, <em>centerXY=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onRemovePeaktoPeaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onRemovePeaktoPeaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove picked peak from the current peaks list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onRemoveAllPeakstoPeaklist">
+<code class="descname">onRemoveAllPeakstoPeaklist</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.onRemoveAllPeakstoPeaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.onRemoveAllPeakstoPeaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove all spots of the peaks list and update the plot (remove circular markers)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getClosestPeak">
+<code class="descname">getClosestPeak</code><span class="sig-paren">(</span><em>centerXY=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.getClosestPeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.getClosestPeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>return peak in self.peaklistPixels
+that is close to the clicked pixel position or the given value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.deleteOnePeak">
+<code class="descname">deleteOnePeak</code><span class="sig-paren">(</span><em>index_close</em>, <em>peakXY</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.deleteOnePeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.deleteOnePeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete one peak and update display and lists</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.deleteAllPeaks">
+<code class="descname">deleteAllPeaks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.deleteAllPeaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.deleteAllPeaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete all peaks and update display and lists</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnPeakSearch">
+<code class="descname">OnPeakSearch</code><span class="sig-paren">(</span><em>_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/GUI/PeakSearchGUI.html#MainPeakSearchFrame.OnPeakSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame.OnPeakSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch peak search by calling methods in readmccd.py</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

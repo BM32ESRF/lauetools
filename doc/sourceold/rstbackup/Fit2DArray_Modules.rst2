@@ -1,0 +1,22 @@
+.. _Fit2DPeaks:
+
+
+Gaussian Fit peaks in 2D array 
+-----------------------
+
+.. automodule:: fit2Dintensity
+   :members:
+
+Lorentzian Fit peaks in 2D array 
+----------------------
+.. automodule:: fit2Dintensity_Lorentz
+   :members:
+
+
+Double Gaussian Fit peaks in 2D array 
+----------------------
+.. automodule:: fitdoublepeaks
+   :members:
+
+
+

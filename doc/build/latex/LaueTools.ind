@@ -1,0 +1,280 @@
+\begin{sphinxtheindex}
+\def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
+
+  \bigletter A
+  \item activateCrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item Add\_Images() (in module LaueTools.readmccd), \hyperpage{95}
+  \item AngleBetweenNormals() (in module LaueTools.CrystalParameters), \hyperpage{57}
+  \item applyformula\_on\_images() (in module LaueTools.readmccd), \hyperpage{101}
+  \item askUserForDirname() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{88}
+
+  \indexspace
+  \bigletter B
+  \item bestposition() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item blur\_image() (in module LaueTools.readmccd), \hyperpage{101}
+  \item blurCCD() (in module LaueTools.readmccd), \hyperpage{102}
+  \item blurCCD\_with\_binning() (in module LaueTools.readmccd), \hyperpage{102}
+  \item BrowseCropPanel (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{87}
+  \item buildMosaic() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+
+  \indexspace
+  \bigletter C
+  \item calc\_B\_RR() (in module LaueTools.CrystalParameters), \hyperpage{57}
+  \item calc\_uflab() (in module LaueTools.LaueGeometry), \hyperpage{70}
+  \item calc\_uflab\_trans() (in module LaueTools.LaueGeometry), \hyperpage{71}
+  \item calc\_xycam() (in module LaueTools.LaueGeometry), \hyperpage{71}
+  \item calc\_xycam\_transmission() (in module LaueTools.LaueGeometry), \hyperpage{71}
+  \item calcSpots\_fromHKLlist() (in module LaueTools.lauecore), \hyperpage{63}
+  \item check\_array\_indices() (in module LaueTools.readmccd), \hyperpage{95}
+  \item circularMask() (in module LaueTools.readmccd), \hyperpage{102}
+  \item compute\_autobackground\_image() (in module LaueTools.readmccd), \hyperpage{102}
+  \item Compute\_data2thetachi() (in module LaueTools.LaueGeometry), \hyperpage{73}
+  \item computefilteredimage() (in module LaueTools.readmccd), \hyperpage{102}
+  \item Computefilteredimage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item Construct\_GrainsParameters\_parametric() (in module LaueTools.multigrainsSimulator), 
+		\hyperpage{75}
+  \item convert2corfile() (in module LaueTools.LaueGeometry), \hyperpage{73}
+  \item convert2corfile\_fileseries() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item convert2corfile\_multiprocessing() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item convert\_xycam\_from\_sourceshift() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item ConvolvebyKernel() (in module LaueTools.readmccd), \hyperpage{97}
+  \item create\_main\_panel() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{88}
+  \item create\_spot() (in module LaueTools.lauecore), \hyperpage{61}
+  \item create\_spot\_np() (in module LaueTools.lauecore), \hyperpage{61}
+  \item CurrentFileIsReady() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{89}
+
+  \indexspace
+  \bigletter D
+  \item deleteAllPeaks() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{91}
+  \item deleteOnePeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{91}
+  \item DeviatoricStrain\_LatticeParams() (in module LaueTools.CrystalParameters), \hyperpage{58}
+  \item diff\_pix() (in module LaueTools.readmccd), \hyperpage{95}
+  \item dosimulation\_parametric() (in module LaueTools.multigrainsSimulator), \hyperpage{75}
+  \item draw\_cursor() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+
+  \indexspace
+  \bigletter F
+  \item FilterBackGroundPanel (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{87}
+  \item FilterHarmonics\_2() (in module LaueTools.CrystalParameters), \hyperpage{57}
+  \item filterimage() (in module LaueTools.readmccd), \hyperpage{102}
+  \item filterLaueSpots() (in module LaueTools.lauecore), \hyperpage{61}
+  \item findLocalMaxima\_Meth\_1 (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item findLocalMaxima\_Meth\_2 (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item findLocalMaxima\_Meth\_3 (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item fitoneimage\_manypeaks() (in module LaueTools.readmccd), \hyperpage{98}
+  \item FitParametersPanel (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item from\_qunit\_to\_twchi() (in module LaueTools.LaueGeometry), \hyperpage{72}
+  \item from\_twchi\_to\_q() (in module LaueTools.LaueGeometry), \hyperpage{72}
+  \item from\_twchi\_to\_qunit() (in module LaueTools.LaueGeometry), \hyperpage{72}
+
+  \indexspace
+  \bigletter G
+  \item gauss\_kern() (in module LaueTools.readmccd), \hyperpage{101}
+  \item genHKL\_np() (in module LaueTools.lauecore), \hyperpage{59}
+  \item get2ThetaChi\_geometry() (in module LaueTools.lauecore), \hyperpage{62}
+  \item Get\_XYI\_from\_fit2dpeaksfile() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item getclickposition() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{86}
+  \item getClosestPeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{91}
+  \item getConvolvedData() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item getDisplayedImageSize() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item getExtrema() (in module LaueTools.readmccd), \hyperpage{96}
+  \item getIndex\_fromfilename() (in module LaueTools.readmccd), \hyperpage{91}
+  \item getIndex\_fromfilename() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{89}
+  \item getindices2cropArray() (in module LaueTools.readmccd), \hyperpage{94}
+  \item getIntegratedIntensities() (in module LaueTools.readmccd), \hyperpage{96}
+  \item getIntegratedIntensity() (in module LaueTools.readmccd), \hyperpage{96}
+  \item getLaueSpots() (in module LaueTools.lauecore), \hyperpage{60}
+  \item getlineprofiledata() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method), \hyperpage{88}
+  \item getlineprofiledata() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item getMinMax() (in module LaueTools.readmccd), \hyperpage{96}
+  \item gettime() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item GrainParameter\_from\_Material() (in module LaueTools.CrystalParameters), \hyperpage{53}
+
+  \indexspace
+  \bigletter I
+  \item init\_figure\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{89}
+
+  \indexspace
+  \bigletter L
+  \item LaueTools.CrystalParameters (module), \hyperpage{53}
+  \item LaueTools.GUI.PeakSearchGUI (module), \hyperpage{86}
+  \item LaueTools.lauecore (module), \hyperpage{59}
+  \item LaueTools.LaueGeometry (module), \hyperpage{69}
+  \item LaueTools.multigrainsSimulator (module), \hyperpage{75}
+  \item LaueTools.readmccd (module), \hyperpage{91}
+  \item lengthInSample() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item line\_select\_callback() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{88}
+  \item localmaxima() (in module LaueTools.readmccd), \hyperpage{98}
+  \item LocalMaxima\_from\_thresholdarray() (in module LaueTools.readmccd), \hyperpage{97}
+  \item LocalMaxima\_KernelConvolution() (in module LaueTools.readmccd), \hyperpage{97}
+  \item LoGArr() (in module LaueTools.readmccd), \hyperpage{96}
+
+  \indexspace
+  \bigletter M
+  \item MainPeakSearchFrame (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item matrix\_to\_rlat() (in module LaueTools.CrystalParameters), \hyperpage{59}
+  \item merge\_2Peaklist() (in module LaueTools.readmccd), \hyperpage{102}
+  \item MosaicAndMonitor (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{87}
+
+  \indexspace
+  \bigletter N
+  \item normalizeplot() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+
+  \indexspace
+  \bigletter O
+  \item onCenterROI() (LaueTools.GUI.PeakSearchGUI.ROISelection method), \hyperpage{87}
+  \item onChangeIndex\_slider\_imagevert() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{89}
+  \item OnChangeUseFormula() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item OnCheckPlotValues() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{89}
+  \item onClick() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{88}
+  \item onComputeBlurImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item OnFit() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item onFitOnePeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item onGetBImagefilename() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item onGetBlackListfilename() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item OnGoto() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item onKeyPressed() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item OnLargeMinus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item OnLargePlus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item OnMinus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item OnMosaic() (LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor method), \hyperpage{87}
+  \item onMotion\_ToolTip() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item onOpenDetFile() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item OnPeakSearch() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{91}
+  \item OnPlus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item OnRemove() (LaueTools.GUI.PeakSearchGUI.PeakListOLV method), \hyperpage{88}
+  \item onRemoveAllPeakstoPeaklist() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item onRemovePeaktoPeaklist() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item OnReplot() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{86}
+  \item onSaveBlurImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item onSaveFormulaResultImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item onSaveROIsList() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item OnSetFileCCDParam() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{88}
+  \item OnSetPlotSize() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{88}
+  \item OnShowLineProfiler() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method), \hyperpage{88}
+  \item OnShowLineProfiler() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item OnShowLineXYProfiler() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method), 
+		\hyperpage{88}
+  \item OnShowLineXYProfiler() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{86}
+  \item OnSpinCtrl\_ImaxDisplayed() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item OnSwitchBlurRawImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method), 
+		\hyperpage{87}
+  \item OnSwitchImageDisplay() (LaueTools.GUI.PeakSearchGUI.findLocalMaxima\_Meth\_3 method), 
+		\hyperpage{88}
+  \item OnTabChange\_nb0() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{88}
+  \item onToggle() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item onToggleCrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+
+  \indexspace
+  \bigletter P
+  \item PeakListOLV (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item PeakSearch() (in module LaueTools.readmccd), \hyperpage{98}
+  \item peaksearch\_fileseries() (in module LaueTools.readmccd), \hyperpage{101}
+  \item peaksearch\_multiprocessing() (in module LaueTools.readmccd), \hyperpage{101}
+  \item peaksearch\_on\_Image() (in module LaueTools.readmccd), \hyperpage{100}
+  \item plot\_image\_markers() (in module LaueTools.readmccd), \hyperpage{101}
+  \item PlotPeakListPanel (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{88}
+  \item PlotValues() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item Prepare\_Grain() (in module LaueTools.CrystalParameters), \hyperpage{55}
+  \item purgePeaksListFile() (in module LaueTools.readmccd), \hyperpage{102}
+
+  \indexspace
+  \bigletter Q
+  \item Quicklist() (in module LaueTools.lauecore), \hyperpage{59}
+  \item qvector\_from\_xy\_E() (in module LaueTools.LaueGeometry), \hyperpage{72}
+
+  \indexspace
+  \bigletter R
+  \item read\_background\_flag() (in module LaueTools.readmccd), \hyperpage{101}
+  \item read\_data() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item Read\_GrainListparameter() (in module LaueTools.multigrainsSimulator), \hyperpage{75}
+  \item read\_header\_marccd() (in module LaueTools.readmccd), \hyperpage{91}
+  \item read\_header\_marccd2() (in module LaueTools.readmccd), \hyperpage{91}
+  \item read\_header\_scmos() (in module LaueTools.readmccd), \hyperpage{92}
+  \item readCCDimage() (in module LaueTools.readmccd), \hyperpage{92}
+  \item readdata\_updateplot\_aftercrop\_uncrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item readheader() (in module LaueTools.readmccd), \hyperpage{91}
+  \item readoneimage() (in module LaueTools.readmccd), \hyperpage{92}
+  \item readoneimage\_crop() (in module LaueTools.readmccd), \hyperpage{93}
+  \item readoneimage\_crop\_fast() (in module LaueTools.readmccd), \hyperpage{92}
+  \item readoneimage\_manycrops() (in module LaueTools.readmccd), \hyperpage{93}
+  \item readoneimage\_multiROIfit() (in module LaueTools.readmccd), \hyperpage{93}
+  \item readrectangle\_in\_image() (in module LaueTools.readmccd), \hyperpage{93}
+  \item reinit\_aftercrop\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item remove\_minimum\_background() (in module LaueTools.readmccd), \hyperpage{102}
+  \item removePeaks\_inPeakList() (in module LaueTools.readmccd), \hyperpage{102}
+  \item restrictxylimits\_to\_imagearray() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), 
+		\hyperpage{87}
+  \item ROISelection (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{87}
+
+  \indexspace
+  \bigletter S
+  \item SavePeakList\_PSPfile() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item set\_circleradius() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item setfilename() (in module LaueTools.readmccd), \hyperpage{91}
+  \item setfilename() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item Show\_ConvolvedImage() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), 
+		\hyperpage{90}
+  \item Show\_Image() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item showImage() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item SimulateLaue() (in module LaueTools.lauecore), \hyperpage{63}
+  \item SimulateLaue\_full\_np() (in module LaueTools.lauecore), \hyperpage{65}
+  \item SimulateResult() (in module LaueTools.lauecore), \hyperpage{67}
+  \item SumImages() (in module LaueTools.readmccd), \hyperpage{95}
+
+  \indexspace
+  \bigletter T
+  \item to8bits() (in module LaueTools.readmccd), \hyperpage{95}
+  \item toplayout2() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{88}
+
+  \indexspace
+  \bigletter U
+  \item uflab\_from2thetachi() (in module LaueTools.LaueGeometry), \hyperpage{71}
+  \item unit\_q() (in module LaueTools.LaueGeometry), \hyperpage{73}
+  \item update() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{89}
+  \item update\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+  \item updateLineXYProfile() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method), \hyperpage{87}
+  \item updatePlotTitle() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method), \hyperpage{90}
+
+  \indexspace
+  \bigletter V
+  \item vec\_normalTosurface() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item vec\_onsurface\_alongys() (in module LaueTools.LaueGeometry), \hyperpage{74}
+  \item ViewColorPanel (class in LaueTools.GUI.PeakSearchGUI), \hyperpage{86}
+  \item VolumeCell() (in module LaueTools.CrystalParameters), \hyperpage{58, 59}
+
+  \indexspace
+  \bigletter W
+  \item write\_PurgedPeakListFile() (in module LaueTools.readmccd), \hyperpage{102}
+  \item write\_rawbinary() (in module LaueTools.readmccd), \hyperpage{95}
+  \item writefile\_mergedPeaklist() (in module LaueTools.readmccd), \hyperpage{102}
+  \item writeimage() (in module LaueTools.readmccd), \hyperpage{95}
+  \item writepeaklist() (in module LaueTools.readmccd), \hyperpage{98}
+
+\end{sphinxtheindex}
