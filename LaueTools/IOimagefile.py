@@ -13,6 +13,14 @@ import sys
 import os
 import copy
 import struct
+from scipy import ndimage as scind
+try:
+    SKIMAGE = True
+    from skimage.external import tifffile
+except:
+    SKIMAGE = False
+
+import LaueTools.generaltools as GT
 
 # third party modules
 try:
@@ -32,7 +40,7 @@ try:
 
     libtiff_ctypes.suppress_warnings()
     LIBTIFF_EXISTS = True
-except (ImportError, ValueError):
+except (ImportError, ValueError, AttributeError, NameError):
     print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images")
     LIBTIFF_EXISTS = False
 
@@ -328,6 +336,195 @@ def getwildcardstring(CCDlabel):
 
     return wildcard_extensions
 
+def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
+    """ return values of pixel intensity xy pixel position
+    
+    :param sortpeaks: True or False, to sort peaks by increasing y value
+    .. note: assume nb  of peaks > 1
+    """
+    if not isinstance(xy[0,0],np.int):
+        xy=np.int_(xy)
+    if not sortpeaks: # already sorted
+        xx,yy = np.array(xy).T
+        nbpeaks = len(xx)
+    else: # sort by y
+        X,Y=np.array(xy).T
+        nbpeaks=len(xy)
+        
+        sp = np.argsort(Y)
+        xx=X[sp]
+        yy=Y[sp]
+
+    assert nbpeaks>1
+
+    vals = None
+    with open(imagefilename, 'rb') as f:
+        filesize = os.path.getsize(imagefilename)
+        framedim = DictLT.dict_CCD[CCDLabel][0]
+        offset = filesize - np.prod(framedim) * 2
+        vals = np.zeros(nbpeaks, dtype=np.int32)
+        for k in range(nbpeaks):
+            x=xx[k]
+            y=yy[k]
+            if CCDLabel == 'sCMOS':
+                #x = 2018 - x  # fliplr
+                f.seek(offset + 2 * (2016 * y + x))
+                vals[k]=struct.unpack("H", f.read(2))[0]
+            elif CCDLabel == 'IMSTAR_bin2':
+                #x = 2018 - x  # fliplr
+                f.seek(offset + 2 * (3035 * y + x))
+                vals[k]=struct.unpack("H", f.read(2))[0]
+            elif CCDLabel == 'MARCCD165':
+                f.seek(offset + 2 * (2048 * y + x))
+                vals[k]=struct.unpack("H", f.read(2))[0]
+    return vals
+
+def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+    dataimage= None
+    framedim=None
+
+    selectedcounters = ["Imax",]
+    ndivisions = (4,20)
+    CountersData={}
+    CountersData["Imax"]=np.zeros(len(roicenters))
+    with fabio.open(imagefilename) as img:  # ok for sCMOS
+        dataimage = img.data
+        framedim = dataimage.shape
+        for roi_index, roi in enumerate(roicenters):
+            center_pixel = (round(roi[0]), round(roi[1]))
+
+            indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                    (halfboxsize[0], halfboxsize[1]),
+                                                    framedim,
+                                                    flipxycenter=0)
+            imin, imax, jmin, jmax = indicesborders
+
+            # avoid to wrong indices when slicing the data
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                    framedim=framedim)
+
+            piece_dat = dataimage[imin:imax, jmin:jmax]
+            piece_dat_m = None
+
+            for counter in selectedcounters:
+
+                if 'multiple' in counter:  #split array into several regular subarrays (tiled)
+                    if piece_dat_m is None:
+                        piece_dat_m, _, (box1, box2) = GT.splitarray(piece_dat, ndivisions)
+
+                if counter.startswith("I"):
+                    if 'multiple' not in counter:
+                        if counter == "Imean":
+                            CountersData["Imean"][roi_index] = np.mean(piece_dat)
+                        elif counter == "Imax":
+                            CountersData["Imax"][roi_index] = np.amax(piece_dat)
+                        elif counter == "Iptp":
+                            CountersData["Iptp"][roi_index] = np.ptp(piece_dat)
+                    else:
+                        if counter == "Imean_multiple":
+                            CountersData["Imean_multiple"][roi_index] = np.mean(piece_dat_m, axis=(1, 2))
+                        elif counter == "Imax_multiple":
+                            CountersData["Imax_multiple"][roi_index] = np.amax(piece_dat_m, axis=(1, 2))
+                        elif counter == "Iptp_multiple":
+                            CountersData["Iptp_multiple"][roi_index] = np.ptp(piece_dat_m, axis=(1, 2))
+
+                elif counter.startswith("pos"):
+
+                    if 'multiple' in counter:
+                        if counter == "posmax_multiple":
+                            nbrois = ndivisions[0] * ndivisions[1]
+                            labels = np.repeat(np.arange(nbrois), box1 * box2).reshape((nbrois, box1, box2))
+                            #print('labels.shape',labels.shape)
+                            index = np.arange(nbrois)
+                            datmaximumpos = np.array(scind.measurements.maximum_position(piece_dat_m, labels=labels, index=index))
+                            CountersData["posmax_multiple"][roi_index] = datmaximumpos[:, 1:]
+
+                    else:
+                        datminimum = scind.measurements.maximum(piece_dat)
+                        # center of mass without background removal
+                        datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
+                        # remove baseline level set to minimum pixel intensity
+                        datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
+
+                        centerofmass = datcenterofmass2 + np.array([jmin, imin])
+
+                        datmaximumpos = scind.measurements.maximum_position(piece_dat)
+                        datmaximumpos = np.array(datmaximumpos, dtype="uint32")
+
+                        posmax = datmaximumpos + np.array([jmin, imin])
+
+                        # position monitors selection
+                        XY = posmax
+                        XY = centerofmass
+
+                        xDATA, yDATA = XY
+
+                        CountersData["posX"][roi_index] = xDATA
+                        CountersData["posY"][roi_index] = yDATA
+    
+    return CountersData["Imax"]
+
+def getroisXYmax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+    dataimage= None
+    framedim=None
+
+    selectedcounters = ["posX","posY"]
+    CountersData={}
+    CountersData["posXY"]=np.zeros((len(roicenters),2))
+    with fabio.open(imagefilename) as img:  # ok for sCMOS
+        dataimage = img.data
+        framedim = dataimage.shape
+        i_idx = 0
+        for roi_index, roi in enumerate(roicenters):
+            center_pixel = (round(roi[0]), round(roi[1]))
+
+            indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                    (halfboxsize[0], halfboxsize[1]),
+                                                    framedim,
+                                                    flipxycenter=0)
+            imin, imax, jmin, jmax = indicesborders
+
+            # avoid to wrong indices when slicing the data
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                    framedim=framedim)
+
+            piece_dat = dataimage[imin:imax, jmin:jmax]
+
+            for counter in selectedcounters:
+
+                if counter.startswith("I"):
+                    if counter == "Imean":
+                        CountersData["Imean"][roi_index] = np.mean(piece_dat)
+                    elif counter == "Imax":
+                        CountersData["Imax"][roi_index] = np.amax(piece_dat)
+                    elif counter == "Iptp":
+                        CountersData["Iptp"][roi_index] = np.ptp(piece_dat)
+                    
+
+                elif counter.startswith("pos"):
+
+                    datminimum = scind.measurements.maximum(piece_dat)
+                    # center of mass without background removal
+                    datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
+                    # remove baseline level set to minimum pixel intensity
+                    datcenterofmass2 = np.array(scind.measurements.center_of_mass(piece_dat - datminimum))
+
+                    centerofmass = datcenterofmass2 + np.array([jmin, imin])
+
+                    datmaximumpos = scind.measurements.maximum_position(piece_dat)
+                    datmaximumpos = np.array(datmaximumpos, dtype="uint32")
+
+                    posmax = datmaximumpos + np.array([jmin, imin])
+
+                    # position monitors selection
+                    #XY = posmax
+                    XY = centerofmass
+
+                    xDATA, yDATA = XY
+
+                    CountersData["posXY"][i_idx] = [xDATA,yDATA]
+            i_idx+=1
+    return CountersData["posXY"]
 
 def getpixelValue(filename, x, y, ccdtypegeometry="edf"):
     r"""return pixel value at x,y
@@ -464,6 +661,30 @@ def read_header_scmos(filename, verbose=0):
 
     return dictpar
 
+def readheadertiff(fullpathimage):
+    ''' return artist tag of tiff image generated by pslviewer including exposure time, and unit'''
+    if not SKIMAGE:
+        print('SKIMAGE is missing ...')
+        return None
+
+    with tifffile.TiffFile(fullpathimage) as tif:
+        imgs = [page.asarray() for page in tif.pages] # image(s)
+        kkeys = [kk for page in tif.pages for kk in page.tags.keys() ]
+        artist = [page.tags['artist'].value for page in tif.pages]
+        listprops = artist[0].decode('UTF-8').split(',')
+        gotExposureFlag=False
+        for prop in listprops:
+            if gotExposureFlag:
+                expo_unit = prop[:-1].strip()
+                print('expo_unit', expo_unit)
+                break
+            if prop.startswith('Exposure'):
+                gotExposureFlag=True
+                _, exp = prop.split(':')
+                exposuretime = int(exp[1:])
+                continue
+        return artist, exposuretime, expo_unit
+
 
 def read_motorsposition_fromheader(filename, CCDLabel="MARCCD165"):
     r""" return xyzpositions, expo_time from image file header
@@ -567,18 +788,20 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             # warning import Image  # for well read of header only
 
             if dirname is not None:
-                img = fabio.open(os.path.join(dirname, filename))
+                pathfile=os.path.join(dirname, filename)
             else:
-                img = fabio.open(filename)
+                pathfile=filename
 
-            dataimage = img.data
-            framedim = dataimage.shape
+            with fabio.open(pathfile) as img:
+                dataimage = img.data
+            
+                framedim = dataimage.shape
 
-            # pythonic way to change immutable tuple...
-            initframedim = list(DictLT.dict_CCD[CCDLabel][0])
-            initframedim[0] = framedim[0]
-            initframedim[1] = framedim[1]
-            initframedim = tuple(initframedim)
+                # pythonic way to change immutable tuple...
+                initframedim = list(DictLT.dict_CCD[CCDLabel][0])
+                initframedim[0] = framedim[0]
+                initframedim[1] = framedim[1]
+                initframedim = tuple(initframedim)
         else:
             USE_RAW_METHOD = True
 
@@ -1256,3 +1479,6 @@ def get_imagesize(framedim, nbbits_per_pixel, headersize_bytes):
     return size of image in byte (= 1 octet = 8 bits)
     """
     return (framedim[0] * framedim[1] * nbbits_per_pixel + headersize_bytes * 8) // 8
+
+if __name__=='__main__':
+    pass
