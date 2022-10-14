@@ -3529,7 +3529,7 @@ def CollectData(param, outputfolder, ccdlabel="MARCCD165"):
 
 
 def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
-                selectedcounters=("Imean", "Imax", "Iptp", "posX", "posY"), ndivisions=(1,15)):
+                selectedcounters=("Imean", "Imax", "Iptp", "posX", "posY"), ndivisions=(1,15), imageheaderinfos=False):
     """
     return dictionary of counters
 
@@ -3550,7 +3550,6 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
     nbpeaks = len(peaklist)
 
     #print("nbpeaks", nbpeaks)
-    #     print 'peaklist', peaklist
 
     boxsize_row, boxsize_line = list(map(int, [boxsize_row, boxsize_line]))
 
@@ -3576,28 +3575,29 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
 
     filename = os.path.join(dirname, filename)
 
+    try:
+        framedim = DictLT.dict_CCD[ccdlabel][0]
+        dataimage, framedim, fliprot = IOimage.readCCDimage(filename, CCDLabel=ccdlabel,
+                                                                                dirname=None)
+    except IOError:
+        print("!***!****!****!")
+        print("Missing image file : %s" % filename)
+        print("!***!****!****!")
+        raise IOError
+
     for peak_index, peak in enumerate(peaklist):
-        try:
-            framedim = DictLT.dict_CCD[ccdlabel][0]
-            dataimage, framedim, fliprot = IOimage.readCCDimage(filename, CCDLabel=ccdlabel,
-                                                                                    dirname=None)
-        except IOError:
-            print("!***!****!****!")
-            print("Missing image file : %s" % filename)
-            print("!***!****!****!")
-            raise IOError
-
-        if ccdlabel == "MARCCD165":
-            comments, expo_time = IOimage.read_header_marccd2(filename)
-            I0 = float(comments.split()[3])
-            CountersData["Monitor"] = I0
-            CountersData["ExposureTime"] = expo_time
-        elif ccdlabel == "sCMOS":
-            dictpar = IOimage.read_header_scmos(filename)
-            if dictpar is not {}:
-                CountersData["Monitor"] = dictpar["mon"]
-                CountersData["ExposureTime"] = dictpar["exposure"] * 1000  # in milliseconds
-
+        if imageheaderinfos:
+            if ccdlabel == "MARCCD165":
+                comments, expo_time = IOimage.read_header_marccd2(filename)
+                I0 = float(comments.split()[3])
+                CountersData["Monitor"] = I0
+                CountersData["ExposureTime"] = expo_time
+            elif ccdlabel == "sCMOS":
+                dictpar = IOimage.read_header_scmos(filename)
+                if dictpar is not {}:
+                    CountersData["Monitor"] = dictpar.get("mon",None)
+                    CountersData["ExposureTime"] = dictpar.get("exposure", None)  # in milliseconds
+        
         center_pixel = (round(peak[0]), round(peak[1]))
 
         indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
@@ -3612,8 +3612,9 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
 
         piece_dat = dataimage[imin:imax, jmin:jmax]
 
-        if 'multiple' in counter:  #split array into several subarrays
+        #print('piece_dat',piece_dat)
 
+        if 'multiple' in counter:  #split array into several subarrays
             piece_dat, _, (box1, box2) = GT.splitarray(piece_dat, ndivisions)
 
         for counter in selectedcounters:
