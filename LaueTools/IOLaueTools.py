@@ -292,18 +292,21 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             data_theta = data_2theta / 2.0
 
     #    print "Reading detector parameters if exist"
-    openf = open(filename, "r")
+    with open(filename, "r") as openf:
 
-    # new way of reading CCD calibration parameters
+        # new way of reading CCD calibration parameters
 
-    CCDcalib = readCalibParametersInFile(openf)
-    # print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
+        CCDcalib = readCalibParametersInFile(openf)
+        print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
 
-    if len(CCDcalib) >= 5:
-        detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
-        # print("5 CCD Detector parameters read from .cor file: %s"%filename)
+        if CCDcalib['dd']:
+            detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
+            # print("5 CCD Detector parameters read from .cor file: %s"%filename)
+        else:
+            raise IndexError('Missing explicit values for keys %s in CCDcalib () in file  %s '%(CCD_CALIBRATION_PARAMETERS[:5],filename))
+            return
 
-    openf.close()
+
 
     if output_CCDparamsdict:
         return (alldata, data_theta, data_chi,
@@ -739,7 +742,6 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
     else:
         foundNpeaks = len(data_peak)
 
-
     if output_columnsname:
         return data_peak, columnsname
 
@@ -749,15 +751,13 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
         return data_peak
 
 
-def writefitfile(outputfilename,
-                 datatooutput,
-                 nb_of_indexedSpots,
-                 dict_matrices=None,
-                 meanresidues=None,
-                 PeakListFilename=None,
-                 columnsname=None,
-                 modulecaller=None,
-                 refinementtype="Strain and Orientation"):
+def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
+                                            dict_matrices=None,
+                                            meanresidues=None,
+                                            PeakListFilename=None,
+                                            columnsname=None,
+                                            modulecaller=None,
+                                            refinementtype="Strain and Orientation"):
     """
     write a .fit file
     
@@ -796,14 +796,14 @@ def writefitfile(outputfilename,
         #            outputfile.write(str(self.UBB0mat) + '\n')
         footer += str(dict_matrices["UBmat"].round(decimals=9)) + "\n"
 
-    # added by OR-------------------------
+    # added O Robach fields   ------------------------
     if "Umat2" in dict_matrices:
-        footer += "Umatrix in q_lab= (UB) B0 G* \n"
+        footer += "Umatrix in q_lab= (Umatrix) (B) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
         footer += str(dict_matrices["Umat2"].round(decimals=9)) + "\n"
 
     if "Bmat_tri" in dict_matrices:
-        footer += "Bmatrix in q_lab= (UB) B0 G* \n"
+        footer += "Bmatrix in q_lab= (U) (Bmatrix) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
         footer += str(dict_matrices["Bmat_tri"].round(decimals=9)) + "\n"
 
@@ -818,15 +818,14 @@ def writefitfile(outputfilename,
             footer += dict_matrices["HKLxyz_names"][k] + "\t"
             footer += str(dict_matrices["HKLxyz"][k].round(decimals=3)) + "\n"
 
-    # ---------- end OR
-
+    # ---------- end O Robach fields
     if "B0" in dict_matrices:
         footer += "B0 matrix in q= UB (B0) G*\n"
         footer += str(dict_matrices["B0"].round(decimals=8)) + "\n"
 
     if "UBB0" in dict_matrices:
         footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns "
-        footer += "in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, "
+        footer += "in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as columns on xyzlab1, "
         footer += "xlab1 = ui, ui = unit vector along incident beam)\n"
         footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
 
