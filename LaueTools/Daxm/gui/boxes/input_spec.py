@@ -10,6 +10,8 @@ __version__ = '$Revision$'
 import wx
 
 import LaueTools.Daxm.contrib.spec_reader as spr
+import LaueTools.logfile_reader as logfiler
+
 
 from LaueTools.Daxm.gui.widgets.text import LabelTxtCtrlNum
 from LaueTools.Daxm.gui.widgets.file import FileSelectOpen
@@ -32,6 +34,7 @@ class InputSpec(wx.StaticBoxSizer):
         self._observers = []
 
         self.spec = None
+        self.filetype = None
 
         self.spec_fs = None
         self.cmd_cbx = None
@@ -46,9 +49,9 @@ class InputSpec(wx.StaticBoxSizer):
 
     def Create(self):
 
-        self.spec_fs = FileSelectOpen(self._parent, "Spec file:", "", tip='Load spec or bliss hdf5 file')
+        self.spec_fs = FileSelectOpen(self._parent, "Logfile:", "", tip='Load spec or bliss hdf5 file which contains command description')
 
-        self.cmd_cbx = LabelComboBox(self._parent, "Scan:  ", tip='list of wire scans from spec or hdf file',
+        self.cmd_cbx = LabelComboBox(self._parent, "Scan:  ", tip='list of wire scans from spec or hdf5 file',
                                     choices=["xxxx ascan yf xxxx xxxx xxxx xxxx"])
 
         self.manual_chk = wx.CheckBox(self._parent, wx.ID_ANY, "user-defined:")
@@ -91,23 +94,35 @@ class InputSpec(wx.StaticBoxSizer):
 
     # Getters
     def GetValue(self):
-
+        """ return filename, scan_id, scan_num, scan_command parameters, logfiletype"""
         if self.manual_chk.IsChecked() or self.spec_fs.IsBlank():
 
             fname = None
-            scan = 0
+            scan_num = 0
             comm = [self.ystart_txt.GetValue(), self.ystop_txt.GetValue(),
                     self.step_txt.GetValue(), self.expo_txt.GetValue()]
-
+            scan_id = None
         else:
             fname = self.spec_fs.GetValue()
-            scan = int(self.cmd_cbx.GetValue().split()[0])
+            if fname.endswith('.h5'):  # bliss hdf5 log file
+                scan_id = self.cmd_cbx.GetValue().split()[0]
+                scan_num = int(scan_id.split('_')[-1])
+                filetype='hdf5'
+            else: #spec log file
+                scan_id = self.cmd_cbx.GetValue().split()[0]
+                scan_num = int(scan_id)
+                filetype='spec'
+                
             comm = []
 
-        return fname, scan, comm
+            self.filetype=filetype
+
+        return fname, scan_id, scan_num, comm, self.filetype
 
     def GetSpecList(self):
-
+        """ select in self.spec object (spec or hdf5) the scans that are wire scans that
+        return scan_list   list of selected items in self.spec.cmd_list.values()
+        """
         if self.spec is not None:
             scan_list = [item for item in self.spec.cmd_list.values() if (('yf' in item) | ('zf' in item))]
 
@@ -117,7 +132,9 @@ class InputSpec(wx.StaticBoxSizer):
         return scan_list
 
     def GetSpecScan(self, scan_num):
-
+        """return scan command (str)
+        
+        :param scan_num: key in self.spec.cmd_list : int, for spec scan number, str for BLISS hdf5 file"""
         if scan_num in self.spec.cmd_list:
             cmd = self.spec.cmd_list[scan_num]
         else:
@@ -126,13 +143,16 @@ class InputSpec(wx.StaticBoxSizer):
         return cmd
 
     def GetSpecScanParams(self, scan_num=None):
-
+        """ get 4 parameters  ystart ystop step expo
+        
+        from for a given scan_num from the logfile or selected item in combobox self.cmd_cbx"""
         if scan_num is None:
             cmd = self.cmd_cbx.GetValue()
         else:
             cmd = self.GetSpecScan(scan_num)
 
         cmd_parts = cmd.split()
+        print('cmd_parts', cmd_parts)
 
         if cmd_parts[1] in ("ascan", "dscan"):
             params = cmd_parts[3:]
@@ -148,28 +168,47 @@ class InputSpec(wx.StaticBoxSizer):
         return self.manual_chk.IsChecked()
 
     # Setters
-    def SetValue(self, fname, scan, comm):
+    def SetValue(self, fname, scan, comm, hdf5scanId=''):
+        """set value in InputSpec object"""
+        print('self.filetype in inputSpec SetValue', self.filetype)
+        if self.filetype=='spec':
+            if fname is not None:
 
-        if fname is not None:
+                self.SetManual(False)
+                self.SetFile(fname)
+                self.SetScan(scan)
+                self.SetParams()
 
-            self.SetManual(False)
+            else:
+                self.SetManual(True)
+                self.SetParams(comm)
 
-            self.SetFile(fname)
+        elif self.filetype=='hdf5':
+            if fname is not None:
 
-            self.SetScan(scan)
+                # self.SetManual(False)
+                # self.SetFile(fname)
+                # self.SetScan(scan)
+                # self.SetParams()
+                self.SetManual(False)
+                self.SetFile(fname)
+                # print('this is a bliss hdf5 file!')
+                # self.spec = logfiler.SpecFile(fileselected, filetype='hdf5', onlywirescan=True, collectallscans=False,onlymesh=False)
+                self.SetScan(hdf5scanId)
+                self.SetParams() #selection of one scan
 
-            self.SetParams()
-
-        else:
-            self.SetManual(True)
-
-            self.SetParams(comm)
+            else:
+                self.SetManual(True)
+                self.SetParams(comm)
+            
 
     def SetFile(self, fname):
 
         self.spec_fs.SetValue(fname)
-
-        self.spec = spr.SpecFile(fname)
+        if self.filetype == 'spec':
+            self.spec = spr.SpecFile(fname)  # it can be hdf5 file also
+        elif self.filetype == 'hdf5':
+            self.spec = logfiler.SpecFile(fname, filetype='hdf5',onlywirescan=True, collectallscans=False, onlymesh=False)  # it can be hdf5 file also
 
         self.SetScanList()
 
@@ -187,7 +226,9 @@ class InputSpec(wx.StaticBoxSizer):
         self.expo_txt.SetEditable(value)
 
     def SetParams(self, params=None):
-
+        """ set scan parameters txt_ctrls (ystart, ystop, step, expo_txt
+        provided by user argument params or from self.GetSpecScanParams()
+        """
         if params is None and not self.spec_fs.IsBlank():
             params = self.GetSpecScanParams()
 
@@ -206,7 +247,7 @@ class InputSpec(wx.StaticBoxSizer):
         self.cmd_cbx.SetValue(cmd)
 
     def SetScanList(self, choices=None):
-
+        """ set gui combo box choices provided by user (choices) or by self.GetSpecList()"""
         if choices is None:
             choices = self.GetSpecList()
 
@@ -215,13 +256,26 @@ class InputSpec(wx.StaticBoxSizer):
     # Event handlers
     def OnSelectFile(self, event):
         """ start the spec or hdf5 file reader """
-        self.spec = spr.SpecFile(event.GetValue())
+        fileselected = event.GetValue()
+        print('fileselected', fileselected)
 
-        self.SetScanList()
+        if not fileselected.endswith('.h5'):
+            self.spec = spr.SpecFile()
+            self.SetScanList()
+            self.SetParams()
+            self.Notify()
+        else:
+            print('this is a bliss hdf5 file!')
+            self.spec = logfiler.SpecFile(fileselected, filetype='hdf5', onlywirescan=True, collectallscans=False,onlymesh=False)
+            self.filetype ='hdf5'
+            
+            print('logfile with only wirescan',self.spec)
+            print(self.spec.get_cmd_list)
+            self.SetScanList()
 
-        self.SetParams()
+            self.SetParams() #selection of one scan
 
-        self.Notify()
+            self.Notify()
 
     def OnSelectScan(self, event):
 
@@ -268,11 +322,11 @@ class InputSpec(wx.StaticBoxSizer):
 
 
 class InputSpec2(InputSpec):
-
+    """class to select log file with scans and wire scan first image to get a single wire scan parameters set"""
     # Constructor
     def __init__(self, parent, label="Spec"):
-        InputSpec.__init__(self, parent, label=label)
-
+        InputSpec.__init__(self, parent, label=label)  # log file GUI spec or hdf5
+        self.filetype = None
         # Create
         self.img_fs = FileSelectOpen(self._parent, "First image:", "", tip="select first image of wire daxm scan")
 
@@ -302,7 +356,15 @@ class InputSpec2(InputSpec):
 
     # Getters
     def GetValue(self):
-        return InputSpec.GetValue(self) + (self.img_fs.GetValue(),)
+        """  inputSpec2  return fname,scan_id or scan_num, scancomm, imagefilepath"""
+        fname, scan_id, scan_num, scancomm, filetype = InputSpec.GetValue(self)
+        imagefilepath = InputSpec.GetValue(self)
+        self.filetype = filetype
+
+        if filetype=='spec':
+            return (fname, scan_num, scancomm, imagefilepath)
+        elif filetype=='hdf5':
+            return (fname, scan_id, scancomm, imagefilepath) 
 
     # Appearance
     def Enable(self, enable=True):

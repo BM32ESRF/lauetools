@@ -27,3 +27,12 @@ rec_dir = os.path.join(analysis_dir, "reconstruction")
 
 prefix = "GeDAXM"
 
+
+# ---------------------------------------
+analysis_dir = "/media/micha/LaCie/a322847_guillou_daxm/ech13/ech13_map2d3d/scan_0002"   # images folder
+calib_dir = os.path.join(analysis_dir, "calibration")
+rec_dir = os.path.join(analysis_dir, "reconstruction")
+
+
+prefix = "ech13_daxm_0"
+

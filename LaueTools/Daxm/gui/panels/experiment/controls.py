@@ -122,9 +122,26 @@ class PanelExperimentControls(wxls.ScrolledPanel):
         scan_dict = scan.to_dict("setup")
         self.inp_dtt.SetValue(label=scan_dict['CCDType'], params=scan_dict['detCalib'])
 
+    # def SetSpec(self, scan):
+    #     scan_dict = scan.to_dict("spec")
+    #     self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+
     def SetSpec(self, scan):
         scan_dict = scan.to_dict("spec")
-        self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+        print("scan_dict['specFile']",scan_dict['specFile'])
+        if scan_dict['specFile'] is None:
+            self.inp_spc.filetype='spec'  # default
+            self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+            return
+
+        if not scan_dict['specFile'].endswith('.h5'): # spec file
+            self.inp_spc.filetype='spec'  # default
+            self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+
+        else: #hdf5 file
+            self.inp_spc.filetype='hdf5'  # default
+            print("scan_dict['hdf5scanId']", scan_dict['hdf5scanId'])
+            self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'],hdf5scanId=scan_dict['hdf5scanId'])
 
     def SetWire(self, scan):
         scan_dict = scan.to_dict("wire")

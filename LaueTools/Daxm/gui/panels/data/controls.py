@@ -97,12 +97,18 @@ class PanelDataControls(wxls.ScrolledPanel):
 
     # Getters
     def GetScan(self):
-        return self._parent.GetScan()
+        """return PanelData.scan obj"""
+        return self._parent.GetScan()  # main.py PanelData.GetScan  =PanelDate.scan obj
 
     # Setters
     def Update(self, part="all"):
-
+        print('---  in PanelDataControls.Update() ----\n')
         scan = self.GetScan()
+
+        print('scan in PanelDataControls.Update()',scan)
+        
+        print(scan.hdf5scanId)
+        print(scan.spec_file)
 
         if part in ("detector", "all"):
 
@@ -133,7 +139,16 @@ class PanelDataControls(wxls.ScrolledPanel):
 
     def SetSpec(self, scan):
         scan_dict = scan.to_dict("spec")
-        self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+        if not scan_dict['specFile'].endswith('.h5'): # spec file
+            self.inp_spc.filetype='spec'
+            self.inp_spc.SetValue(fname=scan_dict['specFile'], scan=scan_dict['scanNumber'], comm=scan_dict['scanCmd'])
+        else: #hdf5 file
+            self.inp_spc.filetype='hdf5'
+            print("scan_dict['hdf5scanId']", scan_dict['hdf5scanId'])
+            self.inp_spc.SetValue(fname=scan_dict['specFile'],
+                                    scan=scan_dict['scanNumber'],
+                                    comm=scan_dict['scanCmd'],
+                                    hdf5scanId=scan_dict['hdf5scanId'])
 
     def SetWire(self, scan):
         scan_dict = scan.to_dict("wire")

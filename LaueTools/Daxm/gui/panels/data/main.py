@@ -30,7 +30,7 @@ class PanelData(wx.Panel):
 
         self.scan = new_scan(scan_dict, verbose=False)
 
-        self.Create()
+        self.Create()  #layout
         self.Init()
 
     def Create(self):
@@ -67,6 +67,7 @@ class PanelData(wx.Panel):
 
     # Getters
     def GetScan(self):
+        """of PanelData, return self.scan   obj"""
         return self.scan
 
     # Event handlers
@@ -94,9 +95,7 @@ class PanelData(wx.Panel):
         print("In PanelData: Loading scan from file: %s"%event.GetPath())
 
         self.scan.load(event.GetPath())
-
         self.ctrl_panel.Update()
-
         self.fig_panel.Update()
 
     def OnSave(self, event):

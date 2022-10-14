@@ -30,18 +30,15 @@ from LaueTools.Daxm.gui.icons import icon_manager as mycons
 from LaueTools.Daxm.gui.widgets.file import FileSelectOpen
 from LaueTools.Daxm.gui.boxes.input_detector import InputDetector
 from LaueTools.Daxm.gui.boxes.input_spec import InputSpec2
-
 from LaueTools.Daxm.utils.read_image import split_filename
-
 from LaueTools.Daxm.classes.scan.point import new_scan_dict, load_scan_dict
 
 
 SET_FROMFILE = False
 SET_MANUAL = True
 
-
 class LoadScan(wx.Dialog):
-
+    """ class of scan """
     def __init__(self, parent, workdir=None):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 
                            "Load 3DLaue Scan",
@@ -55,7 +52,7 @@ class LoadScan(wx.Dialog):
         self.wgt_file = None
         self.ckb_manual = None
         self.inp_dtt = None
-        self.inp_spc = None
+        self.inp_spc2 = None  # gui load
         self.btn_ok = None
         self.bnt_cl = None
 
@@ -76,7 +73,7 @@ class LoadScan(wx.Dialog):
 
         self.inp_dtt = InputDetector(self, label="Detector information")
 
-        self.inp_spc = InputSpec2(self, label="Scan information")
+        self.inp_spc2 = InputSpec2(self, label="Scan information")
 
         self.btn_ok = wx.Button(self, wx.ID_OK)
         self.btn_cl = wx.Button(self, wx.ID_CANCEL)
@@ -93,7 +90,7 @@ class LoadScan(wx.Dialog):
         self._mainbox.Add(self.wgt_file, 0, wx.EXPAND | wx.ALL, 5)
         self._mainbox.Add(self.ckb_manual, 0, wx.EXPAND | wx.ALL, 5)
         self._mainbox.Add(self.inp_dtt, 0, wx.EXPAND | wx.ALL, 5)
-        self._mainbox.Add(self.inp_spc, 0, wx.EXPAND | wx.ALL, 5)
+        self._mainbox.Add(self.inp_spc2, 0, wx.EXPAND | wx.ALL, 5)
         self._mainbox.Add(vbox, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
 
@@ -106,7 +103,7 @@ class LoadScan(wx.Dialog):
         # values
         self._workdir = os.getcwd() if workdir is None else workdir
 
-        self.inp_spc.SetManual(False)
+        self.inp_spc2.SetManual(False)
         self.inp_dtt.SetManual(False)
 
         self.SetCCDType()
@@ -125,13 +122,13 @@ class LoadScan(wx.Dialog):
             mode = self.GetMode()
 
         self.wgt_file.Enable(not mode)
-        self.inp_spc.Enable(mode)
+        self.inp_spc2.Enable(mode)
         self.inp_dtt.Enable(mode)
 
     def SetWorkDir(self, workdir=None):
 
         if workdir is not None:
-            self.inp_spc.SetDefaultDir(workdir)
+            self.inp_spc2.SetDefaultDir(workdir)
             self.inp_dtt.SetDefaultDir(workdir)
 
     def SetCCDType(self, ccd_type=None):
@@ -141,20 +138,27 @@ class LoadScan(wx.Dialog):
 
         wildcard = rmccd.getwildcardstring(ccd_type)
 
-        self.inp_spc.SetWildCard(wildcard)
+        self.inp_spc2.SetWildCard(wildcard)
 
     # Getters
     def GetScan(self):
+        filetype = self.inp_spc2.filetype
 
         if self.GetMode() == SET_FROMFILE:
 
-            scan = load_scan_dict(self.wgt_file.GetValue())
+            scan_dict = load_scan_dict(self.wgt_file.GetValue())
 
         else:
 
             ccd_label, det_calib = self.inp_dtt.GetValue()
 
-            spec_file, scan, comm, img_file = self.inp_spc.GetValue()
+            if filetype=='spec':
+                spec_file, scan_num, comm, img_file = self.inp_spc2.GetValue()
+                scan_id = None
+            elif filetype=='hdf5':
+                spec_file, scan_id, comm, img_file = self.inp_spc2.GetValue()
+                
+                scan_num = int(scan_id.rsplit('_',1)[-1])
 
             filedir, filename = os.path.split(img_file)
             pref, idx, _ = split_filename(filename)
@@ -165,19 +169,21 @@ class LoadScan(wx.Dialog):
             # idx = remaining.split('.')[0]
 
             new_dict = {'specFile': spec_file,
-                        'scanNumber': scan,
+                        'scanNumber': scan_num,
+                        'hdf5scanId': scan_id,
                         'scanCmd': comm,
                         'CCDType': ccd_label,
                         'detCalib': det_calib,
                         'imageFolder': filedir,
                         'imagePrefix': pref,
                         'imageFirstIndex': int(idx),
-                        'imageDigits': len(idx)
+                        'imageDigits': len(idx),
+                        'filetype': filetype
                         }
 
-            scan = new_scan_dict(new_dict)
+            scan_dict = new_scan_dict(new_dict)
 
-        return scan
+        return scan_dict
 
     def GetMode(self):
         return SET_MANUAL if self.ckb_manual.IsChecked() else SET_FROMFILE

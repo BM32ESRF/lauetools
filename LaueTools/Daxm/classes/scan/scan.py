@@ -13,14 +13,16 @@ from LaueTools.Daxm.classes.scan.mesh import MeshScan
 
 
 def is_type_scan(obj):
-
+    """return True is obj is of class PointScan, LineScan or MeshScan
+    
+    """
     return isinstance(obj, (PointScan, LineScan, MeshScan))
 
 
 def new_scan(scan_inp, verbose=True):
 
     scan = None
-
+    print('scan_inp', scan_inp)
     if is_type_scan(scan_inp):
 
         scan = scan_inp
