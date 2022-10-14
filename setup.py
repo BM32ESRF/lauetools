@@ -22,7 +22,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="LaueTools",
-    version="3.0.45",
+    version="3.0.46",
     packages=find_packages(),
     python_requires='>=2.6 , <3.9',
 
