@@ -310,7 +310,6 @@ class CrystalParamPanel(wx.Panel):
         btnReloadMaterials.Bind(wx.EVT_BUTTON, self.OnLoadMaterials)
 
         # layout
-
         h1box = wx.BoxSizer(wx.HORIZONTAL)
         h1box.Add(t1, 0, wx.EXPAND|wx.ALL, 10)
         h1box.Add(self.eminC, 0, wx.EXPAND|wx.ALL, 10)
@@ -2559,6 +2558,13 @@ class MainCalibrationFrame(wx.Frame):
                         ListMatrices[ind_matrix][i][j] = floatval
                         ind_elem += 1
 
+                _allm = np.array(ListMatrices[ind_matrix])
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
             # save in list of orientation matrix
             # default name
             inputmatrixname = "InputMat_"
