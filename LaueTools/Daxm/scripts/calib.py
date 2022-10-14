@@ -3,7 +3,9 @@ from header import *
 
 print('path_to_lauetools', path_to_lauetools)
 
-calib_file = os.path.join(analysis_dir, prefix + "_calib.scan")
+calib_file = os.path.join(analysis_dir, prefix + "_calib.scan")  # for batch analysis
+ 
+calib_file = os.path.join(analysis_dir, 'ech13_daxm_0_LT3.scan')
 
 print('calib_file',calib_file)
 
@@ -11,7 +13,7 @@ print('calib_file',calib_file)
 
 scan = new_scan(calib_file)
 
-sample = new_source("Ge", 0.270, ystep=0.001)
+sample = new_source("Zr", 0.1, ystep=0.001)
 
 calib = new_calib(scan, sample, kind="fluo")
 
@@ -24,9 +26,10 @@ calib.run(var=['h', 'p0', 'axis', 'dm'])
 
 calib.save_wires(prefix+"_fast", directory=calib_dir)
 
-#calib.log_plot()
+calib.log_plot()
 
-#mplp.show()
+mplp.show()
+
 
 #----------- coarse calibration-----------
 
@@ -36,9 +39,9 @@ calib.run(var=['h', 'p0', 'axis', 'Re', 'u2', 'dm'])
 
 calib.save_wires(prefix+"_test", directory=calib_dir)
 
-#calib.log_plot()
+calib.log_plot()
 
-#mplp.show()
+mplp.show()
 
 #----------- fine calibration-----------
 

@@ -29,6 +29,7 @@ import LaueTools.IOimagefile as rmccd
 # daxm imports
 import LaueTools.Daxm.utils.read_image as rimg
 import LaueTools.Daxm.contrib.spec_reader as rspec
+import LaueTools.logfile_reader as logfiler
 
 import LaueTools.Daxm.modules.geometry as geom
 import LaueTools.Daxm.modules.calibration as calib
@@ -45,6 +46,7 @@ def new_scan_dict(scan_dict=None):
                 'lineSubFolder':None,
                 'specFile': None,
                 'scanNumber': 0,
+                'hdf5scanId': '',
                 'scanCmd': [],
                 'CCDType': 'sCMOS',
                 'detCalib': '',
@@ -95,6 +97,8 @@ class StaticPointScan(object):
     def __init__(self, inp, verbose=True):
         self.verbose = verbose
         self.print_msg("Creating class instance...")
+        print("Creating class instance... (init StaticPointScan)")
+        print('input "inp"', inp)
 
         if isinstance(inp, str):
             self.print_msg(" from file: " + inp)
@@ -103,15 +107,16 @@ class StaticPointScan(object):
             self.print_msg(" from dict.")
             inp = new_scan_dict(inp)
 
-        self.input = inp
+        self.input = inp  # dictionnary relative a scan  
 
-        # attributes related to spec
-        self.spec_file = None
+        # attributes related to spec or hdf5 file
+        self.spec_file = None   # str, filename
         self.spec = None
-        self.spec_scan_num = None
+        self.spec_scan_num = None # for hdf5, it can correspond to several scans located in different folders
+        self.hdf5scanId = None  # specific to hdf5 file
         self.spec_scan = None
         self.spec_expo = None
-        self.scan_cmd = None
+        self.scan_cmd = None  # scan command 
         self.spec_data = None
         self.spec_motor = None
         self.spec_monitor = None
@@ -119,6 +124,7 @@ class StaticPointScan(object):
         self.wire_step = None
         self.number_images = None
 
+        # open file and set self.filetype
         self.init_spec()
 
         # attributes related to detector and geometry
@@ -165,13 +171,29 @@ class StaticPointScan(object):
             self.init_mon()
 
         self.print_msg("Ready to work.")
+        print('self.filetype', self.filetype)
+        print('end of StaticPointScan init')
         # End of __init__
 
     def init_spec(self):
 
         self.print_msg("- Reading spec...")
+        print('reading spec or hdf5 file in StaticPointScan')
 
-        self.spec_file = self.input['specFile']
+        self.spec_file = self.input['specFile']  # can be hdf5 file
+        self.filetype ='spec'  #default
+        
+        if self.spec_file is not None and self.spec_file.endswith('.h5'):
+            self.filetype = 'hdf5'
+            if 'hdf5scanId' not in self.input or self.input['hdf5scanId'] is None:
+                print('deducing hdf5 scan location... from imageFolder')
+                imfolder=self.input['imageFolder']
+                print('imfolder',imfolder)
+                hh, tt = os.path.split(os.path.dirname(imfolder))
+                self.hdf5scanId = 'tobeimplemented'
+            else:
+                self.hdf5scanId = self.input['hdf5scanId']
+
         self.spec_scan_num = self.input['scanNumber']
         self.scan_cmd = self.input['scanCmd']
         self.spec_data = None
@@ -191,18 +213,36 @@ class StaticPointScan(object):
         self.number_images = self.scan_cmd[2] + 1
 
     def init_spec_file(self):
-        self.spec = rspec.SpecFile(self.spec_file)
-        self.spec_data = rspec.Scan(self.spec, self.spec_scan_num)
-        self.scan_cmd = self.spec.cmd_list[self.spec_scan_num].split()[3:]
-        self.spec_monitor = getattr(self.spec_data, "Monitor")
-        self.spec_motor = self.spec.cmd_list[self.spec_scan_num].split()[2]
+        print('self.filetype in init_spec_file of StaticPointScan  ==>', self.filetype)
+        if self.filetype == 'spec':
+            self.spec = rspec.SpecFile(self.spec_file)
+            self.spec_data = rspec.Scan(self.spec, self.spec_scan_num)
+            self.scan_cmd = self.spec.cmd_list[self.spec_scan_num].split()[3:]
+            self.spec_monitor = getattr(self.spec_data, "Monitor")
+            self.spec_motor = self.spec.cmd_list[self.spec_scan_num].split()[2]
 
+        elif self.filetype == 'hdf5':
+            self.spec = logfiler.SpecFile(self.spec_file, filetype='hdf5', onlywirescan=True, collectallscans=False,onlymesh=False)
+            print('self.hdf5scanId',self.hdf5scanId)
+            print('self.spec_file (hdf5)', self.spec_file)
+            # read single key scan (for the moment)
+            self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId)
+            print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
+            self.scan_cmd = self.spec.cmd_list[self.hdf5scanId].split()[3:]
+            self.spec_monitor = getattr(self.spec_data, "mon")
+            print('self.spec_monitor',self.spec_monitor)
+            self.spec_motor = self.spec.cmd_list[self.hdf5scanId].split()[2]
+
+            print('self.spec_motor  !!! ====> ',self.spec_motor)
+        
         for i, dtype in enumerate([float, float, int, float]):
             self.scan_cmd[i] = dtype(self.scan_cmd[i])
 
         self.spec_expo = self.scan_cmd[3]
 
         self.wire_position = getattr(self.spec_data, self.spec_motor)
+
+        print('\nself.wire_position  ===>=>=>',self.wire_position)
 
         # Printing stuff
         self.print_msg("   from file: " + self.spec_file)
@@ -970,6 +1010,10 @@ class StaticPointScan(object):
         return self.wire[wire].calc_position(self.wire_position[frame] + offset)
 
     def calc_wire_intersect_ray(self, wire, xcam, ycam, ysrc=0):
+        # print('wire', wire)
+        # print('xcam',xcam)
+        # print('ycam',ycam)
+        # print('ysrc',ysrc)
 
         if isinstance(wire, (int, np.int, np.int64)):
             thewire = self.wire[wire]
@@ -1110,6 +1154,7 @@ class PointScan(StaticPointScan):
 
     # Methods to safely and cleanly modify the scan
     def update(self, scan_dict, part):
+        """update dict of PointScan"""
 
         if part in ("setup", "all"):
             self.update_setup(scan_dict)
@@ -1141,7 +1186,7 @@ class PointScan(StaticPointScan):
 
     def update_spec(self, scan_dict):
 
-        self.update_input(scan_dict, ['specFile', 'scanNumber', 'scanCmd'])
+        self.update_input(scan_dict, ['specFile', 'scanNumber', 'scanCmd', 'filetype', 'hdf5scanId'])
 
         self.init_spec()
         self.init_data()
@@ -1211,7 +1256,9 @@ class PointScan(StaticPointScan):
         if part in ("spec", "all"):
             dict_spec = {'specFile': self.spec_file,
                          'scanNumber': self.spec_scan_num,
-                         'scanCmd': self.scan_cmd}
+                         'hdf5scanId': self.hdf5scanId,
+                         'scanCmd': self.scan_cmd,
+                         'filetype': self.filetype}
             dict_res.update(dict_spec)
 
         if part in ("data", "all"):

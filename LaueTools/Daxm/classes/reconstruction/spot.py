@@ -37,7 +37,7 @@ class SpotReconstructor:
 
         self.wire = wire
 
-        self.yrange = yrange
+        self.yrange = yrange # y // beam   range  or depth along the beam range
 
         self.abscoeff = abscoeff
 

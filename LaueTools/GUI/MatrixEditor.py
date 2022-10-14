@@ -284,10 +284,18 @@ class MatrixEditor_Dialog(wx.Frame):
                 m32 = float(self.mat_a32.GetValue())
                 m33 = float(self.mat_a33.GetValue())
 
-                self.parent.dict_Rot[self.last_name_stored] = [
+                _allm = np.array([
                     [m11, m12, m13],
                     [m21, m22, m23],
-                    [m31, m32, m33]]
+                    [m31, m32, m33]])
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "txt")
+                    return
+
+                self.parent.dict_Rot[self.last_name_stored] = _allm.tolist()
 
             # read ASCII editor
             else:
@@ -318,6 +326,14 @@ class MatrixEditor_Dialog(wx.Frame):
                         floatval = listelem[ind_elem]
                         mat[i][j] = floatval
                         ind_elem += 1
+
+                _allm = np.array(mat)
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
 
                 self.parent.dict_Rot[self.last_name_stored] = mat
 
@@ -360,7 +376,7 @@ class MatrixEditor_Dialog(wx.Frame):
                     txt += "It doesn't contain 9 elements with float type ..."%paramraw
                     print(txt)
 
-                    wx.MessageBox(txt, "VALUE ERROR")
+                    wx.MessageBox(txt, "ERROR")
                     return
 
                 mat = np.zeros((3, 3))
@@ -370,6 +386,14 @@ class MatrixEditor_Dialog(wx.Frame):
                         floatval = listelem[ind_elem]
                         mat[i][j] = floatval
                         ind_elem += 1
+
+                _allm = np.array(mat)
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
 
                 self.text.Clear()
                 self.text.WriteText(str(mat))

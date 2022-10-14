@@ -376,7 +376,15 @@ class B0MatrixEditor(wx.Frame):
                     m32 = float(self.mat_a32s.GetValue())
                     m33 = float(self.mat_a33s.GetValue())
 
-                    allm = (m11, m12, m13, m21, m22, m23, m31, m32, m33)
+                    allm = [m11, m12, m13, m21, m22, m23, m31, m32, m33]
+
+                _allm = np.array(allm).reshape((3,3))
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
 
                 f = open(self.last_name_saved, "w")
                 text = ("[[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f],\n[%.17f,%.17f,%.17f]]" % allm)
@@ -419,9 +427,18 @@ class B0MatrixEditor(wx.Frame):
                 m32 = float(self.mat_a32s.GetValue())
                 m33 = float(self.mat_a33s.GetValue())
 
-                self.parent.dict_Vect[self.last_name_stored] = [[m11, m12, m13],
-                                                                [m21, m22, m23],
-                                                                [m31, m32, m33]]
+                mat = np.array([[m11, m12, m13],
+                                [m21, m22, m23],
+                                [m31, m32, m33]])
+                if np.linalg.det(mat)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
+
+
+                self.parent.dict_Vect[self.last_name_stored] = mat
 
             else:  # read ASCII editor
                 paramraw = str(self.texts.GetValue())
@@ -442,7 +459,7 @@ class B0MatrixEditor(wx.Frame):
                     txt += "It doesn't contain 9 elements with float type ..."%paramraw
                     print(txt)
 
-                    wx.MessageBox(txt, "VALUE ERROR")
+                    wx.MessageBox(txt, "ERROR")
                     return
 
                 mat = np.zeros((3, 3))
@@ -452,6 +469,13 @@ class B0MatrixEditor(wx.Frame):
                         floatval = listelem[ind_elem]
                         mat[i][j] = floatval
                         ind_elem += 1
+                
+                if np.linalg.det(mat)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
 
                 self.parent.dict_Rot[self.last_name_stored] = mat
 

@@ -906,6 +906,14 @@ class Plot_RefineFrame(wx.Frame):
                         floatval = listelem[ind_elem]
                         ListMatrices[ind_matrix][i][j] = floatval
                         ind_elem += 1
+                        
+                _allm = np.array(ListMatrices[ind_matrix])
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return
 
             # save in list of orientation matrix
             # default name

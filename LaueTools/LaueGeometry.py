@@ -1985,20 +1985,21 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
             return twicetheta, chi, dataintensity, data_x, data_y
 
 
-def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pixelsize=165.0 / 2048,
-                                                                                CCDCalibdict=None,
-                                                                                add_props=False):
+def convert2corfile(filename, calibparam, dirname_in=None,
+                                        dirname_out=None,
+                                        pixelsize=165.0 / 2048,
+                                        CCDCalibdict=None, add_props=False):
     r"""
     Convert .dat (peaks list from peaksearch procedure) to .cor (adding scattering angles 2theta chi)
 
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
+    :param CCDCalibdict: dictionary of CCD file and calibration parameters
+
     :param calibparam: list of 5 CCD calibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
 
-    :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict['pixelsize'] is missing)
-
-    :param CCDCalibdict: dictionary of CCD file and calibration parameters
+    :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or if CCDCalibdict['pixelsize'] is missing)
 
     :param add_props: add all peaks properties to .cor file instead of the 5 columns
     """
@@ -2007,7 +2008,8 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
     else:
         filename_in = filename
 
-    print('CCDCalibdict in convert2corfile of %s'%filename, CCDCalibdict)
+    #print('using CCDCalibdict in convert2corfile for %s'%filename, CCDCalibdict)
+
     if CCDCalibdict is not None:
         if "CCDCalibParameters" in CCDCalibdict:
             calibparam = CCDCalibdict["CCDCalibParameters"]
@@ -2015,10 +2017,19 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
         if "xpixelsize" in CCDCalibdict:
             pixelsize = CCDCalibdict["xpixelsize"]
 
+        if "pixelsize" in CCDCalibdict:
+            pixelsize = CCDCalibdict["pixelsize"]
+    else:
+        #print('using pixelsize given in argument'
+        pass
+
+    #print('using pixelsize: ', pixelsize)
+
+
     (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
                                                                sorting_intensity="yes",
-                                                                            detectorparams=calibparam,
-                                                                            pixelsize=pixelsize)
+                                                                detectorparams=calibparam,
+                                                                pixelsize=pixelsize)
     if add_props:
         if len(twicetheta) > 1:
             rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
@@ -2055,15 +2066,13 @@ def convert2corfile(filename, calibparam, dirname_in=None, dirname_out=None, pix
         param = CCDCalibdict
 
         # update dict according to values in file .cor
-        f = open(filename_in, "r")
-        param = IOLT.readCalibParametersInFile(f, Dict_to_update=CCDCalibdict)
-        f.close()
+        with open(filename_in, "r") as f:
+            param = IOLT.readCalibParametersInFile(f, Dict_to_update=CCDCalibdict)
 
     else:
         param = calibparam + [pixelsize]
 
     # print('add_props', data.shape, add_props)
-
     IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
                                                             data_props=add_props,
                                                             sortedexit=0,

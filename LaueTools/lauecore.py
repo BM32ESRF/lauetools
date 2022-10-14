@@ -424,6 +424,12 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
         (Bmatrix, Extinc,
         Orientmatrix, key_for_dict) = parse_grainparameters(crystalsParams[i])
 
+        determinant = np.linalg.det(Orientmatrix)
+        
+        # print(Orientmatrix)
+        # print('determinant',determinant)
+        assert determinant>0, "Orientation matrix (UB) is not direct !!" 
+
         if verbose:
             print("\nin getLaueSpots()")
             print("Bmatrix", Bmatrix)

@@ -1144,6 +1144,9 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
 
+            if np.linalg.det(matrix)<0: # orientation matrix must be direct
+                continue
+
             matrix_list.append(matrix)
             pairplanes.append([hkl1, hkl2])
             pairspots.append([spot_index, spotindex_2])
@@ -1153,7 +1156,8 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             matrix = FindO.OrientMatrix_from_2hkl(hkl2, coord1, hkl1, coord2, B,
                                                         verbose="no", frame="lauetools")
 
-            # print "matrix",matrix
+            if np.linalg.det(matrix)<0:
+                continue
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
 
@@ -2229,7 +2233,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                             % (mat_ind, nbclose, nballres, std_closematch, mean_residue,
                                         max_residue, nbclose ** 2 * 1.0 / nballres / std_closematch),
                             "    ", str(planes[mat_ind]), "  ", pairspots[mat_ind])
-                        print("matrix ==", list_orient_matrix[mat_ind])
+                        #print("matrix ==", list_orient_matrix[mat_ind])
 
                     spotindex2 = pairspots[mat_ind][1]
                     if currentspotindex2 != spotindex2:

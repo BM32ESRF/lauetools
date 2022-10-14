@@ -271,7 +271,7 @@ class Calib:
 
     # Saving/Loading wire parameters
     def save_wires(self, filename, directory=""):
-
+        """ save a json file of wire(s) parameters. Output file has .calib extension"""
         if directory == "" or os.path.isdir(directory):
 
             fn = os.path.join(directory, add_extension(filename, "calib"))

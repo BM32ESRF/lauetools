@@ -39,6 +39,9 @@ class CalibFluo(Calib):
 
         XYcam = self.gen_wires_points(dims, method="grid", adjust=adjust)
 
+        print('XYcam',XYcam)
+        print(halfboxsize)
+
         self.set_points(XYcam, halfboxsize)
 
     # Calibration points
