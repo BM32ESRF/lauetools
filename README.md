@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="1000" height="350" src="https://github.com/BM32ESRF/lauetools/blob/main/LaueTools/icons/transmissionLaue.png">
+  <img width="1000" height="350" src="https://github.com/BM32ESRF/lauetools/blob/master/LaueTools/icons/transmissionLaue.png">
 </p>
 
 
