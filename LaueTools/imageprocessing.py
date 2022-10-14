@@ -980,7 +980,7 @@ def LocalMaxima_ShiftArrays(Data, framedim=(2048, 2048), IntensityThreshold=500,
         distmatrix_c = sqdistmatrix_c + np.eye(sqdistmatrix_c.shape[0]) * maxdistance_c
         # must be (array([], dtype=int64), array([], dtype=int64))
         print("close hotpixels", np.where(distmatrix_c < pixeldistance))
-    # print "purged_pklist", purged_pklist
+
     print("shape(purged_pklist)", np.shape(purged_pklist))
     npeaks = np.shape(purged_pklist)[0]
     Ipixmax = np.zeros(npeaks, dtype=int)
