@@ -1,0 +1,61 @@
+{% set name = "lauetools" %}
+{% set data = load_setup_py_data() %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ data['version'] }}
+
+source:
+  path: ..
+
+build:
+  entry_points:
+    - lauetools = LaueTools.LaueToolsGUI:start
+    - peaksearch = LaueTools.FileSeries.Peak_Search:start
+    - indexrefine = LaueTools.FileSeries.Index_Refine:start
+    - plotmeshGUI = LaueTools.plotmeshspecGUI:start
+    - buildsummary = LaueTools.FileSeries.Build_Summary:start
+    - plotmap = LaueTools.FileSeries.Plot_Maps2:start
+    - mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start
+    - daxmgui = LaueTools.daxmgui:start
+  script: {{ PYTHON }} -m pip install --no-deps --no-cache-dir . -vv
+  number: 0
+  
+requirements:
+  host:
+    - python <3.9
+    - pip
+  run:
+    - python <3.9
+    - docutils >=0.3
+    - numpy >=1.11.3
+    - scipy >=0.19.0
+    - matplotlib-base >=2.0.0
+    - wxpython >=3.0
+    - networkx >=2.1
+    - h5py >=3.1
+    - tqdm >=4.60.0
+
+test:
+  imports:
+    - LaueTools
+    - scipy
+    - numpy
+    - h5py
+    - networkx
+    - tqdm
+    
+about:
+  home: https://github.com/BM32ESRF/lauetools
+  summary: Laue diffraction data analysis tool GUI
+  license: MIT
+
+app:
+  entry: lauetools
+  icon: icon.png
+  summary:  "Laue diffraction data analysis tool GUI"
+  type: desk
+  
+extra:
+  recipe-maintainers:
+    - jsmicha

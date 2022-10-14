@@ -1,0 +1,155 @@
+.. _Indexation:
+
+*********************************
+Indexation and Strain Refinement
+*********************************
+
+==========================
+Open Peak List
+==========================
+
+First select the detector you have used for the data collection in the menu Calibration (as for the peak search or calibration procedure)
+
+.. image:: ./Images/clickcalib.png
+
+.. image:: ./Images/ccdfileselect.png
+
+Then in the menu ``File/Open Peak List`` open a file with extension .cor or .dat:
+   * The .dat file contains a list of peak position, intensity and other peak properties. When selecting a .dat file, one is asked for the CCD parameters. A .cor file is then build (see below).
+   * The .cor file contains five columns 2-theta, Chi, X, Y and Intensity: the first two angles are    calculated from X,Y peak position using the CCD calibration parameters which are mentionned at the end of the file as comments. 
+
+.. image:: ./Images/Indexation_openpeaklistsmall.png
+
+In the main LaueTools GUI window is edited the .cor file.
+
+.. image:: ./Images/indexation_corfilelistspot.png
+
+=======================================
+Indexation using a reference structure
+=======================================
+
+Depending of the complexity of the data, two tools to index laue diffraction pattern are available.
+The principles are based on looking up an angle between lattice planes normals in a reference structure angle distance table.
+The automatic indexation can screen a lot of angular distances measured in the data. The manual indexation look up a angle between two spots given by the clicks of the user.
+
+----------------------------
+Manual indexation
+----------------------------
+
+Select the menu in the ``Plot and Tools`` one of the representation spaces in which the data will be displayed in.
+
+.. image:: ./Images/indexation_plottoolssmall.png
+
+The board which appears allows to recognise an angular distance of the data in an Look-Up-Table (LUT) of angles of the reference structure chosen in the list control ``Elem``. ``Draw Exp. Spot index`` draws spot index in experimental peak list and intensity when clicking on a spot.
+
+Activate the recognition by pressing the button ``Recognise distance`` and click approximately on two points close to the Laue spots you expect to have low Miller indices values. In this example, spot 0 and 11 have been chosen. 
+
+An experimental distance is recognised in the LUT within the ``Distance Recognition Tolerance Angle``. Then an orientation Matrix can be computed and a laue pattern simulated. An automatic spots linking is performed within the tolerance angle ``Matching Angular Tolerance(Residues)``. The number of spots pairs is the criterium of matching quality.
+
+.. image:: ./Images/indexation_labelexpspot.png
+
+The best orientation matrices with high matching rate are listed in the window ``Potential Solutions``. The matrix for which the matching rate is the highest and the ``mean`` angular residue the lowest is worth plotting. The second column is the number of pairs with residues lower than ``Matching Angular Tolerance(Residues)`` value (including harmonics). The third column is the total number of simulated spots.  
+ 
+.. image:: ./Images/indexation_potentialsolutions.png
+
+Check the matrix(ces) to be plotted before pressing the ``Plot`` button. Then a window with a plot containing filled circles for experimental spots and hollow circles for simulated spots appears. The window functionnalities are described below in *Strain and orient matrix refinement* paragraph. 
+
+.. image:: ./Images/indexation_fromspot0_11_matrix2.png
+
+-----------------------------------
+Automatic indexation (classical)
+-----------------------------------
+
+What is performed before manually and for a single distance can be done automatically for a large amount of distances.
+
+From a .cor file data, go to the menu ``Indexation/Classical``
+
+.. image:: ./Images/indexaation_autosmall.png
+
+The ``Classical indexation Board`` gives the input for a multiple distances recognition.
+
+Select the reference structure with ``Element or Structure``.
+The LUT contains by default angles between all lattice planes normals from (001) up to (332) with ``LUT Nmax`` set to 3. Some crystal need to be indexed with larger maximal index value (reasonnable up to 6).
+
+With ``Trial spot index`` set to 0 and ``Recognition spots set Size`` to 10, 10 distances between spot #0 and the 10 first most intense spots (in the experimental data peak list) will be compared to distances to those in the LUT.  
+
+.. image:: ./Images/Indexation_classical.png
+
+With ``Trial spot index`` set to a python list [0,1,2,3,4] and ``Recognition spots set Size`` to 30, 5*30 distances between spot #0, 1,2,3 and 4 to the 30 first most intense spots (in the experimental data peak list) will be compared to distances to those in the LUT.
+
+A minimum threshold of matching pairs ``Minimum Number Matched Spots`` allows to list only significant results in the potential solution window (``Classical Indexation Solutions``)  
+
+.. image:: ./Images/indexation_classical_2.png
+
+.. image:: ./Images/index_classical_res.png
+
+What has been done manually to index from distance between spots #0 and 11 correspond to the following entry.
+
+.. image:: ./Images/indexation_classical_fromspot11.png
+
+.. image:: ./Images/indexation_fromspot11.png
+
+Check the matrix(ces) to be plotted before pressing the ``Plot`` button. 
+
+======================================
+Strain and orient matrix refinement
+=======================================
+
+Then a window with a plot containing filled circles for experimental spots and hollow circles for simulated spots appears.
+ 
+A set of pairs containing each a simulated and a experimental spots must be defined. The set of distances will be minimized by a least square method to determine the crystal orientation and strain.
+ 
+--------------------
+Set the spots pairs 
+--------------------
+
+Like in Calibration model refinement. Pairs can be obtained automatically with ``Auto Link`` and filtered with ``Filter Link``
+
+.. image:: ./Images/autolink_forrefinementsmall.png
+
+
+--------------------
+Fitting
+-------------------
+
+The refinement of the model (Strained and orientated Crystal) can be performed either on pairs resulting from the automatic spots linking (``Auto. Link`` button), the filtered pairs (``Filter Link``) or even from previous fit results (``Show Results``)
+
+Choose hence the set of pairs for the refinement by checking corresponding radio button (``Use for Refinement``) and press ``Refine``.  
+
+.. image:: ./Images/fitchoicebuttons.png
+
+Results in terms of deviatoric strain or initial and final lattice parameters (with the a lattice length kept fixed). Fit is good for mean pixel distance ``Mean Pixel Deviation`` smaller than 1 pixel for a few tens of pairs. Pixel Residue for each pair is listed by clicking on ``Show Results``.
+
+.. image:: ./Images/strainResult.png
+
+
+========================================================================================
+Module function description: 
+========================================================================================
+
+The next documentation comes from the docstring in the header of function or class definition.
+
+indexingSpotsSet
+--------------------
+
+.. automodule:: indexingSpotsSet
+   :members:
+
+indexingAngleLUT
+--------------------
+
+.. automodule:: indexingAnglesLUT
+   :members:
+
+indexingImageMatching
+--------------------
+
+.. automodule:: indexingImageMatching
+   :members:
+
+FindOrientMatrix
+--------------------
+
+.. automodule:: findorient
+   :members:
+

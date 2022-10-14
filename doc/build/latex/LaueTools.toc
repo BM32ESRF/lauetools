@@ -1,0 +1,65 @@
+\babel@toc {english}{}
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}
+\contentsline {section}{\numberline {1.1}Tools}{1}{section.1.1}
+\contentsline {section}{\numberline {1.2}Developers}{1}{section.1.2}
+\contentsline {section}{\numberline {1.3}Browse Modules and Functions}{1}{section.1.3}
+\contentsline {chapter}{\numberline {2}Installation}{3}{chapter.2}
+\contentsline {section}{\numberline {2.1}How to Get LaueTools code}{3}{section.2.1}
+\contentsline {section}{\numberline {2.2}Build LaueTools Documentation}{3}{section.2.2}
+\contentsline {chapter}{\numberline {3}Getting started}{5}{chapter.3}
+\contentsline {section}{\numberline {3.1}Launch Graphical User Interfaces of LaueTools}{5}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}Use LaueTools module as a library}{5}{subsection.3.1.1}
+\contentsline {chapter}{\numberline {4}Conventions}{7}{chapter.4}
+\contentsline {section}{\numberline {4.1}Mathematics and Conventions}{7}{section.4.1}
+\contentsline {chapter}{\numberline {5}Graphical User Interfaces}{9}{chapter.5}
+\contentsline {section}{\numberline {5.1}Interactive Graphical User Interfaces}{9}{section.5.1}
+\contentsline {subsection}{\numberline {5.1.1}Peak Search (PeaksearchGUI)}{9}{subsection.5.1.1}
+\contentsline {subsection}{\numberline {5.1.2}Indexation (LaueToolsGUI)}{9}{subsection.5.1.2}
+\contentsline {subsection}{\numberline {5.1.3}Crystal unit cell refinement (LaueToolsGUI)}{9}{subsection.5.1.3}
+\contentsline {subsection}{\numberline {5.1.4}Detector Geometry Calibration (DetectorCalibrationBoard)}{9}{subsection.5.1.4}
+\contentsline {subsection}{\numberline {5.1.5}Laue pattern simulation of assembly of crystals (LaueSimulatorGUI)}{9}{subsection.5.1.5}
+\contentsline {section}{\numberline {5.2}Batch Processing Graphical User Interfaces}{9}{section.5.2}
+\contentsline {chapter}{\numberline {6}Tutorials}{11}{chapter.6}
+\contentsline {section}{\numberline {6.1}Basics of Laue Pattern peak search and Unit cell Refinement}{11}{section.6.1}
+\contentsline {subsection}{\numberline {6.1.1}This Notebook is a part of Tutorials on LaueTools Suite.}{11}{subsection.6.1.1}
+\contentsline {subsubsection}{Now indexing}{16}{subsubsection*.3}
+\contentsline {paragraph}{geometry calibration parameters}{16}{paragraph*.4}
+\contentsline {subparagraph}{create instance of an objet spotsset class}{17}{subparagraph*.5}
+\contentsline {section}{\numberline {6.2}Indexation of spots data set.}{33}{section.6.2}
+\contentsline {subsection}{\numberline {6.2.1}This Notebook is a part of Tutorials on LaueTools Suite. Author:J.-S. Micha Date: July 2019}{34}{subsection.6.2.1}
+\contentsline {subsubsection}{Let\IeC {\textquoteright }s take a simple example of a single Laue Pattern. From the peak search we get 83 spots}{34}{subsubsection*.6}
+\contentsline {paragraph}{Normally we read all spots data from a .cor file}{36}{paragraph*.7}
+\contentsline {paragraph}{but we can import a custom list of spots. For example, starting from spots a the previous .cor file}{37}{paragraph*.8}
+\contentsline {subsubsection}{spots data must be imported as an array of 5 elements: 2theta, chi, Intensity, pixelX, pixelY}{37}{subsubsection*.9}
+\contentsline {subsection}{\numberline {6.2.2}core function to index a set of spots}{38}{subsection.6.2.2}
+\contentsline {subsection}{\numberline {6.2.3}Results of indexation can be found in attributes or through methods}{51}{subsection.6.2.3}
+\contentsline {chapter}{\numberline {7}LaueTools Modules}{53}{chapter.7}
+\contentsline {section}{\numberline {7.1}Browse Modules and Functions}{53}{section.7.1}
+\contentsline {section}{\numberline {7.2}Modules for Laue Pattern Simulation}{53}{section.7.2}
+\contentsline {subsection}{\numberline {7.2.1}CrystalParameters}{53}{subsection.7.2.1}
+\contentsline {subsection}{\numberline {7.2.2}Laue Pattern Simulation}{59}{subsection.7.2.2}
+\contentsline {subsection}{\numberline {7.2.3}2D Detection Geometry}{69}{subsection.7.2.3}
+\contentsline {subsection}{\numberline {7.2.4}Multiple Grains and Strain/orientation Distribution}{75}{subsection.7.2.4}
+\contentsline {section}{\numberline {7.3}Modules for Digital Image processing, Peak Search \& Fitting}{77}{section.7.3}
+\contentsline {subsection}{\numberline {7.3.1}PeakSearchGUI}{77}{subsection.7.3.1}
+\contentsline {subsubsection}{Read Images and Binary files}{77}{subsubsection*.50}
+\contentsline {subsubsection}{View \& Color}{80}{subsubsection*.51}
+\contentsline {subsubsection}{Image \& Filter}{81}{subsubsection*.52}
+\contentsline {subsubsection}{Browse \& Crop}{82}{subsubsection*.53}
+\contentsline {subsubsection}{Mosaic \& Monitor}{82}{subsubsection*.54}
+\contentsline {subsubsection}{Plot Tools}{83}{subsubsection*.55}
+\contentsline {paragraph}{Local Maxima or Blob Search}{84}{paragraph*.56}
+\contentsline {subsubsection}{Method 1: pixels above a threshold on raw image}{84}{subsubsection*.57}
+\contentsline {subsubsection}{Method 2: hottest pixel in a box (by array shift)}{84}{subsubsection*.58}
+\contentsline {subsubsection}{Method 3: Peak enhancement by convolution on raw image}{85}{subsubsection*.59}
+\contentsline {paragraph}{Peak Position Fit}{85}{paragraph*.60}
+\contentsline {paragraph}{Module functions}{86}{paragraph*.61}
+\contentsline {subsubsection}{PeakSearchGUI.py (PeakSearchBoard)}{86}{subsubsection*.62}
+\contentsline {subsection}{\numberline {7.3.2}Peak Search and Fit (readmccd.py)}{91}{subsection.7.3.2}
+\contentsline {subsubsection}{Module functions}{91}{subsubsection*.152}
+\contentsline {paragraph}{readmccd.py}{91}{paragraph*.153}
+\contentsline {section}{\numberline {7.4}Modules for Laue Pattern Indexation}{103}{section.7.4}
+\contentsline {section}{\numberline {7.5}Modules for Crystal unit cell refinement}{103}{section.7.5}
+\contentsline {section}{\numberline {7.6}Modules for batch processing}{103}{section.7.6}
+\contentsline {chapter}{Python Module Index}{105}{section*.207}
+\contentsline {chapter}{Index}{107}{section*.208}

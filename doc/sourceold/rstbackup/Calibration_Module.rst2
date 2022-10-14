@@ -1,0 +1,179 @@
+.. _Calibration:
+
+*****************************************
+Calibration of 2D Detection Geometry
+*****************************************
+
+This part explains how calibrate the detector geometry with a Laue pattern collected on a weel-known (unstrained if possible) crystal.
+
+==============================
+Read peak list data
+=============================
+
+First select the detector you have used for the data collection in the menu Calibration (as for the peak search)
+
+.. image:: ./Images/clickcalib.png
+
+.. image:: ./Images/ccdfileselect.png
+
+Go to Calibration/Det. Calibration to load a peak list .dat file (produced by the peaksearch)
+
+.. image:: ./Images/selectcalibsmall.png
+
+
+.. image:: ./Images/detectorparameterboard.png
+
+Then you obtain a board enabling match any simulated laue pattern to that measured on a CCD camera.
+The goal of this board is to help the computer to have initial guesses for fitting the CCD parameters and crystal orientation.
+
+.. image:: ./Images/CalibBoard.png
+   :scale: 60%
+
+This board is composed by composed by differents parts:
+
+* plot of the laue spot contained in .dat file
+* manual change of CCD parameters and crystal orientation
+* set of crystal parameters to simulate laue pattern
+* automatic links (pairing) between close simulated and experimtal spots
+* Refinement of crystal orientation and CCD geometry
+
+
+==========================
+Simulation parameters
+==========================
+
+Both Crystal orientation and CCD parameters can be varyed.
+
+------------------------
+Crystal Parameters
+-------------------------
+
+Select crystal element/structure with the list control ``Element``, one of the orientation matrix in list control ``Orient Matrix`` and Energy spectral band limits in ``Energy min/max(keV)``.
+
+One of the most difficult task will be to find yourself the orientation matrix of crystal that has produced the laue pattern. Some usefull have been pre entered when sample is at 40 ° and crystal surface is oriented 001, 101, or 111 resp. ``orientsurf_001``,``orientsurf_101`` or ``orientsurf_111``. But crystal rotation around the normal to the surface is still not determined.
+
+You can enter your own matrix by pressing ``Enter Matrix``. Take care of writing or pasting a python list without weird symbols.
+
+At any moment, the current matrix can be stored in the software with a given name with ``Store Matrix``
+
+Rotation of the crystal can be performed by means of 3 rotations around the lauetools frame axes. Axis1 is along y and rotation around it modifies 2-theta angles at constant chi angle. Axis2 is along x rotation around it modifies chi only (at 2-theta angle constant). Axis3 is along z.
+Crystal orientation can be changed manually by clicking on ``+`` or ``-`` to respectively increase or decrease the corresponding rotation angle by the ``step`` value (which can be changed).
+
+.. image:: ./Images/CalibBoard_simulXtalParams.png
+
+.. image:: ./Images/CalibBoard_Xtalrotations.png
+
+---------------------
+CCD parameters
+---------------------
+
+CCD parameters can be changed manually by clicking on ``+`` or ``-`` to respectively increase or decrease the parameter by the ``step`` value (which can be changed).
+
+.. image:: ./Images/CalibBoard_changeCCDparams.png
+
+Current CCD parameters are listed below the plot window. These values can be modified by entering directly number in the fields and pressing ``Go to Current``. 
+
+.. image:: ./Images/CalibBoard_currentCCDparam.png
+
+**Note**: CCD parameters and namely the pixelsize can checked, modified or reloaded by pressing the button ``set CCD Param.``
+
+==========================
+Plot parameters
+==========================
+
+Filled circles are experimental spots whose size and color are mapped to the spot intensity. Hollow red circles are simulated spots. Size is approximately mapped to the 1/Energy law and may differ from the experimental size when matching the simulated and experimental patterns.
+
+.. image:: ./Images/CalibBoard_plot.png
+
+Solid angle and position of the CCD camera can be set with ``2theta Range`` and ``Chi Range`` values. By default, the CCD camera is at 2-theta=90°. It collects more or less 90° in 2-theta and chi (for distance sample-detector=70mm and CCD diameter = 165mm) 
+
+.. image:: ./Images/CalibBoard_simulGeometry.png
+
+Press ``Label Exp. spot `` and click close to an experimental spot to draw the spot index in the peak list and intensity.
+
+.. image:: ./Images/CalibLabelExpSpotssmall.png
+
+Press ``Label Simul. spot `` and click close to a simulated spot to draw the spot index in the simulated peak list and the correspond Miller indices h,k,l.
+
+.. image:: ./Images/CalibLabelTheoSpotsmall.png
+
+``Switch Space`` button allow to display the spot in 3 different spaces: 2-theta/Chi, Gnomonic X and Y, and CCD pixel X and Y coordinates. A great feature of the gnomonic projection space is to align spots belonging to the same zone axis. In this space representation, wrong CCD parameters leads to curved dense zone axes that can be straigthten by changing ``Xcen`` and ``Ycen`` parameters values. 
+
+.. image:: ./Images/calib_switch_spacesmall.png
+
+==============================================
+Spots Linking and CCD parameters refinement
+==============================================
+
+-------------------------------------
+Prepare the automatic linking 
+--------------------------------------
+
+You need rotate the sample around the 3 frame axes (resp Angle 1 2 and 3 for axis  x,y and z) and CCD parameters to match red hollow circle (simulated spots) with filled circles (experimental spots).
+
+It is really nice to know your reference crystal orientation since the bragg reflections corresponding to the lattice planes parallel to the sample surface has a scattering 2-theta angle equals to 2*sample_tilt_angle (for sample holder tilted at 40° from the horizontal plane, crystal orientation Bragg peak is at 2-theta = 80°). Then  first act on Xcen and Ycen to put the intense laue spot at this place  (chi = 0).
+
+First rotate the sample to match the zones axes which have different spots densities and distributions. Secondly, try to improve the matching by changing CCD parameters and Crystal angles. 
+
+.. image:: ./Images/CalibBoard_matchpattern.png
+   :scale: 60%
+
+Reducing energy decreases the number of simulated spots. It is a way to notice which Laue Spots are intense and are likely to be present in the experimental peak list. In addition it helps to obtain more correct association of spots (simulated and experimental) even with a high tolerance angle (see next paragraph)
+
+.. image:: ./Images/CalibBoard_autolinks2.png
+   :scale: 60%
+
+It is **very oftern to perform an iterative sequence** of 3 steps (manual parameters change, automatic links, fit) until the final fit.
+
+----------------------
+Automatic Linking
+----------------------
+
+By clicking on ``Auto. Link Spots``, any exprimental spot in the vicinity of a simulated spots within a tolerance angle ``Angle tolerance(deg)`` will be associated to this spot: a link or a pair is then established. The pixel distance between the experimental and the simulated spot of the pair will be next reduced by the fitting procedure. 
+
+.. image:: ./Images/CalibBoard_autolinks.png
+
+Pressing ``Show/Filter Linked Spots`` opens the list of pairs. This list can be sorted in different ways by clicking on the column header (e.g. click on residues column header to sort the list by residues).
+
+A pair can be removed by selecting a row and pressing ``Remove one spot``. Several pairs can be removed by filling the fields by a conditional operator at the top of the window and pressing the button ``filter``. For instance, pairs whose angular residues is larger than 0.5 ° and whose experimental intensity is weaker than 10000 will be rejected.
+
+Press ``Accept and Quit`` to close the window and use this filtered list of pairs for the next minimization procedure.
+
+.. image:: ./Images/CalibBoard_ShowFilterLinks.png
+
+----------------------
+Fitting 
+----------------------
+
+The parameters that need to be refined must be checked. In some case it is recommended to fix parameters that you may know quite well (but not in the final fit!).
+
+For the final fit, the largest number of pairs distance must be used, namely the energy band of the calibration must be the same than that used during the experiment.
+
+Checking ``GOTO to Results`` update the CCD parameters and the plot to see the mat.
+
+.. image:: ./Images/CalibBoard_Fitparams.png
+
+You should see something similar to that to consider that the calibration is completed. The numerical criterium is the pixel ``Mean Residues`` and the number of pairs used ``NbSpots``. 
+
+.. image:: ./Images/CalibBoard_FitCalib.png
+
+----------------------
+Saving Results
+----------------------
+
+Press on ``Save Calib`` to save the CCD parameters (and by the way crystal orientation matrix).
+
+.. image:: ./Images/SaveCalib.png
+
+========================================================================================
+Module function description: 
+========================================================================================
+
+The next documentation comes from the docstring in the header of function or class definition.
+
+LaueToolsGUI - Calibration Board
+
+.. automodule:: LaueToolsGUI
+   :members:
+
+

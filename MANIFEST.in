@@ -1,0 +1,7 @@
+include *.md
+recursive-include LaueTools/icons *
+recursive-include LaueTools/LaueImages *
+recursive-include LaueTools/Examples *
+recursive-include LaueTools/Documentation *
+recursive-include LaueTools/Daxm *
+recursive-include LaueTools *

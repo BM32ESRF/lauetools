@@ -1,0 +1,34 @@
+.. _WireTechnique:
+
+*********************************
+WireTechnique Depth resolution Modules
+*********************************
+
+This part is still in development and aims at providing software tools to acquire and analyse data for depth resoluted Laue Pattern.
+
+===================================================================================
+Module function description: 
+========================================================================================
+
+The next documentation comes from the docstring in the header of function or class definition.
+
+mainDAXM
+--------------------
+
+main module of Wire technique
+
+.. automodule:: Wire.mainDAXM
+   :members:
+
+geometry
+--------------------
+
+module for defining wire positions and geometry
+
+.. automodule:: Wire.geometry
+   :members:
+
+
+
+
+

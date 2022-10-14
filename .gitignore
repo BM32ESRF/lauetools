@@ -1,0 +1,8 @@
+/LaueTools/*.dat
+/LaueTools/*.pyc
+/LaueTools/*.bak
+/Distribute/*
+/LaueTools/sorted*
+/doc/conf.py
+/LaueTools/__pycache__/*
+

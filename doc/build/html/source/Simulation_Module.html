@@ -1,0 +1,1401 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>CrystalParameters &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>CrystalParameters</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/Simulation_Module.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-LaueTools.CrystalParameters">
+<span id="crystalparameters"></span><span id="simulation"></span><h1>CrystalParameters<a class="headerlink" href="#module-LaueTools.CrystalParameters" title="Permalink to this headline">¶</a></h1>
+<p>This module belong to LaueTools package. It gathers procedures to define crystal
+lattice parameters and strain calculations</p>
+<p>Main authors are JS Micha, O. Robach, S. Tardif June 2019</p>
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.GrainParameter_from_Material">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">GrainParameter_from_Material</code><span class="sig-paren">(</span><em>key_material, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#GrainParameter_from_Material"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.GrainParameter_from_Material" title="Permalink to this definition">¶</a></dt>
+<dd><p>create grain parameters list for the Laue pattern simulation</p>
+<p>Can handle material defined in dictionary by four elements instead of 6 lattice parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>key_material</strong> (<em>string</em>) – material or structure label</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">grain (4 elements list),  contains_U (boolean)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.Prepare_Grain">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">Prepare_Grain</code><span class="sig-paren">(</span><em>key_material, OrientMatrix, force_extinction=None, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#Prepare_Grain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.Prepare_Grain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of the grain (crystal) parameters for Laue pattern simulation</p>
+<p>if in key_material definition (see dict_Materials) orient matrix is missing
+(i.e. only lattice parameter are input)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>key_material</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – material label</td>
+</tr>
+</tbody>
+</table>
+<p>then list parameter will consider the provided value of the optional
+OrientMatrix argument</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>force_extinction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – None, use default extinction rules,
+otherwise use other extinction correspondoing to the label</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.AngleBetweenNormals">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">AngleBetweenNormals</code><span class="sig-paren">(</span><em>HKL1s</em>, <em>HKL2s</em>, <em>Gstar</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#AngleBetweenNormals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.AngleBetweenNormals" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute pairwise angles (in degrees) between reflections or lattice plane normals
+of two sets according to unit cell metrics Gstar</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>HKL1s</strong> – list of [H1,K1,L1]</li>
+<li><strong>HKL2s</strong> – list of [H2,K2,L2]</li>
+<li><strong>Gstar</strong> – 3*3 matrix corresponding to reciprocal metric tensor of unit cell (as provided by Gstar_from_directlatticeparams())</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array of pairwise angles between reflections</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.FilterHarmonics_2">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">FilterHarmonics_2</code><span class="sig-paren">(</span><em>hkl</em>, <em>return_indices_toremove=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#FilterHarmonics_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.FilterHarmonics_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>keep only hkl 3d vectors that are representative of direction nh,nk,nl
+for any h,k,l signed integers</p>
+<p>It removes only parallel vector but KEEPs antiparallel vectors (vec , -n vec) with n&gt;0</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>hkl</strong> – array of 3d hkl indices</li>
+<li><strong>return_indices_toremove</strong> – 1, returns indices of element in hkl that have been removed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.calc_B_RR">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">calc_B_RR</code><span class="sig-paren">(</span><em>latticeparameters</em>, <em>directspace=1</em>, <em>setvolume=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#calc_B_RR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.calc_B_RR" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>Calculate B0 matrix (columns = vectors a*,b*,c*) from direct (real) space lattice parameters (directspace=1)</li>
+<li>Calculate a matrix (columns = vectors a,b,c) from direct (real) space lattice parameters (directspace=0)</li>
+</ul>
+<p><span class="math notranslate nohighlight">\(\boldsymbol q_{ortho}=B_0 {\bf G^*}\)</span> where <span class="math notranslate nohighlight">\({\bf G^*}=h{\bf a^*}+k{\bf b^*}+l{\bf c^*}\)</span></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>latticeparameters</strong> – <ul>
+<li>[a,b,c, alpha, beta, gamma]    (angles are in degrees) if directspace=1</li>
+<li>[a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees) if directspace=0</li>
+</ul>
+</li>
+<li><strong>directspace</strong> – <ul>
+<li><dl class="first docutils">
+<dt>1 (default) converts  (reciprocal) direct lattice parameters</dt>
+<dd>to (direct) reciprocal space calculates “B” matrix in the reciprocal space of input latticeparameters</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space</dt>
+<dd>calculates “B” matrix in same space of  input latticeparameters</dd>
+</dl>
+</li>
+</ul>
+</li>
+<li><strong>setvolume</strong> – <ul>
+<li>False, sets direct unit cell volume to the true volume from lattice parameters</li>
+<li>1,      sets direct unit cell volume to 1</li>
+<li>’a**3’,  sets direct unit cell volume to a**3</li>
+<li>’b**3’, sets direct unit cell volume to b**3</li>
+<li>’c**3’,  sets direct unit cell volume to c**3</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>B matrix is used in q=U B G* formula or</dt>
+<dd>as B0  in q= (UB) B0 G*</dd>
+</dl>
+<p>after Busing Levy, Acta Crysta 22 (1967), p 457</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\left( \begin{matrix}
+a^*  &amp; b^*\cos \gamma^* &amp; c^*\cos beta^*\\
+0  &amp; b^*\sin \gamma^* &amp;-c^*\sin \beta^*\cos \alpha\\
+0 &amp;  0    &amp;      c^*\sin \beta^*\sin \alpha\\
+        \end{matrix} \right)\end{split}\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\cos(\alpha)=(\cos \beta^*\cos \gamma^*-\cos \alpha^*)/(\sin \beta^*\sin \gamma^*)\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[c^* \sin \beta^* \sin \alpha = 1/c\]</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.DeviatoricStrain_LatticeParams">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">DeviatoricStrain_LatticeParams</code><span class="sig-paren">(</span><em>newUBmat</em>, <em>latticeparams</em>, <em>constantlength='a'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#DeviatoricStrain_LatticeParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.DeviatoricStrain_LatticeParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes deviatoric strain and new direct (real) lattice parameters
+from matrix newUBmat (rotation and deformation)
+considering that one lattice length is chosen to be constant</p>
+<p>Zero strain corresponds to reference state of input <cite>lattice parameters</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>newUBmat</strong> – (3x3) matrix operator including rotation and deformation</li>
+<li><strong>latticeparams</strong> – 6 lattice parameters  [a,b,c,:math:<cite>alpha, beta, gamma</cite>] in Angstrom and degrees</li>
+<li><strong>constantlength</strong> – ‘a’,’b’, or ‘c’ to set one length according to the value in <cite>latticeparams</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
+<li>3x3 deviatoric strain tensor)</li>
+<li>lattice_parameter_direct_strain (direct (real) lattice parameters)</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">3x3 numpy array, 6 elements list</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>q = newUBmat . B0 . G*  where B0 (triangular up matrix) comes from lattice parameters input.</li>
+<li>equivalently, q = UBstar_s . G*</li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.VolumeCell">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">VolumeCell</code><span class="sig-paren">(</span><em>latticeparameters</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#VolumeCell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.VolumeCell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes unit cell volume from lattice parameters (either real or reciprocal)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>latticeparameters</strong> – 6 lattice parameters</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">scalar volume</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">VolumeCell</code><span class="sig-paren">(</span><em>latticeparameters</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#VolumeCell"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Computes unit cell volume from lattice parameters (either real or reciprocal)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>latticeparameters</strong> – 6 lattice parameters</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">scalar volume</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.CrystalParameters.matrix_to_rlat">
+<code class="descclassname">LaueTools.CrystalParameters.</code><code class="descname">matrix_to_rlat</code><span class="sig-paren">(</span><em>mat</em>, <em>angles_in_deg=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/CrystalParameters.html#matrix_to_rlat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.CrystalParameters.matrix_to_rlat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns RECIPROCAL lattice parameters of the unit cell a*,b*,c* in columns of <cite>mat</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mat</strong> – matrix where columns are respectively a*,b*,c* coordinates in orthonormal frame</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">[a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Reciprocal lattice parameters are contained in UB matrix : q =  mat G*</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-LaueTools.lauecore">
+<span id="laue-pattern-simulation"></span><h1>Laue Pattern Simulation<a class="headerlink" href="#module-LaueTools.lauecore" title="Permalink to this headline">¶</a></h1>
+<p>Core module to compute Laue Pattern in various geometry</p>
+<p>Main author is J. S. Micha:   micha [at] esrf [dot] fr</p>
+<p>version July 2019
+from LaueTools package hosted in</p>
+<p><a class="reference external" href="http://sourceforge.net/projects/lauetools/">http://sourceforge.net/projects/lauetools/</a></p>
+<p>or</p>
+<p><a class="reference external" href="https://gitlab.esrf.fr/micha/lauetools">https://gitlab.esrf.fr/micha/lauetools</a></p>
+<dl class="function">
+<dt id="LaueTools.lauecore.Quicklist">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">Quicklist</code><span class="sig-paren">(</span><em>OrientMatrix</em>, <em>ReciprocBasisVectors</em>, <em>listRSnorm</em>, <em>lambdamin</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#Quicklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.Quicklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>return 6 indices min and max boundary values for each Miller index h, k, l
+to be contained in the largest Ewald Sphere.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>OrientMatrix</strong> – orientation matrix (3*3 matrix)</li>
+<li><strong>ReciprocBasisVectors</strong> – list of the three vectors a*,b*,c* in the lab frame
+before rotation with OrientMatrix</li>
+<li><strong>listRSnorm</strong> – : list of the three reciprocal space lengthes of a*,b*,c*</li>
+<li><strong>lambdamin</strong> – : lambdamin (in Angstrom) corresponding to energy max</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">[[hmin,hmax],[kmin,kmax],[lmin,lmax]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.genHKL_np">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">genHKL_np</code><span class="sig-paren">(</span><em>listn</em>, <em>Extinc</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#genHKL_np"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.genHKL_np" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate all Miller indices hkl from indices limits given  by listn
+and taking into account for systematic exctinctions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>listn</strong> (<em>[</em><em>[</em><em>hmin</em><em>,</em><em>hmax</em><em>]</em><em>,</em><em>[</em><em>kmin</em><em>,</em><em>kmax</em><em>]</em><em>,</em><em>[</em><em>lmin</em><em>,</em><em>lmax</em><em>]</em><em>]</em>) – Miller indices limits (warning: these lists are used in python range (last index is excluded))</li>
+<li><strong>Extinc</strong> (<em>string</em>) – label corresponding to systematic exctinction
+rules on h k and l miller indics such as (‘fcc’, ‘bcc’, ‘dia’, …) or ‘no’ for any rules</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array of [h,k,l]</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">node [0,0,0] is excluded</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.getLaueSpots">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">getLaueSpots</code><span class="sig-paren">(</span><em>wavelmin</em>, <em>wavelmax</em>, <em>crystalsParams</em>, <em>linestowrite</em>, <em>kf_direction='Z&gt;0'</em>, <em>OpeningAngleCollection=22.0</em>, <em>fastcompute=0</em>, <em>ResolutionAngstrom=False</em>, <em>fileOK=1</em>, <em>verbose=1</em>, <em>dictmaterials=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#getLaueSpots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.getLaueSpots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Qxyz vectors and corresponding HKL miller indices for nodes in recicprocal space that can be measured
+for the given detection geometry and energy bandpass configuration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wavelmin</strong> – smallest wavelength in Angstrom</li>
+<li><strong>wavelmax</strong> – largest wavelength in Angstrom</li>
+<li><strong>crystalsParams</strong> – <p>list of <em>SingleCrystalParams</em>, each of them being a list
+of 4 elements for crystal orientation and strain properties:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>[0](array): is the B matrix a*,b*,c* vectors are expressed in column</dt>
+<dd>in LaueTools frame in reciprocal angstrom units</dd>
+</dl>
+</li>
+<li>[1](str): peak Extinction rules (‘no’,’fcc’,’dia’, etc…)</li>
+<li>[2](array): orientation matrix</li>
+<li>[3](str): key for material element</li>
+</ul>
+</li>
+<li><strong>kf_direction</strong> – <p>string defining the average geometry, mean value of exit scattered vector:
+‘Z&gt;0’   top spots</p>
+<p>’Y&gt;0’   one side spots (towards hutch door)</p>
+<p>’Y&lt;0’   other side spots</p>
+<p>’X&gt;0’   transmission spots</p>
+<p>’X&lt;0’   backreflection spots</p>
+</li>
+<li><strong>fastcompute</strong> – <ul>
+<li>1, compute reciprocal space (RS) vector BUT NOT the Miller indices</li>
+<li>0, returns both RS vectors (normalised) and Miller indices</li>
+</ul>
+</li>
+<li><strong>ResolutionAngstrom</strong> – <ul>
+<li>scalar, smallest interplanar distance ordered in crystal in angstrom.</li>
+<li>None, all reflections will be calculated that can be time-consuming for large unit cell</li>
+</ul>
+</li>
+<li><strong>linestowrite</strong> – list of [string] that can be write in file or display in
+stdout. Example: [[“”]] or [[“<strong>******</strong>”],[“lauetools”]]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>list of [Qx,Qy,Qz]s for each grain, list of [H,K,L]s for each grain (fastcompute = 0)</li>
+<li>list of [Qx,Qy,Qz]s for each grain, None  (fastcompute = 1)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p>This method doesn’t create spot instances.</p>
+<p class="last">This is done in filterLaueSpots with fastcompute = 0</p>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p class="last">finer selection of nodes : on camera , without harmonics can be
+done later with filterLaueSpots()</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">lauetools laboratory frame is in this case:
+x// ki (center of ewald sphere has neagtive x component)
+z perp to x and belonging to the plane defined by x and dd vectors
+(where dd vector is the smallest vector joining sample impact point and points on CCD plane)
+y is perpendicular to x and z</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.create_spot">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">create_spot</code><span class="sig-paren">(</span><em>pos_vec</em>, <em>miller</em>, <em>detectordistance</em>, <em>allattributes=False</em>, <em>pixelsize=0.08056640625</em>, <em>dim=(2048</em>, <em>2048)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#create_spot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.create_spot" title="Permalink to this definition">¶</a></dt>
+<dd><p>From reciprocal space position and 3 miller indices
+create a spot instance (on top camera geometry)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pos_vec</strong> (<em>list of 3 float</em>) – 3D vector</li>
+<li><strong>miller</strong> – list of 3 miller indices</li>
+<li><strong>detectordistance</strong> – approximate distance detector sample (to compute complementary spots attributes)</li>
+<li><strong>allattributes</strong> – False or 0  not to compute complementary spot attributes</li>
+<li><strong>allattributes</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">spot instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">spot.Qxyz is a vector expressed in lauetools frame</p>
+</div>
+<p>X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.create_spot_np">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">create_spot_np</code><span class="sig-paren">(</span><em>Qxyz</em>, <em>miller</em>, <em>detectordistance</em>, <em>allattributes=False</em>, <em>pixelsize=0.08056640625</em>, <em>dim=(2048</em>, <em>2048)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#create_spot_np"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.create_spot_np" title="Permalink to this definition">¶</a></dt>
+<dd><p>From reciprocal space position and 3 miller indices
+create a spot instance (on top camera geometry)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pos_vec</strong> (<em>list of 3 float</em>) – 3D vector</li>
+<li><strong>miller</strong> – list of 3 miller indices</li>
+<li><strong>detectordistance</strong> – approximate distance detector sample (to compute complementary spots attributes)</li>
+<li><strong>allattributes</strong> – False or 0  not to compute complementary spot attributes</li>
+<li><strong>allattributes</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">spot instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">spot.Qxyz is a vector expressed in lauetools frame</p>
+</div>
+<p>X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.filterLaueSpots">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">filterLaueSpots</code><span class="sig-paren">(</span><em>vec_and_indices, HarmonicsRemoval=1, fastcompute=0, kf_direction='Z&gt;0', fileOK=0, detectordistance=70.0, detectordiameter=165.0, pixelsize=0.08056640625, dim=(2048, 2048), linestowrite=[['']]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#filterLaueSpots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.filterLaueSpots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates list of grains spots on camera and without harmonics
+and on CCD camera from [[spots grain 0],[spots grain 1],etc] =&gt;
+returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>vec_and_indices</strong> – <p>list of elements corresponding to 1 grain, each element is composed by
+* [0] array of vector</p>
+<ul>
+<li>[1] array of indices</li>
+</ul>
+</li>
+<li><strong>HarmonicsRemoval</strong> – 1, removes harmonics according to their miller indices
+(only for fastcompute = 0)</li>
+<li><strong>fastcompute</strong> – <ul>
+<li><dl class="first docutils">
+<dt>1, outputs a list for each grain of 2theta spots and a list for each grain of chi spots</dt>
+<dd>(HARMONICS spots are still HERE!)</dd>
+</dl>
+</li>
+<li>0, outputs list for each grain of spots with</li>
+</ul>
+</li>
+<li><strong>kf_direction</strong> (<em>string</em>) – label for detection geometry (CCD plane with respect to the incoming beam and sample)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>list of spot instances if fastcompute=0</li>
+<li>2theta, chi          if fastcompute=1</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>USED IMPORTANTLY in lauecore.SimulateResults  lauecore.SimulateLaue</li>
+<li>USED in matchingrate.AngularResidues</li>
+<li>USED in ParametricLaueSimulator.dosimulation_parametric</li>
+<li>USED in AutoindexationGUI.OnSimulate_S3, DetectorCalibration.Reckon_2pts, and others</li>
+</ul>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">add dim in create_spot in various geometries</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.get2ThetaChi_geometry">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">get2ThetaChi_geometry</code><span class="sig-paren">(</span><em>oncam_vec</em>, <em>oncam_HKL</em>, <em>detectordistance=70.0</em>, <em>pixelsize=0.08056640625</em>, <em>dim=(2048</em>, <em>2048)</em>, <em>kf_direction='Z&gt;0'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#get2ThetaChi_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.get2ThetaChi_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes list of spots instances from oncam_vec (q 3D vectors)
+and oncam_HKL (miller indices 3D vectors)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>oncam_vec</strong> (<em>array with 3D elements</em><em> (</em><em>shape =</em><em> (</em><em>n</em><em>,</em><em>3</em><em>)</em><em>)</em>) – q vectors [qx,qy,qz] (corresponding to kf collected on camera)</li>
+<li><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em> or </em><em>tuple of 2 integers</em>) – CCD frame dimensions (nb pixels, nb pixels)</li>
+<li><strong>detectordistance</strong> – approximate distance detector sample</li>
+<li><strong>detectordistance</strong> – float or integer</li>
+<li><strong>pixelsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – pixel size in mm</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body"><p class="first">kf_direction : label for detection geometry
+(CCD plane with respect to
+the incoming beam and sample)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">kf_direction: string</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of spot instances</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">USED in lauecore.filterLaueSpots</p>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>to be replaced by something else not using spot class</li>
+<li>put this function in LaueGeometry module ?</li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.calcSpots_fromHKLlist">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">calcSpots_fromHKLlist</code><span class="sig-paren">(</span><em>UB</em>, <em>B0</em>, <em>HKL</em>, <em>dictCCD</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#calcSpots_fromHKLlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.calcSpots_fromHKLlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes all Laue Spots properties on 2D detector from a list of hkl
+(given structure by B0 matrix, orientation by UB matrix, and detector geometry by dictCCD)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>UB</strong> (<em>3x3 array</em><em> (or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em>)</em>) – orientation matrix (rotation -and if any- strain)</li>
+<li><strong>B0</strong> (<em>3x3 array</em><em> (or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em>)</em>) – initial a*,b*,c* reciprocal unit cell basis vector in Lauetools frame (x// ki))</li>
+<li><strong>HKL</strong> (<em>array with shape =</em><em> (</em><em>n</em><em>,</em><em>3</em><em>)</em>) – array of Miller indices</li>
+<li><strong>dictCCD</strong> – dictionnary of CCD properties (with key ‘CCDparam’, ‘pixelsize’,’dim’)
+for ‘ccdparam’ 5 CCD calibration parameters [dd,xcen,ycen,xbet,xgam], pixelsize in mm, and (dim1, dim2)</li>
+<li><strong>dictCCD</strong> – dict object</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of arrays H, K, L, Qx, Qy, Qz, X, Y, twthe, chi, Energy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Fundamental equation
+<span class="math notranslate nohighlight">\({\bf q} = UB*B0 * {\bf G^*}\)</span>
+with <span class="math notranslate nohighlight">\({\bf G^*} = h{\bf a^*}+k{\bf b^*}+l{\bf c^*}\)</span></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">USED in DetectorCalibration.OnWriteResults, and PlotRefineGUI.onWriteFitFile</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.SimulateLaue">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">SimulateLaue</code><span class="sig-paren">(</span><em>grain, emin, emax, detectorparameters, kf_direction='Z&gt;0', ResolutionAngstrom=False, removeharmonics=0, pixelsize=0.08056640625, dim=(2048, 2048), detectordiameter=None, force_extinction=None, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#SimulateLaue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.SimulateLaue" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Computes Laue Pattern spots positions, scattering angles, miller indices</dt>
+<dd>for a SINGLE grain or Xtal</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grain</strong> – crystal parameters made of a 4 elements list</li>
+<li><strong>emin</strong> – minimum bandpass energy (keV)</li>
+<li><strong>emax</strong> – maximum bandpass energy (keV)</li>
+<li><strong>removeharmonics</strong> – <ul>
+<li><dl class="first docutils">
+<dt>1, removes harmonics spots and keep fondamental spots (or reciprocal direction)</dt>
+<dd>(with lowest Miller indices)</dd>
+</dl>
+</li>
+<li>0 keep all spots (including harmonics)</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-2">
+<p class="first admonition-title">Todo</p>
+<p class="last">To update to accept kf_direction not only in reflection geometry</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">USED in detectorCalibration…simulate_theo  for non routine geometry (ie except Z&gt;0 (reflection top) X&gt;0 (transmission)</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.SimulateLaue_full_np">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">SimulateLaue_full_np</code><span class="sig-paren">(</span><em>grain, emin, emax, detectorparameters, kf_direction='Z&gt;0', ResolutionAngstrom=False, removeharmonics=0, pixelsize=0.08056640625, dim=(2048, 2048), detectordiameter=None, force_extinction=None, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#SimulateLaue_full_np"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.SimulateLaue_full_np" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Compute Laue Pattern spots positions, scattering angles, miller indices</dt>
+<dd>for a SINGLE grain or Xtal using numpy vectorization</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grain</strong> – crystal parameters in a 4 elements list</li>
+<li><strong>emin</strong> – minimum bandpass energy (keV)</li>
+<li><strong>emax</strong> – maximum bandpass energy (keV)</li>
+<li><strong>removeharmonics</strong> – 1, remove harmonics spots and keep fondamental spots
+(with lowest Miller indices)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-3">
+<p class="first admonition-title">Todo</p>
+<p class="last">update to accept kf_direction not only in reflection geometry</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">USED in detectorCalibration…simulate_theo for routine geometry Z&gt;0 (reflection top) X&gt;0 (transmission)</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.lauecore.SimulateResult">
+<code class="descclassname">LaueTools.lauecore.</code><code class="descname">SimulateResult</code><span class="sig-paren">(</span><em>grain, emin, emax, simulparameters, fastcompute=1, ResolutionAngstrom=False, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/lauecore.html#SimulateResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.lauecore.SimulateResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulates 2theta chi of Laue Pattern spots for ONE SINGLE grain</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grain</strong> – crystal parameters in a 4 elements list</li>
+<li><strong>emin</strong> – minimum bandpass energy (keV)</li>
+<li><strong>emax</strong> – maximum bandpass energy (keV)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">2theta, chi</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Need of approximate detector distance and diameter to restrict simulation to a limited solid angle</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>USED: in AutoindexationGUI.OnStart, LaueToolsGUI.OnCheckOrientationMatrix</li>
+<li>USED also IndexingImageMatching, lauecore.SimulateLaue_merge</li>
+</ul>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-LaueTools.LaueGeometry">
+<span id="d-detection-geometry"></span><h1>2D Detection Geometry<a class="headerlink" href="#module-LaueTools.LaueGeometry" title="Permalink to this headline">¶</a></h1>
+<p>Module of lauetools project to compute Laue spots position on CCD camera.
+It handles detection and source geometry.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The frame (LT2) considered in this package (with y axis parallel to the incoming beam) in not the LaueTools frame (for which x is parallel to the incoming beam)</p>
+</div>
+<p>JS Micha June 2019</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>Vectors Definitions</dt>
+<dd><ul class="first last">
+<li><strong>q</strong> momentum transfer vector from resp. incoming and outgoing wave vector <strong>ki</strong> and <strong>kf</strong>, <span class="math notranslate nohighlight">\(q=kf-ki\)</span></li>
+<li>When a Laue spot exists, <strong>q</strong> is equal to the one node of the reciprocal lattice given by <strong>G*</strong> vector</li>
+<li><dl class="first docutils">
+<dt><strong>G*</strong> is perpendicular to atomic planes defined by the three Miller indices h,k,l</dt>
+<dd>such as <strong>G***=h**a*</strong> + k**b*** +l**c*** where <strong>a*</strong>, <strong>b*</strong>, and <strong>c*</strong> are the unit cell lattice basis vectors.</dd>
+</dl>
+</li>
+<li><strong>kf</strong>: scattered beam vector whose corresponding unit vector is <strong>uf</strong></li>
+<li><strong>ki</strong> incoming beam vector, <strong>ui</strong> corresponding unit vector</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Laboratory Frame LT2</dt>
+<dd><ul class="first last">
+<li>I: origin</li>
+<li>z vertical up perpendicular to CCD plane (top camera geometry)</li>
+<li>y along X-ray horizontal</li>
+<li>x towards wall behind horizontal</li>
+<li>O: origin of pixel CCD frame in detecting plane</li>
+<li><strong>j</strong> // <strong>ui</strong> incoming beam unit vector</li>
+<li><dl class="first docutils">
+<dt>z axis is defined by the CCD camera position. z axis is perpendicular to CCD plane</dt>
+<dd>such as IO belongs to the plane Iyz</dd>
+</dl>
+</li>
+<li>bet: angle between <strong>IO</strong> and <strong>k</strong></li>
+<li><dl class="first docutils">
+<dt><strong>i**= **j**^**k</strong> (when entering the BM32 hutch <strong>i</strong> is approximately towards the wall</dt>
+<dd>(in CCD on top geometry and beam coming from the right)</dd>
+</dl>
+</li>
+<li>M: point lying in CCD plane corresponding to Laue spot</li>
+<li><strong>uf</strong> is the unit vector relative to vector <strong>IM</strong></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>kf</strong> is also a vector collinear to <strong>IM</strong> with a length of R=1/wavelength=E/12.398 [keV]
+with wavelength and Energy of the corresponding bragg’s reflections.</p>
+<p>I is the point from which calibration parameters (CCD position) are deduced (from a perfectly known crystal structure Laue pattern)
+Iprime is an other source of emission (posI or offset in functions)</p>
+<p><span class="math notranslate nohighlight">\(2 \theta\)</span> is the scattering angle between <strong>ui</strong> and <strong>uf</strong>, i.e.</p>
+<p><span class="math notranslate nohighlight">\(\cos(2 \theta)=u_i.u_f\)</span></p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}{\bf k_f} = ( -\sin 2 \theta \sin \chi, \cos 2\theta, \sin 2\theta \cos \chi)\\{\bf k_i} = (0, 1, 0)\end{aligned}\end{align} \]</div>
+<p>Energy= 12.398*  q**2/(2* <strong>q</strong>.**ui**)=12.398 * q**2/ (-2 sin theta)</p>
+<dl class="docutils">
+<dt><em>Calibration parameters (CCD position and detection geometry)</em></dt>
+<dd><ul class="first last simple">
+<li>calib: list of the 5 calibration parameters [dd,xcen,ycen,xbet,xgam]</li>
+<li>dd: norm of <strong>IO</strong>  [mm]</li>
+<li><dl class="first docutils">
+<dt>xcen,ycen [pixel unit]: pixels values in CCD frame of point O with respect to Oprime where</dt>
+<dd>Oprime is the origin of CCD pixels frame (at a corner of the CCD array)</dd>
+</dl>
+</li>
+<li>xbet: angle between <strong>IO</strong> and <strong>k</strong> [degree]</li>
+<li><dl class="first docutils">
+<dt>xgam: azimutal rotation angle around z axis. Angle between CCD array axes</dt>
+<dd>and (<strong>i</strong>,**j**) after rotation by xbet [degree].</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<p><em>sample frame</em></p>
+<p>Origin is I and unit frame vectors (<strong>is</strong>, <strong>js</strong>, <strong>ks</strong>) are derived
+from absolute frame by the rotation (axis= - <strong>i</strong>, angle= wo) where wo is the angle between <strong>js</strong> and <strong>j</strong></p>
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.calc_uflab">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">calc_uflab</code><span class="sig-paren">(</span><em>xcam</em>, <em>ycam</em>, <em>detectorplaneparameters</em>, <em>offset=0</em>, <em>returnAngles=1</em>, <em>verbose=0</em>, <em>pixelsize=0.08056640625</em>, <em>rectpix=0</em>, <em>kf_direction='Z&gt;0'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#calc_uflab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.calc_uflab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes unit vector <span class="math notranslate nohighlight">\({\bf u_f}=\frac{\bf k_f}{\|k_f\|}\)</span> in laboratory frame of scattered beam <span class="math notranslate nohighlight">\(k_f\)</span>
+(angle scattering angles 2theta and chi) from X, Y pixel Laue spot position</p>
+<p>Unit vector uf correspond to normalized kf vector: q = kf - ki
+from lists of X and Y Laue spots pixels positions on detector</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xcam</strong> (<em>list of floats</em>) – list of pixel X position</li>
+<li><strong>ycam</strong> (<em>list of floats</em>) – list of pixel Y position</li>
+<li><strong>detectorplaneparameters</strong> – list of 5 calibration parameters</li>
+<li><strong>offset</strong> – float, offset in position along incoming beam of source of scattered rays
+if positive: offset in sample depth
+units: mm</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>if returnAngles=1   : twicetheta, chi   <em>(default)</em></li>
+<li>if returnAngles!=1  : uflab, IMlab</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.calc_uflab_trans">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">calc_uflab_trans</code><span class="sig-paren">(</span><em>xcam</em>, <em>ycam</em>, <em>calib</em>, <em>returnAngles=1</em>, <em>verbose=0</em>, <em>pixelsize=0.08056640625</em>, <em>rectpix=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#calc_uflab_trans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.calc_uflab_trans" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute <span class="math notranslate nohighlight">\(2 \theta\)</span> and <span class="math notranslate nohighlight">\(\chi\)</span> scattering angles or <strong>uf</strong> and <strong>kf</strong> vectors
+from lists of X and Y Laue spots positions
+in TRANSMISSION geometry</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xcam</strong> (<em>list of floats</em>) – list of pixel X position</li>
+<li><strong>ycam</strong> (<em>list of floats</em>) – list of pixel Y position</li>
+<li><strong>calib</strong> – list of 5 calibration parameters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>if returnAngles=1   : twicetheta, chi   <em>(default)</em></li>
+<li>if returnAngles!=1  : uflab, IMlab</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p># TODO: add offset like in reflection geometry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.calc_xycam">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">calc_xycam</code><span class="sig-paren">(</span><em>uflab</em>, <em>calib</em>, <em>energy=0</em>, <em>offset=None</em>, <em>verbose=0</em>, <em>returnIpM=False</em>, <em>pixelsize=0.08056640625</em>, <em>rectpix=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#calc_xycam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.calc_xycam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes Laue spots position x and y in pixels units in CCD frame
+from unit scattered vector uf expressed in Lab. frame</p>
+<p>computes coordinates of point M on CCD from point source and <strong>uflab</strong>.
+Point Ip (source Iprime of x-ray scattered beams)
+(for each Laue spot <strong>uflab</strong> is the unit vector of <strong>IpM</strong>)
+Point Ip is shifted by offset (if not None) from the default point I
+(used to calibrate the CCD camera and 2theta chi determination)</p>
+<p>th0 (theta in degrees)
+Energy (energy in keV)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>uflab</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em> or </em><em>array</em><em> (</em><em>length must &gt; 1</em><em>)</em>) – list or array of [qx,qy,qz] (q vector)</li>
+<li><strong>calib</strong> (<em>list of floats</em>) – list 5 detector calibration parameters</li>
+<li><strong>offset</strong> (<em>list of floats</em><em> (</em><em>[</em><em>x</em><em>,</em><em>y</em><em>,</em><em>z</em><em>]</em><em>)</em>) – offset (in mm) in the scattering source (origin of Laue spots)
+position with respect to the position which has been used
+for the calibration of  the CCD detector plane. Offset is positive when in the same
+direction as incident beam (i.e. in sample depth)
+(incident beam direction remains constant)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>xcam: list of pixel X coordinates</li>
+<li>ycam: list of pixel Y coordinates</li>
+<li>theta: list half scattering angle “theta” (in degree)</li>
+<li>optionally energy=1: add in output list of spot energies (in keV)</li>
+<li>if returnIpM and offset not None: return list of vectors <strong>IprimeM</strong></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.calc_xycam_transmission">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">calc_xycam_transmission</code><span class="sig-paren">(</span><em>uflab</em>, <em>calib</em>, <em>energy=0</em>, <em>offset=None</em>, <em>verbose=0</em>, <em>returnIpM=False</em>, <em>pixelsize=0.08056640625</em>, <em>rectpix=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#calc_xycam_transmission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.calc_xycam_transmission" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes Laue spots position x and y in pixels units (in CCD frame) from scattering vector q</p>
+<p>As calc_xycam() but in TRANSMISSION geometry</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.uflab_from2thetachi">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">uflab_from2thetachi</code><span class="sig-paren">(</span><em>twicetheta</em>, <em>chi</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#uflab_from2thetachi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.uflab_from2thetachi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes <span class="math notranslate nohighlight">\({\bf u_f}\)</span> vectors coordinates in lauetools LT2 frame
+from <span class="math notranslate nohighlight">\({\bf k_f}\)</span> scattering angles <span class="math notranslate nohighlight">\(2 \theta\)</span> and <span class="math notranslate nohighlight">\(2 \chi\)</span> angles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>twicetheta</strong> – (list) <span class="math notranslate nohighlight">\(2 \theta\)</span> angle(s) ( in degree)</li>
+<li><strong>chi</strong> – (list) <span class="math notranslate nohighlight">\(2 \chi\)</span> angle(s) ( in degree)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of <cite>{bf u_f}</cite> =  [<span class="math notranslate nohighlight">\(uf_x,uf_y,uf_z\)</span>]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.from_twchi_to_qunit">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">from_twchi_to_qunit</code><span class="sig-paren">(</span><em>Angles</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#from_twchi_to_qunit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.from_twchi_to_qunit" title="Permalink to this definition">¶</a></dt>
+<dd><p>from kf 2theta, chi to q unit in LaueTools frame (xx// ki) q=kf-ki
+returns array = (all x’s, all y’s, all z’s)</p>
+<p>Angles in degrees !!
+Angles[0] 2theta deg values,
+Angles[1] chi values in deg</p>
+<p>this is the inverse function of from_qunit_to_twchi(), useful to check it</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.from_twchi_to_q">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">from_twchi_to_q</code><span class="sig-paren">(</span><em>Angles</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#from_twchi_to_q"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.from_twchi_to_q" title="Permalink to this definition">¶</a></dt>
+<dd><p>From kf 2theta,chi to q (arbitrary lenght) in lab frame (xx// ki) q=kf-ki
+returns array = (all qx’s, all qy’s, all qz’s)</p>
+<p>Angles in degrees !!
+Angles[0] 2theta deg values,
+Angles[1] chi values in deg</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.from_qunit_to_twchi">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">from_qunit_to_twchi</code><span class="sig-paren">(</span><em>arrayXYZ</em>, <em>labXMAS=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#from_qunit_to_twchi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.from_qunit_to_twchi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns 2theta chi from a q unit vector (defining a direction) expressed in LaueTools frame (<strong>xx</strong>// <strong>ki</strong>) <strong>q=kf-ki</strong></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\left [ \begin{matrix}
+-\sin \theta \\ \cos \theta \sin \chi \\ \cos \theta \cos \chi
+\end{matrix}
+\right ]\end{split}\]</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>in LaueTools frame</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\begin{split}kf = \left [ \begin{matrix}
+\cos 2\theta \\ \sin 2\theta \sin \chi \\ \sin 2\theta \cos \chi
+\end{matrix}
+\right ]\end{split}\\\begin{split}q = 2 \sin \theta \left [ \begin{matrix}
+-\sin \theta \\ \cos \theta \sin \chi \\ \cos \theta \cos \chi
+\end{matrix}
+\right ]\end{split}\end{aligned}\end{align} \]</div>
+<p>In LT2 Frame   labXMAS=1</p>
+<div class="last math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\begin{split}kf = \left [ \begin{matrix}
+\sin 2\theta \sin \chi \\ \cos 2\theta \\ \sin 2\theta \cos \chi
+\end{matrix}
+\right ]\end{split}\\\begin{split}q = 2 \sin \theta \left [ \begin{matrix}
+\cos \theta \sin \chi \\ -\sin \theta \\ \cos \theta \cos \chi
+\end{matrix}
+\right ]\end{split}\end{aligned}\end{align} \]</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.qvector_from_xy_E">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">qvector_from_xy_E</code><span class="sig-paren">(</span><em>xcamList</em>, <em>ycamList</em>, <em>energy</em>, <em>detectorplaneparameters</em>, <em>pixelsize</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#qvector_from_xy_E"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.qvector_from_xy_E" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns q vectors in Lauetools frame given x and y pixel positions on detector
+for a given Energy (keV)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>xcamList</strong> – list pixel x postions</li>
+<li><strong>ycamList</strong> – list pixel y postions</li>
+<li><strong>energy</strong> – list pf energies</li>
+<li><strong>detectorplaneparameters</strong> – list of 5 calibration parameters</li>
+<li><strong>pixelsize</strong> – pixel size in mm</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.unit_q">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">unit_q</code><span class="sig-paren">(</span><em>ttheta</em>, <em>chi</em>, <em>frame='lauetools'</em>, <em>anglesample=40.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#unit_q"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.unit_q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns unit q vector from 2theta,chi coordinates</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ttheta</strong> – list of 2theta angles (in degrees)</li>
+<li><strong>chi</strong> – list of chi angles (in degrees)</li>
+<li><strong>anglesample</strong> – incidence angle of beam to surface plane (degrees)</li>
+<li><strong>frame</strong> – frame to express vectors in: ‘lauetools’ , ‘XMASlab’ (LT2 frame),’XMASsample’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of 3D u_f (unit vector of scattering transfer q)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.Compute_data2thetachi">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">Compute_data2thetachi</code><span class="sig-paren">(</span><em>filename</em>, <em>tuple_column_X_Y_I</em>, <em>_nblines_headertoskip</em>, <em>sorting_intensity='yes'</em>, <em>param=None</em>, <em>kf_direction='Z&gt;0'</em>, <em>verbose=1</em>, <em>pixelsize=0.08056640625</em>, <em>dim=(2048</em>, <em>2048)</em>, <em>saturation=0</em>, <em>forceextension_lines_to_extract=None</em>, <em>col_isbadspot=None</em>, <em>alpha_xray_incidence_correction=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#Compute_data2thetachi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.Compute_data2thetachi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts spot positions x,y to scattering angles 2theta, chi from a list of peaks</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> (<em>string</em>) – fullpath to peaks list ASCII file</li>
+<li><strong>tuple_column_X_Y_I</strong> (<em>3 elements</em>) – tuple with column indices of spots X, Y (pixels on CCD) and intensity</li>
+<li><strong>_nblines_headertoskip</strong> – nb of line to skip before reading an array of data in ascii file</li>
+<li><strong>param</strong> – list of CCD calibration parameters [det, xcen, ycen, xbet, xgam]</li>
+<li><strong>pixelsize</strong> – pixelsize in mm</li>
+<li><strong>dim</strong> – (nb pixels x, nb pixels y)</li>
+<li><strong>kf_direction</strong> (<em>string</em>) – label of detection geometry (CCD position): ‘Z&gt;0’,’X&gt;0’,…</li>
+<li><strong>sorting_intensity</strong> – ‘yes’ sort spots list by decreasing intensity</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>saturation = 0 : do not read Ipixmax column of DAT file from LaueTools peaksearch
+saturation &gt; 0 : read Ipixmax column and create data_sat list
+data_sat[i] = 1 if Ipixmax[i]&gt; saturation, =0 otherwise</p>
+<dl class="docutils">
+<dt>Note: _nblines_headertoskip =0 for .pik file (no header at all)</dt>
+<dd>_nblines_headertoskip =1 for .peaks coming from fit2d</dd>
+</dl>
+<p>col_Ipixmax = 10 for .dat from LT peak search using method “Local Maxima”
+(TODO : bug in Ipixmax for method “convolve”)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.convert2corfile">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">convert2corfile</code><span class="sig-paren">(</span><em>filename</em>, <em>calibparam</em>, <em>dirname_in=None</em>, <em>dirname_out=None</em>, <em>pixelsize=0.08056640625</em>, <em>CCDCalibdict=None</em>, <em>add_props=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#convert2corfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.convert2corfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert .dat (peaks list from peaksearch procedure) to .cor (adding scattering angles 2theta chi)</p>
+<p>From X,Y pixel positions in peak list file (x,y,I,…) and detector plane geometry comptues scattering angles 2theta chi
+and creates a .cor file (ascii peaks list (2theta chi X Y int …))</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>calibparam</strong> – list of 5 CCD cakibration parameters (used if CCDCalibdict is None or  CCDCalibdict[‘CCDCalibPameters’] is missing)</li>
+<li><strong>pixelsize</strong> – CCD pixelsize (in mm) (used if CCDCalibdict is None or CCDCalibdict[‘pixelsize’] is missing)</li>
+<li><strong>CCDCalibdict</strong> – dictionary of CCD file and calibration parameters</li>
+<li><strong>add_props</strong> – add all peaks properties to .cor file instead of the 5 columns</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.convert2corfile_fileseries">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">convert2corfile_fileseries</code><span class="sig-paren">(</span><em>fileindexrange</em>, <em>filenameprefix</em>, <em>calibparam</em>, <em>suffix=''</em>, <em>nbdigits=4</em>, <em>dirname_in=None</em>, <em>dirname_out=None</em>, <em>pixelsize=0.08056640625</em>, <em>fliprot='no'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#convert2corfile_fileseries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.convert2corfile_fileseries" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert a serie of peaks list ascii files to .cor files (adding scattering angles).</p>
+<p>Filename is decomposed as following for incrementing file index in ####:
+prefix####suffix
+example: myimage_0025.myccd =&gt; prefix=myimage_ nbdigits=4 suffix=.myccd</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nbdigits</strong> – nb of digits of file index in filename (with zero padding)
+(example: for myimage_0002.ccd nbdigits = 4</li>
+<li><strong>calibparam</strong> – list of 5 CCD cakibration parameters</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.convert2corfile_multiprocessing">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">convert2corfile_multiprocessing</code><span class="sig-paren">(</span><em>fileindexrange</em>, <em>filenameprefix</em>, <em>calibparam</em>, <em>dirname_in=None</em>, <em>suffix=''</em>, <em>nbdigits=4</em>, <em>dirname_out=None</em>, <em>pixelsize=0.08056640625</em>, <em>fliprot='no'</em>, <em>nb_of_cpu=6</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#convert2corfile_multiprocessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.convert2corfile_multiprocessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>launch several processes in parallel to convert .dat file to .cor file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.vec_normalTosurface">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">vec_normalTosurface</code><span class="sig-paren">(</span><em>mat_labframe</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#vec_normalTosurface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.vec_normalTosurface" title="Permalink to this definition">¶</a></dt>
+<dd><p>solve Mat * X = (0,0,1) for X
+for pure rotation invMat = transpose(Mat)</p>
+<p>TODO: add option sample angle and axis</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.vec_onsurface_alongys">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">vec_onsurface_alongys</code><span class="sig-paren">(</span><em>mat_labframe</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#vec_onsurface_alongys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.vec_onsurface_alongys" title="Permalink to this definition">¶</a></dt>
+<dd><p>solve Mat * X = (0,1,0) for X
+for pure rotation invMat = transpose(Mat)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.convert_xycam_from_sourceshift">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">convert_xycam_from_sourceshift</code><span class="sig-paren">(</span><em>OMs</em>, <em>IIp</em>, <em>calib</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#convert_xycam_from_sourceshift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.convert_xycam_from_sourceshift" title="Permalink to this definition">¶</a></dt>
+<dd><p>From x,y on CCD camera (OMs) and source shift (IIprime)
+compute modified x,y values for the SAME calibration (calib)(for further analysis)</p>
+<p>return new value of x,y</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.LaueGeometry.lengthInSample">
+<code class="descclassname">LaueTools.LaueGeometry.</code><code class="descname">lengthInSample</code><span class="sig-paren">(</span><em>depth</em>, <em>twtheta</em>, <em>chi</em>, <em>omega</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/LaueGeometry.html#lengthInSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.LaueGeometry.lengthInSample" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute geometrical lengthes in sample from impact point (I) at the surface to a point (B)
+where xray are scattered (or fluorescence is emitted) and finally escape from inside at point (C) lying at the sample surface
+(intersection of line with unit vector u with sample surface plane tilted by omega)</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">twtheta and chi angles can be misleading.
+Assumption is made that angles of unit vector from B to C (or to detector frame pixel) are
+<span class="math notranslate nohighlight">\(2 \theta\)</span> and <span class="math notranslate nohighlight">\(\chi\)</span>.
+For large depth D, unit vector scattered beam direction is not given by <span class="math notranslate nohighlight">\(2 \theta\)</span> and <span class="math notranslate nohighlight">\(\chi\)</span> angles
+as they are used for describing the scattering direction from point I and a given detector frame position
+(you should then compute the two angles correction , actually <span class="math notranslate nohighlight">\(\chi\)</span> is unchanged, and the <span class="math notranslate nohighlight">\(2 \theta\)</span> change is approx
+d/ distance .i.e. 3 10-4 for d=20 µm and CCD at 70 mm)</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<dl class="last docutils">
+<dt>incoming beam coming from the right positive x direction with</dt>
+<dd><ul class="first last simple">
+<li>IB = (-D,0,0)</li>
+<li>BC =(xc+D,yc,zc)</li>
+<li>and length BC is proportional to the depth D</li>
+</ul>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-LaueTools.multigrainsSimulator">
+<span id="multiple-grains-and-strain-orientation-distribution"></span><h1>Multiple Grains and Strain/orientation Distribution<a class="headerlink" href="#module-LaueTools.multigrainsSimulator" title="Permalink to this headline">¶</a></h1>
+<p>Module to compute Laue Patterns from several crystals in various geometry</p>
+<p>Main author is J. S. Micha:   micha [at] esrf [dot] fr</p>
+<p>version July 2019
+from LaueTools package for python2 hosted in</p>
+<p><a class="reference external" href="http://sourceforge.net/projects/lauetools/">http://sourceforge.net/projects/lauetools/</a></p>
+<p>or for python3 and 2 in</p>
+<p><a class="reference external" href="https://gitlab.esrf.fr/micha/lauetools">https://gitlab.esrf.fr/micha/lauetools</a></p>
+<dl class="function">
+<dt id="LaueTools.multigrainsSimulator.Read_GrainListparameter">
+<code class="descclassname">LaueTools.multigrainsSimulator.</code><code class="descname">Read_GrainListparameter</code><span class="sig-paren">(</span><em>param</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/multigrainsSimulator.html#Read_GrainListparameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.multigrainsSimulator.Read_GrainListparameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read dictionary of  input key parameters for simulation</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.multigrainsSimulator.Construct_GrainsParameters_parametric">
+<code class="descclassname">LaueTools.multigrainsSimulator.</code><code class="descname">Construct_GrainsParameters_parametric</code><span class="sig-paren">(</span><em>SelectGrains_parametric</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/multigrainsSimulator.html#Construct_GrainsParameters_parametric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.multigrainsSimulator.Construct_GrainsParameters_parametric" title="Permalink to this definition">¶</a></dt>
+<dd><p>return list of simulation parameters for each grain set (mother and children grains)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LaueTools.multigrainsSimulator.dosimulation_parametric">
+<code class="descclassname">LaueTools.multigrainsSimulator.</code><code class="descname">dosimulation_parametric</code><span class="sig-paren">(</span><em>_list_param, Transform_params=None, SelectGrains=None, emax=25.0, emin=5.0, detectordistance=68.7, detectordiameter=165.0, posCEN=(1024.0, 1024.0), cameraAngles=(0.0, 0.0), gauge=None, kf_direction='Z&gt;0', pixelsize=0.08056640625, dictmaterials={'Al': ['Al', [4.05, 4.05, 4.05, 90, 90, 90], 'fcc'], 'Al2Cu': ['Al2Cu', [6.063, 6.063, 4.872, 90, 90, 90], 'no'], 'Al2O3': ['Al2O3', [4.785, 4.785, 12.991, 90, 90, 120], 'Al2O3'], 'Al2O3_all': ['Al2O3_all', [4.785, 4.785, 12.991, 90, 90, 120], 'no'], 'AlN': ['AlN', [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], 'wurtzite'], 'Au': ['Au', [4.078, 4.078, 4.078, 90, 90, 90], 'fcc'], 'CCDL1949': ['CCDL1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'h+k=2n'], 'CdHgTe': ['CdHgTe', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'dia'], 'CdHgTe_fcc': ['CdHgTe_fcc', [6.46678, 6.46678, 6.46678, 90, 90, 90], 'fcc'], 'CdTe': ['CdTe', [6.487, 6.487, 6.487, 90, 90, 90], 'fcc'], 'CdTeDiagB': ['CdTeDiagB', [4.5721, 7.9191, 11.1993, 90, 90, 90], 'no'], 'Crocidolite': ['Crocidolite', [9.811, 18.013, 5.326, 90, 103.68, 90], 'no'], 'Crocidolite_2': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 103.6, 90], 'no'], 'Crocidolite_2_72deg': ['Crocidolite_2', [9.76, 17.93, 5.35, 90, 76.4, 90], 'no'], 'Crocidolite_small': ['Crocidolite_small', [3.2533333333333334, 5.976666666666667, 1.7833333333333332, 90, 103.6, 90], 'no'], 'Crocidolite_whittaker_1949': ['Crocidolite_whittaker_1949', [9.89, 17.85, 5.31, 90, 107.5, 90], 'no'], 'Cu': ['Cu', [3.6, 3.6, 3.6, 90, 90, 90], 'fcc'], 'Cu6Sn5_monoclinic': ['Cu6Sn5_monoclinic', [11.02, 7.28, 9.827, 90, 98.84, 90], 'no'], 'Cu6Sn5_tetra': ['Cu6Sn5_tetra', [3.608, 3.608, 5.037, 90, 90, 90], 'no'], 'DIA': ['DIA', [5.0, 5.0, 5.0, 90, 90, 90], 'dia'], 'DIAs': ['DIAs', [3.56683, 3.56683, 3.56683, 90, 90, 90], 'dia'], 'DarinaMolecule': ['DarinaMolecule', [9.4254, 13.5004, 13.8241, 61.83, 84.555, 75.231], 'no'], 'FCC': ['FCC', [5.0, 5.0, 5.0, 90, 90, 90], 'fcc'], 'Fe': ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc'], 'Fe2Ta': ['Fe2Ta', [4.83, 4.83, 0.788, 90, 90, 120], 'no'], 'FeAl': ['FeAl', [5.871, 5.871, 5.871, 90, 90, 90], 'fcc'], 'GaAs': ['GaAs', [5.65325, 5.65325, 5.65325, 90, 90, 90], 'dia'], 'GaN': ['GaN', [3.189, 3.189, 5.185, 90, 90, 120], 'wurtzite'], 'GaN_all': ['GaN_all', [3.189, 3.189, 5.185, 90, 90, 120], 'no'], 'Ge': ['Ge', [5.6575, 5.6575, 5.6575, 90, 90, 90], 'dia'], 'Ge_compressedhydro': ['Ge_compressedhydro', [5.64, 5.64, 5.64, 90, 90, 90.0], 'dia'], 'Ge_s': ['Ge_s', [5.6575, 5.6575, 5.6575, 90, 90, 89.5], 'dia'], 'Getest': ['Getest', [5.6575, 5.6575, 5.6574, 90, 90, 90], 'dia'], 'Hematite': ['Hematite', [5.03459, 5.03459, 13.7533, 90, 90, 120], 'no'], 'In': ['In', [3.2517, 3.2517, 4.9459, 90, 90, 90], 'h+k+l=2n'], 'InGaN': ['InGaN', [3.3609999999999998, 3.3609999999999998, 5.439, 90, 90, 120], 'wurtzite'], 'InN': ['InN', [3.533, 3.533, 5.693, 90, 90, 120], 'wurtzite'], 'Magnetite': ['Magnetite', [8.391, 8.391, 8.391, 90, 90, 90], 'dia'], 'Magnetite_fcc': ['Magnetite_fcc', [8.391, 8.391, 8.391, 90, 90, 90], 'fcc'], 'Magnetite_sc': ['Magnetite_sc', [8.391, 8.391, 8.391, 90, 90, 90], 'no'], 'Nd45': ['Nd45', [5.4884, 5.4884, 5.4884, 90, 90, 90], 'fcc'], 'Ni': ['Ni', [3.5238, 3.5238, 3.5238, 90, 90, 90], 'fcc'], 'NiO': ['NiO', [2.96, 2.96, 7.23, 90, 90, 120], 'no'], 'NiTi': ['NiTi', [3.5506, 3.5506, 3.5506, 90, 90, 90], 'fcc'], 'SC': ['SC', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'SC5': ['SC5', [5.0, 5.0, 5.0, 90, 90, 90], 'no'], 'SC7': ['SC7', [7.0, 7.0, 7.0, 90, 90, 90], 'no'], 'Sb': ['Sb', [4.3, 4.3, 11.3, 90, 90, 120], 'no'], 'Si': ['Si', [5.4309, 5.4309, 5.4309, 90, 90, 90], 'dia'], 'Sn': ['Sn', [5.83, 5.83, 3.18, 90, 90, 90], 'h+k+l=2n'], 'Ti': ['Ti', [2.95, 2.95, 4.68, 90, 90, 120], 'no'], 'Ti2AlN': ['Ti2AlN', [2.989, 2.989, 13.624, 90, 90, 120], 'Ti2AlN'], 'Ti2AlN_w': ['Ti2AlN_w', [2.989, 2.989, 13.624, 90, 90, 120], 'wurtzite'], 'Ti_beta': ['Ti_beta', [3.2587, 3.2587, 3.2587, 90, 90, 90], 'bcc'], 'Ti_omega': ['Ti_omega', [4.6085, 4.6085, 2.8221, 90, 90, 120], 'no'], 'Ti_s': ['Ti_s', [3.0, 3.0, 4.7, 90.5, 89.5, 120.5], 'no'], 'UO2': ['UO2', [5.47, 5.47, 5.47, 90, 90, 90], 'fcc'], 'VO2M1': ['VO2M1', [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], 'VO2_mono'], 'VO2M2': ['VO2M2', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'no'], 'VO2R': ['VO2R', [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], 'rutile'], 'W': ['W', [3.1652, 3.1652, 3.1652, 90, 90, 90], 'bcc'], 'YAG': ['YAG', [9.2, 9.2, 9.2, 90, 90, 90], 'no'], 'ZnO': ['ZnO', [3.252, 3.252, 5.213, 90, 90, 120], 'wurtzite'], 'ZrO2': ['ZrO2', [5.1505, 5.2116, 5.3173, 90, 99.23, 90], 'VO2_mono'], 'ZrO2Y2O3': ['ZrO2Y2O3', [5.1378, 5.1378, 5.1378, 90, 90, 90], 'fcc'], 'alphaQuartz': ['alphaQuartz', [4.9, 4.9, 5.4, 90, 90, 120], 'no'], 'betaQuartznew': ['betaQuartznew', [4.9, 4.9, 6.685, 90, 90, 120], 'no'], 'bigpro': ['bigpro', [112.0, 112.0, 136.0, 90, 90, 90], 'no'], 'dummy': ['dummy', [4.0, 8.0, 2.0, 90, 90, 90], 'no'], 'ferrydrite': ['ferrydrite', [2.96, 2.96, 9.4, 90, 90, 120], 'no'], 'hexagonal': ['hexagonal', [1.0, 1.0, 3.0, 90, 90, 120.0], 'no'], 'inputB': ['inputB', [1.0, 1.0, 1.0, 90, 90, 90], 'no'], 'quartz_alpha': ['quartz_alpha', [4.913, 4.913, 5.404, 90, 90, 120], 'no'], 'smallpro': ['smallpro', [20.0, 4.8, 49.0, 90, 90, 90], 'no'], 'test_reference': ['test_reference', [3.2, 4.5, 5.2, 83, 92.0, 122], 'wurtzite'], 'test_solution': ['test_solution', [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], 'wurtzite'], 'testindex': ['testindex', [2.0, 1.0, 4.0, 90, 90, 90], 'no'], 'testindex2': ['testindex2', [2.0, 1.0, 4.0, 75, 90, 120], 'no']}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/LaueTools/multigrainsSimulator.html#dosimulation_parametric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LaueTools.multigrainsSimulator.dosimulation_parametric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulation of orientation or deformation gradient.
+From parent grain simulate a list of transformations (deduced by a parametric variation)</p>
+<p>_list_param   : list of parameters for each grain  [grain parameters, grain name]</p>
+<p>posCEN =(Xcen, Ycen)
+cameraAngles =(Xbet, Xgam)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(list_twicetheta,
+list_chi,
+list_energy,
+list_Miller,
+list_posX,
+list_posY,
+ParentGrainName_list,
+list_ParentGrain_transforms,
+calib,
+total_nb_grains)</td>
+</tr>
+</tbody>
+</table>
+<p>TODO:simulate for any camera position
+TODO: simulate spatial distribution of laue pattern origin</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

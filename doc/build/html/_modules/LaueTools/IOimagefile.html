@@ -1,0 +1,1392 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>LaueTools.IOimagefile &mdash; LaueTools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> LaueTools
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../GUIs.html">Graphical User Interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../LaueToolsModules.html">LaueTools Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LaueTools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>LaueTools.IOimagefile</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for LaueTools.IOimagefile</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">IOimagefile module is made for reading data contained in binary image file</span>
+<span class="sd">fully or partially.</span>
+
+<span class="sd">More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr</span>
+<span class="sd">March 2020</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Jean-Sebastien Micha, CRG-IF BM32 @ ESRF&quot;</span>
+
+<span class="c1"># built-in modules</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="c1"># third party modules</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">fabio</span>
+
+    <span class="n">FABIO_EXISTS</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Missing fabio module. Please install it if you need open some tiff images &quot;</span>
+            <span class="s2">&quot;from the sCMOS camera&quot;</span><span class="p">)</span>
+    <span class="n">FABIO_EXISTS</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">libtiff</span> <span class="k">import</span> <span class="n">TIFF</span><span class="p">,</span> <span class="n">libtiff_ctypes</span>
+
+    <span class="n">libtiff_ctypes</span><span class="o">.</span><span class="n">suppress_warnings</span><span class="p">()</span>
+    <span class="n">LIBTIFF_EXISTS</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Missing library libtiff, Please install: pylibtiff if you need open some tiff images&quot;</span><span class="p">)</span>
+    <span class="n">LIBTIFF_EXISTS</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">PIL</span> <span class="k">import</span> <span class="n">Image</span>
+
+    <span class="n">PIL_EXISTS</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Missing python module called PIL. Please install it if you need open some tiff &quot;</span>
+            <span class="s2">&quot;images from vhr camera&quot;</span><span class="p">)</span>
+    <span class="n">PIL_EXISTS</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="c1"># lauetools modules</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">major</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">dict_LaueTools</span> <span class="k">as</span> <span class="n">DictLT</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">imageprocessing</span> <span class="k">as</span> <span class="n">ImProc</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">dict_LaueTools</span> <span class="k">as</span> <span class="nn">DictLT</span>
+    <span class="kn">import</span> <span class="nn">imageprocessing</span> <span class="k">as</span> <span class="nn">ImProc</span>
+
+<span class="n">listfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+
+<div class="viewcode-block" id="stringint"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.stringint">[docs]</a><span class="k">def</span> <span class="nf">stringint</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; returns string of integer k with n zeros padding</span>
+<span class="sd">    (by placing zeros before to have n characters)</span>
+
+<span class="sd">    :param k: integer to convert</span>
+<span class="sd">    :param n: nb of digits for zero padding</span>
+
+<span class="sd">    :return: string of length n containing integer k</span>
+
+<span class="sd">    Example: 1 -&gt; &#39;0001&#39;</span>
+<span class="sd">    15 -&gt; &#39;0015&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#     strint = str(k)</span>
+    <span class="c1">#     res = &#39;0&#39; * (n - len(strint)) + strint</span>
+
+    <span class="n">encodingdigits</span> <span class="o">=</span> <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="s2">&quot;:0</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">encodingdigits</span> <span class="o">%</span> <span class="n">k</span>
+
+    <span class="k">return</span> <span class="n">res</span></div>
+
+<span class="c1"># --- ---------------- read images functions</span>
+<div class="viewcode-block" id="setfilename"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.setfilename">[docs]</a><span class="k">def</span> <span class="nf">setfilename</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">,</span> <span class="n">imageindex</span><span class="p">,</span> <span class="n">nbdigits</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    reconstruct filename string from imagefilename and update filename index with imageindex</span>
+
+<span class="sd">    :param imagefilename: filename string (full path or not)</span>
+<span class="sd">    :param imageindex: index in filename</span>
+<span class="sd">    :type imageindex: string</span>
+
+<span class="sd">    :return filename: input filename with index replaced by input imageindex</span>
+<span class="sd">    :rtype: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#     print &quot;imagefilename&quot;,imagefilename</span>
+    <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mccd&quot;</span><span class="p">):</span>
+        <span class="n">lenext</span> <span class="o">=</span> <span class="mi">5</span> <span class="c1">#length of extension including &#39;.&#39;</span>
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="n">lenext</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.mccd&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">):</span>
+        <span class="c1">#default file extension for sCMOS camera</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="s2">&quot;tif&quot;</span>
+        <span class="n">lenext</span> <span class="o">=</span> <span class="mi">4</span> <span class="c1">#length of extension including &#39;.&#39;</span>
+        <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;tiff&quot;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s2">&quot;tiff&quot;</span>
+            <span class="n">lenext</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="c1"># zero padded index for filename</span>
+
+        <span class="k">if</span> <span class="n">nbdigits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+                <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="n">lenext</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">imageindex</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="o">+</span><span class="s2">&quot;.gz&quot;</span><span class="p">):</span>
+                <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="n">lenext</span><span class="o">+</span><span class="mi">3</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.gz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+        <span class="c1"># no zero padded index for filename</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+                <span class="n">prefix</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+                <span class="n">prefix0</span> <span class="o">=</span> <span class="n">prefix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">imageindex</span> <span class="o">&gt;</span> <span class="mi">9999</span><span class="p">:</span>
+                    <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">prefix0</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">prefix0</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">{:04d}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;EIGER_4Mstack&quot;</span><span class="p">,):</span>
+        <span class="c1"># only stackimageindex is changed not imagefilename</span>
+        <span class="k">pass</span>
+
+    <span class="c1">#     print &quot;imagefilename archetype&quot;, imagefilename</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mar.tiff&quot;</span><span class="p">):</span>
+
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="mi">9</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">_mar.tiff&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mar.tif&quot;</span><span class="p">):</span>
+        <span class="c1"># requires two underscores with number in between</span>
+        <span class="c1"># map1_105_mar.tif</span>
+        <span class="n">sname</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sname</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># pathfilename contain more than 1 underscore</span>
+
+            <span class="n">sname2</span> <span class="o">=</span> <span class="n">sname</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">sname</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="n">sname2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">_mar.tif&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="c1"># special case for image id15 frelon corrected form distorsion</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s2">&quot;.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;.edf&quot;</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ImageStar_raw&quot;</span><span class="p">,</span> <span class="p">):</span>
+            <span class="n">prefixwihtindex</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">prefixwithindex_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">prefixwihtindex</span><span class="p">)</span>
+            <span class="n">indexnodigit</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefixwithindex_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lastelem</span> <span class="o">=</span> <span class="n">prefixwithindex_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;lastelem&quot;</span><span class="p">,</span> <span class="n">lastelem</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">lastelem</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                    <span class="k">break</span>
+                <span class="n">indexnodigit</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefixwihtindex</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">indexnodigit</span><span class="p">)]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+            <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.tif&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span>
+
+            <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">,</span> <span class="n">suffix</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mccd&quot;</span><span class="p">):</span>
+
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.mccd&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;edf&quot;</span><span class="p">):</span>
+
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.edf&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;unstacked&quot;</span><span class="p">):</span>
+
+        <span class="n">imagefilename</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="p">[:</span> <span class="o">-</span><span class="p">(</span><span class="mi">10</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:04d}</span><span class="s2">.unstacked&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imageindex</span><span class="p">)</span>
+
+    <span class="c1">#     print &quot;set filename to:&quot;, imagefilename</span>
+    <span class="k">return</span> <span class="n">imagefilename</span></div>
+
+
+<div class="viewcode-block" id="getIndex_fromfilename"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.getIndex_fromfilename">[docs]</a><span class="k">def</span> <span class="nf">getIndex_fromfilename</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">,</span> <span class="n">nbdigits</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stackimageindex</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get integer index from imagefilename string</span>
+
+<span class="sd">    :param imagefilename: filename string (full path or not)</span>
+
+<span class="sd">    :return: file index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">):</span>
+        <span class="c1">#default file extension for sCMOS camera</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="s2">&quot;tif&quot;</span>
+        <span class="n">lenext</span> <span class="o">=</span> <span class="mi">4</span> <span class="c1">#length of extension including &#39;.&#39;</span>
+
+        <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;tiff&quot;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s2">&quot;tiff&quot;</span>
+            <span class="n">lenext</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nbdigits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+                <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">lenext</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="p">(</span><span class="n">lenext</span><span class="p">)])</span>
+            <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="o">+</span><span class="s2">&quot;.gz&quot;</span><span class="p">):</span>
+                <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">lenext</span><span class="o">+</span><span class="mi">3</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="p">(</span><span class="n">lenext</span><span class="o">+</span><span class="mi">3</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+                <span class="n">prefix</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+                <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">prefix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># for stacked images we return the position of image data in the stack as imagefileindex</span>
+    <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;EIGER_4Mstack&quot;</span><span class="p">,):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="n">stackimageindex</span>
+
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mar.tiff&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">9</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">9</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;tiff&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mar.tif&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.tif&quot;</span><span class="p">):</span>
+        <span class="c1"># TODO: treat the case of HN56.tif  without underscore (see setfilename)</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;mccd&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;edf&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">imagefilename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;unstacked&quot;</span><span class="p">):</span>
+        <span class="n">imageindex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">imagefilename</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">10</span> <span class="o">+</span> <span class="n">nbdigits</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">10</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">imageindex</span></div>
+
+
+<div class="viewcode-block" id="getfilename"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.getfilename">[docs]</a><span class="k">def</span> <span class="nf">getfilename</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">imfileprefix</span><span class="p">,</span> <span class="n">imfilesuffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">numim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">nbdigits_filename</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    to get the global file name (name+path) for given components of the name</span>
+<span class="sd">    put %4d instead of stringint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fileim</span> <span class="o">=</span> <span class="n">imfileprefix</span> <span class="o">+</span> <span class="n">stringint</span><span class="p">(</span><span class="n">numim</span><span class="p">,</span> <span class="n">nbdigits_filename</span><span class="p">)</span> <span class="o">+</span> <span class="n">imfilesuffix</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">fileim</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">filename</span></div>
+
+<div class="viewcode-block" id="getwildcardstring"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.getwildcardstring">[docs]</a><span class="k">def</span> <span class="nf">getwildcardstring</span><span class="p">(</span><span class="n">CCDlabel</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;  return smart wildcard to open binary CCD image file with priority of CCD type of CCDlabel</span>
+
+<span class="sd">    :param CCDlabel: string label defining the CCD type</span>
+<span class="sd">    :type CCDlabel: str</span>
+<span class="sd">    :return: string from concatenated strings to be used in wxpython open file dialog box</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    .. see also::</span>
+<span class="sd">        - :func:`getIndex_fromfilename`</span>
+
+<span class="sd">        - LaueToolsGUI.AskUserfilename</span>
+
+<span class="sd">        - wx.FileDialog</span>
+
+<span class="sd">    .. example::</span>
+<span class="sd">        &gt;&gt;&gt; from readmccd import getwildcardstring</span>
+<span class="sd">        &gt;&gt;&gt; getwildcardstring(&#39;MARCCD165&#39;)</span>
+<span class="sd">        &#39;MARCCD, ROPER(*.mccd)|*mccd|mar tif(*.tif)|*_mar.tiff|tiff(*.tiff)|*tiff|Princeton(*.spe)|*spe|Frelon(*.edf)|*edf|tif(*.tif)|*tif|All files(*)|*&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ALL_EXTENSIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mccd&quot;</span><span class="p">,</span> <span class="s2">&quot;_mar.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;spe&quot;</span><span class="p">,</span> <span class="s2">&quot;edf&quot;</span><span class="p">,</span> <span class="s2">&quot;tif&quot;</span><span class="p">,</span> <span class="s2">&quot;h5&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+    <span class="n">INFO_EXTENSIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MARCCD, ROPER(*.mccd)&quot;</span><span class="p">,</span> <span class="s2">&quot;mar tif(*.tif)&quot;</span><span class="p">,</span> <span class="s2">&quot;tiff(*.tiff)&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Princeton(*.spe)&quot;</span><span class="p">,</span> <span class="s2">&quot;Frelon(*.edf)&quot;</span><span class="p">,</span> <span class="s2">&quot;tif(*.tif)&quot;</span><span class="p">,</span> <span class="s2">&quot;hdf5(*.h5)&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;All files(*)&quot;</span><span class="p">]</span>
+
+    <span class="n">extensions</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">ALL_EXTENSIONS</span><span class="p">)</span>
+    <span class="n">infos</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">INFO_EXTENSIONS</span><span class="p">)</span>
+    <span class="n">chosen_extension</span> <span class="o">=</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDlabel</span><span class="p">][</span><span class="mi">7</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">chosen_extension</span> <span class="ow">in</span> <span class="n">ALL_EXTENSIONS</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">ALL_EXTENSIONS</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">chosen_extension</span><span class="p">)</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">extensions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">extensions</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ce</span><span class="p">)</span>
+
+        <span class="n">inf</span> <span class="o">=</span> <span class="n">infos</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">infos</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inf</span><span class="p">)</span>
+
+    <span class="n">wcd</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">inf</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">infos</span><span class="p">,</span> <span class="n">extensions</span><span class="p">):</span>
+        <span class="n">wcd</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">|*</span><span class="si">{}</span><span class="s2">|&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inf</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+
+    <span class="n">wildcard_extensions</span> <span class="o">=</span> <span class="n">wcd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">wildcard_extensions</span></div>
+
+
+<div class="viewcode-block" id="getpixelValue"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.getpixelValue">[docs]</a><span class="k">def</span> <span class="nf">getpixelValue</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ccdtypegeometry</span><span class="o">=</span><span class="s2">&quot;edf&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;return pixel value at x,y</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        Very old function. To be checked. Use better readpixelvalue in plotdip.py</span>
+
+<span class="sd">    :param filename: path to image file</span>
+<span class="sd">    :type filename: str</span>
+<span class="sd">    :param x: x pixel value</span>
+<span class="sd">    :type x: int</span>
+<span class="sd">    :param y: y pixel value</span>
+<span class="sd">    :type y: int</span>
+<span class="sd">    :param ccdtypegeometry: CCD label, defaults to &quot;edf&quot;</span>
+<span class="sd">    :type ccdtypegeometry: str, optional</span>
+<span class="sd">    :return: pixel intensity</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ccdtypegeometry</span> <span class="o">==</span> <span class="s2">&quot;edf&quot;</span><span class="p">:</span>
+        <span class="c1"># frelon camera as mounted on BM32 Oct2012</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">2047</span> <span class="o">-</span> <span class="n">y</span>
+    <span class="k">if</span> <span class="n">ccdtypegeometry</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mccd&quot;</span><span class="p">,):</span>
+        <span class="k">pass</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">1024</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2048</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="p">))</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="readheader"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readheader">[docs]</a><span class="k">def</span> <span class="nf">readheader</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return header in a raw format</span>
+
+<span class="sd">    default offset for marccd image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">CCDLabel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">):</span>
+        <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">framedim</span> <span class="o">=</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">framedim</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">myheader</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">myheader</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">myheader</span></div>
+
+
+<div class="viewcode-block" id="read_header_marccd"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.read_header_marccd">[docs]</a><span class="k">def</span> <span class="nf">read_header_marccd</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return string of parameters found in header in marccd image file .mccd</span>
+
+<span class="sd">    - print allsentences  displays the header</span>
+<span class="sd">    - use allsentences.split(&#39;\n&#39;) to get a list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2048</span><span class="p">)</span>
+    <span class="n">posbyte</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">allsentences</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">)):</span>
+        <span class="n">tt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="n">tt</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s1</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">allsentences</span> <span class="o">+=</span> <span class="n">s1</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="c1"># print posbyte, s1</span>
+        <span class="n">posbyte</span> <span class="o">+=</span> <span class="mi">32</span>
+    <span class="n">tt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">tt</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s1</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">allsentences</span> <span class="o">+=</span> <span class="n">s1</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">allsentences</span></div>
+
+
+<div class="viewcode-block" id="read_header_marccd2"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.read_header_marccd2">[docs]</a><span class="k">def</span> <span class="nf">read_header_marccd2</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return string of parameters comments and exposure time</span>
+<span class="sd">    found in header in marccd image file .mccd</span>
+
+<span class="sd">    - print allsentences  displays the header</span>
+<span class="sd">    - use allsentences.split(&#39;\n&#39;) to get a list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">3072</span><span class="p">)</span>
+    <span class="n">tt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>
+    <span class="c1"># from beamline designed input</span>
+    <span class="n">dataset_comments</span> <span class="o">=</span> <span class="n">tt</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">1024</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">256</span> <span class="o">+</span> <span class="mi">128</span> <span class="o">+</span> <span class="mi">12</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">Struct</span><span class="p">(</span><span class="s2">&quot;I I I&quot;</span><span class="p">)</span>
+    <span class="n">unpacked_data</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="c1">#     print &#39;Unpacked Values:&#39;, unpacked_data</span>
+    <span class="c1">#integration_time, expo_time, readout_time = unpacked_data</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">expo_time</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">unpacked_data</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">dataset_comments</span><span class="p">,</span> <span class="n">expo_time</span></div>
+
+
+<div class="viewcode-block" id="read_header_scmos"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.read_header_scmos">[docs]</a><span class="k">def</span> <span class="nf">read_header_scmos</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return string of parameters comments and exposure time</span>
+<span class="sd">    found in header in scmis image file .tif</span>
+
+<span class="sd">    - print allsentences  displays the header</span>
+<span class="sd">    - use allsentences.split(&#39;\n&#39;) to get a list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">PIL_EXISTS</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+
+    <span class="c1"># img.tag.keys()</span>
+    <span class="c1"># tag[270]   = (u&#39;0 (thf=-50.4850 mon=24923 exposure=0.400)&#39;,)</span>
+
+    <span class="n">dictpar</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">strcom</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">tag</span><span class="p">[</span><span class="mi">270</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;read_header_scmos&#39;</span><span class="p">,</span> <span class="n">strcom</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">strcom</span><span class="p">))</span>
+
+    <span class="n">si</span> <span class="o">=</span> <span class="n">strcom</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)</span>
+    <span class="n">fi</span> <span class="o">=</span> <span class="n">strcom</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">)</span>
+    <span class="n">listpar</span> <span class="o">=</span> <span class="n">strcom</span><span class="p">[</span><span class="n">si</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">fi</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="c1">#     print &quot;listpar&quot;,listpar</span>
+    <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">listpar</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;=&quot;</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">:</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
+            <span class="n">dictpar</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dictpar</span></div>
+
+
+<div class="viewcode-block" id="read_motorsposition_fromheader"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.read_motorsposition_fromheader">[docs]</a><span class="k">def</span> <span class="nf">read_motorsposition_fromheader</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; return xyzpositions, expo_time from image file header</span>
+<span class="sd">    available for &quot;MARCCD165&quot;, &quot;sCMOS&quot;, &quot;sCMOS_fliplr&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,):</span>
+        <span class="n">dataset_comments</span><span class="p">,</span> <span class="n">expo_time</span> <span class="o">=</span> <span class="n">read_header_marccd2</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">dataset_comments</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">xyzpositions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">xyz</span><span class="p">:</span>
+            <span class="n">xyzpositions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">pos</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">):</span>
+        <span class="n">dictpar</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="kn">import</span> <span class="nn">re</span>
+
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">tag</span><span class="p">[</span><span class="mi">315</span><span class="p">]</span>
+        <span class="n">aa</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([^:]+)=([^:]+)(?:,|$)&quot;</span><span class="p">,</span> <span class="n">ff</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">listeq</span> <span class="o">=</span> <span class="n">aa</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">listeq</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;Xech&quot;</span> <span class="ow">in</span> <span class="n">elem</span> <span class="ow">or</span> <span class="s2">&quot;Yech&quot;</span> <span class="ow">in</span> <span class="n">elem</span> <span class="ow">or</span> <span class="s2">&quot;Zech&quot;</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">:</span>
+                <span class="n">dictpar</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">))</span>
+
+        <span class="n">headerdict</span> <span class="o">=</span> <span class="n">read_header_scmos</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">headerdict</span><span class="p">:</span>
+            <span class="n">expo_time</span> <span class="o">=</span> <span class="n">headerdict</span><span class="p">[</span><span class="s2">&quot;exposure&quot;</span><span class="p">]</span>
+        <span class="n">xyzpositions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">motorname</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;Xech&quot;</span><span class="p">,</span> <span class="s2">&quot;Yech&quot;</span><span class="p">,</span> <span class="s2">&quot;Zech&quot;</span><span class="p">):</span>
+            <span class="n">xyzpositions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dictpar</span><span class="p">[</span><span class="n">motorname</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">xyzpositions</span><span class="p">,</span> <span class="n">expo_time</span></div>
+
+
+<div class="viewcode-block" id="readoneimage_full"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage_full">[docs]</a><span class="k">def</span> <span class="nf">readoneimage_full</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">frametype</span><span class="o">=</span><span class="s2">&quot;mccd&quot;</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    too SLOW!</span>
+<span class="sd">    reads 1 entire image (marCCD format)</span>
+<span class="sd">    :return: PILimage, image object of PIL module (16 bits integer) and</span>
+<span class="sd">    arrayofdata: 2D array of intensity</span>
+<span class="sd">    #TODO: manage framedim like readoneimage() just below&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">frametype</span> <span class="o">==</span> <span class="s2">&quot;mccd&quot;</span><span class="p">:</span>
+        <span class="n">shapeCCD</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">frametype</span> <span class="o">==</span> <span class="s2">&quot;martiff&quot;</span><span class="p">:</span>
+        <span class="c1"># opposite of fit2d displays in loading data</span>
+        <span class="n">shapeCCD</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2591</span><span class="p">,</span> <span class="mi">2751</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">frametype</span> <span class="o">==</span> <span class="s2">&quot;spe&quot;</span><span class="p">:</span>
+        <span class="c1"># opposite of fit2d displays in loading data</span>
+        <span class="n">shapeCCD</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+
+    <span class="n">pilimage</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="n">ravdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pilimage</span><span class="o">.</span><span class="n">getdata</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">pilimage</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ravdata</span><span class="p">,</span> <span class="n">shapeCCD</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="readCCDimage"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readCCDimage">[docs]</a><span class="k">def</span> <span class="nf">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stackimageindex</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Read raw data binary image file.</span>
+
+<span class="sd">    Read raw data binary image file and return pixel intensity 2D array such as</span>
+<span class="sd">    to fit the data (2theta, chi) scattering angles representation convention.</span>
+
+<span class="sd">    :param filename: path to image file (fullpath if ` dirname` =None)</span>
+<span class="sd">    :type filename: str</span>
+<span class="sd">    :param CCDLabel: label, defaults to &quot;MARCCD165&quot;</span>
+<span class="sd">    :type CCDLabel: str, optional</span>
+<span class="sd">    :param dirname: folder path, defaults to None</span>
+<span class="sd">    :type dirname: str, optional</span>
+<span class="sd">    :param stackimageindex: index of images bunch, defaults to -1</span>
+<span class="sd">    :type stackimageindex: int, optional</span>
+<span class="sd">    :param verbose: 0 or 1, defaults to 0</span>
+<span class="sd">    :type verbose: int, optional</span>
+<span class="sd">    :raises ValueError: if data format and CCD parameters from label are not compatible</span>
+<span class="sd">    :return:</span>
+<span class="sd">        - dataimage, 2D array image data pixel intensity properly oriented</span>
+<span class="sd">        - framedim, iterable of 2 integers shape of dataimage</span>
+<span class="sd">        - fliprot : string, key for CCD frame transform to orient image</span>
+<span class="sd">    :rtype: tuple of 3 elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">framedim</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">fliprot</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">]</span>
+
+    <span class="n">USE_RAW_METHOD</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CCDLabel in readCCDimage&quot;</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="p">)</span>
+    <span class="c1">#    if extension != extension:</span>
+    <span class="c1">#        print &quot;warning : file extension does not match CCD type set in Set CCD File Parameters&quot;</span>
+    <span class="k">if</span> <span class="n">FABIO_EXISTS</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;MARCCD165&#39;</span><span class="p">,</span> <span class="s2">&quot;EDF&quot;</span><span class="p">,</span> <span class="s2">&quot;EIGER_4M&quot;</span><span class="p">,</span> <span class="s2">&quot;EIGER_1M&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_fliplr_16M&quot;</span><span class="p">,</span> <span class="s2">&quot;sCMOS_16M&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Rayonix MX170-HS&quot;</span><span class="p">,</span> <span class="s1">&#39;psl_weiwei&#39;</span><span class="p">):</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----&gt; Using fabio ... to open </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">filename</span><span class="p">)</span>
+            <span class="c1"># warning import Image  # for well read of header only</span>
+
+            <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">fabio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">fabio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">framedim</span> <span class="o">=</span> <span class="n">dataimage</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="c1"># pythonic way to change immutable tuple...</span>
+            <span class="n">initframedim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">initframedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">initframedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">initframedim</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">initframedim</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">USE_RAW_METHOD</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;EIGER_4Mstack&quot;</span><span class="p">,</span> <span class="p">):</span>
+
+        <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">Tab</span>
+
+        <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pathtofile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pathtofile</span> <span class="o">=</span> <span class="n">filename</span>
+
+        <span class="c1"># TODO check to correct version transition</span>
+        <span class="k">if</span> <span class="n">Tab</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;3.4.2&quot;</span><span class="p">:</span>
+            <span class="n">hdf5file</span> <span class="o">=</span> <span class="n">Tab</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">pathtofile</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hdf5file</span> <span class="o">=</span> <span class="n">Tab</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="n">pathtofile</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;opening hdf5 stacked data table&quot;</span><span class="p">)</span>
+        <span class="n">alldata</span> <span class="o">=</span> <span class="n">hdf5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">entry</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;alldata.shape&quot;</span><span class="p">,</span> <span class="n">alldata</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="n">stackimageindex</span><span class="p">]</span>
+        <span class="n">framedim</span> <span class="o">=</span> <span class="n">dataimage</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">elif</span> <span class="n">LIBTIFF_EXISTS</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----&gt; Using libtiff...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span> <span class="s2">&quot;TIFF Format&quot;</span><span class="p">,</span> <span class="s2">&quot;FRELONID15_corrected&quot;</span><span class="p">,</span> <span class="s2">&quot;VHR_PSI&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;VHR_DLS&quot;</span><span class="p">,</span> <span class="s2">&quot;MARCCD225&quot;</span><span class="p">,</span> <span class="s2">&quot;Andrea&quot;</span><span class="p">,</span> <span class="s2">&quot;pnCCD_Tuba&quot;</span><span class="p">):</span>
+
+            <span class="c1">#         print &quot;tiff format&quot;, CCDLabel</span>
+            <span class="c1">#             print &quot;dirname, filename&quot;, dirname, filename</span>
+            <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tifimage</span> <span class="o">=</span> <span class="n">TIFF</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tifimage</span> <span class="o">=</span> <span class="n">TIFF</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">tifimage</span><span class="o">.</span><span class="n">read_image</span><span class="p">()</span>
+            <span class="n">framedim</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tifimage</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ImageLength&quot;</span><span class="p">)),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">tifimage</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ImageWidth&quot;</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">tifimage</span><span class="o">.</span><span class="n">IsByteSwapped</span><span class="p">():</span>
+                <span class="n">dataimage</span> <span class="o">=</span> <span class="n">dataimage</span><span class="o">.</span><span class="n">byteswap</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">USE_RAW_METHOD</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">elif</span> <span class="n">PIL_EXISTS</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;using PIL&#39;s module Image&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,</span> <span class="s2">&quot;MARCCD165&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;PIL is too slow. Better install libtiff or fabio. Meanwhile ...&#39;</span><span class="p">)</span>
+            <span class="n">USE_RAW_METHOD</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;VHR_PSI&quot;</span><span class="p">,</span> <span class="s2">&quot;VHR_DLS&quot;</span><span class="p">,</span> <span class="s2">&quot;MARCCD225&quot;</span><span class="p">,</span> <span class="s2">&quot;Andrea&quot;</span><span class="p">,</span> <span class="s2">&quot;pnCCD_Tuba&quot;</span><span class="p">):</span>
+            <span class="c1"># data are compressed!</span>
+
+            <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fullpath</span> <span class="o">=</span> <span class="n">filename</span>
+
+            <span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">getdata</span><span class="p">())</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">framedim</span><span class="p">)</span>
+
+    <span class="c1"># RAW method knowing or deducing offsetheader and dataformat</span>
+    <span class="k">if</span> <span class="n">USE_RAW_METHOD</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----&gt; not using libtiff, nor fabio, nor PIL!!!  &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for MARCCD not using libtiff, raw method ...&quot;</span><span class="p">)</span>
+            <span class="c1"># offsetheader may change ...</span>
+            <span class="c1">#filesize = os.path.getsize(os.path.join(dirname, filename))</span>
+            <span class="n">offsetheader</span> <span class="o">=</span> <span class="mi">4096</span> <span class="c1">#filesize - 2048*2048 * 2</span>
+        <span class="c1"># offset header varying</span>
+        <span class="k">elif</span> <span class="n">CCDLabel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ImageStar_raw&quot;</span><span class="p">):</span>
+            <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="n">bytes_per_pixels</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="n">CCDLabel</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;32bits&quot;</span><span class="p">):</span>
+                <span class="n">bytes_per_pixels</span> <span class="o">=</span> <span class="mi">4</span>
+
+            <span class="n">nbpixels</span> <span class="o">=</span> <span class="mi">1500</span>
+            <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ImageStar_1528x1528&quot;</span><span class="p">,):</span>
+                <span class="n">nbpixels</span> <span class="o">=</span> <span class="mi">1528</span>
+            <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="n">nbpixels</span> <span class="o">*</span> <span class="n">nbpixels</span> <span class="o">*</span> <span class="n">bytes_per_pixels</span>
+        <span class="k">elif</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS&quot;</span><span class="p">,):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for sCMOS not using libtiff, raw method ...&quot;</span><span class="p">)</span>
+            <span class="c1"># offsetheader may change ...</span>
+            <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="mi">2016</span><span class="o">*</span><span class="mi">2018</span> <span class="o">*</span> <span class="mi">2</span>
+
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">readoneimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span>
+                                <span class="n">framedim</span><span class="o">=</span><span class="n">framedim</span><span class="p">,</span>
+                                <span class="n">dirname</span><span class="o">=</span><span class="n">dirname</span><span class="p">,</span>
+                                <span class="n">offset</span><span class="o">=</span><span class="n">offsetheader</span><span class="p">,</span>
+                                <span class="n">formatdata</span><span class="o">=</span><span class="n">formatdata</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;FRELONID15_corrected&quot;</span><span class="p">,):</span>
+
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">dataimage</span><span class="o">.</span><span class="n">byteswap</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">CCDLabel</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;EIGER_4Munstacked&quot;</span><span class="p">,):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;offsetheader&quot;</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;formatdata&quot;</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">)</span>
+
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">dataimage</span> <span class="o">&gt;</span> <span class="mi">4000000</span><span class="p">,</span> <span class="n">dataimage</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;dataimage&quot;</span><span class="p">,</span> <span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CCDLabel: &quot;</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;nb of pixels&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">dataimage</span><span class="p">))</span>
+
+    <span class="c1"># need to reshape data from 1D to 2D</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataimage</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;nb elements&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataimage</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim nb of elements&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dataimage</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Selected CCD type :</span><span class="si">{}</span><span class="s2"> may be wrong (or nb of pixels, dimensions...)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">CCDLabel</span><span class="p">))</span>
+
+    <span class="c1"># some array transformations if needed depending on the CCD mounting</span>
+    <span class="k">if</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;spe&quot;</span><span class="p">:</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">dataimage</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;VHR_Feb13&quot;</span><span class="p">:</span>
+        <span class="c1">#            self.dataimage_ROI = np.rot90(self.dataimage_ROI, k=3)</span>
+        <span class="c1"># TODO: do we need this left and right flip ?</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">:</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;vhr&quot;</span><span class="p">:</span>  <span class="c1"># july 2012 close to diamond monochromator crystal</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">dataimage</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;vhrdiamond&quot;</span><span class="p">:</span>  <span class="c1"># july 2012 close to diamond monochromator crystal</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">dataimage</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">fliprot</span> <span class="o">==</span> <span class="s2">&quot;frelon2&quot;</span><span class="p">:</span>
+        <span class="n">dataimage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">dataimage</span><span class="p">)</span>
+
+    <span class="c1">#     print &quot;framedim&quot;,framedim, fliprot</span>
+    <span class="k">return</span> <span class="n">dataimage</span><span class="p">,</span> <span class="n">framedim</span><span class="p">,</span> <span class="n">fliprot</span></div>
+
+
+<div class="viewcode-block" id="readoneimage"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage">[docs]</a><span class="k">def</span> <span class="nf">readoneimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">framedim</span><span class="o">=</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">),</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">formatdata</span><span class="o">=</span><span class="s2">&quot;uint16&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; returns a 1d array of integers from a binary image file (full data)</span>
+
+<span class="sd">    :param filename: image file name (full path if dirname=0)</span>
+<span class="sd">    :type filename: str</span>
+<span class="sd">    :param framedim: detector dimensions, defaults to (2048, 2048)</span>
+<span class="sd">    :type framedim: tuple of 2 integers, optional</span>
+<span class="sd">    :param dirname: folder path, defaults to None</span>
+<span class="sd">    :type dirname: str, optional</span>
+<span class="sd">    :param offset: file header in byte (octet), defaults to 4096</span>
+<span class="sd">    :type offset: int, optional</span>
+<span class="sd">    :param formatdata: numpy format of raw binary image pixel value, defaults to &quot;uint16&quot;</span>
+<span class="sd">    :type formatdata: str, optional</span>
+<span class="sd">    :return: dataimage : image data pixel intensity</span>
+<span class="sd">    :rtype: 1D array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nb_elem</span> <span class="o">=</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="c1"># d=scipy.io.fread(f,2048*2048,np.oldnumeric.Int16)</span>
+    <span class="c1"># d = scipy.io.fread(f,nb_elem,np.oldnumeric.UInt16)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">formatdata</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">nb_elem</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="readoneimage_band"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage_band">[docs]</a><span class="k">def</span> <span class="nf">readoneimage_band</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span>
+                        <span class="n">framedim</span><span class="o">=</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">),</span>
+                        <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">offset</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+                        <span class="n">line_startindex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">line_finalindex</span><span class="o">=</span><span class="mi">2047</span><span class="p">,</span>
+                        <span class="n">formatdata</span><span class="o">=</span><span class="s2">&quot;uint16&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns a 1d array of integers from a binary image file. Data located in band according shape of data (framedim)</span>
+
+<span class="sd">    :param filename: string</span>
+<span class="sd">               path to image file (fullpath if `dirname`=None)</span>
+<span class="sd">    :param offset: integer</span>
+<span class="sd">             nb of file header bytes</span>
+<span class="sd">    :param framedim: iterable of 2 integers</span>
+<span class="sd">               shape of expected 2D data</span>
+<span class="sd">    :param formatdata: string</span>
+<span class="sd">                 key for numpy dtype to decode binary file</span>
+
+<span class="sd">    :return: dataimage, 1D array, image data pixel intensity</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+
+    <span class="k">if</span> <span class="n">formatdata</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uint16&quot;</span><span class="p">,):</span>
+        <span class="n">nbBytesPerElement</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">formatdata</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uint32&quot;</span><span class="p">,):</span>
+        <span class="n">nbBytesPerElement</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="n">nbElems</span> <span class="o">=</span> <span class="p">(</span><span class="n">line_finalindex</span> <span class="o">-</span> <span class="n">line_startindex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">line_startindex</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbBytesPerElement</span><span class="p">)</span>
+
+    <span class="c1"># d=scipy.io.fread(f,2048*2048,np.oldnumeric.Int16)</span>
+    <span class="c1"># d = scipy.io.fread(f,nb_elem,np.oldnumeric.UInt16)</span>
+    <span class="c1">#     print &quot;line_finalindex-line_startindex&quot;,line_finalindex-line_startindex</span>
+    <span class="c1">#     print &quot;line_startindex*framedim[1]*nbBytesPerElement&quot;,line_startindex*framedim[1]*nbBytesPerElement</span>
+    <span class="c1">#     print &quot;line_startindex*framedim[1]&quot;,line_startindex*framedim[1]</span>
+    <span class="c1">#     print &quot;nbElems&quot;,nbElems</span>
+
+    <span class="n">band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">formatdata</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">nbElems</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">band</span></div>
+
+
+<div class="viewcode-block" id="readoneimage_crop_fast"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage_crop_fast">[docs]</a><span class="k">def</span> <span class="nf">readoneimage_crop_fast</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span>
+                                                    <span class="n">firstElemIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lastElemIndex</span><span class="o">=</span><span class="mi">2047</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Returns a 2d array of integers from a binary image file. Data are taken only from a rectangle</span>
+
+<span class="sd">    with respect to firstElemIndex and lastElemIndex.</span>
+
+<span class="sd">    :param filename: string, path to image file (fullpath if ` dirname`=None)</span>
+<span class="sd">    :param offset: integer, nb of file header bytes</span>
+<span class="sd">    :param framedim: iterable of 2 integers, shape of expected 2D data</span>
+<span class="sd">    :param formatdata: string, key for numpy dtype to decode binary file</span>
+
+<span class="sd">    :return: dataimage : 1D array image data pixel intensity</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">framedim</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">fliprot</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim read from DictLT.dict_CCD in readoneimage_crop_fast()&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;formatdata&quot;</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;offsetheader&quot;</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+
+    <span class="c1"># if formatdata in (&quot;uint16&quot;,):</span>
+    <span class="c1">#     nbBytesPerElement = 2</span>
+    <span class="c1"># if formatdata in (&quot;uint32&quot;,):</span>
+    <span class="c1">#     nbBytesPerElement = 4</span>
+
+    <span class="n">dataimage2D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">framedim</span><span class="p">)</span>
+
+    <span class="c1"># colFirstElemIndex = firstElemIndex % framedim[1]</span>
+    <span class="n">lineFirstElemIndex</span> <span class="o">=</span> <span class="n">firstElemIndex</span> <span class="o">//</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># colLastElemIndex = lastElemIndex % framedim[1]</span>
+    <span class="n">lineLastElemIndex</span> <span class="o">=</span> <span class="n">lastElemIndex</span> <span class="o">//</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">band1D</span> <span class="o">=</span> <span class="n">readoneimage_band</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">framedim</span><span class="o">=</span><span class="n">framedim</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="n">dirname</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offsetheader</span><span class="p">,</span>
+                                                            <span class="n">line_startindex</span><span class="o">=</span><span class="n">lineFirstElemIndex</span><span class="p">,</span>
+                                                            <span class="n">line_finalindex</span><span class="o">=</span><span class="n">lineLastElemIndex</span><span class="p">,</span>
+                                                            <span class="n">formatdata</span><span class="o">=</span><span class="n">formatdata</span><span class="p">)</span>
+
+    <span class="c1">#     print &quot;band1D.shape&quot;,band1D.shape</span>
+    <span class="c1">#     print &quot;(lineLastElemIndex-lineFirstElemIndex,framedim[1])&quot;,(lineLastElemIndex-lineFirstElemIndex,framedim[1])</span>
+    <span class="c1">#     print &quot;((lineLastElemIndex-lineFirstElemIndex)*framedim[1])&quot;,((lineLastElemIndex-lineFirstElemIndex)*framedim[1])</span>
+
+    <span class="n">band2D</span> <span class="o">=</span> <span class="n">band1D</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">lineLastElemIndex</span> <span class="o">-</span> <span class="n">lineFirstElemIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="n">dataimage2D</span><span class="p">[</span><span class="n">lineFirstElemIndex</span> <span class="p">:</span> <span class="n">lineLastElemIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">band2D</span>
+
+    <span class="k">return</span> <span class="n">dataimage2D</span><span class="p">,</span> <span class="n">framedim</span><span class="p">,</span> <span class="n">fliprot</span></div>
+
+
+<div class="viewcode-block" id="readrectangle_in_image"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readrectangle_in_image">[docs]</a><span class="k">def</span> <span class="nf">readrectangle_in_image</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">pixx</span><span class="p">,</span> <span class="n">pixy</span><span class="p">,</span> <span class="n">halfboxx</span><span class="p">,</span> <span class="n">halfboxy</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                            <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span>
+                                                                            <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns a 2d array of integers from a binary image file. Data are taken only from a rectangle</span>
+<span class="sd">    centered on pixx, pixy</span>
+
+<span class="sd">    :return: dataimage : 2D array, image data pixel intensity</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">framedim</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">fliprot</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim read from DictLT.dict_CCD in readrectangle_in_image()&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;formatdata&quot;</span><span class="p">,</span> <span class="n">formatdata</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;offsetheader&quot;</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">)</span>
+    <span class="c1"># recompute headersize</span>
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fullpathfilename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+        <span class="n">fullpathfilename</span> <span class="o">=</span> <span class="n">filename</span>
+
+    <span class="k">if</span> <span class="n">formatdata</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uint16&quot;</span><span class="p">,):</span>
+        <span class="n">nbBytesPerElement</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">formatdata</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uint32&quot;</span><span class="p">,):</span>
+        <span class="n">nbBytesPerElement</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fullpathfilename&quot;</span><span class="p">,</span> <span class="n">fullpathfilename</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">fullpathfilename</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;missing file </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fullpathfilename</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># uint16</span>
+    <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="p">(</span><span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">nbBytesPerElement</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;calculated offset of header from file size...&quot;</span><span class="p">,</span> <span class="n">offsetheader</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pixx</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pixy</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fliprot</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sCMOS_fliplr&quot;</span><span class="p">,):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span>
+
+    <span class="n">boxx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">halfboxx</span><span class="p">)</span>
+    <span class="n">boxy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">halfboxy</span><span class="p">)</span>
+
+    <span class="n">xpixmin</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">boxx</span>
+    <span class="n">xpixmax</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">boxx</span>
+
+    <span class="n">ypixmin</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">boxy</span>
+    <span class="n">ypixmax</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">boxy</span>
+
+    <span class="c1">#     ymin= (y-boxy)*framedim[1]</span>
+    <span class="c1">#     ymax= (y+boxy)*framedim[1]</span>
+
+    <span class="n">lineFirstElemIndex</span> <span class="o">=</span> <span class="n">ypixmin</span>
+    <span class="n">lineLastElemIndex</span> <span class="o">=</span> <span class="n">ypixmax</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;lineFirstElemIndex&quot;</span><span class="p">,</span> <span class="n">lineFirstElemIndex</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;lineLastElemIndex&quot;</span><span class="p">,</span> <span class="n">lineLastElemIndex</span><span class="p">)</span>
+
+    <span class="n">band</span> <span class="o">=</span> <span class="n">readoneimage_band</span><span class="p">(</span><span class="n">fullpathfilename</span><span class="p">,</span>
+                                <span class="n">framedim</span><span class="o">=</span><span class="n">framedim</span><span class="p">,</span>
+                                <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                <span class="n">offset</span><span class="o">=</span><span class="n">offsetheader</span><span class="p">,</span>
+                                <span class="n">line_startindex</span><span class="o">=</span><span class="n">lineFirstElemIndex</span><span class="p">,</span>
+                                <span class="n">line_finalindex</span><span class="o">=</span><span class="n">lineLastElemIndex</span><span class="p">,</span>
+                                <span class="n">formatdata</span><span class="o">=</span><span class="n">formatdata</span><span class="p">)</span>
+
+    <span class="n">nblines</span> <span class="o">=</span> <span class="n">lineLastElemIndex</span> <span class="o">-</span> <span class="n">lineFirstElemIndex</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">band2D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">band</span><span class="p">,</span> <span class="p">(</span><span class="n">nblines</span><span class="p">,</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="c1"># dataimage2D = np.zeros(framedim)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;band2D.shape&quot;</span><span class="p">,</span> <span class="n">band2D</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="n">rectangle2D</span> <span class="o">=</span> <span class="n">band2D</span><span class="p">[:,</span> <span class="n">xpixmin</span> <span class="p">:</span> <span class="n">xpixmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rectangle2D.shape&quot;</span><span class="p">,</span> <span class="n">rectangle2D</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rectangle2D</span></div>
+
+
+<div class="viewcode-block" id="readoneimage_crop"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage_crop">[docs]</a><span class="k">def</span> <span class="nf">readoneimage_crop</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">halfboxsize</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;PRINCETON&quot;</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return a cropped array of data read in an image file</span>
+
+<span class="sd">    :param filename: string, path to image file (fullpath if ` dirname`=None)</span>
+<span class="sd">    :param center: iterable of 2 integers, (x,y) pixel coordinates</span>
+<span class="sd">    :param halfboxsize: integer or iterable of 2 integers, ROI half size in both directions</span>
+
+<span class="sd">    :return: dataimage : 1D array, image data pixel intensity</span>
+
+<span class="sd">    .. todo:: useless?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">halfboxsize</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">boxsizex</span><span class="p">,</span> <span class="n">boxsizey</span> <span class="o">=</span> <span class="n">halfboxsize</span><span class="p">,</span> <span class="n">halfboxsize</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">halfboxsize</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">boxsizex</span><span class="p">,</span> <span class="n">boxsizey</span> <span class="o">=</span> <span class="n">halfboxsize</span>
+
+    <span class="n">xpic</span><span class="p">,</span> <span class="n">ypic</span> <span class="o">=</span> <span class="n">center</span>
+
+    <span class="n">dataimage</span><span class="p">,</span> <span class="n">framedim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="n">CCDLabel</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xpic</span> <span class="o">-</span> <span class="n">boxsizex</span><span class="p">)</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xpic</span> <span class="o">+</span> <span class="n">boxsizex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># framedim[0]</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ypic</span> <span class="o">-</span> <span class="n">boxsizey</span><span class="p">)</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ypic</span> <span class="o">+</span> <span class="n">boxsizey</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># framedim[1]</span>
+
+    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dataimage</span><span class="p">[</span><span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="readoneimage_manycrops"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.readoneimage_manycrops">[docs]</a><span class="k">def</span> <span class="nf">readoneimage_manycrops</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">centers</span><span class="p">,</span> <span class="n">boxsize</span><span class="p">,</span> <span class="n">stackimageindex</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span>
+                                                                        <span class="n">addImax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                        <span class="n">use_data_corrected</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    reads 1 image and extract many regions</span>
+<span class="sd">    centered on center_pixel with xyboxsize dimensions in pixel unit</span>
+
+<span class="sd">    :param filename: string,fullpath to image file</span>
+<span class="sd">    :param centers: list or array of [int,int] centers (x,y) pixel coordinates</span>
+<span class="sd">    :param use_data_corrected: enter data instead of reading data from file</span>
+<span class="sd">                         must be a tuple of 3 elements:</span>
+<span class="sd">                         fulldata, framedim, fliprot</span>
+<span class="sd">                         where fulldata is a numpy.ndarray</span>
+<span class="sd">                         as output by :func:`readCCDimage`</span>
+<span class="sd">    :param boxsize: iterable 2 elements or integer</span>
+<span class="sd">              boxsizes [in x, in y] direction or integer to set a square ROI</span>
+
+<span class="sd">    :return: Data, list of 2D array pixel intensity or Data and Imax</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># use alternate data  (for instance for data from filename without background)</span>
+    <span class="k">if</span> <span class="n">use_data_corrected</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">use_data_corrected</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">use_data_corrected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">fulldata</span><span class="p">,</span> <span class="n">framedim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">use_data_corrected</span>
+    <span class="c1"># use data by reading file</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fulldata</span><span class="p">,</span> <span class="n">framedim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">stackimageindex</span><span class="o">=</span><span class="n">stackimageindex</span><span class="p">,</span>
+                                                            <span class="n">CCDLabel</span><span class="o">=</span><span class="n">CCDLabel</span><span class="p">,</span>
+                                                            <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">boxsize</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">boxsizex</span><span class="p">,</span> <span class="n">boxsizey</span> <span class="o">=</span> <span class="n">boxsize</span><span class="p">,</span> <span class="n">boxsize</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">boxsize</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">boxsizex</span><span class="p">,</span> <span class="n">boxsizey</span> <span class="o">=</span> <span class="n">boxsize</span>
+
+    <span class="c1"># xpic, ypic = np.array(centers).T</span>
+
+    <span class="c1">#    x1 = np.array(np.maximum(0, xpic - boxsizex), dtype=np.int)</span>
+    <span class="c1">#    x2 = np.array(np.minimum(framedim[0], xpic + boxsizex), dtype=np.int)</span>
+    <span class="c1">#    y1 = np.array(np.maximum(0, ypic - boxsizey), dtype=np.int)</span>
+    <span class="c1">#    y2 = np.array(np.minimum(framedim[1], ypic + boxsizey), dtype=np.int)</span>
+
+    <span class="n">Data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">Imax</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;framedim in readoneimage_manycrops&quot;</span><span class="p">,</span> <span class="n">framedim</span><span class="p">)</span>
+    <span class="n">framedim</span> <span class="o">=</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">center</span> <span class="ow">in</span> <span class="n">centers</span><span class="p">:</span>
+        <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span> <span class="o">=</span> <span class="n">ImProc</span><span class="o">.</span><span class="n">getindices2cropArray</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="p">(</span><span class="n">boxsizex</span><span class="p">,</span> <span class="n">boxsizey</span><span class="p">),</span> <span class="n">framedim</span><span class="p">)</span>
+        <span class="c1">#        print &quot;i1, i2, j1, j2-----&quot;, i1, i2, j1, j2</span>
+        <span class="n">cropdata</span> <span class="o">=</span> <span class="n">fulldata</span><span class="p">[</span><span class="n">i1</span><span class="p">:</span><span class="n">i2</span><span class="p">,</span> <span class="n">j1</span><span class="p">:</span><span class="n">j2</span><span class="p">]</span>
+        <span class="c1">#         # print &quot;cropdata.shape&quot;, cropdata.shape</span>
+        <span class="c1">#         print &quot;i2-i1&quot;,i2-i1</span>
+        <span class="c1">#         print &quot;boxsizey*2+1&quot;,boxsizey*2+1</span>
+        <span class="c1">#         print &quot;j2-j1&quot;,j2-j1</span>
+        <span class="c1">#         print &quot;boxsizex*2+1&quot;,boxsizex*2+1</span>
+
+        <span class="c1"># for spot near border, replace by zeros array</span>
+        <span class="k">if</span> <span class="n">i2</span> <span class="o">-</span> <span class="n">i1</span> <span class="o">!=</span> <span class="n">boxsizey</span> <span class="o">*</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">j2</span> <span class="o">-</span> <span class="n">j1</span> <span class="o">!=</span> <span class="n">boxsizex</span> <span class="o">*</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">cropdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">boxsizey</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">boxsizex</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">Data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cropdata</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">addImax</span><span class="p">:</span>
+            <span class="n">Imax</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">cropdata</span><span class="p">))</span>
+
+    <span class="c1">#        print &quot;max in cropped data&quot;, np.amax(cropdata)</span>
+    <span class="k">if</span> <span class="n">addImax</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Imax</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Data</span></div>
+
+<div class="viewcode-block" id="writeimage"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.writeimage">[docs]</a><span class="k">def</span> <span class="nf">writeimage</span><span class="p">(</span><span class="n">outputname</span><span class="p">,</span> <span class="n">_header</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dataformat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    from data 1d array of integers</span>
+<span class="sd">    with header coming from a f.open(&#39;imagefile&#39;); f.read(headersize);f.close()</span>
+<span class="sd">    .. warning:: header contain dimensions for subsequent data. Check before the compatibility of</span>
+<span class="sd">    data with header infos(nb of byte per pixel and array dimensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outputname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+    <span class="n">newfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_header</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dataformat</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">newfile</span><span class="p">)</span>
+    <span class="n">newfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;image written in &quot;</span><span class="p">,</span> <span class="n">outputname</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="write_rawbinary"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.write_rawbinary">[docs]</a><span class="k">def</span> <span class="nf">write_rawbinary</span><span class="p">(</span><span class="n">outputname</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dataformat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    write a binary file without header of a 2D array</span>
+
+<span class="sd">    used ?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outputname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dataformat</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">newfile</span><span class="p">)</span>
+
+    <span class="n">newfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;image written in &quot;</span><span class="p">,</span> <span class="n">outputname</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SumImages"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.SumImages">[docs]</a><span class="k">def</span> <span class="nf">SumImages</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span> <span class="n">suffixname</span><span class="p">,</span> <span class="n">ind_start</span><span class="p">,</span> <span class="n">ind_end</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">plot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                            <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">CCDLabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">nbdigits</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    sum images and write image with 32 bits per pixel format (4 bytes)</span>
+
+<span class="sd">    used?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#     prefixname = &#39;HN08_&#39;</span>
+    <span class="c1">#     suffixname = &#39;.tif&#39;</span>
+    <span class="c1">#     CCDLabel = &#39;ImageStar_raw&#39;</span>
+    <span class="c1">#     dirname = &#39;/home/micha/LaueProjects/Vita&#39;</span>
+
+    <span class="n">output_filename</span> <span class="o">=</span> <span class="s2">&quot;mean_</span><span class="si">{}</span><span class="s2">_</span><span class="si">{:04d}</span><span class="s2">_</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span> <span class="n">ind_start</span><span class="p">,</span> <span class="n">ind_end</span><span class="p">,</span> <span class="n">suffixname</span><span class="p">)</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{:04d}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span> <span class="n">ind_start</span><span class="p">,</span> <span class="n">suffixname</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="n">CCDLabel</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="n">dirname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">CCDLabel</span> <span class="o">==</span> <span class="s2">&quot;ImageStar_raw&quot;</span><span class="p">:</span>
+        <span class="c1"># Add addition of 32 bits image =&gt; replace 2 by 4  nb of bytes per pixel</span>
+        <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="mi">1500</span> <span class="o">*</span> <span class="mi">1500</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">CCDLabel</span> <span class="o">==</span> <span class="s2">&quot;EIGER_1M&quot;</span><span class="p">:</span>
+        <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="mi">1065</span> <span class="o">*</span> <span class="mi">1030</span> <span class="o">*</span> <span class="mi">4</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Add addition of 32 bits image =&gt; replace 2 by 4  nb of bytes per pixel</span>
+        <span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="n">offsetheader</span> <span class="o">=</span> <span class="n">filesize</span> <span class="o">-</span> <span class="mi">2048</span> <span class="o">*</span> <span class="mi">2048</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="c1"># print &quot;shape = &quot;, np.shape(datastart)</span>
+    <span class="n">datasum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+
+    <span class="c1">#     nb_images = ind_end - ind_start + 1</span>
+
+    <span class="n">indexscanlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">ind_start</span><span class="p">,</span> <span class="n">ind_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">indexscanlist</span><span class="p">:</span>
+        <span class="c1"># print k</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{:04d}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">suffixname</span><span class="p">)</span>
+        <span class="c1"># print filename1</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="n">CCDLabel</span><span class="p">,</span> <span class="n">dirname</span><span class="o">=</span><span class="n">dirname</span><span class="p">)</span>
+        <span class="c1"># print max(data1), np.argmax(data1)</span>
+        <span class="n">datasum</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">datasum</span>
+
+    <span class="k">if</span> <span class="n">output_filename</span><span class="p">:</span>
+        <span class="n">outputfilename</span> <span class="o">=</span> <span class="n">output_filename</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">readheader</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">offset</span><span class="o">=</span><span class="n">offsetheader</span><span class="p">)</span>
+        <span class="n">writeimage</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">outputfilename</span><span class="p">),</span> <span class="n">header</span><span class="p">,</span> <span class="n">datasum</span><span class="p">,</span> <span class="n">dataformat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Added images with prefix </span><span class="si">{}</span><span class="s2"> from </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2"> written in </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">prefixname</span><span class="p">,</span> <span class="n">ind_start</span><span class="p">,</span> <span class="n">ind_end</span><span class="p">,</span> <span class="n">outputfilename</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;later&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datasum</span></div>
+
+
+<div class="viewcode-block" id="Add_Images2"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.Add_Images2">[docs]</a><span class="k">def</span> <span class="nf">Add_Images2</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span>
+                <span class="n">ind_start</span><span class="p">,</span>
+                <span class="n">ind_end</span><span class="p">,</span>
+                <span class="n">plot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">writefilename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">CCDLabel</span><span class="o">=</span><span class="s2">&quot;MARCCD165&quot;</span><span class="p">,</span>
+                <span class="n">average</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    in dev</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">suffixname</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">DictLT</span><span class="o">.</span><span class="n">dict_CCD</span><span class="p">[</span><span class="n">CCDLabel</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">prefixname</span> <span class="o">+</span> <span class="n">stringint</span><span class="p">(</span><span class="n">ind_start</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffixname</span>
+    <span class="n">datastart</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="p">)</span>
+
+    <span class="c1"># print &quot;shape = &quot;, np.shape(datastart)</span>
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datastart</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">indexscanlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">ind_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ind_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">indexscanlist</span><span class="p">:</span>
+        <span class="c1"># print k</span>
+        <span class="n">filename1</span> <span class="o">=</span> <span class="n">prefixname</span> <span class="o">+</span> <span class="n">stringint</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffixname</span>
+        <span class="c1"># print filename1</span>
+        <span class="n">data1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">readCCDimage</span><span class="p">(</span><span class="n">filename1</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="p">)</span>
+        <span class="c1"># print max(data1), np.argmax(data1)</span>
+        <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">+</span> <span class="n">datastart</span>
+    <span class="c1"># datastart= datastart/((len(indexscanlist)+1)*1.)</span>
+    <span class="c1"># print &quot;final&quot;</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="k">if</span> <span class="n">average</span><span class="p">:</span>
+        <span class="n">datastart</span> <span class="o">=</span> <span class="n">datastart</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indexscanlist</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datastart</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="k">if</span> <span class="n">writefilename</span><span class="p">:</span>
+        <span class="n">outputfilename</span> <span class="o">=</span> <span class="n">writefilename</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">readheader</span><span class="p">(</span><span class="n">filename1</span><span class="p">,</span> <span class="n">CCDLabel</span><span class="o">=</span><span class="n">CCDLabel</span><span class="p">)</span>
+        <span class="n">writeimage</span><span class="p">(</span><span class="n">outputfilename</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">datastart</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;written in &quot;</span><span class="p">,</span> <span class="n">outputfilename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;later&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datastart</span></div>
+
+
+<div class="viewcode-block" id="Add_Images"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.Add_Images">[docs]</a><span class="k">def</span> <span class="nf">Add_Images</span><span class="p">(</span><span class="n">prefixname</span><span class="p">,</span> <span class="n">ind_start</span><span class="p">,</span> <span class="n">ind_end</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">writefilename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add continuous sequence of images</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Add_Images2 exists</span>
+
+<span class="sd">    :param prefixname: string, prefix common part of name of files</span>
+
+<span class="sd">    :param ind_start: int, starting image index</span>
+
+<span class="sd">    :param ind_end: int, final image index</span>
+
+<span class="sd">    :param writefilename: string, new image filename where to write datastart (with last image file header read)</span>
+
+<span class="sd">    :return:  datastart, array accumulation of 2D data from each image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">suffixname</span> <span class="o">=</span> <span class="s2">&quot;.mccd&quot;</span>
+
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">readoneimage</span><span class="p">(</span><span class="n">prefixname</span> <span class="o">+</span> <span class="n">stringint</span><span class="p">(</span><span class="n">ind_start</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffixname</span><span class="p">)</span>
+    <span class="c1"># print &quot;shape = &quot;, np.shape(datastart)</span>
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datastart</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">indexscanlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">ind_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ind_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">indexscanlist</span><span class="p">:</span>
+        <span class="c1"># print k</span>
+        <span class="n">filename1</span> <span class="o">=</span> <span class="n">prefixname</span> <span class="o">+</span> <span class="n">stringint</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffixname</span>
+        <span class="c1"># print filename1</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">readoneimage</span><span class="p">(</span><span class="n">filename1</span><span class="p">)</span>
+        <span class="c1"># print max(data1), np.argmax(data1)</span>
+        <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">+</span> <span class="n">datastart</span>
+    <span class="c1"># datastart= datastart/((len(indexscanlist)+1)*1.)</span>
+    <span class="c1"># print &quot;final&quot;</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">datastart</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indexscanlist</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="n">datastart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datastart</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+    <span class="c1"># print max(datastart), np.argmax(datastart)</span>
+    <span class="k">if</span> <span class="n">writefilename</span><span class="p">:</span>
+        <span class="n">outputfilename</span> <span class="o">=</span> <span class="n">writefilename</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">readheader</span><span class="p">(</span><span class="n">filename1</span><span class="p">)</span>
+        <span class="n">writeimage</span><span class="p">(</span><span class="n">outputfilename</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">datastart</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;written in &quot;</span><span class="p">,</span> <span class="n">outputfilename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;later&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datastart</span></div>
+
+<div class="viewcode-block" id="get_imagesize"><a class="viewcode-back" href="../../PeakSearch.html#LaueTools.IOimagefile.get_imagesize">[docs]</a><span class="k">def</span> <span class="nf">get_imagesize</span><span class="p">(</span><span class="n">framedim</span><span class="p">,</span> <span class="n">nbbits_per_pixel</span><span class="p">,</span> <span class="n">headersize_bytes</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return size of image in byte (= 1 octet = 8 bits)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">framedim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">framedim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbbits_per_pixel</span> <span class="o">+</span> <span class="n">headersize_bytes</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span> <span class="o">//</span> <span class="mi">8</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, J.S. Micha, O. Robach., S. Tardif
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

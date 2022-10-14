@@ -1,0 +1,36 @@
+.. _AuxiliaryModules:
+
+*********************************
+Auxiliary Modules
+*********************************
+
+===================================================================================
+Module function description: 
+========================================================================================
+
+The next documentation comes from the docstring in the header of function or class definition.
+
+generaltools
+--------------------
+
+Some useful functions to handle laue Microdiffraction data (Algebra, Vector Analysis, Sorting algorithm, etc.)
+
+.. automodule:: generaltools
+   :members:
+
+readwriteASCII
+--------------------
+
+Functions to write and read ASCII data files
+
+.. automodule:: readwriteASCII
+   :members:
+
+dict_LaueTools
+--------------------
+
+This module contains constant and dictionnaries of physical or mathematical object: among them dictionnary of CCD Camera adndictionnary of Element and Crsytal Structure
+
+
+
+

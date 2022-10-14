@@ -85,10 +85,7 @@ def test_GetProximity2():
 
     print(res)
     return res, TwicethetaChi[0] / 2.0, exp_theta / 2.0, TwicethetaChi[1], exp_chi
-
-
-def Test_Build_and_Query_LUT():
-    """
+format_coord
     test building and query of an angular look up table from a crystal
     given its lattice parameters
 
@@ -96,15 +93,7 @@ def Test_Build_and_Query_LUT():
     # test
     n = 3
     # compute LUT outside loop:
-    hkl_all = GT.threeindices_up_to(n)
-
-    if 1:  # filterharmonics:
-        hkl_all = FindO.FilterHarmonics(hkl_all)
-
-    #    Gstar_metric = CP.Gstar_from_directlatticeparams(2, 1, 4, 75, 90, 120)
-    Gstar_metric = CP.Gstar_from_directlatticeparams(5.43, 5.43, 5.43, 90, 90, 90)
-    # GenerateLookUpTable
-    LUT = FindO.GenerateLookUpTable(hkl_all, Gstar_metric)
+    hkl_all = GTformat_coordenerateLookUpTable(hkl_all, Gstar_metric)
 
     print(FindO.QueryLUT(LUT, 14.01, 1))
 

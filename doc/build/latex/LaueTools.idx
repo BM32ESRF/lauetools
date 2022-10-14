@@ -1,0 +1,189 @@
+\indexentry{LaueTools.CrystalParameters (module)|hyperpage}{53}
+\indexentry{GrainParameter\_from\_Material() (in module LaueTools.CrystalParameters)|hyperpage}{53}
+\indexentry{Prepare\_Grain() (in module LaueTools.CrystalParameters)|hyperpage}{55}
+\indexentry{AngleBetweenNormals() (in module LaueTools.CrystalParameters)|hyperpage}{57}
+\indexentry{FilterHarmonics\_2() (in module LaueTools.CrystalParameters)|hyperpage}{57}
+\indexentry{calc\_B\_RR() (in module LaueTools.CrystalParameters)|hyperpage}{57}
+\indexentry{DeviatoricStrain\_LatticeParams() (in module LaueTools.CrystalParameters)|hyperpage}{58}
+\indexentry{VolumeCell() (in module LaueTools.CrystalParameters)|hyperpage}{58}
+\indexentry{VolumeCell() (in module LaueTools.CrystalParameters)|hyperpage}{59}
+\indexentry{matrix\_to\_rlat() (in module LaueTools.CrystalParameters)|hyperpage}{59}
+\indexentry{LaueTools.lauecore (module)|hyperpage}{59}
+\indexentry{Quicklist() (in module LaueTools.lauecore)|hyperpage}{59}
+\indexentry{genHKL\_np() (in module LaueTools.lauecore)|hyperpage}{59}
+\indexentry{getLaueSpots() (in module LaueTools.lauecore)|hyperpage}{60}
+\indexentry{create\_spot() (in module LaueTools.lauecore)|hyperpage}{61}
+\indexentry{create\_spot\_np() (in module LaueTools.lauecore)|hyperpage}{61}
+\indexentry{filterLaueSpots() (in module LaueTools.lauecore)|hyperpage}{61}
+\indexentry{get2ThetaChi\_geometry() (in module LaueTools.lauecore)|hyperpage}{62}
+\indexentry{calcSpots\_fromHKLlist() (in module LaueTools.lauecore)|hyperpage}{63}
+\indexentry{SimulateLaue() (in module LaueTools.lauecore)|hyperpage}{63}
+\indexentry{SimulateLaue\_full\_np() (in module LaueTools.lauecore)|hyperpage}{65}
+\indexentry{SimulateResult() (in module LaueTools.lauecore)|hyperpage}{67}
+\indexentry{LaueTools.LaueGeometry (module)|hyperpage}{69}
+\indexentry{calc\_uflab() (in module LaueTools.LaueGeometry)|hyperpage}{70}
+\indexentry{calc\_uflab\_trans() (in module LaueTools.LaueGeometry)|hyperpage}{71}
+\indexentry{calc\_xycam() (in module LaueTools.LaueGeometry)|hyperpage}{71}
+\indexentry{calc\_xycam\_transmission() (in module LaueTools.LaueGeometry)|hyperpage}{71}
+\indexentry{uflab\_from2thetachi() (in module LaueTools.LaueGeometry)|hyperpage}{71}
+\indexentry{from\_twchi\_to\_qunit() (in module LaueTools.LaueGeometry)|hyperpage}{72}
+\indexentry{from\_twchi\_to\_q() (in module LaueTools.LaueGeometry)|hyperpage}{72}
+\indexentry{from\_qunit\_to\_twchi() (in module LaueTools.LaueGeometry)|hyperpage}{72}
+\indexentry{qvector\_from\_xy\_E() (in module LaueTools.LaueGeometry)|hyperpage}{72}
+\indexentry{unit\_q() (in module LaueTools.LaueGeometry)|hyperpage}{73}
+\indexentry{Compute\_data2thetachi() (in module LaueTools.LaueGeometry)|hyperpage}{73}
+\indexentry{convert2corfile() (in module LaueTools.LaueGeometry)|hyperpage}{73}
+\indexentry{convert2corfile\_fileseries() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{convert2corfile\_multiprocessing() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{vec\_normalTosurface() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{vec\_onsurface\_alongys() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{convert\_xycam\_from\_sourceshift() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{lengthInSample() (in module LaueTools.LaueGeometry)|hyperpage}{74}
+\indexentry{LaueTools.multigrainsSimulator (module)|hyperpage}{75}
+\indexentry{Read\_GrainListparameter() (in module LaueTools.multigrainsSimulator)|hyperpage}{75}
+\indexentry{Construct\_GrainsParameters\_parametric() (in module LaueTools.multigrainsSimulator)|hyperpage}{75}
+\indexentry{dosimulation\_parametric() (in module LaueTools.multigrainsSimulator)|hyperpage}{75}
+\indexentry{LaueTools.GUI.PeakSearchGUI (module)|hyperpage}{86}
+\indexentry{ViewColorPanel (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{86}
+\indexentry{OnReplot() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{86}
+\indexentry{getclickposition() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{86}
+\indexentry{OnShowLineXYProfiler() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{86}
+\indexentry{bestposition() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{restrictxylimits\_to\_imagearray() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{getlineprofiledata() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{OnShowLineProfiler() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{updateLineXYProfile() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{onOpenDetFile() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{showImage() (LaueTools.GUI.PeakSearchGUI.ViewColorPanel method)|hyperpage}{87}
+\indexentry{FilterBackGroundPanel (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{87}
+\indexentry{Computefilteredimage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{onComputeBlurImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{OnSwitchBlurRawImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{onSaveBlurImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{onSaveFormulaResultImage() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{onGetBImagefilename() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{onGetBlackListfilename() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{OnChangeUseFormula() (LaueTools.GUI.PeakSearchGUI.FilterBackGroundPanel method)|hyperpage}{87}
+\indexentry{BrowseCropPanel (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{87}
+\indexentry{MosaicAndMonitor (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{87}
+\indexentry{OnMosaic() (LaueTools.GUI.PeakSearchGUI.MosaicAndMonitor method)|hyperpage}{87}
+\indexentry{ROISelection (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{87}
+\indexentry{onCenterROI() (LaueTools.GUI.PeakSearchGUI.ROISelection method)|hyperpage}{87}
+\indexentry{PlotPeakListPanel (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{OnShowLineXYProfiler() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method)|hyperpage}{88}
+\indexentry{getlineprofiledata() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method)|hyperpage}{88}
+\indexentry{OnShowLineProfiler() (LaueTools.GUI.PeakSearchGUI.PlotPeakListPanel method)|hyperpage}{88}
+\indexentry{findLocalMaxima\_Meth\_1 (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{findLocalMaxima\_Meth\_2 (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{findLocalMaxima\_Meth\_3 (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{OnSwitchImageDisplay() (LaueTools.GUI.PeakSearchGUI.findLocalMaxima\_Meth\_3 method)|hyperpage}{88}
+\indexentry{FitParametersPanel (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{PeakListOLV (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{OnRemove() (LaueTools.GUI.PeakSearchGUI.PeakListOLV method)|hyperpage}{88}
+\indexentry{MainPeakSearchFrame (class in LaueTools.GUI.PeakSearchGUI)|hyperpage}{88}
+\indexentry{create\_main\_panel() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{toplayout2() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{line\_select\_callback() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{OnTabChange\_nb0() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{askUserForDirname() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{OnSetFileCCDParam() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{OnSetPlotSize() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{onClick() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{88}
+\indexentry{onKeyPressed() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{gettime() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{onToggle() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{onToggleCrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{update() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{CurrentFileIsReady() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{getIndex\_fromfilename() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{setfilename() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnLargePlus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnLargeMinus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnPlus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnMinus() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnGoto() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{onChangeIndex\_slider\_imagevert() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{read\_data() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{OnCheckPlotValues() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{PlotValues() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{init\_figure\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{Show\_Image() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{89}
+\indexentry{Show\_ConvolvedImage() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{updatePlotTitle() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{normalizeplot() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{update\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{getDisplayedImageSize() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{set\_circleradius() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{activateCrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{readdata\_updateplot\_aftercrop\_uncrop() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{reinit\_aftercrop\_draw() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{buildMosaic() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{onMotion\_ToolTip() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{OnSpinCtrl\_ImaxDisplayed() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{Get\_XYI\_from\_fit2dpeaksfile() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{draw\_cursor() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{getConvolvedData() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{SavePeakList\_PSPfile() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{onSaveROIsList() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{onFitOnePeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{OnFit() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{onRemovePeaktoPeaklist() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{onRemoveAllPeakstoPeaklist() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{90}
+\indexentry{getClosestPeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{91}
+\indexentry{deleteOnePeak() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{91}
+\indexentry{deleteAllPeaks() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{91}
+\indexentry{OnPeakSearch() (LaueTools.GUI.PeakSearchGUI.MainPeakSearchFrame method)|hyperpage}{91}
+\indexentry{LaueTools.readmccd (module)|hyperpage}{91}
+\indexentry{setfilename() (in module LaueTools.readmccd)|hyperpage}{91}
+\indexentry{getIndex\_fromfilename() (in module LaueTools.readmccd)|hyperpage}{91}
+\indexentry{readheader() (in module LaueTools.readmccd)|hyperpage}{91}
+\indexentry{read\_header\_marccd() (in module LaueTools.readmccd)|hyperpage}{91}
+\indexentry{read\_header\_marccd2() (in module LaueTools.readmccd)|hyperpage}{91}
+\indexentry{read\_header\_scmos() (in module LaueTools.readmccd)|hyperpage}{92}
+\indexentry{readCCDimage() (in module LaueTools.readmccd)|hyperpage}{92}
+\indexentry{readoneimage() (in module LaueTools.readmccd)|hyperpage}{92}
+\indexentry{readoneimage\_crop\_fast() (in module LaueTools.readmccd)|hyperpage}{92}
+\indexentry{readrectangle\_in\_image() (in module LaueTools.readmccd)|hyperpage}{93}
+\indexentry{readoneimage\_crop() (in module LaueTools.readmccd)|hyperpage}{93}
+\indexentry{readoneimage\_manycrops() (in module LaueTools.readmccd)|hyperpage}{93}
+\indexentry{readoneimage\_multiROIfit() (in module LaueTools.readmccd)|hyperpage}{93}
+\indexentry{getindices2cropArray() (in module LaueTools.readmccd)|hyperpage}{94}
+\indexentry{check\_array\_indices() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{to8bits() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{writeimage() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{write\_rawbinary() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{SumImages() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{Add\_Images() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{diff\_pix() (in module LaueTools.readmccd)|hyperpage}{95}
+\indexentry{getExtrema() (in module LaueTools.readmccd)|hyperpage}{96}
+\indexentry{getIntegratedIntensities() (in module LaueTools.readmccd)|hyperpage}{96}
+\indexentry{getIntegratedIntensity() (in module LaueTools.readmccd)|hyperpage}{96}
+\indexentry{getMinMax() (in module LaueTools.readmccd)|hyperpage}{96}
+\indexentry{LoGArr() (in module LaueTools.readmccd)|hyperpage}{96}
+\indexentry{ConvolvebyKernel() (in module LaueTools.readmccd)|hyperpage}{97}
+\indexentry{LocalMaxima\_KernelConvolution() (in module LaueTools.readmccd)|hyperpage}{97}
+\indexentry{LocalMaxima\_from\_thresholdarray() (in module LaueTools.readmccd)|hyperpage}{97}
+\indexentry{localmaxima() (in module LaueTools.readmccd)|hyperpage}{98}
+\indexentry{writepeaklist() (in module LaueTools.readmccd)|hyperpage}{98}
+\indexentry{fitoneimage\_manypeaks() (in module LaueTools.readmccd)|hyperpage}{98}
+\indexentry{PeakSearch() (in module LaueTools.readmccd)|hyperpage}{98}
+\indexentry{peaksearch\_on\_Image() (in module LaueTools.readmccd)|hyperpage}{100}
+\indexentry{read\_background\_flag() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{plot\_image\_markers() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{applyformula\_on\_images() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{peaksearch\_fileseries() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{peaksearch\_multiprocessing() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{gauss\_kern() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{blur\_image() (in module LaueTools.readmccd)|hyperpage}{101}
+\indexentry{blurCCD() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{circularMask() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{compute\_autobackground\_image() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{computefilteredimage() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{filterimage() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{blurCCD\_with\_binning() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{remove\_minimum\_background() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{purgePeaksListFile() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{write\_PurgedPeakListFile() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{removePeaks\_inPeakList() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{merge\_2Peaklist() (in module LaueTools.readmccd)|hyperpage}{102}
+\indexentry{writefile\_mergedPeaklist() (in module LaueTools.readmccd)|hyperpage}{102}
