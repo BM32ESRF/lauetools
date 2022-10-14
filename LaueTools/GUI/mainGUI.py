@@ -667,7 +667,9 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["dict_Rot"] = dict_Rot
         StorageDict["dict_Materials"] = self.dict_Materials
         # --------------end of common part before indexing------------------------
-        self.EnterMatrix(1)
+        nbmatrices = self.EnterMatrix(1)
+        if nbmatrices == 0:
+            return
         if not self.Enterkey_material():
             return
         self.EnterEnergyMax()
@@ -1142,15 +1144,14 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         open matrix entry board in check orientation process
         """
-        helptstr = "Enter Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
+        helptstr = "Enter UB Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += " Or list of Matrices"
         dlg = wx.TextEntryDialog(self, helptstr, "Orientation Matrix elements Entry for Matching Check")
 
         _param = "[[1.,0,0],[0,1,0],[0,0,1]]"
         dlg.SetValue(_param)
 
-        # OR
-        dlg.SetToolTipString("please enter UB not UB.B0 (or list of UB's)")
+        dlg.SetToolTipString("please enter orientation matrix UB (or list of UB's). UB excludes reciprocal unit cell matrix B0. So only UB operator in q = UB B0 G*")
 
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
@@ -1171,7 +1172,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 print(txt)
 
                 wx.MessageBox(txt, "INFO")
-                return
+                return nbmatrices
 
             nbmatrices = nbval // 9
             ListMatrices = np.zeros((nbmatrices, 3, 3))
@@ -1182,6 +1183,14 @@ class LaueToolsGUImainframe(wx.Frame):
                         floatval = listelem[ind_elem]
                         ListMatrices[ind_matrix][i][j] = floatval
                         ind_elem += 1
+                mat = ListMatrices[ind_matrix]
+                _allm = np.array(mat)
+                if np.linalg.det(_allm)<0:
+                    txt = "Matrix is not direct (det(UB)<0)"
+                    print(txt)
+
+                    wx.MessageBox(txt, "ERROR")
+                    return 0
 
             # save in list of orientation matrix
             # default name
