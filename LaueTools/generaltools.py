@@ -1280,7 +1280,7 @@ def purgeClosePoints2(peaklist, maxdistance, verbose=0):
     """
 
     if np.shape(peaklist)[0] < 2:
-        print("GT.purgeClosePoints2 : shape(peaklist) = ", np.shape(peaklist))
+        if verbose: print("GT.purgeClosePoints2 : shape(peaklist) = ", np.shape(peaklist))
         return peaklist, []
 
     pixeldistance = maxdistance
