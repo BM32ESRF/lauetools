@@ -625,6 +625,12 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                         fulldata, framedim, fliprot
                         where fulldata  ndarray
 
+    :return: [0] array, (tabIsorted) array of spot properties, peaks are sorted by decreasing intensity:
+                [peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                Xdev, Ydev, peak_bkg, Ipixmax]
+            [1] array (par) (results parameters),
+            [2] array (peaklist) input list of peaks
+
     .. note:: used in PeakSearchGUI
     """
     #     print 'Ipixmax in fitoneimage_manypeaks', Ipixmax
@@ -658,7 +664,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                         addImax=ComputeIpixmax,
                                         use_data_corrected=use_data_corrected)
 
-    if 1:#verbose:
+    if verbose:
         print("fitting time for {} peaks is : {:.4f}".format(len(peaklist), ttt.time() - tstart))
         print("nb of results: ", len(ResFit[0]))
 
@@ -732,7 +738,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # too large peak compared to given threshold
     to_reject7 = np.where(maxpeaksize >= PeakSizeRange[1])[0]
 
-    if 1:#verbose:
+    if verbose:
         print("to_reject", type(to_reject))
         print("to_reject ...(len)", len(to_reject))
         print(np.take(peaklist, to_reject, axis=0))
