@@ -1062,9 +1062,12 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                 Ipixmax = np.ones(len(peaklist)) * IntensityThreshold
                 ComputeIpixmax = False
 
+        else:
+            peaklist = None
+
     # second method ----------- "Local Maxima in a box by shift array method"
     if local_maxima_search_method in (1, "1"):
-        # flat top peaks (e.g. saturation) are NOT well detected
+        # WARNING! flat top peaks (e.g. saturation) are NOT well detected
         if verbose: print("Using shift arrays to detect local maxima (method 2/3)")
         peaklist, Ipixmax = ImProc.LocalMaxima_ShiftArrays(Data,
                                         framedim=framedim,
@@ -1077,6 +1080,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         ComputeIpixmax = True
 
     # third method: ------------ "Convolution by a gaussian kernel"
+    # Warning! time consuming method
     if local_maxima_search_method in (2, "2"):
 
         if verbose: print("Using mexican hat convolution to detect local maxima (method 3/3)")
