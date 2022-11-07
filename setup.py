@@ -22,7 +22,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="LaueTools",
-    version="3.0.46",
+    version="3.0.47",
     packages=find_packages(),
     python_requires='>=2.6 , <3.9',
 
@@ -35,7 +35,7 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1'],  # add fabio libtiff?
+			'h5py>=3.1','scikit-image>=0.18.0'],  # add fabio libtiff?
 
     include_package_data=True,
 
@@ -49,7 +49,7 @@ setup(
 	
     license="MIT",
     keywords="Lauetools x-ray scattering data analysis GUI Laue",
-    url="https://sourceforge.net/projects/lauetools/",  # project home page, if any
+    url="https://github.com/BM32ESRF/lauetools",  # project home page, if any
     classifiers=["Programming Language :: Python :: 3.8",
 "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.6",

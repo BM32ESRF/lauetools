@@ -2300,7 +2300,74 @@ class findLocalMaxima_Meth_3(wx.Panel):
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
             self.mainframe.Show_Image(evt)
 
+class findLocalMaxima_Meth_4(wx.Panel):
+    """
+    class of method 1 for local maxima search (intensity threshold)
+    """
 
+    # ----------------------------------------------------------------------
+    def __init__(self, parent):
+        """
+        """
+        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+
+        self.methodnumber = 5
+
+        mintxt = wx.StaticText(self, -1, "MinimumDistance")
+        self.PNR = wx.SpinCtrl(self, -1, "3", (80, -1), min=2, max=2000)
+        ittxt = wx.StaticText(self, -1, "IntensityThreshold")
+        self.IT = wx.SpinCtrl(self, -1, "2", (80, -1), min=1, max=3000000)
+        bstxt = wx.StaticText(self, -1, "BoxSize")
+        self.BS = wx.SpinCtrl(self, -1, "5", (80, -1), min=1, max=3000000)
+        fittxt1 = wx.StaticText(self, -1, "FitOption")
+        self.fitfunc_peak = wx.ComboBox(self, -1, "Gaussian_Strictbounds",
+                                choices=["Gaussian_Strictbounds", "Gaussian_Relaxedbounds", "Gaussian_nobounds", "NoFit"], style=wx.CB_READONLY)
+        modetxt2 = wx.StaticText(self, -1, "Mode")
+        self.processMode = wx.ComboBox(self, -1, "single_CPU",
+                                choices=["single_CPU", "multiprocessing"], style=wx.CB_READONLY)
+
+        # layout
+        h1 = wx.BoxSizer(wx.HORIZONTAL)
+        h1.Add(mintxt, 0 , wx.ALL, 5)
+        h1.Add(self.PNR, 0 , wx.ALL, 5)
+
+        h2 = wx.BoxSizer(wx.HORIZONTAL)
+        h2.Add(ittxt,0 , wx.ALL, 5)
+        h2.Add(self.IT, 0 , wx.ALL, 5)
+        
+        h3 = wx.BoxSizer(wx.HORIZONTAL)
+        h3.Add(bstxt,0 , wx.ALL, 5)
+        h3.Add(self.BS, 0 , wx.ALL, 5)
+        
+        h4 = wx.BoxSizer(wx.HORIZONTAL)
+        h4.Add(fittxt1, 0 , wx.ALL, 5)
+        h4.Add(self.fitfunc_peak, 0 , wx.ALL, 5)
+        
+        h5 = wx.BoxSizer(wx.HORIZONTAL)
+        h5.Add(modetxt2, 0 , wx.ALL, 5)
+        h5.Add(self.processMode, 0 , wx.ALL, 5)
+        
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(h1,0, wx.EXPAND,10)
+        vbox.Add(h2,0, wx.EXPAND,5)
+        vbox.Add(h3,0, wx.EXPAND,5)
+        vbox.Add(h4,0, wx.EXPAND,5)
+        vbox.Add(h5,0, wx.EXPAND,5)
+        self.SetSizer(vbox)
+
+        # tooltips
+        mintp = "Minimum pixel distances between local maxima"
+        mintxt.SetToolTipString(mintp)
+        self.PNR.SetToolTipString(mintp)
+
+        ittp = "Threshold level above which local maxima must be found (usually between 1-5)"
+        ittxt.SetToolTipString(ittp)
+        self.IT.SetToolTipString(ittp)
+        
+        bstp = "Box size for fitting Gaussians to local maximas"
+        bstxt.SetToolTipString(bstp)
+        self.BS.SetToolTipString(bstp)
+        
 class FitParametersPanel(wx.Panel):
     def __init__(self, parent):
         """
@@ -3094,6 +3161,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.page1 = findLocalMaxima_Meth_1(self.nb)
         self.page2 = findLocalMaxima_Meth_2(self.nb)
         self.page3 = findLocalMaxima_Meth_3(self.nb)
+        self.page4 = findLocalMaxima_Meth_4(self.nb)
         self.fitparampanel = FitParametersPanel(self.nb)
         if ObjectListView_Present:
             self.page4 = PeakListOLV(self.nb)  # PeakListOLV
@@ -3101,6 +3169,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.nb.AddPage(self.page1, "1_Threshold")
         self.nb.AddPage(self.page2, "1_ArrayShift")
         self.nb.AddPage(self.page3, "1_Convolution")
+        self.nb.AddPage(self.page4, "1_skimage")
         self.nb.AddPage(self.fitparampanel, "2_FitParams")
         if ObjectListView_Present:
             self.nb.AddPage(self.page4, "PeakNavigator")
@@ -5303,7 +5372,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         currentLocalMaximaMethod = self.nb.GetCurrentPage()
         if currentLocalMaximaMethod.methodnumber == 4:
-            wx.MessageBox("Select one of the three tabs for the local Maxima Search Method", "INFO")
+            wx.MessageBox("Select one of the four tabs for the local Maxima Search Method", "INFO")
             return
 
         self.method = currentLocalMaximaMethod.methodnumber
@@ -5312,7 +5381,9 @@ class MainPeakSearchFrame(wx.Frame):
 
         # read fitting function selected by user
         fitfunc = str(self.fitparampanel.fitfunc.GetValue())
-
+        
+        fitfunc1 = str(self.fitparampanel.fitfunc.GetValue())
+        
         print("fitfunc for fitting ", fitfunc)
         if fitfunc == "NoFit":
             fit_peaks_gaussian = 0
@@ -5325,7 +5396,25 @@ class MainPeakSearchFrame(wx.Frame):
 
         # default offset to be compatible with XMAS convention of array reading
         self.position_definition = 1
-
+        
+        if self.method == 5:
+            boxsizeSKIMAGE = currentLocalMaximaMethod.BS.GetValue()
+            fitfunc1 = str(currentLocalMaximaMethod.fitfunc_peak.GetValue())
+            processMode = str(currentLocalMaximaMethod.processMode.GetValue())
+            if processMode =="multiprocessing":
+                multip_peak = True
+            else:
+                multip_peak = False
+            if fitfunc1 == "NoFit":
+                fit_peaks_ = 0
+            elif fitfunc1 == "Gaussian_nobounds":
+                fit_peaks_ = 1
+            elif fitfunc1 == "Gaussian_Relaxedbounds":
+                fit_peaks_ = 2 
+            elif fitfunc1 == "Gaussian_Strictbounds":
+                fit_peaks_ = 3
+        else:
+            boxsizeSKIMAGE = self.fitparampanel.boxsize.GetValue()
         # build dict of common parameters --------------------------------------
         list_param_key = ["IntensityThreshold",
                         "PixelNearRadius",
@@ -5335,7 +5424,8 @@ class MainPeakSearchFrame(wx.Frame):
                         "MaxIntensity",
                         "MinIntensity",
                         "MaxPeakSize",
-                        "MinPeakSize"]
+                        "MinPeakSize",
+                        "boxsizeSKIMAGE"]
 
         list_param_val = [currentLocalMaximaMethod.IT.GetValue(),
                             currentLocalMaximaMethod.PNR.GetValue(),
@@ -5345,7 +5435,8 @@ class MainPeakSearchFrame(wx.Frame):
                             float(self.fitparampanel.maxIctrl.GetValue()),
                             float(self.fitparampanel.minIctrl.GetValue()),
                             float(self.fitparampanel.peaksizemaxctrl.GetValue()),
-                            float(self.fitparampanel.peaksizeminctrl.GetValue())]
+                            float(self.fitparampanel.peaksizeminctrl.GetValue()),
+                            boxsizeSKIMAGE]
 
         self.dict_param = {}
         for key, val in zip(list_param_key, list_param_val):
@@ -5505,12 +5596,23 @@ class MainPeakSearchFrame(wx.Frame):
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 2
             self.dict_param_LocalMaxima["position_definition"] = self.position_definition
             self.dict_param_LocalMaxima["thresholdConvolve"] = Thresconvolve
-
+        
+        if self.method == 5:  # SKIMAGE PEAK SEARCH METHOD
+            ResPeakSearch = RMCCD.peaksearch_skimage(imagefilename, 
+                                                     self.dict_param["PixelNearRadius"], 
+                                                     self.dict_param["IntensityThreshold"], 
+                                                     self.dict_param["boxsizeSKIMAGE"], 
+                                                     fit_peaks_, 
+                                                     self.CCDlabel,
+                                                     use_multiprocessing=multip_peak)
+            
+            self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
+            self.dict_param_LocalMaxima["local_maxima_search_method"] = 0
+            self.dict_param_LocalMaxima["position_definition"] = self.position_definition
+            
         # print("ResPeakSearch", ResPeakSearch)
         if ResPeakSearch is not None:
-
             Isorted = ResPeakSearch[0]
-
             if Isorted is not None:
                 self.peaklistPixels = Isorted
             else:
