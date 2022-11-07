@@ -90,7 +90,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: publish-to-conda
-        uses: ravipurohit1991/conda-package-publish-action@v1.3
+        uses: ravipurohit1991/conda-package-publish-action@v1.4
         with:
           subDir: 'conda.noarch'
           AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
