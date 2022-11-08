@@ -1,7 +1,5 @@
-<p align="center">
-  <img width="1000" height="350" src="https://github.com/BM32ESRF/lauetools/blob/master/LaueTools/icons/transmissionLaue.png">
-</p>
 
+![til](https://github.com/BM32ESRF/lauetools/blob/master/animation_Si.gif)
 
 [![Conda](https://img.shields.io/conda/pn/bm32esrf/lauetools?color=green&label=supported%20platform)](https://anaconda.org/bm32esrf/lauetools)
 
