@@ -12,7 +12,7 @@
 
 [![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
 [![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://anaconda.org/bm32esrf/lauetools)
-[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/installer/conda.svg)](https://anaconda.org/bm32esrf/lauetools)
+[![Platforms](https://anaconda.org/bm32esrf/lauetools/badges/platforms.svg)](https://anaconda.org/bm32esrf/lauetools)
 
 
 Welcome to LaueTools's DOCUMENTATION!
