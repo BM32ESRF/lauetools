@@ -317,7 +317,7 @@ def error_function_on_demand_calibration(param_calib,
                                     pixelsize=pixelsize,
                                     dim=dim,
                                     kf_direction=kf_direction,
-                                    depthcorrection=True)
+                                    depthcorrection=False)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -602,7 +602,7 @@ def error_function_on_demand_strain(param_strain,
                                 pixelsize=pixelsize,
                                 dim=dim,
                                 kf_direction=kf_direction,
-                                depthcorrection=True)
+                                depthcorrection=False)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y + depth/1000./pixelsize/np.sin(40.*DEG)- pixY) ** 2)
 
