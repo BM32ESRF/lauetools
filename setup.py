@@ -22,7 +22,9 @@ with open("README.md", "r") as fh:
 
 setup(
     name="LaueTools",
-    version="3.0.47",
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
+    #version="3.0.48", ##Automatic versioning from Github Tags
     packages=find_packages(),
     python_requires='>=2.6 , <3.9',
 

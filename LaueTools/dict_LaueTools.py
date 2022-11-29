@@ -184,6 +184,51 @@ dict_Materials_short = {
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
 }
 
+# --- -------------- Extinction Rules
+dict_Extinc = {
+    "NoExtinction": "no",
+    "FaceCenteredCubic": "fcc",
+    "Diamond": "dia",
+    "BodyCentered": "bcc",
+    "VO2_mono": "VO2_mono",
+    "wurtzite": "wurtzite",
+    "magnetite": "magnetite",
+    "Al2O3": "Al2O3",
+    "SG166": "SG166",
+    "h+k=2n": "h+k=2n",
+    "h+l=2n": "h+l=2n",
+    "h+k+l=2n": "h+k+l=2n",
+    "Ti2AlN": "Ti2AlN",
+    "Al2O3_rhombo":"Al2O3_rhombo",
+    "VO2_mono2":"VO2_mono2",
+    "rutile": "rutile",
+    "SG227": "SG227",
+    "SG141": "SG141",
+    "137": "137"
+}
+
+dict_Extinc_inv = {
+    "no": "NoExtinction",
+    "fcc": "FaceCenteredCubic",
+    "dia": "Diamond",
+    "bcc": "BodyCentered",
+    "VO2_mono": "VO2_mono",
+    "wurtzite": "wurtzite",
+    "magnetite": "magnetite",
+    "Al2O3": "Al2O3",
+    "SG166": "SG166",
+    "h+k=2n": "h+k=2n",
+    "h+l=2n": "h+l=2n",
+    "h+k+l=2n": "h+k+l=2n",
+    "Ti2AlN": "Ti2AlN",
+    "Al2O3_rhombo":"Al2O3_rhombo",
+    "VO2_mono2":"VO2_mono2",
+    "rutile":"rutile",
+    "SG227": "SG227",
+    "SG141": "SG141",
+    "137": "137"
+}
+
 def writeDict(_dict, filename, writemode='a', sep=', '):
     """write an ascii file of dict_Materials
 
@@ -420,51 +465,6 @@ dict_calib = {
     "Sep09": [68.0195, 934.94, 1033.6, 0.73674, -0.74386],  # Sep09
     "ZrO2 Dec09": [69.66221, 895.29492, 960.78674, 0.84324, -0.32201],  # Dec09 Julie Ge_run41_1_0003.mccd
     "Basic": [68, 930, 1100, 0.0, 0.0],
-}
-
-# --- -------------- Extinction Rules
-dict_Extinc = {
-    "NoExtinction": "no",
-    "FaceCenteredCubic": "fcc",
-    "Diamond": "dia",
-    "BodyCentered": "bcc",
-    "VO2_mono": "VO2_mono",
-    "wurtzite": "wurtzite",
-    "magnetite": "magnetite",
-    "Al2O3": "Al2O3",
-    "SG166": "SG166",
-    "h+k=2n": "h+k=2n",
-    "h+l=2n": "h+l=2n",
-    "h+k+l=2n": "h+k+l=2n",
-    "Ti2AlN": "Ti2AlN",
-    "Al2O3_rhombo":"Al2O3_rhombo",
-    "VO2_mono2":"VO2_mono2",
-    "rutile": "rutile",
-    "SG227": "SG227",
-    "SG141": "SG141",
-    "137": "137"
-}
-
-dict_Extinc_inv = {
-    "no": "NoExtinction",
-    "fcc": "FaceCenteredCubic",
-    "dia": "Diamond",
-    "bcc": "BodyCentered",
-    "VO2_mono": "VO2_mono",
-    "wurtzite": "wurtzite",
-    "magnetite": "magnetite",
-    "Al2O3": "Al2O3",
-    "SG166": "SG166",
-    "h+k=2n": "h+k=2n",
-    "h+l=2n": "h+l=2n",
-    "h+k+l=2n": "h+k+l=2n",
-    "Ti2AlN": "Ti2AlN",
-    "Al2O3_rhombo":"Al2O3_rhombo",
-    "VO2_mono2":"VO2_mono2",
-    "rutile":"rutile",
-    "SG227": "SG227",
-    "SG141": "SG141",
-    "137": "137"
 }
 
 # --- -------------- Transforms 3x3 Matrix

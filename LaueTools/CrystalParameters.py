@@ -26,10 +26,12 @@ except (ImportError, ValueError):
 if sys.version_info.major == 3:
     from . dict_LaueTools import dict_Materials, dict_Stiffness
     from . import generaltools as GT
+    from . wyckpos_lauetools import testhklcond_generalrules_array
 else:
     from dict_LaueTools import dict_Materials, dict_Stiffness
     import generaltools as GT
-
+    from wyckpos_lauetools import testhklcond_generalrules_array
+    
 DEG = np.pi / 180.0
 RAD = 1 / DEG
 IDENTITYMATRIX = np.eye(3)
@@ -88,8 +90,10 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     if verbose:
         print("nb of reflections before extinctions %d" % len(HKL))
 
+    if Extinc.isdecimal():
+        array_hkl = testhklcond_generalrules_array(Extinc, HKL)
     # 'dia' adds selection rules to those of 'fcc'
-    if Extinc in ("fcc", "dia"):
+    elif Extinc in ("fcc", "dia"):
         cond = ((H - K) % 2 == 0) * ((H - L) % 2 == 0)
         if Extinc == "dia":
             conddia = ((H + K + L) % 4) != 2

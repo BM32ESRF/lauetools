@@ -1,9 +1,8 @@
 {% set name = "lauetools" %}
-{% set data = load_setup_py_data() %}
 
 package:
   name: {{ name|lower }}
-  version: {{ data['version'] }}
+  version: {{ GIT_DESCRIBE_TAG }}
 
 source:
   path: ..
@@ -25,6 +24,8 @@ build:
 requirements:
   host:
     - python <3.9
+    - setuptools
+    - setuptools_scm
     - pip
   run:
     - python <3.9
@@ -36,6 +37,7 @@ requirements:
     - networkx >=2.1
     - h5py >=3.1
     - tqdm >=4.60.0
+    - scikit-image >=0.18.0
 
 test:
   imports:

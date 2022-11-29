@@ -1,37 +1,33 @@
-<p align="center">
-  <img width="1000" height="350" src="https://github.com/BM32ESRF/lauetools/blob/master/LaueTools/icons/transmissionLaue.png">
-</p>
 
+![til](https://github.com/BM32ESRF/lauetools/blob/master/animation_Si.gif)
 
 [![Conda](https://img.shields.io/conda/pn/bm32esrf/lauetools?color=green&label=supported%20platform)](https://anaconda.org/bm32esrf/lauetools)
 
-[![Python package](https://github.com/BM32ESRF/lauetools/actions/workflows/python-package.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/python-package.yml)
-[![Publish_PYPI](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_PYPI.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_PYPI.yml)
+[![Lint, test, build, and publish (PYPI, CONDA)](https://github.com/BM32ESRF/lauetools/actions/workflows/complete_workflow.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/complete_workflow.yml)
 [![PyPI](https://img.shields.io/pypi/v/LaueTools)](https://pypi.python.org/pypi/LaueTools/)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/LaueTools.svg)](https://pypi.python.org/pypi/LaueTools/)
-
-
-[![publish_conda_win_mac_linux](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_conda.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/publish_conda.yml)
-[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
 [![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://anaconda.org/bm32esrf/lauetools)
-[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/installer/conda.svg)](https://anaconda.org/bm32esrf/lauetools)
 
 
-Welcome to LaueTools's!
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/LaueTools.svg)](https://pypi.python.org/pypi/LaueTools/)
+[![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
+
+
+Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-Last revision (March 2020)
+Last revision (Sept 2022)
 
-LaueTools code and documentation at:
+LaueTools information on BM32 beamline website:
 
-https://lauetools.readthedocs.io/en/latest/index.html
+https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
+
 
 1- Download LaueTools code
 ***************************
 
-- the very last version of the code at gitlab.esrf.fr (you are also welcome to fork this project):
+- the very last version of the code running with python3 is now on github (you are also welcome to fork this project):
 
-	https://gitlab.esrf.fr/micha/lauetools
+	https://github.com/BM32ESRF/lauetools
 
 - last (or older releases) with repository on pypi
 
@@ -41,9 +37,14 @@ https://lauetools.readthedocs.io/en/latest/index.html
 
 	.. code-block:: python
 
-	   pip install lauetools 
+	   pip install lauetools
+
+- Former LaueTools package written for python 2.7 only (up to June 2019) is no longer maintained and can be found on sourceforge:
+	
+	https://sourceforge.net/projects/lauetools/version
 
 
+But it is highly recommended to use python 3 to take benefit from all capabilities
 
 2a- Launch Graphical User Interfaces of LaueTools
 *************************************************
@@ -51,15 +52,16 @@ https://lauetools.readthedocs.io/en/latest/index.html
 
 Normally, in a command window (if environment variables are well set) 3 main GUIs can be launched:
 
-	- lauetools   for the main GUI
+	> lauetools   for the main GUI
+	> peaksearch  for batch Laue pattern peak search processing
+	> indexrefine   for batch Laue pattern indexing and unit cell (strain) refinement
+	> buildsummary    to compile all results from indexrefine analysis
+	> plotmap    to plot 2D map of structural quantities from file built previously
+	> plotmeshgui   to plot 2D map from counters values in (spec) logfile
 
-	- peaksearch  for batch Laue pattern peak search processing
-	
-	- indexrefine   for batch Laue pattern indexing and unit cell (strain) refinement
+To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
 
-To deal with relative import, from the parent folder of LaueTools, the package name ‘LaueTools’ must be specified to the python interpreter as following
-
-	Examples:
+	if LaueTools is a current subfolder:
 
 	- python -m LaueTools.LaueToolsGUI
 
@@ -101,5 +103,8 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 In jupyter-notebook, it is also simple in the same manner:
 
-	.. image:: Images/notebook0.jpg
+	.. image:: /images/notebook0.jpg
+
+
+
 
