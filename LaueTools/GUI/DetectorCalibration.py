@@ -84,6 +84,7 @@ else:
     import orientations as ORI
 
 
+
 DEG = DictLT.DEG
 PI = DictLT.PI
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
@@ -101,6 +102,7 @@ class PlotRangePanel(wx.Panel):
         self.mainframeparent = parent.GetParent().GetParent().GetParent()
 
         print("mainframe in PlotRangePanel", self.mainframe)
+        print('linked github version DetectorCalibration')
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 

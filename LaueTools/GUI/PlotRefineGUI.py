@@ -1554,9 +1554,9 @@ class Plot_RefineFrame(wx.Frame):
         in plot_RefineFrame
 
         Note: only strain and orientation simultaneously
-        # TODO: fit only a set of parameters, useful
-        NOTE: refine strained and oriented crystal by minimizing peaks positions (pixels).
-        NOTE: experimental peaks pixel positions are reevaluated from 2theta and chi angles
+        .. toto:: fit only a set of parameters, useful
+        .. note:: refine strained and oriented crystal by minimizing peaks positions (pixels).
+        .. note:: experimental peaks pixel positions are reevaluated from 2theta and chi angles
         """
 
         if self.use_forfit1.GetValue():
@@ -1596,14 +1596,12 @@ class Plot_RefineFrame(wx.Frame):
         # print "Pairs of spots used",self.linkedspots
         arraycouples = np.array(self.linkedspots_fit)
 
-        #         print "\n\n***arraycouples", arraycouples
 
         exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
         sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
 
         nb_pairs = len(exp_indices)
         print("Nb of pairs: ", nb_pairs)
-        # print "exp_indices, sim_indices",exp_indices, sim_indices
 
         # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy
         # Data_Q = self.data_theo[2]  # all miller indices must be entered with sim_indices = arraycouples[:,1]
@@ -1901,6 +1899,12 @@ class Plot_RefineFrame(wx.Frame):
         self.new_latticeparameters = lattice_parameter_direct_strain
         self.deviatoricstrain = devstrain
         self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
+
+
+        # ADDONS: strain in lauetools frame:
+        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat)*1000,decimals=3)
+        print('====> **** devstrain_LTframe',devstrain_LTframe)
+        print('*************************************\n')
 
         # TODO: to complete ---------------------
         # devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))

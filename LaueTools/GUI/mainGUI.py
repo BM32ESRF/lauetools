@@ -397,13 +397,16 @@ class LaueToolsGUImainframe(wx.Frame):
         and launch the peak search board(class PeakSearchFrame)
         """
         if askUserForFilename(self, filetype = 'image', style=wx.OPEN, **self.defaultFileDialogOptionsImage()):
-
-            nbparts = len(self.imgfilename.split("."))
+            snamelist = self.imgfilename.split(".")
+            nbparts = len(snamelist)
             if nbparts == 2:
-                _, file_extension = self.imgfilename.rsplit(".", 1)
-            elif nbparts == 3:
-                _, ext1, ext2 = self.imgfilename.rsplit(".", 2)
-                file_extension = ext1 + "." + ext2
+                _, file_extension = snamelist
+            elif nbparts > 2:
+                if snamelist[-1]=='gz':
+                    _, ext1, ext2 = self.imgfilename.rsplit(".", 2)
+                    file_extension = ext1 + "." + ext2
+                else:
+                    _, file_extension = self.imgfilename.rsplit(".", 1)
 
             if file_extension in list_CCD_file_extensions:
 
