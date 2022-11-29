@@ -1156,7 +1156,9 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
     Compute strain components in sample frame:
     Zsample perpendicular to sample surface
     Xsample in the same plane thanZ and incoming vector, Xsample is tilted by sampletilt from incoming beam (XLauetools)
-    Ysample is horizontal and equal to Ylauetools
+    Ysample is horizontal and equal to Ylauetools (perpendicular to the beam)
+
+    .. warning:: on BM32 beamline xech = -Ysample   yech = Xsample  Zech = Zsample
 
     :param strain: 3x3 symmetric array describing the strain in crystal frame
     :param UBmat: 3x3 array, orientation matrix
@@ -1186,20 +1188,23 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
 
     return strain_sampleframe
 
-# def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
-#     r"""
-#     qxyzLT= UB B0 q_a*b*c*
 
-#     if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
+def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
+    r"""
+    to express strain in lauetools frame (x // ki, z towards detector, y // z^x)
+    
+    
+    qxyzLT= UB B0 q_a*b*c*
 
-#     Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
+    if cubic , B0 is proportional to Id, then frame transfrom matrix is UBmat
 
-#     operator_LT= UB operator_crystal UB-1
+    Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
 
-#     """
-#     strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
+    operator_LT= UB operator_crystal UB-1
+    """
+    strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
 
-#     return strain_LaueToolsframe
+    return strain_LaueToolsframe
 
 
 # def strain_from_crystal_to_sample_frame(

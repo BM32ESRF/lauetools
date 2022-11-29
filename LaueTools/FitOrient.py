@@ -74,25 +74,24 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
                                             verbose=0,
                                             pixelsize=165.0 / 2048,
                                             dim=(2048, 2048),
-                                            kf_direction="Z>0"):
+                                            kf_direction="Z>0",
+                                            depthcorrection=False):
     """
     compute x and y pixel positions of Laue spots given hkl list
 
-    DATA_Q: array of all 3 elements miller indices
-    nspots: indices of selected spots of DATA_Q
-    initrot: initial orientation matrix (rotation and distorsion)
+    :param DATA_Q: array of all 3 elements miller indices
+    :param nspots: indices of selected spots of DATA_Q
+    :param initrot: initial orientation matrix (rotation and distorsion)
 
-    varying_parameter_values: array of value that will be taken into account
-    varying_parameter_indices: list of indices (element position) of
+    :param varying_parameter_values: array of value that will be taken into account
+    :param varying_parameter_indices: list of indices (element position) of
                             varying parameters in allparameters array
-    allparameters: array of 8 elements: 5 first of calibration parameters
+    :param allparameters: array of 8 elements: 5 first of calibration parameters
                                         and 3 of angles defining quaternion
 
     WARNING: All miller indices must be entered in DATA_Q, selection is done in xy_from_Quat
     WARNING2: len(varying_parameter_values)=len(varying_parameter_indices)
-    returns:
-
-    array of x y pixel positions of Laue peaks
+    :return:     array of x y pixel positions of Laue peaks
     """
 
     allparameters.put(varying_parameter_indices, varying_parameter_values)
@@ -143,15 +142,26 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
         print("Qrot", Qrot)
         print("Qrotn", Qrotn)
         print("Qrot/Qrotn", Qrot / Qrotn)
-        print("twthe,chi", twthe, chi)
+        print("twthe, chi", twthe, chi)
 
-    X, Y, theta = F2TC.calc_xycam_from2thetachi(twthe,
+    X, Y, theta, energy = F2TC.calc_xycam_from2thetachi(twthe,
                                                 chi,
                                                 calibration_parameters,
+                                                outputenergy=1, 
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 kf_direction=kf_direction)
-
+    # Y pixel position can be shifted to take into account from the sample
+    # only for semi infinite single crystal now (= not finite size crystal)
+    # only crystal at the surface
+    # only for Ge
+    if depthcorrection:
+        from . import attenuation as attn
+        
+        attlength = attn.attenGe(energy*1000.)
+        shiftypixel= attlength/1000./pixelsize
+        # Y pixel are shifted as if all depth are equal 
+        Y = Y - shiftypixel
     return X, Y, theta, R
 
 
@@ -238,8 +248,10 @@ def error_function_on_demand_calibration(param_calib,
                                         allspots_info=0,
                                         kf_direction="Z>0"):
     """
-    #All miller indices must be entered in DATA_Q,
-    selection is done in xy_from_Quat with nspots (array of indices)
+    cost function of model of single crystal and plane detector.
+    All miller indices must be entered in DATA_Q
+    Pixel distances is minimized
+    Selection of spots is done in xy_from_Quat with nspots (array of indices)
     # param_orient is three elements array representation of quaternion
     """
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
@@ -304,7 +316,8 @@ def error_function_on_demand_calibration(param_calib,
                                     verbose=verbose,
                                     pixelsize=pixelsize,
                                     dim=dim,
-                                    kf_direction=kf_direction)
+                                    kf_direction=kf_direction,
+                                    depthcorrection=True)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
 
@@ -588,7 +601,8 @@ def error_function_on_demand_strain(param_strain,
                                 verbose=0,
                                 pixelsize=pixelsize,
                                 dim=dim,
-                                kf_direction=kf_direction)
+                                kf_direction=kf_direction,
+                                depthcorrection=True)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y + depth/1000./pixelsize/np.sin(40.*DEG)- pixY) ** 2)
 

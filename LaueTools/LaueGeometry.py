@@ -567,6 +567,8 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
             (incident beam direction remains constant)
     :type offset: list of floats ([x,y,z])
 
+    :param energy: boolean to output energy of spots
+
     :returns:
         - xcam: list of pixel X coordinates
         - ycam: list of pixel Y coordinates
@@ -1081,7 +1083,7 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
 
 
 
-def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
+def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, outputenergy=0, verbose=0,
                                                         pixelsize=165.0 / 2048,
                                                         kf_direction="Z>0", version=1):
     r"""
@@ -1094,6 +1096,9 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
         direction as incident beam (i.e. in sample depth)
         (incident beam direction remains constant)
     :type offset: list of floats ([x,y,z])
+    :param outputenergy: 1  to return energy (0 else)
+
+    :return:  xcam, ycam, theta, [Energy]
     """
     # scattered vector not in Lauetools frame (y//ki)
     uflab = uflab_from2thetachi(twicetheta, chi, verbose=0)
@@ -1102,7 +1107,7 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, verbose=0,
         print("uflab", uflab)
 
     if kf_direction in ("Z>0",):  # , '[90.0, 45.0]'):
-        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
+        return calc_xycam(uflab, calib, energy=outputenergy, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("Y>0", "Y<0"):
         print("CAUTION: not checked yet")
         # TODO raise ValueError, print "not checked yet"
