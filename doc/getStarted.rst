@@ -5,6 +5,20 @@ Getting started
 =================================================
 Launch Graphical User Interfaces of LaueTools
 =================================================
+
+- When installed with "pip install lauetools" then the follwing executables are available
+
+lauetools    (main GUI)
+plotmeshGUI  (hdf5 viewer specialized for Laue experiments)
+--------------------
+peaksearch   (batch analysis input GUI)
+indexrefine   (batch analysis input GUI)
+buildsummary  (batch analysis input GUI)
+plotmap    (batch analysis input GUI)
+mapanalyzer   (batch analysis input GUI)
+--------------------------
+daxmgui   (DAXM   3D Laue GUI)
+
 - start Lauetools GUIs from command line :
 
 To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter as following
@@ -38,7 +52,6 @@ There are additional basic GUIs for batch processing located in FileSeries folde
 	- neither > python LaueToolsGUI
 
 	- nor in >ipython -i :  > run LaueToolsGUI  will work…
-
 
 Use LaueTools module as a library
 **************************************
