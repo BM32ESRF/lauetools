@@ -21,7 +21,9 @@ plotmeshGUI  (hdf5 viewer specialized for Laue experiments)
 
 --------------------------
 
-daxmgui   (DAXM   3D Laue GUI)
+- daxmgui   (DAXM   3D Laue GUI)
+
+--------------------------
 
 - start Lauetools GUIs from command line :
 
