@@ -14,7 +14,7 @@ How to Get LaueTools code
 
 - Download the very last version of the code at **gitlab.esrf.fr** (but you are also welcome to fork this project):
 
-	https://gitlab.esrf.fr/micha/lauetools
+	https://github.com/BM32ESRF/lauetools
 
 - or Download last (or older releases) on **pypi** by means of pip
 
