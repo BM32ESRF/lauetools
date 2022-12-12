@@ -10,13 +10,17 @@ Launch Graphical User Interfaces of LaueTools
 
 lauetools    (main GUI)
 plotmeshGUI  (hdf5 viewer specialized for Laue experiments)
+
 --------------------
-peaksearch   (batch analysis input GUI)
-indexrefine   (batch analysis input GUI)
-buildsummary  (batch analysis input GUI)
-plotmap    (batch analysis input GUI)
-mapanalyzer   (batch analysis input GUI)
+
+- peaksearch   (batch analysis input GUI)
+- indexrefine   (batch analysis input GUI)
+- buildsummary  (batch analysis input GUI)
+- plotmap    (batch analysis input GUI)
+- mapanalyzer   (batch analysis input GUI)
+
 --------------------------
+
 daxmgui   (DAXM   3D Laue GUI)
 
 - start Lauetools GUIs from command line :
