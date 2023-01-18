@@ -59,38 +59,6 @@ Normally, in a command window (if environment variables are well set) 3 main GUI
 	> plotmap    to plot 2D map of structural quantities from file built previously
 	> plotmeshgui   to plot 2D map from counters values in (spec) logfile
 
-To deal with relative import, the package name ‘LaueTools’ must be specified to the python interpreter with -m option as following
-
-	if LaueTools is a current subfolder:
-
-	- python -m LaueTools.LaueToolsGUI
-
-	- python -m LaueTools.GUI.LaueSimulatorGUI
-
-	- python -m LaueTools.GUI.PeaksearchGUI
-
-The two last GUIs (LaueSimulatorGUI, PeaksearchGUI) can be accessed by the first main one, LaueToolsGUI
-
-There are additional basic GUIs for batch processing located in FileSeries folder:
-
-	- python -m LaueTools.FileSeries.Peak_Search
-	- python -m LaueTools.FileSeries.Index_Refine
-	- python -m LaueTools.FileSeries.Build_summary
-	- python -m LaueTools.FileSeries.Plot_Maps2
-
-- within interactive python (say, ipython -i), GUI can be started thanks to a start() function:
-
-	- In [1] : import LaueTools.LaueToolsGUI as LTGUI
-
-	- In [2] : LTGUI.start()
-
-.. note::
-	in the LaueTools folder :
-
-	- neither > python LaueToolsGUI
-
-	- nor in >ipython -i :  > run LaueToolsGUI  will work…
-
 
 2b- Use LaueTools module as a library
 **************************************
