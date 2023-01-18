@@ -11,6 +11,8 @@
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/LaueTools.svg)](https://pypi.python.org/pypi/LaueTools/)
 [![Anaconda-Server Badge](https://anaconda.org/bm32esrf/lauetools/badges/license.svg)](https://anaconda.org/bm32esrf/lauetools)
 
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/BM32ESRF/lauetools/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FBM32ESRF%2Flauetools%2Ftree%2Fmaster%2FLaueTools%2Fnotebooks
 
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
