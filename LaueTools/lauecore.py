@@ -799,6 +799,8 @@ def create_spot_side_neg(pos_vec, miller, detectordistance, allattributes=0, pix
     create a spot on neg side camera
 
     .. todo:: Update with dim as other create_spot()
+
+    is it really committed?
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -830,7 +832,7 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
     r""" From reciprocal space position and 3 miller indices
     create a spot on forward direction transmission geometry
 
-    .. note: at this step: crude Xcam Ycam spot attributes with ideal detector pointing towards sample
+    .. note: at this step: crude Xcam Ycam spot attributes with ideal detector pointing towards sample. pxiel position is done afterwards with calc_xycam_form_2thetachi of LaueGeometry module
     """
     #     print "use create_spot_front"
     spotty = spot(miller)
