@@ -109,7 +109,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond1 = (H + K) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
-    elif Extinc == "h+k+l=2n":  # group space 139 indium
+    elif Extinc == "h+k+l=2n":  # group space 139 indium also SG 82 tetragonal
         cond1 = (H + K + L) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
