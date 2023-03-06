@@ -103,6 +103,15 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
     """
     print("\n\n********* Starting dosimulation_parametric *********\n\n")
 
+    # print('_list_param',_list_param)
+    # print('SelectGrains',SelectGrains)
+    # print('detectordistance',detectordistance)
+    # print('detectordiameter',detectordiameter)
+    # print('posCEN',posCEN)
+    # print('cameraAngles',cameraAngles)
+    # print('kf_direction',kf_direction)
+    # print('pixelsize',pixelsize)
+
     # Number_ParentGrains parent grains
     Number_ParentGrains = len(_list_param)
 
@@ -496,20 +505,15 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                     calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
 
-                    posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
-                                        pixelsize=pixelsize,
-                                        kf_direction=kf_direction)[:2]
-                    # posx, posy, theta0 = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib, pixelsize = self.pixelsize)
+                    # posx, posy = LTGeo.calc_xycam_from2thetachi(twicetheta, chi, calib,
+                    #                     pixelsize=pixelsize,
+                    #                     kf_direction=kf_direction)[:2]
+                    print('Y>0 2theta ', twicetheta[:5])
 
                     posx = [spot.Xcam for spot in Laue_spot_list[0]]
                     posy = [spot.Ycam for spot in Laue_spot_list[0]]
 
-                    # vecRR = [
-                    #     spot.Qxyz for spot in Laue_spot_list[0]
-                    # ]  # uf_lab in JSM frame
-
-                    # print "twicetheta",twicetheta
-                    # print "2*th0",(2*theta0).tolist()
+                    print('Y>0 posx ', posx[:5])
 
                     list_twicetheta.append(twicetheta)
                     list_chi.append(chi)

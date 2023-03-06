@@ -1555,6 +1555,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         # simulation in class parametric_Grain_Dialog3
 
         self.calib = [self.Det_distance, self.Xcen, self.Ycen, self.Xbet, self.Xgam]
+
         data_res = MGS.dosimulation_parametric(list_param,
                                                 emax=self.emax,
                                                 emin=self.emin,

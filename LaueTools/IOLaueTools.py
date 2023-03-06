@@ -451,6 +451,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'IMSTAR_bin2'
                 elif abs(ps-0.0252) <= 0.001:
                     ccdlabel = 'IMSTAR_bin1'
+                elif abs(ps-0.2) <= 0.001:
+                    ccdlabel = 'Alban'
 
 
                 CCDcalib['CCDLabel'] = ccdlabel
@@ -825,7 +827,7 @@ def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
 
     if "UBB0" in dict_matrices:
         footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns "
-        footer += "in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as columns on xyzlab1, "
+        footer += "in LT frame: astar = UBB0[:,0], bstar = UBB0[:,1], cstar = UBB0[:,2]. (abcstar as columns on xyzlab1, "
         footer += "xlab1 = ui, ui = unit vector along incident beam)\n"
         footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
 

@@ -35,10 +35,11 @@ dict_Materials = {
     "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
     "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
     "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
-    "3H-SiC": ["3H-SiC", [4.3596, 4.3596, 4.3596, 90, 90, 90], "dia"],  # zinc blende
-    "4H-SiC": ["4H-SiC", [3.073, 3.073, 10.053, 90, 90, 120], "wurtzite"],  # wurtzite  = 6H-SiC also
+    "3H-SiC": ["3H-SiC", [4.3596, 4.3596, 4.3596, 90, 90, 90], "dia"],  # zinc blende  SG 216
+    "4H-SiC": ["4H-SiC", [3.073, 3.073, 10.053, 90, 90, 120], "wurtzite"],  # wurtzite  = 6H-SiC also  SG 186
     "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
     "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
+    "Cr": ["Cr", [2.87, 2.87, 2.87, 90, 90, 90], "fcc"],  # 229
     "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
     "Getest": ["Getest", [5.6575, 5.6575, 5.6574, 90, 90, 90], "dia", ],  # c is slightly lower
     "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
@@ -55,6 +56,7 @@ dict_Materials = {
     "CCDL1949": ["CCDL1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "h+k=2n"],
     "Crocidolite_small": ["Crocidolite_small", [9.76 / 3, 17.93 / 3, 5.35 / 3, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Hematite": ["Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
+    "Mg":["Mg",[3.2095,3.2095,5.2104,90,90,120],"no"],
     "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
     "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
@@ -126,6 +128,8 @@ dict_Materials = {
     "ZnCuOCl": ["ZnCuOCl", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "SG166"],
     "ZnCuOCl_all": ["ZnCuOCl_all", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "no"],
     "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
+    "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194 
+    "Nb14W3O44": ["Nb14W3O44", [21.03,21.03,3.93,90, 90, 90], "h+k+l=2n"], #SG 82
 }
 
 dict_Materials_short = {
@@ -357,6 +361,7 @@ dict_CCD = {
     "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff"),
     "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif"),
     "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif"),
+    "Alban": [(1504, 1499), 0.2, 65535, "no", -1, "uint16", "Alban de vaucorbeil detector australia", "tif"],
     "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd"),  # 2X2, saturation value depends on gain and DAC
     "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf"),
     "TIFF Format": (-1, -1, "", "", "", "" "CCD parameters read from tiff header", "tiff", ),

@@ -660,6 +660,7 @@ def create_spot(pos_vec, miller, detectordistance, allattributes=False, pixelsiz
                                                                                 dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot instance (on top camera geometry)
+    warning: by default only 1 attribute: Qxyz vector 
 
     :param pos_vec: 3D vector
     :type pos_vec: list of 3 float
@@ -713,6 +714,8 @@ def create_spot_np(Qxyz, miller, detectordistance, allattributes=False,
     :return: spot instance
 
     .. note:: spot.Qxyz is a vector expressed in lauetools frame
+    .. note:: spot pixel cam positions are not calculated here.
+
 
     X along x-ray and Z towards CCD when CCD on top and y towards experimental hutch door
     """
@@ -759,7 +762,7 @@ def create_spot_4pi(pos_vec, miller, detectordistance, allattributes=0, pixelsiz
 
 
 def create_spot_side_pos(pos_vec, miller, detectordistance,
-                                        allattributes=0,
+                                        allattributes=False,
                                         pixelsize=165.0 / 2048,
                                         dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
@@ -775,7 +778,7 @@ def create_spot_side_pos(pos_vec, miller, detectordistance,
             + spotty.Qxyz[1] ** 2
             + spotty.Qxyz[2] ** 2)
 
-        if not allattributes:
+        if allattributes:
             X = (detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius) / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             #             spotty.Xcam = X / pixelsize + dim[0] / 2
@@ -808,7 +811,7 @@ def create_spot_side_neg(pos_vec, miller, detectordistance, allattributes=0, pix
             + spotty.Qxyz[1] ** 2
             + spotty.Qxyz[2] ** 2)
 
-        if not allattributes:
+        if allattributes:
             X = (-detectordistance * (spotty.Qxyz[0] + spotty.EwaldRadius) / spotty.Qxyz[1])
             Y = detectordistance * (spotty.Qxyz[2]) / spotty.Qxyz[1]
             spotty.Xcam = X / pixelsize + dim[0] / 2.0
@@ -826,6 +829,8 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
                                                         dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on forward direction transmission geometry
+
+    .. note: at this step: crude Xcam Ycam spot attributes with ideal detector pointing towards sample
     """
     #     print "use create_spot_front"
     spotty = spot(miller)
@@ -861,10 +866,13 @@ def create_spot_front(pos_vec, miller, detectordistance, allattributes=0,
         return None
 
 
-def create_spot_back(pos_vec, miller, detectordistance, allattributes=0,
+def create_spot_back(pos_vec, miller, detectordistance, allattributes=False,
                                                         pixelsize=165.0 / 2048, dim=(2048, 2048)):
     r""" From reciprocal space position and 3 miller indices
     create a spot on backward directions i.e.  back reflection geometry
+
+    .. note: at this step: crude Xcam Ycam spot attributes with ideal detector pointing towards sample
+
     """
     spotty = spot(miller)
     spotty.Qxyz = pos_vec
@@ -874,7 +882,7 @@ def create_spot_back(pos_vec, miller, detectordistance, allattributes=0,
         abskx = math.fabs(spotty.Qxyz[0] + spotty.EwaldRadius)
         normkout = math.sqrt(abskx ** 2 + spotty.Qxyz[1] ** 2 + spotty.Qxyz[2] ** 2)
 
-        if not allattributes:
+        if allattributes:
             X = detectordistance * (spotty.Qxyz[1]) / abskx
             Y = detectordistance * (spotty.Qxyz[2]) / abskx
             spotty.Xcam = X / pixelsize + dim[0] / 2.0
@@ -1389,7 +1397,9 @@ def get2ThetaChi_geometry(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTO
                                                                 kf_direction=DEFAULT_TOP_GEOMETRY):
     r"""
     computes list of spots instances from oncam_vec (q 3D vectors)
-    and oncam_HKL (miller indices 3D vectors)
+    and oncam_HKL (miller indices 3D vectors), with crude Xcam Ycam pixel positions for ideal plan detector
+
+    Warning: pixel X,Y peaks positions (Xcam and YCam) are roughly computed for perfect detector plane pointing towards sample. For kf_direction Z>0, pixel position is evaluated precisely later with a LaueGeomtry module's function calc_xycam_from_2thetachi()
 
     :param oncam_vec: q vectors [qx,qy,qz] (corresponding to kf collected on camera)
     :type oncam_vec: array with 3D elements (shape = (n,3))
@@ -1420,8 +1430,13 @@ def get2ThetaChi_geometry(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTO
     if len(oncam_vec) != len(oncam_HKL):
         raise ValueError("Wrong input for get2ThetaChi_geometry()")
 
+    COMPUTE_ALL_SPOTATTRIBUTES = False
+
+    if kf_direction in ('Y>0', 'Y>0'):
+        COMPUTE_ALL_SPOTATTRIBUTES = True
+
     listspot = []
-    options_createspot = {"allattributes": 0, "pixelsize": pixelsize, "dim": dim}
+    options_createspot = {"allattributes": COMPUTE_ALL_SPOTATTRIBUTES, "pixelsize": pixelsize, "dim": dim}
 
     dictcase = {"Z>0": create_spot,   # top reflection geom
                 "Y>0": create_spot_side_pos,  # side + reflection geom
@@ -1815,6 +1830,15 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
                                                 verbose=0,
                                                 pixelsize=pixelsize,
                                                 kf_direction=kf_direction, version=version)[:2]
+
+    print('posx, posy with calc_xycam_from2thetachi() ',posx[:5],posy[:5])
+
+    if kf_direction in ('Y>0', 'Y<0'):
+    
+        posx = [spot.Xcam for spot in ListofSpots]
+        posy = [spot.Ycam for spot in ListofSpots]
+
+        print('posx, posy with Xcam and Ycam atttibutes',posx[:5],posy[:5])
 
     return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 

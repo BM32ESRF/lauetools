@@ -781,7 +781,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     if FABIO_EXISTS:
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
-                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2'):
+                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2', 'Alban'):
 
             if verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
