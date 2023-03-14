@@ -1109,9 +1109,10 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, outputenergy=0, v
     if kf_direction in ("Z>0",):  # , '[90.0, 45.0]'):
         return calc_xycam(uflab, calib, energy=outputenergy, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("Y>0", "Y<0"):
-        print("CAUTION: not checked yet")
+        print("CAUTION: calc_xycam() is not checked yet for this geometry! For now, only basic x y pixels can be calcylated by looking at Xcam and Ycam position of a detector plane pointing towards sample")
+        pass
         # TODO raise ValueError, print "not checked yet"
-        return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
+        #return calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize)
     elif kf_direction in ("X>0",):  # transmission
         if version == 1:
             return calc_xycam_transmission(uflab, calib, offset=offset, pixelsize=pixelsize)
