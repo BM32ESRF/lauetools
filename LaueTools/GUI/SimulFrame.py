@@ -27,7 +27,6 @@ DEG = np.pi / 180.0
 CA = np.cos(40.0 * DEG)
 SA = np.sin(40.0 * DEG)
 
-
 class SimulationPlotFrame(wx.Frame):
     r"""
     class to plot simulated Laue pattern of one or several grains
@@ -147,6 +146,9 @@ class SimulationPlotFrame(wx.Frame):
         self.pixeldist_btn = wx.Button(self.panel, -1, "GetPixelDistance")
         # self.pointButton3 = wx.ToggleButton(self.panel, 3, 'Show indices')
         self.drawindicesBtn = wx.ToggleButton(self.panel, 4, "Draw indices")
+        self.txtoffsettext = wx.StaticText(self.panel, -1, "annotation offset", size=(80, -1))
+        self.coef_text_offset = 5
+        self.textoffsettxtctrl = wx.TextCtrl(self.panel, -1, str(self.coef_text_offset), size=(75, -1), style= wx.TE_PROCESS_ENTER)
         self.setImageScalebtn = wx.Button(self.panel, -1, "Load Image")
         #  self.pointButton5 = wx.Button(self.panel, 5, 'Save Plot')
         self.pointButton6 = wx.Button(self.panel, -1, "Quit")
@@ -156,6 +158,7 @@ class SimulationPlotFrame(wx.Frame):
         self.setImageScalebtn.Bind(wx.EVT_BUTTON, self.onSetImageScale)
         self.angulardist_btn.Bind(wx.EVT_BUTTON, self.GetAngularDistance)
         self.pixeldist_btn.Bind(wx.EVT_BUTTON, self.GetCartesianDistance)
+        self.textoffsettxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnterAnnotOffset)
 
         self.txtctrldistance_angle = wx.StaticText(self.panel, -1, "==> %s deg" % "", size=(80, -1))
         self.txtctrldistance_pixel = wx.StaticText(self.panel, -1, "==> %s pixel" % "", size=(80, -1))
@@ -216,7 +219,10 @@ class SimulationPlotFrame(wx.Frame):
         btnSizer.Add(self.txtctrldistance_pixel, 0, wx.BOTTOM | wx.LEFT)
         # btnSizer.Add(self.pointButton3, 0, wx.BOTTOM | wx.LEFT)
         btnSizer.Add(self.drawindicesBtn, 0, wx.BOTTOM | wx.LEFT)
+        btnSizer.Add(self.txtoffsettext, 0, wx.BOTTOM | wx.LEFT)
+        btnSizer.Add(self.textoffsettxtctrl, 0, wx.BOTTOM | wx.LEFT)
         # btnSizer.Add(self.pointButton5, 0, wx.BOTTOM | wx.LEFT)
+
 
         btnSizer.Add(self.setImageScalebtn, 0, wx.BOTTOM | wx.LEFT)
         btnSizer.Add(bottombarsizer, 0, wx.BOTTOM | wx.LEFT)
@@ -659,11 +665,18 @@ class SimulationPlotFrame(wx.Frame):
             self.Y_offsetfluoframe = float(self.offsetYtxtctrl.GetValue())
         self._replot()
 
+
+    def OnEnterAnnotOffset(self, _):
+        self.coef_text_offset= float(self.textoffsettxtctrl.GetValue())
+        self._replot()
+
     def OnEnterOffsetX(self, _):
         """
         set the origin of ydet zdet fluodetector frame in pixel x,y frame
         """
+        
         self.X_offsetfluoframe = float(self.offsetXtxtctrl.GetValue())  # in pixel
+
         self._replot()
 
     def OnEnterOffsetY(self, _):
@@ -1091,7 +1104,7 @@ class SimulationPlotFrame(wx.Frame):
 
     def drawAnnote(self, axis, x, y, annote):
         """
-        Draw the annotation on the plot
+        Draw the annotation E and h, k, l of simulated spot on the plot
         """
         if (x, y) in self.drawnAnnotations:
             markers = self.drawnAnnotations[(x, y)]
@@ -1100,12 +1113,11 @@ class SimulationPlotFrame(wx.Frame):
                 m.set_visible(not m.get_visible())
 
         else:
-            coef_text_offset = 5
             # t = axis.text(x, y, "(%3.2f, %3.2f) - %s"%(x, y,annote), ) # par defaut
-            t1 = axis.text(x + coef_text_offset * 1, y + coef_text_offset * 3,
+            t1 = axis.text(x + self.coef_text_offset * 1, y + self.coef_text_offset * 3,
                 "%.3f" % (annote[0]),
                 size=8)
-            t2 = axis.text(x + coef_text_offset * 1, y - coef_text_offset * 3,
+            t2 = axis.text(x + self.coef_text_offset * 1, y - self.coef_text_offset * 3,
                 "%d %d %d" % (int(annote[1][0]), int(annote[1][1]), int(annote[1][2])),
                 size=8)
 
