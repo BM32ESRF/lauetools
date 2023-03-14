@@ -428,6 +428,7 @@ def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sC
                         elif counter == "Iptp_multiple":
                             CountersData["Iptp_multiple"][roi_index] = np.ptp(piece_dat_m, axis=(1, 2))
 
+                # TODO this branch is useless ?!
                 elif counter.startswith("pos"):
 
                     if 'multiple' in counter:
@@ -502,8 +503,8 @@ def getroisXYmax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='
                     
 
                 elif counter.startswith("pos"):
-
-                    datminimum = scind.measurements.maximum(piece_dat)
+                    # method 1  ------  center of mass  without a flat baseline-----
+                    datminimum = scind.measurements.minimum(piece_dat)
                     # center of mass without background removal
                     datcenterofmass = np.array(scind.measurements.center_of_mass(piece_dat))
                     # remove baseline level set to minimum pixel intensity
@@ -511,6 +512,7 @@ def getroisXYmax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='
 
                     centerofmass = datcenterofmass2 + np.array([jmin, imin])
 
+                    # method 2  ------ position of maximum --------
                     datmaximumpos = scind.measurements.maximum_position(piece_dat)
                     datmaximumpos = np.array(datmaximumpos, dtype="uint32")
 
