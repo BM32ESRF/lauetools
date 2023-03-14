@@ -44,10 +44,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+        node-version: '16'
         fetch-depth: 0
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
+        node-version: '16'
         python-version: '3.9'
     - name: Install dependencies
       run: |
