@@ -130,6 +130,7 @@ dict_Materials = {
     "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
     "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194 
     "Nb14W3O44": ["Nb14W3O44", [21.03,21.03,3.93,90, 90, 90], "h+k+l=2n"], #SG 82
+    "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"]
 }
 
 dict_Materials_short = {
@@ -208,7 +209,8 @@ dict_Extinc = {
     "rutile": "rutile",
     "SG227": "SG227",
     "SG141": "SG141",
-    "137": "137"
+    "137": "137",
+    "R3m_sg160": "R3m_sg160"
 }
 
 dict_Extinc_inv = {
@@ -230,7 +232,8 @@ dict_Extinc_inv = {
     "rutile":"rutile",
     "SG227": "SG227",
     "SG141": "SG141",
-    "137": "137"
+    "137": "137",
+    "R3m_sg160":"R3m_sg160"
 }
 
 def writeDict(_dict, filename, writemode='a', sep=', '):
