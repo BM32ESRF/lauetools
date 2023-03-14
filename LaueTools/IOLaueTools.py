@@ -1115,7 +1115,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float)
             #                     print "got dataspots_Unindexed!"
 
-            elif line.startswith("#UB"):
+            elif line.startswith("#UB matrix"):
                 matrixfound = 1
 
                 #lineendspot = iline - 1
