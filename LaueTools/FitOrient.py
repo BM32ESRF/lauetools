@@ -144,24 +144,36 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
         print("Qrot/Qrotn", Qrot / Qrotn)
         print("twthe, chi", twthe, chi)
 
-    X, Y, theta, energy = F2TC.calc_xycam_from2thetachi(twthe,
-                                                chi,
-                                                calibration_parameters,
-                                                outputenergy=1, 
-                                                verbose=0,
-                                                pixelsize=pixelsize,
-                                                kf_direction=kf_direction)
+    if kf_direction in ('X>0'):
+        outputenergy = 0
+        X, Y, theta= F2TC.calc_xycam_from2thetachi(twthe,
+                                                    chi,
+                                                    calibration_parameters,
+                                                    outputenergy=outputenergy, 
+                                                    verbose=0,
+                                                    pixelsize=pixelsize,
+                                                    kf_direction=kf_direction)
+    else:
+        outputenergy = 1
+
+        X, Y, theta, energy = F2TC.calc_xycam_from2thetachi(twthe,
+                                                    chi,
+                                                    calibration_parameters,
+                                                    outputenergy=outputenergy, 
+                                                    verbose=0,
+                                                    pixelsize=pixelsize,
+                                                    kf_direction=kf_direction)
     # Y pixel position can be shifted to take into account from the sample
     # only for semi infinite single crystal now (= not finite size crystal)
     # only crystal at the surface
     # only for Ge
-    if depthcorrection:
-        from . import attenuation as attn
-        
-        attlength = attn.attenGe(energy*1000.)
-        shiftypixel= attlength/1000./pixelsize
-        # Y pixel are shifted as if all depth are equal 
-        Y = Y - shiftypixel
+        if depthcorrection:
+            from . import attenuation as attn
+            
+            attlength = attn.attenGe(energy*1000.)
+            shiftypixel= attlength/1000./pixelsize
+            # Y pixel are shifted as if all depth are equal 
+            Y = Y - shiftypixel
     return X, Y, theta, R
 
 
@@ -523,6 +535,7 @@ def error_function_on_demand_strain(param_strain,
     Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
     """
 
+    print('kf_direction in error_function_on_demand_strain',kf_direction)
     #print('param_strain in error_function_on_demand_strain', param_strain)
 
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
