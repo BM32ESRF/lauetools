@@ -127,7 +127,7 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
     .. todo:: setting list of initial guesses can be improve with
         scipy.ndimages of a concatenate array of multiple slices?
     """
-    if 1:#verbose > 0:
+    if verbose > 0:
         print("addImax", addImax)
     
     # read data (several arrays)
@@ -146,7 +146,7 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
     framedim = DictLT.dict_CCD[CCDLabel][0]
     saturation_value = DictLT.dict_CCD[CCDLabel][2]
    
-    Data = np.array(Datalist)
+    Data = Datalist  # important not to array Datalist for multiprocessing purpose
 
     # setting initial guessed values for each center
     nb_Images = len(Data)
@@ -187,7 +187,7 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
         start_amplitude = []
         d = 0
         for dd in Data:
-            start_amplitude.append(dd[int(start_j[d]), int(start_i[d])] - start_baseline[d])
+            start_amplitude.append(dd[int(start_j), int(start_i)] - start_baseline[d])
             d += 1
     elif position_start == "max":  # starting position  from maximum intensity in dat
 
