@@ -72,6 +72,27 @@ def isCubic(latticeparams):
 
     return Cubic
 
+def isHexagonal(latticeparams):
+    r"""
+    :param latticeparams: 6 elements list
+    :type latticeparams: iterable object with float or integers elements
+
+    :return: True or False
+    """
+    if not isinstance(latticeparams, (list, tuple, np.ndarray)):
+        raise ValueError("latticeparams is not a list of the 6 lattice parameters")
+
+    if len(latticeparams) != 6:
+        raise ValueError("latticeparams is not a list of the 6 lattice parameters")
+
+    Hexagonal = False
+    if (latticeparams[0] == latticeparams[1] and latticeparams[5] * 1.0 == 120.0):
+        Hexagonal = True
+    if latticeparams[3] * 1.0 == 120.0 or latticeparams[4] * 1.0 == 120.0:
+        raise ValueError('Unit cell is strangely defined? if it is hexagonal I would expect gamma=120degrees.\n %s'%str(latticeparams))
+
+    return Hexagonal
+
 
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     r"""
@@ -118,6 +139,12 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond2 = (L) % 2 == 0
         cond = cond1 * cond2
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
+
+    elif Extinc == "R3m_sg160":
+        cond1 = (-H + K + L) % 3 == 0
+        # cond2 = (L) % 2 == 0
+        # cond = cond1 * cond2
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
     elif Extinc == "SG166":
         cond = (-H + K + L) % 3 == 0
