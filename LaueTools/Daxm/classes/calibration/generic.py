@@ -425,7 +425,7 @@ class Calib:
                     self.exp_I.append(self.data_I[w][k])
 
         self.exp_Pcam = np.array(self.exp_Pcam)
-        self.exp_wire = np.array(self.exp_wire, dtype=np.int)
+        self.exp_wire = np.array(self.exp_wire, dtype=np.int16)
         self.exp_qty = len(self.exp_Pcam)
         self.exp_size = np.sum([len(I) for I in self.exp_I])
 
