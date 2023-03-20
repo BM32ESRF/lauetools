@@ -425,8 +425,8 @@ class ViewColorPanel(wx.Panel):
             z = self.mainframe.dataimage_ROI
 
         # transpose data
-        i_ind = y.astype(np.int)
-        j_ind = x.astype(np.int)
+        i_ind = y.astype(np.int16)
+        j_ind = x.astype(np.int16)
 
         zi = z[i_ind, j_ind]
 
@@ -1957,8 +1957,8 @@ class PlotPeakListPanel(wx.Panel):
             z = self.mainframe.dataimage_ROI
 
         # transpose data
-        i_ind = y.astype(np.int)
-        j_ind = x.astype(np.int)
+        i_ind = y.astype(np.int16)
+        j_ind = x.astype(np.int16)
 
         zi = z[i_ind, j_ind]
 
@@ -3102,7 +3102,7 @@ class MainPeakSearchFrame(wx.Frame):
             # drawtype is 'box' or 'line' or 'none'
             self.RS = RectangleSelector(self.axes,
                                         self.line_select_callback,
-                                        drawtype="box",
+                                        #drawtype="box",
                                         useblit=True,
                                         button=[1, 2, 3],  # don't use middle button
                                         minspanx=5,
@@ -3962,8 +3962,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.dataimage_ROI_B = dataimage
         else:
             # type np.int to test with cython module arr.pyx
-            #             self.dataimage_ROI = dataimage.astype(np.int)
-            self.dataimage_ROI = dataimage.astype(np.int)
+            #             self.dataimage_ROI = dataimage.astype(np.int16)
+            self.dataimage_ROI = dataimage.astype(np.int16)
 
         if self.CropIsOn:
 
