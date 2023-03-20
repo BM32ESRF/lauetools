@@ -934,7 +934,7 @@ def getSets(pairs):
     sizemat = np.amax(pairs)
     adjencymat = np.zeros((sizemat + 1, sizemat + 1))
 
-    pairs = np.array(pairs, dtype=np.int)
+    pairs = np.array(pairs, dtype=np.int16)
 
     for pair in pairs:
         i, j = pair

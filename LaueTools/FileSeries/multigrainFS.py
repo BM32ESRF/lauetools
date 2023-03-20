@@ -1166,7 +1166,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
         # print "opsym =" , op1
         # print matk_lab[op1].round(decimals=4)
 
-    opsymres = np.array(opsymres, dtype=np.int)
+    opsymres = np.array(opsymres, dtype=np.int16)
     # print opsymres
 
     if 0 in opsymres:
@@ -2523,7 +2523,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         Tabindices1D = np.ravel(map_imageindex_array)
         plotobjet = ImshowFrame(App_parent, -1, "%s %s" % (maptype, columnname),
                                 z_values, Imageindices=Tabindices1D,
-                                nb_row=nb_col, nb_lines=nb_lines, stepindex=1,
+                                nb_col=nb_col, nb_lines=nb_lines, stepindex=1,
                                 boxsize_row=1, boxsize_line=1,
                                 imagename=columnname, mosaic=0,
                                 datatype=None,

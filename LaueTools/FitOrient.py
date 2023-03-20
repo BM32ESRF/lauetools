@@ -40,7 +40,7 @@ def remove_harmonic(hkl, uflab, yz):
 
     # print "removing harmonics from theoretical peak list"
     nn = len(uflab[:, 0])
-    isbadpeak = np.zeros(nn, dtype=np.int)
+    isbadpeak = np.zeros(nn, dtype=np.int16)
     toluf = 0.05
 
     for i in list(range(nn)):
