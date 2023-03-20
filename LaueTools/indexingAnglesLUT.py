@@ -1868,6 +1868,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                             ResolutionAngstrom=False,
                                             B=np.eye(3),  # for cubic
                                             cubicSymmetry=False,
+                                            hexagonalSymmetry=False,
                                             LUT=None,
                                             LUT_tol_angle=0.5,
                                             MR_tol_angle=0.2,
@@ -2078,31 +2079,34 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         # if hkl for central spots IS NOT known  (ie hkl is None...)
         else:
             # TODO: retrieve cubic LUT if already calculated
-            if cubicSymmetry:
-                # compute a specific LUT from 1 hkl and hkls up to n
-                if verbosedetails:
-                    print("using LUTcubic")
-                    if LUTcubic is not None:
-                        print("LUTcubic is not None for k_centspot_index %d in getOrientMatrices()"
-                            % k_centspot_index)
+            if cubicSymmetry:#  or hexagonalSymmetry:
+                if cubicSymmetry:
+                    # compute a specific LUT from 1 hkl and hkls up to n
+                    if verbosedetails:
+                        print("using LUTcubic")
+                        if LUTcubic is not None:
+                            print("LUTcubic is not None for k_centspot_index %d in getOrientMatrices()"
+                                % k_centspot_index)
+                        else:
+                            print("LUTcubic is None for k_centspot_index %d in getOrientMatrices()" % k_centspot_index)
+
+                    if n == 3:
+                        hkl1 = FindO.HKL_CUBIC_UP3
+                    elif n == 4:
+                        hkl1 = FindO.HKL_CUBIC_UP4
+                    elif n == 5:
+                        hkl1 = FindO.HKL_CUBIC_UP5
+                    elif n == 6:
+                        hkl1 = FindO.HKL_CUBIC_UP6
+                    elif n == 7:
+                        hkl1 = FindO.HKL_CUBIC_UP7
                     else:
-                        print("LUTcubic is None for k_centspot_index %d in getOrientMatrices()" % k_centspot_index)
+                        hkl1 = GT.threeindicesfamily(n)
 
-                if n == 3:
-                    hkl1 = FindO.HKL_CUBIC_UP3
-                elif n == 4:
-                    hkl1 = FindO.HKL_CUBIC_UP4
-                elif n == 5:
-                    hkl1 = FindO.HKL_CUBIC_UP5
-                elif n == 6:
-                    hkl1 = FindO.HKL_CUBIC_UP6
-                elif n == 7:
-                    hkl1 = FindO.HKL_CUBIC_UP7
-                else:
-                    hkl1 = GT.threeindicesfamily(n)
-
-                # Rules = dictmaterials[key_material][2]
-                # hkl1 = CP.ApplyExtinctionrules(np.array(hkl1), Rules)
+                    # Rules = dictmaterials[key_material][2]
+                    # hkl1 = CP.ApplyExtinctionrules(np.array(hkl1), Rules)
+                if hexagonalSymmetry:
+                    hkl1 = FindO.HKL_HEXAGONAL_UP3
 
                 (list_orient_matrix, planes, pairspots,
                 ), hkl2, LUTcubic = matrices_from_onespot_hkl(spot_index_central,

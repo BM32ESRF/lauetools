@@ -342,7 +342,7 @@ def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
     :param sortpeaks: True or False, to sort peaks by increasing y value
     .. note: assume nb  of peaks > 1
     """
-    if not isinstance(xy[0,0],np.int):
+    if not isinstance(xy[0,0],np.int16):
         xy=np.int_(xy)
     if not sortpeaks: # already sorted
         xx,yy = np.array(xy).T
@@ -503,6 +503,59 @@ def getroisXYmax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='
                     
 
                 elif counter.startswith("pos"):
+                    # method 2  ------ position of maximum --------
+                    datmaximumpos = scind.measurements.maximum_position(piece_dat)
+                    datmaximumpos = np.array(datmaximumpos, dtype="uint32")
+
+                    posmax = datmaximumpos + np.array([jmin, imin])
+
+                    # position monitors selection
+                    XY = posmax
+
+                    xDATA, yDATA = XY
+
+                    CountersData["posXY"][i_idx] = [xDATA,yDATA]
+            i_idx+=1
+    return CountersData["posXY"]
+
+def getroiscenterofmass(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+    dataimage= None
+    framedim=None
+
+    selectedcounters = ["posX","posY"]
+    CountersData={}
+    CountersData["posXY"]=np.zeros((len(roicenters),2))
+    with fabio.open(imagefilename) as img:  # ok for sCMOS
+        dataimage = img.data
+        framedim = dataimage.shape
+        i_idx = 0
+        for roi_index, roi in enumerate(roicenters):
+            center_pixel = (round(roi[0]), round(roi[1]))
+
+            indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                    (halfboxsize[0], halfboxsize[1]),
+                                                    framedim,
+                                                    flipxycenter=0)
+            imin, imax, jmin, jmax = indicesborders
+
+            # avoid to wrong indices when slicing the data
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                    framedim=framedim)
+
+            piece_dat = dataimage[imin:imax, jmin:jmax]
+
+            for counter in selectedcounters:
+
+                if counter.startswith("I"):
+                    if counter == "Imean":
+                        CountersData["Imean"][roi_index] = np.mean(piece_dat)
+                    elif counter == "Imax":
+                        CountersData["Imax"][roi_index] = np.amax(piece_dat)
+                    elif counter == "Iptp":
+                        CountersData["Iptp"][roi_index] = np.ptp(piece_dat)
+                    
+
+                elif counter.startswith("pos"):
                     # method 1  ------  center of mass  without a flat baseline-----
                     datminimum = scind.measurements.minimum(piece_dat)
                     # center of mass without background removal
@@ -512,14 +565,6 @@ def getroisXYmax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='
 
                     centerofmass = datcenterofmass2 + np.array([jmin, imin])
 
-                    # method 2  ------ position of maximum --------
-                    datmaximumpos = scind.measurements.maximum_position(piece_dat)
-                    datmaximumpos = np.array(datmaximumpos, dtype="uint32")
-
-                    posmax = datmaximumpos + np.array([jmin, imin])
-
-                    # position monitors selection
-                    #XY = posmax
                     XY = centerofmass
 
                     xDATA, yDATA = XY
@@ -1238,7 +1283,8 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
     :param boxsize: iterable 2 elements or integer
               boxsizes [in x, in y] direction or integer to set a square ROI
 
-    :return: Data, list of 2D array pixel intensity or Data and Imax
+    :return: Data, list of 2D array pixel intensity if addImax is False
+            or (Data,Imax) if addImax is True
     """
     # use alternate data  (for instance for data from filename without background)
     if use_data_corrected is not None:
@@ -1258,10 +1304,10 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
 
     # xpic, ypic = np.array(centers).T
 
-    #    x1 = np.array(np.maximum(0, xpic - boxsizex), dtype=np.int)
-    #    x2 = np.array(np.minimum(framedim[0], xpic + boxsizex), dtype=np.int)
-    #    y1 = np.array(np.maximum(0, ypic - boxsizey), dtype=np.int)
-    #    y2 = np.array(np.minimum(framedim[1], ypic + boxsizey), dtype=np.int)
+    #    x1 = np.array(np.maximum(0, xpic - boxsizex), dtype=np.int16)
+    #    x2 = np.array(np.minimum(framedim[0], xpic + boxsizex), dtype=np.int16)
+    #    y1 = np.array(np.maximum(0, ypic - boxsizey), dtype=np.int16)
+    #    y2 = np.array(np.minimum(framedim[1], ypic + boxsizey), dtype=np.int16)
 
     Data = []
 

@@ -179,8 +179,8 @@ def RefineUB(linkedspots_link,
     # print "Pairs of spots used",self.linkedspots
     arraycouples = np.array(linkedspots_fit)
 
-    exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
-    sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
+    exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+    sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
 
     nb_pairs = len(exp_indices)
     print("Nb of pairs: ", nb_pairs)
@@ -751,8 +751,8 @@ def RefineCalibParameters(linkedspots,
 
     arraycouples = np.array(linkedspots)
 
-    exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
-    sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
+    exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+    sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
 
     nb_pairs = len(exp_indices)
     if verbose:

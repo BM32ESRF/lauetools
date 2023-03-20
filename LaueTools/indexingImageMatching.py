@@ -2056,7 +2056,7 @@ def best_orientations_new(Database, bigHoughcollector, nb_orientations=20):
     #    print "rara.shape", rara.shape
     #    print "argrara.shape", argrara.shape
 
-    bestindices = np.array(findGrain_in_orientSpace_new(rara, nb_orientations), dtype=np.int)
+    bestindices = np.array(findGrain_in_orientSpace_new(rara, nb_orientations), dtype=np.int16)
 
     # TODO: generalize to other angles sampling
     #    best_Az, best_Ay = convert_Orientindex_to_angles(bestindices, (90, 90))

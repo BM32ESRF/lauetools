@@ -1857,7 +1857,7 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
         if saturation:
             data_Ipixmax = alldata[:, -1]
             indsat = np.where(data_Ipixmax >= saturation)
-            data_sat = np.zeros(len(data_Ipixmax), dtype=np.int)
+            data_sat = np.zeros(len(data_Ipixmax), dtype=np.int16)
             data_sat[indsat[0]] = 1
 
             if col_isbadspot is not None:

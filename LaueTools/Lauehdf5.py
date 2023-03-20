@@ -2238,7 +2238,7 @@ def plotpresence(tabpresence, mapshape=(101, 16), starting_index=1708):
     """
     if tabpresence == []:
         return
-    indexfile = np.array(tabpresence[:, 0], dtype=np.int) - starting_index
+    indexfile = np.array(tabpresence[:, 0], dtype=np.int16) - starting_index
     value_intensity = tabpresence[:, 1]
 
     data = np.zeros(mapshape[0] * mapshape[1])

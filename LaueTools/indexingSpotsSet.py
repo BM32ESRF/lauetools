@@ -669,7 +669,7 @@ class spotsset:
             # absoluteindex, twthe, chi, intensity_data
             arr[k] = [self.indexed_spots_dict[spot_index][i] for i in (0, 1, 2, 5)]
 
-        absoluteindex = np.array(arr[:, 0], dtype=np.int)
+        absoluteindex = np.array(arr[:, 0], dtype=np.int16)
 
         # np.array([twicetheta_data, chi_data, intensity_data]), absoluteindex
         return arr[:, 1: 4].T, absoluteindex
@@ -699,7 +699,7 @@ class spotsset:
 
         absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
         intensity_data = toindexdata[:, 5]
-        absoluteindex = np.array(absoluteindex, dtype=np.int)
+        absoluteindex = np.array(absoluteindex, dtype=np.int16)
 
         return np.array([twicetheta_data, chi_data, intensity_data]), absoluteindex
 
@@ -978,6 +978,7 @@ class spotsset:
                                                     n=nLUT,
                                                     B=B,
                                                     cubicSymmetry=CP.isCubic(latticeparams),
+                                                    hexagonalSymmetry=CP.isHexagonal(latticeparams),
                                                     ResolutionAngstrom=ResolutionAngstrom,
                                                     LUT=LUT,
                                                     LUT_tol_angle=AngTol_LUTmatching,

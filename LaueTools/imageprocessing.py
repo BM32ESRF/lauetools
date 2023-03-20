@@ -553,7 +553,7 @@ def LocalMaxima_ndimage(Data,
     if returnfloatmeanpos:
         return meanpos
     else:
-        return np.array(meanpos, dtype=np.int)
+        return np.array(meanpos, dtype=np.int32)
 
 
 def ConvolvebyKernel(Data, peakVal=4, boxsize=5, central_radius=2):

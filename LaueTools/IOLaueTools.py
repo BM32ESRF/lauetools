@@ -352,6 +352,22 @@ def getpixelsize_from_corfile(filename):
     else:
         return None
 
+def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
+    """
+    return kf_direction (laue camera/detector position geometry) if written in .cor file
+    """
+
+    with open(filename, "r") as f:
+
+        kf_direction =defautdirection
+        for line in f:
+            if line.startswith("#") and 'kf_direction' in line:
+                kf_direction = line.split(":")[-1].strip()
+                print('found kf_direction is:', kf_direction)
+                break
+
+        return kf_direction
+
 
 def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
     """
