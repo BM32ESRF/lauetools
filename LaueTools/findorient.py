@@ -756,6 +756,26 @@ HKL_CUBIC_UP7 = HKL_CUBIC_UP6 + [[7, 1, 0], [7, 1, 1], [7, 2, 0], [7, 2, 1], [7,
                     [7, 5, 0], [7, 5, 1], [7, 5, 2], [7, 5, 3], [7, 5, 4], [7, 5, 5], [7, 6, 0],
                     [7, 6, 1], [7, 6, 2], [7, 6, 3], [7, 6, 4], [7, 6, 5], [7, 6, 6]]
 
+
+HKL_HEXAGONAL_UP3 = [[1, 0, 0], [1, 1, 0], [1, 1, 1], 
+                        [2, 1, 0], [2, 1, 1], [2, 2, 1], 
+                        [3, 1, 0], [3, 1, 1], [3, 2, 1], [3, 2, 2], [3, 3, 1], [3, 3, 2],
+                    [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 1, 2], [0, 1, 3], [0, 2, 1], [0, 2, 3],
+                    [0, 3, 1], [0, 3, 2], 
+                    [1, 0, 1], [1, 0, 2], [1, 0, 3], [1,1, 2],
+                    [1, 1, 3], [1, 2, 0], [1, 2, 1], [1, 2, 2], [1,2, 3],
+                    [1, 3, 0], [1, 3, 1], [1, 3, 2], [1, 3, 3],
+                    [2, 0, 1], [2, 1, 2], [2,0, 3], [2, 1, 3],
+                    [2, 2, 3], [2, 3, 0],[2, 3, 1],[2,3,2],[2,3,3],
+                    [3, 0, 1], [3, 1, 2], [3, 1, 3], [3,2,0],[3, 2, 3]]
+
+HKL_HEXAGONAL_UP3 = [[0, 1, 0],[1, 0, 0], [1, 1, 0], [2, 1, 0], 
+                        [3, 1, 0], [3, 2, 0], 
+                        [0, 1, 1],[1, 0, 1], [1, 1, 1], [2, 0, 1],[2, 1, 1],[2, 2, 1],[3, 0, 1],
+                    [3, 1, 1], [3, 2, 1], 
+                    [0, 1, 2],[1, 0, 2], [1, 1, 2], [1, 2, 2], [2, 1, 2], [3, 0, 2], 
+                        [0, 3, 2]]
+
 def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
     """
     Generate Look Up Table of angles between HKL_CUBIC_UP3 (up to order 3) and hkl2 directions
@@ -764,6 +784,17 @@ def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
     see doc of GenerateLookUpTable_from2sets()
     """
     hkl1 = np.array(HKL_CUBIC_UP3)
+
+    return GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=verbose)
+
+def Generate_LUT_for_hexagonal(hkl2, Gstar, verbose=0):
+    """
+    Generate Look Up Table of angles between HKL_HEXAGONAL_UP3 (up to order 3) and hkl2 directions
+    for an unit cell defined by (reciprocal) metric tensor Gstar
+
+    see doc of GenerateLookUpTable_from2sets()
+    """
+    hkl1 = np.array(HKL_HEXAGONAL_UP3)
 
     return GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=verbose)
 
