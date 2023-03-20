@@ -786,6 +786,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.Det_distance, self.Det_diameter = None, None
         self.Xcen, self.Ycen, self.Xbet, self.Xgam = None, None, None, None
         self.calib = None
+        self.kf_direction = 'Z>0'
         self.simul_filename = None
 
         # widgets --------------------------------
@@ -1426,6 +1427,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         footer += "\n# pixelsize    :   %s" % self.pixelsize
         footer += "\n# ypixelsize    :   %s" % self.pixelsize
         footer += "\n# CCDLabel    :   %s" % self.CCDLabel
+        footer += "\n# kf_direction    :   %s" % self.kf_direction
 
         header2 = "2theta   chi    x    y  I"
         np.savetxt(corfileobj, Toedit_sorted, fmt='%.8f', header=header2, footer=footer, comments="")
@@ -1490,6 +1492,8 @@ class parametric_Grain_Dialog3(wx.Frame):
             cameraposition = "X<0"
         else:
             cameraposition = "Y<0"
+
+        self.kf_direction = cameraposition
 
         try:
             self.Det_distance = float(self.rightpanel.detdist.GetValue())

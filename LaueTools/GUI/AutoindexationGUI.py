@@ -720,6 +720,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     ResolutionAngstrom=ResolutionAngstrom,
                                     B=B,
                                     cubicSymmetry=restrictLUT_cubicSymmetry,
+                                    hexagonalSymmetry=CP.isHexagonal(latticeparams),
                                     LUT=None,
                                     LUT_tol_angle=rough_tolangle,
                                     MR_tol_angle=fine_tolangle,

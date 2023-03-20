@@ -1260,7 +1260,7 @@ class Plot_RefineFrame(wx.Frame):
         col0 = selectedSpotsPropsarray[0]
         col1, col2, col3 = selectedSpotsPropsarray[1:4]
 
-        self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int)
+        self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int16)
 
         if self.datatype is "2thetachi":
 
@@ -1512,9 +1512,9 @@ class Plot_RefineFrame(wx.Frame):
         """
         if self.linkedspots_link is not None:
 
-            indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int)
-            indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int))[1:4]
+            indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int16)
+            indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int16)
+            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int16))[1:4]
             intens = self.linkIntensity_link
             if self.linkResidues_link is not None:
                 residues = np.array(self.linkResidues_link)[:, 2]
@@ -1597,8 +1597,8 @@ class Plot_RefineFrame(wx.Frame):
         arraycouples = np.array(self.linkedspots_fit)
 
 
-        exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
-        sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
+        exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+        sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
 
         nb_pairs = len(exp_indices)
         print("Nb of pairs: ", nb_pairs)
@@ -2469,9 +2469,9 @@ class Plot_RefineFrame(wx.Frame):
 
             # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
 
-            indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int)
-            indTheo = np.array(self.linkedspots_fit[:, 1], dtype=np.int)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int))[1:4]
+            indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int16)
+            indTheo = np.array(self.linkedspots_fit[:, 1], dtype=np.int16)
+            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int16))[1:4]
             intens = self.linkIntensity_fit
 
             if self.linkResidues_fit is not None:
@@ -2525,8 +2525,8 @@ class Plot_RefineFrame(wx.Frame):
         outputfilename = self.DataPlot_filename.split(".")[0] + suffix + ".fit"
 
         # absolute exp spot index as found in .cor or .dat file
-        indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int)
-        _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int))[1:4]
+        indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int16)
+        _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int16))[1:4]
         intens = self.linkIntensity_fit
         residues = np.array(self.linkResidues_fit)[:, 2]
 
@@ -2918,7 +2918,7 @@ class Plot_RefineFrame(wx.Frame):
         # plot experimental spots linked to 1 theo. spot)
         # ---------------------------------------------------------------
         if self.plotlinks is not None:
-            exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int)
+            exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int16)
             #print('exp_indices in yellow links plot ',exp_indices)
 
             # experimental spots selection -------------------------------------
@@ -3141,8 +3141,8 @@ class Plot_RefineFrame(wx.Frame):
         # self.Energy_Exp_spot
         #print('self.linkExpMiller_link', self.linkExpMiller_link)
 
-        Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int)[:, 1:4]
-        List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int)
+        Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int16)[:, 1:4]
+        List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int16)
         Energy_Exp_spot = self.Energy_Exp_spot
 
         #print("List_Exp_spot_close in Spot_MillerAttribution", List_Exp_spot_close)
@@ -3178,7 +3178,7 @@ class Plot_RefineFrame(wx.Frame):
         # --- Indexed  spots will be only those used for the refinement
         #         self.DataSet.resetSpotsFamily(self.current_processedgrain)
         #         if self.linkResidues_fit is not None:
-        #             self.DataSet.getSpotsFromSpotIndices(np.array(self.linkResidues_fit[:,0],dtype=np.int))
+        #             self.DataSet.getSpotsFromSpotIndices(np.array(self.linkResidues_fit[:,0],dtype=np.int16))
         #         else:
         #             wx.MessageBox('You must perform a fitting!','Info')
         #             return
@@ -3191,7 +3191,7 @@ class Plot_RefineFrame(wx.Frame):
         self.DataSet.AssignHKL(ISS.OrientMatrix(self.UBmat),
                                 grain_index,
                                 matching_angle_tolerance,
-                                selectbyspotsindices=np.array(self.linkResidues_fit[:, 0], dtype=np.int))
+                                selectbyspotsindices=np.array(self.linkResidues_fit[:, 0], dtype=np.int16))
         self.DataSet.dict_grain_devstrain[grain_index] = self.deviatoricstrain
         self.DataSet.dict_indexedgrains_material[grain_index] = self.key_material
 

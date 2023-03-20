@@ -1659,7 +1659,7 @@ class MainCalibrationFrame(wx.Frame):
 
         indExp = self.linkedspots[:, 0]
         indTheo = self.linkedspots[:, 1]
-        _h, _k, _l = np.transpose(np.array(self.linkExpMiller, dtype=np.int))[1:4]
+        _h, _k, _l = np.transpose(np.array(self.linkExpMiller, dtype=np.int16))[1:4]
         intens = self.linkIntensity
         if self.linkResidues is not None:
             residues = np.array(self.linkResidues)[:, 2]
@@ -1922,8 +1922,8 @@ class MainCalibrationFrame(wx.Frame):
         print("Pairs of spots used", self.linkedspots)
         arraycouples = np.array(self.linkedspots)
 
-        exp_indices = np.array(arraycouples[:, 0], dtype=np.int)
-        sim_indices = np.array(arraycouples[:, 1], dtype=np.int)
+        exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+        sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
 
         nb_pairs = len(exp_indices)
         print("Nb of pairs: ", nb_pairs)
@@ -2247,8 +2247,8 @@ class MainCalibrationFrame(wx.Frame):
             
         outputfilename = os.path.join(self.writefolder,filename)
 
-        indExp = np.array(self.linkedspotsAfterFit[:, 0], dtype=np.int)
-        _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int))[1:4]
+        indExp = np.array(self.linkedspotsAfterFit[:, 0], dtype=np.int16)
+        _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int16))[1:4]
         intens = self.linkIntensityAfterFit
         residues_calibFit = self.residues_fitAfterFit
 

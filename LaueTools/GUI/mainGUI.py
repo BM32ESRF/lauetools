@@ -1518,7 +1518,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["AllDataToIndex"]["IndexedFlag"] = np.zeros(
                                                                         nbspotstoindex)
         self.indexation_parameters["AllDataToIndex"]["absolutespotindex"] = np.array(
-                                            np.arange(nbspotstoindex), dtype=np.int)
+                                            np.arange(nbspotstoindex), dtype=np.int16)
 
     def OpenDefaultData(self):
         """

@@ -729,7 +729,7 @@ class ManualIndexFrame(wx.Frame):
         #
         #         # take only the first 4 columns
         #         abs_spotindex, self.Data_X, self.Data_Y, self.Data_I = np.transpose(toreturn)[:4]
-        #         self.abs_spotindex = np.array(abs_spotindex,dtype=np.int)
+        #         self.abs_spotindex = np.array(abs_spotindex,dtype=np.int16)
 
         selectedSpotsPropsarray = data.T
 
@@ -737,7 +737,7 @@ class ManualIndexFrame(wx.Frame):
         col1, col2, col3 = selectedSpotsPropsarray[1:4]
 
         print("\n****SELECTED and DISPLAYED PART OF EXPERIMENTAL SPOTS\n")
-        self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int)
+        self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int16)
 
         if self.datatype is "2thetachi":
 

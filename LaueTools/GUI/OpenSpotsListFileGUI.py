@@ -123,12 +123,16 @@ def OpenCorfile(filename, parent):
     CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent)
 
     pixelsize_fromfile = IOLT.getpixelsize_from_corfile(filename)
+    kf_direction_fromfile = IOLT.getkfdirection_from_corfile(filename)
+    parent.kf_direction = kf_direction_fromfile
+
 
     # update  CCDLabel,   framedim (nb pixels * nb pixels)
     parent.CCDLabel = CCDCalibDict['CCDLabel']
     print('parent.CCDLabel', parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
     parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][0]
+
 
     # set parent parameters:
 
