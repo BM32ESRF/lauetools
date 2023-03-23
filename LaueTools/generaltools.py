@@ -224,7 +224,7 @@ def pairwise_mutualangles(XY1, XY2):
     """
     M1 = XY1.shape[0]
     M2 = XY2.shape[0]
-    D = np.empty((M1, M2), dtype=np.float)
+    D = np.empty((M1, M2), dtype=np.float32)
     #k=0
     for i in range(M1):
         #print("XY1[i]",XY1[i])
@@ -245,7 +245,7 @@ def pairwise_mutualangles_1D(XY1, XY2):
     """
     M1 = XY1.shape[0]
     M2 = XY2.shape[0]
-    D = np.empty(M1*M2, dtype=np.float)
+    D = np.empty(M1*M2, dtype=np.float32)
     k = 0
     for i in range(M1):
         #print("XY1[i]",XY1[i])

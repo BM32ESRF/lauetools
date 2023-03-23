@@ -1582,8 +1582,8 @@ def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verb
         print("strained orientation matrix, peak list")
         print("convert matrix to matstarlabOR")
 
-    matLT3x3 = np.zeros((3, 3), dtype=np.float)
-    strain = np.zeros((3, 3), dtype=np.float)
+    matLT3x3 = np.zeros((3, 3), dtype=np.float32)
+    strain = np.zeros((3, 3), dtype=np.float32)
     f = open(filefit, "r")
     i = 0
     matrixfound = 0

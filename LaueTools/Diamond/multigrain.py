@@ -3160,9 +3160,9 @@ def readlt_fit_mg(filefitmg,
     
     # lecture .fit pour chaque grain    
     for k in range(nbgrains) : 
-        matLT3x3 = np.zeros((3, 3), dtype=np.float)
-        strain = np.zeros((3, 3), dtype=np.float)
-        strain2 = np.zeros((3, 3), dtype=np.float)
+        matLT3x3 = np.zeros((3, 3), dtype=np.float32)
+        strain = np.zeros((3, 3), dtype=np.float32)
+        strain2 = np.zeros((3, 3), dtype=np.float32)
         i = 0
         n = linepos_list[k]
         #print "n = ", n
@@ -3542,11 +3542,11 @@ def read_any_fitfitfile_multigrain(filefitmg,
     
     # lecture .fit pour chaque grain    
     for k in range(nbgrains) : 
-        matLT3x3 = np.zeros((3, 3), dtype=np.float)
-        orientmat = np.zeros((3, 3), dtype=np.float)
-        B0mat = np.zeros((3, 3), dtype=np.float)
-        strain = np.zeros((3, 3), dtype=np.float)
-        strain2 = np.zeros((3, 3), dtype=np.float)
+        matLT3x3 = np.zeros((3, 3), dtype=np.float32)
+        orientmat = np.zeros((3, 3), dtype=np.float32)
+        B0mat = np.zeros((3, 3), dtype=np.float32)
+        strain = np.zeros((3, 3), dtype=np.float32)
+        strain2 = np.zeros((3, 3), dtype=np.float32)
         i = 0
         n = linepos_list[k]
         #print "n = ", n

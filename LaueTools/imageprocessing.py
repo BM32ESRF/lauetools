@@ -420,7 +420,7 @@ def radialArr(shape, func, orig=None, wrap=False, dtype=np.float32):
         shape = (shape,)
 
     if orig is None:
-        orig = (np.array(shape, dtype=np.float) - 1) / 2.0
+        orig = (np.array(shape, dtype=np.float32) - 1) / 2.0
     else:
         try:
             oo = float(orig)
@@ -545,10 +545,10 @@ def LocalMaxima_ndimage(Data,
     #     meanpos = np.array(ndimage.measurements.center_of_mass(thraa,
     #                                                     ll,
     #                                                     np.arange(1, nf + 1)),
-    #                                                     dtype=np.float)
+    #                                                     dtype=np.float32)
 
     meanpos = np.array(ndimage.measurements.maximum_position(thraa, ll, np.arange(1, nf + 1)),
-                                                                                    dtype=np.float)
+                                                                                    dtype=np.float32)
 
     if returnfloatmeanpos:
         return meanpos
@@ -1190,10 +1190,12 @@ def LocalMaxima_from_thresholdarray(Data, IntensityThreshold=400, rois=None, fra
 
     if outputIpixmax:
         if len(np.shape(meanpos)) > 1:
-            print('meanpos' ,meanpos)
+            
             JJ, II = meanpos.T
             Ipixmax = Data[II, JJ]
-            print('Ipixmax', Ipixmax)
+            if verbose:
+                print('meanpos' ,meanpos)
+                print('Ipixmax', Ipixmax)
         else:
             meanpos, Data[meanpos[1], meanpos[0]]
         return meanpos, Ipixmax

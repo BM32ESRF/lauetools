@@ -341,7 +341,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
                 dataline.append(str(self.listcontrol.GetItem(idx, k).GetText()))
             self.toreturn.append(dataline)
 
-        self.toreturn = np.array(self.toreturn, dtype=np.float)
+        self.toreturn = np.array(self.toreturn, dtype=np.float32)
         return self.toreturn
 
     def OnAcceptQuit(self, _):

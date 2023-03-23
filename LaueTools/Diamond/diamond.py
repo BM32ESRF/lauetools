@@ -170,7 +170,7 @@ def dipSearch(data_Dips, stdmax=0.03, scan=None, DipDepthThreshold=0.06, pedesta
         # print "ll,nf",ll, nf
 
         meanpos = np.array(snd.measurements.center_of_mass(cprofile, ll, np.arange(1, nf + 1)),
-                                                            dtype=np.float)
+                                                            dtype=np.float32)
         peakpos = []
         dipamplitude = []
         nbDipsFound = 0
@@ -2218,7 +2218,7 @@ def plot_Ipix_vs_img(file_Ipix_vs_img=None,
     intensitiesArray = IntProfilesData[:, 1:]
 
     # preparation of intensity profiles
-    yy = np.zeros(nbimages, dtype=np.float)
+    yy = np.zeros(nbimages, dtype=np.float32)
 
     if imgref != None:
         ind1 = np.where(imageindiceslist == imgref)
@@ -4682,9 +4682,9 @@ def convert_JSM_fitfile_into_OR_fitfile(filefit, min_matLT=True, verbose=0,
     if verbose:
         print("convert fit file from LaueTool24.py to fit file from multigrain.py: \n", filefit)
 
-    UBmatLT3x3 = np.zeros((3, 3), dtype=np.float)
-    B0matLT3x3 = np.zeros((3, 3), dtype=np.float)
-    strain = np.zeros((3, 3), dtype=np.float)
+    UBmatLT3x3 = np.zeros((3, 3), dtype=np.float32)
+    B0matLT3x3 = np.zeros((3, 3), dtype=np.float32)
+    strain = np.zeros((3, 3), dtype=np.float32)
     f = open(filefit, "r")
     i = 0
 

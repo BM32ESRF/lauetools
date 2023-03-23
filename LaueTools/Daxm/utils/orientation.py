@@ -25,12 +25,12 @@ class Orientation(object):
     def __init__(self, mat=None):
 
         if mat is None:
-            mat = np.identity(3, dtype=np.float)
+            mat = np.identity(3, dtype=np.float32)
 
         if mat.shape != (3, 3):
             raise OrientationError("3x3 matrix expected for initialization!")
 
-        self.mat = np.matrix(mat, dtype=np.float)
+        self.mat = np.matrix(mat, dtype=np.float32)
 
     @classmethod
     def mat(cls, mat):
@@ -68,7 +68,7 @@ class Orientation(object):
 
         phi1, phi, phi2 = euler
 
-        mat = np.identity(3, dtype=np.float)
+        mat = np.identity(3, dtype=np.float32)
 
         cosphi1, sinphi1 = np.cos(phi1), np.sin(phi1)
         cosphi, sinphi = np.cos(phi), np.sin(phi)
@@ -105,7 +105,7 @@ class Orientation(object):
     @staticmethod
     def rtheta_to_mat(rtheta):
 
-        mat = np.identity(3, dtype=np.float)
+        mat = np.identity(3, dtype=np.float32)
 
         r, theta = rtheta
         costheta = np.cos(theta)
@@ -176,7 +176,7 @@ class Orientation(object):
     @staticmethod
     def quat_to_mat(quat):
 
-        mat = np.identity(3, dtype=np.float)
+        mat = np.identity(3, dtype=np.float32)
 
         mat[0, 0] = quat[0]**2 + quat[1]**2 - quat[2]**2 - quat[3]**2
         mat[0, 1] = 2.*(quat[1]*quat[2] + quat[0]*quat[3])

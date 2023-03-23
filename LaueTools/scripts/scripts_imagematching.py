@@ -1285,7 +1285,7 @@ def test_old(database):
             toindexdata = DataSet.getUnIndexedSpotsallData(exceptgrains=indexedgrains)
             absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
             intensity_data = toindexdata[:, 5]
-            absoluteindex = np.array(absoluteindex, dtype=np.int)
+            absoluteindex = np.array(absoluteindex, dtype=np.int16)
 
             TwiceTheta_Chi_Int = np.array([twicetheta_data, chi_data, intensity_data])
 
@@ -1695,7 +1695,7 @@ def test_old_imagematching(database):
             toindexdata = DataSet.getUnIndexedSpotsallData(exceptgrains=indexedgrains)
             absoluteindex, twicetheta_data, chi_data = toindexdata[:, :3].T
             intensity_data = toindexdata[:, 5]
-            absoluteindex = np.array(absoluteindex, dtype=np.int)
+            absoluteindex = np.array(absoluteindex, dtype=np.int16)
 
             TwiceTheta_Chi_Int = np.array([twicetheta_data, chi_data, intensity_data])
 

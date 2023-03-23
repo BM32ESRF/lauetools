@@ -4333,9 +4333,9 @@ def convert_JSM_fitfile_into_OR_fitfile(filefit,
     if verbose :
         print "convert fit file from LaueTool24.py to fit file from multigrain.py: \n", filefit
 
-    UBmatLT3x3 = np.zeros((3, 3), dtype=np.float)
-    B0matLT3x3 = np.zeros((3, 3), dtype=np.float)
-    strain = np.zeros((3, 3), dtype=np.float)
+    UBmatLT3x3 = np.zeros((3, 3), dtype=np.float32)
+    B0matLT3x3 = np.zeros((3, 3), dtype=np.float32)
+    strain = np.zeros((3, 3), dtype=np.float32)
     f = open(filefit, 'r')
     i = 0
     

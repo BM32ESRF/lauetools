@@ -190,7 +190,7 @@ def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
     
 
     # spot index in current list sorted according to order in ref. list
-    new_order_spotindices = np.array(corresp_array[arg_ind][:, 0], dtype=np.int)
+    new_order_spotindices = np.array(corresp_array[arg_ind][:, 0], dtype=np.int16)
     if verbose:
         print("arg_ind", arg_ind)
         print("new_order_spotindices", new_order_spotindices)

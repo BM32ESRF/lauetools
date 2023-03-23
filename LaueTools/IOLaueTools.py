@@ -1051,8 +1051,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     # read .fit file for each grain
 
-    UBmat = np.zeros((3, 3), dtype=np.float)
-    strain = np.zeros((3, 3), dtype=np.float)
+    UBmat = np.zeros((3, 3), dtype=np.float32)
+    strain = np.zeros((3, 3), dtype=np.float32)
 
     matrixfound = 0
     calibfound = 0
@@ -1116,7 +1116,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         dataspots.append(
                             line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
-                    dataspots = np.array(dataspots, dtype=np.float)
+                    dataspots = np.array(dataspots, dtype=np.float32)
 
                 elif nb_UNindexed_spots > 0:
                     nbspots = nb_UNindexed_spots
@@ -1128,7 +1128,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         dataspots_Unindexed.append(
                             line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
-                    dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float)
+                    dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float32)
             #                     print "got dataspots_Unindexed!"
 
             elif line.startswith("#UB matrix"):
@@ -1227,7 +1227,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         list_starting_rows_in_data[grain_index] = (list_starting_rows_in_data[grain_index - 1]
                                                     + list_nb_indexed_peaks[grain_index - 1])
 
-    pixdev = np.array(PixDev_list, dtype=np.float)
+    pixdev = np.array(PixDev_list, dtype=np.float32)
 
     if verbose:
         print("list_indexedgrains_indices = ", list_indexedgrains_indices)
@@ -1846,7 +1846,7 @@ def ReadSummaryFile(filename, dirname=None):
         list_column_names.append(elem)
         dict_column_names[elem] = k
 
-    data = np.loadtxt(f, dtype=np.float)  # , comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
+    data = np.loadtxt(f, dtype=np.float32)  # , comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
 
     f.close()
 
@@ -1875,13 +1875,13 @@ def createselecteddata(tupledata_theta_chi_I, _listofselectedpts, _indicespotmax
     # print cutlistofselectedpts
     # print "nb of selected data points",len(cutlistofselectedpts)
     if cutlistofselectedpts is None:
-        _dataselected = np.array(np.zeros((3, len(_data_theta)), dtype=np.float))
+        _dataselected = np.array(np.zeros((3, len(_data_theta)), dtype=np.float32))
         _dataselected[1] = _data_chi
         _dataselected[0] = _data_theta
         _dataselected[2] = _data_I
     else:
         # _dataselected=np.array(zeros((3,len(cutlistofselectedpts)),'float'))
-        _dataselected = np.array(np.zeros((3, len(cutlistofselectedpts)), dtype=np.float))
+        _dataselected = np.array(np.zeros((3, len(cutlistofselectedpts)), dtype=np.float32))
         _dataselected[0] = np.take(_data_theta, cutlistofselectedpts)
         _dataselected[1] = np.take(_data_chi, cutlistofselectedpts)
         _dataselected[2] = np.take(_data_I, cutlistofselectedpts)
@@ -1968,7 +1968,7 @@ def read_cri(filecri):
     # Al001    0.00000   0.00000   0.35230   1.00000
     # O0001    0.30640   0.00000   0.25000   1.00000
 
-    uc = np.zeros(6, dtype=np.float)
+    uc = np.zeros(6, dtype=np.float32)
     element_name = []
     #sg_num = 0
 
@@ -2058,7 +2058,7 @@ def readfile_str(filename, grain_index):
     f = open(filename, "r")
     i = 0
     grainfound = 0
-    calib = np.zeros(5, dtype=np.float)
+    calib = np.zeros(5, dtype=np.float32)
     # x(exp)  y(exp)  h  k  l xdev  ydev  energy  dspace  intens   integr
     # xwidth   ywidth  tilt  rfactor   pearson  xcentroid  ycentroid
     # 0 x(exp)    # 1 y(exp)
@@ -2130,7 +2130,7 @@ def readfile_str(filename, grain_index):
                             skip_header=linestart,
                             skip_footer=linetot - lineend)
 
-    data_str = np.array([elem[0].split() for elem in data_], dtype=np.float)[:, :11]
+    data_str = np.array([elem[0].split() for elem in data_], dtype=np.float32)[:, :11]
 
     print("number of indexed peaks :", len(data_str))
     print("first peak : ", data_str[0, 2:5])

@@ -1367,15 +1367,15 @@ def getblobCOM(data_array, threshold=0, connectivity=1, returnfloatmeanpos=0, re
     range_nf = np.array(np.arange(1, nf + 1), dtype=np.int16)
 
     meanpos = np.array(
-        NDI.measurements.center_of_mass(thraa, ll, range_nf), dtype=np.float)
+        NDI.measurements.center_of_mass(thraa, ll, range_nf), dtype=np.float32)
 
     #    maximumvalues = np.array(NDI.measurements.maximum(thraa, ll, range_nf),
-    #                                                                dtype=np.float)
+    #                                                                dtype=np.float32)
 
-    sumofvalues = np.array(NDI.measurements.sum(thraa, ll, range_nf), dtype=np.float)
+    sumofvalues = np.array(NDI.measurements.sum(thraa, ll, range_nf), dtype=np.float32)
 
     #    meanofvalues = np.array(NDI.measurements.sum(thraa, ll, np.arange(1, nf + 1)),
-    #                                                                dtype=np.float)
+    #                                                                dtype=np.float32)
 
     criterium = sumofvalues
 
@@ -1936,25 +1936,25 @@ def findGrain_in_orientSpace_new(CorrelIntensTab, nbfirstpt):
     ll, nf = NDI.label(maxtab)
 
     maxpos = np.array(NDI.measurements.maximum_position(maxtab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     #    meanvalues = np.array(NDI.measurements.sum(thraa,
     #                                                    ll,
     #                                                    np.arange(1, nf + 1)),
-    #                                                    dtype=np.float)
+    #                                                    dtype=np.float32)
 
-    meanvalues2 = np.array(NDI.measurements.mean(thraa, ll, np.arange(1, nf + 1)), dtype=np.float)
+    meanvalues2 = np.array(NDI.measurements.mean(thraa, ll, np.arange(1, nf + 1)), dtype=np.float32)
 
     maximumvalues = np.array(NDI.measurements.maximum(CorrelIntensTab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     minimumvalues = np.array(NDI.measurements.minimum(CorrelIntensTab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     #    std_values = np.array(NDI.measurements.standard_deviation(CorrelIntensTab,
     #                                                      ll,
     #                                                      np.arange(1, nf + 1)),
-    #                                                      dtype=np.float)
+    #                                                      dtype=np.float32)
 
     # position variable
     var_pos = maxpos
@@ -2012,17 +2012,17 @@ def findGrain_in_orientSpace_new(CorrelIntensTab, nbfirstpt):
     # #    meanpos = np.array(NDI.measurements.center_of_mass(thraa,
     # #                                                        ll,
     # #                                                        np.arange(1, nf + 1)),
-    # #                                                        dtype=np.float)
+    # #                                                        dtype=np.float32)
     #    print "ll", np.transpose(ll)[8:15, 40:60]
     #    maxpos = np.array(NDI.measurements.maximum_position(thraa,
     #                                                        ll,
     #                                                        np.arange(1, nf + 1)),
-    #                                                        dtype=np.float)
+    #                                                        dtype=np.float32)
     #
     #    maximumvalues = np.array(NDI.measurements.maximum(CorrelIntensTab,
     #                                                      ll,
     #                                                      np.arange(1, nf + 1)),
-    #                                                      dtype=np.float)
+    #                                                      dtype=np.float32)
     #    #position variable
     #    var_pos = maxpos
     #
@@ -2332,36 +2332,36 @@ def findGrain_in_orientSpace_new_3D(CorrelIntensTab, rank_n=20, sigmagaussian=(1
     ll, nf = NDI.label(maxtab)
 
     maxpos = np.array(NDI.measurements.maximum_position(maxtab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     meanpos = np.array(NDI.measurements.center_of_mass(maxtab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     #
 
     #    meanvalues = np.array(NDI.measurements.sum(thraa,
     #                                                    ll,
     #                                                    np.arange(1, nf + 1)),
-    #                                                    dtype=np.float)
+    #                                                    dtype=np.float32)
     #
     #    meanvalues2 = np.array(NDI.measurements.mean(thraa,
     #                                                    ll,
     #                                                    np.arange(1, nf + 1)),
-    #                                                    dtype=np.float)
+    #                                                    dtype=np.float32)
 
     maximumvalues = np.array(NDI.measurements.maximum(CorrelIntensTab, ll, np.arange(1, nf + 1)),
-        dtype=np.float)
+        dtype=np.float32)
 
     #    minimumvalues = np.array(NDI.measurements.minimum(CorrelIntensTab,
     #                                                      ll,
     #                                                      np.arange(1, nf + 1)),
-    #                                                      dtype=np.float)
+    #                                                      dtype=np.float32)
     #
 
     #    std_values = np.array(NDI.measurements.standard_deviation(CorrelIntensTab,
     #                                                      ll,
     #                                                      np.arange(1, nf + 1)),
-    #                                                      dtype=np.float)
+    #                                                      dtype=np.float32)
 
     # if rank_N is large, blob are no longer symetric,
     # then it would be better to use maxpos than meanpos
