@@ -228,10 +228,10 @@ class ScanReconstructor:
         thickness = np.array(thickness)
 
         for i, expo in enumerate(exposure):
-            images[i] = (np.array(images[i], dtype=np.float) - ndimage.filters.minimum_filter(images[i],
+            images[i] = (np.array(images[i], dtype=np.float32) - ndimage.filters.minimum_filter(images[i],
                                                                                               size=fsize)) / expo
 
-        images = np.array(images, dtype=np.float)
+        images = np.array(images, dtype=np.float32)
 
         peaks_energy = np.ones(self.peakqty_all) * 10.
 
