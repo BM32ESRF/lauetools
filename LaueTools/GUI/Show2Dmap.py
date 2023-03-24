@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import copy
+import pickle
+
 
 import numpy as np
 import wx
@@ -1597,8 +1599,7 @@ def read2Dmapfile(mapfile,folder):
             d["shape"]=data.shape
             return d    
 
-
-if __name__ == "__main__":
+def start():
     #dataarray = np.random.random((20,20))
     folder = '.' # '/home/micha/LaueProjects/MapSn'
     # 41 x n
@@ -1615,7 +1616,6 @@ if __name__ == "__main__":
     dictroiprops[0]=[200,400,200,400,300,300,200,200] # xmin, xmax, ymin,ymax, xc,yc, boxx,boxy
     dictrois['roisprops']=dictroiprops
 
-    import pickle
     with open(os.path.join(folder,'alldetsSn1383.pickle'),'rb') as f:
         alldets=pickle.load(f)
 
@@ -1638,3 +1638,6 @@ if __name__ == "__main__":
                                             mosaic=0)
     PSGUIframe.Show()
     PSGUIApp.MainLoop()
+
+if __name__ == "__main__":
+    start()
