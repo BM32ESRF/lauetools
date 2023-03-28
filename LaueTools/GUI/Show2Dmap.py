@@ -36,6 +36,119 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 from LaueTools.GUI.mosaic import MyCustomToolbar 
 import LaueTools.generaltools as GT
 
+import wx.lib.agw.customtreectrl as CT
+
+
+class TreePanel(wx.Panel):
+    """ class of tree organisation of map
+
+    granparent class must provide  ReadScan_SpecFile()
+
+    sets granparent scan_index_mesh  or scan_index_ascan to selected item index
+    """
+    def __init__(self, parent, scantype=None, _id=wx.ID_ANY, **kwd):
+        wx.Panel.__init__(self, parent=parent, id=_id, **kwd)
+
+        self.parent = parent
+        self.scantype = scantype
+        self.frameparent = self.parent.GetParent()
+        # self.tree = wx.TreeCtrl(self, -1, wx.DefaultPosition, (-1, -1),
+        #                                                     wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
+        # agwStyle=wx.TR_DEFAULT_STYLE
+        self.tree = CT.CustomTreeCtrl(self, -1, agwStyle=wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS | wx.TR_MULTIPLE, size=(200,-1))
+        self.tree.DoGetBestSize()
+
+        self.maketree()
+
+        # multiple selection ------
+        self.keypressed = None
+        self.multiitems = False
+        # --------------------
+
+        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
+        #self.tree.Bind(wx.EVT_TREE_SEL_CHANGING, self.OnSelChanged)
+        self.tree.Bind(wx.EVT_TREE_KEY_DOWN, self.OnkeyPressed)
+
+        # wx.EVT_TREE_ITEM_RIGHT_CLICK
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.tree, 1, wx.EXPAND)
+        vbox.AddSpacer(1)
+
+        self.SetSizer(vbox)
+
+    def maketree(self):
+        self.root = self.tree.AddRoot("Map Files")
+        self.tree.AppendItem(self.root, str(self.scantype))
+
+    def OnkeyPressed(self, event):
+        #print(dir(event))
+        key = event.GetKeyCode()
+        # print('key pressed is ', key)
+        
+        if key == wx.WXK_DOWN:
+            # arrow down
+            nextitem = self.tree.GetNext(self.last_item)
+            try:
+                self.tree.DoSelectItem(nextitem)
+                self.OnSelChanged(event, scan_index=nextitem)
+            except AttributeError: # reaching last element!
+                pass
+
+        elif key == wx.WXK_UP:
+            # arrow up
+
+            previtem = self.tree.GetPrev(self.last_item)
+            self.tree.DoSelectItem(previtem)
+            #self.tree.GetPrev(lastclickeditem)
+            # lastclickeditem = self.tree.GetFocusedItem()
+            # previtem = self.tree.GetPrevVisible(self.lastclickeditem)
+            # self.tree.SetFocusedItem(previtem)
+
+            self.OnSelChanged(1, scan_index=previtem)
+
+    def OnSelChanged(self, event, scan_index=None):
+        
+        #self.frameparent.fig.clear() # to do for wxpython 4.1.1
+        self.SelChangedFile(event, item=None)
+
+    def SelChangedFile(self, event, item=None):
+        """ read item for map file tree    """
+        #print('\n\n SelChangeHdf5')
+        if item is None:
+            if event != 1:
+                item = event.GetItem()
+        
+        if item is None:
+            return
+        selected_item = self.tree.GetItemText(item)
+        #scan_index = int(selected_item)
+        print("item selected: ", selected_item)
+        #print("selected_item ", dir(item))
+        
+        # single selection
+        
+        print('Single selection MODE', self.frameparent.currentfolder)
+
+        fullpath=os.path.join(self.frameparent.currentfolder, selected_item)
+        
+        self.frameparent.readData(fullpath)
+        
+        self.frameparent.scan_index_mesh = selected_item
+        
+        #self.last_sel_scan_index = selected_item
+        self.last_item = item
+
+        # # tooltip----------------
+        # speccommand = self.frameparent.scancommand
+        # date = self.frameparent.scan_date
+        # # print('speccommand', speccommand)
+        # # print('date',date)
+        # tooltip = "command: %s\n date: %s" % (speccommand, date)
+        # #print('tooltip',tooltip)
+        # event.GetEventObject().SetToolTipString(tooltip)
+        # event.Skip()
+        # #------------------
+    
 class ShowMapFrame(wx.Frame):
     """
     Class to show 2D array scalar data
@@ -71,6 +184,11 @@ class ShowMapFrame(wx.Frame):
 
         self.createMenu()
         self.sb = self.CreateStatusBar()
+
+        self.treemesh = TreePanel(self.panel, scantype="MESH", _id=0, size=(250,-1))
+
+        self.currentfolder = None
+
         self.dpi = 100
         self.figsize = 5
         self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi)
@@ -99,6 +217,7 @@ class ShowMapFrame(wx.Frame):
         self.data = self.datarois[self.dataroiindex]
         self.datatype = datatype
         self.maxpositions = maxpositions
+
 
         # test ---------  need datarois,  maxpoistions, index and threshold
         modifiedpositions=[]
@@ -409,9 +528,13 @@ class ShowMapFrame(wx.Frame):
             self.vbox.Add(hboxarrow, 0, wx.EXPAND)
         if "FilteredfittedPeaksData" in self.dict_param:
             self.vbox.Add(hboxmask, 0, wx.EXPAND)
-        self.panel.SetSizer(self.vbox)
+        
+        self.hbox = wx.BoxSizer(wx.HORIZONTAL)
+        self.hbox.Add(self.treemesh, 1, wx.LEFT | wx.TOP | wx.GROW)#wx.EXPAND)
+        self.hbox.Add(self.vbox, 0, wx.LEFT | wx.TOP | wx.GROW)
+        self.panel.SetSizer(self.hbox)
+        self.hbox.Fit(self)
 
-        self.vbox.Fit(self)
         self.Layout()
 
     def createMenu(self):
@@ -432,6 +555,9 @@ class ShowMapFrame(wx.Frame):
 
         openDatamenu = FileMenu.Append(wx.ID_ANY, "&Open Data", "Open Data")
         self.Bind(wx.EVT_MENU, self.OpenData, openDatamenu)
+
+        menuFolder = FileMenu.Append(wx.ID_ANY, "Open folder", "Open a folder containing some map files (lauetools mosaic's made)")
+        self.Bind(wx.EVT_MENU, self.OpenFolder, menuFolder)
 
         CloseMenu = FileMenu.Append(wx.ID_ANY, "&Close", "Close Application")
         self.Bind(wx.EVT_MENU, self.OnQuit, CloseMenu)
@@ -529,14 +655,105 @@ class ShowMapFrame(wx.Frame):
         wx.MessageBox("To be implemented, but data are automatically saved in the same folder "
                                                                 "than the images one", "INFO")
 
+    def OpenFolder(self, _):
+        """find 2dmaps file in a folder"""
+        
+        folder = wx.FileDialog(self, "Select folder containing 2D map files",
+                                wildcard="Bliss ESRF hdf5 (*.h5)|*.h5|All files(*)|*",
+                                defaultDir=str(self.currentfolder))
+
+        self.last_folder = self.currentfolder
+        if folder.ShowModal() == wx.ID_OK:
+
+            self.currentfolder = os.path.split(folder.GetPath())[0]
+            print('\nselected folder is ===> ', self.currentfolder)
+
+        # simply update list fo scans
+        # if (self.currentfolder == self.last_folder and self.currentfolder is not None):
+        #     self.onUpdatehdf5File(1)
+
+        self.get_list_files()
+
+        if (self.currentfolder != self.last_folder and self.currentfolder is not None):
+            #print("\n\ndeleting last old items\n\n")
+            self.treemesh.tree.DeleteAllItems()
+            wx.CallAfter(self.treemesh.maketree)
+
+        self.listfilestoAdd = self.listfiles
+
+        wx.CallAfter(self.fill_tree)
+
+    def fill_tree(self):
+        for fileelem in self.listfilestoAdd:
+            self.treemesh.tree.AppendItem(self.treemesh.root, str(fileelem))
+    
+    def select2Dmapfile(self, listfiles):
+        finallist=[]
+        for elem in listfiles:
+            print('elem', elem)
+            if 'mean_2D' in elem or 'max_2D' in elem:
+                finallist.append(elem)
+        return finallist
+
+    def get_list_files(self):
+        """ retrieve list of map files in the folder"""
+        samefolder = False
+    
+        print('in get_list_files')
+        currentfolder = self.currentfolder
+        if self.currentfolder != self.last_folder:
+            samefolder = True
+            self.listfiles = None
+
+        lastscan_listfiles = 0
+        list_lastfiles_indices = []
+        if self.listfiles is not None:
+            print("self.listfiles already exists")
+            print("self.listfiles", self.listfiles)
+            list_lastfiles_indices = []
+            for ms in self.listfiles:
+                list_lastfiles_indices.append(ms[0])
+            lastscan_listfiles = max(list_lastfiles_indices)
+
+        print("lastscan_listfiles", lastscan_listfiles)
+
+        listfilesall  = self.select2Dmapfile(os.listdir(currentfolder))
+        #listfilesall = ['toto','titi','tata']
+
+        print('listfilesall',listfilesall)
+
+
+        if listfilesall == []:
+            print('No map files apparently in %s'%self.currentfolder)
+            self.listfiles = []
+            return
+
+        # list_meshscan_indices = []
+        # for ms in listfilesall:
+        #     if ms[0] not in list_lastfiles_indices:
+        #         list_meshscan_indices.append(ms[0])
+
+        self.listfiles = listfilesall
+        #self.list_meshscan_indices = list_meshscan_indices
+
+        print('self.listfiles', self.listfiles)
+        #print('hdf5 self.list_meshscan_indices', self.list_meshscan_indices)
+
+
     def OpenData(self, _):
 
         if self.askUserForFilename():
             fpath = os.path.join(self.dirname, self.filename)
             print("Read file ", fpath)
 
+            self.readData(fpath)
+
+    def readData(self,fpath):
+
             with open(fpath, 'r') as f:
-                d=read2Dmapfile(self.filename,self.dirname)
+                d=read2Dmapfile(fpath)
+
+            self.dirname,self.filename=os.path.split(fpath)
 
             print('type',type(d))
             dshape = d.get('shape')
@@ -566,6 +783,9 @@ class ShowMapFrame(wx.Frame):
             #print('boxsize_row  boxsize_line',boxsize_row, boxsize_line)
             self.stepindex = 1
             self.imagename = self.filename
+
+            print('end of readData')
+            print('data', self.data.shape, self.data[3])
 
             self.setArrayImageIndices()
             self._replot()
@@ -963,6 +1183,7 @@ class ShowMapFrame(wx.Frame):
         in ImshowFrame
         """
 
+        print('self.datatype in _replot', self.datatype)
         def fromindex_to_pixelpos_x(index, _):
             return index  # self.center[0]-self.boxsize[0]+index
 
@@ -1535,8 +1756,9 @@ class ShowMapFrame(wx.Frame):
         wx.MessageBox("Not implemented yet!", "INFO")
         return
 
-def read2Dmapfile(mapfile,folder):
-    with open(os.path.join(folder, mapfile)) as f:
+def read2Dmapfile(fullpath):
+    with open(fullpath) as f:
+        folder, mapfile = os.path.split(fullpath)
         if not mapfile.startswith(('MOSAIC','max_2D', 'mean_2D',
                                    'ptp_2D','Amplitude_2D',
                                    'Displacement_2D','Position XY_2D')):
@@ -1601,7 +1823,9 @@ def read2Dmapfile(mapfile,folder):
 
 def start():
     #dataarray = np.random.random((20,20))
-    folder = '.' # '/home/micha/LaueProjects/MapSn'
+    
+    folder = os.path.split((os.path.abspath(__file__)))[0]
+    print('absolute path of folder', folder)
     # 41 x n
     startindex = 0
     finalindex= 1383
