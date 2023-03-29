@@ -2815,7 +2815,8 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
                 parent.list_of_windows.append(plot2Dpeaksize)
 
-            # peak amplitude
+            # peak amplitudes
+
             if plot and counter == "Amplitude":
                 PeakAmplitude = (FilteredfittedPeaksData[:, 2] - FilteredfittedPeaksData[:, 8])
                 PeakAmplitude2D = PeakAmplitude.reshape((n0, n1))
