@@ -63,6 +63,7 @@ dict_Materials = {
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
+    "Nb14W3O44": ["Nb14W3O44", [21.002, 21.002, 3.82, 90, 90, 90], "no"],  #space group 82 to be checked
     "Olivine_forsterite": ["Olivine_forsterite", [4.754,10.1971,5.9806, 90, 90, 90], "no"],
     "Olivine_fayalite": ["Olivine_fayalite", [4.8211,10.4779,6.0889, 90, 90, 90], "no"],
     "Olivine_mantle": ["Olivine_mantle", [4.7646,10.2296,5.9942, 90, 90, 90], "no"],
