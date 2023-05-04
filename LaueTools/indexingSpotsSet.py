@@ -2931,6 +2931,8 @@ class spotsset:
             dict_matrices["B0"] = self.B0matrix
             #         dict_matrices['UBB0'] = self.UBB0mat
             UBB0 = np.dot(dict_matrices["UBmat"], dict_matrices["B0"])
+            dict_matrices["UBB0"] = UBB0
+
             euler_angles = ORI.calc_Euler_angles(UBB0).round(decimals=3)
             dict_matrices["euler_angles"] = euler_angles
 

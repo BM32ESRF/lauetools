@@ -961,7 +961,10 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         all_UBmats_flat,
                         allgrains_spotsdata,
                        calibJSM[:, :5],
-                       pixdev, strain6, euler
+                       pixdev
+
+                       and in addition if rezadmore is True:
+                       strain6, euler, all_UBB0mats_flat,
 
                where   list_indexedgrains_indices   : list of indices of indexed grains
                        list_nb_indexed_peaks        : list of numbers of indexed peaks for each grain
@@ -970,6 +973,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         all_UBmats_flat           : all 1D 9 elements UBmat matrix
                                                 in q = UBmat B0 G* in Lauetools Frame (ki//x)
                                                 WARNING! not OR or labframe (ki//y) !!!
+                        all_UBB0mats_flat       : all 1D 9 elements UBB0 matrix
                         allgrains_spotsdata        :   array of all spots sorted by grains
                         calibJSM[:, :5]            : contains 5 detector geometric parameters
                         pixdev                    : list of pixel deviations after fit for each grain
@@ -1035,6 +1039,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     list_indexedgrains_indices = list(range(nbgrains))
 
     all_UBmats_flat = np.zeros((nbgrains, 9), float)
+    all_UBB0mats_flat = np.zeros((nbgrains, 9), float)
     strain6 = np.zeros((nbgrains, 6), float)
     calib = np.zeros((nbgrains, 5), float)
     calibJSM = np.zeros((nbgrains, 7), float)
@@ -1052,6 +1057,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     # read .fit file for each grain
 
     UBmat = np.zeros((3, 3), dtype=np.float32)
+    UBB0mat = np.zeros((3, 3), dtype=np.float32)
     strain = np.zeros((3, 3), dtype=np.float32)
 
     matrixfound = 0
@@ -1136,6 +1142,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
                 #lineendspot = iline - 1
                 # print "matrix found"
+            elif line.startswith("#UBB0 matrix"):
+                ubb0found = 1
             elif line.startswith("#Sample"):
                 calibfound = 1
                 linecalib = iline + 1
@@ -1147,6 +1155,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 linepixdev = iline + 1
             elif line.startswith("#deviatoric"):
                 strainfound = 1
+
+            
 
             elif line.startswith("#Euler"):
                 eulerfound = 1
@@ -1163,6 +1173,20 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     iline += 1
                 #                 print "got UB matrix:", UBmat
                 matrixfound = 0
+
+            if ubb0found:
+                jline_matrix = 0
+                while(jline_matrix<3):
+                    line = f.readline()
+                    if line.startswith(("in LT frame","xlab1 = ui")): # there could be additionnal text before data
+                        iline += 1
+                        continue
+                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                    UBB0mat[jline_matrix, :] = np.array(lineval, dtype=float)
+                    jline_matrix += 1
+
+                ubb0found = 0
+
             if strainfound:
                 for jline_matrix in list(range(3)):
                     line = f.readline()
@@ -1206,6 +1230,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         #            data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
 
         all_UBmats_flat[grain_index, :] = np.ravel(UBmat)
+        all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)
 
         # xx yy zz yz xz xy
         # voigt notation
@@ -1256,7 +1281,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     calibJSM[:, :5],
                     pixdev,
                     strain6,
-                    euler)
+                    euler,
+                    all_UBB0mats_flat)
     if return_toreindex:
         toreturn = (list_indexedgrains_indices,
                     list_nb_indexed_peaks,
