@@ -159,6 +159,7 @@ class ScanReconstructor:
         self.peaks_abscoeff = [self.peaks_abscoeff_all[i, j] for i, j in enumerate(self.peaks_wireid)]
 
     def set_abscoeff_fromfitfile(self, fit_file, max_dist=10., default_energy=11.):
+        """warning  maybe columns for x y energy are wrong, look at dict_column_header of readfitfile_multigrains"""
 
         list_x, list_y, list_energy = [], [], []
 
