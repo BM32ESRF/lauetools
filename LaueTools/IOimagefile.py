@@ -830,7 +830,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2', 'Alban'):
 
-            if verbose > 1:
+            if 1: #verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
@@ -849,6 +849,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 initframedim[0] = framedim[0]
                 initframedim[1] = framedim[1]
                 initframedim = tuple(initframedim)
+                if CCDLabel in ("EIGER_4M",):
+                    dataimage = np.ma.masked_where(dataimage<0, dataimage)
+                    print('min fo dataimage: ',np.amin(dataimage))
         else:
             USE_RAW_METHOD = True
 
@@ -875,9 +878,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         framedim = dataimage.shape
 
     elif LIBTIFF_EXISTS:
-        if verbose > 1:
+        if 1: #verbose > 1:
             print("----> Using libtiff...")
-        if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "FRELONID15_corrected", "VHR_PSI",
+        if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "EIGER_4M","FRELONID15_corrected", "VHR_PSI",
                             "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", "sCMOS_16M"):
 
             #         print "tiff format", CCDLabel
@@ -892,6 +895,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         int(tifimage.GetField("ImageWidth")))
             if tifimage.IsByteSwapped():
                 dataimage = dataimage.byteswap()
+
+            # if CCDLabel==("EIGER_4M",):
+            #     dataimage = np.ma.masked_values(dataimage, -1)
         else:
             USE_RAW_METHOD = True
 
@@ -984,6 +990,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     # some array transformations if needed depending on the CCD mounting
     if fliprot == "spe":
         dataimage = np.rot90(dataimage, k=1)
+
+    elif fliprot == "EIGER SLS":
+        dataimage = np.rot90(dataimage, k=-1)
 
     elif fliprot == "VHR_Feb13":
         #            self.dataimage_ROI = np.rot90(self.dataimage_ROI, k=3)

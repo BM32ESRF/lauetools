@@ -791,8 +791,13 @@ class FilterBackGroundPanel(wx.Panel):
 
         set self.blurimage
         """
+        CCDlabel = self.mainframe.CCDlabel
+
+        print('min of self.mainframe.dataimage_ROI in onComputeBlurImage',np.amin(self.mainframe.dataimage_ROI))
+
         self.blurimage = ImProc.compute_autobackground_image(self.mainframe.dataimage_ROI,
-                                                                                boxsizefilter=10)
+                                                            boxsizefilter=10,
+                                                            CCDlabel=CCDlabel)
 
         print("self.blurimage.shape", self.blurimage.shape)
 
@@ -3887,7 +3892,8 @@ class MainPeakSearchFrame(wx.Frame):
         if (self.ImageFilterpanel.FilterImage and self.ImageFilterpanel.ImageType == "Raw"):
             print("self.ImageFilterpanel.ImageType == 'Raw'")
             self.ImageFilterpanel.blurimage = ImProc.compute_autobackground_image(
-                                                            self.dataimage_ROI, boxsizefilter=10)
+                                                            self.dataimage_ROI, boxsizefilter=10,
+                                                            CCDlabel=self.CCDlabel)
             self.ImageFilterpanel.Computefilteredimage()
             self.viewingLUTpanel.showImage()
         elif self.ImageFilterpanel.UseImage and self.ImageFilterpanel.ImageType == "Raw":
@@ -3960,10 +3966,14 @@ class MainPeakSearchFrame(wx.Frame):
 
         if secondaryImage:
             self.dataimage_ROI_B = dataimage
-        else:
+        else:  # TODO better use self.format ??
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
-            self.dataimage_ROI = dataimage.astype(np.int16)
+            if self.CCDlabel in ("EIGER_4M",):
+                img_dataformat = np.int32
+            else:
+                img_dataformat = np.int16  # np.unit16 ???
+            self.dataimage_ROI = dataimage.astype(img_dataformat)
 
         if self.CropIsOn:
 
@@ -4569,7 +4579,10 @@ class MainPeakSearchFrame(wx.Frame):
                     xabs, yabs = rx + self.jmin_crop, ry + self.imin_crop
                 else:
                     #tip = "x=%d\ny=%d\nI=%.5f" % (rx, ry, zvalue)
-                    tip = "x=%.2f\ny=%.2f\nI=%.5f" % (evx, evy, zvalue)
+                    if isinstance(zvalue, (float, np.float)):
+                        tip = "x=%.2f\ny=%.2f\nI=%.5f" % (evx, evy, zvalue)
+                    else:
+                        tip = "x=%.2f\ny=%.2f\nI=%s" % (evx, evy, str(zvalue))
 
                     xabs, yabs = rx, ry
 
@@ -4774,8 +4787,11 @@ class MainPeakSearchFrame(wx.Frame):
 
         csum = np.cumsum(histo[0])
         nbtot = np.size(ravI)
-        bb = np.where(csum > nbtot - nbhotpixels)[0][0]
-        th = histo[1][bb]
+        try:  # for EIGER int32 case...
+            bb = np.where(csum > nbtot - nbhotpixels)[0][0]
+            th = histo[1][bb]
+        except IndexError:
+            th=2000
 
         return histo, int(th)
 

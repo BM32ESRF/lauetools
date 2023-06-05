@@ -1187,7 +1187,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         if Data_for_localMaxima == "auto_background":
             if verbose:
                 print("computing background from current image ", filename)
-            backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10)
+            backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10, CCDLabel=CCDLabel)
             # basic substraction
             usemask = True
         # path to a background image file
@@ -1448,6 +1448,7 @@ def Get_blacklisted_spots(filename):
             XY_blacklisted = data_peak_blacklisted[:, :2].T
 
     elif filename.endswith('.fit'):
+        # assume  columns of x and y are 7 and 8
         resdata = IOLT.readfile_fit(filename)
         if resdata is not None:
             allgrainsspotsdata = resdata[4]

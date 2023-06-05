@@ -233,6 +233,8 @@ def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True
     if verbose > 0: print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
     datacropped = data2d[imin:imax, jmin:jmax]
 
+    print('datacropped', datacropped)
+
     # mini, maxi, posmin, posmax
 
     mini, maxi, posmin, posmax = ndimage.measurements.extrema(datacropped)
@@ -1297,14 +1299,21 @@ def circularMask(center, radius, arrayshape):
     return cond
 
 
-def compute_autobackground_image(dataimage, boxsizefilter=10):
+def compute_autobackground_image(dataimage, boxsizefilter=10, CCDlabel='sCMOS'):
     r"""
     return 2D array of filtered data array
     :param dataimage: array of image data
     :type dataimage: 2D array
     """
 
+    # if CCDlabel in ("EIGER_4M",): # rapid removal of -1 value
+    #     dataimage = np.ma.masked_values(dataimage, -1)
+
+    print('min dataimage in compute_autobackground_image',np.amin(dataimage))
+
     bkgimage = filter_minimum(dataimage, boxsize=boxsizefilter)
+
+
 
     return bkgimage
 
@@ -1339,8 +1348,12 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
     #     if framedim not in ((2048, 2048), [2048, 2048]):
     #         raise ValueError, "Background removal still implemented for non squared camera "
     # computing substraction on whole array
-    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_fliplr"):
+    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_fliplr", "EIGER_4M"):
         usemask = False
+
+    if CCDlabel in ("EIGER_4M",): # rapid removal of -1 value. TODO better use NaN mask...
+        np.clip(dataimage,0, None)
+        np.clip(bkg_image,0, None)
 
     if usemask:
         # mask parameter to avoid high intensity steps at border:
@@ -1452,6 +1465,8 @@ def filter_minimum(im, boxsize=10):
 def remove_minimum_background(im, boxsize=10):
     r"""
     remove to image array the array resulting from minimum_filter
+
+    -- note:: not used!
     """
     return im - filter_minimum(im, boxsize=boxsize)
 
@@ -1511,6 +1526,10 @@ def applyformula_on_images(A, B, formulaexpression="A-B", SaturationLevel=None,
     """
     if A.shape != B.shape:
         raise ValueError("input arrays in applyformula_on_images() have not the same shape.")
+
+    if 1: # rapid removal of -1 value. TODO better use NaN mask...
+        np.clip(A,0, None)
+        np.clip(B,0, None)
 
     A = np.array(A, dtype="float32")
     B = np.array(B, dtype="float32")

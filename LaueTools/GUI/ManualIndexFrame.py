@@ -927,7 +927,8 @@ class ManualIndexFrame(wx.Frame):
                 if self.ImageArrayMinusBckg is None:
                     # compute 
                     backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
-                                                                            boxsizefilter=10)
+                                                                            boxsizefilter=10,
+                                                                            CCDLabel=self.CCDLabel)
                     # basic substraction
                     self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
                                                             backgroundimage, self.CCDLabel,
