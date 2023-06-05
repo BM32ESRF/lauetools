@@ -373,7 +373,7 @@ dict_CCD = {
     "EDF": ((1065, 1030), 0.075, 650000000000, "no", 0, "uint32", "CCD parameters read from edf header EIGER", "edf", ),
     "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff"),
     "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff"),
-    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS", "tif"),
+    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "spe", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS or SLS   (fliprot = spe for SLS)", "tif"),
     "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5"),
     "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked"),
     "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M at BM32 ESRF", "edf"),
