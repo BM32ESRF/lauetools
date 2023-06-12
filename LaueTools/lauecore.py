@@ -342,7 +342,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
         * [3](str): key for material element
 
     :param kf_direction: string defining the average geometry, mean value of exit scattered vector:
-        'Z>0'   top spots
+        'Z>0'   top spots  (at around 90 deg in 2theta scattering angles)
 
         'Y>0'   one side spots (towards hutch door)
 
@@ -379,6 +379,8 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
         z perp to x and belonging to the plane defined by x and dd vectors
         (where dd vector is the smallest vector joining sample impact point and points on CCD plane)
         y is perpendicular to x and z
+
+    .. note::  USED MultigrainSimulator.py (from polygrainsimulator Board)
 
     """
     if isinstance(wavelmin, (float, int)) and isinstance(wavelmax, (float, int)):
@@ -482,6 +484,7 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
 
         Orientmatrix = np.array(Orientmatrix)
 
+        # Q vectors
         listrotvec = np.dot(Orientmatrix, np.dot(Bmatrix, table_vec.T))
 
         listrotvec_X = listrotvec[0]
@@ -505,8 +508,9 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
             listObj = list
 
         # Kf direction selection
+
         # top reflection 2theta = 90
-        if kf_direction == "Z>0":
+        if kf_direction == "Z>0":  # assuming that detector plane small enough and too much tilted, such as not potentially intersect Z<0 components
             KF_condit = listrotvec_Z > 0.0
         # side reflection  2theta = 90
         elif kf_direction == "Y>0":
@@ -532,10 +536,10 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
             if len(kf_direction) != 2:
                 raise ValueError("kf_direction must be defined by a list of two angles !")
             else:
-                kf_2theta, kf_chi = kf_direction
-                kf_2theta, kf_chi = kf_2theta * DEG, kf_chi * DEG
+                kf_2theta, kf_chi = kf_direction  # in degree
+                kf_2theta, kf_chi = kf_2theta * DEG, kf_chi * DEG  # now in radians
 
-                qmean_theta, qmean_chi = kf_2theta / 2.0, kf_chi
+                qmean_theta, qmean_chi = kf_2theta / 2.0, kf_chi  # in radian
 
                 print("central q angles", qmean_theta, qmean_chi)
 
@@ -572,8 +576,8 @@ def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GE
                                         ((listrotvec_X * 2.0 / wlm + arraysquare) <= 0.0),
                                         ((listrotvec_X * 2.0 / wlM + arraysquare) > 0.0),
                                     ), (KF_condit))
-        #   print "nb of spots in spheres and in towards CCD region", len(np.where(Condit == True)[0])
 
+        #  q vectors and Miller indices are calculated
         if fastcompute == 0:
             #             print 'Using detailled computation mode'
 
@@ -896,7 +900,8 @@ def create_spot_back(pos_vec, miller, detectordistance, allattributes=False,
 
     return spotty
 
-def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf_direction='Z>0'):
+def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter,
+                         kf_direction='Z>0', shiftcentercamera=None):
     """filter vector Q and HKL in vec_and_indices
 
     :param vec_and_indices: arrays of vectors Q and HKL
@@ -907,10 +912,13 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
     :type detectordiameter: float
     :param kf_direction: geometry of detection label or two angles giving 2theta chi direction of detector, defaults to 'Z>0'
     :type kf_direction: str or 2 floats, optional
+    : param shiftcentercamera: Default is None, xbet angle in degree to shift significantly the center of collected Laue spots from basic position defined by kf_direction
     :raises ValueError: [description]
     :raises ValueError: [description]
     :return: [oncam_vec], [oncam_HKL]
     :rtype: [np.array of 3 elements, np.array of 3 elements]
+
+    .. note::   Xcam and Ycam in mm (not in pixel unit!)
     """
     Qvectors_list, HKLs_list = vec_and_indices
     Qx = Qvectors_list[0][:, 0] * 1.0
@@ -929,7 +937,17 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
     # Kf direction selection
     if kf_direction == "Z>0":  # top reflection geometry
         ratiod = detectordistance / Qz
-        Ycam = ratiod * (Qx + Rewald)
+        if shiftcentercamera is not None:  
+            #Ycam = ratiod * (Qx + Rewald) - detectordistance*np.tan(shiftcentercamera*DEG)
+            #Ycam = ratiod * (Qx - np.tan(shiftcentercamera*DEG/2.)*Qz+ Rewald)
+            
+            #theta  = np.arctan(Qx/Qz)/DEG
+            myxbet = (np.pi/2 + 2.*np.arctan(Qx/Qz))/DEG
+            # print('Qx', np.amin(Qx), np.mean(Qx), np.amax(Qx))
+            # print('mygam', np.amin(myxbet), np.mean(myxbet), np.amax(myxbet))
+            Ycam = -detectordistance*np.tan(shiftcentercamera*DEG-myxbet*DEG)
+        else:  # Qx is negative
+            Ycam = ratiod * (Qx + Rewald)
         Xcam = ratiod * (Qy)
     elif kf_direction == "Y>0":  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
         ratiod = detectordistance / Qy
@@ -975,7 +993,12 @@ def filterQandHKLvectors(vec_and_indices, detectordistance, detectordiameter, kf
     oncam_Qy = np.compress(onCam_cond, Qy)
     oncam_Qz = np.compress(onCam_cond, Qz)
 
+    myxbet_oncam = (np.pi/2 + 2.*np.arctan(oncam_Qx/oncam_Qz))/DEG
+    #print('myxbet_oncam', np.amin(myxbet_oncam), np.mean(myxbet_oncam), np.amax(myxbet_oncam))
+    mytheta_oncam  = np.arctan(oncam_Qx/oncam_Qz)/DEG
+    #print('mytheta_oncam', np.amin(mytheta_oncam), np.mean(mytheta_oncam), np.amax(mytheta_oncam))
     oncam_vec = np.array([oncam_Qx, oncam_Qy, oncam_Qz]).T
+    #print('len(oncam_vec)',len(oncam_vec))
 
     oncam_H = np.compress(onCam_cond, indi_H)
     oncam_K = np.compress(onCam_cond, indi_K)
@@ -994,7 +1017,8 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
                                     pixelsize=165.0 / 2048,
                                     dim=(2048, 2048),
                                     linestowrite=[[""]],
-                                    verbose=0):
+                                    verbose=0,
+                                    shiftcentercamera=None):
     r""" Calculates list of grains spots on camera and without harmonics
     and on CCD camera from [[spots grain 0],[spots grain 1],etc] =>
     returns [[spots grain 0],[spots grain 1],etc] w / o harmonics and on camera  CCD
@@ -1071,7 +1095,17 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         # Kf direction selection
         if kf_direction == "Z>0":  # top reflection geometry
             ratiod = detectordistance / Qz
-            Ycam = ratiod * (Qx + Rewald)
+            if shiftcentercamera is not None:  
+                #Ycam = ratiod * (Qx + Rewald) - detectordistance*np.tan(shiftcentercamera*DEG)
+                #Ycam = ratiod * (Qx - np.tan(shiftcentercamera*DEG/2.)*Qz+ Rewald)
+                
+                #theta  = np.arctan(Qx/Qz)/DEG
+                myxbet = (np.pi/2 + 2.*np.arctan(Qx/Qz))/DEG
+                # print('Qx', np.amin(Qx), np.mean(Qx), np.amax(Qx))
+                # print('mygam', np.amin(myxbet), np.mean(myxbet), np.amax(myxbet))
+                Ycam = -detectordistance*np.tan(shiftcentercamera*DEG-myxbet*DEG)
+            else:  # Qx is negative
+                Ycam = ratiod * (Qx + Rewald)
             Xcam = ratiod * (Qy)
         elif kf_direction == "Y>0":  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
             ratiod = detectordistance / Qy
@@ -1226,7 +1260,8 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
                                                         detectordiameter=DEFAULT_DETECTOR_DIAMETER,
                                                         pixelsize=165.0 / 2048,
                                                         dim=(2048, 2048),
-                                                        grainindex=0):
+                                                        grainindex=0,
+                                                        shiftcentercamera=None):
     r""" Calculates spots data for an individual grain
     on camera and without harmonics
     and on CCD camera
@@ -1247,6 +1282,8 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
                     (CCD plane with respect to
                     the incoming beam and sample)
     :type kf_direction: string
+
+    :param shiftcentercamera: default None, angular value of xbet angle (from detector calibration parameters to center scattered beams around the center of the camera)
 
     :return: tuple of lists of Twtheta Chi Energy Millers if fastcompute=0
 
@@ -1270,7 +1307,15 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
     if kf_direction == "Z>0":  # top reflection geometry
         # VecZ is >0
         ratiod = detectordistance / VecZ
-        Ycam = ratiod * (VecX + Rewald)
+        if shiftcentercamera is not None:  
+            #Ycam = ratiod * (Qx + Rewald) - detectordistance*np.tan(shiftcentercamera*DEG)
+            #Ycam = ratiod * (Qx - np.tan(shiftcentercamera*DEG/2.)*Qz+ Rewald)
+            
+            myxbet = np.pi/2 + 2.*np.arctan(VecX/VecZ)
+            
+            Ycam = - detectordistance * np.tan(shiftcentercamera*DEG - myxbet)
+        else:  # VecX is negative
+            Ycam = ratiod * (VecX + Rewald)
         Xcam = ratiod * (VecY)
     elif kf_direction == "Y>0":  # side reflection geometry (for detector between the GMT hutch door and the sample (beam coming from right to left)
         ratiod = detectordistance / VecY
@@ -1327,6 +1372,8 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
     oncam_vecY = np.compress(onCam_cond, VecY)
     oncam_vecZ = np.compress(onCam_cond, VecZ)
 
+    #print('nb of laue spots after filtering',len(oncam_vecZ))
+
     if onlyXYZ:
         return np.array([oncam_vecX, oncam_vecY, oncam_vecZ]).T
 
@@ -1357,7 +1404,7 @@ def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemo
                                                                 dim=dim,
                                                                 kf_direction=kf_direction)
 
-        #         print 'TwthetaChiEnergy_list_one_grain', TwthetaChiEnergy_list_one_grain
+        # print 'TwthetaChiEnergy_list_one_grain', TwthetaChiEnergy_list_one_grain
         # Creating list of spot with or without harmonics
         if HarmonicsRemoval and True:  # listspot:
             raise ValueError("Harmonic removal is not implemented and listspot does not exist anymore")
@@ -1904,7 +1951,8 @@ def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
                                                 detectordiameter=DETECTORDIAMETER,
                                                 kf_direction=kf_direction,
                                                 HarmonicsRemoval=0,
-                                                pixelsize=pixelsize)
+                                                pixelsize=pixelsize,
+                                                shiftcentercamera=detectorparameters[3])
 
     Twicetheta_zerodepth, Chi_zerodepth, Energy, Miller_ind = TwthetaChiEnergyMillers_list_one_grain_wo_harmonics[:4]
 
@@ -2088,6 +2136,7 @@ def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotL
                                         fastcompute=0,
                                         kf_direction=kf_direction,
                                         detectordistance=detectordistance,
-                                        HarmonicsRemoval=HarmonicsRemoval)
+                                        HarmonicsRemoval=HarmonicsRemoval,
+                                        correctcenterfromxbet=None) # could be xbet value
 
     return True

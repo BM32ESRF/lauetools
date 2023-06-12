@@ -837,7 +837,7 @@ class SimulationPlotFrame(wx.Frame):
             else:
                 kwords["c"] = tuple(colors[grainindex])
 
-            print('np.array(self.Data_X[grainindex])',np.array(self.Data_X[grainindex]))
+            #print('np.array(self.Data_X[grainindex])',np.array(self.Data_X[grainindex]))
 
             # theo Laue spots scatter plot
             self.axes.scatter(np.array(self.Data_X[grainindex]) - self.X_offset,

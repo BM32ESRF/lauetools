@@ -2871,7 +2871,7 @@ class MainCalibrationFrame(wx.Frame):
 
         Simulate theoretical Laue spots properties
 
-        removeharmonics:  1  keep only lowest hkl (fondamental) for each harmonics spots family
+        :param removeharmonics:  1  keep only lowest hkl (fondamental) for each harmonics spots family
                           0  consider all spots (fond. + harmonics)
 
         return:

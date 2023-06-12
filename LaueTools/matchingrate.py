@@ -705,7 +705,8 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
                                                         detectordistance=detectordistance,
                                                         detectordiameter=detectordiameter,
                                                         pixelsize=pixelsize,
-                                                        dim=dim)
+                                                        dim=dim,
+                                                        correctcenterfromxbet=None)
 
         # old calculation with spots instantiation
         #     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
@@ -732,7 +733,8 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
                                                     detectordistance=detectordistance,
                                                     detectordiameter=detectordiameter,
                                                     pixelsize=pixelsize,
-                                                    dim=dim)
+                                                    dim=dim,
+                                                    correctcenterfromxbet=None)
 
         # Y should be Q vectors corresponding to exp. twicetheta_data and chi_data
         Y = LaueGeo.from_twchi_to_q((twicetheta_data, chi_data)).T
@@ -810,7 +812,8 @@ def Angular_residues_np_multimatrices(ListMatrices, twicetheta_data, chi_data, a
                                                         detectordistance=detectordistance,
                                                         detectordiameter=detectordiameter,
                                                         pixelsize=pixelsize,
-                                                        dim=dim)
+                                                        dim=dim,
+                                                        correctcenterfromxbet=None)
         # print("matindex",matindex)
         Arr_Theo2Theta[matindex] = TheoTwicethetaChi[0][:NBMAXPEAKS]
         Arr_TheoChi[matindex] = TheoTwicethetaChi[1][:NBMAXPEAKS]

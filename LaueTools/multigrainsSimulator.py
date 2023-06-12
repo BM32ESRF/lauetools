@@ -210,6 +210,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         print("GrainSimulParam in dosimulation_parametric() input Element")
         print(GrainSimulParam)
 
+        # q vectors in lauetools frame + miller indices
         spots2pi = LAUE.getLaueSpots(DictLT.CST_ENERGYKEV / emax,
                                         DictLT.CST_ENERGYKEV / emin,
                                         [GrainSimulParam],  # bracket because of a list of one grain
@@ -218,15 +219,13 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                         kf_direction=kf_direction,
                                         dictmaterials=dictmaterials)
 
-        # q vectors in lauetools frame, miller indices
-        # print "spots2pi",spots2pi
-
         # ---------  [list of 3D vectors],[list of corresponding Miller indices]
 
         # remove Parent Grain Laue spots too close from detector border vicinity
         Qvectors_ParentGrain, HKLs_ParentGrain = LAUE.filterQandHKLvectors(spots2pi,
-                                                                    detectordistance,
-                                                                    detectordiameter, kf_direction)
+                                                            detectordistance,
+                                                            detectordiameter, kf_direction,
+                                                            shiftcentercamera=cameraAngles[0])
 
         # Qvectors_ParentGrain, HKLs_ParentGrain = spots2pi
 
@@ -431,7 +430,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                                     detectordiameter=detectordiameter*1.2,  # * 1.2, # avoid losing some spots in large transformation
                                                     kf_direction=kf_direction,
                                                     HarmonicsRemoval=1,
-                                                    pixelsize=pixelsize)
+                                                    pixelsize=pixelsize,
+                                                    shiftcentercamera=cameraAngles[0])
 
                     # for elem in Laue_spot_list[0][:10]:
                     # print elem
