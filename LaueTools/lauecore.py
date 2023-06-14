@@ -2137,6 +2137,6 @@ def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotL
                                         kf_direction=kf_direction,
                                         detectordistance=detectordistance,
                                         HarmonicsRemoval=HarmonicsRemoval,
-                                        correctcenterfromxbet=None) # could be xbet value
+                                        shiftcentercamera=None) # could be xbet value
 
     return True
