@@ -826,7 +826,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS:
-        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1",
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2', 'Alban'):
 
