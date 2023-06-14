@@ -377,6 +377,7 @@ dict_CCD = {
     "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5"),
     "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked"),
     "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M at BM32 ESRF", "edf"),
+    "RXO": ((512, 512), 0.4, 255, "no", 0 , "uint8", "RXO industrial detector", "tif"),
 }
 
 
