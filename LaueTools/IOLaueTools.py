@@ -469,6 +469,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'IMSTAR_bin1'
                 elif abs(ps-0.2) <= 0.001:
                     ccdlabel = 'Alban'
+                elif abs(ps-0.4) <= 0.001:
+                    ccdlabel = 'RXO'
 
 
                 CCDcalib['CCDLabel'] = ccdlabel
@@ -1078,7 +1080,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         iline = linepos_grain_list[grain_index]
 
         nb_indexed_spots = 0
-
+        ubb0found = 0
         while iline < linepos_grain_list[grain_index + 1]:
 
             line = f.readline()
