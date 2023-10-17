@@ -132,6 +132,7 @@ def OpenCorfile(filename, parent):
     print('parent.CCDLabel', parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
     parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][0]
+    parent.detectordiameter = IOLT.getdetectordiameter_from_corfile(filename)
 
 
     # set parent parameters:
@@ -271,9 +272,23 @@ def OpenPeakList(parent):
 
         # write .cor file
         prefixfilename = "dat_" + prefix
+
+        # ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
+        # "xpixelsize", "ypixelsize", "CCDLabel",
+        # "framedim", "detectordiameter", "kf_direction"]
+        Parameters_dict = {}
+        Parameters_dict["CCDLabel"] = parent.CCDLabel
+        Parameters_dict["CCDParam"] = parent.defaultParam
+        Parameters_dict["pixelsize"] = parent.pixelsize
+        Parameters_dict["framedim"] = parent.framedim
+        Parameters_dict["detectordiameter"] = parent.detectordiameter
+        Parameters_dict["kf_direction"] = parent.kf_direction
+        for k,v in zip(["dd", "xcen", "ycen", "xbet", "xgam"],parent.defaultParam[:5]):
+            Parameters_dict[k]=v
+
         IOLT.writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y,
                             dataintensity, sortedexit=0,
-                            param=parent.defaultParam + [parent.pixelsize],
+                            param=Parameters_dict,#parent.defaultParam + [parent.pixelsize],
                             initialfilename=DataPlot_filename,
                             dirname_output=parent.writefolder)
 
