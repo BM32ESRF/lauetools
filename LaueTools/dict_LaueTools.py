@@ -57,6 +57,7 @@ dict_Materials = {
     "Crocidolite_small": ["Crocidolite_small", [9.76 / 3, 17.93 / 3, 5.35 / 3, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Hematite": ["Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
     "Mg":["Mg",[3.2095,3.2095,5.2104,90,90,120],"no"],
+    "CaF2": ["CaF2", [5.463, 5.463, 5.463, 90, 90, 90], "fcc", ],  # GS 225 fcc 
     "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
     "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
@@ -349,6 +350,8 @@ dict_CCD = {
     "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif"],
     "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
     "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
+    "psl_IN_bmp": [(425, 640), 10/43., 256, "no", -1, "uint16", "camera from inst Neel ", "bmp", ],
+    "psl_IN_tif": [(425, 640), 10/43., 65535, "no", -1, "uint16", "camera from inst Neel ", "tif", ],
     "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
     "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff"),
     "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff"),
@@ -366,7 +369,7 @@ dict_CCD = {
     "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff"),
     "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif"),
     "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif"),
-    "Alban": [(1504, 1499), 0.2, 65535, "no", -1, "uint16", "Alban de vaucorbeil detector australia", "tif"],
+    "Alban": [(1504, 1499), 0.2, 65535*65535, "no", -1, "uint32", "Alban de vaucorbeil detector australia", "tif"],
     "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd"),  # 2X2, saturation value depends on gain and DAC
     "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf"),
     "TIFF Format": (-1, -1, "", "", "", "" "CCD parameters read from tiff header", "tiff", ),
