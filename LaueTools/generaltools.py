@@ -764,6 +764,9 @@ def find_closest(input_array, target_array, tol):
     from stats.py
     """
     input_array_len = len(input_array)
+
+    # print('input_array',input_array)
+    # print('target_array',target_array)
     closest_indices = np.searchsorted(input_array, target_array)  # determine the locations of target_array in input_array
     acc_rej_indices = [-1] * len(target_array)
     curr_tol = [tol] * len(target_array)
