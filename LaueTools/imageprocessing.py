@@ -1299,7 +1299,7 @@ def circularMask(center, radius, arrayshape):
     return cond
 
 
-def compute_autobackground_image(dataimage, boxsizefilter=10, CCDlabel='sCMOS'):
+def compute_autobackground_image(dataimage, boxsizefilter=10):
     r"""
     return 2D array of filtered data array
     :param dataimage: array of image data
@@ -1309,7 +1309,7 @@ def compute_autobackground_image(dataimage, boxsizefilter=10, CCDlabel='sCMOS'):
     # if CCDlabel in ("EIGER_4M",): # rapid removal of -1 value
     #     dataimage = np.ma.masked_values(dataimage, -1)
 
-    print('min dataimage in compute_autobackground_image',np.amin(dataimage))
+    #print('min dataimage in compute_autobackground_image',np.amin(dataimage))
 
     bkgimage = filter_minimum(dataimage, boxsize=boxsizefilter)
 
@@ -1348,7 +1348,7 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
     #     if framedim not in ((2048, 2048), [2048, 2048]):
     #         raise ValueError, "Background removal still implemented for non squared camera "
     # computing substraction on whole array
-    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_fliplr", "EIGER_4M"):
+    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_fliplr", "EIGER_4M", 'Alban', 'psl_IN_tif'):
         usemask = False
 
     if CCDlabel in ("EIGER_4M",): # rapid removal of -1 value. TODO better use NaN mask...
