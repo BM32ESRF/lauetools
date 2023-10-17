@@ -144,7 +144,7 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
         print("Qrot/Qrotn", Qrot / Qrotn)
         print("twthe, chi", twthe, chi)
 
-    if kf_direction in ('X>0'):
+    if kf_direction in ('X>0', 'X<0'):
         outputenergy = 0
         X, Y, theta= F2TC.calc_xycam_from2thetachi(twthe,
                                                     chi,
@@ -332,6 +332,10 @@ def error_function_on_demand_calibration(param_calib,
                                     depthcorrection=False)
 
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y - pixY) ** 2)
+    if 0:
+        deltaY = (Y - pixY)  # we may need to have deltaY > 0 only to some extent (source not too much in depth)
+        deltaY = np.where(deltaY < 0, -deltaY*10., deltaY)
+        distanceterm = np.sqrt((X - pixX) ** 2 + deltaY ** 2)
 
     if (weights is not None):  # take into account the exp. spots intensity as weight in cost distance function
         allweights = np.sum(weights)
@@ -531,11 +535,11 @@ def error_function_on_demand_strain(param_strain,
     in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
     Bmat=  B0 matrix
 
-    :param depth: depth in microns under sample surface (vertically) (not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this depth (expressed in pixel)
+    :param depth: normal to surface depth in microns (under sample surface, not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this depth (expressed in pixel)
     Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
     """
 
-    print('kf_direction in error_function_on_demand_strain',kf_direction)
+    #print('kf_direction in error_function_on_demand_strain',kf_direction)
     #print('param_strain in error_function_on_demand_strain', param_strain)
 
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
@@ -844,6 +848,8 @@ def fit_on_demand_strain(starting_param,
     allparameters = 5calibdetectorparams + fivestrainparameter + 3deltaangles of orientations
     starting_param = [fivestrainparameter + 3deltaangles of orientations] = [1,1,0,0,0,0,0,0]  typically
     arr_indexvaryingparameters = range(5,13)
+
+    :param depth: normal to surface depth in microns
     """
 
     # All miller indices must be entered in miller, selection is done in xy_from_Quat with nspots (array of indices)
