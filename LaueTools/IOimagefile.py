@@ -266,7 +266,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
         imageindex = int(imagefilename[-(5 + nbdigits) : -5])
     elif imagefilename.endswith("mar.tif"):
         imageindex = int(imagefilename.split("_")[-2])
-    elif imagefilename.endswith(".tif"):
+    elif imagefilename.endswith((".tif", "bmp")):
         # TODO: treat the case of HN56.tif  without underscore (see setfilename)
         imageindex = int(imagefilename.split("_")[-1][:-4])
     elif imagefilename.endswith("mccd"):
@@ -818,17 +818,18 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     USE_RAW_METHOD = False
 
-    if verbose > 1:
+    if 1:# verbose > 1:
         print("CCDLabel in readCCDimage", CCDLabel)
         print('FABIO_EXISTS',FABIO_EXISTS)
         print('LIBTIFF_EXISTS',LIBTIFF_EXISTS)
         print('PIL_EXISTS',PIL_EXISTS)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if FABIO_EXISTS:
+    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp'):
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
-                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021','ImageStar_dia_2021_2x2', 'Alban'):
+                        "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
+                        'ImageStar_dia_2021_2x2','psl_IN_tif'):#, 'Alban'):
 
             if 1: #verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
@@ -877,14 +878,12 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif LIBTIFF_EXISTS:
+    elif LIBTIFF_EXISTS and CCDLabel in ("Alban",):
         if 1: #verbose > 1:
             print("----> Using libtiff...")
         if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "EIGER_4M","FRELONID15_corrected", "VHR_PSI",
-                            "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", "sCMOS_16M"):
-
-            #         print "tiff format", CCDLabel
-            #             print "dirname, filename", dirname, filename
+                            "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", "sCMOS_16M", "Alban", ):
+            
             if dirname is not None:
                 tifimage = TIFF.open(os.path.join(dirname, filename), mode="r")
             else:
@@ -895,6 +894,21 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         int(tifimage.GetField("ImageWidth")))
             if tifimage.IsByteSwapped():
                 dataimage = dataimage.byteswap()
+                
+            if CCDLabel in ("Alban",):  # float from summation in imageJ
+                print("amin()", np.amin(dataimage))
+                print('pixel val',dataimage[455,590])
+                ampli = np.amax(dataimage)-np.amin(dataimage)
+                dataimage = (dataimage-np.amin(dataimage))/ampli*60000
+                print("amin(), amax()", np.amin(dataimage), np.amax(dataimage))
+                a2=np.round(dataimage, decimals=0)
+                dataimage = np.array(a2, dtype=np.int16)
+                print('pixel val',dataimage[455,590])
+                print("amin(), amax()", np.amin(dataimage), np.amax(dataimage))
+
+                dataimage=np.where(dataimage<0,2*65535-dataimage, dataimage)
+                print('pixel val',dataimage[455,590])
+                print("amin(), amax()", np.amin(dataimage), np.amax(dataimage))
 
             # if CCDLabel==("EIGER_4M",):
             #     dataimage = np.ma.masked_values(dataimage, -1)
@@ -907,7 +921,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         if CCDLabel in ("sCMOS", "MARCCD165", "sCMOS_16M"):
             if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile I will use PIL...')
             USE_RAW_METHOD = True
-        elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba"):
+        elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", ):
             # data are compressed!
 
             if dirname is not None:
@@ -917,6 +931,18 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
             im = Image.open(fullpath, "r")
             dataimage = np.array(im.getdata()).reshape(framedim)
+
+        elif CCDLabel in ("psl_IN_bmp",):
+            # data are compressed!
+
+            if dirname is not None:
+                fullpath = os.path.join(dirname, filename)
+            else:
+                fullpath = filename
+
+            im = Image.open(fullpath, "r")
+            dataimageraw = np.asarray(im)
+            dataimage = np.amax(dataimageraw)-dataimageraw
 
     # RAW method knowing or deducing offsetheader and dataformat
     if USE_RAW_METHOD:
