@@ -1912,7 +1912,7 @@ def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
 
     :param removeharmonics: 1, remove harmonics spots and keep fondamental spots
                             (with lowest Miller indices)
-    :param depth: depth (in microns) of the sample point that produces Laue pattern. Default = 0 (impact point at sample surface). Positive depth towards inside the sample  (// k_i)
+    :param depth: depth (in microns) of the sample point that produces Laue pattern. Default = 0 (impact point at sample surface). Positive depth towards inside the sample  (// k_i) ie along the beam direction
 
     :return: single grain data: Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
