@@ -156,7 +156,7 @@ class DraggableLine(object):
             xylimits = None
         elif self.datatype == "gnomon":
             limited_to_positive_integers = False
-            xylimits = (-1, 1, -1, 1)
+            xylimits = (-10, 10, -10, 10)
         elif self.datatype == "2thetachi":
             # draw lines is useless
             return
