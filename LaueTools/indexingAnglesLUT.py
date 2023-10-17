@@ -644,7 +644,8 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
                                                                         MaxRadiusHKL=False,
                                                                         applyExtinctionRules=None,
                                                                         verbose=0,
-                                                                        excludespotspairs=None):
+                                                                        excludespotspairs=None,
+                                                                        LUTfraction=1/2.):
     r"""
     returns list of pair of planes and exp pairs of spots that match an angle in a reference LUT.
     LUT is computed from B (Gstar)
@@ -668,6 +669,8 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
     orientation matrix is then given with respect the frame in which is expressed B
 
     :param applyExtinctionRules: apply hkl filtering when building the LUT (if LUT =None)
+
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
     """
     # possible_couplespots, possible_coupleplanes = plane_type_attribution(spot_index,
     # ang_tol,
@@ -695,7 +698,8 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
             print("k,angle = ", spotindex_2, angle)
             print("-*-*-*----------------------------------------------------\n")
 
-        hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=0, verbose=verbose)  # LUT is provided !
+        hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=0,
+                                  LUTfraction=LUTfraction,verbose=verbose)  # LUT is provided !
 
         if hkls is not None:
             nbpairs = len(hkls)
@@ -726,15 +730,17 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                                                             worker=None,
                                                             dictmaterials=DictLT.dict_Materials,
                                                             LUT_with_rules=True,
-                                                            excludespotspairs=None):
+                                                            excludespotspairs=None,
+                                                            minimumnbmatricesformultiprocessing=1000,
+                                                            LUTfraction=1/2.):
     """
     find ub matrices and compute corresponding matching rate from two exp. spots 
     
-    angdist   : scalar
-    coords_1   2theta, chi
-    twiceTheta_exp :  all 2theta values (to compute matching rate of Laue Patterns)
+    :param angdist: scalar, tolerance angle
+    :param coords_1:   2theta, chi
+    :param twiceTheta_exp :  all 2theta values (to compute matching rate of Laue Patterns)
 
-    LUT: look-up-table , if None, a LUT will be built
+    :param LUT: look-up-table , if None, a LUT will be built
 
     LUT_with_rules:
 
@@ -772,7 +778,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                                                                 verbose=verbose,
                                                                 dictmaterials=dictmaterials,
                                                                 LUT_with_rules=LUT_with_rules,
-                                                                excludespotspairs=excludespotspairs)
+                                                                excludespotspairs=excludespotspairs,
+                                                                LUTfraction=LUTfraction)
 
     solutions_matorient_index = []
     solutions_spotscouple = []
@@ -781,7 +788,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     solutions_matchingrate = []
 
     if verbose:
-        print("len(list_orient_matrix)", len(list_orient_matrix))
+        print("nb matrices", len(list_orient_matrix))
         print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
             % (ang_tol_MR))
 
@@ -794,9 +801,9 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     # TODO: use multiprocessing if nb_UB_matrices > 1000
 
 
-    print('\n\n**** nb_UB_matrices',nb_UB_matrices)
+    print('\n\n**** nb_UB_matrices in getUBs_and_MatchingRate()',nb_UB_matrices)
     # Thanks to Ravi
-    if nb_UB_matrices > 1000:
+    if nb_UB_matrices > minimumnbmatricesformultiprocessing:
         args = zip(list_orient_matrix,
                    itertools.repeat(twiceTheta_exp),
                    itertools.repeat(Chi_exp),
@@ -827,6 +834,10 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
 
     else: # usual one cpu way
 
+        if 0:
+            print('matrices found')
+            print(list_orient_matrix)
+
         for mat_ind in list(range(nb_UB_matrices)):
             if WORKEREXIST:
                 #             print "there is a worker !!"
@@ -838,6 +849,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
             if (mat_ind % 20) == 0:
                 print("Calculating matching with exp. data for matrix #%d / %d" % (mat_ind,
                                                                                     nb_UB_matrices))
+                print('matrix is:\n',list_orient_matrix[mat_ind])
+                #print('detectorparameters',detectorparameters)
             # compute matching rate and store if high
             AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                         twiceTheta_exp,
@@ -848,6 +861,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                                                         ang_tol=ang_tol_MR,
                                                         detectorparameters=detectorparameters,
                                                         dictmaterials=dictmaterials)
+            
 
             if AngRes is None:
                 continue
@@ -936,7 +950,8 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
                                 verbose=0,
                                 dictmaterials=DictLT.dict_Materials,
                                 LUT_with_rules=True,
-                                excludespotspairs=None):
+                                excludespotspairs=None,
+                                LUTfraction=1/2.):
     r"""
     returns list of pair of planes and exp pairs of spots that match an angle in a reference LUT.
     (a LUT if not given, is computed (and returned). LUT building uses B (Gstar)
@@ -957,10 +972,10 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
 
     orientation matrix is then given with respect the frame in which is expressed B
 
-    set_hkl_1     : if not None, [h,k,l] of spot #1
+    :param set_hkl_1     : if not None, [h,k,l] of spot #1
 
-    LUT_with_rules: True, apply extinctions rules when computing LUT
-
+    :param LUT_with_rules: True, apply extinctions rules when computing LUT
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
     :return: (matrix_list, pairplanes, pairspots), LUT
 
@@ -994,7 +1009,8 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
                                         applyExtinctionRules=Rules)
 
         # LUT is provided now for sure!
-        hkls = FindO.PlanePairs_2(exp_angular_dist, angle_tol, LUT, onlyclosest=0, verbose=verbose)
+        hkls = FindO.PlanePairs_2(exp_angular_dist, angle_tol, LUT, onlyclosest=0,
+                                  LUTfraction=LUTfraction,verbose=verbose)
 
     #         print "nb of hkls found in LUT:", len(hkls)
     #         print "hkls:", hkls
@@ -1038,8 +1054,7 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
         PPs_list.append([hkls, spot_index_2, nbpairs])
         if verbose:
             print("hkls, plane_indices spotindex_2, nbpairs", hkls, spot_index_2, nbpairs)
-
-    #     print "PPs_list", PPs_list
+            print('B matrix', B)
 
     matrix_list, pairplanes, pairspots = Loop_on_PlanesPairs_and_Get_Matrices(PPs_list,
                                                                 spot_index_1,
@@ -1056,6 +1071,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
                                                     excludespotspairs=None):
     r"""
     loop on possible planes couples (PP) from recognised distances from a single spot (of index spot_index)
+    and compute corresponding matrices
 
     :param excludespotspairs:  list of pair of spot indices already taken into account
 
@@ -1068,10 +1084,15 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
     coords  :  2theta chi spots coordinates
     """
+    #verbose = 1
+
     if excludespotspairs is None:
         excludespotspairs = [[0, 0]]
 
-    if verbose: print("** --Loop_on_PlanesPairs_and_Get_Matrices() --**")
+    if verbose:
+        print("** --Loop_on_PlanesPairs_and_Get_Matrices() --**")
+        print()
+
 
     pairspots = []
     matrix_list = []
@@ -1122,19 +1143,18 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             print("hlks_shape", hlks_shape)
             print("hkls", hkls)
             print("nb_pairs", nb_pairs)
-            print('spot_index, spotindex_2', spot_index, spotindex_2)
+            print('spot_index, spotindex_2 :  ', spot_index, spotindex_2)
 
         # loop over the plane pairs
         for planepair in hkls:
-
             hkl1, hkl2 = planepair
             #print('planepair: ', planepair)
-            # print("hkl1, hkl2 ", hkl1, hkl2)
-            # print "coord1,coord2", coord1,coord2
+            #print("hkl1, hkl2 ", hkl1, hkl2)
+            #print("coord1,coord2", coord1,coord2)
             # print "spot_index, spotindex_2",spot_index, spotindex_2
 
             if np.sum(np.abs(np.cross(hkl1, hkl2))) < 0.00000001:
-                #print("parallel planes ...")
+                if verbose: print("parallel planes ...")
                 continue
 
             matrix = FindO.OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
@@ -1144,12 +1164,24 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
 
-            if np.linalg.det(matrix)<0: # orientation matrix must be direct
-                continue
+            if np.linalg.det(matrix)>0: # orientation matrix must be direct
+                matrix_list.append(matrix)
+                pairplanes.append([hkl1, hkl2])
+                pairspots.append([spot_index, spotindex_2])
 
-            matrix_list.append(matrix)
-            pairplanes.append([hkl1, hkl2])
-            pairspots.append([spot_index, spotindex_2])
+                if verbose:
+                    print("\n *** in matrices_from_onespot_new")
+                    print("pair of lattice planes ", hkl1, hkl2)
+                    print([coord1, coord2])
+                    print("matrix", matrix)
+            else:    
+                if verbose:
+                    print('\n--- matrix rejected because of negative determinant')
+                    print('matrix',matrix)
+                    print('for planepair',hkl1, hkl2)
+                
+
+            
 
             # ---compute matrix by swaping hkl1 and hkl2
 
@@ -1157,6 +1189,10 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
                                                         verbose="no", frame="lauetools")
 
             if np.linalg.det(matrix)<0:
+                if verbose:
+                    print('\n--- matrix rejected because of negative determinant')
+                    print('matrix',matrix)
+                    print('for planepair',hkl2, hkl1)
                 continue
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
@@ -1166,10 +1202,9 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             pairspots.append([spot_index, spotindex_2])
 
             if verbose:
-                print("in matrices_from_onespot_new")
-                print("pair of lattice planes ", hkl1, hkl2)
+                print("\n**** in matrices_from_onespot_new (swaped)")
+                print("pair of lattice planes ", hkl2, hkl1)
                 print([coord1, coord2])
-                print("spot_index_2", spotindex_2)
                 print("matrix", matrix)
 
     return matrix_list, pairplanes, pairspots
@@ -1192,7 +1227,8 @@ def getOrientMatrix_from_onespot(spot_index,
                                 detectorparameters=None,
                                 verbose=0,
                                 dictmaterials=DictLT.dict_Materials,
-                                LUT_with_rules=True):
+                                LUT_with_rules=True,
+                                LUTfraction=1/2.):
     """
     TODO: to delete only used in multigrain.py
 
@@ -1221,6 +1257,8 @@ def getOrientMatrix_from_onespot(spot_index,
 
     LUT_with_rules :
 
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission) 
+
     TODO: to make it more compact !! there are too much copy-paste
     TODO: in the main loop should start at spot_index +1   !!!
     """
@@ -1233,14 +1271,8 @@ def getOrientMatrix_from_onespot(spot_index,
         raise ValueError("Need a tolerance angle to compute matching rate!")
     if MatchingThresholdStop in (None, 0.0, 100.0, 0, 100):
         AngTol_LUTmatching = 0.5
-        res_onespot = getOrientMatrices(spot_index,
-                                        emax,
-                                        table_angdist,
-                                        twiceTheta / 2.0,
-                                        Chi,
-                                        n=n,
-                                        B=B,
-                                        cubicSymmetry=cubicSymmetry,
+        res_onespot = getOrientMatrices(spot_index, emax, table_angdist, twiceTheta / 2.0, Chi,
+                                        n=n, B=B, cubicSymmetry=cubicSymmetry,
                                         LUT=LUT,
                                         ResolutionAngstrom=ResolutionAngstrom,
                                         LUT_tol_angle=AngTol_LUTmatching,
@@ -1254,7 +1286,8 @@ def getOrientMatrix_from_onespot(spot_index,
                                         addMatrix=None,
                                         verbose=1,
                                         dictmaterials=dictmaterials,
-                                        LUT_with_rules=LUT_with_rules)
+                                        LUT_with_rules=LUT_with_rules,
+                                        LUTfraction=LUTfraction)
 
         print("res_onespot", res_onespot)
         matrix = res_onespot[0][0]
@@ -1302,7 +1335,8 @@ def getOrientMatrix_from_onespot(spot_index,
             print("k,angle = ", spotindex_2, angle)
             print("-----------------------------------------------------------\n")
 
-        hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=1, verbose=0)
+        hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=1,
+                                  LUTfraction=LUTfraction, verbose=0)
 
         if hkls is not None and (spot_index != spotindex_2):
             nbpairs = len(hkls)
@@ -1538,13 +1572,17 @@ def flatnestedlist(list_of_lists):
 def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, nLUT,
                                             key_material, LUT_tol_angle, detectorparameters,
                                             minimumNbMatches=15,
-                                            LUT_with_rules=True):
+                                            LUT_with_rules=True,
+                                            minimumnbmatricesformultiprocessing=1000,
+                                            LUTfraction=1/2.):
     """find orientation matrices and scores from the mutual angles recognition
     in a subset of spots
 
     LUT_with_rules:
 
-    .. note:: used in Autoindexation  if max setA > max setB
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
+
+    .. note:: not used anywhere ...?
     """
 
     print("\n\n ----------------\n ---  getOrientMatrices_SubSpotsSets  --- \n --------------------\n\n")
@@ -1601,7 +1639,8 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
 
         # print('expdistance_2spots  = ', expdistance_2spots)
 
-        UBS_MRS = getUBs_and_MatchingRate(spot_index_1,
+        # (List_UBs, List_Scores), LUT
+        UBS_MRS, _ = getUBs_and_MatchingRate(spot_index_1,
                                             spot_index_2,
                                             LUT_tol_angle,
                                             expdistance_2spots,
@@ -1616,12 +1655,14 @@ def getOrientMatrices_SubSpotsSets(selectedspots_ind, emax, Theta_exp, Chi_exp, 
                                             emax=emax,
                                             ang_tol_MR=LUT_tol_angle,
                                             detectorparameters=detectorparameters,
-                                            verbosedetails=False)
+                                            verbosedetails=False,
+                                            minimumnbmatricesformultiprocessing=minimumnbmatricesformultiprocessing,
+                                            LUTfraction=LUTfraction)
 
-        # print('UBS_MRS',UBS_MRS)
+        print('UBS_MRS in getOrientMatrices_SubSpotsSets()',UBS_MRS)
 
         # no matrices found for this pair i1,i2
-        if len(UBS_MRS[0]) == 0:
+        if len(UBS_MRS[0]) == 0 or UBS_MRS[0]==([],[]):
             print('nb of UBs for this pair [%d, %d]: '%(spot_index_1, spot_index_2), len(UBS_MRS[0]))
             continue
 
@@ -1673,7 +1714,8 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
                                     set_hkl_1=None,
                                     minimumNbMatches=15,
                                     LUT_with_rules=True,
-                                    excludespotspairs=None):
+                                    excludespotspairs=None,
+                                    LUTfraction=1/2.):
     """find orientation matrices and scores from the mutual angles recognition
     from two Sets of spots
 
@@ -1710,6 +1752,8 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
     :param set_hkl_1:
 
     :param LUT_with_rules:
+
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
     :return:
         * [0]  list of potential Orientation Matrices (UB)
@@ -1778,7 +1822,7 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
         if spot_index_1 == spot_index_2:
             continue
 
-        if [spot_index_1, spot_index_2] not in probedpairs:
+        if [spot_index_1, spot_index_2] not in probedpairs or [spot_index_2, spot_index_1] not in probedpairs:
             probedpairs.append([spot_index_1, spot_index_2])
             # Table of distances is very small (nb selected spots**2)
             expdistance_2spots = Tabledistance[i1, i2]
@@ -1812,9 +1856,10 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
                                                     detectorparameters=detectorparameters,
                                                     Minimum_Nb_Matches=minimumNbMatches,
                                                     verbosedetails=False,
-                                                    LUT_with_rules=LUT_with_rules)
+                                                    LUT_with_rules=LUT_with_rules,
+                                                    LUTfraction=LUTfraction)
 
-        print('UBS_MRS', UBS_MRS)
+        print('UBS_MRS in getOrientMatrices_fromTwoSets()', UBS_MRS)
 
         # no matrices found for this pair i1,i2
         if len(UBS_MRS[0]) == 0:
@@ -1886,7 +1931,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                             dictmaterials=DictLT.dict_Materials,
                                             MaxRadiusHKL=False,
                                             LUT_with_rules=True,
-                                            excludespotspairs=None):
+                                            excludespotspairs=None,
+                                            LUTfraction=1/2.):
     """
     Return all matrices that have a matching rate Minimum_Nb_Matches.
     Distances between two spots are compared to a reference
@@ -1921,6 +1967,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     set_central_spots_hkl    : list of hkls to set hkl for central spots (otherwise None)
                                 to set one element
     LUT_with_rules:
+
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
     Output:
     [0]  candidate Matrices
@@ -2152,7 +2200,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                                                                     B,
                                                                     LUT=LUT,
                                                                     verbose=verbose,
-                                                                    excludespotspairs=excludespotspairs)
+                                                                    excludespotspairs=excludespotspairs,
+                                                                    LUTfraction=LUTfraction)
         if len(list_orient_matrix) == 0:
             print('\n\n ----- len(list_orient_matrix)  is 0 \n\n', len(list_orient_matrix))
 
@@ -2171,7 +2220,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
         nb_ub_matrices = len(list_orient_matrix)
 
-        print("len(list_orient_matrix)", nb_ub_matrices)
+        print("nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
 
         if nb_ub_matrices>1250:
             
@@ -2530,7 +2579,8 @@ def getOrients_AnglesLUT(spot_index_central,
                         verbose=1,
                         dictmaterials=DictLT.dict_Materials,
                         applyExtinctionRules=None,
-                        LUT_with_rules=True):
+                        LUT_with_rules=True,
+                        LUTfraction=1/2.):
     """
     TODO: obsolete not used anymore ?
 
@@ -2569,6 +2619,8 @@ def getOrients_AnglesLUT(spot_index_central,
                             'detectordiameter', detector diameter (mm)
 
     LUT_with_rules:
+
+    :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
     Output:
     [0]  candidate Matrices
@@ -2628,7 +2680,8 @@ def getOrients_AnglesLUT(spot_index_central,
                                         MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
                                         verbose=0,
                                         detectorparameters=detectorparameters,
-                                        LUT_with_rules=LUT_with_rules)
+                                        LUT_with_rules=LUT_with_rules,
+                                        LUTfraction=LUTfraction)
 
         print("Res", Res)
         print("for spot central relative index %d" % spot_index_central)
