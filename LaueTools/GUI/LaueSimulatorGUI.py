@@ -502,19 +502,27 @@ class SlipSystemPanel(wx.Panel):
         buttontransform.Bind(wx.EVT_BUTTON, self.mainframe.OnApplytransformSlipSystems)
         buttontransform.SetFont(font3)
 
+        secondmiddle = wx.StaticText(self, -1, "Stacking faults Transformations")
+        secondmiddle.SetFont(font3)
+
+        sftransform = wx.Button(self, -1, "Apply transforms", size=(150, 35))
+        sftransform.Bind(wx.EVT_BUTTON, self.mainframe.OnApplytransformStackingFaults)
+        sftransform.SetFont(font3)
+
         self.mainframe.transform_index = 0
         self.mainframe.dict_transform = {}
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(titlemiddle)
-
         vbox.Add(buttontransform)
+        vbox.Add(secondmiddle)
+        vbox.Add(sftransform)
 
         self.SetBackgroundColour("sky Blue")
 
         self.SetSizer(vbox)
 
-    def ReadTransform(self):
+    def ReadTransform(self):  #slipsystems
         """
         build lists of parameters for the simulation of set of grains
         """
@@ -553,6 +561,33 @@ class SlipSystemPanel(wx.Panel):
         all_angles = np.tile(angle_rot, nbsystems)
 
         return "r_axis_d_slipsystem", all_angles, all_axes
+    
+    def ReadTransformStackingFaults(self):
+        """
+        build lists of parameters for the simulation of set of grains stacking faults in fcc
+        """
+        print("ReadTransform  stackingfault")
+        Bmatrix = self.mainframe.Bmatrix_current
+
+        # mirror normal in crystal frame
+        d1 = np.array([1,1,1])
+        d2 = np.array([-1,1,1])
+        d3 = np.array([1,-1,1])
+        d4 = np.array([1,1,-1])
+
+        amplitude = 0.03   # in q space unit
+        nbofsubgrains = 9
+        t = np.linspace(-amplitude,amplitude,nbofsubgrains)
+
+        dq1 = np.outer(t, d1) 
+        dq2 = np.outer(t, d2)
+        dq3 = np.outer(t, d3)
+        dq4 = np.outer(t, d4)
+
+        allstackingsets = np.concatenate((dq1,dq2,dq3,dq4))
+        # allstackingsets =dq1
+
+        return "StackingFaults", allstackingsets, None
 
 
 class SimulationPanel(wx.Panel):
@@ -794,7 +829,6 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         # defines self.hboxbottom  sizer
         self.bottompanel()
-
         self.nb0 = wx.Notebook(self.panel, -1, style=0)
 
         self.centerpanel = TransformPanel(self.nb0)
@@ -802,11 +836,9 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.rightpanel = SimulationPanel(self.nb0)
 
         self.nb0.AddPage(self.centerpanel, "Transforms")
-        self.nb0.AddPage(self.centerpanel2, "SlipSystems")
+        self.nb0.AddPage(self.centerpanel2, "PredefinedTransforms")  # SlipSystems
         self.nb0.AddPage(self.rightpanel, "Simulation")
-
         self.nb0.SetSelection(2)
-
         self.nb0.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChange_nb0)
 
         # tooltips
@@ -1335,6 +1367,49 @@ class parametric_Grain_Dialog3(wx.Frame):
             self.ParentGrainname = grainindex
 
             alltransforms = self.centerpanel2.ReadTransform()
+
+            # create or update transform dictionary
+            self.dict_transform[transform_name] = alltransforms
+            print("in OnApplytransform -----")
+            print("self.SelectGrains", self.SelectGrains)
+            print("self.dict_transform", self.dict_transform)
+        else:
+            print("Please! Select a parent grain to be slightly transformed!")
+
+        self.transform_index += 1
+        event.Skip()
+
+    def OnApplytransformStackingFaults(self,event):
+        num_items = self.LC.GetItemCount()
+
+        if num_items < 1:
+            wx.MessageBox("You must select a grain before calculating some geometrical transforms!", "ERROR")
+        grainindex = self.LC.GetItemText(self.LC.GetFocusedItem())
+        selectitem = self.LC.GetFocusedItem()
+        print(" OnApplytransformname", grainindex)
+        print("total num_items", num_items)
+        print("selectitem", selectitem)
+
+        if grainindex:
+            colindex_transform_p = 7
+            transform_name = "Tr_%dStackingFault" % self.transform_index
+
+            self.LC.SetStringItem(selectitem, colindex_transform_p, transform_name)
+
+            self.dict_grain_created[grainindex][colindex_transform_p] = transform_name
+            self.SelectGrains[grainindex] = self.dict_grain_created[grainindex]
+
+            # B matrix or T B matrix form slected grains
+
+            Bmatrix_key = self.SelectGrains[grainindex][4]
+            Transform_C_key = self.SelectGrains[grainindex][5]
+            B_matrix = DictLT.dict_Vect[Bmatrix_key]
+            Transform_crystalframe = DictLT.dict_Transforms[Transform_C_key]
+
+            self.Bmatrix_current = np.dot(B_matrix, Transform_crystalframe)
+            self.ParentGrainname = grainindex
+
+            alltransforms = self.centerpanel2.ReadTransformStackingFaults()
 
             # create or update transform dictionary
             self.dict_transform[transform_name] = alltransforms
