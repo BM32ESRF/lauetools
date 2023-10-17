@@ -286,6 +286,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 axis_list = np.dot(matOrient, axis_list_c.T).T
             #                 print "axis_list in absolute frame from d frame", axis_list
 
+            elif Transform_listparam[0] in ("StackingFaults",):
+                nb_transforms = len(Transform_listparam[1])
             # general transform expressed in absolute lauetools frame
             elif Transform_listparam[0] == "r_axis_c":
                 axis_list = Transform_listparam[2]
@@ -300,7 +302,6 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
             elif Transform_listparam[0] == "r_mat":
                 matrix_list = Transform_listparam[1]
                 nb_transforms = len(matrix_list)
-
                 # general transform expressed in crystal frame
 
             elif Transform_listparam[0] == "r_mat_d":
@@ -348,6 +349,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         calib = [detectordistance, posCEN[0], posCEN[1], cameraAngles[0], cameraAngles[1]]
         # -----------------------------------------------------
         # loop over child grains derived from transformation of a single parent grain
+        print('nb_transforms', nb_transforms)
         for ChildGrain_index in range(nb_transforms):
             # Qvectors_ParentGrain is used to create Qvectors_ParentGrain for each chold grain
             # according to the transform
@@ -363,9 +365,19 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 qvectors_ChildGrain = GT.rotate_around_u(Qvectors_ParentGrain[0],
                                                             angle_list[ChildGrain_index],
                                                             u=axis_list[ChildGrain_index])
+                
+                print('qvectors_ChildGrain',qvectors_ChildGrain)
                 # list of spot which are on camera(without harmonics)
                 # hkl are common to all child grains
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
+
+            elif Transform_listparam[0] in ("StackingFaults",):
+                print('Qvectors_ParentGrain[0]', Qvectors_ParentGrain[0])
+                qvectors_ChildGrain=Transform_listparam[1][ChildGrain_index]+Qvectors_ParentGrain[0]
+ 
+
+                spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
+
 
             # for general transform expressed in any frame
             elif (Transform_listparam[0] == "r_mat" or
@@ -387,6 +399,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 #     print("GrainSimulParam", GrainSimulParam)
                 #     print("qvectors_ChildGrain", qvectors_ChildGrain[:10])
                 # list of spot which are on camera(without harmonics)
+                print('qvectors_ChildGrain.shape',qvectors_ChildGrain.shape)
+
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
             # for the three consecutive axial strains
@@ -405,6 +419,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     factor_list[2][ChildGrain_index],
                     u=axis_list[2][ChildGrain_index])
                 # list of spots for a child grain (on camera + without harmonics)
+                print('qvectors_ChildGrain.shape',qvectors_ChildGrain.shape)
+
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
             else:
