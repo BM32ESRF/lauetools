@@ -83,7 +83,7 @@ def read_disttable(picklefilename=None):
     from main planes (1,0,0),(1,1,0) up to (3,2,1)  type
     """
     if picklefilename is not None:
-        ar_distances = read_LUT(picklefilename)
+        ar_distances,_,_,_ = read_LUT(picklefilename)
         print("Cubic distance table read from a pickled file %s"%picklefilename)
     else:
         ar_distances = np.array([8.13000011, 10.02499962, 10.89299965, 11.48999977, 14.76299953, 15.79300022, 17.02400017,
@@ -168,8 +168,6 @@ def create_AdjencyMatrix(Tabledistance, ReferenceTable, ang_tol, nb_of_spots, ve
     # print GT.find_closest(ReferenceTable ,Tabledistance[elem],ang_tol)[1]
     # print GT.find_closest(ReferenceTable ,Tabledistance[elem],ang_tol)[1]+elem*nb_of_spots
 
-    # enthought python 2.4
-    # john=map(lambda elem: mytab.put(1,    GT.find_closest(ReferenceTable ,Tabledistance[elem],ang_tol)[1]  +elem*nb_of_spots),  arange(nb_of_spots) )
     # enthought python 2.5 (reversed order of args!!)
     adjtab1D = [mytab.put(
             GT.find_closest(ReferenceTable, Tabledistance[elem], ang_tol)[1] + elem * nb_of_spots, 1)
@@ -289,7 +287,7 @@ def give_bestclique(filename, nb_of_spots, ang_tol, nodes=0, col_Int=-1,
     # GGraw = NX.from_whatever(adjencymat, create_using=NX.Graph()) # old syntax
     GGraw = NX.to_networkx_graph(adjencymat, create_using=NX.Graph())
 
-    # print adjencymat
+    print('adjencymat',adjencymat)
     # print shape(adjencymat)
     # print adjencymat[0]
 
