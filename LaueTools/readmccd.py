@@ -1187,7 +1187,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         if Data_for_localMaxima == "auto_background":
             if verbose:
                 print("computing background from current image ", filename)
-            backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10, CCDLabel=CCDLabel)
+            backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10)
             # basic substraction
             usemask = True
         # path to a background image file
