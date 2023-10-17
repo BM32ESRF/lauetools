@@ -345,11 +345,6 @@ def getProximity_multimatrices(Arr_Theo2Theta, Arr_TheoChi, data_theta, data_chi
     # # exp data
     sorted_data = array([data_theta, data_chi]).T
 
-    #     table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
-    #     print "table_dist_old", table_dist[:5, :5]
-    #     print "table_dist_old", table_dist[-5:, -5:]
-    #     print "table_dist_old", table_dist.shape
-
     print('sorted_data.shape', sorted_data.shape)
     print('Arr_Theo2Theta.shape', Arr_Theo2Theta.shape)
 
@@ -360,7 +355,7 @@ def getProximity_multimatrices(Arr_Theo2Theta, Arr_TheoChi, data_theta, data_chi
                                         signchi * np.ravel(Arr_TheoChi)]).T,
                                         sorted_data)
 
-        print('table_dist.shape', table_dist.shape)
+        #print('table_dist.shape', table_dist.shape)
 
     #         print "table_dist normal", table_dist[:5, :5]
     #     print "table_dist_new", table_dist.shape
@@ -443,6 +438,11 @@ def getProximity(TwicethetaChi,
                     signchi=1,
                     usecython=USE_CYTHON):
     r"""
+    compute two sets of spots (TwicethetaChi  generally theo. spots, and data_theta, data_chi for exp.spots).
+    if proxtable = 0, compute spots close enough (within angtol (default=0.5 deg) and properties.
+    return allresidues, res, nb_in_res, len(allresidues), meanres, maxi
+    if proxtable = 1, return allresidues, prox_table, table_dist, where prox_table is a 1D table of two spots indices of closest spots.
+
     :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
     :param data_theta: array of theta angles (of experimental spots)
     :param data_chi: array of chi (same length than data_theta!)
@@ -452,7 +452,7 @@ def getProximity(TwicethetaChi,
     .. warning:: TwicethetaChi contains 2theta instead of data_theta theta contains theta !
 
     .. todo::
-        * change the input with 2theta angles pnly to avoid confusion
+        * change the input with 2theta angles only to avoid confusion
         * remove the option signchi = 1 fixed old convention
     """
     # theo simul data
@@ -467,6 +467,7 @@ def getProximity(TwicethetaChi,
 
     if not usecython:
         table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+        #print('table_dist.shape',table_dist.shape)
 
         # for cartesian distance only, crude approximate for kf_direction=Z>0
         # import scipy
@@ -515,14 +516,12 @@ def getProximity(TwicethetaChi,
     #                                dtype=int32)
     #     allresidues = ravel(table_dist)[pos_closest_1d]
 
-    allresidues = amin(table_dist, axis=1)
+    allresidues = np.amin(table_dist, axis=1)
 
     #     print "allresidues", allresidues
 
     # len(allresidues)  = len(theo)
 
-    #     print "theodata", theodata
-    #     print 'len(allresidues)', len(allresidues)
     if proxtable == 0:
         cond = where(allresidues < angtol)
         res = allresidues[cond]
@@ -538,6 +537,7 @@ def getProximity(TwicethetaChi,
             nb_in_res = len(res)
             maxi = max(res)
             meanres = mean(res)
+            #print('res, nb_in_res, len(allresidues)',res, nb_in_res, len(allresidues))
 
         return allresidues, res, nb_in_res, len(allresidues), meanres, maxi
 
@@ -678,7 +678,8 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
         pixelsize = detectorparameters["pixelsize"]
         dim = detectorparameters["dim"]
 
-    #     print "kf_direction,pixelsize,detectordistance", kf_direction, pixelsize, detectordistance
+    # print("kf_direction,pixelsize,detectordistance,detectordiameter", kf_direction,
+    #       pixelsize, detectordistance, detectordiameter)
 
     # ---simulation-----------------------------------
     grain = CP.Prepare_Grain(key_material, test_Matrix, dictmaterials=dictmaterials)
@@ -692,12 +693,14 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
                                     kf_direction=kf_direction,
                                     ResolutionAngstrom=ResolutionAngstrom,
                                     dictmaterials=dictmaterials)
+    
+    #print('len(spots2pi[0][0]) nb of spots 2pi steradians', len(spots2pi[0][0]))
 
     if not SCIKITLEARN or not onlyXYZ:
         # 2theta,chi of spot which are on camera (with harmonics)
         # None because no need of hkl vectors
         # TwicethetaChi without energy calculations and hkl selection
-        # without use of spots instantation (faster)
+        # without use of spots instantation (faster computation)
         TwicethetaChi = LAUE.filterLaueSpots_full_np(spots2pi[0][0], None, onlyXYZ=False,
                                                         HarmonicsRemoval=0,
                                                         fastcompute=1,
@@ -707,6 +710,8 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
                                                         pixelsize=pixelsize,
                                                         dim=dim,
                                                         shiftcentercamera=None)
+        
+        #print('len(TwicethetaChi) nb of spots on cam', len(TwicethetaChi[0]))
 
         # old calculation with spots instantiation
         #     TwicethetaChi = LAUE.filterLaueSpots(spots2pi, fileOK=0, fastcompute=1,
@@ -717,13 +722,12 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
         #                                          dim=dim)
 
         #     print "len(TwicethetaChi[0])", len(TwicethetaChi[0])
-        if len(TwicethetaChi[0]) == 0:
-            #         print 'no peak found'
+        if len(TwicethetaChi[0]) == 0: #'no peak found'
             return None
 
         # no particular gain...?
-        return getProximity(TwicethetaChi, twicetheta_data / 2.0, chi_data, angtol=ang_tol,
-                                                                                        proxtable=0)
+        return getProximity(TwicethetaChi, twicetheta_data / 2.0, chi_data,
+                                                            angtol=ang_tol, proxtable=0)
 
     else:
         Q_XYZ_onCam = LAUE.filterLaueSpots_full_np(spots2pi[0][0], None, onlyXYZ=True,
