@@ -796,8 +796,7 @@ class FilterBackGroundPanel(wx.Panel):
         print('min of self.mainframe.dataimage_ROI in onComputeBlurImage',np.amin(self.mainframe.dataimage_ROI))
 
         self.blurimage = ImProc.compute_autobackground_image(self.mainframe.dataimage_ROI,
-                                                            boxsizefilter=10,
-                                                            CCDlabel=CCDlabel)
+                                                            boxsizefilter=10)
 
         print("self.blurimage.shape", self.blurimage.shape)
 
@@ -3892,8 +3891,7 @@ class MainPeakSearchFrame(wx.Frame):
         if (self.ImageFilterpanel.FilterImage and self.ImageFilterpanel.ImageType == "Raw"):
             print("self.ImageFilterpanel.ImageType == 'Raw'")
             self.ImageFilterpanel.blurimage = ImProc.compute_autobackground_image(
-                                                            self.dataimage_ROI, boxsizefilter=10,
-                                                            CCDlabel=self.CCDlabel)
+                                                            self.dataimage_ROI, boxsizefilter=10)
             self.ImageFilterpanel.Computefilteredimage()
             self.viewingLUTpanel.showImage()
         elif self.ImageFilterpanel.UseImage and self.ImageFilterpanel.ImageType == "Raw":
@@ -3964,6 +3962,8 @@ class MainPeakSearchFrame(wx.Frame):
                                                         dirname=self.dirname,
                                                         stackimageindex=self.stackimageindex)
 
+        
+        
         if secondaryImage:
             self.dataimage_ROI_B = dataimage
         else:  # TODO better use self.format ??
