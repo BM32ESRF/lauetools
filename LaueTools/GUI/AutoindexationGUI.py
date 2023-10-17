@@ -644,6 +644,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         restrictLUT_cubicSymmetry = True
         set_central_spots_hkl = None
 
+        if self.kf_direction in ('Z>0',):
+            LUTfraction = 1/2.
+        elif self.kf_direction in ('X>0','X<0'):
+            LUTfraction = 1
+
         if self.sethklchck.GetValue():
             strhkl = str(self.sethklcentral.GetValue())[1:-1].split(",")
 
@@ -736,7 +741,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     dictmaterials=self.IndexationParameters['dict_Materials'],
                                     MaxRadiusHKL=False,#True could be OK for this workflow
                                     LUT_with_rules=LUT_with_rules,
-                                    excludespotspairs=excludespotspairs)
+                                    excludespotspairs=excludespotspairs,
+                                    LUTfraction=LUTfraction)
 
         elif spotssettype in ('listsetA', 'listsetAB', ):
             # and spotsB is checked
@@ -750,7 +756,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 set_central_spots_hkl,
                                                 Minimum_MatchesNb,
                                                 LUT_with_rules,
-                                                excludespotspairs)
+                                                excludespotspairs,
+                                                LUTfraction)
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
                                                 n, self.key_material, rough_tolangle,
@@ -758,7 +765,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 set_hkl_1=set_central_spots_hkl,
                                                 minimumNbMatches=Minimum_MatchesNb,
                                                 LUT_with_rules=LUT_with_rules,
-                                                excludespotspairs=excludespotspairs)
+                                                excludespotspairs=excludespotspairs,
+                                                LUTfraction=LUTfraction)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res
