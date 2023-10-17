@@ -573,7 +573,7 @@ def ComputeGnomon_2(TwiceTheta_Chi, CenterProjection=(45 * DEG, 0 * DEG)):
 
 def InverseGnomon(_gnomonX, _gnomonY):
     """ from x,y in gnomonic projection gives lat and long
-    return theta and chi of Q (direction of Q)
+    return theta and chi of Q (direction of Q)   in radians
 
     WARNING: assume that center of projection is centerlat, centerlongit = 45 deg, 0
     """
@@ -590,7 +590,7 @@ def InverseGnomon(_gnomonX, _gnomonY):
     Theta = np.arcsin(np.cos(lalat) * np.cos(lonlongit))
     Chi = np.arctan(np.sin(lonlongit) / np.tan(lalat))
 
-    return Theta, Chi
+    return Theta, Chi  # in radians
 
 
 def Fromgnomon_to_2thetachi(gnomonicXY, _dataI):
