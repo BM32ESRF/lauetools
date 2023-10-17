@@ -403,7 +403,7 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     PROBLEM: hint: lAUETOOLS use frame = 'lauetools' for recognition from pattern simulated in lauetools frame...
     three possible frames: lauetools , XMASlab, XMASsample
 
-    WARNING! only valid for cubic unit cell!
+    ????WARNING! only valid for cubic unit cell!  ???
 
     USED in proposematrix and Allproposedmatrix, but used only in scripts (not tested)
     IndexingAngkesLUT.matrices_from_onespot() but not used anymore (obsolete)
@@ -439,17 +439,19 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
 
     qq3prod = np.cross(qq1, qq2)  # can be negative, we want to have finally a matrix with one eigenvalue of +1
 
-    matou = constructMat(matrice_P, qq1, qq2, qq3prod)
+    guessedmatrix = constructMat(matrice_P, qq1, qq2, qq3prod)
 
-    valeurpropres = np.linalg.eigvals(matou)  # eigen values
+    eigenvalues = np.linalg.eigvals(guessedmatrix)  # eigen values
     # check number of eigen values that are close to 1.0 (+- 0.05)
     # (we want to have finally a matrix with one eigenvalue of +1, corresponding eigen vector is the rotation axis
     if (
-        len(GT.find_closest(np.array([1.0]), np.real(valeurpropres), 0.05)[1]) == 1):  # we have an axis: OK
-        matorient = matou
-    else:  # matou is not a rotation matrix
+        len(GT.find_closest(np.array([1.0]), np.real(eigenvalues), 0.05)[1]) == 1):  # we have an axis: OK
+        matorient = guessedmatrix
+    else:  # guessedmatrix is not a rotation matrix
         # print "I need to construct an other matrix"
         matorient = constructMat(matrice_P, qq1, qq2, -qq3prod)
+
+    # check determinant of matorient
 
     if verbose == "yes":
         print("Estimated Orientation Matrix")
@@ -540,7 +542,7 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
         print("Estimated Orientation Matrix ---------------")
         print(matorient)
         print("--------------------------------------------")
-        # print "sol",sol
+        
     return matorient
 
 
@@ -676,12 +678,6 @@ def GenerateLookUpTable(hkl_all, Gstar):
     """
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl_all, hkl_all, Gstar)
-
-    # # place value higher than any possible angle value in diagonal elements
-    # np.putmask(tab_angulardist,tab_angulardist<0.001,400)
-    # np.putmask(tab_angulardist,np.isnan(tab_angulardist),400)
-
-    # proxtable = np.argmin(tab_angulardist,axis=1)
 
     # from square interangles matrix (from the same set of hkl)
     tab_side_size = tab_angulardist.shape[0]
@@ -841,19 +837,18 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     return sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist.shape
 
 
-def QueryLUT(LUT, query_angle, tolerance_angle, LUTfraction=2, verbose=0):
+def QueryLUT(LUT, query_angle, tolerance_angle, LUTfraction=1/2., verbose=0):
     """
     Query the LUT and return the atomic planes pairs solutions
     ( that form an angle close to query_angle within tolerance_angle)
 
     LUT has been  built from a square interdistance angles from one hkl list with itself
 
-    halfLUT : (int) fraction of LUT angles to be used (to increase speed).
-    Reference angles are comprised from 0 to 180deg. For recognition of Laue Pattern collected 2D detector
-    of even rather large area , only angles from 0 to 90 (fraction =2) are necessary.
+    LUTfraction : (float) fraction of LUT angles to be used (to increase speed). Reference angles are comprised from 0 to 180deg. For recognition of Laue Pattern collected 2D detector
+    of even rather large area , only angles from 0 to 90 (fraction =1/2) are necessary.
     (even shorter range may be used)
     """
-    RefAngles = LUT[1][:len(LUT[1])//LUTfraction]
+    RefAngles = LUT[1][:int(len(LUT[1])*LUTfraction)]
 
     # in sorted angles
     indices = np.where((np.abs(RefAngles - query_angle)) < tolerance_angle)[0]
@@ -915,13 +910,13 @@ def buildLUT_fromLatticeParams(latticeparams, n, CheckAndUseCubicSymmetry=True, 
 
     return LUT
 
-def computesortedangles(latticeparameters, nLUT=5, applyExtinctionRules=None):
+def computesortedangles(latticeparameters, nLUT=5, applyExtinctionRules=None, anglerangle=(19,90)):
     """build reference angles in several short range (to be used for cliques search)
     """
     lut = buildLUT_fromLatticeParams(latticeparameters, nLUT, applyExtinctionRules)
     sangles = lut[1]  #sorted angles
     # limitsAngles
-    Anglemin, Anglemax = 19, 90
+    Anglemin, Anglemax = anglerangle
     esangles = sangles[np.logical_and(sangles >= Anglemin, sangles <= Anglemax)]
     # sorted array of angles
     sortedangles = np.array(sorted(list(set(esangles.tolist()))))
@@ -953,7 +948,8 @@ def Build_Cubic_shortLUTs(latticeparameters, nLUT=5, applyExtinctionRules=None):
             pickle.dump(sortedangles, f)
 
 
-def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=DictLT.dict_Materials):
+def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material,
+                   dictmaterials=DictLT.dict_Materials, LUTfraction=1/2.):
     r"""
     Return hlk couples and corresponding angle that match the input angle within the tolerance angle
 
@@ -968,14 +964,14 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material, dictmaterials=Di
 
     LUT = buildLUT_fromLatticeParams(latticeparams, nLUT)
 
-    sol = QueryLUT(LUT, angle, tol)
+    sol = QueryLUT(LUT, angle, tol, LUTfraction=LUTfraction)
 
     print("solutions", sol)
 
     return sol
 
 
-def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verbose=0):
+def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., verbose=0):
     """
     return pairs of lattice hkl planes
     whose mutual angles between normals are the closest to the given query_angle within tolerance
@@ -993,14 +989,14 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=2, verb
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
-    LUTfraction:   fraction reference angles from 0 to 180 deg to consider. 2 is sufficient (0-90 deg)
-                            for common 2D plane detector geomtery
+    LUTfraction:   fraction reference angles from 0 to 180 deg to consider. 1/2 is sufficient (0-90 deg)
+                            for common 2D plane detector geometry (top reflection)
 
     TODO: many target angles
     """
     sorted_ind, sorted_angles, indy, tab_side_size, hkl_all = LUT
 
-    RefAngles = sorted_angles[:len(sorted_angles)//LUTfraction]
+    RefAngles = sorted_angles[:int(len(sorted_angles)*LUTfraction)]
 
     angular_tolerance_Recognition = angle_tol
     angle_query = query_angle
