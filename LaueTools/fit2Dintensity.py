@@ -156,7 +156,7 @@ def twodgaussian(inpars, circle, rotate, vheight):
             xp = x
             yp = y
         g = height + amplitude * np.exp(
-            -(((rcen_x - xp) / width_x) ** 2 + ((rcen_y - yp) / width_y) ** 2) / 2.0)
+            -(((rcen_x - xp) / (width_x+0.000001)) ** 2 + ((rcen_y - yp) / (width_y+0.000001)) ** 2) / 2.0)
         return g
 
     return rotgauss
