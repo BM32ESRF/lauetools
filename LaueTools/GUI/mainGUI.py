@@ -2009,15 +2009,15 @@ class CliquesFindingBoard(wx.Frame):
         self.AT = wx.TextCtrl(self.panel, -1, "0.2", (200, 40), (60, -1))
         wx.StaticText(self.panel, -1, "(for distance recognition): ", (15, 60))
 
-        wx.StaticText(self.panel, -1, "Size of spots set: ", (15, 90))
-        self.nbspotmax = wx.SpinCtrl(self.panel, -1, str(MaxNbSpots),
+        sss = wx.StaticText(self.panel, -1, "Size of spots set: ", (15, 90))
+        ssssc = self.nbspotmax = wx.SpinCtrl(self.panel, -1, str(MaxNbSpots),
                                                     (200, 85), (60, -1), min=3, max=MaxNbSpots)
 
-        wx.StaticText(self.panel, -1, "List of spots index", (15, 125))
-        self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
-        wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
+        lsi=wx.StaticText(self.panel, -1, "List of spots index", (15, 125))
+        lsic=self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
+        lsit = wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
 
-        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (260, 170), (60, 30))
+        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (260, 170), (110, 30))
         compsavebtn.Bind(wx.EVT_BUTTON, self.OnComputeSaveAnglesFile)
 
         wx.StaticText(self.panel, -1, "Load AnglesLUT file ", (15, 175))
@@ -2035,18 +2035,37 @@ class CliquesFindingBoard(wx.Frame):
         self.Show(True)
         self.Centre()
 
+        # tooltip
+        txtsss = 'set to the largest spot index probed + 1'
+        ssssc.SetToolTipString(txtsss)
+        sss.SetToolTipString(txtsss)
+
+        txtlsi='integer index or list of integer or "to5" as alias of [0,1,2,3,4,5]'
+        lsi.SetToolTipString(txtlsi)
+        lsic.SetToolTipString(txtlsi)
+        lsit.SetToolTipString(txtlsi)
+
+
     def OnComputeSaveAnglesFile(self, _):
         # open dialog  for structure
-        key_material = 'Ti'
+        key_material = 'Mg'
         nLUT = 4
 
         latticeparameters = dict_Materials[key_material][1]
         print('computing angles in material: %s.\n-- Wait a bit --'%key_material)
-        sortedangles = computesortedangles(latticeparameters, nLUT)
+
+        if self.parent.kf_direction =='Z>0':
+            anglerangle = (19,90)
+            geom = 'topreflection'
+        elif self.parent.kf_direction =='X>0':
+            anglerangle = (7, 179.999)
+            geom = 'transmission'
+
+        sortedangles = computesortedangles(latticeparameters, nLUT, anglerangle=anglerangle)
 
         import pickle
 
-        self.LUTfilename = '%s_nlut%d.angles'%(key_material,nLUT)
+        self.LUTfilename = '%s_nlut%d_%s.angles'%(key_material,nLUT, geom)
         with open(self.LUTfilename, "wb") as f:
             pickle.dump(sortedangles, f)
 
@@ -2096,7 +2115,7 @@ class CliquesFindingBoard(wx.Frame):
         Nodes = spot_index_central
         print("Clique finding for Nodes :%s" % Nodes)
 
-        fullpath = os.path.join(self.parent.dirname, self.parent.DataPlot_filename,)
+        fullpath = os.path.join(self.parent.dirnamepklist, self.parent.DataPlot_filename,)
 
         res_cliques = give_bestclique(fullpath, nbmax_probed, ang_tol,
                                                     nodes=Nodes, col_Int=-1,
