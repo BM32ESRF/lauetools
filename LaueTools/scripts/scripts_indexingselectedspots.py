@@ -127,7 +127,8 @@ for i1, i2 in GT.allpairs_in_set(range(len(selectedspots_ind))):
                                         key_material=key_material,
                                         emax=emax,
                                         ang_tol_MR=angle_tol,
-                                        detectorparameters=detectorparameters)
+                                        detectorparameters=detectorparameters,
+                                        LUTfraction=1/2.)
 
     print('UBS_MRS',UBS_MRS)
     print(len(UBS_MRS))

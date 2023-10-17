@@ -281,39 +281,24 @@ def simulatepattern(
 
     if PlotLaueDiagram:
 
-        Plot_Laue(
-            emin,
-            emax,
-            oncam_sansh,
-            data_2theta,
-            data_chi,
-            data_filename,
-            removeharmonics=1,
-            kf_direction=kf_direction,
-            Plot_Data=Plot_Data,
-            Display_label=Display_label,
-            What_to_plot=whatplot,
-            saveplotOK=0,
-            WriteLogFile=1,
-            linestowrite=linestowrite,
-        )
+        Plot_Laue( emin, emax, oncam_sansh, data_2theta, data_chi, data_filename, removeharmonics=1,
+                                            kf_direction=kf_direction,
+                                            Plot_Data=Plot_Data,
+                                            Display_label=Display_label,
+                                            What_to_plot=whatplot,
+                                            saveplotOK=0,
+                                            WriteLogFile=1,
+                                            linestowrite=linestowrite,)
    
     return True
 
-def simulatepurepattern(
-    grain,
-    emin,
-    emax,
-    kf_direction,
-    data_filename,
-    PlotLaueDiagram=1,
-    Plot_Data=0,
-    verbose=0,
-    detectordistance=DEFAULT_DETECTOR_DISTANCE,
-    ResolutionAngstrom=False,
-    Display_label=1,
-    HarmonicsRemoval=1,
-):
+def simulatepurepattern(grain,emin,emax,kf_direction,data_filename,PlotLaueDiagram=1,
+                                            Plot_Data=0,
+                                            verbose=0,
+                                            detectordistance=DEFAULT_DETECTOR_DISTANCE,
+                                            ResolutionAngstrom=False,
+                                            Display_label=1,
+                                            HarmonicsRemoval=1,):
     """
     NOT USED ??!!
     """
@@ -355,17 +340,12 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
     fig = figure(figsize=(6.0, 6.0), dpi=80)  # ? small but ok for savefig!
     ax = fig.add_subplot(111)
 
-    title(
-        "Laue pattern %.1f-%.1f keV \n %s" % (_emin, _emax, _data_filename),
-        font,
-        fontsize=12,
-    )
+    title("Laue pattern %.1f-%.1f keV \n %s" % (_emin, _emax, _data_filename),
+        font,fontsize=12,)
     # text(0.5, 2.5, 'a line', font, color = 'k')
 
     if removeharmonics == 0:
-        oncam_sansh = Calc_spot_on_cam_sansh(
-            list_of_spots, fileOK=WriteLogFile, linestowrite=linestowrite
-        )
+        oncam_sansh = Calc_spot_on_cam_sansh(list_of_spots, fileOK=WriteLogFile, linestowrite=linestowrite)
     elif removeharmonics == 1:
         print("harmonics have been already removed")
         oncam_sansh = list_of_spots
@@ -390,22 +370,10 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
     # loop over grains
     for i in list(range(nb_of_grains)):
 
-        print(
-            "Number of spots on camera (w / o harmonics): GRAIN number ",
-            i,
-            " : ",
-            len(oncam_sansh[i]),
-        )
+        print("Number of spots on camera (w / o harmonics): GRAIN number ",i, " : ",len(oncam_sansh[i]),)
         if WriteLogFile:
-            linestowrite.append(
-                [
-                    "--- GRAIN number ",
-                    str(i),
-                    " : ",
-                    str(len(oncam_sansh[i])),
-                    " ----------",
-                ]
-            )
+            linestowrite.append(["--- GRAIN number ",
+                    str(i)," : ",str(len(oncam_sansh[i]))," ----------",])
         facscale = 1.0
         # loop over spots
         for elem in oncam_sansh[i]:
@@ -456,8 +424,7 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
         if nb_of_grains >= 3:
             #            trans[i] = offset(ax, fig, 10, -5 * (nb_of_grains - 2) + 5 * i)
             trans[i] = offset(
-                ax.transData, fig, 10, -5 * (nb_of_grains - 2) + 5 * i, units="dots"
-            )
+                ax.transData, fig, 10, -5 * (nb_of_grains - 2) + 5 * i, units="dots")
         else:
             #            trans[i] = offset(ax, fig, 10, 5 * (-1) ** (i % 2))
             trans[i] = offset(ax.transData, fig, 10, 5 * (-1) ** (i % 2), units="dots")
@@ -465,29 +432,21 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
         print("nb of spots for grain # %d : %d" % (i, len(xxx[i])))
         #        print tuple(xxx[i])
         #        print tuple(yyy[i])
-        ax.scatter(
-            tuple(xxx[i]),
+        ax.scatter(tuple(xxx[i]),
             tuple(yyy[i]),
             s=[facscale * int(200.0 / en) for en in energy[i]],
             c=dicocolor[(i + 1) % (len(dicocolor))],
             marker="o",
             faceted=False,
-            alpha=0.5,
-        )
+            alpha=0.5,)
 
         if Display_label:  # displaying labels c and d at position a, b
-            for a, b, c, d in zip(
-                tuple(xxx[i]), tuple(yyy[i]), tuple(indy[i]), tuple(energy[i])
-            ):
-                ax.text(
-                    a,
-                    b,
-                    "%s,%.1f" % (str(c), d),
+            for a, b, c, d in zip(tuple(xxx[i]), tuple(yyy[i]), tuple(indy[i]), tuple(energy[i])):
+                ax.text(a,b,"%s,%.1f" % (str(c), d),
                     font,
                     fontsize=7,
                     color=dicocolor[i % (len(dicocolor))],
-                    transform=trans[i],
-                )
+                    transform=trans[i],)
 
     ax.set_aspect(aspect="equal")
     if What_to_plot == "XYcam":
@@ -514,9 +473,7 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
         Xtol = 5.0
         Ytol = 5.0
 
-    elif What_to_plot == "2thetachi" and (
-        isinstance(kf_direction, list) or kf_direction in ("Z>0")
-    ):
+    elif What_to_plot == "2thetachi" and (isinstance(kf_direction, list) or kf_direction in ("Z>0")):
 
         circX = 90 + 45 * np.cos(t)
         circY = 45 * np.sin(t)
@@ -541,9 +498,7 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
     ax.plot(circX, circY, "")
 
     if saveplotOK:
-        fig.savefig(
-            "figlaue.png", dpi=300, facecolor="w", edgecolor="w", orientation="portrait"
-        )
+        fig.savefig("figlaue.png", dpi=300, facecolor="w", edgecolor="w", orientation="portrait")
 
     if not Display_label:
         whole_xxx = xxx[0]
@@ -570,7 +525,6 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
 
 
 def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
-
     """ Calculates list of grains spots on camera w / o harmonics,
     from liligrains (list of grains spots instances scattering in 2pi steradians)
     [[spots grain 0],[spots grain 0],etc] = >
@@ -578,7 +532,6 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
 
     TODO: rather useless  only used in Plot_Laue(), need to be replace by filterLaueSpots
     """
-
     nbofgrains = len(listoflistofspots)
 
     _oncam = emptylists(nbofgrains)  # list of spot on the camera (harmonics included)
@@ -588,21 +541,15 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
 
     if fileOK:
         linestowrite.append(["\n"])
-        linestowrite.append(
-            ["--------------------------------------------------------"]
+        linestowrite.append(["--------------------------------------------------------"]
         )
-        linestowrite.append(
-            ["------------- Simulation Data --------------------------"]
+        linestowrite.append(["------------- Simulation Data --------------------------"]
         )
-        linestowrite.append(
-            ["--------------------------------------------------------"]
+        linestowrite.append(["--------------------------------------------------------"]
         )
         linestowrite.append(["\n"])
-        linestowrite.append(
-            [
-                "#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"
-            ]
-        )
+        linestowrite.append([
+                "#grain, h, k, l, energy(keV), 2theta (deg), chi (deg), X_Xmas, Y_Xmas, X_JSM, Y_JSM, Xtest, Ytest"])
 
     for i in list(range(nbofgrains)):
         condCam = (elem.Xcam ** 2 + elem.Ycam ** 2 <= (DEFAULT_DETECTOR_DIAMETER / 2) ** 2)
@@ -620,443 +567,261 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
 
     return _oncamsansh
 
+def simulateLauePatterns(crystals, emin, emax,
+                         detectorparameters, pixelsize, dim,kf_direction, nb_spurious_spots=0,detectordiameter=200,
+                        noisypositions = False):
+    
+    s_tth, s_chi, s_posx, s_posy, s_E, s_intensity = np.zeros((6,1))
+    s_miller = np.zeros((1,3))
+    s_grainindex = np.zeros(1)
+    
+    for i_grain, cry in enumerate(crystals):
+        key_material, UBmatrix =  cry
+        grain = CP.Prepare_Grain(key_material, UBmatrix)
+        print('grain',grain)
+        _tth, _chi, _miller, _posx, _posy, _E= LT.SimulateLaue_full_np(grain, emin, emax,
+                                                                         detectorparameters,
+                                                                         removeharmonics=1,
+                                                                        pixelsize=pixelsize,
+                                                                          dim=dim,
+                                                                          detectordiameter=detectordiameter,
+                                                                        kf_direction=kf_direction)
+        _grainindex = i_grain*np.ones(len(_tth))
+        
+        #print('_miller', _miller)
+        rmiller= GT.reduceHKL(_miller)
+        #print('rmiller', rmiller)
+        
+        #_intensity = 50000.*simulintensity(_E)/np.power(np.sum(rmiller**2, axis=1), .2)
+        #_intensity = 50000.*simulintensity(_E)*np.exp(-np.sum(rmiller**2, axis=1)/100.)
+        _intensity = 50000.*np.exp(-np.sum(rmiller**2, axis=1)/100.)
+
+        
+        # concatenate
+        s_tth = np.concatenate((s_tth,_tth))
+        s_chi = np.concatenate((s_chi,_chi))
+        s_miller = np.concatenate((s_miller,rmiller))  # reduced miller indices (someting wrong with removeharmonics ??)
+        s_posx = np.concatenate((s_posx,_posx))
+        s_posy = np.concatenate((s_posy,_posy))
+        s_E = np.concatenate((s_E,_E))
+        s_intensity = np.concatenate((s_intensity,_intensity))
+        s_grainindex = np.concatenate((s_grainindex,_grainindex))
+        
+    if nb_spurious_spots:
+        anglmax=15
+        tth_spurious = np.random.random(nb_spurious_spots)*(2*2*anglmax)+(90-2*anglmax)
+        chi_spurious = np.random.random(nb_spurious_spots)*(2*anglmax)+(0-anglmax)
+
+        posx_spurious, posy_spurious = LTGeo.calc_xycam_from2thetachi(tth_spurious,
+                                                        chi_spurious,
+                                                        detectorparameters,
+                                                        verbose=0,
+                                                        pixelsize=pixelsize,
+                                                        dim=dim,
+                                                        kf_direction=kf_direction)[:2]
+        miller_spurious = np.zeros((nb_spurious_spots,3))
+        energy_spurious = np.zeros(nb_spurious_spots)
+        grainindex_spurious = -1*np.ones(nb_spurious_spots)
+
+        s_tth = np.concatenate((s_tth,tth_spurious))
+        s_chi = np.concatenate((s_chi,chi_spurious))
+        s_miller = np.concatenate((s_miller,miller_spurious))
+        s_posx = np.concatenate((s_posx,posx_spurious))
+        s_posy = np.concatenate((s_posy,posy_spurious))
+        s_E = np.concatenate((s_E,energy_spurious))
+        s_intensity = np.concatenate((s_intensity,simulintensity(energy_spurious)))
+        s_grainindex = np.concatenate((s_grainindex,grainindex_spurious))
+
+        print("noisy spots index", np.arange(nbgoodspots,len(s_tth)))
+        
+    if noisypositions:
+        # spots noise positions
+
+        n_x = np.random.random(len(s_posx))*0.1-0.05
+        n_y = np.random.random(len(s_posx))*0.1-0.05
+
+        n_r = np.sqrt(n_x**2+n_y**2)
+
+        s_posx += n_x
+        s_posy += n_y
+        
+        s_tth,s_chi = LTGeo.calc_uflab(s_posx,s_posy,detectorparameters,returnAngles=1,
+                                                        verbose=0,
+                                                        pixelsize=pixelsize,
+                                                        kf_direction=kf_direction)
+        
+    sorted_idx = np.argsort(s_intensity[1:])[::-1]
+    
+        
+    return s_tth[1:][sorted_idx], s_chi[1:][sorted_idx], s_miller[1:][sorted_idx], s_posx[1:][sorted_idx], s_posy[1:][sorted_idx], s_E[1:][sorted_idx],s_intensity[1:][sorted_idx], np.array(s_grainindex[1:], dtype=np.int)[sorted_idx]
+
+# ----------    MAIN -------------------
+# --------------------------------------
+if  __name__ == '__main__':
+
+    
+    nbcrystals = 1
+    key_material = 'Si' # 'ZrO2'
+    emax = 60
+    detectordiameter =100
+
+    xbet = 30
+    pixelsize = 1
+    dim=(100,100)
+    detectorparameters = [100,0,0,xbet,0]
+    kf_direction = 'Z>0'
+
+    crystals=[]
+    HKL= [-1,1,1]
+    
+    matrothkl = GT.propose_orientation_from_hkl(HKL, randomrotation=True)
+
+    crystals =[[key_material,
+                GT.propose_orientation_from_hkl(HKL, randomrotation=True)] for k in range(nbcrystals)]
+
+    (s_tth, s_chi,
+    s_miller,
+    s_posx, s_posy,
+    s_E,s_intensity, s_grainindex) = simulateLauePatterns(crystals, 5, emax, detectorparameters,
+                                                        pixelsize, dim,kf_direction,
+                                                        nb_spurious_spots=0,
+                                                        noisypositions = False,
+                                                        detectordiameter=detectordiameter)
+   
+    print('s_posy  max', np.amax(s_posy))
+    print('s_posy  min', np.amin(s_posy))
+    print('s_tth  max', np.amax(s_tth))
+    print('s_tth  min', np.amin(s_tth))
+
+    import matplotlib.pyplot as plt
+    #plt.hist(s_posy, bins=300)
+    fig, ax = plt.subplots()
+    ax.scatter(s_tth,s_chi)
+    ax.set_xlabel('2theta')
+    ax.set_ylabel('chi')
+    ax.grid()
+
+    fig2, ax2 = plt.subplots()
+    ax2.scatter(s_posx,s_posy)
+    ax2.set_ybound(np.amax(s_posy)-1.1,np.amin(s_posy)-20)
+    ax2.set_xlabel('pixel X')
+    ax2.set_ylabel('pixel Y')
+    ax2.grid()
+
+
+    plt.show()
+
 
-emin = 5
-emax = 15
-kf_direction = "Z>0"
-data_filename = "Ge_test.cor"  # experimental data
+    if 0:
+        grainSi = CP.Prepare_Grain("Si", dict_Rot["Si_001"])
 
-Id = np.eye(3)
+        grainSi[2] = GT.fromEULERangles_toMatrix([20.0, 10.0, 50.0])
 
-if 0:
-    grainSi = CP.Prepare_Grain("Si", dict_Rot["Si_001"])
+        print("\n*******************\nSimulation with fastcompute = 0")
+        vecind = LT.getLaueSpots(
+            CST_ENERGYKEV / emax,
+            CST_ENERGYKEV / emin,
+            [grainSi],
+            fastcompute=0,
+            kf_direction=kf_direction,
+            verbose=1,
+        )
 
-    grainSi[2] = GT.fromEULERangles_toMatrix([20.0, 10.0, 50.0])
+        print("nb of spots with harmonics %d\n\n" % len(vecind[0][0]))
 
-    print("\n*******************\nSimulation with fastcompute = 0")
-    vecind = LT.getLaueSpots(
-        CST_ENERGYKEV / emax,
-        CST_ENERGYKEV / emin,
-        [grainSi],
-        fastcompute=0,
-        kf_direction=kf_direction,
-        verbose=1,
-    )
+        print("\n*********\nSimulation with fastcompute = 1")
 
-    print("nb of spots with harmonics %d\n\n" % len(vecind[0][0]))
+        vecindfast = LT.getLaueSpots(CST_ENERGYKEV / emax,
+                                    CST_ENERGYKEV / emin,
+                                    [grainSi],
+                                    fastcompute=1,
+                                    kf_direction=kf_direction,
+                                    verbose=1)
 
-    print("\n*********\nSimulation with fastcompute = 1")
+        print("nb of spots with harmonics fast method", len(vecindfast[0][0]))
 
-    vecindfast = LT.getLaueSpots(CST_ENERGYKEV / emax,
-                                CST_ENERGYKEV / emin,
-                                [grainSi],
-                                fastcompute=1,
-                                kf_direction=kf_direction,
-                                verbose=1)
+        print("\n*******************\n --------  Harmonics removal -----------\n")
+        linestowrite = [[""]]
+        oncam_sansh00 = LT.filterLaueSpots(
+            vecind,
+            fileOK=1,
+            fastcompute=0,
+            kf_direction=kf_direction,
+            HarmonicsRemoval=1,
+            linestowrite=linestowrite,
+        )
 
-    print("nb of spots with harmonics fast method", len(vecindfast[0][0]))
+        print("after harm removal 00", len(oncam_sansh00[0]))
 
-    print("\n*******************\n --------  Harmonics removal -----------\n")
-    linestowrite = [[""]]
-    oncam_sansh00 = LT.filterLaueSpots(
-        vecind,
-        fileOK=1,
-        fastcompute=0,
-        kf_direction=kf_direction,
-        HarmonicsRemoval=1,
-        linestowrite=linestowrite,
-    )
+        oncam_sansh01 = LT.filterLaueSpots(
+            vecind,
+            fileOK=1,
+            fastcompute=1,
+            kf_direction=kf_direction,
+            HarmonicsRemoval=1,
+            linestowrite=linestowrite,
+        )
 
-    print("after harm removal 00", len(oncam_sansh00[0]))
+        print("after harm removal 01", len(oncam_sansh01[0]))
 
-    oncam_sansh01 = LT.filterLaueSpots(
-        vecind,
-        fileOK=1,
-        fastcompute=1,
-        kf_direction=kf_direction,
-        HarmonicsRemoval=1,
-        linestowrite=linestowrite,
-    )
+        oncam_sansh11 = LT.filterLaueSpots(
+            vecindfast,
+            fileOK=1,
+            fastcompute=1,
+            kf_direction=kf_direction,
+            HarmonicsRemoval=1,
+            linestowrite=linestowrite,
+        )
 
-    print("after harm removal 01", len(oncam_sansh01[0]))
+        print("after harm removal 11", len(oncam_sansh11[0]))
 
-    oncam_sansh11 = LT.filterLaueSpots(
-        vecindfast,
-        fileOK=1,
-        fastcompute=1,
-        kf_direction=kf_direction,
-        HarmonicsRemoval=1,
-        linestowrite=linestowrite,
-    )
+        # ------------------------
+        print("\n*****************************\n rax compute\n")
+        grainSi[2] = GT.fromEULERangles_toMatrix([20.0, 10.0, 50.0])
 
-    print("after harm removal 11", len(oncam_sansh11[0]))
+        # res = get_2thetaChi_withoutHarmonics(grainSi, 5, 15)
 
-    # ------------------------
-    print("\n*****************************\n rax compute\n")
-    grainSi[2] = GT.fromEULERangles_toMatrix([20.0, 10.0, 50.0])
+    if 0:  # some grains example
+        inittime = time.time()
 
-    # res = get_2thetaChi_withoutHarmonics(grainSi, 5, 15)
+        emax = 50
+        emin = 5
 
-if 1:  # some grains example
-    inittime = time.time()
+        elem1 = "Ti"
+        elem2 = "Cu"
 
-    emax = 50
-    emin = 5
+        kf_direction = "Z>0"
 
-    elem1 = "Ti"
-    elem2 = "Cu"
+        BmatTi = CP.calc_B_RR(dict_Materials["Ti"][1])
 
-    kf_direction = "Z>0"
+        BmatCu = CP.calc_B_RR(dict_Materials["Cu"][1])
 
-    BmatTi = CP.calc_B_RR(dict_Materials["Ti"][1])
+        Umat = dict_Rot["OrientSurf111"]
 
-    BmatCu = CP.calc_B_RR(dict_Materials["Cu"][1])
+        grainTi = [BmatTi, "no", Umat, "Ti"]
 
-    Umat = dict_Rot["OrientSurf111"]
+        grainCu = [BmatCu, "fcc", Id, "Cu"]
+        grainCu__ = [BmatCu, "no", Id, "Cu"]
 
-    grainTi = [BmatTi, "no", Umat, "Ti"]
+        dict_Materials["Cu2"] = ["Cu2", [5, 3.6, 3.6, 90, 90, 90], "fcc"]
+        BmatCu2 = CP.calc_B_RR(dict_Materials["Cu2"][1])
 
-    grainCu = [BmatCu, "fcc", Id, "Cu"]
-    grainCu__ = [BmatCu, "no", Id, "Cu"]
+        dict_Materials["Cu3"] = ["Cu3", [Id, Umat, Id, BmatCu2], "fcc"]  # Da, U, Dc, B
 
-    dict_Materials["Cu2"] = ["Cu2", [5, 3.6, 3.6, 90, 90, 90], "fcc"]
-    BmatCu2 = CP.calc_B_RR(dict_Materials["Cu2"][1])
+        grainCu2 = CP.Prepare_Grain("Cu2", Id)
+        grainCu3 = CP.Prepare_Grain("Cu3", "ihjiĥiohio")
 
-    dict_Materials["Cu3"] = ["Cu3", [Id, Umat, Id, BmatCu2], "fcc"]  # Da, U, Dc, B
+        grainSi1 = CP.Prepare_Grain("Cu", Id)
+        grainSi2 = CP.Prepare_Grain("Si", dict_Rot["OrientSurf111"])
 
-    grainCu2 = CP.Prepare_Grain("Cu2", Id)
-    grainCu3 = CP.Prepare_Grain("Cu3", "ihjiĥiohio")
+        grainAl2o3 = CP.Prepare_Grain("Al2O3", Id)
 
-    grainSi1 = CP.Prepare_Grain("Cu", Id)
-    grainSi2 = CP.Prepare_Grain("Si", dict_Rot["OrientSurf111"])
+        # grains= [grainSi,grainCu3]
+        grains = [grainSi1, grainCu3, grainAl2o3]
 
-    grainAl2o3 = CP.Prepare_Grain("Al2O3", Id)
+        print(grains)
 
-    # grains= [grainSi,grainCu3]
-    grains = [grainSi1, grainCu3, grainAl2o3]
-
-    print(grains)
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        HarmonicsRemoval=0,
-    )
-
-    finaltime = time.time()
-
-    print("computation time is ", finaltime - inittime)
-
-if 0:
-    # strain study: ---------------------------------------
-    dict_Materials["Cu2"] = ["Cu2", [5, 3.6, 3.6, 90, 90, 90], "fcc"]
-    BmatCu2 = CP.calc_B_RR(dict_Materials["Cu2"][1])
-
-    Umat = dict_Rot["OrientSurf111"]
-    # Da, U, Dc, B
-    dict_Materials["Cu3"] = ["Cu3", [Id, Umat, Id, BmatCu2], "fcc"]
-
-    grains = []
-    for k in list(range(-5, 6)):
-        dict_Materials["Cu_%d" % k] = dict_Materials["Cu3"]
-        # set material label
-        dict_Materials["Cu_%d" % k][0] = "Cu_%d" % k
-        # set deformation in absolute space
-        dict_Materials["Cu_%d" % k][1][0] = [
-            [1 + 0.01 * k, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1.0],
-        ]
-        grains.append(CP.Prepare_Grain("Cu_%d" % k))
-
-    simulatepattern(grains, emin, emax, kf_direction, data_filename, Plot_Data=0)
-    # -----------------------------------------------
-
-if 0:
-
-    Bmat = dict_Vect["543_909075"]
-    Umat = dict_Rot["OrientSurf001"]
-    Dc = [[1.02, 0.01, 0], [-0.01, 0.98, 0.005], [0.001, -0.02, 1.01]]
-    Dc = [[1.00, 0.00, 0], [-0.00, 1.00, 0.000], [0.000, -0.00, 1.03]]
-
-    dict_Materials["mycell"] = ["mycell", [Id, Umat, Id, Bmat], "fcc"]
-    dict_Materials["mycell_strained"] = ["mycell_strained", [Id, Umat, Dc, Bmat], "fcc"]
-
-    mygrain = CP.Prepare_Grain("mycell")
-    mygrain_s = CP.Prepare_Grain("mycell_strained")
-
-    grains = [mygrain, mygrain_s]
-
-    simulatepattern(grains, emin, emax, kf_direction, data_filename, Plot_Data=0)
-
-if 0:
-
-    Bmat = dict_Vect["543_909075"]
-    Umat = dict_Rot["mat311c1"]
-    Dc = dict_Vect["shear4"]
-
-    dict_Materials["mycell_s"] = ["mycell_s", [Id, Umat, Dc, Bmat], "fcc"]
-    dict_Materials["mycell"] = ["mycell", [Id, Umat, Id, Bmat], "fcc"]
-
-    mygrain_s = CP.Prepare_Grain("mycell_s")
-    mygrain = CP.Prepare_Grain("mycell")
-
-    grains = [mygrain_s]
-
-    simulatepattern(
-        grains, emin, emax, kf_direction, data_filename, Plot_Data=0, verbose=1
-    )
-
-if 0:
-    emin = 5
-    emax = 22
-    kf_direction = "X>0"  # transmission
-    kf_direction = "Z>0"  # reflection
-
-    ResolutionAngstrom = 2.0
-
-    # overwriting dict_Materials['smallpro']
-    dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
-    mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
-    mygrain = CP.Prepare_Grain("smallpro", Id)
-
-    grains = [mygrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=69,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
-
-if 0:
-    emin = 5
-    emax = 30
-    kf_direction = "X>0"  # transmission
-    #        kf_direction = 'Z>0' # reflection
-
-    ResolutionAngstrom = False
-
-    # overwriting dict_Materials['smallpro']
-
-    mat111alongx = np.dot(GT.matRot([1, 0, 0], -45.0), GT.matRot([0, 0, 1], 45.0))
-
-    print("mat111alongx", mat111alongx)
-
-    matmono = np.dot(GT.matRot([1, 0, 0], -1), mat111alongx)
-
-    mygrain = CP.Prepare_Grain("Cu", matmono)
-
-    grains = [mygrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=10,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
-
-if 0:
-    emin = 8
-    emax = 25
-    kf_direction = "X<0"  # back reflection
-    #        kf_direction = 'Z>0' # reflection
-
-    ResolutionAngstrom = False
-
-    # overwriting dict_Materials['smallpro']
-
-    matmono = np.dot(GT.matRot([0, 0, 1], 20), np.eye(3))
-
-    mygrain = CP.Prepare_Grain("Si", matmono)
-
-    grains = [mygrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=55,
-        ResolutionAngstrom=ResolutionAngstrom,
-        Display_label=0,
-    )
-
-if 0:
-    emin = 8
-    emax = 25
-    kf_direction = "X<0"  # back reflection
-    #        kf_direction = 'Z>0' # reflection
-
-    ResolutionAngstrom = False
-
-    # overwriting dict_Materials['smallpro']
-
-    matmother = np.dot(GT.matRot([0, 0, 1], -5), np.eye(3))
-    matmisorient = np.dot(GT.matRot([-1, 1, 1], 0.1), matmother)
-
-    maingrain = CP.Prepare_Grain("Si", matmother)
-
-    mygrain = CP.Prepare_Grain("Si", matmisorient)
-
-    grains = [maingrain, mygrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=55,
-        ResolutionAngstrom=ResolutionAngstrom,
-        Display_label=0,
-    )
-
-if 0:
-    emin = 5
-    emax = 20
-    kf_direction = [90, 45]
-    #        kf_direction = 'Z>0' # reflection
-
-    ResolutionAngstrom = False
-
-    # overwriting dict_Materials['smallpro']
-
-    matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
-    #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
-
-    maingrain = CP.Prepare_Grain("Si", matmother)
-
-    grains = [maingrain, maingrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=70,
-        ResolutionAngstrom=ResolutionAngstrom,
-        Display_label=0,
-    )
-
-if 0:
-    emin = 5
-    emax = 20
-    #        kf_direction = [0, 0]
-    kf_direction = "X>0"  #
-
-    ResolutionAngstrom = False
-
-    # overwriting dict_Materials['smallpro']
-
-    matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
-    #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
-
-    maingrain = CP.Prepare_Grain("Si", matmother)
-
-    grains = [maingrain, maingrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=70,
-        ResolutionAngstrom=ResolutionAngstrom,
-        Display_label=0,
-    )
-
-
-if 0:
-    emin = 5
-    emax = 22
-
-    Detpos = 0  # 1 = 'top' 0 = 'trans'
-
-    if Detpos == 1:
-        # on top
-        kf_direction = "Z>0"  # reflection
-        Detdist = 70  # mm
-    elif Detpos == 0:
-        # transmission
-        kf_direction = "X>0"  # transmission
-        Detdist = 100  # mm
-
-    ResolutionAngstrom = None
-
-    # overwriting dict_Materials['smallpro']
-    dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
-    mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
-    mygrain = CP.Prepare_Grain("smallpro", Id)
-    ResolutionAngstrom = 2.0
-
-    grains = [mygrain]
-
-    simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=Detdist,
-        ResolutionAngstrom=ResolutionAngstrom,
-    )
-
-if 0:
-    emin = 5
-    emax = 22
-
-    Detpos = 0  # 1 = 'top' 0 = 'trans'
-
-    if Detpos == 1:
-        # on top
-        kf_direction = "Z>0"  # reflection
-        Detdist = 70  # mm
-    elif Detpos == 0:
-        # transmission
-        kf_direction = "X>0"  # transmission
-        Detdist = 100.0  # mm
-
-    ResolutionAngstrom = None
-
-    # overwriting dict_Materials['smallpro']
-    dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
-    ResolutionAngstrom = 2.0
-
-    for ori in list(dict_Rot.keys())[2:3]:
-        mygrain = CP.Prepare_Grain("smallpro", dict_Rot[ori])
-
-        grains = [mygrain]
-
-        mydata = simulatepattern(
+        simulatepattern(
             grains,
             emin,
             emax,
@@ -1064,218 +829,537 @@ if 0:
             data_filename,
             Plot_Data=0,
             verbose=1,
-            detectordistance=Detdist,
-            ResolutionAngstrom=ResolutionAngstrom,
+            HarmonicsRemoval=0,
         )
 
-    ard = np.array(mydata[0])
+        finaltime = time.time()
 
-    import pylab as pp
+        print("computation time is ", finaltime - inittime)
 
-    pp.figure(1)
-    pp.scatter(ard[:, 0], ard[:, 1])
+    if 0:
+        # strain study: ---------------------------------------
+        dict_Materials["Cu2"] = ["Cu2", [5, 3.6, 3.6, 90, 90, 90], "fcc"]
+        BmatCu2 = CP.calc_B_RR(dict_Materials["Cu2"][1])
 
-    xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
+        Umat = dict_Rot["OrientSurf111"]
+        # Da, U, Dc, B
+        dict_Materials["Cu3"] = ["Cu3", [Id, Umat, Id, BmatCu2], "fcc"]
 
-    pp.figure(2)
-    pp.scatter(xyd[:, 0], xyd[:, 1])
-
-    calib = [100.0, 1024.0, 1024.0, 90, 0.0]
-
-    xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
-        ard[:, 0],
-        ard[:, 1],
-        calib,
-        verbose=0,
-        pixelsize=165.0 / 2048,
-        kf_direction=kf_direction)
-
-    X, Y, theta = xyd_fromfind2
-
-    pp.scatter(X, Y, c="r")
-
-    pp.show()
-
-
-if 0:
-    emin = 50
-    emax = 120
-
-    Detpos = 0  # 1 = 'top' 0 = 'trans'
-
-    if Detpos == 1:
-        # on top
-        kf_direction = "Z>0"  # reflection
-        Detdist = 70  # mm
-    elif Detpos == 0:
-        # transmission
-        kf_direction = "X>0"  # transmission
-        Detdist = 100.0  # mm
-
-    ResolutionAngstrom = 0.5
-
-    for ori in list(dict_Rot.keys())[2:3]:
-        mygrain = CP.Prepare_Grain("Ni", dict_Rot[ori])
-
-        grains = [mygrain]
-
-        mydata = simulatepattern(
-            grains,
-            emin,
-            emax,
-            kf_direction,
-            data_filename,
-            Plot_Data=0,
-            verbose=1,
-            detectordistance=Detdist,
-            ResolutionAngstrom=ResolutionAngstrom,
-        )
-
-    ard = np.array(mydata[0])
-
-    print("mydata", mydata)
-
-    import pylab as pp
-
-    pp.figure(1)
-    pp.scatter(ard[:, 0], ard[:, 1])
-
-    xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
-
-    miller = [elem.Millers for elem in mydata[1][0]]
-
-    print(miller)
-
-    pp.figure(2)
-    pp.scatter(xyd[:, 0], xyd[:, 1])
-
-    calib = [105.624, 1017.50, 996.62, -0.027, -116.282]
-    pixelsize = 0.048
-
-    xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
-        ard[:, 0],
-        ard[:, 1],
-        calib,
-        verbose=0,
-        pixelsize=pixelsize,
-        kf_direction=kf_direction)
-
-    X, Y, theta = xyd_fromfind2
-
-    pp.scatter(X, Y, c="r")
-
-    pp.show()
-
-    f = open("Ni_fake_transmission.dat", "w")
-    f.write("X Y I from simulation\n")
-    for k in list(range(len(X))):
-        f.write(
-            "%s %s %s %s %s %s %s %s %s %s %s\n"
-            % (
-                X[k],
-                Y[k],
-                65000 * (1 - 0.8 * k / len(X)),
-                65000 * (1 - 0.8 * k / len(X)),
-                1.47,
-                1.81,
-                82.460,
-                -1.07,
-                1.78,
-                624.74,
-                64740,
-            )
-        )
-    f.write("# %s pixelsize %s" % (str(calib), pixelsize))
-    f.close()
-
-if 0:  # Si 111 in transmission on ID15
-    emin = 80
-    emax = 100
-
-    Detpos = 0  # 1 = 'top' 0 = 'trans'
-
-    if Detpos == 1:
-        # on top
-        kf_direction = "Z>0"  # reflection
-        Detdist = 100  # mm
-    elif Detpos == 0:
-        # transmission
-        kf_direction = "X>0"  # transmission
-        Detdist = 100.0  # mm
-
-    mattrans3 = [
-        [0.998222982873332, 0.04592237603705288, -0.037973831023250665],
-        [0.0036229001244100726, 0.5893105150537007, 0.8078985031808321],
-        [0.05947899678171664, -0.8066004291012069, 0.5880969279936651],
-    ]
-    mygrain = CP.Prepare_Grain("Si", dict_Rot["mat111alongx"])
-    mygrain = CP.Prepare_Grain("Si", mattrans3)
-
-    grains = [mygrain]
-
-    mydata = simulatepattern(
-        grains,
-        emin,
-        emax,
-        kf_direction,
-        data_filename,
-        PlotLaueDiagram=0,
-        Plot_Data=0,
-        verbose=1,
-        detectordistance=Detdist,
-        ResolutionAngstrom=None,
-    )
-
-    # two theta chi
-    ard = np.array(mydata[0])
-
-    print("ard", ard)
-
-    import pylab as pp
-
-    pp.figure(1)
-    pp.scatter(ard[:, 0], ard[:, 1])
-
-    # pixel X Y position with default camera settings ...
-    #         xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
-    #
-    #         pp.figure(2)
-    #         pp.scatter(xyd[:, 0], xyd[:, 1])
-
-    calib = [105.0, 1024.0, 1024.0, 0.0, 0.0]
-
-    xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
-        ard[:, 0],
-        ard[:, 1],
-        calib,
-        verbose=0,
-        pixelsize=0.048,
-        kf_direction=kf_direction)
-
-    X, Y, theta = xyd_fromfind2
-
-    intensity = np.ones_like(X)
-
-    IOLT.writefile_Peaklist(
-        "ID15transSi111",
-        np.array(
-            [
-                X,
-                Y,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
-                intensity,
+        grains = []
+        for k in list(range(-5, 6)):
+            dict_Materials["Cu_%d" % k] = dict_Materials["Cu3"]
+            # set material label
+            dict_Materials["Cu_%d" % k][0] = "Cu_%d" % k
+            # set deformation in absolute space
+            dict_Materials["Cu_%d" % k][1][0] = [
+                [1 + 0.01 * k, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1.0],
             ]
-        ).T,
-    )
+            grains.append(CP.Prepare_Grain("Cu_%d" % k))
 
-    pp.figure(3)
-    pp.scatter(X, Y, c="r")
+        simulatepattern(grains, emin, emax, kf_direction, data_filename, Plot_Data=0)
+        # -----------------------------------------------
 
-    pp.show()
+    if 0:
+
+        Bmat = dict_Vect["543_909075"]
+        Umat = dict_Rot["OrientSurf001"]
+        Dc = [[1.02, 0.01, 0], [-0.01, 0.98, 0.005], [0.001, -0.02, 1.01]]
+        Dc = [[1.00, 0.00, 0], [-0.00, 1.00, 0.000], [0.000, -0.00, 1.03]]
+
+        dict_Materials["mycell"] = ["mycell", [Id, Umat, Id, Bmat], "fcc"]
+        dict_Materials["mycell_strained"] = ["mycell_strained", [Id, Umat, Dc, Bmat], "fcc"]
+
+        mygrain = CP.Prepare_Grain("mycell")
+        mygrain_s = CP.Prepare_Grain("mycell_strained")
+
+        grains = [mygrain, mygrain_s]
+
+        simulatepattern(grains, emin, emax, kf_direction, data_filename, Plot_Data=0)
+
+    if 0:
+
+        Bmat = dict_Vect["543_909075"]
+        Umat = dict_Rot["mat311c1"]
+        Dc = dict_Vect["shear4"]
+
+        dict_Materials["mycell_s"] = ["mycell_s", [Id, Umat, Dc, Bmat], "fcc"]
+        dict_Materials["mycell"] = ["mycell", [Id, Umat, Id, Bmat], "fcc"]
+
+        mygrain_s = CP.Prepare_Grain("mycell_s")
+        mygrain = CP.Prepare_Grain("mycell")
+
+        grains = [mygrain_s]
+
+        simulatepattern(
+            grains, emin, emax, kf_direction, data_filename, Plot_Data=0, verbose=1
+        )
+
+    if 0:
+        emin = 5
+        emax = 22
+        kf_direction = "X>0"  # transmission
+        kf_direction = "Z>0"  # reflection
+
+        ResolutionAngstrom = 2.0
+
+        # overwriting dict_Materials['smallpro']
+        dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
+        mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
+        mygrain = CP.Prepare_Grain("smallpro", Id)
+
+        grains = [mygrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=69,
+            ResolutionAngstrom=ResolutionAngstrom,
+        )
+
+    if 0:
+        emin = 5
+        emax = 30
+        kf_direction = "X>0"  # transmission
+        #        kf_direction = 'Z>0' # reflection
+
+        ResolutionAngstrom = False
+
+        # overwriting dict_Materials['smallpro']
+
+        mat111alongx = np.dot(GT.matRot([1, 0, 0], -45.0), GT.matRot([0, 0, 1], 45.0))
+
+        print("mat111alongx", mat111alongx)
+
+        matmono = np.dot(GT.matRot([1, 0, 0], -1), mat111alongx)
+
+        mygrain = CP.Prepare_Grain("Cu", matmono)
+
+        grains = [mygrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=10,
+            ResolutionAngstrom=ResolutionAngstrom,
+        )
+
+    if 0:
+        emin = 8
+        emax = 25
+        kf_direction = "X<0"  # back reflection
+        #        kf_direction = 'Z>0' # reflection
+
+        ResolutionAngstrom = False
+
+        # overwriting dict_Materials['smallpro']
+
+        matmono = np.dot(GT.matRot([0, 0, 1], 20), np.eye(3))
+
+        mygrain = CP.Prepare_Grain("Si", matmono)
+
+        grains = [mygrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=55,
+            ResolutionAngstrom=ResolutionAngstrom,
+            Display_label=0,
+        )
+
+    if 0:
+        emin = 8
+        emax = 25
+        kf_direction = "X<0"  # back reflection
+        #        kf_direction = 'Z>0' # reflection
+
+        ResolutionAngstrom = False
+
+        # overwriting dict_Materials['smallpro']
+
+        matmother = np.dot(GT.matRot([0, 0, 1], -5), np.eye(3))
+        matmisorient = np.dot(GT.matRot([-1, 1, 1], 0.1), matmother)
+
+        maingrain = CP.Prepare_Grain("Si", matmother)
+
+        mygrain = CP.Prepare_Grain("Si", matmisorient)
+
+        grains = [maingrain, mygrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=55,
+            ResolutionAngstrom=ResolutionAngstrom,
+            Display_label=0,
+        )
+
+    if 0:
+        emin = 5
+        emax = 20
+        kf_direction = [90, 45]
+        #        kf_direction = 'Z>0' # reflection
+
+        ResolutionAngstrom = False
+
+        # overwriting dict_Materials['smallpro']
+
+        matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
+        #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
+
+        maingrain = CP.Prepare_Grain("Si", matmother)
+
+        grains = [maingrain, maingrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=70,
+            ResolutionAngstrom=ResolutionAngstrom,
+            Display_label=0,
+        )
+
+    if 0:
+        emin = 5
+        emax = 20
+        #        kf_direction = [0, 0]
+        kf_direction = "X>0"  #
+
+        ResolutionAngstrom = False
+
+        # overwriting dict_Materials['smallpro']
+
+        matmother = np.dot(GT.matRot([0, 0, 1], 0), np.eye(3))
+        #        matmisorient = np.dot(GT.matRot([-1, 1, 1], .1), matmother)
+
+        maingrain = CP.Prepare_Grain("Si", matmother)
+
+        grains = [maingrain, maingrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=70,
+            ResolutionAngstrom=ResolutionAngstrom,
+            Display_label=0,
+        )
+
+
+    if 0:
+        emin = 5
+        emax = 22
+
+        Detpos = 0  # 1 = 'top' 0 = 'trans'
+
+        if Detpos == 1:
+            # on top
+            kf_direction = "Z>0"  # reflection
+            Detdist = 70  # mm
+        elif Detpos == 0:
+            # transmission
+            kf_direction = "X>0"  # transmission
+            Detdist = 100  # mm
+
+        ResolutionAngstrom = None
+
+        # overwriting dict_Materials['smallpro']
+        dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
+        mygrain = CP.Prepare_Grain("smallpro", dict_Rot["mat311c1"])
+        mygrain = CP.Prepare_Grain("smallpro", Id)
+        ResolutionAngstrom = 2.0
+
+        grains = [mygrain]
+
+        simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=Detdist,
+            ResolutionAngstrom=ResolutionAngstrom,
+        )
+
+    if 0:
+        emin = 5
+        emax = 22
+
+        Detpos = 0  # 1 = 'top' 0 = 'trans'
+
+        if Detpos == 1:
+            # on top
+            kf_direction = "Z>0"  # reflection
+            Detdist = 70  # mm
+        elif Detpos == 0:
+            # transmission
+            kf_direction = "X>0"  # transmission
+            Detdist = 100.0  # mm
+
+        ResolutionAngstrom = None
+
+        # overwriting dict_Materials['smallpro']
+        dict_Materials["smallpro"] = ["smallpro", [20, 4.8, 49, 90, 90, 90], "no"]
+        ResolutionAngstrom = 2.0
+
+        for ori in list(dict_Rot.keys())[2:3]:
+            mygrain = CP.Prepare_Grain("smallpro", dict_Rot[ori])
+
+            grains = [mygrain]
+
+            mydata = simulatepattern(
+                grains,
+                emin,
+                emax,
+                kf_direction,
+                data_filename,
+                Plot_Data=0,
+                verbose=1,
+                detectordistance=Detdist,
+                ResolutionAngstrom=ResolutionAngstrom,
+            )
+
+        ard = np.array(mydata[0])
+
+        import pylab as pp
+
+        pp.figure(1)
+        pp.scatter(ard[:, 0], ard[:, 1])
+
+        xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
+
+        pp.figure(2)
+        pp.scatter(xyd[:, 0], xyd[:, 1])
+
+        calib = [100.0, 1024.0, 1024.0, 90, 0.0]
+
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
+            ard[:, 0],
+            ard[:, 1],
+            calib,
+            verbose=0,
+            pixelsize=165.0 / 2048,
+            kf_direction=kf_direction)
+
+        X, Y, theta = xyd_fromfind2
+
+        pp.scatter(X, Y, c="r")
+
+        pp.show()
+
+
+    if 0:
+        emin = 50
+        emax = 120
+
+        Detpos = 0  # 1 = 'top' 0 = 'trans'
+
+        if Detpos == 1:
+            # on top
+            kf_direction = "Z>0"  # reflection
+            Detdist = 70  # mm
+        elif Detpos == 0:
+            # transmission
+            kf_direction = "X>0"  # transmission
+            Detdist = 100.0  # mm
+
+        ResolutionAngstrom = 0.5
+
+        for ori in list(dict_Rot.keys())[2:3]:
+            mygrain = CP.Prepare_Grain("Ni", dict_Rot[ori])
+
+            grains = [mygrain]
+
+            mydata = simulatepattern(
+                grains,
+                emin,
+                emax,
+                kf_direction,
+                data_filename,
+                Plot_Data=0,
+                verbose=1,
+                detectordistance=Detdist,
+                ResolutionAngstrom=ResolutionAngstrom,
+            )
+
+        ard = np.array(mydata[0])
+
+        print("mydata", mydata)
+
+        import pylab as pp
+
+        pp.figure(1)
+        pp.scatter(ard[:, 0], ard[:, 1])
+
+        xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
+
+        miller = [elem.Millers for elem in mydata[1][0]]
+
+        print(miller)
+
+        pp.figure(2)
+        pp.scatter(xyd[:, 0], xyd[:, 1])
+
+        calib = [105.624, 1017.50, 996.62, -0.027, -116.282]
+        pixelsize = 0.048
+
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
+            ard[:, 0],
+            ard[:, 1],
+            calib,
+            verbose=0,
+            pixelsize=pixelsize,
+            kf_direction=kf_direction)
+
+        X, Y, theta = xyd_fromfind2
+
+        pp.scatter(X, Y, c="r")
+
+        pp.show()
+
+        f = open("Ni_fake_transmission.dat", "w")
+        f.write("X Y I from simulation\n")
+        for k in list(range(len(X))):
+            f.write(
+                "%s %s %s %s %s %s %s %s %s %s %s\n"
+                % (
+                    X[k],
+                    Y[k],
+                    65000 * (1 - 0.8 * k / len(X)),
+                    65000 * (1 - 0.8 * k / len(X)),
+                    1.47,
+                    1.81,
+                    82.460,
+                    -1.07,
+                    1.78,
+                    624.74,
+                    64740,
+                )
+            )
+        f.write("# %s pixelsize %s" % (str(calib), pixelsize))
+        f.close()
+
+    if 0:  # Si 111 in transmission on ID15
+        emin = 80
+        emax = 100
+
+        Detpos = 0  # 1 = 'top' 0 = 'trans'
+
+        if Detpos == 1:
+            # on top
+            kf_direction = "Z>0"  # reflection
+            Detdist = 100  # mm
+        elif Detpos == 0:
+            # transmission
+            kf_direction = "X>0"  # transmission
+            Detdist = 100.0  # mm
+
+        mattrans3 = [
+            [0.998222982873332, 0.04592237603705288, -0.037973831023250665],
+            [0.0036229001244100726, 0.5893105150537007, 0.8078985031808321],
+            [0.05947899678171664, -0.8066004291012069, 0.5880969279936651],
+        ]
+        mygrain = CP.Prepare_Grain("Si", dict_Rot["mat111alongx"])
+        mygrain = CP.Prepare_Grain("Si", mattrans3)
+
+        grains = [mygrain]
+
+        mydata = simulatepattern(
+            grains,
+            emin,
+            emax,
+            kf_direction,
+            data_filename,
+            PlotLaueDiagram=0,
+            Plot_Data=0,
+            verbose=1,
+            detectordistance=Detdist,
+            ResolutionAngstrom=None,
+        )
+
+        # two theta chi
+        ard = np.array(mydata[0])
+
+        print("ard", ard)
+
+        import pylab as pp
+
+        pp.figure(1)
+        pp.scatter(ard[:, 0], ard[:, 1])
+
+        # pixel X Y position with default camera settings ...
+        #         xyd = np.array([[elem.Xcam, elem.Ycam] for elem in mydata[1][0]])
+        #
+        #         pp.figure(2)
+        #         pp.scatter(xyd[:, 0], xyd[:, 1])
+
+        calib = [105.0, 1024.0, 1024.0, 0.0, 0.0]
+
+        xyd_fromfind2 = LTGeo.calc_xycam_from2thetachi(
+            ard[:, 0],
+            ard[:, 1],
+            calib,
+            verbose=0,
+            pixelsize=0.048,
+            kf_direction=kf_direction)
+
+        X, Y, theta = xyd_fromfind2
+
+        intensity = np.ones_like(X)
+
+        IOLT.writefile_Peaklist(
+            "ID15transSi111",
+            np.array(
+                [
+                    X,
+                    Y,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                    intensity,
+                ]
+            ).T,
+        )
+
+        pp.figure(3)
+        pp.scatter(X, Y, c="r")
+
+        pp.show()
