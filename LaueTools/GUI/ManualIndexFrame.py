@@ -213,7 +213,7 @@ class ManualIndexFrame(wx.Frame):
         self.DataSet = DataSetObject
 
         self.kf_direction = kf_direction
-        # print("self.kf_direction in ManualIndexFrame", self.kf_direction)
+        print("\n**** self.kf_direction in ManualIndexFrame", self.kf_direction)
 
         self.current_matrix = []
         self.Millerindices = None
@@ -305,9 +305,9 @@ class ManualIndexFrame(wx.Frame):
         self.listbuttonstate = [self.p2S, self.p3S, self.p6S]
         self.listbuttonstate = [0, 0, 0]
 
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T2, id=2)  # pick distance
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T3, id=3)  # recognise distance
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)  # show Exp. spot props
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T2, id=2)  # pick distance button
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T3, id=3)  # recognise distance button
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.T6, id=6)  # show Exp. spot props button
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -927,8 +927,7 @@ class ManualIndexFrame(wx.Frame):
                 if self.ImageArrayMinusBckg is None:
                     # compute 
                     backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
-                                                                            boxsizefilter=10,
-                                                                            CCDLabel=self.CCDLabel)
+                                                                            boxsizefilter=10)
                     # basic substraction
                     self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
                                                             backgroundimage, self.CCDLabel,
@@ -994,10 +993,13 @@ class ManualIndexFrame(wx.Frame):
                 self.gnomonX - X_offset,
                 self.gnomonY - Y_offset,
                 #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
-                s=self.factorsize
-                * self.func_size_peakintensity(np.array(self.Data_I),
-                                                params_spotsize,
-                                                lin=spotsizescale))
+                # s=self.factorsize
+                # * self.func_size_peakintensity(np.array(self.Data_I),
+                #                                 params_spotsize,
+                #                                 lin=spotsizescale))
+
+                s=self.Data_I / np.amax(self.Data_I) * 100.0,
+                c=self.Data_I / 50.0)
 
         # axes labels
         if self.datatype == "2thetachi":
@@ -1095,10 +1097,10 @@ class ManualIndexFrame(wx.Frame):
             print(("inaxes  xdata, ydata", evt.xdata, evt.ydata))
             self.centerx, self.centery = evt.xdata, evt.ydata
 
-            if self.pointButton6.GetValue():
+            if self.pointButton6.GetValue():  # annotate exp spots porperties
                 self.Annotate_exp(evt)
 
-            if self.pickdistbtn.GetValue():
+            if self.pickdistbtn.GetValue():  #pick distance
                 self.nbclick_dist += 1
                 print("self.nbclick_dist", self.nbclick_dist)
 
@@ -1133,10 +1135,15 @@ class ManualIndexFrame(wx.Frame):
                         _dist = GT.distfrom2thetachi(np.array(spot1), np.array(spot2))
 
                     if self.datatype == "gnomon":
-                        tw, ch = IIM.Fromgnomon_to_2thetachi(
-                            [np.array([spot1[0], spot2[0]]),
-                                np.array([spot1[1], spot2[1]]),
-                            ], 0)[:2]
+                        # last two nearest clicked spots
+                        print('self.clicked_indexSpot',self.clicked_indexSpot)
+                        _i1, _i2 = self.clicked_indexSpot[-2:]
+
+                        tw = np.take(self.tth,[_i1, _i2])
+                        ch = np.take(self.chi,[_i1, _i2])
+
+                        print('tw, ch from gmonon',tw, ch)
+
                         _dist = GT.distfrom2thetachi(
                             np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))
 
@@ -1169,7 +1176,7 @@ class ManualIndexFrame(wx.Frame):
                     self.txtctrldistance.SetLabel(
                         "==> %s deg" % str(np.round(_dist, decimals=3)))
 
-            if self.recongnisebtn.GetValue():
+            if self.recongnisebtn.GetValue():   # recognise distance
                 self.nbclick_dist += 1
                 print("self.nbclick_dist", self.nbclick_dist)
 
@@ -1453,20 +1460,20 @@ class ManualIndexFrame(wx.Frame):
                 print("(2theta, chi) ")
 
             elif self.datatype == "gnomon":
-                tw, ch = IIM.Fromgnomon_to_2thetachi([np.array([spot1[0], spot2[0]]),
-                                                        np.array([spot1[1], spot2[1]])],
-                                                        0)[:2]
-                print("gnomon")
-                last_index = self.clicked_indexSpot[-1]
-                print("last clicked", last_index)
-                if len(self.clicked_indexSpot) > 1:
-                    last_last_index = self.clicked_indexSpot[-2]
-                    print("former clicked", last_last_index)
+                print('self.clicked_indexSpot',self.clicked_indexSpot)
+                _i1, _i2 = self.clicked_indexSpot[-2:]
 
+                last_last_index, last_index = _i1, _i2
+
+                tw = np.take(self.tth,[_i1, _i2])
+                ch = np.take(self.chi,[_i1, _i2])
+
+                print('tw, ch from gmonon',tw, ch)
+
+                _dist = GT.distfrom2thetachi(
+                    np.array([tw[0], ch[0]]), np.array([tw[1], ch[1]]))
                 spot1 = [tw[0], ch[0]]
                 spot2 = [tw[1], ch[1]]
-                _dist = GT.distfrom2thetachi(np.array([tw[0], ch[0]]),
-                                                    np.array([tw[1], ch[1]]))
 
             elif self.datatype == "pixels":
                 print("pixels")
@@ -1592,12 +1599,15 @@ class ManualIndexFrame(wx.Frame):
         self.key_material = str(self.combokeymaterial.GetValue())
         latticeparams = self.parent.dict_Materials[self.key_material][1]
         B = CP.calc_B_RR(latticeparams)
-        # print type(key_material)
-        # print type(nbmax_probed)
-        # print type(energy_max)
 
         # read maximum index of hkl for building angles Look Up Table(LUT)
         nLUT = int(self.nlut.GetValue())
+
+        if self.kf_direction in ('X>0','X<0'):
+            LUTfraction=1.
+            print('\n********  TRANSMISSION MODE  ***********\n')
+        elif self.kf_direction in ('Z>0',):
+            LUTfraction=1/2.
 
         rough_tolangle = float(self.DRTA.GetValue())
         fine_tolangle = float(self.matr_ctrl.GetValue())
@@ -1613,7 +1623,7 @@ class ManualIndexFrame(wx.Frame):
         detectorparameters["pixelsize"] = self.parent.pixelsize
         detectorparameters["dim"] = self.parent.framedim
 
-        print("detectorparameters", detectorparameters)
+        #print("detectorparameters", detectorparameters)
 
         restrictLUT_cubicSymmetry = True
         set_central_spots_hkl = None
@@ -1670,7 +1680,9 @@ class ManualIndexFrame(wx.Frame):
                     "verbosedetails": verbosedetails,
                     "Minimum_Nb_Matches": Nb_criterium,
                     "worker": None,
-                    "dictmaterials":self.dict_Materials}]
+                    "dictmaterials":self.dict_Materials,
+                    "minimumnbmatricesformultiprocessing":1000,
+                    "LUTfraction":LUTfraction}]
 
             # update DataSetObject
             self.DataSet.dim = detectorparameters["dim"]
@@ -1712,7 +1724,9 @@ class ManualIndexFrame(wx.Frame):
                                                     verbosedetails=verbosedetails,
                                                     Minimum_Nb_Matches=Nb_criterium,
                                                     worker=self.worker,
-                                                    dictmaterials=self.dict_Materials)
+                                                    dictmaterials=self.dict_Materials,
+                                                    minimumnbmatricesformultiprocessing=1000,
+                                                    LUTfraction=LUTfraction)
             self.UBs_MRs, _ = self.resindexation
             # self.bestmat, stats_res = self.UBs_MRs
             self.bestmat, _ = self.UBs_MRs
