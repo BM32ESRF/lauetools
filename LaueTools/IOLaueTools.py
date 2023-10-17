@@ -71,6 +71,8 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     :param data_props: [array of dataproperties, list columns name]  (ie  peak sizes, pixdev etc...  see .dat file)
 
+    :param param: list of dictionnary (5 or 6 elements) of detector geometry parameters (order and key is found in CCD_CALIBRATION_PARAMETERS)
+
     if data_sat list, add column to .cor file to mark saturated peaks
     """
     nbspots = len(twicetheta)
@@ -323,23 +325,22 @@ def getpixelsize_from_corfile(filename):
     xpixelsize = None
 
     #    print "Reading detector parameters if exist"
-    f = open(filename, "r")
-    find_xpixelsize = False
-    find_ypixelsize = False
-    find_pixelsize = False
+    with open(filename, "r") as f:
+        find_xpixelsize = False
+        find_ypixelsize = False
+        find_pixelsize = False
 
-    for line in f:
-        if line.startswith("# pixelsize"):
-            find_pixelsize = True
-            pixelsize = float(line.split(":")[-1])
-            break
-        if line.startswith("# xpixelsize"):
-            find_xpixelsize = True
-            xpixelsize = float(line.split(":")[-1])
-        elif line.startswith("# ypixelsize"):
-            find_ypixelsize = True
-            ypixelsize = float(line.split(":")[-1])
-    f.close()
+        for line in f:
+            if line.startswith("# pixelsize"):
+                find_pixelsize = True
+                pixelsize = float(line.split(":")[-1])
+                break
+            if line.startswith("# xpixelsize"):
+                find_xpixelsize = True
+                xpixelsize = float(line.split(":")[-1])
+            elif line.startswith("# ypixelsize"):
+                find_ypixelsize = True
+                ypixelsize = float(line.split(":")[-1])
 
     if find_pixelsize:
         return pixelsize
@@ -367,6 +368,22 @@ def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
                 break
 
         return kf_direction
+    
+def getdetectordiameter_from_corfile(filename, defautdiameter=165):
+    """
+    return kf_direction (laue camera/detector position geometry) if written in .cor file
+    """
+
+    with open(filename, "r") as f:
+
+        diam =defautdiameter
+        for line in f:
+            if line.startswith("#") and 'detectordiameter' in line:
+                diam = float(line.split(":")[-1].strip())
+                print('found detectordiameter is:', diam)
+                break
+
+        return diam
 
 
 def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
@@ -471,7 +488,9 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'Alban'
                 elif abs(ps-0.4) <= 0.001:
                     ccdlabel = 'RXO'
-
+                elif abs(ps-0.232) <= 0.002:
+                    ccdlabel = 'psl_IN_bmp'
+                    ccdlabel = 'psl_IN_tif'
 
                 CCDcalib['CCDLabel'] = ccdlabel
 
@@ -605,58 +624,56 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         Xdev, Ydev, peak_bkg) = np.zeros((6, nbpeaks))
         Ipixmax = 500*np.ones(nbpeaks)
 
-    outputfile = open(os.path.join(dirname, outputfilename), "w")
+    with open(os.path.join(dirname, outputfilename), "w") as outputfile:
 
-    outputfile.write("peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
+        outputfile.write("peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
                                                 "peak_inclination Xdev Ydev peak_bkg Ipixmax\n")
 
-    if nbpeaks == 1:
-        print("nbcolumns", nbcolumns)
+        if nbpeaks == 1:
+            print("nbcolumns", nbcolumns)
 
-        outputfile.write(
-            "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-            % (np.round(peak_X[0], decimals=2),
-                np.round(peak_Y[0], decimals=2),
-                np.round(peak_I[0] + peak_bkg[0], decimals=2),
-                np.round(peak_I[0], decimals=2),
-                np.round(peak_fwaxmaj[0], decimals=2),
-                np.round(peak_fwaxmin[0], decimals=2),
-                np.round(peak_inclination[0], decimals=2),
-                np.round(Xdev[0], decimals=2),
-                np.round(Ydev[0], decimals=2),
-                np.round(peak_bkg[0], decimals=2),
-                int(Ipixmax[0])))
+            outputfile.write(
+                "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
+                % (np.round(peak_X[0], decimals=2),
+                    np.round(peak_Y[0], decimals=2),
+                    np.round(peak_I[0] + peak_bkg[0], decimals=2),
+                    np.round(peak_I[0], decimals=2),
+                    np.round(peak_fwaxmaj[0], decimals=2),
+                    np.round(peak_fwaxmin[0], decimals=2),
+                    np.round(peak_inclination[0], decimals=2),
+                    np.round(Xdev[0], decimals=2),
+                    np.round(Ydev[0], decimals=2),
+                    np.round(peak_bkg[0], decimals=2),
+                    int(Ipixmax[0])))
 
-        nbpeaks = 1
+            nbpeaks = 1
 
-    else:
+        else:
 
-        outputfile.write(
-            "\n".join(
-                ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-                    % tuple(list(zip(peak_X.round(decimals=2),
-                                peak_Y.round(decimals=2),
-                                (peak_I + peak_bkg).round(decimals=2),
-                                peak_I.round(decimals=2),
-                                peak_fwaxmaj.round(decimals=2),
-                                peak_fwaxmin.round(decimals=2),
-                                peak_inclination.round(decimals=2),
-                                Xdev.round(decimals=2),
-                                Ydev.round(decimals=2),
-                                peak_bkg.round(decimals=2),
-                                Ipixmax))[i]
-                    ) for i in list(range(nbpeaks))]))
-        nbpeaks = len(peak_X)
+            outputfile.write(
+                "\n".join(
+                    ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
+                        % tuple(list(zip(peak_X.round(decimals=2),
+                                    peak_Y.round(decimals=2),
+                                    (peak_I + peak_bkg).round(decimals=2),
+                                    peak_I.round(decimals=2),
+                                    peak_fwaxmaj.round(decimals=2),
+                                    peak_fwaxmin.round(decimals=2),
+                                    peak_inclination.round(decimals=2),
+                                    Xdev.round(decimals=2),
+                                    Ydev.round(decimals=2),
+                                    peak_bkg.round(decimals=2),
+                                    Ipixmax))[i]
+                        ) for i in list(range(nbpeaks))]))
+            nbpeaks = len(peak_X)
 
-    outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
-    if initialfilename:
-        outputfile.write("\n# From: %s" % initialfilename)
+        outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
+        if initialfilename:
+            outputfile.write("\n# From: %s" % initialfilename)
 
-    outputfile.write("\n# Comments: nb of peaks %d" % nbpeaks)
-    if comments:
-        outputfile.write("\n# " + comments)
-
-    outputfile.close()
+        outputfile.write("\n# Comments: nb of peaks %d" % nbpeaks)
+        if comments:
+            outputfile.write("\n# " + comments)
 
     if verbose:
         print("table of %d peak(s) with %d columns has been written in \n%s"
@@ -687,20 +704,19 @@ def addPeaks_in_Peaklist(
     if dirname_in is not None:
         filename_in = os.path.join(dirname_in, filename_in)
 
-    f = open(filename_in, "r")
-    comments = ""
-    incomments = False
-    while True:
-        line = f.readline()
+    with open(filename_in, "r") as f:
+        comments = ""
+        incomments = False
+        while True:
+            line = f.readline()
 
-        if line.startswith("#"):
-            incomments = True
-            #print(line)
-            comments += line
+            if line.startswith("#"):
+                incomments = True
+                #print(line)
+                comments += line
 
-        elif incomments:
-            break
-    f.close()
+            elif incomments:
+                break
 
     #print(merged_data.shape)
 
