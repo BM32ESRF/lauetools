@@ -1365,8 +1365,9 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
             for _n in positionersnames:
                 posmotors[_n] = f[i_scan]['instrument']['positioners'][_n][()]
             
-            print('title', title)
-            print('duration', duration)
+            if verbose:
+                print('title', title)
+                print('duration', duration)
             
         if not outputdate:
             return title, d, posmotors, fullpath
