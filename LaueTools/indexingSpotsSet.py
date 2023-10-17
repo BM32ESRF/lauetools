@@ -908,12 +908,15 @@ class spotsset:
                                                                 Minimum_Nb_Matches=15,
                                                                 verbose=0,
                                                                 nb_of_solutions_per_central_spot=1,
-                                                                simulparameters=None):
+                                                                simulparameters=None,
+                                                                LUTfraction=1/2.):
         """
         class method to Find orientation matrices by angles recognition
         (look up table of angles in reference structure)
 
         consider exp. spots that are unindexed  (call of getUnIndexedSpots())
+
+        :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
         call of INDEX.getOrientMatrices in spotsset class
 
@@ -993,7 +996,8 @@ class spotsset:
                                                     detectorparameters=simulparameters,
                                                     verbosedetails=False,  # not CP.isCubic(key_material)
                                                     dictmaterials=self.dict_Materials,
-                                                    LUT_with_rules=True)
+                                                    LUT_with_rules=True,
+                                                    LUTfraction=LUTfraction)
         # when nbbestplot is very high  self.bestmat contain all matrices
         # with matching rate above Minimum_Nb_Matches
 
@@ -1112,6 +1116,7 @@ class spotsset:
         :type corfilename: string
         :param dirnameout_fitfile: folder to write .fit results file in
         :type dirnameout_fitfile: string
+        :param depth: normal to surface sample depth in microns
         """
         MINIMUM_NB_SPOTS_FOR_INDEXING = 3
 
@@ -1386,6 +1391,11 @@ class spotsset:
                         print("central list of spots contains spots that do not belong the current list of spots to be indexed")
                         break
 
+                    if self.kf_direction in ('Z>0',):
+                        LUTfraction=1/2.
+                    elif self.kf_direction in ('X>0',):
+                        LUTfraction=1.
+
                     # find single best orientation matrix UB solution
                     (bestUB, _, _,
                         Threshold_reached,
@@ -1398,7 +1408,8 @@ class spotsset:
                                                         set_central_spots_hkl=set_central_spots_hkl,
                                                         ResolutionAngstrom=ResolutionAngstrom,
                                                         exceptgrains=self.indexedgrains,
-                                                        verbose=verbose)
+                                                        verbose=verbose,
+                                                        LUTfraction=LUTfraction)
                     # a way to launch indexing from scratch one time. and it provides only one UB mrix
                     NeedtoProvideNewMatrices = False
                     indexing_from_scratch_counter += 1
@@ -1894,7 +1905,8 @@ class spotsset:
                                                     ResolutionAngstrom=ResolutionAngstrom,
                                                     pixelsize=self.pixelsize,
                                                     dim=self.dim,
-                                                    detectordiameter=self.detectordiameter * 1.25)
+                                                    detectordiameter=self.detectordiameter * 1.25,
+                                                    kf_direction=self.kf_direction)
 
         nb_of_simulated_spots = len(Twicetheta)
 
@@ -2091,10 +2103,13 @@ class spotsset:
                                 set_central_spots_hkl=None,
                                 ResolutionAngstrom=False,
                                 exceptgrains=None,
-                                verbose=0):
+                                verbose=0,
+                                LUTfraction=1/2.):
         r"""
         get all orientation matrices from angular distance matching technique
         with experimental spot data
+
+        :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
         .. note::
             USED in FileSeries
@@ -2130,7 +2145,8 @@ class spotsset:
                                                     MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
                                                     Minimum_Nb_Matches=Minimum_Nb_Matches,
                                                     nb_of_solutions_per_central_spot=max_nb_of_solutions_per_central_spot,
-                                                    simulparameters=self.simulparameter)
+                                                    simulparameters=self.simulparameter,
+                                                    LUTfraction=LUTfraction)
 
         print("Nb of potential UBs ", len(list_matrices))
 
@@ -2160,11 +2176,14 @@ class spotsset:
                                                                 set_central_spots_hkl=None,
                                                                 ResolutionAngstrom=False,
                                                                 exceptgrains=None,
-                                                                verbose=0):
+                                                                verbose=0,
+                                                                LUTfraction=1/2.):
         r"""
         get single best orientation matrix from angular distance matching technique
         with experimental spot data
 
+        :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
+        
         .. note::
             USED in FileSeries
 
@@ -2186,7 +2205,8 @@ class spotsset:
                                                 set_central_spots_hkl=set_central_spots_hkl,
                                                 ResolutionAngstrom=ResolutionAngstrom,
                                                 exceptgrains=exceptgrains,
-                                                verbose=verbose)
+                                                verbose=verbose,
+                                                LUTfraction=LUTfraction)
 
         #         print "Res", Res
         if Res[0] is None:
@@ -2273,6 +2293,8 @@ class spotsset:
         use_weights : refine model parameters by weighting each spots pair (exp.- theo)
                         by intensity of exp. spot.
         nbSpotsToIndex  : integer or 'all' select the nb of pairs to used for refinement.
+
+        :param depth: normal to surface sample depth in microns
 
         :return: None, None if two few exp. data to fit
 
@@ -3780,7 +3802,7 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
     keep_only_equivalent         : True all permutation of axes,
                                 0, None or False    all matrices even duplicates
     """
-    if verbose:
+    if 1:#verbose:
         print('Scores', Scores)
 
     _hhh = []
