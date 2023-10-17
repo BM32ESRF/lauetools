@@ -677,7 +677,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
 
-        self.sampledepthctrl.SetToolTipString('depth in micrometre = 10-3 mm)')
+        self.sampledepthctrl.SetToolTipString('normal to surface sample depth in micrometre = 10-3 mm)')
 
     def _layout(self):
         """ layout
@@ -1559,7 +1559,7 @@ class Plot_RefineFrame(wx.Frame):
         .. note:: experimental peaks pixel positions are reevaluated from 2theta and chi angles
         """
 
-        if self.use_forfit1.GetValue():
+        if self.use_forfit1.GetValue():   # radio button autolinks model
             if self.linkedspots_link is None:
                 wx.MessageBox('There are not existing links between simulated and experimental '
                 'data for the refinement!! Click on "Auto Links" button ', "INFO")
@@ -1567,14 +1567,14 @@ class Plot_RefineFrame(wx.Frame):
 
             if len(self.linkedspots_link) < 8:
                 wx.MessageBox(
-                    "You have only %d over the 8 links needed between exp. and theo. spots to "
+                    "WARNING! You have only %d over the 8 links needed between exp. and theo. spots to "
                     "refine orientation and strain" % len(self.linkedspots_link), "INFO")
-                return
+                # return
             self.linkedspots_fit = self.linkedspots_link
             self.linkExpMiller_fit = self.linkExpMiller_link
             self.linkIntensity_fit = self.linkIntensity_link
             self.linkResidues_fit = None
-        elif self.use_forfit2.GetValue():
+        elif self.use_forfit2.GetValue():  # radio button filterlinks model
             if self.linkedspots == []:
                 txt = "There are not existing links between simulated and experimental data for the refinement!!\n"
                 txt += 'Click first on "Auto Links" button and then filter and select data for the refinement'
@@ -1584,7 +1584,7 @@ class Plot_RefineFrame(wx.Frame):
             self.linkExpMiller_fit = self.linkExpMiller
             self.linkIntensity_fit = self.linkIntensity
             self.linkResidues_fit = None
-        elif self.use_forfit3.GetValue():
+        elif self.use_forfit3.GetValue():  # radio button show results model
             print("I will use for the refinement the(filtered) results of the previous fit")
             if self.linkedspots_fit is None:
                 wx.MessageBox(
@@ -2824,8 +2824,7 @@ class Plot_RefineFrame(wx.Frame):
                 if self.ImageArrayMinusBckg is None:
                     # compute
                     backgroundimage = ImProc.compute_autobackground_image(self.ImageArrayInit,
-                                                                            boxsizefilter=10,
-                                                                            CCDlabel=self.CCDLabel)
+                                                                            boxsizefilter=10)
                     # basic substraction
                     self.ImageArrayMinusBckg = ImProc.computefilteredimage(self.ImageArrayInit,
                                                             backgroundimage, self.CCDLabel,
@@ -3067,7 +3066,7 @@ class Plot_RefineFrame(wx.Frame):
         """
         in Plot_RefineFrame
 
-        button Accept Matching
+        button 'Accept Matching'
 
         Assign Miller indices of exp. spots for simulated spots close to them
         Assumption: undistorted cubic crystal in CCD on top geometry
@@ -3186,7 +3185,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # matching
 
-        print("\n\n\n self.linkResidues_fit[:,0]", self.linkResidues_fit[:, 0])
+        print("\n\n\n self.linkResidues_fit[:,0]", np.array(self.linkResidues_fit[:, 0], dtype=np.int16))
         print("self.current_processedgrain", self.current_processedgrain)
         print("\n\n\n")
         self.DataSet.AssignHKL(ISS.OrientMatrix(self.UBmat),
