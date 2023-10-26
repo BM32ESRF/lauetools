@@ -1091,7 +1091,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         starting_param = [77, 1000, 1000, 0, 0]
 
-        print("Starting param", starting_param)
+        #print("Starting param", starting_param)
 
         initialParameter = {}
         initialParameter["CCDParam"] = starting_param
@@ -1105,8 +1105,8 @@ class LaueToolsGUImainframe(wx.Frame):
         initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples", "Ge")
         initialParameter["dict_Materials"] = self.dict_Materials
 
-        print("initialParameter when launching calibration", initialParameter)
-        print('OnDetectorCalibration ==> pixelsize', pixelsize)
+        # print("initialParameter when launching calibration", initialParameter)
+        # print('OnDetectorCalibration ==> pixelsize', pixelsize)
 
         file_peaks = os.path.join(initialParameter["dirname"], initialParameter["filename"])
 
