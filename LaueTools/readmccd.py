@@ -40,6 +40,36 @@ else:
 
 listfile = os.listdir(os.curdir)
 
+def function_details(func): 
+      
+      
+    # Getting the argument names of the 
+    # called function 
+    argnames = func.__code__.co_varnames[:func.__code__.co_argcount] 
+      
+    # Getting the Function name of the 
+    # called function 
+    fname = func.__name__ 
+      
+      
+    def inner_func(*args, **kwargs): 
+          
+        print(fname, "(", end = "") 
+          
+        # printing the function arguments 
+        print(', '.join( '% s = % r' % entry 
+            for entry in zip(argnames, args[:len(argnames)])), end = ", ") 
+          
+        # Printing the variable length Arguments 
+        print("args =", list(args[len(argnames):]), end = ", ") 
+          
+        # Printing the variable length keyword 
+        # arguments 
+        print("kwargs =", kwargs, end = "") 
+        print(")") 
+          
+    return inner_func
+
 # Default dictionary peak search parameters:
 
 PEAKSEARCHDICT_Convolve = {"PixelNearRadius": 10,
@@ -996,8 +1026,8 @@ def peaksearch_skimage(filename, min_dist, pkid_threshold, bs, fit_peaks_gaussia
     
     return tabIsorted, peak_coords
 
-
-def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
+#@function_details
+def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 boxsizeROI=(200, 200),  # use only if center != None
                                                 PixelNearRadius=5,
                                                 removeedge=2,
@@ -1007,7 +1037,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
                                                 boxsize=15,
                                                 verbose=0,
                                                 position_definition=1,
-                                                local_maxima_search_method=1,
+                                                local_maxima_search_method=0,
                                                 peakposition_definition="max",
                                                 fit_peaks_gaussian=1,
                                                 xtol=0.00001,
@@ -1208,7 +1238,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="PRINCETON", center=None,
         Data = ImProc.computefilteredimage(Data, backgroundimage, CCDLabel, usemask=usemask,
                                                             formulaexpression=formulaexpression)
 
-    if verbose > 1: print("Data.shape for local maxima", Data.shape)
+    if verbose: print("Data.shape for local maxima", Data.shape)
 
     # --- PRE SELECTION OF HOT PIXELS as STARTING POINTS FOR FITTING ---------
     # first method ---------- "Basic Intensity Threshold"
