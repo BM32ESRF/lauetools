@@ -818,7 +818,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     USE_RAW_METHOD = False
 
-    if 1:# verbose > 1:
+    if verbose > 1:
         print("CCDLabel in readCCDimage", CCDLabel)
         print('FABIO_EXISTS',FABIO_EXISTS)
         print('LIBTIFF_EXISTS',LIBTIFF_EXISTS)
@@ -831,7 +831,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
                         'ImageStar_dia_2021_2x2','psl_IN_tif'):#, 'Alban'):
 
-            if 1: #verbose > 1:
+            if verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
