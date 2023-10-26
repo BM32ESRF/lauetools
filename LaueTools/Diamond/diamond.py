@@ -1343,44 +1343,9 @@ def build_mosaic_and_fit_spot_position(indimg,
 
         dataimage, _, _ = IOimage.readCCDimage(fileim, CCDLabel=CCDlabel, dirname=None)
 
-        #        print np.shape(dataimage)
-
         databox = dataimage[y1:y2, x1:x2]
 
-        #        ind1 = np.where(databox > 40000)
-        #        databox[ind1[0]] = 0
-        #
-        #        print np.shape(databox)
-
-        #        f = open(fileim,'r')
-        #        im = Image.open(fileim)
-        #        #print "original image :", im.format, im.size, im.mode
-        #
-        #        region = im.crop(box)
-        ##         region2 = ImageChops.invert(region)
-        ##         region.show()
-        ##         la convention pour l'orientation de y est la meme que dans XMAS
-        #        print "cropped image : ", region.format, region.size, region.mode
-        #        print "cropped image pixel values"
-        #
-        #
-        #        data1= list(region.getdata())
-        #
-        #        data5 = np.array(region.getdata(), dtype = "uint16")
-        #
-        #        #data2 = str(data1).replace(',','')
-        #        #data3 = data2.strip('[]')
-        #        #data4 = data3.split(' ')
-        #        # ligne
-        #        #data5 = np.array(data4)
-        #
-        #        #tableau
-        #        databox = data5.renp.shape(2*yboxsize,2*xboxsize)
-        #
-        # print "databox \n", databox
-        # data7 = np.array(databox, dtype=int)
-        # print data7
-
+        
         if calc_sum_image:
 
             print("summing images")
@@ -5088,7 +5053,7 @@ def build_dict_spec_mesh(spec_file,
         firsttime = 1
         for spec_scan_num in scan_list:
 
-            dict_spec, ctime, user_comment1, dict_mot_pos_in_header, scan_title = read_scan_in_specfile(
+            dict_spec, ctime, user_comment1, dict_mot_pos_in_header, scan_title = MG.read_scan_in_specfile(
                 spec_file,
                 spec_scan_num,
                 list_colnames=list_colnames,
@@ -5169,7 +5134,7 @@ def build_dict_xy_E(img_list,
     Etheor_ref = np.array(data_ref[:, 9], dtype=float)
 
     dlatu_angstroms_deg = DictLT.dict_Materials[elem_label][1]
-    dlatu_nm_rad = deg_to_rad_angstroms_to_nm(dlatu_angstroms_deg)
+    dlatu_nm_rad = MG.deg_to_rad_angstroms_to_nm(dlatu_angstroms_deg)
     #            print "dlatu_nm_rad = ", dlatu_nm_rad
 
     # rajouter img_list en commentaire dans fichier
