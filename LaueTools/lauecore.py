@@ -1880,7 +1880,7 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
                                                 pixelsize=pixelsize,
                                                 kf_direction=kf_direction, version=version)[:2]
 
-    print('posx, posy with calc_xycam_from2thetachi() ',posx[:5],posy[:5])
+    #print('posx, posy with calc_xycam_from2thetachi() ',posx[:5],posy[:5])
 
     if kf_direction in ('Y>0', 'Y<0'):
     
