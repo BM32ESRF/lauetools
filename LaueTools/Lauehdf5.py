@@ -21,6 +21,8 @@ if sys.version_info.major == 3:
     import LaueTools.IOLaueTools as IOLT
     import LaueTools.dict_LaueTools as DictLT
     import LaueTools.orientations as ORI
+    import LaueTools.imageprocessing as ImProc
+
 else:
 
     import generaltools as GT
