@@ -90,7 +90,7 @@ else:
     import IOimagefile as IOimage
     import imageprocessing as ImProc
 
-
+ 
 class ViewColorPanel(wx.Panel):
     """class to play with color LUT and intensity scale
     """
@@ -5459,8 +5459,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.dict_param[key] = val
         # ----------------------------------------------------------------
 
-        print("self.dict_param")
-        print(self.dict_param)
+        # print("self.dict_param")
+        # print(self.dict_param)
         #        print "self.method"
         #        print self.method
 
@@ -5502,6 +5502,10 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.dict_param_LocalMaxima = {}
         if self.method == 1:  # basic local maxima search (threshold on raw intensity)
+            print('method threshold')
+            print(self.stackimageindex, NB_MAX_FITS, self.dict_param["PixelNearRadius"],
+                  self.dict_param["IntensityThreshold"], self.dict_param["boxsize"], fit_peaks_gaussian,
+                  self.dict_param["xtol"], self.dict_param["FitPixelDev"], self.dict_param["MinIntensity"], Data_for_localMaxima, Fit_with_Data_for_localMaxima, maxPixelDistanceRejection, formulaexpression)
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
                             stackimageindex=self.stackimageindex,
                             CCDLabel=self.CCDlabel,
@@ -5513,7 +5517,7 @@ class MainPeakSearchFrame(wx.Frame):
                             # thresholdConvolve = 1000,
                             boxsize=self.dict_param["boxsize"],
                             position_definition=self.position_definition,
-                            verbose=0,
+                            verbose=1,
                             fit_peaks_gaussian=fit_peaks_gaussian,
                             xtol=self.dict_param["xtol"],
                             FitPixelDev=self.dict_param["FitPixelDev"],
