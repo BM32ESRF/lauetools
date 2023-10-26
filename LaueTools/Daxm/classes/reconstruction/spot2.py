@@ -165,7 +165,7 @@ class SpotReconstructor:
 
         # corresponding depth position (considering central pixel)
         self.yw, _ = self.wire.mask_fronts(self.pw, self.Pcam)
-	self.yw = np.arange(self.yw[0]-self.wire.R, self.yw[1]+self.wire.R, 0.001) 
+        self.yw = np.arange(self.yw[0]-self.wire.R, self.yw[1]+self.wire.R, 0.001) 
 
         self.ygrid = 0.5 * (self.yw[:-1] + self.yw[1:])
 
