@@ -16,6 +16,7 @@ from numpy.linalg import inv, det
 from math import atan
 from math import acos
 from math import asin
+import math
 
 import sys
 import os
@@ -568,7 +569,7 @@ def deviatoric_strain_crystal_to_stress_crystal(c_tensor, eps_crystal_line): #29
     sigma in 0.1 GPa = 100 MPa units
     """
     fact1 = np.array([1., 1., 1., 2., 2., 2.])
-    gam_cryst = multiply(eps_crystal_line, fact1)
+    gam_cryst = np.multiply(eps_crystal_line, fact1)
     sigma_crystal_line = dot(c_tensor, gam_cryst)
     #print eps_crystal_line
     #print gam_cryst
@@ -1553,7 +1554,7 @@ def matstarlab_to_orientation_color_rgb(matstarlab,
         if (omega  is  not None)&(mat_from_lab_to_sample_frame  is None) : # deprecated - only for retrocompatibility
             omega = omega*PI/180.0
             # rotation de -omega autour de l'axe x pour repasser dans Rsample
-            mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,cos(omega),np.sin(omega)],[0.0,-np.sin(omega),np.cos(omega)]])
+            mat_from_lab_to_sample_frame = array([[1.0,0.0,0.0],[0.0,math.cos(omega),math.sin(omega)],[0.0,-math.sin(omega),math.cos(omega)]])
 
         mat_from_sample_to_lab_frame = transpose(mat_from_lab_to_sample_frame)
                         
@@ -2227,7 +2228,7 @@ def test_index_refine(filedat, paramdetector_top, proposed_matrix=None,
             hklmin = dot(transfmat,hkl.transpose()).transpose()
             
     elif stereo_mat == True : 
-            MG.init_numbers_for_crystal_opsym_and_first_stereo_sector(elem_label = elem_label)
+            init_numbers_for_crystal_opsym_and_first_stereo_sector(elem_label = elem_label)
             if axis_pole_sample  is  not None :
                     matstarlab = F2TC.matstarlabLaueTools_to_matstarlabOR(UBmat_2)
                     matstarlabnew, transfmat, rgb_pole = matstarlab_to_orientation_color_rgb(matstarlab, axis_pole_sample, elem_label = elem_label)
@@ -2305,18 +2306,7 @@ def test_index_refine(filedat, paramdetector_top, proposed_matrix=None,
         #filedet = save_det_results(filedat, filecor, matLTmin, filesuffix, newparam, elem_label)
         #filecal = save_cal_results(filecor, numlist, hkl , intensity_list, pixdev_list , matLTmin, filesuffix, pixdev_2,newparam)
 
-    PLOTRESULTS = 0
     
-    if PLOTRESULTS :
-        xyind = data_cor[numlist, 2:4]
-        xyall = data_cor[:, 2:4]
-        print(shape(xyind))
-        #print xy_list
-        p.figure(figsize=(8, 8))
-        p.plot(xyall[:, 0], xyall[:, 1], 'bo', markersize=8)
-        p.plot(xyind[:, 0], xyind[:, 1], 'rx', label='LT', markersize=12, markeredgewidth=2)
-        p.xlim(0, 2048)
-        p.ylim(2048, 0)
 
     if paramtofit == "strain" :
         return(filefit, filecor, nfit_2, pixdev_2, matLT_UBB0)
