@@ -101,8 +101,8 @@ class PlotRangePanel(wx.Panel):
         self.mainframe = parent.GetParent().GetParent()
         self.mainframeparent = parent.GetParent().GetParent().GetParent()
 
-        print("mainframe in PlotRangePanel", self.mainframe)
-        print('linked github version DetectorCalibration')
+        # print("mainframe in PlotRangePanel", self.mainframe)
+        # print('linked github version DetectorCalibration')
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -485,7 +485,7 @@ class CCDParamPanel(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        print("self.mainframe in CCDParamPanel", self.mainframe)
+        # print("self.mainframe in CCDParamPanel", self.mainframe)
 
         self.init_pixelsize = self.mainframe.pixelsize
         self.init_detectordiameter = self.mainframe.detectordiameter
@@ -946,8 +946,8 @@ class StrainXtal(wx.Panel):
 
         key_param = name.split("_")[-1]
 
-        self.lattice_parameters_dict[key_param] = float(getattr(self,
-                                                        "currentctrl_%s" % key_param).GetValue())
+        formulaexpr = getattr(self,"currentctrl_%s" % key_param).GetValue()
+        self.lattice_parameters_dict[key_param] = float(eval(formulaexpr))
 
         if "strained" not in self.key_material:
             new_key_material = "strained_%s" % self.key_material
@@ -970,7 +970,8 @@ class StrainXtal(wx.Panel):
         print("new lattice parameters", new_lattice_params)
         print("for material: %s" % new_key_material)
 
-        getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
+        # getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param])) 
+        getattr(self, "currentctrl_%s" % key_param).SetValue(formulaexpr)
 
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
@@ -1465,15 +1466,16 @@ class MainCalibrationFrame(wx.Frame):
         """
         print('\n\nReadExperimentData()  \n\n')
 
-        print("self.CCDParam in ReadExperimentData()", self.CCDParam)
-        print('self.kf_direction', self.kf_direction)
-
         datfilename = self.filename
 
         extension = self.filename.split(".")[-1]
-        print('self.writefolder', self.writefolder)
+        
         filepath = os.path.join(self.dirnamepklist, self.filename)
-        print('filepath', filepath)
+
+        # print("self.CCDParam in ReadExperimentData()", self.CCDParam)
+        # print('self.kf_direction', self.kf_direction)
+        # print('self.writefolder', self.writefolder)
+        # print('filepath', filepath)
 
         if not os.access(self.dirnamepklist, os.W_OK):
             if self.writefolder is None:
@@ -2424,7 +2426,7 @@ class MainCalibrationFrame(wx.Frame):
         self.parametersdisplaypanel.act_Ycen_r.SetValue(str(dataresults[2]))
         self.parametersdisplaypanel.act_Ang1_r.SetValue(str(dataresults[3]))
         self.parametersdisplaypanel.act_Ang2_r.SetValue(str(dataresults[4]))
-        self.act_residues.SetValue(str(np.round(dataresults[8], decimals=2)))
+        self.act_residues.SetValue(str(np.round(dataresults[8], decimals=4)))
         self.nbspots_in_fit.SetValue(str(dataresults[9]))
 
     def close(self, _):
@@ -2877,8 +2879,8 @@ class MainCalibrationFrame(wx.Frame):
         return:
         twicetheta, chi, self.Miller_ind, posx, posy, Energy
         """
-        print('entering simulate_theo() --------\n\n')
-        print('self.kf_direction', self.kf_direction)
+        # print('entering simulate_theo() --------\n\n')
+        # print('self.kf_direction', self.kf_direction)
         ResolutionAngstrom = None
 
         self.Extinctions = DictLT.dict_Extinc[self.crystalparampanel.comboExtinctions.GetValue()]
@@ -2931,8 +2933,8 @@ class MainCalibrationFrame(wx.Frame):
         if SINGLEGRAIN:  # for single grain simulation
             if self.kf_direction in ("Z>0", "X>0", 'X<0') and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
-                print('SINGLEGRAIN')
-                print('parameters for SimulateLaue_full_np', self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
+                #print('SINGLEGRAIN')
+                #print('parameters for SimulateLaue_full_np', self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
 
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,
@@ -2965,7 +2967,9 @@ class MainCalibrationFrame(wx.Frame):
                 return None
 
             (twicetheta, chi, self.Miller_ind, posx, posy, Energy) = ResSimul
-            print('twicetheta[:5], chi[:5]', twicetheta[:5], chi[:5])
+            # print('twicetheta[:5], chi[:5]', twicetheta[:5], chi[:5])
+            # print('posx[:5], posy[:5]', posx[:5], posy[:5])
+            # print('min max posx, min max posy', np.amin(posx), np.amax(posx),np.amin(posy), np.amax(posy))
 
         else:
             # for twinned grains simulation
@@ -3174,7 +3178,7 @@ class MainCalibrationFrame(wx.Frame):
 
         # restore the zoom limits(unless they're for an empty plot)
         if xlim != (0.0, 1.0) or ylim != (0.0, 1.0):
-            print('xlim, ylim', xlim, ylim)
+            # print('xlim, ylim', xlim, ylim)
             self.axes.set_xlim(xlim)
             self.axes.set_ylim(ylim)
 
@@ -3603,13 +3607,18 @@ class MainCalibrationFrame(wx.Frame):
                 self.RotateAroundAxis(-angle)
 
     def onClick(self, event):
-        """ onclick or onPress with mouse
+        """ onclick with mouse
         """
-        #        print 'clicked on mouse'
         if event.inaxes:
 
             if event.button == 1:
                 self.centerx, self.centery = event.xdata, event.ydata
+
+
+                if self.datatype=='pixels':
+                    tw, chi = self.convertpixels2twotheta(event.xdata, event.ydata)
+                    print('X,Y',event.xdata, event.ydata)
+                    print('2theta, chi', tw, chi)
 
             # rotation  around self.centerx, self.centery triggered by button
             if self.RotationActivated:
@@ -3641,15 +3650,153 @@ class MainCalibrationFrame(wx.Frame):
         if event.button == 1:
             self.centerx, self.centery = self.press
 
-            # define rotation axis from self.centerx, self.centery
+            # define rotation axis from self.centerx, self.centery that must be 2theta and chi angles
             self.SelectedRotationAxis = self.selectrotationaxis(self.centerx, self.centery)
             self._replot(event)
 
         self.press = None
 
+
+    def onMotion_ToolTip(self, event):
+        """tool tip to show data (exp. and theo. spots) when mouse hovers on plot
+        """
+
+        if len(self.data[0]) == 0:
+            return
+
+        collisionFound_exp = False
+        collisionFound_theo = False
+
+        if self.datatype == "2thetachi":
+            xtol = 5
+            ytol = 5
+        elif self.datatype == "pixels":
+            xtol = 200
+            ytol = 200
+
+        if self.datatype == "2thetachi":
+            xdata, ydata, _annotes_exp = (self.Data_X,
+                                        self.Data_Y,
+                                        list(zip(self.Data_index_expspot, self.Data_I)))
+        elif self.datatype == "pixels":
+            xdata, ydata, _annotes_exp = (self.data_XY[0],
+                                        self.data_XY[1],
+                                        list(zip(self.Data_index_expspot, self.Data_I)))
+
+        xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
+                                                self.data_theo[1],
+                                                list(zip(*self.data_theo[2:])))
+
+        if event.xdata != None and event.ydata != None:
+
+            evx, evy = event.xdata, event.ydata
+
+            if self.datatype == "pixels":
+                tip = "(X,Y)=(%.2f,%.2f)"%(evx, evy)
+            if self.datatype == "2thetachi":
+                tip = "(2theta,chi)=(%.2f,%.2f)"%(evx, evy)
+
+            annotes_exp = []
+            for x, y, aexp in zip(xdata, ydata, _annotes_exp):
+                if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
+                    #                     print "got exp. spot!! at x,y", x, y
+                    annotes_exp.append((GT.cartesiandistance(x, evx, y, evy), x, y, aexp))
+
+            annotes_theo = []
+            for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
+                if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
+                    #                     print "got theo. spot!!"
+                    #                     print "with info: ", atheo
+                    annotes_theo.append((GT.cartesiandistance(x, evx, y, evy), x, y, atheo))
+
+            if annotes_exp != []:
+                collisionFound_exp = True
+            if annotes_theo != []:
+                collisionFound_theo = True
+
+            if not collisionFound_exp and not collisionFound_theo:
+                self.tooltip.SetTip(tip)
+                return
+
+            tip_exp = ""
+            tip_theo = ""
+            if self.datatype == "2thetachi":
+                closedistance = 2.0
+            elif self.datatype == "pixels":
+                closedistance = 100.0
+
+            if collisionFound_exp:
+                annotes_exp.sort()
+                _distanceexp, x, y, annote_exp = annotes_exp[0]
+
+                # if exp. spot is close enough
+                if _distanceexp < closedistance:
+                    tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
+                    print('found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
+                    self.updateStatusBar(x, y, annote_exp, spottype="exp")
+
+                    self.highlightexpspot = annote_exp[0]
+                else:
+                    self.sb.SetStatusText("", 1)
+                    tip_exp = ""
+                    collisionFound_exp = False
+                    self.highlightexpspot = None
+
+            if collisionFound_theo:
+                annotes_theo.sort()
+                _distancetheo, x, y, annote_theo = annotes_theo[0]
+
+                # if theo spot is close enough
+                if _distancetheo < closedistance:
+                    # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
+                    # print("with info (hkl, other coordinates, energy)", annote_theo)
+
+                    tip_theo = "[h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
+                    if self.datatype == "pixels":
+                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            x, y, annote_theo[1], annote_theo[2])
+                    if self.datatype == "2thetachi":
+                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                            annote_theo[1], annote_theo[2], x, y)
+                    self.updateStatusBar(x, y, annote_theo, spottype="theo")
+
+                    # find theo spot index
+                    hkl0 = annote_theo[0]
+                    #print('hkl0',hkl0)
+                    hkls = self.data_theo[2]
+                    theoindex = np.where(np.sum(np.hypot(hkls - hkl0, 0), axis=1) < 0.01)[0]
+                    #print('theoindex',theoindex)
+                    self.highlighttheospot = theoindex
+                    hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
+                    print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
+                else:
+                    self.sb.SetStatusText("", 0)
+                    tip_theo = ""
+                    collisionFound_theo = False
+                    self.highlighttheospot = None
+                    self._replot()
+
+            if collisionFound_exp or collisionFound_theo:
+                if tip_exp is not "":
+                    fulltip = tip_exp + "\n" + tip_theo
+                else:
+                    fulltip = tip_theo
+
+                self.tooltip.SetTip(tip + "\n" + fulltip)
+                self.tooltip.Enable(True)
+
+                self._replot()
+                return
+
+        if not collisionFound_exp and not collisionFound_theo:
+            self.tooltip.SetTip("")
+            # set to False to avoid blocked tooltips from btns and checkboxes on windows platforms
+
+    #             self.tooltip.Enable(False)
+
     def onMotion(self, event):
         if self.press is None:
-            return
+            self.onMotion_ToolTip(event)
         if not event.inaxes:
             return
 
@@ -3701,7 +3848,12 @@ class MainCalibrationFrame(wx.Frame):
         tws, chs = F2TC.calc_uflab(np.array([X, X]),
                                     np.array([Y, Y]),
                                     self.CCDParam[:5],
+                                    pixelsize=self.pixelsize,
                                     kf_direction=self.kf_direction)
+
+        print('for kf_direction',self.kf_direction)
+        print('X,Y: ',X,Y)
+        print('2theta, chi', tws[0], chs[0])
         return tws[0], chs[0]
 
     def computeRotation(self, twth1, chi1, twth2, chi2):
@@ -3785,7 +3937,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def selectrotationaxis(self, twtheta, chi):
         """
-        return 3D vector of rotation axis
+        return 3D vector of rotation axis from twtheta and chi axis coordinates
         """
         if self.datatype == "gnomon":
             RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]),
@@ -3816,7 +3968,7 @@ class MainCalibrationFrame(wx.Frame):
     #         print "self.SelectedRotationAxis", self.SelectedRotationAxis
 
     def RotateAroundAxis(self, angle):
-        #         print "now ready to rotate"
+        """ compute rotation matrix from angle and self.SelectedRotationAxis and replot()"""
 
         self.deltamatrix = GT.matRot(self.SelectedRotationAxis, angle)
 
