@@ -1,14 +1,14 @@
 """
 scripts example to be launched from
 """
-import os, copy
+import os, copy, time, pickle
 import numpy as np
 
 import LaueTools
 print("Using LaueToolsFolder: ", os.path.abspath(LaueTools.__file__))
 
 import LaueTools.indexingSpotsSet as ISS
-import LaueTools.matchingrate
+import LaueTools.matchingrate as matchingrate
 import LaueTools.generaltools as GT
 import LaueTools.findorient as FindO
 import LaueTools.CrystalParameters as CP
@@ -85,17 +85,17 @@ def test_GetProximity2():
 
     print(res)
     return res, TwicethetaChi[0] / 2.0, exp_theta / 2.0, TwicethetaChi[1], exp_chi
-format_coord
-    test building and query of an angular look up table from a crystal
+def test5():
+    """test building and query of an angular look up table from a crystal
     given its lattice parameters
 
     """
     # test
     n = 3
     # compute LUT outside loop:
-    hkl_all = GTformat_coordenerateLookUpTable(hkl_all, Gstar_metric)
+    #hkl_all = GT.enerateLookUpTable(hkl_all, Gstar_metric)
 
-    print(FindO.QueryLUT(LUT, 14.01, 1))
+    #print(FindO.QueryLUT(LUT, 14.01, 1))
 
 
 def test_indexation_with_apriori_Matrices():
@@ -824,7 +824,7 @@ def test_IAM_real():
     }
 
     t0_2 = time.time()
-    DataSet_2 = spotsset()
+    DataSet_2 = ISS.spotsset()
 
     DataSet_2.IndexSpotsSet(
         file_to_index,
@@ -905,7 +905,7 @@ def testIAM():
     import time
 
     t0_2 = time.time()
-    DataSet_2 = spotsset()
+    DataSet_2 = ISS.spotsset()
 
     database = None
     dictimm = None
@@ -949,7 +949,7 @@ def testtwin(
     file_to_index = os.path.join(dirname, "Si_TSV.cor")
 
     t0_2 = time.time()
-    DataSet_Si = spotsset()
+    DataSet_Si = ISS.spotsset()
 
     database = None
 
@@ -985,7 +985,7 @@ def testtwin(
     # ind, 2theta, chi, posx, posy, int
     dataSubstrate = DataSet_Si.getSpotsFamilyExpData(0).T
 
-    DataSet_Cu = spotsset()
+    DataSet_Cu = ISS.spotsset()
     DataSet_Cu.importdatafromfile(file_to_index)
 
     DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
@@ -1015,7 +1015,7 @@ def testtwin(
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
-        DataSet_Cu = spotsset()
+        DataSet_Cu = ISS.spotsset()
         DataSet_Cu.importdatafromfile(file_to_index)
 
         DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
@@ -1103,7 +1103,7 @@ def test_SiCu(nstart=92, nend=1707):
     )
 
     t0_2 = time.time()
-    DataSet_Si = spotsset()
+    DataSet_Si = ISS.spotsset()
 
     database = None
 
@@ -1136,7 +1136,7 @@ def test_SiCu(nstart=92, nend=1707):
     # ind, 2theta, chi, posx, posy, int
     dataSubstrate = DataSet_Si.getSpotsFamilyExpData(0).T
 
-    DataSet_Cu = spotsset()
+    DataSet_Cu = ISS.spotsset()
     DataSet_Cu.importdatafromfile(file_to_index)
 
     DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
@@ -1161,7 +1161,7 @@ def test_SiCu(nstart=92, nend=1707):
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
-        DataSet_Cu = spotsset()
+        DataSet_Cu = ISS.spotsset()
         DataSet_Cu.importdatafromfile(file_to_index)
 
         DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
@@ -1240,7 +1240,7 @@ def index_fileseries(
     file_to_index = os.path.join(dirname, "Si_TSV.cor")
 
     t0_2 = time.time()
-    DataSet_Si = spotsset()
+    DataSet_Si = ISS.spotsset()
 
     database = None
 
@@ -1313,7 +1313,7 @@ def index_fileseries(
 
         print("\n\nINDEXING    file : %s\n\n" % file_to_index)
 
-        DataSet_Cu = spotsset()
+        DataSet_Cu = ISS.spotsset()
         DataSet_Cu.importdatafromfile(file_to_index)
 
         DataSet_Cu.purgedata(dataSubstrate[1:3], dist_tolerance=0.5)
@@ -1569,7 +1569,7 @@ if __name__ == "__main__":
 
         print(initialparameters["IndexRefine Parameters File"])
 
-        dict_param_list = readIndexRefineConfigFile(
+        dict_param_list = ISS.readIndexRefineConfigFile(
             initialparameters["IndexRefine Parameters File"]
         )
 
@@ -1609,7 +1609,7 @@ if __name__ == "__main__":
 
         print(Index_Refine_Parameters_dict)
 
-        index_fileseries_3(
+        ISS.index_fileseries_3(
             (0, 1, 1),
             Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
             saveObject=0,
@@ -1678,7 +1678,7 @@ if __name__ == "__main__":
 
         fileindexrange = (171, 177, 3)
 
-        index_fileseries_3(
+        ISS.index_fileseries_3(
             fileindexrange,
             Index_Refine_Parameters_dict=Index_Refine_Parameters_dict,
             saveObject=0,
