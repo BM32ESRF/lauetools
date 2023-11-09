@@ -1092,7 +1092,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         # (proportional to photons Energy)
         Rewald = Qsquare / 2.0 / np.abs(Qx)
 
-        # Kf direction selection
+        # Kf direction selection (crude selection considering detector perpendicular and centred on the axis direction...)
         if kf_direction == "Z>0":  # top reflection geometry
             ratiod = detectordistance / Qz
             if shiftcentercamera is not None:  
@@ -1163,7 +1163,9 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
         #print('oncam_2theta',oncam_2theta)
         # be careful of the of sign
-        oncam_chi = np.arctan(1.0 * oncam_Qy / oncam_Qz)
+        oncam_chi = np.arctan2(1.0 * oncam_Qy , oncam_Qz)
+        print('oncam_chi',oncam_chi/DEG)
+        print('Qx Qy Qz', np.array([Qx,Qy,Qz]).T)
         #         oncam_chi = np.arctan2(1. * oncam_Qy, oncam_Qz)
         # TODO: replace by arctan2(1. * oncam_Qy ,oncam_Qz) ??
 
@@ -1229,7 +1231,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         # will return 2theta, chi for each grain
         # no harmonics removal
         elif fastcompute == 1:
-            Oncam2theta[grainindex] = oncam_2theta
+            Oncam2theta[grainindex] = oncam_2theta  # in radians
             Oncamchi[grainindex] = oncam_chi
 
             totalnbspots += len(oncam_2theta)
@@ -1248,7 +1250,7 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
     if fastcompute == 0:
         # list of elements which are list of objects of spot class (1 element / grain)
         return ListSpots_Oncam_wo_harmonics
-    elif fastcompute == 1:
+    elif fastcompute == 1:  # return angles in Degrees
         # list of elements which are composed by two arrays (2theta, chi) (1 element / grain)
         return (np.concatenate(Oncam2theta) / DEG, np.concatenate(Oncamchi) / DEG)
 
