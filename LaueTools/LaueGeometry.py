@@ -465,19 +465,20 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
     cosgam = np.cos(- xgam * DEG)
     singam = np.sin(- xgam * DEG)  # negative
 
-    xcam1 = (np.array(xcam) - xcen) * pixelsize
-    ycam1 = (np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)
+    xcam1 = -(np.array(xcam) - xcen) * pixelsize  # xdata is not in the same direction than xOR
+    ycam1 = -(np.array(ycam) - ycen) * pixelsize * (1.0 + rectpix)  # ydata is not in the same direction than xOR
 
-    xca0 = cosgam * xcam1 - singam * ycam1
-    yca0 = singam * xcam1 + cosgam * ycam1
+    xca0 = cosgam * xcam1 - singam * ycam1   # component along along xOR  
+    yca0 = singam * xcam1 + cosgam * ycam1  # component along tilted ZOR by xbet (y tilted camera)
 
-    # I centre
+    # I point at sample where diffraction occurs
     # O centre of origin of pixel CCD plane array
     # M belong to CCD plane
     # IM is parallel to kf (or uf = kf/||kf||)
 
+    # I is the origin of OR frame  (YOR // incoming beam,ZOR towards top, XOR = YOR^ZOR (direct))
     # IOlab = detect * np.array([0.0, -sinbeta, cosbeta])
-    xO, yO, zO = detect * np.array([0.0, -sinbeta, cosbeta])
+    xO, yO, zO = detect * np.array([0.0, -sinbeta, cosbeta])  #IO
 
     # OMlab = array([xca0, yca0*cosbeta, yca0*sinbeta])
     xOM = xca0
@@ -510,7 +511,7 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
 
     # print("back reflection mode ", uflab)
 
-    chi = np.arctan2(-xM, zM + EPS) / DEG
+    chi = np.arctan2(-xM, zM + EPS) / DEG # negative for good origin and sign of chi: since chi=45 for XOR<0 and ZOR>0
     twicetheta = np.arccos(uflab[:, 1]) / DEG
     #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
     #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
@@ -712,28 +713,19 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
     # unitary normal vector of CCD plane
     # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
     unlab = IOlab / np.sqrt(np.dot(IOlab, IOlab))
-    unlab2 = IOlab2 / np.sqrt(np.dot(IOlab2, IOlab2))
 
     # normalization of all input uflab
     norme_uflab = np.sqrt(np.sum(uflab ** 2, axis=1))
     uflab = uflab / np.reshape(norme_uflab, (len(norme_uflab), 1))
 
-    uflab2 = np.array([uflab[:,0],uflab[:,2], -uflab[:,1]]).T
-    uflab2 = uflab2 / np.reshape(norme_uflab, (len(norme_uflab), 1))
-
     # un is orthogonal to any vector joining O and a point M lying in the CCD frame plane
     scal = np.dot(uflab, unlab)
     normeIMlab = distance_IO / scal
 
-    scal2 = np.dot(uflab2, unlab2)
-    normeIMlab2 = distance_IO / scal2
-
     # IMlab = normeIMlab*uflab
     IMlab = uflab * np.reshape(normeIMlab, (len(normeIMlab), 1))
-    IMlab2 = uflab2 * np.reshape(normeIMlab2, (len(normeIMlab2), 1))
 
     OMlab = IMlab - IOlab
-    OMlab2 = IMlab2 - IOlab2
 
     if offset not in (None, 0, 0.0):  # offset input in millimeter
         # OO'=II'-(II'.un)un  # 1 vector
@@ -766,19 +758,15 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
 
     # OMlab = array([xca0, yca0*cosbeta, yca0*sinbeta ])
     # OMlab2 = array([xca02, yca02*sinbeta, -yca02*cosbeta ])
-    xca0 = OMlab[:, 0]
-    xca02 = OMlab2[:, 0]
+    
+    #frame 1 :  axis ydata and xdata oppsite direction / XOR a nd ZOR tilted
+    xca0 = -OMlab[:, 0]
     
     if cosbeta != 0.0:
-        yca0 = OMlab[:, 1] / cosbeta
+        yca0 = -OMlab[:, 1] / cosbeta
     elif sinbeta != 0.0:
-        yca0 = OMlab[:, 2] / sinbeta
+        yca0 = -OMlab[:, 2] / sinbeta
     # zca0 = 0
-
-    if sinbeta != 0.0:
-        yca02 = OMlab2[:, 1] / sinbeta
-    else:
-        yca02 = -OMlab2[:, 2] / cosbeta
 
     cosgam = np.cos(-xgam * DEG)
     singam = np.sin(-xgam * DEG)
@@ -798,31 +786,10 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
 
     Energy = CST_CONV_LAMBDA_KEV * norme_qflab ** 2 / (2.0 * np.sin(th0 * DEG))
 
-    #*************************************
-    xcam1_2 = cosgam * xca02 + singam * yca02
-    ycam1_2 = -singam * xca02 + cosgam * yca02
-
-    xcam2 = xcen + xcam1_2 / pixelsize
-    ycam2 = ycen + ycam1_2 / (pixelsize * (1.0 + rectpix))
-
-    twicetheta_2 = (1. / DEG) * np.arccos(-uflab[:, 2])
-    th0_2 = twicetheta_2 / 2.0
-
-    # q = kf - ki, uf_lab is normalized
-    qf_2 = uflab2 - np.array([0.0, 0.0, -1.0])
-    norme_qflab2 = np.sqrt(np.sum(qf_2 ** 2, axis=1))
-
-    Energy_2 = CST_CONV_LAMBDA_KEV * norme_qflab2 ** 2 / (2.0 * np.sin(th0_2 * DEG))
-
-    # if energy:
-    #     return xcam, ycam, th0, Energy
-    # else:
-    #     return xcam, ycam, th0
-
     if energy:
-        return xcam2, ycam2, th0_2, Energy_2
+        return xcam, ycam, th0, Energy
     else:
-        return xcam2, ycam2, th0_2
+        return xcam, ycam, th0
 
 def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
                                                                             pixelsize=165.0 / 2048,
