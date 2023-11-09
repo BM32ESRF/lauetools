@@ -1229,6 +1229,16 @@ class MainCalibrationFrame(wx.Frame):
 
         self.toolbar = NavigationToolbar(self.canvas)
 
+        DictLT.LAUETOOLSFOLDER
+
+        # Add the custom tools that we created
+        self.toolbar.AddTool(123456, 'oneTool',  wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER,"icons",'flipudsmall.png')),  
+                                                     wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER,"icons",'flipudsmall.png')),  
+                                             kind = wx.ITEM_CHECK, shortHelp ="Flip up/down")
+        self.toolbar.Bind(wx.EVT_TOOL, self.OnChangeOrigin, id=123456)
+
+        self.toolbar.Realize() 
+
         self.sb = self.CreateStatusBar()
 
         self.cidpress = self.fig.canvas.mpl_connect("button_press_event", self.onClick)
@@ -3005,10 +3015,19 @@ class MainCalibrationFrame(wx.Frame):
 
             print("nb of spots", len(twicetheta))
 
-        print('End of simulate_theo() ------------\n\n')
+        #print('End of simulate_theo() ------------\n\n')
 
         return twicetheta, chi, self.Miller_ind, posx, posy, Energy
 
+    def OnChangeOrigin(self, _):
+        
+        xlim = self.axes.get_xlim()
+        ylim = self.axes.get_ylim()
+        # print('ylim',ylim)
+
+        self.axes.set_ylim(ylim[1],ylim[0])
+        self._replot(1)
+    
     def _replot(self, _):  # in MainCalibrationFrame
         """
         in MainCalibrationFrame
