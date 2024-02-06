@@ -3970,7 +3970,7 @@ class MainPeakSearchFrame(wx.Frame):
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
             if self.CCDlabel in ("EIGER_4M",):
-                img_dataformat = np.int32
+                img_dataformat = np.uint32
             else:
                 img_dataformat = np.int16  # np.unit16 ???
             self.dataimage_ROI = dataimage.astype(img_dataformat)
