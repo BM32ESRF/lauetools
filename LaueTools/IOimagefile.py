@@ -117,53 +117,14 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         prefix0, strindex = str(prepart).rsplit('_', 1)
 
         if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
-            SPEC_controlled_SCMOS = True
-            imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+            #imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+            # spec or BLISS 
+            encodingdigits = "%%0%dd" % nbdigits
+            imagefilename = prefix0 +'_'+encodingdigits%imageindex + '.'+ ext
+
         else:  # bliss psl control of sCMOS
-            SPEC_controlled_SCMOS = False
             imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
 
-        # if int(strindex)<1000:
-        #     if len(strindex)<4: # no zero padded
-        #         SPEC_controlled_SCMOS = False
-        #         imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
-
-        #     else:  # 4 only  zeros padded 
-        #         SPEC_controlled_SCMOS = True
-        #         imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
-        
-        # # zero padded index for filename
-        # if nbdigits is not None:
-        #     if imagefilename.endswith(ext):
-        #         #imagefilename = imagefilename[: - (lenext + nbdigits)] + "{:04d}.{}".format(imageindex, ext)
-
-        #         #imagefilename = imagefilename[: - (lenext + nbdigits)].zfill(nbdigits) + "%s" % ext
-
-        #         prepart = str(imagefilename).rsplit('.',1)[0]
-        #         prefix, strindex = str(prepart).rsplit('_', 1)
-                
-
-        #         current_nbdigits = len(strindex)
-        #         imagefilename = prefix + "_" + str(imageindex).zfill(current_nbdigits) + "." + ext
-                
-        #     elif imagefilename.endswith(ext+".gz"):
-        #         imagefilename = imagefilename[: -(lenext+3 + nbdigits)] + "{:04d}.{}.gz".format(imageindex, ext)
-        # # no zero padded index for filename
-        # else:
-        #     if imagefilename.endswith(ext):
-        #         prefix, _ = imagefilename.split(".")
-        #         prefix0, strindex = prefix.rsplit("_",1)
-
-        #         if len(strindex)<=4:
-
-        #         if 
-        #         SPEC_controlled_SCMOS = True
-
-        #         # version SPEC and SCMOS up to March 2022
-        #         if imageindex > 9999:
-        #             imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
-        #         else: # 4   0s padding for index < 10000
-        #             imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
 
     elif CCDLabel in ("EIGER_4Mstack",):
         # only stackimageindex is changed not imagefilename
@@ -825,7 +786,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         print('PIL_EXISTS',PIL_EXISTS)
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp'):
+    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','EIGER_4M'):
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
@@ -878,12 +839,13 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif LIBTIFF_EXISTS and CCDLabel in ("Alban",):
-        if 1: #verbose > 1:
-            print("----> Using libtiff...")
+    elif LIBTIFF_EXISTS or CCDLabel in ("Alban",):
+        
         if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "EIGER_4M","FRELONID15_corrected", "VHR_PSI",
                             "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", "sCMOS_16M", "Alban", ):
-            
+            if 1: #verbose > 1:
+                print("----> Using libtiff...")
+                print(f'for {CCDLabel} camera \n')
             if dirname is not None:
                 tifimage = TIFF.open(os.path.join(dirname, filename), mode="r")
             else:
@@ -910,8 +872,12 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 print('pixel val',dataimage[455,590])
                 print("amin(), amax()", np.amin(dataimage), np.amax(dataimage))
 
-            # if CCDLabel==("EIGER_4M",):
-            #     dataimage = np.ma.masked_values(dataimage, -1)
+            if CCDLabel in ("EIGER_4M",):
+                #dataimage = np.ma.masked_values(dataimage, -1)
+                np.clip(dataimage, a_min=0, a_max=200000, out=dataimage)
+                dataimage = np.ma.masked_where(dataimage<0, dataimage)
+                print('min of dataimage: ',np.amin(dataimage))
+                print('image type: ',dataimage.dtype)
         else:
             USE_RAW_METHOD = True
 
