@@ -40,6 +40,9 @@ dict_Materials = {
     "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
     "3H-SiC": ["3H-SiC", [4.3596, 4.3596, 4.3596, 90, 90, 90], "dia"],  # zinc blende  SG 216
     "4H-SiC": ["4H-SiC", [3.073, 3.073, 10.053, 90, 90, 120], "wurtzite"],  # wurtzite  = 6H-SiC also  SG 186
+    "Cazadero": ["Cazadero", [11.637, 11.637, 11.6443, 90, 90, 90], "SG141"], # normally SG142
+    "EastAlps": ["EastAlps", [11.5935, 11.5935, 11.5987, 90, 90, 90], "SG141"], # normally SG142
+    "CubicGarnet": ["CubicGarnet", [11.6,11.6,11.6, 90, 90, 90], "no"], # fictius garnet
     "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
     "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
     "Cr": ["Cr", [2.87, 2.87, 2.87, 90, 90, 90], "fcc"],  # 229
@@ -100,6 +103,8 @@ dict_Materials = {
     "betaQuartznew": ["betaQuartznew", [4.9, 4.9, 6.685, 90, 90, 120], "no"],
     "GaN": ["GaN", [3.189, 3.189, 5.185, 90, 90, 120], "wurtzite"],
     "GaN_all": ["GaN_all", [3.189, 3.189, 5.185, 90, 90, 120], "no"],
+    "GaN_PG_sub": ["GaN_PG_sub", [3.185, 3.185, 5.189, 90, 90, 120], "wurtzite"],
+    "InGaN_PG": ["InGaN_PG", [3.218, 3.218, 5.255, 90, 90, 120], "wurtzite"],
     "In": ["In", [3.2517, 3.2517, 4.9459, 90, 90, 90], "h+k+l=2n"],
     "In_distorted": ["In_distorted", [3.251700, 3.251133, 4.818608, 89.982926, 90.007213, 95.379102],"h+k+l=2n"],
     "InN": ["InN", [3.533, 3.533, 5.693, 90, 90, 120], "wurtzite"],
@@ -348,14 +353,17 @@ CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
 dict_CCD = {
     "MARCCD165": ((2048, 2048), 0.079142, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd", ),
     "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif"],
+
     "IMSTAR_bin2": [(3092, 3035), 0.0504, 65535, "no", 3828, "uint16", "", "tif"],
     "IMSTAR_bin1": [(6185, 6070), 0.0252, 65535, "no", 3828, "uint16", "", "tif"],
     "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif"],
     "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
     "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
+
     "psl_IN_bmp": [(425, 640), 10/43., 256, "no", -1, "uint16", "camera from inst Neel ", "bmp", ],
     "psl_IN_tif": [(425, 640), 10/43., 65535, "no", -1, "uint16", "camera from inst Neel ", "tif", ],
     "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
+
     "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff"),
     "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff"),
     "VHR_small": ((2594, 2748), 0.031, 10000, "vhr", 4096, "uint16", "vhr close to diamond Nov12 frame size is lower than VHR_diamond", "tiff"),
@@ -372,6 +380,7 @@ dict_CCD = {
     "VHR_Feb13_rawtiff": ((2594, 2774), 0.031, 10000, "VHR_Feb13", 110, "uint16", " ", "tiff"),
     "VHR_PSI": ((2615, 3891), 0.0312, 65000, "no", 4096, "uint16", "vhr at psi actually read by libtiff (variable header size and compressed data)", "tif"),
     "VHR_DLS": ((3056, 3056), 0.0312, 65000, "no", 4096, "uint16", "vhr at dls actually read by libtiff (variable header size and compressed data)", "tif"),
+
     "Alban": [(1504, 1499), 0.2, 65535*65535, "no", -1, "uint32", "Alban de vaucorbeil detector australia", "tif"],
     "PRINCETON": ((2048, 2048), 0.079, 57000, "no", 4096, "uint16", "ROPER Princeton Quadro 2048x2048 pixels converted from .spe to .mccd", "mccd"),  # 2X2, saturation value depends on gain and DAC
     "FRELON": ((2048, 2048), 0.048, 65000, "frelon2", 1024, "uint16", "FRELON camera 2048x2048 pixels, 2theta axis is horizontal (edf format)", "edf"),
@@ -379,6 +388,7 @@ dict_CCD = {
     "EDF": ((1065, 1030), 0.075, 650000000000, "no", 0, "uint32", "CCD parameters read from edf header EIGER", "edf", ),
     "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff"),
     "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff"),
+    
     "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "spe", 0, "uint32", "CCD parameters read from tif header EIGER4M used at ALS or SLS   (fliprot = spe for SLS)", "tif"),
     "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5"),
     "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked"),
