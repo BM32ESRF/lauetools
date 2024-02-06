@@ -1,0 +1,6 @@
+peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin peak_inclination Xdev Ydev peak_bkg Ipixmax
+
+623.12   1657.73   29330.04   29239.30   0.75   0.86    285.480   0.12   -0.27   90.74   28899
+# File created at Thu Mar 30 14:45:42 2023 with IOLaueTools.py
+# From: /home/micha/lauetoolsgithub/LaueTools/LaueImages/Ge_blanc_0000.mccd
+# Comments: nb of peaks 1

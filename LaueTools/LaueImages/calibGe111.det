@@ -1,18 +1,19 @@
-70.775, 941.74, 1082.57, 0.631, -0.681, 0.07914, 2048, 2048
+70.77500, 941.7400, 1082.5600, 0.6300000, -0.6820000, 0.07914200, 2048, 2048
 Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2
-Calibration done with Si at Fri May 10 11:09:51 2019 with LaueToolsGUI.py
-Experimental Data file: Ge_blanc_0000_LT_4.dat
+Calibration done with Ge at Thu Mar 30 15:22:37 2023 with LaueToolsGUI.py
+Experimental Data file: /home/micha/lauetoolsgithub/LaueTools/LaueImages/Ge_blanc_0000_LT_5.dat
 Orientation Matrix:
-[[0.9958270,-0.0714658,-0.0567559],[0.0122054,0.7206143,-0.6932287],[0.0904413,0.6896431,0.7184795]]
-# Material : Si
+[[-0.0714767,-0.9958259,-0.0567609],[0.7206185,-0.0122104,-0.6932243],[0.6896376,-0.0904523,0.7184833]]
+# Material : Ge
 # dd : 70.775
 # xcen : 941.74
-# ycen : 1082.57
-# xbet : 0.631
-# xgam : -0.681
+# ycen : 1082.56
+# xbet : 0.63
+# xgam : -0.682
+# pixelsize : 0.079142
 # xpixelsize : 0.079142
 # ypixelsize : 0.079142
 # CCDLabel : MARCCD165
 # framedim : (2048, 2048)
-# detectordiameter : 162.082816
+# detectordiameter : 178.29109760000003
 # kf_direction : Z>0

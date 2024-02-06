@@ -1,0 +1,19 @@
+[IndexRefine]
+nb materials = 1
+key material_0 = Ge
+nbgrainstofind_0 = 1
+emin_0 = 5.0
+emax_0 = 22
+matchingrate threshold ial_0 = 100.0
+angletollut_0 = 0.5
+matchingrate angle tol_0 = 0.2
+nbmaxprobed_0 = to10
+minimumnumbermatches_0 = 6
+central spots indices_0 = to10
+resolutionangstrom_0 = False
+nlutmax_0 = 4
+setcentralspotshkl_0 = None
+useintensityweights_0 = True
+nbspotstoindex_0 = 1000
+list matching tol angles_0 = [0.2, 0.1]
+
