@@ -9,3 +9,4 @@ scipy
 tqdm
 attrdict
 pyperclip
+astropy
