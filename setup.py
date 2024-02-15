@@ -38,7 +38,7 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.18.0',astropy>=4.0],  # add fabio libtiff?
+			'h5py>=3.1','scikit-image>=0.18.0','astropy>=4.0'],  # add fabio libtiff?
 
     include_package_data=True,
 
