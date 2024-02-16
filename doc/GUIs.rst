@@ -21,7 +21,7 @@ Peak Search (PeaksearchGUI)
 .. toctree::
     PeakSearchGUI.rst
 
-Indexation (LaueToolsGUI)
+Indexation (LaueToolsGUI) classical angular distance LUT
 ---------------------------------------
 
 Crystal unit cell refinement (LaueToolsGUI)
