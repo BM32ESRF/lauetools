@@ -27,7 +27,7 @@ print('in conf.py sys.path',sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'LaueTools'
-copyright = '2020, J.S. Micha, O. Robach., S. Tardif'
+copyright = '2024, J.S. Micha, O. Robach., S. Tardif'
 author = 'JS Micha, O. Robach.,S. Tardif'
 
 # The short X.Y version
