@@ -5,3 +5,4 @@
 /doc/conf.py
 /LaueTools/__pycache__/*
 
+LaueTools/test_toolbar.py

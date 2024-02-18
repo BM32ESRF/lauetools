@@ -85,99 +85,100 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
     if outputfilename in os.listdir(dirname_output) and not overwrite:
         outputfilename = prefixfilename + "_new" + ".cor"
 
-    outputfile = open(os.path.join(dirname_output, outputfilename), "w")
+    #outputfile = open(os.path.join(dirname_output, outputfilename), "w")
+    with open(os.path.join(dirname_output, outputfilename), "w") as outputfile:
 
-    if not os.access(dirname_output, os.W_OK):
-        print('Can not write in the folder: %s'%dirname_output)
-        print('File .cor is not written !')
-        return None
+        if not os.access(dirname_output, os.W_OK):
+            print('Can not write in the folder: %s'%dirname_output)
+            print('File .cor is not written !')
+            return None
 
-    firstline = "2theta chi X Y I"
-    format_string = "%.06f   %.06f   %.06f   %.06f   %.03f"
-    list_of_data = [twicetheta, chi, data_x, data_y, dataintensity]
+        firstline = "2theta chi X Y I"
+        format_string = "%.06f   %.06f   %.06f   %.06f   %.03f"
+        list_of_data = [twicetheta, chi, data_x, data_y, dataintensity]
 
-    if data_sat is not None:
-        firstline += " data_sat"
-        format_string += "   %d"
-        list_of_data += [data_sat]
-    if data_props:
-        print('preparing spots props "list_of_data"')
-        data_peaks, columnnames = data_props
-        for k in range(len(columnnames)):
-            firstline += " %s" % columnnames[k]
-            format_string += "   %.06f"
-            # TODO clarify ???
-            list_of_data += [data_peaks[:, k]]
-            #list_of_data += [data_peaks[k, :]]
+        if data_sat is not None:
+            firstline += " data_sat"
+            format_string += "   %d"
+            list_of_data += [data_sat]
+        if data_props:
+            print('preparing spots props "list_of_data"')
+            data_peaks, columnnames = data_props
+            for k in range(len(columnnames)):
+                firstline += " %s" % columnnames[k]
+                format_string += "   %.06f"
+                # TODO clarify ???
+                list_of_data += [data_peaks[:, k]]
+                #list_of_data += [data_peaks[k, :]]
 
-    firstline += "\n"
+        firstline += "\n"
 
-    # print('format_string', format_string)
-    # print('firstline', firstline)
+        # print('format_string', format_string)
+        # print('firstline', firstline)
 
-    if sortedexit:
-        # to write in decreasing order of intensity (col intensity =4)
-        print("rearranging exp. spots order according to intensity")
-        arraydata = np.array(list_of_data).T
-        s_ix = np.argsort(arraydata[:, 4])[::-1]
+        if sortedexit:
+            # to write in decreasing order of intensity (col intensity =4)
+            print("rearranging exp. spots order according to intensity")
+            arraydata = np.array(list_of_data).T
+            s_ix = np.argsort(arraydata[:, 4])[::-1]
 
-        sortedarray = arraydata[s_ix]
+            sortedarray = arraydata[s_ix]
 
-        list_of_data = sortedarray.T
+            list_of_data = sortedarray.T
 
-    outputfile.write(firstline)
+        outputfile.write(firstline)
 
-    #print('nbspots', nbspots)
-    #print('len(list_of_data)', len(list_of_data))
-    ldata = [elem for elem in list_of_data]
-    #for elem in ldata:
-        #print('len ---', len(elem))
-        #print('elem ---', elem)
-    if PYTHON3:
-        liststrs = [format_string % tuple(list(zip(*ldata))[i]) for i in range(nbspots)]
-        #liststrs = [format_string % tuple(list(zip((*list_of_data)))[i]) for i in range(nbspots)]
-    else:
-        liststrs = [format_string % tuple(zip(*ldata)[i]) for i in range(nbspots)]
-    outputfile.write("\n".join(liststrs))
+        #print('nbspots', nbspots)
+        #print('len(list_of_data)', len(list_of_data))
+        ldata = [elem for elem in list_of_data]
+        #for elem in ldata:
+            #print('len ---', len(elem))
+            #print('elem ---', elem)
+        if PYTHON3:
+            liststrs = [format_string % tuple(list(zip(*ldata))[i]) for i in range(nbspots)]
+            #liststrs = [format_string % tuple(list(zip((*list_of_data)))[i]) for i in range(nbspots)]
+        else:
+            liststrs = [format_string % tuple(zip(*ldata)[i]) for i in range(nbspots)]
+        outputfile.write("\n".join(liststrs))
 
-    outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
+        outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
 
-    if initialfilename:
-        outputfile.write("\n# From: %s" % initialfilename)
+        if initialfilename:
+            outputfile.write("\n# From: %s" % initialfilename)
 
-    # metadata on detector position and nature
-    if verbose:
-        print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
-    if param is not None:
-        outputfile.write("\n# Calibration parameters")
-        # param is a list
-        if isinstance(param, (list, np.ndarray)):
-            if len(param) == 6:
-                for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:6], param)):
-                    outputfile.write("\n# %s     :   %s" % (par, value))
-                ypixelsize = param[5] * (1.0 + rectpix)
-                outputfile.write("\n# ypixelsize     :   " + str(ypixelsize))
-            elif len(param) == 5:
-                for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:5], param)):
-                    outputfile.write("\n# %s     :   %s" % (par, value))
-            else:
-                raise ValueError("5 or 6 calibration parameters are needed!")
-        # param is a dict : CCDCalibdict
-        elif isinstance(param, dict):
-            if verbose:
-                print("param is a dict!")
-            for key in CCD_CALIBRATION_PARAMETERS:
-                # print('key in CCD_CALIBRATION_PARAMETERS', key)
-                if key in param:
-                    # print('key in param', key)
-                    outputfile.write("\n# %s     :   %s" % (key, str(param[key])))
+        # metadata on detector position and nature
+        if verbose:
+            print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
+        if param is not None:
+            outputfile.write("\n# Calibration parameters")
+            # param is a list
+            if isinstance(param, (list, np.ndarray)):
+                if len(param) == 6:
+                    for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:6], param)):
+                        outputfile.write("\n# %s     :   %s" % (par, value))
+                    ypixelsize = param[5] * (1.0 + rectpix)
+                    outputfile.write("\n# ypixelsize     :   " + str(ypixelsize))
+                elif len(param) == 5:
+                    for par, value in list(zip(CCD_CALIBRATION_PARAMETERS[:5], param)):
+                        outputfile.write("\n# %s     :   %s" % (par, value))
+                else:
+                    raise ValueError("5 or 6 calibration parameters are needed!")
+            # param is a dict : CCDCalibdict
+            elif isinstance(param, dict):
+                if verbose:
+                    print("param is a dict!")
+                for key in CCD_CALIBRATION_PARAMETERS:
+                    # print('key in CCD_CALIBRATION_PARAMETERS', key)
+                    if key in param:
+                        # print('key in param', key)
+                        outputfile.write("\n# %s     :   %s" % (key, str(param[key])))
 
-    if comments:
-        outputfile.write("\n# Comments")
-        for line in comments:
-            outputfile.write("\n# %s" % line)
+        if comments:
+            outputfile.write("\n# Comments")
+            for line in comments:
+                outputfile.write("\n# %s" % line)
 
-    outputfile.close()
+    #outputfile.close()
 
     # print("(%s) written in %s at the end of writefile_cor()" % (firstline[:-1], outputfilename))
     return outputfilename
@@ -201,9 +202,9 @@ def get_otherspotprops(allspotsprops, filename, sortintensities=True):
 
     # list of props
     otherpropsdata = props[:, 5:].T
-    f = open(filename, 'r')
-    columnnames = f.readline().split()[5:]
-    f.close()
+    with open(filename, "r") as f:
+        columnnames = f.readline().split()[5:]
+    
 
     # print('\n\n      get_otherspotprops()')
     # print('otherpropsdata', otherpropsdata[0])
@@ -232,13 +233,13 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     """
     SKIPROWS = 1
     # read first line
-    f = open(filename, "r")
-    firstline = f.readline()
-    unindexeddata = False
-    if firstline.startswith("# Unindexed"):
-        unindexeddata = True
-        SKIPROWS = 7
-    f.close()
+    with open(filename, "r") as f:
+    
+        firstline = f.readline()
+        unindexeddata = False
+        if firstline.startswith("# Unindexed"):
+            unindexeddata = True
+            SKIPROWS = 7
 
     if sys.version.split()[0] < "2.6.1":
         f = open(filename, "r")
@@ -367,7 +368,7 @@ def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
                 print('found kf_direction is:', kf_direction)
                 break
 
-        return kf_direction
+    return kf_direction
     
 def getdetectordiameter_from_corfile(filename, defautdiameter=165):
     """
@@ -383,31 +384,31 @@ def getdetectordiameter_from_corfile(filename, defautdiameter=165):
                 print('found detectordiameter is:', diam)
                 break
 
-        return diam
+    return diam
 
 
 def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
     """
     read .det file and return calibration parameters and orientation matrix used
     """
-    f = open(filename_det, "r")
-    i = 0
+    with open(filename_det, 'r') as f:
+        i = 0
 
-    mat_line = None
-    try:
-        for line in f:
-            i = i + 1
-            if i == 1:
-                calib = np.array(line.split(",")[:nbCCDparameters], dtype=float)
-                if verbose:
-                    print("calib = ", calib)
-            if i == 6:
-                pline = line.replace("[", "").replace("]", "").split(",")
-                mat_line = np.array(pline, dtype=float)
-                if verbose:
-                    print("matrix = ", mat_line.round(decimals=6))
-    finally:
-        f.close()
+        mat_line = None
+        try:
+            for line in f:
+                i = i + 1
+                if i == 1:
+                    calib = np.array(line.split(",")[:nbCCDparameters], dtype=float)
+                    if verbose:
+                        print("calib = ", calib)
+                if i == 6:
+                    pline = line.replace("[", "").replace("]", "").split(",")
+                    mat_line = np.array(pline, dtype=float)
+                    if verbose:
+                        print("matrix = ", mat_line.round(decimals=6))
+        finally:
+            pass
 
     return calib, mat_line
 
@@ -501,11 +502,9 @@ def readCalib_det_file(filename_det):
     """
     read .det file and return calibration parameters and orientation matrix used
     """
-    f = open(filename_det, "r")
+    with open(filename_det, 'r') as f:
+        CCDcalib = readCalibParametersInFile(f)
 
-    CCDcalib = readCalibParametersInFile(f)
-
-    f.close()
 
     calibparam, UB_calib = readfile_det(filename_det, nbCCDparameters=8)
 
@@ -913,10 +912,9 @@ def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
             footer += "Refined T transform elements in %s\n" % dict_matrices["Ts"][1]
             footer += str(dict_matrices["Ts"][2]) + "\n"
 
-    outputfile = open(outputfilename, "wb")
-    np.savetxt(outputfilename, datatooutput, fmt="%.6f",
+    with open(outputfilename, 'wb') as outputfile:
+        np.savetxt(outputfile, datatooutput, fmt="%.6f",
                header=header, footer=footer, comments="#")
-    outputfile.close()
 
 
 def ReadASCIIfile(_filename_data, col_2theta=0, col_chi=1, col_Int=-1, nblineskip=1):
@@ -1006,28 +1004,29 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     columns_headers = []
 
-    f = open(fitfilename, "r")
+    with open(fitfilename, 'r') as f:
 
-    # search for each start of grain data
-    nbgrains = 0
-    linepos_grain_list = []
-    lineindex = 1
-    WrongExtension = False
+        # search for each start of grain data
+        nbgrains = 0
+        linepos_grain_list = []
+        lineindex = 1
+        WrongExtension = False
 
-    for line in f:
-        _line = line.rstrip(string.whitespace)
-        #if not _line.startswith("# Unindexed and unrefined"):
-        #    if _line.endswith(fileextensionmarker):
-        #        nbgrains += 1
-        #        linepos_grain_list.append(lineindex)
-        #    else:
-        #        WrongExtension = True
-        if _line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-            print('got a grain!')
-            linepos_grain_list.append(lineindex)
-            nbgrains += 1
-            
-        lineindex += 1
+        for line in f:
+            _line = line.rstrip(string.whitespace)
+            #if not _line.startswith("# Unindexed and unrefined"):
+            #    if _line.endswith(fileextensionmarker):
+            #        nbgrains += 1
+            #        linepos_grain_list.append(lineindex)
+            #    else:
+            #        WrongExtension = True
+            if _line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
+                print('got a grain!')
+                linepos_grain_list.append(lineindex)
+                nbgrains += 1
+                
+            lineindex += 1
+    
     linepos_grain_list.append(lineindex)
 
     # try:
@@ -1089,182 +1088,182 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     #linestrain = 0
     lineeuler = 0
 
-    f = open(fitfilename, "r")
-    unindexedspots = False
-    for grain_index in list(range(nbgrains)):
+    with open(fitfilename, 'r') as f:
 
-        iline = linepos_grain_list[grain_index]
+        unindexedspots = False
+        for grain_index in list(range(nbgrains)):
 
-        nb_indexed_spots = 0
-        ubb0found = 0
-        while iline < linepos_grain_list[grain_index + 1]:
+            iline = linepos_grain_list[grain_index]
 
-            line = f.readline()
-            #             print "iline =%d line" % iline, line
-            if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-                print("iline =%d line" % iline, line)
-                try:
-                    nb_indexed_spots = int(line.split(":")[-1])
-                except ValueError:
-                    print("number of indexed spots should placed after ':' ")
+            nb_indexed_spots = 0
+            ubb0found = 0
+            while iline < linepos_grain_list[grain_index + 1]:
 
-            elif line.startswith(("# Number of unindexed spots", "#Number of unindexed spots")):
-                nb_indexed_spots = 0
-                nb_UNindexed_spots = int(line.split(":")[-1])
-                unindexedspots = True
-
-            elif line.startswith(("# Mean Pixel Deviation", "#Mean Deviation", "#Mean Pixel Deviation")):
-                meanpixdev = float(line.split(":")[-1])
-                PixDev_list.append(meanpixdev)
-
-            elif line.startswith("#Element"):
                 line = f.readline()
-                Material_list.append(line.rstrip("\n"))
-                iline += 1
-            elif line.startswith("#grainIndex"):
-                line = f.readline()
-                GrainName_list.append(line.rstrip("\n"))
+                #             print "iline =%d line" % iline, line
+                if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
+                    print("iline =%d line" % iline, line)
+                    try:
+                        nb_indexed_spots = int(line.split(":")[-1])
+                    except ValueError:
+                        print("number of indexed spots should placed after ':' ")
 
-                iline += 1
-            elif line.startswith(("spot#", "#spot", "##spot", "# Spot")):
-                if not unindexedspots:
-                    columns_headers = line.replace("#", "").split()
+                elif line.startswith(("# Number of unindexed spots", "#Number of unindexed spots")):
+                    nb_indexed_spots = 0
+                    nb_UNindexed_spots = int(line.split(":")[-1])
+                    unindexedspots = True
 
-                if nb_indexed_spots > 0:
-                    nbspots = nb_indexed_spots
+                elif line.startswith(("# Mean Pixel Deviation", "#Mean Deviation", "#Mean Pixel Deviation")):
+                    meanpixdev = float(line.split(":")[-1])
+                    PixDev_list.append(meanpixdev)
 
-                    dataspots = []
-                    for _ in list(range(nbspots)):
+                elif line.startswith("#Element"):
+                    line = f.readline()
+                    Material_list.append(line.rstrip("\n"))
+                    iline += 1
+                elif line.startswith("#grainIndex"):
+                    line = f.readline()
+                    GrainName_list.append(line.rstrip("\n"))
+
+                    iline += 1
+                elif line.startswith(("spot#", "#spot", "##spot", "# Spot")):
+                    if not unindexedspots:
+                        columns_headers = line.replace("#", "").split()
+
+                    if nb_indexed_spots > 0:
+                        nbspots = nb_indexed_spots
+
+                        dataspots = []
+                        for _ in list(range(nbspots)):
+                            line = f.readline()
+                            iline += 1
+                            dataspots.append(
+                                line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+
+                        dataspots = np.array(dataspots, dtype=np.float32)
+
+                    elif nb_UNindexed_spots > 0:
+                        nbspots = nb_UNindexed_spots
+
+                        dataspots_Unindexed = []
+                        for _ in list(range(nbspots)):
+                            line = f.readline()
+                            iline += 1
+                            dataspots_Unindexed.append(
+                                line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+
+                        dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float32)
+                #                     print "got dataspots_Unindexed!"
+
+                elif line.startswith("#UB matrix"):
+                    matrixfound = 1
+
+                    #lineendspot = iline - 1
+                    # print "matrix found"
+                elif line.startswith("#UBB0 matrix"):
+                    ubb0found = 1
+                elif line.startswith("#Sample"):
+                    calibfound = 1
+                    linecalib = iline + 1
+                elif line.startswith(("# Calibration", "#Calibration")):
+                    calibfoundJSM = 1
+                    linecalib = iline + 1
+                elif line.startswith("#pixdev"):
+                    pixdevfound = 1
+                    linepixdev = iline + 1
+                elif line.startswith("#deviatoric"):
+                    strainfound = 1
+
+                
+
+                elif line.startswith("#Euler"):
+                    eulerfound = 1
+                    lineeuler = iline + 1
+
+                    print('Eulers Angles found', eulerfound)
+
+                if matrixfound:
+                    for jline_matrix in list(range(3)):
                         line = f.readline()
+                        # print("line in matrix matrixfound", line)
+                        lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                        UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                         iline += 1
-                        dataspots.append(
-                            line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                    #                 print "got UB matrix:", UBmat
+                    matrixfound = 0
 
-                    dataspots = np.array(dataspots, dtype=np.float32)
-
-                elif nb_UNindexed_spots > 0:
-                    nbspots = nb_UNindexed_spots
-
-                    dataspots_Unindexed = []
-                    for _ in list(range(nbspots)):
+                if ubb0found:
+                    jline_matrix = 0
+                    while(jline_matrix<3):
                         line = f.readline()
+                        if line.startswith(("in LT frame","xlab1 = ui")): # there could be additionnal text before data
+                            iline += 1
+                            continue
+                        lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                        UBB0mat[jline_matrix, :] = np.array(lineval, dtype=float)
+                        jline_matrix += 1
+
+                    ubb0found = 0
+
+                if strainfound:
+                    for jline_matrix in list(range(3)):
+                        line = f.readline()
+                        lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                        strain[jline_matrix, :] = np.array(lineval, dtype=float)
                         iline += 1
-                        dataspots_Unindexed.append(
-                            line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-
-                    dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float32)
-            #                     print "got dataspots_Unindexed!"
-
-            elif line.startswith("#UB matrix"):
-                matrixfound = 1
-
-                #lineendspot = iline - 1
-                # print "matrix found"
-            elif line.startswith("#UBB0 matrix"):
-                ubb0found = 1
-            elif line.startswith("#Sample"):
-                calibfound = 1
-                linecalib = iline + 1
-            elif line.startswith(("# Calibration", "#Calibration")):
-                calibfoundJSM = 1
-                linecalib = iline + 1
-            elif line.startswith("#pixdev"):
-                pixdevfound = 1
-                linepixdev = iline + 1
-            elif line.startswith("#deviatoric"):
-                strainfound = 1
-
-            
-
-            elif line.startswith("#Euler"):
-                eulerfound = 1
-                lineeuler = iline + 1
-
-                print('Eulers Angles found', eulerfound)
-
-            if matrixfound:
-                for jline_matrix in list(range(3)):
-                    line = f.readline()
-                    # print("line in matrix matrixfound", line)
-                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-                    UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
-                    iline += 1
-                #                 print "got UB matrix:", UBmat
-                matrixfound = 0
-
-            if ubb0found:
-                jline_matrix = 0
-                while(jline_matrix<3):
-                    line = f.readline()
-                    if line.startswith(("in LT frame","xlab1 = ui")): # there could be additionnal text before data
+                    #                 print "got strain matrix:", strain
+                    strainfound = 0
+                if calibfoundJSM:
+                    calibparam = []
+                    for _ in list(range(7)):
+                        line = f.readline()
+                        val = float(line.split(":")[-1])
+                        calibparam.append(val)
                         iline += 1
-                        continue
-                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-                    UBB0mat[jline_matrix, :] = np.array(lineval, dtype=float)
-                    jline_matrix += 1
+                    #                 print "got calibration parameters:", calibparam
+                    calibJSM[grain_index, :] = calibparam
+                    calibfoundJSM = 0
 
-                ubb0found = 0
+                if calibfound & (iline == linecalib):
+                    calib[grain_index, :] = np.array(line.split(",")[:5], dtype=float)
+                    # print "calib = ", calib[grain_index,:]
+                if eulerfound & (iline == lineeuler):
+                    euler[grain_index, :] = np.array(
+                        line.replace("[", "").replace("#", "").replace("]", "").split()[:3], dtype=float)
+                    # print "euler = ", euler[grain_index,:]
+                if pixdevfound & (iline == linepixdev):
+                    pixdev[grain_index] = float(line.rstrip("\n"))
+                    # print "pixdev = ", pixdev[grain_index]
 
-            if strainfound:
-                for jline_matrix in list(range(3)):
-                    line = f.readline()
-                    lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
-                    strain[jline_matrix, :] = np.array(lineval, dtype=float)
-                    iline += 1
-                #                 print "got strain matrix:", strain
-                strainfound = 0
-            if calibfoundJSM:
-                calibparam = []
-                for _ in list(range(7)):
-                    line = f.readline()
-                    val = float(line.split(":")[-1])
-                    calibparam.append(val)
-                    iline += 1
-                #                 print "got calibration parameters:", calibparam
-                calibJSM[grain_index, :] = calibparam
-                calibfoundJSM = 0
+                iline += 1
 
-            if calibfound & (iline == linecalib):
-                calib[grain_index, :] = np.array(line.split(",")[:5], dtype=float)
-                # print "calib = ", calib[grain_index,:]
-            if eulerfound & (iline == lineeuler):
-                euler[grain_index, :] = np.array(
-                    line.replace("[", "").replace("#", "").replace("]", "").split()[:3], dtype=float)
-                # print "euler = ", euler[grain_index,:]
-            if pixdevfound & (iline == linepixdev):
-                pixdev[grain_index] = float(line.rstrip("\n"))
-                # print "pixdev = ", pixdev[grain_index]
+            list_nb_indexed_peaks[grain_index] = np.shape(dataspots)[0]
 
-            iline += 1
+            #        if min_matLT == True :
+            #            matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(UBmat)
+            #            UBmat = matmin
+            #            print "transfmat \n", list(transfmat)
+            #            # transformer aussi les HKL pour qu'ils soient coherents avec matmin
+            #            hkl = data_fit[:, 2:5]
+            #            data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
 
-        list_nb_indexed_peaks[grain_index] = np.shape(dataspots)[0]
+            all_UBmats_flat[grain_index, :] = np.ravel(UBmat)
+            all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)
 
-        #        if min_matLT == True :
-        #            matmin, transfmat = FindO.find_lowest_Euler_Angles_matrix(UBmat)
-        #            UBmat = matmin
-        #            print "transfmat \n", list(transfmat)
-        #            # transformer aussi les HKL pour qu'ils soient coherents avec matmin
-        #            hkl = data_fit[:, 2:5]
-        #            data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
+            # xx yy zz yz xz xy
+            # voigt notation
+            strain6[grain_index, :] = np.array([strain[0, 0],
+                                                strain[1, 1],
+                                                strain[2, 2],
+                                                strain[1, 2],
+                                                strain[0, 2],
+                                                strain[0, 1]])
 
-        all_UBmats_flat[grain_index, :] = np.ravel(UBmat)
-        all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)
+            if grain_index == 0:
+                allgrains_spotsdata = dataspots * 1.0
+            elif grain_index:
+                allgrains_spotsdata = np.row_stack((allgrains_spotsdata, dataspots))
 
-        # xx yy zz yz xz xy
-        # voigt notation
-        strain6[grain_index, :] = np.array([strain[0, 0],
-                                            strain[1, 1],
-                                            strain[2, 2],
-                                            strain[1, 2],
-                                            strain[0, 2],
-                                            strain[0, 1]])
-
-        if grain_index == 0:
-            allgrains_spotsdata = dataspots * 1.0
-        elif grain_index:
-            allgrains_spotsdata = np.row_stack((allgrains_spotsdata, dataspots))
-
-    f.close()
 
     for grain_index in list(range(1, nbgrains)):
         list_starting_rows_in_data[grain_index] = (list_starting_rows_in_data[grain_index - 1]
@@ -1340,38 +1339,37 @@ def readfitfile_comments(fitfilepath):
     framedimflag = False
     detectorflag = False
 
-    f = open(fitfilepath, "r")
-    nblines = 0
-    for line in f.readlines():
-        nblines += 1
-    f.seek(0)
-    lineindex = 0
-    while lineindex < nblines:
-        line = f.readline()
-        # print('lineeeeeeeeee', line)
-        if ccdlabelflag:
-            dictcomments['CCDLabel'] = line.split('#')[1].strip()
-            ccdlabelflag = False
-        if pixelsizeflag:
-            dictcomments['pixelsize'] = line.split('#')[1].strip()
-            pixelsizeflag = False
-        if framedimflag:
-            dictcomments['framedim'] = line.split('#')[1].strip()
-            framedimflag = False
-        if detectorflag:
-            dictcomments['detectorparameters'] = line.split('#')[1].strip()
-            detectorflag = False
+    with open(fitfilepath, 'r') as f:
+        nblines = 0
+        for line in f.readlines():
+            nblines += 1
+        f.seek(0)
+        lineindex = 0
+        while lineindex < nblines:
+            line = f.readline()
+            # print('lineeeeeeeeee', line)
+            if ccdlabelflag:
+                dictcomments['CCDLabel'] = line.split('#')[1].strip()
+                ccdlabelflag = False
+            if pixelsizeflag:
+                dictcomments['pixelsize'] = line.split('#')[1].strip()
+                pixelsizeflag = False
+            if framedimflag:
+                dictcomments['framedim'] = line.split('#')[1].strip()
+                framedimflag = False
+            if detectorflag:
+                dictcomments['detectorparameters'] = line.split('#')[1].strip()
+                detectorflag = False
 
-        if line.startswith(('#CCDLabel', "# CCDLabel")):
-            ccdlabelflag = True
-        if line.startswith(('#pixelsize', "# pixelsize")):
-            pixelsizeflag = True
-        if line.startswith(('#Frame dimensions', "# Frame dimensions")):
-            framedimflag = True
-        if line.startswith(('#DetectorParameters', "# DetectorParameters")):
-            detectorflag = True
-        lineindex += 1
-    f.close()
+            if line.startswith(('#CCDLabel', "# CCDLabel")):
+                ccdlabelflag = True
+            if line.startswith(('#pixelsize', "# pixelsize")):
+                pixelsizeflag = True
+            if line.startswith(('#Frame dimensions', "# Frame dimensions")):
+                framedimflag = True
+            if line.startswith(('#DetectorParameters', "# DetectorParameters")):
+                detectorflag = True
+            lineindex += 1
 
     return dictcomments
 
@@ -1487,33 +1485,33 @@ def readListofIntegers(fullpathtoFile):
 def read_roisfile(fullpathtoFile):
     """ read a file where each line is x,y,boxx,boxy (all integers or will be converted in integers)
     """
-    f = open(fullpathtoFile, "r")
+    with open(fullpathtoFile, 'r') as f:
 
-    nbRois = 0
+        nbRois = 0
 
-    lines = f.readlines()
-    listrois = []
-    for line in lines:
+        lines = f.readlines()
+        listrois = []
+        for line in lines:
 
-        listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
-        nbelems = 0
-        listroielems = []
-        for elem in listval:
-            if elem not in ("",):
-                try:
-                    val = int(float(elem))
-                except ValueError:
-                    print("can't convert %s into integer...! I give up"%elem)
-                    return None
-                listroielems.append(val)
-                nbelems += 1
-        if nbelems == 4:
-            listrois.append(listroielems)
-            nbRois += 1
-        else:
-            print("\n\n**********\n\nSorry. I can't extract 4 integers from the line %s. "
-                "I give up...****\n\n" % line)
-            return None
+            listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
+            nbelems = 0
+            listroielems = []
+            for elem in listval:
+                if elem not in ("",):
+                    try:
+                        val = int(float(elem))
+                    except ValueError:
+                        print("can't convert %s into integer...! I give up"%elem)
+                        return None
+                    listroielems.append(val)
+                    nbelems += 1
+            if nbelems == 4:
+                listrois.append(listroielems)
+                nbRois += 1
+            else:
+                print("\n\n**********\n\nSorry. I can't extract 4 integers from the line %s. "
+                    "I give up...****\n\n" % line)
+                return None
 
     return listrois
 
@@ -1689,73 +1687,74 @@ def readCheckOrientationsFile(fullpathtoFile):
     known_values = [False for k in list(range(6))]
     Current_CheckOrientationParameters = [0 for k in list(range(6))]
 
-    f = open(fullpathtoFile, "r")
-    lineindex = 0
-    while 1:
-        line = f.readline()
-        #print("line file.ubs",line)
-        if line.startswith("$"):
-            if line.startswith("$FileIndex"):
-                line = str(f.readline())
-                #print("$FileIndex: ", line)
-                list_indices = getfileindex(line)
-                Current_CheckOrientationParameters[0] = list_indices
-                known_values[0] = True
-                List_posImageIndex.append(lineindex)
-                lineindex += 1
-            elif line.startswith("$Grain"):
-                line = f.readline()
-                grain_index = int(line)
-                Current_CheckOrientationParameters[1] = grain_index
-                known_values[1] = True
-                List_posGrain.append(lineindex)
-                lineindex += 1
-            elif line.startswith("$Material"):
-                line = f.readline()
-                key_material = str(line).strip()
-                Current_CheckOrientationParameters[2] = key_material
-                known_values[2] = True
-                List_posMaterial.append(lineindex)
-                lineindex += 1
-            elif line.startswith("$EnergyMax"):
-                line = f.readline()
-                energymax = int(line)
-                Current_CheckOrientationParameters[3] = energymax
-                known_values[3] = True
-                List_posEnergyMax.append(lineindex)
-                lineindex += 1
-            elif line.startswith("$MatchingThreshold"):
-                line = f.readline()
-                matchingthreshold = float(line)
-                Current_CheckOrientationParameters[4] = matchingthreshold
-                known_values[4] = True
-                List_posMatchingThreshold.append(lineindex)
-                lineindex += 1
-            elif line.startswith("$Matrix"):
-                nbMatrices, matrices, nblines, posfile = readdataasmatrices(f)
-                #print("nbMatrices,matrices, nblines, posfile",
-                    # nbMatrices,
-                    # matrices,
-                    # nblines,
-                    # posfile)
+    with open(fullpathtoFile, 'r') as f:
+    
+        lineindex = 0
+        while 1:
+            line = f.readline()
+            #print("line file.ubs",line)
+            if line.startswith("$"):
+                if line.startswith("$FileIndex"):
+                    line = str(f.readline())
+                    #print("$FileIndex: ", line)
+                    list_indices = getfileindex(line)
+                    Current_CheckOrientationParameters[0] = list_indices
+                    known_values[0] = True
+                    List_posImageIndex.append(lineindex)
+                    lineindex += 1
+                elif line.startswith("$Grain"):
+                    line = f.readline()
+                    grain_index = int(line)
+                    Current_CheckOrientationParameters[1] = grain_index
+                    known_values[1] = True
+                    List_posGrain.append(lineindex)
+                    lineindex += 1
+                elif line.startswith("$Material"):
+                    line = f.readline()
+                    key_material = str(line).strip()
+                    Current_CheckOrientationParameters[2] = key_material
+                    known_values[2] = True
+                    List_posMaterial.append(lineindex)
+                    lineindex += 1
+                elif line.startswith("$EnergyMax"):
+                    line = f.readline()
+                    energymax = int(line)
+                    Current_CheckOrientationParameters[3] = energymax
+                    known_values[3] = True
+                    List_posEnergyMax.append(lineindex)
+                    lineindex += 1
+                elif line.startswith("$MatchingThreshold"):
+                    line = f.readline()
+                    matchingthreshold = float(line)
+                    Current_CheckOrientationParameters[4] = matchingthreshold
+                    known_values[4] = True
+                    List_posMatchingThreshold.append(lineindex)
+                    lineindex += 1
+                elif line.startswith("$Matrix"):
+                    nbMatrices, matrices, nblines, posfile = readdataasmatrices(f)
+                    #print("nbMatrices,matrices, nblines, posfile",
+                        # nbMatrices,
+                        # matrices,
+                        # nblines,
+                        # posfile)
 
-                Current_CheckOrientationParameters[5] = matrices
-                known_values[5] = True
-                List_posMatrices.append(lineindex)
+                    Current_CheckOrientationParameters[5] = matrices
+                    known_values[5] = True
+                    List_posMatrices.append(lineindex)
 
-                #print("Current_CheckOrientationParameters", Current_CheckOrientationParameters)
-                #print("known_values", known_values)
+                    #print("Current_CheckOrientationParameters", Current_CheckOrientationParameters)
+                    #print("known_values", known_values)
 
-                List_CheckOrientations.append(copy.copy(Current_CheckOrientationParameters))
+                    List_CheckOrientations.append(copy.copy(Current_CheckOrientationParameters))
 
-                if posfile != -1:
-                    f.seek(posfile)
-                    for _ in list(range(nblines)):
-                        f.readline()
-                        lineindex += 1
-                else:
-                    f.close()
-                    break
+                    if posfile != -1:
+                        f.seek(posfile)
+                        for _ in list(range(nblines)):
+                            f.readline()
+                            lineindex += 1
+                    else:
+                        
+                        break
 
     return List_CheckOrientations
 
