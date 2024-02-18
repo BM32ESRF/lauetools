@@ -4,7 +4,7 @@
 
 name: update readthedocs in workflow folder
 
-on: commit
+on: create
 
 # Required
 version: 2
