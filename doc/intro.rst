@@ -5,7 +5,7 @@ Introduction
 
 LaueTools is a **python** written package aiming at analysing from 1 to few 10000s microdiffraction Laue patterns coming from synchrotron CRG-IF BM32 beamline at ESRF.
 
-With pip installer, it is now relatively easy to install LaueTools and put hands immediately on data. See :ref:`installation` page.
+With pip installer, it is easy to install LaueTools and put hands immediately on data. See :ref:`installation` page.
 
 
 
