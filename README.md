@@ -15,7 +15,7 @@
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-Last revision (Sept 2022)
+Last revision (February 2024)
 
 LaueTools information on BM32 beamline website:
 
