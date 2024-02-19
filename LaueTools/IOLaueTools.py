@@ -586,7 +586,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                             0 to write a file with '_new' added in the name
     """
     if Data_array is None:
-        print("No data peak to write")
+        if verbose:
+            print("No data peak to write")
         return
     # just one row!
     elif len(Data_array.shape) == 1:
@@ -629,7 +630,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
                                                 "peak_inclination Xdev Ydev peak_bkg Ipixmax\n")
 
         if nbpeaks == 1:
-            print("nbcolumns", nbcolumns)
+            if verbose:
+                print("nbcolumns", nbcolumns)
 
             outputfile.write(
                 "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
