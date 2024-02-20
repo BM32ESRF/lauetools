@@ -3972,7 +3972,7 @@ class MainPeakSearchFrame(wx.Frame):
             if self.CCDlabel in ("EIGER_4M",):
                 img_dataformat = np.uint32
             else:
-                img_dataformat = np.int16  # np.unit16 ???
+                img_dataformat = np.uint16 
             self.dataimage_ROI = dataimage.astype(img_dataformat)
 
         if self.CropIsOn:
