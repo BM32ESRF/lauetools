@@ -79,21 +79,37 @@ class PanelExperimentFigure(wx.Panel):
 
     def _CreateCtrl(self):
 
-        vbox = wx.StaticBox(self, -1)
-        vbox_sizer = wx.StaticBoxSizer(vbox, wx.VERTICAL)
+        # vbox = wx.StaticBox(self, -1)
+        # vbox_sizer = wx.StaticBoxSizer(vbox, wx.VERTICAL)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # # orientation
+        # self._ctrl_ori = LabelComboBox(vbox, label="Axes:  ", style=wx.CB_SORT,
+        #                                value=self._img_orient, choices=["ij", "xy"])
+
+        # # scan slider
+        # self._ctrl_scan = SpinSliderCtrl(vbox, "Frame: ", size=(60, -1),
+        #                                  style=wx.SL_MIN_MAX_LABELS | wx.SL_TOP,
+        #                                  min=1, max=self._img_qty, initial=1)
+
+        # # checkboxes
+        # self._ctrl_center = wx.CheckBox(vbox, wx.ID_ANY, label="Show detector center")
+        # self._ctrl_lims = wx.CheckBox(vbox, wx.ID_ANY, label="Show scan limits")
 
         # orientation
-        self._ctrl_ori = LabelComboBox(vbox, label="Axes:  ", style=wx.CB_SORT,
+        self._ctrl_ori = LabelComboBox(self, label="Axes:  ", style=wx.CB_SORT,
                                        value=self._img_orient, choices=["ij", "xy"])
 
         # scan slider
-        self._ctrl_scan = SpinSliderCtrl(vbox, "Frame: ", size=(60, -1),
+        self._ctrl_scan = SpinSliderCtrl(self, "Frame: ", size=(60, -1),
                                          style=wx.SL_MIN_MAX_LABELS | wx.SL_TOP,
                                          min=1, max=self._img_qty, initial=1)
 
         # checkboxes
-        self._ctrl_center = wx.CheckBox(vbox, wx.ID_ANY, label="Show detector center")
-        self._ctrl_lims = wx.CheckBox(vbox, wx.ID_ANY, label="Show scan limits")
+        self._ctrl_center = wx.CheckBox(self, wx.ID_ANY, label="Show detector center")
+        self._ctrl_lims = wx.CheckBox(self, wx.ID_ANY, label="Show scan limits")
+
 
         #assemble
         hbox = wx.GridSizer(rows=1, cols=3, vgap=0, hgap=5)
@@ -101,10 +117,18 @@ class PanelExperimentFigure(wx.Panel):
         hbox.Add(self._ctrl_center, 0, wx.ALIGN_CENTER_VERTICAL)
         hbox.Add(self._ctrl_lims, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        vbox_sizer.Add(hbox, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
-        vbox_sizer.Add(self._ctrl_scan, 0, wx.EXPAND| wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
+        # vbox_sizer.Add(hbox, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.ALL)#, 10)
+        # vbox_sizer.Add(self._ctrl_scan, 0, wx.EXPAND| wx.ALIGN_CENTER_VERTICAL | wx.ALL)#, 10)
 
-        self._mainbox.Add(vbox_sizer, 0, wx.EXPAND|wx.ALL, 5)
+        # vbox.Add(hbox, 0, wx.EXPAND | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
+        # vbox.Add(self._ctrl_scan, 0, wx.EXPAND| wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
+
+        vbox.Add(hbox, 0, wx.EXPAND | wx.ALL, 10)
+        vbox.Add(self._ctrl_scan, 0, wx.EXPAND | wx.ALL, 10)
+
+        # self._mainbox.Add(vbox_sizer, 0, wx.EXPAND|wx.ALL, 5)
+        self._mainbox.Add(vbox, 0, wx.EXPAND|wx.ALL, 5)
+
 
         #bindings
         self._ctrl_ori.Bind_to(self._OnSelectAxes)

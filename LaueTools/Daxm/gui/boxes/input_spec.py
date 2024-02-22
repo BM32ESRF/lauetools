@@ -64,10 +64,16 @@ class InputSpec(wx.StaticBoxSizer):
         grid = wx.GridSizer(rows=1, cols=5, hgap=5, vgap=0)
         grid.Add(wx.StaticText(parent=self._parent, id=wx.ID_ANY, label="ascan yf"),
                  0, wx.ALIGN_CENTER)
-        grid.Add(self.ystart_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
-        grid.Add(self.ystop_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
-        grid.Add(self.step_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
-        grid.Add(self.expo_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
+        #grid.Add(self.ystart_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
+        # grid.Add(self.ystop_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
+        # grid.Add(self.step_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
+        # grid.Add(self.expo_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
+
+        grid.Add(self.ystart_txt, 0, wx.EXPAND )
+        grid.Add(self.ystop_txt, 0, wx.EXPAND )
+        grid.Add(self.step_txt, 0, wx.EXPAND )
+        grid.Add(self.expo_txt, 0, wx.EXPAND )
+
 
         self.AddSpacer(10)
         self.Add(self.spec_fs,  0, wx.EXPAND | wx.LEFT | wx.RIGHT, 15)

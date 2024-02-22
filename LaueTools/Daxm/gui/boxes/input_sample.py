@@ -138,8 +138,11 @@ class InputSample(wx.StaticBoxSizer):
         hbox.Add(self.fluo_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND)
 
         # assemble
-        self.Add(self.notebook, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.ALL, 5)
-        self.Add(hbox, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 5)
+        # self.Add(self.notebook, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.ALL, 5)
+        # self.Add(hbox, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 5)
+        
+        self.Add(self.notebook, 0, wx.EXPAND | wx.ALL, 5)
+        self.Add(hbox, 0,wx.EXPAND | wx.ALL, 5)
 
         # bindings
         self.mat_cbx.Bind_to(self.OnModifyAnything)

@@ -156,7 +156,9 @@ class InputWire(wx.StaticBoxSizer):
         self.notebook.AddPage(panel2, "Customized", False)
 
         # assemble
-        self.Add(self.notebook, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.ALL, 5)
+        # self.Add(self.notebook, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.ALL, 5)
+        self.Add(self.notebook, 1,  wx.EXPAND | wx.ALL, 5)
+
 
         # bindings
         self.qty_spn.Bind_to(self.OnModifyQty)
