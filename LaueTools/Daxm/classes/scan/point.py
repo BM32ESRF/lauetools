@@ -1015,7 +1015,7 @@ class StaticPointScan(object):
         # print('ycam',ycam)
         # print('ysrc',ysrc)
 
-        if isinstance(wire, (int, np.int, np.int64)):
+        if isinstance(wire, (int, np.int32, np.int64)):
             thewire = self.wire[wire]
         else:
             thewire = wire
