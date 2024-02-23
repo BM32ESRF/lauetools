@@ -18,6 +18,9 @@ from skimage.segmentation import random_walker
 from astropy.stats import SigmaClip
 from photutils import Background2D, MedianBackground
 
+import photutils
+print('location photutils', photutils)
+
 # -------------------------------- Thresholding --------------------------------
 def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
@@ -25,7 +28,7 @@ def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
     mask = img > bkg + thr
 
-    mask = morphology.remove_small_objects(mask, min_size**2, in_place=True)
+    mask = morphology.remove_small_objects(mask, min_size**2)#, in_place=True)
 
     for i in range(erode):
         mask = morphology.binary_erosion(mask)
@@ -38,7 +41,7 @@ def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
 def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
-    mask = np.zeros(img.shape)
+    mask = np.zeros(img.shape, dtype=np.int32)
     bkg = np.zeros(img.shape)
 
     sigma_clip = SigmaClip(sigma=3.)
@@ -53,7 +56,7 @@ def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
         mask = (img - bkg) > thr
         for i in range(erode):
             mask = morphology.binary_erosion(mask)
-        mask = morphology.remove_small_objects(mask, min_size, in_place=True)
+        mask = morphology.remove_small_objects(mask, min_size) #, in_place=True)
         for i in range(dilate):
             mask = morphology.binary_dilation(mask, morphology.disk(2))
 

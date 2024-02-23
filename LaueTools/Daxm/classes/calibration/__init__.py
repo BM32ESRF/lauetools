@@ -11,4 +11,4 @@ __version__ = '$Revision$'
 from . calib import new_calib, CalibDiff, CalibFluo, CalibManager
 
 
-print('CalibManager in init of classes/calibration', CalibManager)
+#print('CalibManager in init of classes/calibration', CalibManager)

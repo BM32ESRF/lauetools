@@ -30,7 +30,6 @@ import LaueTools.IOimagefile as rmccd
 import LaueTools.Daxm.utils.read_image as rimg
 import LaueTools.Daxm.contrib.spec_reader as rspec
 import LaueTools.logfile_reader as logfiler
-
 import LaueTools.Daxm.modules.geometry as geom
 import LaueTools.Daxm.modules.calibration as calib
 

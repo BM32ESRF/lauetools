@@ -8,6 +8,7 @@ __version__ = '$Revision$'
 
 
 from LaueTools.Daxm.classes.scan.point import PointScan, load_scan_dict
+
 from LaueTools.Daxm.classes.scan.line import LineScan
 from LaueTools.Daxm.classes.scan.mesh import MeshScan
 
@@ -22,7 +23,7 @@ def is_type_scan(obj):
 def new_scan(scan_inp, verbose=True):
 
     scan = None
-    print('scan_inp', scan_inp)
+    print('"scan_inp" scan input dict', scan_inp)
     if is_type_scan(scan_inp):
 
         scan = scan_inp
