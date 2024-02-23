@@ -104,6 +104,7 @@ def createmirrorfolder(folder, defaultname='datfiles'):
     return genfolder
 
 def setimagefilename(prefix, imageindex, folder=None, suffix='.tif',sizeofzeropadding = 4):
+    """setter of path of full path to image file"""
     paddedindex = '%s'%str(imageindex).zfill(sizeofzeropadding)
     imagefilename = f"{prefix}{paddedindex}{suffix}"
     if folder is not None:
