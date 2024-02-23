@@ -101,7 +101,7 @@ class InputSpec(wx.StaticBoxSizer):
     # Getters
     def GetValue(self):
         """ return filename, scan_id, scan_num, scan_command parameters, logfiletype"""
-        if self.manual_chk.IsChecked() or self.spec_fs.IsBlank():
+        if self.manual_chk.IsChecked() or self.spec_fs.IsBlank():  # user-defined check box in Sacn information  OR LogFile field is blank
 
             fname = None
             scan_num = 0
@@ -163,7 +163,12 @@ class InputSpec(wx.StaticBoxSizer):
         if cmd_parts[1] in ("ascan", "dscan"):
             params = cmd_parts[3:]
         else: # should be mesh or dmesh...
-            params = cmd_parts[7:]
+            for mot in ['yf','zf']:
+                if mot in cmd_parts:
+                    imot = cmd_parts.index(mot)
+                    params = cmd_parts[imot+1:imot+4] # wiremin, wiremax, nbsteps
+                    params.append(cmd_parts[-1]) # expo
+                    break
 
         params = [float(param) for param in params]
         params[2] = int(params[2])
@@ -221,15 +226,15 @@ class InputSpec(wx.StaticBoxSizer):
     def SetManual(self, value=True):
         value = bool(value)
 
-        self.manual_chk.SetValue(value)
+        self.manual_chk.SetValue(value)  # in Scan information  user defined check box
 
-        self.spec_fs.Enable(not value)
-        self.cmd_cbx.Enable(not value)
+        self.spec_fs.Enable(not value)  # in Scan information  Logfile
+        self.cmd_cbx.Enable(not value)  # in Scan information  Scan menu
 
-        self.ystart_txt.SetEditable(value)
-        self.ystop_txt.SetEditable(value)
-        self.step_txt.Enable(value)
-        self.expo_txt.SetEditable(value)
+        self.ystart_txt.SetEditable(value)  #wiremin
+        self.ystop_txt.SetEditable(value) # wiremax
+        self.step_txt.Enable(value) #nb steps
+        self.expo_txt.SetEditable(value) # exposure time
 
     def SetParams(self, params=None):
         """ set scan parameters txt_ctrls (ystart, ystop, step, expo_txt
@@ -364,10 +369,13 @@ class InputSpec2(InputSpec):
     def GetValue(self):
         """  inputSpec2  return fname,scan_id or scan_num, scancomm, imagefilepath"""
         fname, scan_id, scan_num, scancomm, filetype = InputSpec.GetValue(self)
-        imagefilepath = InputSpec.GetValue(self)
+        imagefilepath = self.img_fs.GetValue()
+
+        print('imagefilepath',imagefilepath)
         self.filetype = filetype
 
         if filetype=='spec':
+            imagefilepath = InputSpec.GetValue(self)  # ????
             return (fname, scan_num, scancomm, imagefilepath)
         elif filetype=='hdf5':
             return (fname, scan_id, scancomm, imagefilepath) 

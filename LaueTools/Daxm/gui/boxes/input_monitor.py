@@ -129,10 +129,15 @@ class InputMonitor(wx.StaticBoxSizer):
         hbox.Add(self.check_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND)
 
         # assemble
-        self.Add(self.dttoff_spn, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT, 10)
-        self.Add(self.apply_ckb, 0,  wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
-        self.Add(self.notebook, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
-        self.Add(hbox, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 5)
+        # self.Add(self.dttoff_spn, 0, wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT, 10)
+        # self.Add(self.apply_ckb, 0,  wx.ALIGN_CENTER_VERTICAL | wx.ALL, 10)
+        # self.Add(self.notebook, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
+        # self.Add(hbox, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 5)
+
+        self.Add(self.dttoff_spn, 0,  wx.TOP | wx.LEFT, 10)
+        self.Add(self.apply_ckb, 0,  wx.ALL, 10)
+        self.Add(self.notebook, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
+        self.Add(hbox, 0, wx.EXPAND | wx.ALL, 5)
 
         # bindings
         self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnModifyAnything)

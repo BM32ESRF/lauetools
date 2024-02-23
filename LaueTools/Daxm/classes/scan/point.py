@@ -97,8 +97,9 @@ class StaticPointScan(object):
     def __init__(self, inp, verbose=True):
         self.verbose = verbose
         self.print_msg("Creating class instance...")
-        print("Creating class instance... (init StaticPointScan)")
-        print('input "inp"', inp)
+        if verbose:
+            print("Creating class instance... (init StaticPointScan)")
+            print('input "inp"', inp)
 
         if isinstance(inp, str):
             self.print_msg(" from file: " + inp)
@@ -171,8 +172,9 @@ class StaticPointScan(object):
             self.init_mon()
 
         self.print_msg("Ready to work.")
-        print('self.filetype', self.filetype)
-        print('end of StaticPointScan init')
+        if verbose:
+            print('self.filetype', self.filetype)
+            print('end of StaticPointScan init')
         # End of __init__
 
     def init_spec(self):
@@ -228,16 +230,28 @@ class StaticPointScan(object):
             # read single key scan (for the moment)
             self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId)
             print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
-            self.scan_cmd = self.spec.cmd_list[self.hdf5scanId].split()[3:]
+            cmd_parts = self.spec.cmd_list[self.hdf5scanId].split()
+            for mot in ['yf','zf']:
+                if mot in cmd_parts:
+                    self.spec_motor = mot
+                    print('self.spec_motor  !!! ====> ',self.spec_motor)
+                    imot = cmd_parts.index(mot)
+                    params = cmd_parts[imot+1:imot+4] # wiremin, wiremax, nbsteps
+                    params.append(cmd_parts[-1]) # expo
+                    break
+
+            self.scan_cmd = params
+            print('self.scan_cmd',self.scan_cmd)
+
             self.spec_monitor = getattr(self.spec_data, "mon")
             print('self.spec_monitor',self.spec_monitor)
-            self.spec_motor = self.spec.cmd_list[self.hdf5scanId].split()[2]
-
-            print('self.spec_motor  !!! ====> ',self.spec_motor)
+            
+            
         
         for i, dtype in enumerate([float, float, int, float]):
             self.scan_cmd[i] = dtype(self.scan_cmd[i])
-
+        print('self.scan_cmd',self.scan_cmd)
+        
         self.spec_expo = self.scan_cmd[3]
 
         self.wire_position = getattr(self.spec_data, self.spec_motor)

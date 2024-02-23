@@ -23,7 +23,9 @@ if path_to_lauetools not in sys.path:
 
 import wx
 import pprint
-from wx.lib.pubsub import pub
+#from wx.lib.pubsub import pub
+from pubsub import pub
+
 
 try:
     from wx.adv import SplashScreen as SplashScreen

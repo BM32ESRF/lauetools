@@ -9,7 +9,8 @@ __version__ = '$Revision$'
 import numpy as np
 
 import wx
-from wx.lib.pubsub import pub
+#from wx.lib.pubsub import pub
+from pubsub import pub
 
 import matplotlib as mpl
 import matplotlib.pyplot as mplp

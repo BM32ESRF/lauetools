@@ -164,6 +164,9 @@ class LabelTxtCtrlNum(wx.BoxSizer):
     
     def __init__(self, parent, label, value, size=wx.DefaultSize, style=wx.TE_PROCESS_ENTER):
         wx.BoxSizer.__init__(self, wx.HORIZONTAL)
+
+        if style == wx.TE_READONLY:
+            style = wx.TE_READONLY | wx.TE_PROCESS_ENTER
         
         self._parent = parent
         self._observers = []
@@ -178,6 +181,7 @@ class LabelTxtCtrlNum(wx.BoxSizer):
         
         self._text.SetValue(str(value))
         self._text.Bind(wx.EVT_TEXT_ENTER, self._OnTextEnter)
+        # self._text.Bind(wx.TE_PROCESS_ENTER, self._OnTextEnter)
         
         if not self._text.IsEditable():
             self._text.SetBackgroundColour(COLOR_READONLY)

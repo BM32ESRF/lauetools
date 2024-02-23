@@ -160,6 +160,8 @@ class LoadScan(wx.Dialog):
                 
                 scan_num = int(scan_id.rsplit('_',1)[-1])
 
+            print('img_file',img_file)
+
             filedir, filename = os.path.split(img_file)
             pref, idx, _ = split_filename(filename)
 

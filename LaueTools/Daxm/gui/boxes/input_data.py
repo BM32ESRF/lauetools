@@ -141,9 +141,13 @@ class InputData(wx.StaticBoxSizer):
         self.notebook.AddPage(panel1, "Line", False)
         self.notebook.AddPage(panel2, "Mesh", False)
 
-        self.Add(sizer0,  0, wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
-        self.Add(self.series_ckb, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.ALIGN_LEFT, 10)
-        self.Add(self.notebook, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+        # self.Add(sizer0,  0, wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        # self.Add(self.series_ckb, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.ALIGN_LEFT, 10)
+        # self.Add(self.notebook, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+
+        self.Add(sizer0,  0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self.Add(self.series_ckb, 0,  wx.ALL | wx.ALIGN_LEFT, 10)
+        self.Add(self.notebook, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
 
         # bindings
         self.series_ckb.Bind(wx.EVT_CHECKBOX, self.OnModifySeries)

@@ -32,7 +32,7 @@ try:
     FABIO_EXISTS = True
 except ImportError:
     print("Missing fabio module. Please install it if you need open some tiff images "
-            "from the sCMOS camera")
+            "from the sCMOS camera. However, libtiff or PIL can do the job!")
     FABIO_EXISTS = False
 
 try:
@@ -41,7 +41,7 @@ try:
     libtiff_ctypes.suppress_warnings()
     LIBTIFF_EXISTS = True
 except (ImportError, ValueError, AttributeError, NameError):
-    print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images")
+    print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images. However, Fabio or PIL can do the job!")
     LIBTIFF_EXISTS = False
 
 try:
@@ -49,7 +49,7 @@ try:
 
     PIL_EXISTS = True
 except ImportError:
-    print("Missing python module called PIL. Please install it if you need open some tiff "
+    print("Missing python module called PIL. Please install it if you need open some tiff. However, Fabio or libtiff can do the job!  "
             "images from vhr camera")
     PIL_EXISTS = False
 import numpy as np
