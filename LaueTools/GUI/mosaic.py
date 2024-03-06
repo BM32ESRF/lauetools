@@ -3034,7 +3034,7 @@ def FitPeakOnMap(mosaic,
                                 Xdev,
                                 Ydev,
                                 peak_bkg,
-                                maskedrows]).T
+                                maskedrows], dtype='object').T
     #                 DEFAULT_WRONG_X = np.nan
     #                 DEFAULT_WRONG_Y = np.nan
     #                 FilterX = np.where(BoolToTake, peak_X, DEFAULT_WRONG_X)
