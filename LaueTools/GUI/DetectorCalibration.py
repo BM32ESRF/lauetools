@@ -585,14 +585,13 @@ class DetectorParametersDisplayPanel(wx.Panel):
             grid.Add(wx.StaticText(self, -1, txt), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
 
         grid.Add(currenttxt)
-        for txtctrl in [self.act_distance, self.act_Xcen, self.act_Ycen, self.act_Ang1,
-                                                                                    self.act_Ang2]:
+        for txtctrl in [self.act_distance, self.act_Xcen, self.act_Ycen, self.act_Ang1, self.act_Ang2]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Current and Set new value (press enter)")
             txtctrl.SetSize(sizetxtctrl)
 
         grid.Add(resultstxt)
-        for txtctrl in [self.act_distance_r, self.act_Xcen_r, self.act_Ycen_r, self.act_Ang1_r,                                                                                         self.act_Ang2_r]:
+        for txtctrl in [self.act_distance_r, self.act_Xcen_r, self.act_Ycen_r, self.act_Ang1_r, self.act_Ang2_r]:
             grid.Add(txtctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL)
             txtctrl.SetToolTipString("Fit result value")
 
@@ -1330,7 +1329,6 @@ class MainCalibrationFrame(wx.Frame):
         self.incrementfile = wx.CheckBox(self.panel, -1, "increment saved filenameindex")
 
         self.layout()
-
 
         # tooltips
         self.plotrangepanel.SetToolTipString("Set plot and spots display parameters")
@@ -2431,10 +2429,13 @@ class MainCalibrationFrame(wx.Frame):
     def display_results(self, dataresults):
         """display CCD parameters refinement results in txtctrls
         """
+        # for backreflection xbet = 0 is dangerous!
+        xbet = float(dataresults[3])+0.0000001
+
         self.parametersdisplaypanel.act_distance_r.SetValue(str(dataresults[0]))
         self.parametersdisplaypanel.act_Xcen_r.SetValue(str(dataresults[1]))
         self.parametersdisplaypanel.act_Ycen_r.SetValue(str(dataresults[2]))
-        self.parametersdisplaypanel.act_Ang1_r.SetValue(str(dataresults[3]))
+        self.parametersdisplaypanel.act_Ang1_r.SetValue(str(xbet))
         self.parametersdisplaypanel.act_Ang2_r.SetValue(str(dataresults[4]))
         self.act_residues.SetValue(str(np.round(dataresults[8], decimals=4)))
         self.nbspots_in_fit.SetValue(str(dataresults[9]))
@@ -2939,12 +2940,17 @@ class MainCalibrationFrame(wx.Frame):
         else:
             diameter_for_simulation = self.detectordiameter
 
+        # xbet = 0 is dangerous for back reflection geometry (issue with calculation of pixel X, Y position)!
+        self.CCDParam[3] += 0.0000001 
+
         SINGLEGRAIN = 1
         if SINGLEGRAIN:  # for single grain simulation
             if self.kf_direction in ("Z>0", "X>0", 'X<0') and removeharmonics == 0:
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
                 #print('SINGLEGRAIN')
                 #print('parameters for SimulateLaue_full_np', self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
+
+                
 
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,
@@ -3694,8 +3700,8 @@ class MainCalibrationFrame(wx.Frame):
             ytol = 200
 
         if self.datatype == "2thetachi":
-            xdata, ydata, _annotes_exp = (self.Data_X,
-                                        self.Data_Y,
+            xdata, ydata, _annotes_exp = (self.data_x,
+                                        self.data_y,
                                         list(zip(self.Data_index_expspot, self.Data_I)))
         elif self.datatype == "pixels":
             xdata, ydata, _annotes_exp = (self.data_XY[0],
@@ -3804,7 +3810,7 @@ class MainCalibrationFrame(wx.Frame):
                 self.tooltip.SetTip(tip + "\n" + fulltip)
                 self.tooltip.Enable(True)
 
-                self._replot()
+                self._replot(1)
                 return
 
         if not collisionFound_exp and not collisionFound_theo:
@@ -3812,6 +3818,27 @@ class MainCalibrationFrame(wx.Frame):
             # set to False to avoid blocked tooltips from btns and checkboxes on windows platforms
 
     #             self.tooltip.Enable(False)
+
+    def updateStatusBar(self, x, y, annote, spottype="exp"):
+
+        if self.datatype == "2thetachi":
+            Xplot = "2theta"
+            Yplot = "chi"
+        else:
+            Xplot = "x"
+            Yplot = "y"
+
+        if spottype == "theo":
+            self.sb.SetStatusText(("%s= %.2f " % (Xplot, x)
+                    + " %s= %.2f " % (Yplot, y)
+                    + "  HKL=%s " % str(annote)), 0)
+
+        elif spottype == "exp":
+
+            self.sb.SetStatusText(("%s= %.2f " % (Xplot, x)
+                    + " %s= %.2f " % (Yplot, y)
+                    + "   Spotindex=%d " % annote[0]
+                    + "   Intensity=%.2f" % annote[1]), 0)
 
     def onMotion(self, event):
         if self.press is None:
