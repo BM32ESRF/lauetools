@@ -5,7 +5,7 @@ blissdatafolderstructures is a module to provide some helper functions given a f
 import sys, os
 
 
-def setExperimentFolder_with_date(ExperimentFolder, expDate=None):
+def setExperimentFolder_with_date(ExperimentFolder, expDate=None, addfolder='RAW_DATA'):
     """return the experiment folder path by adding the proper date
     expDate: date is a string yearmonthday format '20231003'"""
     try:
@@ -29,10 +29,15 @@ def setExperimentFolder_with_date(ExperimentFolder, expDate=None):
         ExperimentFolder=os.path.join(ExperimentFolder,expDate)
     elif len(dirs)==0:
         print(f'ExperimentFolder {ExperimentFolder} is empty')
-        ExperimentFolder = None
+        return None
     else:
         print(f'Please recall the function with the argument expDate among:')
         print(dirs)
+        return None
+    
+    if addfolder is not None:
+        ExperimentFolder=os.path.join(ExperimentFolder,addfolder)
+        
     return ExperimentFolder
 
 def createdatfolder(folder, defaultname='datfiles'):
