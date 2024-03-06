@@ -140,7 +140,9 @@ dict_Materials = {
     "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
     "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194 
     "Nb14W3O44": ["Nb14W3O44", [21.03,21.03,3.93,90, 90, 90], "h+k+l=2n"], #SG 82
-    "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"]
+    "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"],
+    "CaWO4": ["CaWO4", [5.26, 5.26, 11.35, 90, 90, 90], "h+k+l=2n"], # SG88
+    "CaWO4_distorted": ["CaWO4_distorted", [5.26, 5.26, 11.4, 90, 90, 90], "h+k+l=2n"],
 }
 
 dict_Materials_short = {
