@@ -314,7 +314,7 @@ def SpotLinks(twicetheta_exp,
             linkIntensity.append(dataintensity_exp[exp_id])
             # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
 
-    linkedspots_link = np.array(listofpairs)
+    linkedspots_link = np.array(listofpairs, dtype=object)
     linkExpMiller_link = linkExpMiller
     linkIntensity_link = linkIntensity
     linkResidues_link = linkResidues

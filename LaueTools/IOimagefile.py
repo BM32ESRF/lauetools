@@ -1529,5 +1529,6 @@ def get_imagesize(framedim, nbbits_per_pixel, headersize_bytes):
     """
     return (framedim[0] * framedim[1] * nbbits_per_pixel + headersize_bytes * 8) // 8
 
+
 if __name__=='__main__':
     pass
