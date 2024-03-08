@@ -481,15 +481,17 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
                                                                 xtol=xtol)
 
         if showfitresults:
+            
             print("\n *****fitting results ************\n")
+            print(f'centers[{k_image}]', centers[k_image])
             print("  for k_image = ", k_image)
             print(params)
             print("background intensity:                        {:.2f}".format(params[0]))
             print("Peak amplitude above background              {:.2f}".format(params[1]))
             print("pixel position (X)                   {:.2f}".format(
-                    params[3] - Xhalfboxsize[k_image] + centers[k_image][0]))  # WARNING Y and X are exchanged
+                    1 + params[2] - Xhalfboxsize[k_image] + centers[k_image][0]))  
             print("pixel position (Y)                   {:.2f}".format(
-                    params[2] - Yhalfboxsize[k_image] + centers[k_image][1]))
+                    1 - params[3] + Yhalfboxsize[k_image] + centers[k_image][1]))  # warning axes Y and i are inversed
             print("std 1,std 2 (pix)                    ( {:.2f} , {:.2f} )".format(
                     params[4], params[5]))
             print("e=min(std1,std2)/max(std1,std2)              {:.3f}".format(
@@ -498,15 +500,17 @@ def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, 
             print("- Xboxsize[k_image]", -Xhalfboxsize[k_image])
             print("centers[k_image][0]", centers[k_image][0])
             print("************************************\n")
-        bkg_sol, amp_sol, Y_sol, X_sol, std1_sol, std2_sol, ang_sol = params
+        # local pixels values
+        bkg_sol, amp_sol, X_sol, Y_sol, std1_sol, std2_sol, ang_sol = params
 
         RES_cov.append(cov)
         RES_infodict.append(infodict)
         RES_errmsg.append(errmsg)
 
+        # warning axes Y and i are inversed. Global values pixels
         params_sol = np.array([bkg_sol, amp_sol,
                 X_sol - Xhalfboxsize[k_image] + centers[k_image][0],
-                Y_sol - Yhalfboxsize[k_image] + centers[k_image][1],
+                -Y_sol + Yhalfboxsize[k_image] + centers[k_image][1],
                 std1_sol,
                 std2_sol,
                 ang_sol])  # now X,Y in safest order
