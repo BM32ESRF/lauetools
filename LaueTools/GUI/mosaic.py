@@ -2671,8 +2671,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             #                                             peak_inclination, Xdev, Ydev, peak_bkg, FilterX]
             # 3rd value (gaussian fit) -------------------------------------------
 
-            #                print "XY", XY
-            #                print "lenXY", len(XY)
+            # print("XY", XY)
 
             xDATA, yDATA = XY[:nbimages].T
 
@@ -2763,7 +2762,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                 meanX = np.mean(dataX_2D)
                 meanY = np.mean(dataY_2D)
 
-                # data for radial distzance plot
+                # data for radial distance plot
                 pixelCenter = (meanX, meanY)
                 radialdistance_2D = np.sqrt((dataX_2D - pixelCenter[0]) ** 2
                     + (dataY_2D - pixelCenter[1]) ** 2)
