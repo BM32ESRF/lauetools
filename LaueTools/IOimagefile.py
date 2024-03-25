@@ -790,7 +790,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
-                        'ImageStar_dia_2021_2x2','psl_IN_tif'):#, 'Alban'):
+                        'ImageStar_dia_2021_2x2','psl_IN_tif', 'Alexiane'):#, 'Alban'):
 
             if verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
@@ -985,6 +985,9 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     elif fliprot == "EIGER SLS":
         dataimage = np.rot90(dataimage, k=-1)
+
+    elif fliprot == "Alexiane":
+        dataimage = np.rot90(dataimage, k=1)
 
     elif fliprot == "VHR_Feb13":
         #            self.dataimage_ROI = np.rot90(self.dataimage_ROI, k=3)

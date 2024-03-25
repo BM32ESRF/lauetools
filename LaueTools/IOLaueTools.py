@@ -492,6 +492,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                 elif abs(ps-0.232) <= 0.002:
                     ccdlabel = 'psl_IN_bmp'
                     ccdlabel = 'psl_IN_tif'
+                elif abs(ps-0.139) <= 0.002:
+                    ccdlabel = 'Alexiane'
 
                 CCDcalib['CCDLabel'] = ccdlabel
 
