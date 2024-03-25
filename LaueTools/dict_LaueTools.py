@@ -67,6 +67,7 @@ dict_Materials = {
     "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
     "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "MgO": ["MgO", [4.211, 4.211, 4.211, 90, 90, 90], "fcc"],
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
@@ -364,7 +365,8 @@ dict_CCD = {
 
     "psl_IN_bmp": [(425, 640), 10/43., 256, "no", -1, "uint16", "camera from inst Neel ", "bmp", ],
     "psl_IN_tif": [(425, 640), 10/43., 65535, "no", -1, "uint16", "camera from inst Neel ", "tif", ],
-    "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif", ],
+    "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif"],
+    "Alexiane": [(1078, 886), 0.139, 65535, "Alexiane", -1, "uint16", "camera from Alexiane's lab reflection geometry", "tif"],
 
     "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff"),
     "VHR_diamond": ((2594, 3764), 0.031, 10000, "vhr", 4096, "uint16", "first vhr settings of Jun 12 close to diamond 2theta axis displayed is vertical, still problem with fit from PeakSearchGUI", "tiff"),
