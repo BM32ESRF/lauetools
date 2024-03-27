@@ -881,7 +881,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         else:
             USE_RAW_METHOD = True
 
-    elif PIL_EXISTS:
+    elif PIL_EXISTS and CCDLabel not in ('EIGER_4M',):
         if verbose > 1:
             print("using PIL's module Image")
         if CCDLabel in ("sCMOS", "MARCCD165", "sCMOS_16M"):
