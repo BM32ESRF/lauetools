@@ -23,7 +23,6 @@ import pkg_resources
 __version__ = pkg_resources.get_distribution('LaueTools').version
 
 
-
 import time
 import sys
 import copy
@@ -1149,7 +1148,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         helptstr = "Enter UB Matrix elements : \n [[a11, a12, a13],[a21, a22, a23],[a31, a32, a33]]"
         helptstr += " Or list of Matrices"
-        dlg = wx.TextEntryDialog(self, helptstr, "Orientation Matrix elements Entry for Matching Check")
+        dlg = wx.TextEntryDialog(self, helptstr, "Orientation Matrix elements Entry for Matching Check",
+                                 style=wx.TE_MULTILINE|wx.OK|wx.CANCEL)
 
         _param = "[[1.,0,0],[0,1,0],[0,0,1]]"
         dlg.SetValue(_param)
