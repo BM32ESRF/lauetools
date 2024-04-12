@@ -53,7 +53,7 @@ setup(
     license="MIT",
     keywords="Lauetools x-ray scattering data analysis GUI Laue",
     url="https://github.com/BM32ESRF/lauetools",  # project home page, if any
-    classifiers=["Programming Language :: Python :: 3.11"
+    classifiers=["Programming Language :: Python :: 3.11",
 	    "Programming Language :: Python :: 3.10",
 	    "Programming Language :: Python :: 3.9",
 		 "Programming Language :: Python :: 3.8",
