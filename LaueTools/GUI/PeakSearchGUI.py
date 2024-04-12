@@ -4579,7 +4579,7 @@ class MainPeakSearchFrame(wx.Frame):
                     xabs, yabs = rx + self.jmin_crop, ry + self.imin_crop
                 else:
                     #tip = "x=%d\ny=%d\nI=%.5f" % (rx, ry, zvalue)
-                    if isinstance(zvalue, (float, np.float)):
+                    if isinstance(zvalue, (float, np.float64)):
                         tip = "x=%.2f\ny=%.2f\nI=%.5f" % (evx, evy, zvalue)
                     else:
                         tip = "x=%.2f\ny=%.2f\nI=%s" % (evx, evy, str(zvalue))
