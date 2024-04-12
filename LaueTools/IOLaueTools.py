@@ -765,7 +765,7 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
             if lineindex == 0:
                 columnsname = _line.split()
 
-            if _line.startswith('# File created'):
+            if _line.startswith(('# File created','# files created', '# file created)')):
                 nbdatarows = lineindex-1
                 commentfound = True
             elif _line.startswith('# Comments: nb of peaks'):
