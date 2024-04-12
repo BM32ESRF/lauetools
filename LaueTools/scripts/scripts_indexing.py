@@ -25,7 +25,7 @@ def test_GetProximity():
     shufflenexp = np.random.permutation(nexp)
 
     TwicethetaChi = np.ascontiguousarray(
-        np.random.randint(40, high=140, size=(2, 20)), dtype=np.float
+        np.random.randint(40, high=140, size=(2, 20)), dtype=np.float64
     )
 
     data_theta = TwicethetaChi[0] / 2.0
