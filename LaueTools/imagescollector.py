@@ -13,6 +13,11 @@ import LaueTools.generaltools as GT
 import LaueTools.IOimagefile as IOimage  
 import LaueTools.readmccd as RMCCD
 
+def setfilename(prefix,index,CCDLabel='sCMOS'):
+    if CCDLabel in ('sCMOS',):
+        return prefix+'%04d'%index + '.tif'
+    elif CCDLabel in ('MARCCD165',):
+        return prefix+'%04d'%index + '.mccd'
 
 def collectpixelvalue_singlefile(index, peaklist=None, prefix=None, folder =None,CCDLabel='sCMOS'):
     """ collect single pixel intensities located in several locations (defined by peaklist) in 1 image
@@ -26,7 +31,7 @@ def collectpixelvalue_singlefile(index, peaklist=None, prefix=None, folder =None
     :return: array of pixel values with shape = (nbimages, nbpeaks)
 
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    filename = setfilename(prefix,index,CCDLabel)   
     imagefilename = os.path.join(folder, filename)
 
     pixvals = IOimage.pixelvalat(imagefilename, xy=peaklist, sortpeaks=False, CCDLabel=CCDLabel)
@@ -50,7 +55,7 @@ def collectroismax_singlefile(index, roicenters=None, prefix=None, folder =None,
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    filename = setfilename(prefix,index,CCDLabel)   
     imagefilename = os.path.join(folder, filename)
 
     pixvals = IOimage.getroismax(imagefilename, roicenters=roicenters,
@@ -71,7 +76,7 @@ def collectroisXYmax_singlefile(index, roicenters=None, prefix=None, folder =Non
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    filename = setfilename(prefix,index,CCDLabel)   
     imagefilename = os.path.join(folder, filename)
 
     pixvals = IOimage.getroisXYmax(imagefilename, roicenters=roicenters,
@@ -93,7 +98,7 @@ def collectroisXYcenterofmass_singlefile(index, roicenters=None, prefix=None, fo
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    filename = setfilename(prefix,index,CCDLabel)   
     imagefilename = os.path.join(folder, filename)
 
     pixvals = IOimage.getroiscenterofmass(imagefilename, roicenters=roicenters,
@@ -116,7 +121,7 @@ def collectroisfitpeak_singlefile(index, roicenters=None, prefix=None,
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    filename = setfilename(prefix,index,CCDLabel)   
     imagefilename = os.path.join(folder, filename)
     
     resfit = RMCCD.readoneimage_multiROIfit(imagefilename,
