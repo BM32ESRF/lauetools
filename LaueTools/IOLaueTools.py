@@ -2574,7 +2574,8 @@ class LT_fitfile:
             .replace("[", "")
             .replace("]", "")
             .replace("\n", "")
-            .replace("#","")            
+            .replace("#","")
+            .strip()  
             .split(" "))
         
         self.EulerAngles = np.array([float(l1[0]), float(l1[1]), float(l1[2])])
