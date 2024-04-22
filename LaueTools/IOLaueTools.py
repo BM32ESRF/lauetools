@@ -2420,71 +2420,84 @@ class LT_fitfile:
     # dictionary definitions for handling the LaueTools .fit files lines
     def __param__(self):
         return {
-            "#UB matrix in q= (UB) B0 G* ": self.__UB__,
-            "#B0 matrix in q= UB (B0) G*": self.__B0__,
-            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)": self.__UBB0__,
-            "#UBB0 matrix in q= (UB B0) G* , abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam : astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]": self.__UBB0__,
-            "#deviatoric strain in crystal frame (10-3 unit)": self.__devCrystal__,
-            "#deviatoric strain in direct crystal frame (10-3 unit)": self.__devCrystal__,
-            "#deviatoric strain in sample2 frame (10-3 unit)": self.__devSample__,
-            "#DetectorParameters": self.__DetectorParameters__,
-            "#pixelsize": self.__PixelSize__,
-            "#Frame dimensions": self.__FrameDimension__,
-            "#CCDLabel": self.__CCDLabel__,
-            "#Element": self.__Element__,
-            "#grainIndex": self.__GrainIndex__,
-            "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev": self.__Peaks__,
-            "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz": self.__Peaks__,
-            "# Number of indexed spots": self.__NumberIndexedSpots__,
-            "# Mean Deviation(pixel)": self.__MeanDev__,
+            "#UB matrix in q= (UB) B0 G* ": self.__UB__, #self.UB
+            "#B0 matrix in q= UB (B0) G*": self.__B0__, #self.B0
+            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[:,0], bstar = UBB0[:,1], cstar = UBB0[:,2]. (abcstar as columns on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)": self.__UBB0__, #self.UBB0
+            "#UBB0 matrix in q= (UB B0) G* , abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam : astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]": self.__UBB0__,  #self.UBB0
+            "#deviatoric strain in crystal frame (10-3 unit)": self.__devCrystal__, #self.deviatoric
+            "#deviatoric strain in direct crystal frame (10-3 unit)": self.__devCrystal__, #self.deviatoric
+            "#deviatoric strain in sample2 frame (10-3 unit)": self.__devSample__, #self.dev_sample
+            "#DetectorParameters": self.__DetectorParameters__, #self.DetectorParametrs
+            "#pixelsize": self.__PixelSize__, #self.PixelSize
+            "#Frame dimensions": self.__FrameDimension__, #self.FrameDimension
+            "#CCDLabel": self.__CCDLabel__,#self.CDDLabel
+            "#Element": self.__Element__, #self.Element
+            "#grainIndex": self.__GrainIndex__, #self.GrainIndex
+            "##spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev": self.__Peaks__, #self.peak
+            "##spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz": self.__Peaks__, #self.peak
+            "#Number of indexed spots": self.__NumberIndexedSpots__, #self.NumberOfIndexedSpots
+            "#Mean Deviation(pixel)": self.__MeanDev__, #self.MeanDevPixel
+            "#Euler angles phi theta psi (deg)": self.__EulerAngles__, #self.EulerAngles
+            "#new lattice parameters": self.__NewParam__ # self.a, self.b, self.c, self.alpha, self.beta, self.gamma
+            
+            #Other returns: 
+                    #self.a_prime : vector for real basis 
+                    #self.b_prime : vector for real basis 
+                    #self.c_prime : vector for real basis 
+                    #self.astar_prime : vector for reciprocal basis 
+                    #self.bstar_prime : vector for reciprocal basis 
+                    #self.cstar_prime : vector for reciprocal basis 
+                    #self.boa : the ratio between the norm (or magnitude) of vector b and the norm of vector a
+                    #self.coa : the ratio between the norm (or magnitude) of vector c and the norm of vector a
+                    
         }
 
     def __UB__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ub11, ub12, ub13 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ub21, ub22, ub23 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ub31, ub32, ub33 = float(l[0]), float(l[1]), float(l[2])
         self.UB = np.array([[ub11, ub12, ub13], [ub21, ub22, ub23], [ub31, ub32, ub33]])
 
     def __B0__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         b011, b012, b013 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         b021, b022, b023 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         b031, b032, b033 = float(l[0]), float(l[1]), float(l[2])
         self.B0 = np.array([[b011, b012, b013], [b021, b022, b023], [b031, b032, b033]])
 
     def __UBB0__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ubb011, ubb012, ubb013 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ubb021, ubb022, ubb023 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ubb031, ubb032, ubb033 = float(l[0]), float(l[1]), float(l[2])
         self.UBB0 = np.array([[ubb011, ubb012, ubb013],
                             [ubb021, ubb022, ubb023],
                             [ubb031, ubb032, ubb033]])
 
     def __devCrystal__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep11, ep12, ep13 = float(l[0]) * 1e-3, float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep22, ep23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep33 = float(l[2]) * 1e-3
         self.deviatoric = np.array([[ep11, ep12, ep13], [ep12, ep22, ep23], [ep13, ep23, ep33]])
 
     def __devSample__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep_sample11, ep_sample12, ep_sample13 = (float(l[0]) * 1e-3,
                                                 float(l[1]) * 1e-3,
                                                 float(l[2]) * 1e-3)
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep_sample22, ep_sample23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
+        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").replace("#","").split()
         ep_sample33 = float(l[2]) * 1e-3
         self.dev_sample = np.array([[ep_sample11, ep_sample12, ep_sample13],
                                     [ep_sample12, ep_sample22, ep_sample23],
@@ -2496,6 +2509,7 @@ class LT_fitfile:
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
+            .replace("#","")
             .split(","))
         self.dd = float(l[0])
         self.xcen = float(l[1])
@@ -2510,15 +2524,16 @@ class LT_fitfile:
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
+            .replace("#","")
             .split(","))
         self.PixelSize = float(l[0])
 
     def __FrameDimension__(self, f, l):
-        l = f.readline().replace("\n", "")
+        l = f.readline().replace("\n", "").replace("#","")
         if l[0] == "[":
-            l = l.replace("[", "").replace("]", "").split("  ")
+            l = l.replace("[", "").replace("]", "").replace("#","").split(", ")
         elif l[0] == "(":
-            l = l.replace("(", "").replace(")", "").split(", ")
+            l = l.replace("(", "").replace(")", "").replace("#","").split(", ")
         self.FrameDimension = [float(l[0]), float(l[1])]
 
     def __CCDLabel__(self, f, l):
@@ -2527,6 +2542,7 @@ class LT_fitfile:
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
+            .replace("#","")
             .split(","))
         self.CCDLabel = l[0]
 
@@ -2536,6 +2552,7 @@ class LT_fitfile:
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
+            .replace("#","")
             .split(","))
         self.Element = l[0]
 
@@ -2545,14 +2562,39 @@ class LT_fitfile:
             .replace("]", "")
             .replace("\n", "")
             .replace(" ", "")
+            .replace("#","")
             .split(","))
         self.GrainIndex = l[0]
+        
+        
+    def __EulerAngles__(self, f, l):
+        
+        l = f.readline()
+        l1 = (' '.join(l.split())
+            .replace("[", "")
+            .replace("]", "")
+            .replace("\n", "")
+            .replace("#","")            
+            .split(" "))
+        
+        self.EulerAngles = np.array([float(l1[0]), float(l1[1]), float(l1[2])])
+        
+    def __NewParam__(self, f, l): 
+        l = f.readline()
+        l1 = (' '.join(l.split())
+            .replace("[", "")
+            .replace("]", "")
+            .replace("\n", "")
+            .replace("#","")
+            .strip()  
+            .split(" "))
+        self.a, self.b, self.c = float(l1[0]), float(l1[1]), float(l1[2])
 
     def __Peaks__(self, f, l):
         self.peak = {}
         for _ in list(range(self.NumberOfIndexedSpots)):
-            l = f.readline().split()
-            self.peak["{:d} {:d} {:d}".format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
+            l = f.readline().replace("#","").split()
+            self.peak["{:d} {:d} {:d}".format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = l 
 
     def __NumberIndexedSpots__(self, _, l):
         self.NumberOfIndexedSpots = int(l.split(" ")[-1])
@@ -2586,6 +2628,7 @@ class LT_fitfile:
                             # print l.split(':')[0]
                             self.__param__()[l.split(":")[0]](f, l)
                             l = f.readline().replace("\n", "")
+                            
 
                         except KeyError:
                             print("could not read line {}".format(l))
@@ -2639,7 +2682,7 @@ if __name__ == "__main__":
     res = readCheckOrientationsFile(filepath)
 
 
-#     start_func()
-#
-#     pp = readwriteParametersFile()
-#     pp.loadParamsFile('myparams.txt')
+    start_func()
+
+    pp = readwriteParametersFile()
+    pp.loadParamsFile('myparams.txt')
