@@ -2616,7 +2616,7 @@ class LT_fitfile:
 
                 # read the footer
                 l = f.readline().replace("\n", "")
-                while l != "\n" and l != "":
+                while l != "\n" and l != "" and l != "#":
                     try:
                         self.__param__()[l](f, l)
                         if verbose:
