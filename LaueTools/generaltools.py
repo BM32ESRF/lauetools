@@ -1027,7 +1027,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
     :return:
     [0] ind_XY1: index of points in XY1 which are seen in XY2
     [1]  ind_XY2: index of points in XY2 which are seen in XY1
-    [2] boolean: True if at least point belong to XY1 and XY2. False if no common points are found (within the tolerance)
+    [2] boolean: True if at least 1 point belong to XY1 and XY2. False if no common points are found (within the tolerance)
 
     example:
     pA =  [[0, 0], [0, 1], [1, 2], [10, 3], [1, 20], [5, 3]]
