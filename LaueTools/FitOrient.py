@@ -628,11 +628,12 @@ def error_function_on_demand_strain(param_strain,
         distanceterm = distanceterm * weights / allweights
 
     if verbose:
-        if weights is not None:
-            print("***********mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
-        else:
-            print("***********mean pixel deviation   ", np.mean(distanceterm), "    ********")
-        #        print "newmatrix", newmatrix
+        if verbose > 1:
+            if weights is not None:
+                print("*********** mean weighted pixel deviation   ", np.mean(distanceterm), "    ********")
+            else:
+                print("*********** mean pixel deviation   ", np.mean(distanceterm), "    ********")
+            #        print "newmatrix", newmatrix
         return distanceterm, deltamat, newmatrix
 
     else:
@@ -860,8 +861,9 @@ def fit_on_demand_strain(starting_param,
 
     param_strain_0 = starting_param
 
-    print('\n\nstarting_param', starting_param)
+    
     if verbose:
+        print('\n\nstarting_param', starting_param)
         print("\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
 
@@ -939,11 +941,10 @@ def fit_on_demand_strain(starting_param,
 
     strain_sol = res[0]
 
-    print("code results", res[-1])
-    print("nb iterations", res[2]["nfev"])
-    print("mesg", res[-2])
-
     if verbose:
+        print("code results", res[-1])
+        print("nb iterations", res[2]["nfev"])
+        print("mesg", res[-2])
         print("strain_sol", strain_sol)
 
     if res[-1] not in (1, 2, 3, 4, 5):
@@ -1441,10 +1442,10 @@ def error_function_on_demand_strain_2grains(varying_parameters_values,
 
     if verbose:
         if weights is not None:
-            print("***********mean weighted pixel deviation   ",
+            print("*********mean weighted pixel deviation   ",
                 np.mean(alldistances_array), "    ********")
         else:
-            print("***********mean pixel deviation   ",
+            print("*********mean pixel deviation   ",
                 np.mean(alldistances_array), "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
@@ -1545,12 +1546,12 @@ def error_function_general(varying_parameters_values_array,
             # print "anglevalue (rad)= ",anglevalue
             ca = np.cos(anglevalue)
             sa = np.sin(anglevalue)
-            if parameter_name is "angley":
+            if parameter_name == "angley":
                 Uy = np.array([[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]])
-            elif parameter_name is "anglex":
+            elif parameter_name == "anglex":
                 Ux = np.array([[1.0, 0, 0], [0, ca, sa], [0, -sa, ca]])
 
-            elif parameter_name is "anglez":
+            elif parameter_name == "anglez":
                 Uz = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1.0]])
 
         elif ((not T_has_elements) and (not Ts_has_elements) and parameter_name
@@ -2032,12 +2033,12 @@ def error_function_latticeparameters(varying_parameters_values_array,
             # print "anglevalue (rad)= ",anglevalue
             ca = np.cos(anglevalue)
             sa = np.sin(anglevalue)
-            if parameter_name is "angley":
+            if parameter_name == "angley":
                 Uy = np.array([[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]])
-            elif parameter_name is "anglex":
+            elif parameter_name == "anglex":
                 Ux = np.array([[1.0, 0, 0], [0, ca, sa], [0, -sa, ca]])
 
-            elif parameter_name is "anglez":
+            elif parameter_name == "anglez":
                 Uz = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1.0]])
 
         elif parameter_name in ("alpha", "beta", "gamma"):
@@ -2134,11 +2135,11 @@ def error_function_latticeparameters(varying_parameters_values_array,
         # print "param_orient",param_calib
         # print "distanceterm",distanceterm
         if weights is not None:
-            print("***********mean weighted pixel deviation   ",
+            print("***********     mean weighted pixel deviation   ",
                 np.mean(alldistances_array), "    ********")
         else:
             print(
-                "***********mean pixel deviation   ", np.mean(alldistances_array),
+                "***********    mean pixel deviation   ", np.mean(alldistances_array),
                 "    ********")
     #        print "newmatrix", newmatrix
     if returnalldata:
@@ -2236,12 +2237,11 @@ def error_function_strain(varying_parameters_values_array,
             # print "anglevalue (rad)= ",anglevalue
             ca = np.cos(anglevalue)
             sa = np.sin(anglevalue)
-            if parameter_name is "angley":
+            if parameter_name == "angley":
                 Uy = np.array([[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]])
-            elif parameter_name is "anglex":
+            elif parameter_name == "anglex":
                 Ux = np.array([[1.0, 0, 0], [0, ca, sa], [0, -sa, ca]])
-
-            elif parameter_name is "anglez":
+            elif parameter_name == "anglez":
                 Uz = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1.0]])
         elif parameter_name in ("Ts00", "Ts01", "Ts02", "Ts11", "Ts12", "Ts22"):
             #             print 'got Ts elements: ', parameter_name
@@ -2578,12 +2578,12 @@ def error_strain_from_elongation(varying_parameters_values_array,
             # print "anglevalue (rad)= ",anglevalue
             ca = np.cos(anglevalue)
             sa = np.sin(anglevalue)
-            if parameter_name is "angley":
+            if parameter_name == "angley":
                 Uy = np.array([[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]])
-            elif parameter_name is "anglex":
+            elif parameter_name == "anglex":
                 Ux = np.array([[1.0, 0, 0], [0, ca, sa], [0, -sa, ca]])
 
-            elif parameter_name is "anglez":
+            elif parameter_name == "anglez":
                 Uz = np.array([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1.0]])
         elif parameter_name in ("Ts00", "Ts01", "Ts02", "Ts11", "Ts12", "Ts22"):
             #             print 'got Ts elements: ', parameter_name
