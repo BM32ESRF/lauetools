@@ -502,8 +502,8 @@ class spotsset:
 
         :return: list of spot indices (int)
         """
-        c = -1 # index column flag isindexed 1, otherwise 0
-        cg = -2 # index column grainindex
+        c = -1 # index column for flag isindexed 1, otherwise 0
+        cg = -2 # index column for grainindex
         spots_set = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             # spot has been indexed
@@ -753,11 +753,10 @@ class spotsset:
             self.dict_grain_matching_rate[grain_index] = [nb_updates, matching_rate]
             self.dict_Missing_Reflections[grain_index] = missingRefs
 
-        input:
-        Orientation             : OrientMatrix object or array of 3 euler angles
-        grain_index                : grain index to label exp. spots
-        AngleTol (deg)        : angular tolerance to accept a link between exp. and theo. spots
-        use_spots_in_currentselection : False, consider
+        :param Orientation: OrientMatrix object or array of 3 euler angles
+        :param grain_index: grain index to label exp. spots
+        :param AngleTol: angular tolerance (in degrees) to accept a link between exp. and theo. spots
+        :param use_spots_in_currentselection: False, consider
 
         :return:
         matching_rate, nb_updates, missingRefs
@@ -823,7 +822,7 @@ class spotsset:
             print("missingRefs", missingRefs)
 
         if AssignationHKL_res is not None:
-            nb_updates = self.updateIndexationDict(AssignationHKL_res, grain_index, overwrite=1)
+            nb_updates = self.updateIndexationDict(AssignationHKL_res, grain_index, overwrite=1, verbose=verbose)
 
             matching_rate = 100.0 * nb_updates / nbtheospots
 
@@ -909,7 +908,8 @@ class spotsset:
                                                                 verbose=0,
                                                                 nb_of_solutions_per_central_spot=1,
                                                                 simulparameters=None,
-                                                                LUTfraction=1/2.):
+                                                                LUTfraction=1/2.,
+                                                                printmatchingresults=False):
         """
         class method to Find orientation matrices by angles recognition
         (look up table of angles in reference structure)
@@ -923,6 +923,11 @@ class spotsset:
         .. note::
             USED in FileSeries
         """
+
+        if verbose:
+            print('********  in FindOrientMatrices()  *************')
+            print('spot_index_central',spot_index_central)
+
         emax = self.emax
 
         key_material = self.key_material
@@ -990,7 +995,7 @@ class spotsset:
                                                     plot=0,
                                                     key_material=key_material,
                                                     nbbestplot=nb_of_solutions_per_central_spot,  # nb of solutions per central spot
-                                                    verbose=0,
+                                                    verbose=verbose,
                                                     addMatrix=None,  # To add a priori good candidates...
                                                     set_central_spots_hkl=set_central_spots_hkl,
                                                     detectorparameters=simulparameters,
@@ -1006,7 +1011,7 @@ class spotsset:
 
         nb_sol = len(bestmat)
 
-        print("Number of matrices found (nb_sol): ", nb_sol)
+        if verbose: print("Number of matrices found (nb_sol) (before merging): ", nb_sol)
 
         keep_only_equivalent = CP.isCubic(DictLT.dict_Materials[key_material][1])
 
@@ -1026,7 +1031,7 @@ class spotsset:
                                                                 tol=0.0001,
                                                                 keep_only_equivalent=keep_only_equivalent)
 
-        if verbose:
+        if printmatchingresults:
             PrintMatchingResults(bestmat, stats_res)
         nb_sol = len(bestmat)
         #         print "Max. Number of Solutions", NBRP
@@ -1333,7 +1338,7 @@ class spotsset:
             # --- need to find UB matrices from indexing techniques (from scratch)
             # -------------------------------------------------------
             if NeedtoProvideNewMatrices:
-                print('\n\n------- **  INDEXING from SCRATCH  **--------------\n')
+                if verbose: print('\n\n------- **  INDEXING from SCRATCH  **--------------\n')
                 frompreviousResults = False
                 # ----------------------------------------------------
                 # potential orientation solutions from template matching
@@ -1353,7 +1358,7 @@ class spotsset:
                 # Using Angles LUT matching technique based on indexingAnglesLUT.py
                 # -----------------------------
                 else:
-                    # potential orientation solutions from angles LUT matching
+                    # potential orientation solutions from angle between two spots recognition
 
                     (self.TwiceTheta_Chi_Int,
                     self.absolute_index) = self.getSelectedExpSpotsData(exceptgrains=self.indexedgrains)
@@ -1707,12 +1712,12 @@ class spotsset:
         :return:
         number of new pairs (exp. theo.) found
         """
-        if verbose:
+        if verbose > 1:
             print('\n------- start of  updateIndexationDict()  -------\n')
             print('self.indexed_spots_dict[0]', self.indexed_spots_dict[0])
         if overwrite:
             self.resetSpotsFamily(grain_index)
-        if verbose:
+        if verbose > 1:
             print('self.indexed_spots_dict[0] after resetSpotsFamily', self.indexed_spots_dict[0])
 
         links_Miller = indexation_res[2]
@@ -1740,8 +1745,9 @@ class spotsset:
                 nb_updates += 1
 
 
-        print("grain #%d : %d links to simulated spots have been found " % (grain_index, nb_updates))
-        if verbose:
+        
+        if verbose > 1:
+            print("grain #%d : %d links to simulated spots have been found " % (grain_index, nb_updates))
             print("\n so at the end of updateIndexationDict():     ")
             print('self.indexed_spots_dict[0]', self.indexed_spots_dict[0])
 
@@ -2045,7 +2051,7 @@ class spotsset:
 
         nbspots = len(theta)
 
-        print("nbspots", nbspots)
+        # print("nbspots", nbspots)
 
         if nbmax is not None:
             nbmax = min(nbmax, nbspots)
@@ -2104,7 +2110,8 @@ class spotsset:
                                 ResolutionAngstrom=False,
                                 exceptgrains=None,
                                 verbose=0,
-                                LUTfraction=1/2.):
+                                LUTfraction=1/2.,
+                                printmatchingresults=False):
         r"""
         get all orientation matrices from angular distance matching technique
         with experimental spot data
@@ -2118,6 +2125,8 @@ class spotsset:
 
 
         spot_index_central : integer or list of integer, 0 if None
+
+        WARNING DANGER : implicit use of self.AngTol_LUTmatching and self.n_LUT !
 
         TODO: Not implemented!  All matrix are probed without stopping
         MatchingRate_Threshold   : in percent, matching rate above which loop is interrupted
@@ -2146,17 +2155,24 @@ class spotsset:
                                                     Minimum_Nb_Matches=Minimum_Nb_Matches,
                                                     nb_of_solutions_per_central_spot=max_nb_of_solutions_per_central_spot,
                                                     simulparameters=self.simulparameter,
-                                                    LUTfraction=LUTfraction)
+                                                    LUTfraction=LUTfraction,
+                                                    verbose=verbose,
+                                                    printmatchingresults=printmatchingresults)
 
         print("Nb of potential UBs ", len(list_matrices))
+        print('for spot_index_central:', spot_index_central)
 
         if len(list_matrices) == 1:  # patch when only matrix found by FindOrientMatrices
             list_stats = [list_stats[0][:3]]
-        #         print "list_stats", list_stats
 
-        nbspotsIAM = len(self.absolute_index)
+        if isinstance(spot_index_central, int):
+            spotindex_maxspotindex = spot_index_central
+        elif isinstance(spot_index_central,(np.ndarray, list, tuple)):
+            spotindex_maxspotindex = spot_index_central
+        else:
+            raise ValueError
         if list_matrices == []:
-            return None, None, nbspotsIAM, False
+            return None, None, spotindex_maxspotindex, False
 
         MatchingRate_list = []
         for stat in list_stats:
@@ -2166,7 +2182,7 @@ class spotsset:
 
         MatchingRates = np.array(MatchingRate_list)
 
-        return list_matrices, list_stats, nbspotsIAM, MatchingRates
+        return list_matrices, list_stats, spotindex_maxspotindex, MatchingRates
 
     def get_bestUB_fromAnglesLUT(self, spot_index_central=None, MatchingRate_Threshold=None,
                                                                 MatchingRate_Angle_Tol=0.5,
@@ -2195,8 +2211,10 @@ class spotsset:
         MatchingRate_Threshold   : in percent, matching rate above which loop is interrupted
                                     100   , never interrupted
         """
+        NBsolutions_per_spot = 1
+
         Res = self.get_all_UBs_fromAnglesLUT(spot_index_central=spot_index_central,
-                                                max_nb_of_solutions_per_central_spot=1,
+                                                max_nb_of_solutions_per_central_spot=NBsolutions_per_spot,
                                                 MatchingRate_Threshold=MatchingRate_Threshold,
                                                 MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
                                                 nbmax_probed=nbmax_probed,
@@ -2286,13 +2304,12 @@ class spotsset:
         r"""
         refine UB matrix of spots family belonging to grain being indexed
 
-        input:
-        grain_index:  integer , index of grain
-        initial_matrix   :    UB matrix 3*3 array to be refined
+        :param grain_index:  integer , current grain index
+        :param initial_matrix:    UB matrix 3*3 array to be refined
         getstrain : always =1 , obsolete to be deleted
-        use_weights : refine model parameters by weighting each spots pair (exp.- theo)
+        :param use_weights: refine model parameters by weighting each spots pair (exp.- theo)
                         by intensity of exp. spot.
-        nbSpotsToIndex  : integer or 'all' select the nb of pairs to used for refinement.
+        :param nbSpotsToIndex: integer or 'all' select the nb of pairs to used for refinement.
 
         :param depth: normal to surface sample depth in microns
 
@@ -2490,7 +2507,7 @@ class spotsset:
         if verbose:
             print("strain_direct", strain_direct)
 
-        print("UB and strain refinement completed")
+            print("UB and strain refinement completed")
 
         return newmatrix, devstrain
 
@@ -2753,8 +2770,8 @@ class spotsset:
         if verbose:
             print("strain_direct", strain_direct)
 
-        #             print "deviatoric strain", devstrain
-        print("UB and strain refinement completed")
+            #             print "deviatoric strain", devstrain
+            print("UB and strain refinement completed")
 
         return newUBmat, devstrain, Tsresults
 
@@ -3623,20 +3640,23 @@ def getallcubicMatrices(mat):
 
 def comparematrices(matA, matB, tol=0.001, allpermu=None):
     """
-    return True if A==B   i.e. if A =B*S with S symetry operator (axes permutation and rotation)
+    return True if A==B   i.e. if A =B*S with S symmetry operator (axes permutation and rotation)
     matrix comparaison is done elementwise within tolerance
 
     matA and matB are single matrix
     """
-    if allpermu is 'Id':
-        diff = matB - matA
-        flagdiff = np.less(np.abs(diff), tol)
-        resflag = np.all(np.ravel(flagdiff))
-        # print('for ID: ', resflag)
-        return resflag, resflag
-
-    elif allpermu is None or allpermu == "cubic":
-        allpermu = DictLT.OpSymArray
+    if isinstance(allpermu,str):
+        if allpermu == 'Id':
+            diff = matB - matA
+            flagdiff = np.less(np.abs(diff), tol)
+            resflag = np.all(np.ravel(flagdiff))
+            # print('for ID: ', resflag)
+            return resflag, resflag
+        if allpermu == 'cubic':
+            allpermu = DictLT.OpSymArray
+    elif not isinstance(allpermu, np.ndarray):
+        if allpermu is None:
+            allpermu = DictLT.OpSymArray
 
     # diff between one matrix and an array of matrices
     # print "matA",matA
@@ -3777,7 +3797,7 @@ def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
         # updating scores list
         if verbose:
             print("FilteredMatrixList")
-        print(FilteredMatrixList)
+            print(FilteredMatrixList)
         for mat in FilteredMatrixList:
             if isinstance(mat, (np.ndarray, )):
                 mat = mat.tolist()
@@ -3798,11 +3818,14 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
 
     3)Remove Duplicates (taking into account symetry operators)
 
-    threshold_matching : first column of Scores
-    keep_only_equivalent         : True all permutation of axes,
+    :param OrientMatrices: list of orientation matrices (3x3)
+    :param Scores: at least list of three elements (nbmatch, nbtheo, angularstd) . Size of OrientMatrices = Size of Scores
+    :param threshold_matching: minimum magnitude of first column of Scores to be accepted
+    :param keep_only_equivalent: True all permutation of axes,
                                 0, None or False    all matrices even duplicates
+    :param tol: resolution angle: maximum misorientation angle between two orientation matrices to be considered as equal 
     """
-    if 1:#verbose:
+    if verbose:
         print('Scores', Scores)
 
     _hhh = []
@@ -4365,7 +4388,7 @@ def PrintMatchingResults(bestmat_list, stats_res_list):
     print("\n-----------------------------------------")
     print("results:")
     #         print bestmat_list, stats_res_list
-    print("matrix:                                         matching results")
+    print("matrix:                                         matching results : [Nexp, Ntheo] angresidues MR")
 
     #     print "bestmat_list, stats_res_list", bestmat_list, stats_res_list
     if len(stats_res_list) == 1 and len(bestmat_list) != 1:

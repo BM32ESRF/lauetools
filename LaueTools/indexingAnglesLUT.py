@@ -537,10 +537,10 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
     #                                         excludespotspairs)
     #verbose = 1
     if verbose:
-        print("---- mode verbose = 1 --------")
-        print('--------*****   matrices_from_onespot_hkl()   ******-----------')
+        print("\n---- mode verbose = 1 --------")
+        print('--------*****   matrices_from_onespot_hkl()   ******-----------\n')
     if verbose:
-        print('\n\n***  in matrices_from_onespot_hkl\n\n')
+        print('\n***  in matrices_from_onespot_hkl\n\n')
         print("LUT_tol_angle", LUT_tol_angle)
         print('table_angdist.shape', table_angdist.shape)
         print('n', n)
@@ -568,7 +568,7 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
 
     if LUT is None:
         if hkl2 is None:
-            print("Computing hkl2 list for specific or cubic LUT in matrices_from_onespot_hkl()")
+            if verbose: print("Computing hkl2 list for specific or cubic LUT in matrices_from_onespot_hkl()")
             # compute hkl2 outside loop
             hkl_all = GT.threeindices_up_to(n, remove_negative_l=allow_restrictedLUT)
 
@@ -1943,8 +1943,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         - USED in FileSeries
 
     From:
-    spot_index_central:         :    Integer or list of integer  corresponding to index of exp. spot from which distances
-                                will be calculated with the rest of the exp. spots
+    spot_index_central:         :    Integer or list of integer  corresponding to index of exp. spot from which distances will be calculated with the rest of the exp. spots = len(Tab_angl_dist)
     energy_max :                 :    Maximum energy used in simulation of the Laue Pattern (the higher this value the larger
                                 the number of theo. spots)
     Tab_angl_dist :             :    Symetric matrix whose elements are angular distances (deg) between exp. spots as if they
@@ -1976,8 +1975,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
     if spot_index_central is a list of spot index, then only one successful result is return per spot
     """
-    if verbosedetails:
-        print('\n  -------   mode verbosedetails  ---------------')
+    if verbose: #details:
+        print('\n  -------   mode verbosedetails  in getOrientMatrices()---------------')
         print("print details\n")
 
     if excludespotspairs is None:
@@ -1996,7 +1995,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
             raise ValueError("spot_index_central is negative")
         list_spot_central_indices = (spot_index_central,)
     else:
-        print("looking from spot # 0 (default settings)")
+        if verbose: print("looking from spot # 0 (default settings)")
         list_spot_central_indices = (0,)
 
     if max(list_spot_central_indices) > nbofpeaks:
@@ -2012,10 +2011,11 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     List_UBs = []  # matrix list
     List_Scores = []  # hall of fame BestScores_per_centralspot list
 
-    if LUT is not None:
-        print("LUT is not None when entering getOrientMatrices()")
-    else:
-        print("LUT is None when entering getOrientMatrices()")
+    if verbose:
+        if LUT is not None:
+            print("LUT is not None when entering getOrientMatrices()")
+        else:
+            print("LUT is None when entering getOrientMatrices()")
 
     twiceTheta_exp = 2 * np.array(Theta_exp)
 
@@ -2026,20 +2026,22 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
     if verbosedetails: print("set_central_spots_hkl", set_central_spots_hkl)
 
     if set_central_spots_hkl not in (None, "None"):
-        print("set_central_spots_hkl is not None in getOrientMatrices()")
+        
         set_central_spots_hkl = np.array(set_central_spots_hkl)
-        print("set_central_spots_hkl", set_central_spots_hkl)
-        print("set_central_spots_hkl.shape", set_central_spots_hkl.shape)
+        if verbose:
+            print("set_central_spots_hkl is not None in getOrientMatrices()")
+            print("set_central_spots_hkl", set_central_spots_hkl)
+            print("set_central_spots_hkl.shape", set_central_spots_hkl.shape)
         if set_central_spots_hkl.shape == (3,):
-            print("case: 1a")
+            if verbose: print("case: 1a")
             set_central_spots_hkl_list = np.tile(
                 set_central_spots_hkl, (len(list_spot_central_indices), 1))
         elif set_central_spots_hkl.shape == (1, 3):
             set_central_spots_hkl_list = np.tile(
                 set_central_spots_hkl[0], (len(list_spot_central_indices), 1))
-            print("case: 1b")
+            if verbose: print("case: 1b")
         else:
-            print("case: 2")
+            if verbose: print("case: 2")
             for ll, _ in enumerate(list_spot_central_indices):
                 if ll < len(set_central_spots_hkl):
                     set_central_spots_hkl_list[ll] = set_central_spots_hkl[ll]
@@ -2087,7 +2089,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
         # if hkl for central spots IS defined
         #print("hkl in getOrientMatrices", hkl, type(hkl))
-        if hkl is "None":
+        if hkl == "None":
             hkl = None
 
         if hkl is not None:
@@ -2220,9 +2222,9 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
 
         nb_ub_matrices = len(list_orient_matrix)
 
-        print("nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
+        if verbose: print("nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
 
-        if nb_ub_matrices>1250:
+        if nb_ub_matrices>1250:  # empirical value to use multiple cpus
             
             args = zip(list_orient_matrix,
                     itertools.repeat(twiceTheta_exp),
@@ -2628,6 +2630,10 @@ def getOrients_AnglesLUT(spot_index_central,
 
     if spot_index_central is a list of spot index, then only one successful result is return per spot
     """
+    if verbose:
+        print('--------  in getOrients_AnglesLUT() ---------------')
+        print('spot_index_central',spot_index_central)
+
     nbofpeaks = len(Tab_angl_dist) - 1
 
     if isinstance(spot_index_central, (list, np.ndarray)):
@@ -2637,7 +2643,7 @@ def getOrients_AnglesLUT(spot_index_central,
             raise ValueError("spot_index_central is negative")
         scan_over_index = [spot_index_central]
     else:
-        print("looking from spot # 0")
+        if verbose: print("looking from spot # 0")
         scan_over_index = [0]
 
     if key_material is None:
