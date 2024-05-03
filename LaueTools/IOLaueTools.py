@@ -17,6 +17,7 @@ import string
 import copy
 from copy import deepcopy
 import re
+import io
 
 import numpy as np
 
@@ -744,9 +745,14 @@ def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
     return read_Peaklist(filename_in, dirname=dirname, returnnbpeaks=returnnbpeaks)
 
 
-def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbpeaks=False):
+def read_Peaklist(filename_in, dirname=None, output_columnsname=False,
+                  returnnbpeaks=False, maxnumberlines=10000):
     """
     read peak list .dat file and return the entire array of spots data
+    :param filename_in: full path of .dat file if dirname is None, otherwise only filename without folder
+    :param maxnumberlines: max number of spots (to avoid infinite loop)
+    :param output_columnsname: boolean to add or not list of column names in the output
+    :param returnnbpeaks: boolean to add or not nb of spots in the output
 
     (peak_X,peak_Y,peak_Itot, peak_Isub,peak_fwaxmaj,peak_fwaxmin,
     peak_inclination,Xdev,Ydev,peak_bkg, Pixmax)
@@ -756,16 +762,24 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False, returnnbp
 
     SKIPROWS = 1
 
-    with open(filename_in, 'r') as ff:
+    with io.open(filename_in, 'r', encoding='utf-8') as ff:
         lineindex = 0
         commentfound = False
         while not commentfound:
             _line = ff.readline()
+            if not _line:
+                nbdatarows = lineindex-1
+                break
+            print('_line',_line)
+            print('line index', lineindex)
+
+            if lineindex > maxnumberlines:  break
 
             if lineindex == 0:
                 columnsname = _line.split()
 
             if _line.startswith(('# File created','# files created', '# file created)')):
+                print('got comments and nb of spots!')
                 nbdatarows = lineindex-1
                 commentfound = True
             elif _line.startswith('# Comments: nb of peaks'):
