@@ -1004,7 +1004,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = np.rot90(dataimage, k=3)
         dataimage = np.fliplr(dataimage)
 
-    elif fliprot == "Imagestar_dia_2021":  # starting Feb july 2021 close to diamond monochromator crystal
+    elif fliprot in ("Imagestar_dia_2021","ImageStar_dia_2021"):  # starting Feb july 2021 close to diamond monochromator crystal
         dataimage = np.rot90(dataimage, k=1)
         dataimage = np.fliplr(dataimage)
 
