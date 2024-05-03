@@ -1164,8 +1164,9 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         #print('oncam_2theta',oncam_2theta)
         # be careful of the of sign
         oncam_chi = np.arctan2(1.0 * oncam_Qy , oncam_Qz)
-        print('oncam_chi',oncam_chi/DEG)
-        print('Qx Qy Qz', np.array([Qx,Qy,Qz]).T)
+        if verbose:
+            print('oncam_chi',oncam_chi/DEG)
+            print('Qx Qy Qz', np.array([Qx,Qy,Qz]).T)
         #         oncam_chi = np.arctan2(1. * oncam_Qy, oncam_Qz)
         # TODO: replace by arctan2(1. * oncam_Qy ,oncam_Qz) ??
 
