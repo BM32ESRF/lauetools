@@ -1325,7 +1325,7 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stre
     #         [c12, c12, c11, 0, 0, 0],
     #         [0, 0, 0, c44, 0, 0],
     #         [0, 0, 0, 0, c44, 0],
-    #         [0, 0, 0, 0, 0, c44], ], dtype=np.float, )
+    #         [0, 0, 0, 0, 0, c44], ], dtype=float, )
 
     P = GT.matRot([0, 1, 0], -sampletilt)
 
