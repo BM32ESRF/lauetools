@@ -58,16 +58,19 @@ dict_Materials = {
     "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2_72deg": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 76.4, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
-    "Crocidolite_whittaker_1949": ["Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no", ],
+    "Crocidolite_whittaker_1949": ["Crocidolite_whittaker_1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "no"],
     "CCDL1949": ["CCDL1949", [9.89, 17.85, 5.31, 90, 180 - 72.5, 90], "h+k=2n"],
     "Crocidolite_small": ["Crocidolite_small", [9.76 / 3, 17.93 / 3, 5.35 / 3, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Hematite": ["Hematite", [5.03459, 5.03459, 13.7533, 90, 90, 120], "no", ],  # extinction for h+k+l=3n and always les l=2n
     "Mg":["Mg",[3.2095,3.2095,5.2104,90,90,120],"no"],
-    "CaF2": ["CaF2", [5.463, 5.463, 5.463, 90, 90, 90], "fcc", ],  # GS 225 fcc 
-    "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
+    "CaF2": ["CaF2", [5.463, 5.463, 5.463, 90, 90, 90], "fcc"],  # GS 225 fcc 
+    "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc"],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
-    "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no"],  # no extinction
     "MgO": ["MgO", [4.211, 4.211, 4.211, 90, 90, 90], "fcc"],
+    "MoO3": ["alpha_MoO3", [3.76, 3.97, 14.432, 90, 90, 90], "SG62"],
+    "literature_MoO3": ["literature_MoO3", [3.76, 3.97, 14.43, 90.0, 90.0, 90.0], "SG62"],
+    "PMNPT": ["PMNPT", [3.9969, 3.9969, 4.0457, 90, 90, 90], "SG99"],
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
