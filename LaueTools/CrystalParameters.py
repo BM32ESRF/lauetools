@@ -574,19 +574,17 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
         * [a,b,c, alpha, beta, gamma]    (angles are in degrees) if directspace=1
         * [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees) if directspace=0
     :param directspace:
-        * 1 (default) converts  (reciprocal) direct lattice parameters
-            to (direct) reciprocal space calculates "B" matrix in the reciprocal space of input latticeparameters
-        * 0  converts  (reciprocal) direct lattice parameters to (reciprocal) direct space
-            calculates "B" matrix in same space of  input latticeparameters
+        * 1 (default) build from lattice parameters in one space, a matrix in an other space
+        * 0  build from lattice parameters in one space, a matrix in the same space
 
     :param setvolume:
-        * False, sets direct unit cell volume to the true volume from lattice parameters
+        * False, (default), sets direct unit cell volume to the true volume from lattice parameters
         * 1,      sets direct unit cell volume to 1
         * 'a**3',  sets direct unit cell volume to a**3
         * 'b**3', sets direct unit cell volume to b**3
         * 'c**3',  sets direct unit cell volume to c**3
 
-    :return: B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame matrix
+    :return: B Matrix (triangular up) from  crystal (reciprocal space) frame to orthonormal frame
     :rtype: numpy array
 
     B matrix is used in q=U B G* formula or
@@ -786,7 +784,12 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
                                             verbose=0):
     r"""
     Computes  direct (real) lattice parameters
-    from matrix UBmatrix (rotation and deformation)
+    from matrix UBmatrix (rotation and deformation).Rescale one unit cell length (default 'a') to the one given by the material 'key_material'
+
+    :param UBmatrix: 3x3 orientation and distortion matrix (UB) in q = UB B0 G*.
+    :param key_material: str, reference material for reference length for rescaling lengthes (ratii of legnthes are kept...)
+    :param  constantlength: str, 'a','b' or 'c'. Length of reference for the final values of unit cell lengthes
+    :param dictmaterials: dict of materials reference lattice parameters
     """
     # starting B0matrix corresponding to the unit cell   -----
     latticeparams = dictmaterials[key_material][1]
@@ -796,12 +799,13 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
 
     (_, lattice_parameter_direct_strain) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
 
-    if constantlength == "a":
-        index_constant_length = 0
-    elif constantlength == "b":
+    if constantlength == "b":
         index_constant_length = 1
-    if constantlength == "c":
+    elif constantlength == "c":
         index_constant_length = 2
+    else:  # default
+        index_constant_length = 0
+
     
     ratio = (latticeparams[index_constant_length]
         / lattice_parameter_direct_strain[index_constant_length])
@@ -963,7 +967,7 @@ def VolumeCell(latticeparameters):
 
 def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
     r"""
-    compute the direct lattice matrix (a,b,c vectors) from the reciprocal matrix (a*,b*,c*)
+    compute the direct lattice matrix (a,b,c vectors) 'matdirlab' from the reciprocal matrix (a*,b*,c*) 'matstarlab'
 
     :param matstarlab: matrix of reciprocal basis vector a*,b*,c* in lab. frame
                     (1rst  column is made of components of a* vector in lab. frame bases)
@@ -1013,15 +1017,15 @@ def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
 
 def matrix_to_rlat(mat, angles_in_deg=1):
     r"""
-    Returns RECIPROCAL lattice parameters of the unit cell a*,b*,c* in columns of `mat`
+    Returns RECIPROCAL lattice parameters from the unit cell a*,b*,c* in columns of `mat`
 
-    :param mat: matrix where columns are respectively a*,b*,c* coordinates in orthonormal frame
+    :param mat: matrix where columns are respectively a*,b*,c* coordinates in an orthonormal frame
 
     :returns: [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees)
 
     .. note::
 
-        Reciprocal lattice parameters are contained in UB matrix : q =  mat G*
+        Reciprocal lattice parameters are contained in UB matrix : q =  mat G* frequently epxressed as q = UB B0 G* where UB is the orientatio matrix containing distortion (UB is not pure rotation)
     """
     rlat = np.zeros(6)
 
@@ -1149,13 +1153,13 @@ def dlat_to_dil(dlat_unstrained, dlat_strained, angles_in_deg=1):
     return dil
 
 
-def calc_epsp(dlat):
+def calc_epsp_cubic(dlat):
     r"""
-    From direct space lattice parameter dlat=[a,b,c, alpha, beta, gamma]
+    Compute deviatoric strain from initially cubic lattice (a=b=c, alpha=beta=gamma=90)
+    and from SMALL deformation assumption
+    :param dlat: direct space lattice parameters [a,b,c, alpha, beta, gamma]
     (alpha, beta, gamma in DEGREES)
-    calculates deviatoric strain from initially cubic lattice (a=b=c, alpha=beta=gamma=90)
-    and from SMALL deformation
-
+    
     .. note::
 
         from O Robach's scripts
@@ -1189,11 +1193,11 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
     Xsample in the same plane thanZ and incoming vector, Xsample is tilted by sampletilt from incoming beam (XLauetools)
     Ysample is horizontal and equal to Ylauetools (perpendicular to the beam)
 
-    .. warning:: on BM32 beamline xech = -Ysample   yech = Xsample  Zech = Zsample
+    .. warning:: on BM32 beamline xech = -Ysample   yech = Xsample  zech = Zsample
 
     :param strain: 3x3 symmetric array describing the strain in crystal frame
     :param UBmat: 3x3 array, orientation matrix
-    :param sampletilt: float, tilt angle in degree
+    :param sampletilt: float, sample tilt angle in degree (default = 40 degress approx on BM32)
     :return: 3x3 symmetric array describing the strain in sample frame
  
     .. note::
@@ -1207,7 +1211,7 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
 
         then:
 
-        operator_sample= P-1 UB operator_crystal UB-1 P
+        operator_sample_frame= P-1 UB operator_crystal_frame UB-1 P
     """
     P = GT.matRot([0, 1, 0], -sampletilt)
     #    M = np.dot(np.linalg.inv(P), UBmat)
