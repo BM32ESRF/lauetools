@@ -934,7 +934,12 @@ def getwirescan_from_hdf5file(filename, verbose=0):
     return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=True,
                                     verbose=verbose)[0]
 
-def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywirescan=False, onlymesh=False):
+def getall_from_hdf5file(filename, verbose=0):
+    return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=False,collectall=True,
+                                    verbose=verbose)
+
+def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywirescan=False, onlymesh=False,
+                           collectall=False):
 
     if collectallscans:
         onlymesh=False
@@ -973,13 +978,14 @@ def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywiresc
                     props, isselected = getscanprops_lowest_hdf5(foundfile, _modified_key,
                                                 collectallscans=collectallscans,
                                                 onlymesh=onlymesh,
-                                                onlywirescan=onlywirescan)
+                                                onlywirescan=onlywirescan,
+                                                collectall=collectall)
             elif isinstance(objlink, h5py._hl.group.HardLink):
                 if verbose: print('key = %s is Hard link to '%(_key))
                 props, isselected = getscanprops_lowest_hdf5(filename, _key,
                                                             collectallscans=collectallscans,
                                                             onlymesh=onlymesh,
-                                                            onlywirescan=onlywirescan)
+                                                            onlywirescan=onlywirescan, collectall=collectall)
             if props is not None:
                 allprops.append(props)
             if isselected:
@@ -1034,7 +1040,7 @@ def findlowesthdf5file(filename, mainfolder='.', verbose=0):
         print('foundfile',foundfile)
     return foundfile
 
-def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose=0):
+def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose=0, collectall=False):
     """ get scan properties from hdf5 file and filter optionally wrt scan type (mesh or wirescan)"""
     #print('\n\nterminal hdf5 file')
     _,ext = filename.rsplit('.',1)
@@ -1071,6 +1077,11 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
                 isselected=True
         elif collectallscans:
             if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand:
+                keyfilename = ffname[:-3]  #  removing .h5
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+                isselected=True
+        elif collectall:
+            if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand or 'ct' in scancommand:
                 keyfilename = ffname[:-3]  #  removing .h5
                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
