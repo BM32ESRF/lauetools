@@ -283,7 +283,7 @@ def twodgaussian_2peaks(inpars, circle, rotate, vheight):
     # return rotgauss_2
 
 
-def gaussfit( data, err=None, params=[], autoderiv=1, return_all=0, circle=0,
+def gaussfit(data, err=None, params=None, autoderiv=1, return_all=0, circle=0,
     rotate=1, vheight=1, xtol=0.0000001, Acceptable_HighestValue=False,
     Acceptable_LowestValue=False, ijindices_array=None,
     usecythonmodule=USE_CYTHON, computerrorbars=False):
@@ -330,7 +330,7 @@ def gaussfit( data, err=None, params=[], autoderiv=1, return_all=0, circle=0,
     if Acceptable_LowestValue is not False:
         err[data <= Acceptable_LowestValue] = 0
 
-    if params == []:
+    if params is None:
         params = momentsr(data, circle, rotate, vheight)
 
     if ijindices_array is None:
@@ -386,7 +386,7 @@ def gaussfit( data, err=None, params=[], autoderiv=1, return_all=0, circle=0,
         return p, cov, infodict, errmsg
 
 
-def gaussfit_2peaks( data, err=None, params=[], autoderiv=1, return_all=0,
+def gaussfit_2peaks(data, err=None, params=[], autoderiv=1, return_all=0,
                                                 circle=0, rotate=1, vheight=1, xtol=0.0000001):
     """
     two Gaussians fitter with the ability to fit a variety of
