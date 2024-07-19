@@ -535,7 +535,7 @@ def error_function_on_demand_strain(param_strain,
     in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
     Bmat=  B0 matrix
 
-    :param depth: normal to surface depth in microns (under sample surface, not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this depth (expressed in pixel)
+    :param depth: normal to surface depth in microns (under sample surface, not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this location of scattering emission depth (expressed in pixel).
     Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
     """
 
@@ -544,7 +544,7 @@ def error_function_on_demand_strain(param_strain,
 
     mat1, mat2, mat3 = IDENTITYMATRIX, IDENTITYMATRIX, IDENTITYMATRIX
 
-    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last for rotation
+    # arr_indexvaryingparameters =  [5,6,7,8,9,10,11,12]  first 5 params for strain and 3 last for slight rotation
     index_of_rot_in_arr_indexvaryingparameters = [10, 11, 12]
 
     if index_of_rot_in_arr_indexvaryingparameters[0] in arr_indexvaryingparameters:
@@ -750,10 +750,9 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     deltamat_2 = np.dot(mat3, np.dot(mat2, mat1))
 
     # building B mat
-    varyingstrain = np.array(
-        [[1.0, param_strain[2], param_strain[3]],
-            [0, param_strain[0], param_strain[4]],
-            [0, 0, param_strain[1]]])
+    varyingstrain = np.array([[1.0, param_strain[2], param_strain[3]],
+                                [0, param_strain[0], param_strain[4]],
+                                [0, 0, param_strain[1]]])
 
     newmatrix_1 = np.dot(np.dot(deltamat_1, initrot), varyingstrain)
 
@@ -774,11 +773,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     ally_1 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X1, Y1, _, _ = xy_from_Quat(allparameters[:5],
-                                        DATA_Q,
-                                        nspots,
-                                        np.arange(5),
-                                        ally_1,
+    X1, Y1, _, _ = xy_from_Quat(allparameters[:5], DATA_Q, nspots, np.arange(5), ally_1,
                                         initrot=newmatrix_1,
                                         vecteurref=Bmat,
                                         pureRotation=0,
@@ -793,11 +788,7 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
     ally_2 = np.array(patchallparam[:5] + [0, 0, 0] + patchallparam[5:])
     # because elem 5 to 7 are used in quaternion calculation
     # TODO : correct also strain calib in the same manner
-    X2, Y2, _, _ = xy_from_Quat(allparameters[:5],
-                                    DATA_Q,
-                                    nspots,
-                                    np.arange(5),
-                                    ally_2,
+    X2, Y2, _, _ = xy_from_Quat(allparameters[:5], DATA_Q, nspots, np.arange(5), ally_2,
                                     initrot=newmatrix_2,
                                     vecteurref=Bmat,
                                     pureRotation=0,
@@ -825,14 +816,9 @@ def error_function_strain_with_two_orientations(param_strain, DATA_Q, allparamet
         return distanceterm
 
 
-def fit_on_demand_strain(starting_param,
-                                miller,
-                                allparameters,
-                                _error_function_on_demand_strain,
-                                arr_indexvaryingparameters,
-                                nspots,
-                                pixX,
-                                pixY,
+def fit_on_demand_strain(starting_param, miller, allparameters,
+                        _error_function_on_demand_strain, arr_indexvaryingparameters,
+                        nspots, pixX, pixY,
                                 initrot=IDENTITYMATRIX,
                                 Bmat=IDENTITYMATRIX,
                                 pureRotation=0,
