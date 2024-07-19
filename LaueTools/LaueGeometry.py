@@ -1043,6 +1043,8 @@ def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, outputenergy=0, v
         (incident beam direction remains constant)
     :type offset: list of floats ([x,y,z])
     :param outputenergy: 1  to return energy (0 else)
+    :param pixelsize: pixel size of X-ray detector in mm
+    :param kf_direction: main direction off X-ray detector in lauetools frame with respect to sample ('Z>0'  top reflection (90 deg), 'X>0' (transmission), 'X<0' (back reflection), 'Y>0' side reflection, 'Y<0' other side reflection)
 
     :return:  xcam, ycam, theta, [Energy]
     """
