@@ -245,6 +245,10 @@ class TransformPanel(wx.Panel):
 
         self.rb_rotId.SetToolTipString("No rotation (default)")
 
+        tipgeneraltransform ="apply a series of 3D operator A(t)  (as a function of parameter t) in q = A(t) q0 = A UB B0 G*. Components of q0 vectors are modified along the direction given by the frame 'a' (absolute Lauetools) or other frame ? ('c', 's','d')"
+        self.rb_rotmatrix.SetToolTipString(tipgeneraltransform)
+        self.tc_rotmatrix.SetToolTipString(tipgeneraltransform)
+
     def onEnableStrain(self, _):
         if self.rb_strainaxes.GetValue():
             self.rb_rotId.SetValue(True)
