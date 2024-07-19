@@ -723,6 +723,7 @@ class PanelDataFigure(wx.Panel):
     def ShowScanLimits(self):
 
         for scan in self._disp_limits_lines:
+            
             self._fig_axes.lines.remove(scan[0])
             self._fig_axes.lines.remove(scan[1])
 
