@@ -323,7 +323,7 @@ def RefineUB(linkedspots_link,
         RR, PP = GT.UBdecomposition_RRPP(UBmat)
 
         # symetric matrix (strain) in direct real distance
-        epsil = GT.epsline_to_epsmat(CP.calc_epsp(CP.dlat_to_rlat(CP.matrix_to_rlat(PP))))
+        epsil = GT.epsline_to_epsmat(CP.calc_epsp_cubic(CP.dlat_to_rlat(CP.matrix_to_rlat(PP))))
         # print "epsil is already a zero trace symetric matrix ",np.round(epsil*1000, decimals = 2)
         # if the trace is not zero
         epsil = epsil - np.trace(epsil) * np.eye(3) / 3.0
