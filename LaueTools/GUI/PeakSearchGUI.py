@@ -4865,7 +4865,7 @@ class MainPeakSearchFrame(wx.Frame):
         xabs = int(np.round(event.xdata))
         yabs = int(np.round(event.ydata))
 
-        textsb = "x=%d y=%d" % (xabs, yabs)
+        textsb = "pixX=%d y=%d" % (xabs, yabs)
 
         if self.viewingLUTpanel.show2thetachi.GetValue():
             if self.CCDcalib is not None:
