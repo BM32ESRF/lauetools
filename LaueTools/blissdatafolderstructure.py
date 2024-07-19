@@ -67,7 +67,7 @@ def createmirrorfolder(folder, defaultname='datfiles'):
     """create a mirror folder of a folder in RAW_DATA
     and write a corresponding PROCESSED_DATA folder
     
-    :param defaultname: last folder name to be added is added at the end of the path except if defaultname is None or '.'"""
+    :param defaultname: last folder name to be added is added at the end of the path except if defaultname is None or '.' or ''"""
 
     lf = os.path.abspath(folder).split('/')
     if 'RAW_DATA' not in lf:
@@ -101,7 +101,7 @@ def createmirrorfolder(folder, defaultname='datfiles'):
             fpath= os.path.join('/',ifolder,'PROCESSED_DATA',fff)
             try:
                 os.mkdir(fpath)
-            except FileExistsError:
+            except (FileExistsError, FileNotFoundError):
                 continue
         if os.path.isdir(genfolder):
             print('%s folder has been created'%genfolder)
