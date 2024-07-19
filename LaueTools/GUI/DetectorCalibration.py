@@ -2437,7 +2437,7 @@ class MainCalibrationFrame(wx.Frame):
         self.parametersdisplaypanel.act_Ycen_r.SetValue(str(dataresults[2]))
         self.parametersdisplaypanel.act_Ang1_r.SetValue(str(xbet))
         self.parametersdisplaypanel.act_Ang2_r.SetValue(str(dataresults[4]))
-        self.act_residues.SetValue(str(np.round(dataresults[8], decimals=4)))
+        self.act_residues.SetValue(str(np.round(dataresults[8], decimals=5)))
         self.nbspots_in_fit.SetValue(str(dataresults[9]))
 
     def close(self, _):
@@ -2941,7 +2941,8 @@ class MainCalibrationFrame(wx.Frame):
             diameter_for_simulation = self.detectordiameter
 
         # xbet = 0 is dangerous for back reflection geometry (issue with calculation of pixel X, Y position)!
-        self.CCDParam[3] += 0.0000001 
+        if math.fabs(self.CCDParam[3]) <= 1e-7:
+            self.CCDParam[3] += 0.000000000001
 
         SINGLEGRAIN = 1
         if SINGLEGRAIN:  # for single grain simulation
@@ -2949,9 +2950,6 @@ class MainCalibrationFrame(wx.Frame):
                 # for single grain simulation (WITH HARMONICS   TROUBLE with TRansmission geometry)
                 #print('SINGLEGRAIN')
                 #print('parameters for SimulateLaue_full_np', self.CCDParam[:5], self.kf_direction, removeharmonics,pixelsize, self.framedim)
-
-                
-
                 ResSimul = LAUE.SimulateLaue_full_np(Grain,
                                                     self.emin,
                                                     self.emax,
