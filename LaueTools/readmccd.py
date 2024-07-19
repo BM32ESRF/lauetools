@@ -711,7 +711,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
 
     #    print "par in fitoneimage_manypeaks", par
 
-    if par == []:
+    if par is None or len(par)==0:
         print("\n\n no fitted peaks!! \n\n")
         return
 
