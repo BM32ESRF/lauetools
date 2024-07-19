@@ -309,13 +309,13 @@ def tensile_along_u(v, tensile, u="zsample"):
 
     result is an array of 3 elements vectors
 
-    v*_in = v*_in_plane+v*_in_along_u
-    v*_out = v*_in_plane+factor * v*_in_along_u
-    v*_in_along_u = (v*_in.u) u   (along u)
-    v*_out = v*_in+(factor-1)(v_in.u) u
-    (or v*_in_plane= (u ^ v)^u)
+    v = v_plane+v_along_u
+    v_out = v_plane+factor * v_along_u
+    v_along_u = (v.u) u   (along u)
+    v_out = v +(factor-1)(v.u) u
+    (or v_plane= (u ^ v)^u)
 
-    example: 1.02 means real expansion of 2% i.e. 1/1.02 of variation of reciprocal vector component along u
+    example: 1.02 means real expansion of 2% of vectors component along u (if vector corresponds to reciprocal space vector, then 1/1.02 of variation of reciprocal vector component along u)
     """
     # print "lolo",v # all v vectors
     # print wholelistindicesfiltered
@@ -341,7 +341,6 @@ def tensile_along_u(v, tensile, u="zsample"):
                             + (1.0 / real_expansion_coef - 1)
                             * np.reshape(scalaruv, (len(scalaruv), 1))
                             * direction_traction)
-    # print "lala",wholelistvecfiltered
 
     return wholelistvecfiltered
 
