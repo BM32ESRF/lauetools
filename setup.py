@@ -27,7 +27,7 @@ setup(
     setup_requires=['setuptools_scm'],
     #version="3.0.48", ##Automatic versioning from Github Tags
     packages=find_packages(),
-    python_requires='>=2.6 , <3.12',
+    python_requires='>=2.6 , <3.13',
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
@@ -53,7 +53,8 @@ setup(
     license="MIT",
     keywords="Lauetools x-ray scattering data analysis GUI Laue",
     url="https://github.com/BM32ESRF/lauetools",  # project home page, if any
-    classifiers=["Programming Language :: Python :: 3.11",
+    classifiers=["Programming Language :: Python :: 3.12",
+		"Programming Language :: Python :: 3.11",
 	    "Programming Language :: Python :: 3.10",
 	    "Programming Language :: Python :: 3.9",
 		 "Programming Language :: Python :: 3.8",
