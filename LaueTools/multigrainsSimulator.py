@@ -82,10 +82,12 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
     Simulation of orientation or deformation gradient.
     From parent grain simulate a list of transformations (deduced by a parametric variation)
 
-    _list_param   : list of parameters for each grain  [grain parameters, grain name]
+    :param Transform_params: list of grain simulation parameters defined by transformations with respect to the main grain orientation
+    :param _list_param: list of parameters for each grain  [grain parameters, grain name]
 
-    posCEN =(Xcen, Ycen)
-    cameraAngles =(Xbet, Xgam)
+    :param posCEN: tuple of Xcen, Ycen (detector geometry calibration)
+    :param cameraAngles: tuple of Xbet, Xgam (detector geometry calibration)
+    :param kf_direction: str, label to set the average position of the detecor plane with respect to the incoming beam ('Z>0',...)
 
     :return: (list_twicetheta,
                 list_chi,
@@ -266,6 +268,8 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         # Calculates matOrient which is U*B in q = U*B*Gstar
         matOrient = np.dot(GrainSimulParam[2], GrainSimulParam[0])
 
+        # matOrient could be not pure rotation, so orientation of directions in which are expressed strain or rotation may be not fully accurate. (<1% if it comes from raw indexing)
+
         if Transform_listparam != "":
             # print "Transform_listparam[0]",Transform_listparam[0]
             if Transform_listparam[0] == "r_axis":
@@ -305,7 +309,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                 # general transform expressed in crystal frame
 
             elif Transform_listparam[0] == "r_mat_d":
-                raise ValueError("r_mat_d matrix transform with d frame is not implemented yet")
+                raise ValueError("r_mat_d matrix transform with d frame is not implemented yet !")
 
             elif Transform_listparam[0] == "r_mat_c":
                 # print "using r_mat_c"
@@ -317,7 +321,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                         matOrient, np.dot(matrix_list[k], np.linalg.inv(matOrient)))
                     # matrix_list[k] = np.dot(inv(matOrient),np.dot(matrix_list[k],matOrient))
 
-                # transform is a list of tensile transforms
+            # transform is a list of tensile or STRAIN transforms
             elif isinstance(Transform_listparam[0], list):
                 # is a list of 's_axis' or 's_axis_c
                 liststrainframe = Transform_listparam[0]
@@ -403,7 +407,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 
-            # for the three consecutive axial strains
+            # RADIAL STRAIN: for the three consecutive axial strains
             elif isinstance(Transform_listparam[0], list):
 
                 first_traction = GT.tensile_along_u(
