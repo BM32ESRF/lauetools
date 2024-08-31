@@ -782,11 +782,11 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
 
         print("After fitting, {}/{} peaks have been rejected\n due to (final - initial position)> FitPixelDev = {}".format(
                 len(to_reject3), len(peaklist), FitPixelDev))
-        print("{} spots have been rejected\n due to negative baseline".format(len(to_reject2)))
-        print("{} spots have been rejected\n due to much intensity ".format(len(to_reject4)))
-        print("{} spots have been rejected\n due to weak intensity ".format(len(to_reject5)))
-        print("{} spots have been rejected\n due to small peak size".format(len(to_reject6)))
-        print("{} spots have been rejected\n due to large peak size".format(len(to_reject7)))
+        print("{} spots have been rejected (negative baseline)".format(len(to_reject2)))
+        print("{} spots have been rejected (too much intensity)".format(len(to_reject4)))
+        print("{} spots have been rejected (too weak intensity)".format(len(to_reject5)))
+        print("{} spots have been rejected (too small peak size)".format(len(to_reject6)))
+        print("{} spots have been rejected (too large peak size)".format(len(to_reject7)))
 
     # spots indices to reject
     ToR = (set(to_reject)
