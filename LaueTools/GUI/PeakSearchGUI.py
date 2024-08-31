@@ -2923,10 +2923,11 @@ class MainPeakSearchFrame(wx.Frame):
         self.LastLUT = self.initialParameter["mapsLUT"]
         self.writefolder = self.initialParameter["writefolder"]
         self.CCDlabel = self.initialParameter["CCDLabel"]
-
+        # for stacked images in hdf5 file
         self.stackedimages = self.initialParameter["stackedimages"]
         self.stackimageindex = self.initialParameter["stackimageindex"]
         self.Nbstackedimages = self.initialParameter["Nbstackedimages"]
+        
         self.nbdigits = 4   # sCMOS with bliss
 
         (self.framedim, self.pixelsize, self.saturationvalue, self.fliprot, self.headeroffset,
@@ -3792,11 +3793,14 @@ class MainPeakSearchFrame(wx.Frame):
     def OnPlus(self, _):
         """increase  self.imageindex by 1 (horizontal ascending to the right in sample raster scan)
         and read new image and plot
+
+        Note: if self.stackedimages os True: imageindex is used for stackimageindex
         """
         print(self.canvas.GetRect())
         print(self.canvas.GetScreenRect())
         if self.stackedimages:
-            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            print('\n!!stacked images!!\n')
+            print('self.Nbstackedimages', self.Nbstackedimages)
             self.stackimageindex += 1
             self.stackimageindex = self.stackimageindex % self.Nbstackedimages
         else:
@@ -3954,16 +3958,13 @@ class MainPeakSearchFrame(wx.Frame):
             self.paramsHat = (6, 8, 4)
 
         print("CCD label in PeakSearchGUI: ", self.CCDlabel)
+        print("self.stackimageindex", self.stackimageindex)
 
-        #         nolog = wx.LogNull()
-        #         self.gettime()
-        dataimage, _, _ = IOimage.readCCDimage(imagefilename,
+        dataimage, framedim, _ = IOimage.readCCDimage(imagefilename,
                                                         CCDLabel=self.CCDlabel,
                                                         dirname=self.dirname,
                                                         stackimageindex=self.stackimageindex)
 
-        
-        
         if secondaryImage:
             self.dataimage_ROI_B = dataimage
         else:  # TODO better use self.format ??
@@ -3971,11 +3972,17 @@ class MainPeakSearchFrame(wx.Frame):
             #             self.dataimage_ROI = dataimage.astype(np.int16)
             if self.CCDlabel in ("EIGER_4M",):
                 img_dataformat = np.uint32
+            elif self.CCDlabel in ("MaxiPIXCdTe",):
+                img_dataformat = np.int32
+                if self.stackimageindex != 1:
+                    self.Nbstackedimages = framedim[0]
             else:
                 img_dataformat = np.uint16 
             self.dataimage_ROI = dataimage.astype(img_dataformat)
 
         if self.CropIsOn:
+            if self.stackimageindex != 1:
+                self.Nbstackedimages = framedim[0]
 
             xpic, ypic = np.round(self.centerx), np.round(self.centery)
 
