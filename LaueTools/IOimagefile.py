@@ -14,6 +14,9 @@ import os
 import copy
 import struct
 from scipy import ndimage as scind
+import h5py 
+
+
 try:
     SKIMAGE = True
     from skimage.external import tifffile
@@ -131,6 +134,23 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         pass
 
     #     print "imagefilename archetype", imagefilename
+
+    elif CCDLabel in ("MaxiPIXCdTe",):
+        #default file extension for sCMOS camera
+        ext = "h5"
+        lenext = 3  #length of extension including '.'
+        
+        prepart = str(imagefilename).rsplit('.',1)[0]
+        prefix0, strindex = str(prepart).rsplit('_', 1)
+
+        if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
+            #imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+            # spec or BLISS 
+            encodingdigits = "%%0%dd" % nbdigits
+            imagefilename = prefix0 +'_'+encodingdigits%imageindex + '.'+ ext
+
+        else:  # bliss psl control of sCMOS
+            imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
     elif imagefilename.endswith("mar.tiff"):
 
         imagefilename = imagefilename[: -(9 + nbdigits)] + "{:04d}_mar.tiff".format(imageindex)
@@ -187,7 +207,9 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
 
 def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimageindex=-1, verbose=0):
     r"""
-    get integer index from imagefilename string
+    get integer index from imagefilename string if stackimageindex=-1 (default)
+
+    if stackimageindex != -1, 
 
     :param imagefilename: filename string (full path or not)
 
@@ -218,8 +240,14 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(prefix.rsplit("_")[1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
-    elif CCDLabel in ("EIGER_4Mstack",):
-        imageindex = stackimageindex
+    elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe"):
+        _filename = os.path.split(imagefilename)[-1]
+        if _filename.startswith('mpxcdte_'):
+            imageindex= int(_filename.split('.')[0].split('_')[-1])
+        else:
+            print('CCDLabel in getIndex_fromfilename',CCDLabel)
+            imageindex = stackimageindex
+            print('imageindex',imageindex)
 
     elif imagefilename.endswith("mar.tiff"):
         imageindex = int(imagefilename[-(9 + nbdigits) : -9])
@@ -784,9 +812,10 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         print('FABIO_EXISTS',FABIO_EXISTS)
         print('LIBTIFF_EXISTS',LIBTIFF_EXISTS)
         print('PIL_EXISTS',PIL_EXISTS)
+
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp'):#,'EIGER_4M'):
+    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','MaxiPIXCdTe'):#,'EIGER_4M'):
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M","sCMOS_9M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
@@ -839,6 +868,52 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
+    elif filename.endswith('h5'):  #  maxipix  hdf5 file
+        print('MAXIPIXCDTE ***********!\n\n')
+
+        
+
+        import LaueTools.logfile_reader as iohdf5      
+
+        if CCDLabel in ('MaxiPIXCdTe',):
+            """there are two types of h5 file: case 1, raw data only
+                case 2,  master h5 file with meta data (namely folder) pointing (link) to h5 file of case 1"""
+            
+            if dirname is not None:
+                pathfile=os.path.join(dirname, filename)
+            else:
+                pathfile=filename
+
+
+            if os.path.split(pathfile)[-1].startswith('mpxcdte_'):
+                h5filetype = 'h5puredata'
+            else:
+                h5filetype = 'h5master'
+            
+            if h5filetype == 'h5master':
+                """framedim  =  nbframes,   dim1 , dim2  with nbframes >=1"""
+                print('----> Reading hdf5 file [pointing to hdf5 file] %s\n'%filename)
+                dirname = '/home/micha/LaueProjects/MaxiPIX_Laue'
+                filename = 'align_0001.h5'
+                key = 'align_0001_84'
+
+                if verbose > 0: print("opening hdf5 stacked data table")
+                alldata = iohdf5.Scan_hdf5(pathfile, key, verbose=0).mpxcdte
+                if verbose > 0: print("alldata.shape", alldata.shape)
+
+                dataimage = alldata[stackimageindex]
+                framedim = alldata.shape  # nb images, dim1, dim2
+                fliprot = 'fliplr_h5master'
+
+            elif h5filetype == 'h5puredata':
+                """framedim  = dim1 , dim2 """
+                os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+                with h5py.File(pathfile, 'r') as f:
+                    dataimage = f['entry_0000']['measurement']['data'][()][0]
+                    framedim = dataimage.shape
+                    fliprot = 'fliplr_h5pure'
+
+
     elif LIBTIFF_EXISTS or CCDLabel in ("Alban",):
         
         if CCDLabel in ("sCMOS", "MARCCD165", "TIFF Format", "EIGER_4M","FRELONID15_corrected", "VHR_PSI",
@@ -854,6 +929,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             dataimage = tifimage.read_image()
             framedim = (int(tifimage.GetField("ImageLength")),
                         int(tifimage.GetField("ImageWidth")))
+            
             if tifimage.IsByteSwapped():
                 dataimage = dataimage.byteswap()
                 
@@ -980,6 +1056,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 CCDLabel))
 
     # some array transformations if needed depending on the CCD mounting
+    print('fliprot', fliprot)
+
     if fliprot == "spe":
         dataimage = np.rot90(dataimage, k=1)
 
@@ -989,11 +1067,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     elif fliprot == "Alexiane":
         dataimage = np.rot90(dataimage, k=1)
 
-    elif fliprot == "VHR_Feb13":
-        #            self.dataimage_ROI = np.rot90(self.dataimage_ROI, k=3)
-        dataimage = np.fliplr(dataimage)
-
-    elif fliprot == "sCMOS_fliplr":
+    elif fliprot in ("VHR_Feb13", "sCMOS_fliplr", "fliplr") or fliprot.startswith('fliplr'):  # for h5 from maxipixof stacked link to images 'h5master'
+        print('fliprot  2 ', fliprot)
         dataimage = np.fliplr(dataimage)
 
     elif fliprot == "vhr":  # july 2012 close to diamond monochromator crystal
@@ -1319,7 +1394,12 @@ def readoneimage_manycrops(filename, centers, boxsize, stackimageindex=-1, CCDLa
         
     if verbose > 0:
         print("framedim in readoneimage_manycrops", framedim)
-    framedim = framedim[1], framedim[0]
+    # if CCDLabel in ('MaxiPIXCdTe',):  #stacking of images in scan  or h5 pure data
+    #     framedim = framedim[-1], framedim[-2]
+    # else:
+    #     framedim = framedim[1], framedim[0]
+
+    framedim = framedim[-1], framedim[-2]
 
     for center in centers:
         i1, i2, j1, j2 = ImProc.getindices2cropArray(center, (boxsizex, boxsizey), framedim)
