@@ -228,6 +228,11 @@ class CCDFileParameters(wx.Dialog):
             # geometrical parameters
             self.parent.framedim, self.parent.pixelsize = DictLT.dict_CCD[str(self.CCDLabel)][0:2]
 
+            if self.CCDLabel in ('MaxiPIXCdTe',):
+                self.parent.stackedimages = True
+                self.parent.stackimageindex = 0
+                self.parent.Nbstackedimages = 1
+
             #print("self.parent", self.parent)
             print("self.parent.framedim", self.parent.framedim)
             print("self.parent.pixelsize", self.parent.pixelsize)
