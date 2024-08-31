@@ -176,6 +176,10 @@ class LaueToolsGUImainframe(wx.Frame):
         self.headeroffset, self.dataformat = dict_CCD[self.CCDLabel][4:6]
         self.file_extension = dict_CCD[self.CCDLabel][7]
         self.saturationvalue = dict_CCD[self.CCDLabel][2]
+        # for stacked images in hdf5 file
+        self.stackedimages = False
+        self.stackimageindex = 0
+        self.Nbstackedimages = 1
 
         self.defaultParam = DEFAULT_DETECTORPARAMETERS
 
@@ -431,6 +435,11 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackedimages"] = True
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = 20
+
+                elif self.CCDLabel in ("MaxiPIXCdTe",):
+                    initialParameter["stackedimages"] = self.stackedimages
+                    initialParameter["stackimageindex"] = self.stackimageindex
+                    initialParameter["Nbstackedimages"] = self.Nbstackedimages
 
                 peaksearchframe = MainPeakSearchFrame(self, -1, initialParameter,
                                                                         "peaksearch Board")
