@@ -1360,6 +1360,9 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
             d = {}
             for _n in datasetnames:
                 d[_n] = f[i_scan]['measurement'][_n][()]
+                if _n =='mpxcdte':
+                    print('type', type(f[i_scan]['measurement'][_n]))
+                    d[_n] = f[i_scan]['measurement'][_n][:]
             
             if h5py.__version__>='3':
                 title = f[i_scan]['title'][()].decode('UTF-8')
