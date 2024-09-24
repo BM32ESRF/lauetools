@@ -262,11 +262,11 @@ if NUMBAINSTALLED:
 
         return pairwiseangles_numba(listpoints1, listpoints2)
 
-def cartesiandistance(x1, x2, y1, y2):
+def cartesiandistance(x1, x2, y1, y2, nbdecimalsresolution=3):
     """
     return the cartesian distance between two points
     """
-    return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return np.round(np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2), decimals=nbdecimalsresolution)
 
 
 def norme_vec(vec1):
