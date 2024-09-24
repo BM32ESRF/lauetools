@@ -2316,6 +2316,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
     xpic, ypic = dict_param["pixelX_center"], dict_param["pixelY_center"]
     boxsize_col, boxsize_line = (dict_param["pixelboxsize_X"], dict_param["pixelboxsize_Y"])
 
+    if ccdlabel == 'EIGER_4MCdTe':
+        print('ccdlabel in buildMosaic3', ccdlabel)
+        # print('swapping x and y')
+        # ypic, xpic  = dict_param["pixelX_center"], dict_param["pixelY_center"]
+        # boxsize_line, boxsize_col = (dict_param["pixelboxsize_X"], dict_param["pixelboxsize_Y"])
+
     selectedcounters = dict_param["selectedcounters"]
     monitoroffset = dict_param["monitoroffset"]
 
@@ -2378,7 +2384,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                     nbdigits=nbdigits)
 
         filename = os.path.join(dirname, filename)
-        print("filename", filename)
+        if verbose > 0: print("filename", filename)
 
         try:
             framedimraw = DictLT.dict_CCD[ccdlabel][0]
@@ -2399,13 +2405,15 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                             flipxycenter=0)
                 imin, imax, jmin, jmax = indicesborders
 
-                if verbose > 0: print("indicesborders", indicesborders)
+                if verbose > 0:
+                    print("indicesborders", indicesborders)
 
                 # avoid to wrong indices when slicing the data
                 imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                             framedim=framedimraw)
 
-                if verbose > 0:print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
+                if verbose > 0:
+                    print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
                 # new fast way to read specific area in file directly
                 datacrop = IOimage.readrectangle_in_image(filename,
                                                         xpic,
@@ -2414,6 +2422,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                         halfboxsizes[1],
                                                         dirname=None,
                                                         CCDLabel=ccdlabel)
+                #print('datacrop max --> ', np.amax(datacrop))
             else:
 
                 framedim = framedimraw
@@ -2462,7 +2471,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             print("!***!****!****!")
             continue
 
-        if imageindex % 10 == 1:
+        if verbose > 0 and imageindex % 10 == 1:
             print(filename, "up to", IOimage.setfilename(filename, endind, CCDLabel=ccdlabel))
 
         kx, ky = dict_map_imageindex[map_imageindex][2:]
@@ -2470,8 +2479,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
         # print("dict_map_imageindex", dict_map_imageindex)
         # print("kx, ky, map_imageindex, imageindex", kx, ky, map_imageindex, imageindex)
 
-        #             mosaic[kx, ky] = datcrop.T
-        mosaic[kx, ky] = np.flipud(datcrop).T
+        mosaic[kx, ky] = np.flipud(datcrop).T  # Y axis origin in upper part
 
         monitor[kx, ky] = monitor_val
 
@@ -2902,6 +2910,8 @@ def FitPeakOnMap(mosaic,
     """
     Fit peak on series of 2D pixel intensities array
     """
+
+    print('\n\n****!! Fitting a peak on a map  !!****\n\n')
     n0, n1, n2, n3 = mosaic.shape
     xpic, ypic = ROIcenter
 
