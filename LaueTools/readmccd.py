@@ -133,7 +133,8 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
                                                                         verbose=0,
                                                                         xtol=0.00000001,
                                                                         addImax=False,
-                                                                        use_data_corrected=None):
+                                                                        use_data_corrected=None,
+                                                                        computerrorbars=False):
     r"""
     Fit several peaks in one image
 
@@ -272,7 +273,8 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
                                                     xtol=xtol,
                                                     Acceptable_HighestValue=saturation_value,
                                                     Acceptable_LowestValue=0,
-                                                    ijindices_array=ijindices_array)
+                                                    ijindices_array=ijindices_array,
+                                                    computerrorbars=computerrorbars)
 
             if cov is not None and verbose:
                 print('params  solution ', params)
@@ -640,7 +642,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                                     ComputeIpixmax=False,
                                                     use_data_corrected=None,
                                                     reject_negative_baseline=True,
-                                                    purgeDuplicates=True):
+                                                    purgeDuplicates=True,
+                                                    computerrorbars=False):
 
     r"""
     fit multiple ROI data to get peaks position in a single image
@@ -696,7 +699,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                         fitfunc=type_of_function,
                                         xtol=xtol,
                                         addImax=ComputeIpixmax,
-                                        use_data_corrected=use_data_corrected)
+                                        use_data_corrected=use_data_corrected,
+                                        computerrorbars=computerrorbars)
 
     if verbose:
         print("fitting time for {} peaks is : {:.4f}".format(len(peaklist), ttt.time() - tstart))
@@ -1060,7 +1064,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 reject_negative_baseline=True,
                                                 formulaexpression="A-1.1*B",
                                                 listrois=None,
-                                                outputIpixmax=True):
+                                                outputIpixmax=True,
+                                                computerrorbars=False):
     r"""
     Find local intensity maxima as starting position for fittinng and return peaklist.
 
@@ -1470,7 +1475,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                 NumberMaxofFits=NumberMaxofFits,
                                 ComputeIpixmax=ComputeIpixmax,
                                 use_data_corrected=Data_to_Fit,
-                                reject_negative_baseline=reject_negative_baseline)
+                                reject_negative_baseline=reject_negative_baseline,
+                                computerrorbars=computerrorbars)
 
 def Get_blacklisted_spots(filename):
     XY_blacklisted = None
