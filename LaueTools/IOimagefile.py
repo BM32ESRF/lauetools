@@ -135,7 +135,8 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
 
     #     print "imagefilename archetype", imagefilename
 
-    elif CCDLabel in ("MaxiPIXCdTe",):
+    elif CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
+        
         #default file extension for sCMOS camera
         ext = "h5"
         lenext = 3  #length of extension including '.'
@@ -143,14 +144,20 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         prepart = str(imagefilename).rsplit('.',1)[0]
         prefix0, strindex = str(prepart).rsplit('_', 1)
 
-        if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
-            #imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
-            # spec or BLISS 
-            encodingdigits = "%%0%dd" % nbdigits
-            imagefilename = prefix0 +'_'+encodingdigits%imageindex + '.'+ ext
+        if prepart.startswith(('mpxcdte_', 'eiger1_')):
 
-        else:  # bliss psl control of sCMOS
-            imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
+            if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
+                #imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
+                # spec or BLISS 
+                encodingdigits = "%%0%dd" % nbdigits
+                imagefilename = prefix0 +'_'+encodingdigits%imageindex + '.'+ ext
+
+            else:  # bliss psl control of sCMOS
+                imagefilename = prefix0 + "_{}.{}".format(imageindex, ext)
+
+        else: # same file but stackingindex will change
+            print('same file : %s but stackingindex inside file will change!'%prepart)
+            pass 
     elif imagefilename.endswith("mar.tiff"):
 
         imagefilename = imagefilename[: -(9 + nbdigits)] + "{:04d}_mar.tiff".format(imageindex)
@@ -229,8 +236,8 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 #imageindex = int(imagefilename[-(lenext + nbdigits): - (lenext)])
                 prepart = str(imagefilename).rsplit('.',1)[0]
                 digitpart = str(prepart).rsplit('_',1)[-1]
-                print("prepart", prepart)
-                print("digitpart",digitpart)
+                # print("prepart", prepart)
+                # print("digitpart",digitpart)
                 imageindex = int(digitpart)
             elif imagefilename.endswith(ext+".gz"):
                 imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
@@ -240,9 +247,9 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(prefix.rsplit("_")[1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
-    elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe"):
+    elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe","EIGER_4MCdTe"):
         _filename = os.path.split(imagefilename)[-1]
-        if _filename.startswith('mpxcdte_'):
+        if _filename.startswith(('mpxcdte_','eiger1_')):
             imageindex= int(_filename.split('.')[0].split('_')[-1])
         else:
             print('CCDLabel in getIndex_fromfilename',CCDLabel)
@@ -264,6 +271,8 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
         imageindex = int(imagefilename[-(4 + nbdigits) : -4])
     elif imagefilename.endswith("unstacked"):
         imageindex = int(imagefilename[-(10 + nbdigits) : -10])
+
+    # print('found index',imageindex)
 
     return imageindex
 
@@ -816,7 +825,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','MaxiPIXCdTe'):#,'EIGER_4M'):
-        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_4MCdTe","EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M","sCMOS_9M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
                         'ImageStar_dia_2021_2x2','psl_IN_tif', 'Alexiane'):#, 'Alban'):
@@ -869,9 +878,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         framedim = dataimage.shape
 
     elif filename.endswith('h5'):  #  maxipix  hdf5 file
-        print('MAXIPIXCDTE ***********!\n\n')
-
-        
+        print('MAXIPIXCDTE or EIGER 4M CdTe***********!\n\n')
 
         import LaueTools.logfile_reader as iohdf5      
 
@@ -885,7 +892,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 pathfile=filename
 
 
-            if os.path.split(pathfile)[-1].startswith('mpxcdte_'):
+            if os.path.split(pathfile)[-1].startswith(('mpxcdte_','eiger1_')):
                 h5filetype = 'h5puredata'
             else:
                 h5filetype = 'h5master'
@@ -1024,7 +1031,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                                 offset=offsetheader,
                                 formatdata=formatdata)
 
-        print("dataimage", dataimage)
+        #print("dataimage", dataimage)
 
         if CCDLabel in ("FRELONID15_corrected",):
 
@@ -1056,7 +1063,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 CCDLabel))
 
     # some array transformations if needed depending on the CCD mounting
-    print('fliprot', fliprot)
+    # print('fliprot', fliprot)
 
     if fliprot == "spe":
         dataimage = np.rot90(dataimage, k=1)
@@ -1068,7 +1075,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = np.rot90(dataimage, k=1)
 
     elif fliprot in ("VHR_Feb13", "sCMOS_fliplr", "fliplr") or fliprot.startswith('fliplr'):  # for h5 from maxipixof stacked link to images 'h5master'
-        print('fliprot  2 ', fliprot)
+        #print('fliprot  2 ', fliprot)
         dataimage = np.fliplr(dataimage)
 
     elif fliprot == "vhr":  # july 2012 close to diamond monochromator crystal
@@ -1289,17 +1296,24 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         print("lineFirstElemIndex", lineFirstElemIndex)
         print("lineLastElemIndex", lineLastElemIndex)
 
-    band = readoneimage_band(fullpathfilename,
+    if CCDLabel not in ('EIGER_4MCdTe'):
+        band = readoneimage_band(fullpathfilename,
                                 framedim=framedim,
                                 dirname=None,
                                 offset=offsetheader,
                                 line_startindex=lineFirstElemIndex,
                                 line_finalindex=lineLastElemIndex,
                                 formatdata=formatdata)
+        
+        nblines = lineLastElemIndex - lineFirstElemIndex + 1
 
-    nblines = lineLastElemIndex - lineFirstElemIndex + 1
+        band2D = np.reshape(band, (nblines, framedim[1]))
 
-    band2D = np.reshape(band, (nblines, framedim[1]))
+    elif CCDLabel in ('EIGER_4MCdTe'):
+        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=-1, verbose=0)
+        band2D = _data[ypixmin:ypixmax+1]
+
+        #print('shape of band2D', band2D.shape)
 
     rectangle2D = band2D[:, xpixmin : xpixmax + 1]
 
