@@ -1180,6 +1180,7 @@ class MainCalibrationFrame(wx.Frame):
         self.RecBox = None
         self.centerx, self.centery = None, None
         self.press = None
+        self.savedfinaltxt = ''
 
         self._dataANNOTE_exp, self._dataANNOTE_theo = None, None
 
@@ -1228,7 +1229,10 @@ class MainCalibrationFrame(wx.Frame):
 
         self.toolbar = NavigationToolbar(self.canvas)
 
-        DictLT.LAUETOOLSFOLDER
+        self.tooltip = wx.ToolTip(tip="Welcome on LaueTools calibration board")
+        self.canvas.SetToolTip(self.tooltip)
+        self.tooltip.Enable(False)
+        self.tooltip.SetDelay(0)
 
         # Add the custom tools that we created
         self.toolbar.AddTool(123456, 'oneTool',  wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER,"icons",'flipudsmall.png')),  
@@ -3683,7 +3687,7 @@ class MainCalibrationFrame(wx.Frame):
     def onMotion_ToolTip(self, event):
         """tool tip to show data (exp. and theo. spots) when mouse hovers on plot
         """
-
+        
         if len(self.data[0]) == 0:
             return
 
@@ -3766,7 +3770,13 @@ class MainCalibrationFrame(wx.Frame):
                     self.highlightexpspot = None
 
             if collisionFound_theo:
-                annotes_theo.sort()
+                try:
+                    annotes_theo.sort()
+                    txtharmonics = ''
+                except ValueError:
+                    txtharmonics = f'Peak with {len(annotes_theo)} harmonics !'
+                    print(txtharmonics)
+
                 _distancetheo, x, y, annote_theo = annotes_theo[0]
 
                 # if theo spot is close enough
@@ -3781,6 +3791,9 @@ class MainCalibrationFrame(wx.Frame):
                     if self.datatype == "2thetachi":
                         tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
                             annote_theo[1], annote_theo[2], x, y)
+
+                    tip_theo += txtharmonics
+
                     self.updateStatusBar(x, y, annote_theo, spottype="theo")
 
                     # find theo spot index
@@ -3791,13 +3804,16 @@ class MainCalibrationFrame(wx.Frame):
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
                     hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
-                    print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
+                    finaltxt = 'theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3])
+                    if finaltxt != self.savedfinaltxt:
+                        print(finaltxt)
+                    self.savedfinaltxt = finaltxt
                 else:
                     self.sb.SetStatusText("", 0)
                     tip_theo = ""
                     collisionFound_theo = False
                     self.highlighttheospot = None
-                    self._replot()
+                    self._replot(1)
 
             if collisionFound_exp or collisionFound_theo:
                 if tip_exp is not "":
@@ -3813,7 +3829,7 @@ class MainCalibrationFrame(wx.Frame):
 
         if not collisionFound_exp and not collisionFound_theo:
             self.tooltip.SetTip("")
-            # set to False to avoid blocked tooltips from btns and checkboxes on windows platforms
+            # set to False to avoid blocked tooltips from btns and checkboxes on windows os platforms
 
     #             self.tooltip.Enable(False)
 
@@ -3839,11 +3855,16 @@ class MainCalibrationFrame(wx.Frame):
                     + "   Intensity=%.2f" % annote[1]), 0)
 
     def onMotion(self, event):
-        if self.press is None:
-            self.onMotion_ToolTip(event)
         if not event.inaxes:
             return
-
+        if self.press is None:
+            self.onMotion_ToolTip(event)
+            
+        
+        #print('self.press',self.press)
+        if not event.button == 1 or self.toolbar.mode in ('pan/zoom', 'zoom rect'):
+            #print('self.toolbar.mode', self.toolbar.mode)
+            return
         xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
