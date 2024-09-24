@@ -3722,7 +3722,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         print('***** \n\nself.image_with_index',self.image_with_index)
         
-        if self.image_with_index:
+        if self.image_with_index and not self.stackedimages:
             self.misstext=''
             self.lastimagefilename = self.imagefilename
             self.imagefilename = IOimage.setfilename(self.imagefilename, self.imageindex,
@@ -3744,6 +3744,11 @@ class MainPeakSearchFrame(wx.Frame):
 
             self.axes.set_title('', color='black')
             
+            return True
+
+        if self.stackedimages:
+            print('setfilename() in PeakSearchGUI()')
+            print('self.imagefilename  unchanged ... only stack index',self.imagefilename)
             return True
 
     def OnStepChange(self, _):
@@ -3776,8 +3781,13 @@ class MainPeakSearchFrame(wx.Frame):
         #        print self.canvas.GetRect()
         #        print self.canvas.GetScreenRect()
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-        self.lastindex = self.imageindex
-        self.imageindex += self.stepindex
+        if self.stackedimages:
+            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            self.stackimageindex += self.stepindex
+            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+        else:
+            self.lastindex = self.imageindex
+            self.imageindex += self.stepindex
         
         self.resetfilename_and_plot()
 
@@ -3786,15 +3796,20 @@ class MainPeakSearchFrame(wx.Frame):
         and read new image and plot
         """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-        self.lastindex = self.imageindex
-        self.imageindex -= self.stepindex
+        if self.stackedimages:
+            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            self.stackimageindex -= self.stepindex
+            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+        else:
+            self.lastindex = self.imageindex
+            self.imageindex -= self.stepindex
         self.resetfilename_and_plot()
 
     def OnPlus(self, _):
         """increase  self.imageindex by 1 (horizontal ascending to the right in sample raster scan)
         and read new image and plot
 
-        Note: if self.stackedimages os True: imageindex is used for stackimageindex
+        Note: if self.stackedimages is True: imageindex is used for stackimageindex
         """
         print(self.canvas.GetRect())
         print(self.canvas.GetScreenRect())
@@ -3970,18 +3985,18 @@ class MainPeakSearchFrame(wx.Frame):
         else:  # TODO better use self.format ??
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
-            if self.CCDlabel in ("EIGER_4M",):
+            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe"):
                 img_dataformat = np.uint32
             elif self.CCDlabel in ("MaxiPIXCdTe",):
                 img_dataformat = np.int32
-                if self.stackimageindex != 1:
+                if self.stackedimages:
                     self.Nbstackedimages = framedim[0]
             else:
                 img_dataformat = np.uint16 
             self.dataimage_ROI = dataimage.astype(img_dataformat)
 
         if self.CropIsOn:
-            if self.stackimageindex != 1:
+            if self.stackedimages != 1:
                 self.Nbstackedimages = framedim[0]
 
             xpic, ypic = np.round(self.centerx), np.round(self.centery)
@@ -4079,9 +4094,11 @@ class MainPeakSearchFrame(wx.Frame):
                                     norm=LogNorm(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed))
 
         title = self.imagefilename
+        suptitle = self.dirname
         if self.stackedimages:
             title += "\nsstack index %d" % self.stackimageindex
         self.axes.set_title(title)
+        self.fig.suptitle(suptitle)
         # self.myplot.set_clim=(1,200)  # work?
         self.myplot.set_cmap(self.viewingLUTpanel.comboLUT.GetValue())
 
@@ -5160,7 +5177,8 @@ class MainPeakSearchFrame(wx.Frame):
                                             verbose=0,
                                             position_definition=self.position_definition,
                                             use_data_corrected=use_data_corrected,
-                                            reject_negative_baseline=reject_negative_baseline)
+                                            reject_negative_baseline=reject_negative_baseline,
+                                            computerrorbars=True)
 
         print("tabIsorted", tabIsorted)
 
@@ -5196,7 +5214,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.plot_singlefitresults_chck.GetValue():  # showplot:
             framedim = self.framedim
             # patch ------------------------------------
-            if self.CCDlabel in ("VHR_PSI", "EIGER_4M"):
+            if self.CCDlabel in ("VHR_PSI","EIGER_4M"):#, "EIGER_4MCdTe"):
                 framedim = self.framedim[1], self.framedim[0]
             # ----------------------------
             # crop data for local fit
