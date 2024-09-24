@@ -4,7 +4,6 @@ GUI class to connect spots from two sets
 """
 import wx
 
-
 class LinkEditor(wx.Frame):
     def __init__(self, parent, _id, title, previouslist, millerlist, intensitylist=None):
         # wx.Dialog.__init__(self, parent, id, title, size=(600,500), style=wx.DEFAULT_DIALOG_STYLE)
