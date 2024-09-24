@@ -178,8 +178,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.saturationvalue = dict_CCD[self.CCDLabel][2]
         # for stacked images in hdf5 file
         self.stackedimages = False
-        self.stackimageindex = 0
-        self.Nbstackedimages = 1
+        self.stackimageindex = None
+        self.Nbstackedimages = None
 
         self.defaultParam = DEFAULT_DETECTORPARAMETERS
 
@@ -436,7 +436,11 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = 20
 
-                elif self.CCDLabel in ("MaxiPIXCdTe",):
+                elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
+                    if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):
+                        h5browserBoard = CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
+                        h5browserBoard.ShowModal()
+                        h5browserBoard.Destroy()
                     initialParameter["stackedimages"] = self.stackedimages
                     initialParameter["stackimageindex"] = self.stackimageindex
                     initialParameter["Nbstackedimages"] = self.Nbstackedimages
