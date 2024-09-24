@@ -19,6 +19,16 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
+LIBTIFF_EXISTS = False
+try:
+    from libtiff import TIFF, libtiff_ctypes
+
+    libtiff_ctypes.suppress_warnings()
+    LIBTIFF_EXISTS = True
+except (ImportError, ValueError, AttributeError, NameError):
+    print("Missing library libtiff, Please install: pylibtiff if you need open some tiff images. However, Fabio or PIL can do the job!")
+    LIBTIFF_EXISTS = False
+
 from pylab import cm as pcm
 from pylab import Rectangle
 from matplotlib.colors import LogNorm
@@ -35,6 +45,8 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 
 from LaueTools.GUI.mosaic import MyCustomToolbar 
 import LaueTools.generaltools as GT
+import LaueTools.IOimagefile as IOimage
+import LaueTools.MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
 
@@ -647,8 +659,11 @@ class ShowMapFrame(wx.Frame):
                 print("Image saved in ", fullpath)
             elif fullpath.endswith('.tiff'):  # TODO convert better float to uint16
                 datint = np.array(self.data, dtype=np.uint16)
-                TIFF.imsave(fullpath, datint)
-                print("Image saved in tiff format ", fullpath)
+                if LIBTIFF_EXISTS:
+                    TIFF.imsave(fullpath, datint)
+                    print("Image saved in tiff format ", fullpath)
+                else:
+                    wx.MessageBox('libtiff is not installed or not found\n Image is not saved','error')
         dlg.Destroy()
 
     def SaveData(self, _):
