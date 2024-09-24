@@ -377,6 +377,7 @@ def gaussfit(data, err=None, params=None, autoderiv=1, return_all=0, circle=0,
             pfit_leastsq = p
             perr_leastsq = np.array(error)
 
+            # (height, amplitude, x, y, width_x, width_y, rota)
             print("pfit_leastsq", pfit_leastsq)
             print("perr_leastsq", perr_leastsq)
 
