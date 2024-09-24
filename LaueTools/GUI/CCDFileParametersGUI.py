@@ -228,10 +228,14 @@ class CCDFileParameters(wx.Dialog):
             # geometrical parameters
             self.parent.framedim, self.parent.pixelsize = DictLT.dict_CCD[str(self.CCDLabel)][0:2]
 
-            if self.CCDLabel in ('MaxiPIXCdTe',):
-                self.parent.stackedimages = True
-                self.parent.stackimageindex = 0
-                self.parent.Nbstackedimages = 1
+            if self.CCDLabel in ('MaxiPIXCdTe'):
+                print('self.parent.filename',self.parent.imgfilename)
+                imagefilename = self.parent.imgfilename
+                # hdf5 .h5 file with stacked images or links to raw h5 image file
+                if not imagefilename.startswith('mpxcdte_','eiger1_') or not imagefilename.endswith('.h5'): 
+                    self.parent.stackedimages = True
+                    self.parent.stackimageindex = 0
+                    self.parent.Nbstackedimages = 1
 
             #print("self.parent", self.parent)
             print("self.parent.framedim", self.parent.framedim)
