@@ -130,6 +130,27 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond1 = (H + K) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
+    elif Extinc == "h+k=2n, modulated":  # group space 12  I2/m + modulation along q= k3 c*
+        """we add only m=-1 and m=1 first satellite
+        for each node we add h k l+k3 and h k l-k3 (if m=2 we would add h k l+2k3 and h k l-2k3) 
+        
+        general expression G* = ha* +kb*+lc*+mq*  where h,k,l are integers, m integer but -1 and 1 (first order satellite)
+        are enough (and the stronger)
+        """
+        k3 = 0.3437  # q = k3 c*
+
+        cond1 = (H + K) % 2 == 0
+        array_hkl_average = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
+        H, K, L = array_hkl_average.T
+
+        # m=1
+        sat_m_order1 = np.array([H, K, L+k3]).T
+        # m=-1
+        sat_m_orderm1 = np.array([H, K, L-k3]).T
+
+        array_hkl = np.concatenate((sat_m_orderm1,array_hkl_average, sat_m_order1))
+
     elif Extinc == "h+k+l=2n":  # group space 139 indium also SG 82 tetragonal
         cond1 = (H + K + L) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
