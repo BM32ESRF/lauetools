@@ -459,6 +459,7 @@ class LaueToolsGUImainframe(wx.Frame):
 
         # ---------------------------------------------
         self.filenamepklist = self.DataPlot_filename
+        self.dirname = self.dirnamepklist
 
         self.set_gnomonic_data()
         # ---------------------------------------------
@@ -763,7 +764,7 @@ class LaueToolsGUImainframe(wx.Frame):
         #         self.indexation_parameters ={}
         #print("AllDataToIndex in dict: ", "AllDataToIndex" in self.indexation_parameters)
         self.indexation_parameters["writefolder"] = self.writefolder
-        self.indexation_parameters["dirname"] = self.dirname
+        self.indexation_parameters["dirname"] = self.dirnamepklist
         self.indexation_parameters["kf_direction"] = self.kf_direction
         self.indexation_parameters["DataPlot_filename"] = self.DataPlot_filename
         self.indexation_parameters["dict_Materials"] = self.dict_Materials
@@ -1535,14 +1536,15 @@ class LaueToolsGUImainframe(wx.Frame):
 
     def OpenDefaultData(self):
         """
-        Open default data for quick test if user has not yet loaded some data
+        Open default peak list data defaultGe0001.cor
+        Useful for quick test debugging or if user has not yet loaded some data
         """
         DEFAULTFILE = "defaultGe0001.cor"
         defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
 
         #print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
-
-        self.dirnamepklist = os.path.split(os.path.abspath(defaultdatafile))[0]
+        print('Open default Ge peaklist .cor file')
+        self.dirnamepklist = os.path.abspath(os.path.split(defaultdatafile)[0])
         print('self.dirnamepklist', self.dirnamepklist)
         self.filenamepklist = DEFAULTFILE
         print('self.filenamepklist', self.filenamepklist)
@@ -1560,6 +1562,8 @@ class LaueToolsGUImainframe(wx.Frame):
         # ---------------------------------------------
         self.filenamepklist = self.DataPlot_filename
         self.init_DataSet()
+
+        print('\n\n===> self.dirnamepklist', self.dirnamepklist)
 
         # create DB spots(dictionary)
         self.CreateSpotDB()
