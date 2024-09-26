@@ -1469,7 +1469,7 @@ class LaueToolsGUImainframe(wx.Frame):
             if filename.endswith(".cor"):
                 finalfilename = filename[: -4]
 
-            fullpath = os.path.join(self.dirname, finalfilename)
+            fullpath = os.path.join(self.dirnamepklist, finalfilename)
 
             self.SaveFileCorNonIndexedSpots(outputfilename=fullpath)
 
