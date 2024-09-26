@@ -4095,6 +4095,9 @@ class MainPeakSearchFrame(wx.Frame):
 
         title = self.imagefilename
         suptitle = self.dirname
+        if len(suptitle)>30 and 'RAW_DATA' in suptitle:
+            s1,s2 = suptitle.split('RAW_DATA')
+            suptitle= '%s\n%s'%(s1,s2)
         if self.stackedimages:
             title += "\nsstack index %d" % self.stackimageindex
         self.axes.set_title(title)
