@@ -2,15 +2,9 @@ r"""
 GUI for microdiffraction Laue Pattern peaks list file loading.
 
 This module belongs to the open source LaueTools project
-with a free code repository at at gitlab.esrf.fr
+with a free code repository at github
 
-(former version with python 2.7 at https://sourceforge.net/projects/lauetools/)
-
-or for python3 and 2 in
-
-https://gitlab.esrf.fr/micha/lauetools
-
-J. S. Micha February 2020
+J. S. Micha Sept 2024
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
 import os
