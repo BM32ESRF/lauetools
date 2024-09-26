@@ -60,7 +60,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
     + comments at the end for calibration CCD parameters that have been used for calculating
     2theta and chi for each peak (in addition to X,Y pixel position)
 
-    :return: outputfilename
+    :return: str, outputfilename
 
     :param sortedexit: - 1 sort peaks by intensity for the outputfile
                 - 0 do not sort (e.g. sorting already done in input .dat file . see dataintensity inpu parameter)
@@ -146,6 +146,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
         if initialfilename:
             outputfile.write("\n# From: %s" % initialfilename)
+            outputfile.write("\n# Output Folder: %s" % dirname_output)
 
         # metadata on detector position and nature
         if verbose:
@@ -678,6 +679,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
         if initialfilename:
             outputfile.write("\n# From: %s" % initialfilename)
+            outputfile.write("\n# Output Folder: %s" % dirname)
+
 
         outputfile.write("\n# Comments: nb of peaks %d" % nbpeaks)
         if comments:
