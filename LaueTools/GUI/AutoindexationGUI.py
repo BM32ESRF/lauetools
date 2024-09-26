@@ -61,7 +61,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     Class of GUI for the automatic indexation board of
     a single peak list with a single material or structure
 
-    called also autoindexation
+    called also by autoindexation
     """
     def __init__(self, parent, _id, indexation_parameters, title,
                                         StorageDict=None, DataSetObject=None):
@@ -156,6 +156,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         title1 = wx.StaticText(self, -1, "Spots Selection")
         title1.SetFont(font3)
         txtcf = wx.StaticText(self, -1, "Current File:        %s   " % self.DataPlot_filename)
+        txtcfolder = wx.StaticText(self, -1, "Folder:        %s   " % self.dirname)
         nbspots_in_data = len(self.current_exp_spot_index_list)
         mssstxt = wx.StaticText(self, -1, "Spots set Size         ")
         self.nbspotmaxformatching = wx.SpinCtrl(self, -1, str(nbspots_in_data),
@@ -293,6 +294,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(txtcf, 0, wx.EXPAND, 10)
+        vbox.Add(txtcfolder, 0, wx.EXPAND, 10)
         vbox.Add(h1box, 0, wx.EXPAND, 10)
         vbox.AddSpacer(10)
         vbox.Add(title1, 0, wx.EXPAND, 10)
@@ -957,6 +959,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             self.IndexationParameters["bestmatrices"] = self.bestmatrices
             self.IndexationParameters["TwicethetaChi_solutions"] = self.TwicethetaChi_solution
             # display "statistical" results
+
+            #print('self.IndexationParameters before RecognitionResultCheckBox ',self.IndexationParameters)
             RRCBClassical = RecognitionResultCheckBox(self, -1,
                                                     "Screening Distances Indexation Solutions",
                                                     stats_properformat,
