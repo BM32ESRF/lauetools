@@ -240,8 +240,9 @@ class Plot_RefineFrame(wx.Frame):
             #             AllData = self.IndexationParameters['AllDataToIndex']
             self.dirname = self.IndexationParameters["dirname"]
             DataToIndex = self.IndexationParameters["DataToIndex"]
-            print("\n\nPlot_RefineFrame\n\n****\n\nNumber of spots in DataToIndex",
+            print("\n\***************\nEntering Plot_RefineFrame\nNumber of spots in DataToIndex: %d\n*****************\n"%
                                                                     len(DataToIndex["data_theta"]))
+            
             if self.datatype is "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
                 self.Data_Y = DataToIndex["data_chi"]
@@ -277,8 +278,12 @@ class Plot_RefineFrame(wx.Frame):
             self.DataPlot_filename = IndexationParameters["DataPlot_filename"]
             self.current_processedgrain = IndexationParameters["current_processedgrain"]
         else:
+            print('WARNING! IndexationParameters dict is None!?')
             self.DataPlot_filename = self.mainframe.DataPlot_filename
+            self.dirname = self.mainframe.pklistdirname
             self.current_processedgrain = self.mainframe.current_processedgrain
+
+        print('peaklist: Filename: %s\nFolder: %s'%(self.DataPlot_filename, self.dirname))
 
         # initial parameters of calibration ----------------------*
         if CCDdetectorparameters is not None:
@@ -1551,10 +1556,11 @@ class Plot_RefineFrame(wx.Frame):
     # --- ------------ Fitting functions ----
     def OnRefine_UB_and_Strain(self, _):
         """
-        in plot_RefineFrame
+        Action called by pressing button 'Refine' in plot_RefineFrame.
+        Current selected links will be used for structural model refinement
 
         Note: only strain and orientation simultaneously
-        .. toto:: fit only a set of parameters, useful
+        .. note:: fit only a set of parameters, useful
         .. note:: refine strained and oriented crystal by minimizing peaks positions (pixels).
         .. note:: experimental peaks pixel positions are reevaluated from 2theta and chi angles
         """
@@ -1915,7 +1921,7 @@ class Plot_RefineFrame(wx.Frame):
 
         Umat = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=np.array(self.UBmat))
         # TODO to be translated !----------------------
-        # conversion en np array necessaire apres automatic indexation, pas necessaire apres check orientation
+        # conversion in np array is necessary from automatic indexation results, but not necessary from check orientation results
 
         print("**********test U ****************************")
         print("U matrix = ")
@@ -1954,6 +1960,7 @@ class Plot_RefineFrame(wx.Frame):
 
         txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (self.DataPlot_filename,
                                                                     time.asctime())
+        txt0 += 'Folder: %s\n'%self.dirname
         txt0 += "Mean Pixel Deviation: %.3f\n" % np.mean(residues_non_weighted)
         txt0 += "Number of refined Laue spots: %d\n" % nb_pairs
         texts_dict["NbspotsResidues"] = txt0
