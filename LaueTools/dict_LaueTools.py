@@ -154,8 +154,17 @@ dict_Materials = {
     "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"],
     "CaWO4": ["CaWO4", [5.26, 5.26, 11.35, 90, 90, 90], "h+k+l=2n"], # SG88
     "CaWO4_distorted": ["CaWO4_distorted", [5.26, 5.26, 11.4, 90, 90, 90], "h+k+l=2n"],
+    "LTO_a321204": ["LTO_a321204", [5.13, 5.45, 6.35, 87.20, 89.38, 118.09], "R3m_sg160"],
     "LTO_1": ["LTO_1", [5.13, 5.13, 13.82, 90, 90, 120], "R3m_sg160"],
-    "LTO_all": ["LTO_all", [5.13, 5.13, 13.82, 90, 90, 120], "no"]
+    "LTO_half": ["LTO_half", [5.13, 5.13, 6.91, 90, 90, 120], "R3m_sg160"],
+    "LTO_all": ["LTO_all", [5.13, 5.13, 13.82, 90, 90, 120], "no"],
+    "fcc_mystere": ["fcc_mystere", [5.33, 5.33, 5.23, 90, 91, 90], "fcc"],
+    "AAA_mystere": ["AAA_mystere", [7.89, 7.89, 7.89 , 93.5, 93.5, 86.5], "fcc"],
+    "LTO_distor": ["LTO_distor", [10.869, 13.655,  8.459, 92.653, 63.159, 86.865], "fcc"],
+    "LTO_distor_all": ["LTO_distor_all", [10.869, 13.655,  8.459, 92.653, 63.159, 86.865], "no"],
+    "LTO_distor_al2o3_ext": ["LTO_distor_al2o3_ext", [10.869, 13.655,  8.459, 92.653, 63.159, 86.865], "Al2O3"],
+    "LTO_distor_bulk": ["LTO_distor_bulk", [5.130, 4.830,  11.958, 90.00, 92.80, 118.08], "R3m_sg160"],
+    "LTO_distor_bulk_fit": ["LTO_distor_bulk_fit", [5.13, 4.8301684, 5.9791912, 89.9987506, 92.8008151, 118.0844543], "R3m_sg160"]
 }
 
 dict_Materials_short = {
