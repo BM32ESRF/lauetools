@@ -108,7 +108,8 @@ def collectroisXYcenterofmass_singlefile(index, roicenters=None, prefix=None, fo
 
 def collectroisfitpeak_singlefile(index, roicenters=None, prefix=None,
                                   folder =None,
-                            boxsize_row=10,boxsize_line=10,CCDLabel=None):
+                            boxsize_row=10,boxsize_line=10,CCDLabel=None,
+                            computerrorbars=False):
     """ collect pixel XY position of max intensity in some given rois centered on peaks defined in peaklist in 1 image
 
     :param index: int, image file index
@@ -117,7 +118,8 @@ def collectroisfitpeak_singlefile(index, roicenters=None, prefix=None,
     ('Cu_' for images named  'Cu_0020.tif')
     :param folder: str, path to folder containing all images
     :param boxsize_row, boxsize_line: half boxsize along x and y of the roi (can be a list?)
-    :param CCDLabel: label of detector
+    :param CCDLabel: str, label of detector
+    :param computerrorbars: bool, compute fit parameter error bars
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
@@ -139,7 +141,15 @@ def collectroisfitpeak_singlefile(index, roicenters=None, prefix=None,
                                         fitfunc="gaussian",
                                         xtol=0.00001,
                                         addImax=False,
-                                        use_data_corrected=None)
+                                        use_data_corrected=None,
+                                        computerrorbars=computerrorbars)
     #  bkg, amp, x, y std1, std2, angle
     #print('resfit',resfit)
-    return resfit[0]
+    toreturn = resfit[0]
+    if computerrorbars:
+        # infodict["pfit_leastsq"]=pfit_leastsq
+        # infodict["perr_leastsq"]=perr_leastsq
+        infodict = resfit[2]
+        toreturn = resfit[0], infodict['pfit_leastsq'], infodict['perr_leastsq']
+        
+    return toreturn
