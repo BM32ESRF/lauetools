@@ -2,10 +2,10 @@
 import sys
 import wx
 
-try:
-    from SpecClient_gevent import SpecCommand
-except ImportError:
-    print('-- warning. spec control software and SpecClient_gevent missing ? (normal if you are not at the beamline)')
+# try:
+#     from SpecClient_gevent import SpecCommand
+# except ImportError:
+#     print('-- warning. spec control software and SpecClient_gevent missing ? (normal if you are not at the beamline)')
 
 try:
     sys.path.append('/users/blissadm/local/bliss.git')
@@ -39,19 +39,19 @@ class MessageCommand(wx.Dialog):
         txt1 = wx.StaticText(self, -1, "%s\n\n%s" % (sentence, self.speccommand))
 
         acceptbtn = wx.Button(self, -1, "OK")
-        tospecbtn = wx.Button(self, -1, "Send to Spec")
+        # tospecbtn = wx.Button(self, -1, "Send to Spec")
         toblissbtn = wx.Button(self, -1, "Send to Bliss")
         cancelbtn = wx.Button(self, -1, "Cancel")
 
         acceptbtn.Bind(wx.EVT_BUTTON, self.onAccept)
         cancelbtn.Bind(wx.EVT_BUTTON, self.onCancel)
-        tospecbtn.Bind(wx.EVT_BUTTON, self.onCommandtoSpec)
+        # tospecbtn.Bind(wx.EVT_BUTTON, self.onCommandtoSpec)
         toblissbtn.Bind(wx.EVT_BUTTON, self.onCommandtoBliss)
 
         btnssizer = wx.BoxSizer(wx.HORIZONTAL)
         btnssizer.Add(acceptbtn, 0, wx.ALL)
         btnssizer.Add(cancelbtn, 0, wx.ALL)
-        btnssizer.Add(tospecbtn, 0, wx.ALL)
+        # btnssizer.Add(tospecbtn, 0, wx.ALL)
         btnssizer.Add(toblissbtn, 0, wx.ALL)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -68,15 +68,15 @@ class MessageCommand(wx.Dialog):
         # todo save old positions and make inverse mvt
         self.Close()
 
-    def onCommandtoSpec(self, _):
+    # def onCommandtoSpec(self, _):
 
-        myspec = SpecCommand.SpecCommand("", "crg1:laue")
+    #     myspec = SpecCommand.SpecCommand("", "crg1:laue")
 
-        print("Sending command : " + self.speccommand)
+    #     print("Sending command : " + self.speccommand)
 
-        myspec.executeCommand(self.speccommand)
+    #     myspec.executeCommand(self.speccommand)
 
-        self.Close()
+    #     self.Close()
         
     def onCommandtoBliss(self, _):
         
