@@ -676,7 +676,7 @@ class FilterBackGroundPanel(wx.Panel):
         sb3 = wx.StaticBox(self, label='Filter Peaks')
         self.RemoveBlackpeaks = wx.CheckBox(sb3, -1, "Remove BlackListed Peaks")
         self.BlackListtoltxt = wx.StaticText(sb3, -1, "Max. Distance")
-        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(sb3, -1, "15", size=(80, -1), min=1, max=10000)
+        self.BlackListRejection_pixeldistanceMax = wx.SpinCtrl(sb3, -1, "15", size=(80, -1), min=1, max=100000)
         self.BlackListedPeaks = wx.TextCtrl(sb3, -1, "", (220, -1))
         self.openBlackListFile = wx.Button(sb3, -1, "...")
 
@@ -910,10 +910,10 @@ class BrowseCropPanel(wx.Panel):
         self.toggleBtnCrop.Bind(wx.EVT_BUTTON, self.mainframe.onToggleCrop)
         self.boxsizetxt = wx.StaticText(self, -1, "boxsize:")
         self.boxxtxt = wx.StaticText(self, -1, "X")
-        self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000)
+        self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=300000)
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxxctrl)
         self.boxytxt = wx.StaticText(self, -1, "Y")
-        self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000)
+        self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=300000)
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxyctrl)
 
         plusbtn = wx.Button(self, -1, "index +1")
@@ -1086,10 +1086,10 @@ class MosaicAndMonitor(wx.Panel):
 
         self.boxsizetxt = wx.StaticText(self, -1, "boxsize:")
         self.boxxtxt = wx.StaticText(self, -1, "X")
-        self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
+        self.boxxctrl = wx.SpinCtrl(self, -1, "10", min=0, max=300000, size=(60, -1))
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxxctrl)
         self.boxytxt = wx.StaticText(self, -1, "Y")
-        self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=3000, size=(60, -1))
+        self.boxyctrl = wx.SpinCtrl(self, -1, "10", min=0, max=300000, size=(60, -1))
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxyctrl)
 
         self.btnclearwindows = wx.Button(self, wx.ID_ANY, "Clear Windows")
@@ -1108,7 +1108,7 @@ class MosaicAndMonitor(wx.Panel):
         self.lastindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=300000, size=(60, -1))
 
         self.stepimageindex = wx.StaticText(self, -1, "Step")
-        self.stepimageindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=100, size=(60, -1))
+        self.stepimageindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=100000, size=(60, -1))
 
         self.rectangleindexradiobtn = wx.RadioButton(self, -1, "-->")
 
@@ -1379,9 +1379,9 @@ class ROISelection(wx.Panel):
         txt1.SetFont(font3)
 
         self.boxxtxt = wx.StaticText(self, -1, "X")
-        self.boxxctrl = wx.SpinCtrl(self, -1, "30", min=0, max=3000, size=(60, -1))
+        self.boxxctrl = wx.SpinCtrl(self, -1, "30", min=0, max=300000, size=(60, -1))
         self.boxytxt = wx.StaticText(self, -1, "Y")
-        self.boxyctrl = wx.SpinCtrl(self, -1, "30", min=0, max=3000, size=(60, -1))
+        self.boxyctrl = wx.SpinCtrl(self, -1, "30", min=0, max=300000, size=(60, -1))
 
         txt2 = wx.StaticText(self, -1, "ROI selection mode")
         txt2.SetFont(font3)
@@ -2133,7 +2133,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
         _, defaultthreshold = mainframe.gethisto()
 
         mintxt = wx.StaticText(self, -1, "MinimumDistance")
-        self.PNR = wx.SpinCtrl(self, -1, "10", (80, -1), min=2, max=2000)
+        self.PNR = wx.SpinCtrl(self, -1, "10", (80, -1), min=2, max=200000)
 
         ittxt = wx.StaticText(self, -1, "IntensityThreshold")
 
@@ -2182,10 +2182,10 @@ class findLocalMaxima_Meth_2(wx.Panel):
         #        self.title2.SetFont(font3)
 
         pnrtxt = wx.StaticText(self, -1, "PixelNearRadius", (5, 5))
-        self.PNR = wx.SpinCtrl(self, -1, "10", (140, 5), (80, -1), min=5, max=500)
+        self.PNR = wx.SpinCtrl(self, -1, "10", (140, 5), (80, -1), min=5, max=500000)
 
         ittxt = wx.StaticText(self, -1, "IntensityThreshold", (5, 35))
-        self.IT = wx.SpinCtrl(self, -1, "500", (140, 35), (80, -1), min=0, max=65000)
+        self.IT = wx.SpinCtrl(self, -1, "500", (140, 35), (80, -1), min=0, max=650000)
 
         # tooltips
         pnrtp = "Minimum pixel distances between local maxima"
@@ -2228,7 +2228,7 @@ class findLocalMaxima_Meth_3(wx.Panel):
         posv = 30
 
         pnrtxt = wx.StaticText(self, -1, "PixelNearRadius", (5, 32 - posv))
-        self.PNR = wx.SpinCtrl(self, -1, "10", (125, 30 - posv), (80, -1), min=5, max=500)
+        self.PNR = wx.SpinCtrl(self, -1, "10", (125, 30 - posv), (80, -1), min=5, max=500000)
 
         showhisto_btn = wx.Button(self, -1, "ShowHisto", (350, 30 - posv))
         showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto_ConvolvedData)
@@ -2318,7 +2318,7 @@ class findLocalMaxima_Meth_4(wx.Panel):
         self.methodnumber = 5
 
         mintxt = wx.StaticText(self, -1, "MinimumDistance")
-        self.PNR = wx.SpinCtrl(self, -1, "3", (80, -1), min=2, max=2000)
+        self.PNR = wx.SpinCtrl(self, -1, "3", (80, -1), min=2, max=200000)
         ittxt = wx.StaticText(self, -1, "IntensityThreshold")
         self.IT = wx.SpinCtrl(self, -1, "2", (80, -1), min=1, max=3000000)
         bstxt = wx.StaticText(self, -1, "BoxSize")
@@ -2420,10 +2420,10 @@ class FitParametersPanel(wx.Panel):
         self.xtol = wx.TextCtrl(self, -1, "0.001")
 
         boxtxt = wx.StaticText(self, -1, "Boxsize")
-        self.boxsize = wx.SpinCtrl(self, -1, "15", min=1, max=100)
+        self.boxsize = wx.SpinCtrl(self, -1, "15", min=1, max=100000)
 
         peaksizetxt = wx.StaticText(self, -1, "Peak size")
-        self.peaksizectrl = wx.SpinCtrl(self, -1, "1", min=1, max=100)
+        self.peaksizectrl = wx.SpinCtrl(self, -1, "1", min=1, max=100000)
 
         # rejection
 
@@ -2566,7 +2566,10 @@ DICT_FIELDS_SIZE = {"intensity": 100,
                     "peak_inclin": 45,
                     "PixDev_x": 50,
                     "PixDev_y": 50,
-                    "PixMax": 100}
+                    "PixMax": 100,
+                    "XfitErr": 75,
+                    "YfitErr": 75,
+                    "distfitErr": 75}
 
 DICT_FIELDS_ALIGN = {"intensity": "left",
                     "pixX": "left",
@@ -2588,7 +2591,10 @@ DICT_FIELDS_ALIGN = {"intensity": "left",
                     "peak_inclin": "left",
                     "PixDev_x": "left",
                     "PixDev_y": "left",
-                    "PixMax": "left"}
+                    "PixMax": "left",
+                    "XfitErr": "left",
+                    "YfitErr": "left",
+                    "distfitErr": "left"}
 
 LIST_OF_FIELDS_DATAPEAK = ["pixX",
                             "pixY",
@@ -2701,6 +2707,12 @@ class PeakListOLV(wx.Panel):
             # numpy array of datapeak
             self.listofdata = self.grangranparent.peaklistPixels
             # list of spot objects
+            if self.listofdata.shape[1]==12:
+                self.listoffields.append('XfitErr')
+                self.listoffields.append('YfitErr')
+                self.listoffields.append('distfitErr')
+                coldistfierr = np.sqrt(self.listofdata[:,10]**2+self.listofdata[:,11]**2)
+                self.listofdata = np.c_[self.listofdata,coldistfierr]
             self.allspots = SpotModel.GetAllspots(self.listofdata, self.listoffields)
 
             flag = True
@@ -3966,7 +3978,9 @@ class MainPeakSearchFrame(wx.Frame):
         ) = DictLT.dict_CCD[self.initialParameter["CCDLabel"]]
 
         if extension != self.extension:
-            print("warning : file extension does not match CCD type set in Set CCD File Parameters")
+            txt = "warning : file extension does not match CCD type set in Set CCD File Parameters ??"
+            print(txt)
+            wx.MessageBox(f'{txt}', 'Info')
 
         if self.CCDlabel == "LaueImaging":
 
@@ -4742,7 +4756,7 @@ class MainPeakSearchFrame(wx.Frame):
         # correction only to fit peak position to the display
         if self.position_definition == 1:
             offset_convention = np.array([1, 1])
-            if self.peaklistPixels.shape == (10,):
+            if len(self.peaklistPixels.shape) == 1:
                 XYlist = (self.peaklistPixels[:2] - offset_convention,)
             else:
                 XYlist = self.peaklistPixels[:, :2] - offset_convention
@@ -4988,7 +5002,7 @@ class MainPeakSearchFrame(wx.Frame):
     # ---  ----Peak Search and Fit
     def SavePeakList_PSPfile(self, _):
         """
-        save peak list and save .psp file
+        save peak list .dat and save .psp file
         """
         print("Saving list of peaks in SavePeakList_PSPfile()")
         if self.peaklistPixels is None:
@@ -5015,12 +5029,13 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             nb_of_peaks = self.peaklistPixels.shape[0]
 
-        # writing ascii peak list
+        # writing ascii peak list  .dat file
+        initialfilename=os.path.join(self.dirname, self.imagefilename)
         RMCCD.writepeaklist(self.peaklistPixels,
                                 finalfilename,
-                                outputfolder=outputfolder,
-                                comments=comments_in_file,
-                                initialfilename=os.path.join(self.dirname, self.imagefilename))
+                                outputfolder,
+                                comments_in_file,
+                                initialfilename)
         # writing ascii peaksearch parameters
         pspfile_fullpath = os.path.join(outputfolder, "PeakSearch_%s.psp" % finalfilename)
 
@@ -5194,11 +5209,14 @@ class MainPeakSearchFrame(wx.Frame):
         params_res = params_res[0]
 
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin,
-            peak_inclination, _, _, peak_bkg, _) = datapeak
+            peak_inclination, _, _, peak_bkg, _) = datapeak[:10]
+        
 
         fitresults = [peak_bkg, peak_I, peak_X, peak_Y, peak_fwaxmaj, peak_fwaxmin, peak_inclination]
 
         print("fitresults", fitresults)
+        if len(datapeak)==12: # computerrorbars == True
+            print('Error Bars on X and Y:',datapeak[10:12])
 
         # parameter for function:
         params_loc = copy.copy(params_res)
@@ -5529,6 +5547,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.dict_param["maxPixelDistanceRejection"] = maxPixelDistanceRejection
 
         self.dict_param_LocalMaxima = {}
+        computerrorbars = True
         if self.method == 1:  # basic local maxima search (threshold on raw intensity)
             print('method threshold')
             print(self.stackimageindex, NB_MAX_FITS, self.dict_param["PixelNearRadius"],
@@ -5560,7 +5579,8 @@ class MainPeakSearchFrame(wx.Frame):
                             reject_negative_baseline=reject_negative_baseline,
                             Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                             maxPixelDistanceRejection=maxPixelDistanceRejection,
-                            formulaexpression=formulaexpression)
+                            formulaexpression=formulaexpression,
+                            computerrorbars=computerrorbars)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 0
@@ -5594,7 +5614,8 @@ class MainPeakSearchFrame(wx.Frame):
                                     reject_negative_baseline=reject_negative_baseline,
                                     Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                                     maxPixelDistanceRejection=maxPixelDistanceRejection,
-                                    formulaexpression=formulaexpression)
+                                    formulaexpression=formulaexpression,
+                                    computerrorbars=computerrorbars)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 1
@@ -5638,7 +5659,8 @@ class MainPeakSearchFrame(wx.Frame):
                                         reject_negative_baseline=reject_negative_baseline,
                                         Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                                         maxPixelDistanceRejection=maxPixelDistanceRejection,
-                                        formulaexpression=formulaexpression)
+                                        formulaexpression=formulaexpression,
+                                        computerrorbars=computerrorbars)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 2
