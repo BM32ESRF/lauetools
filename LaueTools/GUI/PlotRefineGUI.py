@@ -199,16 +199,18 @@ class Plot_RefineFrame(wx.Frame):
         self.datatype_unchanged = None
         self.centerx, self.centery = None, None
         self.tth, self.chi, self.pixelX, self.pixelY = None, None, None, None
+        # list of spot associations (links) between exp. and theo. spots
         self.linkExpMiller_link = None
         self.linkResidues_link = None
         self.linkIntensity_link = None
-        self.Energy_Exp_spot = None
-        self.fields = None
+        self.Energy_Exp_spot = None  # estimated energy of exp. spots from close theo. spot
+        self.fields = None  # list of str fields featuring spot properties
         self.linkResidues = None
 
         self.linkExpMiller_fit = None
         self.linkResidues_fit = None
         self.linkIntensity_fit = None
+        self.Energy_Exp_spot_fit = None
         self.fit_completed = False
         self.residues_non_weighted = None
         self.varyingstrain = None
@@ -1446,7 +1448,8 @@ class Plot_RefineFrame(wx.Frame):
                     # print "add in dict refine_indexed_spots\n"
                     refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index,
-                                                        Miller_Exp_spot[k]]
+                                                        Miller_Exp_spot[k],
+                                                        Energy_Exp_spot[k]]
                 # else:  # test whether all theo spots are harmonics
                 # ar_miller = np.take(Miller_ind, theo_index, axis =0)
                 # print "ar_miller",ar_miller
@@ -1460,7 +1463,8 @@ class Plot_RefineFrame(wx.Frame):
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
                         refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index[closest_theo_ind],
-                                                        Miller_Exp_spot[k]]
+                                                        Miller_Exp_spot[k],
+                                                        Energy_Exp_spot[k]]
             else:
                 print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
 
@@ -1474,11 +1478,14 @@ class Plot_RefineFrame(wx.Frame):
         linkExpMiller = []
         linkIntensity = []
         linkResidues = []
+        linkEnergy = []
+        #linkExpXY = []
         # Dataxy = []
 
         print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
         print('refine_indexed_spots', refine_indexed_spots)
 
+        # val = [exp_index, theo_inde, Miller_Exp_spot, Energy_Exp_spot
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
@@ -1492,16 +1499,20 @@ class Plot_RefineFrame(wx.Frame):
                 listofpairs.append([absolute_spot_index, closetheoindex])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
                 linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(dataintensity_exp[localspotindex])
+                
                 linkResidues.append([absolute_spot_index, closetheoindex, Resi[closetheoindex]])
+                
+                linkEnergy.append(float(val[3]))
                 # Dataxy.append([ LaueToolsframe.data_pixX[val[0]], LaueToolsframe.data_pixY[val[0]]])
+                #linkExpXY.append(dataintensity_exp[localspotindex])
 
 
         self.linkedspots_link = np.array(listofpairs)
         self.linkExpMiller_link = linkExpMiller
         self.linkIntensity_link = linkIntensity
         self.linkResidues_link = linkResidues
-        self.Energy_Exp_spot = Energy_Exp_spot
-        self.fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues(deg)"]
+        self.linkEnergy_link = linkEnergy
+        self.fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "E(keV)", "residues(deg)"]
 
         print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
 
@@ -1510,10 +1521,13 @@ class Plot_RefineFrame(wx.Frame):
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks(self, _):  # filter links between spots(after OnAutoLink() )
+    def BuildDataDictAfterLinks(self, _):  # filter links between spots(after OnAutoLinks() )
         """
         open editor to look at spots links and filter them
-        button Filter Links
+        
+        launched by button 'Filter Links'
+
+        uses linkedspots_link, linkedspots_link, linkExpMiller_link
         """
         if self.linkedspots_link is not None:
 
@@ -1521,12 +1535,13 @@ class Plot_RefineFrame(wx.Frame):
             indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int16)
             _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int16))[1:4]
             intens = self.linkIntensity_link
+            energy = self.linkEnergy_link
             if self.linkResidues_link is not None:
                 residues = np.array(self.linkResidues_link)[:, 2]
             else:
                 residues = -1 * np.ones(len(indExp))
 
-            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, residues
+            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
 
             mySpotData = {}
             for k, ff in enumerate(self.fields):
@@ -1548,7 +1563,8 @@ class Plot_RefineFrame(wx.Frame):
         self.linkedspots = ArrayReturn[:, :2]
         self.linkExpMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity = ArrayReturn[:, 5]
-        self.linkResidues = np.take(ArrayReturn, [0, 1, 6], axis=1)
+        self.linkResidues = np.take(ArrayReturn, [0, 1, 7], axis=1)
+        self.Energy_Exp_spot = ArrayReturn[:, 6]
 
         self.plotlinks = self.linkedspots
         self._replot()
@@ -1579,6 +1595,7 @@ class Plot_RefineFrame(wx.Frame):
             self.linkedspots_fit = self.linkedspots_link
             self.linkExpMiller_fit = self.linkExpMiller_link
             self.linkIntensity_fit = self.linkIntensity_link
+            self.linkEnergy_fit = self.linkEnergy_link
             self.linkResidues_fit = None
         elif self.use_forfit2.GetValue():  # radio button filterlinks model
             if self.linkedspots == []:
@@ -1589,6 +1606,8 @@ class Plot_RefineFrame(wx.Frame):
             self.linkedspots_fit = self.linkedspots
             self.linkExpMiller_fit = self.linkExpMiller
             self.linkIntensity_fit = self.linkIntensity
+            self.linkEnergy_fit = self.linkEnergy_link
+
             self.linkResidues_fit = None
         elif self.use_forfit3.GetValue():  # radio button show results model
             print("I will use for the refinement the(filtered) results of the previous fit")
@@ -2465,13 +2484,11 @@ class Plot_RefineFrame(wx.Frame):
 
     def build_FitResults_Dict(self, _):
         """
-        button OnShowResults of fit
-
-        build dict of results of pairs distance minimization launched by show Results button
+        build dict of results of pairs distance minimization launched by 'Show Results' button
         """
         if self.fitresults:
 
-            fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues(pix.)"]
+            fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "Energy(keV)", "residues(pix.)"]
             # filter results Data spots
 
             # self.Data_X, self.Data_Y, self.Data_I, self.File_NAME = self.data
@@ -2480,17 +2497,21 @@ class Plot_RefineFrame(wx.Frame):
             indTheo = np.array(self.linkedspots_fit[:, 1], dtype=np.int16)
             _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int16))[1:4]
             intens = self.linkIntensity_fit
+            energy = self.linkEnergy_fit
 
             if self.linkResidues_fit is not None:
                 residues = np.array(self.linkResidues_fit)[:, 2]
             else:
                 residues = -1 * np.ones(len(indExp))
 
-            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, residues
+            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
 
             mySpotData = {}
             for k, ff in enumerate(fields):
                 mySpotData[ff] = to_put_in_dict[k]
+
+            print('energy column :', mySpotData["Energy(keV)"])
+            print('of length',len(mySpotData["Energy(keV)"]))
             dia = LSEditor.SpotsEditor(None, -1, "Show and Filter fit results Spots Editor ",
                                         mySpotData,
                                         func_to_call=self.readdata_fromEditor_Res,
@@ -2501,17 +2522,25 @@ class Plot_RefineFrame(wx.Frame):
             wx.MessageBox("You must have run once a data refinement!", "INFO")
 
     def readdata_fromEditor_Res(self, data):
-        """ set self attribute from data:
+        """
+        function that return data after user selection in the GUI SpotsEditor  
+        
+        set self attribute from data:
         self.linkedspots_fit
         self.linkExpMiller_fit
         self.linkIntensity_fit
-        self.linkResidues_fit"""
+        self.linkResidues_fit
+        self.linkEnergy_fit"""
         ArrayReturn = np.array(data)
+
+        print('ArrayReturn in readdata_fromEditor_Res()',ArrayReturn)
+        print('ArrayReturn.shape', ArrayReturn.shape)
 
         self.linkedspots_fit = ArrayReturn[:, :2]
         self.linkExpMiller_fit = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity_fit = ArrayReturn[:, 5]
-        self.linkResidues_fit = np.take(ArrayReturn, [0, 1, 6], axis=1)
+        self.linkResidues_fit = np.take(ArrayReturn, [0, 1, 7], axis=1)
+        self.linkEnergy_fit = ArrayReturn[:, 6]
 
         self.plotlinks = self.linkedspots_fit
         self._replot()
