@@ -322,7 +322,6 @@ def gaussfit(data, err=None, params=None, autoderiv=1, return_all=0, circle=0,
     #     data = np.ma.array(data, mask=False)
     #
     #     data.mask[data >= 65535] = True
-    # print("in gaussfit")
     if (Acceptable_HighestValue is not False) or (Acceptable_LowestValue is not False):
         err = np.ones(data.shape)
     if Acceptable_HighestValue is not False:
@@ -378,8 +377,11 @@ def gaussfit(data, err=None, params=None, autoderiv=1, return_all=0, circle=0,
             perr_leastsq = np.array(error)
 
             # (height, amplitude, x, y, width_x, width_y, rota)
-            print("pfit_leastsq", pfit_leastsq)
-            print("perr_leastsq", perr_leastsq)
+            # print("pfit_leastsq", pfit_leastsq)
+            # print("perr_leastsq", perr_leastsq)
+
+            infodict["pfit_leastsq"]=pfit_leastsq
+            infodict["perr_leastsq"]=perr_leastsq
 
     if return_all == 0:
         return p
