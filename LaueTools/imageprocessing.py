@@ -233,7 +233,7 @@ def getExtrema(data2d, center, boxsize, framedim, ROIcoords=0, flipxycenter=True
     if verbose > 0: print("imin, imax, jmin, jmax", imin, imax, jmin, jmax)
     datacropped = data2d[imin:imax, jmin:jmax]
 
-    print('datacropped', datacropped)
+    #print('datacroppe in getExtrema()', datacropped)
 
     # mini, maxi, posmin, posmax
 
