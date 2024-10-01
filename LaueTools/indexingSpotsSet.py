@@ -318,7 +318,7 @@ class spotsset:
 
         optionnaly: write a 'REF_*******.cor' file and set self.refpositionfilepath accordingly
 
-        :param filename: fullpath to file (str)
+        :param filename: str, fullpath to file
         :param TrackingMode: 0   then refpositionfilepath is unchanged when indexing several images
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
         will be selected and aranged according to this reference list.
