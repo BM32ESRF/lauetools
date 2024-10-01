@@ -222,6 +222,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
 
     :return: file index
     """
+    imageindex = None
     if CCDLabel in ("sCMOS", "sCMOS_fliplr"):
         #default file extension for sCMOS camera
         ext = "tif"
@@ -272,8 +273,8 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     elif imagefilename.endswith("unstacked"):
         imageindex = int(imagefilename[-(10 + nbdigits) : -10])
 
-    # print('found index',imageindex)
-
+    if imageindex is None:
+        raise ValueError(f'Detector label {CCDLabel} does not probably correspond to the selected file {imagefilename}')
     return imageindex
 
 
