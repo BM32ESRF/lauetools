@@ -171,6 +171,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
         plotfreqbtn.Bind(wx.EVT_BUTTON, self.OnPlot)
         rlbtn.Bind(wx.EVT_BUTTON, self.OnReload)
         rmv1spotbtn.Bind(wx.EVT_BUTTON, self.OnRemove)
+        
         self.Bind(wx.EVT_BUTTON, self.OnAcceptQuit, id=wx.ID_OK)
 
         # vbox4.Add(wx.Button(pnl2, 10, 'Filter'),   0, wx.ALIGN_CENTER | wx.TOP, 15)
@@ -214,6 +215,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
                     break
 
             if proceed:
+                print('self.dict_spots_data',self.dict_spots_data)
                 self.nbspots = length[0]
                 self.listcontrol.add_rows(self.dict_spots_data, self.nbspots)
                 #                 self.tcnb.SetValue(str(self.nbspots))
@@ -275,14 +277,12 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
 
         # read conditionnal expressions
         cond = [str(tc.GetValue()) for tc in (self.tc1, self.tc2, self.tc3)]
-
-        AllConds = True * np.ones(self.nbspots)  # by default we start the filter from the whole initial data
+        # by default we start the filter from the whole initial data
+        AllConds = True * np.ones(self.nbspots)
 
         for k, condition in enumerate(cond):
             if condition != "":
-                # print "condition is ",condition
-
-                # array_data must be defined. The following line mustn't be commented!
+                # array_data MUST be defined. The following line mustn't be commented!
                 array_data = np.array(self.dict_spots_data[field[k]])
                 # print "before filtering", array_data
                 toeval = "array_data" + condition
@@ -290,7 +290,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
                 try:
                     _cond = eval(toeval)
                 except NameError:
-                    wx.MessageBox("Wrong condition:\nType simply in field: >5, <=58.5 ==6.",
+                    wx.MessageBox("Wrong condition:\nType simply in left GUI txt field: >5, <=58.5 or ==6.",
                         "INFO")
                     return
 
