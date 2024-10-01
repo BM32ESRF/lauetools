@@ -254,7 +254,8 @@ class ShowMapFrame(wx.Frame):
         self.memorizedxlimits = None
         self.memorizedylimits = None
 
-        print("self.data.shape in ImshowFrame", self.data.shape)
+        print('----- In ImshowFrame -------')
+        print("self.data.shape", self.data.shape)
         print("self.nb_columns, self.nb_lines", self.nb_columns, self.nb_lines)
         print("self.boxsize_row, self.boxsize_line", self.boxsize_row, self.boxsize_line)
 
@@ -332,7 +333,6 @@ class ShowMapFrame(wx.Frame):
         self.comboLUT = wx.ComboBox(self.panel,
                                     -1,
                                     str(self.LastLUT),
-                                    size=(-1, 40),
                                     choices=self.mapsLUT,
                                     style=wx.TE_PROCESS_ENTER)
 
@@ -345,18 +345,14 @@ class ShowMapFrame(wx.Frame):
         else:
             self.scaletype = "Linear"
         self.scaletxt = wx.StaticText(self.panel, -1, "Scale")
-        self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype, choices=["Linear", "Log"],
-                                                                                    size=(-1, 40))
+        self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype, choices=["Linear", "Log"])
 
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
         self.aspect = "auto"
         self.aspecttxt = wx.StaticText(self.panel, -1, "Aspect Ratio")
-        self.comboaspect = wx.ComboBox(self.panel,
-                                        -1,
-                                        self.aspect,
+        self.comboaspect = wx.ComboBox(self.panel, -1, self.aspect,
                                         choices=["equal", "auto"],
-                                        size=(-1, 40),
                                         style=wx.TE_PROCESS_ENTER)
 
         self.comboaspect.Bind(wx.EVT_COMBOBOX, self.OnChangeAspect)
@@ -455,9 +451,10 @@ class ShowMapFrame(wx.Frame):
         self.setArrayImageIndices()
 
         print('self.datatype', self.datatype)
-        print(self.data.shape)
-        print(self.Imageindices)
-        print(self.tabindices)
+        print('detailed data')
+        print('self.data.shape',self.data.shape)
+        print('self.Imageindices',self.Imageindices)
+        print('self.tabindices',self.tabindices)
         self._replot()
 
     def layout(self):
@@ -496,17 +493,17 @@ class ShowMapFrame(wx.Frame):
         if "FilteredfittedPeaksData" in self.dict_param:
             hboxmask = wx.BoxSizer(wx.HORIZONTAL)
             hboxmask.Add(self.maskbtn, 0)
-            hboxmask.Add(self.maskthresholdtxt, 0)
+            hboxmask.Add(self.maskthresholdtxt, 0, wx.ALL,5)
 
-            hboxmask.Add(self.maskthresholdctrl, 0)
+            hboxmask.Add(self.maskthresholdctrl, 0, wx.ALL,5)
 
         if self.datatype in ("Vector",):
             hboxarrow = wx.BoxSizer(wx.HORIZONTAL)
             hboxarrow.Add(self.slidertxt_arrowwidth, 0)
             hboxarrow.Add(self.slider_arrowwidth, 0)
 
-            hboxarrow.Add(self.slidertxt_arrowscale, 0)
-            hboxarrow.Add(self.slider_arrowscale, 0)
+            hboxarrow.Add(self.slidertxt_arrowscale, 0, wx.ALL,5)
+            hboxarrow.Add(self.slider_arrowscale, 0, wx.ALL,5)
 
             #             hboxarrow.Add(self.slidertxt_arrowscalecutoff, 0)
             #             hboxarrow.Add(self.slider_arrowscaleCutOff, 0)
