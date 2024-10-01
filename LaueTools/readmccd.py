@@ -153,6 +153,9 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
     :param use_data_corrected: tuple of 3 elements, Enter data instead of reading data from file:
                          fulldata, framedim, fliprot
                          where fulldata is a 2D ndarray
+
+    :param computerrorbars: bool, compute error bars of fit parameters. Values are in a list of all infodict in with keys "pfit_leastsq" and  "perr_leastsq"
+
     :return: list of results:   bkg,  amp  (gaussian height-bkg), X , Y, major axis standard deviation, minor axis standard deviation,
                                 major axis tilt angle / Ox
     .. todo:: setting list of initial guesses can be improve with
@@ -181,7 +184,7 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
 
     # setting initial guessed values for each center
     nb_Images = len(Data)
-    #     print "nb of images to fitdata ... in  readoneimage_multiROIfit()", nb_Images
+
     if baseline in ("auto", None):  # background height or baseline level
         list_min = []
         for _, dd in enumerate(Data):
@@ -342,10 +345,12 @@ def readoneimage_multiROIfit(filename, centers, boxsize, stackimageindex=-1, CCD
 
         k_image += 1
 
+    toreturn = [RES_params, RES_cov, RES_infodict, RES_errmsg, start_baseline]
+
     if addImax:
-        return RES_params, RES_cov, RES_infodict, RES_errmsg, start_baseline, Imax
-    else:
-        return RES_params, RES_cov, RES_infodict, RES_errmsg, start_baseline
+        toreturn.append(Imax)
+    
+    return tuple(toreturn)
 
 
 def fitPeakMultiROIs(Data, centers, FittingParametersDict, showfitresults=True, verbose=False):
@@ -612,14 +617,11 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
 def writepeaklist(tabpeaks, output_filename,
                                         outputfolder=None, comments=None, initialfilename=None):
     r"""
-    write peaks properties and comments in file with extension .dat added
+    write (and overwrite) peaks properties and comments in file with extension .dat added
     """
-    outputfilefullpath = IOLT.writefile_Peaklist(output_filename,
-                                                tabpeaks,
-                                                dirname=outputfolder,
-                                                overwrite=1,
-                                                initialfilename=initialfilename,
-                                                comments=comments)
+    outputfilefullpath = IOLT.writefile_Peaklist(output_filename, tabpeaks,
+                                                1, initialfilename,
+                                                comments,outputfolder)
 
     return outputfilefullpath
 
@@ -662,15 +664,16 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                         fulldata, framedim, fliprot
                         where fulldata  ndarray
 
+    :param computerrorbars: bool, compute error bars of fit parameters. Values are in a list of all infodict in with keys "pfit_leastsq" and  "perr_leastsq"
+
     :return: [0] array, (tabIsorted) array of spot properties, peaks are sorted by decreasing intensity:
                 [peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                Xdev, Ydev, peak_bkg, Ipixmax]
+                Xdev, Ydev, peak_bkg, Ipixmax] + [Xfiterr, Yfiterr] if computerrobars = True
             [1] array (par) (results parameters),
             [2] array (peaklist) input list of peaks
 
     .. note:: used in PeakSearchGUI
     """
-    #     print 'Ipixmax in fitoneimage_manypeaks', Ipixmax
     if len(peaklist) >= NumberMaxofFits:
         print("TOO MUCH peaks to fitdata.")
         print("(in fitoneimage_manypeaks) It may stuck the computer.")
@@ -727,14 +730,18 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     peak_fwaxmin = par[:, 5]
     peak_inclination = par[:, 6] % 360
 
+    rawnbpeaks = len(peak_bkg)
+
     # pixel deviations from guessed initial position before fitting
     Xdev = peak_X - peaklist[:, 0]
     Ydev = peak_Y - peaklist[:, 1]
 
-    #     print "peak_X",peak_X
-    #     print "peaklist[:, 0]",peaklist[:, 0]
-    #     print 'Xdev', Xdev
-    #     print "Ydev", Ydev
+    if computerrorbars:
+        Xfiterr = np.zeros(rawnbpeaks)
+        Yfiterr = np.zeros(rawnbpeaks)
+        for _pk, infodict in enumerate(info):
+            # bkg, amp, x, y std1, std2, angle
+            Xfiterr[_pk], Yfiterr[_pk] =  infodict['perr_leastsq'][2:4]
 
     # --- --- PEAKS REJECTION -------------------------------
     # print "peaklist[:20]",peaklist[:]
@@ -818,8 +825,14 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         pass
 
     # all peaks list building
-    tabpeak = np.array([peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                        Xdev, Ydev, peak_bkg, Ipixmax]).T
+    allvalues= [peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                        Xdev, Ydev, peak_bkg, Ipixmax]
+    
+    if computerrorbars:
+        allvalues.append(Xfiterr)
+        allvalues.append(Yfiterr)
+    #  10 columns or 12 columns with Xfiterr and Yfiterr
+    tabpeak = np.array(allvalues).T
 
     # print("Results of all fits in tabpeak", tabpeak)
 
@@ -854,19 +867,17 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         # minimum distance fit solutions
         pixeldistance = boxsize
 
-        # tabXY, index_todelete
         _, index_todelete = GT.purgeClosePoints2(tabIsorted[:, :2], pixeldistance)
-
-        #         print tabXY
-        #         print index_todelete
 
         tabIsorted = np.delete(tabIsorted, tuple(index_todelete), axis=0)
         if verbose:
             print(
-                "\n{} peaks found after removing duplicates minimum intermaxima distance = {})".format(
-                    len(tabIsorted), pixeldistance))
+                "\n{} peaks found after removing duplicates minimum intermaxima distance = {})".format(len(tabIsorted), pixeldistance))
 
-    return tabIsorted, par, peaklist
+    if computerrorbars:
+        return tabIsorted, par, peaklist
+    else:
+        return tabIsorted[:,:10], par, peaklist
 
 
 # =============================================================================
@@ -1158,10 +1169,16 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
 
     :param outputIpixmax: compute maximal pixel intensity for all peaks found
 
-    :return:  -  peak list sorted by decreasing (integrated intensity - fitted bkg)
-                -peak_X,peak_Y,peak_I,peak_fwaxmaj,peak_fwaxmin,peak_inclination,Xdev,Ydev,peak_bkg
+    :param computerrorbars: bool, compute fit parameter error bars 
 
-    for fit_peaks_gaussian == 0 (no fitdata) and local_maxima_search_method==2 (convolution)
+    :return: tuple of 3 elements given by fitoneimage_manypeaks()
+                first one is : peak list sorted by decreasing (integrated intensity - fitted bkg)
+                [peak_X,peak_Y,peak_I,peak_fwaxmaj,peak_fwaxmin,peak_inclination,Xdev,Ydev,peak_bkg]
+                + optionally 
+                IpixMax (if computeIpixmax is True)
+                and Xfiterr Yfiterr (if computerrobars is True)
+
+    .. note:: for fit_peaks_gaussian == 0 (no fitdata) and local_maxima_search_method==2 (convolution)
         if peakposition_definition ='max' then X,Y,I are from the hottest pixels
         if peakposition_definition ='center' then X,Y are blob center and I the hottest blob pixel
 
@@ -1598,8 +1615,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpea
         # .dat file extension is done in writefile_Peaklist()
 
         IOLT.writefile_Peaklist("{}".format(outputfilename),
-                                Isorted,
-                                overwrite=1,
+                                Isorted, 1,
                                 initialfilename=filename_in,
                                 comments=params_comments)
 
