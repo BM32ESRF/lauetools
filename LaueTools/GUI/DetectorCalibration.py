@@ -1153,6 +1153,7 @@ class MainCalibrationFrame(wx.Frame):
         self.data_x, self.data_y = None, None
         self.filenameCalib = None
         self.linkIntensity = None
+        self.linkEnergy = None
         self.UBmatrix = None
         self.Umat2 = None
         self.Bmat_tri = None
@@ -1666,21 +1667,23 @@ class MainCalibrationFrame(wx.Frame):
         return strmat[:-2] + "]"
 
     def OnShowAndFilter(self, _):
-        fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "residues"]
+        fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "Energy(keV)","residues"]
         # self.linkedspots = dia.listofpairs
         # self.linkExpMiller = dia.linkExpMiller
         # self.linkIntensity = dia.linkIntensity
+        # self.linkEnergy = dia.linkEnergy
 
         indExp = self.linkedspots[:, 0]
         indTheo = self.linkedspots[:, 1]
         _h, _k, _l = np.transpose(np.array(self.linkExpMiller, dtype=np.int16))[1:4]
         intens = self.linkIntensity
+        energy = self.linkEnergy
         if self.linkResidues is not None:
             residues = np.array(self.linkResidues)[:, 2]
         else:
             residues = -1 * np.ones(len(indExp))
 
-        to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, residues
+        to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
 
         mySpotData = {}
         for k, ff in enumerate(fields):
@@ -1693,13 +1696,18 @@ class MainCalibrationFrame(wx.Frame):
         dia.Show(True)
 
     def readdata_fromEditor_Filter(self, data):
+        """function to set filtered data from SpotsEditor
+        
+        set attributes self.link#####"""
 
         ArrayReturn = np.array(data)
 
         self.linkedspots = ArrayReturn[:, :2]
         self.linkExpMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity = ArrayReturn[:, 5]
-        self.linkResidues = ArrayReturn[:, 6]
+        self.LinkEnergy  = ArrayReturn[:, 6]
+        self.linkResidues = ArrayReturn[:, 7]
+
 
     def OnLinkSpotsAutomatic(self, _):
         """ create automatically links between currently close experimental
@@ -1711,18 +1719,18 @@ class MainCalibrationFrame(wx.Frame):
         veryclose_angletol = float(self.AngleMatchingTolerance.GetValue())  # in degrees
 
         # theoretical data
-        twicetheta, chi, Miller_ind, posx, posy, _ = self.simulate_theo(removeharmonics=1)
+        twicetheta, chi, Miller_ind, posx, posy, energy = self.simulate_theo(removeharmonics=1)
         
         # experimental data (set exp. spots attributes)
         self.ReadExperimentData()
 
-        print("theo. spots")
-        print("k, x, y, 2theta, theta, chi hkl")
+        # print("theo. spots")
+        # print("k, x, y, 2theta, theta, chi hkl")
         for k in range(len(twicetheta)):
             print(k, posx[k], posy[k], twicetheta[k], twicetheta[k] / 2, chi[k], Miller_ind[k])
 
-        print('theo', np.array([twicetheta, chi]).T)
-        print('exp' , np.array([self.twicetheta, self.chi]).T)
+        # print('theo', np.array([twicetheta, chi]).T)
+        # print('exp' , np.array([self.twicetheta, self.chi]).T)
 
         Resi, ProxTable = matchingrate.getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                                         self.twicetheta / 2.0,
@@ -1739,6 +1747,7 @@ class MainCalibrationFrame(wx.Frame):
 
         List_Exp_spot_close = []
         Miller_Exp_spot = []
+        Energy_Spot = []
 
         # todisplay = ''
         if longueur_very_close > 0:
@@ -1746,6 +1755,7 @@ class MainCalibrationFrame(wx.Frame):
 
                 List_Exp_spot_close.append(ProxTable[theospot_ind])
                 Miller_Exp_spot.append(Miller_ind[theospot_ind])
+                Energy_Spot.append(energy[theospot_ind])
 
                 # todisplay += "theo # %d   exp. # %d  Miller : %s \n"%(spot_ind, ProxTable[spot_ind],str(TwicethetaChi[0][spot_ind].Millers))
                 # print "theo # %d   exp. # %d  Miller : %s"%(spot_ind, ProxTable[spot_ind],str(TwicethetaChi[0][spot_ind].Millers))
@@ -1777,6 +1787,7 @@ class MainCalibrationFrame(wx.Frame):
             # marking exp spots(belonging ambiguously to several simulated grains)
             for ind in ambiguous_exp_ind:
                 Miller_Exp_spot[ind] = None
+                Energy_Spot[ind] = 0.0
 
         # -----------------------------------------------------------------------------------------------------
         ProxTablecopy = copy.copy(ProxTable)
@@ -1817,7 +1828,8 @@ class MainCalibrationFrame(wx.Frame):
                     # fill with expindex,[h,k,l]
                     calib_indexed_spots[exp_index] = [exp_index,
                                                     theo_index,
-                                                    Miller_Exp_spot[k]]
+                                                    Miller_Exp_spot[k],
+                                                    Energy_Spot[k]]
                 else:  # recent PATCH:
                     print("Resi[theo_index]", Resi[theo_index])
                     closest_theo_ind = np.argmin(Resi[theo_index])
@@ -1825,7 +1837,8 @@ class MainCalibrationFrame(wx.Frame):
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
                         calib_indexed_spots[exp_index] = [exp_index,
                                                         theo_index[closest_theo_ind],
-                                                        Miller_Exp_spot[k]]
+                                                        Miller_Exp_spot[k],
+                                                        Energy_Spot[k]]
             else:
                 print("Experimental spot #%d may belong to several theo. spots!"
                     % exp_index)
@@ -1840,6 +1853,7 @@ class MainCalibrationFrame(wx.Frame):
         linkExpMiller = []
         linkIntensity = []
         linkResidues = []
+        linkEnergy = []
         # for val in list(calib_indexed_spots.values()):
         #     if val[2] is not None:
         #         listofpairs.append([val[0], val[1]])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
@@ -1858,12 +1872,14 @@ class MainCalibrationFrame(wx.Frame):
                 linkExpMiller.append([float(val[0])] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(self.Data_I[val[0]])
                 linkResidues.append([val[0], closetheoindex, Resi[closetheoindex]])
+                linkEnergy.append(val[3])
 
 
         self.linkedspots = np.array(listofpairs)
         self.linkExpMiller = linkExpMiller
         self.linkIntensity = linkIntensity
         self.linkResidues = linkResidues
+        self.linkEnergy = linkEnergy
 
         return calib_indexed_spots
 
@@ -1882,6 +1898,7 @@ class MainCalibrationFrame(wx.Frame):
         self.linkedspots = dia.listofpairs
         self.linkExpMiller = dia.linkExpMiller
         self.linkIntensity = dia.linkIntensity
+        self.linkEnergy = dia.linkIntensity
 
     def OnUndoGoto(self, evt):
         self.cb_gotoresults.SetValue(False)
@@ -2201,6 +2218,8 @@ class MainCalibrationFrame(wx.Frame):
             self.linkExpMillerAfterFit = copy.copy(self.linkExpMiller)
             self.linkIntensityAfterFit = copy.copy(self.linkIntensity)
             self.residues_fitAfterFit = copy.copy(self.residues_fit)
+            # for energy no need ... apparently
+            #self.linkEnergyAfterFit = copy.copy(self.linkEnergy)
 
         # update .cor file  self.initialParameter["filename.cor"]
         print("self.defaultParam after refinement", self.CCDParam)
@@ -2235,7 +2254,7 @@ class MainCalibrationFrame(wx.Frame):
         """
         write a .fit file from refined orientation and detector calibration CCD geometry
         """
-        print("self.linkedspots in OnWriteResults()", self.linkedspots)
+        # print("self.linkedspots in OnWriteResults()", self.linkedspots)
 
         if self.SpotsData is None or self.linkedspotsAfterFit is None:
             wx.MessageBox("You must have run once a calibration refinement!", "INFO")
@@ -2265,6 +2284,7 @@ class MainCalibrationFrame(wx.Frame):
         _h, _k, _l = np.transpose(np.array(self.linkExpMillerAfterFit, dtype=np.int16))[1:4]
         intens = self.linkIntensityAfterFit
         residues_calibFit = self.residues_fitAfterFit
+        # for energy: it will recalculated below ...
 
         # elem = self.crystalparampanel.comboElem.GetValue()
 
@@ -2281,11 +2301,11 @@ class MainCalibrationFrame(wx.Frame):
         # H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthe, chi, Energy = spotsProps
         Xtheo, Ytheo, twthe, chi, Energy = spotsProps[-5:]
 
-        print('self.initialParameter["filename.cor"] in OnWriteResults',
-                self.initialParameter["filename.cor"])
+        # print('self.initialParameter["filename.cor"] in OnWriteResults',
+        #         self.initialParameter["filename.cor"])
 
         initialdatfile = self.filename #self.initialParameter["filename.cor"]
-        print('initialdatfile  :', initialdatfile)
+        # print('initialdatfile  :', initialdatfile)
 
         data_peak = IOLT.read_Peaklist(initialdatfile)
 
@@ -3647,7 +3667,7 @@ class MainCalibrationFrame(wx.Frame):
                     print('X,Y',event.xdata, event.ydata)
                     print('2theta, chi', tw, chi)
 
-            # rotation  around self.centerx, self.centery triggered by button
+            # rotation  around self.centerx, self.centery triggered by button and NOT MOUSE
             if self.RotationActivated:
                 # axis is already defined
                 if self.SelectedRotationAxis is not None:
@@ -3665,22 +3685,28 @@ class MainCalibrationFrame(wx.Frame):
 
             elif self.btn_label_expspot.GetValue():
                 self.Annotate_theo(event)
-            #                 self.Annotate(event)
 
-            elif self.toolbar.mode == "":  # dragging laue pattern
+            elif self.toolbar.mode == "":  # dragging and 'rotating' laue pattern
                 self.press = event.xdata, event.ydata
 
     def onRelease(self, event):
+        """handle the release of button 1 for rotation axis selection"""
+
+        # need to have previously clicked on a point
+        #print('Release  button', event.button)
         if self.press is None:
+            #print('self.press is None when Release')
             return
 
         if event.button == 1:
+            #print('event.button == 1 in onrelease()')
             self.centerx, self.centery = self.press
 
             # define rotation axis from self.centerx, self.centery that must be 2theta and chi angles
             self.SelectedRotationAxis = self.selectrotationaxis(self.centerx, self.centery)
             self._replot(event)
 
+        #print('self.press = None in onrelease\n\n')
         self.press = None
 
 
@@ -3775,7 +3801,7 @@ class MainCalibrationFrame(wx.Frame):
                     txtharmonics = ''
                 except ValueError:
                     txtharmonics = f'Peak with {len(annotes_theo)} harmonics !'
-                    print(txtharmonics)
+                    # print(txtharmonics)
 
                 _distancetheo, x, y, annote_theo = annotes_theo[0]
 
@@ -3825,7 +3851,7 @@ class MainCalibrationFrame(wx.Frame):
                 self.tooltip.Enable(True)
 
                 self._replot(1)
-                return
+                #return
 
         if not collisionFound_exp and not collisionFound_theo:
             self.tooltip.SetTip("")
@@ -3855,16 +3881,22 @@ class MainCalibrationFrame(wx.Frame):
                     + "   Intensity=%.2f" % annote[1]), 0)
 
     def onMotion(self, event):
-        if not event.inaxes:
-            return
+
         if self.press is None:
             self.onMotion_ToolTip(event)
+            #print('self.press is None in OnMotion')
+            return
             
         
+        if not event.inaxes:
+            #print('event.inaxes is False')
+            return
+               
         #print('self.press',self.press)
-        if not event.button == 1 or self.toolbar.mode in ('pan/zoom', 'zoom rect'):
+        if self.toolbar.mode in ('pan/zoom', 'zoom rect'):
             #print('self.toolbar.mode', self.toolbar.mode)
             return
+        
         xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
@@ -3873,6 +3905,7 @@ class MainCalibrationFrame(wx.Frame):
             return
 
         # calculate new UBmat
+        #print('Going to compute UB mat from GUI and mouse position')
         if self.datatype == "2thetachi":
             twth1, chi1 = self.press
             twth2, chi2 = event.xdata, event.ydata
@@ -4009,7 +4042,8 @@ class MainCalibrationFrame(wx.Frame):
                                                     np.array([chi, chi])], 0)[:2]
             twtheta = RES[0][0]
             chi = RES[1][0]
-        #         elif self.datatype == 'pixels':
+        elif self.datatype == 'pixels':
+            wx.MessageBox('Not implement yet','Info')
         #             twthetas, chis = F2TC.calc_uflab(np.array([twtheta, twtheta]),
         #                                          np.array([chi, chi]),
         #                                         self.CCDParam[:5],
