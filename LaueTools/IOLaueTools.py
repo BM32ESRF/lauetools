@@ -564,7 +564,7 @@ def readStringOfIterable(striter):
     return listvals
 
 
-def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
+def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                                                         initialfilename=None,
                                                         comments=None,
                                                         dirname=None,
@@ -572,7 +572,14 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     """
     Write .dat file
 
-    :param dirname: output file dirname
+    :param initialfilename: str, image filename
+    :param Data_array: numpy array. Shaoe = (nbspots, nb of properties)
+    :param dirname: output file dirname (and may be the folder of the image filename)
+    :param position_definition:    0 no offset ,1 XMAS offset , 2 fit2D offset
+    (see peaksearch)
+
+    :param overwrite: bool, True to overwrite the existing file
+                            False to write a file with '_new' added in the name
 
 
     containing data
@@ -587,24 +594,27 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
 
     TODO: to simplify to deal with single peak recording
 
-    position_definition    0 no offset ,1 XMAS offset , 2 fit2D offset
-    (see peaksearch)
+    TODO: simplify to implement larger number of spot properties
 
-    overwrite            : 1 to overwrite the existing file
-                            0 to write a file with '_new' added in the name
+
     """
     if Data_array is None:
         if verbose:
             print("No data peak to write")
         return
+    
     # just one row!
     elif len(Data_array.shape) == 1:
         print("single peak to record!")
         nbpeaks, nbcolumns = 1, Data_array.shape[0]
     else:
         nbpeaks, nbcolumns = Data_array.shape
-        if Data_array.shape == (1, 10):
+        if Data_array.shape[0] == 1:
             Data_array = Data_array[0]
+
+    # print('Data_array.shape', Data_array.shape)
+    # print('Found in writefile_Peaklist() nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
+    # print('Data_array[0]',Data_array[0])
 
     if dirname is None:
         dirname = os.curdir
@@ -617,14 +627,17 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
     if nbpeaks == 1:
         Data_array = np.array([Data_array, Data_array])
 
-    if nbcolumns == 10:
+    if nbcolumns == 10: # standard 
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
         Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
 
-    elif nbcolumns == 11:
+    elif nbcolumns == 11: # quite obsolete and rare case ?
         (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
-
+    elif nbcolumns == 12:  # standard + 2 columns for error bars
+        (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+        Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr,) = Data_array.T
+        
     elif nbcolumns == 3: # basic X, Y , I
         # need to set fake data
         (peak_X, peak_Y, peak_I) = Data_array.T
@@ -633,48 +646,97 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=1,
         Ipixmax = 500*np.ones(nbpeaks)
 
     with open(os.path.join(dirname, outputfilename), "w") as outputfile:
+        headerfile = "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
+        headerfile += "peak_inclination Xdev Ydev peak_bkg Ipixmax"
+        if nbcolumns == 12: #computerrorbars
+             headerfile += " Xfiterr Yfiterr"
+        headerfile += '\n'
 
-        outputfile.write("peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
-                                                "peak_inclination Xdev Ydev peak_bkg Ipixmax\n")
+        outputfile.write(headerfile)
 
-        if nbpeaks == 1:
-            if verbose:
-                print("nbcolumns", nbcolumns)
+        if nbcolumns < 12:
+            if nbpeaks == 1:
+                if verbose:
+                    print("nbcolumns", nbcolumns)
 
-            outputfile.write(
-                "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-                % (np.round(peak_X[0], decimals=2),
-                    np.round(peak_Y[0], decimals=2),
-                    np.round(peak_I[0] + peak_bkg[0], decimals=2),
-                    np.round(peak_I[0], decimals=2),
-                    np.round(peak_fwaxmaj[0], decimals=2),
-                    np.round(peak_fwaxmin[0], decimals=2),
-                    np.round(peak_inclination[0], decimals=2),
-                    np.round(Xdev[0], decimals=2),
-                    np.round(Ydev[0], decimals=2),
-                    np.round(peak_bkg[0], decimals=2),
-                    int(Ipixmax[0])))
+                outputfile.write(
+                    "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
+                    % (np.round(peak_X[0], decimals=2),
+                        np.round(peak_Y[0], decimals=2),
+                        np.round(peak_I[0] + peak_bkg[0], decimals=2),
+                        np.round(peak_I[0], decimals=2),
+                        np.round(peak_fwaxmaj[0], decimals=2),
+                        np.round(peak_fwaxmin[0], decimals=2),
+                        np.round(peak_inclination[0], decimals=2),
+                        np.round(Xdev[0], decimals=2),
+                        np.round(Ydev[0], decimals=2),
+                        np.round(peak_bkg[0], decimals=2),
+                        int(Ipixmax[0])))
 
-            nbpeaks = 1
+                nbpeaks = 1
 
-        else:
+            else:
 
-            outputfile.write(
-                "\n".join(
-                    ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
-                        % tuple(list(zip(peak_X.round(decimals=2),
-                                    peak_Y.round(decimals=2),
-                                    (peak_I + peak_bkg).round(decimals=2),
-                                    peak_I.round(decimals=2),
-                                    peak_fwaxmaj.round(decimals=2),
-                                    peak_fwaxmin.round(decimals=2),
-                                    peak_inclination.round(decimals=2),
-                                    Xdev.round(decimals=2),
-                                    Ydev.round(decimals=2),
-                                    peak_bkg.round(decimals=2),
-                                    Ipixmax))[i]
-                        ) for i in list(range(nbpeaks))]))
-            nbpeaks = len(peak_X)
+                outputfile.write(
+                    "\n".join(
+                        ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d"
+                            % tuple(list(zip(peak_X.round(decimals=2),
+                                        peak_Y.round(decimals=2),
+                                        (peak_I + peak_bkg).round(decimals=2),
+                                        peak_I.round(decimals=2),
+                                        peak_fwaxmaj.round(decimals=2),
+                                        peak_fwaxmin.round(decimals=2),
+                                        peak_inclination.round(decimals=2),
+                                        Xdev.round(decimals=2),
+                                        Ydev.round(decimals=2),
+                                        peak_bkg.round(decimals=2),
+                                        Ipixmax))[i]
+                            ) for i in list(range(nbpeaks))]))
+                nbpeaks = len(peak_X)
+
+        elif nbcolumns == 12:
+            if nbpeaks == 1:
+                if verbose:
+                    print("nbcolumns", nbcolumns)
+
+                outputfile.write(
+                    "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d   %.04f   %.04f"
+                    % (np.round(peak_X[0], decimals=2),
+                        np.round(peak_Y[0], decimals=2),
+                        np.round(peak_I[0] + peak_bkg[0], decimals=2),
+                        np.round(peak_I[0], decimals=2),
+                        np.round(peak_fwaxmaj[0], decimals=2),
+                        np.round(peak_fwaxmin[0], decimals=2),
+                        np.round(peak_inclination[0], decimals=3),
+                        np.round(Xdev[0], decimals=2),
+                        np.round(Ydev[0], decimals=2),
+                        np.round(peak_bkg[0], decimals=2),
+                        int(Ipixmax[0]),
+                        np.round(Xfiterr[0],decimals=3),
+                        np.round(Yfiterr[0],decimals=3)))
+
+                nbpeaks = 1
+
+            else:
+
+                outputfile.write(
+                    "\n".join(
+                        ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d   %.04f   %.04f"
+                            % tuple(list(zip(peak_X.round(decimals=2),
+                                        peak_Y.round(decimals=2),
+                                        (peak_I + peak_bkg).round(decimals=2),
+                                        peak_I.round(decimals=2),
+                                        peak_fwaxmaj.round(decimals=2),
+                                        peak_fwaxmin.round(decimals=2),
+                                        peak_inclination.round(decimals=3),
+                                        Xdev.round(decimals=2),
+                                        Ydev.round(decimals=2),
+                                        peak_bkg.round(decimals=2),
+                                        Ipixmax,
+                                        Xfiterr.round(decimals=3),
+                                        Yfiterr.round(decimals=3)))[i]
+                            ) for i in list(range(nbpeaks))]))
+                nbpeaks = len(peak_X)
 
         outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
         if initialfilename:
@@ -756,10 +818,10 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False,
                   returnnbpeaks=False, maxnumberlines=10000):
     """
     read peak list .dat file and return the entire array of spots data
-    :param filename_in: full path of .dat file if dirname is None, otherwise only filename without folder
-    :param maxnumberlines: max number of spots (to avoid infinite loop)
-    :param output_columnsname: boolean to add or not list of column names in the output
-    :param returnnbpeaks: boolean to add or not nb of spots in the output
+    :param filename_in: str, full path of .dat file if dirname is None, otherwise only filename without folder
+    :param maxnumberlines: int, max number of spots (to avoid infinite loop)
+    :param output_columnsname: bool, add or not list of column names in the output
+    :param returnnbpeaks: bool, add or not nb of spots in the output
 
     (peak_X,peak_Y,peak_Itot, peak_Isub,peak_fwaxmaj,peak_fwaxmin,
     peak_inclination,Xdev,Ydev,peak_bkg, Pixmax)
@@ -777,8 +839,8 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False,
             if not _line:
                 nbdatarows = lineindex-1
                 break
-            print('_line',_line)
-            print('line index', lineindex)
+            # print('_line',_line)
+            # print('line index', lineindex)
 
             if lineindex > maxnumberlines:  break
 
