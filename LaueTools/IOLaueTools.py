@@ -2441,17 +2441,6 @@ def getpeaks_fromfit2d(filename):
     print("X,Y, int list in %s" % (outputfilename))
     return len(peaklist)
 
-
-def start_func():
-    print("main of IOLaueTools.py")
-    # print("numpy version", np.__version__)
-
-    print("print current", time.asctime())
-
-    for k in list(range(20)):
-        print("k=%d, k**2=%d" % (k, k ** 2))
-
-
 # ----------------------------------
 # Lauetools .fit file parser
 # rev. : 2016-08-03
@@ -2720,9 +2709,3 @@ if __name__ == "__main__":
     filepath = "SiHgCdTe.ubs"
     filepath = "/home/micha/LaueToolsPy3/LaueTools/Examples/CuSi/testUBS.ubs"
     res = readCheckOrientationsFile(filepath)
-
-
-#     start_func()
-#
-#     pp = readwriteParametersFile()
-#     pp.loadParamsFile('myparams.txt')
