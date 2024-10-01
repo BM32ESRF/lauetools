@@ -889,7 +889,6 @@ class ImshowFrame(wx.Frame):
         self.comboLUT = wx.ComboBox(self.panel,
                                     -1,
                                     str(self.LastLUT),
-                                    size=(-1, 40),
                                     choices=self.mapsLUT,
                                     style=wx.TE_PROCESS_ENTER)
 
@@ -902,18 +901,15 @@ class ImshowFrame(wx.Frame):
         else:
             self.scaletype = "Linear"
         self.scaletxt = wx.StaticText(self.panel, -1, "Scale")
-        self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype, choices=["Linear", "Log"],
-                                                                                    size=(-1, 40))
+        self.comboscale = wx.ComboBox(self.panel, -1, self.scaletype, choices=["Linear", "Log"])
 
         self.comboscale.Bind(wx.EVT_COMBOBOX, self.OnChangeScale)
 
         self.aspect = "auto"
         self.aspecttxt = wx.StaticText(self.panel, -1, "Aspect Ratio")
-        self.comboaspect = wx.ComboBox(self.panel,
-                                        -1,
+        self.comboaspect = wx.ComboBox(self.panel, -1,
                                         self.aspect,
                                         choices=["equal", "auto"],
-                                        size=(-1, 40),
                                         style=wx.TE_PROCESS_ENTER)
 
         self.comboaspect.Bind(wx.EVT_COMBOBOX, self.OnChangeAspect)
@@ -1001,11 +997,11 @@ class ImshowFrame(wx.Frame):
         self.layout()
         self.setArrayImageIndices()
 
-
+        print('detailed data')
         print('self.datatype', self.datatype)
-        print(self.data.shape)
-        print(self.Imageindices)
-        print(self.tabindices)
+        print('self.data.shape', self.data.shape)
+        print('self.Imageindices', self.Imageindices)
+        print('self.tabindices', self.tabindices)
         self._replot()
 
     def layout(self):
@@ -1039,10 +1035,9 @@ class ImshowFrame(wx.Frame):
 
         if "FilteredfittedPeaksData" in self.dict_param:
             hboxmask = wx.BoxSizer(wx.HORIZONTAL)
-            hboxmask.Add(self.maskbtn, 0)
-            hboxmask.Add(self.maskthresholdtxt, 0)
-
-            hboxmask.Add(self.maskthresholdctrl, 0)
+            hboxmask.Add(self.maskbtn, 0, wx.ALL,5)
+            hboxmask.Add(self.maskthresholdtxt, 0, wx.ALL)
+            hboxmask.Add(self.maskthresholdctrl, 0, wx.ALL,5)
 
         if self.datatype in ("Vector",):
             hboxarrow = wx.BoxSizer(wx.HORIZONTAL)
@@ -1065,12 +1060,12 @@ class ImshowFrame(wx.Frame):
         #         self.vbox.Add(self.toolbar, 0, wx.EXPAND)
         #         self.vbox.Add(self.btnflipud, 0, wx.EXPAND)
         self.vbox.Add(self.canvas, 1, wx.ALL | wx.TOP | wx.EXPAND)
-        self.vbox.Add(h0box, 0, wx.EXPAND)
-        self.vbox.Add(hbox, 0, wx.EXPAND)
+        self.vbox.Add(h0box, 0, wx.EXPAND, 5)
+        self.vbox.Add(hbox, 0, wx.EXPAND, 5)
         if self.datatype in ("Vector",):
             self.vbox.Add(hboxarrow, 0, wx.EXPAND)
         if "FilteredfittedPeaksData" in self.dict_param:
-            self.vbox.Add(hboxmask, 0, wx.EXPAND)
+            self.vbox.Add(hboxmask, 0, wx.EXPAND, 5)
         self.panel.SetSizer(self.vbox)
 
         self.vbox.Fit(self)
@@ -1135,7 +1130,7 @@ class ImshowFrame(wx.Frame):
         description = """mosaic aims mainly at looking at 2D data images and navigating among a set of them (sample map); Mapcanvas is a part of LaueTools toolkit for white beam x-ray microdiffraction Laue Pattern analysis. It allows Simulation & Indexation procedures written in python by Jean-Sebastien MICHA \n  micha@esrf.fr\n\n French CRG-IF beamline \n at BM32 (European Synchrotron Radiation Facility).
 
         Support and help in developing this package:
-        https://gitlab.esrf.fr/micha/lauetools/
+        https://github/bm32esrf/lauetools/
         """
 
         licence = """mosaic is free software; you can redistribute it and/or modify it 
@@ -1155,7 +1150,7 @@ class ImshowFrame(wx.Frame):
         info.SetName("LaueTools")
         info.SetVersion("6.0")
         info.SetDescription(description)
-        info.SetCopyright("(C) 2021 Jean-Sebastien Micha")
+        info.SetCopyright("(C) 2024 Jean-Sebastien Micha")
         info.SetWebSite("http://www.esrf.eu/UsersAndScience/Experiments/CRG/BM32/")
         info.SetLicence(licence)
         info.AddDeveloper("Jean-Sebastien Micha")
@@ -2329,7 +2324,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
     halfboxsizes = boxsize_col, boxsize_line
 
-    print("selected2Darray_imageindex in buildMosaic3", selected2Darray_imageindex)
+    #print("selected2Darray_imageindex in buildMosaic3", selected2Darray_imageindex)
 
     #    print "boxsize_col, boxsize_line", halfboxsizes
     selected1Darray_absoluteimageindex = np.ravel(selected2Darray_imageindex)
@@ -2615,7 +2610,7 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
         elif counter in ("Position XY", "Position MAX", "Position Centroid", "Displacement",
                                                                         "Amplitude", "Shape"):
-            print("\n\n\n ***************************  Position XY****************\n\n\n")
+            print(f"***************************  {counter} ****************")
             n0, n1, n2, n3 = mosaic.shape
 
             print("dat.shape", mosaic.shape)
