@@ -12,8 +12,7 @@ if sys.version_info.major == 3:
 	'buildsummary = LaueTools.FileSeries.Build_Summary:start',
 	'plotmap = LaueTools.FileSeries.Plot_Maps2:start',
 	'mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start',
-	'daxmgui = LaueTools.daxmgui:start',
-    	'show2Dmap = LaueTools.GUI.Show2Dmap:start']}
+	'daxmgui = LaueTools.daxmgui:start']}
 else:
     python3entry_points= {}
 
@@ -38,7 +37,7 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.18.0','astropy>=4.0'],  # add fabio libtiff?
+			'h5py>=3.1','scikit-image>=0.18.0','astropy>=4.0'],  # add fabio libtif ObjectListView2?
 
     include_package_data=True,
 
