@@ -825,13 +825,13 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
-    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','MaxiPIXCdTe'):#,'EIGER_4M'):
+    if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','MaxiPIXCdTe', 'EIGER_4MCdTestack'):#,'EIGER_4M'):
         if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_4MCdTe","EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
                         "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M","sCMOS_9M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
                         'ImageStar_dia_2021_2x2','psl_IN_tif', 'Alexiane'):#, 'Alban'):
 
-            if verbose > 1:
+            if 1:#verbose > 1:
                 print('----> Using fabio ... to open %s\n'%filename)
             # warning import Image  # for well read of header only
 
@@ -846,17 +846,20 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 framedim = dataimage.shape
 
                 # pythonic way to change immutable tuple...
-                initframedim = list(DictLT.dict_CCD[CCDLabel][0])
-                initframedim[0] = framedim[0]
-                initframedim[1] = framedim[1]
-                initframedim = tuple(initframedim)
+                # initframedim = list(DictLT.dict_CCD[CCDLabel][0])
+                # initframedim[0] = framedim[0]
+                # initframedim[1] = framedim[1]
+                # initframedim = tuple(initframedim)
                 if CCDLabel in ("EIGER_4M",):
                     dataimage = np.ma.masked_where(dataimage<0, dataimage)
                     print('min fo dataimage: ',np.amin(dataimage))
+
+                # elif CCDLabel in ('EIGER_4MCdTe',):
+                #     print('raw framedim EIGER_4MCdTe', framedim)
         else:
             USE_RAW_METHOD = True
-
-    elif CCDLabel in ("EIGER_4Mstack", ):
+    # special treatment: because fabio open only the fisrt image of stacked images hdf5 file!....
+    elif CCDLabel in ("EIGER_4Mstack"):  #made by PSL software
 
         import tables as Tab
 
@@ -878,26 +881,54 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
+    elif CCDLabel in ("EIGER_4MCdTestack" ):  #made by ESRF BLISS software
+        if dirname is not None:
+            pathfile=os.path.join(dirname, filename)
+        else:
+            pathfile=filename
+
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        with h5py.File(pathfile, 'r') as f:
+            try:
+                if stackimageindex < 0:
+                    stackimageindex = 0
+                dataimage = f['entry_0000']['measurement']['data'][()][stackimageindex]
+            except IndexError:
+                stackedimagesshape = f['entry_0000']['measurement']['data'][()].shape
+                nbmaximages = stackedimagesshape[0]
+                print('\n---------------\nWARNING !! For this file : %s'%filename)
+                print(f'Requested stackindex {stackimageindex} exceeds the number of stacked images: {nbmaximages}')
+                print("---------------\n")
+                dataimage=np.zeros((stackedimagesshape[1], stackedimagesshape[2]))
+
+            framedim = dataimage.shape
+            print('framedim EIGER_4MCdTestack',framedim) 
+            fliprot = 'no'
+
     elif filename.endswith('h5'):  #  maxipix  hdf5 file
-        print('MAXIPIXCDTE or EIGER 4M CdTe***********!\n\n')
+        print('MAXIPIXCDTE ***********!\n\n')  # no more eiger4MCdTe
 
         import LaueTools.logfile_reader as iohdf5      
 
         if CCDLabel in ('MaxiPIXCdTe',):
-            """there are two types of h5 file: case 1, raw data only
-                case 2,  master h5 file with meta data (namely folder) pointing (link) to h5 file of case 1"""
+            """there are two types of h5 file:
+                case 1, raw data only 
+                case 2,  master h5 file with meta data (namely folder) pointing (link) to h5 file of case 1
+                case 3, stacked images raw data"""
             
             if dirname is not None:
                 pathfile=os.path.join(dirname, filename)
             else:
                 pathfile=filename
 
-
-            if os.path.split(pathfile)[-1].startswith(('mpxcdte_','eiger1_')):
+            # case 1 or 3
+            if os.path.split(pathfile)[-1].startswith(('mpxcdte_','eiger1_')):  
                 h5filetype = 'h5puredata'
+            # case 2
             else:
-                h5filetype = 'h5master'
+                h5filetype = 'h5master'  
             
+            # case 2
             if h5filetype == 'h5master':
                 """framedim  =  nbframes,   dim1 , dim2  with nbframes >=1"""
                 print('----> Reading hdf5 file [pointing to hdf5 file] %s\n'%filename)
@@ -912,13 +943,14 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 dataimage = alldata[stackimageindex]
                 framedim = alldata.shape  # nb images, dim1, dim2
                 fliprot = 'fliplr_h5master'
-
+            # case 1 or 3
             elif h5filetype == 'h5puredata':
                 """framedim  = dim1 , dim2 """
                 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
                 with h5py.File(pathfile, 'r') as f:
                     dataimage = f['entry_0000']['measurement']['data'][()][0]
                     framedim = dataimage.shape
+                    print('framedim',framedim) 
                     fliprot = 'fliplr_h5pure'
 
 
@@ -1097,6 +1129,15 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     return dataimage, framedim, fliprot
 
 def getfilesize(dirname,filename):
+    """get size in byte of a file
+
+    :param dirname: folder
+    :type dirname: str, pathlike
+    :param filename: filename
+    :type filename: str, pathlike
+    :return: file size
+    :rtype: int
+    """
     if dirname is not None:
         filesize = os.path.getsize(os.path.join(dirname, filename))
     else:
@@ -1240,6 +1281,9 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
 
     :return: dataimage : 2D array, image data pixel intensity
     """
+    if CCDLabel == "EIGER_4MCdTestack":
+        raise NotImplementedError(f'Mosaic and roi counters is not yet implemented for {CCDLabel}')
+
     (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
 
     if verbose > 0:
@@ -1531,12 +1575,37 @@ def SumImages(prefixname, suffixname, ind_start, ind_end, dirname=None,
 def Add_Images2(prefixname,
                 ind_start,
                 ind_end,
-                plot=0,
+                plot=False,
                 writefilename=None,
                 CCDLabel="MARCCD165",
                 average=True):
     """
-    in dev
+    Add several Images
+
+    Notes
+    -----
+    in dev 
+
+    Parameters
+    ----------
+    prefixname
+        str, prefix filename
+    ind_start
+        int, first file index
+    ind_end
+        int, laqt file index
+    plot, optional
+        bool, plot image (not implemented), by default False
+    writefilename, optional
+        str, output filename, by default None
+    CCDLabel, optional
+        _description_, by default "MARCCD165"
+    average, optional
+        _description_, by default True
+
+    Returns
+    -------
+        numpy array, sum of image data arrays
     """
     suffixname = "." + DictLT.dict_CCD[CCDLabel][-1]
 

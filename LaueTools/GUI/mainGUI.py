@@ -416,7 +416,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 detectedCCDlabel = autoDetectDetectorType(file_extension)
                 if detectedCCDlabel is not None:
                     self.CCDLabel = autoDetectDetectorType(file_extension)
-                DPBoard = CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
+                DPBoard = CCDFileParameters(self, -1, "CCD File Parameters Board1", self.CCDLabel)
                 DPBoard.ShowModal()
                 DPBoard.Destroy()
 
@@ -431,14 +431,14 @@ class LaueToolsGUImainframe(wx.Frame):
                 initialParameter["stackedimages"] = False
                 initialParameter["Nbstackedimages"] = 0
 
-                if self.CCDLabel in ("EIGER_4Mstack",):
+                if self.CCDLabel in ("EIGER_4Mstack","EIGER_4MCdTestack"):
                     initialParameter["stackedimages"] = True
                     initialParameter["stackimageindex"] = 0
-                    initialParameter["Nbstackedimages"] = 20
+                    initialParameter["Nbstackedimages"] = 121  #maybe non useful
 
                 elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
-                    if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):
-                        h5browserBoard = CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
+                    if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):  # never enter this branch??
+                        h5browserBoard = CCDFileParameters(self, -1, "CCD File Parameters Board2", self.CCDLabel)
                         h5browserBoard.ShowModal()
                         h5browserBoard.Destroy()
                     initialParameter["stackedimages"] = self.stackedimages

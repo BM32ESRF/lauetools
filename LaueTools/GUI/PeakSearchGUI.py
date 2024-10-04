@@ -3828,7 +3828,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.stackedimages:
             #         if self.CCDlabel in ('EIGER_4Mstack',):
             self.stackimageindex += self.stepindex
-            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+            self.stackimageindex = max(0,self.stackimageindex)
         else:
             self.lastindex = self.imageindex
             self.imageindex += self.stepindex
@@ -3843,7 +3843,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.stackedimages:
             #         if self.CCDlabel in ('EIGER_4Mstack',):
             self.stackimageindex -= self.stepindex
-            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+            self.stackimageindex = max(0,self.stackimageindex)
         else:
             self.lastindex = self.imageindex
             self.imageindex -= self.stepindex
@@ -3861,7 +3861,7 @@ class MainPeakSearchFrame(wx.Frame):
             print('\n!!stacked images!!\n')
             print('self.Nbstackedimages', self.Nbstackedimages)
             self.stackimageindex += 1
-            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+            self.stackimageindex = max(0,self.stackimageindex)
         else:
             self.lastindex = self.imageindex
             self.imageindex += 1
@@ -3876,7 +3876,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.stackedimages:
             #         if self.CCDlabel in ('EIGER_4Mstack',):
             self.stackimageindex -= 1
-            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+            self.stackimageindex = max(0,self.stackimageindex)
         else:
             self.lastindex = self.imageindex
             self.imageindex -= 1
@@ -3889,7 +3889,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         if self.stackedimages:
             self.stackimageindex = int(self.ImagesBrowser.fileindexctrl.GetValue())
-            self.stackimageindex = self.stackimageindex % self.Nbstackedimages
+            self.stackimageindex = max(0,self.stackimageindex)
         else:
             self.imageindex = int(self.ImagesBrowser.fileindexctrl.GetValue())
 
