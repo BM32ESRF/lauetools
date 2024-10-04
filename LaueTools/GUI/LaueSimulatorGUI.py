@@ -610,10 +610,10 @@ class SimulationPanel(wx.Panel):
         title1.SetFont(self.mainframe.font3)
 
         txtemin = wx.StaticText(self, -1, "Energy min: ")
-        self.scmin = wx.SpinCtrl(self, -1, "5", size=(60, -1), min=5, max=195)
+        self.scmin = wx.SpinCtrl(self, -1, "5", size=(150, -1), min=5, max=195)
 
         txtemax = wx.StaticText(self, -1, "Energy max: ")
-        self.scmax = wx.SpinCtrl(self, -1, "25", size=(60, -1), min=6, max=200)
+        self.scmax = wx.SpinCtrl(self, -1, "25", size=(150, -1), min=6, max=200)
 
         gridSizer = wx.GridSizer(rows=1, cols=4, hgap=1, vgap=1)
         gridSizer.Add(txtemin, 0, wx.ALIGN_CENTER | wx.ALIGN_CENTER)
