@@ -460,7 +460,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     # print Laue_spot_list[0][0].Twicetheta
 
                     if gauge and WXPYTHON:
-                        gaugecount = gaugecount + 900 / nb_transforms
+                        gaugecount = gaugecount + int(900 / nb_transforms)
                         gauge.SetValue(gaugecount)
                         wx.Yield()
                         # print "ChildGrain_index 900%nb_transforms",ChildGrain_index, gaugecount
