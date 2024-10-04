@@ -835,7 +835,7 @@ class SimulationPlotFrame(wx.Frame):
             if self.ImageArray is not None:
                 kwords["edgecolors"] = tuple(colors[grainindex])
             else:
-                kwords["c"] = tuple(colors[grainindex])
+                kwords["color"] = tuple(colors[grainindex])
 
             #print('np.array(self.Data_X[grainindex])',np.array(self.Data_X[grainindex]))
 
