@@ -881,7 +881,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif CCDLabel in ("EIGER_4MCdTestack" ):  #made by ESRF BLISS software
+    elif CCDLabel in ("EIGER_4MCdTestack"):  #made by ESRF BLISS software
         if dirname is not None:
             pathfile=os.path.join(dirname, filename)
         else:
@@ -1274,7 +1274,8 @@ def readoneimage_crop_fast(filename, dirname=None, CCDLabel="MARCCD165",
 
 def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=None,
                                                                             CCDLabel="MARCCD165",
-                                                                            verbose=0):
+                                                                            verbose=0,
+                                                                            stackimageindex=-1):
     r"""
     returns a 2d array of integers from a binary image file. Data are taken only from a rectangle
     centered on pixx, pixy
@@ -1282,7 +1283,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     :return: dataimage : 2D array, image data pixel intensity
     """
     if CCDLabel == "EIGER_4MCdTestack":
-        raise NotImplementedError(f'Mosaic and roi counters is not yet implemented for {CCDLabel}')
+        raise NotImplementedError(f'Mosaic and roi counters is not yet implemented for {CCDLabel}. In progress')
 
     (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
 
@@ -1313,7 +1314,11 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
     # uint16
     offsetheader = filesize - (framedim[0] * framedim[1]) * nbBytesPerElement
 
-    if verbose > 0:
+    if CCDLabel in ('EIGER_4MCdTe'):  # not useful ?
+        oneimagesize = (framedim[0] * framedim[1]) * nbBytesPerElement
+        offsetheader = filesize % oneimagesize
+
+    if 1: #verbose > 0:
         print("calculated offset of header from file size...", offsetheader)
 
     x = int(pixx)
@@ -1330,9 +1335,6 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
 
     ypixmin = y - boxy
     ypixmax = y + boxy
-
-    #     ymin= (y-boxy)*framedim[1]
-    #     ymax= (y+boxy)*framedim[1]
 
     lineFirstElemIndex = ypixmin
     lineLastElemIndex = ypixmax
@@ -1359,6 +1361,12 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         band2D = _data[ypixmin:ypixmax+1]
 
         #print('shape of band2D', band2D.shape)
+
+    elif CCDLabel in ('EIGER_4MCdTestack'):
+        print('stackimageindex', stackimageindex)
+        print('filename',filename)
+        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=stackimageindex, verbose=0)
+        band2D = _data[ypixmin:ypixmax+1]
 
     rectangle2D = band2D[:, xpixmin : xpixmax + 1]
 
