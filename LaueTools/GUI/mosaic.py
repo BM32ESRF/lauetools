@@ -2296,12 +2296,17 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
     """
     CountersData = {}
 
+    print('dict_param in buildMosaic3 ',dict_param)
+
     #     (dirname, filename, startind, endind, stepind, nb_lines, nb_images_per_line,
     #             xpic, ypic, boxsize_col, boxsize_line, selectedcounters) = dict_param
 
     dirname = dict_param["imagesfolder"]
     filename_representative = dict_param["filename_representative"]
     ccdlabel = dict_param["CCDLabel"]
+
+    print('filename_representative',filename_representative)
+    print('ccdlabel',ccdlabel)
     nbdigits = dict_param["nbdigits"]
     #     startind = int(dict_param['starting_imageindex'])
     #     endind = int(dict_param['final_imageindex'])
@@ -2373,7 +2378,11 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
     for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
         imageindex = absolute_imageindex
-        filename = IOimage.setfilename(filename_representative,
+        if ccdlabel in ('EIGER_4MCdTestack'):
+            filename = filename_representative
+            stackimageindex = imageindex
+        else:
+            filename = IOimage.setfilename(filename_representative,
                                     imageindex,
                                     CCDLabel=ccdlabel,
                                     nbdigits=nbdigits)
@@ -2391,6 +2400,10 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             center_pixel = (xpic, ypic)
             if fliprot in ("sCMOS_fliplr",):
                 center_pixel = (framedimraw[1] - xpic, ypic)
+            if ccdlabel in ('EIGER_4MCdTestack'):
+                center_pixel = (ypic, xpic)
+                _fdim = DictLT.dict_CCD[ccdlabel][0]
+                framedimraw = _fdim[1], _fdim[0]
 
             if not filename.endswith("tif.gz"):
 
@@ -2416,9 +2429,10 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
                                                         halfboxsizes[0],
                                                         halfboxsizes[1],
                                                         dirname=None,
-                                                        CCDLabel=ccdlabel)
+                                                        CCDLabel=ccdlabel,
+                                                        stackimageindex=stackimageindex)
                 #print('datacrop max --> ', np.amax(datacrop))
-            else:
+            else:  # ends with("tif.gz")
 
                 framedim = framedimraw
                 indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
