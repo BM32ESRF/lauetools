@@ -434,7 +434,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 if self.CCDLabel in ("EIGER_4Mstack","EIGER_4MCdTestack"):
                     initialParameter["stackedimages"] = True
                     initialParameter["stackimageindex"] = 0
-                    initialParameter["Nbstackedimages"] = 121  #maybe non useful
+                    initialParameter["Nbstackedimages"] = None  #maybe non useful
 
                 elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
                     if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):  # never enter this branch??
