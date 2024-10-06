@@ -1640,6 +1640,7 @@ class ROISelection(wx.Panel):
         self.mainframe.update_draw(evt)
 
     def OnMosaic(self, _):
+        """in ROIselection class"""
 
         self.getcounters()
 
@@ -4031,7 +4032,7 @@ class MainPeakSearchFrame(wx.Frame):
         else:  # TODO better use self.format ??
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
-            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe"):
+            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe", "EIGER_4MCdTestack"):
                 img_dataformat = np.uint32
             elif self.CCDlabel in ("MaxiPIXCdTe",):
                 img_dataformat = np.int32
@@ -4381,11 +4382,11 @@ class MainPeakSearchFrame(wx.Frame):
 
             nbimages_asked = int(len(np.arange(startind, endind + 1, stepind)))
 
-            print("in PEAKSEARCHGUI.py------------------------------------\n")
+            print("in buildMosaic() of PEAKSEARCHGUI.py------------------------------------\n")
             print("nbimages_asked", nbimages_asked)
             print("nbimages_per_line", nbimages_per_line)
-            print("nbimages_asked", type(nbimages_asked))
-            print("nbimages_per_line", type(nbimages_per_line))
+            # print("nbimages_asked", type(nbimages_asked))
+            # print("nbimages_per_line", type(nbimages_per_line))
 
             # reminder of integer division of nbimages_asked by nbimages_per_line
             rr = nbimages_asked % nbimages_per_line
@@ -4460,8 +4461,9 @@ class MainPeakSearchFrame(wx.Frame):
             print("selected2Darray_imageindex", selected2Darray_imageindex)
             print("nb_lines", nb_lines)
 
-        try:
+        try:  # check if self.centerx exists
             if self.centerx is None:
+                print('self.centerx',self.centerx)
                 return
         except AttributeError:
             wx.MessageBox("Click before on a point in image to select the center of the ROI", "INFO")
