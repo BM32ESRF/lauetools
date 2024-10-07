@@ -2289,17 +2289,46 @@ def myformattime():
                                                 tt.tm_min,
                                                 tt.tm_sec)
 
+DEFAULT_DICTfittingparameters = {
+                'modelFunction':"gaussian",
+                'positionStart':"max",
+                'peaksizeStart': 0.5,
+                'MinimumPeakAmplitude':25,
+                'reject_negative_baseline':True,
+                'reject_large_PixelDeviation':True,
+                'reject_weakPeaks':False,
+                'FitPixelDev':None,
+            }
 
-def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=None, verbose=0):
+def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=True, parent=None, dictfittingparameters:dict=DEFAULT_DICTfittingparameters, verbose:int=0):
     """
     build mosaic image from arrangement of image ROI data taken from selected images
+
+    Parameters
+    ----------
+    dict_param
+        dict with file and image parameters. Keys are dirname, filename, startind, endind, stepind, nb_lines, nb_images_per_line, xpic, ypic, boxsize_col, boxsize_line, selectedcounters
+    outputfolder
+        path where to write results files
+    ccdlabel, optional
+        detector label, by default "sCMOS"
+    plot, optional
+        plot or not plots (mosaic or scalar maps), by default True
+    parent, optional
+        GUI window class, by default None
+    dictfittingparameters, optional
+        dict with parameters used when fitting the 2D intensity distribution, by default None. Keys are:
+        'modelFunction','positionStart','peaksizeStart','MinimumPeakAmplitude','reject_negative_baseline','reject_large_PixelDeviation','reject_weakPeaks','FitPixelDev':None,
+    verbose, optional
+        show in stdout prints, by default 0 (no prints)
     """
+    
     CountersData = {}
 
     print('dict_param in buildMosaic3 ',dict_param)
 
-    #     (dirname, filename, startind, endind, stepind, nb_lines, nb_images_per_line,
-    #             xpic, ypic, boxsize_col, boxsize_line, selectedcounters) = dict_param
+    #update and complement dictfittingparameters if needed 
+    dictfittingparameters = {**DEFAULT_DICTfittingparameters,**dictfittingparameters}
 
     dirname = dict_param["imagesfolder"]
     filename_representative = dict_param["filename_representative"]
@@ -2331,7 +2360,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
     #print("selected2Darray_imageindex in buildMosaic3", selected2Darray_imageindex)
 
-    #    print "boxsize_col, boxsize_line", halfboxsizes
     selected1Darray_absoluteimageindex = np.ravel(selected2Darray_imageindex)
     tabindices = selected1Darray_absoluteimageindex
     startind, endind = (selected1Darray_absoluteimageindex[0], selected1Darray_absoluteimageindex[-1])
@@ -2364,8 +2392,6 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
 
     boxpixelsize = (2 * halfboxsizes[0] + 1, 2 * halfboxsizes[1] + 1)
 
-    #        print "boxpixelsize", boxpixelsize
-
     try:
         mosaic = np.zeros((nb_lines, nb_col, boxpixelsize[0], boxpixelsize[1]))
     except MemoryError:
@@ -2379,8 +2405,12 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
     for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
         imageindex = absolute_imageindex
         if ccdlabel in ('EIGER_4MCdTestack'):
+            print('in buildMosaic3')
+            print('ccdlabel ', ccdlabel)
             filename = filename_representative
             stackimageindex = imageindex
+            print("filename",filename)
+            print("stackimageindex",stackimageindex)
         else:
             filename = IOimage.setfilename(filename_representative,
                                     imageindex,
@@ -2400,10 +2430,10 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             center_pixel = (xpic, ypic)
             if fliprot in ("sCMOS_fliplr",):
                 center_pixel = (framedimraw[1] - xpic, ypic)
-            if ccdlabel in ('EIGER_4MCdTestack'):
-                center_pixel = (ypic, xpic)
-                _fdim = DictLT.dict_CCD[ccdlabel][0]
-                framedimraw = _fdim[1], _fdim[0]
+            # if ccdlabel in ('EIGER_4MCdTestack'):
+            #     center_pixel = (ypic, xpic)
+            #     _fdim = DictLT.dict_CCD[ccdlabel][0]
+            #     framedimraw = _fdim[1], _fdim[0]
 
             if not filename.endswith("tif.gz"):
 
@@ -2659,6 +2689,8 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             # relative_posmax = posmax - meanposmax_global
 
             nbimages = len(np.arange(startind, endind + 1))
+
+            
             # ---------------------------------------------------
             # position monitors selection
             # ---------------------------------------------------
@@ -2669,17 +2701,10 @@ def buildMosaic3(dict_param, outputfolder, ccdlabel="MARCCD165", plot=1, parent=
             # fit 2D pixel intensities array with a 2D shape gaussian function
             else:  # default
                 #                 elif counter == 'Position XY':
-                XY, FilteredfittedPeaksData = FitPeakOnMap(mosaic,
-                                                        (xpic, ypic),
-                                                        reject_negative_baseline=True,
-                                                        reject_large_PixelDeviation=True,
-                                                        reject_weakPeaks=False,
-                                                        FitPixelDev=None,
-                                                        MinimumPeakAmplitude=25,
-                                                        modelFunction="gaussian",
+                XY, FilteredfittedPeaksData = FitPeakOnMap(mosaic, (xpic, ypic),
                                                         framedimensions=framedimraw,
-                                                        positionStart="max",
-                                                        verbose=1)
+                                                        verbose=1,
+                                                        **dictfittingparameters)
 
                 dict_param["FilteredfittedPeaksData"] = FilteredfittedPeaksData
 
@@ -2915,12 +2940,13 @@ def FitPeakOnMap(mosaic,
                 modelFunction="gaussian",
                 framedimensions=(2048, 2048),
                 positionStart="max",
+                peaksizeStart=0.5,
                 verbose=1):
     """
     Fit peak on series of 2D pixel intensities array
     """
 
-    print('\n\n****!! Fitting a peak on a map  !!****\n\n')
+    print('\n\n****!! Fitting a peak on a several images (e.g. map)  !!****\n\n')
     n0, n1, n2, n3 = mosaic.shape
     xpic, ypic = ROIcenter
 
@@ -2937,8 +2963,8 @@ def FitPeakOnMap(mosaic,
 
     FittingParametersDict["startangles"] = 0
     FittingParametersDict["position_start"] = positionStart
-    FittingParametersDict["start_sigma1"] = 2.0
-    FittingParametersDict["start_sigma2"] = 2.0
+    FittingParametersDict["start_sigma1"] = peaksizeStart
+    FittingParametersDict["start_sigma2"] = peaksizeStart
 
     FittingParametersDict["fitfunction"] = modelFunction
     FittingParametersDict["xtol"] = 0.0001
@@ -3037,7 +3063,7 @@ def FitPeakOnMap(mosaic,
     BoolToMask = True * np.ones(len(CentralPeaks))
     BoolToMask[list(ToTake)] = False
 
-    print("BoolToMask", BoolToMask)
+    #print("BoolToMask", BoolToMask)
 
     #     print "where Masked", np.where(BoolToMask==True)
     maskedrows = np.where(BoolToMask == True)[0]
