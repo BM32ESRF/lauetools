@@ -1282,8 +1282,8 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
 
     :return: dataimage : 2D array, image data pixel intensity
     """
-    if CCDLabel == "EIGER_4MCdTestack":
-        raise NotImplementedError(f'Mosaic and roi counters is not yet implemented for {CCDLabel}. In progress')
+    # if CCDLabel == "EIGER_4MCdTestack":
+    #     raise NotImplementedError(f'Mosaic and roi counters is not yet implemented for {CCDLabel}. In progress')
 
     (framedim, _, _, fliprot, offsetheader, formatdata, _, _) = DictLT.dict_CCD[CCDLabel]
 
@@ -1318,7 +1318,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         oneimagesize = (framedim[0] * framedim[1]) * nbBytesPerElement
         offsetheader = filesize % oneimagesize
 
-    if 1: #verbose > 0:
+    if verbose > 0:
         print("calculated offset of header from file size...", offsetheader)
 
     x = int(pixx)
@@ -1343,7 +1343,21 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         print("lineFirstElemIndex", lineFirstElemIndex)
         print("lineLastElemIndex", lineLastElemIndex)
 
-    if CCDLabel not in ('EIGER_4MCdTe'):
+    
+
+    if CCDLabel in ('EIGER_4MCdTe'):
+        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=-1, verbose=0)
+        band2D = _data[ypixmin:ypixmax+1]
+
+        #print('shape of band2D', band2D.shape)
+
+    elif CCDLabel in ('EIGER_4MCdTestack'):
+        print('stackimageindex', stackimageindex)
+        print('filename',filename)
+        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=stackimageindex, verbose=0)
+        band2D = _data[ypixmin:ypixmax+1]
+
+    elif CCDLabel not in ('EIGER_4MCdTe', 'EIGER_4MCdTestack'):
         band = readoneimage_band(fullpathfilename,
                                 framedim=framedim,
                                 dirname=None,
@@ -1355,18 +1369,6 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         nblines = lineLastElemIndex - lineFirstElemIndex + 1
 
         band2D = np.reshape(band, (nblines, framedim[1]))
-
-    elif CCDLabel in ('EIGER_4MCdTe'):
-        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=-1, verbose=0)
-        band2D = _data[ypixmin:ypixmax+1]
-
-        #print('shape of band2D', band2D.shape)
-
-    elif CCDLabel in ('EIGER_4MCdTestack'):
-        print('stackimageindex', stackimageindex)
-        print('filename',filename)
-        _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=stackimageindex, verbose=0)
-        band2D = _data[ypixmin:ypixmax+1]
 
     rectangle2D = band2D[:, xpixmin : xpixmax + 1]
 
