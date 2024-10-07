@@ -2420,9 +2420,8 @@ class FitParametersPanel(wx.Panel):
         self.boxsize = wx.SpinCtrl(self, -1, "15", #size=(100,-1),
                                             min=1, max=9999)
 
-        peaksizetxt = wx.StaticText(self, -1, "Peak size")
-        self.peaksizectrl = wx.SpinCtrl(self, -1, "1", #size=(100,-1),
-                                            min=1, max=9999)
+        peaksizetxt = wx.StaticText(self, -1, "Guessed Peak size")
+        self.peaksizectrl = wx.TextCtrl(self, -1, "0.9")
 
         # rejection
         txt2 = wx.StaticText(self, -1, "Rejection parameters")
@@ -4514,8 +4513,14 @@ class MainPeakSearchFrame(wx.Frame):
             dict_param["NormalizeWithMonitor"] = True
         dict_param["monitoroffset"] = float(self.Monitor.monitoroffsetctrl.GetValue())
 
+        # for fitting peak over several images
+        guessed_peaksize = float(self.fitparampanel.peaksizectrl.GetValue())
+        dictfittingparameters = {'peaksizeStart':guessed_peaksize}
+
         outputfolder = dirname
-        MOS.buildMosaic3(dict_param, outputfolder, parent=parent)
+
+        MOS.buildMosaic3(dict_param, outputfolder, parent=parent,
+                         ccdlabel=self.CCDlabel, dictfittingparameters=dictfittingparameters)
 
     def onOpenBImage(self, _):
         self.FileDialog = wx.FileDialog(self, "Choose an image", style=wx.OPEN,
