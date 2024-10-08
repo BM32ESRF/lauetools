@@ -2920,18 +2920,20 @@ class PeakListOLV(wx.Panel):
 
 
 class WriteFileBoxINFOBox(wx.Frame):
-    """ class GUI allow to show info and selecteable path to files 
+    """ class GUI allow to show info and selectable path to files 
     the layout is the following vertically :
     headertext, msg1, filepath1, [msg2,filepath2]
     """
     def __init__(self, parent, _id, title, headertext, msg1, filepath1, msg2='',filepath2=''):
         wx.Frame.__init__(self, parent, _id, title, size=(800,200))
         self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
+
+        self.userfilename = None
         
         header = wx.StaticText(self, -1, headertext)
         header.SetFont(wx.Font(12, wx.MODERN, wx.NORMAL, wx.BOLD))
-        path1ctrl = wx.TextCtrl(self, size=(800, 40))#, style=wx.TE_MULTILINE)
-        path1ctrl.SetValue(filepath1)
+        self.path1ctrl = wx.TextCtrl(self, size=(800, 40))#, style=wx.TE_MULTILINE)
+        self.path1ctrl.SetValue(filepath1)
 
         btna = wx.Button(self, wx.ID_OK, "OK", size=(150, 40))
         btna.Bind(wx.EVT_BUTTON, self.OnAccept)
@@ -2940,7 +2942,7 @@ class WriteFileBoxINFOBox(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(header, 0)
         vbox.Add(wx.StaticText(self, -1, msg1), 0)
-        vbox.Add(path1ctrl, 0, wx.EXPAND)
+        vbox.Add(self.path1ctrl, 0, wx.EXPAND)
         if msg2 != '':
             path2ctrl = wx.TextCtrl(self, size=(800, 40))
             path2ctrl.SetValue(filepath2)
@@ -2950,6 +2952,7 @@ class WriteFileBoxINFOBox(wx.Frame):
         self.SetSizer(vbox)
 
     def OnAccept(self, _):
+        self.userfilename = self.path1ctrl.GetValue()
         self.Close()
 
 class MainPeakSearchFrame(wx.Frame):
@@ -5074,14 +5077,8 @@ class MainPeakSearchFrame(wx.Frame):
         else:
             nb_of_peaks = self.peaklistPixels.shape[0]
 
-        # writing ascii peak list  .dat file
-        initialfilename=os.path.join(self.dirname, self.imagefilename)
-        RMCCD.writepeaklist(self.peaklistPixels,
-                                finalfilename,
-                                outputfolder,
-                                comments_in_file,
-                                initialfilename)
-        # writing ascii peaksearch parameters
+        
+        # writing ascii peaksearch parameters .psp file ---------
         pspfile_fullpath = os.path.join(outputfolder, "PeakSearch_%s.psp" % finalfilename)
 
         if self.dict_param is not None:
@@ -5096,16 +5093,27 @@ class MainPeakSearchFrame(wx.Frame):
             usercomments = ""
             comments_in_file = params_comments + "# user comments: " + usercomments
 
-        #wxMESSAGE_SELECT
-        # wx.MessageBox("%d Peak(s) found.\n List written in \n%s\n\nPeakSearch Parameters (.psp) file written in %s"
-        #     % (nb_of_peaks, os.path.join(os.path.abspath(outputfolder), finalfilename + ".dat"),
-        #         pspfile_fullpath), 'INFO')
-        
-        dlg = WriteFileBoxINFOBox(self,-1,'INFO',"%d Peak(s) found"%nb_of_peaks,
-                                  "List of peaks (.dat) file",os.path.join(os.path.abspath(outputfolder), finalfilename+".dat"),
-                                  "PeakSearch Parameters (.psp) file", pspfile_fullpath) 
-        
-        dlg.Show(True)
+
+        mesg = "%d Peak(s) found"%nb_of_peaks +"\nPeakSearch Parameters written in %s\n"%pspfile_fullpath+"List of peaks will be written  in (.dat) file"
+        userfilename = os.path.join(os.path.abspath(outputfolder), finalfilename+".dat")
+        with wx.TextEntryDialog(self, mesg, caption='Save Peak list .dat file', value=userfilename) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                userfilename = dlg.GetValue()
+
+        outputfolder, finalfilename = os.path.split(userfilename)
+
+        print('finalfilename',finalfilename)
+        if finalfilename.endswith('.dat'):
+            outputfilename = finalfilename[:-4]
+        else:
+            outputfilename = finalfilename
+        # writing ascii peak list  .dat file
+        initialfilename=os.path.join(self.dirname, self.imagefilename)
+        RMCCD.writepeaklist(self.peaklistPixels,
+                                outputfilename,
+                                outputfolder,
+                                comments_in_file,
+                                initialfilename)
         # MyMessageBox(None, "INFO", "%d Peak(s) found.\n List written in \n%s\n\nPeakSearch Parameters (.psp) file written in %s"
         #     % (nb_of_peaks, os.path.join(os.path.abspath(outputfolder), finalfilename + ".dat"),
         #         pspfile_fullpath))
