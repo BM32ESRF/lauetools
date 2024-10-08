@@ -581,6 +581,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     :param overwrite: bool, True to overwrite the existing file
                             False to write a file with '_new' added in the name
 
+    :return: full path of created file
+
 
     containing data
     one line   of header
