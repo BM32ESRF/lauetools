@@ -614,11 +614,27 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
     return optim_value, Res
 
 
-def writepeaklist(tabpeaks, output_filename,
-                                        outputfolder=None, comments=None, initialfilename=None):
-    r"""
-    write (and overwrite) peaks properties and comments in file with extension .dat added
+def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, initialfilename=None):
     """
+    write (and overwrite) an ASCII file with peaks properties. Cmments in file with extension .dat added
+
+    Parameters
+    ----------
+    tabpeaks
+        numpy.array, peaks properties
+    output_filename
+        str,output filename (without .dat which is added)
+    outputfolder, optional
+        str, output folder, by default None
+    comments, optional
+        str, comments added at the end of the file, by default None
+    initialfilename, optional
+        location of laue pattern image, by default None
+
+    Returns
+    -------
+        str, full path of created file
+    """    
     outputfilefullpath = IOLT.writefile_Peaklist(output_filename, tabpeaks,
                                                 1, initialfilename,
                                                 comments,outputfolder)
