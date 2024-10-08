@@ -2597,7 +2597,7 @@ class Plot_RefineFrame(wx.Frame):
 
             columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
 
-        else:  # old only 5 columns in .fit file
+        else:  # old! only 5 columns in .fit file
             Columns = [indExp, intens, _h, _k, _l, residues]
             columnsname = "#spot_index Intensity h k l pixDev\n"
 
@@ -2635,7 +2635,7 @@ class Plot_RefineFrame(wx.Frame):
             self.IndexationParameters["writefolder"] = OSLFGUI.askUserForDirname(self)
 
 
-        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n",
+        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n Folder: %s"%self.IndexationParameters["writefolder"],
                                                             "Saving refined peaks list")
         dlg.SetValue("%s" % outputfilename)
         filenamefit = None

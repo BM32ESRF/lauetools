@@ -609,6 +609,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         nbpeaks, nbcolumns = 1, Data_array.shape[0]
     else:
         nbpeaks, nbcolumns = Data_array.shape
+        print('Data_array.shape', Data_array.shape)
         if Data_array.shape[0] == 1:
             Data_array = Data_array[0]
 
@@ -718,7 +719,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                 nbpeaks = 1
 
             else:
-
+                print('writing XfitErr and YfitErr !')
                 outputfile.write(
                     "\n".join(
                         ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d   %.04f   %.04f"
@@ -814,8 +815,8 @@ def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
     return read_Peaklist(filename_in, dirname=dirname, returnnbpeaks=returnnbpeaks)
 
 
-def read_Peaklist(filename_in, dirname=None, output_columnsname=False,
-                  returnnbpeaks=False, maxnumberlines=10000):
+def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
+                  returnnbpeaks:bool=False, maxnumberlines:int=10000):
     """
     read peak list .dat file and return the entire array of spots data
     :param filename_in: str, full path of .dat file if dirname is None, otherwise only filename without folder
@@ -824,7 +825,7 @@ def read_Peaklist(filename_in, dirname=None, output_columnsname=False,
     :param returnnbpeaks: bool, add or not nb of spots in the output
 
     (peak_X,peak_Y,peak_Itot, peak_Isub,peak_fwaxmaj,peak_fwaxmin,
-    peak_inclination,Xdev,Ydev,peak_bkg, Pixmax)
+    peak_inclination,Xdev,Ydev,peak_bkg, Ipixmax)
     """
     if dirname is not None:
         filename_in = os.path.join(dirname, filename_in)

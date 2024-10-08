@@ -2263,7 +2263,7 @@ class MainCalibrationFrame(wx.Frame):
         # spotsData = [Xtheo,Ytheo, Xexp, Yexp, Xdev, Ydev, theta_theo]
         spotsData = self.SpotsData
 
-        print("Writing results in .fit file")
+        print("Writing results in .fit file in OnWriteResults()")
         suffix = ""
         if self.incrementfile.GetValue():
             self.savedindex += 1
@@ -2309,12 +2309,24 @@ class MainCalibrationFrame(wx.Frame):
 
         data_peak = IOLT.read_Peaklist(initialdatfile)
 
+        # print('data_peak.shape', data_peak.shape)
+
         selected_data_peak = np.take(data_peak, indExp, axis=0)
 
+        # print('selected_data_peak.shape',selected_data_peak.shape)
+
+        _, nbcolumns = selected_data_peak.shape
+
         if initialdatfile.endswith('.dat'):
-            (Xexp, Yexp, _, peakAmplitude,
+
+            if nbcolumns == 11:
+                (Xexp, Yexp, _, peakAmplitude,
             peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
+            elif nbcolumns == 13:
+                (Xexp, Yexp, _, peakAmplitude,
+            peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+            Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
 
         elif initialdatfile.endswith('.cor'):
             (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
@@ -2340,6 +2352,11 @@ class MainCalibrationFrame(wx.Frame):
                 peakAmplitude, IntensityMax, peak_bkg,
                 peak_fwaxmaj, peak_fwaxmin, peak_inclination,
                 Xdev_peakFit, Ydev_peakFit]
+        
+        if nbcolumns == 13:
+            Columns.append(XfitErr)
+            Columns.append(YfitErr)
+            print
 
         datatooutput = np.transpose(np.array(Columns))
         datatooutput = np.round(datatooutput, decimals=5)
@@ -2372,7 +2389,10 @@ class MainCalibrationFrame(wx.Frame):
 
         columnsname = "spot_index Itot h k l Xtheo Ytheo Xexp Yexp XdevCalib YdevCalib pixDevCalib "
         columnsname += "2theta_theo chi_theo Energy PeakAmplitude Imax PeakBkg "
-        columnsname += "PeakFwhm1 PeakFwhm2 PeakTilt XdevPeakFit YdevPeakFit\n"
+        columnsname += "PeakFwhm1 PeakFwhm2 PeakTilt XdevPeakFit YdevPeakFit"
+        if nbcolumns == 13:
+            columnsname += " XfitEerr YfitErr"
+        columnsname +="\n"
 
         meanresidues = np.mean(residues_calibFit)
 

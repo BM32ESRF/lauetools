@@ -735,7 +735,16 @@ def readheadertiff(fullpathimage):
 def read_motorsposition_fromheader(filename, CCDLabel="MARCCD165"):
     r""" return xyzpositions, expo_time from image file header
     available for "MARCCD165", "sCMOS", "sCMOS_fliplr"
+
+    .. note: todo for hdf5 file
     """
+
+    if CCDLabel not in ("MARCCD165","sCMOS", "sCMOS_fliplr"):
+        if filename.endswith('.h5'):
+            # TODO read some groups in hd5 file 
+            pass
+        return None, None
+    
     if CCDLabel in ("MARCCD165",):
         dataset_comments, expo_time = read_header_marccd2(filename)
         xyz = dataset_comments.split(" ")[:3]

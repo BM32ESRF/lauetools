@@ -1,0 +1,19 @@
+76.56000, 1020.9200, 1054.0900, 0.3890000, 0.1380000, 0.07340000, 2018, 2016
+Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2
+Calibration done with Si at Tue Oct  8 12:54:45 2024 with LaueToolsGUI.py
+Experimental Data file: /home/micha/lauetoolsgithub/LaueTools/LaueImages/AH12_CMT_r14_0200_LT_0.dat
+Orientation Matrix:
+[[0.8216781,-0.5193920,0.2346851],[0.5659187,0.7923875,-0.2277235],[-0.0676838,0.3199281,0.9450211]]
+# Material : Si
+# dd : 76.56
+# xcen : 1020.92
+# ycen : 1054.09
+# xbet : 0.389
+# xgam : 0.138
+# pixelsize : 0.0734
+# xpixelsize : 0.0734
+# ypixelsize : 0.0734
+# CCDLabel : sCMOS
+# framedim : (2018, 2016)
+# detectordiameter : 162.93332000000004
+# kf_direction : Z>0
