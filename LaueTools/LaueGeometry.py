@@ -1758,7 +1758,8 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
                                                         saturation=0,
                                                         forceextension_lines_to_extract=None,
                                                         col_isbadspot=None,
-                                                        alpha_xray_incidence_correction=None):
+                                                        alpha_xray_incidence_correction=None,
+                                                        addspotproperties=False):
     r"""
     Read a file and convert spot positions x,y to scattering angles 2theta, chi according to detector parameters
 
@@ -1773,6 +1774,8 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
     :type kf_direction: string
 
     :param sorting_intensity: 'yes' sort spots list by decreasing intensity
+
+    :param addspotproperties: append the output a dict with two 'columnsname' = (list str) and 'data_spotsproperties'= spots properties array (size, pixdev XfitErr, etc...) which are written in the input file .dat
 
     saturation = 0 : do not read Ipixmax column of DAT file from LaueTools peaksearch
     saturation > 0 : read Ipixmax column and create data_sat list
@@ -1793,12 +1796,19 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
 
     elif extension in ("dat", "DAT"):  # peak list single line header
         alldata, nbpeaks = IOLT.readfile_dat(filename, returnnbpeaks=True)
+        listcolumnsname = IOLT.getcolumnsname_dat(filename)
+        nbcolumns = len(listcolumnsname)
+        
         # print('nbpeaks', nbpeaks)
         # print('alldata', alldata)
+        listcolspotproperties = [2]+[ik for ik in range(4,nbcolumns)]
         if nbpeaks > 1:
+            nbcolumns = alldata.shape[1]
             data_xyI = np.take(alldata, (0, 1, 3), axis=1)
+            data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=1)
         elif nbpeaks == 1:
             data_xyI = np.take(alldata, (0, 1, 3), axis=0)
+            data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=0)
 
         print("nb of spots and columns in .dat file", data_xyI.shape)
 
@@ -1840,7 +1850,7 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
         print("file :%s" % filename)
         print("containing %d peaks" % nb_peaks)
 
-    if filename.split(".")[-1] in ("pik", "peaks"):
+    if filename.split(".")[-1] in ("pik", "peaks"):  # obsolete ...
         data_x = data_xyI[:, 0]  # + 0.5  # 0.5 for being closer to XMAS peaks position
         data_y = (dim[1] - data_xyI[:, 1])  # + 0.5 # 0.5 for being closer to XMAS peaks position
         data_I = data_xyI[:, 2]  # for fit2d pixels convention
@@ -1901,7 +1911,6 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
                                                                         pixelsize=pixelsize,
                                                                         kf_direction=kf_direction)
     #-----------------------------------------------------------------------
-    # print chi,twicetheta
     if nb_peaks > 1 and sorting_intensity == "yes":
         listsorted = np.argsort(data_I)[::-1]
         chi = np.take(chiraw, listsorted)
@@ -1913,6 +1922,8 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
             data_sat = np.take(data_sat, listsorted)
         if col_isbadspot != None:
             data_isbadspot = np.take(data_isbadspot, listsorted)
+
+        data_spotsproperties = np.take(data_spotsproperties, listsorted, axis=0)
 
     else:
         dataintensity = data_I
@@ -1926,23 +1937,28 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
         data_x = [data_x[0]]
         data_y = [data_y[0]]
 
-    if saturation:
-        print("adding flag column for saturated peaks")
-        return twicetheta, chi, dataintensity, data_x, data_y, data_sat
-    if col_isbadspot != None:
-        return twicetheta, chi, dataintensity, data_x, data_y, data_sat, data_isbadspot
-
-    else:
+    if not addspotproperties:
+        if saturation:
+            print("adding flag column for saturated peaks")
+            return twicetheta, chi, dataintensity, data_x, data_y, data_sat
         if col_isbadspot != None:
-            return twicetheta, chi, dataintensity, data_x, data_y, data_isbadspot
+            return twicetheta, chi, dataintensity, data_x, data_y, data_sat, data_isbadspot
+
         else:
-            return twicetheta, chi, dataintensity, data_x, data_y
+            if col_isbadspot != None:
+                return twicetheta, chi, dataintensity, data_x, data_y, data_isbadspot
+            else:
+                return twicetheta, chi, dataintensity, data_x, data_y
+    else:
+        dict_spotsproperties ={'columnsname':listcolumnsname, 'data_spotsproperties':data_spotsproperties}
+        return twicetheta, chi, dataintensity, data_x, data_y, dict_spotsproperties
 
 
 def convert2corfile(filename, calibparam, dirname_in=None,
                                         dirname_out=None,
                                         pixelsize=165.0 / 2048,
-                                        CCDCalibdict=None, add_props=False):
+                                        CCDCalibdict=None, add_props=False,
+                                        addspotproperties=False):
     r"""
     Convert .dat (peaks list from peaksearch procedure) to .cor (adding scattering angles 2theta chi)
 
@@ -1983,19 +1999,19 @@ def convert2corfile(filename, calibparam, dirname_in=None,
     (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
                                                                sorting_intensity="yes",
                                                                 detectorparams=calibparam,
-                                                                pixelsize=pixelsize)
+                                                                pixelsize=pixelsize,
+                                                                addspotproperties=False)
     if add_props:
         if len(twicetheta) > 1:
             rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
-            # need to sort data by intensity (col 2)
-            sortedind = np.argsort(rawdata[:, 2])[:: -1]
+            # need to sort data by intensity (col 3) 'peak_Isub'
+            sortedind = np.argsort(rawdata[:, 3])[:: -1]
             data = rawdata[sortedind]
 
-            add_props = (data[:, 4:], allcolnames[4:])
+            add_props = (data[:, 2:], allcolnames[2:])
         else:
             rawdata, allcolnames = IOLT.read_Peaklist(filename_in, output_columnsname=True)
-            # need to sort data by intensity (col 2)
-            add_props = (np.array([rawdata[4:]]), allcolnames[4:])
+            add_props = (np.array([rawdata[2:]]), allcolnames[2:])
 
     # TODO: handle windowsOS path syntax
     filename_wo_path = filename.split("/")[-1]
@@ -2029,7 +2045,7 @@ def convert2corfile(filename, calibparam, dirname_in=None,
     # print('add_props', data.shape, add_props)
     IOLT.writefile_cor(filename_out, twicetheta, chi, data_x, data_y, dataintensity,
                                                             data_props=add_props,
-                                                            sortedexit=0,
+                                                            sortedexit=False,
                                                             param=param,
                                                             initialfilename=filename)
 
