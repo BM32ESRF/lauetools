@@ -40,17 +40,18 @@ def convert2corfile():
     pass
 
 
-def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity,
+def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, data_y:list, dataintensity:list,
                                             param=None,
                                             initialfilename=None,
                                             comments=None,
-                                            sortedexit=0,
+                                            sortedexit=False,
                                             overwrite=1,
                                             data_sat=None,
                                             data_props=None,
                                             rectpix=0,  # RECTPIX
                                             dirname_output=None,
-                                            verbose=0):
+                                            verbose=0,                                                        dict_data_spotsproperties=None
+                                            ):
     """
     Write .cor file containing data
     one line   of header
@@ -62,17 +63,21 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
 
     :return: str, outputfilename
 
-    :param sortedexit: - 1 sort peaks by intensity for the outputfile
-                - 0 do not sort (e.g. sorting already done in input .dat file . see dataintensity inpu parameter)
+    :param sortedexit: bool, True then sort peaks by intensity for the outputfile. False, then do not sort (e.g. sorting already done in input .dat file . see dataintensity input parameter)
 
     :param overwrite: 1 overwrite existing file
                         0 write a file with '_new' added in the name
+
+    :param initialfilename: original .dat file from which the created .cor is based 
 
     :param rectpix:   to deal with non squared pixel: ypixelsize = xpixelsize * (1.0 + rectpix)
 
     :param data_props: [array of dataproperties, list columns name]  (ie  peak sizes, pixdev etc...  see .dat file)
 
-    :param param: list of dictionnary (5 or 6 elements) of detector geometry parameters (order and key is found in CCD_CALIBRATION_PARAMETERS)
+    :param param: list or dictionnary (5 or 6 elements) of detector geometry parameters (order and key is found in CCD_CALIBRATION_PARAMETERS)
+
+    :param dict_data_spotsproperties: write additional columns from orignal peaksearch-based (.dat) spots properties.
+    dict must have keys: 'columnsname' and 'data_spotsproperties'
 
     if data_sat list, add column to .cor file to mark saturated peaks
     """
@@ -86,7 +91,6 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
     if outputfilename in os.listdir(dirname_output) and not overwrite:
         outputfilename = prefixfilename + "_new" + ".cor"
 
-    #outputfile = open(os.path.join(dirname_output, outputfilename), "w")
     with open(os.path.join(dirname_output, outputfilename), "w") as outputfile:
 
         if not os.access(dirname_output, os.W_OK):
@@ -94,40 +98,62 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
             print('File .cor is not written !')
             return None
 
-        firstline = "2theta chi X Y I"
-        format_string = "%.06f   %.06f   %.06f   %.06f   %.03f"
+        firstline_headercolumnsname = "2theta       chi         X           Y           I       "
+        format_string = "%.05f   %.05f   %.05f   %.05f   %.02f"
         list_of_data = [twicetheta, chi, data_x, data_y, dataintensity]
 
+        if dict_data_spotsproperties is not None:
+            # print('in writefile_cor()')
+            # print('dict_data_spotsproperties',dict_data_spotsproperties)
+
+            ar_list_of_data = np.array(list_of_data).T
+            array_data = dict_data_spotsproperties['data_spotsproperties']
+            assert len(array_data) == len(twicetheta)
+            # print('array_data.shape',array_data.shape)
+            ardata =np.hstack((ar_list_of_data,array_data))
+            # print('ardata.shape',ardata.shape)
+
+            list_of_data = (ardata.T).tolist()
+
+            # print('len list_of_data',len(list_of_data))
+            for _key in dict_data_spotsproperties['columnsname']:
+                if _key not in ('peak_X', 'peak_Y','peak_Isub'):
+                    firstline_headercolumnsname += ' %s'%_key
+                    format_string += "   %.03f"
+
+            # prevent  adding other columns
+            data_props=None
+            data_sat = None
+
         if data_sat is not None:
-            firstline += " data_sat"
+            firstline_headercolumnsname += " data_sat"
             format_string += "   %d"
             list_of_data += [data_sat]
         if data_props:
             print('preparing spots props "list_of_data"')
             data_peaks, columnnames = data_props
             for k in range(len(columnnames)):
-                firstline += " %s" % columnnames[k]
+                firstline_headercolumnsname += " %s" % columnnames[k]
                 format_string += "   %.06f"
                 # TODO clarify ???
                 list_of_data += [data_peaks[:, k]]
                 #list_of_data += [data_peaks[k, :]]
 
-        firstline += "\n"
+        firstline_headercolumnsname += "\n"
 
-        # print('format_string', format_string)
-        # print('firstline', firstline)
 
-        if sortedexit:
+        if sortedexit and dict_data_spotsproperties is None:
             # to write in decreasing order of intensity (col intensity =4)
+            colindex_intensity = 4
             print("rearranging exp. spots order according to intensity")
             arraydata = np.array(list_of_data).T
-            s_ix = np.argsort(arraydata[:, 4])[::-1]
+            s_ix = np.argsort(arraydata[:, colindex_intensity])[::-1]
 
             sortedarray = arraydata[s_ix]
 
             list_of_data = sortedarray.T
 
-        outputfile.write(firstline)
+        outputfile.write(firstline_headercolumnsname)
 
         #print('nbspots', nbspots)
         #print('len(list_of_data)', len(list_of_data))
@@ -148,7 +174,7 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
             outputfile.write("\n# From: %s" % initialfilename)
             outputfile.write("\n# Output Folder: %s" % dirname_output)
 
-        # metadata on detector position and nature
+        # metadata on calibration detector parameters and nature
         if verbose:
             print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
         if param is not None:
@@ -180,32 +206,37 @@ def writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y, dataintensity
             for line in comments:
                 outputfile.write("\n# %s" % line)
 
-    #outputfile.close()
-
-    # print("(%s) written in %s at the end of writefile_cor()" % (firstline[:-1], outputfilename))
     return outputfilename
 
-def get_otherspotprops(allspotsprops, filename, sortintensities=True):
+def get_otherspotprops(allspotsprops: np.array, filename:str, sortintensities:bool=True):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
 
+
     :param allspotsprops: array with shape (nb of spots, nb of props)
+    :param filename: str, .cor file to get the columns name
+
+    :return: array of spot props (except X Y 2theta chi and I), list of column names
     """
+    normalnbcolumns = 5
+    colindex_intensity = 4
+
     assert len(allspotsprops.shape) == 2
+    assert filename.endswith('.cor')
 
     # no additional spot properties
-    if allspotsprops.shape[1] == 5:
+    if allspotsprops.shape[1] == normalnbcolumns:
         return None
 
     # print('filename', filename, 'allspotsprops  int', allspotsprops[:,4])
     if sortintensities:
-        props = allspotsprops[np.argsort(allspotsprops[:, 4])[:: -1]]
+        props = allspotsprops[np.argsort(allspotsprops[:, colindex_intensity])[:: -1]]
     else:
         props = allspotsprops
 
     # list of props
-    otherpropsdata = props[:, 5:].T
+    otherpropsdata = props[:, normalnbcolumns:].T
     with open(filename, "r") as f:
-        columnnames = f.readline().split()[5:]
+        columnnames = f.readline().split()[normalnbcolumns:]
     
 
     # print('\n\n      get_otherspotprops()')
@@ -214,18 +245,22 @@ def get_otherspotprops(allspotsprops, filename, sortintensities=True):
     # print('\n\n')
     return otherpropsdata, columnnames
 
-def readfile_cor(filename, output_CCDparamsdict=False):
+def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True):
     """
     read peak list in .cor file which is contain 2theta and chi angles for each peak
-    .cor file is made of 5 columns
+    .cor file is made at least of 5 columns:  2theta chi pixX pixY I
 
-    2theta chi pixX pixY
+    :param output_CCDparamsdict: bool, dict of detector calibration and nature parameters
+
+    :param output_only5columns: bool, read only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
             data_pixX, data_pixY,
             data_I,                            # intensity
-            detector parameters
+            [detector parameters (CCDcalib), [dict_spotsproperties
+
+
 
     NOTE: detector parameters has been used previously to compute 2theta and chi (angles of kf)
     from pixX and pixY, ie 2theta chi are detector position independent
@@ -236,21 +271,19 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     SKIPROWS = 1
     # read first line
     with open(filename, "r") as f:
-    
         firstline = f.readline()
         unindexeddata = False
         if firstline.startswith("# Unindexed"):
             unindexeddata = True
             SKIPROWS = 7
 
-    if sys.version.split()[0] < "2.6.1":
-        f = open(filename, "r")
-        alldata = np.loadtxt(f, skiprows=SKIPROWS)
-        f.close()
-    else:
-        #         print "python version", sys.version.split()[0]
-        # self.alldata = scipy.io.array_import.read_array(filename, lines = (1,-1))
-        alldata = np.loadtxt(filename, skiprows=SKIPROWS)
+        import re
+        hh = re.sub(' +', ' ', firstline)
+        listcolumnsname = hh.split(' ')
+
+    alldata = np.loadtxt(filename, skiprows=SKIPROWS)
+
+    dict_spotsproperties = {}
 
     # nbspots, nbcolumns = np.shape(self.alldata)
     sha = np.shape(alldata)
@@ -260,6 +293,7 @@ def readfile_cor(filename, output_CCDparamsdict=False):
     elif len(sha) == 1:
         nb_peaks = 1
         nbcolumns = sha[0]
+
 
     if nb_peaks > 1:
 
@@ -278,6 +312,12 @@ def readfile_cor(filename, output_CCDparamsdict=False):
         elif nbcolumns > 6:  # .cor file with additional spots properties
             data_2theta, data_chi, data_pixX, data_pixY, data_I = alldata.T[:5]
             data_theta = data_2theta / 2.0
+
+            # listcolumnsname
+            otherproperties_name = listcolumnsname[5:]
+            otherproperties_data = alldata[:,5:]
+            dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
+
     elif nb_peaks == 1:
         if nbcolumns == 3:
             data_theta = alldata[0] / 2.0
@@ -296,13 +336,17 @@ def readfile_cor(filename, output_CCDparamsdict=False):
             data_2theta, data_chi, data_pixX, data_pixY, data_I = alldata[:5]
             data_theta = data_2theta / 2.0
 
+            otherproperties_name = listcolumnsname[5:]
+            otherproperties_data = alldata[5:]
+            dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
+
     #    print "Reading detector parameters if exist"
     with open(filename, "r") as openf:
 
         # new way of reading CCD calibration parameters
 
         CCDcalib = readCalibParametersInFile(openf)
-        print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
+        #print('CCDcalib in readfile_cor() of file %s'%filename, CCDcalib)
 
         if CCDcalib['dd']:
             detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
@@ -310,15 +354,17 @@ def readfile_cor(filename, output_CCDparamsdict=False):
         else:
             raise IndexError('Missing explicit values for keys %s in CCDcalib () in file  %s '%(CCD_CALIBRATION_PARAMETERS[:5],filename))
             return
-
-
-
+        
+    toreturn = [alldata, data_theta, data_chi,
+                    data_pixX, data_pixY, data_I, detParam]
+    
     if output_CCDparamsdict:
-        return (alldata, data_theta, data_chi,
-                    data_pixX, data_pixY, data_I, detParam, CCDcalib)
-    else:
-        return (alldata, data_theta, data_chi,
-                    data_pixX, data_pixY, data_I, detParam)
+        toreturn.append(CCDcalib)
+
+    if not output_only5columns:
+        toreturn.append(dict_spotsproperties)
+    
+    return toreturn
 
 
 def getpixelsize_from_corfile(filename):
@@ -367,15 +413,16 @@ def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
         for line in f:
             if line.startswith("#") and 'kf_direction' in line:
                 kf_direction = line.split(":")[-1].strip()
-                print('found kf_direction is:', kf_direction)
+                #print('found kf_direction is:', kf_direction)
                 break
 
     return kf_direction
     
-def getdetectordiameter_from_corfile(filename, defautdiameter=165):
+def getdetectordiameter_from_corfile(filename: str, defautdiameter:float=165):
     """
     return kf_direction (laue camera/detector position geometry) if written in .cor file
     """
+    assert defautdiameter>0
 
     with open(filename, "r") as f:
 
@@ -383,7 +430,7 @@ def getdetectordiameter_from_corfile(filename, defautdiameter=165):
         for line in f:
             if line.startswith("#") and 'detectordiameter' in line:
                 diam = float(line.split(":")[-1].strip())
-                print('found detectordiameter is:', diam)
+                # print('found detectordiameter is:', diam)
                 break
 
     return diam
@@ -611,7 +658,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         nbpeaks, nbcolumns = 1, Data_array.shape[0]
     else:
         nbpeaks, nbcolumns = Data_array.shape
-        print('Data_array.shape', Data_array.shape)
+        #print('Data_array.shape', Data_array.shape)
         if Data_array.shape[0] == 1:
             Data_array = Data_array[0]
 
@@ -811,6 +858,25 @@ def addPeaks_in_Peaklist(
 
     return merged_data
 
+def getcolumnsname_dat(fullpath):
+    """
+    get the list of columns name of a .dat file (peal list) from peaksearch 
+
+    Parameters
+    ----------
+    fullpath
+        str, full path to .dat file
+
+    Returns
+    -------
+        list of (str) columns name
+    """
+    with io.open(fullpath, 'r', encoding='utf-8') as ff:
+        _line = ff.readline()
+        columnsname = _line.split()
+
+    return columnsname
+
 
 def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
     """ call simply read_Peaklist()"""
@@ -829,6 +895,8 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
     (peak_X,peak_Y,peak_Itot, peak_Isub,peak_fwaxmaj,peak_fwaxmin,
     peak_inclination,Xdev,Ydev,peak_bkg, Ipixmax)
     """
+    print('\n\nIn read_Peaklist(): ')
+
     if dirname is not None:
         filename_in = os.path.join(dirname, filename_in)
 
@@ -851,7 +919,7 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
                 columnsname = _line.split()
 
             if _line.startswith(('# File created','# files created', '# file created)')):
-                print('got comments and nb of spots!')
+                #print('got comments and nb of spots!')
                 nbdatarows = lineindex-1
                 commentfound = True
             elif _line.startswith('# Comments: nb of peaks'):
