@@ -552,4 +552,4 @@ if __name__ == "__main__":
                                     data_x,
                                     data_y,
                                     dataintensity,
-                                    sortedexit=Intensitysorted)
+                                    sortedexit=False)
