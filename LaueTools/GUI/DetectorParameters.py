@@ -67,8 +67,8 @@ class DetectorParameters(wx.Dialog):
                                                                 self.Parameters_dict["detectordiameter"],
                                                                 self.Parameters_dict["kf_direction"]]
 
-        print("self.params_values_list", self.params_values_list)
-        print("self.paramdetector", self.paramdetector)
+        # print("self.params_values_list", self.params_values_list)
+        # print("self.paramdetector", self.paramdetector)
 
         self.currentvalues = copy.copy(self.params_values_list)
 
@@ -84,7 +84,7 @@ class DetectorParameters(wx.Dialog):
         for text in [a1, a2, a3, a4]:
             text.SetFont(font3)
         for kk, paramVal in enumerate(self.params_values_list):
-            print("kk,paramVal", kk, paramVal)
+            #print("kk,paramVal", kk, paramVal)
             wx.StaticText(self.panel, -1, self.paramdetector[kk], (15, 45 + 30 * kk))
             self.controltext.append(
                 wx.TextCtrl(
@@ -227,7 +227,7 @@ class DetectorParameters(wx.Dialog):
         if not self.getcurrentParams():
             return
 
-        print("self.newparam in OnAcceptCalib()", self.newparam)
+        print("\n\nIn OnAcceptCalib(): self.newparam", self.newparam)
 
         Parameter = {}
         Parameter["CCDParam"] = self.newparam[:5]
@@ -236,13 +236,13 @@ class DetectorParameters(wx.Dialog):
         Parameter["detectordiameter"] = self.newparam[8]
         Parameter["kf_direction"] = self.newparam[9]
 
-        print("param to set", Parameter["CCDParam"])
+        #print("param to set", Parameter["CCDParam"])
         # new parameters can be called from outside parent frame
         if self.parent is not None:
 
             try:
-                print("Parameter['kf_direction']", Parameter["kf_direction"])
-                print("detectordiameter", Parameter["detectordiameter"])
+                # print("Parameter['kf_direction']", Parameter["kf_direction"])
+                # print("detectordiameter", Parameter["detectordiameter"])
 
                 self.parent.defaultParam = Parameter["CCDParam"]
                 self.parent.pixelsize = Parameter["pixelsize"]
@@ -250,7 +250,7 @@ class DetectorParameters(wx.Dialog):
                 self.parent.detectordiameter = Parameter["detectordiameter"]
                 self.parent.kf_direction = Parameter["kf_direction"]
 
-                print("self.parent.defaultParam", self.parent.defaultParam)
+                #print("self.parent.defaultParam", self.parent.defaultParam)
             except AttributeError:
                 print("you must define an attribute 'Parameters_dict'")
                 print("of the calling parent object to collect the new parameters")
