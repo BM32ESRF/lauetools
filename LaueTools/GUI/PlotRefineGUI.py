@@ -176,6 +176,10 @@ class Plot_RefineFrame(wx.Frame):
 
         self.IndexationParameters = IndexationParameters
 
+        # check 
+        # print('keys of IndexationParameters dict:', [kk for kk in IndexationParameters.keys()])
+        # print('keys of DataToIndex dict:', [kk for kk in IndexationParameters['DataToIndex'].keys()])
+
         self.mainframe = IndexationParameters["mainAppframe"]
         if "indexationframe" in IndexationParameters:
             self.indexationframe = IndexationParameters["indexationframe"]
@@ -200,17 +204,17 @@ class Plot_RefineFrame(wx.Frame):
         self.centerx, self.centery = None, None
         self.tth, self.chi, self.pixelX, self.pixelY = None, None, None, None
         # list of spot associations (links) between exp. and theo. spots
-        self.linkExpMiller_link = None
+        self.linkMiller_link = None
         self.linkResidues_link = None
         self.linkIntensity_link = None
-        self.Energy_Exp_spot = None  # estimated energy of exp. spots from close theo. spot
+        self.Energy_spot = None  # estimated energy of exp. spots from close theo. spot
         self.fields = None  # list of str fields featuring spot properties
         self.linkResidues = None
 
-        self.linkExpMiller_fit = None
+        self.linkMiller_fit = None
         self.linkResidues_fit = None
         self.linkIntensity_fit = None
-        self.Energy_Exp_spot_fit = None
+        self.Energy_spot_fit = None
         self.fit_completed = False
         self.residues_non_weighted = None
         self.varyingstrain = None
@@ -355,7 +359,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # No links between exp and theo spots have been done so far
         self.linkedspots = []
-        self.linkExpMiller = []
+        self.linkMiller = []
         self.linkIntensity = []
         # No fit results
         self.linkedspots_fit = None
@@ -491,8 +495,8 @@ class Plot_RefineFrame(wx.Frame):
         self.btnfilterdata = wx.Button(self.panel, -1, "Filter Exp. Data")
         self.btnfilterdata.Bind(wx.EVT_BUTTON, self.BuildDataDict)
 
-        self.btnautolink = wx.Button(self.panel, -1, "Auto. Links")
-        self.btnautolink.Bind(wx.EVT_BUTTON, self.OnAutoLink)
+        self.btnautolink = wx.Button(self.panel, -1, "AutoLinks")
+        self.btnautolink.Bind(wx.EVT_BUTTON, self.OnAutoLinks)
 
         self.btnfilterlink = wx.Button(self.panel, -1, "Filter Links")
         self.btnfilterlink.Bind(wx.EVT_BUTTON, self.BuildDataDictAfterLinks)
@@ -583,8 +587,9 @@ class Plot_RefineFrame(wx.Frame):
         self.incrementfilename.SetValue(True)
 
         self.svbutton = wx.Button(self.panel, -1, "Save Results")
-        self.svbutton.Bind(wx.EVT_BUTTON, self.onWriteFitFile)
         self.svbutton.SetFont(font3)
+        self.svbutton.Bind(wx.EVT_BUTTON, self.onWriteFitFile)
+        
 
         self._layout()
         self._replot()
@@ -1254,13 +1259,13 @@ class Plot_RefineFrame(wx.Frame):
                                     -1,
                                     "Filter Experimental Spots Data",
                                     mySpotData,
-                                    func_to_call=self.readdata_fromEditor,
+                                    func_to_call=self.readdata_fromEditor_ExpData,
                                     field_name_and_order=fields)
         dia.Show(True)
 
-    def readdata_fromEditor(self, data):
+    def readdata_fromEditor_ExpData(self, data):
         """
-        update exp. spots data according to the user selected filter
+        called function from SpotsEditor to update exp. spots data according to the user selected filter
         """
         selectedSpotsPropsarray = data.T
 
@@ -1293,7 +1298,7 @@ class Plot_RefineFrame(wx.Frame):
         # update experimental spots display
         self._replot()
 
-    def OnAutoLink(self, _):
+    def OnAutoLinks(self, _):
         r""" create automatically links between currently DISPLAYED close experimental and
         theoretical spots in 2theta, chi representation
 
@@ -1318,7 +1323,7 @@ class Plot_RefineFrame(wx.Frame):
             twicetheta_exp, chi_exp, dataintensity_exp = self.tth, self.chi, self.Data_I
 
             #             print "twicetheta_exp",twicetheta_exp
-            print("nb of spots in OnAutoLink", len(twicetheta_exp))
+            print("nb of spots in OnAutoLinks", len(twicetheta_exp))
         elif self.datatype == "pixels":
             twicetheta_exp, chi_exp = self.tth, self.chi
             dataintensity_exp = self.Data_I
@@ -1355,18 +1360,18 @@ class Plot_RefineFrame(wx.Frame):
         nb_very_close = len(very_close_ind)
 
         List_Exp_spot_close = []
-        Miller_Exp_spot = []
-        Energy_Exp_spot = []
+        Miller_spot = []
+        Energy_spot = []
         # todisplay = ''
         if nb_very_close > 0:
             for theospot_ind in very_close_ind:  # loop over theo spots index
 
                 List_Exp_spot_close.append(ProxTable[theospot_ind])
-                Miller_Exp_spot.append(Miller_ind[theospot_ind])
-                Energy_Exp_spot.append(energy[theospot_ind])
+                Miller_spot.append(Miller_ind[theospot_ind])
+                Energy_spot.append(energy[theospot_ind])
 
         # print("List_Exp_spot_close", List_Exp_spot_close)
-        # print("Miller_Exp_spot", Miller_Exp_spot)
+        # print("Miller_spot", Miller_spot)
 
         if List_Exp_spot_close == []:
             wx.MessageBox("No links have been found for tolerance angle : %.2f deg" % veryclose_angletol,
@@ -1387,7 +1392,7 @@ class Plot_RefineFrame(wx.Frame):
 
         # print "number labelled exp spots", len(List_Exp_spot_close)
         # print "List_Exp_spot_close", List_Exp_spot_close
-        # print "Miller_Exp_spot", Miller_Exp_spot
+        # print "Miller_spot", Miller_spot
 
         if len(toremoveindex) > 0:
             # index of exp spot in arrayLESC that are duplicated
@@ -1397,10 +1402,10 @@ class Plot_RefineFrame(wx.Frame):
 
             # marking exp spots(belonging ambiguously to several simulated grains)
             for ind in ambiguous_exp_ind:
-                Miller_Exp_spot[ind] = None
-                Energy_Exp_spot[ind] = 0.0
+                Miller_spot[ind] = None
+                Energy_spot[ind] = 0.0
 
-        # -----------------------------------------------------------------------------------------------------
+        #----------------------------------------------------------------------
         ProxTablecopy = copy.copy(ProxTable)
         # tag duplicates in ProxTable with negative sign ----------------------
         # ProxTable[index_theo]  = index_exp   closest link
@@ -1426,7 +1431,7 @@ class Plot_RefineFrame(wx.Frame):
         # print ProxTablecopy
 
         #         print "len List_Exp_spot_close", len(List_Exp_spot_close)
-        # print "Results",[Miller_Exp_spot, List_Exp_spot_close]
+        # print "Results",[Miller_spot, List_Exp_spot_close]
 
         singleindices = []
         refine_indexed_spots = {}
@@ -1448,14 +1453,14 @@ class Plot_RefineFrame(wx.Frame):
                     # print "add in dict refine_indexed_spots\n"
                     refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index,
-                                                        Miller_Exp_spot[k],
-                                                        Energy_Exp_spot[k]]
+                                                        Miller_spot[k],
+                                                        Energy_spot[k]]
                 # else:  # test whether all theo spots are harmonics
                 # ar_miller = np.take(Miller_ind, theo_index, axis =0)
                 # print "ar_miller",ar_miller
                 # filtered_miller = FindO.FilterHarmonics(ar_miller)
                 # if len(filtered_miller) == 1:
-                # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_Exp_spot[k]]
+                # refine_indexed_spots[exp_index] = [exp_index,theo_index,Miller_spot[k]]
                 else:  # recent PATCH:
                     # print "Resi[theo_index]", Resi[theo_index]
                     closest_theo_ind = np.argmin(Resi[theo_index])
@@ -1463,8 +1468,8 @@ class Plot_RefineFrame(wx.Frame):
                     if Resi[theo_index][closest_theo_ind] < veryclose_angletol:
                         refine_indexed_spots[exp_index] = [exp_index,
                                                         theo_index[closest_theo_ind],
-                                                        Miller_Exp_spot[k],
-                                                        Energy_Exp_spot[k]]
+                                                        Miller_spot[k],
+                                                        Energy_spot[k]]
             else:
                 print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
 
@@ -1474,18 +1479,18 @@ class Plot_RefineFrame(wx.Frame):
         # key is experimental spot index and value is [exp. spotindex, h, k, l]
         # print "refine_indexed_spots",refine_indexed_spots
 
-        listofpairs = []
-        linkExpMiller = []
+        listofpairs = []  # list of pairs between absolute exp. spot index and theo. spot index
+        linkMiller = []
         linkIntensity = []
         linkResidues = []
         linkEnergy = []
         #linkExpXY = []
         # Dataxy = []
 
-        print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
-        print('refine_indexed_spots', refine_indexed_spots)
+        # print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
+        # print('refine_indexed_spots', refine_indexed_spots)
 
-        # val = [exp_index, theo_inde, Miller_Exp_spot, Energy_Exp_spot
+        # val = [exp_index, theo_inde, Miller_spot, Energy_spot
         for val in list(refine_indexed_spots.values()):
             if val[2] is not None:
                 localspotindex = val[0]
@@ -1497,7 +1502,7 @@ class Plot_RefineFrame(wx.Frame):
                 absolute_spot_index = self.selectedAbsoluteSpotIndices[localspotindex]
 
                 listofpairs.append([absolute_spot_index, closetheoindex])  # Exp, Theo,  where -1 for specifying that it came from automatic linking
-                linkExpMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
+                linkMiller.append([float(absolute_spot_index)] + [float(elem) for elem in val[2]])  # float(val) for further handling as floats array
                 linkIntensity.append(dataintensity_exp[localspotindex])
                 
                 linkResidues.append([absolute_spot_index, closetheoindex, Resi[closetheoindex]])
@@ -1507,12 +1512,29 @@ class Plot_RefineFrame(wx.Frame):
                 #linkExpXY.append(dataintensity_exp[localspotindex])
 
 
+        assert len(linkEnergy) == len(linkIntensity)
+
         self.linkedspots_link = np.array(listofpairs)
-        self.linkExpMiller_link = linkExpMiller
+        self.linkMiller_link = linkMiller
         self.linkIntensity_link = linkIntensity
         self.linkResidues_link = linkResidues
         self.linkEnergy_link = linkEnergy
+        self.linkSpotsProps_link= None
         self.fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "E(keV)", "residues(deg)"]
+
+        # check if peak search spots properties exist
+        DataToIndex = self.IndexationParameters["DataToIndex"]
+        if 'select_spotsproperties' in DataToIndex:
+            indExp = self.linkedspots_link[:,0]
+            arr_data = np.take(DataToIndex['select_spotsproperties'], indExp, axis=0)
+            # adding spot properties
+            listkeys_spotsproperties = DataToIndex['columnsname_spotproperties']
+
+            self.linkSpotsProps_link = []  # [prop1data, prop2data, ...,propsndata]
+            for ii, key in enumerate(listkeys_spotsproperties):
+                self.fields.append(key)
+                self.linkSpotsProps_link.append(arr_data[:,ii])
+
 
         print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
 
@@ -1521,33 +1543,40 @@ class Plot_RefineFrame(wx.Frame):
 
         return refine_indexed_spots
 
-    def BuildDataDictAfterLinks(self, _):  # filter links between spots(after OnAutoLinks() )
+    def BuildDataDictAfterLinks(self, _):
         """
-        open editor to look at spots links and filter them
+        launched by button 'Filter Links'.
+        Open editor to look at spots links and filter them
         
-        launched by button 'Filter Links'
+        uses attributes linkedspots_link, linkedspots_link, linkMiller_link, linkIntensity_link, linkResidues_link, [linkSpotsProps_link]
 
-        uses linkedspots_link, linkedspots_link, linkExpMiller_link
+        .. note: possible only after OnAutoLinks() which has set link###_link attributes
         """
         if self.linkedspots_link is not None:
 
             indExp = np.array(self.linkedspots_link[:, 0], dtype=np.int16)
             indTheo = np.array(self.linkedspots_link[:, 1], dtype=np.int16)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_link, dtype=np.int16))[1:4]
+            _h, _k, _l = np.transpose(np.array(self.linkMiller_link, dtype=np.int16))[1:4]
             intens = self.linkIntensity_link
             energy = self.linkEnergy_link
+            # props = self.linkSpotsProps_link done below
+            
+                
             if self.linkResidues_link is not None:
                 residues = np.array(self.linkResidues_link)[:, 2]
             else:
                 residues = -1 * np.ones(len(indExp))
 
-            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
+            to_put_in_dict = [indExp, indTheo, _h, _k, _l, intens, energy, residues]
+
+            if self.linkSpotsProps_link is not None:
+                to_put_in_dict += self.linkSpotsProps_link
 
             mySpotData = {}
             for k, ff in enumerate(self.fields):
                 mySpotData[ff] = to_put_in_dict[k]
-            dia = LSEditor.SpotsEditor(None, -1, "Filter spots links Editor", mySpotData,
-                                    func_to_call=self.readdata_fromEditor_after,
+            dia = LSEditor.SpotsEditor(None, -1, "Show and Filter spots links Editor", mySpotData,
+                                    func_to_call=self.readdata_fromEditor_afterFilterLinks,
                                     field_name_and_order=self.fields)
             dia.Show(True)
 
@@ -1555,16 +1584,25 @@ class Plot_RefineFrame(wx.Frame):
             wx.MessageBox('There are not existing links between simulated and experimental '
             'data!! Click on "Auto Links" button ', "INFO")
 
-    def readdata_fromEditor_after(self, data):
-        """ set self.linkedspots, self.linkExpMiller, self.linkIntensity, self.linkResidues
+    def readdata_fromEditor_afterFilterLinks(self, data):
+        """ called function from SpotsEditor used to filter links (in plotrefineGUI Filter Links button)
+        
+        set self.linkedspots, self.linkMiller, self.linkIntensity, self.linkResidues, Energy_spot
         from data array"""
         ArrayReturn = np.array(data)
 
+        print('\nIn readdata_fromEditor_after() filter links: ')
+        print('ArrayReturn.shape',ArrayReturn.shape)
+
         self.linkedspots = ArrayReturn[:, :2]
-        self.linkExpMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
+        self.linkMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity = ArrayReturn[:, 5]
         self.linkResidues = np.take(ArrayReturn, [0, 1, 7], axis=1)
-        self.Energy_Exp_spot = ArrayReturn[:, 6]
+        self.linkEnergy = ArrayReturn[:, 6]
+        if ArrayReturn.shape[1]>8:
+            self.linkSpotsProps = ArrayReturn[:,8:].T.tolist()
+        else:
+            self.linkSpotsProps = None
 
         self.plotlinks = self.linkedspots
         self._replot()
@@ -1580,6 +1618,7 @@ class Plot_RefineFrame(wx.Frame):
         .. note:: refine strained and oriented crystal by minimizing peaks positions (pixels).
         .. note:: experimental peaks pixel positions are reevaluated from 2theta and chi angles
         """
+        print('\nIn OnRefine_UB_and_Strain():  \n')
 
         if self.use_forfit1.GetValue():   # radio button autolinks model
             if self.linkedspots_link is None:
@@ -1591,12 +1630,19 @@ class Plot_RefineFrame(wx.Frame):
                 wx.MessageBox(
                     "WARNING! You have only %d over the 8 links needed between exp. and theo. spots to "
                     "refine orientation and strain" % len(self.linkedspots_link), "INFO")
-                # return
+                return
+            
             self.linkedspots_fit = self.linkedspots_link
-            self.linkExpMiller_fit = self.linkExpMiller_link
+            self.linkMiller_fit = self.linkMiller_link
             self.linkIntensity_fit = self.linkIntensity_link
             self.linkEnergy_fit = self.linkEnergy_link
+            self.linkSpotsProps_fit = self.linkSpotsProps_link
             self.linkResidues_fit = None
+
+            # print('len(self.linkIntensity_link)', len(self.linkIntensity_link))
+            # print('len(self.linkEnergy_link)', len(self.linkEnergy_link))
+
+
         elif self.use_forfit2.GetValue():  # radio button filterlinks model
             if self.linkedspots == []:
                 txt = "There are not existing links between simulated and experimental data for the refinement!!\n"
@@ -1604,11 +1650,14 @@ class Plot_RefineFrame(wx.Frame):
                 wx.MessageBox(txt, "INFO")
                 return
             self.linkedspots_fit = self.linkedspots
-            self.linkExpMiller_fit = self.linkExpMiller
+            self.linkMiller_fit = self.linkMiller
             self.linkIntensity_fit = self.linkIntensity
-            self.linkEnergy_fit = self.linkEnergy_link
-
+            self.linkEnergy_fit = self.linkEnergy
+            # print('len(self.linkIntensity)', len(self.linkIntensity))
+            # print('len(self.linkEnergy_link)', len(self.linkEnergy_link))
+            self.linkSpotsProps_fit = self.linkSpotsProps
             self.linkResidues_fit = None
+
         elif self.use_forfit3.GetValue():  # radio button show results model
             print("I will use for the refinement the(filtered) results of the previous fit")
             if self.linkedspots_fit is None:
@@ -1631,10 +1680,9 @@ class Plot_RefineFrame(wx.Frame):
         # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy
         # Data_Q = self.data_theo[2]  # all miller indices must be entered with sim_indices = arraycouples[:,1]
 
-        # print "self.linkExpMiller",self.linkExpMiller
-        Data_Q = np.array(self.linkExpMiller_fit)[:, 1:]
+        Data_Q = np.array(self.linkMiller_fit)[:, 1:]
         sim_indices = np.arange(nb_pairs)  # for fitting function this must be an arange...
-        #         print "DataQ from self.linkExpMiller", Data_Q
+        #         print "DataQ from self.linkMiller", Data_Q
 
         # experimental spots selection -------------------------------------
         AllData = self.IndexationParameters["AllDataToIndex"]
@@ -2484,7 +2532,9 @@ class Plot_RefineFrame(wx.Frame):
 
     def build_FitResults_Dict(self, _):
         """
-        build dict of results of pairs distance minimization launched by 'Show Results' button
+        launched by 'Show Results' button.
+        
+        Build dict of spots pairs which were used for structural model refinement 
         """
         if self.fitresults:
 
@@ -2495,16 +2545,22 @@ class Plot_RefineFrame(wx.Frame):
 
             indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int16)
             indTheo = np.array(self.linkedspots_fit[:, 1], dtype=np.int16)
-            _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int16))[1:4]
+            _h, _k, _l = np.transpose(np.array(self.linkMiller_fit, dtype=np.int16))[1:4]
             intens = self.linkIntensity_fit
             energy = self.linkEnergy_fit
+
+            assert len(energy) == len(intens)
 
             if self.linkResidues_fit is not None:
                 residues = np.array(self.linkResidues_fit)[:, 2]
             else:
                 residues = -1 * np.ones(len(indExp))
 
-            to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
+            to_put_in_dict = [indExp, indTheo, _h, _k, _l, intens, energy, residues]
+
+            if self.linkSpotsProps_fit is not None:
+                to_put_in_dict += self.linkSpotsProps_fit
+                fields += self.IndexationParameters['DataToIndex']['columnsname_spotproperties']
 
             mySpotData = {}
             for k, ff in enumerate(fields):
@@ -2514,40 +2570,49 @@ class Plot_RefineFrame(wx.Frame):
             print('of length',len(mySpotData["Energy(keV)"]))
             dia = LSEditor.SpotsEditor(None, -1, "Show and Filter fit results Spots Editor ",
                                         mySpotData,
-                                        func_to_call=self.readdata_fromEditor_Res,
+                                        func_to_call=self.readdata_fromEditor_afterShowResults,
                                         field_name_and_order=fields)
             dia.Show(True)
 
         else:
             wx.MessageBox("You must have run once a data refinement!", "INFO")
 
-    def readdata_fromEditor_Res(self, data):
+    def readdata_fromEditor_afterShowResults(self, data):
         """
-        function that return data after user selection in the GUI SpotsEditor  
+        called function of spotseditor.
+        Return fitted spots data after user selection  
         
-        set self attribute from data:
+        set (update by filtering) attributes from data:
         self.linkedspots_fit
-        self.linkExpMiller_fit
+        self.linkMiller_fit
         self.linkIntensity_fit
         self.linkResidues_fit
-        self.linkEnergy_fit"""
+        self.linkEnergy_fit
+        self.linkSpotsProps_fit"""
+
         ArrayReturn = np.array(data)
 
-        print('ArrayReturn in readdata_fromEditor_Res()',ArrayReturn)
+        #print('ArrayReturn in readdata_fromEditor_Res()',ArrayReturn)
         print('ArrayReturn.shape', ArrayReturn.shape)
 
         self.linkedspots_fit = ArrayReturn[:, :2]
-        self.linkExpMiller_fit = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
+        self.linkMiller_fit = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity_fit = ArrayReturn[:, 5]
         self.linkResidues_fit = np.take(ArrayReturn, [0, 1, 7], axis=1)
         self.linkEnergy_fit = ArrayReturn[:, 6]
+        if ArrayReturn.shape[1]>8:
+            print('\n In readdata_fromEditor_Res(): ')
+            print('filling self.linkSpotsProps_fit')
+            self.linkSpotsProps_fit = ArrayReturn[:,8:].T.tolist()
+        else:
+            self.linkSpotsProps_fit = None
 
         self.plotlinks = self.linkedspots_fit
         self._replot()
 
     def onWriteFitFile(self, _):
         """
-        write a .fit file of indexation results of 1 grain
+        write a .fit file based on indexation results of a single grain laue pattern
         """
         if not self.fitresults:
             wx.MessageBox("You must have run once a data refinement!", "INFO")
@@ -2562,12 +2627,11 @@ class Plot_RefineFrame(wx.Frame):
 
         # absolute exp spot index as found in .cor or .dat file
         indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int16)
-        _h, _k, _l = np.transpose(np.array(self.linkExpMiller_fit, dtype=np.int16))[1:4]
+        _h, _k, _l = np.transpose(np.array(self.linkMiller_fit, dtype=np.int16))[1:4]
         intens = self.linkIntensity_fit
         residues = np.array(self.linkResidues_fit)[:, 2]
 
         fullresults = 1
-        # addCCDparams = 1
 
         if fullresults:
             # theoretical spots properties
@@ -2576,11 +2640,11 @@ class Plot_RefineFrame(wx.Frame):
             dictCCD["CCDparam"] = self.CCDcalib
             dictCCD["pixelsize"] = self.pixelsize
             dictCCD["kf_direction"] = self.kf_direction
-            SpotsProperties = LAUE.calcSpots_fromHKLlist(self.UBmat, self.B0matrix,
+            AllSpotsData = LAUE.calcSpots_fromHKLlist(self.UBmat, self.B0matrix,
                                                             np.array([_h, _k, _l]).T,
                                                             dictCCD)
-            # (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
-            (_, _, _, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = SpotsProperties
+            # (H, K, L, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = AllSpotsData
+            (_, _, _, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = AllSpotsData
 
             # self.Data_2theta, self.Data_chi, self.Data_I, self.File_NAME = self.data
 
@@ -2595,8 +2659,27 @@ class Plot_RefineFrame(wx.Frame):
             Columns = [indExp, intens, _h, _k, _l, residues, Energytheo, Xexp, Yexp, twtheexp,
                                         chiexp, Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz]
 
-            columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz\n"
+            columnsname = "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz "
 
+            # check if peak search spots properties exist
+            DataToIndex = self.IndexationParameters["DataToIndex"]
+            if 'select_spotsproperties' in DataToIndex:
+                #print('Additional spots properties to save !!')
+                arr_data = DataToIndex['select_spotsproperties']
+
+                # adding spot properties
+                listkeys_spotsproperties = DataToIndex['columnsname_spotproperties']
+                assert len(listkeys_spotsproperties) == arr_data.shape[1]
+                for ii, key in enumerate(listkeys_spotsproperties):
+                    Columns.append(arr_data[:,ii][indExp])
+                    columnsname+='%s '%key
+
+            else:
+                pass
+                # print('\n So Sad !! No additional spots properties to save !!\n')
+                
+
+            columnsname += '\n'
         else:  # old! only 5 columns in .fit file
             Columns = [indExp, intens, _h, _k, _l, residues]
             columnsname = "#spot_index Intensity h k l pixDev\n"
@@ -2635,8 +2718,8 @@ class Plot_RefineFrame(wx.Frame):
             self.IndexationParameters["writefolder"] = OSLFGUI.askUserForDirname(self)
 
 
-        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n Folder: %s"%self.IndexationParameters["writefolder"],
-                                                            "Saving refined peaks list")
+        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n Folder: %s"%self.IndexationParameters["writefolder"],"Saving refined peaks list (.fit) file")
+
         dlg.SetValue("%s" % outputfilename)
         filenamefit = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -3168,18 +3251,18 @@ class Plot_RefineFrame(wx.Frame):
             self.SimulParam = (Grain, emin, emax)
 
         # Generating link automatically
-        self.OnAutoLink(evt)  # inside there is simulatePattern() which uses self.SimulParam
+        self.OnAutoLinks(evt)  # inside there is simulatePattern() which uses self.SimulParam
 
         # self.linkedspots_link
-        # self.linkExpMiller_link
+        # self.linkMiller_link
         # self.linkIntensity_link
         # self.linkResidues_link
-        # self.Energy_Exp_spot
-        #print('self.linkExpMiller_link', self.linkExpMiller_link)
+        # self.Energy_spot
+        #print('self.linkMiller_link', self.linkMiller_link)
 
-        Miller_Exp_spot = np.array(self.linkExpMiller_link, dtype=np.int16)[:, 1:4]
+        Miller_spot = np.array(self.linkMiller_link, dtype=np.int16)[:, 1:4]
         List_Exp_spot_close = np.array(self.linkedspots_link[:, 0], dtype=np.int16)
-        Energy_Exp_spot = self.Energy_Exp_spot
+        Energy_spot = self.Energy_spot
 
         #print("List_Exp_spot_close in Spot_MillerAttribution", List_Exp_spot_close)
 
@@ -3244,11 +3327,11 @@ class Plot_RefineFrame(wx.Frame):
 
         # update spots properties with respect to indexation results (and self.current_processedgrain +=1)
         self.mainframe.last_epsil_fromindexation[self.current_processedgrain] = epsil
-        self.mainframe.Update_DataToIndex_Dict([Miller_Exp_spot,
-                                                Energy_Exp_spot,
+        self.mainframe.Update_DataToIndex_Dict([Miller_spot,
+                                                Energy_spot,
                                                 List_Exp_spot_close])
-        self.mainframe.Update_DB_fromIndexation([Miller_Exp_spot,
-                                                Energy_Exp_spot,
+        self.mainframe.Update_DB_fromIndexation([Miller_spot,
+                                                Energy_spot,
                                                 List_Exp_spot_close])
 
         # closing windows

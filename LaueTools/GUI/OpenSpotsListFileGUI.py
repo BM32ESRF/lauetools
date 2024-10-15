@@ -91,28 +91,35 @@ def askUserForDirname(parent):
 
 def OpenCorfile(filename, parent):
     """
-    Read a .cor file with 5 columns 2theta chi pixX pixY I
-    reads detector parameters and set defaultParam according to them
-    returns self.data_theta, self.data_chi, self.data_pixX, self.data_pixY, self.data_I
+    Reads a .cor file with spots porperties columns (usually 5: 2theta chi pixX pixY I).
+    Reads also detector parameters and set defaultParam according to them
+    
+    creates or updates parent.Current_peak_data (all columns of .cor file)
+    creates or updates parent.data_theta, parent.data_chi, parent.data_I, parent.data_pixX,
+        parent.data_pixY, parent.CCDCalibDict
 
-    creates or updates self.Current_peak_data (all columns of .cor file)
-    creates or updates self.data_theta, self.data_chi, self.data_I, self.data_pixX,
-        self.data_pixY, self.CCDCalibDict
-
-    parent must have attributes: kf_direction_from_file, CCDLabel, detectordiameter
+    :param parent: object, with mandatory attributes: kf_direction_from_file, CCDLabel, detectordiameter, dict_spotsproperties
+    
+    :return: data_theta, data_chi, data_pixX, data_pixY, data_I, dict_spotsproperties where
+    dict_spotsproperties = {'columnsname': ..., 'data_spotsproperties': ...}
+    
     """
     kf_direction_from_file, CCDLabel = parent.kf_direction_from_file, parent.CCDLabel
 
-    print('Opening .cor file %s'%filename)
+    dict_spotsproperties = {}  # potential dict of extra spots properties 
+
+    print('In OpenCorfile():\nOpening .cor file %s'%filename)
     (Current_peak_data, data_theta, data_chi,
         data_pixX, data_pixY, data_I,
         calib,
-        CCDCalibDict,
-    ) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
+        CCDCalibDict, dict_spotsproperties
+    ) = IOLT.readfile_cor(filename, output_CCDparamsdict=True, output_only5columns=False)
 
-    print("\nCCDCalibDict after readfile_cor ", CCDCalibDict)
+    #print("\nCCDCalibDict after readfile_cor ", CCDCalibDict)
     if 'CCDLabel' in CCDCalibDict:
         CCDLabel = CCDCalibDict['CCDLabel']
+
+    
 
     CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent)
 
@@ -123,7 +130,7 @@ def OpenCorfile(filename, parent):
 
     # update  CCDLabel,   framedim (nb pixels * nb pixels)
     parent.CCDLabel = CCDCalibDict['CCDLabel']
-    print('parent.CCDLabel', parent.CCDLabel)
+    # print('parent.CCDLabel', parent.CCDLabel)
     parent.framedim = DictLT.dict_CCD[parent.CCDLabel][0]
     parent.pixelsize = DictLT.dict_CCD[parent.CCDLabel][0]
     parent.detectordiameter = IOLT.getdetectordiameter_from_corfile(filename)
@@ -157,13 +164,17 @@ def OpenCorfile(filename, parent):
                         data_I,
                         calib,
                         CCDCalibDict)
+    
+    if len(dict_spotsproperties)>0:
+        print('dict_spotsproperties is not empty cool!')
+        parent.dict_spotsproperties = dict_spotsproperties
 
     # Spots List to index object ----------------------
-    print("self.CCDCalibDict  end ", parent.CCDCalibDict)
-    print("self.pixelsize  end", parent.pixelsize)
+    # print("self.CCDCalibDict  end ", parent.CCDCalibDict)
+    # print("self.pixelsize  end", parent.pixelsize)
 
     return (data_theta, data_chi,
-            data_pixX, data_pixY, data_I)
+            data_pixX, data_pixY, data_I, dict_spotsproperties)
 
 def CheckCCDCalibParameters(CCDCalibDict, kf_direction_from_file, CCDLabel, parent):
     """
@@ -223,7 +234,10 @@ def OpenPeakList(parent):
         - kf_direction_from_file
         - PeakListDatFileName  .dat file
         - DataPlot_filename
+
+    :param parent: GUI object with above 
     """
+    print('\n\nIn OpenPeakList():')
     if parent.resetwf is True:
         parent.writefolder = parent.dirnamepklist
 
@@ -248,19 +262,20 @@ def OpenPeakList(parent):
         LaueGeomBoard.ShowModal()
         LaueGeomBoard.Destroy()
 
-        print("kf_direction in OnOpenPeakList", parent.kf_direction)
+        print("In OpenPeakList(): kf_direction", parent.kf_direction)
 
         # compute 2theta and chi according to detector calibration geometry
         (twicetheta, chi, dataintensity,
-            data_x, data_y) = F2TC.Compute_data2thetachi(
+            data_x, data_y, dict_data_spotsproperties) = F2TC.Compute_data2thetachi(
                                                 fullpathfilename, sorting_intensity="yes",
                                                 detectorparams=parent.defaultParam,
                                                 pixelsize=parent.pixelsize,
-                                                kf_direction=parent.kf_direction)
+                                                kf_direction=parent.kf_direction,
+                                                addspotproperties=True)
 
         if not os.access(parent.dirnamepklist, os.W_OK):
             parent.writefolder = askUserForDirname(parent)
-            print('choosing %s as folder for results  => ', parent.writefolder)
+            print('In OpenPeakList(): choosing %s as folder for results  => ', parent.writefolder)
         else:
             parent.writefolder = parent.dirnamepklist
 
@@ -280,13 +295,18 @@ def OpenPeakList(parent):
         for k,v in zip(["dd", "xcen", "ycen", "xbet", "xgam"],parent.defaultParam[:5]):
             Parameters_dict[k]=v
 
+
+        if dict_data_spotsproperties is not None:
+            print('In OpenPeakList():\ndict_data_spotsproperties',dict_data_spotsproperties)
+
         IOLT.writefile_cor(prefixfilename, twicetheta, chi, data_x, data_y,
-                            dataintensity, sortedexit=0,
+                            dataintensity, sortedexit=False,
                             param=Parameters_dict,#parent.defaultParam + [parent.pixelsize],
                             initialfilename=DataPlot_filename,
-                            dirname_output=parent.writefolder)
+                            dirname_output=parent.writefolder,
+                            dict_data_spotsproperties=dict_data_spotsproperties)
 
-        print("%s has been created\n in folder %s"%("dat_" + prefix + ".cor", parent.writefolder))
+        print("In openpeaklist():\n%s has been created\n in folder %s"%("dat_" + prefix + ".cor", parent.writefolder))
         print("with defaultparameter\n %s" % str(parent.defaultParam))
 
         parent.PeakListDatFileName = copy.copy(DataPlot_filename)

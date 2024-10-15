@@ -108,7 +108,7 @@ class LinkEditor(wx.Frame):
 
     def OnClose(self, _):
         self.listofpairs = []
-        self.linkExpMiller = []
+        self.linkMiller = []
         self.linkIntensity = []
         for idx in range(self.lc.GetItemCount()):
 
@@ -132,11 +132,11 @@ class LinkEditor(wx.Frame):
 
             # print [item_exp,item_sim,HKL]
             self.listofpairs.append([item_exp, item_sim])
-            self.linkExpMiller.append([float(item_exp), H, K, L])
+            self.linkMiller.append([float(item_exp), H, K, L])
             self.linkIntensity.append(intensity)
             # print "\n\n self.listofpairs in editor class",self.listofpairs
         self.Close()
-        return self.listofpairs, self.linkExpMiller, self.linkIntensity
+        return self.listofpairs, self.linkMiller, self.linkIntensity
 
     def OnClear(self, _):
         self.lc.DeleteAllItems()
@@ -177,7 +177,7 @@ if __name__ == "__main__":
             dia.Destroy()
 
             print("list of pairs", dia.listofpairs)
-            print("list of Miller selection", dia.linkExpMiller)
+            print("list of Miller selection", dia.linkMiller)
             print("list of intensity selection", dia.linkIntensity)
             return True
 
