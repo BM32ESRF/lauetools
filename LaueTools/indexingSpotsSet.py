@@ -318,7 +318,7 @@ class spotsset:
 
         optionnaly: write a 'REF_*******.cor' file and set self.refpositionfilepath accordingly
 
-        :param filename: str, fullpath to file
+        :param filename: str, fullpath to file with extension .cor
         :param TrackingMode: 0   then refpositionfilepath is unchanged when indexing several images
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
         will be selected and aranged according to this reference list.
@@ -341,6 +341,9 @@ class spotsset:
         print("Import Data for DATASET indexation procedure")
 
         print("filename in importdatafromfile()", filename)
+
+        assert filename.endswith('.cor')
+        
         (allspotsprops,
         data_theta, Chi, posx, posy, dataintensity,
         detectorparameters,
