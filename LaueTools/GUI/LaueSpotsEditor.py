@@ -208,14 +208,14 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
                 if ldata != length[0]:
 
                     proceed = False
-                    txt = "The input Data contain list of data of different lengths!\n"
+                    txt = "The input Data contain list of data of different lengthes!\n"
                     txt += "List of data for each field must have the same length!\n"
                     txt += "Field %s\nLength %s" % (allfield, length)
                     wx.MessageBox(txt, "INFO")
                     break
 
             if proceed:
-                print('self.dict_spots_data',self.dict_spots_data)
+                #print('self.dict_spots_data',self.dict_spots_data)
                 self.nbspots = length[0]
                 self.listcontrol.add_rows(self.dict_spots_data, self.nbspots)
                 #                 self.tcnb.SetValue(str(self.nbspots))
