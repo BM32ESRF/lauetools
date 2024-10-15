@@ -108,6 +108,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.CCDdetectorparameters["detectordiameter"] = indexation_parameters["detectordiameter"]
 
         self.IndexationParameters = indexation_parameters
+        
         self.IndexationParameters["Filename"] = indexation_parameters["DataPlot_filename"]
         self.dirname = indexation_parameters["dirname"]
         self.IndexationParameters["DataPlot_filename"] = indexation_parameters["DataPlot_filename"]
