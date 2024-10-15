@@ -198,13 +198,14 @@ class PlotRangePanel(wx.Panel):
         self.mainframe.init_plot = True
 
     def opendata(self, evt):
-        """import list of spots
+        """open a GUI to select a file containing peaks list (.dat, or .cor)
         """
         OSLFGUI.OpenPeakList(self.mainframe)
 
         selectedFile = self.mainframe.DataPlot_filename
 
-        print("open data Selected file ", selectedFile)
+        print("\n\nIn opendata(): Selected file ", selectedFile)
+        print("dict_spotsproperties", self.mainframe.dict_spotsproperties)
 
         self.mainframe.initialParameter["dirname"] = self.mainframe.dirnamepklist
         self.mainframe.initialParameter["filename"] = selectedFile
@@ -261,7 +262,7 @@ class CrystalParamPanel(wx.Panel):
 
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
         t2 = wx.StaticText(self, -1, "Element")
-        self.comboElem = wx.ComboBox(self, -1, "Si",
+        self.comboElem = wx.ComboBox(self, -1, "Ge",
                                         choices=self.listsorted_materials,
                                         style=wx.CB_READONLY)
 
@@ -1498,17 +1499,24 @@ class MainCalibrationFrame(wx.Frame):
             self.writefolder = self.dirnamepklist
 
         if extension in ("dat", "DAT"):
-
-            (twicetheta, chi, dataintensity, data_x, data_y,
+            addspotproperties = True  # for test ofr normal worflow
+            (twicetheta, chi, dataintensity, data_x, data_y, dict_data_spotsproperties
             ) = F2TC.Compute_data2thetachi(filepath, detectorparams=self.CCDParam,
                                             pixelsize=self.pixelsize,
-                                            kf_direction=self.kf_direction)
+                                            kf_direction=self.kf_direction,
+                                            addspotproperties=addspotproperties)
             self.initialParameter['filename.cor'] = None
             self.initialParameter['filename.dat'] = filepath
             self.filename = filepath
 
 
         elif extension in ("cor",):
+            dict_data_spotsproperties = {}
+            addspotproperties = False
+            #print('IOLT.getcolumnsname_dat(filepath)',IOLT.getcolumnsname_dat(filepath))
+            if len(IOLT.getcolumnsname_dat(filepath))>5:
+                addspotproperties = True
+
             (_, data_theta,
                 chi,
                 data_x,
@@ -1518,7 +1526,7 @@ class MainCalibrationFrame(wx.Frame):
             twicetheta = 2 * data_theta
             self.initialParameter['filename.cor'] = self.filename
 
-            # write a basic .dat file from .cor file
+            # write a basic .dat file from .cor file  (name calib_.dat)
             Data_array = np.zeros((len(data_theta), 10))
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
@@ -1543,6 +1551,9 @@ class MainCalibrationFrame(wx.Frame):
 
         # pixel coordinates of experimental spots
         self.data_x, self.data_y = data_x, data_y
+
+        # peaksearch spots properties
+        self.dict_data_spotsproperties = dict_data_spotsproperties
 
     def computeGnomonicExpData(self):
         # compute Gnomonic projection
@@ -1847,7 +1858,7 @@ class MainCalibrationFrame(wx.Frame):
 
         # calib_indexed_spots is a dictionnary:
         # key is experimental spot index and value is [experimental spot index,h,k,l]
-        print("calib_indexed_spots", calib_indexed_spots)
+        #print("calib_indexed_spots", calib_indexed_spots)
 
         listofpairs = []
         linkExpMiller = []
@@ -1949,25 +1960,27 @@ class MainCalibrationFrame(wx.Frame):
             event.Skip()
             return
 
-        print("\nStart fit")
-        print("Pairs of spots used", self.linkedspots)
+        print("\nIn Start fit()")
+        print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
+        print('self.filename', self.filename)
+        #print("Pairs of spots used", self.linkedspots)
         arraycouples = np.array(self.linkedspots)
 
         exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
         sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
 
         nb_pairs = len(exp_indices)
-        print("Nb of pairs: ", nb_pairs)
-        print(exp_indices, sim_indices)
+        print("Nb of pairs  theo-exp spots: ", nb_pairs)
+        #print(exp_indices, sim_indices)
 
         # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy
         # Data_Q = self.data_theo[2]  # all miller indices must be entered with sim_indices = arraycouples[:,1]
 
-        print("self.linkExpMiller", self.linkExpMiller)
+        #print("self.linkExpMiller", self.linkExpMiller)
         Data_Q = np.array(self.linkExpMiller)[:, 1:]
 
         sim_indices = np.arange(nb_pairs)
-        print("DataQ from self.linkExpMiller", Data_Q)
+        #print("DataQ from self.linkExpMiller", Data_Q)
 
         # experimental spots selection from self.data_x, self.data_y(loaded when initialising calibFrame)
         pixX, pixY = (np.take(self.data_x, exp_indices),
@@ -2222,17 +2235,20 @@ class MainCalibrationFrame(wx.Frame):
             #self.linkEnergyAfterFit = copy.copy(self.linkEnergy)
 
         # update .cor file  self.initialParameter["filename.cor"]
-        print("self.defaultParam after refinement", self.CCDParam)
+        print("In StartFit(): after refinement self.defaultParam ", self.CCDParam)
+        
         fullpathfilename = os.path.join(self.initialParameter["dirname"],
                                         self.filename)
-        print("fullpathfilename", fullpathfilename)
+        print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
+        print('self.filename', self.filename)
 
-        (twicetheta, chi, dataintensity, data_x, data_y) = F2TC.Compute_data2thetachi(
+        (twicetheta, chi, dataintensity, data_x, data_y, dict_data_spotsproperties) = F2TC.Compute_data2thetachi(
                                                             fullpathfilename,
                                                             sorting_intensity="yes",
                                                             detectorparams=self.CCDParam,
                                                             pixelsize=self.pixelsize,
-                                                            kf_direction=self.kf_direction)
+                                                            kf_direction=self.kf_direction,
+                                                            addspotproperties=True)
 
         folder, filename = os.path.split(fullpathfilename)
         prefix = filename.split(".")[0]
@@ -2242,12 +2258,13 @@ class MainCalibrationFrame(wx.Frame):
 
         IOLT.writefile_cor(prefix, twicetheta, chi, data_x, data_y,
                         dataintensity,
-                        sortedexit=0,
+                        sortedexit=False,
                         param=self.CCDParam + [self.pixelsize],
                         initialfilename=self.filename,
-                        dirname_output=self.writefolder)  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
+                        dirname_output=self.writefolder,
+                        dict_data_spotsproperties=dict_data_spotsproperties)  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
         
-        print("%s has been updated" % (prefix + ".cor"))
+        print("In StartFit(): end of fit: %s has been updated" % (prefix + ".cor"))
         self.initialParameter["filename.cor"] = prefix + ".cor"
 
     def OnWriteResults(self, _):
@@ -2396,7 +2413,36 @@ class MainCalibrationFrame(wx.Frame):
 
         meanresidues = np.mean(residues_calibFit)
 
-        IOLT.writefitfile(outputfilename,
+        # IOLT.writefitfile(outputfilename,
+        #                 data,
+        #                 len(indExp),
+        #                 dict_matrices=dict_matrices,
+        #                 meanresidues=meanresidues,
+        #                 PeakListFilename=initialdatfile,
+        #                 columnsname=columnsname,
+        #                 modulecaller="DetectorCalibration.py",
+        #                 refinementtype="CCD Geometry")
+
+        # wx.MessageBox("Fit results saved in %s" % outputfilename, "INFO")
+
+        if self.parent:
+            # update main GUI CCD geometrical parameters
+            self.parent.defaultParam = self.CCDParam
+            self.parent.pixelsize = self.pixelsize
+            self.parent.kf_direction = self.kf_direction
+
+        ##################
+        dlg = wx.TextEntryDialog(self, "Enter File name with .fit extension: \n Folder: %s"%self.writefolder,"Saving refined peaks list (.fit) file")
+
+        dlg.SetValue("%s" % filename)
+        filenamefit = None
+        if dlg.ShowModal() == wx.ID_OK:
+            filenamefit = str(dlg.GetValue())
+            fullpath = os.path.abspath(os.path.join(self.writefolder, filenamefit))
+
+        dlg.Destroy()
+
+        IOLT.writefitfile(fullpath,
                         data,
                         len(indExp),
                         dict_matrices=dict_matrices,
@@ -2406,13 +2452,9 @@ class MainCalibrationFrame(wx.Frame):
                         modulecaller="DetectorCalibration.py",
                         refinementtype="CCD Geometry")
 
-        wx.MessageBox("Fit results saved in %s" % outputfilename, "INFO")
 
-        if self.parent:
-            # update main GUI CCD geometrical parameters
-            self.parent.defaultParam = self.CCDParam
-            self.parent.pixelsize = self.pixelsize
-            self.parent.kf_direction = self.kf_direction
+
+        wx.MessageBox("Fit results saved in %s" % fullpath, "INFO")
 
     def show_alltogglestate(self, flag):
         if flag:
@@ -2697,12 +2739,11 @@ class MainCalibrationFrame(wx.Frame):
     def update_data(self, event):
         """
         update experimental data according to CCD parameters
-        and replot simulated data
-        with _replot
+        and replot simulated data with _replot()
         """
         self.ReadExperimentData()
 
-        print('update_data....')
+        print('In update_data():')
         # update theoretical data
         self._replot(event)
         self.display_current()
