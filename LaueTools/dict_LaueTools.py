@@ -4,7 +4,7 @@ Dictionary of several parameters concerning Detectors, Materials, Transforms etc
 that are used in LaueTools and in LaueToolsGUI module
 
 Lauetools project
-April 2019
+2009 - October 2024
 
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -623,6 +623,9 @@ sq6 = np.sqrt(6)
 # --- --------------  (almost) Rotation Matrices
 
 dict_Rot = {
+    "GesCMOS_sept2024": [[0.6497410927187327, 0.5764646261387358, 0.49550484078704454],
+[-0.0119670971887755, 0.6595228823484899, -0.7515892204147262],
+[-0.7600613797697796, 0.482408646760677, 0.4354177264570093]],
     "mat203": [[ 0.280833091148746,  0.               , -0.959756622751748],
        [ 0.               ,  1.               ,  0.               ],
        [ 0.959756622751748,  0.               ,  0.280833091148746]],
