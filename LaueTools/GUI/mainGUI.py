@@ -1149,7 +1149,7 @@ class LaueToolsGUImainframe(wx.Frame):
         framedim = dict_CCD[self.CCDLabel][0]
         geomoperator = dict_CCD[self.CCDLabel][3]
         initialParameter["detectordiameter"] = max(framedim[0], framedim[1]) * pixelsize * 1.1
-        initialParameter["filename"] = 'dat_Ge0001.cor'
+        initialParameter["filename"] = 'img_Ge_sCMOS_0000_2peaks.cor' #'img_Ge_sCMOS_0000_181peaks.cor' # 'dat_Ge0001.cor'
         initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples", "Ge")
         initialParameter["dict_Materials"] = self.dict_Materials
 
@@ -1575,7 +1575,7 @@ class LaueToolsGUImainframe(wx.Frame):
         Useful for quick test debugging or if user has not yet loaded some data
         """
         #DEFAULTFILE = "defaultGe0001.cor"  # MARCCD165  ... old!
-        DEFAULTFILE = "dat_img_Ge_sCMOS_0000_181peaks.cor"
+        DEFAULTFILE = "img_Ge_sCMOS_0000_181peaks.cor"
         defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
 
         #print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
