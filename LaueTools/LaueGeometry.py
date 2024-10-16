@@ -1785,6 +1785,10 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
     (TODO : bug in Ipixmax for method "convolve")
 
     :returns: twicetheta, chi, dataintensity, data_x, data_y  [, other data]
+
+    where other data can be dict_spotsproperties
+
+    dict_spotsproperties ={'columnsname':listcolumnsname, 'data_spotsproperties':data_spotsproperties}
     """
     extension = filename.split(".")[-1]
 
