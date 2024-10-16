@@ -1947,6 +1947,11 @@ class Plot_RefineFrame(wx.Frame):
                                         Tsresults=None):
         """
         evaluate strain and display fitting results
+        :param newUBmat: array, 3x3 orientation matrix UBrefined
+        :param key_material: str, label for material taht sets the lattice parameters and unit cell shape
+        :param residues_non_weighted: array or list,  to estimate the mean pixel deviation
+        :param nb_pairs: int, nb of pairs used in the refinement
+        :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
         """
         # compute new lattice parameters  -----
         latticeparams = self.dict_Materials[key_material][1]
