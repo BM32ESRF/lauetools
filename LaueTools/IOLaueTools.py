@@ -258,7 +258,8 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
             data_theta, data_chi,
             data_pixX, data_pixY,
             data_I,                            # intensity
-            [detector parameters (CCDcalib), [dict_spotsproperties
+            detParam,
+            [detector parameters dict (CCDcalib), [dict_spotsproperties
 
 
 
@@ -364,6 +365,7 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
     if not output_only5columns:
         toreturn.append(dict_spotsproperties)
     
+    #print('len of output tuple return', len(toreturn))
     return toreturn
 
 
@@ -688,7 +690,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
         Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr,) = Data_array.T
         
-    elif nbcolumns == 3: # basic X, Y , I
+    elif nbcolumns == 3: # basic X, Y , I   # from DetectorCalibration board
         # need to set fake data
         (peak_X, peak_Y, peak_I) = Data_array.T
         (peak_fwaxmaj, peak_fwaxmin, peak_inclination,
