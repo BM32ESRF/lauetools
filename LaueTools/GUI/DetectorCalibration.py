@@ -205,7 +205,7 @@ class PlotRangePanel(wx.Panel):
         selectedFile = self.mainframe.DataPlot_filename
 
         print("\n\nIn opendata(): Selected file ", selectedFile)
-        print("dict_spotsproperties", self.mainframe.dict_spotsproperties)
+        #print("dict_spotsproperties", self.mainframe.dict_spotsproperties)
 
         self.mainframe.initialParameter["dirname"] = self.mainframe.dirnamepklist
         self.mainframe.initialParameter["filename"] = selectedFile
@@ -252,13 +252,13 @@ class CrystalParamPanel(wx.Panel):
 
         self.mainframe = parent.GetParent().GetParent()
 
-        self.UBmatrix = np.eye(3)
+        self.UBmatrix = DictLT.dict_Rot[self.mainframe.DEFAULT_UBMATRIX_CALIB]
 
         # print("self.mainframe in CrystalParamPanel", self.mainframe)
         # widgets layout
         t1 = wx.StaticText(self, -1, "Energy min/max(keV): ")
         self.eminC = wx.SpinCtrl( self, -1, "5", min=5, max=149)
-        self.emaxC = wx.SpinCtrl( self, -1, "22", min=6, max=150)
+        self.emaxC = wx.SpinCtrl( self, -1, "27", min=6, max=150)
 
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
         t2 = wx.StaticText(self, -1, "Element")
@@ -272,7 +272,8 @@ class CrystalParamPanel(wx.Panel):
                                             style=wx.CB_READONLY)
 
         t4 = wx.StaticText(self, -1, "Orient Matrix (UB)")
-        self.comboMatrix = wx.ComboBox(self, 2525, "Identity",
+
+        self.comboMatrix = wx.ComboBox(self, 2525, self.mainframe.DEFAULT_UBMATRIX_CALIB,
                                         choices=list(DictLT.dict_Rot.keys()))
 
         #GT.propose_orientation_from_hkl(HKL, target2theta=90., randomrotation=False)
@@ -1111,11 +1112,12 @@ class MainCalibrationFrame(wx.Frame):
 
         self.recognition_possible = True
         self.toshow = []
-        self.current_matrix = []
+        self.DEFAULT_UBMATRIX_CALIB = 'GesCMOS_sept2024'
         self.deltamatrix = np.eye(3)
         self.manualmatrixinput = None
 
         self.inputmatrix = None
+        
 
         # for plot spots annotation
         self.drawnAnnotations_exp = {}
@@ -1135,6 +1137,10 @@ class MainCalibrationFrame(wx.Frame):
         self.linkedspots = []
         self.linkExpMiller = []
         self.linkResidues = None
+
+        # highlight spots
+        self.plotlinks = None   # exp spot linked to theo spot
+
         # savings of refined model
         self.linkedspotsAfterFit = None
         self.linkExpMillerAfterFit = None
@@ -1231,7 +1237,7 @@ class MainCalibrationFrame(wx.Frame):
 
         self.toolbar = NavigationToolbar(self.canvas)
 
-        self.tooltip = wx.ToolTip(tip="Welcome on LaueTools calibration board")
+        self.tooltip = wx.ToolTip(tip="Welcome on LaueTools Simulation and Calibration Board")
         self.canvas.SetToolTip(self.tooltip)
         self.tooltip.Enable(False)
         self.tooltip.SetDelay(0)
@@ -1270,6 +1276,9 @@ class MainCalibrationFrame(wx.Frame):
 
         self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(80, 80))
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
+
+        self.residualstrainbtn = wx.Button(self.panel, -1, "Assess Resid. Strain", size=(80, 80))
+        self.residualstrainbtn.Bind(wx.EVT_BUTTON, self.OnAssessResidualStrain)
 
         # replot simul button (one button in two panels)
         self.Bind(wx.EVT_BUTTON, self._replot, id=52)
@@ -1425,6 +1434,8 @@ class MainCalibrationFrame(wx.Frame):
         hboxfit.Add(self.use_weights, 1, wx.ALL, 5)
         hboxfit.Add(self.cb_gotoresults, 1, wx.ALL, 5)
         hboxfit.Add(self.undogotobtn, 1, wx.ALL, 5)
+        hboxfit.Add(self.residualstrainbtn, 1, wx.ALL, 5)
+
 
         vboxfit2 = wx.BoxSizer(wx.VERTICAL)
         vboxfit2.Add(self.txtresidues, 0, wx.ALL, 0)
@@ -1478,7 +1489,7 @@ class MainCalibrationFrame(wx.Frame):
         self.Data_index_expspot
         self.data_x, self.data_y
         """
-        print('\n\nReadExperimentData()  \n\n')
+        print('\n\nIn ReadExperimentData():  \n\n')
 
         datfilename = self.filename
 
@@ -1499,7 +1510,7 @@ class MainCalibrationFrame(wx.Frame):
             self.writefolder = self.dirnamepklist
 
         if extension in ("dat", "DAT"):
-            addspotproperties = True  # for test ofr normal worflow
+            addspotproperties = True
             (twicetheta, chi, dataintensity, data_x, data_y, dict_data_spotsproperties
             ) = F2TC.Compute_data2thetachi(filepath, detectorparams=self.CCDParam,
                                             pixelsize=self.pixelsize,
@@ -1507,6 +1518,8 @@ class MainCalibrationFrame(wx.Frame):
                                             addspotproperties=addspotproperties)
             self.initialParameter['filename.cor'] = None
             self.initialParameter['filename.dat'] = filepath
+            if not filepath.endswith('calib_.dat'):
+                self.initialParameter['initialfilename'] = filepath
             self.filename = filepath
 
 
@@ -1516,15 +1529,21 @@ class MainCalibrationFrame(wx.Frame):
             #print('IOLT.getcolumnsname_dat(filepath)',IOLT.getcolumnsname_dat(filepath))
             if len(IOLT.getcolumnsname_dat(filepath))>5:
                 addspotproperties = True
+                #print('There is extra spots properties ...')
 
             (_, data_theta,
                 chi,
                 data_x,
                 data_y,
                 dataintensity,
-                _) = IOLT.readfile_cor(filepath)
+                _,
+                dict_data_spotsproperties) = IOLT.readfile_cor(filepath, output_only5columns=not addspotproperties)
             twicetheta = 2 * data_theta
-            self.initialParameter['filename.cor'] = self.filename
+
+            if self.filename == 'calib_.cor':
+                self.initialParameter['filename.cor'] = self.filename
+            else:
+                self.initialParameter['initialfilename'] = filepath
 
             # write a basic .dat file from .cor file  (name calib_.dat)
             Data_array = np.zeros((len(data_theta), 10))
@@ -1553,7 +1572,12 @@ class MainCalibrationFrame(wx.Frame):
         self.data_x, self.data_y = data_x, data_y
 
         # peaksearch spots properties
-        self.dict_data_spotsproperties = dict_data_spotsproperties
+        if len(dict_data_spotsproperties['columnsname'])==dict_data_spotsproperties['data_spotsproperties'].shape[1]:
+            self.dict_data_spotsproperties = dict_data_spotsproperties
+        else:
+            print('ERROR in dict_data_spotsproperties !! nb columns', len(dict_data_spotsproperties['columnsname']))
+
+            print('data shape:',  dict_data_spotsproperties['data_spotsproperties'].shape)
 
     def computeGnomonicExpData(self):
         # compute Gnomonic projection
@@ -1678,6 +1702,10 @@ class MainCalibrationFrame(wx.Frame):
         return strmat[:-2] + "]"
 
     def OnShowAndFilter(self, _):
+        """ on button Filter Links"""
+        print('\n In OnShowAndFilter(): \n')
+
+
         fields = ["#Spot Exp", "#Spot Theo", "h", "k", "l", "Intensity", "Energy(keV)","residues"]
         # self.linkedspots = dia.listofpairs
         # self.linkExpMiller = dia.linkExpMiller
@@ -1694,7 +1722,23 @@ class MainCalibrationFrame(wx.Frame):
         else:
             residues = -1 * np.ones(len(indExp))
 
-        to_put_in_dict = indExp, indTheo, _h, _k, _l, intens, energy, residues
+        to_put_in_dict = [indExp, indTheo, _h, _k, _l, intens, energy, residues]
+
+        if len(self.dict_data_spotsproperties)>0:
+            print('Handling extra spots properties')
+            ar_alldata = self.dict_data_spotsproperties['data_spotsproperties']
+            print('ar_alldata.shape', ar_alldata.shape)
+            assert ar_alldata.shape[1]>0
+
+            int_indExp = np.array(indExp, dtype=np.int32)
+            ar_data = np.take(ar_alldata,int_indExp, axis=0).T.tolist()
+            
+            to_put_in_dict += ar_data
+
+            print('final length of to_put_in_dict', len(to_put_in_dict))
+            fields += self.dict_data_spotsproperties['columnsname']
+            print('final length of fields', len(fields))
+
 
         mySpotData = {}
         for k, ff in enumerate(fields):
@@ -1716,8 +1760,10 @@ class MainCalibrationFrame(wx.Frame):
         self.linkedspots = ArrayReturn[:, :2]
         self.linkExpMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
         self.linkIntensity = ArrayReturn[:, 5]
-        self.LinkEnergy  = ArrayReturn[:, 6]
-        self.linkResidues = ArrayReturn[:, 7]
+        self.linkEnergy  = ArrayReturn[:, 6]
+        self.linkResidues = np.take(ArrayReturn, [0, 1, 7], axis=1)
+
+        self.plotlinks = self.linkedspots
 
 
     def OnLinkSpotsAutomatic(self, _):
@@ -1892,6 +1938,8 @@ class MainCalibrationFrame(wx.Frame):
         self.linkResidues = linkResidues
         self.linkEnergy = linkEnergy
 
+        self.plotlinks = self.linkedspots
+
         return calib_indexed_spots
 
     def OnLinkSpots(self, _):  # manual links
@@ -1910,6 +1958,8 @@ class MainCalibrationFrame(wx.Frame):
         self.linkExpMiller = dia.linkExpMiller
         self.linkIntensity = dia.linkIntensity
         self.linkEnergy = dia.linkIntensity
+
+        self.plotlinks = self.linkedspots
 
     def OnUndoGoto(self, evt):
         self.cb_gotoresults.SetValue(False)
@@ -1949,9 +1999,357 @@ class MainCalibrationFrame(wx.Frame):
         # update exp and theo data
         self.update_data(evt)
 
+    def OnAssessResidualStrain(self, event):
+        """Single Crystal orientation and lattice parameters refinement (to assess residual strain afetr detector geometry calibration refinement.
+        """        
+        if self.linkedspots == []:
+            wx.MessageBox('You need to create first links between experimental and simulated spots '
+                            'with the "link spots" button.',
+                            "INFO")
+            event.Skip()
+            return
+        
+        print("\nIn OnAssessResidualStrain")
+        print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
+        print('self.filename', self.filename)
+        #print("Pairs of spots used", self.linkedspots)
+        arraycouples = np.array(self.linkedspots)
+
+        exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+        sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
+
+        nb_pairs = len(exp_indices)
+        print("Nb of pairs  theo-exp spots: ", nb_pairs)
+        #print(exp_indices, sim_indices)
+
+        # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy
+        # Data_Q = self.data_theo[2]  # all miller indices must be entered with sim_indices = arraycouples[:,1]
+
+        #print("self.linkExpMiller", self.linkExpMiller)
+        Data_Q = np.array(self.linkExpMiller)[:, 1:]
+
+        sim_indices = np.arange(nb_pairs)
+        #print("DataQ from self.linkExpMiller", Data_Q)
+
+        # experimental spots selection from self.data_x, self.data_y(loaded when initialising calibFrame)
+        pixX, pixY = (np.take(self.data_x, exp_indices),
+                        np.take(self.data_y, exp_indices))  # pixel coordinates
+        # twth, chi = np.take(self.twicetheta, exp_indices),np.take(self.chi, exp_indices)  # 2theta chi coordinates
+
+        # initial parameters of calibration and misorientation from the current orientation UBmatrix
+        print("detector parameters", self.CCDParam)
+
+        starting_orientmatrix = self.crystalparampanel.UBmatrix
+
+        # starting B0matrix corresponding to the unit cell   -----
+        latticeparams = DictLT.dict_Materials[self.key_material][1]
+        B0matrix = CP.calc_B_RR(latticeparams)
+
+        # initial distorsion is  1 1 0 0 0  = refined_22,refined_33, 0,0,0
+        allparameters = np.array(self.CCDParam + [1, 1, 0, 0, 0] + [0, 0, 0])
+
+        # change ycen if grain is below the surface (NOT ALONG beam direction (ybeam)):
+        # depth is counted positively below surface in microns
+        #depth = float(self.sampledepthctrl.GetValue())
+        depth = 0 
+        depth_along_beam = depth / np.sin(40 * np.pi / 180.)
+        delta_ycen = depth_along_beam/1000./self.pixelsize
+        allparameters[2] += delta_ycen
+
+        # strain & orient
+        initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0])
+        arr_indexvaryingparameters = np.arange(5, 13)
+
+        # if self.fitycen.GetValue():
+        #     initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, allparameters[2]])
+        #     arr_indexvaryingparameters = np.append(np.arange(5, 13), 2)
+
+        print("\nInitial error--------------------------------------\n")
+
+        print("initial_values, allparameters, arr_indexvaryingparameters")
+        print(initial_values, allparameters, arr_indexvaryingparameters)
+
+        residues, deltamat, _ = FitO.error_function_on_demand_strain(
+                                                                initial_values,
+                                                                Data_Q,
+                                                                allparameters,
+                                                                arr_indexvaryingparameters,
+                                                                sim_indices,
+                                                                pixX,
+                                                                pixY,
+                                                                initrot=starting_orientmatrix,
+                                                                Bmat=B0matrix,
+                                                                pureRotation=0,
+                                                                verbose=1,
+                                                                pixelsize=self.pixelsize,
+                                                                dim=self.framedim,
+                                                                weights=None,
+                                                                kf_direction=self.kf_direction)
+
+        print("mean Initial residues", np.mean(residues))
+        print("---------------------------------------------------\n")
+
+        results = FitO.fit_on_demand_strain(initial_values,
+                                                    Data_Q,
+                                                    allparameters,
+                                                    FitO.error_function_on_demand_strain,
+                                                    arr_indexvaryingparameters,
+                                                    sim_indices,
+                                                    pixX,
+                                                    pixY,
+                                                    initrot=starting_orientmatrix,
+                                                    Bmat=B0matrix,
+                                                    pixelsize=self.pixelsize,
+                                                    dim=self.framedim,
+                                                    verbose=1,
+                                                    weights=None,
+                                                    kf_direction=self.kf_direction)
+
+
+
+        print("\n********************\n       Results of Fit        \n********************")
+        print("results", results)
+
+        if results is None:
+            return
+
+        
+
+        print("\nFinal error--------------------------------------\n")
+        residues, deltamat, refinedUB = FitO.error_function_on_demand_strain(
+                                                                results,
+                                                                Data_Q,
+                                                                allparameters,
+                                                                arr_indexvaryingparameters,
+                                                                sim_indices,
+                                                                pixX,
+                                                                pixY,
+                                                                initrot=starting_orientmatrix,
+                                                                Bmat=B0matrix,
+                                                                pureRotation=0,
+                                                                verbose=1,
+                                                                pixelsize=self.pixelsize,
+                                                                dim=self.framedim,
+                                                                weights=None,
+                                                                kf_direction=self.kf_direction)
+
+        
+
+        print("Final residues", residues)
+        print("---------------------------------------------------\n")
+        print("mean", np.mean(residues))
+
+        # building B mat
+        param_strain_sol = results
+        varyingstrain = np.array([[1.0, param_strain_sol[2], param_strain_sol[3]],
+                                        [0, param_strain_sol[0], param_strain_sol[4]],
+                                        [0, 0, param_strain_sol[1]]])
+        print("varyingstrain results")
+        print(varyingstrain)
+
+        # if self.fitycen.GetValue():
+        #     print("fitted ycen", param_strain_sol[8])
+        #     print('calib ref. ycen: ', allparameters[2])
+        #     print('delta ycen: ', param_strain_sol[8] - allparameters[2])
+
+        newUmat = np.dot(deltamat, starting_orientmatrix)
+
+        # building UBmat(= newmatrix)
+        newUBmat = np.dot(newUmat, varyingstrain)
+        print("newUBmat", newUBmat)
+        print("refinedUB", refinedUB)
+
+        # ---------------------------------------------------------------
+        # postprocessing of unit cell orientation and strain refinement
+        # ---------------------------------------------------------------
+        print("self.newUBmat after fitting", newUBmat)
+        self.evaluate_strain_display_results(newUBmat,
+                                            self.key_material,
+                                            residues,
+                                            nb_pairs,
+                                            constantlength="a")
+        
+    def evaluate_strain_display_results(self,
+                                        newUBmat,
+                                        key_material,
+                                        residues_non_weighted,
+                                        nb_pairs,
+                                        constantlength="a"):
+        """
+        evaluate strain and display fitting results
+        :param newUBmat: array, 3x3 orientation matrix UBrefined
+        :param key_material: str, label for material taht sets the lattice parameters and unit cell shape
+        :param residues_non_weighted: array or list,  to estimate the mean pixel deviation
+        :param nb_pairs: int, nb of pairs used in the refinement
+        :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
+        """
+        # compute new lattice parameters  -----
+        latticeparams = DictLT.dict_Materials[key_material][1]
+        B0matrix = CP.calc_B_RR(latticeparams)
+
+        UBmat = copy.copy(newUBmat)
+
+        (devstrain, lattice_parameter_direct_strain) = CP.compute_deviatoricstrain(
+                                                                UBmat, B0matrix, latticeparams)
+        # overwrite and rescale possibly lattice lengthes
+        lattice_parameter_direct_strain = CP.computeLatticeParameters_from_UB(
+                                                            UBmat, key_material, constantlength,
+                                                            dictmaterials=DictLT.dict_Materials)
+
+        print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
+
+        deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
+                                                                        devstrain, UBmat)
+
+        devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
+        devstrain_round = np.round(devstrain * 1000, decimals=3)
+
+        new_latticeparameters = lattice_parameter_direct_strain
+        deviatoricstrain = devstrain
+        deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
+
+
+        # ADDONS: strain in lauetools frame:
+        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat)*1000,decimals=3)
+        print('====> **** devstrain_LTframe',devstrain_LTframe)
+        print('*************************************\n')
+
+        # TODO: to complete ---------------------
+        # devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))
+
+        UBB0mat = np.dot(newUBmat, B0matrix)
+
+        Umat = None
+
+        Umat = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=np.array(UBmat))
+        # TODO to be translated !----------------------
+        # conversion in np array is necessary from automatic indexation results, but not necessary from check orientation results
+
+        print("**********test U ****************************")
+        print("U matrix = ")
+        print(Umat.round(decimals=9))
+        print("norms :")
+        for i in range(3):
+            print(i, GT.norme_vec(Umat[:, i]).round(decimals=5))
+        print("scalar products")
+        for i in range(3):
+            j = np.mod(i + 1, 3)
+            print(i, j, np.inner(Umat[:, i], Umat[:, j]).round(decimals=5))
+        print("determinant")
+        print(np.linalg.det(Umat).round(decimals=5))
+
+        Bmat_triang_up = np.dot(np.transpose(Umat), UBmat)
+
+        print(" Bmat_triang_up= ")
+        print(Bmat_triang_up.round(decimals=9))
+
+        Umat2 = Umat
+        Bmat_tri = Bmat_triang_up
+
+        (list_HKL_names,
+        HKL_xyz) = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
+                                                        matstarlab=None,  # OR
+                                                        UBmat=UBB0mat,  # LT , UBB0 ici
+                                                        omega=None,  # was MG.PAR.omega_sample_frame,
+                                                        mat_from_lab_to_sample_frame=None,
+                                                        results_in_OR_frames=0,
+                                                        results_in_LT_frames=1,
+                                                        sampletilt=40.0)
+        HKLxyz_names = list_HKL_names
+        HKLxyz = HKL_xyz
+
+        initial_filepath = self.initialParameter['initialfilename']
+        initialfolder, initialfilename= os.path.split(initial_filepath)
+
+        texts_dict = {}
+
+        txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (initialfilename,
+                                                                    time.asctime())
+        txt0 += 'Folder: %s\n'%initialfolder
+        txt0 += "Mean Pixel Deviation: %.3f\n" % np.mean(residues_non_weighted)
+        txt0 += "Number of refined Laue spots: %d\n" % nb_pairs
+        texts_dict["NbspotsResidues"] = txt0
+
+        txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
+        for k in range(3):
+            txt1 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_round[k])
+        texts_dict["devstrain_crystal"] = txt1
+
+        txt2 = "Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n"
+        for k in range(3):
+            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_round[k])
+        texts_dict["devstrain_sample"] = txt2
+
+        #         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
+        #         txt3 += 'Assumption: cubic material + stress33=0\n'
+        #         for k in range(3):
+        #             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
+        txt3 = ""
+        texts_dict["fullstrain_sample"] = txt3
+
+        txtinitlattice = "Initial Lattice Parameters\n"
+        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
+        for name, val in zip(paramcellname, latticeparams):
+            txtinitlattice += "%s\t\t%.6f\n" % (name, val)
+
+        texts_dict["Initial lattice"] = txtinitlattice
+
+        txtfinallattice = "Refined Lattice Parameters\n"
+        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
+        for name, val in zip(paramcellname, lattice_parameter_direct_strain):
+            txtfinallattice += "%s\t\t%.6f\n" % (name, val)
+
+        texts_dict["Refined lattice"] = txtfinallattice
+
+        
+
+        txtUB = "UB matrix in q = UB B0 G*\n"
+        txtUB += "["
+        for k in range(3):
+            txtUB += "[%.8f, %.8f, %.8f],\n" % tuple(UBmat[k])
+        texts_dict["UBmatrix"] = txtUB[:-2] + "]"
+
+        txtB0 = "B0 matrix in q = UB B0 G*\n"
+        txtB0 += "["
+        for k in range(3):
+            txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0matrix[k])
+        texts_dict["B0matrix"] = txtB0[:-2] + "]"
+
+        txtHKLxyz_names = "                                 HKL frame coordinates\n"
+        listvectors = ["x=[100]_LT :",
+                        "y=[010]_LT :",
+                        "z=[001]_LT :",
+                        "xs=[100]_LTsample :",
+                        "ys=[010]_LTsample :",
+                        "zs=[001]_LTsample :"]
+        for k in range(6):
+            txtHKLxyz_names += listvectors[k] + "\t [%.3f, %.3f, %.3f]\n" % tuple(
+                HKLxyz[k])
+            texts_dict["HKLxyz_names"] = txtHKLxyz_names
+
+        print(txtHKLxyz_names)
+
+        # if 0:
+        #     txtHKLxyz = "HKL = \n"
+        #     txtHKLxyz += "["
+        #     for k in range(6):
+        #         txtHKLxyz += "[%.3f, %.3f, %.3f],\n" % tuple(self.HKLxyz[k])
+        #         texts_dict["HKLxyz"] = txtHKLxyz[:-2] + "]"
+        #     print(txtHKLxyz)
+        texts_dict["HKLxyz"] = ""
+
+        from LaueTools.GUI import PlotRefineGUI as PRGUI
+
+        frb = PRGUI.FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
+        frb.ShowModal()
+
+        frb.Destroy()
+
     def StartFit(self, event):
         """
         StartFit in calib frame
+
+        Single Crystal orientation and detector geometry parameters refinement
         """
         if self.linkedspots == []:
             wx.MessageBox('You need to create first links between experimental and simulated spots '
@@ -1960,7 +2358,7 @@ class MainCalibrationFrame(wx.Frame):
             event.Skip()
             return
 
-        print("\nIn Start fit()")
+        print("\nIn StartFit()")
         print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
         print('self.filename', self.filename)
         #print("Pairs of spots used", self.linkedspots)
@@ -2280,7 +2678,7 @@ class MainCalibrationFrame(wx.Frame):
         # spotsData = [Xtheo,Ytheo, Xexp, Yexp, Xdev, Ydev, theta_theo]
         spotsData = self.SpotsData
 
-        print("Writing results in .fit file in OnWriteResults()")
+        print("\nIn OnWriteResults(): Writing results in .fit file")
         suffix = ""
         if self.incrementfile.GetValue():
             self.savedindex += 1
@@ -2320,40 +2718,61 @@ class MainCalibrationFrame(wx.Frame):
 
         # print('self.initialParameter["filename.cor"] in OnWriteResults',
         #         self.initialParameter["filename.cor"])
+        print('self.filename',self.filename)
+        print('self.initialParameter["filename.cor"]', self.initialParameter["filename.cor"])
+        print('self.initialParameter["initialfilename"]', self.initialParameter["initialfilename"])
 
-        initialdatfile = self.filename #self.initialParameter["filename.cor"]
-        # print('initialdatfile  :', initialdatfile)
+        initialfile = self.initialParameter["initialfilename"]
+        print('initialfile  :', initialfile)
 
-        data_peak = IOLT.read_Peaklist(initialdatfile)
-
-        # print('data_peak.shape', data_peak.shape)
+        if initialfile.endswith('dat'):
+            data_peak = IOLT.read_Peaklist(initialfile)
+            initialfileextension = 'dat'
+            _, nbcolumns_dat = data_peak.shape
+        elif initialfile.endswith('cor'):
+            data_peak,_,_,_,_,_,_,dict_spotsproperties = IOLT.readfile_cor(initialfile,output_only5columns=False)
+            initialfileextension = 'cor'
+            _, nbcolumns_cor = data_peak.shape
+        
 
         selected_data_peak = np.take(data_peak, indExp, axis=0)
 
         # print('selected_data_peak.shape',selected_data_peak.shape)
+        
+        if initialfileextension == 'dat' and initialfile != 'calib_.dat':
 
-        _, nbcolumns = selected_data_peak.shape
-
-        if initialdatfile.endswith('.dat'):
-
-            if nbcolumns == 11:
+            if nbcolumns_dat == 11:
                 (Xexp, Yexp, _, peakAmplitude,
             peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
-            elif nbcolumns == 13:
+            elif nbcolumns_dat == 13:
                 (Xexp, Yexp, _, peakAmplitude,
             peak_fwaxmaj, peak_fwaxmin, peak_inclination,
             Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
 
-        elif initialdatfile.endswith('.cor'):
-            (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
-            _ = peakAmplitude
-            unknowns = np.zeros(len(Xexp))
-            peak_fwaxmaj = unknowns
-            peak_fwaxmin = unknowns
-            peak_inclination = unknowns
-            Xdev_peakFit = unknowns
-            Ydev_peakFit, peak_bkg, IntensityMax = unknowns, unknowns, unknowns
+        elif initialfileextension == 'cor':
+            if nbcolumns_cor==5:
+                (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
+                _ = peakAmplitude
+                unknowns = np.zeros(len(Xexp))
+                peak_fwaxmaj = unknowns
+                peak_fwaxmin = unknowns
+                peak_inclination = unknowns
+                Xdev_peakFit = unknowns
+                Ydev_peakFit, peak_bkg, IntensityMax = unknowns, unknowns, unknowns
+            else:
+                print('%d of colmuns in initialfile'%nbcolumns_cor, initialfile)
+                if nbcolumns_cor== 15:
+                    (_,_, Xexp, Yexp, peakAmplitude,
+                    I_tot,
+                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
+
+                if nbcolumns_cor== 13:
+                    (_,_, Xexp, Yexp, peakAmplitude,
+                    I_tot,
+                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+                Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
 
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
@@ -2370,10 +2789,9 @@ class MainCalibrationFrame(wx.Frame):
                 peak_fwaxmaj, peak_fwaxmin, peak_inclination,
                 Xdev_peakFit, Ydev_peakFit]
         
-        if nbcolumns == 13:
+        if nbcolumns_cor == 15 or nbcolumns_dat == 15:
             Columns.append(XfitErr)
             Columns.append(YfitErr)
-            print
 
         datatooutput = np.transpose(np.array(Columns))
         datatooutput = np.round(datatooutput, decimals=5)
@@ -2407,7 +2825,7 @@ class MainCalibrationFrame(wx.Frame):
         columnsname = "spot_index Itot h k l Xtheo Ytheo Xexp Yexp XdevCalib YdevCalib pixDevCalib "
         columnsname += "2theta_theo chi_theo Energy PeakAmplitude Imax PeakBkg "
         columnsname += "PeakFwhm1 PeakFwhm2 PeakTilt XdevPeakFit YdevPeakFit"
-        if nbcolumns == 13:
+        if nbcolumns_cor == 15 or nbcolumns_dat == 15:
             columnsname += " XfitEerr YfitErr"
         columnsname +="\n"
 
@@ -2447,7 +2865,7 @@ class MainCalibrationFrame(wx.Frame):
                         len(indExp),
                         dict_matrices=dict_matrices,
                         meanresidues=meanresidues,
-                        PeakListFilename=initialdatfile,
+                        PeakListFilename=initialfile,
                         columnsname=columnsname,
                         modulecaller="DetectorCalibration.py",
                         refinementtype="CCD Geometry")
@@ -2995,7 +3413,7 @@ class MainCalibrationFrame(wx.Frame):
             self.crystalparampanel.UBmatrix = DictLT.dict_Rot[self.crystalparampanel.comboMatrix.GetValue()]
             # to keep self.UBmatrix unchanged at this step
             self.manualmatrixinput = None
-
+            print('\nIn simulate_theo(): matrix label',self.crystalparampanel.comboMatrix.GetValue())
         # from manual input
         elif self.manualmatrixinput == 1:
             self.crystalparampanel.UBmatrix = self.inputmatrix
@@ -3047,7 +3465,7 @@ class MainCalibrationFrame(wx.Frame):
                                                     detectordiameter=diameter_for_simulation * 1.25,
                                                     force_extinction=self.Extinctions,
                                                     dictmaterials=self.dict_Materials)
-            else:
+            else:  # for autolinks (removeharmonics=1)
                 ResSimul = LAUE.SimulateLaue(Grain,
                                             self.emin,
                                             self.emax,
@@ -3069,6 +3487,21 @@ class MainCalibrationFrame(wx.Frame):
             # print('twicetheta[:5], chi[:5]', twicetheta[:5], chi[:5])
             # print('posx[:5], posy[:5]', posx[:5], posy[:5])
             # print('min max posx, min max posy', np.amin(posx), np.amax(posx),np.amin(posy), np.amax(posy))
+
+            # sort data by increasing twicetheta and print only
+            TEST_ONLY = False
+            if TEST_ONLY:
+                cond = np.logical_and(twicetheta>80,twicetheta<82)
+                ix_in = np.where(cond)[0]
+                sorted_ix = np.argsort(twicetheta[ix_in])
+                select_ix = ix_in[sorted_ix]
+
+                s_twtheta = twicetheta[select_ix]
+                s_posx = posx[select_ix]
+                s_posy = posy[select_ix]
+                s_Energy = Energy[select_ix]
+                print('sorted data by increasing 2theta')
+                print(np.array([s_twtheta, s_posx,s_posy,s_Energy]).T)
 
         else:
             # for twinned grains simulation
@@ -3117,7 +3550,7 @@ class MainCalibrationFrame(wx.Frame):
         self.axes.set_ylim(ylim[1],ylim[0])
         self._replot(1)
     
-    def _replot(self, _):  # in MainCalibrationFrame
+    def _replot(self, _):
         """
         in MainCalibrationFrame
         """
@@ -3130,11 +3563,18 @@ class MainCalibrationFrame(wx.Frame):
 
         self.data_theo = ResSimul
 
+        # offsets to match imshow and scatter plot coordinates frames
+        if self.datatype == "pixels":
+            X_offset = 1
+            Y_offset = 1
+        else:
+            X_offset = 0
+            Y_offset = 0
+
         if not self.init_plot:
             xlim = self.axes.get_xlim()
             ylim = self.axes.get_ylim()
 
-        #         print "_replot MainCalibrationFrame"
         self.axes.clear()
         self.axes.set_autoscale_on(False)  # Otherwise, infinite loop
         #         self.axes.set_autoscale_on(True)
@@ -3270,8 +3710,8 @@ class MainCalibrationFrame(wx.Frame):
             self.axes.set_ylabel("Y gnomon")
 
         elif self.datatype == "pixels":
-            self.axes.scatter(self.data_x,
-                            self.data_y,
+            self.axes.scatter(self.data_x - X_offset,
+                            self.data_y - Y_offset,
                             s=self.Data_I / np.amax(self.Data_I) * 100.0,
                             c=self.Data_I / 50.0,
                             alpha=0.5)
@@ -3280,6 +3720,26 @@ class MainCalibrationFrame(wx.Frame):
                 xlim = (-100, self.framedim[1] + 100)
             self.axes.set_xlabel("X CCD")
             self.axes.set_ylabel("Y CCD")
+
+        # ---------------------------------------------------------------
+        # plot experimental spots linked to 1 theo. spot)
+        # ---------------------------------------------------------------
+        if self.plotlinks is not None:
+            exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int16)
+            #print('exp_indices in yellow links plot ',exp_indices)
+
+            # experimental spots selection -------------------------------------
+            if self.datatype == "2thetachi":
+                Xlink = np.take(self.twicetheta, exp_indices)
+                Ylink = np.take(self.chi, exp_indices)
+            elif self.datatype == "pixels":
+                pixX = np.take(self.data_x, exp_indices)
+                pixY = np.take(self.data_y, exp_indices)
+
+                Xlink = pixX - X_offset
+                Ylink = pixY - Y_offset
+
+            self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
         self.axes.set_title("%s %d spots" % (os.path.split(self.filename)[-1], len(self.twicetheta)))
         self.axes.grid(True)
