@@ -1041,7 +1041,6 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
 
     :return:
         * list of spot instances if fastcompute=0
-
         * 2theta, chi          if fastcompute=1
 
     .. note::
