@@ -2125,7 +2125,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
 
         ittxt = wx.StaticText(self, -1, "IntensityThreshold")
         self.IT = wx.SpinCtrl(self, -1, str(defaultthreshold), #(100, -1),
-                                            min=-6000, max=9999)
+                                            min=-6000, max=10000000000)
 
         # layout
         h1 = wx.BoxSizer(wx.HORIZONTAL)
