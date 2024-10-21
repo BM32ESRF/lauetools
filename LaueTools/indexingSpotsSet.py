@@ -350,7 +350,7 @@ class spotsset:
         CCDcalibdict) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
         print('nb of spots in .cor file %s  is '%filename, len(data_theta))
 
-        add_props = IOLT.get_otherspotprops(allspotsprops, filename)
+        add_props = IOLT.get_spotprops_cor(allspotsprops, filename)
         if add_props is None:
             print('raw .cor file with 5 columns')
 
