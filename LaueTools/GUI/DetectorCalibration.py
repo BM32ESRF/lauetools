@@ -1274,11 +1274,14 @@ class MainCalibrationFrame(wx.Frame):
         self.use_weights.SetValue(False)
         self.cb_gotoresults.SetValue(True)
 
-        self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(80, 80))
+        self.undogotobtn = wx.Button(self.panel, -1, "Undo GOTO last fit", size=(-1, 80))
         self.undogotobtn.Bind(wx.EVT_BUTTON, self.OnUndoGoto)
 
-        self.residualstrainbtn = wx.Button(self.panel, -1, "Assess Resid. Strain", size=(80, 80))
+        self.residualstrainbtn = wx.Button(self.panel, -1, "Assess Resid. Strain", size=(-1, 80))
         self.residualstrainbtn.Bind(wx.EVT_BUTTON, self.OnAssessResidualStrain)
+
+        self.resstrainstatsbtn = wx.Button(self.panel, -1, "Resid. Strain Statistics", size=(-1, 80))
+        self.resstrainstatsbtn.Bind(wx.EVT_BUTTON, self.OnResidualStrainStatistics)
 
         # replot simul button (one button in two panels)
         self.Bind(wx.EVT_BUTTON, self._replot, id=52)
@@ -1401,6 +1404,8 @@ class MainCalibrationFrame(wx.Frame):
 
         self.incrementfile.SetToolTipString("If Checked, increment filename avoiding overwritten file")
 
+        self.residualstrainbtn.SetToolTipString("Assess the residual strain by fitting orientation and strain only (not detector geometry)")
+
     def layout(self):
         # LAYOUT
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1435,6 +1440,7 @@ class MainCalibrationFrame(wx.Frame):
         hboxfit.Add(self.cb_gotoresults, 1, wx.ALL, 5)
         hboxfit.Add(self.undogotobtn, 1, wx.ALL, 5)
         hboxfit.Add(self.residualstrainbtn, 1, wx.ALL, 5)
+        hboxfit.Add(self.resstrainstatsbtn, 1, wx.ALL, 5)
 
 
         vboxfit2 = wx.BoxSizer(wx.VERTICAL)
@@ -1494,8 +1500,11 @@ class MainCalibrationFrame(wx.Frame):
         datfilename = self.filename
 
         extension = self.filename.split(".")[-1]
+
+        print('extension of self.filename: ', extension)
         
         filepath = os.path.join(self.dirnamepklist, self.filename)
+        print('filepath', filepath)
 
         # print("self.CCDParam in ReadExperimentData()", self.CCDParam)
         # print('self.kf_direction', self.kf_direction)
@@ -1520,24 +1529,36 @@ class MainCalibrationFrame(wx.Frame):
             self.initialParameter['filename.dat'] = filepath
             if not filepath.endswith('calib_.dat'):
                 self.initialParameter['initialfilename'] = filepath
+            print('extension .dat : Reset self.filename to : ', self.filename)
             self.filename = filepath
 
 
         elif extension in ("cor",):
             dict_data_spotsproperties = {}
             addspotproperties = False
-            #print('IOLT.getcolumnsname_dat(filepath)',IOLT.getcolumnsname_dat(filepath))
-            if len(IOLT.getcolumnsname_dat(filepath))>5:
+            nbcolumns_cor = len(IOLT.getcolumnsname_dat(filepath))
+            print(f'found {nbcolumns_cor} columns in .cor file :', filepath)
+            if nbcolumns_cor>5:
                 addspotproperties = True
                 #print('There is extra spots properties ...')
-
-            (_, data_theta,
+                (_, data_theta,
                 chi,
                 data_x,
                 data_y,
                 dataintensity,
                 _,
-                dict_data_spotsproperties) = IOLT.readfile_cor(filepath, output_only5columns=not addspotproperties)
+                dict_data_spotsproperties) = IOLT.readfile_cor(filepath, output_only5columns=False)
+
+            else:
+                addspotproperties = False
+
+                (_, data_theta,
+                    chi,
+                    data_x,
+                    data_y,
+                    dataintensity,
+                    _) = IOLT.readfile_cor(filepath, output_only5columns=True)
+                    
             twicetheta = 2 * data_theta
 
             if self.filename == 'calib_.cor':
@@ -1545,11 +1566,30 @@ class MainCalibrationFrame(wx.Frame):
             else:
                 self.initialParameter['initialfilename'] = filepath
 
-            # write a basic .dat file from .cor file  (name calib_.dat)
-            Data_array = np.zeros((len(data_theta), 10))
+            # write a basic temporary calib_.dat file from .cor file
+            if addspotproperties:
+                print('columnsname', dict_data_spotsproperties['columnsname'])
+                if 'Xfiterr' in dict_data_spotsproperties['columnsname']:
+
+                    nbcols = 13
+                else:
+                    nbcols = 11
+            else:
+                nbcols = 10  # ???
+            print('Preparing array to wrtie in .dat with shape: ', (len(data_theta), nbcols))
+            Data_array = np.zeros((len(data_theta), nbcols))
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
             Data_array[:, 2] = dataintensity
+
+            if addspotproperties:
+                alldata = dict_data_spotsproperties['data_spotsproperties']
+                peakbkg= alldata[:,11]
+                Data_array[:, 2] = peakbkg + dataintensity
+                Data_array[:, 3] = dataintensity
+                if Data_array[:, 4:].shape != alldata[:,4:].shape:
+                    print('Data_array, alldata shapes',Data_array[:, 4:].shape, alldata[:,6:].shape)
+                Data_array[:, 4:] = alldata[:,6:]
 
             outputprefix = 'calib_'
             IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
@@ -1559,6 +1599,8 @@ class MainCalibrationFrame(wx.Frame):
             self.initialParameter['filename.dat'] = os.path.join(self.dirnamepklist, outputprefix+'.dat')
             # next time in ReadExperimentData  this branch (.cor) won't be used
             self.filename = self.initialParameter['filename.dat']
+
+            print('extension .cor : Reset self.filename to : ', self.filename)
 
         self.twicetheta = twicetheta
         self.chi = chi
@@ -1574,6 +1616,8 @@ class MainCalibrationFrame(wx.Frame):
         # peaksearch spots properties
         if len(dict_data_spotsproperties['columnsname'])==dict_data_spotsproperties['data_spotsproperties'].shape[1]:
             self.dict_data_spotsproperties = dict_data_spotsproperties
+
+            print('')
         else:
             print('ERROR in dict_data_spotsproperties !! nb columns', len(dict_data_spotsproperties['columnsname']))
 
@@ -1731,6 +1775,7 @@ class MainCalibrationFrame(wx.Frame):
             assert ar_alldata.shape[1]>0
 
             int_indExp = np.array(indExp, dtype=np.int32)
+            print('int_indExp.shape', int_indExp.shape)
             ar_data = np.take(ar_alldata,int_indExp, axis=0).T.tolist()
             
             to_put_in_dict += ar_data
@@ -1751,7 +1796,7 @@ class MainCalibrationFrame(wx.Frame):
         dia.Show(True)
 
     def readdata_fromEditor_Filter(self, data):
-        """function to set filtered data from SpotsEditor
+        """function to set filtered links from SpotsEditor
         
         set attributes self.link#####"""
 
@@ -1999,7 +2044,26 @@ class MainCalibrationFrame(wx.Frame):
         # update exp and theo data
         self.update_data(evt)
 
-    def OnAssessResidualStrain(self, event):
+    def OnResidualStrainStatistics(self, event):
+        dlg = wx.TextEntryDialog(self, "Strain will be estimated 'Nbtrials' times from a set of 'Nspots' randomly chosen spots. Enter: NbTrials, Nspots values",'Residual Strain Statistics', value="20,20")
+
+        if dlg.ShowModal() == wx.ID_OK:
+            NbTrials, Nspots = map(int, dlg.GetValue().split(','))
+            print('NbTrials', NbTrials)
+            print('Nspots', Nspots)
+        dlg.Destroy()
+
+        listmaxlevelstrain = []
+        for ii in range(NbTrials):
+            
+            maxstrain = self.OnAssessResidualStrain(event,displayresults=False, verbose=0, subsetsize=Nspots)
+            print(f' trial {ii+1}/{NbTrials} maxstrain = ', maxstrain)
+            listmaxlevelstrain.append(maxstrain)
+
+        print('listmaxlevelstrain', listmaxlevelstrain)
+    
+
+    def OnAssessResidualStrain(self, event, displayresults=True, verbose=1, subsetsize = 0):
         """Single Crystal orientation and lattice parameters refinement (to assess residual strain afetr detector geometry calibration refinement.
         """        
         if self.linkedspots == []:
@@ -2009,26 +2073,42 @@ class MainCalibrationFrame(wx.Frame):
             event.Skip()
             return
         
-        print("\nIn OnAssessResidualStrain")
-        print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
-        print('self.filename', self.filename)
-        #print("Pairs of spots used", self.linkedspots)
-        arraycouples = np.array(self.linkedspots)
+        if verbose:
+            print("\nIn OnAssessResidualStrain")
+            print('self.initialParameter["dirname"]', self.initialParameter["dirname"])
+            print('self.filename', self.filename)
+            #print("Pairs of spots used", self.linkedspots)
 
-        exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
-        sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
+        if subsetsize > 0:
+            print("\n\n ***************\nIn OnAssessResidualStrain")
+            print('self.linkedspots', self.linkedspots)
+            ar_ind = np.arange(len(self.linkedspots))
+            np.random.shuffle(ar_ind)
+            randindices = ar_ind[:subsetsize]
+            arraycouples = np.take(np.array(self.linkedspots),randindices, axis=0)
+            print('arraycouples', arraycouples)
+            print('***********\n\n')
+            exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+            nb_pairs = len(exp_indices)
+            #sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
+            Data_Q = np.take(np.array(self.linkExpMiller)[:, 1:],randindices, axis=0)
+            sim_indices = np.arange(nb_pairs)
 
-        nb_pairs = len(exp_indices)
-        print("Nb of pairs  theo-exp spots: ", nb_pairs)
+        else:
+            arraycouples = np.array(self.linkedspots)
+
+            Data_Q = np.array(self.linkExpMiller)[:, 1:]
+            exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
+            #sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
+            nb_pairs = len(exp_indices)
+            sim_indices = np.arange(nb_pairs)
+
+        if verbose: print("Nb of pairs  theo-exp spots: ", nb_pairs)
         #print(exp_indices, sim_indices)
 
         # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy
         # Data_Q = self.data_theo[2]  # all miller indices must be entered with sim_indices = arraycouples[:,1]
 
-        #print("self.linkExpMiller", self.linkExpMiller)
-        Data_Q = np.array(self.linkExpMiller)[:, 1:]
-
-        sim_indices = np.arange(nb_pairs)
         #print("DataQ from self.linkExpMiller", Data_Q)
 
         # experimental spots selection from self.data_x, self.data_y(loaded when initialising calibFrame)
@@ -2037,7 +2117,7 @@ class MainCalibrationFrame(wx.Frame):
         # twth, chi = np.take(self.twicetheta, exp_indices),np.take(self.chi, exp_indices)  # 2theta chi coordinates
 
         # initial parameters of calibration and misorientation from the current orientation UBmatrix
-        print("detector parameters", self.CCDParam)
+        if verbose: print("detector parameters", self.CCDParam)
 
         starting_orientmatrix = self.crystalparampanel.UBmatrix
 
@@ -2063,11 +2143,11 @@ class MainCalibrationFrame(wx.Frame):
         # if self.fitycen.GetValue():
         #     initial_values = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, allparameters[2]])
         #     arr_indexvaryingparameters = np.append(np.arange(5, 13), 2)
+        if verbose:
+            print("\nInitial error--------------------------------------\n")
 
-        print("\nInitial error--------------------------------------\n")
-
-        print("initial_values, allparameters, arr_indexvaryingparameters")
-        print(initial_values, allparameters, arr_indexvaryingparameters)
+            print("initial_values, allparameters, arr_indexvaryingparameters")
+            print(initial_values, allparameters, arr_indexvaryingparameters)
 
         residues, deltamat, _ = FitO.error_function_on_demand_strain(
                                                                 initial_values,
@@ -2086,8 +2166,11 @@ class MainCalibrationFrame(wx.Frame):
                                                                 weights=None,
                                                                 kf_direction=self.kf_direction)
 
-        print("mean Initial residues", np.mean(residues))
-        print("---------------------------------------------------\n")
+        if 1: #verbose:
+            print("\nInitial error--------------------------------------\n")
+            print('residues', residues)
+            print("mean Initial residues", np.mean(residues))
+            print("---------------------------------------------------\n")
 
         results = FitO.fit_on_demand_strain(initial_values,
                                                     Data_Q,
@@ -2101,21 +2184,21 @@ class MainCalibrationFrame(wx.Frame):
                                                     Bmat=B0matrix,
                                                     pixelsize=self.pixelsize,
                                                     dim=self.framedim,
-                                                    verbose=1,
+                                                    verbose=verbose,
                                                     weights=None,
                                                     kf_direction=self.kf_direction)
 
 
-
-        print("\n********************\n       Results of Fit        \n********************")
-        print("results", results)
+        if verbose:
+            print("\n********************\n       Results of Fit        \n********************")
+            print("results", results)
 
         if results is None:
             return
 
         
 
-        print("\nFinal error--------------------------------------\n")
+        if verbose: print("\nFinal error--------------------------------------\n")
         residues, deltamat, refinedUB = FitO.error_function_on_demand_strain(
                                                                 results,
                                                                 Data_Q,
@@ -2134,18 +2217,19 @@ class MainCalibrationFrame(wx.Frame):
                                                                 kf_direction=self.kf_direction)
 
         
-
-        print("Final residues", residues)
-        print("---------------------------------------------------\n")
-        print("mean", np.mean(residues))
+        if verbose:
+            print("Final residues", residues)
+            print("---------------------------------------------------\n")
+            print("mean", np.mean(residues))
 
         # building B mat
         param_strain_sol = results
         varyingstrain = np.array([[1.0, param_strain_sol[2], param_strain_sol[3]],
                                         [0, param_strain_sol[0], param_strain_sol[4]],
                                         [0, 0, param_strain_sol[1]]])
-        print("varyingstrain results")
-        print(varyingstrain)
+        if verbose:
+            print("varyingstrain results")
+            print(varyingstrain)
 
         # if self.fitycen.GetValue():
         #     print("fitted ycen", param_strain_sol[8])
@@ -2156,25 +2240,28 @@ class MainCalibrationFrame(wx.Frame):
 
         # building UBmat(= newmatrix)
         newUBmat = np.dot(newUmat, varyingstrain)
-        print("newUBmat", newUBmat)
-        print("refinedUB", refinedUB)
 
         # ---------------------------------------------------------------
         # postprocessing of unit cell orientation and strain refinement
         # ---------------------------------------------------------------
-        print("self.newUBmat after fitting", newUBmat)
-        self.evaluate_strain_display_results(newUBmat,
+        if verbose:
+            print("newUBmat", newUBmat)
+            print("refinedUB", refinedUB)
+            print("self.newUBmat after fitting", newUBmat)
+        maxlevelstrain = self.evaluate_strain_display_results(newUBmat,
                                             self.key_material,
                                             residues,
                                             nb_pairs,
-                                            constantlength="a")
+                                            constantlength="a",displayresults=displayresults)
+        
+        return maxlevelstrain
         
     def evaluate_strain_display_results(self,
                                         newUBmat,
                                         key_material,
                                         residues_non_weighted,
                                         nb_pairs,
-                                        constantlength="a"):
+                                        constantlength="a", displayresults=True):
         """
         evaluate strain and display fitting results
         :param newUBmat: array, 3x3 orientation matrix UBrefined
@@ -2204,9 +2291,6 @@ class MainCalibrationFrame(wx.Frame):
         devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
         devstrain_round = np.round(devstrain * 1000, decimals=3)
 
-        new_latticeparameters = lattice_parameter_direct_strain
-        deviatoricstrain = devstrain
-        deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
 
 
         # ADDONS: strain in lauetools frame:
@@ -2242,9 +2326,6 @@ class MainCalibrationFrame(wx.Frame):
 
         print(" Bmat_triang_up= ")
         print(Bmat_triang_up.round(decimals=9))
-
-        Umat2 = Umat
-        Bmat_tri = Bmat_triang_up
 
         (list_HKL_names,
         HKL_xyz) = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
@@ -2338,12 +2419,16 @@ class MainCalibrationFrame(wx.Frame):
         #     print(txtHKLxyz)
         texts_dict["HKLxyz"] = ""
 
-        from LaueTools.GUI import PlotRefineGUI as PRGUI
+        if displayresults:
+            from LaueTools.GUI import PlotRefineGUI as PRGUI
 
-        frb = PRGUI.FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
-        frb.ShowModal()
+            frb = PRGUI.FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
+            frb.ShowModal()
 
-        frb.Destroy()
+            frb.Destroy()
+
+        return max(np.amax(np.fabs(devstrain_round)),np.amax(np.fabs(devstrain_sampleframe_round)))
+        
 
     def StartFit(self, event):
         """
@@ -2740,7 +2825,7 @@ class MainCalibrationFrame(wx.Frame):
         # print('selected_data_peak.shape',selected_data_peak.shape)
         
         if initialfileextension == 'dat' and initialfile != 'calib_.dat':
-
+            nbcolumns_cor = 0
             if nbcolumns_dat == 11:
                 (Xexp, Yexp, _, peakAmplitude,
             peak_fwaxmaj, peak_fwaxmin, peak_inclination,
@@ -2751,6 +2836,7 @@ class MainCalibrationFrame(wx.Frame):
             Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
 
         elif initialfileextension == 'cor':
+            nbcolumns_dat = 0
             if nbcolumns_cor==5:
                 (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
                 _ = peakAmplitude
