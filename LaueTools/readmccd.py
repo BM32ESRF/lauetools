@@ -664,6 +664,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                                     computerrorbars=False):
 
     r"""
+    
     fit multiple ROI data to get peaks position in a single image
 
     Ipixmax  :  highest intensity above background in every ROI centered on element of peaklist
