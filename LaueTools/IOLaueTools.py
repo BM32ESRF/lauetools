@@ -101,33 +101,42 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
         firstline_headercolumnsname = "2theta       chi         X           Y           I       "
         format_string = "%.05f   %.05f   %.05f   %.05f   %.02f"
         list_of_data = [twicetheta, chi, data_x, data_y, dataintensity]
+        nb_elem_format_string = 5
 
         if dict_data_spotsproperties is not None:
-            # print('in writefile_cor()')
-            # print('dict_data_spotsproperties',dict_data_spotsproperties)
+            if verbose:
+                print('\nIn writefile_cor() :')
+                print('total properties in data array of dict_data_spotsproperties',dict_data_spotsproperties['data_spotsproperties'].shape[1])
 
             ar_list_of_data = np.array(list_of_data).T
             array_data = dict_data_spotsproperties['data_spotsproperties']
+
             assert len(array_data) == len(twicetheta)
+
             # print('array_data.shape',array_data.shape)
             ardata =np.hstack((ar_list_of_data,array_data))
             # print('ardata.shape',ardata.shape)
 
             list_of_data = (ardata.T).tolist()
 
-            # print('len list_of_data',len(list_of_data))
+            
             for _key in dict_data_spotsproperties['columnsname']:
-                if _key not in ('peak_X', 'peak_Y','peak_Isub'):
+                if _key: # not in ('peak_X', 'peak_Y','peak_Isub'):
                     firstline_headercolumnsname += ' %s'%_key
                     format_string += "   %.03f"
+                    nb_elem_format_string+=1
+            if verbose:
+                print('nb of properties to be added',len(list_of_data))
+                print('nb_elem_format_string', nb_elem_format_string)
 
-            # prevent  adding other columns
+            # prevent  adding other columns from rarely used argument of writefile_cor()
             data_props=None
             data_sat = None
 
         if data_sat is not None:
             firstline_headercolumnsname += " data_sat"
             format_string += "   %d"
+            nb_elem_format_string+=1
             list_of_data += [data_sat]
         if data_props:
             print('preparing spots props "list_of_data"')
@@ -135,6 +144,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
             for k in range(len(columnnames)):
                 firstline_headercolumnsname += " %s" % columnnames[k]
                 format_string += "   %.06f"
+                nb_elem_format_string+=1
                 # TODO clarify ???
                 list_of_data += [data_peaks[:, k]]
                 #list_of_data += [data_peaks[k, :]]
@@ -145,7 +155,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
         if sortedexit and dict_data_spotsproperties is None:
             # to write in decreasing order of intensity (col intensity =4)
             colindex_intensity = 4
-            print("rearranging exp. spots order according to intensity")
+            if verbose: print("rearranging exp. spots order according to intensity")
             arraydata = np.array(list_of_data).T
             s_ix = np.argsort(arraydata[:, colindex_intensity])[::-1]
 
@@ -155,8 +165,11 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
 
         outputfile.write(firstline_headercolumnsname)
 
-        #print('nbspots', nbspots)
-        #print('len(list_of_data)', len(list_of_data))
+        if verbose:
+            print('nbspots', nbspots)
+            print('len(list_of_data)', len(list_of_data))
+            print('nb_elem_format_string', nb_elem_format_string)
+
         ldata = [elem for elem in list_of_data]
         #for elem in ldata:
             #print('len ---', len(elem))
@@ -208,7 +221,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
 
     return outputfilename
 
-def get_otherspotprops(allspotsprops: np.array, filename:str, sortintensities:bool=True):
+def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:bool=True):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
 
 
@@ -239,7 +252,7 @@ def get_otherspotprops(allspotsprops: np.array, filename:str, sortintensities:bo
         columnnames = f.readline().split()[normalnbcolumns:]
     
 
-    # print('\n\n      get_otherspotprops()')
+    # print('\n\n      get_spotprops_cor()')
     # print('otherpropsdata', otherpropsdata[0])
     # print('columnnames', columnnames)
     # print('\n\n')
@@ -252,7 +265,7 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
 
     :param output_CCDparamsdict: bool, to return or not dict of detector calibration and nature parameters
 
-    :param output_only5columns: bool, to read or not only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
+    :param output_only5columns: bool, to output or not only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
@@ -887,6 +900,47 @@ def getcolumnsname_dat(fullpath):
         columnsname = _line.split()
 
     return columnsname
+
+def getspotsproperties_dat(fullpath):
+    """
+    return dict of spots properties from .dar file
+
+    Parameters
+    ----------
+    fullpath
+        str, full path to .dat file
+
+    Returns
+    -------
+        dict of spots properties:  dict_spotsproperties ={'columnsname':list of columns name, 'data_spotsproperties': array, data_spotsproperties  shape = (nb of spots, nb of properties)}
+        
+    """
+    alldata, nbpeaks = readfile_dat(fullpath, returnnbpeaks=True)
+    listcolumnsname = getcolumnsname_dat(fullpath)
+    nbcolumns = len(listcolumnsname)
+    
+    print('\n   In getspotsproperties_dat: filename :', fullpath)
+    print('nbpeaks', nbpeaks)
+    print('alldata.shape', alldata.shape)
+    print('raw nbcolumns', nbcolumns)
+
+    
+    listcolspotproperties = np.arange(nbcolumns)
+
+    dict_spotsproperties ={}
+    
+    if nbpeaks > 1:
+        nbcolumns = alldata.shape[1]
+        data_xyI = np.take(alldata, (0, 1, 3), axis=1)
+        data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=1)
+    elif nbpeaks == 1:
+        data_xyI = np.take(alldata, (0, 1, 3), axis=0)
+        data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=0)
+
+    dict_spotsproperties['data_spotsproperties'] = alldata
+    dict_spotsproperties['columnsname'] = listcolumnsname
+
+    return dict_spotsproperties
 
 
 def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
