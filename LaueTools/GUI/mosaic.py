@@ -2325,7 +2325,7 @@ def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:b
     
     CountersData = {}
 
-    print('dict_param in buildMosaic3 ',dict_param)
+    print('\n In buildMosaic3(): dict_param : ',dict_param)
 
     #update and complement dictfittingparameters if needed 
     dictfittingparameters = {**DEFAULT_DICTfittingparameters,**dictfittingparameters}
@@ -2334,8 +2334,9 @@ def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:b
     filename_representative = dict_param["filename_representative"]
     ccdlabel = dict_param["CCDLabel"]
 
-    print('filename_representative',filename_representative)
-    print('ccdlabel',ccdlabel)
+    if verbose:
+        print('filename_representative',filename_representative)
+        print('ccdlabel',ccdlabel)
     nbdigits = dict_param["nbdigits"]
     #     startind = int(dict_param['starting_imageindex'])
     #     endind = int(dict_param['final_imageindex'])
@@ -2376,7 +2377,7 @@ def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:b
     print("nb_lines,nb_col", nb_lines, nb_col)
 
     dict_map_imageindex = {}
-    print("selected1Darray_absoluteimageindex", selected1Darray_absoluteimageindex)
+    if verbose: print("selected1Darray_absoluteimageindex", selected1Darray_absoluteimageindex)
     if nb_col > 0:
         for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
 
@@ -2404,7 +2405,7 @@ def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:b
 
     for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
         imageindex = absolute_imageindex
-        if ccdlabel in ('EIGER_4MCdTestack'):
+        if ccdlabel in ('EIGER_4MCdTestack'): # or other stack images detector
             print('in buildMosaic3')
             print('ccdlabel ', ccdlabel)
             filename = filename_representative
@@ -2416,6 +2417,7 @@ def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:b
                                     imageindex,
                                     CCDLabel=ccdlabel,
                                     nbdigits=nbdigits)
+            stackimageindex = -1
 
         filename = os.path.join(dirname, filename)
         if verbose > 0: print("filename", filename)
