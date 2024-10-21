@@ -535,8 +535,12 @@ def error_function_on_demand_strain(param_strain,
     in this function calibration is not refined (but values are needed!), arr_indexvaryingparameters must only contain index >= 5
     Bmat=  B0 matrix
 
+    :param nspots: indices of selected spots of DATA_Q
+
     :param depth: normal to surface depth in microns (under sample surface, not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this location of scattering emission depth (expressed in pixel).
     Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
+
+    :param verbose: print on stdout messages but also act on the nb of elements in return tuple !!!
     """
 
     #print('kf_direction in error_function_on_demand_strain',kf_direction)
