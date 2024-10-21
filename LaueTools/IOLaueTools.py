@@ -250,9 +250,9 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made at least of 5 columns:  2theta chi pixX pixY I
 
-    :param output_CCDparamsdict: bool, dict of detector calibration and nature parameters
+    :param output_CCDparamsdict: bool, to return or not dict of detector calibration and nature parameters
 
-    :param output_only5columns: bool, read only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
+    :param output_only5columns: bool, to read or not only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
@@ -281,6 +281,7 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         import re
         hh = re.sub(' +', ' ', firstline)
         listcolumnsname = hh.split(' ')
+        listcolumnsname[-1].strip()
 
     alldata = np.loadtxt(filename, skiprows=SKIPROWS)
 
@@ -315,8 +316,10 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
             data_theta = data_2theta / 2.0
 
             # listcolumnsname
-            otherproperties_name = listcolumnsname[5:]
-            otherproperties_data = alldata[:,5:]
+            firstcolumnindex_properties = 0  # 5
+            otherproperties_name = listcolumnsname[firstcolumnindex_properties:]
+            otherproperties_name[-1]=otherproperties_name[-1].strip()
+            otherproperties_data = alldata[:,firstcolumnindex_properties:]
             dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     elif nb_peaks == 1:
@@ -336,9 +339,9 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         elif nbcolumns > 6:
             data_2theta, data_chi, data_pixX, data_pixY, data_I = alldata[:5]
             data_theta = data_2theta / 2.0
-
-            otherproperties_name = listcolumnsname[5:]
-            otherproperties_data = alldata[5:]
+            firstcolumnindex_properties = 0 # 5
+            otherproperties_name = listcolumnsname[firstcolumnindex_properties:]
+            otherproperties_data = alldata[firstcolumnindex_properties:]
             dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     #    print "Reading detector parameters if exist"
@@ -369,9 +372,12 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
     return toreturn
 
 
-def getpixelsize_from_corfile(filename):
+def getpixelsize_from_corfile(filename: str):
     """
     return pixel size if written in .cor file
+
+
+    :param filename: str, full filepath
     """
     xpixelsize = None
 
@@ -632,13 +638,12 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     :return: full path of created file
 
-
     containing data
     one line   of header
     next lines of data
     last lines of comments
 
-    WARNING: compute and a column 'peak_Itot'
+    WARNING: compute and add a column 'peak_Itot' in the file
 
     TODO: should only write things and not compute !! see intensity calculation!
     (peak_I + peak_bkg)
@@ -646,9 +651,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     TODO: to simplify to deal with single peak recording
 
     TODO: simplify to implement larger number of spot properties
-
-
     """
+    print('\n In writefile_Peaklist(): ')
     if Data_array is None:
         if verbose:
             print("No data peak to write")
@@ -664,8 +668,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         if Data_array.shape[0] == 1:
             Data_array = Data_array[0]
 
-    # print('Data_array.shape', Data_array.shape)
-    # print('Found in writefile_Peaklist() nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
+    print('Data_array.shape', Data_array.shape)
+    print('Found in writefile_Peaklist() Data_array cotresponding to nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
     # print('Data_array[0]',Data_array[0])
 
     if dirname is None:
@@ -681,15 +685,20 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     if nbcolumns == 10: # standard 
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-        Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
+        Xdev, Ydev, peak_bkg, Ipixmax) = Data_array.T
 
-    elif nbcolumns == 11: # quite obsolete and rare case ?
-        (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-            Xdev, Ydev, peak_bkg, Ipixmax, ) = Data_array.T
+    # elif nbcolumns == 11: # quite obsolete and rare case ?
+    #     (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+    #         Xdev, Ydev, peak_bkg, Ipixmax) = Data_array.T
     elif nbcolumns == 12:  # standard + 2 columns for error bars
         (peak_X, peak_Y, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-        Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr,) = Data_array.T
-        
+        Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr) = Data_array.T
+
+    elif nbcolumns == 13:  # standard + 2 columns for error bars
+        (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+        Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr) = Data_array.T
+
+      
     elif nbcolumns == 3: # basic X, Y , I   # from DetectorCalibration board
         # need to set fake data
         (peak_X, peak_Y, peak_I) = Data_array.T
@@ -700,7 +709,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     with open(os.path.join(dirname, outputfilename), "w") as outputfile:
         headerfile = "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
         headerfile += "peak_inclination Xdev Ydev peak_bkg Ipixmax"
-        if nbcolumns == 12: #computerrorbars
+        if nbcolumns in (12, 13): #computerrorbars
              headerfile += " Xfiterr Yfiterr"
         headerfile += '\n'
 
@@ -746,7 +755,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                             ) for i in list(range(nbpeaks))]))
                 nbpeaks = len(peak_X)
 
-        elif nbcolumns == 12:
+        elif nbcolumns in (12, 13):
             if nbpeaks == 1:
                 if verbose:
                     print("nbcolumns", nbcolumns)
