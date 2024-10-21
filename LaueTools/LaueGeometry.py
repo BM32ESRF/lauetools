@@ -1750,10 +1750,10 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None,
+def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=None,
                                                         kf_direction="Z>0",
                                                         verbose=1,
-                                                        pixelsize=165.0 / 2048,
+                                                        pixelsize:float=165.0 / 2048,
                                                         dim=(2048, 2048),
                                                         saturation=0,
                                                         forceextension_lines_to_extract=None,
@@ -1763,11 +1763,10 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
     r"""
     Read a file and convert spot positions x,y to scattering angles 2theta, chi according to detector parameters
 
-    :param filename: fullpath to peaks list ASCII file
-    :type filename: string
+    :param filename: str, fullpath to peaks list ASCII file
 
     :param detectorparams: list of CCD calibration parameters [det, xcen, ycen, xbet, xgam]
-    :param pixelsize: pixelsize in mm
+    :param pixelsize: float, pixelsize in mm
     :param dim: (nb pixels x, nb pixels y)
 
     :param kf_direction: label of detection geometry (CCD position): 'Z>0','X>0',...
@@ -1803,18 +1802,24 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
         listcolumnsname = IOLT.getcolumnsname_dat(filename)
         nbcolumns = len(listcolumnsname)
         
-        # print('nbpeaks', nbpeaks)
-        # print('alldata', alldata)
-        listcolspotproperties = [2]+[ik for ik in range(4,nbcolumns)]
+        print('\n   In Compute_data2thetachi(): filename :', filename)
+        print('nbpeaks', nbpeaks)
+        print('alldata.shape', alldata.shape)
+        print('raw nbcolumns', nbcolumns)
+
+        # take all columns (spots properties)
+        dict_spotsproperties = IOLT.getspotsproperties_dat(filename)
+        data_spotsproperties = dict_spotsproperties['data_spotsproperties']
+
+        basic_colunms_idx = (0,1,3)   # X, Y, peak amplitude
+
         if nbpeaks > 1:
             nbcolumns = alldata.shape[1]
-            data_xyI = np.take(alldata, (0, 1, 3), axis=1)
-            data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=1)
+            data_xyI = np.take(alldata, basic_colunms_idx, axis=1)
         elif nbpeaks == 1:
-            data_xyI = np.take(alldata, (0, 1, 3), axis=0)
-            data_spotsproperties = np.take(alldata, tuple(listcolspotproperties), axis=0)
+            data_xyI = np.take(alldata, basic_colunms_idx, axis=0)
 
-        print("nb of spots and columns in .dat file", data_xyI.shape)
+        print("data_spotsproperties.shape", data_spotsproperties.shape)
 
         if saturation:
             data_Ipixmax = alldata[:, -1]
@@ -1957,6 +1962,63 @@ def Compute_data2thetachi(filename, sorting_intensity="yes", detectorparams=None
         dict_spotsproperties ={'columnsname':listcolumnsname, 'data_spotsproperties':data_spotsproperties}
         return twicetheta, chi, dataintensity, data_x, data_y, dict_spotsproperties
 
+def convertdat2corfile(filename_dat:str, fullpath_det:str, dirname_in:str=None,
+                                        dirname_out:str=None):
+    """
+    Write a .cor file from a .dat file (peaksearch made peaks list) taking into account a .det file (calibration file)
+
+    Parameters
+    ----------
+    filename_dat
+        filename (including full path or not). If fullpath is not included, then dirname_in must be provided
+    fullpath_det
+        fullpath to .det file (detector geometry calibration)
+    dirname_in, optional
+        path to folder containing the file with name filename_dat, by default None. If None, filename_dat must include the its fullpath
+    dirname_out, optional
+        full path to where output file be written , by default None
+
+    Returns
+    -------
+        str, the output filename of the .cor file
+
+    Raises
+    ------
+    KeyError
+        if 'xpixelsize' or 'pixelsize' key is not found when reading detector calibration file
+    """
+    
+    if dirname_in != None:
+        datfilename_in = os.path.join(dirname_in, filename_dat)
+    else:
+        datfilename_in = filename_dat
+
+    CCDCalibdict = IOLT.readCalib_det_file(fullpath_det)
+
+    if "pixelsize" in CCDCalibdict: 
+        pixelsize = CCDCalibdict['pixelsize']
+    elif "xpixelsize" in CCDCalibdict: 
+        pixelsize = CCDCalibdict['xpixelsize']
+    else:
+        raise KeyError('Can not read pixel size in file : %s'%fullpath_det)
+    
+    if 'CCDCalibParameters' in  CCDCalibdict:
+        calibparam = CCDCalibdict['CCDCalibParameters']
+
+    #dict_spotsproperties = IOLT.getspotsproperties_dat(datfilename_in)
+
+    print('pixelsize',pixelsize)
+    print('CCDCalibdict',CCDCalibdict)
+
+    filename_out = convert2corfile(datfilename_in, calibparam, dirname_in=None,
+                                        dirname_out=dirname_out,
+                                        pixelsize=pixelsize,
+                                        CCDCalibdict=CCDCalibdict, add_props=False,
+                                        addspotproperties=True)
+    
+    print('.cor file written in ', filename_out)
+    return filename_out
+
 
 def convert2corfile(filename, calibparam, dirname_in=None,
                                         dirname_out=None,
@@ -1969,13 +2031,15 @@ def convert2corfile(filename, calibparam, dirname_in=None,
     From X,Y pixel positions in peak list file (x,y,I,...) and detector plane geometry comptues scattering angles 2theta chi
     and creates a .cor file (ascii peaks list (2theta chi X Y int ...))
 
-    :param CCDCalibdict: dictionary of CCD file and calibration parameters
+    :param CCDCalibdict: dictionary of CCD file and calibration parameters. If the dictionnary has got keys 'pixelsize' and 'CCDCalibPameters', calibparam and pixelsize are useless!
 
     :param calibparam: list of 5 CCD calibration parameters (used if CCDCalibdict is None or  CCDCalibdict['CCDCalibPameters'] is missing)
 
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or if CCDCalibdict['pixelsize'] is missing)
 
     :param add_props: add all peaks properties to .cor file instead of the 5 columns
+
+    TODO:  remove add_props
     """
     if dirname_in != None:
         filename_in = os.path.join(dirname_in, filename)
@@ -1994,13 +2058,22 @@ def convert2corfile(filename, calibparam, dirname_in=None,
         if "pixelsize" in CCDCalibdict:
             pixelsize = CCDCalibdict["pixelsize"]
     else:
-        #print('using pixelsize given in argument'
+        print('WARNING: using pixelsize given in argument of convert2corfile()')
         pass
 
     #print('using pixelsize: ', pixelsize)
 
-
-    (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
+    if addspotproperties:
+        (twicetheta, chi, dataintensity, data_x, data_y, dict_spotsproperties) = Compute_data2thetachi(filename_in,
+                                                               sorting_intensity="yes",
+                                                                detectorparams=calibparam,
+                                                                pixelsize=pixelsize,
+                                                                addspotproperties=True)
+        
+        print('In convert2corfile(): dict_spotsproperties',dict_spotsproperties)
+        print(dict_spotsproperties['data_spotsproperties'])
+    else:
+        (twicetheta, chi, dataintensity, data_x, data_y) = Compute_data2thetachi(filename_in,
                                                                sorting_intensity="yes",
                                                                 detectorparams=calibparam,
                                                                 pixelsize=pixelsize,
@@ -2051,7 +2124,8 @@ def convert2corfile(filename, calibparam, dirname_in=None,
                                                             data_props=add_props,
                                                             sortedexit=False,
                                                             param=param,
-                                                            initialfilename=filename)
+                                                            initialfilename=filename,
+                                                            dict_data_spotsproperties=dict_spotsproperties)
 
 
 def convert2corfile_fileseries(fileindexrange, filenameprefix, calibparam, suffix="",
