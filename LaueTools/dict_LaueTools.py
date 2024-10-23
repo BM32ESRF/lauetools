@@ -80,6 +80,7 @@ dict_Materials = {
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
     "NiMnIn_modulated": ["NiMnIn_modulated", [4.3919, 5.6202, 4.3315, 90, 93.044, 90], "h+k=2n, modulated"],  # average I2/m SG 12 # modulated structure Yan et al Acta Mat 88 (2015) 375
     "NiMnIn": ["NiMnIn", [4.3919, 5.6202, 4.3315, 90, 93.044, 90], "h+k=2n"],  # I2/m SG 12 
+    "NiMnIn_2ac": ["NiMnIn_2ac", [2*4.3919, 5.6202, 2*4.3315, 90, 93.044, 90], "2h+k=2n"],  # I2/m SG 12 
     "Nb14W3O44": ["Nb14W3O44", [21.002, 21.002, 3.82, 90, 90, 90], "no"],  #space group 82 to be checked
     "Olivine_forsterite": ["Olivine_forsterite", [4.754,10.1971,5.9806, 90, 90, 90], "no"],
     "Olivine_fayalite": ["Olivine_fayalite", [4.8211,10.4779,6.0889, 90, 90, 90], "no"],
