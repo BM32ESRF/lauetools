@@ -35,22 +35,17 @@ else:
 DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
-def convert2corfile():
-    """ from .dat + .det compute .cor file  in LaueGeometry """
-    pass
-
-
 def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, data_y:list, dataintensity:list,
-                                            param=None,
-                                            initialfilename=None,
-                                            comments=None,
-                                            sortedexit=False,
-                                            overwrite=1,
+                                            param: list, dict=None,
+                                            initialfilename:str=None,
+                                            comments:str=None,
+                                            sortedexit:bool=False,
+                                            overwrite:int=1,
                                             data_sat=None,
                                             data_props=None,
-                                            rectpix=0,  # RECTPIX
-                                            dirname_output=None,
-                                            verbose=0,                                                        dict_data_spotsproperties=None
+                                            rectpix:int=0,  # RECTPIX
+                                            dirname_output:str=None,
+                                            verbose:int=0,                                                        dict_data_spotsproperties:dict=None
                                             ):
     """
     Write .cor file containing data
@@ -61,7 +56,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
     + comments at the end for calibration CCD parameters that have been used for calculating
     2theta and chi for each peak (in addition to X,Y pixel position)
 
-    :return: str, outputfilename
+    :return: str, outputfilename (not including full path)
 
     :param sortedexit: bool, True then sort peaks by intensity for the outputfile. False, then do not sort (e.g. sorting already done in input .dat file . see dataintensity input parameter)
 
@@ -86,7 +81,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
     outputfilename = prefixfilename + ".cor"
 
     if dirname_output is None:
-        dirname_output = os.curdir
+        dirname_output = os.path.abspath(os.curdir)
 
     if outputfilename in os.listdir(dirname_output) and not overwrite:
         outputfilename = prefixfilename + "_new" + ".cor"
@@ -104,6 +99,11 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
         nb_elem_format_string = 5
 
         if dict_data_spotsproperties is not None:
+            print('dict_data_spotsproperties',dict_data_spotsproperties)
+
+            if 'data_spotsproperties' not in dict_data_spotsproperties:
+                raise KeyError('"data_spotsproperties" key not found in dict_data_spotsproperties :', dict_data_spotsproperties)
+
             if verbose:
                 print('\nIn writefile_cor() :')
                 print('total properties in data array of dict_data_spotsproperties',dict_data_spotsproperties['data_spotsproperties'].shape[1])
@@ -218,38 +218,41 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
             outputfile.write("\n# Comments")
             for line in comments:
                 outputfile.write("\n# %s" % line)
-
+    if verbose:
+        print('Writing .cor file in ',outputfilename)
+        print('folder:', dirname_output)
+    
     return outputfilename
 
-def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:bool=True):
+def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:bool=True,
+                                                                defaultminimalnbcolumns:int=5):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
 
-
-    :param allspotsprops: array with shape (nb of spots, nb of props)
+    :param allspotsprops: array of all spots properties with shape (nb of spots, nb of props)
     :param filename: str, .cor file to get the columns name
+    :param defaultminimalnbcolumns: int, minimal nb of columns (default = 5, 2theta chi X Y I )
 
     :return: array of spot props (except X Y 2theta chi and I), list of column names
     """
-    normalnbcolumns = 5
-    colindex_intensity = 4
+    COLINDEX_INTENSITY_CORFILE = 4  # convention 
 
     assert len(allspotsprops.shape) == 2
     assert filename.endswith('.cor')
 
     # no additional spot properties
-    if allspotsprops.shape[1] == normalnbcolumns:
+    if allspotsprops.shape[1] == defaultminimalnbcolumns:
         return None
 
     # print('filename', filename, 'allspotsprops  int', allspotsprops[:,4])
     if sortintensities:
-        props = allspotsprops[np.argsort(allspotsprops[:, colindex_intensity])[:: -1]]
+        props = allspotsprops[np.argsort(allspotsprops[:, COLINDEX_INTENSITY_CORFILE])[:: -1]]
     else:
         props = allspotsprops
 
     # list of props
-    otherpropsdata = props[:, normalnbcolumns:].T
+    otherpropsdata = props[:, defaultminimalnbcolumns:].T
     with open(filename, "r") as f:
-        columnnames = f.readline().split()[normalnbcolumns:]
+        columnnames = f.readline().split()[defaultminimalnbcolumns:]
     
 
     # print('\n\n      get_spotprops_cor()')
@@ -492,9 +495,11 @@ def writeCalibFile():
 
 def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True):
     """
-    read .det file (detector geometry calibration)
+    read detector parameters and calibration parameter from  .cor or .det file
 
-    .. warning:: if CCDLabel is unknown, it is gueesed from pixelsize...
+    If CCDLabel is unknown, it is guessed from pixelsize...
+
+    the parameters are found in the file at line containinf # dd, # xcen , etc...
 
     .. todo:: we could add dimensions to guess CCDLabel
 
@@ -901,7 +906,7 @@ def getcolumnsname_dat(fullpath):
 
     return columnsname
 
-def getspotsproperties_dat(fullpath):
+def getspotsproperties_dat(fullpath, verbose=0):
     """
     return dict of spots properties from .dar file
 
@@ -918,11 +923,12 @@ def getspotsproperties_dat(fullpath):
     alldata, nbpeaks = readfile_dat(fullpath, returnnbpeaks=True)
     listcolumnsname = getcolumnsname_dat(fullpath)
     nbcolumns = len(listcolumnsname)
-    
-    print('\n   In getspotsproperties_dat: filename :', fullpath)
-    print('nbpeaks', nbpeaks)
-    print('alldata.shape', alldata.shape)
-    print('raw nbcolumns', nbcolumns)
+
+    if verbose:
+        print('\n   In getspotsproperties_dat(): filename :', fullpath)
+        print('nbpeaks', nbpeaks)
+        print('alldata.shape', alldata.shape)
+        print('raw nbcolumns', nbcolumns)
 
     
     listcolspotproperties = np.arange(nbcolumns)
@@ -949,7 +955,7 @@ def readfile_dat(filename_in, dirname=None, returnnbpeaks = False):
 
 
 def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
-                  returnnbpeaks:bool=False, maxnumberlines:int=10000):
+                  returnnbpeaks:bool=False, maxnumberlines:int=10000, verbose=0):
     """
     read peak list .dat file and return the entire array of spots data
     :param filename_in: str, full path of .dat file if dirname is None, otherwise only filename without folder
@@ -960,7 +966,7 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
     (peak_X,peak_Y,peak_Itot, peak_Isub,peak_fwaxmaj,peak_fwaxmin,
     peak_inclination,Xdev,Ydev,peak_bkg, Ipixmax)
     """
-    print('\n\nIn read_Peaklist(): ')
+    if verbose: print('\n\nIn read_Peaklist(): ')
 
     if dirname is not None:
         filename_in = os.path.join(dirname, filename_in)
