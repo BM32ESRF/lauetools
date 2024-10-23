@@ -24,7 +24,7 @@ if sys.version_info.major == 3:
     from . import matchingrate
     from . import dict_LaueTools as DictLT
     from . import FitOrient as FitO
-    from . import LaueGeometry as F2TC
+    from . import LaueGeometry as LaueGeo
     from . import findorient as FO
     from . import indexingImageMatching as IMM
     from . import IOLaueTools as IOLT
@@ -41,7 +41,7 @@ else:
     import matchingrate
     import dict_LaueTools as DictLT
     import FitOrient as FitO
-    import LaueGeometry as F2TC
+    import LaueGeometry as LaueGeo
     import findorient as FO
     import indexingImageMatching as IMM
     import IOLaueTools as IOLT
@@ -5163,10 +5163,14 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             # batch to convert from .dat (peak list of X,Y,I) to .cor (2theta,Chi,X,Y,I)
             if verbose:
-                print("build .cor file")
+                print("Going to build a .cor file")
                 print("in %s" % Index_Refine_Parameters_dict["PeakListCor Folder"])
-            F2TC.convert2corfile(datfilename,
-                                calibparam,
+                print('with CCDCalibdict', CCDCalibdict)
+
+            assert CCDCalibdict is not None
+
+            LaueGeo.convert2corfile(datfilename,
+                                calibparam,  # should be useless and pixelsize argument is also missing...
                                 dirname_in=dirname_in,
                                 dirname_out=Index_Refine_Parameters_dict["PeakListCor Folder"],
                                 CCDCalibdict=CCDCalibdict,
