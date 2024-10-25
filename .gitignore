@@ -4,5 +4,23 @@
 /LaueTools/sorted*
 /doc/conf.py
 /LaueTools/__pycache__/*
+/LaueTools/DAXM/__pycache__/*
+/LaueTools/DAXM/classes/__pycache__/*
+/LaueTools/DAXM/contrib/__pycache__/*
+/LaueTools/DAXM/contrib/ObjectListView/__pycache__/*
+/LaueTools/DAXM/gui/__pycache__/*
+/LaueTools/DAXM/gui/boxes/__pycache__/*
+/LaueTools/DAXM/gui/icons/__pycache__/*
+/LaueTools/DAXM/gui/panels/__pycache__/*
+/LaueTools/DAXM/gui/panels/data/__pycache__/*
+/LaueTools/DAXM/gui/panels/experiment/__pycache__/*
+/LaueTools/DAXM/gui/widgets/__pycache__/*
+/LaueTools/DAXM/gui/windows/__pycache__/*
+/LaueTools/DAXM/material/__pycache__/*
+/LaueTools/DAXM/modules/__pycache__/*
+/LaueTools/DAXM/utils/__pycache__/*
+/LaueTools/dummy*
+
+/LaueTools/GUI/__pycache__/*
 
 LaueTools/test_toolbar.py
