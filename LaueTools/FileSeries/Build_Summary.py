@@ -106,7 +106,8 @@ class MainFrame_BuildSummary(wx.Frame):
         print('-----             LaueTools           --------')
         print('-----  Build Summary GUI FileSeries   --------')
         print('----- (reading results in .fit files) --------')
-        print('------------------2024------------------------')
+        print('----------------------------------------------')
+        print('----------------------------------------------')
 
         # print('In MainFrame_BuildSummary().__init__(): self.initialparameters', self.initialparameters)
         # print('file_xyz', file_xyz)
