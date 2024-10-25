@@ -6,6 +6,9 @@
 /LaueTools/__pycache__/*
 /LaueTools/DAXM/__pycache__/*
 /LaueTools/DAXM/classes/__pycache__/*
+/LaueTools/DAXM/classes/scan/__pycache__/*
+/LaueTools/DAXM/classes/reconstruction/__pycache__/*
+/LaueTools/DAXM/classes/calibration/__pycache__/*
 /LaueTools/DAXM/contrib/__pycache__/*
 /LaueTools/DAXM/contrib/ObjectListView/__pycache__/*
 /LaueTools/DAXM/gui/__pycache__/*
