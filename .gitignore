@@ -23,4 +23,6 @@
 
 /LaueTools/GUI/__pycache__/*
 
+.eggs/*
+
 LaueTools/test_toolbar.py
