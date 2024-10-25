@@ -36,7 +36,7 @@ DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
 def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, data_y:list, dataintensity:list,
-                                            param: list, dict=None,
+                                            param: list=None,
                                             initialfilename:str=None,
                                             comments:str=None,
                                             sortedexit:bool=False,
@@ -45,7 +45,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
                                             data_props=None,
                                             rectpix:int=0,  # RECTPIX
                                             dirname_output:str=None,
-                                            verbose:int=0,                                                        dict_data_spotsproperties:dict=None
+                                            verbose:int=0,                                                        dict_data_spotsproperties=None
                                             ):
     """
     Write .cor file containing data
@@ -205,7 +205,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
                 else:
                     raise ValueError("5 or 6 calibration parameters are needed!")
             # param is a dict : CCDCalibdict
-            elif isinstance(param, dict):
+            elif isinstance(param, (dict,)):
                 if verbose:
                     print("param is a dict!")
                 for key in CCD_CALIBRATION_PARAMETERS:
@@ -238,6 +238,8 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
 
     assert len(allspotsprops.shape) == 2
     assert filename.endswith('.cor')
+
+    #print('allspotsprops.shape', allspotsprops.shape)
 
     # no additional spot properties
     if allspotsprops.shape[1] == defaultminimalnbcolumns:
@@ -312,6 +314,8 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         nb_peaks = 1
         nbcolumns = sha[0]
 
+    # having created an empty .cor file may be useless
+    assert nb_peaks != 0
 
     if nb_peaks > 1:
 
@@ -357,7 +361,7 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
             data_theta = data_2theta / 2.0
             firstcolumnindex_properties = 0 # 5
             otherproperties_name = listcolumnsname[firstcolumnindex_properties:]
-            otherproperties_data = alldata[firstcolumnindex_properties:]
+            otherproperties_data = np.array(alldata[firstcolumnindex_properties:])
             dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     #    print "Reading detector parameters if exist"
@@ -374,9 +378,14 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         else:
             raise IndexError('Missing explicit values for keys %s in CCDcalib () in file  %s '%(CCD_CALIBRATION_PARAMETERS[:5],filename))
             return
-        
-    toreturn = [alldata, data_theta, data_chi,
+    
+    if nb_peaks > 1:
+        toreturn = [alldata, data_theta, data_chi,
                     data_pixX, data_pixY, data_I, detParam]
+    if nb_peaks == 1:
+        toreturn = [np.array([alldata]), np.array([data_theta]), np.array([data_chi]),
+                    np.array([data_pixX]), np.array([data_pixY]), np.array([data_I]), detParam]
+
     
     if output_CCDparamsdict:
         toreturn.append(CCDcalib)
@@ -1208,7 +1217,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                        calibJSM[:, :5],
                        pixdev
 
-                       and in addition if rezadmore is True:
+                       and in addition if readmore is True:
                        strain6, euler, all_UBB0mats_flat,
 
                where   list_indexedgrains_indices   : list of indices of indexed grains
@@ -1228,8 +1237,9 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         euler                    : list of 3 Euler Angles for each grain
 
     """
-    if verbose:
-        print("reading fit file %s by readfitfile_multigrains.py of IOLaueTools (formerly readwriteASCII): " % fitfilename)
+    if verbose > 0:
+        print("\nIn readfitfile_multigrains(): ")
+        print("reading fit file: %s " % fitfilename)
 
     columns_headers = []
 
@@ -1250,7 +1260,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             #    else:
             #        WrongExtension = True
             if _line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-                print('got a grain!')
+                if verbose > 1: print('got a grain!')
                 linepos_grain_list.append(lineindex)
                 nbgrains += 1
                 
@@ -1274,7 +1284,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     #     linepos_grain_list.append(lineindex)
     #     f.close()
 
-    if verbose:
+    if verbose > 0:
         print("nbgrains = ", nbgrains)
         print("linepos_grain_list = ", linepos_grain_list)
 
@@ -1305,12 +1315,14 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
     UBmat = np.zeros((3, 3), dtype=np.float32)
     UBB0mat = np.zeros((3, 3), dtype=np.float32)
     strain = np.zeros((3, 3), dtype=np.float32)
+    strain2 = np.zeros((3, 3), dtype=np.float32)
 
     matrixfound = 0
     calibfound = 0
     calibfoundJSM = 0
     pixdevfound = 0
     strainfound = 0
+    strainfound2 = 0
     eulerfound = 0
     linecalib = 0
     linepixdev = 0
@@ -1331,11 +1343,11 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 line = f.readline()
                 #             print "iline =%d line" % iline, line
                 if line.startswith(("# Number of indexed spots", "#Number of indexed spots")):
-                    print("iline =%d line" % iline, line)
+                    if verbose > 1: print("iline =%d line" % iline, line)
                     try:
                         nb_indexed_spots = int(line.split(":")[-1])
                     except ValueError:
-                        print("number of indexed spots should placed after ':' ")
+                        if verbose > 1: print("number of indexed spots should placed after ':' ")
 
                 elif line.startswith(("# Number of unindexed spots", "#Number of unindexed spots")):
                     nb_indexed_spots = 0
@@ -1382,7 +1394,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                                 line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
 
                         dataspots_Unindexed = np.array(dataspots_Unindexed, dtype=np.float32)
-                #                     print "got dataspots_Unindexed!"
 
                 elif line.startswith("#UB matrix"):
                     matrixfound = 1
@@ -1400,22 +1411,20 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                 elif line.startswith("#pixdev"):
                     pixdevfound = 1
                     linepixdev = iline + 1
-                elif line.startswith("#deviatoric"):
+                elif line.startswith("#deviatoric strain in direct crystal"):
                     strainfound = 1
-
-                
-
+                elif line.startswith("#deviatoric strain in sample2"):
+                    strainfound2 = 1
                 elif line.startswith("#Euler"):
                     eulerfound = 1
                     lineeuler = iline + 1
 
-                    print('Eulers Angles found', eulerfound)
-
+                if verbose > 1: print('Eulers Angles found', eulerfound)
+                
                 if matrixfound:
                     for jline_matrix in list(range(3)):
                         line = f.readline()
-                        # print("line in matrix matrixfound", line)
-                        lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                        lineval = line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split()
                         UBmat[jline_matrix, :] = np.array(lineval, dtype=float)
                         iline += 1
                     #                 print "got UB matrix:", UBmat
@@ -1442,6 +1451,17 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         iline += 1
                     #                 print "got strain matrix:", strain
                     strainfound = 0
+
+                # actually dev strain in sample2 frame is not considered there but it will be recomputed later ...
+                if strainfound2:
+                    for jline_matrix in list(range(3)):
+                        line = f.readline()
+                        lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
+                        strain2[jline_matrix, :] = np.array(lineval, dtype=float)
+                        iline += 1
+                    #                 print "got strain matrix:", strain
+                    strainfound2 = 0
+
                 if calibfoundJSM:
                     calibparam = []
                     for _ in list(range(7)):
@@ -1475,7 +1495,6 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             #            # transformer aussi les HKL pour qu'ils soient coherents avec matmin
             #            hkl = data_fit[:, 2:5]
             #            data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
-
             all_UBmats_flat[grain_index, :] = np.ravel(UBmat)
             all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)
 
@@ -1493,14 +1512,13 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             elif grain_index:
                 allgrains_spotsdata = np.row_stack((allgrains_spotsdata, dataspots))
 
-
     for grain_index in list(range(1, nbgrains)):
         list_starting_rows_in_data[grain_index] = (list_starting_rows_in_data[grain_index - 1]
                                                     + list_nb_indexed_peaks[grain_index - 1])
 
     pixdev = np.array(PixDev_list, dtype=np.float32)
 
-    if verbose:
+    if verbose > 0:
         print("list_indexedgrains_indices = ", list_indexedgrains_indices)
         print("all_UBmats_flat = ")
         print(all_UBmats_flat)
@@ -1518,7 +1536,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     allgrains_spotsdata,
                     calibJSM[:, :5],
                     pixdev)
-    elif readmore:
+    elif readmore:  # actually dev strain in sample2 frame is not saved there but it will be recomputed later ...
         toreturn = (list_indexedgrains_indices,
                     list_nb_indexed_peaks,
                     list_starting_rows_in_data,
@@ -1536,6 +1554,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     Material_list,
                     all_UBmats_flat,
                     calibJSM[:, :5])
+
 
     if columns_headers is not []:
         dict_column_header = {}

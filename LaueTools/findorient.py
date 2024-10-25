@@ -538,7 +538,7 @@ def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="laue
         # print "I need to construct an other matrix"
         matorient = constructMat(matrice_P, qq1, qq2, -qq3prod)
 
-    if verbose in ("yes", 1):
+    if verbose>0:
         print("Estimated Orientation Matrix ---------------")
         print(matorient)
         print("--------------------------------------------")
@@ -1038,7 +1038,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., v
 
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
-            if verbose:
+            if verbose>0:
                 print("\n within %.3f and close to %.9f deg" % (angular_tolerance_Recognition, angle_query))
                 for pair in planes_pairs:
                     print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
@@ -1069,7 +1069,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., v
 
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
-            if verbose:
+            if verbose>0:
                 print("\n within %.3f and close to %.9f deg"
                     % (angular_tolerance_Recognition, angle_query))
                 for k, pair in enumerate(planes_pairs):
@@ -1124,7 +1124,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
 
     if LUT is None:
         # GenerateLookUpTable
-        if verbose: print("Calculating LUT in PlanePairs_from2sets()")
+        if verbose>0: print("Calculating LUT in PlanePairs_from2sets()")
         if LUT_with_rules:
             rules = (None, dictmaterials[key_material][2])
         else:
@@ -1170,7 +1170,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
         close_angles_duplicates = np.where(sorted_angles == closest_angle)[0]
 
         if len(close_angles_duplicates) > 1:
-            if verbose:
+            if verbose>0:
                 print("\nThere are several angles in structure from different lattice plane "
                     "pairs that are equal\n")
             closest_index_in_sorted_angles_raw = close_angles_duplicates
@@ -1209,7 +1209,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
         # list of one pair of hkl
         planes_pairs = np.array([[plane_1[0], plane_2[0]]])
 
-    if verbose:
+    if verbose>0:
         print("tab_angulardist_shape", tab_angulardist_shape)
         print("query_angle", query_angle)
         print("sorted_angles", sorted_angles)

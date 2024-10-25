@@ -137,7 +137,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         general expression G* = ha* +kb*+lc*+mq*  where h,k,l are integers, m integer but -1 and 1 (first order satellite)
         are enough (and the stronger)
         """
-        k3 = 0.3437  # q = k3 c*
+        k3 = 0.3437  # q* = k3 c*
 
         cond1 = (H + K) % 2 == 0
         array_hkl_average = np.take(HKL, np.where(cond1 == True)[0], axis=0)
@@ -754,8 +754,8 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
 
     (devstrain, lattice_parameters) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
     # overwrite and rescale possibly lattice lengthes
-    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength, verbose=verbose)
-    if verbose:
+    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength, verbose=verbose-1)
+    if verbose>0:
         print("final lattice_parameters", lattice_parameters)
 
     deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(devstrain, UBmat)
@@ -834,7 +834,7 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
     lattice_parameter_direct_strain[1] *= ratio
     lattice_parameter_direct_strain[2] *= ratio
 
-    if verbose:
+    if verbose>0:
         print(
             "For comparison: a,b,c are rescaled with respect to the reference value of %s = %f Angstroms"
             % (constantlength, latticeparams[index_constant_length]))

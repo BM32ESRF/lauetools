@@ -1525,7 +1525,7 @@ def readlt_fit(filefit, returnmatLT=False, min_matLT=False, readmore=False, verb
     add transfo of HKL's if matmin_LT  == True
     """
 
-    if verbose:
+    if verbose > 0:
         print("reading info from LaueTools fit file : \n", filefit)
         print("strained orientation matrix, peak list")
         print("convert matrix to matstarlabOR")
@@ -2025,7 +2025,7 @@ def convertdat2corfile(filename_dat:str, fullpath_det:str, dirname_in:str=None,
 
 def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None, dirname_out:str=None,
                                         pixelsize:float=165.0 / 2048,
-                                        CCDCalibdict:dict=None, add_props=False,
+                                        CCDCalibdict=None, add_props=False,
                                         addspotproperties:bool=False,
                                         verbose:int=0):
     r"""

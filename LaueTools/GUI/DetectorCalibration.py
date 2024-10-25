@@ -2138,7 +2138,7 @@ class MainCalibrationFrame(wx.Frame):
             nb_pairs = len(exp_indices)
             sim_indices = np.arange(nb_pairs)
 
-        if verbose: print("Nb of pairs  theo-exp spots: ", nb_pairs)
+        if verbose: print("Nb of pairs theo-exp spots: ", nb_pairs)
         #print(exp_indices, sim_indices)
 
         # self.data_theo contains the current simulated spots: twicetheta, chi, Miller_ind, posx, posy

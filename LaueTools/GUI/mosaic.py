@@ -2300,7 +2300,7 @@ DEFAULT_DICTfittingparameters = {
                 'FitPixelDev':None,
             }
 
-def buildMosaic3(dict_param:dict, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=True, parent=None, dictfittingparameters:dict=DEFAULT_DICTfittingparameters, verbose:int=0):
+def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=True, parent=None, dictfittingparameters=DEFAULT_DICTfittingparameters, verbose:int=0):
     """
     build mosaic image from arrangement of image ROI data taken from selected images
 

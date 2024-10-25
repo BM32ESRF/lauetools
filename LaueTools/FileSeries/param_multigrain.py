@@ -4,7 +4,7 @@ Created on Thu May 30 10:54:18 2013
 
 @author: odile32
 """
-print("Multigrain in LaueTools/FileSeries")
+#print("In param_multigrain module: in LaueTools/FileSeries")
 # invisible parameters for serial_peak_search
 
 CCDlabel = (

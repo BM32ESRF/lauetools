@@ -719,19 +719,23 @@ def Add_allspotsSummary_from_dict( Summary_HDF5_filename, filename_dictRes,
     h5file.close()
 
 
-def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, fitfiles_folder,
+def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fitfiles_folder,
                                                                 fileindex_list,
                                                                 Summary_HDF5_dirname=None,
                                                                 number_of_digits_in_image_name=4,
                                                                 filesuffix=".fit",
                                                                 nb_of_spots_per_image=200,
-                                                                max_nb_grains=3):
+                                                                max_nb_grains=3,
+                                                                verbose=0):
     """
     open a hdf5 file and create or Add a Node of /Allspots/total_spots with spots data
 
     Dataspots are not updated but simply appended (no test if data for a given index in fileindex_list
     already exists
     """
+    if verbose > 0:
+        print('In lauehdf5, Add_allspotsSummary_from_fitfiles() :')
+
     full_HDF5_output_path = Summary_HDF5_filename
     if Summary_HDF5_dirname is not None:
         full_HDF5_output_path = os.path.join(Summary_HDF5_dirname, Summary_HDF5_filename)
@@ -819,33 +823,36 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
         _filename = prefix_fitfiles + encodingdigits % fileindex + filesuffix
 
         if _filename not in list_fitfiles_in_folder:
-            print("Warning! missing .fit file: %s" % _filename)
+            if verbose > 1: print("Warning! missing .fit file: %s" % _filename)
             continue
 
         filefitmg = os.path.join(fitfiles_folder, _filename)
 
         # read data from .fit file (grains and unindexed spots)
-        resIndexed, resUnindexed = IOLT.readfitfile_multigrains(filefitmg,
+        resfit = IOLT.readfitfile_multigrains(filefitmg,
                                                                 verbose=0,
                                                                 readmore=True,
                                                                 fileextensionmarker=".cor",
                                                                 returnUnindexedSpots=True)
-
-        #         print "resIndexed", resIndexed
+        if len(resfit) == 2:
+            resIndexed, resUnindexed = resfit
+        else:
+            raise ValueError(f'resfit in lauehdf5 has not 2 elements but {len(resfit)}')
 
         if resIndexed != 0:
+
             (list_indexedgrains_indices, list_nb_indexed_peaks, list_starting_rows_in_data,
                 all_UBmats_flat, allgrains_spotsdata, calibJSM,
-                list_pixdev, list_strain6, list_euler, ) = resIndexed
+                list_pixdev, list_strain6, list_euler) = resIndexed[:9]
 
-            print("read hdf5 : list_pixdev", list_pixdev)
+            if verbose > 1: print("read hdf5 : list_pixdev", list_pixdev)
             if len(list_pixdev) == 0:
-                print("setting pixdev to -1 for file: %s" % _filename)
+                if verbose > 1: print("setting pixdev to -1 for file: %s" % _filename)
                 list_pixdev = [-1 for kkk in range(len(list_indexedgrains_indices))]
 
         key_image = fileindex
 
-        print("fileindex", fileindex, "--------------------------")
+        if verbose > 1: print("fileindex", fileindex, "--------------------------")
         for k, grain_index in enumerate(list_indexedgrains_indices):
             start_row = list_starting_rows_in_data[k]
             final_row = start_row + list_nb_indexed_peaks[k]
@@ -872,9 +879,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
                 UBmatrix_flat = np.zeros(9)
                 devstrainmatrix = np.zeros(6)
                 devstrainsamplematrix = np.zeros(6)
-                #
-                #                print "spot index", elem[0]
-                #                print "grainindex", int(elem[1])
+ 
                 if grain_index >= 0:
 
                     UBmatrix_flat = all_UBmats_flat[k]
@@ -921,7 +926,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
 
         # append unindexedspots:
         nb_of_unindexedspots = len(resUnindexed)
-        print("\nadding %d unindexed spots\n" % nb_of_unindexedspots)
+        if verbose > 1: print("\nadding %d unindexed spots\n" % nb_of_unindexedspots)
 
         for spot_data in resUnindexed:
             #             print "spot_data", spot_data
@@ -967,7 +972,7 @@ def Add_allspotsSummary_from_fitfiles( Summary_HDF5_filename, prefix_fitfiles, f
     # Close (and flush) the file
     h5file.close()
 
-    print('Summary file is built!: %s'%full_HDF5_output_path)
+    print('HDF5 Summary file is saved in: %s'%full_HDF5_output_path)
 
 
 def build_hdf5_fromSummaryFile(

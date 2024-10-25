@@ -9,6 +9,7 @@ from initially T. Cerba
 import sys
 import os
 import copy
+import traceback
 
 sys.path.append("..")
 
@@ -37,7 +38,7 @@ else:
 
 LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
 LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)
-print("LaueToolProjectFolder", LaueToolsProjectFolder)
+# print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
 from LaueTools.FileSeries import multigrainFS as MGFS
 
@@ -97,9 +98,18 @@ class MainFrame_BuildSummary(wx.Frame):
         wx.Frame.__init__(self, parent, _id, title, wx.DefaultPosition, wx.Size(1000, 700))
         self.parent = parent
         self.initialparameters = _initialparameters
-        print('self.initialparameters', self.initialparameters)
         file_xyz = self.initialparameters[10]
-        print('file_xyz', file_xyz)
+
+        print('----------------------------------------------')
+        print('-----              Welcome            --------')
+        print('-----                 to              --------')
+        print('-----             LaueTools           --------')
+        print('-----  Build Summary GUI FileSeries   --------')
+        print('----- (reading results in .fit files) --------')
+        print('----------------------------------------------')
+
+        # print('In MainFrame_BuildSummary().__init__(): self.initialparameters', self.initialparameters)
+        # print('file_xyz', file_xyz)
 
         self.panel = wx.Panel(self)
         if WXPYTHON4:
@@ -162,15 +172,13 @@ class MainFrame_BuildSummary(wx.Frame):
        
         btn_fabrication_to_hand = wx.Button(
             self.panel, -1, "Build file xy manually", size=(200, -1))
-
-        grid.Add(wx.StaticText(self.panel, -1, ""))
+        
         grid.Add(btn_fabrication_to_hand)
-        txt_none = wx.StaticText(self.panel, -1, "")
-        grid.Add(txt_none)
+        grid.Add(wx.StaticText(self.panel, -1, ""))
+        grid.Add(wx.StaticText(self.panel, -1, "verbose level"), 0, wx.ALIGN_BOTTOM)
         
         btn_fabrication_to_hand.Bind(wx.EVT_BUTTON, self.OnbuildManually)
 
-        grid.Add(wx.StaticText(self.panel, -1, ""))
         self.builddatfile = wx.CheckBox(self.panel, -1, "Build .dat file")
         self.builddatfile.SetValue(True)
         self.buildhdf5 = wx.CheckBox(self.panel, -1, "Build .hdf5 file")
@@ -181,8 +189,11 @@ class MainFrame_BuildSummary(wx.Frame):
         else:
             self.buildhdf5.SetValue(True)
 
+        self.verbosespin = wx.SpinCtrl(self.panel,-1,value='0',min=0, max=10)
+
         grid.Add(self.builddatfile)
         grid.Add(self.buildhdf5)
+        grid.Add(self.verbosespin)
 
         btnStart = wx.Button(self.panel, -1, "BUILD SUMMARY FILE(s)", size=(-1, 60))
 
@@ -272,6 +283,8 @@ class MainFrame_BuildSummary(wx.Frame):
         if not self.builddatfile.GetValue() and not self.buildhdf5.GetValue():
             wx.MessageBox("Check at least one type of summary file!", "Error")
 
+        verboselevel = int(self.verbosespin.GetValue())
+
         startindex = int(self.list_txtctrl[5].GetValue())
         finalindex = int(self.list_txtctrl[6].GetValue())
         stepindex = int(self.list_txtctrl[7].GetValue())
@@ -290,13 +303,9 @@ class MainFrame_BuildSummary(wx.Frame):
 
         filexyz = str(self.list_txtctrl[10].GetValue())
 
-        
-
-
         if self.builddatfile.GetValue():
             try:
-                _, fullpath_summary_filename = MGFS.build_summary(
-                                    image_indices,
+                _, fullpath_summary_filename = MGFS.build_summary(image_indices,
                                     folderfitfiles,
                                     prefix,
                                     suffix,
@@ -305,30 +314,40 @@ class MainFrame_BuildSummary(wx.Frame):
                                     finalindex=finalindex,
                                     number_of_digits_in_image_name=nbdigits_for_zero_padding,
                                     folderoutput=folderresult,
-                                    default_file=DEFAULT_FILE)
-
-                print("fullpath_summary_filename", fullpath_summary_filename)
+                                    default_file=DEFAULT_FILE,
+                                    verbose=verboselevel - 1)
 
                 fullpath_summary_filename = MGFS.add_columns_to_summary_file_new(
                                                         fullpath_summary_filename,
                                                         elem_label=key_material,
-                                                        filestf=stiffnessfile)
+                                                        filestf=stiffnessfile,
+                                                        verbose=verboselevel - 1)
+                
+                print("\nSummary file written (with added infos) in:", fullpath_summary_filename)
 
-                wx.MessageBox("Operation Successful! \t \t Summary file created here: %s"
-                    % fullpath_summary_filename)
+                pp, ff = os.path.split(fullpath_summary_filename)
+                wx.MessageBox("Results in .fit files are saved in:\nFOLDER:\n%s\n\nSummary FILENAME:\n%s"
+                    % (pp, ff),'** Build Summary file completed **')
 
                 if self.parent is not None:
                     object_to_set = self.parent
                     object_to_set.initialparameters["Map Summary File"] = fullpath_summary_filename
                     object_to_set.initialparameters["File xyz"] = filexyz
 
-            except ValueError as err:
-                wx.MessageBox("%s"%str(err))
+            # except ValueError as err:
+            #     wx.MessageBox("%s"%str(err))
+
+            except Exception as e:
+                traceback.print_exc()
+                wx.MessageBox("%s"%str(e), 'ERROR in OnCreateSummary()')
+
         if self.buildhdf5.GetValue():
-            from Lauehdf5 import Add_allspotsSummary_from_fitfiles
+            from LaueTools.Lauehdf5 import Add_allspotsSummary_from_fitfiles
 
             "\n\n ****** \nBuilding a hdf5 summary file\n*********  \n\n"
-            Summary_HDF5_filename = prefix + ".h5"
+            fname = os.path.split(fullpath_summary_filename)[-1].split('.')[0]
+            Summary_HDF5_filename = fname + ".h5"
+            print('hdf5 filename  :', fname)
             Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename,
                                                 prefix,
                                                 folderfitfiles,
@@ -336,7 +355,8 @@ class MainFrame_BuildSummary(wx.Frame):
                                                 Summary_HDF5_dirname=folderfitfiles,
                                                 number_of_digits_in_image_name=nbdigits_for_zero_padding,
                                                 filesuffix=".fit",
-                                                nb_of_spots_per_image=300)
+                                                nb_of_spots_per_image=300,
+                                                verbose=verboselevel-1)
 
 class Manual_XYZfilecreation_Frame(wx.Frame):
     """
@@ -531,29 +551,54 @@ def fill_list_valueparamBS(initialparameters_dict):
 
 initialparameters = {}
 
-print("LaueToolProjectFolder", LaueToolsProjectFolder)
+if 0:
+    print("LaueToolProjectFolder", LaueToolsProjectFolder)
 
-MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
+    MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
 
-print("MainFolder", MainFolder)
+    print("MainFolder", MainFolder)
 
-initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfiles")
 
-initialparameters["file xyz"] = os.path.join(MainFolder, "fitfiles", "SiCustrain_0_to_5_xy.dat")
-initialparameters["IndexRefine PeakList Prefix"] = "SiCustrain"
-initialparameters["IndexRefine PeakList Suffix"] = ".fit"
+    initialparameters["file xyz"] = os.path.join(MainFolder, "fitfiles", "SiCustrain_0_to_5_xy.dat")
+    initialparameters["IndexRefine PeakList Prefix"] = "SiCustrain"
+    initialparameters["IndexRefine PeakList Suffix"] = ".fit"
 
-initialparameters["Map shape"] = (5, 3)  # (nb lines, nb images per line)
+    initialparameters["Map shape"] = (5, 3)  # (nb lines, nb images per line)
 
-initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
-initialparameters["Material"] = "Si"
-initialparameters["stiffness file"] = os.path.join(MainFolder, "si.stf")
+    initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
+    initialparameters["Material"] = "Si"
+    initialparameters["stiffness file"] = os.path.join(MainFolder, "si.stf")
 
-initialparameters["nbdigits"] = 0
-initialparameters["startingindex"] = 0
-initialparameters["finalindex"] = 5
-initialparameters["stepindex"] = 1
-initialparameters["fast axis: x or y"] = "x"
+    initialparameters["nbdigits"] = 0
+    initialparameters["startingindex"] = 0
+    initialparameters["finalindex"] = 5
+    initialparameters["stepindex"] = 1
+    initialparameters["fast axis: x or y"] = "x"
+    
+if 1:
+
+    MainFolder = os.path.join('/mnt/multipath-shares/data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/ech15/ech15_map2Dexpo0p1sec/scan0001', "img_CORfiles")
+    #print("MainFolder in Build_Summary", MainFolder)
+
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfilesJSM")
+
+    initialparameters["file xyz"] = os.path.join(MainFolder, "fitfilesJSM", "img__0_to_3110_xy.dat")
+    initialparameters["IndexRefine PeakList Prefix"] = "img_"
+    initialparameters["IndexRefine PeakList Suffix"] = ".fit"
+
+    initialparameters["Map shape"] = (51, 61)  # (nb lines, nb images per line)
+
+    initialparameters["(stepX, stepY) microns"] = (1.0, 1.0)
+    initialparameters["Material"] = "Si"
+    initialparameters["stiffness file"] = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi", "si.stf")
+
+    initialparameters["nbdigits"] = 4
+    initialparameters["startingindex"] = 0
+    initialparameters["finalindex"] = 5
+    initialparameters["stepindex"] = 1
+    initialparameters["fast axis: x or y"] = "x"
+
 
 list_valueparamBS = fill_list_valueparamBS(initialparameters)
 

@@ -34,10 +34,10 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
-try:
-    from multigrain import filter_peaks, index_refine_calib_one_image
-except (ImportError, SyntaxError):
-    print("Missing modules or functions of multigrain.py. But It does not matter!")
+# try:
+#     from multigrain import filter_peaks, index_refine_calib_one_image
+# except (ImportError, SyntaxError):
+#     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
 if sys.version_info.major == 3:
     import LaueTools.IOLaueTools as IOLT
@@ -456,8 +456,14 @@ class MainFrame_indexrefine(wx.Frame):
     main class providing a board from which to launch indexation and refinement of data
     """
 
-    def __init__(self, parent, _id, title, _initialparameters, objet_IR):
-        print('entering MainFrame_indexrefine')
+    def __init__(self, parent, _id, title, _initialparameters, objet_IR=None):
+        # print('entering MainFrame_indexrefine')
+        print('----------------------------------------------')
+        print('-----              Welcome            --------')
+        print('-----                 to              --------')
+        print('-----             LaueTools           --------')
+        print('-----  Index & Refine GUI FileSeries  --------')
+        print('----------------------------------------------')
         wx.Frame.__init__(self, parent, _id, title)#, size=(900, 650))
 
         self.initialparameters = _initialparameters
@@ -467,9 +473,9 @@ class MainFrame_indexrefine(wx.Frame):
 
         #---  widgets -----------------------------
         if WXPYTHON4:
-            grid = wx.FlexGridSizer(3, 10, 10)
+            grid = wx.FlexGridSizer(3, 1, 10)
         else:
-            grid = wx.FlexGridSizer(14, 3, 10, 10)
+            grid = wx.FlexGridSizer(14, 3, 1, 10)
 
         grid.SetFlexibleDirection(wx.HORIZONTAL)
         grid.AddGrowableCol(1, 0)
@@ -489,7 +495,7 @@ class MainFrame_indexrefine(wx.Frame):
             # print("kk,txt_elem", kk, txt_elem)
             # print("objet_IR.list_valueparamIR[kk]", objet_IR.list_valueparamIR[kk])
 
-            self.txtctrl = wx.TextCtrl(self.panel, -1, size=(500, 25))
+            self.txtctrl = wx.TextCtrl(self.panel, -1, size=(600, 25))
             self.txtctrl.SetValue(str(vals[kk]))
             self.list_txtctrl.append(self.txtctrl)
             grid.Add(self.txtctrl, wx.EXPAND)
@@ -549,8 +555,8 @@ class MainFrame_indexrefine(wx.Frame):
         self.trackingmode.SetValue(False)
 
 
-        grid.Add(Createcfgbtn, wx.EXPAND)
-        grid.Add(self.previousreschk)
+        # grid.Add(Createcfgbtn, wx.EXPAND)
+        # grid.Add(self.previousreschk)
 
         # multiprocessing handling
         txt_cpus = wx.StaticText(self.panel, -1, "nb CPU(s)")
@@ -562,8 +568,9 @@ class MainFrame_indexrefine(wx.Frame):
         self.updatefitfiles = wx.CheckBox(self.panel, -1, "Update preexisting results")
         self.updatefitfiles.SetValue(False)
 
-        self.verbosemode = wx.CheckBox(self.panel, -1, "Verbose mode")
-        self.verbosemode.SetValue(True)
+        txt_verbose = wx.StaticText(self.panel, -1, "verbose level")
+        self.verbosemode = wx.SpinCtrl(self.panel, -1, value='0', min=0, max=10)
+        
 
         #          bouton STARTdfd
         btnStart = wx.Button(
@@ -571,18 +578,24 @@ class MainFrame_indexrefine(wx.Frame):
         btnStart.Bind(wx.EVT_BUTTON, self.OnStart)
 
         #widgets layout-----
-        hfinal = wx.BoxSizer(wx.HORIZONTAL)
-        hfinal.Add(txt_cpus, 0)
-        hfinal.Add(self.txtctrl_cpus, 0)
-        hfinal.AddSpacer(30)
-        hfinal.Add(self.chck_renanalyse, 0)
-        hfinal.Add(self.updatefitfiles, 0, wx.EXPAND)
-        hfinal.Add(self.verbosemode, 0, wx.EXPAND)
+        
 
         hmap = wx.BoxSizer(wx.HORIZONTAL)
+        hmap.Add(Createcfgbtn, 0)
+        hmap.Add(self.previousreschk, 0)
         hmap.Add(txt_mapshape, 0)
         hmap.Add(self.txtctrl_mapshape, 0)
         hmap.Add(self.trackingmode, 0)
+
+        hfinal = wx.BoxSizer(wx.HORIZONTAL)
+        hfinal.Add(txt_cpus, 0, wx.EXPAND)
+        hfinal.Add(self.txtctrl_cpus, 0, wx.EXPAND)
+        hfinal.AddSpacer(30)
+        hfinal.Add(self.chck_renanalyse, 0, wx.EXPAND)
+        hfinal.Add(self.updatefitfiles, 0, wx.EXPAND)
+        hfinal.AddSpacer(10)
+        hfinal.Add(txt_verbose, 0, wx.ALL)
+        hfinal.Add(self.verbosemode, 0, wx.ALIGN_CENTRE_VERTICAL)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
@@ -607,8 +620,8 @@ class MainFrame_indexrefine(wx.Frame):
         Createcfgbtn.SetToolTipString(
             "Create .irp file containing parameters to index & refine peaks list")
         self.previousreschk.SetToolTipString("If checked, for indexing the current image n, "
-        "first check if orientation matrix of image n-1 is a good guess before starting "
-        "an indexation from scratch (according to .irp file). 'Guessed Matrix(ces) must be None'")
+        "orientation matrix of image n-1 will be tested to match potentially the current image n. if matching rate is lower than 'Minimum Matching Rate' then "
+        "an indexation from scratch (according to .irp file) will be done. If checked, 'Guessed Matrix(ces) must be set to None'")
         tipcpus = "nb of cores to use to index&refine all peaks list files"
         txt_cpus.SetToolTipString(tipcpus)
         self.txtctrl_cpus.SetToolTipString(tipcpus)
@@ -773,37 +786,37 @@ class MainFrame_indexrefine(wx.Frame):
                                         (LIST_TXTPARAMS, LIST_VALUESPARAMS, LIST_UNITSPARAMS))
         IRPboard.Show(True)
 
-    def calcCalibrationfitFile(self):
-        """
-        produce a .fit file of the reference crystal used for CCD calibration parameters.
+    # def calcCalibrationfitFile(self):
+    #     """
+    #     produce a .fit file of the reference crystal used for CCD calibration parameters.
 
-        Need proper version of module multigrain
+    #     Need proper version of module multigrain
 
-        .. note:: this function is not called anywhere. OnbtnBrowse_fileReferenceCalibrationdat() is commented in this module
-        """
-        # needs to remove bad shaped spots for calibration refinement
-        if self.initialparameters["filter_peaks_index_refine_calib"]:
-            filedet = self.list_txtctrl[9].GetValue()  # to guess the initial CCD parameters
-            #             referencefiledat_init = self.list_txtctrl[10].GetValue()
-            referencefiledat_init = None
+    #     .. note:: this function is not called anywhere. OnbtnBrowse_fileReferenceCalibrationdat() is commented in this module
+    #     """
+    #     # needs to remove bad shaped spots for calibration refinement
+    #     if self.initialparameters["filter_peaks_index_refine_calib"]:
+    #         filedet = self.list_txtctrl[9].GetValue()  # to guess the initial CCD parameters
+    #         #             referencefiledat_init = self.list_txtctrl[10].GetValue()
+    #         referencefiledat_init = None
 
-            if referencefiledat_init is not None:
-                MAXPIXDEV_CALIBRATIONREFINEMENT = self.initialparameters[
-                    "maxpixdev_filter_peaks_index_refine_calib"]
-                self.referencefiledat_purged = filter_peaks(referencefiledat_init,
-                                                        maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
-                #(calib_fitfilename, npeaks_LT, pixdev_LT,
-                calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
-            else:
-                raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
-                "used for calibration is no more used in Index_refine()")
+    #         if referencefiledat_init is not None:
+    #             MAXPIXDEV_CALIBRATIONREFINEMENT = self.initialparameters[
+    #                 "maxpixdev_filter_peaks_index_refine_calib"]
+    #             self.referencefiledat_purged = filter_peaks(referencefiledat_init,
+    #                                                     maxpixdev=MAXPIXDEV_CALIBRATIONREFINEMENT)
+    #             #(calib_fitfilename, npeaks_LT, pixdev_LT,
+    #             calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
+    #         else:
+    #             raise ValueError("filter_peaks_index_refine_calib=1 without .dat file of peaks "
+    #             "used for calibration is no more used in Index_refine()")
 
-        else:
-            # (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image
-            calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
+    #     else:
+    #         # (calib_fitfilename, npeaks_LT, pixdev_LT) = index_refine_calib_one_image
+    #         calib_fitfilename = index_refine_calib_one_image(self.referencefiledat_purged, filedet=filedet)[0]
 
-        self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
-        print("CCDcalibrationReference .fit file : %s" % calib_fitfilename)
+    #     self.initialparameters["CCDcalibrationReference .fit file"] = calib_fitfilename
+    #     print("CCDcalibrationReference .fit file : %s" % calib_fitfilename)
 
     def fitFolderExists(self):
         """ check if fitfolder exists"""
@@ -999,7 +1012,7 @@ class MainFrame_indexrefine(wx.Frame):
         updatefitfiles = self.updatefitfiles.GetValue()
 
 
-        verbosemode = self.verbosemode.GetValue()
+        verbosemode = int(self.verbosemode.GetValue())
 
         # ------  field 11: Minimum matching rate
         MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
@@ -1022,7 +1035,7 @@ class MainFrame_indexrefine(wx.Frame):
             if not guessedMatricesFile.endswith(".ubs"):
                 _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
 
-                print("guessedmatrix", guessedSolutions)
+                print("guessed matrix", guessedSolutions)
                 Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
             # read .ubs file
             else:
@@ -1165,7 +1178,7 @@ initialparameters["MinimumMatchingRate"] = 4.0
 initialparameters["Selected Peaks from File"] = None
 
 # for local test:
-if 1:
+if 0:
     MainFolder = os.path.join(LaueToolsProjectFolder, "Examples", "CuSi")
     print("MainFolder", MainFolder)
     initialparameters["PeakList Folder"] = os.path.join(MainFolder, "corfiles")
@@ -1184,6 +1197,26 @@ if 1:
     initialparameters["finalindex"] = 5
     initialparameters["stepindex"] = 1
     initialparameters["GuessedUBMatrix"]='/home/micha/LaueToolsPy3/LaueTools/Examples/CuSi/Cumatrix.mat'
+
+if 1:
+    MainFolder = os.path.join('/mnt/multipath-shares/data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/ech15/ech15_map2Dexpo0p1sec/scan0001', "img_CORfiles")
+    print("MainFolder", MainFolder)
+    initialparameters["PeakList Folder"] = MainFolder
+    initialparameters["IndexRefine PeakList Folder"] = os.path.join(MainFolder, "fitfilesJSM")
+    initialparameters["PeakListCor Folder"] = MainFolder
+    initialparameters["PeakList Filename Prefix"] = "img_"
+    initialparameters["IndexRefine Parameters File"] = os.path.join(MainFolder,"Zr_noindex.irp")
+    initialparameters["PeakList Filename Suffix"] = ".cor"
+    initialparameters["Detector Calibration File .det"] = None
+    initialparameters["nbdigits"] = 4
+    # initialparameters["Selected Peaks from File"] = os.path.join(MainFolder,
+    #                                                       "corfiles", "SiCustrain5_Cu20spots.fit")
+    initialparameters["Selected Peaks from File"] = 'None'
+    initialparameters["startingindex"] = 1310
+    initialparameters["finalindex"] = 1311
+    initialparameters["stepindex"] = 1
+    # initialparameters["GuessedUBMatrix"]=os.path.join(MainFolder, "img_FITfiles","im_1615_Zr_GOI1_1point.mat")
+    initialparameters["GuessedUBMatrix"]=os.path.join(MainFolder, "img_INPUT","Zr_bis.ubs")
 # for local test    guessUBmatrices on 3 grains
 if 0:
     MainFolder = '/home/micha/LaueProjects/LauraConvert_TiLaser_Nov2020/LaserTi/T40'
@@ -1227,13 +1260,13 @@ list_valueparamIR = fill_list_valueparamIR(initialparameters)
 
 def start():
     """ start of GUI for module launch"""
-    Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
+    #Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
 
-    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)
-    print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_valueparamIR)
+    # print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)
+    # print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_valueparamIR)
     IndexRefineSeriesApp = wx.App()
     IndexRefineSeries = MainFrame_indexrefine(None, -1, "Index Refine Parameters Board",
-                                                    initialparameters, Stock_INDEXREFINE)
+                                                    initialparameters)
     IndexRefineSeries.Show()
     IndexRefineSeriesApp.MainLoop()
 

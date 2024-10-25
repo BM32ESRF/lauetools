@@ -338,6 +338,7 @@ class spotsset:
             - self.kf_direction
             - ...
         """
+        print('\nIn importdatafromfile(): ')
         print("Import Data for DATASET indexation procedure")
 
         print("filename in importdatafromfile()", filename)
@@ -351,8 +352,11 @@ class spotsset:
         print('nb of spots in .cor file %s  is '%filename, len(data_theta))
 
         add_props = IOLT.get_spotprops_cor(allspotsprops, filename)
+
         if add_props is None:
             print('raw .cor file with 5 columns')
+        else:
+            print('add_props.shape', add_props.shape)
 
         if isinstance(data_theta, (float, int)):
             nb_spots = 1
@@ -766,7 +770,7 @@ class spotsset:
         """
         MINIMUM_SPOTS = 8
 
-        if verbose:
+        if verbose>0:
             print('\n----- start of AssignHKL() -------\n')
         if len(self.indexed_spots_dict) < MINIMUM_SPOTS:
             print("too few spots to index in spotsset object")
@@ -816,7 +820,7 @@ class spotsset:
                                                                     removeharmonics=1, # for fast computations
                                                                     ResolutionAngstrom=False,#
                                                                     veryclose_angletol=AngleTol,
-                                                                    verbose=verbose)
+                                                                    verbose=verbose-1)
         # TODO nb of links with getSpotsLinks() larger than nb of links used in previous refinement
         # self.pixelresidues
         #         print "AssignationHKL_res in AssignHKL", AssignationHKL_res
@@ -825,11 +829,11 @@ class spotsset:
             print("missingRefs", missingRefs)
 
         if AssignationHKL_res is not None:
-            nb_updates = self.updateIndexationDict(AssignationHKL_res, grain_index, overwrite=1, verbose=verbose)
+            nb_updates = self.updateIndexationDict(AssignationHKL_res, grain_index, overwrite=1, verbose=verbose-1)
 
             matching_rate = 100.0 * nb_updates / nbtheospots
 
-            if verbose:
+            if verbose>0:
                 print("\n")
                 if eulers is not None:
                     print("for this three euler angles [%.1f,%.1f,%.1f]" % tuple(Orientation))
@@ -847,7 +851,7 @@ class spotsset:
             #            print "Low value of indexed spots may mean that"
             #            print "spots have been already assigned to other grain"
 
-            if verbose:
+            if verbose>0:
                 print('\n----- end of AssignHKL() -------\n')
             return matching_rate, nb_updates, missingRefs
 
@@ -1142,7 +1146,7 @@ class spotsset:
         MatchingRate_Threshold_IMM = 30
 
         self.ResolutionAngstromLUT = False
-        if verbose:
+        if verbose>0:
             print("self.pixelsize in IndexSpotsSet", self.pixelsize)
             print("ResolutionAngstromLUT in IndexSpotsSet", ResolutionAngstrom)
 
@@ -1180,7 +1184,7 @@ class spotsset:
             # previousResults = (nbAddMatrices, addMatrices, MRs, NBs)
 
             _, addMatrices, _, _ = previousResults
-            if verbose:
+            if verbose>0:
                 print("considering previousResults with addMatrix", addMatrices)
             previousMatricesList = []
             for addMatrix in addMatrices:
@@ -1194,7 +1198,7 @@ class spotsset:
             fromIMM = IMM
             frompreviousResults = True
 
-            if verbose:
+            if verbose>0:
                 print("self.UBStack before while(1) loop")
                 print(self.UBStack)
             self.nbMatricesInUBStack = len(self.UBStack)
@@ -1209,7 +1213,7 @@ class spotsset:
         # matrices that must be tested first before trying to index from scratch
         # these matrices are proposed by a specific file .ubs  (see Guessed Matrix(ces) ... field in Index_Refine.py)
         if CheckOrientations is not None:
-            if verbose:
+            if verbose>0:
                 print("CheckOrientations is not None")
                 print("CheckOrientations", CheckOrientations)
             CheckOrientation = CheckOrientations[0]
@@ -1227,7 +1231,7 @@ class spotsset:
 
             fromIMM = IMM
 
-        if verbose:
+        if verbose>0:
             print("MATCHINGRATE_FOR_PREVIOUSRESULTS", MATCHINGRATE_FOR_PREVIOUSRESULTS)
 
         if nbGrainstoFind != "max" and not isinstance(nbGrainstoFind, int):
@@ -1255,7 +1259,7 @@ class spotsset:
             ProceedWithRefinement = False
             nb_remaining_spots = len(self.getUnIndexedSpots())
 
-            if verbose:
+            if verbose>0:
                 print("\n Remaining nb of spots to index for grain #%d : %d\n"
                 % (grain_index, nb_remaining_spots))
 
@@ -1263,7 +1267,7 @@ class spotsset:
             # or when user requests to index a few number of grain
             if nb_remaining_spots <= MINIMUM_NB_SPOTS_FOR_INDEXING or (
                 isinstance(nbGrainstoFind, int) and nbgrains_found == nbGrainstoFind) or indexing_from_scratch_counter == 1:
-                if verbose:
+                if verbose>0:
                     print("%d spots have been indexed over %d"
                         % (totalnbspots - nb_remaining_spots, totalnbspots))
                     print("indexing rate is --- : %.1f percents"
@@ -1276,7 +1280,7 @@ class spotsset:
                         print("Leaving Index and Refine procedures...")
                 break
 
-            if verbose:
+            if verbose>0:
                 print("\n ******")
                 print("start to index grain #%d of Material: %s \n" % (grain_index, key_material))
                 print("******\n")
@@ -1294,7 +1298,7 @@ class spotsset:
                 and (self.nbMatricesInUBStack > 0)
                 and MatchingRateUBStackTooLow is True):
 
-                if verbose:
+                if verbose>0:
                     print("\n ---- %d Matrice(s) are candidates in the Matrix Stack ! ----"
                                                                         % len(testUBs))
                     print("\n  -----   Taking a new matrix from the matrices stack  -------")
@@ -1302,7 +1306,7 @@ class spotsset:
                 k_mat += 1
                 UB = testUBs.pop(0)
 
-                if verbose:
+                if verbose>0:
                     print("\nFor grain_index", grain_index)
                     print("Considering UB", UB.matrix)
 
@@ -1318,8 +1322,8 @@ class spotsset:
                 # update matrix dictionary
                 MatchRate, _, _ = self.AssignHKL(UB, grain_index, AngleTol=AngleTol_0,
                                                             use_spots_in_currentselection=True,
-                                                            verbose=verbose)
-                if verbose:
+                                                            verbose=verbose+1)
+                if verbose+5>0:
                     print("before refinement MatchRate", MatchRate)
                     print('MATCHINGRATE_FOR_PREVIOUSRESULTS', MATCHINGRATE_FOR_PREVIOUSRESULTS)
 
@@ -1331,7 +1335,7 @@ class spotsset:
                     ProceedWithRefinement = True
                     bestUB = UB
 
-                    if verbose:
+                    if verbose>0:
                         print("\n-*****-  Ready to structure refinement now !   -*****-\n")
                     print('bestUB chosen from previous results. matrix rank = %d'%k_mat)
                 else:
@@ -1341,7 +1345,7 @@ class spotsset:
             # --- need to find UB matrices from indexing techniques (from scratch)
             # -------------------------------------------------------
             if NeedtoProvideNewMatrices:
-                if verbose: print('\n\n------- **  INDEXING from SCRATCH  **--------------\n')
+                if verbose>0: print('\n\n------- **  INDEXING from SCRATCH  **--------------\n')
                 frompreviousResults = False
                 # ----------------------------------------------------
                 # potential orientation solutions from template matching
@@ -1354,7 +1358,7 @@ class spotsset:
                     _,
                     _) = self.getOrients_ImageMatching(MatchingRate_Threshold=MatchingRate_Threshold_IMM,
                                                                     exceptgrains=self.indexedgrains,
-                                                                    verbose=verbose)
+                                                                    verbose=verbose-1)
 
                     fromIMM = True
                 # ---------------------------
@@ -1367,7 +1371,7 @@ class spotsset:
                     self.absolute_index) = self.getSelectedExpSpotsData(exceptgrains=self.indexedgrains)
 
                     nbspots = len(self.TwiceTheta_Chi_Int[0])
-                    if verbose:
+                    if verbose>0:
                         print("providing new set of matrices Using Angles LUT template matching")
                         print("nbspots", nbspots)
 
@@ -1388,7 +1392,7 @@ class spotsset:
                     # set mutual angular distance from NBMAXPROBED first spots
                     # TODO: build self.table_angdist but not yet effective
                     self.setTable_Angdist(nbmax=NBMAXPROBED)
-                    if verbose:
+                    if verbose>0:
                         print("NBMAXPROBED", NBMAXPROBED)
                         print("set_central_spots_hkl", set_central_spots_hkl)
                     if set_central_spots_hkl is None and LUT is None:
@@ -1416,7 +1420,7 @@ class spotsset:
                                                         set_central_spots_hkl=set_central_spots_hkl,
                                                         ResolutionAngstrom=ResolutionAngstrom,
                                                         exceptgrains=self.indexedgrains,
-                                                        verbose=verbose,
+                                                        verbose=verbose-1,
                                                         LUTfraction=LUTfraction)
                     # a way to launch indexing from scratch one time. and it provides only one UB mrix
                     NeedtoProvideNewMatrices = False
@@ -1424,16 +1428,16 @@ class spotsset:
                     
                     fromIMM = False
 
-                if verbose:
+                if verbose>0:
                     print("\nWorking with a new stack of orientation matrices")
 
                 if Threshold_reached:
-                    if verbose:
+                    if verbose>0:
                         print(" MATCHINGRATE_THRESHOLD_IAL= %.1f" % MATCHINGRATE_THRESHOLD_IAL)
                         print("has been reached! Indexing has been stopped")
 
                 else:
-                    if verbose:
+                    if verbose>0:
                         print("MATCHINGRATE_THRESHOLD_IAL= %.1f" % MATCHINGRATE_THRESHOLD_IAL)
                         print("has not been reached! All potential solutions have been calculated")
                         print("taking the first one only.")
@@ -1441,7 +1445,7 @@ class spotsset:
                 # update (overwrite) candidate orientMatrix object list
                 # print("bestUB object", bestUB)
                 if bestUB is None:
-                    if verbose:
+                    if verbose>0:
                         print("\n #### No matrix available for refinement.####")
                         print("#### End of indexation and refinement for element: %s ####"
                             % key_material)
@@ -1456,7 +1460,7 @@ class spotsset:
             if not ProceedWithRefinement:
                 break
 
-            if verbose:
+            if verbose>0:
                 print("\n\n---------------refining grain orientation and strain #%d-----------------"
                                                                             % grain_index)
             # loop over refinement steps of UB and strain with different angular matching tolerances
@@ -1465,7 +1469,7 @@ class spotsset:
             UBrefined = bestUB
             for step_refinement_index, AngleTol in enumerate(ANGLETOL_List):
                 # step is counted from zero
-                if verbose:
+                if verbose>0:
                     print("\n------  ------ refining grain #%d step ------  -------%d/%s\n"
                     % (grain_index, step_refinement_index, str(range(nbsteps))))
 
@@ -1478,9 +1482,9 @@ class spotsset:
                                 grain_index,
                                 AngleTol=AngleTol,
                                 use_spots_in_currentselection=True,
-                                verbose=verbose)
+                                verbose=verbose-1)
 
-                if verbose:
+                if verbose>0:
                     print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  '
                     'self.dict_grain_matrix[grain_index]', self.dict_grain_matrix[grain_index])
                     print('and material   :', self.key_material)
@@ -1489,7 +1493,7 @@ class spotsset:
                                                                     self.dict_grain_matrix[grain_index],
                                                                     use_weights=self.UseIntensityWeights,
                                                                     nbSpotsToIndex=self.nbSpotsToIndex,
-                                                                    verbose=verbose,
+                                                                    verbose=verbose-1,
                                                                     depth=depth)
                 refinedTs = None
                 # --- ----------------------------
@@ -1514,7 +1518,7 @@ class spotsset:
                                                                 grain_index,
                                                                 AngleTol=AngleTol,
                                                                 use_spots_in_currentselection=selectedspots_index,
-                                                                verbose=verbose)
+                                                                verbose=verbose-1)
                 else:
                     Matching_rate = None
 
@@ -1620,7 +1624,7 @@ class spotsset:
                         # -----------------------------------------------------------
                         elif not checkSigma3:
 
-                            if verbose:
+                            if verbose>0:
                                 print("\n---------------------------------------------")
                                 print("indexing completed for grain #%d of %s with matching rate %.2f "
                                     % (grain_index, self.key_material, Matching_rate))
@@ -1653,10 +1657,10 @@ class spotsset:
                                     self.indexed_spots_dict[exp_spot_index][-6: -6 + 3] = [hh, kk, ll]
 
                             # write fit file for one grain
-                            if verbose:
+                            if verbose>0:
                                 print("writing fit file -------------------------")
                                 print("for grainindex=", grain_index)
-                            if verbose > 1:
+                            if verbose>1:
                                 print("self.dict_grain_matrix[grain_index]",
                                 self.dict_grain_matrix[grain_index])
                                 print("self.refinedUBmatrix", self.refinedUBmatrix)
@@ -1666,7 +1670,7 @@ class spotsset:
                             self.deviatoricstrain_sampleframe,
                             self.new_latticeparameters) = CP.evaluate_strain_fromUBmat(self.refinedUBmatrix,
                                                                                         self.key_material,
-                                                                                        constantlength='a', verbose=verbose)
+                                                                                        constantlength='a', verbose=verbose-1)
 
                             # write .fit file of single grain spots results
                             #print('self.pixelresidues', self.pixelresidues)
@@ -1685,7 +1689,8 @@ class spotsset:
                                 NeedtoProvideNewMatrices = True
 
                             # tagging and inhibiting exp spot which are too much ambiguous
-                            MissingRef_grain_index = self.LabelMissingReflections(grain_index, 0.5, verbose=verbose)
+                            MissingRef_grain_index = self.LabelMissingReflections(grain_index, 0.5,
+                                                                                  verbose=verbose-1)
                             self.MissingRefindexedgrains.append(MissingRef_grain_index)
                             #print('self.indexed_spots_dict',self.indexed_spots_dict)
 
@@ -1788,7 +1793,7 @@ class spotsset:
                 # keep the spot data and add theo info
                 self.indexed_spots_dict[exp_index][-6:] = [hh, kk, ll, energy, MissingRef_grain_index, 1]
 
-        if verbose:
+        if verbose>0:
             print("Experimental experimental spots indices which are not indexed",
                                                                             close_spots[:, 0])
             print("Missing reflections grainindex is %d for indexed grainindex %d"
@@ -1890,7 +1895,7 @@ class spotsset:
         return:
          res, nb_of_simulated_spots, Missing_Reflections_Data
         """
-        if verbose:
+        if verbose>0:
                 print("\n--- start in getSpotsLinks() ---")
         # experimental data
         if exp_data is not None:
@@ -1957,20 +1962,20 @@ class spotsset:
             missing_refs = set(range(nb_of_simulated_spots))- set(tps)
 
 
-            if verbose:
+            if verbose>0:
                 #        print "theo paired spots indexed", tps
                 print("nb of theo spots when trying to pairing spots",
                                                             nb_of_simulated_spots)
 
             nb_indexed_spots = nb_of_simulated_spots - len(missing_refs)
-            if verbose:
+            if verbose>0:
                 print("For angular tolerance %.2f deg" % veryclose_angletol)
                 print("Nb of pairs found / nb total of expected spots: %d/%d"
                                         % (nb_indexed_spots, nb_of_simulated_spots))
                 print("Matching Rate : %.2f"
                                 % (100.0 * nb_indexed_spots / nb_of_simulated_spots))
 
-            if verbose:
+            if verbose>0:
                 print("Nb missing reflections: %d" % len(missing_refs))
 
             # Twicetheta, Chi, posx, posy, Miller_ind, Energy
@@ -1988,7 +1993,7 @@ class spotsset:
                                         Missing_Reflections_Miller,
                                         Missing_Reflections_Energy)
 
-            if verbose:
+            if verbose>0:
                 print("\n--- end of getSpotsLinks() ---")
 
             return res, nb_of_simulated_spots, Missing_Reflections_Data
@@ -2031,7 +2036,7 @@ class spotsset:
                                                         self.emax,
                                                         rawAngularmatchingtolerance=RAW_ANGULAR_MATCHINGTOLERANCE,
                                                         MatchingRate_Threshold=MatchingRate_Threshold,
-                                                        verbose=verbose,
+                                                        verbose=verbose-1,
                                                     )
 
         if bestEULER is None:
@@ -2226,7 +2231,7 @@ class spotsset:
                                                 set_central_spots_hkl=set_central_spots_hkl,
                                                 ResolutionAngstrom=ResolutionAngstrom,
                                                 exceptgrains=exceptgrains,
-                                                verbose=verbose,
+                                                verbose=verbose-1,
                                                 LUTfraction=LUTfraction)
 
         #         print "Res", Res
@@ -2245,9 +2250,9 @@ class spotsset:
         Threshold_reached = False
 
         bestUB = OrientMatrix(matrix=matrix)
-
-        print('bestUB ', matrix)
-        print('with matching rate',score)
+        if verbose>0:
+            print('bestUB ', matrix)
+            print('with matching rate',score)
 
         return bestUB, score, nbspotsIAM, Threshold_reached
 
@@ -2340,7 +2345,7 @@ class spotsset:
         else:
             data_1grain = data_1grain_raw
 
-        if verbose:
+        if verbose>0:
             print('data_1grain.shape in refineUBSpotsFamily', data_1grain.shape)
 
         if len(data_1grain) >= MINIMUM_LINKS_FOR_FIT:
@@ -2355,7 +2360,7 @@ class spotsset:
         #    print "Miller", Miller
 
         nb_pairs = len(index)
-        if verbose:
+        if verbose>0:
             print("Nb of pairs: ", nb_pairs)
 
         sim_indices = np.arange(nb_pairs)
@@ -2486,7 +2491,7 @@ class spotsset:
                                                                         newUBmat,
                                                                         latticeparams,
                                                                         constantlength="a")
-        if verbose:
+        if verbose>0:
             print("devstrain, lattice_parameter_direct_strain", devstrain,
                                                 lattice_parameter_direct_strain)
             print("devstrain1, lattice_parameter_direct_strain1", devstrain1,
@@ -2496,7 +2501,7 @@ class spotsset:
         deviatoricstrain_sampleframe,
         lattice_parameters) = CP.evaluate_strain_fromUBmat(newUBmat,
                                                         self.key_material,
-                                                        constantlength="a", verbose=verbose)
+                                                        constantlength="a", verbose=verbose-1)
 
         self.refinedUBmatrix = newUBmat
         self.B0matrix = Bmatrix
@@ -2507,7 +2512,7 @@ class spotsset:
         self.pixelresidues = residues
         self.spotindexabs = index
 
-        if verbose:
+        if verbose>0:
             print("strain_direct", strain_direct)
 
             print("UB and strain refinement completed")
@@ -4631,20 +4636,20 @@ def log_result(result):
     print("mylog print")
 
 
-def indexFilesSeries(filepathdat, filepathcor, filepathout,
-                    fileprefix, filesuffix, nbdigits_filename,
-                    startindex, finalindex, stepindex,
-                    filedet,
-                     guessedMatricesFile, MinimumMatchingRate,
-                     fileirp,
-                     spottrackingfile,
-                     nb_cpus,
-                     reanalyse,
-                     use_previous_results,
-                     updatefitfiles,
-                     trackingmode=False,
-                     build_hdf5=True,
-                     verbose=0):
+def indexFilesSeries(filepathdat:str, filepathcor:str, filepathout:str,
+                    fileprefix:str, filesuffix:str, nbdigits_filename:int,
+                    startindex:int, finalindex:int, stepindex:int,
+                    filedet:str,
+                     guessedMatricesFile:str, MinimumMatchingRate:float,
+                     fileirp:str,
+                     spottrackingfile:str,
+                     nb_cpus:int,
+                     reanalyse:bool,
+                     use_previous_results:bool,
+                     updatefitfiles:bool,
+                     trackingmode:bool=False,
+                     build_hdf5:bool=True,
+                     verbose:int=0):
     """ index laue spots of several peakslist files using multiprocessing
 
     """
@@ -4672,7 +4677,7 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
     Index_Refine_Parameters_dict["MinimumMatchingRate"] = MinimumMatchingRate
 
     if guessedMatricesFile not in ("None", "none", 'NONE', None):
-        print("Reading general file for guessed UB solutions")
+        print(f"Reading {guessedMatricesFile} for guessed UB solutions")
 
         assert use_previous_results is False
     else:
@@ -4683,16 +4688,16 @@ def indexFilesSeries(filepathdat, filepathcor, filepathout,
         if not guessedMatricesFile.endswith(".ubs"):
             _, guessedSolutions = IOLT.readListofMatrices(guessedMatricesFile)
 
-            print("guessedmatrix", guessedSolutions)
+            print("guessed matrix", guessedSolutions)
             Index_Refine_Parameters_dict["GuessedUBMatrix"] = guessedSolutions
         # read .ubs file
         else:
             Index_Refine_Parameters_dict["CheckOrientation"] = guessedMatricesFile
 
-    # spot restriction or tracking
+    #  ??  TODO why setting mapshape !! 
     Index_Refine_Parameters_dict['mapshape'] = (1000, 1)
+    # spot restriction or tracking
     Index_Refine_Parameters_dict['Reference Spots List'] = spottrackingfile
-
     Index_Refine_Parameters_dict['trackingmode'] = trackingmode
 
     fileindexrange = (startindex, finalindex, stepindex)
@@ -4960,6 +4965,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     GuessedUBMatrices = [None,]
     if "GuessedUBMatrix" in Index_Refine_Parameters_dict:
         GuessedUBMatrices = Index_Refine_Parameters_dict["GuessedUBMatrix"]
+        print(f'GuessedUBMatrices is {GuessedUBMatrices}')
 
     MinimumMatchingRate = Index_Refine_Parameters_dict["MinimumMatchingRate"]
     print('start of index_fileseries_3() MinimumMatchingRate', MinimumMatchingRate)
@@ -5063,9 +5069,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 #refposfile = refposfileprefix + '.cor'
 
 
-    #----------------------------------------
-    # ---   Building list of indices -------
-    #----------------------------------------
+    #-----------------------------------------------------
+    # ---   Building list of (image, file) indices -------
+    #-----------------------------------------------------
     if verbose: print("fileindexrange", fileindexrange)
 
     if isinstance(fileindexrange[0], int):
@@ -5131,7 +5137,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             maptableindices = np.arange(dim1 * dim2).reshape((dim1, dim2))
 
     # -------------------------------------------
-    # --- Loop over images ----------------------
+    # --- Loop over index of .dat or .cor files
     # -------------------------------------------
     previousindex = -1
     for imageindex in listindices:
@@ -5190,7 +5196,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         file_to_index = os.path.join(Index_Refine_Parameters_dict["PeakListCor Folder"],
                                                     corfilename)
 
-        print("\n\n ---------------INDEXING----------    file : \n%s\n\n" % file_to_index)
+        print("\n\n -------Considering in index_fileseries_3()  file : \n%s\n----------\n" % file_to_index)
 
         DataSet = spotsset()
 
@@ -5424,6 +5430,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 fitfilename = (prefixfilename + str(imageindex).zfill(nbdigits)
                     + "_g%d.fit" % material_index)
 
+                
                 (list_indexedgrains_indices, _, _,
                 Material_list,
                 all_UBmats_flat,
@@ -5469,7 +5476,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                                                 angletol_list=List_Matching_Tol_Angles,
                                                 MatchingRate_List=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 10 steps of refinements is highly reasonable
                                                 nbGrainstoFind=nbGrainstoFind,
-                                                verbose=verbose,
+                                                verbose=verbose-1,
                                                 corfilename=corfilename,
                                                 dirnameout_fitfile=fitfile_folder,
                                                 previousResults=previousResults,

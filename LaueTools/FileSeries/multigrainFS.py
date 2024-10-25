@@ -555,122 +555,22 @@ def build_xy_list_by_hand(outputfullpath, nx, ny, xfast, yfast, xstep, ystep,
     return outputfullpath
 
 
-import struct
-
-# uses invisible parameters from param.py
-def get_xyzech(filepathim, fileprefix, indimg, filesuffix, filepathout):
-
-    nimg = len(indimg)
-    data_list = np.zeros((nimg, 6), float)
-    fileim = ""
-
-    # ROPER only - use hexedit to find hexadecimal location of stored floats
-
-    kk = 0
-    for k in indimg:
-
-        data_list[kk, 0] = k
-        print(filepathim)
-        print(fileprefix)
-        print(filesuffix)
-        fileim = os.path.join(filepathim,
-                            fileprefix
-                            + rmccd.stringint(k, PAR.number_of_digits_in_image_name)
-                            + filesuffix)
-        print(fileim)
-
-        f = open(fileim, "rb")
-
-        # #            toto1 =""
-        # #            f.seek(0x9B4)
-        # #            for i in range(7) :
-        # #                toto = struct.unpack("c",f.read(1))
-        # #                toto1 = toto1 + toto[0]
-        # #
-        # #            print toto1
-        # #            data_list[kk,5] = float(toto1)
-
-        toto1 = ""
-        print(type(toto1))
-        f.seek(PAR.xech_offset)
-        for i in range(7):
-            toto = struct.unpack("c", f.read(1))
-            toto1 = toto1 + toto[0]
-        print(toto1)
-        print(type(toto1))
-        data_list[kk, 1] = float(toto1)
-
-        toto1 = ""
-        f.seek(PAR.yech_offset)
-        for i in range(7):
-            toto = struct.unpack("c", f.read(1))
-            toto1 = toto1 + toto[0]
-        print(toto1)
-        data_list[kk, 2] = float(toto1)
-
-        toto1 = ""
-        f.seek(PAR.zech_offset)
-        for i in range(7):
-            toto = struct.unpack("c", f.read(1))
-            toto1 = toto1 + toto[0]
-        print(toto1)
-        data_list[kk, 3] = float(toto1)
-
-        toto1 = ""
-        f.seek(PAR.xech_offset)
-        for i in range(40):
-            toto = struct.unpack("c", f.read(1))
-            toto1 = toto1 + toto[0]
-        print(toto1)
-        print(toto1.split()[3])
-        data_list[kk, 4] = float(toto1.split()[3])
-        data_list[kk, 5] = float(toto1.split()[4])
-
-        print("img, xech, yech, zech, mon4, lambda = \n", data_list[kk, :])
-
-        kk = kk + 1
-
-    print(data_list)
-
-    header = "img 0 , xech 1, yech 2, zech 3, mon4 4, lambda 5 \n"
-
-    try:
-        import module_graphique as modgraph
-
-        print(modgraph.outfilenamexyz)
-        outfilename = os.path.join(modgraph.outfilenamexyz,
-                                fileprefix
-                                + str(modgraph.indimg[0])
-                                + "_to_"
-                                + str(modgraph.indimg[-1])
-                                + ".dat")
-        print('outfilename', outfilename)
-        outputfile = open(outfilename, "w")
-        outputfile.write(header)
-        np.savetxt(outputfile, data_list, fmt="%.4f", header=header, comments='')
-        outputfile.close()
-    except ImportError:
-        print("Miss module_graphique.py")
-
-    return outfilename
-
-try:
-    import module_graphique as modgraph
-except ImportError:
-    print("You have to import module_graphique.py")
-
-
-def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
+def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuffix, filexyz,
                                                         startindex=modgraph.indimg[0],
                                                         finalindex=modgraph.indimg[-1],
                                                         number_of_digits_in_image_name=4,
                                                         nbtopspots=10,
                                                         outputprefix="_SUMMARY_",
-                                                        folderoutput=modgraph.outfilename,
-                                                        default_file=None):  # 29May13
+                                                        folderoutput=None,
+                                                        default_file=None,
+                                                        verbose=0):  # 29May13
     """
-    write a file containing the sumary of results from a set .fit file
+    write a file containing the summary of results from a set .fit file
     fileindex_list: list of file index
+
+    :param filepathfit: path to folder containing .fit files
+
+    :param filesuffix: extension of files to be scanned 
 
     # mean local grain intensity is taken over the most intense ntopspots spots
     nbtopspots = 10
@@ -679,6 +579,7 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
                                     example: for 4  , then 56 => 0056
                                     0 to simpliest integer formatting (not zero padding)
     """
+    if verbose > 0: print('\n In build_summary()  :')
     # filexyz : img 0 , xech 1, yech 2, zech 3, mon4 4, lambda 5
     total_nb_cols = 25
 
@@ -696,9 +597,8 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     for i in range(total_nb_cols):
         header2 = header2 + list_col_names2[i] + " "
     header2 += "\n"
-    print(header2)
+    if verbose > 0: print(header2)
 
-    iloop = 0
 
     # read xyz position file
     posxyz = np.loadtxt(filexyz, skiprows=1)
@@ -706,8 +606,9 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     imgxy = np.array(posxyz[:, 0], dtype=np.int16)
     dxy = xy - xy[0, :]  # *1000.0
 
-    print("imgxy", imgxy)
-    print("dxy", dxy)
+    if verbose > 0:
+        print("imgxy", imgxy)
+        print("dxy", dxy)
 
     # if nb of elems in file xy is less than nb of images to be compiled for the summary
     if len(dxy) < len(fileindex_list):
@@ -719,17 +620,19 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     test = re.compile("\.fit$", re.IGNORECASE)
     list_fitfiles_in_folder = list(filter(test.search, list_files_in_folder))
 
+    # loop for reading each .fit file -------------------------
     # encodingdigits = "%%0%dd" % int(number_of_digits_in_image_name)
-    print("fileindex_list", fileindex_list)
-    # loop for reading each .fit file
+    if verbose > 0: print("fileindex_list", fileindex_list)
+
+    iloop = 0
     for fileindex in fileindex_list:
         ind0 = np.where(imgxy == fileindex)
 
-        print("dxy = ", dxy[ind0[0], :])
+        if verbose > 1: print("dxy = ", dxy[ind0[0], :])
         _filename = fileprefix +  str(fileindex).zfill(int(number_of_digits_in_image_name)) + filesuffix
 
         if _filename not in list_fitfiles_in_folder:
-            print("Warning! missing .fit file: %s" % _filename)
+            if verbose > 1: print("Warning! missing .fit file: %s" % _filename)
             res = np.zeros(total_nb_cols, float)
             res[0] = fileindex
 
@@ -737,32 +640,35 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
                 allres = res
             else:
                 allres = np.row_stack((allres, res))
+            if verbose > 1: print('allres.shape',allres.shape)
+            iloop += 1
             continue
 
         filefitmg = os.path.join(filepathfit, _filename)
-        # print filefitmg
 
-        # read .fit file
-        #         res1 = readlt_fit_mg(filefitmg, verbose=1, readmore=True)
+        if verbose > 1:
+            print('Starting to read file .fit: ', filefitmg)
 
         res1 = IOLT.readfitfile_multigrains(filefitmg,
-                                            verbose=0,
+                                            verbose=verbose,
                                             readmore=True,
                                             fileextensionmarker=".cor")
 
         # print("res1  from readfitfile_multigrains in build_summary()", res1)
 
         if res1 != 0:
-            (gnumlist, npeaks, indstart, matstarlab, data_fit,
-                            calib, pixdev, strain6, euler, ) = res1
+            if verbose > 1:
+                print('Nb output elements of readfitfile_multigrains()', len(res1))
+                print('We select only 9 first of them ...')
+            gnumlist, npeaks, indstart, matstarlab, data_fit, calib, pixdev, strain6, euler = res1[:9]
 
             if len(pixdev) == 0:
                 pixdev = np.zeros_like(gnumlist)
 
             ngrains = len(gnumlist)
-            print("ngrains", ngrains)
-            # print indstart
-            intensity = np.zeros(ngrains, np.float)
+            if verbose > 1: print("ngrains", ngrains)
+
+            intensity = np.zeros(ngrains, float)
             if ngrains > 1:
                 for j in range(ngrains):
                     range1 = np.arange(indstart[j], indstart[j] + npeaks[j])
@@ -774,25 +680,19 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
                 euler = euler.reshape(1, 3)
 
             imnumlist = np.ones(ngrains, int) * fileindex
-            dxylist = np.multiply(np.ones((ngrains, 2), np.float), dxy[ind0[0], :])
-            print(dxylist)
+            dxylist = np.multiply(np.ones((ngrains, 2), float), dxy[ind0[0], :])
+            if verbose > 1:
+                print('dxylist', dxylist)
 
-
-            # print shape(strain6)
-            # print shape(imnumlist)
-            # print shape(gnumlist)
-            # print shape(dxylist)
             res = np.column_stack((imnumlist, gnumlist, npeaks, pixdev, intensity,
                                     dxylist, matstarlab, strain6, euler))
 
-            # print imnumlist
-            print("intensity in build_summary()", intensity)
-            # print res
+            if verbose > 1: print("intensity in build_summary()", intensity)
         else:
             res = np.zeros(total_nb_cols, float)
             res[0] = fileindex
 
-            print("something is empty")
+            if verbose > 1: print("something is empty")
 
         if iloop == 0:
             allres = res
@@ -801,13 +701,16 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
 
         iloop += 1
 
-    print("shape allres")
-    print(np.shape(allres))
-    print(folderoutput)
-    print(fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
+    if verbose > 0:
+        print("shape allres")
+        print(np.shape(allres))
+        #print(folderoutput)
+        print("summary file will be saved in :")
+        print(fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
     header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, euler 22:25  \n"
 
+    # write summary file -------------
     try:
         from . import module_graphique as modgraph
 
@@ -815,7 +718,7 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
                             fileprefix
                             + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
-        print("fullpath_summary_filename", fullpath_summary_filename)
+        if verbose > 0: print("fullpath_summary_filename", fullpath_summary_filename)
         modgraph.filesumbeforecolumn = fullpath_summary_filename
         outputfile = open(fullpath_summary_filename, "w")
         outputfile.write(header)
@@ -829,8 +732,8 @@ def build_summary( fileindex_list, filepathfit, fileprefix, filesuffix, filexyz,
     return allres, fullpath_summary_filename
 
 
-def read_summary_file( filesum, read_all_cols="yes",
-    list_column_names=[ "img", "gnumloc", "npeaks", "pixdev", "intensity",
+def read_summary_file(filesum:str, read_all_cols="yes", verbose=0,
+    list_column_names=["img", "gnumloc", "npeaks", "pixdev", "intensity",
         "dxymicrons_0", "dxymicrons_1",
         "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3",
         "matstarlab_4", "matstarlab_5", "matstarlab_6", "matstarlab_7", "matstarlab_8",
@@ -848,16 +751,21 @@ def read_summary_file( filesum, read_all_cols="yes",
         "von_mises"]):
     """
     used by plot_maps2
+
+    :param filesum: str, full path to summary file (.dat)
+
+    :return: data_sum_select_col, list_column_names, firstline
     """
     # 29May13
-    print("reading summary file")
-    print("first two lines :")
+    if verbose > 0:
+        print("In read_summary_file(): summary file is %s"%filesum)
+        print("first two lines :")
     f = open(filesum, "r")
     i = 0
     try:
         for line in f:
             if i == 0:
-                nameline0 = line.rstrip("  \n")
+                firstline = line.rstrip("  \n")
             if i == 1:
                 nameline1 = line.rstrip("\n")
             i = i + 1
@@ -866,18 +774,20 @@ def read_summary_file( filesum, read_all_cols="yes",
     finally:
         f.close()
 
-    # print(nameline0)
-    # print(nameline1)
     listname = nameline1.split()
 
     data_sum = np.loadtxt(filesum, skiprows=2)
 
+    if verbose > 0: print('data_sum.shape', data_sum.shape)
+
+    if len(data_sum.shape) != 2:
+        raise ValueError(f'In read_summary_file(): data_sum.shape is {data_sum.shape} and should be 2 dimension')
+
     if read_all_cols == "yes":
-        print("shape of summarised data :", np.shape(data_sum))
-        return (data_sum, listname, nameline0)
+        return data_sum, listname, firstline
 
     else:
-        print(len(listname))
+        print('len(listname)',len(listname))
         ncol = len(list_column_names)
 
         ind0 = np.zeros(ncol, int)
@@ -885,17 +795,19 @@ def read_summary_file( filesum, read_all_cols="yes",
         for i in range(ncol):
             ind0[i] = listname.index(list_column_names[i])
 
-        print(ind0)
+        print('ind0',ind0)
 
         data_sum_select_col = data_sum[:, ind0]
 
-        print(np.shape(data_sum))
-        print(np.shape(data_sum_select_col))
-        print(filesum)
-        print(list_column_names)
-        print(data_sum_select_col[:5, :])
+        if verbose > 0:
+            print('some details in read_summary_file()')
+            print(np.shape(data_sum))
+            print(np.shape(data_sum_select_col))
+            print(filesum)
+            print(list_column_names)
+            print(data_sum_select_col[:5, :])
 
-        return (data_sum_select_col, list_column_names, nameline0)
+        return data_sum_select_col, list_column_names, firstline
 
 
 def twomat_to_rotation_Emeric(matstarlab1, matstarlab2, omega0=40.0):
@@ -942,6 +854,7 @@ def glide_systems_to_schmid_tensors(n_ref=np.array([1., 1., 1.]),
     coordonnees cartesiennes dans le repere OND obtenu en orthonormalisant le repere cristal
     cf these Gael Daveau p 16
     """
+    if verbose > 0: print('In glide_systems_to_schmid_tensors():')
     nop = 24
 
     allop = DictLT.OpSymArray
@@ -973,42 +886,45 @@ def glide_systems_to_schmid_tensors(n_ref=np.array([1., 1., 1.]),
             dun_dub = dun + dub
             if dun_dub < 0.01:
                 isdouble[j] = 1
-    print(isdouble)
+    
+    if verbose > 0: print(isdouble)
 
     ind0 = np.where(isdouble == 0)
-    print(ind0[0])
+    if verbose > 0: print(ind0[0])
     uqall = uqall[:, ind0[0], :]
 
     nop2 = 12
 
     st1 = np.zeros((nop2, 3, 3), float)
-    hkl_n = uqall[0, :, :]*normehkl[0]
-    hkl_b = uqall[1, :, :]*normehkl[1]
-    if verbose:
+    hkl_n = uqall[0, :, :] * normehkl[0]
+    hkl_b = uqall[1, :, :] * normehkl[1]
+    if verbose > 0:
         print("n b schmid_tensor [line1, line2, line3]")
     for k in range(nop2):
         un_colonne = uqall[0, k, :].reshape(3, 1)
         ub_ligne = uqall[1, k, :].reshape(1, 3)
         st1[k, :, :] = np.dot(un_colonne, ub_ligne)        
-        if verbose:
-            print(uqall[0, k, :]*normehkl[0], uqall[1, k, :] * normehkl[1], st1[k, :, :].reshape(1, 9).round(decimals=3))
+        if verbose > 1:
+            print(uqall[0, k, :] * normehkl[0], uqall[1, k, :] * normehkl[1], st1[k, :, :].reshape(1, 9).round(decimals=3))
 
     if returnmore == 0:
         return st1
     else:
         return st1,hkl_n, hkl_b
 
-def read_stiffness_file(filestf): #29May13
+def read_stiffness_file(filestf:str, verbose:int=0): #29May13
     """
     # units = 1e11 N/m2
     # dans les fichiers stf de XMAS les cij sont en 1e11 N/m2
     """
     c_tensor = np.loadtxt(filestf, skiprows = 1)
     c_tensor = np.array(c_tensor, dtype = float)
-    print(filestf)
-    print(np.shape(c_tensor))
-    print("stiffness tensor C, 1e11 N/m2 (100 GPa) units")
-    print(c_tensor)
+    if verbose > 0:
+        print('\nIn read_stiffn:ess_file()')
+        print(filestf)
+        print(np.shape(c_tensor))
+        print("stiffness tensor C, 1e11 N/m2 (100 GPa) units")
+        print(c_tensor)
 
     return c_tensor
 
@@ -1045,7 +961,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
                         [0.0, np.sin(omega), np.cos(omega)]])
 
     hkl_3 = np.array([[0., 0., 1.], [1., 0., 1.], [1., 1., 1.]])
-    uqref_cr = np.zeros((3, 3), np.float)
+    uqref_cr = np.zeros((3, 3), float)
     # uqref_cr 3 vecteurs 001 101 111 en colonnes
     for i in range(3):
         uqref_cr[:, i] = hkl_3[i, :] / norme(hkl_3[i, :])
@@ -1093,11 +1009,11 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
 # #        print "matdef recalc"
 # #        print dot(mat,Bstar).round(decimals=4)
 
-    cosangall = np.zeros((2 * nop, 3), np.float)
+    cosangall = np.zeros((2 * nop, 3), float)
     ranknum = np.arange(2 * nop)
     opsym = 2 * list(range(nop))
     # print opsym
-    matk_lab = np.zeros((2 * nop, 3, 3), np.float)
+    matk_lab = np.zeros((2 * nop, 3, 3), float)
 
     for k in range(nop):
         matk_lab[k] = np.dot(mat, allop[k])
@@ -1244,7 +1160,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
 
 def mat_to_rlat(matstarlab):
 
-    rlat = np.zeros(6, np.float)
+    rlat = np.zeros(6, float)
 
     astarlab = matstarlab[0:3]
     bstarlab = matstarlab[3:6]
@@ -1289,7 +1205,7 @@ def dlat_to_Bstar(dlat): #29May13
         # rlat  reciprocal lattice parameters
         # en radians
     """
-    Bstar = np.zeros((3, 3), dtype=np.float)
+    Bstar = np.zeros((3, 3), dtype=float)
     rlat = dlat_to_rlat(dlat)
 
     Bstar[0, 0] = rlat[0]
@@ -1458,11 +1374,11 @@ def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
     eq_strain = (2. / 3.) * np.sqrt(toto)
     return eq_strain
 
-def add_columns_to_summary_file_new(filesum,
-                            elem_label="Ge",
+def add_columns_to_summary_file_new(filesum:str,
+                            elem_label:str="Ge",
                             filestf=None,
-                            omega_sample_frame=40.0,
-                            verbose=0,
+                            omega_sample_frame:float=40.0,
+                            verbose:int=0,
                             include_misorientation=0,
                             filefitref_for_orientation=None,  # seulement pour include_misorientation = 1
                             include_strain=1,  # 0 seulement pour mat2spots ou fit calib ou EBSD
@@ -1470,13 +1386,13 @@ def add_columns_to_summary_file_new(filesum,
                             #  include_misorientation = 1
                             # et filefitref_for_orientation = None
                             filter_mean_matrix_by_pixdev_and_npeaks=1,
-                            maxpixdev_for_mean_matrix=0.25,
-                            minnpeaks_for_mean_matrix=20,
+                            maxpixdev_for_mean_matrix:float=0.25,
+                            minnpeaks_for_mean_matrix:float=20,
                             filter_mean_matrix_by_intensity=0,
-                            minintensity_for_mean_matrix=20000.0):  # 29May13
+                            minintensity_for_mean_matrix:float=20000.0):  # 29May13
 
     """
-    filesum previously generated with build_summary
+    :param filesum: str, previously generated file (.dat) with build_summary
     strain in 1e-3 units
     stress in 100 MPa units
     add :
@@ -1502,7 +1418,7 @@ def add_columns_to_summary_file_new(filesum,
        add rgbxyz_lab  - utile pour departager macles avec axe de maclage suivant x, y, ou z sample
        24Jan14 : enleve strain columns
     """
-    data1, list_column_names, nameline0 = read_summary_file(filesum)
+    data1, list_column_names, nameline0 = read_summary_file(filesum, verbose=verbose - 1)
 
     data_1 = np.array(data1, dtype=float)
 
@@ -1544,7 +1460,6 @@ def add_columns_to_summary_file_new(filesum,
         for k in range(len(number_col_strain), len(number_col_strain) + 2):
             list_col_names2.append(list_col_names_strain[k])
 
-    # print list_col_names2
     header2 = ""
     for i in range(len(list_col_names2)):
         header2 = header2 + list_col_names2[i] + " "
@@ -1562,14 +1477,16 @@ def add_columns_to_summary_file_new(filesum,
         header = header + "\n"
         header2 = header2 + "\n"
 
-    print(header)
-    print(header2)
-    print(header2.split())
+    if verbose > 0:
+        print('some headers')
+        print(header)
+        print(header2)
+        print(header2.split())
 
-    schmid_tensors = glide_systems_to_schmid_tensors(verbose=0)
+    schmid_tensors = glide_systems_to_schmid_tensors(verbose=verbose-1)
 
     if filestf != None:
-        c_tensor = read_stiffness_file(filestf)
+        c_tensor = read_stiffness_file(filestf, verbose - 1)
 
     xsample_sample_coord = np.array([1.0, 0.0, 0.0])
     ysample_sample_coord = np.array([0.0, 1.0, 0.0])
@@ -1578,12 +1495,17 @@ def add_columns_to_summary_file_new(filesum,
     omegarad = omega_sample_frame * np.pi / 180.0
     ylab_sample_coord = np.array([0.0, np.cos(omegarad), -np.sin(omegarad)])
     zlab_sample_coord = np.array([0.0, np.sin(omegarad), np.cos(omegarad)])
-    print("x y z sample - sample coord : ", xsample_sample_coord,
-                                            ysample_sample_coord,
-                                            zsample_sample_coord)
-    print("y z lab - sample coord : ", ylab_sample_coord, zlab_sample_coord)
+    if verbose > 0:
+        print('Sample frame description')
+        print(":: x y z sample in sample frame : ", xsample_sample_coord,
+                                                ysample_sample_coord,
+                                                zsample_sample_coord)
+        print(":: ylab zlab in sample frame : ", ylab_sample_coord, zlab_sample_coord)
 
     numig = np.shape(data_1)[0]
+
+    if verbose > 0:
+        print('data_1.shape', data_1.shape)
 
     # numig = 10
 
@@ -1608,8 +1530,13 @@ def add_columns_to_summary_file_new(filesum,
     indnpeaks = list_column_names.index("npeaks")  # 2
     indmatstart = list_column_names.index("matstarlab_0")  # 7
     indintensity = list_column_names.index("intensity")  # 4
-    print(indpixdev, indnpeaks, indmatstart, indintensity)
+    if verbose > 0:
+        print('info position')
+        print(indpixdev, indnpeaks, indmatstart, indintensity)
+
     indmat = np.arange(indmatstart, indmatstart + 9)
+
+    assert len(data_1.shape) == 2
     img_list = data_1[:, indimg]
     pixdev_list = data_1[:, indpixdev]
     npeaks_list = data_1[:, indnpeaks]
@@ -1652,7 +1579,7 @@ def add_columns_to_summary_file_new(filesum,
 
     k = 0
     for i in range(numig):
-        print("ig : ", i, "img : ", img_list[i])
+        if verbose - 1 > 0: print("i : ", i, "img_list[i] : ", img_list[i], "\r")
         if npeaks_list[i] > 0.0:
             matstarlab = mat_list[i, :]
             # print "x"
@@ -1694,10 +1621,10 @@ def add_columns_to_summary_file_new(filesum,
                                             matstarlabref, matstarlab, omega0=omega_sample_frame)
                 omegaxyz[i, :] = vecRodrigues_sample * 2.0 * 1000.0  # unites = mrad
                 # misorientation_angle : unites = degres
-                print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
+                if verbose - 1 > 0: print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
 
-            if verbose:
-                print(matstarlab)
+            if verbose > 0:
+                print('matstarlab', matstarlab)
                 if include_strain:
                     print("deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
                     print(epsp_crystal.round(decimals=2))
@@ -1734,7 +1661,7 @@ def add_columns_to_summary_file_new(filesum,
     #    add_str = add_str + "_use_mean_10_points"
 
     outfilesum = filesum.rstrip(".dat") + add_str + ".dat"
-    print(outfilesum)
+    if verbose > 0: print(outfilesum)
     outputfile = open(outfilesum, "w")
     # outputfile.write(header)
     # outputfile.write(header2)
@@ -1742,161 +1669,6 @@ def add_columns_to_summary_file_new(filesum,
     outputfile.close()
 
     return outfilesum
-
-
-def add_columns_to_summary_file(filesum, elem_label="Ge", filestf=None, verbose=0):  # 29May13
-
-    """
-    filesum previously generated with build_summary
-    strain in 1e-3 units
-    stress in 100 MPa units
-    add :
-        cosines rgb_x and rgb_z for orientation maps with color scale of first stereo triangle
-        reference x and z for rgb are in sample frame
-        strain in sample frame
-        stress in crystal frame
-        stress in sample frame
-        von mises stress
-        resolved shear stress RSS on glide planes
-        max RSS
-    """
-
-    data_1, list_column_names, nameline0 = read_summary_file(filesum)
-
-    data_1 = np.array(data_1, dtype=float)
-
-    list_col_names = ["strain6_sample",
-                    "rgb_x_sample",
-                    "rgb_z_sample",
-                    "stress6_crystal",
-                    "stress6_sample",
-                    "res_shear_stress",
-                    "max_rss",
-                    "von_mises"]
-
-    list_col_names2 = list_column_names
-
-    number_col = np.array([6, 3, 3, 6, 6, 12])
-
-    for k in range(6):
-        for i in range(number_col[k]):
-            toto = list_col_names[k] + "_" + str(i)
-            list_col_names2.append(toto)
-
-    for k in range(6, 8):
-        list_col_names2.append(list_col_names[k])
-
-    # print list_col_names2
-    header2 = ""
-    for i in range(len(list_col_names2)):
-        header2 = header2 + list_col_names2[i] + " "
-    header2 = header2 + "\n"
-    print(header2)
-
-    print(header2.split())
-
-    header = (nameline0 +
-    ", strain_6sample 25:31, rgb_x_sample 31:34, rgb_z_sample 34:37, \
-stress6_crystal 37:43 , stress6_sample 43:49, res_shear_stress 49:61, \
-max_rss 61, von_mises 62 \n")
-
-    print(header)
-
-    schmid_tensors = glide_systems_to_schmid_tensors()
-
-    print("filestf")
-    print(filestf)
-    if filestf != None:
-        c_tensor = read_stiffness_file(filestf)
-
-    axis_pole_sample_z = np.array([0.0, 0.0, 1.0])
-    axis_pole_sample_x = np.array([1.0, 0.0, 0.0])
-    print("pole axes 1, 2 - sample coord : ", axis_pole_sample_x, axis_pole_sample_z)
-
-    numig = np.shape(data_1)[0]
-
-    # numig = 10
-
-    rgb_z = np.zeros((numig, 3), float)
-    rgb_x = np.zeros((numig, 3), float)
-    epsp_sample = np.zeros((numig, 6), float)
-    sigma_crystal = np.zeros((numig, 6), float)
-    sigma_sample = np.zeros((numig, 6), float)
-    tau1 = np.zeros((numig, 12), float)
-    von_mises = np.zeros(numig, float)
-    maxrss = np.zeros(numig, float)
-
-    for i in range(numig):
-        print(i)
-        if data_1[i, 2] > 0.0:
-            matstarlab = data_1[i, 7:16]
-            # print "z"
-            matstarlabnew, transfmat, rgb_z[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, axis_pole_sample_z)
-            # print "x"
-            matstarlabnew, transfmat, rgb_x[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, axis_pole_sample_x)
-
-            epsp_sample[i, :], epsp_crystal = matstarlab_to_deviatoric_strain_sample(
-                matstarlab,
-                omega0=40.0,
-                version=2,
-                returnmore=True,
-                reference_element_for_lattice_parameters=elem_label)
-
-            sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(c_tensor, epsp_crystal)
-            sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                matstarlab, sigma_crystal[i, :], omega0=40.0)
-
-            von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
-
-            tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                sigma_crystal[i, :], schmid_tensors)
-            maxrss[i] = abs(tau1[i, :]).max()
-
-            if verbose:
-                print(matstarlab)
-                print("deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
-                print(epsp_crystal.round(decimals=2))
-                print(
-                    "deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)")
-                print(epsp_sample[i, :].round(decimals=2))
-
-                print("deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)")
-                print(sigma_crystal[i, :].round(decimals=2))
-
-                print("deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)")
-                print(sigma_sample[i, :].round(decimals=2))
-
-                print("Von Mises equivalent Stress (100 MPa units)",
-                    round(von_mises[i], 3),)
-                print("RSS resolved shear stresses on glide planes (100 MPa units) : ")
-                print(tau1[i, :].round(decimals=3))
-                print("Max RSS : ", round(maxrss[i], 3))
-
-    data_list = column_stack((data_1[:numig, :],
-                            epsp_sample,
-                            rgb_x,
-                            rgb_z,
-                            sigma_crystal,
-                            sigma_sample,
-                            tau1,
-                            maxrss,
-                            von_mises))
-    print("filesum", filesum)
-    outfilesum = filesum.rstrip(".dat") + "_add_columns.dat"
-    import module_graphique as modgraph
-
-    modgraph.stockfilesumcolumn = outfilesum
-    print(outfilesum)
-    outputfile = open(outfilesum, "w")
-    outputfile.write(header)
-    outputfile.write(header2)
-    np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
-    outputfile.close()
-
-    return outfilesum
-
 
 def plot_orientation_triangle_color_code():
 
@@ -3272,253 +3044,6 @@ def rotate_map(filexyz, map_rotation, xylim=None):
     np.savetxt(outputfile, data_1_new, fmt="%.4f")
     outputfile.close()
     return (filexyz_new, xylim_new)
-
-
-def class_data_into_grainnum(filesum, filepathout, tol1=0.1, test_mode="yes"):  # 29May13
-
-    data_list, listname, nameline0 = read_summary_file(filesum)
-
-    data_list = np.array(data_list, dtype=float)
-
-    indimg = listname.index("img")
-    indgnumloc = listname.index("gnumloc")
-    indnpeaks = listname.index("npeaks")
-    indrgb = listname.index("rgb_x_sample_0")
-
-    local_gnumlist = np.array(data_list[:, indgnumloc], dtype=int)
-    npeakslist = np.array(data_list[:, indnpeaks], dtype=int)
-
-    ind1 = where(npeakslist > 1)
-
-    print(ind1[0])
-    data_list2 = data_list[ind1[0], :]
-    numig2 = shape(data_list2)[0]
-    print(numig2)
-
-    indrgbxz = list(range(indrgb, indrgb + 6))
-
-    local_gnumlist2 = local_gnumlist[ind1[0]]
-    rgbxz = data_list2[:, indrgbxz]
-    imglist = data_list2[:, indimg]
-    print(rgbxz[:2, :])
-    print(np.shape(rgbxz))
-
-    # norme(rgb) = 1
-    for i in range(numig2):
-        rgbxz[i, :3] = rgbxz[i, :3] / norme(rgbxz[i, :3])
-        rgbxz[i, 3:] = rgbxz[i, 3:] / norme(rgbxz[i, 3:])
-
-    toto = column_stack((list(range(numig2)), imglist, local_gnumlist2, rgbxz))
-
-    #        print toto[:10,:]
-    #        print toto.transpose()[:,:10]
-
-    toto1 = toto.transpose()
-
-    # nested sort
-    # Sort on last row, then on 2nd last row, etc.
-    ind2 = np.lexsort(toto1)
-
-    print(shape(ind2))
-    print(toto1.take(ind2[:10], axis=-1))
-
-    if test_mode == "yes":
-        nmax = 250
-        verbose = 1
-        teststr = "test"
-    else:
-        nmax = numig2
-        verbose = 0
-        teststr = "all2"
-
-    sorted_list = toto1.take(ind2[:nmax], axis=-1).transpose()
-
-    print(shape(sorted_list))
-
-    dict_grains = {}
-    num_one_pixel_grains = 0
-    ig_list = np.array(sorted_list[:, 0], dtype=int)
-    img_list = np.array(sorted_list[:, 1], dtype=int)
-    gnumloc_list = np.array(sorted_list[:, 2], dtype=int)
-
-    has_grain_num = np.zeros(nmax, int)
-    is_ref = np.zeros(nmax, int)
-    grain_size = np.zeros(nmax, int)
-    global_gnum = np.zeros(nmax, int)
-    gnum = 0
-    for i in range(nmax):
-        if has_grain_num[i] == 0:
-            print("i, gnum = ", i, gnum)
-            rgbref = sorted_list[i, -6:]
-            global_gnum[i] = gnum
-            is_ref[i] = 1
-            has_grain_num[i] = 1
-            grain_size[i] = 1
-            ind_in_grain_list = [i]
-            # ig_in_grain_list = [ig_list[i],]
-            for j in range(i + 1, nmax):
-                if has_grain_num[j] == 0:
-                    drgb = norme(sorted_list[j, -6:] - rgbref)
-                    if verbose:
-                        print("j, drgb = ", j, round(drgb, 3))
-                    if drgb < tol1:
-                        has_grain_num[j] = 1
-                        global_gnum[j] = gnum
-                        if verbose:
-                            print("gnum =", gnum)
-                        grain_size[i] = grain_size[i] + 1
-                        ind_in_grain_list.append(j)
-                        # ig_in_grain_list.append(ig_list[j])
-
-                    else:
-                        if verbose:
-                            print(" ")
-            if grain_size[i] == 1:
-                num_one_pixel_grains = num_one_pixel_grains + 1
-                global_gnum[i] = -1
-                print(" ")
-            else:
-                grain_size[ind_in_grain_list] = grain_size[i]
-                short_rgb = sorted_list[ind_in_grain_list, -6:]
-                mean_rgb = short_rgb.mean(axis=0)
-                std_rgb = short_rgb.std(axis=0) * 1000.0
-                range_rgb = (short_rgb.max(axis=0) - short_rgb.min(axis=0)) * 1000.0
-
-                ig_in_grain_list = ig_list[ind_in_grain_list]
-                img_in_grain_list = img_list[ind_in_grain_list]
-                gnumloc_in_grain_list = gnumloc_list[ind_in_grain_list]
-
-                print("grain_size = ", grain_size[i])
-                # print "ind_in_grain_list ", ind_in_grain_list
-                print("ig_in_grain_list ", ig_in_grain_list)
-                print("img_in_grain_list", img_in_grain_list)
-                print("gnumloc_in_grain_list", gnumloc_in_grain_list)
-                print("rgb in grain :")
-                print("mean", mean_rgb.round(decimals=3))
-                print("std*1000 ", std_rgb.round(decimals=3))
-                print("range*1000 ", range_rgb.round(decimals=3))
-                print("\n")
-
-                dict_grains[gnum] = [grain_size[i],
-                                    ind_in_grain_list,
-                                    ig_in_grain_list,
-                                    img_in_grain_list,
-                                    gnumloc_in_grain_list,
-                                    mean_rgb.round(decimals=3),
-                                    std_rgb.round(decimals=3),
-                                    range_rgb.round(decimals=3)]
-
-                gnum = gnum + 1
-
-    print("##########################################################")
-    print("gnum = ", gnum)
-    print("num_one_pixel_grains =", num_one_pixel_grains)
-
-    gnumtot = gnum
-
-    # print dict_grains
-    dict_values_names = ["grain size",
-                        "ind_in_grain_list",
-                        "ig_in_grain_list",
-                        "img_in_grain_list",
-                        "gnumloc_in_grain_list",
-                        "mean_rgb",
-                        "std_rgb *1000",
-                        "range_rgb *1000"]
-
-    ndict = len(dict_values_names)
-
-    # renumerotation des grains pour classement par taille decroissante May13
-    gnumlist = list(range(gnumtot))
-    gsizelist = np.zeros(gnumtot, int)
-
-    for key, value in dict_grains.items():
-        gsizelist[key] = value[0]
-
-    gnum_gsize_list = column_stack((gnumlist, gsizelist))
-    sorted_gnum_gsize_list = sort_list_decreasing_column(gnum_gsize_list, 1)
-    # print gnum_gsize_list
-    # print sorted_gnum_gsize_list
-    dict_grains2 = {}
-    for gnum2 in range(gnumtot):
-        #        print gnum2
-        #        print sorted_gnum_gsize_list[gnum2,0]
-        dict_grains2[gnum2] = dict_grains[sorted_gnum_gsize_list[gnum2, 0]]
-
-    #    for i in range(ndict):
-    #        print dict_values_names[i]
-    #        for key, value in dict_grains2.iteritems():
-    #            print key,value[i]
-    #    klmdqs
-
-    ig_list = column_stack((np.array(sorted_list[:, :3], dtype=int),
-                            is_ref,
-                            has_grain_num,
-                            global_gnum,
-                            grain_size,
-                            list(range(nmax))))
-
-    header = "ig 0, img 1, local_gnum 2, is_ref 3, has_grain_num 4, global_gnum 5, grain_size 6, igsort 7"
-    print(header)
-
-    sorted_ig_list = sort_list_decreasing_column(ig_list, 6)
-
-    # print sorted_ig_list
-
-    # nouveaux numeros de grain dans liste ig
-    for i in range(nmax):
-        if sorted_ig_list[i, 5] != -1:
-            ind1 = where(sorted_gnum_gsize_list[:, 0] == sorted_ig_list[i, 5])
-            sorted_ig_list[i, 5] = ind1[0]
-
-    print(sorted_ig_list)
-
-    if 1:
-        outfilegnum = os.path.join(filepathout, "grain_num2_" + teststr + ".txt")
-        print("column results saved in :")
-        print(outfilegnum)
-        outputfile = open(outfilegnum, "w")
-        outputfile.write(header + "\n")
-        np.savetxt(outputfile, sorted_ig_list, fmt="%d")
-        outputfile.close()
-
-    if 1:
-        import module_graphique as modgraph
-
-        outfilegtog = os.path.join(filepathout, "gtog3_" + teststr + ".txt")
-        modgraph.filegrain_1 = outfilegtog
-        print("dictionnary results saved in :")
-        print(outfilegtog)
-        outputfile = open(outfilegtog, "w")
-        for i in range(ndict):
-            outputfile.write(dict_values_names[i] + "\n")
-            for key, value in dict_grains2.items():
-                if i == 0:
-                    str1 = str(value[i])
-                else:
-                    str1 = " ".join(str(e) for e in value[i])
-                outputfile.write(str(key) + " : " + str1 + "\n")
-        outputfile.close()
-
-    # taille de grains moyenne
-    list1 = []
-    for key, value in dict_grains2.items():
-        # print key,value[0]
-        list1.append(value[0])
-
-    toto = np.array(list1, dtype=float)
-    print("mean grain size (units = map pixels) ", round(toto.mean(), 2))
-
-    # mosaique de grain moyenne
-    list1 = []
-    for key, value in dict_grains2.items():
-        # print key,value[6]
-        list1.append(value[6])
-
-    toto = np.array(list1, dtype=float)
-    print("mean grain std_rgb * 1000 ", toto.mean(axis=0).round(decimals=2))
-
-    return dict_grains2
 
 
 def read_dict_grains(filegrains, dict_with_edges="no", dict_with_all_cols="no",
