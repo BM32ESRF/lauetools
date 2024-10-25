@@ -107,7 +107,7 @@ class MainFrame_BuildSummary(wx.Frame):
         print('-----  Build Summary GUI FileSeries   --------')
         print('----- (reading results in .fit files) --------')
         print('----------------------------------------------')
-        print('----------------------------------------------')
+        print('--------------------2024----------------------')
         print('----------------------------------------------')
 
         # print('In MainFrame_BuildSummary().__init__(): self.initialparameters', self.initialparameters)
