@@ -434,7 +434,7 @@ class LaueToolsGUImainframe(wx.Frame):
                     initialParameter["stackimageindex"] = 0
                     initialParameter["Nbstackedimages"] = None  #maybe non useful
 
-                elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
+                elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe","EIGER_1M"):
                     if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):  # never enter this branch??
                         h5browserBoard = CCDFileParameters(self, -1, "CCD File Parameters Board2", self.CCDLabel)
                         h5browserBoard.ShowModal()
