@@ -390,7 +390,7 @@ dict_CCD = {
 
     "psl_IN_bmp": [(425, 640), 10/43., 256, "no", -1, "uint16", "camera from inst Neel ", "bmp", ],
     "psl_IN_tif": [(425, 640), 10/43., 65535, "no", -1, "uint16", "camera from inst Neel ", "tif", ],
-    "psl_weiwei": [(1247, 1960), 0.075, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif"],
+    "psl_weiwei": [(1247, 1960), 0.075000001, 65535, "no", -1, "uint16", "camera from desy photonics science 1247*1960 ", "tif"],
     "Alexiane": [(1078, 886), 0.139, 65535, "Alexiane", -1, "uint16", "camera from Alexiane's lab reflection geometry", "tif"],
 
     "VHR_full": ((2671, 4008), 0.031, 10000, "vhr", 4096, "uint16", "NOT USED: very basic vhr settings, the largest frame available without grid correction", "tiff"),
@@ -418,13 +418,13 @@ dict_CCD = {
     "pnCCD": ((384, 384), 0.075, 65000, "no", 1024, "uint16", "pnCCD from SIEGEN only: pixel size and frame dimensions OK", "tiff"),
     "pnCCD_Tuba": ((384, 384), 0.075, 10000000, "no", 258, "uint16", "pnCCD from Tuba only: pixel size and frame dimensions OK", "tiff"),
     
-    "EIGER_4M": ((2167, 2070), 0.075, 4294967295, "spe", 0, "uint32", "detector parameters read from tif header EIGER4M used at ALS or SLS   (fliprot = spe for SLS)", "tif"),
+    "EIGER_4M": ((2167, 2070), 0.075000005, 4294967295, "spe", 0, "uint32", "detector parameters read from tif header EIGER4M used at ALS or SLS   (fliprot = spe for SLS)", "tif"),
     "EIGER_4Mstack": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "detector parameters read hdf5 EIGER4M stack used at SLS", "h5"),
     "EIGER_4Munstacked": ((2167, 2070), 0.075, 4294967295, "no", 0, "uint32", "unstacked hdf5 EIGER4M  used at SLS", "unstacked"),
-    "EIGER_4MCdTe": ((2162, 2068), 0.075, 4294967295, "no", 0, "uint32", "single image in hdf5 EIGER4M of CdTe  used at BM32", "h5"),
-    "EIGER_4MCdTestack": ((2162, 2068), 0.075, 4294967295, "no", 0, "uint32", "stacked images in hdf5 EIGER4M of CdTe used at BM32", "h5"),
+    "EIGER_4MCdTe": ((2162, 2068), 0.075000002, 4294967295, "no", 0, "uint32", "single image in hdf5 EIGER4M of CdTe  used at BM32", "h5"),
+    "EIGER_4MCdTestack": ((2162, 2068), 0.075000003, 4294967295, "no", 0, "uint32", "stacked images in hdf5 EIGER4M of CdTe used at BM32", "h5"),
     
-    "EIGER_1M": ((1065, 1030), 0.075, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M Silicon at BM32 ESRF", "edf"),
+    "EIGER_1M": ((1065, 1030), 0.075000004, 4294967295, "no", 0, "uint32", "CCD parameters read from edf header EIGER1M Silicon at BM32 ESRF", "edf"),
     "RXO": ((512, 512), 0.4, 255, "no", 0 , "uint8", "RXO industrial detector", "tif"),
     "MaxiPIXCdTe": ((516, 516), 0.055, 4294967295, "MaxiPIXCdTe", 0, "int32", "MaxiPIX Laue CdTe BM32 test", "h5"),
 }
