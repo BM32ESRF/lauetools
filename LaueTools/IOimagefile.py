@@ -135,7 +135,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
 
     #     print "imagefilename archetype", imagefilename
 
-    elif CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe"):
+    elif CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe",'EIGER_1M'):
         
         #default file extension for sCMOS camera
         ext = "h5"
@@ -248,7 +248,7 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(prefix.rsplit("_")[1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
-    elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe","EIGER_4MCdTe"):
+    elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe","EIGER_4MCdTe", 'EIGER_1M'):
         _filename = os.path.split(imagefilename)[-1]
         if _filename.startswith(('mpxcdte_','eiger1_')):
             imageindex= int(_filename.split('.')[0].split('_')[-1])
@@ -1352,9 +1352,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         print("lineFirstElemIndex", lineFirstElemIndex)
         print("lineLastElemIndex", lineLastElemIndex)
 
-    
-
-    if CCDLabel in ('EIGER_4MCdTe'):
+    if CCDLabel in ('EIGER_4MCdTe','EIGER_1M'):  # not tested with EIGER_1M
         _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=-1, verbose=0)
         band2D = _data[ypixmin:ypixmax+1]
 
@@ -1366,7 +1364,7 @@ def readrectangle_in_image(filename, pixx, pixy, halfboxx, halfboxy, dirname=Non
         _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=stackimageindex, verbose=0)
         band2D = _data[ypixmin:ypixmax+1]
 
-    elif CCDLabel not in ('EIGER_4MCdTe', 'EIGER_4MCdTestack'):
+    elif CCDLabel not in ('EIGER_4MCdTe', 'EIGER_4MCdTestack','EIGER_1M'):
         band = readoneimage_band(fullpathfilename,
                                 framedim=framedim,
                                 dirname=None,
