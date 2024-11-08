@@ -2969,7 +2969,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.imagefilename = self.initialParameter["imagefilename"]
         self.dirname = self.initialParameter["dirname"]
         self.LastLUT = self.initialParameter["mapsLUT"]
-        self.writefolder = self.initialParameter["writefolder"]
+        self.writefolder = self.initialParameter["dirname"]
         self.CCDlabel = self.initialParameter["CCDLabel"]
         # for stacked images in hdf5 file
         self.stackedimages = self.initialParameter["stackedimages"]
@@ -4034,7 +4034,7 @@ class MainPeakSearchFrame(wx.Frame):
         else:  # TODO better use self.format ??
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
-            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe", "EIGER_4MCdTestack"):
+            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe", "EIGER_4MCdTestack", 'EIGER_1M'):
                 img_dataformat = np.uint32
             elif self.CCDlabel in ("MaxiPIXCdTe",):
                 img_dataformat = np.int32
