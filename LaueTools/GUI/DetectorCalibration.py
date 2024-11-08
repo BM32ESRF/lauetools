@@ -4385,20 +4385,25 @@ class MainCalibrationFrame(wx.Frame):
             xtol = 5
             ytol = 5
         elif self.datatype == "pixels":
-            xtol = 200
-            ytol = 200
+            xtol = 50
+            ytol = 50
 
+        # twicetheta, chi, self.Miller_ind, posx, posy, Energy = self.data_theo
         if self.datatype == "2thetachi":
-            xdata, ydata, _annotes_exp = (self.data_x,
-                                        self.data_y,
+            xdata, ydata, _annotes_exp = (self.data[0],
+                                        self.data[1],
                                         list(zip(self.Data_index_expspot, self.Data_I)))
+            
+            xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
+                                                self.data_theo[1],
+                                                list(zip(*self.data_theo[2:])))
         elif self.datatype == "pixels":
             xdata, ydata, _annotes_exp = (self.data_XY[0],
                                         self.data_XY[1],
                                         list(zip(self.Data_index_expspot, self.Data_I)))
 
-        xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[0],
-                                                self.data_theo[1],
+            xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[3],
+                                                self.data_theo[4],
                                                 list(zip(*self.data_theo[2:])))
 
         if event.xdata != None and event.ydata != None:
@@ -4406,20 +4411,20 @@ class MainCalibrationFrame(wx.Frame):
             evx, evy = event.xdata, event.ydata
 
             if self.datatype == "pixels":
-                tip = "(X,Y)=(%.2f,%.2f)"%(evx, evy)
+                tip = "current (X,Y)=(%.2f,%.2f)"%(evx, evy)
             if self.datatype == "2thetachi":
-                tip = "(2theta,chi)=(%.2f,%.2f)"%(evx, evy)
+                tip = "current (2theta,chi)=(%.2f,%.2f)"%(evx, evy)
 
             annotes_exp = []
             for x, y, aexp in zip(xdata, ydata, _annotes_exp):
                 if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
-                    #                     print "got exp. spot!! at x,y", x, y
+                    #print("got exp. spot!! at x,y", x, y)
                     annotes_exp.append((GT.cartesiandistance(x, evx, y, evy), x, y, aexp))
 
             annotes_theo = []
             for x, y, atheo in zip(xdata_theo, ydata_theo, _annotes_theo):
                 if (evx - xtol < x < evx + xtol) and (evy - ytol < y < evy + ytol):
-                    #                     print "got theo. spot!!"
+                    #print("got theo. spot!!")
                     #                     print "with info: ", atheo
                     annotes_theo.append((GT.cartesiandistance(x, evx, y, evy), x, y, atheo))
 
@@ -4435,9 +4440,9 @@ class MainCalibrationFrame(wx.Frame):
             tip_exp = ""
             tip_theo = ""
             if self.datatype == "2thetachi":
-                closedistance = 2.0
+                closedistance = 3
             elif self.datatype == "pixels":
-                closedistance = 100.0
+                closedistance = 10
 
             if collisionFound_exp:
                 annotes_exp.sort()
@@ -4445,13 +4450,13 @@ class MainCalibrationFrame(wx.Frame):
 
                 # if exp. spot is close enough
                 if _distanceexp < closedistance:
-                    tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
-                    print('found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
+                    tip_exp = "Closest Exp. spot: index=%d Intensity=%.1f at (%.2f, %.2f) " % (annote_exp[0], annote_exp[1],x,y)
+                    print('Closest Exp. found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
                     self.updateStatusBar(x, y, annote_exp, spottype="exp")
 
                     self.highlightexpspot = annote_exp[0]
                 else:
-                    self.sb.SetStatusText("", 1)
+                    self.sb.SetStatusText("",0)
                     tip_exp = ""
                     collisionFound_exp = False
                     self.highlightexpspot = None
@@ -4471,12 +4476,12 @@ class MainCalibrationFrame(wx.Frame):
                     # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
                     # print("with info (hkl, other coordinates, energy)", annote_theo)
 
-                    tip_theo = "[h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
+                    tip_theo = "Theo. [h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
                     if self.datatype == "pixels":
-                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                        tip_theo += "\nTheo. (X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
                             x, y, annote_theo[1], annote_theo[2])
                     if self.datatype == "2thetachi":
-                        tip_theo += "\n(X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
+                        tip_theo += "\nTheo. (X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
                             annote_theo[1], annote_theo[2], x, y)
 
                     tip_theo += txtharmonics
@@ -4496,7 +4501,7 @@ class MainCalibrationFrame(wx.Frame):
                         print(finaltxt)
                     self.savedfinaltxt = finaltxt
                 else:
-                    self.sb.SetStatusText("", 0)
+                    self.sb.SetStatusText("",0)
                     tip_theo = ""
                     collisionFound_theo = False
                     self.highlighttheospot = None
