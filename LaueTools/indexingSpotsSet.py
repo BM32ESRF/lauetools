@@ -356,7 +356,7 @@ class spotsset:
         if add_props is None:
             print('raw .cor file with 5 columns')
         else:
-            print('add_props.shape', add_props.shape)
+            print('add_props.shape', add_props[0].shape)
 
         if isinstance(data_theta, (float, int)):
             nb_spots = 1
