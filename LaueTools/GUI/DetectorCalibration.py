@@ -1156,7 +1156,7 @@ class MainCalibrationFrame(wx.Frame):
         self.savedmatrixindex = 0
 
         # for fitting procedure  initial model (pairs of simul and exp; spots)----
-        self.linkedspots = []
+        self.linkedspots = None
         self.linkExpMiller = []
         self.linkResidues = None
 
@@ -1611,7 +1611,7 @@ class MainCalibrationFrame(wx.Frame):
                     nbcols = 11
             else:
                 nbcols = 10  # ???
-            print('Preparing array to wrtie in .dat with shape: ', (len(data_theta), nbcols))
+            print('Preparing array to write in .dat with shape: ', (len(data_theta), nbcols))
             Data_array = np.zeros((len(data_theta), nbcols))
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
@@ -2089,19 +2089,36 @@ class MainCalibrationFrame(wx.Frame):
         dlg.Destroy()
 
         listmaxlevelstrain = []
+        listresidues = []
         for ii in range(NbTrials):
             
-            maxstrain = self.OnAssessResidualStrain(event,displayresults=False, verbose=0, subsetsize=Nspots)
+            maxstrain, residues = self.OnAssessResidualStrain(event,displayresults=False, verbose=0, subsetsize=Nspots)
             print(f' trial {ii+1}/{NbTrials} maxstrain = ', maxstrain)
             listmaxlevelstrain.append(maxstrain)
+            listresidues.append(residues)
+ 
+        print('STATISTICS On Residual STRAIN  (10-3 units)')
+        ar_maxlevelstrain = np.array(listmaxlevelstrain)
+        ar_listresidues = np.array(listresidues)
 
-        print('listmaxlevelstrain', listmaxlevelstrain)
+        # print('listmaxlevelstrain', ar_maxlevelstrain)
+        # print('listresidues', listresidues)
+        print('STRAIN')
+        print('Mean value', np.mean(ar_maxlevelstrain))
+        print('Min and Max Value', np.amin(ar_maxlevelstrain), np.amax(ar_maxlevelstrain))
+        print('std', np.std(ar_maxlevelstrain))
+
+        print('RESIDUES')
+        print('Mean value', np.mean(ar_listresidues))
+        print('Min and Max Value', np.amin(ar_listresidues), np.amax(ar_listresidues))
+        print('std', np.std(ar_listresidues))
+
     
 
     def OnAssessResidualStrain(self, event, displayresults=True, verbose=1, subsetsize = 0):
         """Single Crystal orientation and lattice parameters refinement (to assess residual strain afetr detector geometry calibration refinement.
         """        
-        if self.linkedspots == []:
+        if self.linkedspots is None:
             wx.MessageBox('You need to create first links between experimental and simulated spots '
                             'with the "link spots" button.',
                             "INFO")
@@ -2115,14 +2132,16 @@ class MainCalibrationFrame(wx.Frame):
             #print("Pairs of spots used", self.linkedspots)
 
         if subsetsize > 0:
-            print("\n\n ***************\nIn OnAssessResidualStrain")
-            print('self.linkedspots', self.linkedspots)
+            if verbose:
+                print("\n\n ***************\nIn OnAssessResidualStrain")
+                print('self.linkedspots', self.linkedspots)
             ar_ind = np.arange(len(self.linkedspots))
             np.random.shuffle(ar_ind)
             randindices = ar_ind[:subsetsize]
             arraycouples = np.take(np.array(self.linkedspots),randindices, axis=0)
-            print('arraycouples', arraycouples)
-            print('***********\n\n')
+            if verbose:
+                print('arraycouples', arraycouples)
+                print('***********\n\n')
             exp_indices = np.array(arraycouples[:, 0], dtype=np.int16)
             nb_pairs = len(exp_indices)
             #sim_indices = np.array(arraycouples[:, 1], dtype=np.int16)
@@ -2201,7 +2220,7 @@ class MainCalibrationFrame(wx.Frame):
                                                                 weights=None,
                                                                 kf_direction=self.kf_direction)
 
-        if 1: #verbose:
+        if verbose:
             print("\nInitial error--------------------------------------\n")
             print('residues', residues)
             print("mean Initial residues", np.mean(residues))
@@ -2289,7 +2308,7 @@ class MainCalibrationFrame(wx.Frame):
                                             nb_pairs,
                                             constantlength="a",displayresults=displayresults)
         
-        return maxlevelstrain
+        return maxlevelstrain, residues
         
     def evaluate_strain_display_results(self,
                                         newUBmat,
@@ -2471,7 +2490,7 @@ class MainCalibrationFrame(wx.Frame):
 
         Single Crystal orientation and detector geometry parameters refinement
         """
-        if self.linkedspots == []:
+        if self.linkedspots is None:
             wx.MessageBox('You need to create first links between experimental and simulated spots '
                             'with the "link spots" button.',
                             "INFO")
