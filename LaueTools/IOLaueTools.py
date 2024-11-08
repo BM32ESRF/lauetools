@@ -557,8 +557,16 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'sCMOS'
                 elif abs(ps-0.0365) <= 0.002:
                     ccdlabel = 'sCMOS_16M'
-                elif abs(ps-0.075) <= 0.002:
+                elif abs(ps-0.075000001) < 0.0000000001:
                     ccdlabel = 'psl_weiwei'
+                elif abs(ps-0.075000002) < 0.0000000001:
+                    ccdlabel = 'EIGER_4MCdTe'
+                elif abs(ps-0.075000003) < 0.0000000001:
+                    ccdlabel = 'EIGER_4MCdTestack'
+                elif abs(ps-0.075000004) < 0.0000000001:
+                    ccdlabel = 'EIGER_1M'
+                elif abs(ps-0.075000005) < 0.0000000001:
+                    ccdlabel = 'EIGER_4M'
                 elif abs(ps-0.031) <= 0.002:
                     ccdlabel = 'VHR_Feb13'
                 elif abs(ps-0.022) <= 0.002:
