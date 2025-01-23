@@ -322,7 +322,7 @@ class ManualIndexFrame(wx.Frame):
         self.matr_ctrl = wx.TextCtrl(self.panel, -1, str(self.MATR))
 
         self.txtnlut = wx.StaticText(self.panel, -1, "n LUT:    ")
-        self.nlut = wx.SpinCtrl(self.panel, -1, "4", min=1, max=7, size=(50, -1))
+        self.nlut = wx.SpinCtrl(self.panel, -1, "4", min=1, max=7)
 
         self.nlut.Bind(wx.EVT_SPINCTRL, self.onNlut)
 
@@ -337,7 +337,7 @@ class ManualIndexFrame(wx.Frame):
         self.findspotchck = wx.CheckBox(self.panel, -1, "Show Spot Index")
         self.findspotchck.SetValue(False)
         self.spotindexspinctrl = wx.SpinCtrl(self.panel, -1, "0", min=0,
-                                    max=len(self.data[0]) - 1, size=(70, -1))
+                                    max=len(self.data[0]) - 1)
         self.findspotchck.Bind(wx.EVT_CHECKBOX, self.locateSpot)
         self.spotindexspinctrl.Bind(wx.EVT_SPINCTRL, self.locateSpot)
 
