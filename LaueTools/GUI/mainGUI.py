@@ -653,7 +653,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
-        if len(self.dict_spotsproperties)>0:
+        if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
@@ -785,7 +785,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_Y"] = self.select_pixY
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
-        if len(self.dict_spotsproperties)>0:
+        if self.dict_spotsproperties not in (None, {}):
             print("\n************\nFANTASTIC: there are additional spots porperties !!\n\n")
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
@@ -887,7 +887,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
 
-        if len(self.dict_spotsproperties)>0:
+        if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
@@ -982,7 +982,7 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["data_gnomonY"] = self.select_gnomony
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
-        if len(self.dict_spotsproperties)>0:
+        if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
@@ -1085,7 +1085,8 @@ class LaueToolsGUImainframe(wx.Frame):
         #         self.indexation_parameters['DataToIndex']['data_gnomonY'] = self.select_gnomony
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
-        if self.dict_spotsproperties is not None:
+        if self.dict_spotsproperties not in (None, {}):
+            #print('self.dict_spotsproperties', self.dict_spotsproperties)
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
