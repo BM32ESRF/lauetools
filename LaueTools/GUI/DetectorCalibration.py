@@ -1626,6 +1626,7 @@ class MainCalibrationFrame(wx.Frame):
                     print('Data_array, alldata shapes',Data_array[:, 4:].shape, alldata[:,6:].shape)
                 Data_array[:, 4:] = alldata[:,6:]
 
+            # write calib_.dat temporary file
             outputprefix = 'calib_'
             IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
                                                         initialfilename=self.filename,
@@ -1649,14 +1650,16 @@ class MainCalibrationFrame(wx.Frame):
         self.data_x, self.data_y = data_x, data_y
 
         # peaksearch spots properties
-        if len(dict_data_spotsproperties['columnsname'])==dict_data_spotsproperties['data_spotsproperties'].shape[1]:
-            self.dict_data_spotsproperties = dict_data_spotsproperties
+        if 'columnsname' in dict_data_spotsproperties:
+            print('nb columns',len(dict_data_spotsproperties['columnsname']))
+            if 'data_spotsproperties' in dict_data_spotsproperties:
+                print('data shape:',  dict_data_spotsproperties['data_spotsproperties'].shape)
+                if len(dict_data_spotsproperties['columnsname'])==dict_data_spotsproperties['data_spotsproperties'].shape[1]:
+                    self.dict_data_spotsproperties = dict_data_spotsproperties
 
             print('')
         else:
-            print('ERROR in dict_data_spotsproperties !! nb columns', len(dict_data_spotsproperties['columnsname']))
-
-            print('data shape:',  dict_data_spotsproperties['data_spotsproperties'].shape)
+            print('dict_data_spotsproperties = ', dict_data_spotsproperties)
 
     def computeGnomonicExpData(self):
         # compute Gnomonic projection
