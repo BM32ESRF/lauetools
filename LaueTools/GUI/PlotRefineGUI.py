@@ -372,6 +372,7 @@ class Plot_RefineFrame(wx.Frame):
         self.highlighttheospot = None  # closest theo. spot from mouse position
         self.highlightexpspot = None # closest exp. spot from mouse position
 
+        self.depthlist = [0]   # list of depths for strain refinement
         self.Bmat = None
         self.Umat = None
         self.Umat2 = None
@@ -502,7 +503,7 @@ class Plot_RefineFrame(wx.Frame):
         self.btnfilterlink.Bind(wx.EVT_BUTTON, self.BuildDataDictAfterLinks)
 
         self.btnrefine = wx.Button(self.panel, -1, "Refine")
-        self.btnrefine.Bind(wx.EVT_BUTTON, self.OnRefine_UB_and_Strain)
+        self.btnrefine.Bind(wx.EVT_BUTTON, self.OnRefine)
 
         self.btnShowResults = wx.Button(self.panel, -1, "Show Results")
         self.btnShowResults.Bind(wx.EVT_BUTTON, self.build_FitResults_Dict)
@@ -689,7 +690,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
 
-        self.sampledepthctrl.SetToolTipString('normal to surface sample depth in micrometre = 10-3 mm)')
+        self.sampledepthctrl.SetToolTipString('normal to surface sample depth in micrometre (= 10-3 mm). If two values are provided (eg. [5, 50], two extreme results of strain (crystal + sample frame) and lattice parameters will be returned')
 
     def _layout(self):
         """ layout
@@ -1607,10 +1608,66 @@ class Plot_RefineFrame(wx.Frame):
         self.plotlinks = self.linkedspots
         self._replot()
 
-    # --- ------------ Fitting functions ----
-    def OnRefine_UB_and_Strain(self, _):
+
+    def OnRefine(self, _):
         """
         Action called by pressing button 'Refine' in plot_RefineFrame.
+        check if single or double refinements according to the depth field value 
+        """
+        import re
+        depthstr = self.sampledepthctrl.GetValue()
+        depthstrn=re.sub(r"[\([{})\]]", "", depthstr)
+
+        if ',' not in depthstrn:
+            depthvalue = float(depthstrn)
+            self.OnRefine_UB_and_Strain(depthvalue=depthvalue)
+        else:
+            depthlist = depthstrn.split(',')
+            liststrains_crystalframe = []
+            liststrains_sampleframe = []
+            listlatticeparameters = []
+            for _depth in depthlist:
+                self.OnRefine_UB_and_Strain(depthvalue=float(_depth))
+                liststrains_crystalframe.append(self.deviatoricstrain)
+                liststrains_sampleframe.append(self.deviatoricstrain_sampleframe)
+                listlatticeparameters.append(self.new_latticeparameters)
+
+
+            print("**********  Multidepth Strain Refinement Statiscal results ***************")
+            ar_devstraincrystal = np.array(liststrains_crystalframe)
+            ar_devstrainsample = np.array(liststrains_sampleframe)
+            ar_latticeparams = np.array(listlatticeparameters)
+            statdevs = []
+            for mat in (ar_devstraincrystal,ar_devstrainsample):
+                matround = np.round(mat*1000, decimals=3)
+                statdevs.append([np.round(np.mean(matround, axis=0),decimals=3), 
+                                      np.amin(matround, axis=0),
+                                      np.amax(matround, axis=0),
+                                      np.round(np.std(matround, axis=0),decimals=3)])
+            roundlat = np.round(ar_latticeparams, decimals=3)
+            statlatticeparams = [np.round(np.mean(roundlat, axis=0), decimals=3), 
+                                      np.amin(roundlat, axis=0),
+                                      np.amax(roundlat, axis=0),
+                                      np.round(np.std(roundlat, axis=0),decimals=3)]
+            
+            print('liststrains_crystalframe',liststrains_crystalframe)
+            print('liststrains_sampleframe',liststrains_sampleframe)
+            print('listlatticeparameters',listlatticeparameters)
+            for devstrainstats, txt in zip(statdevs,['CRYSTAL','SAMPLE']):
+                print(f'***********  STRAIN DEV in {txt} Frame in 10-3 units***********')
+                for k, quantity in enumerate(['mean value','min value','max value', 'std']):
+                    print(quantity)
+                    print(devstrainstats[k])
+            print('*********** LATTICE PARAMETERS STATS  (Angstrom and degrees units) ***********')
+            for k, quantity in enumerate(['mean value','min value','max value', 'std']):
+                    print(quantity)
+                    print(statlatticeparams[k])
+            print("********************************************************")
+
+
+    # --- ------------ Fitting functions ----
+    def OnRefine_UB_and_Strain(self, depthvalue=0):
+        """
         Current selected links will be used for structural model refinement
 
         Note: only strain and orientation simultaneously
@@ -1739,7 +1796,7 @@ class Plot_RefineFrame(wx.Frame):
 
             # change ycen if grain is below the surface (NOT ALONG beam direction (ybeam)):
             # depth is counted positively below surface in microns
-            depth = float(self.sampledepthctrl.GetValue())
+            depth = depthvalue
             depth_along_beam = depth / np.sin(40 * np.pi / 180.)
             delta_ycen = depth_along_beam/1000./self.pixelsize
             allparameters[2] += delta_ycen
