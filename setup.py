@@ -31,13 +31,13 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=['docutils>=0.3',
-                      'numpy>=1.11.3',
-                      'scipy>=0.19.0',
+                      'numpy>=1.0.3',
+                      'scipy>=0.15.0',
                       'matplotlib>=2.0.0',
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.18.0','astropy>=4.0'],  # add fabio libtif ObjectListView2?
+			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0'],  # add fabio libtif ObjectListView2?
 
     include_package_data=True,
 
