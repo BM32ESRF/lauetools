@@ -784,7 +784,8 @@ class MainFrame_peaksearch(wx.Frame):
                                                         dictPeakSearch=dict_param,
                                                         verbose=0,
                                                         writeResultDicts=0,
-                                                        computetime=1)
+                                                        computetime=1,
+                                                        dictcalibparams=None)
         else:
             RMCCD.peaksearch_multiprocessing(fileindexrange, filenameprefix=filenameprefix,
                                                             suffix=suffix,
