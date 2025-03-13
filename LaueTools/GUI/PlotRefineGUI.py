@@ -1612,7 +1612,7 @@ class Plot_RefineFrame(wx.Frame):
     def OnRefine(self, _):
         """
         Action called by pressing button 'Refine' in plot_RefineFrame.
-        check if single or double refinements according to the depth field value 
+        check if single or several refinements according to the depth values list
         """
         import re
         depthstr = self.sampledepthctrl.GetValue()
@@ -1627,6 +1627,7 @@ class Plot_RefineFrame(wx.Frame):
             liststrains_sampleframe = []
             listlatticeparameters = []
             for _depth in depthlist:
+                # refine according to one sample normal depth
                 self.OnRefine_UB_and_Strain(depthvalue=float(_depth))
                 liststrains_crystalframe.append(self.deviatoricstrain)
                 liststrains_sampleframe.append(self.deviatoricstrain_sampleframe)
@@ -1639,16 +1640,16 @@ class Plot_RefineFrame(wx.Frame):
             ar_latticeparams = np.array(listlatticeparameters)
             statdevs = []
             for mat in (ar_devstraincrystal,ar_devstrainsample):
-                matround = np.round(mat*1000, decimals=3)
-                statdevs.append([np.round(np.mean(matround, axis=0),decimals=3), 
+                matround = np.round(mat*1000, decimals=4)
+                statdevs.append([np.round(np.mean(matround, axis=0),decimals=4), 
                                       np.amin(matround, axis=0),
                                       np.amax(matround, axis=0),
-                                      np.round(np.std(matround, axis=0),decimals=3)])
-            roundlat = np.round(ar_latticeparams, decimals=3)
-            statlatticeparams = [np.round(np.mean(roundlat, axis=0), decimals=3), 
+                                      np.round(np.std(matround, axis=0),decimals=4)])
+            roundlat = np.round(ar_latticeparams, decimals=4)
+            statlatticeparams = [np.round(np.mean(roundlat, axis=0), decimals=4), 
                                       np.amin(roundlat, axis=0),
                                       np.amax(roundlat, axis=0),
-                                      np.round(np.std(roundlat, axis=0),decimals=3)]
+                                      np.round(np.std(roundlat, axis=0),decimals=4)]
             
             print('liststrains_crystalframe',liststrains_crystalframe)
             print('liststrains_sampleframe',liststrains_sampleframe)
@@ -1774,6 +1775,8 @@ class Plot_RefineFrame(wx.Frame):
         self.fitresults = False
         self.Tsresults = None
         self.new_latticeparameters = None
+
+        depth = 0 # default normal sample depth 
 
         # ----------------------------------
         #  refinement model
@@ -1951,7 +1954,8 @@ class Plot_RefineFrame(wx.Frame):
                                             self.residues_non_weighted,
                                             nb_pairs,
                                             constantlength=self.constantlength,
-                                            Tsresults=self.Tsresults)
+                                            Tsresults=self.Tsresults,
+                                            depth=depth)
 
 
         # ---------------------------------------------
@@ -2001,7 +2005,8 @@ class Plot_RefineFrame(wx.Frame):
                                         residues_non_weighted,
                                         nb_pairs,
                                         constantlength="a",
-                                        Tsresults=None):
+                                        Tsresults=None,
+                                        depth=0):
         """
         evaluate strain and display fitting results
         :param newUBmat: array, 3x3 orientation matrix UBrefined
@@ -2009,6 +2014,7 @@ class Plot_RefineFrame(wx.Frame):
         :param residues_non_weighted: array or list,  to estimate the mean pixel deviation
         :param nb_pairs: int, nb of pairs used in the refinement
         :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
+        :param depth: int, float, normal to surface sample depth in microns (10-3 mm)
         """
         # compute new lattice parameters  -----
         latticeparams = self.dict_Materials[key_material][1]
@@ -2092,6 +2098,7 @@ class Plot_RefineFrame(wx.Frame):
         txt0 += 'Folder: %s\n'%self.dirname
         txt0 += "Mean Pixel Deviation: %.3f\n" % np.mean(residues_non_weighted)
         txt0 += "Number of refined Laue spots: %d\n" % nb_pairs
+        txt0 += "Normal sample depth (microns): %.1f\n" % depth
         texts_dict["NbspotsResidues"] = txt0
 
         txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
@@ -2746,7 +2753,11 @@ class Plot_RefineFrame(wx.Frame):
             Columns = [indExp, intens, _h, _k, _l, residues]
             columnsname = "#spot_index Intensity h k l pixDev\n"
 
-        datatooutput = np.transpose(np.array(Columns)).round(decimals=6)
+        unsorted_datatooutput = np.transpose(np.array(Columns)).round(decimals=6)
+        # intensity sorting
+        sorted_idx = np.argsort(unsorted_datatooutput[:,1])[::-1]
+
+        datatooutput = np.take(unsorted_datatooutput, sorted_idx, axis=0)
 
         dict_matrices = {}
         dict_matrices["UBmat"] = self.UBmat
@@ -2794,7 +2805,7 @@ class Plot_RefineFrame(wx.Frame):
                             PeakListFilename=self.DataPlot_filename,
                             columnsname=columnsname,
                             dict_matrices=dict_matrices,
-                            modulecaller="LaueToolsGUI.py")
+                            modulecaller="PlotRefineGUI.py")
 
         wx.MessageBox("Fit results saved in %s" % fullpath, "INFO")
 
@@ -3142,14 +3153,27 @@ class Plot_RefineFrame(wx.Frame):
             self.axes.set_ylabel("Y pixel")
 
         nbspotstoindex = len(self.IndexationParameters["DataToIndex"]["current_exp_spot_index_list"])
-
+        # figure and plot title ---------------------------------
         texttitle = "%s %d/%d spots" % (self.File_NAME, len(self.Data_I), nbspotstoindex)
         if self.ImageArray is not None:
             if hasattr(self, "fullpathimagefile"):
                 texttitle += "\nImage: %s" % self.fullpathimagefile
 
+        suptitle = self.dirname
+        if len(suptitle)>30:
+            splitwords =['RAW_DATA','inhouse']
+            for sw in splitwords:
+                if sw in suptitle:
+                    s1,s2 = suptitle.split(sw)
+                    s1sw = os.path.join(s1,sw)
+                    suptitle= '%s\n%s'%(s1sw,s2)
+   
+        self.fig.suptitle(suptitle)
+
         self.axes.set_title(texttitle)
         self.axes.grid(True)
+
+
 
         # restore the zoom limits(unless they're for an empty plot)
         if self.xlim != (0.0, 1.0) or self.ylim != (0.0, 1.0):
