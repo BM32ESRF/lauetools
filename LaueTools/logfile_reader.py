@@ -1057,7 +1057,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
 
         for elem in res[0]:
             #print('elem',elem)
-            kkey,scanindex,jj,ddate,longcommand, localhdf5file = elem
+            kkey,scanindex,jj,sdate,edate, longcommand, localhdf5file = elem
             fullcommand = longcommand.split(kkey)[-1].strip()
             scantype = fullcommand.split(' ')[0]
             #print(scantype)
@@ -1078,7 +1078,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
             imagefolder = os.path.join(os.path.split(hdf5folder)[1].rsplit('/',1)[0], 'scan%04d'%int(scanindex))
             #imagefolder = localhdf5file
 
-            datasetdata = [ddate,kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder]
+            datasetdata = [sdate,edate, kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder]
 
             i_scan = '%s.%s'%(scanindex, jj)
             if scantype in ('ct'):
@@ -1117,10 +1117,15 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
             #maybe [()] is enough without decoding
             scancommand = f['%s.%s'%(idx,postfix)]['title'].value
             startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
+            enddate = f['%s.%s'%(idx,postfix)]['end_time'].value
         else:
             #print('%s.%s'%(idx,postfix))
             scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
             startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
+            try:
+                enddate = f['%s.%s'%(idx,postfix)]['end_time'][()].decode('UTF-8')
+            except:
+                enddate = startdate
         props = None
 
         if verbose:
@@ -1130,22 +1135,22 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
         if onlymesh:
             if 'amesh' in scancommand:
                 keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif onlywirescan:
             if 'zf' in scancommand or 'yf' in scancommand:
                 keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif collectallscans:
             if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand:
                 keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif collectall:
             if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand or 'ct' in scancommand:
                 keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
     return props, isselected
 
