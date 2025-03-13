@@ -1129,6 +1129,9 @@ class MosaicAndMonitor(wx.Panel):
 
         self.comboROI = wx.ComboBox(self, -1, "None", size=(-1, 40),
                                         choices=list(self.dict_ROI.keys()))
+        
+        self.transposemap = wx.CheckBox(self, -1, "Transpose Map")
+        self.transposemap.SetValue(False)
 
         self.comboROI.Bind(wx.EVT_COMBOBOX, self.OnChangeROI)
 
@@ -1142,6 +1145,7 @@ class MosaicAndMonitor(wx.Panel):
         self.meancounter = wx.CheckBox(self, -1, "Mean Value")
         self.maxcounter = wx.CheckBox(self, -1, "Max Value")
         self.peaktopeakcounter = wx.CheckBox(self, -1, "Peak to Peak")
+        self.xycentroidcounter = wx.CheckBox(self, -1, "XY Centroid")
         self.xyposcounter = wx.CheckBox(self, -1, "Peak Position")  # from fit with 2D gaussuan
         self.amplitudecounter = wx.CheckBox(self, -1, "Peak Amplitude") # from fit with 2D gaussuan
         self.relativexyposcounter = wx.CheckBox(self, -1, "Peak Displacement") # from fit with 2D gaussuan
@@ -1180,11 +1184,12 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer.Add(self.meancounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.maxcounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.peaktopeakcounter, 0, wx.ALL, 2)
+        self.NavigBoxsizer.Add(self.xycentroidcounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.xyposcounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.amplitudecounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.relativexyposcounter, 0, wx.ALL, 2)
         self.NavigBoxsizer.Add(self.peaksizecounter, 0, wx.ALL, 2)
-        self.NavigBoxsizer.Add(wx.StaticText(self, -1, ""), 0, wx.ALL, 2)
+        
 
         NavigBoxsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         NavigBoxsizer1.Add(self.normalizechck, 0, wx.ALL, 2)
@@ -1214,6 +1219,7 @@ class MosaicAndMonitor(wx.Panel):
         ROIBoxsizer.Add(self.predefinedROIradiobtn, 0, wx.ALL, 5)
         ROIBoxsizer.Add(self.twtROI, 0, wx.ALL, 5)
         ROIBoxsizer.Add(self.comboROI, 0, wx.ALL, 5)
+        ROIBoxsizer.Add(self.transposemap, 0, wx.ALL, 5)
 
         self.NavigBoxsizer3 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer3.Add(self.txtnbimagesperline, 0, wx.ALL, 5)
@@ -1302,6 +1308,8 @@ class MosaicAndMonitor(wx.Panel):
         self.xyposcounter.SetToolTipString("Sample Map of 2D gaussian refined X Y peak position"
         "distribution of the ROI")
 
+        self.xycentroidcounter.SetToolTipString("Sample Map of centroid X, Y positions (no peak fit)")
+
         self.amplitudecounter.SetToolTipString("Sample Map of Peak Amplitude obtained from 2D gaussian peak profile fittings")
         self.relativexyposcounter.SetToolTipString("Sample Map of Peak relative position from 2D gaussian peak profile fittings")
         self.peaksizecounter.SetToolTipString("Sample Map of Peak Size from 2D gaussian peak profile fittings")
@@ -1335,15 +1343,17 @@ class MosaicAndMonitor(wx.Panel):
                         1: "mean",
                         2: "max",
                         3: "ptp",
-                        4: "Position XY",
-                        5: "Amplitude",
-                        6: "Displacement",
-                        7: "Shape"}
+                        4: "Position Centroid",
+                        5: "Position XY",
+                        6: "Amplitude",
+                        7: "Displacement",
+                        8: "Shape"}
 
         list_chckcounters = [self.mosaiccounter,
                             self.meancounter,
                             self.maxcounter,
                             self.peaktopeakcounter,
+                            self.xycentroidcounter,
                             self.xyposcounter,
                             self.amplitudecounter,
                             self.relativexyposcounter,
@@ -1662,6 +1672,7 @@ class ROISelection(wx.Panel):
                             self.meancounter,
                             self.maxcounter,
                             self.peaktopeakcounter,
+                            self.xycentroidcounter,
                             self.xyposcounter,
                             self.amplitudecounter,
                             self.relativexyposcounter,
@@ -4515,6 +4526,8 @@ class MainPeakSearchFrame(wx.Frame):
         if self.Monitor.normalizechck.GetValue():
             dict_param["NormalizeWithMonitor"] = True
         dict_param["monitoroffset"] = float(self.Monitor.monitoroffsetctrl.GetValue())
+        dict_param["transposeMap"] = self.Monitor.transposemap.GetValue()
+        
 
         # for fitting peak over several images
         guessed_peaksize = float(self.fitparampanel.peaksizectrl.GetValue())
