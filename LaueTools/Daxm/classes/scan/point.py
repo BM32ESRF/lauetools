@@ -297,7 +297,7 @@ class StaticPointScan(object):
         self.print_msg("- Loading geometry parameters...")
 
         if isinstance(self.det_calib, str):
-            params, _ = rwa.readfile_det(self.det_calib, nbCCDparameters=6, verbose=False)
+            params, _ = rwa.readfile_det(self.det_calib, nbCCDparameters=6, verbose=0)
         else:
             params = self.det_calib
         self.detector_params = {'distance': params[0],
