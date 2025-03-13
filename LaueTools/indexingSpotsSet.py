@@ -281,6 +281,7 @@ class spotsset:
         initialize spots indexation dictionary from exp_data
 
         set self.indexed_spots_dict and self.dict_props_name
+        set also self.fulldataspots (array of all data spots props), self.fulldatacolnames (corresponding props name)
 
         :param exp_data: array of 5 elements tth, chi, Intensity, posX, posY
 
@@ -290,7 +291,7 @@ class spotsset:
         .. note:: tth, chi are the twotheta and chi scattering angles.
             They must correspond to posX and poxY (pixel position on detector) through calibration
         """
-        self.indexed_spots_dict, self.dict_props_name = initIndexationDict(exp_data, add_props)
+        self.indexed_spots_dict, self.dict_props_name, self.fulldataspots, self.fulldatacolnames = initIndexationDict(exp_data, add_props)
 
     def purgedata(self, twicethetaChi_to_remove, dist_tolerance=0.2):
         """
@@ -299,11 +300,11 @@ class spotsset:
 
         twicethetaChi_to_remove : array of two elements [tth, chi]
 
-        .. warning:: Not used yet! and does not handle additional spots properties
+        .. warning:: used only in scripts_indexing.py! It does not handle additional spots properties
         """
         exp_data = self.getSpotsallData()[:, 1:]
         print("Before purge len(exp_data)", exp_data.shape)
-        self.indexed_spots_dict, self.dict_props_name = purgeSpotsinDict(exp_data.T,
+        self.indexed_spots_dict, self.dict_props_name, _, _ = purgeSpotsinDict(exp_data.T,
                                                                     twicethetaChi_to_remove,
                                                                     dist_tolerance=dist_tolerance)
         # update the nb of spots
@@ -558,8 +559,8 @@ class spotsset:
 
         :return: array   (nb spots, nb properties)
         """
-        c = -1 # index column flag isindexed 1, otherwise 0
-        cg = -2 # index column flag isindexed 1, otherwise 0
+        c = -1 # index column for flag isindexed 1, otherwise 0
+        cg = -2 # index column for grain index (int)
         data = []
         for key_spot in sorted(self.indexed_spots_dict.keys()):
             # flag=1 implies spot has been indexed
@@ -1322,7 +1323,7 @@ class spotsset:
                 # update matrix dictionary
                 MatchRate, _, _ = self.AssignHKL(UB, grain_index, AngleTol=AngleTol_0,
                                                             use_spots_in_currentselection=True,
-                                                            verbose=verbose+1)
+                                                            verbose=verbose-1)
                 if verbose+5>0:
                     print("before refinement MatchRate", MatchRate)
                     print('MATCHINGRATE_FOR_PREVIOUSRESULTS', MATCHINGRATE_FOR_PREVIOUSRESULTS)
@@ -1604,8 +1605,8 @@ class spotsset:
                                 print("Find a grain already indexed in previous image")
 
                         if checkSigma3:
-                            print("--------- Checking Twins sigma3 --------------------")
-                            print("--------- Final spots hkl and grain assignation-----")
+                            print("--------------- Checking Twins sigma3 --------------")
+                            print("--------- Final spots hkl and grain assignation ----")
                             # this grain is considered now as indexed
                             mothergrain_matrix = self.dict_grain_matrix[grain_index]
 
@@ -2890,7 +2891,7 @@ class spotsset:
         write a .fit file: = .cor file + h,k,l, energy grainindex...
         list of spots belonging to a single grain
 
-        :param corfilename: filename to deduce the output filename
+        :param corfilename: filename to deduce the prefix and set the output filename
 
         :param add_grainindex_in_outputfilename: add in filename '_g' and grainindex
 
@@ -2926,7 +2927,7 @@ class spotsset:
 
             deviatoricstrain_sampleframe = self.deviatoricstrain_sampleframe
 
-        if addpixdev:
+        if 1: #addpixdev:
             pixeldevs = self.pixelresidues
             abs_spotindex = self.spotindexabs
 
@@ -2955,16 +2956,84 @@ class spotsset:
             nbindexedspots = len(index)
             # grain_index * np.ones(nbindexedspots)
 
-            Columns = [index, intensity, H, K, L,
-                        tth, chi, posX, posY, Energy,
-                        grain_index * np.ones(nbindexedspots),
-                        pixeldevarray]
-        else:
-            Columns = [index, intensity, H, K, L, tth, chi, posX, posY, Energy]
-            nbindexedspots = len(index)
-
+            # Columns = [index, intensity, H, K, L,
+            #             tth, chi, posX, posY, Energy,
+            #             grain_index * np.ones(nbindexedspots),
+            #             pixeldevarray]
+        
         if verbose:
             print("Columns", Columns)
+
+
+        if 1: #fullresults:
+            # theoretical spots properties
+            dictCCD = {}
+            ccdparam = [self.CCDcalibdict[kk] for kk in ['dd', 'xcen','ycen','xbet','xgam']]
+            dictCCD["dim"] = self.framedim
+            dictCCD["CCDparam"] = ccdparam
+            dictCCD["pixelsize"] = self.pixelsize
+            dictCCD["kf_direction"] = self.kf_direction
+
+            import LaueTools.lauecore as LAUE
+                
+            UBmat = self.dict_grain_matrix[grain_index]
+            B0matrix = self.B0matrix
+
+            if nbindexedspots <= 1:
+                print('No worth writing .ftt file')
+                return
+
+            
+            AllSpotsData = LAUE.calcSpots_fromHKLlist(UBmat, B0matrix, np.array([H, K, L]).T,
+                                                                        dictCCD)
+                
+            (_, _, _, Qx, Qy, Qz, Xtheo, Ytheo, twthetheo, chitheo, Energytheo) = AllSpotsData
+
+            Columns = [index, intensity, H, K, L, pixeldevarray, Energytheo, posX, posY, tth, chi,
+                       Xtheo, Ytheo, twthetheo, chitheo, Qx, Qy, Qz]
+
+            columnsname = "#spot_index Intensity h k l pixDev energy(keV) "
+            columnsname += "Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz "
+
+            # fulldatacolnames = ['index','tth','chi','X','Y', 'intensity'] +[added props] + ['H', 'K', 'L', 'Energy','grainindex','isindexed']
+            #self.fulldataspots, self.fulldatacolnames
+            i_intensity = self.fulldatacolnames.index('intensity')
+            i_H = self.fulldatacolnames.index('H')
+            #print("i_intensity",i_intensity)
+            #print("i_H",i_H)
+            int_index= np.array(index, dtype= np.int16)
+            if i_H - i_intensity > 1: # there are some added spots props
+                #print('nb of spots properties', i_H - i_intensity)
+                # listkeys_spotsproperties =['peak_Itot', 'peak_fwaxmaj', 'peak_fwaxmin', 'peak_inclination',
+                #'Xdev', 'Ydev', 'peak_bkg', 'Ipixmax',] sometimes also 'Xfiterr', 'Yfiterr'
+
+                data = self.fulldataspots
+                #print('data.shape',data.shape )
+                
+                for ii in range(i_intensity+1,i_H):
+                    key = self.fulldatacolnames[ii]
+                    if key in ('peak_X','peak_Y','peak_Isub'): # we have already these properties
+                        continue
+                    #print('key spot property', key)
+                    Columns.append(data[:,ii][int_index])
+                    columnsname+='%s '%key
+
+            else:
+                pass
+                # print('\n So Sad !! No additional spots properties to save !!\n')
+
+            Columns.append(grain_index * np.ones(len(index)))
+            columnsname+='grainindex '    
+
+        
+            columnsname += '\n'
+
+        unsorted_datatooutput = np.transpose(np.array(Columns)).round(decimals=6)
+        # intensity sorting
+        sorted_idx = np.argsort(unsorted_datatooutput[:,1])[::-1]
+
+        datatooutput = np.take(unsorted_datatooutput, sorted_idx, axis=0)
+        # ---------------------------------------------------------------------
 
         datatooutput = np.array(Columns).T
         datatooutput = np.round(datatooutput, decimals=7)
@@ -3002,15 +3071,19 @@ class spotsset:
         meanresidues = None
         if addpixdev:
             meanresidues = np.mean(pixeldevs)
-            columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev\n"
-        else:
-            columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy\n"
+
+
+        #     columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev\n"
+        # else:
+        #     columnsname = "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy\n"
 
         #currentfolder = os.path.abspath(os.curdir)
-        IOLT.writefitfile(outputfilename, datatooutput, nbindexedspots,dict_matrices=dict_matrices, meanresidues=meanresidues,
+        IOLT.writefitfile(outputfilename, datatooutput, nbindexedspots,
+                          dict_matrices=dict_matrices,
+                          meanresidues=meanresidues,
                         PeakListFilename=self.filename,
                         columnsname=columnsname,
-                        modulecaller="indexingSpotsSet.py")
+                        modulecaller="IndexingSpotsSet.py")
         print("Fit File  written in %s" % outputfilename)
 
     def writecorFile_unindexedSpots(self, corfilename=None, dirname=None, filename_nbdigits=None,
@@ -3456,7 +3529,7 @@ def writeEmptyFileSummary(filenamepattern, dirname=None):
 
 def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
     """
-    remove undesirable spots in exp_data that listed in
+    remove undesirable spots in exp_data that are listed in
     and initialize spots indexation dictionary from exp_data
 
     twicethetaChi_to_remove tuple of 2 elements: 2theta,chi
@@ -3464,7 +3537,7 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
 
     :return: indexed_spots_dict, dict_props_name
 
-    .. note:: may be used to remove substrate uninteresting peaks from substrate
+    .. note:: may be used to remove uninteresting peaks from substrate
 
     .. warning:: handling additional spots properties is not implemented... (add_props=None)
     """
@@ -3518,7 +3591,10 @@ def initIndexationDict(exp_data, add_props=None):
             dict_props_name[colname] = 6 + k
 
     indexed_spots_dict = {}
-    # dictionary of exp spots
+    # dictionary of exp spots and fulldataspots array
+    fulldataspots = []
+
+    fulldatacolnames = ['index','tth','chi','X','Y', 'intensity']
     for k in range(nb_of_spots):
         spot_props = [k,  # index of experimental spot in .cor file
                         tth[k],
@@ -3537,7 +3613,14 @@ def initIndexationDict(exp_data, add_props=None):
 
         indexed_spots_dict[k] = spot_props
 
-    return indexed_spots_dict, dict_props_name
+        fulldataspots.append(spot_props)
+
+    if add_props is not None:
+        fulldatacolnames += colnames
+
+    fulldatacolnames += ['H', 'K', 'L', 'Energy','grainindex','isindexed']
+
+    return indexed_spots_dict, dict_props_name, np.array(fulldataspots), fulldatacolnames
 
 
 # --- -----------------  ORIENT MATRIX FILTERING
@@ -4709,9 +4792,11 @@ def indexFilesSeries(filepathdat:str, filepathcor:str, filepathout:str,
     nb_cpus = min(nb_cpus, max_nb_cpus)
 
     if nb_cpus > 1:
-        print('using %d cpu(s)'%nb_cpus)
+        
         fileindexdivision = GT.getlist_fileindexrange_multiprocessing(startindex, finalindex, nb_cpus)
-        print('dispatch of fileindex ', fileindexdivision)
+        if verbose>0:
+            print('using %d cpu(s)'%nb_cpus)
+            print('dispatch of fileindex ', fileindexdivision)
 
         saveObject = None
         index_fileseries_3.__defaults__ = (Index_Refine_Parameters_dict,
