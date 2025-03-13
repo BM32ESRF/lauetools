@@ -1395,7 +1395,7 @@ class LaueToolsGUImainframe(wx.Frame):
         datatooutput = np.round(datatooutput, decimals=7)
 
         header = "# Spots Summary of: %s\n" % (self.filename)
-        header += "# File created at %s with indexingSpotsSet.py\n" % (time.asctime())
+        header += "# File created at %s with LaueToolsGUI.py\n" % (time.asctime())
         header += "# Number of spots: %d\n" % nbspots
 
         header += ("#spot_index grain_index 2theta Chi Xexp Yexp intensity h k l Energy\n")
