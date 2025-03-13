@@ -2042,7 +2042,9 @@ def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None
 
     :param pixelsize: CCD pixelsize (in mm) (used if CCDCalibdict is None or if CCDCalibdict['pixelsize'] is missing)
 
-    :param add_props: add all peaks properties to .cor file instead of the 5 columns
+    :param add_props: OBSOLETE with respect to addspotproperties: add all peaks properties to .cor file instead of the 5 columns
+
+    :param addspotproperties: add all peaks properties to .cor file instead of the 5 columns
 
     TODO:  remove add_props
     """
