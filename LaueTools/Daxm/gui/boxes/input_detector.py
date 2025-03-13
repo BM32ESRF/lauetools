@@ -154,7 +154,7 @@ class InputDetector(wx.StaticBoxSizer):
     def SetParams(self, params=None):
 
         if params is None and not self.geo_fs.IsBlank():
-            params, _ = rwa.readfile_det(self.geo_fs.GetValue(), nbCCDparameters=6, verbose=False)
+            params, _ = rwa.readfile_det(self.geo_fs.GetValue(), nbCCDparameters=6, verbose=0)
 
         if params is not None:
             distance, xcen, ycen, xbet, xgam = params[:5]
