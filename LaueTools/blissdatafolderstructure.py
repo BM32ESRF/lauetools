@@ -116,6 +116,20 @@ def setimagefilename(prefix, imageindex, folder=None, suffix='.tif',sizeofzeropa
         return os.path.join(folder,imagefilename)
     else:
         return imagefilename
-
-
+    
+def setimages_subfolder(fullpath, rootfolder='RAW_DATA'):
+    """extract terminal (tail) part from the full path to images starting from a given root folder
+    
+    example: '/data/AAA/BBB/RAW_DATA/sample1/dataset3/scan0025' => 'sample1/dataset3/scan0025'
+    """
+    lf = os.path.abspath(fullpath).split('/')
+    tail_subfolder = fullpath
+    if 'RAW_DATA' in lf:
+        irawdata=lf.index('RAW_DATA')
+        tail_subfolder = ''
+        for gg in lf[irawdata+1:]:
+            tail_subfolder=os.path.join(tail_subfolder,gg)
+        tail_subfolder=os.path.join(tail_subfolder,gg)
+    
+    return tail_subfolder
 
