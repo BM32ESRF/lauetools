@@ -11,10 +11,6 @@ import time
 import sys
 import copy
 
-try:
-    import Image
-except ImportError:
-    print("-- warning. module Image or PIL is not installed but only for command line mosaic builder (mosaic.py)")
 
 try:
     import wx
@@ -997,7 +993,7 @@ class ImshowFrame(wx.Frame):
         self.layout()
         self.setArrayImageIndices()
 
-        print('detailed data')
+        print('\n******  detailed data  ***********')
         print('self.datatype', self.datatype)
         print('self.data.shape', self.data.shape)
         print('self.Imageindices', self.Imageindices)
@@ -2292,7 +2288,7 @@ def myformattime():
 DEFAULT_DICTfittingparameters = {
                 'modelFunction':"gaussian",
                 'positionStart':"max",
-                'peaksizeStart': 0.5,
+                'peaksizeStart': 4,
                 'MinimumPeakAmplitude':25,
                 'reject_negative_baseline':True,
                 'reject_large_PixelDeviation':True,
@@ -2340,8 +2336,6 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
     nbdigits = dict_param["nbdigits"]
     #     startind = int(dict_param['starting_imageindex'])
     #     endind = int(dict_param['final_imageindex'])
-    selected2Darray_imageindex = dict_param["selected2Darray_imageindex"]
-    #     nb_lines, nb_images_per_line = dict_param['nb_lines'], dict_param['nb_images_per_line']
 
     xpic, ypic = dict_param["pixelX_center"], dict_param["pixelY_center"]
     boxsize_col, boxsize_line = (dict_param["pixelboxsize_X"], dict_param["pixelboxsize_Y"])
@@ -2359,22 +2353,28 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
     halfboxsizes = boxsize_col, boxsize_line
 
-    #print("selected2Darray_imageindex in buildMosaic3", selected2Darray_imageindex)
-
+    
+    array2Dimageindices = dict_param["selected2Darray_imageindex"]
+    #print("selected2Darray_imageindex in buildMosaic3", array2Dimageindices)
+    if dict_param['transposeMap']: # fast axis is yech so xech and yech must be swapped
+        selected2Darray_imageindex = array2Dimageindices.T
+    else: # fast axis is xech so nothing to change
+        selected2Darray_imageindex = array2Dimageindices
     selected1Darray_absoluteimageindex = np.ravel(selected2Darray_imageindex)
     tabindices = selected1Darray_absoluteimageindex
     startind, endind = (selected1Darray_absoluteimageindex[0], selected1Darray_absoluteimageindex[-1])
 
     #        nb_image = endind - startind + 1
     datashape = selected2Darray_imageindex.shape
+    print('datashape of image indices : ', datashape)
     if len(datashape) == 1:
-        nb_col = datashape[0]
+        nb_col = datashape[0]   #slow axis dimension
         nb_lines = 1
     else:
         nb_col = datashape[1]
         nb_lines = datashape[0]
 
-    print("nb_lines,nb_col", nb_lines, nb_col)
+    print("nb_lines,nb_col = (fast axis, slow axis)", nb_lines, nb_col) # #fast axis, slow axis dimensions
 
     dict_map_imageindex = {}
     if verbose: print("selected1Darray_absoluteimageindex", selected1Darray_absoluteimageindex)
@@ -2403,8 +2403,14 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
     monitor = np.zeros((nb_lines, nb_col))
 
+    nbtotalimages = len(selected1Darray_absoluteimageindex)
+
     for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
         imageindex = absolute_imageindex
+
+        if map_imageindex % 100 == 0:
+            print('*** >>>>> Collected %d images over %d'%(map_imageindex,nbtotalimages))
+        
         if ccdlabel in ('EIGER_4MCdTestack'): # or other stack images detector
             print('in buildMosaic3')
             print('ccdlabel ', ccdlabel)
@@ -2515,14 +2521,22 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         if verbose > 0 and imageindex % 10 == 1:
             print(filename, "up to", IOimage.setfilename(filename, endind, CCDLabel=ccdlabel))
 
+        
+
         kx, ky = dict_map_imageindex[map_imageindex][2:]
 
         # print("dict_map_imageindex", dict_map_imageindex)
         # print("kx, ky, map_imageindex, imageindex", kx, ky, map_imageindex, imageindex)
 
         mosaic[kx, ky] = np.flipud(datcrop).T  # Y axis origin in upper part
+        #mosaic[kx, ky] = datcrop.T
 
         monitor[kx, ky] = monitor_val
+
+    if 1:#verbose>2:
+        print('\n-------\ndatcrop.shape',datcrop.shape)
+        print('datcrop max pos',np.argmax(datcrop))
+        print('datcrop max ',np.amax(datcrop))
 
     # ----------   end of images scan
 
@@ -2610,7 +2624,6 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         elif counter == "mosaic":  # true mosaic
 
             print("true mosaic of image ROIs")
-            #                 title = '%s indexrange [%06d-%06d]' % (counter, startind, endind)
 
             dat = mosaic.transpose((0, 3, 1, 2))
             dat = dat.reshape((nb_lines * (2 * boxsize_line + 1), nb_col * (2 * boxsize_col + 1)))
@@ -2733,7 +2746,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
             print("type array", type(dataX_2D))
 
             # plot 1D graph  ( X or Y as fct 1D index in data )
-            if plot and counter == "Position XY":
+            if plot and counter in ("Position XY","Position Centroid"):
 
                 plotX = PLOT1D.Plot1DFrame(parent, -1, counter + "Xpos", title + "Xpos",
                                             XYdat_x,
@@ -2758,7 +2771,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                 parent.list_of_windows.append(plotY)
 
             # plot 2D X position
-            if plot and counter == "Position XY":
+            if plot and counter in ("Position XY","Position Centroid"):
                 print("tabindices in plot 2D X", tabindices.shape)
                 print("nb_col,nb_lines", nb_col, nb_lines)
                 plot2DX = ImshowFrame(parent, -1, "image 2D Plot X %s" % counter,
@@ -2781,7 +2794,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                 parent.list_of_windows.append(plot2DX)
 
             # plot 2D Y position
-            if plot and counter == "Position XY":
+            if plot and counter in ("Position XY","Position Centroid"):
                 plot2DY = ImshowFrame(parent, -1, "image 2D Plot Y %s" % counter,
                                         dataY_2D,
                                         Imageindices=tabindices,  # 1D list ?
@@ -3057,7 +3070,7 @@ def FitPeakOnMap(mosaic,
 
     ToTake = set(np.arange(len(CentralPeaks))) - ToR
 
-    print("ToTake", ToTake)
+    #print("ToTake", ToTake)
 
     BoolToTake = False * np.ones(len(CentralPeaks))
     BoolToTake[list(ToTake)] = True
