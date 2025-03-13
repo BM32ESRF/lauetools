@@ -27,6 +27,7 @@ if sys.version_info.major == 3:
     from . import IOimagefile as IOimage
     from . import dict_LaueTools as DictLT
     from . import imageprocessing as ImProc
+    from . import LaueGeometry as LaueGeo
 
 else:
     import ConfigParser as CONF
@@ -614,9 +615,9 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
     return optim_value, Res
 
 
-def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, initialfilename=None):
+def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, initialfilename=None, verbose=0):
     """
-    write (and overwrite) an ASCII file with peaks properties. Cmments in file with extension .dat added
+    write (and overwrite) an ASCII file with peaks properties. Comments in file with extension .dat added
 
     Parameters
     ----------
@@ -637,7 +638,7 @@ def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, i
     """    
     outputfilefullpath = IOLT.writefile_Peaklist(output_filename, tabpeaks,
                                                 1, initialfilename,
-                                                comments,outputfolder)
+                                                comments,outputfolder, verbose=verbose)
 
     return outputfilefullpath
 
@@ -722,7 +723,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                         use_data_corrected=use_data_corrected,
                                         computerrorbars=computerrorbars)
 
-    if verbose:
+    if verbose>0:
         print("fitting time for {} peaks is : {:.4f}".format(len(peaklist), ttt.time() - tstart))
         print("nb of results: ", len(ResFit[0]))
 
@@ -767,7 +768,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     k = 0
     for inf in info:
         if inf["nfev"] > 1550:
-            if verbose:
+            if verbose>1:
                 print("k= {}   too much iteration".format(k))
             to_reject.append(k)
         k += 1
@@ -800,7 +801,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # too large peak compared to given threshold
     to_reject7 = np.where(maxpeaksize >= PeakSizeRange[1])[0]
 
-    if verbose:
+    if verbose>0:
         print("to_reject", type(to_reject))
         print("to_reject ...(len)", len(to_reject))
         print(np.take(peaklist, to_reject, axis=0))
@@ -828,7 +829,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # spot indices to take
     ToTake = set(np.arange(len(peaklist))) - ToR
 
-    if verbose:
+    if verbose>0:
         print("index ToTake", ToTake)
         print("nb indices in ToTake", len(ToTake))
     if len(ToTake) < 1:
@@ -874,11 +875,11 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         print("\n\nIntensity sorted\n\n")
         print(tabIsorted[:10])
         print("X,Y", tabIsorted[:10, :2])
-    if verbose:
+    if verbose>0:
         print("\n{} fitted peak(s)\n".format(len(tabIsorted)))
 
     if purgeDuplicates and len(tabIsorted) > 2:
-        if verbose: print("Removing duplicates from fit")
+        if verbose>0: print("Removing duplicates from fit")
 
         # remove duplicates (close points), the most intense pixel is kept
         # minimum distance fit solutions
@@ -887,7 +888,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         _, index_todelete = GT.purgeClosePoints2(tabIsorted[:, :2], pixeldistance)
 
         tabIsorted = np.delete(tabIsorted, tuple(index_todelete), axis=0)
-        if verbose:
+        if verbose>0:
             print(
                 "\n{} peaks found after removing duplicates minimum intermaxima distance = {})".format(len(tabIsorted), pixeldistance))
 
@@ -1189,7 +1190,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     :param computerrorbars: bool, compute fit parameter error bars 
 
     :return: tuple of 3 elements given by fitoneimage_manypeaks()
-                first one is : peak list sorted by decreasing (integrated intensity - fitted bkg)
+                first one is : peak list sorted by decreasing intensity (= max gaussian intensity - y - fitted bckg)
                 [peak_X,peak_Y,peak_I,peak_fwaxmaj,peak_fwaxmin,peak_inclination,Xdev,Ydev,peak_bkg]
                 + optionally 
                 IpixMax (if computeIpixmax is True)
@@ -1211,7 +1212,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
 
     # user input its own shaped Data array
     if isinstance(Data_for_localMaxima, np.ndarray):
-        if verbose:
+        if verbose>0:
             print("Using 'Data_for_localMaxima' ndarray for finding local maxima")
         Data = Data_for_localMaxima
 
@@ -1230,7 +1231,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 dirname=None,
                                                 verbose=verbose)
         
-        if verbose: print("image from filename {} read!".format(filename))
+        if verbose>0: print("image from filename {} read!".format(filename))
 
         # peak search in a single and particular region of image
         if center is not None:
@@ -1242,23 +1243,23 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         if write_execution_time:
             dtread = ttt.time() - t0
             ttread = ttt.time()
-            if verbose: print("Read Image. Execution time : {:.3f} seconds".format(dtread))
+            if verbose>0: print("Read Image. Execution time : {:.3f} seconds".format(dtread))
 
         if return_histo:
             # from histogram, deduces
             min_intensity = max(np.amin(Data), 1)  # in case of 16 integer
             max_intensity = min(np.amax(Data), Saturation_value)
-            if verbose:
+            if verbose>0:
                 print("min_intensity", min_intensity)
                 print("max_intensity", max_intensity)
             # histo = np.histogram(Data,
             #     bins=np.logspace(np.log10(min_intensity), np.log10(max_intensity), num=30))
 
     if isinstance(Data_for_localMaxima, str):
-        if verbose: print("Using Data_for_localMaxima for local maxima search: --->", Data_for_localMaxima)
+        if verbose>0: print("Using Data_for_localMaxima for local maxima search: --->", Data_for_localMaxima)
         # compute and remove background from this image
         if Data_for_localMaxima == "auto_background":
-            if verbose:
+            if verbose>0:
                 print("computing background from current image ", filename)
             backgroundimage = ImProc.compute_autobackground_image(Data, boxsizefilter=10)
             # basic substraction
@@ -1268,7 +1269,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             if stackimageindex == -1:
                 raise ValueError("Use stacked images as background is not implement")
             path_to_bkgfile = Data_for_localMaxima
-            if verbose: print("Using image file {} as background".format(path_to_bkgfile))
+            if verbose>0: print("Using image file {} as background".format(path_to_bkgfile))
             try:
                 backgroundimage, _, _ = IOimage.readCCDimage(path_to_bkgfile,
                                                                         CCDLabel=CCDLabel)
@@ -1277,17 +1278,17 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
 
             usemask = False
 
-        if verbose: print("Removing background for local maxima search")
+        if verbose>0: print("Removing background for local maxima search")
         Data = ImProc.computefilteredimage(Data, backgroundimage, CCDLabel, usemask=usemask,
                                                             formulaexpression=formulaexpression)
 
-    if verbose: print("Data.shape for local maxima", Data.shape)
+    if verbose>0: print("Data.shape for local maxima", Data.shape)
 
     # --- PRE SELECTION OF HOT PIXELS as STARTING POINTS FOR FITTING ---------
     # first method ---------- "Basic Intensity Threshold"
     if local_maxima_search_method in (0, "0"):
 
-        if verbose: print("Using simple intensity thresholding to detect local maxima (method 1/3)")
+        if verbose>0: print("Using simple intensity thresholding to detect local maxima (method 1/3)")
         res = ImProc.LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold,
                                                     rois=listrois,
                                                     framedim=framedim,
@@ -1307,7 +1308,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     # second method ----------- "Local Maxima in a box by shift array method"
     if local_maxima_search_method in (1, "1"):
         # WARNING! flat top peaks (e.g. saturation) are NOT well detected
-        if verbose: print("Using shift arrays to detect local maxima (method 2/3)")
+        if verbose>0: print("Using shift arrays to detect local maxima (method 2/3)")
         peaklist, Ipixmax = ImProc.LocalMaxima_ShiftArrays(Data,
                                         framedim=framedim,
                                         IntensityThreshold=IntensityThreshold,
@@ -1322,7 +1323,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     # Warning! time consuming method
     if local_maxima_search_method in (2, "2"):
 
-        if verbose: print("Using mexican hat convolution to detect local maxima (method 3/3)")
+        if verbose>0: print("Using mexican hat convolution to detect local maxima (method 3/3)")
 
         peakValConvolve, boxsizeConvolve, central_radiusConvolve = paramsHat
 
@@ -1339,7 +1340,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                         peakposition_definition=peakposition_definition)
 
         if Candidates is None:
-            if verbose: print("No local maxima found, change peak search parameters !!!")
+            if verbose>0: print("No local maxima found, change peak search parameters !!!")
             return None
 
         if return_nb_raw_blobs == 1:
@@ -1358,7 +1359,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         or peaklist is []
         or peaklist is np.array([])
         or (len(peaklist) == 0)):
-        if verbose: print("No local maxima found, change peak search parameters !!!")
+        if verbose>0: print("No local maxima found, change peak search parameters !!!")
         return None
     # pixel origin correction due to ROI croping
     if center is not None:
@@ -1368,7 +1369,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     if write_execution_time:
         dtsearch = ttt.time() - float(ttread)
 
-        if verbose: print("Local maxima search. Execution time : {:.3f} seconds".format(dtsearch))
+        if verbose>0: print("Local maxima search. Execution time : {:.3f} seconds".format(dtsearch))
 
     # removing some duplicates ------------
     if len(peaklist) >= 2:
@@ -1377,7 +1378,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         #         print 'peaklist',in peaklist before purge
 
         if len(peaklist) >= NumberMaxofFits:
-            if verbose:
+            if verbose>0:
                 print("TOO MUCH peaks to handle.")
                 print("(in PeakSearch) It may stuck the computer.")
                 print("Try to reduce the number of Local Maxima or\n reduce "
@@ -1390,7 +1391,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         peaklist = np.array([Xpeaklist, Ypeaklist]).T
         Ipixmax = np.take(Ipixmax, tokeep)
 
-        if verbose: print("Keep {} from {} initial peaks (ready for peak positions and shape fitting)".format(
+        if verbose>0: print("Keep {} from {} initial peaks (ready for peak positions and shape fitting)".format(
                 len(peaklist), nb_peaks_before))
     # -----------------------------------------------
 
@@ -1410,12 +1411,12 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             X, Y = peaklist[:, :2].T
             (peakX, _, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
                                                         dist_tolerance=maxPixelDistanceRejection,
-                                                        verbose=0)
+                                                        verbose=verbose-1)
 
             npeak_before = len(X)
             npeak_after = len(peakX)
 
-            if verbose: print("\n Removed {} (over {}) peaks belonging to the blacklist {}\n".format(
+            if verbose>0: print("\n Removed {} (over {}) peaks belonging to the blacklist {}\n".format(
                     npeak_before - npeak_after,
                     npeak_before,
                     Remove_BlackListedPeaks_fromfile))
@@ -1435,7 +1436,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             peaklist[:, 0] = peaklist[:, 0] + 0.5
             peaklist[:, 1] = framedim[0] - peaklist[:, 1] + 0.5
 
-        if verbose:
+        if verbose>0:
             print("{} local maxima found".format(len(peaklist)))
             print("20 first peaks", peaklist[:20])
 
@@ -1470,7 +1471,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     else:
         raise ValueError("optional fit_peaks_gaussian value is not understood! Must be 0,1 or 2")
 
-    if verbose:
+    if verbose>0:
         print("\n*****************")
         print("{} local maxima found".format(len(peaklist)))
         print("\n Fitting of each local maxima\n")
@@ -1504,7 +1505,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                 MaxIntensity=Saturation_value,
                                 MinIntensity=MinIntensity,
                                 PeakSizeRange=PeakSizeRange,
-                                verbose=verbose,
+                                verbose=verbose-1,
                                 position_definition=position_definition,
                                 NumberMaxofFits=NumberMaxofFits,
                                 ComputeIpixmax=ComputeIpixmax,
@@ -1593,7 +1594,7 @@ def peaksearch_on_Image(filename_in, pspfile, background_flag="no", blacklistpea
         #                                             SaturationLevel=saturationlevel,
         #                                             clipintensities=True)
 
-        if verbose: print("using {} in peaksearch_fileseries".format(formulaexpression))
+        if verbose: print(f"using {formulaexpression} in peaksearch_fileseries")
 
         # for finding local maxima in image from formula
         psdict_Convolve["Data_for_localMaxima"] = fullpath_backgroundimage
@@ -1842,13 +1843,17 @@ def peaksearch_fileseries(fileindexrange,
                             dictPeakSearch=None,
                             verbose=0,
                             writeResultDicts=0,
-                            computetime=0):
+                            computetime=0,
+                            dictcalibparams=None):
     r"""
     peaksearch function to be called for multi or single processing
+
+    :param dictcalibparams: dictionnary with key: CCDCalibPameters with vlaue = list of 5 calibration parameters, key: pixelsize with value= pixelsize (mm).
+    TODO: ?? might need useful keys for .cor file: "CCDLabel", "kf_direction"
     """
     if computetime:
         t0 = ttt.time()
-    print('\n\n ***** Starting peaksearch_fileseries()  *****\n\n')
+    if verbose>0: print('\n\n ***** Starting peaksearch_fileseries()  *****\n\n')
     # peak search Parameters update from .psp file
     if isinstance(dictPeakSearch, dict):
         for key, val in list(dictPeakSearch.items()):
@@ -1929,7 +1934,7 @@ def peaksearch_fileseries(fileindexrange,
             filename_in = filenameprefix_in + str(fileindex).zfill(nbdigits) + suffix
 
         tirets = "-" * 15
-        if verbose: print("\n\n {} PeakSearch on filename {}\n{}\n{}{}{}n\n".format(
+        if verbose>1: print("\n\n {} PeakSearch on filename {}\n{}\n{}{}{}n\n".format(
                 tirets, tirets, filename_in, tirets, tirets, tirets))
 
         if not os.path.exists(filename_in):
@@ -1939,7 +1944,7 @@ def peaksearch_fileseries(fileindexrange,
         # remove a single image (considered as background) to current image
         if BackgroundImageCreated:
 
-            if verbose: print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
+            if verbose>1: print("consider dataimagefile {} as background".format(fullpath_backgroundimage))
             # (dataimage_raw, _, _) = IOimage.readCCDimage(filename_in, CCDLabel=CCDLABEL,
             #                                                                         dirname=None)
 
@@ -1949,7 +1954,7 @@ def peaksearch_fileseries(fileindexrange,
                 raise ValueError('Missing "formulaexpression" to operate on images before '
                                 'peaksearch in peaksearch_fileseries()')
 
-            if verbose: print("using {} in peaksearch_fileseries".format(formulaexpression))
+            if verbose>2: print(f"using {formulaexpression} in peaksearch_fileseries")
 
             # for finding local maxima in image from formula
             PEAKSEARCHDICT_Convolve["Data_for_localMaxima"] = fullpath_backgroundimage
@@ -1990,21 +1995,34 @@ def peaksearch_fileseries(fileindexrange,
             # filename_out = prefix_outputname + encodingdigits % fileindex
             # TODO valid whatever
             filename_out = prefix_outputname + str(fileindex).zfill(nbdigits)
-            IOLT.writefile_Peaklist("{}".format(filename_out),
+            fullpath_datfile = IOLT.writefile_Peaklist(f"{filename_out}",
                                         Isorted,
                                         overwrite=1,
                                         initialfilename=filename_in,
                                         comments=params_comments)
+            
+            if dictcalibparams is not None:# write also .cor file
+                if isinstance(dictcalibparams, dict):
+
+                    datfolder, datfile = os.path.split(fullpath_datfile)
+
+                    LaueGeo.convert2corfile(datfile,
+                                [],  # should be useless and pixelsize argument is also missing...
+                                dirname_in=datfolder,
+                                dirname_out=datfolder,
+                                CCDCalibdict=dictcalibparams,
+                                add_props=True)
+
             if writeResultDicts:                            
                 DictPeaksList[fileindex] = Isorted
 
         progress = int(np.floor(file_ix/nbimages*nbstepsprogress))
-        if progress > progressstep:
+        if verbose>0 and progress > progressstep:
             print('Imageindex: %d, Task Progress : %.2f %%' % (fileindex, file_ix / nbimages * 100))
             progressstep += 1
         file_ix += 1
 
-    print("\n\n\n*******************\n\n\n task of peaksearch COMPLETED!")
+    if verbose>0: print("\n\n\n*******************\n\n\n task of peaksearch COMPLETED!")
     if computetime:
         print('Execution time %.2f sec'%(ttt.time()-t0))
     return DictPeaksList, file_ix, nb_empty_files
@@ -2040,10 +2058,11 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)
 
     if nb_cpus > 1:
-        print('using %d cpu(s)'%nb_cpus)
         fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_cpus)
         nbimages = index_final - index_start + 1
-        print('dispatch of fileindex ', fileindexdivision)
+        if verbose>0:
+            print('using %d cpu(s)'%nb_cpus)
+            print('dispatch of fileindex ', fileindexdivision)
         
         peaksearch_fileseries.__defaults__ = (filenameprefix,
                                             suffix,
@@ -2054,9 +2073,10 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
                                             CCDLABEL,
                                             KF_DIRECTION,
                                             dictPeakSearch,
-                                            verbose,
+                                            verbose-1,
                                             writeResultDicts,
-                                            0) # compute execution time / task
+                                            0,  # compute execution time / task
+                                            None)  # calibdict to write .cor file
 
         pool = multiprocessing.Pool(nb_of_cpu)
         multiple_results = pool.map(peaksearch_fileseries, fileindexdivision)
@@ -2064,19 +2084,21 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
         # DictPeaksList, file_ix, nb_empty_files = multiple_results
 
     t_mp = ttt.time() - t00
-    print("Execution time : %.2f" % t_mp)
+    if verbose>0: print("Execution time : %.2f sec" % t_mp)
 
     if nb_cpus > 1:
         nbtreatedimages = 0
         nbzeropeaksimages = 0
         for mres in multiple_results:
-            print('nb treated files, nb zero peaks file', mres[1], mres[2])
+            if verbose>1:
+                print(f'over {mres[1]} treated files, {mres[2]} have empty list of peaks')
             nbtreatedimages += mres[1]
             nbzeropeaksimages += mres[2]
-        if nbzeropeaksimages != 0:
-            print('total nb of zero peaks file', nbzeropeaksimages)
-        else:
-            print('all %s images contain at least one peak'%nbtreatedimages)
+        if verbose>0:
+            if nbzeropeaksimages != 0:
+                print('total nb of zero peaks file', nbzeropeaksimages)
+            else:
+                print('all %s images contain at least one peak'%nbtreatedimages)
 
         # TODO  see end of indexFilesSeries()  to write a log file or hdf5 file with peaks props and other stas, nb of peaks per file, average nb , min and max number
 
