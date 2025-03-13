@@ -1063,8 +1063,40 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
         WITHINTOLERANCE = False
     else:
         ind_XY1, ind_XY2 = resmin[0], resmin[1]
+
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
+def getPairsbetweenTwoSets(XY1, XY2, dist_tolerance=0.5, samelist=False):
+    """
+    return indices in XY1 and in XY2 of common pts (2D) and
+    a flag is closest distances are below dist_tolerance
+
+    :param XY1: list of 2D elements
+    :param XY2: list of 2D elements
+    :param dist_tolerance: largest distance (in unit of XY1, XY2) to consider two elements close enough
+    :param samelist: boolean, default is False (when XY1 and XY2 are different). True if XY1=XY2 to
+    find close spots in a single list of points
+
+    :return:
+    ind_XY1, ind_XY2: two arrays of indices which connect elementwise one element of XY1 to 1 element of XY2
+    """
+    x1, y1 = np.array(XY1).T
+
+    x2, y2 = np.array(XY2).T
+
+    diffx = x1[:, np.newaxis] - x2
+    diffy = y1[:, np.newaxis] - y2
+
+    _dist = np.hypot(diffx, diffy)
+
+    if samelist:
+        # add big distance in diagonal
+        np.fill_diagonal(_dist, np.amax(_dist)+2*dist_tolerance)
+
+    conddist = _dist <= dist_tolerance
+    in1, in2 = np.where(conddist==True)
+        
+    return in1, in2
 
 def sortclosestpoints(pt0, pts):
     """return pt index in pts sorted by increasing distance from pt0
