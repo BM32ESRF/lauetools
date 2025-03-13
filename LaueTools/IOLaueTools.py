@@ -45,7 +45,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
                                             data_props=None,
                                             rectpix:int=0,  # RECTPIX
                                             dirname_output:str=None,
-                                            verbose:int=0,                                                        dict_data_spotsproperties=None
+                                            verbose:int=0,                                       dict_data_spotsproperties=None
                                             ):
     """
     Write .cor file containing data
@@ -81,15 +81,20 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
     outputfilename = prefixfilename + ".cor"
 
     if dirname_output is None:
-        dirname_output = os.path.abspath(os.curdir)
+        print('in writefile_cor: dirname_output is None so prefixfilename should contain folder', prefixfilename)
+        fullpath = outputfilename
+    else:
+        fullpath = os.path.join(dirname_output, outputfilename)
 
-    if outputfilename in os.listdir(dirname_output) and not overwrite:
-        outputfilename = prefixfilename + "_new" + ".cor"
+    folder, filename  = os.path.split(fullpath)
 
-    with open(os.path.join(dirname_output, outputfilename), "w") as outputfile:
+    if filename in os.listdir(folder) and not overwrite:
+        filename = prefixfilename + "_new" + ".cor"
 
-        if not os.access(dirname_output, os.W_OK):
-            print('Can not write in the folder: %s'%dirname_output)
+    with open(os.path.join(folder, filename), "w") as outputfile:
+
+        if not os.access(folder, os.W_OK):
+            print('Can not write in the folder: %s'%folder)
             print('File .cor is not written !')
             return None
 
@@ -104,7 +109,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
             if 'data_spotsproperties' not in dict_data_spotsproperties:
                 raise KeyError('"data_spotsproperties" key not found in dict_data_spotsproperties :', dict_data_spotsproperties)
 
-            if verbose:
+            if verbose>0:
                 print('\nIn writefile_cor() :')
                 print('total properties in data array of dict_data_spotsproperties',dict_data_spotsproperties['data_spotsproperties'].shape[1])
 
@@ -125,7 +130,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
                     firstline_headercolumnsname += ' %s'%_key
                     format_string += "   %.03f"
                     nb_elem_format_string+=1
-            if verbose:
+            if verbose>0:
                 print('nb of properties to be added',len(list_of_data))
                 print('nb_elem_format_string', nb_elem_format_string)
 
@@ -139,7 +144,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
             nb_elem_format_string+=1
             list_of_data += [data_sat]
         if data_props:
-            print('preparing spots props "list_of_data"')
+            if verbose>0: print('preparing spots props "list_of_data"')
             data_peaks, columnnames = data_props
             for k in range(len(columnnames)):
                 firstline_headercolumnsname += " %s" % columnnames[k]
@@ -155,7 +160,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
         if sortedexit and dict_data_spotsproperties is None:
             # to write in decreasing order of intensity (col intensity =4)
             colindex_intensity = 4
-            if verbose: print("rearranging exp. spots order according to intensity")
+            if verbose>0: print("rearranging exp. spots order according to intensity")
             arraydata = np.array(list_of_data).T
             s_ix = np.argsort(arraydata[:, colindex_intensity])[::-1]
 
@@ -165,7 +170,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
 
         outputfile.write(firstline_headercolumnsname)
 
-        if verbose:
+        if verbose>0:
             print('nbspots', nbspots)
             print('len(list_of_data)', len(list_of_data))
             print('nb_elem_format_string', nb_elem_format_string)
@@ -185,10 +190,10 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
 
         if initialfilename:
             outputfile.write("\n# From: %s" % initialfilename)
-            outputfile.write("\n# Output Folder: %s" % dirname_output)
+            outputfile.write("\n# Output Folder: %s" % folder)
 
         # metadata on calibration detector parameters and nature
-        if verbose:
+        if verbose>0:
             print(' param   in writefile_cor() for prefixfilename %s'%prefixfilename, param)
         if param is not None:
             outputfile.write("\n# Calibration parameters")
@@ -206,7 +211,7 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
                     raise ValueError("5 or 6 calibration parameters are needed!")
             # param is a dict : CCDCalibdict
             elif isinstance(param, (dict,)):
-                if verbose:
+                if verbose>1:
                     print("param is a dict!")
                 for key in CCD_CALIBRATION_PARAMETERS:
                     # print('key in CCD_CALIBRATION_PARAMETERS', key)
@@ -218,9 +223,9 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
             outputfile.write("\n# Comments")
             for line in comments:
                 outputfile.write("\n# %s" % line)
-    if verbose:
+    if verbose>0:
         print('Writing .cor file in ',outputfilename)
-        print('folder:', dirname_output)
+        print('folder:', folder)
     
     return outputfilename
 
@@ -469,7 +474,7 @@ def getdetectordiameter_from_corfile(filename: str, defautdiameter:float=165):
     return diam
 
 
-def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
+def readfile_det(filename_det, nbCCDparameters=5, verbose=0):
     """
     read .det file and return calibration parameters and orientation matrix used
     """
@@ -482,13 +487,13 @@ def readfile_det(filename_det, nbCCDparameters=5, verbose=True):
                 i = i + 1
                 if i == 1:
                     calib = np.array(line.split(",")[:nbCCDparameters], dtype=float)
-                    if verbose:
+                    if verbose>0:
                         print("calib = ", calib)
                 if i == 6:
                     pline = line.replace("[", "").replace("]", "").split(",")
                     mat_line = np.array(pline, dtype=float)
-                    if verbose:
-                        print("matrix = ", mat_line.round(decimals=6))
+                    if verbose>0:
+                        print("UB matrix (calibration step)= \n", mat_line.round(decimals=6))
         finally:
             pass
 
@@ -687,9 +692,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     TODO: simplify to implement larger number of spot properties
     """
-    print('\n In writefile_Peaklist(): ')
+    if verbose>0: print('\n In writefile_Peaklist(): ')
     if Data_array is None:
-        if verbose:
+        if verbose>0:
             print("No data peak to write")
         return
     
@@ -702,9 +707,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         #print('Data_array.shape', Data_array.shape)
         if Data_array.shape[0] == 1:
             Data_array = Data_array[0]
-
-    print('Data_array.shape', Data_array.shape)
-    print('Found in writefile_Peaklist() Data_array cotresponding to nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
+    if verbose>0:
+        print('Data_array.shape', Data_array.shape)
+        print('Found in writefile_Peaklist() Data_array cotresponding to nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
     # print('Data_array[0]',Data_array[0])
 
     if dirname is None:
@@ -752,7 +757,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
         if nbcolumns < 12:
             if nbpeaks == 1:
-                if verbose:
+                if verbose>1:
                     print("nbcolumns", nbcolumns)
 
                 outputfile.write(
@@ -792,7 +797,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
         elif nbcolumns in (12, 13):
             if nbpeaks == 1:
-                if verbose:
+                if verbose>1:
                     print("nbcolumns", nbcolumns)
 
                 outputfile.write(
@@ -844,7 +849,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         if comments:
             outputfile.write("\n# " + comments)
 
-    if verbose:
+    if verbose>0:
         print("table of %d peak(s) with %d columns has been written in \n%s"
             % (nbpeaks, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
 
@@ -1011,13 +1016,17 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
                 nbdatarows = lineindex-1
                 commentfound = True
             elif _line.startswith('# Comments: nb of peaks'):
-                nbpeaks = int(_line.split('peaks')[-1])
+                nbdatarows = int(_line.split('peaks')[-1])
             elif _line.startswith('# Remove_BlackListedPeaks_fromfile'):
                 commentfound = True
 
             lineindex += 1
 
-    data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
+    if nbdatarows <= 2:  # to fit 1.23 numpy version
+        data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS)
+    else:
+        data_peak = np.loadtxt(filename_in, skiprows=SKIPROWS, max_rows=nbdatarows)
+
     if len(data_peak.shape) == 1:
         foundNpeaks = 1
     else:
@@ -1032,13 +1041,13 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
         return data_peak
 
 
-def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
+def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
                                             dict_matrices=None,
-                                            meanresidues=None,
+                                            meanresidues:float=None,
                                             PeakListFilename=None,
-                                            columnsname=None,
-                                            modulecaller=None,
-                                            refinementtype="Strain and Orientation"):
+                                            columnsname:str=None,
+                                            modulecaller:str=None,
+                                            refinementtype:str="Strain and Orientation"):
     """
     write a .fit file
     
@@ -1051,6 +1060,8 @@ def writefitfile(outputfilename, datatooutput, nb_of_indexedSpots,
         modulecallerstr = " with %s" % modulecaller
     header += "File created at %s%s\n" % (time.asctime(), modulecallerstr)
     header += "Number of indexed spots: %d\n" % nb_of_indexedSpots
+
+    print('header', header)
 
     if "Element" in dict_matrices:
         header += "Element\n"
