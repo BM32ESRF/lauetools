@@ -1,5 +1,7 @@
 from header import *
 
+import numpy as np
+
 scan_file = os.path.join(analysis_dir, prefix + "_calib.scan")
 calib_file = prefix + ".calib"
 
