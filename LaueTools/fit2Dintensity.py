@@ -18,12 +18,11 @@ if sys.version_info.major == 3:
 else:
     import generaltools as GT
 
-try:
+try:  # cython library
     if sys.version_info.major == 3:
         from . import gaussian2D
     else:
         import gaussian2D
-
 
     USE_CYTHON = True
 except ImportError:
@@ -470,6 +469,7 @@ def create2Dgaussiandata():
 
 
 if __name__ == "__main__":
+    import LaueTools.IOimagefile as IOimage
 
     if 0:
         # Create the gaussian data
