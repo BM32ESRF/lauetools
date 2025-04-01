@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Class to replot backuped 2D map
+
+IN DEV...
+
+this class belongs to the open-source LaueTools project
+JS micha March 2025
+"""
+
 import os
 import sys
 import time
@@ -35,8 +45,12 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 
 from LaueTools.GUI.mosaic import MyCustomToolbar 
 import LaueTools.generaltools as GT
+import LaueTools.IOimagefile as IOimage
+from .. import MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
+
+from libtiff import TIFF #, libtiff_ctypes
 
 
 class TreePanel(wx.Panel):
