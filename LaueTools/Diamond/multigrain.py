@@ -1993,7 +1993,8 @@ def test_index_refine(filedat, paramdetector_top, proposed_matrix=None,
                                               MatchingRate_Angle_Tol=fine_tolangle,
                                               verbose=0,
                                               detectorparameters=detectorparameters,
-                                              LUTfraction=1/2.) # for top reflection geometry
+                                              LUTfraction=1/2., # for top reflection geometry
+                                              useparallelcomputing=True) 
 
             print("RES_onespot", RES_onespot)
             print(shape(RES_onespot))
