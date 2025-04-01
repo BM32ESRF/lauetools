@@ -1,10 +1,14 @@
 
 from header import *
 
+import matplotlib.pyplot as mplp
+
 print('path_to_lauetools', path_to_lauetools)
 
-calib_file = os.path.join(analysis_dir, prefix + "_calib.scan")  # for batch analysis
- 
+# for batch analysis of several daxm scans 
+# file use to calibrate and keep wire trajectories parameters and daxm scan data location
+calib_file = os.path.join(analysis_dir, prefix + "_calib.scan")  
+
 calib_file = os.path.join(analysis_dir, 'ech13_daxm_0_LT3.scan')
 
 print('calib_file',calib_file)
@@ -26,7 +30,7 @@ calib.run(var=['h', 'p0', 'axis', 'dm'])
 
 calib.save_wires(prefix+"_fast", directory=calib_dir)
 
-calib.log_plot()
+#calib.log_plot()
 
 mplp.show()
 
@@ -39,7 +43,7 @@ calib.run(var=['h', 'p0', 'axis', 'Re', 'u2', 'dm'])
 
 calib.save_wires(prefix+"_test", directory=calib_dir)
 
-calib.log_plot()
+#calib.log_plot()
 
 mplp.show()
 
