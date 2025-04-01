@@ -53,7 +53,7 @@ class PanelDataFigure(wx.Panel):
         self._img_ylims = []
 
         # img colormap and colorscale
-        self._img_colormap = "CMRmap"
+        self._img_colormap = "gray" #"CMRmap"
         self._img_scale = "linear"
         self._img_Imin = 0
         self._img_Iopt = 65535
