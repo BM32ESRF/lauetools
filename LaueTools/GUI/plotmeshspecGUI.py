@@ -221,7 +221,13 @@ class TreePanel(wx.Panel):
             self.SelChangedHdf5(event, item=None)
 
     def SelChangedHdf5(self, event, item=None):
-        """ read item for HDF5 tree    """
+        """ read item from HDF5 tree
+
+        call self.frameparent.ReadScan_SpecFile()
+        and set self.frameparent.scan_index_mesh 
+        
+        For now only single selection is implemented...
+        """
         #print('\n\n SelChangeHdf5')
         if item is None:
             if event != 1:
@@ -234,7 +240,7 @@ class TreePanel(wx.Panel):
         print("item selected: ", selected_item)
         #print("selected_item ", dir(item))
         
-        # multipe selection with ascan's  NOT YET WORKING....
+        # multipe selection with ascan's  NOT YET WORKING !!! ....
         if self.multipleselectionOn and self.scantype == 'ASCAN': #self.keypressed == 's':
 
             if self.set_selected_indices is None:
@@ -1338,7 +1344,7 @@ class MainFrame(wx.Frame):
         posmotorsinfo: 2D array of motors positions  x, y
         motor1, motor2: str names of motors   (x or fast motor, y or slow motor)
 
-        if imshowmode is Falsze (scattermode): listscanindex must  be provided with list of scan
+        if imshowmode is False (scattermode): listscanindex must  be provided with list of scan
         index along y axis and also obviously data_z_values = list of z values and   posmotorsinfo list of x values"""
         #         self.plot.fig.clear()
 
