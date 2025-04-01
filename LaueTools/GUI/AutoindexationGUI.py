@@ -210,8 +210,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.filterMatrix = wx.CheckBox(self, -1,
                                         "Remove equivalent Matrices (cubic symmetry)")
         self.filterMatrix.SetValue(True)
-        self.verbose = wx.CheckBox(self, -1, "Print details")
-        self.verbose.SetValue(False)
+        self.verbosetxt = wx.StaticText(self, -1, "verbose level")
+        self.verboselevel = wx.SpinCtrl(self, -1, "0",(60, -1), min=0, max=10)
+        
 
         self.showplotBox = wx.CheckBox(self, -1, "Plot Best result")
         self.showplotBox.SetValue(False)
@@ -280,8 +281,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         h7box.Add(self.MNMS, 0, wx.EXPAND|wx.ALL, 10)
 
         h8box = wx.BoxSizer(wx.HORIZONTAL)
-        h8box.Add(self.filterMatrix, 0, wx.EXPAND, 10)
-        h8box.Add(self.verbose, 0, wx.EXPAND, 10)
+        h8box.Add(self.filterMatrix, 0, wx.EXPAND|wx.ALL, 10)
+        h8box.Add(self.verbosetxt, 0, wx.EXPAND|wx.ALL, 10)
+        h8box.Add(self.verboselevel, 0, wx.EXPAND|wx.ALL, 10)
 
         h9box = wx.BoxSizer(wx.HORIZONTAL)
         h9box.Add(spcftxt, 0, wx.EXPAND, 10)
@@ -342,7 +344,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         luttxt.SetToolTipString(luttip)
         self.nLUT.SetToolTipString(luttip)
 
-        tsstip = "If checked, set of spot index to compute all mutual angles between spots of setA and setB."
+        tsstip = "If checked, set of spot index to compute all mutual angles between spots of setA and setB. CAUTION! Largest indices of A and B must fullfil max(A)<max(B)"
         rsstxt.SetToolTipString(tsstip)
         self.spotlistB.SetToolTipString(tsstip)
 
@@ -350,7 +352,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         mssstxt.SetToolTipString(mssstip)
         self.nbspotmaxformatching.SetToolTipString(mssstip)
 
-        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). All mutual angles between spots of setA will be considered for recognition. If setB is checked, all mutual angles between spots of setA and spots of setB will be calculated and compared to angles in reference LUT for recognition.\n'
+        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). All mutual angles between spots of setA will be considered for recognition. If setB is checked, all mutual angles between spots of setA and spots of setB will be calculated and compared to angles in reference LUT for recognition. CAUTION! Largest indices of A and B must fullfil max(A)<max(B)'
         # cstip += 'List of spots must written in with bracket (e.g. [0,1,2,5,8]). Central spots index must be strictly lower to nb of spots of the "recognition set".'
         cstxt.SetToolTipString(cstip)
         self.spotlistA.SetToolTipString(cstip)
@@ -377,7 +379,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.sethklchck.SetToolTipString(sethkltip)
         self.sethklcentral.SetToolTipString(sethkltip)
 
-        self.verbose.SetToolTipString("Display details for long indexation procedure")
+        self.verboselevel.SetToolTipString("verbose level for details")
 
         self.applyrulesLUT.SetToolTipString("Apply systematic lattice extinction Rules "
             "when calculating angles LUT from reciprocal directions. "
@@ -684,39 +686,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
 
-        #         import longtask as LTask
-        #
-        #         taskboard = LTask.MainFrame(None, -1, INDEX.getOrientMatrices,
-        #                                        [spot_index_central,
-        #                                     energy_max,
-        #                                     Tabledistance[:nbmax_probed, :nbmax_probed],
-        #                                     self.select_theta, self.select_chi],
-        #                                     (n,
-        #                                     ResolutionAngstrom,
-        #                                     B,
-        #                                     restrictLUT_cubicSymmetry,
-        #                                     None,
-        #                                     rough_tolangle,
-        #                                     fine_tolangle,
-        #                                     Minimum_MatchesNb,
-        #                                     self.key_material,
-        #                                     0,
-        #                                     3,
-        #                                     0,
-        #                                     None,  # addmatrix
-        #                                     0,  # verbose
-        #                                     detectorparameters,
-        #                                     set_central_spots_hkl,
-        #                                     verbosedetails,
-        #                                     None))  # actually will be overwritten by self of MainFrame
-        #
-        #         taskboard.Show(True)
-        #
-        #         return
+        verboselevel = int(self.verboselevel.GetValue())
 
-        # autoindexation core procedure
-        # print("self.IndexationParameters['dict_Materials']",self.IndexationParameters['dict_Materials']
-        excludespotspairs = [[0, 0]]
+       
         print('spotssettype', spotssettype)
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
@@ -735,17 +707,18 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                     Minimum_Nb_Matches=Minimum_MatchesNb,
                                     key_material=self.key_material,
                                     plot=0,
-                                    verbose=0,
+                                    verbose=verboselevel-1,
                                     detectorparameters=detectorparameters,
                                     addMatrix=None,  # To add a priori good candidates...
                                     set_central_spots_hkl=set_central_spots_hkl,
-                                    verbosedetails=1,  # verbosedetails,
+                                    verbosedetails=verboselevel,  # verbosedetails,
                                     gauge=self.gauge,
                                     dictmaterials=self.IndexationParameters['dict_Materials'],
                                     MaxRadiusHKL=False,#True could be OK for this workflow
                                     LUT_with_rules=LUT_with_rules,
-                                    excludespotspairs=excludespotspairs,
-                                    LUTfraction=LUTfraction)
+                                    excludespotspairs=None,
+                                    LUTfraction=LUTfraction,
+                                    useparallelcomputing=True)
 
         elif spotssettype in ('listsetA', 'listsetAB', ):
             # and spotsB is checked
@@ -759,7 +732,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 set_central_spots_hkl,
                                                 Minimum_MatchesNb,
                                                 LUT_with_rules,
-                                                excludespotspairs,
+                                                None,
                                                 LUTfraction)
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
@@ -768,7 +741,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                 set_hkl_1=set_central_spots_hkl,
                                                 minimumNbMatches=Minimum_MatchesNb,
                                                 LUT_with_rules=LUT_with_rules,
-                                                excludespotspairs=excludespotspairs,
+                                                excludespotspairs=None,
                                                 LUTfraction=LUTfraction)
 
         if len(res[0]) > 0:
@@ -826,10 +799,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         print("spot_index_central", spot_index_central)
 
         if nb_solutions:
-            print("%d matrice(s) found" % nb_solutions)
-            print("self.bestmatrices")
-            print(self.bestmatrices)
-            print("\nEach Matrix is stored in 'MatIndex_#' for further simulation")
+            if verboselevel>0:
+                print("%d matrice(s) found" % nb_solutions)
+                print("self.bestmatrices")
+                print(self.bestmatrices)
+                print("\nEach Matrix is stored in 'MatIndex_#' for further simulation")
             for k in range(nb_solutions):
                 self.dict_Rot["MatIndex_%d" % (k + 1)] = self.bestmatrices[k]
 
