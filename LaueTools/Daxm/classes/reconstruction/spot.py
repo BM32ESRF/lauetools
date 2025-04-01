@@ -37,7 +37,7 @@ class SpotReconstructor:
 
         self.wire = wire
 
-        self.yrange = yrange # y // beam   range  or depth along the beam range
+        self.yrange = yrange # y // beam   range  or depth along the beam (in mm)
 
         self.abscoeff = abscoeff
 
@@ -104,21 +104,30 @@ class SpotReconstructor:
             self.print_msg("Invalid wire argument", mode='F')
 
     def init_wire_assign(self, margin=0):
-
+        """determine and the wire withthe  highest available information in scan data for a given Y pixel position"""
         if is_list_of(self.wire, mywire.CircularWire):
             wire = self.wire
         else:
             wire = self.scan.wire
 
-        ylim = self.scan.calc_wires_range_scan(wire=wire)
+        # Y pixel boundaries for each wire 
+        Yshadow_limits_list = self.scan.calc_wires_range_scan(wire=wire)
 
         tmp = []
-        for lim in ylim:
-            tmp.append((self.XYcam[1] - lim[0]) * (lim[1] - self.XYcam[1]))
+        Ypixel = self.XYcam[1]
+        for Yshadow_limits in Yshadow_limits_list:
+            yshadow_min, Yshadow_max = Yshadow_limits
+            tmp.append((Ypixel - yshadow_min) * (Yshadow_max - Ypixel))
+        
+        assigned_wireindex = np.argmax(tmp)
+        self.wire = wire[assigned_wireindex]
 
-        self.wire = wire[np.argmax(tmp)]
+        return assigned_wireindex
 
     def init_grid(self):
+        """init grid of points lying on detector plane
+        
+        set self.grid_Pcam"""
 
         par = self.scan.get_ccd_params()
 
