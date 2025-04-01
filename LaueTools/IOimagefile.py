@@ -17,10 +17,14 @@ from scipy import ndimage as scind
 import h5py 
 
 
-try:
+try: # 
     SKIMAGE = True
     from skimage.external import tifffile
+    tiffopen = tifffile.TiffFile
 except:
+    SKIMAGE = True
+    from skimage.io import imread as tiffopen
+else:
     SKIMAGE = False
 
 import LaueTools.generaltools as GT
@@ -221,6 +225,8 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     :param imagefilename: filename string (full path or not)
 
     :return: file index
+
+    ..TODO : use better getfileindex() in generaltools (and adapt for stack images file)
     """
     imageindex = None
     if CCDLabel in ("sCMOS", "sCMOS_fliplr"):
@@ -791,7 +797,7 @@ def readheadertiff(fullpathimage):
         print('SKIMAGE is missing ...')
         return None
 
-    with tifffile.TiffFile(fullpathimage) as tif:
+    with tiffopen(fullpathimage) as tif:
         imgs = [page.asarray() for page in tif.pages] # image(s)
         kkeys = [kk for page in tif.pages for kk in page.tags.keys() ]
         artist = [page.tags['artist'].value for page in tif.pages]
