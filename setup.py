@@ -21,7 +21,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="LaueTools",
+    name="lauetools",
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     #version="3.0.48", ##Automatic versioning from Github Tags
