@@ -1,5 +1,7 @@
 import sys, os
 
+import numpy as np
+
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 import findorient as FO

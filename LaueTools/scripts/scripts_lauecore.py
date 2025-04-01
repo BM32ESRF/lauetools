@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 # -*- coding: utf-8 -*-
 """
+
+old scripts !!!
+
 #  scripts and example Laue Pattern simulation based on lauecore.py  (new name of laue6.py)
 #  J. S. Micha   micha [at] esrf [dot] fr
 # version May 2019
@@ -11,6 +14,7 @@ from __future__ import absolute_import
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import sys
 import os
+import math
 
 # # workaround to launch this script with modules in parent folder
 # # whatever the folder it is launched in 
@@ -42,6 +46,7 @@ import LaueTools.LaueGeometry as LTGeo
 
 DEFAULT_TOP_GEOMETRY = LT.DEFAULT_TOP_GEOMETRY
 DEFAULT_DETECTOR_DISTANCE = LT.DEFAULT_DETECTOR_DISTANCE
+DEFAULT_DETECTOR_DIAMETER = 165
 # --- -------------------  TESTS & EXAMPLES
 def test_simulation():
     """
@@ -319,6 +324,11 @@ def simulatepurepattern(grain,emin,emax,kf_direction,data_filename,PlotLaueDiagr
 
     return True
 
+def emptylists(n):
+    r"""
+    builds a list of n empty lists : [[],[],[], ...,[]]
+    """
+    return [[] for k in list(range(n))]
 
 def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filename,
     Plot_Data=1,
@@ -340,7 +350,7 @@ def Plot_Laue( _emin, _emax, list_of_spots, _data_2theta, _data_chi, _data_filen
     fig = figure(figsize=(6.0, 6.0), dpi=80)  # ? small but ok for savefig!
     ax = fig.add_subplot(111)
 
-    title("Laue pattern %.1f-%.1f keV \n %s" % (_emin, _emax, _data_filename),
+    ax.set_title("Laue pattern %.1f-%.1f keV \n %s" % (_emin, _emax, _data_filename),
         font,fontsize=12,)
     # text(0.5, 2.5, 'a line', font, color = 'k')
 
@@ -567,6 +577,9 @@ def Calc_spot_on_cam_sansh(listoflistofspots, fileOK=0, linestowrite=[[""]]):
 
     return _oncamsansh
 
+def simulintensity(e):
+    pass
+
 def simulateLauePatterns(crystals, emin, emax,
                          detectorparameters, pixelsize, dim,kf_direction, nb_spurious_spots=0,detectordiameter=200,
                         noisypositions = False):
@@ -662,6 +675,7 @@ if  __name__ == '__main__':
     
     nbcrystals = 1
     key_material = 'Si' # 'ZrO2'
+    emin = 5
     emax = 60
     detectordiameter =100
 
@@ -783,6 +797,8 @@ if  __name__ == '__main__':
 
     if 0:  # some grains example
         inittime = time.time()
+
+        Id = np.eye(3)
 
         emax = 50
         emin = 5

@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 """
+old scripts ...
+
+
 scripts to test selected spots for indexation (non contiguous)
 to narrow the number of angular distances to be compared to the LUT
 
