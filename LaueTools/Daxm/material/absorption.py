@@ -5,13 +5,23 @@
 __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
-import os
+import os, sys
 
 import numpy as np
 
 import LaueTools.Daxm.material.dict_datamat as dm
 
 __path__ = os.path.dirname(__file__)
+
+if sys.version < '3.8':
+    print("WARNING. Could you better use a python version >= 3.8 please!")
+
+if np.__version__>='1.20':
+    from numpy.typing import NDArray
+else:
+    NDArray={float: float, int: int}
+
+from typing import List, Tuple, Union
 
 
 class MaterialDataError(Exception):
@@ -46,7 +56,7 @@ def calc_absorption(material, energy=None, absolute=False):
     return abscoeff, energy, abscoeff_p
 
 
-def calc_absorption_mix(element, vmass, energy=None, abscoeff_p=None):
+def calc_absorption_mix(element: Union[str,List], vmass, energy:Union["np.array",list]=None, abscoeff_p=None)->Tuple:
 
     if energy is None:
         energy = np.arange(1, 30, 0.01)
@@ -69,7 +79,8 @@ def calc_absorption_mix(element, vmass, energy=None, abscoeff_p=None):
     return np.sum(abscoeff, axis=0), energy, abscoeff_p
 
 
-def load_absorption_coeff(element, energy, absolute=False):
+def load_absorption_coeff(element:str, energy:"np.array[float]", absolute:bool=False)->Tuple["np.array","np.array"]:
+    """read and return absorption coeff and energy from database"""
     filename = os.path.join(__path__, "data", element + ".txt")
 
     abs_energy = np.loadtxt(filename, usecols=(0,))  # keV
@@ -97,6 +108,6 @@ def list_available_element():
     return elt
 
 
-def is_available_absorption(element):
+def is_available_absorption(element:str):
     
     return element in list_available_element()
