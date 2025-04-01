@@ -9,7 +9,7 @@ purposes:
 - image matching (in development, feasability demonstrated)
 - zone axes recongition (in development)
 
-js micha March 2012
+very old last version March 2012
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
@@ -21,7 +21,6 @@ import pickle
 import scipy.ndimage as NDI
 
 try:
-
     import Image
 except:
     print("-- warning: module Image or PIL is not installed, but only used for templateimagematching")
