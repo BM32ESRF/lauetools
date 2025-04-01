@@ -665,7 +665,7 @@ class ObjectListView(wx.ListCtrl):
             lines = ["<td>" + "</td><td>".join(x) + "</td>" for x in rows]
             html = "<table><tr>" + "</tr><tr>".join(lines) + "</tr></table>"
             self._PutTextAndHtmlToClipboard(txt, html)
-        except ImportError:
+        except ImportError:  # on linux 
             cb = wx.Clipboard()
             if cb.Open():
                 cb.SetData(wx.TextDataObject(txt))
@@ -688,7 +688,7 @@ class ObjectListView(wx.ListCtrl):
         The html will be written in accordance with strange "HTML Format" as specified
         in http://msdn.microsoft.com/library/en-us/winui/winui/windowsuserinterface/dataexchange/clipboard/htmlclipboardformat.asp
         """
-        import win32clipboard
+        import win32clipboard  # hard to install or obsolete
 
         MARKER_BLOCK_OUTPUT = \
             "Version:1.3\r\n" \
