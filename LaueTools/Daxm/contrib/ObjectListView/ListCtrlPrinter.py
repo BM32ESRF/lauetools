@@ -2998,8 +2998,7 @@ class RectUtils:
 #----------------------------------------------------------------------------
 # TESTING ONLY
 #----------------------------------------------------------------------------
-
-if __name__ == '__main__':
+def run_test_ListCtrlPrinter():
     import wx
     from ObjectListView import ObjectListView, FastObjectListView, GroupListView, ColumnDefn
 
@@ -3007,8 +3006,11 @@ if __name__ == '__main__':
     import sys
     sys.path.append("../Examples")
 
-    import ExampleModel
-    import ExampleImages
+    try:
+        import ExampleModel
+        import ExampleImages
+    except ImportError("please check folder for ExampleModel and ExampleImages, or download them"):
+        return
 
     class MyFrame(wx.Frame):
 
@@ -3087,3 +3089,6 @@ if __name__ == '__main__':
     app.SetTopWindow(frame_1)
     frame_1.Show()
     app.MainLoop()
+
+if __name__ == '__main__':
+    run_test_ListCtrlPrinter()
