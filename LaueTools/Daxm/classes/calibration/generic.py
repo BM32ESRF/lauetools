@@ -16,6 +16,7 @@ except ImportError:
 
 import numpy as np
 import scipy.optimize as spo
+from pathlib import Path
 
 import LaueTools.Daxm.classes.scan as myscan
 import LaueTools.Daxm.classes.source as mysrc
@@ -294,7 +295,9 @@ class Calib:
                                         'wires': wires_dict}, indent=1))
 
         else:
+            
             self.print_msg("   directory is not valid or does not exist! ({})", (directory,), "E")
+            Path(directory).mkdir(parents=True, exist_ok=True)
 
     def load_wires(self, filename, directory=""):
 
