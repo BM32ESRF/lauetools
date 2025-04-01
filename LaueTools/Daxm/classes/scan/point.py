@@ -610,7 +610,7 @@ class StaticPointScan(object):
 
         return img.transpose()
 
-    def get_image_corr(self, idx, exist=False):
+    def get_image_corr(self, idx:int, exist=False):
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -619,15 +619,15 @@ class StaticPointScan(object):
 
         return self.get_monitor()[frame] * (self.get_image(frame) - self.img_offset) + self.img_offset
 
-    def get_image_index(self, frame):
+    def get_image_index(self, frame:int):
 
         return self.img_idx0 + frame
 
-    def get_image_filedir(self, frame):
+    def get_image_filedir(self, frame:int):
 
         return os.path.join(self.img_folder, self.img_filenames[frame])
 
-    def gen_image_filename(self, idx, relative=True, fullpath=True):
+    def gen_image_filename(self, idx:int, relative=True, fullpath=True):
 
         if relative:
             idx = self.img_idx0 + idx
@@ -639,7 +639,7 @@ class StaticPointScan(object):
 
         return fn
 
-    def get_image_rect(self, i, xlim, ylim, xy=True):
+    def get_image_rect(self, i:int, xlim, ylim, xy=True):
 
         fdir = self.img_folder
 
@@ -666,7 +666,7 @@ class StaticPointScan(object):
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
-    def get_image_roi(self, i, xcam, ycam, halfboxsize, xy=True):
+    def get_image_roi(self, i:int, xcam, ycam, halfboxsize, xy=True):
 
         fdir = self.img_folder
 
@@ -1016,13 +1016,19 @@ class StaticPointScan(object):
 
     def calc_wires_position(self, frame, offset=0):
 
-        return [self.calc_wire_position(i, frame, offset) for i in range(self.wire_qty)]
+        return [self.calc_wire_position(i_w, frame, offset) for i_w in range(self.wire_qty)]
 
-    def calc_wire_position(self, wire, frame, offset=0):
+    def calc_wire_position(self, i_wire:int, frame:int, offset=0):
 
-        return self.wire[wire].calc_position(self.wire_position[frame] + offset)
+        return self.wire[i_wire].calc_position(self.wire_position[frame] + offset)
 
     def calc_wire_intersect_ray(self, wire, xcam, ycam, ysrc=0):
+        """For a given pixel at xcam, ycam (point pcam), and given a depth under the surface along the beam (ysrc in mm), defining a pt source,
+        
+        Return 3 wires positions corresponding to :
+        [0] wire alignement with pt source
+        [1] wire first (front) tangent contact with ray going from pt source to pixel pcam
+        [1] wire mast (back) tangent contact with ray going from pt source to pixel pcam"""
         # print('wire', wire)
         # print('xcam',xcam)
         # print('ycam',ycam)
@@ -1033,6 +1039,7 @@ class StaticPointScan(object):
         else:
             thewire = wire
 
+        # 3D pt lying on X-ray detector plane
         pcam = geom.transf_pix_to_coo(self.get_ccd_params(), xcam, ycam)
 
         pf, pb = thewire.intersect_ray_fronts(ysrc, pcam)
@@ -1076,10 +1083,10 @@ class StaticPointScan(object):
 
         fig = mplp.figure()
 
-        mplp.imshow(img.transpose(), origin='lower')
+        mplp.imshow(img.transpose(), origin='upper')
 
-        mplp.xlim([0, self.get_img_params(['framedim'])[0]])
-        mplp.ylim([0, self.get_img_params(['framedim'])[1]])
+        # mplp.xlim([0, self.get_img_params(['framedim'])[0]])
+        # mplp.ylim([0, self.get_img_params(['framedim'])[1]])
 
         mplp.xlabel("Xcam")
         mplp.ylabel("Ycam")
