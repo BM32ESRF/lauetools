@@ -6,6 +6,8 @@
 __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
+import os,sys
+
 import numpy as np
 import scipy.integrate as spi
 
@@ -19,96 +21,23 @@ import LaueTools.Daxm.material.absorption as abso
 import LaueTools.Daxm.material.fluorescence as fluo
 import LaueTools.Daxm.material.dict_datamat as dm
 
+if sys.version < '3.8':
+    print("WARNING. Could you better use a python version >= 3.8 please!")
 
-# fast source creator
-def new_source(material, thickness=None, ystep=0.001, angle=40.):
+if np.__version__ >= '1.20':
+    from numpy.typing import NDArray
+else:
+    NDArray={float: float, int: int}
 
-    return SecondarySource(get_compo_from_mat(material, thickness), ystep, angle)
-
-# Composition
-def list_available_material():
-
-    return list(dm.dict_mat.keys())
-
-
-def list_available_element():
-
-    return abso.list_available_element()
+from typing import List, Tuple, Union
 
 
-def list_available_all():
-
-    mat = list_available_material()
-
-    for item in list_available_element():
-
-        mat.append(item)
-
-    return mat
-
-
-def is_available_material(material):
-
-    return material in dm.dict_mat
-
-
-def is_available_element(element):
-
-    return abso.is_available_absorption(element)
-
-
-def get_compo_from_mat(material, thickness=None, detail=True):
-
-    if thickness is None:
-        thickness = 0.3
-    else:
-        thickness = float(thickness)
-
-    if is_available_element(material):
-
-        compo = [[material, [0, thickness], dm.dict_density[material]]]
-
-    elif is_available_material(material):
-
-        mat = dm.dict_mat[material]
-
-        if detail:
-
-            compo = [[elt, [0, thickness], mat[1][i]*mat[2]] for i, elt in enumerate(mat[0])]
-
-        else:
-
-            compo = [[material, [0, thickness], mat[2]]]
-
-    else:
-        raise ValueError("Unknown element or material '{}'.".format(material))
-        # compo = []
-
-    print('results compo in get_compo_from_mat()', compo)
-    return compo  
-
-
-def get_density_from_mat(material):
-
-    if is_available_element(material):
-
-        density = dm.dict_density[material]
-
-    elif is_available_material(material):
-
-        density = dm.dict_mat[material][2]
-
-    else:
-        raise ValueError("Unknown element or material '{}'.".format(material))
-        # density = 0
-
-    return density
 
 
 # Main source class
 class SecondarySource:
     # Constructors
-    def __init__(self, arg=None, ystep=0.001, angle=40.):
+    def __init__(self, arg=None, ystep=0.001, angle:float=40.):
 
         self.ystep = ystep
         self.angle = np.radians(angle)
@@ -184,7 +113,7 @@ class SecondarySource:
     def add_component(self, material, yi, vi=None):
 
         if vi is not None and vi <= 0:
-            raise ValueError("Negative density value ({}) for '{}'.".format(vi, material))
+            raise ValueError(f"Negative density value ({vi}) for '{material}'.")
 
         if is_available_element(material):
 
@@ -216,7 +145,7 @@ class SecondarySource:
             else:
                 self.add_element_new(element, yi, vi)
 
-    def add_element_new(self, element, yi, vi):
+    def add_element_new(self, element:str, yi, vi):
 
         # append new component
         self.cmpnt_qty = self.cmpnt_qty + 1
@@ -243,7 +172,7 @@ class SecondarySource:
         
         self.cmpnt_abscoeff.append(abscoeff)
     
-    def add_element_prev(self, element, yi, vi):
+    def add_element_prev(self, element:str, yi, vi):
     
         idx = self.cmpnt_elt.index(element)
     
@@ -627,6 +556,89 @@ class SecondarySource:
         
         fig.show(show)
 
+# fast source creator
+def new_source(material:str, thickness=None, ystep=0.001, angle=40.)->SecondarySource:
+
+    return SecondarySource(get_compo_from_mat(material, thickness), ystep, angle)
+
+# Composition
+def list_available_material()->List[str]:
+
+    return list(dm.dict_mat.keys())
+
+
+def list_available_element():
+
+    return abso.list_available_element()
+
+
+def list_available_all()->List[str]:
+
+    mat = list_available_material()
+
+    for item in list_available_element():
+
+        mat.append(item)
+
+    return mat
+
+
+def is_available_material(material:str)->bool:
+
+    return material in dm.dict_mat
+
+
+def is_available_element(element:str)->bool:
+
+    return abso.is_available_absorption(element)
+
+
+def get_compo_from_mat(material:str, thickness:float=None, detail:bool=True):
+
+    if thickness is None:
+        thickness = 0.3
+    else:
+        thickness = float(thickness)
+
+    if is_available_element(material):
+
+        compo = [[material, [0, thickness], dm.dict_density[material]]]
+
+    elif is_available_material(material):
+
+        mat = dm.dict_mat[material]
+
+        if detail:
+
+            compo = [[elt, [0, thickness], mat[1][i]*mat[2]] for i, elt in enumerate(mat[0])]
+
+        else:
+
+            compo = [[material, [0, thickness], mat[2]]]
+
+    else:
+        raise ValueError("Unknown element or material '{}'.".format(material))
+        # compo = []
+
+    print('results compo in get_compo_from_mat()', compo)
+    return compo  
+
+
+def get_density_from_mat(material:str)->float:
+
+    if is_available_element(material):
+
+        density = dm.dict_density[material]
+
+    elif is_available_material(material):
+
+        density = dm.dict_mat[material][2]
+
+    else:
+        raise ValueError("Unknown element or material '{}'.".format(material))
+        # density = 0
+
+    return density
 
 # Test
 if __name__ == '__main__':
