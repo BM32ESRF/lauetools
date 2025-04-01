@@ -192,15 +192,26 @@ class MainWindow(wx.Frame):
 
     def OnSave(self, event):
         try:
-            f = file(os.path.join(self.dirName, self.fileName), 'w')
-            f.write(self.rtb.GetValue())
-            self.PushStatusText("Saved file: " + str(self.rtb.GetLastPosition()) +
-                                " characters.", SB_INFO)
-            f.close()
-            return True
+            with open(os.path.join(self.dirName, self.fileName), 'w') as f:
+                f.write(self.rtb.GetValue())
+                self.PushStatusText("Saved file: " + str(self.rtb.GetLastPosition()) +
+                                        " characters.", SB_INFO)
+                return True
         except:
             self.PushStatusText("Error in saving file.", SB_INFO)
             return False
+            
+        
+            # try:
+            #     f = file(os.path.join(self.dirName, self.fileName), 'w')
+            #     f.write(self.rtb.GetValue())
+            #     self.PushStatusText("Saved file: " + str(self.rtb.GetLastPosition()) +
+            #                         " characters.", SB_INFO)
+            #     f.close()
+            #     return True
+            # except:
+            #     self.PushStatusText("Error in saving file.", SB_INFO)
+            #     return False
 
 
 # class Manager_callfunctions:
@@ -451,9 +462,3 @@ def start():
 
 if __name__ == "__main__":
     start()
-
-
-    print('initialparameters at entrance Mainwindow')
-    frame = MainWindow(None, -1, 'Laue File Series Analysis', initialparameters)
-    frame.Show(True)
-    app.MainLoop()
