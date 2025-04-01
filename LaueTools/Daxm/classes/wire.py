@@ -6,7 +6,7 @@
 __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
-import os
+import os, sys
 
 import math
 import numpy as np
@@ -17,6 +17,16 @@ import matplotlib.pylab as mplp
 import LaueTools.Daxm.material.absorption as abso
 import LaueTools.Daxm.material.dict_datamat as dm
 import LaueTools.Daxm.modules.geometry as geom
+
+if sys.version < '3.8':
+    print("WARNING. Could you better use a python version >= 3.8 please!")
+
+if np.__version__ >= '1.20':
+    from numpy.typing import NDArray
+else:
+    NDArray={float: float, int: int}
+
+from typing import List, Tuple, Union
 
 
 def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., include_material=True):
@@ -44,7 +54,7 @@ def new_dict_traj(u1=0, u2=0):
             'u2': u2}
 
 
-def load_dict(filename, directory="", material=None):
+def load_dict(filename, directory="", material:str=None):
     filedir = os.path.join(directory, filename)
 
     try:
@@ -61,7 +71,7 @@ def load_dict(filename, directory="", material=None):
     return wire_dict
 
 
-def save_dict(wire_dict, filename, directory=""):
+def save_dict(wire_dict:dict, filename, directory=""):
     """Write the dict scan to file (json)."""
     filedir = os.path.join(directory, filename)
 
@@ -78,7 +88,10 @@ def list_available_material():
     return mat
 
 
-def gen_wires_grid(material, qty, incl, spacing, traj, radius, height, offset):
+def gen_wires_grid(material:str, qty:int, incl:float, spacing:float,
+                   traj:float, radius:float, height:float, offset:float)->List:
+    """build a list of wire's parameters."""
+    assert qty > 0
 
     sinIncl = math.sin(math.radians(float(incl)))
     cosIncl = math.cos(math.radians(float(incl)))
@@ -146,7 +159,7 @@ class CircularWire:
 
         self.set(**load_dict(filename, directory=directory))
 
-    def set_par(self, R, f1, f2, u1, u2, h, p0, material=None):
+    def set_par(self, R:float, f1:float, f2:float, u1:float, u2:float, h:float, p0:float, material=None):
 
         self.set_radius(R)
 
@@ -156,7 +169,7 @@ class CircularWire:
 
         self.set_pos(h, p0)
 
-    def set_material(self, material):
+    def set_material(self, material:str):
 
         self.material = material
 
@@ -166,7 +179,7 @@ class CircularWire:
 
         self.absfun_energy = energy
 
-    def set_radius(self, R):
+    def set_radius(self, R:float):
 
         self.R = R
 
@@ -190,15 +203,15 @@ class CircularWire:
 
         self.set_traj(math.radians(u1), math.radians(u2))
 
-    def set_height(self, h):
+    def set_height(self, h:float):
 
         self.h = h
 
-    def set_offset(self, p0=0.):
+    def set_offset(self, p0:float=0.):
 
         self.p0 = p0
 
-    def set_pos(self, h, p0=0.):
+    def set_pos(self, h:float, p0=0.):
 
         self.set_height(h)
 
@@ -224,7 +237,7 @@ class CircularWire:
 
         return Ox, Oy, Oz
 
-    def calc_crosslength(self, p, ysrc, Pcam):
+    def calc_crosslength(self, p, ysrc:"np.array[float]", Pcam:"np.array[float]"):
         """Calculate the length of the segment travelled in the wire by a given X-ray"""
         # wire positions
         p = np.reshape(p, (-1, 1))
@@ -266,11 +279,11 @@ class CircularWire:
 
         return abslength
 
-    def calc_distance_to(self, p, ysrc, Pcam):
-        """Calculate the shortest distance between the wire axis and a given X-ray"""
+    def calc_distance_to(self, p, ysrc:"np.array[float]", Pcam:"np.array[float]"):
+        """Calculate the shortest distance between the wire axis and a given incoming X-ray beam"""
         # wire positions
         p = np.reshape(p, (-1, 1))
-        # depth positions
+        # depth positions array
         ysrc = np.reshape(ysrc, (1, -1))
 
         # components of OwY vector
@@ -292,8 +305,11 @@ class CircularWire:
         return np.divide(np.fabs(OYx * vfx + OYy * vfy + OYz * vfz), np.sqrt(vf2)) - self.R
 
     # intersect_ray_axis
-    def intersect_ray_axis(self, ysrc, Pcam):
-        """Calculate the motor position at which a given X-ray will intersect the wire axis"""
+    def intersect_ray_axis(self, ysrc:float, Pcam: "np.array[float]"):
+        """Calculate the physical motor position (from SPEC of BLISS command) at which a given X-ray [from sample (at `ysrc`) to 3D pt on detector plane (`Pcam`)],intersect the wire center
+        
+        :param Pcam: np.array, 3 elements
+        """
         Y = np.array([0, ysrc, 0])
         Oh = np.array([0, 0, self.h])
 
@@ -317,8 +333,11 @@ class CircularWire:
 
     # intersect_ray_frontback
     def intersect_ray_fronts(self, ysrc, Pcam):
-        """Calculate the 2 motor positions at which a given X-ray will intersect the wire surface"""
-        # depth positions
+        """Calculate the 2 motor positions at which a given X-ray will intersect tangently the wire surface
+        
+        :param ysrc: array of distance from sample surface to a pt in sample depth (along the beam)
+        """
+        # depth positions vectors (// to [0., 1., 0.] )
         ysrc = np.reshape(ysrc, (-1, 1))
         Y = ysrc * np.array([[0., 1., 0.]])
 
