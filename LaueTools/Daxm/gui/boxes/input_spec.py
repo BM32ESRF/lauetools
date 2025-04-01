@@ -62,7 +62,7 @@ class InputSpec(wx.StaticBoxSizer):
         self.expo_txt = LabelTxtCtrlNum(self._parent, "", 0, size=(40, -1))
 
         grid = wx.GridSizer(rows=1, cols=5, hgap=5, vgap=0)
-        grid.Add(wx.StaticText(parent=self._parent, id=wx.ID_ANY, label="ascan yf"),
+        grid.Add(wx.StaticText(parent=self._parent, id=wx.ID_ANY, label="ascan wiremotor"),
                  0, wx.ALIGN_CENTER)
         #grid.Add(self.ystart_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
         # grid.Add(self.ystop_txt, 0, wx.EXPAND | wx.ALIGN_CENTER)
