@@ -2807,7 +2807,7 @@ class MainCalibrationFrame(wx.Frame):
         print("In StartFit(): end of fit: %s has been updated" % (prefix + ".cor"))
         self.initialParameter["filename.cor"] = prefix + ".cor"
 
-    def OnWriteResults(self, _):
+    def OnWriteResults(self, _, verbose=0):
         """
         write a .fit file from refined orientation and detector calibration CCD geometry
         """
@@ -2820,7 +2820,7 @@ class MainCalibrationFrame(wx.Frame):
         # spotsData = [Xtheo,Ytheo, Xexp, Yexp, Xdev, Ydev, theta_theo]
         spotsData = self.SpotsData
 
-        print("\nIn OnWriteResults(): Writing results in .fit file")
+        if verbose>0: print("\nIn OnWriteResults(): Writing results in .fit file")
         suffix = ""
         if self.incrementfile.GetValue():
             self.savedindex += 1
@@ -2829,8 +2829,9 @@ class MainCalibrationFrame(wx.Frame):
         outputfilename = self.filename.split(".")[0] + suffix + ".fit"
         folder, filename = os.path.split(outputfilename)
 
-        print("self.writefolder",self.writefolder)
-        print("folder",folder)
+        if verbose>0:
+            print("self.writefolder",self.writefolder)
+            print("folder",folder)
 
         if self.writefolder is None:
             self.writefolder = OSLFGUI.askUserForDirname(self)
@@ -2860,12 +2861,13 @@ class MainCalibrationFrame(wx.Frame):
 
         # print('self.initialParameter["filename.cor"] in OnWriteResults',
         #         self.initialParameter["filename.cor"])
-        print('self.filename',self.filename)
-        print('self.initialParameter["filename.cor"]', self.initialParameter["filename.cor"])
-        print('self.initialParameter["initialfilename"]', self.initialParameter["initialfilename"])
+        if verbose>0:
+            print('self.filename',self.filename)
+            print('self.initialParameter["filename.cor"]', self.initialParameter["filename.cor"])
+            print('self.initialParameter["initialfilename"]', self.initialParameter["initialfilename"])
 
         initialfile = self.initialParameter["initialfilename"]
-        print('initialfile  :', initialfile)
+        #print('initialfile  :', initialfile)
 
         if initialfile.endswith('dat'):
             data_peak = IOLT.read_Peaklist(initialfile)
@@ -2904,7 +2906,7 @@ class MainCalibrationFrame(wx.Frame):
                 Xdev_peakFit = unknowns
                 Ydev_peakFit, peak_bkg, IntensityMax = unknowns, unknowns, unknowns
             else:
-                print('%d of colmuns in initialfile'%nbcolumns_cor, initialfile)
+                if verbose>1: print('%d of colmuns in initialfile'%nbcolumns_cor, initialfile)
                 if nbcolumns_cor== 15:
                     (_,_, Xexp, Yexp, peakAmplitude,
                     I_tot,
@@ -2916,7 +2918,6 @@ class MainCalibrationFrame(wx.Frame):
                     I_tot,
                 peak_fwaxmaj, peak_fwaxmin, peak_inclination,
                 Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
-
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
 
@@ -3011,7 +3012,8 @@ class MainCalibrationFrame(wx.Frame):
                         PeakListFilename=initialfile,
                         columnsname=columnsname,
                         modulecaller="DetectorCalibration.py",
-                        refinementtype="CCD Geometry")
+                        refinementtype="CCD Geometry",
+                        verbose=verbose-1)
 
 
 
