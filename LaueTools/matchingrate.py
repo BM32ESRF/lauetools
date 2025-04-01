@@ -115,7 +115,7 @@ def SpotLinks(twicetheta_exp,
     .. todo:: To improve! , always difficult to understand immediately the algorithm :-[
     """
 
-    if verbose:
+    if verbose>0:
         print("\n ************** Spots Association ************** \n")
 
     Resi, ProxTable = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
@@ -157,11 +157,11 @@ def SpotLinks(twicetheta_exp,
     #    print "Miller_Exp_spot", Miller_Exp_spot
 
     if not List_Exp_spot_close:
-        print("Found no pair within tolerance in SpotLinks()")
+        if verbose>0: print("Found no pair within tolerance in SpotLinks()")
         return 0
 
     elif len(List_Exp_spot_close) == 1:
-        print("Just a single found! Nb of pairs equal to 1  is not implemented yet in SpotLinks()")
+        if verbose>0: print("Just a single found! Nb of pairs equal to 1  is not implemented yet in SpotLinks()")
         return 0
 
     # --------------------------------------------------------------
@@ -276,7 +276,7 @@ def SpotLinks(twicetheta_exp,
         # there is already exp_index in singleindices
         else:
             # do not update the dictionary 'refine_indexed_spots'
-            if verbose:
+            if verbose > 0:
                 print("Experimental spot #%d may belong to several theo. spots!"
                     % exp_index)
     # find theo spot linked to exp spot ---------------------------------
@@ -893,7 +893,8 @@ def Angular_residues(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5, key_ma
 
 
 def getMatchingRate(indexed_spots_dict, test_Matrix, ang_tol, simulparam, removeharmonics=1,
-                                                                            detectordiameter=165.0):
+                                                                            detectordiameter=165.0,
+                                                                            verbose=0):
     r"""
     Gets matching rate for an orientation matrix
                     for all exp. data stored in dictionary indexed_spots_dict
@@ -935,7 +936,8 @@ def getMatchingRate(indexed_spots_dict, test_Matrix, ang_tol, simulparam, remove
                     Chi,
                     Miller_ind,
                     Energy,
-                    absoluteindex=None)
+                    absoluteindex=None,
+                    verbose=verbose-1)
 
     if res == 0 or len(res[1]) == 0:
         return None, nb_of_simulated_spots, None
