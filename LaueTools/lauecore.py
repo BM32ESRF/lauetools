@@ -41,7 +41,7 @@ else:
     # TODO: LTGeo to be removed
     import LaueGeometry as LTGeo
 
-try:
+try: # cython library
     import generatehkl
 
     USE_CYTHON = True
