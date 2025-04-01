@@ -647,14 +647,10 @@ class ImshowFrame_Scalar(wx.Frame):
 
         self.axes.grid(True)
 
-        #         numrows, numcols, color = self.data.shape
         numrows, numcols = self.data.shape[:2]
 
-        #         print "self.Imageindices", self.Imageindices
         print("self.Imageindices.shape", self.Imageindices.shape)
         print("self.data.shape", self.data.shape)
-
-        #         imageindices = self.Imageindices[0] + arange(0, numrows, numcols) * self.stepindex
 
         tabindices = self.Imageindices
 
