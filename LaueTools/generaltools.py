@@ -2,7 +2,7 @@ from __future__ import print_function
 """
 module of lauetools project
 
-JS Micha May 2019
+JS Micha Last addition March 2025
 
 package gathering general tools
 """
@@ -12,9 +12,16 @@ import pickle
 import multiprocessing
 import sys
 
+from pathlib import Path
+import re
+
 import numpy as np
+import numpy.ma as ma
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
+
+from typing import Iterable, Tuple, List
+degrees = float
 
 if mpl.__version__ < "2.2":
     MATPLOTLIB2p2 = False
@@ -1425,6 +1432,8 @@ def LaueSpotsCorrelator_multiprocessing(fileindexrange, imageindexref, Parameter
                                         saveObject=0, nb_of_cpu=5):
     """
     launch several processes in parallel
+
+    .. note: IN DEV, not finished
     """
     try:
         if len(fileindexrange) > 2:
@@ -1514,7 +1523,7 @@ def threeindices_up_to_old(n):
             return np.vstack((majorindices_neg, majorindices_pos))
 
 
-def threeindices_up_to(n, remove_negative_l=False):
+def threeindices_up_to(n:int, remove_negative_l:bool=False)->'numpyarraynx3':
     """
     build major hkl indices up to n  (each scanned from -n to n)
 
@@ -1543,7 +1552,7 @@ def threeindices_up_to(n, remove_negative_l=False):
             return majorindices_000removed
 
 
-def twoindices_up_to(n):
+def twoindices_up_to(n:int)->'numpyarraynx2':
     """
     build major hkl indices up to n  (each scanned from -n to n)
     """
@@ -1558,7 +1567,7 @@ def twoindices_up_to(n):
     return indices_pos
 
 
-def twoindices_positive_up_to(n, m):
+def twoindices_positive_up_to(n:int, m:int):
     """
     build  2D integer indices up to n  (each scanned from 0 to n)
     """
@@ -1574,7 +1583,7 @@ def twoindices_positive_up_to(n, m):
     return indices_pos
 
 
-def closest_array_elements(i, j, array2Dshape, maxdist=1, startingindex=0):
+def closest_array_elements(i:int, j:int, array2Dshape:Tuple, maxdist=1, startingindex=0):
     """find closest (in position) other element in 2D array around element at i, j
 
     :param i:  int or even float
@@ -1599,7 +1608,7 @@ def closest_array_elements(i, j, array2Dshape, maxdist=1, startingindex=0):
     return closeelem_ij, tabindices[closeelem_ij], distfrom_ij[closeelem_ij]
 
 
-def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, existingabsindices=None):
+def best_prior_array_element(i:int, j:int, array2Dshape:Tuple, maxdist:float=1, startingindex:int=0, existingabsindices:Iterable[int]=None):
     """ find closest and prior element of 2D array from given i,j
 
     prior in the sense of a raster scan
@@ -1642,7 +1651,7 @@ def best_prior_array_element(i, j, array2Dshape, maxdist=1, startingindex=0, exi
     return [ic[b], jc[b]], absoluteindices[b], dist[b]
 
 
-def GCD(ar_hkl, verbose=0):
+def GCD(ar_hkl:'numpyarraynx3', verbose=0):
     """
     return GCD for each element of an array of hkl:
     """
@@ -1716,7 +1725,7 @@ def GCD(ar_hkl, verbose=0):
     return GCD
 
 
-def threeindicesfamily(n):
+def threeindicesfamily(n:int):
     """
     #TODO to be OPTIMIZED
     remove harmonics
@@ -1746,7 +1755,7 @@ def reduceHKL(ar_hkl):
     return res
 
 
-def find_parallel_hkl(HKLs):
+def find_parallel_hkl(HKLs:'numpyarraynx3')->'numpyarraynxnx3':
     """
     use the tip: 'better looping than broadcasting ...'
     http://www.scipy.org/EricsBroadcastingDoc
@@ -1764,7 +1773,7 @@ def find_parallel_hkl(HKLs):
     return res
 
 
-def extract2Dslice(center, halfsizes, inputarray2D):
+def extract2Dslice(center:int, halfsizes, inputarray2D):
     """
     extract a rectangular 2D slice array from inputarray2D centered on 'center' (value in inputarray2D)
 
@@ -1800,10 +1809,9 @@ def extract2Dslice(center, halfsizes, inputarray2D):
     return extract_array(indices_center, halfsizes, inputarray2D)
 
 
-def extract_array(indices_center, halfsizes, inputarray2D):
+def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:'numpyarray2D')->'numpyarray2D':
     """
-    extract a 2D slice array from inputarray2D
-
+    extract a 2D slice array from inputarray2D center on 'indices_center'
     aa= array([[ 0,  1,  2,  3,  4,  5,  6],
        [ 7,  8,  9, 10, 11, 12, 13],
        [14, 15, 16, 17, 18, 19, 20],
@@ -1821,6 +1829,10 @@ def extract_array(indices_center, halfsizes, inputarray2D):
        [31, 32, 33],
        [38, 39, 40]])
     """
+    if len(halfsizes)!=2:
+        raise ValueError(f'{halfsizes} must have 2 elements')
+    if len(indices_center)!=2:
+        raise ValueError(f'{indices_center} must have 2 elements')
     slowindex_center, fastindex_center = indices_center
     slowindex_halfsize, fastindex_halfsize = halfsizes
 
@@ -1837,12 +1849,14 @@ def extract_array(indices_center, halfsizes, inputarray2D):
     return inputarray2D[imin : imax + 1, jmin : jmax + 1]
 
 
-def reshapepartial2D(d, targetdim):
+def reshapepartial2D(d:'numpyarray', targetdim:Tuple)->'numpyarray2D':
     """ reshape 1D data of size n to 2D one: targetdim where n < targetdim[0]*targetdim[1]
     targetdim[0] is the fastmotor axis dim size
     
     note: similar to to2Darray
     """
+    if len(targetdim)!=2:
+        raise ValueError(f'{targetdim} must have 2 elements')
     dimfast = targetdim[0]
     n= len(d)
 
@@ -1856,7 +1870,7 @@ def reshapepartial2D(d, targetdim):
     #print(lastline)
     return np.concatenate((ddd,[lastline]), axis=0)
 
-def to2Darray(a, n2):
+def to2Darray(a:'numpyarray2D', n2:int)->'numpyarray2D':
     """ return a zero padded array from elements of a and new shape =(n1,n2)
     n2 is the number element in the 2nd axis (fast axis)
 
@@ -1873,7 +1887,7 @@ def to2Darray(a, n2):
     return b.reshape((n1, n2))
 
 
-def splitarray(a, ndivisions):
+def splitarray(a: 'numpyarraynxm', ndivisions:Iterable[int]):
     """ split array into several subarrays
 
     ndivisions: tuple of (n1divisions,n2divisions)
@@ -1945,21 +1959,19 @@ def splitarray(a, ndivisions):
     return ar, roi_index, boxsizes
 
 
-def Positiveindices_up_to(n):
+def Positiveindices_up_to(n:int):
     """
     build major positive hkl indices up to n  (each scanned from 0 to n)
     """
-    if type(n) != type(5):
+    if not isinstance(n, int) or n<=0:
         return None
-    else:
-        if n > 0:
+    
+    nbpos = n + 1
 
-            nbpos = n + 1
+    gripos = np.mgrid[0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j]
+    majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
 
-            gripos = np.mgrid[0 : n : nbpos * 1j, 0 : n : nbpos * 1j, 0 : n : nbpos * 1j]
-            majorindices_pos = np.reshape(gripos.T, (nbpos ** 3, 3))[1:]
-
-            return majorindices_pos
+    return majorindices_pos
 
 
 def fct_j(_, q):
@@ -1970,7 +1982,7 @@ def fct_j(_, q):
     return q
 
 
-def indices_in_flatTriuMatrix(n):
+def indices_in_flatTriuMatrix(n:int)->'numpyarray':
     """
     return index in flattened array of triangular up element
     (excluding diagonal ones) in n*n matrix
@@ -1986,7 +1998,7 @@ def indices_in_flatTriuMatrix(n):
     return np.where(np.ravel(np.triu(np.fromfunction(fct_j, (n, n)), k=1)) != 0)[0]
 
 
-def indices_in_TriuMatrix(ar_indices, n):
+def indices_in_TriuMatrix(ar_indices:Iterable[int], n:int)->'numpyarraynx2':
     """
      convert 1d triangular up (excluded diagonal) indices
      to  i,j 2D array indices of a square n*n M matrix
@@ -2002,7 +2014,7 @@ def indices_in_TriuMatrix(ar_indices, n):
     return np.array([i, j]).T
 
 
-def convert2indices(ar_indices, array_shape):
+def convert2indices(ar_indices, array_shape:Tuple):
     """
     convert 1d indices in 2D indices arranged in a 2D array with array_shape convert indices in  i,j 2D array indices
 
@@ -2074,7 +2086,7 @@ def ShortestDistance(P1, P2, P3, P4):
 
 
 # ------------------  miscellaneous
-def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
+def getlist_fileindexrange_multiprocessing(index_start:int, index_final:int, nb_of_cpu:int):
     """
     returns list of 2 elements (index_start, index_final) for each cpu
 
@@ -2101,7 +2113,7 @@ def getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu):
 
 
 # ---- ---------------- Rotation matrices
-def rotY(angle):
+def rotY(angle:'degrees')->'numpyarray3x3':
     """
     return rotation matrix around 2 basis vector (ie Y) with angle in DEGREES
     """
@@ -2112,11 +2124,14 @@ def rotY(angle):
     return np.array([[1, 0, 0.0], [0.0, ca, sa], [0, -sa, ca]])
 
 
-def matRot(axis, angle):
+def matRot(axis:Iterable[float], angle:'degrees')->'numpyarray3x3':
     """
     gives rotation matrix around axis and angle deg
     """
     #     print "axis, angle", axis, angle
+    if len(axis)!=3:
+        raise ValueError(f'{axis} must have 3 elements')
+    
     axis = np.array(axis)
     norm = 1.0 * np.sqrt(np.sum(axis * axis))
     unitvec = axis / norm
@@ -2131,14 +2146,20 @@ def matRot(axis, angle):
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
 
-def propose_orientation_from_hkl(HKL, target2theta=90., B0matrix=None, randomrotation=False):
+def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False)-> 'numpyarray3x3':
     """
-    proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta, chi =0)
+    proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta and chi =0
 
     1rst step : put G*=ha*+kb*+lc* along [-1,0,0]
     2nd step : put it along qdir (defined by target2theta)
+
+    randomrotation: bool, add a random rotation around qdir
+
+    B0matrix: None or np.eye(3) for cubic structure, or B0matrix describing a*,b*, c* columns in reference lauetools frame
     .. warning:: the resulting orientation is not a pure rotation matrix (a bit distortion)
     """
+    if len(HKL)!=3:
+        raise ValueError(f'{HKL} must have 3 elements!')
     hkl_central = np.array(HKL)
 
     qdir = np.array([-np.sin(target2theta / 2. * DEG), 0, np.cos(target2theta / 2. * DEG)])
@@ -2162,7 +2183,7 @@ def propose_orientation_from_hkl(HKL, target2theta=90., B0matrix=None, randomrot
     return np.dot(matrot3, np.dot(matrot2, matrot1))
 
 
-def getRotationAngleFrom2Matrices(A, B):
+def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->float:
     """
     return rotation angle (in degree) of operator R between two pure rotations A,B: B=RA
     tr(R)=1+2cos(theta)
@@ -2173,7 +2194,7 @@ def getRotationAngleFrom2Matrices(A, B):
         / np.pi)
 
 
-def randomRotationMatrix():
+def randomRotationMatrix()->'numpyarray3x3':
     """
     return a random rotation matrix
     """
@@ -2213,7 +2234,7 @@ def OrientMatrix_fromGL(filename="matrixfromopenGL.dat"):
     return result
 
 
-def extract_rawmatrix_fromGL(extfilename="matrixfromopenGL.dat"):
+def extract_rawmatrix_fromGL(extfilename:str="matrixfromopenGL.dat")->'numpyarray3x3':
     """
         return orientation matrix from that given by openGL laue3d.py
     """
@@ -2225,7 +2246,7 @@ def extract_rawmatrix_fromGL(extfilename="matrixfromopenGL.dat"):
     return mat3x3fromGLtemp
 
 
-def fromMatrix_to_elemangles(mat):  # PROBLEME D'UNICITE de la decomposition
+def fromMatrix_to_elemangles(mat:'numpyarray3x3')->List[float]:  # PROBLEME D'UNICITE de la decomposition
     # exemple :fromelemangles_toMatrix(fromMatrix_to_elemangles(
     #    [[-0.68125975000000005, 0.093353649999999996, -0.72606490999999995],
     #     [0.68874564999999999, 0.41666590999999997, -0.59331184999999997],
@@ -2266,6 +2287,8 @@ def fromelemangles_toMatrix(threeangles):
         [ AF+BDE     AE-BDF   -BC ] ,
         [BF-ADE     BE+ADF   AC] ]
     """
+    if len(threeangles)!=3:
+        raise ValueError(f'{threeangles} must have a length of 3.')
     thetaX = threeangles[0] * DEG
     thetaY = threeangles[1] * DEG
     thetaZ = threeangles[2] * DEG
@@ -2294,7 +2317,7 @@ def fromelemangles_toMatrix(threeangles):
     return mat
 
 
-def fromEULERangles_toMatrix(threeangles):
+def fromEULERangles_toMatrix(angles: Iterable['degrees'])-> "numpyarray3x3":
     """ gives the orientation matrix from the three EULER angles of rotations
     (Rz is applied first then Rx around the new rotated X,
     then Rz again around a rotated z axis
@@ -2308,10 +2331,12 @@ def fromEULERangles_toMatrix(threeangles):
             [-FA-CBE  -FB+CAE   ED ] ,
             [ DB     -DA    C] ])
     """
+    if len(angles)!=3:
+        raise ValueError(f'{angles} must have a length of 3.')
 
-    thetaX = threeangles[0] * DEG
-    thetaY = threeangles[1] * DEG
-    thetaZ = threeangles[2] * DEG
+    thetaX = angles[0] * DEG  # convert to radians
+    thetaY = angles[1] * DEG
+    thetaZ = angles[2] * DEG
 
     mat = np.zeros((3, 3))
 
@@ -2337,14 +2362,15 @@ def fromEULERangles_toMatrix(threeangles):
     return mat
 
 
-def fromEULERangles_toMatrix2(threeangles):
+def fromEULERangles_toMatrix2(angles:Iterable['degrees'])->"numpyarray3x3":
     """ gives the orientation matrix from the three EULER angles of rotations
+    
     (Rz is applied first then Rx around the new rotated X,
     then Rz again around a rotated z axis
 
     following bunge's euler definition
 
-    Orientation is defined by three angles (X, Y, Z)   = phi1, PHI, phi2
+    Orientation is defined by three angles in degrees (X, Y, Z)   = phi1, PHI, phi2
 
     A = cosX, B = sinX
     C = cosY, D = sinY
@@ -2354,9 +2380,11 @@ def fromEULERangles_toMatrix2(threeangles):
             [ DB     -DA    C] ])
 
     """
-    thetaX = threeangles[0] * DEG
-    thetaY = threeangles[1] * DEG
-    thetaZ = threeangles[2] * DEG
+    if len(angles)!=3:
+        raise ValueError(f'{angles} does not have 3 elements!')
+    thetaX = angles[0] * DEG
+    thetaY = angles[1] * DEG
+    thetaZ = angles[2] * DEG
 
     A = np.cos(thetaX)
     B = np.sin(thetaX)
@@ -2384,7 +2412,7 @@ def norme(vec1):
     return nvec
 
 
-def matstarlab_to_matstarlabOND(matstarlab):
+def matstarlab_to_matstarlabOND(matstarlab: "numpyarray9")->"numpyarray3x3":
     """
     transform matrix in a orthonormalized frame
     (Schmid orthogonalisation procedure)
@@ -2409,7 +2437,7 @@ def matstarlab_to_matstarlabOND(matstarlab):
     return matstarlabOND
 
 
-def calc_Euler_angles(mat3x3):
+def calc_Euler_angles(mat3x3:"numpyarray3x3")->Tuple[degrees,degrees,degrees]:
     """
     Calculates unique 3 euler angles representation of mat3x3
     from O Robach
@@ -2449,7 +2477,7 @@ def calc_Euler_angles(mat3x3):
         return euler
 
 
-def fromMatrix_to_EulerAngles(mat):
+def fromMatrix_to_EulerAngles(mat:'numpyarray3x3')->Tuple[degrees,degrees,degrees]:
     """
     following bunge's euler definition
 
@@ -2473,8 +2501,10 @@ def fromMatrix_to_EulerAngles(mat):
 #    return phi1, PHI, phi2
 
 
-def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame="sample",
-                                                    vec1=[1, 0, 0], vec2=[0, 1, 0], vec3=[0, 0, 1]):
+def getdirectbasiscosines(UBmatrix_array:'numpyarray3x3', B0:'numpyarray3x3'=np.eye(3), frame:str="sample",
+                                                    vec1:Iterable[float]=[1, 0, 0],
+                                                    vec2:Iterable[float]=[0, 1, 0],
+                                                    vec3:Iterable[float]=[0, 0, 1])->Tuple['numpyarray9', 'numpyarray3x3']:
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
 
@@ -2488,6 +2518,10 @@ def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame="sample",
     cos2 = qsample.(010)/norme(qsample)
     cos3 = qsample.(001)/norme(qsample)
     """
+    if not isinstance(UBmatrix_array, np.array):
+        raise TypeError(f'{UBmatrix_array} must a numpy array not of type:', type(UBmatrix_array))
+
+
     SAMPLETILT = 40.0
 
     DEG = np.pi / 180.0
@@ -2555,10 +2589,13 @@ def getdirectbasiscosines(UBmatrix_array, B0=np.eye(3), frame="sample",
 
 
 # --- ------------ Quaternions
-def fromQuat_to_MatrixRot(inputquat):
+def fromQuat_to_MatrixRot(inputquat:Iterable[float])->'numpyarray3x3':
     """
     Converts the H quaternion quat into a new equivalent 3x3 rotation matrix.
     """
+    if len(inputquat)!=4:
+        raise ValueError(f'length of {inputquat} argument of fromQuat_to_MatrixRot() is not 4!')
+
     X = 0
     Y = 1
     Z = 2
@@ -2618,7 +2655,8 @@ def fromQuat_to_MatrixRot(inputquat):
 # return np.array([[a00, a01, a02],[a10, a11, a12],[a20, a21, a22]])
 
 
-def fromMatrix_toQuat(matrix):
+def fromMatrix_toQuat(matrix:'numpyarray3x3')->List[float]:
+    """convert 3x3 rotation matrix to 4 elements quaternion"""
     qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.0
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
     qy = (matrix[0][2] - matrix[2][0]) / (4 * qw)
@@ -2644,11 +2682,14 @@ def fromMatrix_toQuat_test(matrix):
     return [qx, qy, qz, qw]
 
 
-def fromQuat_to_vecangle(quat):
+def fromQuat_to_vecangle(quat:Iterable[float])->Tuple:
     """
     from quat = [vec, scalar] = [sin angle / 2 (unitvec(x, y, z)), cos angle / 2]
     gives unitvec and angle of rotation around unitvec
     """
+    if len(quat)!=4:
+        raise ValueError(f'length of {quat} argument of fromQuat_to_vecangle() is not 4!')
+    
     normvectpart = np.sqrt(quat[0] ** 2 + quat[1] ** 2 + quat[2] ** 2 + quat[3] ** 2)
     # print "nor",normvectpart
     angle = np.arccos(quat[3] / normvectpart) * 2.0  # in radians
@@ -2690,17 +2731,18 @@ def fromvec_to_directionangles(vec):
     return longit, lat
 
 
-def from3rotangles_toQuat(listangles):
+def from3rotangles_toQuat(listangles: Iterable[float]):
     """
     from  angle (rotation angle in deg) and 2 angles (in deg) defining a
     unitvector direction quat=[vec, scalar]=[sin angle / 2 (unitvec(x, y, z)),
                                              cos angle / 2]
-    :return: Quatuertion
+    :return: Quatuernion
 
     .. note::
         take the first 3 elements of listangles
     """
     # print "listangles dans from3rotangles_toQuat",listangles
+    
     rotangle, longit, lat = listangles[:3]
 
     myquat = np.zeros(4, dtype=float)
@@ -2721,13 +2763,16 @@ def from3rotangles_toQuat(listangles):
     return myquat.tolist()
 
 
-def fromQuat_to3rotangles(initquat):
+def fromQuat_to3rotangles(initquat:Iterable[float])->Tuple:
     """
     from quaternion=[vec, scalar]=
     [sin angle / 2 (unitvec(x, y, z)), cos angle / 2] ie 4 elements
     returns rotation angles and axis longitude and latitude coordinates
     (in degrees)
     """
+    if len(initquat)!=4:
+        raise ValueError(f'length of {initquat} argument of fromQuat_to3rotangles() is not 4!')
+    
     quat = tuple(np.array(initquat))
     unitvec, rotangle = fromQuat_to_vecangle(quat)
     longit, lat = fromvec_to_directionangles(unitvec)
@@ -2740,10 +2785,37 @@ def prodquat(quat1, quat2):
     returns product quaternion od  quat1.quat2
     Seems to be not used in Lauetools package
     """
+    if len(quat1)!=4 or len(quat2)!=4:
+        raise ValueError(f'Both lengthes of {quat1} and {quat2} arguments of prodquat() are not 4!')
     return [[quat1[3] * quat2[0] + quat1[0] * quat2[3] + quat1[1] * quat2[2] - quat1[2] * quat2[1],
             quat1[3] * quat2[1] + quat1[1] * quat2[3] + quat1[2] * quat2[0] - quat1[0] * quat2[2],
             quat1[3] * quat2[2] + quat1[2] * quat2[3] + quat1[0] * quat2[1] - quat1[1] * quat2[0],
             quat1[3] * quat2[3] - quat1[0] * quat2[0] - quat1[1] * quat2[1] - quat1[2] * quat2[2]]]
+
+
+def getfileindex(filename:str)->int:
+    """
+    extract integer index at the end of filename before file extension
+
+    Parameters
+    ----------
+    filename
+        filename or full path, str or Path object
+
+    Returns
+    -------
+        file index
+
+    Examples
+    --------
+    >>> getindex('/home/mdfgf.rgf/efrf_fre/img_525.5_AAA_01788.cor')
+    1788
+    """
+    ff = Path(filename)
+    fileextension = ff.suffix[1:]
+    match = re.search(r'\d+\.'+fileextension, ff.name)
+    val = match.group()[:-len(fileextension)]
+    return int(float(val))
 
 # ----- ------------  plot tools: colormap
 COPPER = mplcm.get_cmap("copper")
@@ -2755,6 +2827,7 @@ GREYS = mplcm.get_cmap("Greys")
 BWR = mplcm.get_cmap("bwr")
 ORRD = mplcm.get_cmap("OrRd")
 SEISMIC = mplcm.get_cmap("seismic")
+
 if MATPLOTLIB2p2:
     SPECTRAL = mplcm.get_cmap("Spectral")
     SPECTRAL_R = mplcm.get_cmap("Spectral_r")
@@ -2762,6 +2835,59 @@ if MATPLOTLIB2p2:
 else:
     SPECTRAL = mplcm.get_cmap("spectral")
     SPECTRAL_R = mplcm.get_cmap("spectral_r")
+
+
+def format_getimageindex_imshow(x, y, mapdims=None):
+    """fonction to show in matplotlib plot values of x,y, imageindex for 2D map (imshow)
+    for a given axis object, overwrite format_coord method:
+    ax.format_coord = lambda x, y: GT.format_getimageindex(x, y, mapdims)
+    """
+    default = "x=%1.4f, y=%1.4f" % (x, y)
+    if mapdims is None:
+        return default
+    col = int(x + 0.5)
+    row = int(y + 0.5)
+    if col >= 0 and col < mapdims[1] and row >= 0 and row < mapdims[0]:
+        img_idx = 0+ mapdims[1]*row+col
+        return "x=%1.4f, y=%1.4f, imageid=%d" % (x, y,img_idx)
+    else:
+        return default
+    
+def format_getimageindex_pcolormesh(x, y, data2D=None, mapdims=None, xech_stepsize=1., yech_stepsize=1.):
+    """fonction to show in matplotlib plot values of x,y, imageindex for 2D map (pcolormesh)
+    for a given axis object, overwrite format_coord method:
+    ax.format_coord = lambda x, y: format_getimageindex_pcolormesh(x, y,ffs0.exx*1e4, mapdims)
+    
+    z2d:  2D array. shape(z2d ) = mapdims
+    xech_stepsize, xech_stepsize = in microns
+    """
+    if data2D is None: return
+    assert np.shape(data2D)==mapdims
+    
+    xarr = np.arange(mapdims[1])*xech_stepsize
+    yarr = np.arange(mapdims[0])*yech_stepsize
+    
+    cond = ((x >= xarr.min()-.5*xech_stepsize) & (x <= xarr.max()+0.5) &
+        (y >= yarr.min()-.5*yech_stepsize) & (y <= yarr.max()+0.5))
+    print('cond',cond)
+    
+    if cond:
+        # col = np.searchsorted(xarr, x-0.5)
+        # row = np.searchsorted(yarr, y-0.5)
+        col = int(x/xech_stepsize+0.5) # + 0.5)
+        row = int(y/yech_stepsize+0.5)#  + 0.5)
+        print(f'[{row},{col}]')
+        z = data2D[row, col]
+        img_idx = 0+ mapdims[1]*row+col
+        print('z',z)
+        print('img_idx',img_idx)
+
+        if ma.is_masked(z) or np.isnan(z):
+            return f'x={x:1.4f}, y={y:1.4f} z=nan/masked imageindex={img_idx:d}'
+        else:
+            return f'x={x:1.4f}, y={y:1.4f}, z={z:1.4f} imageindex={img_idx:d}'
+    else:
+        return f'x={x:1.4f}, y={y:1.4f}'
 
 # ----  terminal coloredprint
 class bcolors:
