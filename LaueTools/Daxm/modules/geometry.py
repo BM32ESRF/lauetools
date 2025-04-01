@@ -7,13 +7,23 @@
 __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
-import math
+import math, os, sys
 
 import numpy as np
 import numba as nb
 
+if sys.version < '3.8':
+    print("WARNING. Could you better use a python version >= 3.8 please!")
 
-def transf_pix_to_coo (ccd_parameters, xcam, ycam):
+if np.__version__ >= '1.20':
+    from numpy.typing import NDArray
+else:
+    NDArray={float: float, int: int}
+
+from typing import List, Tuple, Union
+
+
+def transf_pix_to_coo (ccd_parameters: Tuple[float], xcam, ycam):
     """Transform image pixel coordinates to laboratory coordinates"""
     detect, xcen, ycen, xbet, xgam, pixelsize = ccd_parameters
 
