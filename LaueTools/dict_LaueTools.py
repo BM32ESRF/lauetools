@@ -140,6 +140,7 @@ dict_Materials = {
     "ferrydrite": ["ferrydrite", [2.96, 2.96, 9.4, 90, 90, 120], "no"],
     "feldspath": ["feldspath", [8.59, 12.985, 7.213, 90, 116., 90], 'no'],
     "hexagonal": ["hexagonal", [1.0, 1.0, 3.0, 90, 90, 120.0], "no"],
+    "Zn": ["Zn", [2.6649, 2.6649, 4.9468, 90, 90, 120], "wurtzite"],  # SG 194
     "ZnO": ["ZnO", [3.252, 3.252, 5.213, 90, 90, 120], "wurtzite"],
     "test_reference": ["test_reference", [3.2, 4.5, 5.2, 83, 92.0, 122], "wurtzite"],
     "test_solution": ["test_solution", [3.252, 4.48, 5.213, 83.2569, 92.125478, 122.364], "wurtzite",],
