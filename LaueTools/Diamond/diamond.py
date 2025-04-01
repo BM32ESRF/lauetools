@@ -5660,6 +5660,7 @@ def matstarlab_and_hkl_to_uqsample(matstarlab, hkl, omega=MG.PAR.omega_sample_fr
     return qsample_norm
 
 if __name__ == '__main__':
+    import sys
     # test1
     fileEdia = "/home/micha/LaueToolsPy3/LaueTools/Diamond/dict_Edia_with_uqlab_m160_m20_22keV_27Oct17_v2.dat"
 
@@ -5671,7 +5672,7 @@ if __name__ == '__main__':
         if i != 2:
             print('len(Edia_list = dd[0][%d])'%i, len(dd[0][i]))
     print('ddname', ddname)
-    dgff
+    sys.exit()
     # test2
     filespotlist_sample = '/home/micha/LaueProjects/DiamondOct18/data/Ge40_0000_spotlistref_with_harmonics.dat'
     fullpathNewAbacus = fileEdia
