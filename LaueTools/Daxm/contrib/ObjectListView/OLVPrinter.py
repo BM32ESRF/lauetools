@@ -141,7 +141,7 @@ class OLVPrinter(wx.Printout):
                 "Printing",
                 wx.OK)
 
-        printout.Destroy()
+        printout.Destroy()  # printer.destroy() ??
 
     #-------------------------------------------------------------------------
     # Event handlers
@@ -1317,7 +1317,7 @@ class ColumnHeaderBlock(CellBlock):
         if self.engine.alwaysCenterColumnHeader:
             return [wx.ALIGN_CENTRE for i in range(self.left, self.right + 1)]
         else:
-            return self.GetColumnAlignments(olv, self.left, self.right)
+            return self.GetColumnAlignments(self.olv, self.left, self.right)
 
     def GetImages(self):
         """
