@@ -2,12 +2,12 @@
 """
 module of lauetools project
 
-https://gitlab.esrf.fr/micha/lauetools/
+https://github.com/BM32ESRF/lauetools
 
-JS Micha   Feb 2022
+JS Micha Last revision  March 2025
 
-this module gathers functions to read and write ASCII file corresponding
-to various data
+this module gathers functions to read (parse) and write ASCII file corresponding
+to various file format of Laue microdiffraction data (.cor, .dat, .fit)
 """
 from __future__ import division
 import os
@@ -20,6 +20,8 @@ import re
 import io
 
 import numpy as np
+from pathlib import Path
+
 
 np.set_printoptions(precision=15)
 
@@ -242,7 +244,8 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
     COLINDEX_INTENSITY_CORFILE = 4  # convention 
 
     assert len(allspotsprops.shape) == 2
-    assert filename.endswith('.cor')
+    assert Path(filename).suffix == '.cor'
+        
 
     #print('allspotsprops.shape', allspotsprops.shape)
 
@@ -1047,7 +1050,8 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
                                             PeakListFilename=None,
                                             columnsname:str=None,
                                             modulecaller:str=None,
-                                            refinementtype:str="Strain and Orientation"):
+                                            refinementtype:str="Strain and Orientation",
+                                            verbose:int=0):
     """
     write a .fit file
     
@@ -1061,7 +1065,7 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
     header += "File created at %s%s\n" % (time.asctime(), modulecallerstr)
     header += "Number of indexed spots: %d\n" % nb_of_indexedSpots
 
-    print('header', header)
+    if verbose>0: print('header', header)
 
     if "Element" in dict_matrices:
         header += "Element\n"
