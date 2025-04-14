@@ -232,6 +232,7 @@ class parsed_fitfile:
             "##spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz": self.__Peaks__,##self.peak
             "##spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz 2theta chi X Y I peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin peak_inclination Xdev Ydev peak_bkg Ipixmax": self.__Peaks__,##self.peak
             "##spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz peak_Itot peak_fwaxmaj peak_fwaxmin peak_inclination Xdev Ydev peak_bkg Ipixmax grainindex": self.__Peaks__,
+            "##spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz grainindex": self.__Peaks__,
             "#Number of indexed spots": self.__NumberIndexedSpots__, #self.NumberOfIndexedSpots
             "#Mean Deviation(pixel)": self.__MeanDev__, #self.MeanDevPixel
             "#Euler angles phi theta psi (deg)": self.__EulerAngles__, #self.EulerAngles
