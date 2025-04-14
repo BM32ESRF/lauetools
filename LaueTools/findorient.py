@@ -705,10 +705,18 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
     latticeparams = dictmaterials[key_material][1]
     Gstar = CP.Gstar_from_directlatticeparams(*latticeparams)
 
-    # if hkl1.shape == (3,):
-    #     hkl1 = np.array([hkl1])
-    # if hkl2.shape == (3,):
-    #     hkl2 = np.array([hkl2])
+    if CP.isHexagonal(latticeparams):  # add some high HKL present around 001
+        if verbose> 0: print('add somes hkl to recognisee orientation 001')
+        Nmax = max(-np.amin(),np.amax())
+        # todo generate cleverly using Nmax as min and an other max value
+        addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
+                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11]
+                     [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
+                     [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],
+                     [1,0,6],[1,0,7],[1,0,8], [1,0,9],
+                     [-1,2,6]]
+        hkl1 = np.r_[addedhkls,hkl1]
+
 
     if applyExtinctionRules:
         if len(applyExtinctionRules) == 2:
@@ -1129,7 +1137,7 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
             rules = (None, dictmaterials[key_material][2])
         else:
             rules = None
-        LUT = Generate_selectedLUT(hkl1, hkl2, key_material, 0, dictmaterials, True, rules)
+        LUT = Generate_selectedLUT(hkl1, hkl2, key_material, verbose=verbose-1, dictmaterials=dictmaterials, filterharmonics=True, applyExtinctionRules=rules)
 
     # (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
     (_, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
