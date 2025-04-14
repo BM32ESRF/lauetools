@@ -20,8 +20,13 @@ import numpy.ma as ma
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
 
-from typing import Iterable, Tuple, List
+from typing import List, Union, Tuple, Dict, Iterable
 degrees = float
+arrayORList1D = Union[List, 'numpyarrayn']
+arrayORListNx2 = 'arrayORListNx2'
+arrayORListNx3 = 'arrayORListNx3'
+arrayORList3x3 = 'arrayORList3x3'
+flag = '0_OR_1'
 
 if mpl.__version__ < "2.2":
     MATPLOTLIB2p2 = False
@@ -147,7 +152,7 @@ def calcdistancetab(listpoints1, listpoints2):
     return didist
 
 
-def distfrom2thetachi(points1, points2):
+def distfrom2thetachi(pt2D_1, pt2D_2):
     """
     returns angular distance (deg) from two single spots
     defined by kf=(2theta,chi) between corresponding q vectors
@@ -155,14 +160,14 @@ def distfrom2thetachi(points1, points2):
 
     q = kf - ki
 
-    points1, points2 must be two elements array: [2theta_1, chi_1], [2theta_2, chi_2]
+    pt2D_1, pt2D_2 must be two elements array: [2theta_1, chi_1], [2theta_2, chi_2]
     """
 
-    longdata1 = points1[0] * DEG / 2.0  # theta
-    latdata1 = points1[1] * DEG  # chi
+    longdata1 = pt2D_1[0] * DEG / 2.0  # theta
+    latdata1 = pt2D_1[1] * DEG  # chi
 
-    longdata2 = points2[0] * DEG / 2.0
-    latdata2 = points2[1] * DEG
+    longdata2 = pt2D_2[0] * DEG / 2.0
+    latdata2 = pt2D_2[1] * DEG
 
     deltalat = latdata1 - latdata2
     cosang = np.sin(longdata1) * np.sin(longdata2) + np.cos(longdata1) * np.cos(
@@ -171,7 +176,7 @@ def distfrom2thetachi(points1, points2):
     return np.arccos(cosang) / DEG
 
 
-def calculdist_from_thetachi(listpoints1, listpoints2):
+def calculdist_from_thetachi(listpoints1:arrayORListNx2, listpoints2:arrayORListNx2)->'numpyarrayNxM':
     """
     From two lists of pairs (THETA, CHI) return:
 
@@ -219,7 +224,7 @@ if NUMBAINSTALLED:
 
         return math.acos(cang)/DEG
 
-def pairwise_mutualangles(XY1, XY2):
+def pairwise_mutualangles(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
     """
     From two lists of pairs (2THETA, CHI) return:
 
@@ -240,7 +245,7 @@ def pairwise_mutualangles(XY1, XY2):
             #k+=1
     return D
 
-def pairwise_mutualangles_1D(XY1, XY2):
+def pairwise_mutualangles_1D(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
     """
     From two lists of pairs (2THETA, CHI) return:
 
@@ -272,6 +277,8 @@ if NUMBAINSTALLED:
 def cartesiandistance(x1, x2, y1, y2, nbdecimalsresolution=3):
     """
     return the cartesian distance between two points
+
+    better use numpy.hypot... or scipy.distance....
     """
     return np.round(np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2), decimals=nbdecimalsresolution)
 
@@ -309,7 +316,7 @@ def norme_list(listvec):
     return normarray
 
 
-def tensile_along_u(v, tensile, u="zsample"):
+def tensile_along_u(v:arrayORListNx3, tensile:float, u:Union[Iterable, str]="zsample"):
     """
     from list of vectors of q vectors expressed in absolute frame,
     transform them so that to expand or compress the q vector component along u axis by factor 'tensile'.
@@ -324,8 +331,6 @@ def tensile_along_u(v, tensile, u="zsample"):
 
     example: 1.02 means real expansion of 2% of vectors component along u (if vector corresponds to reciprocal space vector, then 1/1.02 of variation of reciprocal vector component along u)
     """
-    # print "lolo",v # all v vectors
-    # print wholelistindicesfiltered
     omegasurfacesample = 40 * DEG  # 40 deg sample inclination
     real_expansion_coef = tensile
     if u == "zsample":
@@ -333,6 +338,8 @@ def tensile_along_u(v, tensile, u="zsample"):
         direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])
     else:
         # normalized axis vector u
+        if len(u)!=3:
+            raise ValueError(f'{u} has not 3 elements')
         UU = np.array(u)
         nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
         # u direction traction in q space in absolute frame
@@ -352,12 +359,14 @@ def tensile_along_u(v, tensile, u="zsample"):
     return wholelistvecfiltered
 
 
-def rotate_around_u(v, angle, u):
+def rotate_around_u(v:arrayORListNx3, angle:degrees, u:'arrayORlist3'):
     """
     from list of vectors of v in absolute frame, rotate q vector component around u
     angle in deg
     result is an array
     """
+    if len(u)!=3:
+            raise ValueError(f'{u} has not 3 elements')
     UU = np.array(u)
     nUU = 1.0 * np.sqrt(np.sum(UU ** 2))
     unit_axis = np.array(UU) / nUU  # u direction traction in q space in absolute frame
@@ -369,7 +378,7 @@ def rotate_around_u(v, angle, u):
     return wholelistvecfiltered
 
 
-def reflect_on_u(v, u):
+def reflect_on_u(v:arrayORListNx3, u:'arrayORlist3'):
     """
     from list of vectors of v in absolute frame, reflect vector on plane defined by its normal u
     angle in deg
@@ -386,7 +395,7 @@ def reflect_on_u(v, u):
     return wholelistvecfiltered
 
 
-def strain_along_u(v, alpha, u="zsample", anglesample=40):
+def strain_along_u(v:arrayORListNx3, alpha, u:Union[Iterable, str]="zsample", anglesample:degrees=40):
     """
     from list of vectors of v in absolute frame,
     /alpha expand or contract one vector component along u
@@ -412,17 +421,19 @@ def strain_along_u(v, alpha, u="zsample", anglesample=40):
 
 
 # ------ ---------  Matrices
-def matline_to_mat3x3(mat):
+def matline_to_mat3x3(mat)->arrayORList3x3:
     """
     arrange  9 elements in columns in a 3*3 matrix
     """
     # print "mat ligne \n", mat
+    if len(mat)!=9:
+        raise ValueError(f'{mat} msut have 9 elements')
     mat1 = np.column_stack((mat[0:3], mat[3:6], mat[6:9]))
     # print "mat 3x3 \n", mat1
     return mat1
 
 
-def mat3x3_to_matline(mat):
+def mat3x3_to_matline(mat:arrayORList3x3):
     """
     convert the three columns of 3*3 matrix in a 9 elements vector
 
@@ -441,7 +452,7 @@ def epsline_to_epsmat(epsline):
     NOTE: # deviatoric strain 11 22 33 -dalf 23, -dbet 13, -dgam 12
     """
     if len(epsline) != 6:
-        raise ValueError("%s argument in epsline_to_epsmat has not 6 elements" % epsline)
+        raise ValueError(f"{epsline} has not 6 elements")
 
     epsmat = np.identity(3, float)
 
@@ -462,8 +473,8 @@ def epsline_to_epsmat(epsline):
 
 def epsmat_to_epsline(epsmat):
     """
-    Arrange matrix elements of symetric deviatoric strain (6 independent elements)
-    in a row matrix
+    extract matrix elements of symetric deviatoric strain (6 independent elements)
+    in a 6 elements array
 
     From Odile robach
     """
@@ -482,7 +493,7 @@ def epsmat_to_epsline(epsmat):
     return epsline
 
 
-def Orthonormalization(mat):
+def Orthonormalization(mat:arrayORList3x3)->arrayORList3x3:
     """
     return orthonormalized matrix M from a matrix where columns are expression
     of non unit and non orthogonal expression of basis vector in absolute frame
@@ -504,7 +515,7 @@ def Orthonormalization(mat):
     return np.array([new1, new2, new3]).T
 
 
-def UBdecomposition_RRPP(UBmat):
+def UBdecomposition_RRPP(UBmat:arrayORList3x3)->Tuple[arrayORList3x3]:
     """
     decomposes UBmat in matrix product RR*PP
     where RR is pure rotation and PP symetric matrix
@@ -605,7 +616,7 @@ def properinteger(flo):
 
 
 # ----- ------------  SET
-def FindClosestPoint(arraypts, XY, returndist=0):
+def FindClosestPoint(arraypts:arrayORListNx2, XY:'arrayORList2', returndist:flag=0):
     """
     Returns the index of the closest point in arraypts from point XY =[X,Y]
 
@@ -619,7 +630,7 @@ def FindClosestPoint(arraypts, XY, returndist=0):
         return indclose
 
 
-def FindTwoClosestPoints(arraypts, XY):
+def FindTwoClosestPoints(arraypts:arrayORListNx2, XY:'arrayORList2'):
     """
     Returns the index of the two closest points in arraypts from point XY =[X,Y]
 
@@ -633,7 +644,7 @@ def FindTwoClosestPoints(arraypts, XY):
     return indclose, np.sqrt(np.sum(dist ** 2, axis=1))[indclose]
 
 
-def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
+def SortPoints_fromPositions(TestPoints:arrayORListNx2, ReferencePoints:arrayORListNx2, tolerancedistance:float=5):
     """
     to sort list of points as a function of their proximity to a sorted reference list of spots
 
@@ -705,7 +716,7 @@ def SortPoints_fromPositions(TestPoints, ReferencePoints, tolerancedistance=5):
         isolated_pts_in_ReferencePoints)
 
 
-def prepend_in_list(list_to_modify, elems):
+def prepend_in_list(list_to_modify:arrayORList1D, elems:arrayORList1D):
     """
     move elements of list_to_modify those that are at the beginning of list_to_modify
 
@@ -742,7 +753,7 @@ def prepend_in_list(list_to_modify, elems):
     return elems + list_to_modify
 
 
-def find_closest(input_array, target_array, tol):
+def find_closest(input_array:arrayORList1D, target_array:arrayORList1D, tol:float)->Tuple[Iterable]:
     """
     Find the set of elements in input_array that are closest to
     elements in target_array.  Record the indices of the elements in
@@ -824,7 +835,7 @@ def find_closest(input_array, target_array, tol):
     return closest_indices, accept_indices, reject_indices
 
 
-def mutualpairs(ind1, ind2):
+def mutualpairs(ind1:arrayORList1D, ind2:arrayORList1D)->'arrayORList2D':
     """return all pairs from elements of 2 lists
 
     .. example::
@@ -841,7 +852,7 @@ def mutualpairs(ind1, ind2):
     return np.transpose([np.tile(ind1, len(ind2)), np.repeat(ind2, len(ind1))])
 
 
-def pairs_of_indices(n):
+def pairs_of_indices(n:int)->arrayORListNx2:
     """
     return indice position of non zero and non diagonal elements in triangular up matrix (n*n)
     pairs_of_indices(5)
@@ -865,7 +876,7 @@ def pairs_of_indices(n):
     return np.array(pairs)
 
 
-def allpairs_in_set(list_of_indices):
+def allpairs_in_set(list_of_indices:arrayORList1D)->arrayORListNx2:
     """
     return all combinations by pairs of elements in list_of_indices
 
@@ -895,7 +906,7 @@ def allpairs_in_set(list_of_indices):
     return np.take(list_of_indices, pairs)
 
 
-def return_pair(n, pairs):
+def return_pair(n:int, pairs:arrayORListNx2):
     """
     return array of integer that are in correspondence in pairs with integer n
     """
@@ -906,7 +917,7 @@ def return_pair(n, pairs):
     return Pairs[(i, j)]
 
 
-def getSets(pairs):
+def getSets(pairs:arrayORListNx2):
     """
     find indices pairs from index connections given by a list from pairs of indices
 
@@ -964,7 +975,7 @@ def getSets(pairs):
     return res_sets
 
 
-def Set_dict_frompairs(pairs_index, verbose=0):
+def Set_dict_frompairs(pairs_index:arrayORListNx2, verbose:int=0):
     """
     from association pairs of integers return dictionnary of associated integer
 
@@ -1002,7 +1013,7 @@ def Set_dict_frompairs(pairs_index, verbose=0):
 
                 res_dict[_elem] = set_min
 
-    if verbose:
+    if verbose>0:
         print("res_dict", res_dict)
 
     res_final = {}
@@ -1019,7 +1030,7 @@ def Set_dict_frompairs(pairs_index, verbose=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
+def getCommonPts(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_tolerance=0.5, samelist:bool=False)->Tuple:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1073,7 +1084,7 @@ def getCommonPts(XY1, XY2, dist_tolerance=0.5, samelist=False):
 
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
-def getPairsbetweenTwoSets(XY1, XY2, dist_tolerance=0.5, samelist=False):
+def getPairsbetweenTwoSets(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1105,7 +1116,7 @@ def getPairsbetweenTwoSets(XY1, XY2, dist_tolerance=0.5, samelist=False):
         
     return in1, in2
 
-def sortclosestpoints(pt0, pts):
+def sortclosestpoints(pt0:arrayORListNx2, pts:arrayORListNx2)->Tuple:
     """return pt index in pts sorted by increasing distance from pt0
 
     Note: cartesian distance
@@ -1147,7 +1158,7 @@ def sortclosestspots(kf0, kfs, dist_tolerance):
     return sortedindices, sortedistances
 
 
-def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
+def removeClosePoints_two_sets(XY1:Iterable, XY2:Iterable, dist_tolerance:float=0.5, verbose:int=0):
     """
     remove the spots in XY1 spots list which are present in XY2 spots list
     within the cartesian distance dist_tolerance
@@ -1155,6 +1166,11 @@ def removeClosePoints_two_sets(XY1, XY2, dist_tolerance=0.5, verbose=0):
     XY1 : array([[x1,x2,...],[y1,y2,...]])
     XY2 : array([[x1,x2,...],[y1,y2,...]])
     """
+    if len(XY1)!=2:
+        raise ValueError(f'{XY1} does not have 2 elements')
+    if len(XY2)!=2:
+        raise ValueError(f'{XY2} does not have 2 elements')
+
     X, Y = np.array(XY1)
 
     coord_1 = np.array(XY1).T
@@ -1276,11 +1292,14 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
     return Twicetheta[tokeep], Chi[tokeep], tokeep
 
 
-def removeClosePoints(X, Y, dist_tolerance=0.5):
+def removeClosePoints(X:arrayORList1D, Y:arrayORList1D, dist_tolerance=0.5):
     r"""
     remove very close spots within dist_tolerance (cartesian distance)
     """
+    if len(X)!=len(Y):
+        raise ValueError(f'{X} and {Y} have different length')
     coord = np.array([X, Y]).T
+    
     dist_tab = calcdistancetab(coord, coord)
 
     close_pos = np.where(dist_tab < dist_tolerance)
@@ -1305,17 +1324,20 @@ def removeClosePoints(X, Y, dist_tolerance=0.5):
     return X[tokeep], Y[tokeep], tokeep
 
 
-def purgeClosePoints(peaklist, dist_tolerance=0.5):
-
+def purgeClosePoints(peaklist, dist_tolerance:float=0.5):
     """
     remove points in peaklist that are too close one to the other within dist_tolerance
     """
+    if np.shape(peaklist)[0] < 2:
+        print("GT.purgeClosePoints : shape(peaklist) = ", np.shape(peaklist))
+        return peaklist
+    
     X, Y, _ = removeClosePoints(peaklist[:, 0], peaklist[:, 1], dist_tolerance=dist_tolerance)
 
     return np.array([X, Y]).T
 
 
-def purgeClosePoints2(peaklist, maxdistance, verbose=0):
+def purgeClosePoints2(peaklist, maxdistance:float, verbose=0):
     """
     return peaks list without peaks closer than pixeldistance (maxdistance)
     """
@@ -1355,7 +1377,7 @@ def purgeClosePoints2(peaklist, maxdistance, verbose=0):
     return purged_pklist, index_todelete
 
 
-def getCommonSpots(file1, file2, toldistance, dirname=None, data1=None, fulloutput=False):
+def getCommonSpots(file1:str, file2:str, toldistance:float, dirname:str=None, data1=None, fulloutput:bool=False):
     """
     return nb of spots in common in two list of peaks file1 and file2
 
@@ -2183,7 +2205,7 @@ def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.
     return np.dot(matrot3, np.dot(matrot2, matrot1))
 
 
-def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->float:
+def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->degrees:
     """
     return rotation angle (in degree) of operator R between two pure rotations A,B: B=RA
     tr(R)=1+2cos(theta)
