@@ -24,6 +24,9 @@ from multiprocessing import cpu_count
 from tqdm import tqdm
 import itertools
 
+from typing import Union, List, Dict, Iterable, Tuple
+deg = float
+
 if sys.version_info.major == 3:
     from . import lauecore as LAUE
     from . import CrystalParameters as CP
@@ -55,6 +58,8 @@ try:
     import wx
 except ImportError:
     print("wx is not installed! Could be some trouble from this lack...")
+
+from typing import Iterable, Dict, Tuple, List, Union
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
@@ -272,7 +277,7 @@ def return_index(tup):
     return toreturn
 
 
-def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
+def Possible_planes(angles_value, tole:deg=0.2, verbose=1, onlyclosest=1):
     """
     for a given angular distance and tolerance (in degrees)
     returns possible pairs of planes
@@ -351,7 +356,7 @@ def Possible_planes(angles_value, tole=0.2, verbose=1, onlyclosest=1):
     return planes_sol
 
 
-def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
+def plane_type_attribution(spot_index_1:int, angulartolerance:deg, table_angdist):
     """
     from 1 spot (given by its index as defined in table_angdist[1])
     returns:
@@ -380,7 +385,7 @@ def plane_type_attribution(spot_index_1, angulartolerance, table_angdist):
     return couples_index, couples_type
 
 
-def plane_type_attribution_twospots(spot_index_1, spot_index_2, angulartolerance, table_angdist):
+def plane_type_attribution_twospots(spot_index_1:int, spot_index_2:int, angulartolerance:deg, table_angdist):
     """
     from 2 spots (given by their index as defined in angulardisttable[1])
     returns:
@@ -408,7 +413,7 @@ def plane_type_attribution_twospots(spot_index_1, spot_index_2, angulartolerance
     return np.transpose(np.array(couples_type), (1, 0, 2))
 
 
-def twospots_recognition(spot_1, spot_2, angulartolerance, onlyclosest=1):
+def twospots_recognition(spot_1:Iterable[float], spot_2:Iterable[float], angulartolerance:deg, onlyclosest=1):
     """
     from 2 spots (given by their theta,chi coordinates)
     returns:
@@ -420,6 +425,8 @@ def twospots_recognition(spot_1, spot_2, angulartolerance, onlyclosest=1):
     instead of plane 2 which is an accurate plane type
     (order and sign is important with respect to the family type 1, to have the correct angle)
     """
+    if len(spot_1)!=len(spot_2):
+        raise ValueError(f'{spot_1} and {spot_2} should have 2 elements each')
     listspot = np.array([spot_1, spot_2])
     angle = GT.calculdist_from_thetachi(listspot, listspot)[0, 1]
     from_spot = Possible_planes(angle, tole=angulartolerance, verbose=1, onlyclosest=onlyclosest)
@@ -437,9 +444,11 @@ def twospots_recognition(spot_1, spot_2, angulartolerance, onlyclosest=1):
         return []
 
 
-def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbose=0):
+def matrices_from_onespot(spot_index:int, ang_tol:deg, table_angdist, Theta, Chi, verbose:int=0):
     """
-    from one spot of index spot_index,
+    return matrix_list, pairplanes, pairspots
+    
+    spot_index
     ang_tol angular tolerance (deg) for look up table recognition,
     table_angdist all experimental distances
     Theta and Chi are the experimental Theta Chi spots coordinates
@@ -447,6 +456,11 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
     pairspots = []
     matrix_list = []
     pairplanes = []
+
+    if verbose>0: print('In matrices_from_onespot()-----------------')
+
+    if len(Theta)!=len(Chi):
+        raise ValueError(f'{Theta} and {Chi} should have the same length')
 
     possible_couplespots, possible_coupleplanes = plane_type_attribution(spot_index, ang_tol,
                                                                                 table_angdist)
@@ -458,7 +472,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
     for cs_index in list(range(nb_couplespots)):
 
         spot_index_2 = possible_couplespots[cs_index][1]
-        if verbose:
+        if verbose>1:
             print(" ***********   cs_nindex", cs_index)
             print("couple spots", possible_couplespots[cs_index])
             print("spot2 index", spot_index_2)
@@ -478,7 +492,7 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
             pairplanes.append([plane_1, plane_2])
             pairspots.append(possible_couplespots[cs_index])
 
-            if verbose:
+            if verbose>1:
                 print("in matrices_from_onespot")
                 print("pp_index", pp_index)
                 print("couple planes ", plane_1, plane_2)
@@ -490,15 +504,15 @@ def matrices_from_onespot(spot_index, ang_tol, table_angdist, Theta, Chi, verbos
     return matrix_list, pairplanes, pairspots
 
 
-def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
-                                            n, key_material, MaxRadiusHKL=False,
+def matrices_from_onespot_hkl(spot_index:int, LUT_tol_angle:deg, table_angdist, twiceTheta_exp, Chi_exp,
+                                            n, key_material:str, MaxRadiusHKL=False,
                                             hkl1=None,#FindO.HKL_CUBIC_UP3,
                                             hkl2=None,
                                             LUT=None,
                                             allow_restrictedLUT=False,
-                                            verbose=0,
-                                            dictmaterials=DictLT.dict_Materials,
-                                            LUT_with_rules=True,
+                                            verbose:int=0,
+                                            dictmaterials:Dict=DictLT.dict_Materials,
+                                            LUT_with_rules:bool=True,
                                             excludespotspairs=None):
     """
     get all possibles UBs from one central spot and given its hkl1 miller indices
@@ -528,19 +542,8 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
         * Used in FileSeries
         * Used in AutoIndexation  (if max setA < max setB)
     """
-    
-    # print('input param',spot_index, LUT_tol_angle, table_angdist, twiceTheta_exp, Chi_exp,
-    #                                         n, key_material, MaxRadiusHKL,
-    #                                         hkl1, hkl2, LUT, allow_restrictedLUT,
-    #                                         verbose, dictmaterials,
-    #                                         LUT_with_rules,
-    #                                         excludespotspairs)
-    #verbose = 1
     if verbose>0:
-        print("\n"+f"---- mode verbose = {verbose}  --------")
         print('--------*****   matrices_from_onespot_hkl()   ******-----------\n')
-    if verbose>0:
-        print('\n***  in matrices_from_onespot_hkl\n\n')
         print("LUT_tol_angle", LUT_tol_angle)
         print('table_angdist.shape', table_angdist.shape)
         print('n', n)
@@ -564,11 +567,13 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
 
     if allow_restrictedLUT:
         # LUT restriction given by crystal structure
-        allow_restrictedLUT = CP.isCubic(latticeparams)
+        allow_restrictedLUT = CP.isCubic(latticeparams) or CP.isHexagonal()(latticeparams)
 
     if LUT is None:
+        # the LUT will be calculated and the next loop computations and will be reused
+        # we compute the hkl that will form the LUT angles database
         if hkl2 is None:
-            if verbose>0: print("Computing hkl2 list for specific or cubic LUT in matrices_from_onespot_hkl()")
+            if verbose>0: print("Computing specific or cubic LUT in matrices_from_onespot_hkl()")
             # compute hkl2 outside loop
             hkl_all = GT.threeindices_up_to(n, remove_negative_l=allow_restrictedLUT)
 
@@ -600,7 +605,7 @@ def matrices_from_onespot_hkl(spot_index, LUT_tol_angle, table_angdist, twiceThe
         # print('hkl1', hkl1)
         # print('hkl2', hkl2)
 
-        # during the loop LUT is calculated just once
+        # during the loop, LUT is calculated just once
         (hkls, angles), LUT = FindO.PlanePairs_from2sets(query_angle,
                                             LUT_tol_angle,
                                             hkl1,
@@ -984,7 +989,7 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
     .. todo::
         conflict between key_material and B ...
     """
-    if verbose:
+    if verbose>0:
         print("using UBs_from_twospotsdistance()")
         print("coords_1", coords_1)
         print("coords_2", coords_2)
@@ -1043,7 +1048,7 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
         (hkls, _), LUT = FindO.PlanePairs_from2sets(exp_angular_dist, angle_tol,
                                                 set_hkl_1, hkl2,
                                                 key_material, LUT=None, onlyclosest=0,
-                                                verbose=verbose,
+                                                verbose=verbose-1,
                                                 LUT_with_rules=LUT_with_rules)
 
         if hkls is not None:
@@ -1052,7 +1057,7 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
     if hkls is not None and (spot_index_1 != spot_index_2):
         nbpairs = len(hkls)
         PPs_list.append([hkls, spot_index_2, nbpairs])
-        if verbose:
+        if verbose>0:
             print("hkls, plane_indices spotindex_2, nbpairs", hkls, spot_index_2, nbpairs)
             print('B matrix', B)
 
@@ -1914,13 +1919,15 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
     return BestMatrices, BestStats
 
 
-def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, Chi_exp, n=3,
+def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
+                      energy_max:int,
+                      Tab_angl_dist, Theta_exp, Chi_exp, n:int=3,
                                             ResolutionAngstrom=False,
                                             B=np.eye(3),  # for cubic
-                                            cubicSymmetry=False,
+                                            cubicSymmetry:bool=False,
                                             hexagonalSymmetry=False,
                                             LUT=None,
-                                            LUT_tol_angle=0.5,
+                                            LUT_tol_angle:deg=0.5,
                                             MR_tol_angle=0.2,
                                             Minimum_Nb_Matches=15,
                                             key_material="",
@@ -1998,7 +2005,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         list_spot_central_indices = spot_index_central
     elif isinstance(spot_index_central, int):
         if spot_index_central < 0:
-            raise ValueError("spot_index_central is negative")
+            raise ValueError("spot_index_central is negative !")
         list_spot_central_indices = (spot_index_central,)
     else:
         if verbose>0: print("looking from spot # 0 (default settings)")
@@ -2010,7 +2017,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
             % (nbofpeaks, max(list_spot_central_indices)))
 
     if key_material == "":
-        raise ValueError("Warning! key_material is not defined in getOrientMatrices()")
+        raise ValueError(f"Warning! The material {key_material} is not defined in getOrientMatrices()")
 
     BestScores_per_centralspot = [[] for k in list(range(len(list_spot_central_indices)))]
 
@@ -2084,11 +2091,7 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
         if verbose>1:
             print("Calculating all possible matrices from exp spot #%d and the %d other(s)"
                 % (spot_index_central, nbofpeaks))
-        # list_orient_matrix, planes, pairspots = matrices_from_onespot(spot_index_central,
-        # LUT_tol_angle,
-        # Tab_angl_dist,
-        # Theta_exp,Chi_exp,
-        # verbose=0)
+            
         # read hkl for central spots defined in a list
         if set_central_spots_hkl_list is not None:
             hkl = set_central_spots_hkl_list[k_centspot_index]
@@ -2162,6 +2165,8 @@ def getOrientMatrices(spot_index_central, energy_max, Tab_angl_dist, Theta_exp, 
                     # Rules = dictmaterials[key_material][2]
                     # hkl1 = CP.ApplyExtinctionrules(np.array(hkl1), Rules)
                 if hexagonalSymmetry:
+                    if verbosedetails>1:
+                        print("using hexagonalLUT")
                     hkl1 = FindO.HKL_HEXAGONAL_UP3
 
                 (list_orient_matrix, planes, pairspots,
@@ -2519,6 +2524,18 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
     # compute LUT outside loop:
     hkl_all = GT.threeindices_up_to(n, remove_negative_l=cubicSymmetry)
     #hkl_all = GT.threeindices_up_to(n)
+
+    if CP.isHexagonal(latticeparameters):  # add some high HKL present around 001
+        if verbose> 0: print('add somes hkl to recognisee orientation 001')
+        Nmax = max(-np.amin(hkl_all),np.amax(hkl_all))
+        # todo generate cleverly using Nmax as min and an other max value
+        addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
+                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11],
+                     [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
+                     [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],[0,-1,10],[0,-1,11],
+                     [1,0,6],[1,0,7],[1,0,8], [1,0,9],[1,0,10],[1,0,11],
+                     [-1,2,6]]
+        hkl_all = np.r_[addedhkls,hkl_all]
 
 
     if applyExtinctionRules is not None:
