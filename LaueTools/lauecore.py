@@ -1996,7 +1996,7 @@ def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
         return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
 
-def SimulateResult(grain: Iterable, emi:int, emax:int, simulparameters,
+def SimulateResult(grain: Iterable, emin:int, emax:int, simulparameters,
                     fastcompute:int=1, ResolutionAngstrom: Union[float, None]=None,
                     dictmaterials:Dict=dict_Materials):
     r"""Simulates 2theta chi of Laue Pattern spots for ONE SINGLE grain
