@@ -547,6 +547,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         Recognition is based on the angular distance between two spots from a set of distances
         """
+        verboselevel = int(self.verboselevel.GetValue())
+        verbose = verboselevel
         t0 = time.time()
 
         energy_max = int(self.emax.GetValue())
@@ -556,7 +558,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             ResolutionAngstrom = False
         else:
             ResolutionAngstrom = float(ResolutionAngstrom)
-        print("ResolutionAngstrom in OnStart Classical indexation", ResolutionAngstrom)
+        
+        if verbose>0: print("ResolutionAngstrom in OnStart Classical indexation", ResolutionAngstrom)
 
         self.key_material = str(self.combokeymaterial.GetValue())
         latticeparams = self.dict_Materials[self.key_material][1]
@@ -586,7 +589,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #----------   Spots set Selection for mutual angle computation
         (spotssettype, spot_index_central, nb_central_spots,
                                 nbmax_probed, spotsB) = self.parse_spotssetctrls()
-        print("--spotssettype --#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
+        if verbose>0: print("--spotssettype --#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
 
         # TODO spot_index_central and spotsB to be combined to find UBS
         #------------------------------------------------
@@ -672,8 +675,9 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         restrictLUT_cubicSymmetry = restrictLUT_cubicSymmetry and CP.hasCubicSymmetry(
             self.key_material, dictmaterials=self.dict_Materials)
 
-        print("set_central_spots_hkl", set_central_spots_hkl)
-        print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
+        if verbose>0:
+            print("set_central_spots_hkl", set_central_spots_hkl)
+            print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
 
         LUT_with_rules = self.applyrulesLUT.GetValue()
 
@@ -686,10 +690,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
 
-        verboselevel = int(self.verboselevel.GetValue())
+        
 
        
-        print('spotssettype', spotssettype)
+        if verbose>0: print('spotssettype', spotssettype)
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
@@ -724,16 +728,18 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             # and spotsB is checked
             if spotssettype in ('listsetA', ):
                 spotsB = spot_index_central
-            print('arguments of  getOrientMatrices_fromTwoSets()')
-            print("--->",spot_index_central, spotsB,
-                                                energy_max, self.select_theta, self.select_chi,
-                                                n, self.key_material, rough_tolangle,
-                                                detectorparameters,
-                                                set_central_spots_hkl,
-                                                Minimum_MatchesNb,
-                                                LUT_with_rules,
-                                                None,
-                                                LUTfraction)
+
+            if verbose>0:
+                print('arguments of  getOrientMatrices_fromTwoSets()')
+                print("--->",spot_index_central, spotsB,
+                                                    energy_max, self.select_theta, self.select_chi,
+                                                    n, self.key_material, rough_tolangle,
+                                                    detectorparameters,
+                                                    set_central_spots_hkl,
+                                                    Minimum_MatchesNb,
+                                                    LUT_with_rules,
+                                                    None,
+                                                    LUTfraction)
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
                                                 energy_max, self.select_theta, self.select_chi,
                                                 n, self.key_material, rough_tolangle,
