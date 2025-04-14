@@ -543,7 +543,7 @@ def matrices_from_onespot_hkl(spot_index:int, LUT_tol_angle:deg, table_angdist, 
         * Used in AutoIndexation  (if max setA < max setB)
     """
     if verbose>0:
-        print('--------*****   matrices_from_onespot_hkl()   ******-----------\n')
+        print('In matrices_from_onespot_hkl() -----------\n')
         print("LUT_tol_angle", LUT_tol_angle)
         print('table_angdist.shape', table_angdist.shape)
         print('n', n)
@@ -755,7 +755,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     USED in manual indexation
     """
 
-    print("\n\n ---------------------------- \n getUBs_and_MatchingRate() between\n spots pair "
+    if verbose>0:
+        print("\n\n ---------------------------- \n getUBs_and_MatchingRate() between\n spots pair "
         "[%d, %d] \n ---------------------------- \n\n " % (spot_index_1, spot_index_2))
         
     if excludespotspairs is None:
@@ -780,7 +781,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                                                                 set_hkl_1=set_hkl_1,
                                                                 key_material=key_material,
                                                                 MaxRadiusHKL=MaxRadiusHKL,
-                                                                verbose=verbose,
+                                                                verbose=verbose-1,
                                                                 dictmaterials=dictmaterials,
                                                                 LUT_with_rules=LUT_with_rules,
                                                                 excludespotspairs=excludespotspairs,
@@ -792,7 +793,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     solutions_matchingscores = []
     solutions_matchingrate = []
 
-    if verbose:
+    if verbose>0:
         print("nb matrices", len(list_orient_matrix))
         print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
             % (ang_tol_MR))
@@ -839,7 +840,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
 
     else: # usual one cpu way
 
-        if 0:
+        if verbose>0:
             print('matrices found')
             print(list_orient_matrix)
 
@@ -851,7 +852,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                     BestScores_per_centralspot = np.array([])
                     worker.callbackfct(None)
                     return
-            if (mat_ind % 20) == 0:
+            if (mat_ind % 20) == 0 and verbose>1:
                 print("Calculating matching with exp. data for matrix #%d / %d" % (mat_ind,
                                                                                     nb_UB_matrices))
                 print('matrix is:\n',list_orient_matrix[mat_ind])
