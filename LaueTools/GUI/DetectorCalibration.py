@@ -1542,16 +1542,17 @@ class MainCalibrationFrame(wx.Frame):
         print('filepath', filepath)
 
         # print("self.CCDParam in ReadExperimentData()", self.CCDParam)
-        # print('self.kf_direction', self.kf_direction)
-        # print('self.writefolder', self.writefolder)
-        # print('filepath', filepath)
+        print('self.kf_direction', self.kf_direction)
+        print('self.writefolder', self.writefolder)
+        print('self.dirnamepklist', self.dirnamepklist)
 
         if not os.access(self.dirnamepklist, os.W_OK):
-            if self.writefolder is None:
-                self.writefolder = OSLFGUI.askUserForDirname(self)
-            print('choosing %s as folder for results  => '%self.writefolder)
+            self.writefolder = OSLFGUI.askUserForDirname(self)
+        elif self.writefolder is None:
+            self.writefolder = OSLFGUI.askUserForDirname(self)
         else:
             self.writefolder = self.dirnamepklist
+        print('choosing/setting %s as folder for results  => '%self.writefolder)
 
         if extension in ("dat", "DAT"):
             addspotproperties = True
@@ -1603,35 +1604,53 @@ class MainCalibrationFrame(wx.Frame):
 
             # write a basic temporary calib_.dat file from .cor file
             if addspotproperties:
-                print('columnsname', dict_data_spotsproperties['columnsname'])
-                if 'Xfiterr' in dict_data_spotsproperties['columnsname']:
+                columnsname = dict_data_spotsproperties['columnsname']
+                print('columnsname', columnsname)
 
-                    nbcols = 13
-                else:
-                    nbcols = 11
+                nbcols = len(columnsname)
+                
+                # nbcols = 11
+
+                # if 'Xfiterr' in columnsname:
+                #     nbcols += 2
+
             else:
                 nbcols = 10  # ???
+            
             print('Preparing array to write in .dat with shape: ', (len(data_theta), nbcols))
             Data_array = np.zeros((len(data_theta), nbcols))
+            
             Data_array[:, 0] = data_x
             Data_array[:, 1] = data_y
             Data_array[:, 2] = dataintensity
 
             if addspotproperties:
                 alldata = dict_data_spotsproperties['data_spotsproperties']
-                peakbkg= alldata[:,11]
+
+                colpeakbkg = columnsname.index('peak_bkg')
+                peakbkg= alldata[:,colpeakbkg]
+
                 Data_array[:, 2] = peakbkg + dataintensity
                 Data_array[:, 3] = dataintensity
-                if Data_array[:, 4:].shape != alldata[:,4:].shape:
-                    print('Data_array, alldata shapes',Data_array[:, 4:].shape, alldata[:,6:].shape)
-                Data_array[:, 4:] = alldata[:,6:]
+
+                # if Data_array[:, 4:].shape != alldata[:,6:].shape:
+                #     raise ValueError(f'Number of columns discrepancy between two arrays {Data_array[:, 4:].shape},{alldata[:,6:].shape}. First element of each are: {Data_array[0, 4:]} and {alldata[0,6:]}')
+
+
+
+                print('sha',Data_array[:, 4:nbcols-2].shape, alldata[:,6:].shape)
+                
+                Data_array[:, 4:nbcols-2] = alldata[:,6:]
+
+                print('Data_array[0]', Data_array[0])
 
             # write calib_.dat temporary file
             outputprefix = 'calib_'
             IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
                                                         initialfilename=self.filename,
                                                         comments=None,
-                                                        dirname=self.writefolder)
+                                                        dirname=self.writefolder,
+                                                        verbose=1)
             self.initialParameter['filename.dat'] = os.path.join(self.dirnamepklist, outputprefix+'.dat')
             # next time in ReadExperimentData  this branch (.cor) won't be used
             self.filename = self.initialParameter['filename.dat']
