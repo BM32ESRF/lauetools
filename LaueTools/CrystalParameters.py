@@ -86,13 +86,12 @@ def isHexagonal(latticeparams):
         raise ValueError("latticeparams is not a list of the 6 lattice parameters")
 
     Hexagonal = False
-    if (latticeparams[0] == latticeparams[1] and latticeparams[5] * 1.0 == 120.0):
+    if (np.fabs(latticeparams[0] - latticeparams[1])<.001 and np.fabs(latticeparams[5]-120.0)<0.1):
         Hexagonal = True
-    if latticeparams[3] * 1.0 == 120.0 or latticeparams[4] * 1.0 == 120.0:
-        raise ValueError('Unit cell is strangely defined? if it is hexagonal I would expect gamma=120degrees.\n %s'%str(latticeparams))
+    # if latticeparams[3] * 1.0 == 120.0 or latticeparams[4] * 1.0 == 120.0:
+    #     raise ValueError('Unit cell is strangely defined? if it is hexagonal I would expect gamma=120degrees.\n %s'%str(latticeparams))
 
     return Hexagonal
-
 
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     r"""
@@ -459,7 +458,7 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material, OrientMatrix, force_extinction=None, dictmaterials=dict_Materials):
+def Prepare_Grain(key_material:str, OrientMatrix, force_extinction=None, dictmaterials=dict_Materials):
     r"""
     Constructor of the grain (crystal) parameters for Laue pattern simulation
 
@@ -754,7 +753,7 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
 
     (devstrain, lattice_parameters) = compute_deviatoricstrain(UBmat, B0matrix, latticeparams)
     # overwrite and rescale possibly lattice lengthes
-    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength, verbose=verbose-1)
+    lattice_parameters = computeLatticeParameters_from_UB(UBmat, key_material, constantlength, dictmaterials=dictmaterials, verbose=verbose-1)
     if verbose>0:
         print("final lattice_parameters", lattice_parameters)
 
