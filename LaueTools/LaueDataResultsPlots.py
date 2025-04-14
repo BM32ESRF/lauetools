@@ -75,19 +75,35 @@ def PlotImage(imagepath: str, ROI: tuple = None, **kwargs) -> None:
     plt.colorbar(im)
 
 
-def PlotPeakPos(filepathdat: str, size: tuple = None, **kwargs) -> tuple:
+def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', showindex:bool=False, figax=None,  **kwargs) -> tuple:
     with HidePrint():
         peaklist = IOLT.readfile_dat(filepathdat)
         
-    fig, ax = plt.subplots()
+    if figax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = plt.gcf()
+        ax.invert_yaxis()
     if size is not None:
         fig.set_size_inches(size[0], size[1])
+
+    if frame=='pixel':
+        x,y = peaklist[:,2:4].T
+        xlabel, ylabel = 'pixel X','pixel Y'
+        ax.set_ylim(2050,-50)
+    elif frame == 'angles':
+        x,y = peaklist[:,:2].T
+        xlabel, ylabel = r'2$\theta$ (deg)',r'$\chi$ (deg)'
+        
+    ax.scatter(x,y, label = 'Peak position', cmap = plt.cm.inferno, c = np.arange(len(x), 0,-1), **kwargs)
+    if showindex:
+        for _i, (_x, _y) in enumerate(zip(x,y)):
+            #ax.annote(x + 1, y + 1, "%d" % _i)
+            ax.annotate("%d" % _i, xy=(_x, _y), xycoords='data')
     
-    ax.scatter(peaklist[:,0], peaklist[:,1], label = 'Peak position', **kwargs)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     
-    ax.set_xlabel('Pixel X')
-    ax.set_ylabel('Pixel Y')
-    ax.invert_yaxis()
     ax.set_aspect('equal')
     ax.legend(loc = 'upper right')
     
@@ -297,6 +313,7 @@ def PlotNumberIndexedSpots(indexed_fileseries: parsed_fitfileseries,
     fig.colorbar(im, cax=cbarax)
     return fig, ax
 
+
 def PlotMeanDevPixel(indexed_fileseries: parsed_fitfileseries, 
                   size: tuple = (10,6), maskingcondition=None, **kwargs) -> None:
     
@@ -470,6 +487,8 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
     
     fig, ax = plt.subplots(2, 3)
     fig.subplots_adjust(hspace = 0.25, wspace = 0.2)
+
+    fitgaussianresults= []
     if size is not None:
         fig.set_size_inches(size[0], size[1])
     
@@ -486,6 +505,8 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
             # Plot result
             xlims = ax[axidx].get_xlim()
             xvals = np.linspace(xlims[0], xlims[1], 200)
+
+            fitgaussianresults.append(fit_params)
             
             ax[axidx].plot(xvals, __gaussian__(xvals, *fit_params), color = 'red', linewidth = 2)
             titleplot += f'\nA = {fit_params[0]:.3f}, μ = {fit_params[1]:.3f}, σ = {fit_params[2]:.3f}'
@@ -497,7 +518,8 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
         ax[axidx].title.set_size(10)
         
     fig.suptitle(f'Distribution strain components in {frame} frame')
-    return fig, ax
+    
+    return fig, ax, fitgaussianresults
 
 def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries, 
               scale: str = 'default', size = (21,10), **kwargs) -> tuple:
