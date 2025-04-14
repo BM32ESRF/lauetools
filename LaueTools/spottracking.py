@@ -17,9 +17,12 @@ else:
     import generaltools as GT
     import IOLaueTools as IOLT
 
+from typing import List, Union, Tuple, Dict
+arrayORList1D = Union[List, 'numpyarrayn']
 
-def getspotindex(XY, spotslist_XY, maxdistancetolerance=5, minimum_seconddistance=10,
-                                                    predictedshift_X=None, predictedshift_Y=None):
+
+def getspotindex(XY, spotslist_XY, maxdistancetolerance:float=5, minimum_seconddistance:float=10,
+                                                    predictedshift_X:Union[float, None]=None, predictedshift_Y:Union[float, None]=None):
     """
     get spot index of spot in the spotslist_XY which is located closest to target XY=[X,Y]
 
@@ -108,14 +111,14 @@ def getSpotsAssociations(spotlist_XY, ref_list_XY, maxdistancetolerance=5,
     return correspondence, nocorrespondence
 
 
-def sortSpotsDataCor(data_theta, Chi, posx, posy, dataintensity, referenceList,
-                                                                        thresholddistances=(10, 50),
-                                                                        verbose=0):
+def sortSpotsDataCor(data_theta:arrayORList1D, Chi:arrayORList1D, posx:arrayORList1D, posy:arrayORList1D, dataintensity:arrayORList1D, referenceList:Union[str, List, 'numpyarraynx2'],
+                                                                        thresholddistances:Tuple=(10, 50),
+                                                                        verbose:int=0):
     """
     return rearranged and shortened list of spots properties (data_theta, Chi, posx, posy, dataintensity)
     if pixel positions (posx, posy) are in referenceList
 
-    referenceList = list or array of [X,Y]  or string for full path to file .cor
+    referenceList = list or array of [X,Y]  or str for full path to file .cor
 
     #TODO accept also .dat
 
