@@ -1325,7 +1325,7 @@ def plot2Dmultiple(self, counters=['epoch','mon']):
     #plt.ylabel(dictsr['slowmotor'])
 
 
-def parsehdf5time(strtime):
+def parsehdf5time(strtime:str):
     """ parse time in hdf5 from bliss file
     Return  ascii time, epoch time"""
     sd, _ = strtime.split('+')
@@ -1334,6 +1334,100 @@ def parsehdf5time(strtime):
     hh, mi, sec = ho.split(':')
     starttime = time.strptime('%s %s %s %s:%s:%s'%(yy, mm, dd, hh, mi, sec[:2]), '%Y %m %d %H:%M:%S')
     return time.asctime(starttime), time.mktime(starttime)
+
+
+def read_fullcommand(fullcommand:str)->dict:
+    """convert a BLISS str command to dict
+    
+    example: 'amesh xech 9.12759 9.15760 30 yech -1.51773 -1.2 22 .1'
+    {'fastmotor': 'xech', 'fmotmin': 9.12759, 'fmotmax': 9.1576, 'fmotnbsteps': 30,
+    'slowmotor': 'yech', 'smotmin': -1.51773, 'smotmax': -1.2, 'smotnbsteps': 22,
+    'expotime': 0.1}
+    """
+    sc = fullcommand.split()
+    scancommand = sc[0]
+    if scancommand in ('amesh','dmesh'):
+        assert len(sc) == 10
+        listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
+                    'slowmotor', 'smotmin', 'smotmax', 'smotnbsteps', 'expotime')
+        
+        listfmt = (str, float, float, int,
+                    str, float, float, int, float)
+        
+        dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+    
+    elif scancommand in ('ascan','dscan'):
+        assert len(sc) == 6
+        listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime')
+        
+        listfmt = (str, float, float, int, float)
+        
+        dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+        
+    elif scancommand in ('a2scan','d2scan'):
+        assert len(sc) == 9
+        listparams = ('fastmotor', 'fmotmin', 'fmotmax',
+                    'slowmotor', 'smotmin', 'smotmax', 'fmotnbsteps', 'expotime')
+        
+        listfmt = (str, float, float,
+                    str, float, float, int, float)
+        
+        dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+        
+    dict_command['scancommand']=scancommand
+            
+    return dict_command
+
+
+def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->dict:
+    """build dict of scan parameters from parsem item pandas dataframe object
+    
+    from 'fullcommand' key of pdf, keys of output dictionnary:
+        'scantype' will be set to either 'map' (2D raster scan), 'ascan' (1D scan), 'a2scan' or 'daxm' (ascan of zf or yf)
+        'listindices', 'nbimagesperline', 'mapdimensions' will be set automatically
+    """
+
+    dict_scan = {}
+    
+    dict_scan['scantype'] = None
+    
+    fullcommand = pdf['fullcommand'][item_idx]
+
+    dict_command = read_fullcommand(fullcommand)
+
+    if dict_command['scancommand'] == 'amesh':
+        mapdimensions=dict_command['fmotnbsteps']+1, dict_command['smotnbsteps']+1
+        dict_scan['scantype'] = 'map'
+        
+    elif dict_command['scancommand'] == 'ascan':
+        mapdimensions=dict_command['fmotnbsteps']+1,1
+        if dict_command['fastmotor'] in ('zf, yf'):
+            dict_scan['scantype'] = 'daxm'
+        else:
+            dict_scan['scantype'] = 'ascan'
+        
+    elif dict_command['scancommand'] == 'a2scan':
+        mapdimensions=dict_command['fmotnbsteps']+1,1
+        dict_scan['scantype'] = 'a2scan'
+    else:
+        return dict_scan
+
+    for key in ('start_time', 'end_time','sample_dataset_scanindex', 'fullcommand',
+                                                  'scanindex','motors','localhdf5file','imagefolder'):
+        dict_scan[key] = pdf[key][item_idx]
+
+    dict_scan['folder'] = dict_scan['imagefolder']
+    dict_scan['prefix'] = 'img_'
+    dict_scan['listindices'] = np.arange(0,mapdimensions[0]*mapdimensions[1])
+    dict_scan['nbimagesperline'] = mapdimensions[0]
+    dict_scan['mapdimensions'] = mapdimensions
+    dict_scan['peaklistfile'] = None
+    dict_scan['fastaxis'] = dict_command['fastmotor']
+    dict_scan['slowaxis'] = dict_command.get('slowmotor', None)
+    dict_scan['collector'] = 'pixelval'
+    dict_scan['CCDLabel'] = CCDLabel
+    return dict_scan
+
 
 def ReadHdf5_v2(fname, scan, outputdate=False):
     """extract data of a scan in a ESRF Bliss made hdf5 file
