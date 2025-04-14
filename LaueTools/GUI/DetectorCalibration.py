@@ -1548,10 +1548,12 @@ class MainCalibrationFrame(wx.Frame):
 
         if not os.access(self.dirnamepklist, os.W_OK):
             self.writefolder = OSLFGUI.askUserForDirname(self)
-        elif self.writefolder is None:
-            self.writefolder = OSLFGUI.askUserForDirname(self)
         else:
             self.writefolder = self.dirnamepklist
+        # elif self.writefolder is None:
+        #     self.writefolder = OSLFGUI.askUserForDirname(self)
+        # else:
+        #     self.writefolder = self.dirnamepklist
         print('choosing/setting %s as folder for results  => '%self.writefolder)
 
         if extension in ("dat", "DAT"):
