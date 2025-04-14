@@ -26,10 +26,11 @@ if np.__version__ >= '1.20':
 else:
     NDArray={float: float, int: int}
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict, Iterable
 
 
-def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., include_material=True):
+def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., include_material=True)->Dict:
+    """create dict of input parameters including of not the item of key 'material' """
     if include_material:
         return {'material': material,
                 'R': R,
@@ -49,12 +50,12 @@ def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., inc
                 'u2': u2}
 
 
-def new_dict_traj(u1=0, u2=0):
+def new_dict_traj(u1=0, u2=0)->Dict:
     return {'u1': u1,
             'u2': u2}
 
 
-def load_dict(filename, directory="", material:str=None):
+def load_dict(filename, directory="", material:str=None)->Dict:
     filedir = os.path.join(directory, filename)
 
     try:
@@ -130,13 +131,13 @@ class CircularWire:
         self.set_material(material)
 
         # Attributes describing geometry
-        self.R = None
-        self.f1 = None
-        self.f2 = None
-        self.u1 = None
-        self.u2 = None
-        self.h = None
-        self.p0 = None
+        self.R:float = None
+        self.f1:float = None
+        self.f2:float = None
+        self.u1:float = None
+        self.u2:float = None
+        self.h:float = None
+        self.p0:float = None
         self.axis = None
         self.traj = None
 
