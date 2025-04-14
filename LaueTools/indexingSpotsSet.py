@@ -16,6 +16,10 @@ import numpy as np
 from pylab import figure, scatter, show, subplot, title
 from pathlib import Path
 
+from typing import Iterable, List, Tuple, Dict, Union
+microns = float
+mm=float
+
 if sys.version_info.major == 3:
     import configparser as CONF
     from . import generaltools as GT
@@ -66,7 +70,7 @@ class OrientMatrix:
     class of orientation matrix which may have several representation
     """
 
-    def __init__(self, matrix: np.array=None, eulers=None):
+    def __init__(self, matrix: 'numpyarray3x3'=None, eulers:Iterable['degrees']=None):
         if matrix is not None:
             self.matrix = matrix
             self.eulers = None
@@ -102,6 +106,7 @@ class spotsset:
         self.dict_grain_matrix = {}  # UB matrices
         self.dict_grain_devstrain = {}  # 3x3 deviatoric strain in crsytal frame
         self.dict_grain_devstrain_sample = {}  # 3x3 deviatoric strain in sample frame
+        self.dict_grain_latticeparameters = {}
         self.dict_grain_Ts = {}
         self.dict_grain_matching_rate = {} 
         self.dict_Missing_Reflections = {}
@@ -127,7 +132,8 @@ class spotsset:
         self.kf_direction = None
         self.detectordiameter = None
         self.CCDLabel = None
-        self.emin, self.emax = 5, 23
+        self.emin, self.emax = 5, 23  # energy band limits ofr full laue pattern simulation( for refinement)
+        self.emax_MR = self.emax # max energy to compute angular matching rate between set of spots from exp. and theo.
 
         # materials -----------------------------------------------
         self.key_material = None
@@ -173,7 +179,7 @@ class spotsset:
         self.dict_IMM = None
         self.IMMdatabase = None
 
-    def setImageMatchingParameters(self, dict_IMM, database):
+    def setImageMatchingParameters(self, dict_IMM:Dict, database):
         """
         set parameters for image matching technique
 
@@ -183,22 +189,40 @@ class spotsset:
         self.dict_IMM = dict_IMM
         self.IMMdatabase = database
 
-    def setMaterial(self, key_material, dictmaterials=DictLT.dict_Materials):
+    
+    def setMaterial(self, key_material:str, addeddictmaterials:Dict=None):
         """
-        set material and dict of Materials for indexing
-        :param key_material: material or element key (see dict_Lauetools)
-        :type key_material: string
+        set material and corresponding self.dict_Materials for indexing purpose
+        
+        it uses self.dictmaterials_index that is set at the beginning of indexSpotsSet()
         """
-        assert key_material is not None
+        if key_material is None:
+            raise ValueError(f'{key_material} is None!')
+        
         self.key_material = key_material
-        self.dict_Materials = dictmaterials
 
-    def setEnergyBand(self, emin, emax):
+        if key_material not in DictLT.dict_Materials:
+            if addeddictmaterials is None:
+                if self.dictmaterials_index is None:
+                    raise ValueError(f'Unknown "key_material" and dictmaterials argument in indexSpotsSet() is None!')
+                else:
+                    self.dict_Materials = self.dictmaterials_index
+            else:
+                self.dict_Materials = addeddictmaterials
+            
+        else: # materials in default LaueTools dict
+            self.dict_Materials = DictLT.dict_Materials
+
+
+    def setEnergyBand(self, emin:float, emax:float, emax_matchringrate:float=None):
         """
-        set energy band limits
+        set energy band limits: self.emin, self.emax (for structural refinement), self.emax_MR (for matching rate computation)
+
+
         """
         self.emin = emin
         self.emax = emax
+        self.emax_MR = emax if emax_matchringrate is None else emax_matchringrate
         self.updateSimulParameters()
 
     def updateSimulParameters(self):
@@ -247,11 +271,13 @@ class spotsset:
             print("%s   : %s" % (key, self.simulparameter[key]))
         return self.simulparameter
 
-    def importdata(self, exp_data):
+    def importdata(self, exp_data:Iterable[Iterable]):
         """ old name of set_dict_spotprops"""
+        if len(exp_data)<5:
+            raise ValueError(f'{exp_data} must have at least 5 elements')
         self.set_dict_spotprops(exp_data)
 
-    def set_dict_spotprops(self, exp_data, add_props=None):
+    def set_dict_spotprops(self, exp_data, add_props:Tuple[Iterable]=None):
         """
         initialize spots indexation dictionary from exp_data
 
@@ -266,9 +292,11 @@ class spotsset:
         .. note:: tth, chi are the twotheta and chi scattering angles.
             They must correspond to posX and poxY (pixel position on detector) through calibration
         """
+        if len(exp_data)<5:
+            raise ValueError(f'{exp_data} must have at least 5 elements')
         self.indexed_spots_dict, self.dict_props_name, self.fulldataspots, self.fulldatacolnames = initIndexationDict(exp_data, add_props)
 
-    def purgedata(self, twicethetaChi_to_remove, dist_tolerance=0.2):
+    def purgedata(self, twicethetaChi_to_remove:Tuple[Iterable], dist_tolerance:float=0.2):
         """
         purge experimental spots (already set in spot dictionary)
         of those present in twicethetaChi_to_remove
@@ -277,6 +305,9 @@ class spotsset:
 
         .. warning:: used only in scripts_indexing.py! It does not handle additional spots properties
         """
+        if len(twicethetaChi_to_remove)!=2:
+            raise ValueError(f'{twicethetaChi_to_remove} must have 2 elements')
+        
         exp_data = self.getSpotsallData()[:, 1:]
         print("Before purge len(exp_data)", exp_data.shape)
         self.indexed_spots_dict, self.dict_props_name, _, _ = purgeSpotsinDict(exp_data.T,
@@ -287,14 +318,14 @@ class spotsset:
 
         print("after purge self.nbspots", self.nbspots)
 
-    def importdatafromfile(self, filename, refpositionfilepath=None, trackingmode=0, verbose=0):
+    def importdatafromfile(self, fullpathfile:str, refpositionfilepath=None, trackingmode=0, verbose:int=0):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list:
         ie self.indexed_spots_dict  taken into account a reference file
 
         optionnaly: write a 'REF_*******.cor' file and set self.refpositionfilepath accordingly
 
-        :param filename: str, fullpath to file with extension .cor
+        :param fullpathfile: str, fullpath to file with extension .cor
         :param TrackingMode: 0   then refpositionfilepath is unchanged when indexing several images
         :param refpositionfilepath: filename of peaks pixel position list. Current loaded spots
         will be selected and aranged according to this reference list.
@@ -318,18 +349,23 @@ class spotsset:
             print('\nIn importdatafromfile(): ')
             print("Import Data for DATASET indexation procedure")
 
-            print("filename in importdatafromfile()", filename)
+            print("fullpathfile in importdatafromfile()", fullpathfile)
 
-        assert Path(filename).suffix == '.cor'
+        assert Path(fullpathfile).suffix == '.cor'
+        
+        res = IOLT.readfile_cor(fullpathfile, output_CCDparamsdict=True)
+
+        if res is None:
+            return 'cor file is empty'
         
         (allspotsprops,
         data_theta, Chi, posx, posy, dataintensity,
         detectorparameters,
-        CCDcalibdict) = IOLT.readfile_cor(filename, output_CCDparamsdict=True)
+        CCDcalibdict) = res
 
-        if verbose>0: print('nb of spots in .cor file %s  is '%filename, len(data_theta))
+        if verbose>0: print('nb of spots in .cor file %s  is '%fullpathfile, len(data_theta))
 
-        add_props = IOLT.get_spotprops_cor(allspotsprops, filename)
+        add_props = IOLT.get_spotprops_cor(allspotsprops, fullpathfile)
 
         if verbose>0:
             if add_props is None:
@@ -339,9 +375,9 @@ class spotsset:
 
         if isinstance(data_theta, (float, int)):
             nb_spots = 1
-            if verbose>1: print("%s contains a single peak" % filename)
+            if verbose>1: print("%s contains a single peak" % fullpathfile)
             self.nbspots = nb_spots
-            return False
+            return 'single peak found'
 
         if refpositionfilepath not in (None, "None"):
             if trackingmode:
@@ -369,7 +405,7 @@ class spotsset:
                 # print("isolatedspots_ref", isolatedspots_ref)
 
                 # write refposfile  .cor file     'REF_------.cor
-                dir_reffile, file_reffile = os.path.split(filename)
+                dir_reffile, file_reffile = os.path.split(fullpathfile)
                 refposfileprefix = os.path.join(dir_reffile, 'REF_' + file_reffile[:-4])
                 IOLT.writefile_cor(refposfileprefix,
                                 2*data_theta, Chi, posx, posy, dataintensity,
@@ -392,7 +428,7 @@ class spotsset:
                 self.refpositionfilepath = refpositionfilepath
 
             if verbose>1:
-                print('nb of selected or TRACKED spots in file %s  is '%filename, len(data_theta))
+                print('nb of selected or TRACKED spots in file %s  is '%fullpathfile, len(data_theta))
                 print('self.refpositionfilepath', self.refpositionfilepath)
 
         nb_spots = len(data_theta)
@@ -404,7 +440,7 @@ class spotsset:
         # print('add_props', add_props)
         self.set_dict_spotprops([Twicetheta, Chi, dataintensity, posx, posy],
                                                             add_props=add_props)
-        warningflag = False
+        warningflag = 'no warning'
         self.CCDcalibdict = CCDcalibdict
         self.CCDLabel = self.CCDcalibdict['CCDLabel']
 
@@ -431,7 +467,7 @@ class spotsset:
             self.kf_direction = self.CCDcalibdict["kf_direction"]
         else:
             textwarning = "\n\n*******\n "
-            textwarning += "warning: Laue geometry wasn't specified in %s" % filename
+            textwarning += "warning: Laue geometry wasn't specified in %s" % fullpathfile
             textwarning += "\nSo using default top reflection geometry: \n%s\n*****\n\n" % DEFAULT_KF_DIRECTION
             if verbose>0: printred(textwarning)
 
@@ -440,11 +476,11 @@ class spotsset:
 
         self.detectorparameters = detectorparameters
         self.nbspots = nb_spots
-        self.filename = filename
+        self.filename = fullpathfile
 
         if self.detectorparameters is None:
-            if verbose>0: printred("file %s does not contain the 5 detector parameters" % filename)
-            return
+            if verbose>0: printred("file %s does not contain the 5 detector parameters" % fullpathfile)
+            return 'Finally, 5 detector parameters are missing'
 
         return warningflag
 
@@ -727,8 +763,13 @@ class spotsset:
                 if self.indexed_spots_dict[key_spot][cg] == grain_index:
                     self.indexed_spots_dict[key_spot][-6:] = [10000, 10000, 10000, 10000, -1, 0]
 
-    def AssignHKL(self, Orientation, grain_index, AngleTol=1.0,
-                        use_spots_in_currentselection=True, selectbyspotsindices=None, verbose=0):
+    def AssignHKL(self, Orientation:Union[OrientMatrix, Iterable[float]],
+                        grain_index:int,
+                        AngleTol:float=1.0,
+                        use_spots_in_currentselection:bool=True,
+                        selectbyspotsindices=None,
+                        verbose:int=0,
+                        emax:float=None):
         r"""
         Assign hkl to the exp spot data set according to
         the orientation matrix within the tolerance angle
@@ -744,6 +785,7 @@ class spotsset:
         :param grain_index: grain index to label exp. spots
         :param AngleTol: angular tolerance (in degrees) to accept a link between exp. and theo. spots
         :param use_spots_in_currentselection: False, consider
+        :param emax: float, energy max for Laue pattern simulation
 
         :return:
         matching_rate, nb_updates, missingRefs
@@ -800,7 +842,8 @@ class spotsset:
                                                                     removeharmonics=1, # for fast computations
                                                                     ResolutionAngstrom=False,#
                                                                     veryclose_angletol=AngleTol,
-                                                                    verbose=verbose-1)
+                                                                    verbose=verbose-1,
+                                                                    emax=emax)
         # TODO nb of links with getSpotsLinks() larger than nb of links used in previous refinement
         # self.pixelresidues
         #         print "AssignationHKL_res in AssignHKL", AssignationHKL_res
@@ -889,7 +932,7 @@ class spotsset:
                                                                 nLUT=3,
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
-                                                                ResolutionAngstrom=False,
+                                                                ResolutionAngstrom: Union[float, None]=None,
                                                                 AngTol_LUTmatching=0.5,
                                                                 MatchingRate_Angle_Tol=0.2,
                                                                 Minimum_Nb_Matches=15,
@@ -909,6 +952,8 @@ class spotsset:
 
         :param useparallelcomputing: use multiprocessing internally to compute matching rate
 
+        :param ResolutionAngstrom: float | None, largest dspacing (crudely approx = sqrt(h**2+k**2+l**2)), None, simulate exhaustively all nodes from perfect theo. crystal
+
         call of INDEX.getOrientMatrices in spotsset class
 
         .. note::
@@ -919,7 +964,7 @@ class spotsset:
             print('********  in FindOrientMatrices()  *************')
             print('spot_index_central',spot_index_central)
 
-        emax = self.emax
+        emax = self.emax_MR if self.emax_MR is not None else self.emax
 
         key_material = self.key_material
 
@@ -965,7 +1010,7 @@ class spotsset:
             # compute angles between spots
             Tabledistance = GT.calculdist_from_thetachi(select_thetachi, select_thetachi)
 
-        latticeparams = DictLT.dict_Materials[key_material][1]
+        latticeparams = self.dict_Materials[key_material][1]
         B = CP.calc_B_RR(latticeparams)
 
         # indexation procedure
@@ -1005,7 +1050,7 @@ class spotsset:
 
         if verbose>0: print("Number of matrices found (nb_sol) (before merging): ", nb_sol)
 
-        keep_only_equivalent = CP.isCubic(DictLT.dict_Materials[key_material][1])
+        keep_only_equivalent = CP.isCubic(self.dict_Materials[key_material][1])
 
         if verbose>0:
             print("set_central_spots_hkl", set_central_spots_hkl)
@@ -1048,11 +1093,11 @@ class spotsset:
                                                                 verbose=0,
                                                                 plotintermediateresults=0,
                                                                 IMM=False,
-                                                                nbGrainstoFind="max",
+                                                                nbGrainstoFind:Union[int,str]="max",
                                                                 LUT=None,
-                                                                n_LUT=3,
+                                                                n_LUT:int=3,
                                                                 set_central_spots_hkl=None,
-                                                                ResolutionAngstrom=False,
+                                                                ResolutionAngstrom: Union[float, None]=None,
                                                                 MatchingRate_List=[50, 60, 80],
                                                                 angletol_list=[0.5, 0.2, 0.1],
                                                                 checkSigma3=False,
@@ -1060,7 +1105,11 @@ class spotsset:
                                                                 CheckOrientations=None,
                                                                 corfilename=None,
                                                                 dirnameout_fitfile=None,
-                                                                depth=0.):
+                                                                depth:microns=0.,
+                                                                dictmaterials:str=None,
+                                                                choose_UB_MinEulerepresentative=True,
+                                                                emax_matchringrate=None,
+                                                                writefitfile=True):
         r"""
         General class method to index a set of experimental spots.
 
@@ -1076,7 +1125,7 @@ class spotsset:
         :type key_material: string
         :param emin: minimum energy bandpass
         :type emin: integer
-        :param emax: maximum energy bandpass
+        :param emax: maximum energy bandpass (for structural refinement). self.emax_MR sets the maximum energy for angular matching rate computation
         :type emax: integer
         :param dict_parameters: dictionary of parameters for the loop and spots set size
         :type dict_parameters: dictionary
@@ -1114,6 +1163,11 @@ class spotsset:
         :param dirnameout_fitfile: folder to write .fit results file in
         :type dirnameout_fitfile: string
         :param depth: normal to surface sample depth in microns
+
+        :param ResolutionAngstrom: float | None, largest dspacing (crudely approx = sqrt(h**2+k**2+l**2)), None, simulate exhaustively all nodes from perfect theo. crystal
+
+        :param dictmaterials: considered dict of materials (see dict_LaueTools.dict_materials format) if key_material is unknown in default dict_LaueTools.dict_materials
+        :param choose_UB_MinEulerepresentative: bool, for cubic symmetry, force to represent UB orientation matrix result with smallest Euler Angles.
         """
         MINIMUM_NB_SPOTS_FOR_INDEXING = 3
 
@@ -1123,8 +1177,11 @@ class spotsset:
 
         totalnbspots = self.nbspots
 
+        if dictmaterials is not None:
+            self.dictmaterials_index = dictmaterials
+
         self.setMaterial(key_material)
-        self.setEnergyBand(emin, emax)
+        self.setEnergyBand(emin, emax, emax_matchringrate)
 
         # for image matching technique to provide UB orientation matrices candidates
         self.setImageMatchingParameters(dict_parameters, database)
@@ -1134,6 +1191,8 @@ class spotsset:
 
         self.LUT = LUT
         self.n_LUT = n_LUT
+
+        self.choose_UB_MinEulerepresentative = choose_UB_MinEulerepresentative
 
         # list of missing reflection index
         self.MissingRefindexedgrains = []
@@ -1163,6 +1222,7 @@ class spotsset:
         # matrices that must be tested first before trying to index from scratch
         # these matrices can come from previously indexed Laue Pattern
         if previousResults is not None:
+            self.choose_UB_MinEulerepresentative = False
             # previousResults = (nbAddMatrices, addMatrices, MRs, NBs)
 
             _, addMatrices, _, _ = previousResults
@@ -1195,13 +1255,15 @@ class spotsset:
         # matrices that must be tested first before trying to index from scratch
         # these matrices are proposed by a specific file .ubs  (see Guessed Matrix(ces) ... field in Index_Refine.py)
         if CheckOrientations is not None:
+            self.choose_UB_MinEulerepresentative=False
+
             if verbose>1:
                 print("CheckOrientations is not None")
                 print("CheckOrientations", CheckOrientations)
             CheckOrientation = CheckOrientations[0]
             Checkmatrices = CheckOrientation[5]
             self.key_material = CheckOrientation[2]
-            self.emax = CheckOrientation[3]
+            self.emax_MR = CheckOrientation[3]
             MATCHINGRATE_FOR_PREVIOUSRESULTS = CheckOrientation[4]
 
             self.UBStack = []
@@ -1304,7 +1366,8 @@ class spotsset:
                 # update matrix dictionary
                 MatchRate, _, _ = self.AssignHKL(UB, grain_index, AngleTol=AngleTol_0,
                                                             use_spots_in_currentselection=True,
-                                                            verbose=verbose-1)
+                                                            verbose=verbose-1,
+                                                            emax=self.emax_MR)
                 if verbose>1:
                     print("before refinement MatchRate", MatchRate)
                     print('MATCHINGRATE_FOR_PREVIOUSRESULTS', MATCHINGRATE_FOR_PREVIOUSRESULTS)
@@ -1333,16 +1396,17 @@ class spotsset:
                 # potential orientation solutions from template matching
                 # ----------------------------------------------------
                 if IMM:
-                    print("providing new set of matrices with ImageMatching template technique")
+                    raise ValueError(f'IMM is {IMM} but not implemented! Set it to False')
+                    # print("providing new set of matrices with ImageMatching template technique")
 
-                    # TODO: test if sigma3 symmetry exist between matrices
-                    (bestUB,
-                    _,
-                    _) = self.getOrients_ImageMatching(MatchingRate_Threshold=MatchingRate_Threshold_IMM,
-                                                                    exceptgrains=self.indexedgrains,
-                                                                    verbose=verbose-1)
+                    # # TODO: test if sigma3 symmetry exist between matrices
+                    # (bestUB,
+                    # _,
+                    # _) = self.getOrients_ImageMatching(MatchingRate_Threshold=MatchingRate_Threshold_IMM,
+                    #                                                 exceptgrains=self.indexedgrains,
+                    #                                                 verbose=verbose-1)
 
-                    fromIMM = True
+                    # fromIMM = True
                 # ---------------------------
                 # Using Angles LUT matching technique based on indexingAnglesLUT.py
                 # -----------------------------
@@ -1464,7 +1528,8 @@ class spotsset:
                                 grain_index,
                                 AngleTol=AngleTol,
                                 use_spots_in_currentselection=True,
-                                verbose=verbose-2)
+                                verbose=verbose-2,
+                                emax=self.emax)
 
                 if verbose>2:
                     print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  '
@@ -1488,6 +1553,7 @@ class spotsset:
                     self.dict_grain_devstrain[grain_index] = devstrain
                     self.dict_grain_devstrain_sample[grain_index] = self.deviatoricstrain_sampleframe
                     self.dict_grain_Ts[grain_index] = refinedTs
+                    self.dict_grain_latticeparameters[grain_index] = None
                     self.refinedTs = refinedTs
                     # select data, link spots, update spot dictionary, update matrix dictionary
 
@@ -1500,7 +1566,8 @@ class spotsset:
                                                                 grain_index,
                                                                 AngleTol=AngleTol,
                                                                 use_spots_in_currentselection=selectedspots_index,
-                                                                verbose=verbose-2)
+                                                                verbose=verbose-2,
+                                                                emax=self.emax)
                 else:
                     Matching_rate = None
 
@@ -1527,6 +1594,7 @@ class spotsset:
                     self.dict_grain_devstrain[grain_index] = None
                     self.dict_grain_devstrain_sample[grain_index] = None
                     self.dict_grain_Ts[grain_index] = None
+                    self.dict_grain_latticeparameters[grain_index] = None
                     self.refinedTs = None
 
                     if frompreviousResults:  # refinement in case of UB from previous results 
@@ -1616,8 +1684,8 @@ class spotsset:
                             # corresponding spots will be no more used for the next indexation
                             self.indexedgrains.append(grain_index)
 
-                            # find single representation of UB and reset h,k,l accordingly
-                            if set_central_spots_hkl is None and CP.hasCubicSymmetry(self.key_material,
+                            # For cubic symmetry, find single representation of UB and reset h,k,l accordingly
+                            if self.choose_UB_MinEulerepresentative and set_central_spots_hkl is None and CP.hasCubicSymmetry(self.key_material,
                                                                         dictmaterials=self.dict_Materials):
 
                                 # Transform matrix and recompute everything
@@ -1640,9 +1708,7 @@ class spotsset:
                                     self.indexed_spots_dict[exp_spot_index][-6: -6 + 3] = [hh, kk, ll]
 
                             # write fit file for one grain
-                            if verbose>0:
-                                print("writing fit file -------------------------")
-                                print("for grainindex=", grain_index)
+                            
                             if verbose>1:
                                 print("self.dict_grain_matrix[grain_index]",
                                 self.dict_grain_matrix[grain_index])
@@ -1653,16 +1719,24 @@ class spotsset:
                             self.deviatoricstrain_sampleframe,
                             self.new_latticeparameters) = CP.evaluate_strain_fromUBmat(self.refinedUBmatrix,
                                                             self.key_material,
-                                                            constantlength='a', verbose=verbose-1)
+                                                            constantlength='a',
+                                                            dictmaterials=self.dict_Materials,
+                                                            verbose=verbose-1)
+                            
+                            self.dict_grain_latticeparameters[grain_index] = self.new_latticeparameters
 
                             # write .fit file of single grain spots results
                             #print('self.pixelresidues', self.pixelresidues)
                             #print('dirnameout_fitfile',dirnameout_fitfile)
-                            self.writeFitFile(grain_index,
-                                            corfilename=corfilename,
-                                            dirname=dirnameout_fitfile,
-                                            addpixdev=True,
-                                            add_strain_sampleframe=True)
+                            if writefitfile:
+                                if verbose>0:
+                                    print("writing fit file -------------------------")
+                                    print("for grainindex=", grain_index)
+                                self.writeFitFile(grain_index,
+                                                corfilename=corfilename,
+                                                dirname=dirnameout_fitfile,
+                                                addpixdev=True,
+                                                add_strain_sampleframe=True)
 
                             if fromIMM:
                                 # because IMM may provides once a list of matrices
@@ -1852,12 +1926,13 @@ class spotsset:
         else:
             return resclose[0]
 
-    def getSpotsLinks(self, UBOrientMatrix, exp_data=None, useabsoluteindex=None,
-                                                            removeharmonics=1,
-                                                            ResolutionAngstrom=False,
-                                                            veryclose_angletol=1.0,
-                                                            returnMissingReflections=True,
-                                                            verbose=0):
+    def getSpotsLinks(self, UBOrientMatrix:'numpyArrayOrList3x3', exp_data=None, useabsoluteindex=None,
+                                                            removeharmonics:int=1,
+                                                            ResolutionAngstrom: Union[float, None]=None,
+                                                            veryclose_angletol:float=1.0,
+                                                            returnMissingReflections:bool=True,
+                                                            verbose=0,
+                                                            emax=None):
         r"""
         return links (pairs or associations) between experimental and theoretical spots
         (i.e. simulated from a grain with UBOrientMatrix, key_material)
@@ -1873,7 +1948,7 @@ class spotsset:
 
                                 if None: local index is absolute index in data
 
-        ResolutionAngstrom  :   simulate exhaustively all the pattern for a perfect theo. crystal
+        ResolutionAngstrom  :   float | None, largest dspacing (crudely approx = sqrt(h**2+k**2+l**2)), None, simulate exhaustively all nodes from perfect theo. crystal
 
         return:
          res, nb_of_simulated_spots, Missing_Reflections_Data
@@ -1889,21 +1964,26 @@ class spotsset:
         if useabsoluteindex is None:
             useabsoluteindex = self.absolute_index
 
-        #print("UBOrientMatrix in getSpotsLinks()", UBOrientMatrix)
+        if verbose>0:
+            print("UBOrientMatrix in getSpotsLinks()", UBOrientMatrix)
+            print("self.key_material in getSpotsLinks()", self.key_material)
         # simulated data
         grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix, dictmaterials=self.dict_Materials)
+        
+        emax_simul = emax if emax is not None else self.emax
 
         (Twicetheta, Chi,
         Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(grain,
                                                     self.emin,
-                                                    self.emax,
+                                                    emax_simul,
                                                     self.detectorparameters,
                                                     removeharmonics=removeharmonics,
                                                     ResolutionAngstrom=ResolutionAngstrom,
                                                     pixelsize=self.pixelsize,
                                                     dim=self.dim,
                                                     detectordiameter=self.detectordiameter * 1.25,
-                                                    kf_direction=self.kf_direction)
+                                                    kf_direction=self.kf_direction,
+                                                    dictmaterials=self.dict_Materials)
 
         nb_of_simulated_spots = len(Twicetheta)
 
@@ -2057,13 +2137,18 @@ class spotsset:
 
         return self.table_angdist
 
-    def computeLUT(self, dictmaterials=DictLT.dict_Materials, verbose=0):
+    def computeLUT(self, dictmaterials=None, verbose=0):
         """
         compute look_up_table angular distances between reciprocal nodes of a known structure
 
         Consider self.key_material, self.n_LUT
         """
         if verbose>0: print("Compute LUT for indexing %s spots in LauePattern " % self.key_material)
+        if dictmaterials is None:
+            dictmaterials = self.dict_Materials  # from SetMaterial()
+        if dictmaterials is None:
+            dictmaterials=DictLT.dict_Materials
+
         latticeparams = dictmaterials[self.key_material][1]
         applyExtinctionRules = dictmaterials[self.key_material][2]
         self.B_LUT = CP.calc_B_RR(latticeparams)
@@ -2087,19 +2172,19 @@ class spotsset:
             if verbose>0: print("Using LUT previously calculated")
         else:
             # use B from material to compute LUT
-            if verbose>0: print("Computing LUT from material data")
-            self.computeLUT()
+            if verbose>0: print(f"Computing LUT from material {self.key_material}")
+            self.computeLUT(verbose=verbose-1)
 
     def get_all_UBs_fromAnglesLUT(self,
                                 spot_index_central=None,
-                                max_nb_of_solutions_per_central_spot=5,
+                                max_nb_of_solutions_per_central_spot:int=5,
                                 MatchingRate_Threshold=None,
                                 MatchingRate_Angle_Tol=0.5,
                                 nbmax_probed=10,
                                 Minimum_Nb_Matches=6,
                                 LUT=None,
                                 set_central_spots_hkl=None,
-                                ResolutionAngstrom=False,
+                                ResolutionAngstrom: Union[float, None]=None,
                                 exceptgrains=None,
                                 verbose=0,
                                 LUTfraction=1/2.,
@@ -2186,7 +2271,7 @@ class spotsset:
                                                                 Minimum_Nb_Matches=6,
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
-                                                                ResolutionAngstrom=False,
+                                                                ResolutionAngstrom: Union[float, None]=None,
                                                                 exceptgrains=None,
                                                                 verbose=0,
                                                                 LUTfraction=1/2.,
@@ -2248,59 +2333,11 @@ class spotsset:
 
         return bestUB, score, nbspotsIAM, Threshold_reached
 
-    def getStatsOnMatching(self, List_of_Angles, exp_data, ang_tol=1.0, verbose=0):
-        r"""
-        returns matching rate in terms of nb of close pairs of spots (exp. and simul. ones)
-        within angular tolerance
 
-        :param List_of_Angles: list of 3 angles (EULER angles)
-        :type List_of_Angles: list of 3 floats
-        :param exp_data: experimental spots angles coordinates (kf vectors)
-        :type exp_data: 2 arrays of floats (2theta and  chi)
-        :param ang_tol: matching angular tolerance to form pairs
-        :type ang_tol: float
-
-        :return:
-            [0] sorted indices of List_of_Angles elements by decreasing matching rate,
-            [1] all matching rate corresponding to element in List_of_Angles
-        """
-        twicetheta_data, chi_data, _ = exp_data
-        kk = 0
-        allmatchingrate = []
-        for angles_sol in List_of_Angles:
-
-            test_Matrix = GT.fromEULERangles_toMatrix(angles_sol)
-
-            res = matchingrate.Angular_residues(test_Matrix,
-                                                twicetheta_data,
-                                                chi_data,
-                                                ang_tol=ang_tol,
-                                                key_material=self.key_material,
-                                                emin=self.emin,
-                                                emax=self.emax)
-            if res is None:
-                continue
-
-            matching_rate = 100.0 * res[2] / res[3]
-            allmatchingrate.append(matching_rate)
-
-            if verbose:
-                print("*" * 30)
-                print("res for k:%d and angles: [%.1f,%.1f,%.1f]"
-                    % (kk, angles_sol[0], angles_sol[1], angles_sol[2]))
-                print("Matching rate ----(in %%):                %.2f " % matching_rate)
-                print("Nb of close spot pairs (< %.2f deg) : %d" % (ang_tol, res[2]))
-                print("Nb of simulated spots : %d" % res[3])
-                print("mean angular residues %.2f deg." % res[4])
-                print("highest residues %.2f deg." % res[5])
-            kk += 1
-
-        return np.argsort(np.array(allmatchingrate))[::-1], allmatchingrate
-
-    def refineUBSpotsFamily(self, grain_index, initial_matrix, use_weights=1,
+    def refineUBSpotsFamily(self, grain_index:int, initial_matrix, use_weights=1,
                                                             nbSpotsToIndex="all",
-                                                            verbose=0,
-                                                            depth=0.):
+                                                            verbose:int=0,
+                                                            depth:microns=0.):
         r"""
         refine UB matrix of spots family belonging to grain being indexed
 
@@ -2317,10 +2354,12 @@ class spotsset:
 
         # TODO:  change nbSpotsToIndex="all"
 
-        set results values for:
+        set attributes:
         self.refinedUBmatrix = newUBmat
         self.B0matrix = Bmatrix
         self.deviatoricstrain = devstrain
+        self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
+        self.new_latticeparameters = lattice_parameters
         # list of residues in pixels for the considered pairs in the model
         self.pixelresidues = residues
         # list of exp spots absolute index in considered pairs in the model
@@ -2372,12 +2411,16 @@ class spotsset:
                 self.detectorparameters + [1, 1, 0, 0, 0] + [0, 0, 0])
 
         arr_indexvaryingparameters = np.arange(5, 13)
+        
+
+        latticeparams = self.dict_Materials[self.key_material][1]
+        Bmatrix = CP.calc_B_RR(latticeparams)
+
         if verbose > 1:
             print("\nInitial error--------------------------------------\n")
             print("initial_matrix", initial_matrix)
-
-        latticeparams = DictLT.dict_Materials[self.key_material][1]
-        Bmatrix = CP.calc_B_RR(latticeparams)
+            print("self.key_material", self.key_material)
+            print("initial lattice parameters", latticeparams)
 
         # print("initial_values, Miller,allparameters, arr_indexvaryingparameters,  etc...")
         # print(initial_values, Miller, allparameters, arr_indexvaryingparameters, sim_indices, posX, posY, initial_matrix,
@@ -2493,7 +2536,9 @@ class spotsset:
         deviatoricstrain_sampleframe,
         lattice_parameters) = CP.evaluate_strain_fromUBmat(newUBmat,
                                                         self.key_material,
-                                                        constantlength="a", verbose=verbose-1)
+                                                        constantlength="a",
+                                                        dictmaterials=self.dict_Materials,
+                                                        verbose=verbose-1)
 
         self.refinedUBmatrix = newUBmat
         self.B0matrix = Bmatrix
@@ -2512,7 +2557,7 @@ class spotsset:
         return newmatrix, devstrain
 
 
-    def refineStrainElementsSpotsFamily(self, grain_index, initial_matrix,
+    def refineStrainElementsSpotsFamily(self, grain_index:int, initial_matrix,
                                                             use_weights=1, verbose=0):
         r"""
         refine UB matrix and strain elements of exp. spots of family 'grain_index'
@@ -2576,7 +2621,7 @@ class spotsset:
         print("self.key_material", self.key_material)
         print("self.detectorparameters", self.detectorparameters)
 
-        latticeparameters = DictLT.dict_Materials[self.key_material][1]
+        latticeparameters = self.dict_Materials[self.key_material][1]
         B0matrix = CP.calc_B_RR(latticeparameters)
 
         CCDcalib = self.detectorparameters
@@ -2844,7 +2889,7 @@ class spotsset:
             nbspotsindexed, MatchRate = self.dict_grain_matching_rate[grain_index][:2]
             UBmatrix = self.dict_grain_matrix[grain_index]
             key_material = self.dict_indexedgrains_material[grain_index]
-            latticeparams = DictLT.dict_Materials[key_material][1]
+            latticeparams = self.dict_Materials[key_material][1]
             B0matrix = CP.calc_B_RR(latticeparams)
 
             outputfile.write("#grainIndex\n")
@@ -3353,7 +3398,7 @@ class spotsset:
         unindexedspots    : plot unindexed spots + previously indexed spots not in unindexedspots
         """
 
-        EXTINCTION = DictLT.dict_Materials[self.key_material][2]
+        EXTINCTION = self.dict_Materials[self.key_material][2]
 
         nbMatrices = len(self.dict_grain_matrix)
 
@@ -3519,7 +3564,7 @@ def writeEmptyFileSummary(filenamepattern, dirname=None):
     outputfile.write(header)
     outputfile.close()
 
-def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
+def purgeSpotsinDict(exp_data, twicethetaChi_to_remove:Tuple[Iterable], dist_tolerance:float=0.2):
     """
     remove undesirable spots in exp_data that are listed in
     and initialize spots indexation dictionary from exp_data
@@ -3533,6 +3578,11 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
 
     .. warning:: handling additional spots properties is not implemented... (add_props=None)
     """
+    if len(twicethetaChi_to_remove)!=2:
+        raise ValueError(f'{twicethetaChi_to_remove} must have 2 elements')
+    if len(exp_data)<5:
+        raise ValueError(f'{exp_data} must have 5 elements')
+    
     tth, chi, posX, posY, Intensity = exp_data
 
     Twicetheta, Chi, tokeep = GT.removeClosePoints_two_sets((tth, chi), twicethetaChi_to_remove,
@@ -3547,7 +3597,7 @@ def purgeSpotsinDict(exp_data, twicethetaChi_to_remove, dist_tolerance=0.2):
     return initIndexationDict(purged_exp_data, add_props=None)
 
 
-def initIndexationDict(exp_data, add_props=None):
+def initIndexationDict(exp_data:Iterable[float], add_props=None):
     """
     initialize spots indexation dictionary from exp_data
 
@@ -3560,6 +3610,9 @@ def initIndexationDict(exp_data, add_props=None):
     :return: indexed_spots_dict, dict_props_name
     """
     nb_of_spots = len(exp_data[0])
+
+    if len(exp_data)<5:
+        raise ValueError(f'{exp_data} must have at least 5 elements')
 
     # val is index in spot_props
     dict_props_name = {'spotindex': 0,
@@ -4220,7 +4273,7 @@ def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters, us
                                                             emax=25,
                                                             detectordiameter=None,
                                                             verbose=0,
-                                                            dictmaterials=DictLT.dict_Materials):
+                                                            dictmaterials=None):
     """
     return links between experimental and theoretical spots
     (simulated from a grain with OrientMatrix, key_material)
@@ -4236,6 +4289,9 @@ def getIndexedSpots(OrientMatrix, exp_data, key_material, detectorparameters, us
 
     # experimental data
     twicetheta_data, chi_data, dataI = exp_data
+
+    if dictmaterials is None:
+        dictmaterials=DictLT.dict_Materials
 
     # simulated data
     grain = CP.Prepare_Grain(key_material, OrientMatrix, dictmaterials=dictmaterials)
