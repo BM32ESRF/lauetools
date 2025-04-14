@@ -75,14 +75,15 @@ def PlotImage(imagepath: str, ROI: tuple = None, **kwargs) -> None:
     plt.colorbar(im)
 
 
-def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', showindex:bool=False, figax=None,  **kwargs) -> tuple:
+def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', label='', showindex:bool=False, figax=None,  **kwargs) -> tuple:
+
     with HidePrint():
         peaklist = IOLT.readfile_dat(filepathdat)
         
     if figax is None:
         fig, ax = plt.subplots()
     else:
-        fig = plt.gcf()
+        fig, ax = figax
         ax.invert_yaxis()
     if size is not None:
         fig.set_size_inches(size[0], size[1])
@@ -95,7 +96,7 @@ def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', showind
         x,y = peaklist[:,:2].T
         xlabel, ylabel = r'2$\theta$ (deg)',r'$\chi$ (deg)'
         
-    ax.scatter(x,y, label = 'Peak position', cmap = plt.cm.inferno, c = np.arange(len(x), 0,-1), **kwargs)
+    ax.scatter(x,y, label=label, c=np.arange(len(x), 0,-1), **kwargs)
     if showindex:
         for _i, (_x, _y) in enumerate(zip(x,y)):
             #ax.annote(x + 1, y + 1, "%d" % _i)
@@ -105,7 +106,8 @@ def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', showind
     ax.set_ylabel(ylabel)
     
     ax.set_aspect('equal')
-    ax.legend(loc = 'upper right')
+    if label != '':
+        ax.legend(loc = 'upper right')
     
     return fig, ax
     
@@ -262,7 +264,7 @@ def EulerAngles(indexed_fileseries: parsed_fitfileseries, size: tuple = (21,6), 
 
 def EulerAngles2D(xech: np.ndarray, yech: np.ndarray, 
                   indexed_fileseries: parsed_fitfileseries, 
-                  size: tuple = (10,6), **kwargs) -> None:
+                  size: tuple = (10,6), maskingcondition:bool=None, **kwargs) -> None:
     
     fig, ax = plt.subplots(1,3)
     if size is not None:
@@ -271,6 +273,12 @@ def EulerAngles2D(xech: np.ndarray, yech: np.ndarray,
     phi   = indexed_fileseries.EulerAngles[:,0].reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
     theta = indexed_fileseries.EulerAngles[:,1].reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
     psi   = indexed_fileseries.EulerAngles[:,2].reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    
+    if maskingcondition is not None:
+        phi = ma.masked_where(maskingcondition, phi)
+        theta = ma.masked_where(maskingcondition, theta)
+        psi = ma.masked_where(maskingcondition, psi)
+    
     
     titles = ['Phi', 'Theta', 'Psi']
     
