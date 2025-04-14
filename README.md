@@ -15,7 +15,7 @@
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-Last revision (February 2024)
+Last revision (April 2025)
 
 LaueTools information on BM32 beamline website:
 
@@ -39,24 +39,19 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	   pip install lauetools
 
-- Former LaueTools package written for python 2.7 only (up to June 2019) is no longer maintained and can be found on sourceforge:
-	
-	https://sourceforge.net/projects/lauetools/version
-
-
-But it is highly recommended to use python 3 to take benefit from all capabilities
-
 2a- Launch Graphical User Interfaces of LaueTools
 *************************************************
 - start Lauetools GUIs from command line :
 
-Normally, in a command window (if environment variables are well set) 3 main GUIs can be launched:
+Normally, in a command window (if environment variables are well set) several GUIs can be launched:
 
-	> lauetools   for the main GUI
+	> lauetools   for the main GUI, simulation, complex Laue pattern calibration, teaching the concepts
+
 	> peaksearch  for batch Laue pattern peak search processing
 	> indexrefine   for batch Laue pattern indexing and unit cell (strain) refinement
 	> buildsummary    to compile all results from indexrefine analysis
 	> plotmap    to plot 2D map of structural quantities from file built previously
+ 
 	> plotmeshgui   to plot 2D map from counters values in (spec) logfile
 
 
@@ -68,10 +63,6 @@ With pip installation, LaueTools package will be included to python packages. Th
 	-In [1] : import LaueTools.readmccd as rmccd
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
-
-In jupyter-notebook, it is also simple in the same manner:
-
-	.. image:: /images/notebook0.jpg
 
 
 
