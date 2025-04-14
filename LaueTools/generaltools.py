@@ -176,7 +176,7 @@ def distfrom2thetachi(pt2D_1, pt2D_2):
     return np.arccos(cosang) / DEG
 
 
-def calculdist_from_thetachi(listpoints1:arrayORListNx2, listpoints2:arrayORListNx2)->'numpyarrayNxM':
+def calculdist_from_thetachi(listpoints1:'arrayORListNx2', listpoints2:arrayORListNx2)->'numpyarrayNxM':
     """
     From two lists of pairs (THETA, CHI) return:
 
@@ -316,7 +316,7 @@ def norme_list(listvec):
     return normarray
 
 
-def tensile_along_u(v:arrayORListNx3, tensile:float, u:Union[Iterable, str]="zsample"):
+def tensile_along_u(v:'arrayORListNx3', tensile:float, u:Union[Iterable, str]="zsample"):
     """
     from list of vectors of q vectors expressed in absolute frame,
     transform them so that to expand or compress the q vector component along u axis by factor 'tensile'.
@@ -359,7 +359,7 @@ def tensile_along_u(v:arrayORListNx3, tensile:float, u:Union[Iterable, str]="zsa
     return wholelistvecfiltered
 
 
-def rotate_around_u(v:arrayORListNx3, angle:degrees, u:'arrayORlist3'):
+def rotate_around_u(v:'arrayORListNx3', angle:degrees, u:'arrayORlist3'):
     """
     from list of vectors of v in absolute frame, rotate q vector component around u
     angle in deg
@@ -378,7 +378,7 @@ def rotate_around_u(v:arrayORListNx3, angle:degrees, u:'arrayORlist3'):
     return wholelistvecfiltered
 
 
-def reflect_on_u(v:arrayORListNx3, u:'arrayORlist3'):
+def reflect_on_u(v:'arrayORListNx3', u:'arrayORlist3'):
     """
     from list of vectors of v in absolute frame, reflect vector on plane defined by its normal u
     angle in deg
@@ -395,7 +395,7 @@ def reflect_on_u(v:arrayORListNx3, u:'arrayORlist3'):
     return wholelistvecfiltered
 
 
-def strain_along_u(v:arrayORListNx3, alpha, u:Union[Iterable, str]="zsample", anglesample:degrees=40):
+def strain_along_u(v:'arrayORListNx3', alpha, u:Union[Iterable, str]="zsample", anglesample:degrees=40):
     """
     from list of vectors of v in absolute frame,
     /alpha expand or contract one vector component along u
@@ -421,7 +421,7 @@ def strain_along_u(v:arrayORListNx3, alpha, u:Union[Iterable, str]="zsample", an
 
 
 # ------ ---------  Matrices
-def matline_to_mat3x3(mat)->arrayORList3x3:
+def matline_to_mat3x3(mat)->'arrayORList3x3':
     """
     arrange  9 elements in columns in a 3*3 matrix
     """
@@ -433,7 +433,7 @@ def matline_to_mat3x3(mat)->arrayORList3x3:
     return mat1
 
 
-def mat3x3_to_matline(mat:arrayORList3x3):
+def mat3x3_to_matline(mat:'arrayORList3x3'):
     """
     convert the three columns of 3*3 matrix in a 9 elements vector
 
@@ -493,7 +493,7 @@ def epsmat_to_epsline(epsmat):
     return epsline
 
 
-def Orthonormalization(mat:arrayORList3x3)->arrayORList3x3:
+def Orthonormalization(mat:'arrayORList3x3')->'arrayORList3x3':
     """
     return orthonormalized matrix M from a matrix where columns are expression
     of non unit and non orthogonal expression of basis vector in absolute frame
@@ -515,7 +515,7 @@ def Orthonormalization(mat:arrayORList3x3)->arrayORList3x3:
     return np.array([new1, new2, new3]).T
 
 
-def UBdecomposition_RRPP(UBmat:arrayORList3x3)->Tuple[arrayORList3x3]:
+def UBdecomposition_RRPP(UBmat:'arrayORList3x3')->Tuple[arrayORList3x3]:
     """
     decomposes UBmat in matrix product RR*PP
     where RR is pure rotation and PP symetric matrix
@@ -616,7 +616,7 @@ def properinteger(flo):
 
 
 # ----- ------------  SET
-def FindClosestPoint(arraypts:arrayORListNx2, XY:'arrayORList2', returndist:flag=0):
+def FindClosestPoint(arraypts:'arrayORListNx2', XY:'arrayORList2', returndist:flag=0):
     """
     Returns the index of the closest point in arraypts from point XY =[X,Y]
 
@@ -630,7 +630,7 @@ def FindClosestPoint(arraypts:arrayORListNx2, XY:'arrayORList2', returndist:flag
         return indclose
 
 
-def FindTwoClosestPoints(arraypts:arrayORListNx2, XY:'arrayORList2'):
+def FindTwoClosestPoints(arraypts:'arrayORListNx2', XY:'arrayORList2'):
     """
     Returns the index of the two closest points in arraypts from point XY =[X,Y]
 
@@ -644,7 +644,7 @@ def FindTwoClosestPoints(arraypts:arrayORListNx2, XY:'arrayORList2'):
     return indclose, np.sqrt(np.sum(dist ** 2, axis=1))[indclose]
 
 
-def SortPoints_fromPositions(TestPoints:arrayORListNx2, ReferencePoints:arrayORListNx2, tolerancedistance:float=5):
+def SortPoints_fromPositions(TestPoints:'arrayORListNx2', ReferencePoints:'arrayORListNx2', tolerancedistance:float=5):
     """
     to sort list of points as a function of their proximity to a sorted reference list of spots
 
@@ -852,7 +852,7 @@ def mutualpairs(ind1:arrayORList1D, ind2:arrayORList1D)->'arrayORList2D':
     return np.transpose([np.tile(ind1, len(ind2)), np.repeat(ind2, len(ind1))])
 
 
-def pairs_of_indices(n:int)->arrayORListNx2:
+def pairs_of_indices(n:int)->'arrayORListNx2':
     """
     return indice position of non zero and non diagonal elements in triangular up matrix (n*n)
     pairs_of_indices(5)
@@ -876,7 +876,7 @@ def pairs_of_indices(n:int)->arrayORListNx2:
     return np.array(pairs)
 
 
-def allpairs_in_set(list_of_indices:arrayORList1D)->arrayORListNx2:
+def allpairs_in_set(list_of_indices:arrayORList1D)->'arrayORListNx2':
     """
     return all combinations by pairs of elements in list_of_indices
 
@@ -906,7 +906,7 @@ def allpairs_in_set(list_of_indices:arrayORList1D)->arrayORListNx2:
     return np.take(list_of_indices, pairs)
 
 
-def return_pair(n:int, pairs:arrayORListNx2):
+def return_pair(n:int, pairs:'arrayORListNx2'):
     """
     return array of integer that are in correspondence in pairs with integer n
     """
@@ -917,7 +917,7 @@ def return_pair(n:int, pairs:arrayORListNx2):
     return Pairs[(i, j)]
 
 
-def getSets(pairs:arrayORListNx2):
+def getSets(pairs:'arrayORListNx2'):
     """
     find indices pairs from index connections given by a list from pairs of indices
 
@@ -975,7 +975,7 @@ def getSets(pairs:arrayORListNx2):
     return res_sets
 
 
-def Set_dict_frompairs(pairs_index:arrayORListNx2, verbose:int=0):
+def Set_dict_frompairs(pairs_index:'arrayORListNx2', verbose:int=0):
     """
     from association pairs of integers return dictionnary of associated integer
 
@@ -1030,7 +1030,7 @@ def Set_dict_frompairs(pairs_index:arrayORListNx2, verbose:int=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_tolerance=0.5, samelist:bool=False)->Tuple:
+def getCommonPts(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance=0.5, samelist:bool=False)->Tuple:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1084,7 +1084,7 @@ def getCommonPts(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_tolerance=0.5, sam
 
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
-def getPairsbetweenTwoSets(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
+def getPairsbetweenTwoSets(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1116,7 +1116,7 @@ def getPairsbetweenTwoSets(XY1:arrayORListNx2, XY2:arrayORListNx2, dist_toleranc
         
     return in1, in2
 
-def sortclosestpoints(pt0:arrayORListNx2, pts:arrayORListNx2)->Tuple:
+def sortclosestpoints(pt0:'arrayORListNx2', pts:'arrayORListNx2')->Tuple:
     """return pt index in pts sorted by increasing distance from pt0
 
     Note: cartesian distance
