@@ -20,11 +20,27 @@ if np.__version__ >= '1.20':
 else:
     NDArray={float: float, int: int}
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable
 
 
-def transf_pix_to_coo (ccd_parameters: Tuple[float], xcam, ycam):
-    """Transform image pixel coordinates to laboratory coordinates"""
+def transf_pix_to_coo (ccd_parameters: Iterable[float],
+                       xcam:'numpyArrayOrList', ycam:'numpyArrayOrList')->'numpyArrayNx3':
+    """Transform image pixel coordinates to laboratory coordinates
+
+    ccd_parameters: 6 parameters describing geometry of detector:
+    distance_detector_sample, xcen (pix), ycen (pix), xbet (deg), xgam (deg), pixelsize (mm)
+    
+    laboratory frame is defined as:
+    x perp to incoming beam,
+    y // incoming beam,
+    z pointing towards detector and perp to incimoing beam"""
+    if len(ccd_parameters)<6:
+        raise ValueError(f'ccd_parameters "{ccd_parameters}" must have at least 6 elements')
+    if pixelsize <=0:
+        raise ValueError(f'pixelsize "{pixelsize}" can not be less or equal to zero!')
+    if len(xcam)!=len(ycam):
+        raise ValueError(f'xcam and ycam don t have the same nb of elements: {len(xcam)},{len(ycam)}')
+    
     detect, xcen, ycen, xbet, xgam, pixelsize = ccd_parameters
 
     cosbeta = np.cos(math.pi / 2. - xbet)
@@ -56,7 +72,9 @@ def transf_pix_to_coo (ccd_parameters: Tuple[float], xcam, ycam):
 
 
 def transf_vect_to_pix(ccd_parameters, vect, ysrc=0):
-    """Calculate the pixel coordinates where a given X-ray would hit the detector"""
+    """Calculate the pixel coordinates where a given X-ray would hit the detector
+    
+    NOT USED"""
     detect, xcen, ycen, xbet, xgam, pixelsize = ccd_parameters
 
     cosbeta = np.cos(math.pi / 2. - xbet)
@@ -86,7 +104,9 @@ def transf_vect_to_pix(ccd_parameters, vect, ysrc=0):
 
 
 def calc_ray_length(ccd_parameters, ysrc, xcam, ycam):
-    """Calculate the length of a given X-ray from sample to detector"""
+    """Calculate the length of a given X-ray from sample to detector
+    
+    NOT USED"""
     detect, xcen, ycen, _, _, pixelsize = ccd_parameters
 
     dx = (xcam-xcen)*pixelsize
@@ -99,7 +119,9 @@ def calc_ray_length(ccd_parameters, ysrc, xcam, ycam):
 
 
 def calc_solid_angle_coeff(ccd_parameters, xcam, ycam):
-    """Evaluate the solid angle correction for a detector pixel"""
+    """Evaluate the solid angle correction for a detector pixel
+    
+    NOT USED"""
     detect = ccd_parameters[0]
 
     lray = calc_ray_length(ccd_parameters, 0, xcam, ycam)
@@ -108,12 +130,12 @@ def calc_solid_angle_coeff(ccd_parameters, xcam, ycam):
 
 
 # Wire geometry
-def calc_axis(f1, f2):
-    """Return the axis vector of a wire"""
+def calc_axis(f1:float, f2:float)->'numpyArray3':
+    """Return the 3D axis vector of a wire"""
     return  np.array([np.cos(f1) * np.cos(f2), np.sin(f1) * np.cos(f2), -np.sin(f2)])
 
 
-def calc_traj(u1, u2):
+def calc_traj(u1:float, u2:float)->'numpyArray3':
     """Return the translation vector of a wire"""
     return np.array([ -np.sin(u1) * np.cos(u2), np.cos(u1) * np.cos(u2), np.sin(u2)])  
 
