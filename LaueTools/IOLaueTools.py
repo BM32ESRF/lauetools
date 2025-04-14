@@ -22,6 +22,8 @@ import io
 import numpy as np
 from pathlib import Path
 
+from typing import Union, List, Iterable, Dict, Tuple
+
 
 np.set_printoptions(precision=15)
 
@@ -37,8 +39,8 @@ else:
 DEFAULT_CCDLABEL = 'sCMOS'
 
 # --- ------------  PROCEDURES
-def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, data_y:list, dataintensity:list,
-                                            param: list=None,
+def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, data_y:List, dataintensity:List,
+                                            param: List=None,
                                             initialfilename:str=None,
                                             comments:str=None,
                                             sortedexit:bool=False,
@@ -231,12 +233,12 @@ def writefile_cor(prefixfilename:str, twicetheta:list, chi:list, data_x:list, da
     
     return outputfilename
 
-def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:bool=True,
+def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortintensities:bool=True,
                                                                 defaultminimalnbcolumns:int=5):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
 
     :param allspotsprops: array of all spots properties with shape (nb of spots, nb of props)
-    :param filename: str, .cor file to get the columns name
+    :param fullpathfile: str, .cor file to get the columns name
     :param defaultminimalnbcolumns: int, minimal nb of columns (default = 5, 2theta chi X Y I )
 
     :return: array of spot props (except X Y 2theta chi and I), list of column names
@@ -244,7 +246,7 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
     COLINDEX_INTENSITY_CORFILE = 4  # convention 
 
     assert len(allspotsprops.shape) == 2
-    assert Path(filename).suffix == '.cor'
+    assert Path(fullpathfile).suffix == '.cor'
         
 
     #print('allspotsprops.shape', allspotsprops.shape)
@@ -253,7 +255,7 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
     if allspotsprops.shape[1] == defaultminimalnbcolumns:
         return None
 
-    # print('filename', filename, 'allspotsprops  int', allspotsprops[:,4])
+    # print('fullpathfile', fullpathfile, 'allspotsprops  int', allspotsprops[:,4])
     if sortintensities:
         props = allspotsprops[np.argsort(allspotsprops[:, COLINDEX_INTENSITY_CORFILE])[:: -1]]
     else:
@@ -261,7 +263,7 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
 
     # list of props
     otherpropsdata = props[:, defaultminimalnbcolumns:].T
-    with open(filename, "r") as f:
+    with open(fullpathfile, "r") as f:
         columnnames = f.readline().split()[defaultminimalnbcolumns:]
     
 
@@ -271,7 +273,7 @@ def get_spotprops_cor(allspotsprops: np.array, filename:str, sortintensities:boo
     # print('\n\n')
     return otherpropsdata, columnnames
 
-def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True):
+def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5columns:bool=True)->Union[List, None]:
     """
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made at least of 5 columns:  2theta chi pixX pixY I
@@ -297,7 +299,7 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
     """
     SKIPROWS = 1
     # read first line
-    with open(filename, "r") as f:
+    with open(fullpathfile, "r") as f:
         firstline = f.readline()
         unindexeddata = False
         if firstline.startswith("# Unindexed"):
@@ -308,12 +310,13 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         hh = re.sub(' +', ' ', firstline)
         listcolumnsname = hh.split(' ')
         listcolumnsname[-1].strip()
+    
+    alldata = np.loadtxt(fullpathfile, skiprows=SKIPROWS)
 
-    alldata = np.loadtxt(filename, skiprows=SKIPROWS)
+    #print('np.shape(self.alldata)', np.shape(alldata))
 
     dict_spotsproperties = {}
 
-    # nbspots, nbcolumns = np.shape(self.alldata)
     sha = np.shape(alldata)
     if len(sha) == 2:
         nbcolumns = sha[1]
@@ -323,7 +326,8 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
         nbcolumns = sha[0]
 
     # having created an empty .cor file may be useless
-    assert nb_peaks != 0
+    if nb_peaks == 0:
+        return None
 
     if nb_peaks > 1:
 
@@ -369,11 +373,12 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
             data_theta = data_2theta / 2.0
             firstcolumnindex_properties = 0 # 5
             otherproperties_name = listcolumnsname[firstcolumnindex_properties:]
+            otherproperties_name[-1]=otherproperties_name[-1].strip()
             otherproperties_data = np.array(alldata[firstcolumnindex_properties:])
             dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     #    print "Reading detector parameters if exist"
-    with open(filename, "r") as openf:
+    with open(fullpathfile, "r") as openf:
 
         # new way of reading CCD calibration parameters
 
@@ -382,10 +387,9 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
 
         if CCDcalib['dd']:
             detParam = [CCDcalib[key] for key in CCD_CALIBRATION_PARAMETERS[:5]]
-            # print("5 CCD Detector parameters read from .cor file: %s"%filename)
+            # print("5 CCD Detector parameters read from .cor file: %s"%fullpathfile)
         else:
-            raise IndexError('Missing explicit values for keys %s in CCDcalib () in file  %s '%(CCD_CALIBRATION_PARAMETERS[:5],filename))
-            return
+            raise IndexError('Missing explicit values for keys %s in CCDcalib () in file  %s '%(CCD_CALIBRATION_PARAMETERS[:5],fullpathfile))
     
     if nb_peaks > 1:
         toreturn = [alldata, data_theta, data_chi,
@@ -405,17 +409,17 @@ def readfile_cor(filename, output_CCDparamsdict=False, output_only5columns=True)
     return toreturn
 
 
-def getpixelsize_from_corfile(filename: str):
+def getpixelsize_from_corfile(fullpathfile: str)->Union[float, None]:
     """
     return pixel size if written in .cor file
 
 
-    :param filename: str, full filepath
+    :param fullpathfile: str, full filepath
     """
     xpixelsize = None
 
     #    print "Reading detector parameters if exist"
-    with open(filename, "r") as f:
+    with open(fullpathfile, "r") as f:
         find_xpixelsize = False
         find_ypixelsize = False
         find_pixelsize = False
@@ -443,12 +447,12 @@ def getpixelsize_from_corfile(filename: str):
     else:
         return None
 
-def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
+def getkfdirection_from_corfile(fullpathfile, defautdirection='Z>0'):
     """
     return kf_direction (laue camera/detector position geometry) if written in .cor file
     """
 
-    with open(filename, "r") as f:
+    with open(fullpathfile, "r") as f:
 
         kf_direction =defautdirection
         for line in f:
@@ -459,13 +463,13 @@ def getkfdirection_from_corfile(filename, defautdirection='Z>0'):
 
     return kf_direction
     
-def getdetectordiameter_from_corfile(filename: str, defautdiameter:float=165):
+def getdetectordiameter_from_corfile(fullpathfile: str, defautdiameter:float=165):
     """
     return kf_direction (laue camera/detector position geometry) if written in .cor file
     """
     assert defautdiameter>0
 
-    with open(filename, "r") as f:
+    with open(fullpathfile, "r") as f:
 
         diam =defautdiameter
         for line in f:
@@ -740,8 +744,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     elif nbcolumns == 13:  # standard + 2 columns for error bars
         (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
         Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr) = Data_array.T
-
-      
+    
     elif nbcolumns == 3: # basic X, Y , I   # from DetectorCalibration board
         # need to set fake data
         (peak_X, peak_Y, peak_I) = Data_array.T
@@ -749,14 +752,22 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         Xdev, Ydev, peak_bkg) = np.zeros((6, nbpeaks))
         Ipixmax = 500*np.ones(nbpeaks)
 
+    else:
+        print(f"nbcolumns  ={nbcolumns} is higher than 13!")
+        print('I don t know yet what are the columns meaning ...!')
+
     with open(os.path.join(dirname, outputfilename), "w") as outputfile:
         headerfile = "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
         headerfile += "peak_inclination Xdev Ydev peak_bkg Ipixmax"
         if nbcolumns in (12, 13): #computerrorbars
              headerfile += " Xfiterr Yfiterr"
         headerfile += '\n'
-
-        outputfile.write(headerfile)
+        try:
+            outputfile.write(headerfile)
+        except PermissionError:
+            print('You do not have permission to write a file in this folder! ')
+            print(f'Output file {outputfile} is not written')
+            return
 
         if nbcolumns < 12:
             if nbpeaks == 1:
@@ -841,6 +852,10 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                                         Yfiterr.round(decimals=3)))[i]
                             ) for i in list(range(nbpeaks))]))
                 nbpeaks = len(peak_X)
+
+        else:
+            print(f"nbcolumns  ={nbcolumns} is higher than 13")
+            print('Not implemented yet!')
 
         outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
         if initialfilename:
@@ -933,7 +948,7 @@ def getcolumnsname_dat(fullpath):
 
 def getspotsproperties_dat(fullpath, verbose=0):
     """
-    return dict of spots properties from .dar file
+    return dict of spots properties from .dat file
 
     Parameters
     ----------
@@ -954,7 +969,6 @@ def getspotsproperties_dat(fullpath, verbose=0):
         print('nbpeaks', nbpeaks)
         print('alldata.shape', alldata.shape)
         print('raw nbcolumns', nbcolumns)
-
     
     listcolspotproperties = np.arange(nbcolumns)
 
@@ -2216,8 +2230,8 @@ class readwriteParametersFile:
     def __init__(self):
         pass
 
-    def loadParamsFile(self, filename, dirname=None):
-        with open(filename) as fh:
+    def loadParamsFile(self, fullpathfile, dirname=None):
+        with open(fullpathfile) as fh:
             self.attrs = []
             for line in fh:
                 if not line.startswith(("#", "!", "-")):
@@ -2238,7 +2252,7 @@ class readwriteParametersFile:
 
 
 # ---  --- XMAS file related functions
-def readxy_XMASind(filename):
+def readxy_XMASind(fullpathfile):
     """
     read XMAS indexation file
     and return:
@@ -2254,7 +2268,7 @@ def readxy_XMASind(filename):
 
     # not much used now!
     """
-    f = open(filename, "r")
+    f = open(fullpathfile, "r")
 
     _ = f.readline()  #filename_mccd
     f.readline()
@@ -2351,7 +2365,7 @@ def read_cri(filecri):
     return uc
 
 
-def readfile_str(filename, grain_index):
+def readfile_str(fullpathfile, grain_index):
     """
     read XMAS .str file
 
@@ -2366,10 +2380,10 @@ def readfile_str(filename, grain_index):
     TODO: to be refactored (JSM Feb 2012)
     """
 
-    print("reading info from STR file : \n", filename)
+    print("reading info from STR file : \n", fullpathfile)
     # print "peak list, calibration, strained orientation matrix, deviations"
     # print "change sign of HKL's"
-    f = open(filename, "r")
+    f = open(fullpathfile, "r")
     i = 0
     grainfound = 0
     calib = np.zeros(5, dtype=np.float32)
@@ -2422,7 +2436,7 @@ def readfile_str(filename, grain_index):
     #    matstr = scipy.io.array_import.read_array(filestr, columns=(0, 1, 2),
     #                                              lines = (linemat, linemat + 1, linemat + 2))
     #    print "linemat", linemat
-    matstr = np.genfromtxt(filename,
+    matstr = np.genfromtxt(fullpathfile,
                             usecols=(0, 1, 2),
                             skip_header=linemat,
                             skip_footer=linetot - (linemat + 3))
@@ -2436,7 +2450,7 @@ def readfile_str(filename, grain_index):
     #                                              lines = (linestart, (linestart + 1, lineend)))
     #    print "linestart", linestart
     #    print "linetot - lineend", linetot - lineend
-    data_ = np.genfromtxt(filename,
+    data_ = np.genfromtxt(fullpathfile,
                             dtype=None,
                             delimiter="\n",
                             names=True,
@@ -2456,7 +2470,7 @@ def readfile_str(filename, grain_index):
     return data_str, matstr, calib, dev_str
 
 
-def read_indexationfile(filename, grainindex_mat=0):
+def read_indexationfile(fullpathfile, grainindex_mat=0):
     r"""
     Read indexation file created by lauetools with extension .res
 
@@ -2465,7 +2479,7 @@ def read_indexationfile(filename, grainindex_mat=0):
     .. todo:: adapt matrix reader to new file .res format
 
     """
-    with open(filename, 'r') as f:
+    with open(fullpathfile, 'r') as f:
         while True:
             line = f.readline()
             if line.startswith('# Number of spots:'):
@@ -2474,7 +2488,7 @@ def read_indexationfile(filename, grainindex_mat=0):
 
     nb_lines_header = 4
 
-    f = open(filename, 'r')
+    f = open(fullpathfile, 'r')
     for _ in range(nb_lines_header):
         f.readline()
 
@@ -2508,7 +2522,7 @@ def read_indexationfile(filename, grainindex_mat=0):
     energy = np.take(energy, pos, axis=0)
     Grain_index = np.take(Grain_index, pos, axis=0)
 
-    f = open(filename, "r")
+    f = open(fullpathfile, "r")
     accum_mat = 0  # U matrix
     lineaccum = 0
     mat_index = 0
@@ -2605,19 +2619,19 @@ def read_indexationfile(filename, grainindex_mat=0):
     return (spotindex, twicetheta, chi, pixX, pixY, Intensity, miller, energy,
                 Grain_index, datamat, datamat_B, datamat_E, calib)
 
-def getpeaks_fromfit2d(filename):
+def getpeaks_fromfit2d(fullpathfile):
     """
     read peaks list created by fit2d peak search
 
     #TODO: to remove function to read old data format, not used any longer
     """
-    frou = open(filename, "r")
+    frou = open(fullpathfile, "r")
     alllines = frou.readlines()
     frou.close()
     peaklist = alllines[1:]
 
-    print(" %d peaks in %s" % (len(peaklist), filename))
-    outputfilename = filename[:-6] + ".pik"
+    print(" %d peaks in %s" % (len(peaklist), fullpathfile))
+    outputfilename = fullpathfile[:-6] + ".pik"
     fric = open(outputfilename, "w")
     for line in peaklist:
         fric.write(line)
