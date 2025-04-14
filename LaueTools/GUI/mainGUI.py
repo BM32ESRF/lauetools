@@ -5,15 +5,11 @@ and simulation
 Formerly its name was LaueToolsGUI.py (located at the project root)
 
 This module belongs to the open source LaueTools project
-with a free code repository at at gitlab.esrf.fr
+with a free code repository at 
 
-(former version with python 2.7 at https://sourceforge.net/projects/lauetools/)
+https://github/ESRFBM32/lauetools
 
-or for python3 and 2 in
-
-https://gitlab.esrf.fr/micha/lauetools
-
-J. S. Micha July 2021
+J. S. Micha April 2025
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
 from __future__ import absolute_import, division
