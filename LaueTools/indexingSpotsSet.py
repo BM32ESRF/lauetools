@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Iterable, List, Tuple, Dict, Union
 microns = float
 mm=float
+degrees = float
 
 if sys.version_info.major == 3:
     import configparser as CONF
@@ -70,7 +71,7 @@ class OrientMatrix:
     class of orientation matrix which may have several representation
     """
 
-    def __init__(self, matrix: 'numpyarray3x3'=None, eulers:Iterable['degrees']=None):
+    def __init__(self, matrix: 'numpyarray3x3'=None, eulers:Iterable[degrees]=None):
         if matrix is not None:
             self.matrix = matrix
             self.eulers = None
