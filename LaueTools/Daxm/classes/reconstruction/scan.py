@@ -29,6 +29,9 @@ import LaueTools.Daxm.material.absorption as abso
 
 from LaueTools.Daxm.classes.reconstruction.spot import SpotReconstructor, RecError
 
+mm=float
+
+from typing import Dict, Tuple, Union, List
 
 class ScanReconstructor:
 
@@ -339,8 +342,8 @@ class ScanReconstructor:
         else:
 
             self.reconstruct_parallel(yrange, halfboxsize, ystep, nproc, rec_args, save_spot)
-
-    def reconstruct_serial(self, yrange, halfboxsize=None, ystep=0.001, rec_args={}, save_spot=None):
+    mm=float
+    def reconstruct_serial(self, yrange, halfboxsize=None, ystep:mm=0.001, rec_args:dict={}, save_spot=None):
 
         self.spots_rec = []
         # enumerate(self.peaks)
@@ -419,7 +422,7 @@ class ScanReconstructor:
 
         return img
 
-    def print_images(self, prefix, first_index=0, directory="", nbdigits=4, yrange=None, ystep=0.001):
+    def print_images(self, prefix, first_index=0, directory="", nbdigits:int=4, yrange=None, ystep=0.001):
 
         # try:
         #     print("Creating directory: {}".format(directory))
