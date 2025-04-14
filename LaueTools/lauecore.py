@@ -49,6 +49,8 @@ except ImportError:
     #print("-- warning. Cython compiled module for fast computation of Laue spots is not installed!")
     USE_CYTHON = False
 
+from typing import Tuple, Union, Dict, List, Iterable
+
 DEG = np.pi / 180.0
 
 # --- ---------- Spot class
@@ -316,12 +318,13 @@ def parse_grainparameters(SingleCrystalParams):
     return Bmatrix, Extinc, Orientmatrix, key_for_dict
 
 
-def getLaueSpots(wavelmin, wavelmax, crystalsParams, kf_direction=DEFAULT_TOP_GEOMETRY,
-                                            OpeningAngleCollection=22.0,
-                                            fastcompute=0,
-                                            ResolutionAngstrom=False,
-                                            verbose=1,
-                                            dictmaterials=None):
+def getLaueSpots(wavelmin:float, wavelmax:float, crystalsParams,
+                            kf_direction:str=DEFAULT_TOP_GEOMETRY,
+                            OpeningAngleCollection:float=22.0,
+                            fastcompute=0,
+                            ResolutionAngstrom: Union[float, None]=None,
+                            verbose:int=1,
+                            dictmaterials:Dict=None):
     r"""
     Compute Qxyz vectors and corresponding HKL miller indices for nodes in recicprocal space that can be measured
     for the given detection geometry and energy bandpass configuration.
@@ -1664,7 +1667,7 @@ def emptylists(n):
 def SimulateLaue_merge( grains, emin, emax, detectorparameters, only_2thetachi=True,
                                                 output_nb_spots=False,
                                                 kf_direction=DEFAULT_TOP_GEOMETRY,
-                                                ResolutionAngstrom=False,
+                                                ResolutionAngstrom: Union[float, None]=None,
                                                 removeharmonics=0,
                                                 pixelsize=165 / 2048.0,
                                                 dim=(2048, 2048),
@@ -1807,7 +1810,7 @@ def SimulateLaue_twins(grainparent, twins_operators, emin, emax, detectorparamet
 
 
 def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP_GEOMETRY,
-                                                            ResolutionAngstrom=False,
+                                                            ResolutionAngstrom: Union[float, None]=None,
                                                             removeharmonics=0,
                                                             pixelsize=165 / 2048.0,
                                                             dim=(2048, 2048),
@@ -1896,7 +1899,7 @@ def SimulateLaue(grain, emin, emax, detectorparameters, kf_direction=DEFAULT_TOP
 
 def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
                                             kf_direction=DEFAULT_TOP_GEOMETRY,
-                                            ResolutionAngstrom=False,
+                                            ResolutionAngstrom: Union[float, None]=None,
                                             removeharmonics=0,
                                             pixelsize=165 / 2048.0,
                                             dim=(2048, 2048),
@@ -1993,8 +1996,9 @@ def SimulateLaue_full_np(grain, emin, emax,detectorparameters,
         return Twicetheta, Chi, Miller_ind, posx, posy, Energy
 
 
-def SimulateResult(grain, emin, emax, simulparameters,
-                    fastcompute=1, ResolutionAngstrom=False, dictmaterials=dict_Materials):
+def SimulateResult(grain: Iterable, emi:int, emax:int, simulparameters,
+                    fastcompute:int=1, ResolutionAngstrom: Union[float, None]=None,
+                    dictmaterials:Dict=dict_Materials):
     r"""Simulates 2theta chi of Laue Pattern spots for ONE SINGLE grain
 
     :param grain: crystal parameters in a 4 elements list
@@ -2009,6 +2013,8 @@ def SimulateResult(grain, emin, emax, simulparameters,
         * USED: in AutoindexationGUI.OnStart, LaueToolsGUI.OnCheckOrientationMatrix
         * USED also IndexingImageMatching, lauecore.SimulateLaue_merge
     """
+    if len(grain)!=4:
+        raise ValueError(f'{grain} has not 4 elements!')
 
     detectordiameter = simulparameters["detectordiameter"]
     kf_direction = simulparameters["kf_direction"]
@@ -2115,9 +2121,9 @@ def atomicformfactor(q, element="Ge"):
 
 def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotLaueDiagram=1,
                                                         Plot_Data=0,
-                                                        verbose=0,
+                                                        verbose:int=0,
                                                         detectordistance=DEFAULT_DETECTOR_DISTANCE,
-                                                        ResolutionAngstrom=False,
+                                                        ResolutionAngstrom: Union[float, None]=None,
                                                         Display_label=1,
                                                         HarmonicsRemoval=1,
                                                         dictmaterials=dict_Materials):
@@ -2130,7 +2136,7 @@ def simulatepurepattern_np(grain, emin, emax, kf_direction, data_filename, PlotL
                     verbose=verbose, ResolutionAngstrom=ResolutionAngstrom,
                     dictmaterials=dictmaterials)
 
-    print("len(vecind[0])", len(vecind[0][0]))
+    if verbose>0: print("len(vecind[0])", len(vecind[0][0]))
 
     # selecting RR nodes without harmonics (fastcompute = 1 loses the miller indices and RR positions associations for quicker computation)
 
