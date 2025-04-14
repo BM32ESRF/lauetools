@@ -35,6 +35,8 @@ import LaueTools.Daxm.modules.calibration as calib
 
 import LaueTools.Daxm.classes.wire as mywire
 
+from typing import Dict, Tuple, Union, List, Iterable
+
 
 def new_scan_dict(scan_dict=None):
     """Return a default scan as dict."""
@@ -93,7 +95,7 @@ class ScanError(Exception):
 class StaticPointScan(object):
     """General scan class"""
     # Constructors and initialization
-    def __init__(self, inp, verbose=True):
+    def __init__(self, inp:Union[str, Dict], verbose:bool=True):
         self.verbose = verbose
         self.print_msg("Creating class instance...")
         if verbose:
@@ -122,16 +124,16 @@ class StaticPointScan(object):
         self.spec_monitor = None
         self.wire_position = None
         self.wire_step = None
-        self.number_images = None
+        self.number_images:int = None   # nb of images collected (nb of points of scan = nb of steps +1)
 
         # open file and set self.filetype
         self.init_spec()
 
         # attributes related to detector and geometry
-        self.ccd_type = None
-        self.det_calib = None
-        self.img_params = None
-        self.detector_params = None
+        self.ccd_type:str = None
+        self.det_calib: Union[str, Iterable[float]] = None  # filepath to .det or 6 elements
+        self.img_params: Dict = None
+        self.detector_params: Dict = None
 
         self.init_detector()
 
@@ -147,24 +149,24 @@ class StaticPointScan(object):
 
         # attributes related to the data
         self.img_folder = None
-        self.img_pref = None
-        self.img_idx0 = None
-        self.img_nbdigits = None
-        self.img_offset = None
-        self.img_idx = None
-        self.img_filenames = None
-        self.img_idx_use = None
-        self.img_exist = None
+        self.img_pref: str = None  # image prefix
+        self.img_idx0: int = None  # imageFirstIndex
+        self.img_nbdigits: int = None  # minimal nb of digits for zero padding of image index
+        self.img_offset: float = None  # pixel intensity pedestal (offset)
+        self.img_idx: 'numpyArray1D' = None
+        self.img_filenames:List[str] = None
+        self.img_idx_use: Tuple = None   # tuple of image indices used
+        self.img_exist: 'numpyArray1D' = None  
 
         if not hasattr(self, "disable_data") or not getattr(self, "disable_data"):
             self.init_data()
 
         # attributes relate to the monitor
-        self.monitor_ready = False
-        self.monitor = None
-        self.monitor_roi = None
-        self.monitor_offset = None
-        self.monitor_val = None
+        self.monitor_ready: bool = False
+        self.monitor: str = None  # 'spec', 'detector'
+        self.monitor_roi: Tuple = None  # roi box parameters (pixel): xcentter, ycenter, xhalfbox, yhalfbox
+        self.monitor_offset : float = None
+        self.monitor_val: 'numpyArray1D' = None
         self.monitor_corrcoeff = None
 
         if not hasattr(self, "disable_mon") or not getattr(self, "disable_mon"):
@@ -591,7 +593,7 @@ class StaticPointScan(object):
 
         return res
 
-    def get_image(self, idx, exist=False):
+    def get_image(self, idx:int, exist=False)->'numpyArray2D':
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -610,7 +612,7 @@ class StaticPointScan(object):
 
         return img.transpose()
 
-    def get_image_corr(self, idx:int, exist=False):
+    def get_image_corr(self, idx:int, exist=False)->'numpyArray2D':
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -666,8 +668,11 @@ class StaticPointScan(object):
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
-    def get_image_roi(self, i:int, xcam, ycam, halfboxsize, xy=True):
-
+    def get_image_roi(self, i:int, xcam:int, ycam:int, halfboxsize:Tuple, xy=True)->'numpyArray2D':
+        """return roi imagelet centered on xcam ycam for image located at index 'i' in self..img_filenames
+        
+        if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        """
         fdir = self.img_folder
 
         if self.img_exist[i]:
@@ -684,16 +689,20 @@ class StaticPointScan(object):
 
         return np.array(res, dtype=float)
 
-    def get_images_roi(self, xcam, ycam, halfboxsize=(1, 1), xy=True):
+    def get_images_roi(self, xcam:int, ycam:int, halfboxsize:Tuple=(1, 1), xy=True)->List:
 
         return [self.get_image_roi(i, xcam, ycam, halfboxsize, xy) for i in range(self.number_images)]
 
-    def get_images_roi_corr(self, xcam, ycam, halfboxsize=(1, 1), xy=True):
+    def get_images_roi_corr(self, xcam:int, ycam:int, halfboxsize=(1, 1), xy=True)->List:
 
         return [corr * (self.get_image_roi(i, xcam, ycam, halfboxsize, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
-    def get_images_pixel(self, xcam, ycam, halfboxsize=(1, 1), fun='mean'):
+    def get_images_pixel(self, xcam:int, ycam:int, halfboxsize=(1, 1), fun:str='mean'):
+        """return 1D array of scalar derived from a roi over all images
+        
+        fun='mean' : scalar by default is the pixel intensity mean value 
+        """
 
         tmp = self.get_images_roi(xcam, ycam, halfboxsize)
 
@@ -708,14 +717,14 @@ class StaticPointScan(object):
             tmp = np.array(tmp, dtype=np.double)
             return np.mean(tmp, axis=(1, 2))
 
-    def get_images_pixel_corr(self, xcam, ycam, halfboxsize=(1, 1), fun='mean'):
+    def get_images_pixel_corr(self, xcam:int, ycam:int, halfboxsize=(1, 1), fun='mean'):
 
         return self.get_monitor() * (self.get_images_pixel(xcam=xcam,
                                                            ycam=ycam,
                                                            halfboxsize=halfboxsize,
                                                            fun=fun) - self.img_offset) + self.img_offset
 
-    def get_images_tophat(self, step=1):
+    def get_images_tophat(self, step:int=1):
 
         img0 = self.get_image_corr(0)
 
@@ -724,7 +733,8 @@ class StaticPointScan(object):
 
         return img0
 
-    def check_images_missing(self, verbose=True):
+    def check_images_missing(self, verbose:bool=True):
+        """set self.img_exist 1D array of existing images indices"""
 
         self.img_exist = []
 
@@ -741,7 +751,7 @@ class StaticPointScan(object):
 
         self.img_exist = np.array(self.img_exist, dtype=np.bool_)
 
-    def clip_bbox(self, xy, hbs):
+    def clip_bbox(self, xy, hbs:Tuple[int]):
 
         x, y = int(xy[0]), int(xy[1])
         hx, hy = hbs
@@ -793,6 +803,7 @@ class StaticPointScan(object):
         self.monitor_val = np.array(self.spec_monitor, dtype=np.double) / expo - self.monitor_offset
 
     def set_monitor_dtt(self):
+        """set self.monitor_val"""
 
         xcam, ycam, sx, sy = self.monitor_roi
 
@@ -807,11 +818,12 @@ class StaticPointScan(object):
         self.update_img_corrcoeff()
 
     def update_img_corrcoeff(self):
+        """set self.monitor_corrcoeff"""
 
         self.monitor_corrcoeff = np.divide(np.mean(self.monitor_val[self.img_idx_use] + 1E-6),
                                            (self.monitor_val + 1E-6))
 
-    def fit_monitor_offset(self, nb_iter=10, setvalue=False, plot=False):
+    def fit_monitor_offset(self, nb_iter:int=10, setvalue:bool=False, plot:plot=False):
 
         if not self.monitor_ready:
             self.load_monitor()
@@ -875,13 +887,13 @@ class StaticPointScan(object):
         return result, success
 
     # Methods to get scan profiles
-    def get_profile_pixel_full(self, xycam, halfboxsize):
+    def get_profile_pixel_full(self, xycam:Iterable[int], halfboxsize:Tuple):
 
         img = self.get_images_pixel_corr(xycam[0], xycam[1], halfboxsize) - self.img_offset
 
         return img[self.img_idx_use], self.wire_position[self.img_idx_use]
 
-    def get_profile_pixel_centred(self, wire, xycam, halfboxsize, span=3):
+    def get_profile_pixel_centred(self, wire, xycam:Iterable[int], halfboxsize:Tuple, span=3):
 
         img, pw = self.get_profile_pixel_full(xycam, halfboxsize)
 
@@ -1022,7 +1034,7 @@ class StaticPointScan(object):
 
         return self.wire[i_wire].calc_position(self.wire_position[frame] + offset)
 
-    def calc_wire_intersect_ray(self, wire, xcam, ycam, ysrc=0):
+    def calc_wire_intersect_ray(self, wire, xcam:int, ycam:int, ysrc=0):
         """For a given pixel at xcam, ycam (point pcam), and given a depth under the surface along the beam (ysrc in mm), defining a pt source,
         
         Return 3 wires positions corresponding to :
