@@ -40,10 +40,12 @@ else:
 try:
     if sys.version_info.major == 3:
         from . import angulardist
+        #from . import angulardist2 as angulardist
     else:
         import angulardist
 
     USE_CYTHON = True
+    print('Using cython angulardist2')
 except ImportError:
     # print("-- warning. Cython compiled 'angulardist' module for fast computation of "
     #                                                         "angular distance is not installed!")
