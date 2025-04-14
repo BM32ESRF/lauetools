@@ -786,6 +786,8 @@ def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
     for an unit cell defined by (reciprocal) metric tensor Gstar
 
     see doc of GenerateLookUpTable_from2sets()
+
+    !!! NOT USED ??? !!!
     """
     hkl1 = np.array(HKL_CUBIC_UP3)
 
@@ -797,6 +799,8 @@ def Generate_LUT_for_hexagonal(hkl2, Gstar, verbose=0):
     for an unit cell defined by (reciprocal) metric tensor Gstar
 
     see doc of GenerateLookUpTable_from2sets()
+
+    !!! NOT USED ??? !!!
     """
     hkl1 = np.array(HKL_HEXAGONAL_UP3)
 
@@ -829,7 +833,7 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
 
     angles_set = np.ravel(tab_angulardist)  # 1D array
 
-    if verbose:
+    if verbose>0:
         print("tab_angulardist.shape", tab_angulardist.shape)
         print("tab_angulardist", tab_angulardist)
         print("angles_set", angles_set)
