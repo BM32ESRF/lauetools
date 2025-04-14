@@ -116,7 +116,7 @@ def SpotLinks(twicetheta_exp,
     """
 
     if verbose>0:
-        print("\n ************** Spots Association ************** \n")
+        print("\n In SpotLinks() ********** Spots Association ************** \n")
 
     Resi, ProxTable = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                             twicetheta_exp / 2.0,
