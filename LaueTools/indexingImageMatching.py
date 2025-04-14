@@ -23,7 +23,7 @@ import scipy.ndimage as NDI
 try:
     import Image
 except:
-    print("-- warning: module Image or PIL is not installed, but only used for templateimagematching")
+    print("-- WARNING: module Image or PIL is not installed, but only used for templateimagematching")
 import pylab as p
 
 
