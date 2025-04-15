@@ -153,10 +153,10 @@ class StaticPointScan(object):
         self.img_idx0: int = None  # imageFirstIndex
         self.img_nbdigits: int = None  # minimal nb of digits for zero padding of image index
         self.img_offset: float = None  # pixel intensity pedestal (offset)
-        self.img_idx: 'numpyArray1D' = None
+        self.img_idx: np.ndarray = None
         self.img_filenames:List[str] = None
         self.img_idx_use: Tuple = None   # tuple of image indices used
-        self.img_exist: 'numpyArray1D' = None  
+        self.img_exist: np.ndarray = None  
 
         if not hasattr(self, "disable_data") or not getattr(self, "disable_data"):
             self.init_data()
@@ -166,7 +166,7 @@ class StaticPointScan(object):
         self.monitor: str = None  # 'spec', 'detector'
         self.monitor_roi: Tuple = None  # roi box parameters (pixel): xcentter, ycenter, xhalfbox, yhalfbox
         self.monitor_offset : float = None
-        self.monitor_val: 'numpyArray1D' = None
+        self.monitor_val: np.ndarray = None
         self.monitor_corrcoeff = None
 
         if not hasattr(self, "disable_mon") or not getattr(self, "disable_mon"):
@@ -592,8 +592,8 @@ class StaticPointScan(object):
             res = res[0]
 
         return res
-
-    def get_image(self, idx:int, exist=False)->'numpyArray2D':
+    
+    def get_image(self, idx:int, exist:bool=False)->np.ndarray:
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -612,7 +612,7 @@ class StaticPointScan(object):
 
         return img.transpose()
 
-    def get_image_corr(self, idx:int, exist=False)->'numpyArray2D':
+    def get_image_corr(self, idx:int, exist=False)->np.ndarray:
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -668,7 +668,7 @@ class StaticPointScan(object):
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
-    def get_image_roi(self, i:int, xcam:int, ycam:int, halfboxsize:Tuple, xy=True)->'numpyArray2D':
+    def get_image_roi(self, i:int, xcam:int, ycam:int, halfboxsize:Tuple, xy=True)->np.ndarray:
         """return roi imagelet centered on xcam ycam for image located at index 'i' in self..img_filenames
         
         if image is missing, return roi imagelet with no signal value (pedestal or offset)
@@ -823,7 +823,7 @@ class StaticPointScan(object):
         self.monitor_corrcoeff = np.divide(np.mean(self.monitor_val[self.img_idx_use] + 1E-6),
                                            (self.monitor_val + 1E-6))
 
-    def fit_monitor_offset(self, nb_iter:int=10, setvalue:bool=False, plot:plot=False):
+    def fit_monitor_offset(self, nb_iter:int=10, setvalue:bool=False, plot:bool=False):
 
         if not self.monitor_ready:
             self.load_monitor()
@@ -1139,7 +1139,7 @@ class StaticPointScan(object):
 
         fig.show(True)
 
-    def plot_monitor_corrected(self, fig=None, fontsize=14):
+    def plot_monitor_corrected(self, fig=None, fontsize:int=14):
 
         if not self.monitor_ready:
             self.load_monitor()
@@ -1185,7 +1185,7 @@ class PointScan(StaticPointScan):
         StaticPointScan.__init__(self, inp, verbose)
 
     # Methods to safely and cleanly modify the scan
-    def update(self, scan_dict, part):
+    def update(self, scan_dict, part:str):
         """update dict of PointScan"""
 
         if part in ("setup", "all"):
@@ -1203,20 +1203,20 @@ class PointScan(StaticPointScan):
         if part in ("mon", "all"):
             self.update_mon(scan_dict)
 
-    def update_setup(self, scan_dict):
+    def update_setup(self, scan_dict:Dict):
 
         self.update_input(scan_dict, ['CCDType', 'detCalib'])
 
         self.init_detector()
         self.init_data()
 
-    def update_wire(self, scan_dict):
+    def update_wire(self, scan_dict:Dict):
 
         self.update_input(scan_dict, ['wire', 'wireTrajAngle'])
 
         self.init_wire()
 
-    def update_spec(self, scan_dict):
+    def update_spec(self, scan_dict:Dict):
 
         self.update_input(scan_dict, ['specFile', 'scanNumber', 'scanCmd', 'filetype', 'hdf5scanId'])
 
@@ -1224,7 +1224,7 @@ class PointScan(StaticPointScan):
         self.init_data()
         self.init_mon()
 
-    def update_data(self, scan_dict):
+    def update_data(self, scan_dict:Dict):
 
         self.update_input(scan_dict, ['imageFolder', 'imagePrefix', 'imageFirstIndex', 'imageDigits'])
 
@@ -1237,7 +1237,7 @@ class PointScan(StaticPointScan):
 
         self.init_mon()
 
-    def update_input(self, scan_dict, keys=None):
+    def update_input(self, scan_dict:Dict, keys=None):
 
         if keys is None:
 
