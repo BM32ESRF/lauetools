@@ -16,18 +16,22 @@ from LaueTools.Daxm.utils.num import is_within
 from LaueTools.Daxm.classes.scan.point import PointScan, save_scan_dict, load_scan_dict
 import LaueTools.Daxm.utils.read_image as rimg
 
+from typing import List, Tuple, Iterable,Union,Dict
+emptystring = ""
+
 class MeshScan(PointScan):
 
     def __init__(self, inp, verbose=True):
         PointScan.__init__(self, inp, verbose)
 
-        self.ix, self.iy = 0, 0
-        self.size = (1, 1)
-        self.skip = 0
-        self.line_subfolder = False
-        self.line_subname = ""
-        self.line_subindex = 0
-        self.img_mainfolder = ""
+        self.ix:int = 0
+        self.iy:int = 0
+        self.size:Tuple = (1, 1)
+        self.skip:int = 0
+        self.line_subfolder:Union[str, False] = False
+        self.line_subname : Union[ str, emptystring]= ""
+        self.line_subindex:int = 0
+        self.img_mainfolder:Union[str, emptystring] = ""
 
         self.init_mesh()
 
@@ -118,7 +122,11 @@ class MeshScan(PointScan):
         return tophat
 
     # Methods to navigate through scan serie
-    def goto(self, ix=None, iy=None):
+    def goto(self, ix:int=None, iy:int=None, addscan0001=False):
+        """go to suited image folder and update dicct of PointScan
+        
+        
+        """
 
         if ix is None:
             ix = self.ix
@@ -131,6 +139,9 @@ class MeshScan(PointScan):
                 idx0 = self.img_idx0 + (ix - self.ix) * (self.number_images + self.skip)
                 img_subfolder_old = "{}{:d}".format(self.line_subname, self.iy + self.line_subindex)
                 img_subfolder_new = "{}{:d}".format(self.line_subname, iy + self.line_subindex)
+                if addscan0001:
+                    img_subfolder_old += '/scan0001/'
+                    img_subfolder_new += '/scan0001/'
                 img_folder = os.path.join(self.img_mainfolder, img_subfolder_new)
                 img_pref = self.img_pref
                 if img_subfolder_old in img_pref:
