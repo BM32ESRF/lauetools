@@ -1266,7 +1266,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             usemask = True
         # path to a background image file
         else:
-            if stackimageindex == -1:
+            if stackimageindex != -1:
                 raise ValueError("Use stacked images as background is not implement")
             path_to_bkgfile = Data_for_localMaxima
             if verbose>0: print("Using image file {} as background".format(path_to_bkgfile))
