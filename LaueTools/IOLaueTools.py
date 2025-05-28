@@ -234,7 +234,8 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
     return outputfilename
 
 def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortintensities:bool=True,
-                                                                defaultminimalnbcolumns:int=5):
+                                                                defaultminimalnbcolumns:int=5,
+                                                                maxnbspots:int=None):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
 
     :param allspotsprops: array of all spots properties with shape (nb of spots, nb of props)
@@ -248,7 +249,6 @@ def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortinte
     assert len(allspotsprops.shape) == 2
     assert Path(fullpathfile).suffix == '.cor'
         
-
     #print('allspotsprops.shape', allspotsprops.shape)
 
     # no additional spot properties
@@ -257,9 +257,14 @@ def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortinte
 
     # print('fullpathfile', fullpathfile, 'allspotsprops  int', allspotsprops[:,4])
     if sortintensities:
-        props = allspotsprops[np.argsort(allspotsprops[:, COLINDEX_INTENSITY_CORFILE])[:: -1]]
+        _props = allspotsprops[np.argsort(allspotsprops[:, COLINDEX_INTENSITY_CORFILE])[:: -1]]
     else:
-        props = allspotsprops
+        _props = allspotsprops
+
+    if maxnbspots is not None and len(_props)>20:
+        props = _props[:maxnbspots]
+    else:
+        props = _props
 
     # list of props
     otherpropsdata = props[:, defaultminimalnbcolumns:].T
@@ -273,7 +278,7 @@ def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortinte
     # print('\n\n')
     return otherpropsdata, columnnames
 
-def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5columns:bool=True)->Union[List, None]:
+def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5columns:bool=True, maxnbspots=None)->Union[List, None]:
     """
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made at least of 5 columns:  2theta chi pixX pixY I
@@ -281,6 +286,8 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
     :param output_CCDparamsdict: bool, to return or not dict of detector calibration and nature parameters
 
     :param output_only5columns: bool, to output or not only the 5 first columns (2theta chi pixX pixY I). If False, create a dict dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
+
+    :param maxnbspots: int, max number of spots to read
 
     :return: alldata                  #array with all spots properties)
             data_theta, data_chi,
@@ -311,17 +318,22 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
         listcolumnsname = hh.split(' ')
         listcolumnsname[-1].strip()
     
-    alldata = np.loadtxt(fullpathfile, skiprows=SKIPROWS)
+    if os.stat(fullpathfile).st_size > 17:
+        _alldata = np.loadtxt(fullpathfile, skiprows=SKIPROWS)
+    else:
+        return None
 
     #print('np.shape(self.alldata)', np.shape(alldata))
-
+    
     dict_spotsproperties = {}
 
-    sha = np.shape(alldata)
+    sha = np.shape(_alldata)
     if len(sha) == 2:
         nbcolumns = sha[1]
         nb_peaks = sha[0]
     elif len(sha) == 1:
+        if sha[0] == 0:
+            return None
         nb_peaks = 1
         nbcolumns = sha[0]
 
@@ -330,6 +342,10 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
         return None
 
     if nb_peaks > 1:
+        if maxnbspots is not None:
+            alldata = _alldata[:min(maxnbspots,nb_peaks)]
+        else:
+            alldata = _alldata
 
         if nbcolumns == 3:
             data_theta = alldata[:, 0] / 2.0
@@ -355,6 +371,7 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
             dict_spotsproperties = {'columnsname':otherproperties_name, 'data_spotsproperties':otherproperties_data}
 
     elif nb_peaks == 1:
+        alldata = _alldata
         if nbcolumns == 3:
             data_theta = alldata[0] / 2.0
             data_chi, data_I = alldata[1:]
