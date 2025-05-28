@@ -710,7 +710,7 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
         Nmax = max(-np.amin(),np.amax())
         # todo generate cleverly using Nmax as min and an other max value
         addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
-                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11]
+                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11],
                      [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
                      [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],
                      [1,0,6],[1,0,7],[1,0,8], [1,0,9],
@@ -1303,20 +1303,20 @@ def FilterHarmonics(hkl):
         return hkl
 
 
-def HKL2string(hkl):
+def hkl_to_string(hkl):
     """
-    convert hkl into string
+    Convert hkl into string
     [-10.0,-0.0,5.0]  -> '-10,0,5'
     """
-    res = ""
+    result = ""
     for elem in hkl:
-        ind = int(elem)
-        strind = str(ind)
-        if strind == "-0":  # removing sign before 0
-            strind = "0"
-        res += strind + ","
+        int_elem = int(elem)
+        str_elem = str(int_elem)
+        if str_elem == "-0":  # removing sign before 0
+            str_elem = "0"
+        result += str_elem + ","
 
-    return res[:-1]
+    return result[:-1]
 
 
 def HKLs2strings(hkls):
@@ -1377,3 +1377,4 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         print("Purge is not needed, since there is only one pair of hkls ..!")
 
         return purged_pp
+    
