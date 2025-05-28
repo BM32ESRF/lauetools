@@ -36,9 +36,11 @@ import LaueTools.Daxm.modules.calibration as calib
 import LaueTools.Daxm.classes.wire as mywire
 
 from typing import Dict, Tuple, Union, List, Iterable
+radian = float
+class tuple_2int(Tuple[int, int]):
+    pass
 
-
-def new_scan_dict(scan_dict=None):
+def new_scan_dict(scan_dict:Dict=None):
     """Return a default scan as dict."""
 
     new_dict = {'type': 'point',
@@ -67,7 +69,7 @@ def new_scan_dict(scan_dict=None):
     return new_dict
 
 
-def save_scan_dict(scan_dict, filename, directory=""):
+def save_scan_dict(scan_dict:dict, filename:str, directory:str=""):
     """Write the dict scan to file (json)."""
     filedir = os.path.join(directory, filename)
 
@@ -75,7 +77,7 @@ def save_scan_dict(scan_dict, filename, directory=""):
         pfile.write(json.dumps(scan_dict, indent=1))
 
 
-def load_scan_dict(filename, directory=""):
+def load_scan_dict(filename:str, directory:str="")->Dict:
     """Load scan from (json) file and return it as dict."""
     filedir = os.path.join(directory, filename)
     import codecs
@@ -112,7 +114,7 @@ class StaticPointScan(object):
         self.input = inp  # dictionnary relative a scan  
 
         # attributes related to spec or hdf5 file
-        self.spec_file = None   # str, filename
+        self.spec_file: str = None   # str, filename
         self.spec = None
         self.spec_scan_num = None # for hdf5, it can correspond to several scans located in different folders
         self.hdf5scanId = None  # specific to hdf5 file
@@ -139,11 +141,11 @@ class StaticPointScan(object):
 
         # attributes related the wire(s)
         self.wire_ini = None
-        self.wire_traj_angle = None
-        self.wire_traj = None
-        self.wire_qty = None
-        self.wire_params = None
-        self.wire = None
+        self.wire_traj_angle: radian = None
+        self.wire_traj: Dict = None
+        self.wire_qty: int = None
+        self.wire_params: List[Dict] = None
+        self.wire: List[mywire.CircularWire] = None
 
         self.init_wire()
 
@@ -232,6 +234,7 @@ class StaticPointScan(object):
             self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId)
             print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
             cmd_parts = self.spec.cmd_list[self.hdf5scanId].split()
+            print('cmd_parts',cmd_parts)
             for mot in ['yf','zf']:
                 if mot in cmd_parts:
                     self.spec_motor = mot
@@ -247,8 +250,6 @@ class StaticPointScan(object):
             self.spec_monitor = getattr(self.spec_data, "mon")
             print('self.spec_monitor',self.spec_monitor)
             
-            
-        
         for i, dtype in enumerate([float, float, int, float]):
             self.scan_cmd[i] = dtype(self.scan_cmd[i])
         print('self.scan_cmd',self.scan_cmd)
@@ -392,10 +393,10 @@ class StaticPointScan(object):
 
         self.set_monitor_offset(self.monitor_offset)
 
-    def set_verbosity(self, verbose=True):
+    def set_verbosity(self, verbose:bool=True):
         self.verbose = verbose
 
-    def get_type(self):
+    def get_type(self)->str:
         return "point"
 
     # Methods to get setup parameters
@@ -403,7 +404,7 @@ class StaticPointScan(object):
 
         return self.detector_params
 
-    def get_ccd_params(self, keys=None):
+    def get_ccd_params(self, keys:List[str]=None)->List[float]:
 
         if keys is None:
             keys = ['distance', 'xcen', 'ycen', 'xbet', 'xgam', 'pixelsize']
@@ -415,7 +416,8 @@ class StaticPointScan(object):
 
         return res
 
-    def get_ccd_params_deg(self, keys=None):
+    def get_ccd_params_deg(self, keys:Iterable[str]=None):
+        """Not used fortunately since angles xbet and xgam are in degrees"""
 
         if keys is None:
             keys = ['distance', 'xcen', 'ycen', 'xbet', 'xgam', 'pixelsize']
@@ -435,11 +437,11 @@ class StaticPointScan(object):
         return res
 
     # Methods to get or set the parameters of the wires
-    def get_wires_dict(self):
+    def get_wires_dict(self)->List[Dict]:
 
         return [self.get_wire_dict(i) for i in range(self.wire_qty)]
 
-    def get_wire_dict(self, wire):
+    def get_wire_dict(self, wire)->Dict:
 
         dic = self.wire_params[wire]
 
@@ -447,14 +449,14 @@ class StaticPointScan(object):
 
         return dic
 
-    def get_wires_params(self, keys=None):
+    def get_wires_params(self, keys:List[str]=None):
 
         if keys is None:
             keys = ['material', 'R', 'h', 'p0']
 
         return [self.get_wire_params(i, keys) for i in range(self.wire_qty)]
 
-    def get_wire_params(self, wire=0, keys=None):
+    def get_wire_params(self, wire:int=0, keys:List[str]=None):
 
         if keys is None:
             keys = ['material', 'R', 'h', 'p0']
@@ -641,10 +643,13 @@ class StaticPointScan(object):
 
         return fn
 
-    def get_image_rect(self, i:int, xlim, ylim, xy=True):
+    def get_image_rect(self, i:int, xlim, ylim, xy:bool=True)->np.ndarray:
+        """return 2d array of image data in the rectangle defined by xlim and ylim"""
 
         fdir = self.img_folder
 
+        if self.number_images<=i:
+            res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset  # MODIF ROBIN
         if self.img_exist[i]:
 
             res = rimg.read_image_rectangle(os.path.join(fdir, self.img_filenames[i]),
@@ -660,11 +665,11 @@ class StaticPointScan(object):
         return np.array(res, dtype=float)
 
     def get_images_rect(self, xlim, ylim, xy=True):
-
+        """return 2d array of image data in the rectangle defined by xlim and ylim for all images"""
         return [self.get_image_rect(i, xlim, ylim, xy) for i in range(self.number_images)]
 
     def get_images_rect_corr(self, xlim, ylim, xy=True):
-
+        """return 2d array of image data in the rectangle defined by xlim and ylim for all images and corrected by monitor value"""
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
