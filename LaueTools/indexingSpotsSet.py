@@ -319,7 +319,8 @@ class spotsset:
 
         print("after purge self.nbspots", self.nbspots)
 
-    def importdatafromfile(self, fullpathfile:str, refpositionfilepath=None, trackingmode=0, verbose:int=0):
+    def importdatafromfile(self, fullpathfile:str, refpositionfilepath=None, trackingmode=0, verbose:int=0,
+                           maxnbspots:int=None):
         """
         Read .cor file and initialize spots indexation dictionary from peaks list:
         ie self.indexed_spots_dict  taken into account a reference file
@@ -354,7 +355,7 @@ class spotsset:
 
         assert Path(fullpathfile).suffix == '.cor'
         
-        res = IOLT.readfile_cor(fullpathfile, output_CCDparamsdict=True)
+        res = IOLT.readfile_cor(fullpathfile, output_CCDparamsdict=True, maxnbspots=maxnbspots)
 
         if res is None:
             return 'cor file is empty'
@@ -366,7 +367,7 @@ class spotsset:
 
         if verbose>0: print('nb of spots in .cor file %s  is '%fullpathfile, len(data_theta))
 
-        add_props = IOLT.get_spotprops_cor(allspotsprops, fullpathfile)
+        add_props = IOLT.get_spotprops_cor(allspotsprops, fullpathfile, maxnbspots=maxnbspots)
 
         if verbose>0:
             if add_props is None:
@@ -836,6 +837,8 @@ class spotsset:
         if verbose > 1:
             print("***nb of selected spots in AssignHKL*****", len(useabsoluteindex))
             print('matrix', matrix)
+            print('emax',emax)
+            print('AngleTol', AngleTol)
 
         AssignationHKL_res, nbtheospots, missingRefs = self.getSpotsLinks(matrix,
                                                                     exp_data=selected_expdata,
@@ -1199,7 +1202,7 @@ class spotsset:
         self.MissingRefindexedgrains = []
 
         # initial tolerance angle for matching with a raw (unrefined) provided matrix
-        AngleTol_0 = 0.5
+        AngleTol_0 = dict_parameters['MATCHINGRATE_ANGLE_TOL']
         # tolerance angle sequence for regular serial refining
         ANGLETOL_List = angletol_list
         # Minimum Matching rate (in percent) sequence
@@ -1327,7 +1330,7 @@ class spotsset:
 
             if verbose>1:
                 print(" *********************************************")
-                print("start to index grain #%d of Material: %s" % (grain_index, key_material))
+                print("start to consider grain #%d of Material: %s" % (grain_index, key_material))
                 print(" *********************************************")
 
             # now there should be matrices from previous results
@@ -1391,7 +1394,10 @@ class spotsset:
             # --- need to find UB matrices from indexing techniques (from scratch)
             # -------------------------------------------------------
             if NeedtoProvideNewMatrices and not self.inhibitindexing:
-                if verbose>1: print('\n\n------- **  INDEXING from SCRATCH  **--------------\n')
+                if verbose>1:
+                    print('-------------------------------------------------------')
+                    print('-----------**  INDEXING from SCRATCH  **---------------')
+                    print('-------------------------------------------------------')
                 frompreviousResults = False
                 # ----------------------------------------------------
                 # potential orientation solutions from template matching
@@ -1446,7 +1452,8 @@ class spotsset:
                         self.setAnglesLUTmatchingParameters(LUT=self.LUT, n_LUT=self.n_LUT, verbose=verbose-1)
 
                     if max(spot_index_central_list) >= len(self.absolute_index):
-                        print("central list of spots contains spots that do not belong the current list of spots to be indexed")
+                        if verbose>1:
+                            print("central list of spots contains spots that do not belong the current list of spots to be indexed")
                         break
 
                     if self.kf_direction in ('Z>0',):
@@ -1573,11 +1580,11 @@ class spotsset:
                     Matching_rate = None
 
                 MINIMUM_MATCHINGRATE = 10.0
-                # MINIMUM_SPOTS_GRAIN = 6
+                MINIMUM_SPOTS_GRAIN = 6
                 GoodRefinement = False
                 if Matching_rate is not None:
                     GoodRefinement = (Matching_rate > MINIMUM_MATCHINGRATE) or (
-                        nb_updates >= 6)
+                        nb_updates >= MINIMUM_SPOTS_GRAIN)
 
                 # --------------------------------
                 # case of poor matching rate (after refinement and making links)
@@ -1965,13 +1972,16 @@ class spotsset:
         if useabsoluteindex is None:
             useabsoluteindex = self.absolute_index
 
+        emax_simul = emax if emax is not None else self.emax
+
         if verbose>0:
             print("UBOrientMatrix in getSpotsLinks()", UBOrientMatrix)
             print("self.key_material in getSpotsLinks()", self.key_material)
+            print('emax_simul',emax_simul)
         # simulated data
         grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix, dictmaterials=self.dict_Materials)
         
-        emax_simul = emax if emax is not None else self.emax
+        
 
         (Twicetheta, Chi,
         Miller_ind, posx, posy, Energy) = LAUE.SimulateLaue(grain,
@@ -1987,6 +1997,10 @@ class spotsset:
                                                     dictmaterials=self.dict_Materials)
 
         nb_of_simulated_spots = len(Twicetheta)
+
+        if verbose>0:
+            print('nb_of_simulated_spots', nb_of_simulated_spots)
+            print('veryclose_angletol', veryclose_angletol)
 
         # find close pairs between exp. and theo. spots
         res = matchingrate.SpotLinks(twicetheta_data,
