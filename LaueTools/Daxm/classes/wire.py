@@ -369,7 +369,7 @@ class CircularWire:
         return pfront.squeeze(), pback.squeeze()
 
     def mask_fronts(self, p, Pcam):
-        """Calculate the depth interval masked by the wire for a given pixel"""
+        """Calculate yfront and yback along the beam (ybeam) in sample depth unit where the two lines from a given pixel are tangent to the circualr wire"""
         # wire positions
         p = np.reshape(p, (-1, 1))
 
