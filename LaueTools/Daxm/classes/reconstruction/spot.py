@@ -185,14 +185,21 @@ class SpotReconstructor:
         pf = np.min(pfall)
         pb = np.max(pball)
 
+        # first index in pwire position wherex of wire that shadows the pixel
         self.pw_idx = np.logical_and(self.pw_all > pf, self.pw_all < pb).nonzero()[0]
 
+        # position wire
         self.pw = self.pw_all[self.pw_idx]
+        #print('self.pw', self.pw)
 
         # corresponding depth position (considering central pixel)
         self.yw, _ = self.wire.mask_fronts(self.pw, self.Pcam)
-
+        #print('self.yw', self.yw)
+        # crude interpolated middle values of self.yw
         self.ygrid = 0.5 * (self.yw[:-1] + self.yw[1:])
+        print('self.ygrid', self.ygrid)
+        print('len(self.ygrid)', len(self.ygrid))
+
 
     def init_data(self):
 
@@ -233,8 +240,11 @@ class SpotReconstructor:
 
         self.frames_cor = np.maximum(np.subtract(self.frames_ini, self.frames_bkg * 0.999),
                                      0)
+        print('shape self.frames_cor', self.frames_cor.shape)
 
         self.frames_cor = np.transpose(self.frames_cor[:, :, 1:-1], axes=(2, 1, 0))
+
+        print('after transpose shape self.frames_cor', self.frames_cor.shape)
 
     def init_data_leftb(self):
 
