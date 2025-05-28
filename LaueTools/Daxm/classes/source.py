@@ -443,7 +443,7 @@ class SecondarySource:
         
         # plot absorption
        
-        ax.plot(energy, np.transpose(abscoeff), linewidth=2)          
+        ax.plot(energy, np.transpose(abscoeff), 'o-', linewidth=2)          
     
         ax.set_xlim(energy_lims)
         
@@ -454,8 +454,7 @@ class SecondarySource:
         # labels
         xlabel = 'Energy (keV)'
         ylabel = 'Absorption coefficient (1/mm)'
-        title = 'Absorption profile(s) of the sample'
-    
+        title = f'Absorption profile(s) of the sample \n number o'
         ax.set_xlabel(xlabel, fontsize=fontsize)
         ax.set_ylabel(ylabel, fontsize=fontsize)
         fig.suptitle(title, fontsize=fontsize+2)
@@ -487,7 +486,7 @@ class SecondarySource:
 
         xlabel = 'depth (mm)'
         ylabel = 'Intensity'
-        title = 'Secondary source profile'
+        title = f'Secondary source profile `\n Npts {len(ysrc)}'
         
         ax1.set_xlabel(xlabel, fontsize=fontsize)
         ax1.set_ylabel(ylabel, fontsize=fontsize)
