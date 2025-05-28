@@ -10,7 +10,7 @@ import os
 import json
 
 try:
-    from typing import Union
+    from typing import Union, Dict, List, Tuple
 except ImportError:
     pass
 
@@ -412,7 +412,7 @@ class Calib:
         self.run_init_objfun(self.opt_var)
 
     def run_init_data(self):
-
+        print('self.src_y',self.src_y)
         # Pcam
         self.exp_Pcam = []
         self.exp_wire = []
@@ -621,7 +621,7 @@ class Calib:
 
         return np.array(self.opt_residuals)
 
-    def run_optim_sim(self, x):
+    def run_optim_sim(self, x)->List:
 
         self.run_optim_unpack(x)
 
