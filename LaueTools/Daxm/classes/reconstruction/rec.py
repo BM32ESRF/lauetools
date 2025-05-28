@@ -25,7 +25,7 @@ class RecManager:
         self.fitfile = None
 
         self.grid_ix = []
-        self.grid_ix = []
+        self.grid_iy = []
 
         self.grid_x = []
         self.grid_y = []
