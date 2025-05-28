@@ -21,10 +21,21 @@ else:
     NDArray={float: float, int: int}
 
 from typing import List, Tuple, Union, Iterable
+class Iterable6float(Iterable[float]):
+    pass
 
+class numpyArrayORList_N_float(Iterable[float]):
+    pass
 
-def transf_pix_to_coo (ccd_parameters: Iterable[float],
-                       xcam:'numpyArrayOrList', ycam:'numpyArrayOrList')->'numpyArrayNx3':
+class numpyArrayNx3(Iterable[float]):
+    pass
+
+class numpyArray3float(Iterable[float]):
+    pass
+
+def transf_pix_to_coo (ccd_parameters: Iterable6float,
+                       xcam:numpyArrayORList_N_float,
+                       ycam:numpyArrayORList_N_float)->numpyArrayNx3:
     """Transform image pixel coordinates to laboratory coordinates
 
     ccd_parameters: 6 parameters describing geometry of detector:
@@ -36,10 +47,10 @@ def transf_pix_to_coo (ccd_parameters: Iterable[float],
     z pointing towards detector and perp to incimoing beam"""
     if len(ccd_parameters)<6:
         raise ValueError(f'ccd_parameters "{ccd_parameters}" must have at least 6 elements')
-    if pixelsize <=0:
-        raise ValueError(f'pixelsize "{pixelsize}" can not be less or equal to zero!')
-    if len(xcam)!=len(ycam):
-        raise ValueError(f'xcam and ycam don t have the same nb of elements: {len(xcam)},{len(ycam)}')
+
+    # if not isinstance(xcam, (int, np.int64, float)):
+    #     if len(xcam)!=len(ycam):
+    #         raise ValueError(f'xcam and ycam don t have the same nb of elements: {len(xcam)},{len(ycam)}')
     
     detect, xcen, ycen, xbet, xgam, pixelsize = ccd_parameters
 
@@ -130,12 +141,12 @@ def calc_solid_angle_coeff(ccd_parameters, xcam, ycam):
 
 
 # Wire geometry
-def calc_axis(f1:float, f2:float)->'numpyArray3':
+def calc_axis(f1:float, f2:float)->numpyArray3float:
     """Return the 3D axis vector of a wire"""
     return  np.array([np.cos(f1) * np.cos(f2), np.sin(f1) * np.cos(f2), -np.sin(f2)])
 
 
-def calc_traj(u1:float, u2:float)->'numpyArray3':
+def calc_traj(u1:float, u2:float)->numpyArray3float:
     """Return the translation vector of a wire"""
     return np.array([ -np.sin(u1) * np.cos(u2), np.cos(u1) * np.cos(u2), np.sin(u2)])  
 
