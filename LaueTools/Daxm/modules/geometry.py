@@ -33,7 +33,7 @@ class numpyArrayNx3(Iterable[float]):
 class numpyArray3float(Iterable[float]):
     pass
 
-def transf_pix_to_coo (ccd_parameters: Iterable6float,
+def transf_pix_to_coo(ccd_parameters: Iterable6float,
                        xcam:numpyArrayORList_N_float,
                        ycam:numpyArrayORList_N_float)->numpyArrayNx3:
     """Transform image pixel coordinates to laboratory coordinates
