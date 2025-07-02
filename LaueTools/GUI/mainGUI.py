@@ -15,9 +15,19 @@ mailto: micha --+at-+- esrf --+dot-+- fr
 from __future__ import absolute_import, division
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-import pkg_resources
-__version__ = pkg_resources.get_distribution('LaueTools').version
+import sys
+PYTHONVERSION_3p12_MIN=False
+if sys.version_info.major == 3 and sys.version_info.minor >= 12:
+    PYTHONVERSION_3p12_MIN = True
 
+if PYTHONVERSION_3p12_MIN:
+    from importlib.metadata import version
+    __version__ = version('LaueTools')
+    print('LaueTools __verdion__', __version__)
+
+else:
+    import pkg_resources
+    __version__ = pkg_resources.get_distribution('LaueTools').version
 
 import time
 import sys
@@ -1202,10 +1212,15 @@ class LaueToolsGUImainframe(wx.Frame):
 
         dlg.SetToolTipString("please enter orientation matrix UB (or list of UB's). UB excludes reciprocal unit cell matrix B0. So only UB operator in q = UB B0 G*")
 
+        print('PYTHONVERSION_3p12_MIN', PYTHONVERSION_3p12_MIN)
+
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
 
-            listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+            if PYTHONVERSION_3p12_MIN:
+                listval = re.split("[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
+            else:
+                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             listelem = []
             for elem in listval:
                 try:
