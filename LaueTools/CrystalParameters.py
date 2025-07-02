@@ -458,7 +458,7 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material:str, OrientMatrix, force_extinction=None, dictmaterials=dict_Materials):
+def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dictmaterials:dict=dict_Materials):
     r"""
     Constructor of the grain (crystal) parameters for Laue pattern simulation
 
@@ -493,7 +493,7 @@ def Prepare_Grain(key_material:str, OrientMatrix, force_extinction=None, dictmat
                 grain[2] = OrientMatrix
             return grain
         else:
-            raise ValueError("An OrientMatrix is needed !!! in Prepare_Grain()")
+            raise ValueError("An OrientMatrix class object is needed !!! in Prepare_Grain()")
 
 
 def AngleBetweenNormals(HKL1s, HKL2s, Gstar):
