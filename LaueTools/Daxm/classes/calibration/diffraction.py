@@ -61,7 +61,7 @@ class CalibDiff(Calib):
 
         if len(XYcam_all):
 
-            ylim = self.scan.calc_wires_range_scan(margin=margin, span="inner")
+            ylim = self.scan.calc_wires_range_scan(ysrc=margin, span="inner")
 
             tmp = np.zeros((len(XYcam_all), len(self.scan.wire) + 1), dtype=int)
 
@@ -75,7 +75,9 @@ class CalibDiff(Calib):
                 XYcam.append(XYcam_all[subset,:])
                 energy.append(energy_all[subset])
 
-        Calib.set_XYcam(self, XYcam=XYcam, energy=energy, halfboxsize=halfboxsize)
+        # Calib.set_XYcam(self, XYcam=XYcam, energy=energy, halfboxsize=halfboxsize)
+        Calib.set_points(self, XYcam, halfboxsize)
+        self.data_XYcam_energy = energy
 
     # Solver
     def run_init(self):
@@ -90,7 +92,7 @@ class CalibDiff(Calib):
         # "transmitted" src
         src_E = np.concatenate(self.data_XYcam_energy)
 
-        src_I, self.src_y, = self.model_src.get_source_trans(src_E, interpolate=True)
+        src_I, self.src_y, = self.model_src.get_source_trans(src_E)#, interpolate=True)
 
         # put in good shape
         self.src_I, self.src_E = [], []
@@ -142,6 +144,7 @@ class CalibDiff(Calib):
 
         #Nx, Ny = int(np.ceil(np.sqrt(4. * qty / 3.))), int(np.ceil(np.sqrt(3. * qty / 4.)))
         Nx, Ny = find_closest_product(qty)
+        Nx, Ny = int(Nx), int(Ny)
 
         fig, axarr = mplp.subplots(Ny, Nx, sharey=False, sharex=True, squeeze=False)
 
