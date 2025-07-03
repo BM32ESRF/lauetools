@@ -105,7 +105,7 @@ class RecManager:
                 print("[rec] > Reconstructing Line %d, X = %d..." %(iy, ix))
 
                 if len(self.grid_x)>1:
-                    self.scan.goto(ix, iy, addscan0001=addscan0001)
+                    self.scan.goto(ix, iy)
                 
                 rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
 
