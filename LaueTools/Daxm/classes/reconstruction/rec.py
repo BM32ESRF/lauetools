@@ -61,7 +61,7 @@ class RecManager:
 
         self.fitfile = fitfile
 
-    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None):
+    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False):
 
         grid_depth = np.arange(depth_range_print[0], depth_range_print[1], depth_step)
 
@@ -105,7 +105,7 @@ class RecManager:
                 print("[rec] > Reconstructing Line %d, X = %d..." %(iy, ix))
 
                 if len(self.grid_x)>1:
-                    self.scan.goto(ix, iy)
+                    self.scan.goto(ix, iy, addscan0001=addscan0001)
                 
                 rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
 
