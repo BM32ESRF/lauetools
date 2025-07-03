@@ -41,6 +41,32 @@ def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
 def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
 
+    """
+    Calculate the background of an image using a multi-scale approach.
+
+    This function estimates the background of an image by iteratively applying a 
+    background subtraction and mask refinement process over multiple scales. The 
+    background is calculated using the Background2D method with sigma-clipping 
+    for robust estimation.
+
+    Parameters:
+    img (ndarray): The input image for which the background is to be calculated.
+    max_size (int, optional): The maximum size for the background estimation box. 
+        Default is 100.
+    min_size (int, optional): The minimum size for small objects to be removed. 
+        Default is 3.
+    thr (int, optional): The threshold value for mask creation. Default is 20.
+    erode (int, optional): The number of erosion iterations to refine the mask. 
+        Default is 2.
+    dilate (int, optional): The number of dilation iterations to refine the mask. 
+        Default is 2.
+
+    Returns:
+    ndarray: The estimated background of the input image.
+
+    WARNING: depending on version Background2D() requires argument mask=mask ...
+    """
+
     mask = np.zeros(img.shape, dtype=np.int32)
     bkg = np.zeros(img.shape)
 
