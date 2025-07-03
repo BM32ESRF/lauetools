@@ -212,10 +212,14 @@ class StaticPointScan(object):
         else:
             self.init_spec_custom()
 
-        self.wire_step = np.diff(self.wire_position).mean()
+        self.number_images = self.scan_cmd[2] + 1
+
+        print('self.wire_position.shape',self.wire_position.shape)
+        print('self.number_images',self.number_images)
+        self.wire_step = np.diff(self.wire_position[0:self.number_images]).mean()
         self.print_msg("   scanning step is {:.2f} um", fmt=(1000*self.wire_step,))
 
-        self.number_images = self.scan_cmd[2] + 1
+        
 
     def init_spec_file(self):
         print('self.filetype in init_spec_file of StaticPointScan  ==>', self.filetype)
@@ -650,7 +654,7 @@ class StaticPointScan(object):
 
         if self.number_images<=i:
             res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset  # MODIF ROBIN
-        if self.img_exist[i]:
+        elif self.img_exist[i]:
 
             res = rimg.read_image_rectangle(os.path.join(fdir, self.img_filenames[i]),
                                             xlim, ylim, CCDLabel=self.ccd_type)
