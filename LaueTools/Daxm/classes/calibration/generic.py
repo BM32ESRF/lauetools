@@ -522,9 +522,10 @@ class Calib:
             x0.append(dm0)
 
         for Iexp in self.exp_I:
-            keys.extend(['kM', 'km'])
-            x0.append(np.max(Iexp) - np.min(Iexp))
-            x0.append(np.min(Iexp))
+            if Iexp != []:
+                keys.extend(['kM', 'km'])
+                x0.append(np.max(Iexp) - np.min(Iexp))
+                x0.append(np.min(Iexp))
 
         self.var_x0 = x0
         self.var_key = keys
@@ -656,7 +657,8 @@ class Calib:
                     self.var_cur[i][key] = x[lut[key]]
 
         if 'dm' in self.opt_var:
-            self.var_dm = x[-2 * self.exp_qty - 1]
+            if abs(-2 * self.exp_qty - 1) < len(x): 
+                self.var_dm = x[-2 * self.exp_qty - 1]
 
         kMkm = x[-2 * self.exp_qty:]
 
