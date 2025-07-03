@@ -20,28 +20,46 @@ def is_type_scan(obj):
     return isinstance(obj, (PointScan, LineScan, MeshScan))
 
 
-def new_scan(scan_inp, verbose=True):
+def new_scan(scan_inp, verbose=True)->'ScanObject':
 
-    scan = None
-    print('"scan_inp" scan input dict', scan_inp)
+    """
+    Return a ScanObject based on input
+
+    Parameters
+    ----------
+    scan_inp : str, dict or ScanObject from classes PointScan, LineScan, MeshScan
+        either a filepath to a scan file, a dictionary with scan parameters or an existing ScanObject
+    verbose : bool, optional
+        set verbosity level for ScanObject
+    addscan0001 : bool, optional
+        add 'scan0001' subfolder to filepath if not already present
+
+    Returns
+    -------
+    ScanObject
+        the created ScanObject
+
+    """
+    return_scanObj = None
+    print('type of scan_inp is', type(scan_inp))
+
     if is_type_scan(scan_inp):
 
-        scan = scan_inp
-
-        scan.set_verbosity(verbose)
+        return_scanObj = scan_inp
+        return_scanObj.set_verbosity(verbose)
 
     elif isinstance(scan_inp, dict):
 
-        scan = new_scan_fromdict(scan_inp, verbose=verbose)
+        return_scanObj = new_scan_fromdict(scan_inp, verbose=verbose)
 
-    elif isinstance(scan_inp, str):
+    elif isinstance(scan_inp, str): # filepath
 
-        scan = new_scan_fromfile(scan_inp, verbose=verbose)
+        return_scanObj = new_scan_fromfile(scan_inp, verbose=verbose)
 
     else:
         pass
 
-    return scan
+    return return_scanObj
 
 def new_scan_fromdict(scan_dict=None, verbose=True):
 
@@ -61,7 +79,7 @@ def new_scan_fromdict(scan_dict=None, verbose=True):
 
         return PointScan(scan_dict, verbose)
 
-def new_scan_fromfile(scan_file, directory="", verbose=True):
+def new_scan_fromfile(scan_file, directory="", verbose=True, addscan0001=False):
 
     if 1:#verbose:
         print(scan_file, directory)
