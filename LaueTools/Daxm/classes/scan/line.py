@@ -63,6 +63,7 @@ class LineScan(PointScan):
 
     # Methods to navigate through scan serie
     def goto(self, ix=None):
+        """? need to add  argument to addscan0001  ???"""
 
         if ix is None:
             ix = self.ix
