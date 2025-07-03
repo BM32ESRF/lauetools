@@ -55,7 +55,6 @@ def split_linesubfolder(folder:str)->tuple:
     ##MODIF ROBIN##
 
     subfolder = os.path.basename(os.path.split(folder)[0])
-
     print(subfolder)
 
     rule = re.compile("(\d+)(\S+)")#, flags=re.LOCALE)
@@ -67,9 +66,7 @@ def split_linesubfolder(folder:str)->tuple:
     if len(parts) and len(parts[0]) == 2 and is_int(parts[0][0]) and 'line' in parts[0][1][::-1]:
 
         subname = parts[0][1][::-1]
-
         subindx = int(parts[0][0][::-1])
-
         result = subname, subindx, os.path.dirname(os.path.split(folder)[0])
 
     return result
