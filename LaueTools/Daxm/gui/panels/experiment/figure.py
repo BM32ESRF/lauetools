@@ -237,10 +237,15 @@ class PanelExperimentFigure(wx.Panel):
         else:
             align = 'bottom'
 
+        print('self._fig_axes.lines', self._fig_axes.lines)
         if len(self._disp_shadow_line) != len(ys_right):
             for lines, patches in zip(self._disp_shadow_line, self._disp_shadow_patch):
+                print('lines',lines)
                 #for line in lines:
                 self._fig_axes.lines.remove(lines)
+                #self._fig_axes.lines.remove(lines)
+                
+                
                 #for patch in patches:
                 self._fig_axes.patches.remove(patches)
 
