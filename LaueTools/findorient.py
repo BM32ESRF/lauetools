@@ -690,10 +690,10 @@ def GenerateLookUpTable(hkl_all, Gstar):
     return sorted_ind, sorted_angles, indy, tab_side_size, hkl_all
 
 
-def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
-                                            dictmaterials=DictLT.dict_Materials,
-                                            filterharmonics=True,
-                                            applyExtinctionRules=None):
+def Generate_selectedLUT(hkl1, hkl2, key_material:str, verbose:int=0,
+                                            dictmaterials:dict=DictLT.dict_Materials,
+                                            filterharmonics:bool=True,
+                                            applyExtinctionRules:str=None):
     r"""
     Generate Look Up Table of angles between hkl1 and hkl2 directions
     for an unit cell defined in dict_LaueTools.py in material dictionnary
@@ -815,13 +815,13 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     inputs:
     hkl1            :    array of [h,k,l]
     hkl2            :    array of [h,k,l]
-    Gstar            :    3*3 array
+    Gstar            :    3*3 metric tensor of unit cell (use Gstar_from_directlatticeparams()) as array
 
     outputs:
     sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
     sorted_ind            : array of indices of original indy array when sorting the array of angles
     indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
-    tab_side_size        : size of the square pairs angles matrix
+    tab_side_size        : shape of the squared matrix of mutual angles between pairs
     """
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl1, hkl2, Gstar)
