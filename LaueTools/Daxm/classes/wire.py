@@ -56,6 +56,27 @@ def new_dict_traj(u1=0, u2=0)->Dict:
 
 
 def load_dict(filename, directory="", material:str=None)->Dict:
+    """
+    Load a dict of input parameters from a [ .scan ] file (either json or plain text)
+
+    Parameters
+    ----------
+    filename : str
+        name of the file to be loaded 
+    directory : str
+        directory where the file is located. default is current directory
+    material : str, optional
+        if the file is a plain text, the material name. default is None
+
+    Notes
+    -----
+    In the file, the angles paramters (f1 f2 u1 u2) are  in degrees
+
+    Returns
+    -------
+    wire_dict : dict
+        dict of input parameters
+    """
     filedir = os.path.join(directory, filename)
 
     try:
@@ -91,7 +112,34 @@ def list_available_material():
 
 def gen_wires_grid(material:str, qty:int, incl:float, spacing:float,
                    traj:float, radius:float, height:float, offset:float)->List:
-    """build a list of wire's parameters."""
+    """
+    Generate a list of wire parameters for a grid of circular wires.
+
+    Parameters
+    ----------
+    material : str
+        material name
+    qty : int
+        number of wires
+    incl : float
+        inclination angle of the wires (degrees) wrt to horizontal direction
+    spacing : float
+        spacing between the wires (mm)
+    traj : float
+        angle of the trajectory (degrees) wrt to horizontal direction
+    radius : float
+        radius of the wires (mm)
+    height : float
+        height of the wire (mm)
+    offset : float
+        offset of the wire (mm) along the trajectory
+
+    Returns
+    -------
+    wires : list of lists
+        list of wire parameters (material, radius, height, offset)
+    """
+    
     assert qty > 0
 
     sinIncl = math.sin(math.radians(float(incl)))
