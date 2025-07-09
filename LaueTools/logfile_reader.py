@@ -1437,7 +1437,7 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
     return dict_scan
 
 
-def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech'),potential_scantypes=('ascan','amesh','loopscan','a2scan')):
+def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf'),potential_scantypes=('ascan','amesh','loopscan','a2scan')):
     res = getall_from_hdf5file(pathHDF5)   # scans and ct
 
     listscans = []
