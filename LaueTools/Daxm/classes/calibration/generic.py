@@ -176,7 +176,7 @@ class Calib:
 
         if len(self.data_XYcam):
 
-            self.print_msg("- Loading experimental profiles...")
+            self.print_msg("- Loading experimental intensity profiles...")
 
             XYcam = np.concatenate(self.data_XYcam)
 
@@ -412,7 +412,7 @@ class Calib:
         self.run_init_objfun(self.opt_var)
 
     def run_init_data(self):
-        print('self.src_y',self.src_y)
+        #print('self.src_y',self.src_y)
         # Pcam
         self.exp_Pcam = []
         self.exp_wire = []
@@ -798,11 +798,11 @@ class Calib:
 
         self.print_msg("wire\\" + "{:^10}" * 7, header)
 
-        for wid in range(self.scan.wire_qty):
-            par = self.log_wdict[0][wid]
+        for wireindex in range(self.scan.wire_qty):
+            par = self.log_wdict[0][wireindex]
             par = [np.rad2deg(par[key]) if key in ('u1', 'u2', 'f1', 'f2') else par[key] for key in var]
 
-            self.print_msg(" #{} |".format(wid + 1) + " {:>8f} " * 7, par)
+            self.print_msg(" #{} |".format(wireindex + 1) + " {:>8f} " * 7, par)
 
     def log_report_current(self):
 
