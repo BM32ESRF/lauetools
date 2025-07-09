@@ -143,7 +143,7 @@ def calc_solid_angle_coeff(ccd_parameters, xcam, ycam):
 # Wire geometry
 def calc_axis(f1:float, f2:float)->numpyArray3float:
     """Return the 3D axis vector of a wire"""
-    return  np.array([np.cos(f1) * np.cos(f2), np.sin(f1) * np.cos(f2), -np.sin(f2)])
+    return  np.array([np.cos(f1) * np.cos(f2), np.sin(f1)  * np.cos(f2), -np.sin(f2)])
 
 
 def calc_traj(u1:float, u2:float)->numpyArray3float:
