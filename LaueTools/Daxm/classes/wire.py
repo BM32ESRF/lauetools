@@ -57,7 +57,7 @@ def new_dict_traj(u1=0, u2=0)->Dict:
 
 def load_dict(filename, directory="", material:str=None)->Dict:
     """
-    Load a dict of input parameters from a [ .scan ] file (either json or plain text)
+    Load a dict of input parameters from a [ .calib ] file (either json or plain text)
 
     Parameters
     ----------
