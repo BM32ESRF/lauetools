@@ -1104,10 +1104,10 @@ class StaticPointScan(object):
     def calc_wire_intersect_ray(self, wire, xcam:int, ycam:int, ysrc=0):
         """For a given pixel at xcam, ycam (point pcam), and given a depth under the surface along the beam (ysrc in mm), defining a pt source,
         
-        Return 3 wires positions corresponding to :
+        Return 3 wires positions (in mm) corresponding to :
         [0] wire alignement with pt source
         [1] wire first (front) tangent contact with ray going from pt source to pixel pcam
-        [1] wire mast (back) tangent contact with ray going from pt source to pixel pcam"""
+        [1] wire last (back) tangent contact with ray going from pt source to pixel pcam"""
         # print('wire', wire)
         # print('xcam',xcam)
         # print('ycam',ycam)
