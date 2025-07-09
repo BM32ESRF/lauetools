@@ -59,10 +59,10 @@ def new_scan_dict(scan_dict:Dict=None):
                 'imagePrefix': '',
                 'imageFirstIndex': 0,
                 'imageDigits': 4,
-                'imageOffset': 0,
+                'imageOffset': 1000,
                 'monitor': 'spec',
                 'monitorROI': (1024, 1024, -1, -1),
-                'monitorOffset': 10000}
+                'monitorOffset': 25} # since April 2024 it 25 approx, before this date 10000
 
     if scan_dict is not None:
         new_dict.update(scan_dict)
@@ -70,7 +70,7 @@ def new_scan_dict(scan_dict:Dict=None):
 
 
 def save_scan_dict(scan_dict:dict, filename:str, directory:str=""):
-    """Write the dict scan to file (json)."""
+    """Write the dict in a [.scan] file (json format)."""
     filedir = os.path.join(directory, filename)
 
     with open(filedir, 'w') as pfile:
@@ -78,7 +78,7 @@ def save_scan_dict(scan_dict:dict, filename:str, directory:str=""):
 
 
 def load_scan_dict(filename:str, directory:str="")->Dict:
-    """Load scan from (json) file and return it as dict."""
+    """Load .scan file (json format) and return it as dict."""
     filedir = os.path.join(directory, filename)
     import codecs
     print('#######     read .scan file  ############')
@@ -111,7 +111,7 @@ class StaticPointScan(object):
             self.print_msg(" from dict.")
             inp = new_scan_dict(inp)
 
-        self.input = inp  # dictionnary relative a scan  
+        self.input = inp  # dictionnary relative to a scan  
 
         # attributes related to spec or hdf5 file
         self.spec_file: str = None   # str, filename
@@ -336,18 +336,22 @@ class StaticPointScan(object):
         for ini in self.wire_ini:
 
             if isinstance(ini, str):
-                par = mywire.new_dict(material=ini)
+                dict_wire = mywire.new_dict(material=ini)
             elif isinstance(ini, dict):
-                par = mywire.new_dict(**ini)
+                dict_wire = mywire.new_dict(**ini)
             elif hasattr(ini, '__len__') and len(ini)==4:
-                par = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3])
+                dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3])
+                print('ini has got 4 elements',ini)
+            elif hasattr(ini, '__len__') and len(ini)==6:
+                print('ini has got 6 elements',ini)
+                dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3], f1=ini[4], f2=ini[5])
             else:
-                par = []
+                dict_wire = []
                 self.print_msg("Invalid wire argument! {}", fmt=ini, mode="F")
 
-            self.wire_params.append(par)
-            par.update(self.wire_traj)
-            self.wire.append(mywire.CircularWire(**par))
+            self.wire_params.append(dict_wire)
+            dict_wire.update(self.wire_traj)
+            self.wire.append(mywire.CircularWire(**dict_wire))
 
         # Printing stuff
         if self.wire_qty == 1:
@@ -456,11 +460,28 @@ class StaticPointScan(object):
     def get_wires_params(self, keys:List[str]=None):
 
         if keys is None:
-            keys = ['material', 'R', 'h', 'p0']
+            keys = ['material', 'R', 'h', 'p0','f1','f2']
 
         return [self.get_wire_params(i, keys) for i in range(self.wire_qty)]
 
     def get_wire_params(self, wire:int=0, keys:List[str]=None):
+        """
+        Retrieve parameters of a specified wire.
+
+        Parameters
+        ----------
+        wire : int, optional
+            The index of the wire to retrieve parameters for. Default is 0.
+        keys : List[str], optional
+            A list of parameter names to retrieve. Default is 
+            ['material', 'R', 'h', 'p0']].
+
+        Returns
+        -------
+        List or single value
+            A list of parameter values corresponding to the provided keys.
+            If only a single parameter is requested, the value is returned directly.
+        """
 
         if keys is None:
             keys = ['material', 'R', 'h', 'p0']
@@ -945,18 +966,40 @@ class StaticPointScan(object):
 
     def get_profile_manypixels_centred(self, wire, xycam, halfboxsize, span=3):
 
+        """
+        Return the intensity profile at xycam pixels position as a function of the position of all the wires 
+
+        Parameters
+        ----------
+        wire : int or list of int
+            The index of the wire(s)
+        xycam : iterable of tuples
+            The coordinates of the detector pixels 
+        halfboxsize : tuple
+            The half-size of the box
+        span : int, optional
+            The span of the wire to consider, in pixels. Default is 3
+
+        Returns
+        -------
+        I : list of 1D arrays
+            The intensity profile of the wire(s)
+        pw : list of 1D arrays
+            The position of the wire(s)
+        Note: len(I) = len(pw) = number of wires in input wire (which is a list!)
+        """
         I_full, pw_full = self.get_profile_manypixels_full(xycam, halfboxsize)
 
         I, pw = [], []
 
-        for i, wid in enumerate(wire):
+        for i, wire_id in enumerate(wire):
 
-            print('wire ... ',wid, type(wid))
+            print('wire ... ',wire_id, type(wire_id))
 
-            p0 = self.calc_wire_intersect_ray(wid, *xycam[i])
+            p0 = self.calc_wire_intersect_ray(wire_id, *xycam[i])
 
-            pinf = np.min(p0) - span * self.get_wire_params(wid, ['R']),
-            psup = np.max(p0) + span * self.get_wire_params(wid, ['R'])
+            pinf = np.min(p0) - span * self.get_wire_params(wire_id, ['R']),
+            psup = np.max(p0) + span * self.get_wire_params(wire_id, ['R'])
 
             idx = np.logical_and(pw_full[i] >= pinf, pw_full[i] <= psup)
 
@@ -1011,27 +1054,42 @@ class StaticPointScan(object):
 
     def calc_wires_range_shadow(self, frame, ysrc=0, xcam=None):
 
+        """
+        For a given image frame of the scan, calculate the ycam limits for all wires of the scan, i.e. the limits of the shadow made by each wire during the travel of the scan.
+        :param frame: int, index of the image frame (starting from 1)
+        :param ysrc: float, depth of the source
+        :param xcam: float, x-coordinate at which the ycam limits are calculated
+        :return: list of (ya, yb, yf) coordinates for each wire
+        """
         return [self.calc_wire_range_shadow(i, frame, ysrc, xcam) for i in range(self.wire_qty)]
 
     def calc_wire_range_shadow(self, wire, frame, ysrc=0, xcam=None):
+        """
+        For a given single wire, calculate the ycam pixel coordinates of the limits at a given position `xcam` and depth `ysrc` of the shadow made by the wire during the travel of the scan at a given frame.
 
+        :param wire: int, index of the wire (starting from 0)
+        :param frame: int, index of the image frame (starting from 1)
+        :param ysrc: float, depth of the source
+        :param xcam: float, x-coordinate at which the ycam limits are calculated. If None, set to the middle of the detector (default is None)
+        :return: tuple of (ya, yb, yf) pixel Ycam coordinates, where ya is the y-coordinate of the intersection of the wire axis with the detector plane, yb is the y-coordinate of the intersection of the wire tangent (back) with the detector plane, and yf is the y-coordinate of the intersection of the wire tangent (front) with the detector plane
+        """
         if xcam is None:
             xcam = self.get_img_params(['framedim'])[0] / 2
 
-        ycam = range(0, self.get_img_params(['framedim'])[1], 10)
+        ycam_list = range(0, self.get_img_params(['framedim'])[1], 10)
 
-        pw = [self.calc_wire_intersect_ray(wire, xcam, y, ysrc=ysrc) for y in ycam]
+        pw = [self.calc_wire_intersect_ray(wire, xcam, y, ysrc=ysrc) for y in ycam_list]
 
         pa, pf, pb = [t[0] for t in pw], [t[1] for t in pw], [t[2] for t in pw]
 
         p0 = self.wire_position[frame]
 
-        args = {'fill_value': (ycam[0], ycam[-1]),
+        args = {'fill_value': (ycam_list[0], ycam_list[-1]),
                 'bounds_error': False}
 
-        ya = spi.interp1d(pa, ycam, **args)(p0)
-        yb = spi.interp1d(pb, ycam, **args)(p0)
-        yf = spi.interp1d(pf, ycam, **args)(p0)
+        ya = spi.interp1d(pa, ycam_list, **args)(p0)
+        yb = spi.interp1d(pb, ycam_list, **args)(p0)
+        yf = spi.interp1d(pf, ycam_list, **args)(p0)
 
         return ya, yb, yf
 
