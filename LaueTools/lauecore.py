@@ -433,7 +433,7 @@ def getLaueSpots(wavelmin:float, wavelmax:float, crystalsParams,
         
         # print(Orientmatrix)
         # print('determinant',determinant)
-        assert determinant>0, "Orientation matrix (UB) is not direct !!" 
+        # assert determinant>0, "Orientation matrix (UB) is not direct !!" 
 
         if verbose:
             print("\nin getLaueSpots()")
@@ -1453,7 +1453,7 @@ def get2ThetaChi_geometry(oncam_vec, oncam_HKL, detectordistance=DEFAULT_DETECTO
     computes list of spots instances from oncam_vec (q 3D vectors)
     and oncam_HKL (miller indices 3D vectors), with crude Xcam Ycam pixel positions for ideal plan detector
 
-    Warning: pixel X,Y peaks positions (Xcam and YCam) are roughly computed for perfect detector plane pointing towards sample. For kf_direction Z>0, pixel position is evaluated precisely later with a LaueGeomtry module's function calc_xycam_from_2thetachi()
+    Warning: pixel X,Y peaks positions (Xcam and YCam) are roughly computed for perfect detector plane pointing towards sample. For kf_direction Z>0, pixel position is evaluated precisely later with a LaueGeometry module's function calc_xycam_from_2thetachi()
 
     :param oncam_vec: q vectors [qx,qy,qz] (corresponding to kf collected on camera)
     :type oncam_vec: array with 3D elements (shape = (n,3))

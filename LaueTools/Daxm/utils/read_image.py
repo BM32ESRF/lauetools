@@ -18,7 +18,12 @@ import LaueTools.dict_LaueTools as dlt
 
 from LaueTools.Daxm.utils.num import is_int
 
-def split_filename(filename):
+from typing import List, Dict, Tuple, Union
+
+class tuple_2int(Tuple[int, int]):
+    pass
+
+def split_filename(filename:str)->str:
     rule = re.compile(u'([a-zA-Z_0-9]+)\.(\d+)(\S+)')#,add argument flags=re.LOCALE  for python2!!
 
     parts = rule.findall(filename[::-1])[0]
@@ -26,28 +31,31 @@ def split_filename(filename):
     return str(parts[2][::-1]), str(parts[1][::-1]), str(parts[0][::-1])
 
 
-def sprintf_filename(prefix, idx, extension, ndigits=4):
+def sprintf_filename(prefix:str, idx:int, extension:str, ndigits:int=4)->str:
 
     return prefix + str(idx).zfill(ndigits) + '.' + extension
 
 
-def test_filename(prefix, idx, extension='tif', ndigits=4, folder=''):
+def test_filename(prefix:str, idx:int, extension:str='tif', ndigits=4, folder:str='')->str:
 
     filename = sprintf_filename(prefix, idx, extension, ndigits)
 
     return os.path.isfile(os.path.join(folder, filename))
 
 
-def ccd_to_extension(CCDLabel):
+def ccd_to_extension(CCDLabel:str)->str:
 
     return dlt.dict_CCD[CCDLabel][-1]
 
 
-def split_linesubfolder(folder):
+def split_linesubfolder(folder:str)->tuple:
     """folder  must contain the str   'line' or 'row'
     """
 
-    subfolder = os.path.basename(folder)
+    ##MODIF ROBIN##
+
+    subfolder = os.path.basename(os.path.split(folder)[0])
+    print(subfolder)
 
     rule = re.compile("(\d+)(\S+)")#, flags=re.LOCALE)
 
@@ -55,14 +63,15 @@ def split_linesubfolder(folder):
 
     result = None
 
-    if len(parts) and len(parts[0]) == 2 and is_int(parts[0][0]) and parts[0][1][::-1] in ("line", "row"):
+    if len(parts) and len(parts[0]) == 2 and is_int(parts[0][0]) and 'line' in parts[0][1][::-1]:
+
         subname = parts[0][1][::-1]
         subindx = int(parts[0][0][::-1])
-        result = subname, subindx, os.path.dirname(folder)
+        result = subname, subindx, os.path.dirname(os.path.split(folder)[0])
 
     return result
 
-def read_image_rectangle(filename,  xlim, ylim, dirname=None, CCDLabel='MARCCD165'):
+def read_image_rectangle(filename:str,  xlim:tuple_2int, ylim:tuple_2int, dirname:Union[str, None]=None, CCDLabel:str='MARCCD165')->np.ndarray:
     """
     returns a 2d array of integers from a binary image file. 
     Data are taken only from a rectangle defined by xlim, ylim

@@ -231,10 +231,10 @@ class InputWire(wx.StaticBoxSizer):
 
         wires = tmp
 
-        mat = [wire[0] for wire in wires]
-        rad = [wire[1] for wire in wires]
-        hei = [wire[2] for wire in wires]
-        off = [wire[3] for wire in wires]
+        mat = [wire[0] for wire in wires]  # material
+        rad = [wire[1] for wire in wires]   # wire radius
+        hei = [wire[2] for wire in wires]  # wire height
+        off = [wire[3] for wire in wires]   # wire offset
 
         if len(wires) == 1:
             mode = INP_MODE_NORMAL
@@ -267,7 +267,7 @@ class InputWire(wx.StaticBoxSizer):
             self.height_spn.SetValue(hei[0])
             self.offset_spn.SetValue(off[0])
 
-    def SetQty(self, qty):
+    def SetQty(self, qty):  # qty is the number of wires
         if self.GetMode() == INP_MODE_CUSTOM:
             self.qty2_spn.SetValue(qty)
         else:

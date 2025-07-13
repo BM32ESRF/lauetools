@@ -617,7 +617,7 @@ def Find_optimal_thresholdconvolveValue(filename, IntensityThreshold, CCDLabel="
 
 def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, initialfilename=None, verbose=0):
     """
-    write (and overwrite) an ASCII file with peaks properties. Comments in file with extension .dat added
+    write (and overwrite) .dat file, an ASCII file with peaks properties. 
 
     Parameters
     ----------
@@ -637,7 +637,7 @@ def writepeaklist(tabpeaks, output_filename, outputfolder=None, comments=None, i
         str, full path of created file
     """    
     outputfilefullpath = IOLT.writefile_Peaklist(output_filename, tabpeaks,
-                                                1, initialfilename,
+                                                True, initialfilename,
                                                 comments,outputfolder, verbose=verbose)
 
     return outputfilefullpath

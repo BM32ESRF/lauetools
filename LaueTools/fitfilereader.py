@@ -7,6 +7,7 @@ Original and working version comes from the module of S. Bongiorno, S. Tardif an
 
 from LaueTools import IOLaueTools as IOLT   # read and write ASCII file  (IO) 
 from LaueTools import readmccd as RMCCD     # read CCD and detector binary file, PeakSearch methods
+from LaueTools import generaltools as GT
 
 import numpy as np
 import sys,os
@@ -419,14 +420,16 @@ class parsed_fitfile:
 
 class parsed_fitfileseries:
 
-    def __init__(self, folderpath: str, nb_cols: int, nb_rows: int, prefix = 'img_', suffix = '_g0.fit', use_multiprocessing = True):
+    def __init__(self, folderpath: str, nb_cols: int, nb_rows: int, prefix = 'img_', suffix = '_g0.fit', use_multiprocessing = True, nbdigits=4):
+        
         
         self.folderpath = folderpath
         self.nb_cols = nb_cols
         self.nb_rows = nb_rows
         self.nb_files = self.nb_cols * self.nb_rows
 
-        self.nbdigits_filename = get_nbdigits_filename(self.nb_files)
+        if nbdigits:
+            self.nbdigits_filename = nbdigits
         
         # ----- create a list whose elements are the class parsed_fitfile, initialized for each file in the folder ------
         
@@ -446,7 +449,7 @@ class parsed_fitfileseries:
                                                 chunksize = 1)
                 
             if not multiprocessing.active_children():
-                print("Done!")
+                GT.printgreen("Done!")
             
         else:
             print("Using a single cpu.")

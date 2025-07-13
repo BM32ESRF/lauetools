@@ -721,8 +721,12 @@ class PanelDataFigure(wx.Panel):
                 item.set_visible(self._disp_shadow)
 
     def ShowScanLimits(self):
-
+        print('_fig_axes.lines', self._fig_axes.lines)
+        print('_fig_axes.lines type', type(self._fig_axes.lines))
         for scan in self._disp_limits_lines:
+            print('scan', scan)
+            print('scan[0]', scan[0])
+            print('scan[0]', scan[1])
             
             self._fig_axes.lines.remove(scan[0])
             self._fig_axes.lines.remove(scan[1])

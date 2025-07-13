@@ -1546,10 +1546,23 @@ class MainCalibrationFrame(wx.Frame):
         print('self.writefolder', self.writefolder)
         print('self.dirnamepklist', self.dirnamepklist)
 
-        if not os.access(self.dirnamepklist, os.W_OK):
+        # check if one can write in self.dirnamepklist (beter than os.access (  os.W_OK))
+        if self.writefolder is None:
+            self.writefolder = self.dirnamepklist
+
+        try:
+            ftest = open(os.path.join(self.writefolder,"tmp"),"w")
+            # try:
+            #     txt = " "
+            #     ftest.write(txt)
+        except PermissionError:
+
+            print('Permission Error, select an other folder to write (temporarly or permanent) results')
             self.writefolder = OSLFGUI.askUserForDirname(self)
         else:
-            self.writefolder = self.dirnamepklist
+            print(f'I can write in {self.writefolder}')
+
+        
         # elif self.writefolder is None:
         #     self.writefolder = OSLFGUI.askUserForDirname(self)
         # else:
@@ -1761,7 +1774,7 @@ class MainCalibrationFrame(wx.Frame):
             #             # remove .cor file with old CCD geometry parameters
             #             os.remove(self.initialParameter['filename'])
 
-            # update main GUI CCD geomtrical parameters
+            # update main GUI CCD geometrical parameters
             # print("self.parent", self.parent)
             if self.parent:
                 self.parent.defaultParam = self.CCDParam

@@ -122,10 +122,8 @@ class MeshScan(PointScan):
         return tophat
 
     # Methods to navigate through scan serie
-    def goto(self, ix:int=None, iy:int=None, addscan0001=False):
+    def goto(self, ix:int=None, iy:int=None, addscan0001=True):
         """go to suited image folder and update dicct of PointScan
-        
-        
         """
 
         if ix is None:

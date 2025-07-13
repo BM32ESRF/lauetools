@@ -170,7 +170,6 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond = (-H + K + L) % 3 == 0
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
         
-
     elif Extinc == "Ti2AlN":
         # wurtzite condition
         condfirst = (H == K) * ((L % 2) != 0)
@@ -458,7 +457,7 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material:str, OrientMatrix, force_extinction=None, dictmaterials=dict_Materials):
+def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dictmaterials:dict=dict_Materials):
     r"""
     Constructor of the grain (crystal) parameters for Laue pattern simulation
 
@@ -493,7 +492,7 @@ def Prepare_Grain(key_material:str, OrientMatrix, force_extinction=None, dictmat
                 grain[2] = OrientMatrix
             return grain
         else:
-            raise ValueError("An OrientMatrix is needed !!! in Prepare_Grain()")
+            raise ValueError("An OrientMatrix class object is needed !!! in Prepare_Grain()")
 
 
 def AngleBetweenNormals(HKL1s, HKL2s, Gstar):

@@ -690,10 +690,10 @@ def GenerateLookUpTable(hkl_all, Gstar):
     return sorted_ind, sorted_angles, indy, tab_side_size, hkl_all
 
 
-def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
-                                            dictmaterials=DictLT.dict_Materials,
-                                            filterharmonics=True,
-                                            applyExtinctionRules=None):
+def Generate_selectedLUT(hkl1, hkl2, key_material:str, verbose:int=0,
+                                            dictmaterials:dict=DictLT.dict_Materials,
+                                            filterharmonics:bool=True,
+                                            applyExtinctionRules:str=None):
     r"""
     Generate Look Up Table of angles between hkl1 and hkl2 directions
     for an unit cell defined in dict_LaueTools.py in material dictionnary
@@ -710,7 +710,7 @@ def Generate_selectedLUT(hkl1, hkl2, key_material, verbose=0,
         Nmax = max(-np.amin(),np.amax())
         # todo generate cleverly using Nmax as min and an other max value
         addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
-                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11]
+                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11],
                      [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
                      [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],
                      [1,0,6],[1,0,7],[1,0,8], [1,0,9],
@@ -815,13 +815,13 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     inputs:
     hkl1            :    array of [h,k,l]
     hkl2            :    array of [h,k,l]
-    Gstar            :    3*3 array
+    Gstar            :    3*3 metric tensor of unit cell (use Gstar_from_directlatticeparams()) as array
 
     outputs:
     sorted_angles        : angles between all pairs of hkl in hkl_all sorted in increasing order
     sorted_ind            : array of indices of original indy array when sorting the array of angles
     indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
-    tab_side_size        : size of the square pairs angles matrix
+    tab_side_size        : shape of the squared matrix of mutual angles between pairs
     """
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl1, hkl2, Gstar)
@@ -1303,20 +1303,20 @@ def FilterHarmonics(hkl):
         return hkl
 
 
-def HKL2string(hkl):
+def hkl_to_string(hkl):
     """
-    convert hkl into string
+    Convert hkl into string
     [-10.0,-0.0,5.0]  -> '-10,0,5'
     """
-    res = ""
+    result = ""
     for elem in hkl:
-        ind = int(elem)
-        strind = str(ind)
-        if strind == "-0":  # removing sign before 0
-            strind = "0"
-        res += strind + ","
+        int_elem = int(elem)
+        str_elem = str(int_elem)
+        if str_elem == "-0":  # removing sign before 0
+            str_elem = "0"
+        result += str_elem + ","
 
-    return res[:-1]
+    return result[:-1]
 
 
 def HKLs2strings(hkls):
@@ -1377,3 +1377,4 @@ def FilterEquivalentPairsHKL(pairs_hkl):
         print("Purge is not needed, since there is only one pair of hkls ..!")
 
         return purged_pp
+    

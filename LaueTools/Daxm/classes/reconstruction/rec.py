@@ -25,7 +25,7 @@ class RecManager:
         self.fitfile = None
 
         self.grid_ix = []
-        self.grid_ix = []
+        self.grid_iy = []
 
         self.grid_x = []
         self.grid_y = []
@@ -61,7 +61,7 @@ class RecManager:
 
         self.fitfile = fitfile
 
-    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None):
+    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False):
 
         grid_depth = np.arange(depth_range_print[0], depth_range_print[1], depth_step)
 

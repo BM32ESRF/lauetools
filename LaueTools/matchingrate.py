@@ -52,7 +52,16 @@ except ImportError:
     # print("Using default module")
     USE_CYTHON = False
 
+from typing import Dict, Tuple, Union, List, Iterable
+radian = float
+class tuple_2int(Tuple[int, int]):
+    pass
 
+class numpyArrayORList_N_float(Iterable[float]):
+    pass
+
+class numpyArrayNx3(Iterable[float]):
+    pass
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
 

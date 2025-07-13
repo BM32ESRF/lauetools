@@ -10,7 +10,7 @@ import os
 import json
 
 try:
-    from typing import Union
+    from typing import Union, Dict, List, Tuple
 except ImportError:
     pass
 
@@ -176,7 +176,7 @@ class Calib:
 
         if len(self.data_XYcam):
 
-            self.print_msg("- Loading experimental profiles...")
+            self.print_msg("- Loading experimental intensity profiles...")
 
             XYcam = np.concatenate(self.data_XYcam)
 
@@ -412,7 +412,7 @@ class Calib:
         self.run_init_objfun(self.opt_var)
 
     def run_init_data(self):
-
+        #print('self.src_y',self.src_y)
         # Pcam
         self.exp_Pcam = []
         self.exp_wire = []
@@ -522,9 +522,10 @@ class Calib:
             x0.append(dm0)
 
         for Iexp in self.exp_I:
-            keys.extend(['kM', 'km'])
-            x0.append(np.max(Iexp) - np.min(Iexp))
-            x0.append(np.min(Iexp))
+            if Iexp != []:
+                keys.extend(['kM', 'km'])
+                x0.append(np.max(Iexp) - np.min(Iexp))
+                x0.append(np.min(Iexp))
 
         self.var_x0 = x0
         self.var_key = keys
@@ -621,7 +622,7 @@ class Calib:
 
         return np.array(self.opt_residuals)
 
-    def run_optim_sim(self, x):
+    def run_optim_sim(self, x)->List:
 
         self.run_optim_unpack(x)
 
@@ -656,7 +657,8 @@ class Calib:
                     self.var_cur[i][key] = x[lut[key]]
 
         if 'dm' in self.opt_var:
-            self.var_dm = x[-2 * self.exp_qty - 1]
+            if abs(-2 * self.exp_qty - 1) < len(x): 
+                self.var_dm = x[-2 * self.exp_qty - 1]
 
         kMkm = x[-2 * self.exp_qty:]
 
@@ -796,11 +798,11 @@ class Calib:
 
         self.print_msg("wire\\" + "{:^10}" * 7, header)
 
-        for wid in range(self.scan.wire_qty):
-            par = self.log_wdict[0][wid]
+        for wireindex in range(self.scan.wire_qty):
+            par = self.log_wdict[0][wireindex]
             par = [np.rad2deg(par[key]) if key in ('u1', 'u2', 'f1', 'f2') else par[key] for key in var]
 
-            self.print_msg(" #{} |".format(wid + 1) + " {:>8f} " * 7, par)
+            self.print_msg(" #{} |".format(wireindex + 1) + " {:>8f} " * 7, par)
 
     def log_report_current(self):
 

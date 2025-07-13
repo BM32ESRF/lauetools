@@ -4458,14 +4458,6 @@ class MainPeakSearchFrame(wx.Frame):
 
             print("absoluteimageindexarray2D", absoluteimageindexarray2D)
 
-            #             jcenter = (centerimageindex - mapstarting_index) % nbimages_per_line
-            #             icenter = int((centerimageindex - mapstarting_index) / nbimages_per_line)
-            #
-            #             print 'icenter,jcenter', icenter, jcenter
-            #             selected2Darray_imageindex = GT.extract_array((icenter, jcenter),
-            #                                                         (imageindexboxY, imageindexboxX),
-            #                                                         absoluteimageindexarray2D)
-
             selected2Darray_imageindex = GT.extract2Dslice(centerimageindex,
                                                         (imageindexboxY, imageindexboxX),
                                                         absoluteimageindexarray2D)

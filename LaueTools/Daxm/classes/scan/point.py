@@ -36,9 +36,11 @@ import LaueTools.Daxm.modules.calibration as calib
 import LaueTools.Daxm.classes.wire as mywire
 
 from typing import Dict, Tuple, Union, List, Iterable
+radian = float
+class tuple_2int(Tuple[int, int]):
+    pass
 
-
-def new_scan_dict(scan_dict=None):
+def new_scan_dict(scan_dict:Dict=None):
     """Return a default scan as dict."""
 
     new_dict = {'type': 'point',
@@ -57,26 +59,26 @@ def new_scan_dict(scan_dict=None):
                 'imagePrefix': '',
                 'imageFirstIndex': 0,
                 'imageDigits': 4,
-                'imageOffset': 0,
+                'imageOffset': 1000,
                 'monitor': 'spec',
                 'monitorROI': (1024, 1024, -1, -1),
-                'monitorOffset': 10000}
+                'monitorOffset': 25} # since April 2024 it 25 approx, before this date 10000
 
     if scan_dict is not None:
         new_dict.update(scan_dict)
     return new_dict
 
 
-def save_scan_dict(scan_dict, filename, directory=""):
-    """Write the dict scan to file (json)."""
+def save_scan_dict(scan_dict:dict, filename:str, directory:str=""):
+    """Write the dict in a [.scan] file (json format)."""
     filedir = os.path.join(directory, filename)
 
     with open(filedir, 'w') as pfile:
         pfile.write(json.dumps(scan_dict, indent=1))
 
 
-def load_scan_dict(filename, directory=""):
-    """Load scan from (json) file and return it as dict."""
+def load_scan_dict(filename:str, directory:str="")->Dict:
+    """Load .scan file (json format) and return it as dict."""
     filedir = os.path.join(directory, filename)
     import codecs
     print('#######     read .scan file  ############')
@@ -109,10 +111,10 @@ class StaticPointScan(object):
             self.print_msg(" from dict.")
             inp = new_scan_dict(inp)
 
-        self.input = inp  # dictionnary relative a scan  
+        self.input = inp  # dictionnary relative to a scan  
 
         # attributes related to spec or hdf5 file
-        self.spec_file = None   # str, filename
+        self.spec_file: str = None   # str, filename
         self.spec = None
         self.spec_scan_num = None # for hdf5, it can correspond to several scans located in different folders
         self.hdf5scanId = None  # specific to hdf5 file
@@ -139,11 +141,11 @@ class StaticPointScan(object):
 
         # attributes related the wire(s)
         self.wire_ini = None
-        self.wire_traj_angle = None
-        self.wire_traj = None
-        self.wire_qty = None
-        self.wire_params = None
-        self.wire = None
+        self.wire_traj_angle: radian = None
+        self.wire_traj: Dict = None
+        self.wire_qty: int = None
+        self.wire_params: List[Dict] = None
+        self.wire: List[mywire.CircularWire] = None
 
         self.init_wire()
 
@@ -210,10 +212,14 @@ class StaticPointScan(object):
         else:
             self.init_spec_custom()
 
-        self.wire_step = np.diff(self.wire_position).mean()
+        self.number_images = self.scan_cmd[2] + 1
+
+        print('self.wire_position.shape',self.wire_position.shape)
+        print('self.number_images',self.number_images)
+        self.wire_step = np.diff(self.wire_position[0:self.number_images]).mean()
         self.print_msg("   scanning step is {:.2f} um", fmt=(1000*self.wire_step,))
 
-        self.number_images = self.scan_cmd[2] + 1
+        
 
     def init_spec_file(self):
         print('self.filetype in init_spec_file of StaticPointScan  ==>', self.filetype)
@@ -232,6 +238,7 @@ class StaticPointScan(object):
             self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId)
             print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
             cmd_parts = self.spec.cmd_list[self.hdf5scanId].split()
+            print('cmd_parts',cmd_parts)
             for mot in ['yf','zf']:
                 if mot in cmd_parts:
                     self.spec_motor = mot
@@ -247,8 +254,6 @@ class StaticPointScan(object):
             self.spec_monitor = getattr(self.spec_data, "mon")
             print('self.spec_monitor',self.spec_monitor)
             
-            
-        
         for i, dtype in enumerate([float, float, int, float]):
             self.scan_cmd[i] = dtype(self.scan_cmd[i])
         print('self.scan_cmd',self.scan_cmd)
@@ -331,18 +336,22 @@ class StaticPointScan(object):
         for ini in self.wire_ini:
 
             if isinstance(ini, str):
-                par = mywire.new_dict(material=ini)
+                dict_wire = mywire.new_dict(material=ini)
             elif isinstance(ini, dict):
-                par = mywire.new_dict(**ini)
+                dict_wire = mywire.new_dict(**ini)
             elif hasattr(ini, '__len__') and len(ini)==4:
-                par = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3])
+                dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3])
+                print('ini has got 4 elements',ini)
+            elif hasattr(ini, '__len__') and len(ini)==6:
+                print('ini has got 6 elements',ini)
+                dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3], f1=ini[4], f2=ini[5])
             else:
-                par = []
+                dict_wire = []
                 self.print_msg("Invalid wire argument! {}", fmt=ini, mode="F")
 
-            self.wire_params.append(par)
-            par.update(self.wire_traj)
-            self.wire.append(mywire.CircularWire(**par))
+            self.wire_params.append(dict_wire)
+            dict_wire.update(self.wire_traj)
+            self.wire.append(mywire.CircularWire(**dict_wire))
 
         # Printing stuff
         if self.wire_qty == 1:
@@ -392,10 +401,10 @@ class StaticPointScan(object):
 
         self.set_monitor_offset(self.monitor_offset)
 
-    def set_verbosity(self, verbose=True):
+    def set_verbosity(self, verbose:bool=True):
         self.verbose = verbose
 
-    def get_type(self):
+    def get_type(self)->str:
         return "point"
 
     # Methods to get setup parameters
@@ -403,7 +412,7 @@ class StaticPointScan(object):
 
         return self.detector_params
 
-    def get_ccd_params(self, keys=None):
+    def get_ccd_params(self, keys:List[str]=None)->List[float]:
 
         if keys is None:
             keys = ['distance', 'xcen', 'ycen', 'xbet', 'xgam', 'pixelsize']
@@ -415,7 +424,8 @@ class StaticPointScan(object):
 
         return res
 
-    def get_ccd_params_deg(self, keys=None):
+    def get_ccd_params_deg(self, keys:Iterable[str]=None):
+        """Not used fortunately since angles xbet and xgam are in degrees"""
 
         if keys is None:
             keys = ['distance', 'xcen', 'ycen', 'xbet', 'xgam', 'pixelsize']
@@ -435,11 +445,11 @@ class StaticPointScan(object):
         return res
 
     # Methods to get or set the parameters of the wires
-    def get_wires_dict(self):
+    def get_wires_dict(self)->List[Dict]:
 
         return [self.get_wire_dict(i) for i in range(self.wire_qty)]
 
-    def get_wire_dict(self, wire):
+    def get_wire_dict(self, wire)->Dict:
 
         dic = self.wire_params[wire]
 
@@ -447,14 +457,31 @@ class StaticPointScan(object):
 
         return dic
 
-    def get_wires_params(self, keys=None):
+    def get_wires_params(self, keys:List[str]=None):
 
         if keys is None:
-            keys = ['material', 'R', 'h', 'p0']
+            keys = ['material', 'R', 'h', 'p0','f1','f2']
 
         return [self.get_wire_params(i, keys) for i in range(self.wire_qty)]
 
-    def get_wire_params(self, wire=0, keys=None):
+    def get_wire_params(self, wire:int=0, keys:List[str]=None):
+        """
+        Retrieve parameters of a specified wire.
+
+        Parameters
+        ----------
+        wire : int, optional
+            The index of the wire to retrieve parameters for. Default is 0.
+        keys : List[str], optional
+            A list of parameter names to retrieve. Default is 
+            ['material', 'R', 'h', 'p0']].
+
+        Returns
+        -------
+        List or single value
+            A list of parameter values corresponding to the provided keys.
+            If only a single parameter is requested, the value is returned directly.
+        """
 
         if keys is None:
             keys = ['material', 'R', 'h', 'p0']
@@ -641,11 +668,14 @@ class StaticPointScan(object):
 
         return fn
 
-    def get_image_rect(self, i:int, xlim, ylim, xy=True):
+    def get_image_rect(self, i:int, xlim, ylim, xy:bool=True)->np.ndarray:
+        """return 2d array of image data in the rectangle defined by xlim and ylim"""
 
         fdir = self.img_folder
 
-        if self.img_exist[i]:
+        if self.number_images<=i:
+            res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset  # MODIF ROBIN
+        elif self.img_exist[i]:
 
             res = rimg.read_image_rectangle(os.path.join(fdir, self.img_filenames[i]),
                                             xlim, ylim, CCDLabel=self.ccd_type)
@@ -660,11 +690,11 @@ class StaticPointScan(object):
         return np.array(res, dtype=float)
 
     def get_images_rect(self, xlim, ylim, xy=True):
-
+        """return 2d array of image data in the rectangle defined by xlim and ylim for all images"""
         return [self.get_image_rect(i, xlim, ylim, xy) for i in range(self.number_images)]
 
     def get_images_rect_corr(self, xlim, ylim, xy=True):
-
+        """return 2d array of image data in the rectangle defined by xlim and ylim for all images and corrected by monitor value"""
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
@@ -936,18 +966,40 @@ class StaticPointScan(object):
 
     def get_profile_manypixels_centred(self, wire, xycam, halfboxsize, span=3):
 
+        """
+        Return the intensity profile at xycam pixels position as a function of the position of all the wires 
+
+        Parameters
+        ----------
+        wire : int or list of int
+            The index of the wire(s)
+        xycam : iterable of tuples
+            The coordinates of the detector pixels 
+        halfboxsize : tuple
+            The half-size of the box
+        span : int, optional
+            The span of the wire to consider, in pixels. Default is 3
+
+        Returns
+        -------
+        I : list of 1D arrays
+            The intensity profile of the wire(s)
+        pw : list of 1D arrays
+            The position of the wire(s)
+        Note: len(I) = len(pw) = number of wires in input wire (which is a list!)
+        """
         I_full, pw_full = self.get_profile_manypixels_full(xycam, halfboxsize)
 
         I, pw = [], []
 
-        for i, wid in enumerate(wire):
+        for i, wire_id in enumerate(wire):
 
-            print('wire ... ',wid, type(wid))
+            print('wire ... ',wire_id, type(wire_id))
 
-            p0 = self.calc_wire_intersect_ray(wid, *xycam[i])
+            p0 = self.calc_wire_intersect_ray(wire_id, *xycam[i])
 
-            pinf = np.min(p0) - span * self.get_wire_params(wid, ['R']),
-            psup = np.max(p0) + span * self.get_wire_params(wid, ['R'])
+            pinf = np.min(p0) - span * self.get_wire_params(wire_id, ['R']),
+            psup = np.max(p0) + span * self.get_wire_params(wire_id, ['R'])
 
             idx = np.logical_and(pw_full[i] >= pinf, pw_full[i] <= psup)
 
@@ -1002,27 +1054,42 @@ class StaticPointScan(object):
 
     def calc_wires_range_shadow(self, frame, ysrc=0, xcam=None):
 
+        """
+        For a given image frame of the scan, calculate the ycam limits for all wires of the scan, i.e. the limits of the shadow made by each wire during the travel of the scan.
+        :param frame: int, index of the image frame (starting from 1)
+        :param ysrc: float, depth of the source
+        :param xcam: float, x-coordinate at which the ycam limits are calculated
+        :return: list of (ya, yb, yf) coordinates for each wire
+        """
         return [self.calc_wire_range_shadow(i, frame, ysrc, xcam) for i in range(self.wire_qty)]
 
     def calc_wire_range_shadow(self, wire, frame, ysrc=0, xcam=None):
+        """
+        For a given single wire, calculate the ycam pixel coordinates of the limits at a given position `xcam` and depth `ysrc` of the shadow made by the wire during the travel of the scan at a given frame.
 
+        :param wire: int, index of the wire (starting from 0)
+        :param frame: int, index of the image frame (starting from 1)
+        :param ysrc: float, depth of the source
+        :param xcam: float, x-coordinate at which the ycam limits are calculated. If None, set to the middle of the detector (default is None)
+        :return: tuple of (ya, yb, yf) pixel Ycam coordinates, where ya is the y-coordinate of the intersection of the wire axis with the detector plane, yb is the y-coordinate of the intersection of the wire tangent (back) with the detector plane, and yf is the y-coordinate of the intersection of the wire tangent (front) with the detector plane
+        """
         if xcam is None:
             xcam = self.get_img_params(['framedim'])[0] / 2
 
-        ycam = range(0, self.get_img_params(['framedim'])[1], 10)
+        ycam_list = range(0, self.get_img_params(['framedim'])[1], 10)
 
-        pw = [self.calc_wire_intersect_ray(wire, xcam, y, ysrc=ysrc) for y in ycam]
+        pw = [self.calc_wire_intersect_ray(wire, xcam, y, ysrc=ysrc) for y in ycam_list]
 
         pa, pf, pb = [t[0] for t in pw], [t[1] for t in pw], [t[2] for t in pw]
 
         p0 = self.wire_position[frame]
 
-        args = {'fill_value': (ycam[0], ycam[-1]),
+        args = {'fill_value': (ycam_list[0], ycam_list[-1]),
                 'bounds_error': False}
 
-        ya = spi.interp1d(pa, ycam, **args)(p0)
-        yb = spi.interp1d(pb, ycam, **args)(p0)
-        yf = spi.interp1d(pf, ycam, **args)(p0)
+        ya = spi.interp1d(pa, ycam_list, **args)(p0)
+        yb = spi.interp1d(pb, ycam_list, **args)(p0)
+        yf = spi.interp1d(pf, ycam_list, **args)(p0)
 
         return ya, yb, yf
 
@@ -1037,10 +1104,10 @@ class StaticPointScan(object):
     def calc_wire_intersect_ray(self, wire, xcam:int, ycam:int, ysrc=0):
         """For a given pixel at xcam, ycam (point pcam), and given a depth under the surface along the beam (ysrc in mm), defining a pt source,
         
-        Return 3 wires positions corresponding to :
+        Return 3 wires positions (in mm) corresponding to :
         [0] wire alignement with pt source
         [1] wire first (front) tangent contact with ray going from pt source to pixel pcam
-        [1] wire mast (back) tangent contact with ray going from pt source to pixel pcam"""
+        [1] wire last (back) tangent contact with ray going from pt source to pixel pcam"""
         # print('wire', wire)
         # print('xcam',xcam)
         # print('ycam',ycam)

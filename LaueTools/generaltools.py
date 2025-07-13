@@ -1795,7 +1795,7 @@ def find_parallel_hkl(HKLs:'numpyarraynx3')->'numpyarraynxnx3':
     return res
 
 
-def extract2Dslice(center:int, halfsizes, inputarray2D):
+def extract2Dslice(center:int, halfsizes, inputarray2D, verbose:int=0):
     """
     extract a rectangular 2D slice array from inputarray2D centered on 'center' (value in inputarray2D)
 
@@ -1822,13 +1822,13 @@ def extract2Dslice(center:int, halfsizes, inputarray2D):
     """
 
     indices_center = np.where(inputarray2D == center)
-    #     print "indices_center", indices_center
+    if verbose>0: print("indices_center", indices_center)
     if len(indices_center[0]) == 0:
         raise ValueError("value %s is not in array!" % center)
     elif len(indices_center[0]) > 1:
         raise ValueError("value %s is not  unique in array!" % center)
 
-    return extract_array(indices_center, halfsizes, inputarray2D)
+    return extract_array((indices_center[0][0], indices_center[1][0]), halfsizes, inputarray2D)
 
 
 def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:'numpyarray2D')->'numpyarray2D':
@@ -1855,16 +1855,17 @@ def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:'numpyarra
         raise ValueError(f'{halfsizes} must have 2 elements')
     if len(indices_center)!=2:
         raise ValueError(f'{indices_center} must have 2 elements')
+    
     slowindex_center, fastindex_center = indices_center
     slowindex_halfsize, fastindex_halfsize = halfsizes
 
     nslow, nfast = inputarray2D.shape
 
-    imax = min(slowindex_center + slowindex_halfsize, nslow - 1)[0]
-    imin = max(slowindex_center - slowindex_halfsize, 0)[0]
+    imax = min(slowindex_center + slowindex_halfsize, nslow - 1)
+    imin = max(slowindex_center - slowindex_halfsize, 0)
 
-    jmax = min(fastindex_center + fastindex_halfsize, nfast - 1)[0]
-    jmin = max(fastindex_center - fastindex_halfsize, 0)[0]
+    jmax = min(fastindex_center + fastindex_halfsize, nfast - 1)
+    jmin = max(fastindex_center - fastindex_halfsize, 0)
 
     print("imin:imax + 1, jmin:jmax + 1", imin, imax + 1, jmin, jmax + 1)
 
@@ -2168,7 +2169,7 @@ def matRot(axis:Iterable[float], angle:'degrees')->'numpyarray3x3':
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
 
-def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False)-> 'numpyarray3x3':
+def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False, verbose:int=0)-> 'numpyarray3x3':
     """
     proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta and chi =0
 
@@ -2195,7 +2196,15 @@ def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.
         axrot1 = np.cross(hkl_central, np.array([-1, 0, 0]))
 
     angrot1 = np.arccos(np.dot(hkl_central, np.array([-1, 0, 0])) / n_hklcentral) / DEG
-    matrot1 = matRot(axrot1, angrot1)
+    if verbose>0:
+        print('angrot1',angrot1)
+        print('axrot1',axrot1)
+    if np.linalg.norm(axrot1)==0:
+        matrot1=np.eye(3)
+    else:
+        matrot1 = matRot(axrot1, angrot1)
+    if verbose>0:
+        print('matrot1',matrot1)
     matrot2 = matRot([0, 1, 0], 90. - target2theta / 2.)  # positive angle between qdir and -x
     matrot3 = np.eye(3)
     # random rotation around qdir
@@ -3194,3 +3203,52 @@ def nearestValuesindices(A, B):
     """
     indexInA = np.abs(np.subtract.outer(A, B)).argmin(0)
     return indexInA
+
+def sortpeaklist_by_y(peaklist):
+    """sort peaklist (list of 2d vectors [x,y]) by increasing y"""
+    X,Y=np.array(peaklist).T
+    # sort by y
+    sp = np.argsort(Y)
+    xx=X[sp]
+    yy=Y[sp]
+    return np.array([xx,yy]).T
+
+def selectfirstelements(arraynd, n):
+    """select the first n elements of a 2D array. """
+    assert len(arraynd.shape)==2
+    
+    nbelems, dimelem = arraynd.shape
+    if nbelems==1: return arraynd[0]
+    elif n>nbelems: n=nbelems-1
+    
+    return arraynd[:,:n]
+
+def buildgridroi(spacing=50, maxnbpixels=2015):
+    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array"""
+    xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
+    nx= len(xx)
+    tx = np.tile(xx, (nx,1))
+    ty = tx.T
+    txy = np.array([tx,ty]).T
+    print(txy.size//2)
+    print(txy.shape)
+    arrayrois1d =  txy.reshape((nx*nx,2))
+    return arrayrois1d
+
+def buildgridroi_bottom(spacing=50, maxnbpixels=2015):
+    """build a list of X,Y position (roi centers or peaklist)
+    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)"""
+    
+    xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
+    yy=np.arange(maxnbpixels//2,maxnbpixels-spacing//2,spacing)+spacing//2
+    XX =np.broadcast_to(xx,(len(yy),len(xx)))
+    YY=np.broadcast_to(yy,(len(xx),len(yy))).T
+    grid = np.array([XX,YY]).T.reshape((-1,2))
+    print(grid.shape, grid.size//2)
+    return np.array([XX,YY]).T.reshape((-1,2))
+
+def buildrandomrois(n, maxnbpixels=2015):
+    """build a list of random X, Y position
+    
+    n: number of position"""
+    return np.random.randint(maxnbpixels,size=(n,2))

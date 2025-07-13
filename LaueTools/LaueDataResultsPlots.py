@@ -22,6 +22,7 @@ import os, sys
 import fabio
 #import h5py
 from scipy.optimize import curve_fit
+from pathlib import Path
 
 from typing import List, Tuple, Union
 class HidePrint:
@@ -75,10 +76,22 @@ def PlotImage(imagepath: str, ROI: tuple = None, **kwargs) -> None:
     plt.colorbar(im)
 
 
-def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', label='', showindex:bool=False, figax=None,  **kwargs) -> tuple:
+def PlotPeakPos(filepath: str, size: tuple = None, frame:str='pixel', label='', showindex:bool=False, figax=None,  **kwargs) -> tuple:
+    DATFILE = False
+    if Path(filepath).suffix == '.dat':
+        with HidePrint():
+            peaklist = IOLT.readfile_dat(filepath)
+            DATFILE = True
 
-    with HidePrint():
-        peaklist = IOLT.readfile_dat(filepathdat)
+    elif Path(filepath).suffix == '.cor':
+        res = IOLT.readfile_cor(filepath, output_CCDparamsdict=False)
+        if res is None:
+            GT.printred(f'!! Empty file !!:\n')
+            print(f'==> {filepath}')
+            return None, None
+        
+        peaklist = res[0]
+
         
     if figax is None:
         fig, ax = plt.subplots()
@@ -89,12 +102,17 @@ def PlotPeakPos(filepathdat: str, size: tuple = None, frame:str='pixel', label='
         fig.set_size_inches(size[0], size[1])
 
     if frame=='pixel':
-        x,y = peaklist[:,2:4].T
+        if DATFILE:
+            x,y = peaklist[:,:2].T
+        else:
+            x,y = peaklist[:,2:4].T
         xlabel, ylabel = 'pixel X','pixel Y'
         ax.set_ylim(2050,-50)
-    elif frame == 'angles':
+    elif frame == 'angles' and not DATFILE:
         x,y = peaklist[:,:2].T
         xlabel, ylabel = r'2$\theta$ (deg)',r'$\chi$ (deg)'
+    else:
+        raise NameError("Invalid plot type. Accepted type arguments for 'frame' are either 'pixel' or 'angles'")
         
     ax.scatter(x,y, label=label, c=np.arange(len(x), 0,-1), **kwargs)
     if showindex:
@@ -264,7 +282,8 @@ def EulerAngles(indexed_fileseries: parsed_fitfileseries, size: tuple = (21,6), 
 
 def EulerAngles2D(xech: np.ndarray, yech: np.ndarray, 
                   indexed_fileseries: parsed_fitfileseries, 
-                  size: tuple = (10,6), maskingcondition:bool=None, **kwargs) -> None:
+                  size: tuple = (10,6), maskingcondition:bool=None,
+                  vlimits=((None,None),(None,None),(None,None)), **kwargs) -> None:
     
     fig, ax = plt.subplots(1,3)
     if size is not None:
@@ -274,26 +293,44 @@ def EulerAngles2D(xech: np.ndarray, yech: np.ndarray,
     theta = indexed_fileseries.EulerAngles[:,1].reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
     psi   = indexed_fileseries.EulerAngles[:,2].reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
     
+    xechstep = np.fabs(xech[1]-xech[0])
+    yechstep = np.fabs(yech[1]-yech[0])
+
+    print('xechstep',xechstep)
+    print('yechstep',yechstep)
+
     if maskingcondition is not None:
         phi = ma.masked_where(maskingcondition, phi)
         theta = ma.masked_where(maskingcondition, theta)
         psi = ma.masked_where(maskingcondition, psi)
-    
+    fmtcoordfuncs = []
+
+    for kk, _data in enumerate([phi, theta, psi]):
+        def make_fmtcoordfunc(data2D):  # function factory to ensure "early binding"
+            def fmtcoord(x,y):
+                return GT.format_getimageindex_pcolormesh(x, y, data2D=data2D, mapdims=data2D.shape,
+                                                    xech_stepsize=xechstep,yech_stepsize=yechstep)
+            return fmtcoord
+        fmtcoordfuncs.append(make_fmtcoordfunc(_data))
     
     titles = ['Phi', 'Theta', 'Psi']
-    
-    for axis, data, title in zip(ax, [phi, theta, psi], titles):
-        im = axis.pcolormesh(xech, yech, data, **kwargs)
+    kk=0
+    for axis, data, title, vlimit in zip(ax, [phi, theta, psi], titles, vlimits):
+        im = axis.pcolormesh(xech, yech, data, vmin=vlimit[0], vmax=vlimit[1], **kwargs)
         axis.set_xlabel('Position [µm]')
         axis.set_ylabel('Position [µm]')
         axis.set_aspect('equal')
         axis.set_title(title)
+        axis.format_coord = fmtcoordfuncs[kk]
+        kk+=1
         
         # create axis just for colorbar to give it the same height of the plot 
         #cbarax = fig.add_axes([axis.get_position().x1 + 0.01, axis.get_position().y0, 0.025, axis.get_position().height])
         fig.colorbar(im)#, cax=cbarax)
     
     fig.suptitle('Euler Angles')
+
+    return phi, theta, psi
 
 def PlotNumberIndexedSpots(indexed_fileseries: parsed_fitfileseries, 
                   size: tuple = (10,6), maskingcondition=None, **kwargs) -> None:
@@ -427,8 +464,14 @@ def StrainMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fit
     fig, ax = plt.subplots(2, 3)
     if size is not None:
         fig.set_size_inches(size[0], size[1])
-    xechstep = np.fabs(xech[1]-xech[0])
-    yechstep = np.fabs(yech[1]-yech[0])
+    if len(xech)>1:
+        xechstep = np.fabs(xech[1]-xech[0])
+    else:
+        xechstep =0
+    if len(yech)>1:
+        yechstep = np.fabs(yech[1]-yech[0])
+    else:
+        yechstep =0
 
     print('xechstep',xechstep)
     print('yechstep',yechstep)
