@@ -129,7 +129,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond1 = (H + K) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
-    elif Extinc == "l=2n":  # group space 12  I2/m
+    elif Extinc == "l=2n":  
         cond1 = (L) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
