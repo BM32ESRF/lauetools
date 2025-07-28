@@ -56,6 +56,9 @@ dict_Materials = {
     "GaAs_wurtz": ["GaAs_wurtz", [5.65325, 5.65325, 5.9, 90, 90, 90], "wurtzite"],  # AsGa
     "ZrUO2_corium": ["ZrUO2_corium", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
     "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
+    "Mo": ["Mo", [3.146, 3.146, 3.146, 90, 90, 90], "bcc"],  # SG 229
+    "CuInGaSe": ["CuInGaSe", [5.7478,5.7478, 11.507, 90, 90, 90], "h+k+l=2n"],   # SG 122
+    "CuInGaSe_SG122": ["CuInGaSe_SG122", [5.7478,5.7478, 11.507, 90, 90, 90], "SG122"],   # SG 122
     "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2_72deg": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 76.4, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
@@ -249,7 +252,8 @@ dict_Extinc = {
     "SG141": "SG141",
     "137": "137",
     "R3m_sg160": "R3m_sg160",
-    "h+k=2n, modulated":"h+k=2n, modulated"
+    "h+k=2n, modulated":"h+k=2n, modulated",
+    'SG122':'SG122'
 }
 
 dict_Extinc_inv = {
@@ -273,7 +277,8 @@ dict_Extinc_inv = {
     "SG141": "SG141",
     "137": "137",
     "R3m_sg160":"R3m_sg160",
-    "h+k=2n, modulated":"h+k=2n, modulated"
+    "h+k=2n, modulated":"h+k=2n, modulated",
+    'SG122':'SG122'
 }
 
 def writeDict(_dict, filename, writemode='a', sep=', '):
