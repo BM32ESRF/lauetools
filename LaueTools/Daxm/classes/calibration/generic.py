@@ -169,14 +169,18 @@ class Calib:
 
         self.model_wire = [mywire.CircularWire(**par) for par in self.scan.get_wires_dict()]
 
-    def init_data(self):
+    def init_data(self, verbose=0):
 
         self.data_pw = [[] for _ in self.data_XYcam]
         self.data_I = [[] for _ in self.data_XYcam]
 
+        if verbose>0:
+            if isinstance(wire, list):
+                print('nb of wires: ',len(wire))
+
         if len(self.data_XYcam):
 
-            self.print_msg("- Loading experimental intensity profiles...")
+            self.print_msg(f"- Loading experimental intensity profiles...")
 
             XYcam = np.concatenate(self.data_XYcam)
 
