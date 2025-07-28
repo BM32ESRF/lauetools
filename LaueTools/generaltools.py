@@ -3065,7 +3065,9 @@ def lognorm(x, mu, s):
 
 def CCDintensitymodel(x):
     """
-    function to model response of CCD
+    function to model response efficiencyof CCD
+
+    x: float, energy
     """
     return np.piecewise(x, [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
         [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x])
@@ -3224,7 +3226,10 @@ def selectfirstelements(arraynd, n):
     return arraynd[:,:n]
 
 def buildgridroi(spacing=50, maxnbpixels=2015):
-    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array"""
+    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     nx= len(xx)
     tx = np.tile(xx, (nx,1))
@@ -3237,7 +3242,10 @@ def buildgridroi(spacing=50, maxnbpixels=2015):
 
 def buildgridroi_bottom(spacing=50, maxnbpixels=2015):
     """build a list of X,Y position (roi centers or peaklist)
-    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)"""
+    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     yy=np.arange(maxnbpixels//2,maxnbpixels-spacing//2,spacing)+spacing//2
