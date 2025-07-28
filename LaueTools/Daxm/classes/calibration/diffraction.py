@@ -35,21 +35,54 @@ class CalibDiff(Calib):
 
         self.data_XYcam_energy = energy
 
-    def set_points_fromfile(self, filename, halfboxsize, energy_min = 5., margin=0, blacklist=[]):
+    def set_points_fromfile(self, filename, halfboxsize, energy_min = 5., energy_max = 27, margin=0, blacklist=[],maxnumberspots=None,verbose=0):
+        """
+        Set calibration points from a .fit file.
 
-        data = np.loadtxt(filename, usecols=(6, 7, 8))
+        The .fit file should have the following columns:
+         - column 6: energy (keV)
+         - column 7: x pixel 
+         - column 8: y pixel 
+
+        ?? The file should have been generated with LaueTools.Daxm.utils.reflections.make_reflist_from_images() ??
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
+        halfboxsize : list or tuple
+            half Size of the box in pixels along x and y; default is [5, 0]
+        energy_min : float, optional
+            minimum energy (keV); default is 5.
+        margin : float, optional
+            margin on the wire edges (mm); default is 0.
+        blacklist : list or tuple, optional
+            list of (x, y) coordinates of reflections to be blacklisted; default is empty
+
+        Returns
+        -------
+        None
+        """
+        _data = np.loadtxt(filename, usecols=(6, 7, 8))
+
+        if maxnumberspots is not None:
+            data = _data[:maxnumberspots]
+        else:
+            data = _data
 
         XYcam_all = np.array(data[:,1:], dtype='int')
 
         energy_all = data[:,0]
 
-        # resovle blacklist and energy
+        # resolve blacklist and energy
         is_blacklisted = np.zeros(len(energy_all), dtype='int')
 
         for i, XY in enumerate(XYcam_all):
             if len(blacklist) and closest_point(XY, blacklist)[0] <= 2.:
                 is_blacklisted[i] = 1
             if energy_all[i] < energy_min:
+                is_blacklisted[i] = 1
+            if energy_all[i] > energy_max:
                 is_blacklisted[i] = 1
 
         XYcam_all = XYcam_all[np.logical_not(is_blacklisted)] - 1. # LaueTools convention ?M
@@ -74,6 +107,9 @@ class CalibDiff(Calib):
                 subset=np.squeeze(np.nonzero(wireid==i))
                 XYcam.append(XYcam_all[subset,:])
                 energy.append(energy_all[subset])
+
+        if verbose>0:
+            print('len(XYcam)',len(XYcam))
 
         # Calib.set_XYcam(self, XYcam=XYcam, energy=energy, halfboxsize=halfboxsize)
         Calib.set_points(self, XYcam, halfboxsize)
