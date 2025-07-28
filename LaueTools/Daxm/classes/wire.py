@@ -28,6 +28,8 @@ else:
 
 from typing import List, Tuple, Union, Dict, Iterable
 
+keV=float
+
 
 def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., include_material=True)->Dict:
     """create dict of input parameters including of not the item of key 'material' """
@@ -286,15 +288,32 @@ class CircularWire:
 
         return Ox, Oy, Oz
 
-    def calc_crosslength(self, p, ysrc:"np.array[float]", Pcam:"np.array[float]"):
-        """Calculate the length of the segment travelled in the wire by a given X-ray"""
+    def calc_crosslength(self, pw, ysrc:float, Pcam):
+
+
+        #Calculate the length of the segment travelled in the wire by a given X-ray
         # wire positions
-        p = np.reshape(p, (-1, 1))
+        """
+        Calculate the length of the segment travelled in the wire by a given X-ray as function of 
+
+        Parameters
+        ----------
+        pw : np.array[float]
+            Wire positions
+        ysrc : float, Depth position
+        Pcam  : pixel coordinates on detector
+
+        Returns
+        -------
+        abslength : np.array[float]
+            Length travelled in the wire by the X-ray
+        """
+        pw = np.reshape(pw, (-1, 1))
         # depth positions
         ysrc = np.reshape(ysrc, (1, -1))
 
         # components of OwY vector
-        OYx, OYy, OYz = self.calc_position(p)
+        OYx, OYy, OYz = self.calc_position(pw)
         OYx, OYy, OYz = -OYx, ysrc - OYy, -OYz
 
         # components of v = YP / |YP| 
@@ -302,13 +321,13 @@ class CircularWire:
         vn = np.sqrt(vx ** 2 + vy ** 2 + vz ** 2)
         vx, vy, vz = vx / vn, vy / vn, vz / vn
 
-        # cross product v.f
+        # cross product v.wire axis
         vfx = vy * self.axis[2] - vz * self.axis[1]
         vfy = vz * self.axis[0] - vx * self.axis[2]
         vfz = vx * self.axis[1] - vy * self.axis[0]
         vf2 = vfx ** 2 + vfy ** 2 + vfz ** 2
 
-        # cross product OY.f
+        # cross product OY.wire axis
         Ofx = OYy * self.axis[2] - OYz * self.axis[1]
         Ofy = OYz * self.axis[0] - OYx * self.axis[2]
         Ofz = OYx * self.axis[1] - OYy * self.axis[0]
@@ -459,12 +478,32 @@ class CircularWire:
         """Calculate and interpolate the energy-absorption function of the constituent material"""
         return np.interp(energy, self.absfun_energy, self.absfun_coeff)
 
-    def calc_transmission(self, p, ysrc, Pcam, energy=None, abscoeff=None):
-        """Calculate the transmission rate of a given X-ray"""
+    def calc_transmission(self, pw: np.ndarray, ysrc: float, Pcam: "pt3D", energy: keV = None, abscoeff: float = None) -> float:
+        """
+        Calculate the transmission rate of an X-ray through the wire.
+
+        Parameters
+        ----------
+        pw : np.ndarray
+            Wire positions.
+        ysrc : float
+            single depth position.
+        Pcam : pt3D
+            Single 3D coordinates of a pixel on the detector.
+        energy : float, optional
+            Energy of the X-ray. If None, default energy is used.
+        abscoeff : float, optional
+            Absorption coefficient of the X-ray. If None, it is calculated based on energy.
+
+        Returns
+        -------
+        float
+            Transmission rate of the X-ray.
+        """
         if abscoeff is None:
             abscoeff = self.calc_abscoeff(energy)
 
-        length = self.calc_crosslength(p, ysrc, Pcam)
+        length = self.calc_crosslength(pw, ysrc, Pcam)
 
         return np.exp(-abscoeff * length)
 
