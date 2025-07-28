@@ -61,7 +61,9 @@ class RecManager:
 
         self.fitfile = fitfile
 
-    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False):
+    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc:int=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False, usefitfiles_peaks=False):
+
+        DEFAULT_YSTEP = 0.001
 
         grid_depth = np.arange(depth_range_print[0], depth_range_print[1], depth_step)
 
@@ -76,7 +78,8 @@ class RecManager:
 
         
 
-        ndigits = calc_ndigits(imgqty)
+        ndigits = 4#
+        #ndigits = calc_ndigits(imgqty)
 
         prev_index = 0
         for iy in self.grid_iy:
@@ -109,7 +112,61 @@ class RecManager:
                 
                 rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
 
-                rec.set_regions_fromsearch(**self.seg)
+                if usefitfiles_peaks==True:
+                    default_hbs = [12,12]
+                    
+                    print("[rec] > Optional read of fitfile(s) for peaks")
+                    from LaueTools import IOLaueTools as rwa
+                    #Create list of peaks
+                    peaks_XY = []
+                    #Since the nature of 'self.fitfile' is not explicit we can define 2 cases
+                    if isinstance (self.fitfile,list):
+                        #fn = Single fit_file in 'self.fitfile'
+                        for _k , fn in enumerate(self.fitfile):
+                            #Alternate reusing code from 'scan.py set_abscoeff_fromfitfile'
+                            data = rwa.readfitfile_multigrains(fn)[4] #20250613 - Pick element for blc15488/ech15_Z1 p25um files
+                            # print('Test CR fn value', fn)
+                            # print('Test CR data', data)
+                            # print('Test CR data type', type(data))
+                           
+                            if _k > 0:
+                                _d = np.concatenate((_d,data[:,7:9]))
+                            else:
+                                _d = data[:,7:9]
+                        peaks_XY = np.array(_d)
+                        
+                    else:
+                        data = rwa.readfitfile_multigrains(self.fitfile) #data type <class 'tuple'>
+                        # print('*******')
+                        # print('Test data type', type(data))
+                        # print('Test data', data)
+                        # print('*******')
+                        #CAUTION: Data = Tuple --> Extract element [4]
+                        peaks_XY = data[4][:,7:9]
+                        #For Example GOI fit file SHORT: Expected - TBC [array([[ 111.07, 1790.09], [1924.01, 1316.77]])]
+
+
+                    print('*******')
+                    # print('Test peaks_XY type', type(peaks_XY))
+                    print('peaks_XY', peaks_XY)
+                    print('*******')
+
+                    #CAUTION halfboxsize must be a List - Default halfboxsize proposed
+                    #Create default spot bounding box for all peaks - Same format than expected for ScanReconstructor
+                    halfboxsize = []
+                    
+                    for _ in range(peaks_XY.shape[0]):
+                        halfboxsize.append(default_hbs)
+                    print('*******')
+                    # print('Test halfboxsize type', type(halfboxsize))
+                    print('Test halfboxsize', halfboxsize)
+                    print('*******')
+                    #Set regions (peaks + bounding box) on which to run the reconstruction
+                    rec.set_regions(peaks_XY,halfboxsize)
+
+                #Standard method by Renversade et Molin:
+                else:
+                    rec.set_regions_fromsearch(**self.seg)
 
                 if self.fitfile is None:
 
@@ -120,7 +177,7 @@ class RecManager:
 
                 rec.assign_wire_peaks()
 
-                rec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=0.001, nproc=nproc, rec_args=rec_par)
+                rec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=DEFAULT_YSTEP, nproc=nproc, rec_args=rec_par)
 
                 if len(self.grid_x)>1:
                     rec.print_images(prefix=fileprefix, first_index=img_idx[ix][iy], directory=directory, yrange=depth_range_print, nbdigits=ndigits)
