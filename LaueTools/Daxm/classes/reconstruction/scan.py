@@ -58,7 +58,9 @@ class ScanReconstructor:
 
     # getters
     def get_wireqty(self):
-
+        """
+        Return the number of wires used in the scan.
+        """
         return len(self.wires)
 
         # ----------------- regions -----------------
@@ -117,6 +119,24 @@ class ScanReconstructor:
 
     def set_peaks_fromsearch(self, image_file=None, threshold=150, fit_peaks=1):
 
+        """
+        Find peaks in an image using PeakSearch from rmccd.
+
+        use finally self.set_peaks(peaks_XY)
+        
+        Parameters
+        ----------
+        image_file : str or None
+            If None, use the first image from the scan.
+        threshold : int
+            The IntensityThreshold for PeakSearch.
+        fit_peaks : int
+            If 1, peaks are fitted with a Gaussian.
+        
+        Returns
+        -------
+        None
+        """
         if image_file is None:
 
             image_file = self.scan.get_image_filedir(0)
@@ -136,10 +156,25 @@ class ScanReconstructor:
     # ----------------- abscoeff -----------------
 
     def init_abscoeff(self, peaks_energy=None):
+        """
+        Initialize WIRE absorption coefficients for each peak.
+
+        Parameters
+        ----------
+        peaks_energy : array or None
+            Energies associated with each peak in keV.
+            If None, then set to DEFAULT_PEAK_ENERGY (default 10 keV) for all peaks.
+
+        Notes
+        -----
+        Absorption coefficients are calculated for each peak based on the
+        energy specified and the material properties of the wires.
+        """
+        DEFAULT_PEAK_ENERGY = 10.  # keV
 
         if peaks_energy is None:
 
-            peaks_energy = np.ones(self.peakqty_all) * 10.  # default value of 10 keV
+            peaks_energy = np.ones(self.peakqty_all) * DEFAULT_PEAK_ENERGY
 
         self.set_abscoeff_fromenergy(peaks_energy)
 
@@ -161,8 +196,10 @@ class ScanReconstructor:
 
         self.peaks_abscoeff = [self.peaks_abscoeff_all[i, j] for i, j in enumerate(self.peaks_wireid)]
 
-    def set_abscoeff_fromfitfile(self, fit_file, max_dist=10., default_energy=11.):
+    def set_abscoeff_fromfitfile(self, fit_file, max_dist=10., default_energy=11., usecols=[7, 8, 14]):
         """warning  maybe columns for x y energy are wrong, look at dict_column_header of readfitfile_multigrains"""
+
+        print('!! check column for x y energy !!')
 
         list_x, list_y, list_energy = [], [], []
 
@@ -193,6 +230,7 @@ class ScanReconstructor:
         self.set_abscoeff_fromenergy(peaks_energy)
 
     def set_abscoeff_fromWfilter(self, img0, time0, img1, time1, thickness):
+        """not called anywhere"""
 
         if isinstance(img0, str):
             img0, _, _ = rmccd.readCCDimage(img0, CCDLabel=self.scan.ccd_type)
@@ -225,6 +263,7 @@ class ScanReconstructor:
         self.set_abscoeff(abscoeff)
 
     def set_abscoeff_fromAlFilter(self, images, thickness, exposure=None, fsize=31):
+        """not called anywhere"""
 
         if exposure is None:
             exposure = [1.] * len(images)
