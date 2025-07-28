@@ -28,7 +28,20 @@ class CalibFluo(Calib):
 
     # Set calibration points from grid
     def set_points_grid(self, dims=None, halfboxsize=None, adjust=True):
+        """
+        Set calibration points on detector frame located on a grid. One grid is generated for each wire.
 
+        objective is to use self.set_points() with suited XYcam list of points on detector
+
+        Parameters
+        ----------
+        dims : list or None (optional)
+            Number of points along x and y axes. Default is [2, 2].
+        halfboxsize : list or None (optional)
+            Half box size in pixels. Default is [2, 0].
+        adjust : bool (optional)
+            If True, adjust locations on the grid to avoid diffraction peaks. Default is True.
+        """
         if dims is None:
             dims = [2, 2]
 
@@ -46,6 +59,23 @@ class CalibFluo(Calib):
 
     # Calibration points
     def gen_wires_points(self, dims=None, method='grid', adjust=True):
+        """
+        Generate calibration points on a grid for each wire.
+
+        Parameters
+        ----------
+        dims : list or None (optional)
+            Number of points along x and y axes. Default is [2, 2].
+        method : str (optional)
+            Method to generate points. Default is 'grid'.
+        adjust : bool (optional)
+            If True, adjust locations on the grid to avoid diffraction peaks. Default is True.
+
+        Returns
+        -------
+        XYcam : list
+            A list of a list of calibration points for each wire.
+        """
 
         if dims is None:
             dims = [2, 2]
