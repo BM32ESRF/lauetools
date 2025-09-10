@@ -220,14 +220,14 @@ class DetectorParameters(wx.Dialog):
 
     #         self.OnCancel(event)
 
-    def OnAcceptCalib(self, _):
+    def OnAcceptCalib(self, _, verbose=0):
         """
         in DetectorParameters
         """
         if not self.getcurrentParams():
             return
 
-        print("\n\nIn OnAcceptCalib(): self.newparam", self.newparam)
+        if verbose>0: print("\n\nIn OnAcceptCalib(): self.newparam", self.newparam)
 
         Parameter = {}
         Parameter["CCDParam"] = self.newparam[:5]
