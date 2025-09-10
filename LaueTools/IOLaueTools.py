@@ -29,6 +29,7 @@ np.set_printoptions(precision=15)
 
 if sys.version_info.major == 3:
     from LaueTools.dict_LaueTools import CST_ENERGYKEV, CCD_CALIBRATION_PARAMETERS
+    from . import generaltools as GT
     PYTHON3 = True
     #print('-- OK! You are using python 3')
 else:
@@ -49,7 +50,7 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
                                             data_props=None,
                                             rectpix:int=0,  # RECTPIX
                                             dirname_output:str=None,
-                                            verbose:int=0,                                       dict_data_spotsproperties=None
+                                            verbose:int=0,dict_data_spotsproperties=None
                                             ):
     """
     Write .cor file containing data
@@ -80,12 +81,14 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
 
     if data_sat list, add column to .cor file to mark saturated peaks
     """
+    if verbose>0: GT.printyellow('In writefile_cor(): -------------\n')
+
     nbspots = len(twicetheta)
 
     outputfilename = prefixfilename + ".cor"
 
     if dirname_output is None:
-        print('in writefile_cor: dirname_output is None so prefixfilename should contain folder', prefixfilename)
+        if verbose>0: print('in writefile_cor: dirname_output is None so prefixfilename should contain folder', prefixfilename)
         fullpath = outputfilename
     else:
         fullpath = os.path.join(dirname_output, outputfilename)
@@ -98,8 +101,9 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
     with open(os.path.join(folder, filename), "w") as outputfile:
 
         if not os.access(folder, os.W_OK):
-            print('Can not write in the folder: %s'%folder)
-            print('File .cor is not written !')
+            if verbose>0:
+                GT.printred('Can not write in the folder: %s'%folder)
+                GT.printred(f'File {filename} has not been written !')
             return None
 
         firstline_headercolumnsname = "2theta       chi         X           Y           I       "
@@ -108,7 +112,7 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
         nb_elem_format_string = 5
 
         if dict_data_spotsproperties is not None:
-            print('dict_data_spotsproperties',dict_data_spotsproperties)
+            if verbose>0: print('dict_data_spotsproperties',dict_data_spotsproperties)
 
             if 'data_spotsproperties' not in dict_data_spotsproperties:
                 raise KeyError('"data_spotsproperties" key not found in dict_data_spotsproperties :', dict_data_spotsproperties)
@@ -278,7 +282,7 @@ def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortinte
     # print('\n\n')
     return otherpropsdata, columnnames
 
-def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5columns:bool=True, maxnbspots=None)->Union[List, None]:
+def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5columns:bool=True, maxnbspots=None, verbose:int=0)->Union[List, None]:
     """
     read peak list in .cor file which is contain 2theta and chi angles for each peak
     .cor file is made at least of 5 columns:  2theta chi pixX pixY I
@@ -304,6 +308,8 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
 
     #TODO: output 2theta ?
     """
+    if verbose>0: GT.printyellow('In readfile_cor(): ------------------')
+
     SKIPROWS = 1
     # read first line
     with open(fullpathfile, "r") as f:
@@ -733,8 +739,8 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
             Data_array = Data_array[0]
     if verbose>0:
         print('Data_array.shape', Data_array.shape)
-        print('Found in writefile_Peaklist() Data_array cotresponding to nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
-    # print('Data_array[0]',Data_array[0])
+        print('Found in writefile_Peaklist() Data_array corresponding to nbpeaks, nbcolumns: ',nbpeaks, nbcolumns)
+        print('Data_array[0]',Data_array[0])
 
     if dirname is None:
         dirname = os.curdir
@@ -761,6 +767,10 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     elif nbcolumns == 13:  # standard + 2 columns for error bars
         (peak_X, peak_Y, _, peak_I, peak_fwaxmaj, peak_fwaxmin, peak_inclination,
         Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr) = Data_array.T
+
+    elif nbcolumns == 18:  # from crowded .cor file
+        (peak_X, peak_Y, _, peak_I, _,_,_,peak_fwaxmaj, peak_fwaxmin, peak_inclination,
+        Xdev, Ydev, peak_bkg, Ipixmax,Xfiterr, Yfiterr,_,_) = Data_array.T
     
     elif nbcolumns == 3: # basic X, Y , I   # from DetectorCalibration board
         # need to set fake data
@@ -776,7 +786,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     with open(os.path.join(dirname, outputfilename), "w") as outputfile:
         headerfile = "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
         headerfile += "peak_inclination Xdev Ydev peak_bkg Ipixmax"
-        if nbcolumns in (12, 13): #computerrorbars
+        if nbcolumns in (12, 13, 18): #computerrorbars
              headerfile += " Xfiterr Yfiterr"
         headerfile += '\n'
         try:
@@ -806,6 +816,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                         int(Ipixmax[0])))
 
                 nbpeaks = 1
+                nbcolumnsfinal = 11
 
             else:
 
@@ -825,6 +836,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                                         Ipixmax))[i]
                             ) for i in list(range(nbpeaks))]))
                 nbpeaks = len(peak_X)
+                nbcolumnsfinal = 11
 
         elif nbcolumns in (12, 13):
             if nbpeaks == 1:
@@ -848,6 +860,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                         np.round(Yfiterr[0],decimals=3)))
 
                 nbpeaks = 1
+                nbcolumnsfinal = 13
 
             else:
                 print('writing XfitErr and YfitErr !')
@@ -869,10 +882,56 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
                                         Yfiterr.round(decimals=3)))[i]
                             ) for i in list(range(nbpeaks))]))
                 nbpeaks = len(peak_X)
+                nbcolumnsfinal = 13
 
+        elif nbcolumns == 18:
+            if nbpeaks == 1:
+                if verbose>1:
+                    print("nbcolumns", nbcolumns)
+
+                outputfile.write(
+                    "\n%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d   %.04f   %.04f"
+                    % (np.round(peak_X[0], decimals=2),
+                        np.round(peak_Y[0], decimals=2),
+                        np.round(peak_I[0] + peak_bkg[0], decimals=2),
+                        np.round(peak_I[0], decimals=2),
+                        np.round(peak_fwaxmaj[0], decimals=2),
+                        np.round(peak_fwaxmin[0], decimals=2),
+                        np.round(peak_inclination[0], decimals=3),
+                        np.round(Xdev[0], decimals=2),
+                        np.round(Ydev[0], decimals=2),
+                        np.round(peak_bkg[0], decimals=2),
+                        int(Ipixmax[0]),
+                        np.round(Xfiterr[0],decimals=3),
+                        np.round(Yfiterr[0],decimals=3)))
+
+                nbpeaks = 1
+                nbcolumnsfinal = 13
+            else:
+                print('writing XfitErr and YfitErr !')
+                outputfile.write(
+                    "\n".join(
+                        ["%.02f   %.02f   %.02f   %.02f   %.02f   %.02f    %.03f   %.02f   %.02f   %.02f   %d   %.04f   %.04f"
+                            % tuple(list(zip(peak_X.round(decimals=2),
+                                        peak_Y.round(decimals=2),
+                                        (peak_I + peak_bkg).round(decimals=2),
+                                        peak_I.round(decimals=2),
+                                        peak_fwaxmaj.round(decimals=2),
+                                        peak_fwaxmin.round(decimals=2),
+                                        peak_inclination.round(decimals=3),
+                                        Xdev.round(decimals=2),
+                                        Ydev.round(decimals=2),
+                                        peak_bkg.round(decimals=2),
+                                        Ipixmax,
+                                        Xfiterr.round(decimals=3),
+                                        Yfiterr.round(decimals=3)))[i]
+                            ) for i in list(range(nbpeaks))]))
+                nbpeaks = len(peak_X)
+                nbcolumnsfinal = 13
         else:
-            print(f"nbcolumns  ={nbcolumns} is higher than 13")
-            print('Not implemented yet!')
+            GT.printred(f"nbcolumns  ={nbcolumns} is not 12 13 or 18")
+            GT.printred('Not implemented yet!')
+            return
 
         outputfile.write("\n# File created at %s with IOLaueTools.py" % (time.asctime()))
         if initialfilename:
@@ -886,7 +945,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     if verbose>0:
         print("table of %d peak(s) with %d columns has been written in \n%s"
-            % (nbpeaks, nbcolumns, os.path.join(os.path.abspath(dirname), outputfilename)))
+            % (nbpeaks, nbcolumnsfinal, os.path.join(os.path.abspath(dirname), outputfilename)))
 
     return os.path.join(os.path.abspath(dirname), outputfilename)
 
