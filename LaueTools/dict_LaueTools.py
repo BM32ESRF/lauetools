@@ -78,6 +78,7 @@ dict_Materials = {
     "MgO": ["MgO", [4.211, 4.211, 4.211, 90, 90, 90], "fcc"],
     "MoO3": ["alpha_MoO3", [3.76, 3.97, 14.432, 90, 90, 90], "no"],  # SG62
     "literature_MoO3": ["literature_MoO3", [3.76, 3.97, 14.43, 90.0, 90.0, 90.0], "no"], #sg62
+    "Muscovite": ["Muscovite", [5.2, 9.027, 20.106, 90, 95.78, 90], "VO2_mono2"],  # ~ SG 15 C2/c
     "PMNPT": ["PMNPT", [3.9969, 3.9969, 4.0457, 90, 90, 90], "no"],# sg99
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
@@ -193,6 +194,7 @@ dict_Materials_short = {
     "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
     "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "Muscovite": ["Muscovite", [5.2, 9.027, 20.106, 90, 95.78, 90], "VO2_mono2"],  # ~ SG 15 C2/c
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
