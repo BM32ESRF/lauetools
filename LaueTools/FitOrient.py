@@ -395,7 +395,7 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
 
     parameters_being_fitted = [parameters[k] for k in arr_indexvaryingparameters]
     param_calib_0 = starting_param
-    if verbose:
+    if verbose>0:
         print(
             "\n\n***************************\nfirst error with initial values of:",
             parameters_being_fitted, " \n\n***************************\n")
@@ -447,12 +447,12 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                                 args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
                               tr_solver = 'exact',
                               x_scale=xscale, max_nfev=None)
-
-    print("\n-------LEAST_SQUARES method RESULTS ----------")
-    #print("calib_sol2", calib_sol2)
-    print("calib_sol2['x']",calib_sol2['x'])
-    print('mean residues', np.mean(calib_sol2['fun']))
-    print('\n-------------------------------------\n')
+    if verbose>0:
+        print("\n-------LEAST_SQUARES method RESULTS ----------")
+        #print("calib_sol2", calib_sol2)
+        print("calib_sol2['x']",calib_sol2['x'])
+        print('mean residues', np.mean(calib_sol2['fun']))
+        print('\n-------------------------------------\n')
 
     finalallresults = _error_function_on_demand_calibration(calib_sol2['x'],
                                                 miller,
@@ -469,7 +469,7 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
                                                 weights=weights,
                                                 kf_direction=kf_direction,
                                                 allspots_info=1)
-    if verbose:
+    if verbose>0:
         print("\n\n **************  End of Fitting  -  Final errors  ****************** \n\n")    
         print('finalallresults', finalallresults)
 
@@ -1718,7 +1718,7 @@ def fit_function_general(varying_parameters_values_array,
     
     """
 
-    if verbose:
+    if verbose>0:
         print("\n\n******************\nfirst error with initial values of:",
             varying_parameters_keys, " \n\n***************************\n")
 
@@ -1774,14 +1774,15 @@ def fit_function_general(varying_parameters_values_array,
     refined_values = res[0]
 
     #     print "res fit in fit function general", res
-    print("code results", res[-1])
-    print("nb iterations", res[2]["nfev"])
-    print("refined_values", refined_values)
+    if verbose>0:
+        print("code results", res[-1])
+        print("nb iterations", res[2]["nfev"])
+        print("refined_values", refined_values)
 
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if verbose:
+        if verbose>0:
             print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n"
             )
             alldata = error_function_general(refined_values,
@@ -1804,15 +1805,16 @@ def fit_function_general(varying_parameters_values_array,
             # alldistances_array, Uxyz, newmatrix, Tc, T, Ts
             alldistances_array, Uxyz, refinedUB, refinedTc, refinedT, refinedTs = alldata
 
-            for k, param_key in enumerate(varying_parameters_keys):
-                print("%s  : start %.4f   --->   refined %.4f"
-                    % (param_key, varying_parameters_values_array[k], refined_values[k]))
-            print("results:\n q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
-            print("refined UBmatrix", refinedUB)
-            print("Uxyz", Uxyz)
-            print("refinedTc, refinedT, refinedTs", refinedTc, refinedT, refinedTs)
-            print("final mean pixel residues : %f with %d spots"
-                % (np.mean(alldistances_array), len(absolutespotsindices)))
+            if verbose>0:
+                for k, param_key in enumerate(varying_parameters_keys):
+                    print("%s  : start %.4f   --->   refined %.4f"
+                        % (param_key, varying_parameters_values_array[k], refined_values[k]))
+                print("results:\n q= refinedT UBstart refinedTc B0 G*\nq = refinedUB B0 G*")
+                print("refined UBmatrix", refinedUB)
+                print("Uxyz", Uxyz)
+                print("refinedTc, refinedT, refinedTs", refinedTc, refinedT, refinedTs)
+                print("final mean pixel residues : %f with %d spots"
+                    % (np.mean(alldistances_array), len(absolutespotsindices)))
 
         return refined_values
 
@@ -2355,7 +2357,7 @@ def fit_function_strain(varying_parameters_values_array,
 
     where T comes from Ts
     """
-    if verbose:
+    if verbose>0:
         print("\n\n******************\nfirst error with initial values of:",
             varying_parameters_keys, " \n\n***************************\n")
 
@@ -2416,15 +2418,16 @@ def fit_function_strain(varying_parameters_values_array,
     refined_values = res[0]
 
     #     print "res fit in fit function general", res
-    print("code results", res[-1])
-    print("mesg", res[-2])
-    print("nb iterations", res[2]["nfev"])
-    print("refined_values", refined_values)
+    if verbose>0:
+        print("code results", res[-1])
+        print("mesg", res[-2])
+        print("nb iterations", res[2]["nfev"])
+        print("refined_values", refined_values)
 
     if res[-1] not in (1, 2, 3, 4, 5):
         return None
     else:
-        if 1:
+        if verbose>0:
             print("\n\n **************  End of Fitting  -  Final errors (general fit function) ****************** \n\n")
             alldata = error_function_strain(refined_values,
                                             varying_parameters_keys,
@@ -2446,18 +2449,19 @@ def fit_function_strain(varying_parameters_values_array,
             # alldistances_array, Uxyz, newmatrix, Ts, T
             alldistances_array, Uxyz, newmatrix, refinedTs, refinedT = alldata
 
-            print("\n--------------------\nresults:\n------------------")
-            for k, param_key in enumerate(varying_parameters_keys):
-                print("%s  : start %f   --->   refined %f"
-                    % (param_key, varying_parameters_values_array[k], refined_values[k]))
-            print("q= refinedT UBstart B0 G*\nq = refinedUB B0 G*")
-            print("refined UBmatrix", newmatrix.tolist())
-            print("Uxyz", Uxyz.tolist())
-            print("refinedT", refinedT.tolist())
-            print("refinedTs", refinedTs.tolist())
-            print("refined_values", refined_values)
-            print("final mean pixel residues : %f with %d spots"
-                % (np.mean(alldistances_array), len(absolutespotsindices)))
+            if verbose>0:
+                print("\n--------------------\nresults:\n------------------")
+                for k, param_key in enumerate(varying_parameters_keys):
+                    print("%s  : start %f   --->   refined %f"
+                        % (param_key, varying_parameters_values_array[k], refined_values[k]))
+                print("q= refinedT UBstart B0 G*\nq = refinedUB B0 G*")
+                print("refined UBmatrix", newmatrix.tolist())
+                print("Uxyz", Uxyz.tolist())
+                print("refinedT", refinedT.tolist())
+                print("refinedTs", refinedTs.tolist())
+                print("refined_values", refined_values)
+                print("final mean pixel residues : %f with %d spots"
+                    % (np.mean(alldistances_array), len(absolutespotsindices)))
 
         return refined_values
 
