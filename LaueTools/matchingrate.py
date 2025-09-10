@@ -511,7 +511,7 @@ def getProximity(TwicethetaChi,
     # table_dist[i][prox_table[i]] is the minimum angular distance
     # separating theo spot i from a exp spot of index prox_table[i]
 
-    if verbose:
+    if verbose>0:
         #        print "/0", np.where(table_dist[:, 0] < 1.)
         #        print np.argmin(table_dist[:, 0])
         #        print "/4 exp", np.where(table_dist[:, 4] < 1.)
