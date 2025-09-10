@@ -1623,7 +1623,8 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
                                                     mat_from_lab_to_sample_frame=None,
                                                     results_in_OR_frames=1,
                                                     results_in_LT_frames=0,
-                                                    sampletilt=40.0):
+                                                    sampletilt=40.0,
+                                                    verbose=0):
     """Compute HKLs which are parallel to xyz axis of sample frame and lab frame.
 
     One of the two optional arguments (matstarlab or UBmat) must be input.
@@ -1652,7 +1653,7 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
     if UBmat is not None:
         matstarlab = matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True)
 
-    print("matstarlab = ", matstarlab)
+    if verbose>0: print("matstarlab = ", matstarlab)
 
     matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
 
@@ -1702,9 +1703,10 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
         for i in list(range(3)):
             HKL_xyz[i + 3] = (mat2[:, i] / max(abs(mat2[:, i]))).round(decimals=3)
 
-    print("HKL coordinates of lab and sample frame axes :")
-    for i in list(range(6)):
-        print(list_HKL_names[i], "\t", HKL_xyz[i, :])
+    if verbose>0:
+        print("HKL coordinates of lab and sample frame axes :")
+        for i in list(range(6)):
+            print(list_HKL_names[i], "\t", HKL_xyz[i, :])
 
     return (list_HKL_names, HKL_xyz)
 
