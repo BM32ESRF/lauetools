@@ -64,8 +64,11 @@ def askUserForFilename(parent, filetype = 'peaklist', **dialogOptions):
         # self.filename = dialog.GetFilename()
         # #self.dirname = dialog.GetDirectory()
 
-        allpath = dialog.GetPath()
-        print(allpath)
+        _allpath = dialog.GetPath()
+        GT.printyellow(f'\n\nIn askUserForFilename() --------- selected file _allpath : {_allpath}')
+        allpath = os.path.abspath(_allpath)
+        GT.printyellow(f'\n\nIn askUserForFilename() --------- selected file allpath : {allpath}')
+
 
         if filetype == 'peaklist':
             parent.dirnamepklist, parent.filenamepklist = os.path.split(allpath)
@@ -77,21 +80,34 @@ def askUserForFilename(parent, filetype = 'peaklist', **dialogOptions):
     dialog.Destroy()
     return userProvidedFilename
 
-def askUserForDirname(parent):
+def askUserForDirname(parent, verbose=0):
     """
     provide a dialog to browse the folders and files
     """
+    if verbose>0: GT.printyellow('\n\nIn askUserForDirname():------')
     dialog = wx.DirDialog(parent, message="CHOOSE A FOLDER (WITH PERMISSION) TO WRITE RESULTS", defaultPath=parent.dirnamepklist)
     if dialog.ShowModal() == wx.ID_OK:
         # self.filename = dialog.GetFilename()
         # #self.dirname = dialog.GetDirectory()
 
         allpath = dialog.GetPath()
-        print(allpath)
+        if verbose>0: print('selected folder',allpath)
         writefolder = allpath
 
     dialog.Destroy()
-    return writefolder
+
+    if verbose>0: print('checking permission for',writefolder)
+    try:
+        ftest = open(os.path.join(writefolder,"secondtestfile.txt"),"w")
+        execOK=os.access(writefolder, mode=os.X_OK)
+        print('execOK',execOK)
+        if verbose>0:
+            GT.printyellow('End of askUserForDirname():------')
+            if not execOK: GT.printred('execOK',execOK)
+        return writefolder
+    except PermissionError:
+        wx.MessageBox("You STILL don't have permission to write in this folder\n Select please another folder!", "Error", wx.OK | wx.ICON_ERROR)
+        askUserForDirname(parent)
 
 
 def OpenCorfile(filename, parent, verbose=0):
@@ -242,7 +258,7 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
 
     :param parent: GUI object with above 
     """
-    if verbose>0: print('\n\nIn OpenPeakList():')
+    if verbose>0: GT.printyellow('\n\nIn OpenPeakList(): -------------------\n')
     if parent.resetwf is True:
         parent.writefolder = parent.dirnamepklist
 
@@ -261,12 +277,12 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
 
         prefix, file_extension = DataPlot_filename.rsplit(".", 1)
 
-
         try:
-            ftest = open(os.path.join(parent.dirnamepklist,"tmp"),"w")
-            # try:
-            #     txt = " "
-            #     ftest.write(txt)
+            # print('os.getlogin()',os.getlogin())
+            # print('os.path.expanduser',os.path.expanduser('~'))
+            with open(os.path.join(parent.dirnamepklist,"ezrztr.txt"),"w") as ftest:
+                txt = " "
+                ftest.write(txt)
         except PermissionError:
             if verbose>0:
                 print('before:', parent.writefolder)
@@ -275,14 +291,15 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
             wx.MessageBox('Permission Error, select an other folder to write (temporarly or permanent) results','information', wx.OK | wx.ICON_INFORMATION)
             parent.writefolder = OSLFGUI.askUserForDirname(parent)
 
-            
+            if verbose>0:
+                print('after:', parent.writefolder)
 
-            source = DataPlot_filename
+            source = fullpathfilename
 
             # Make sure the destination folder exists
             os.makedirs(parent.writefolder, exist_ok=True)
 
-            shutil.copy(source, parent.writefolder)
+            shutil.copy(source, os.path.join(parent.writefolder,DataPlot_filename))
 
             fullpathfilename = os.path.join(parent.writefolder, DataPlot_filename)
             parent.filenamepklist = DataPlot_filename
@@ -291,7 +308,7 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
 
         else:
             parent.writefolder = parent.dirnamepklist
-            GT.printgreen(f'I can write in {parent.writefolder}')
+            GT.printgreen(f'In OpenPeakList(): I can write in {parent.writefolder}')
         
     if file_extension in ("dat", "DAT"):
         if verbose>0: print("In OpenPeakList(): .dat file branch")
@@ -372,7 +389,7 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
     # for .cor file ------------------------------
     if file_extension == "cor":
         if verbose>0:
-            print("In OpenPeakList(): .dat file branch")
+            print("In OpenPeakList(): .cor file branch")
             print('fullpathfilename of .cor file ', fullpathfilename)
         # read peak list and detector calibration parameters
         folder, filen = os.path.split(fullpathfilename)
