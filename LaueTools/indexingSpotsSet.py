@@ -1113,7 +1113,8 @@ class spotsset:
                                                                 dictmaterials:str=None,
                                                                 choose_UB_MinEulerepresentative=True,
                                                                 emax_matchringrate=None,
-                                                                writefitfile=True):
+                                                                writefitfile=True,
+                                                                add_info_in_outputfilename=''):
         r"""
         General class method to index a set of experimental spots.
 
@@ -1744,7 +1745,8 @@ class spotsset:
                                                 corfilename=corfilename,
                                                 dirname=dirnameout_fitfile,
                                                 addpixdev=True,
-                                                add_strain_sampleframe=True)
+                                                add_strain_sampleframe=True,
+                                                add_info_in_outputfilename=add_info_in_outputfilename)
 
                             if fromIMM:
                                 # because IMM may provides once a list of matrices
@@ -2937,7 +2939,8 @@ class spotsset:
                                             addpixdev=False,
                                             verbose=0,
                                             add_strain_sampleframe=False,
-                                            add_grainindex_in_outputfilename=True):
+                                            add_grainindex_in_outputfilename=True,
+                                            add_info_in_outputfilename=''):
         r"""
         write a .fit file: = .cor file + h,k,l, energy grainindex...
         list of spots belonging to a single grain
@@ -2945,6 +2948,8 @@ class spotsset:
         :param corfilename: filename to deduce the prefix and set the output filename
 
         :param add_grainindex_in_outputfilename: add in filename '_g' and grainindex
+
+        :param add_info_in_outputfilename: additional info to add in filename. Default is ''. You may start with '_'.
 
         .. note:: output filename has additional info  '_g(grain_index).fit' for .fit
         with only data of grain number grain index
@@ -2954,9 +2959,9 @@ class spotsset:
         if corfilename is not None:
 
             if add_grainindex_in_outputfilename:
-                outputfilename = (corfilename.split(".")[0] + "_g%d" % grain_index + ".fit")
+                outputfilename = (corfilename.split(".")[0] + add_info_in_outputfilename + "_g%d" % grain_index + ".fit")
             else:
-                outputfilename = corfilename.split(".")[0] + ".fit"
+                outputfilename = corfilename.split(".")[0] + add_info_in_outputfilename +".fit"
 
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
@@ -5218,7 +5223,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
                 print('\n\nrefposfile written! It is %s\n\n'%firstrefposfile)
                 #refposfile = refposfileprefix + '.cor'
-
 
     #-----------------------------------------------------
     # ---   Building list of (image, file) indices -------
