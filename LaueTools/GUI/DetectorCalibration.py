@@ -204,6 +204,7 @@ class PlotRangePanel(wx.Panel):
         """open a GUI to select a file containing peaks list (.dat, or .cor)
         """
         verbose=self.mainframe.verbose
+        self.mainframe.plotlinks = None
 
         self.mainframe.USEDEFAULTDATAFILE = False
         if verbose>0:
@@ -1556,7 +1557,7 @@ class MainCalibrationFrame(wx.Frame):
         verbose= self.verbose
 
         if verbose>0:
-            GT.printyellow('\n\nIn ReadExperimentData():  \n\n')
+            GT.printyellow('\n\nIn ReadExperimentData(): ------------- \n')
             print('self.USEDEFAULTDATAFILE', self.USEDEFAULTDATAFILE)
             print("self.dirnamepklist", self.dirnamepklist)
             print("self.filename", self.filename)
@@ -1580,16 +1581,20 @@ class MainCalibrationFrame(wx.Frame):
         # check if one can write in self.dirnamepklist (better than os.access (  os.W_OK))
         if not self.USEDEFAULTDATAFILE:
             try:
-                ftest = open(os.path.join(self.writefolder,"tmp"),"w")
+                ftest = open(os.path.join(self.writefolder,"firsttestfile.txt"),"w")
+                execOK=os.access(self.writefolder, mode=os.X_OK)
+                print('In ReadExperimentData(): execOK  ??',execOK)
                 # try:
                 #     txt = " "
                 #     ftest.write(txt)
             except PermissionError:
 
-                if verbose>0: print('Permission Erro!\n Please select in the next window an other folder where to write (temporarly or permanent) results ')
-                self.writefolder = OSLFGUI.askUserForDirname(self)
+                if verbose>0: GT.printred('Permission Erro!\n Please select in the next window an other folder where to write (temporarly or permanent) results ')
+                wx.MessageBox("Permission Error!\nCannot write in {self.writefolder}!\nPlease select in the next window an other folder where to write (temporarly or permanent) results", "INFO")
+                self.writefolder = OSLFGUI.askUserForDirname(self, verbose=verbose-1)
+
             else:
-                if verbose>0: GT.printgreen(f'I can write in {self.writefolder}')
+                if verbose>0: GT.printgreen(f'In ReadExperimentData(): I can write in {self.writefolder}')
 
         
             # elif self.writefolder is None:
@@ -1644,6 +1649,11 @@ class MainCalibrationFrame(wx.Frame):
                     
             twicetheta = 2 * data_theta
 
+            if verbose>0:
+                print('self.filename', self.filename)
+                print('filepath', filepath)
+       
+
             if self.filename == 'calib_.cor':
                 self.initialParameter['filename.cor'] = self.filename
             else:
@@ -1694,16 +1704,20 @@ class MainCalibrationFrame(wx.Frame):
             if not self.USEDEFAULTDATAFILE:
                 # write calib_.dat temporary file
                 outputprefix = 'calib_'
-                IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
+                outputfilepath = IOLT.writefile_Peaklist(outputprefix, Data_array, overwrite=1,
                                                             initialfilename=self.filename,
                                                             comments=None,
                                                             dirname=self.writefolder,
                                                             verbose=verbose-1)
+                
+                if outputfilepath is None:
+                    return None
                 self.initialParameter['filename.dat'] = os.path.join(self.dirnamepklist, outputprefix+'.dat')
                 # next time in ReadExperimentData  this branch (.cor) won't be used
                 self.filename = self.initialParameter['filename.dat']
 
                 if verbose>0:
+                    print('still In ReadExperimentData():')
                     print('From a .cor file : Reset self.filename to a .dat file: ', self.filename)
                     print('self.filename', self.filename)
 
@@ -1941,7 +1955,7 @@ class MainCalibrationFrame(wx.Frame):
         # experimental data (set exp. spots attributes)
         self.ReadExperimentData()
 
-        if verbose>1:
+        if verbose>2:
             print("theo. spots")
             print("k, x, y, 2theta, theta, chi hkl")
             for k in range(len(twicetheta)):
@@ -2898,7 +2912,7 @@ class MainCalibrationFrame(wx.Frame):
         prefix = filename.split(".")[0]
 
         if self.writefolder is None and not os.access(folder, os.W_OK):
-            self.writefolder = OSLFGUI.askUserForDirname(self)
+            self.writefolder = OSLFGUI.askUserForDirname(self, verbose=verbose-1)
             print('self.writefolder after user selecttion', self.writefolder)
 
         IOLT.writefile_cor(prefix, twicetheta, chi, data_x, data_y,
@@ -2943,7 +2957,7 @@ class MainCalibrationFrame(wx.Frame):
             print("folder",folder)
 
         if self.writefolder is None:
-            self.writefolder = OSLFGUI.askUserForDirname(self)
+            self.writefolder = OSLFGUI.askUserForDirname(self, verbose=verbose-1)
             
         outputfilename = os.path.join(self.writefolder,filename)
 
@@ -3819,6 +3833,7 @@ class MainCalibrationFrame(wx.Frame):
         """
         # simulate theo data
         ResSimul = self.simulate_theo()  # twicetheta, chi, self.Miller_ind, posx, posy
+        
         if ResSimul is None:
             self.deltamatrix = np.eye(3)
             print("reset deltamatrix to identity")
@@ -3987,6 +4002,7 @@ class MainCalibrationFrame(wx.Frame):
         # ---------------------------------------------------------------
         # plot experimental spots linked to 1 theo. spot)
         # ---------------------------------------------------------------
+        if self.verbose>0: print("self.plotlinks", self.plotlinks)
         if self.plotlinks is not None:
             exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int16)
             #print('exp_indices in yellow links plot ',exp_indices)
@@ -5100,20 +5116,37 @@ def start():
     CalibGUIApp.MainLoop()
 
 if __name__ == "__main__":
+    import numpy as np
+    testfile = 2
 
     initialParameter = {}
-    initialParameter["CCDParam"] = [71, 1039.42, 1095, 0.0085, -0.981]
-    initialParameter["detectordiameter"] = 165.0
-    initialParameter["CCDLabel"] = "MARCCD165"
-    initialParameter["filename"] = "Ge0001.dat"
-    initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
     initialParameter["dict_Materials"] = DictLT.dict_Materials
+
+    if testfile == 1:  # MARCCD, .dat file 11 columns  Ge 111
+        initialParameter["CCDParam"] = [69.2, 1050.42, 1116, 0.15, -0.25]
+        initialParameter["detectordiameter"] = 165.0
+        initialParameter["CCDLabel"] = "MARCCD165"
+        initialParameter["filename"] = "Ge0001.dat"
+        initialParameter["dirname"] = "/home/micha/LaueToolsPy3/LaueTools/Examples/Ge"
+    elif testfile == 2:  # SCMOS .cor file 18 columns  Ge 001
+        initialParameter["CCDParam"] = [83.1, 1026.42, 1128, 0.352, 0.36]
+        initialParameter["detectordiameter"] = 165.0
+        initialParameter["CCDLabel"] = "sCMOS"
+        initialParameter["filename"] = "img_Ge_sCMOS_0000_181peaks.cor"
+        initialParameter["dirname"] = "/home/micha/Private"
+    elif testfile == 3:  # sCMOS, .dat file 13 columns  (11 + 2 of XfitErr Yfiterr)  Ge 001
+        initialParameter["CCDParam"] = [83, 1026.42, 1128, 0.352, 0.36]
+        initialParameter["detectordiameter"] = 165.0
+        initialParameter["CCDLabel"] = "sCMOS"
+        initialParameter["filename"] = "img_Ge_sCMOS_0000_181peaks.dat"
+        initialParameter["dirname"] = "/home/micha/Private"
+       
 
     filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
     #    initialParameter['imagefilename'] = 'SS_0171.mccd'
     #    initialParameter['dirname'] = '/home/micha/lauetools/trunk'
 
-    kf_direction = 'X>0'
+    #kf_direction = 'X>0'
 
     kf_direction = 'Z>0'
 
@@ -5126,7 +5159,7 @@ if __name__ == "__main__":
                                                         fliprot="no",
                                                         data_added=None,
                                                         kf_direction=kf_direction)
-
     CalibGUIFrame.Show()
+
 
     CalibGUIApp.MainLoop()
