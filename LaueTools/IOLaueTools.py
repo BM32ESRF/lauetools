@@ -722,7 +722,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     TODO: simplify to implement larger number of spot properties
     """
-    if verbose>0: print('\n In writefile_Peaklist(): ')
+    if verbose>0: GT.printyellow('\n In writefile_Peaklist(): -------------')
     if Data_array is None:
         if verbose>0:
             print("No data peak to write")
@@ -783,6 +783,13 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         print(f"nbcolumns  ={nbcolumns} is higher than 13!")
         print('I don t know yet what are the columns meaning ...!')
 
+    try:
+        ftest = open(os.path.join(dirname, outputfilename), "w")
+    except PermissionError:
+        GT.printred(f'You do not have permission to write a file in this folder!: {dirname}')
+        GT.printred(f'Output file {outputfilename} will not be written')
+        return
+
     with open(os.path.join(dirname, outputfilename), "w") as outputfile:
         headerfile = "peak_X peak_Y peak_Itot peak_Isub peak_fwaxmaj peak_fwaxmin "
         headerfile += "peak_inclination Xdev Ydev peak_bkg Ipixmax"
@@ -792,9 +799,9 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
         try:
             outputfile.write(headerfile)
         except PermissionError:
-            print('You do not have permission to write a file in this folder! ')
-            print(f'Output file {outputfile} is not written')
-            return
+            GT.printred('Again! You do not have permission to write a file in this folder! ')
+            GT.printred(f'Output file {outputfile} will still not be written!\n')
+            return None
 
         if nbcolumns < 12:
             if nbpeaks == 1:
