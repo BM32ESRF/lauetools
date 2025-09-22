@@ -35,6 +35,8 @@ dict_Materials = {
     "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
     "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
     "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
+    "Al13Fe4": ["Al13Fe4", [15.489, 8.0831, 12.476, 90.0, 107.72, 90.0], "SG12", ],  # SG12 monoclinic unique axis b cell choice 1 
+    "Al6Fe": ["Al6Fe", [7.437, 6.492, 8.788, 90.0, 90.0, 90.0], "SG36", ],  # SG36 orthorhombic 
     "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
     "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
     "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
@@ -255,7 +257,9 @@ dict_Extinc = {
     "137": "137",
     "R3m_sg160": "R3m_sg160",
     "h+k=2n, modulated":"h+k=2n, modulated",
-    'SG122':'SG122'
+    'SG122':'SG122',
+    'SG12':'SG12',
+    'SG36':'SG36'
 }
 
 dict_Extinc_inv = {
@@ -280,7 +284,9 @@ dict_Extinc_inv = {
     "137": "137",
     "R3m_sg160":"R3m_sg160",
     "h+k=2n, modulated":"h+k=2n, modulated",
-    'SG122':'SG122'
+    'SG122':'SG122',
+    'SG12':'SG12',
+    'SG36':'SG36'
 }
 
 def writeDict(_dict, filename, writemode='a', sep=', '):
