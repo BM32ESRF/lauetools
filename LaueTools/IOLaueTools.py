@@ -786,7 +786,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
     try:
         ftest = open(os.path.join(dirname, outputfilename), "w")
     except PermissionError:
-        GT.printred(f'You do not have permission to write a file in this folder!: {dirname}')
+        GT.printred(f'(In writefile_Peaklist()). You do not have permission to write a file in this folder!: {dirname}')
         GT.printred(f'Output file {outputfilename} will not be written')
         return
 
