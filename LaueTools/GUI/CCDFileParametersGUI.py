@@ -71,9 +71,11 @@ class CCDFileParameters(wx.Dialog):
         a0 = wx.StaticText(self, -1, "CCD Image File type")
         a0.SetFont(font3)
 
-        self.allCCD_names = GT.put_on_top_list(("MARCCD165",
-                                            "sCMOS",
+        self.allCCD_names = GT.put_on_top_list(("sCMOS","sCMOS_16M" ,
+                                            "sCMOS_9M",
+                                            "sCMOS_4M",
                                             "----------",
+                                            "MARCCD165",
                                             "PRINCETON",
                                             "VHR_Mar13",
                                             "----------"),
