@@ -610,12 +610,14 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                     ccdlabel = 'ImageStar_dia_2021_2x2'
                 
                 elif abs(ps-0.0504) <= 0.002:
-                    ccdlabel = 'sCMOS_9M'
+                    ccdlabel = 'sCMOS_9M' # IMSTAAR_bin2
                     print('\n\n*******\nWARNING ! This detector could be confused with IMSTAR_bin2\n********\n')
                 # elif abs(ps-0.0504) <= 0.001:
                 #     ccdlabel = 'IMSTAR_bin2'
                 elif abs(ps-0.0252) <= 0.001:
                     ccdlabel = 'IMSTAR_bin1'
+                elif abs(ps-0.0252*3) <= 0.001:
+                    ccdlabel = 'sCMOS_4M' # IMSTAAR_bin3
                 elif abs(ps-0.2) <= 0.001:
                     ccdlabel = 'Alban'
                 elif abs(ps-0.4) <= 0.001:
