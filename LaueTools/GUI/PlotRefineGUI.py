@@ -974,7 +974,7 @@ class Plot_RefineFrame(wx.Frame):
             if self.CCDLabel in ("MARCCD165", "PRINCETON"):
                 ylim = (2048, 0)
                 xlim = (0, 2048)
-            elif self.CCDLabel in ("VHR_PSI",):
+            elif self.CCDLabel in ("VHR_PSI","sCMOS_9M"):
                 ylim = (3000, 0)
                 xlim = (0, 4000)
             elif self.CCDLabel.startswith("sCMOS"):
