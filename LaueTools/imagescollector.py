@@ -16,9 +16,30 @@ import LaueTools.imageprocessing as Improc
 import LaueTools.dict_LaueTools as DictLT
 
 
-def setfilename(prefix:str,index:int,CCDLabel='sCMOS')->str:
+def setfilename(prefix:str,index:int,CCDLabel:str='sCMOS', tifextension:str='.tif')->str:
+
+    """
+    Reconstruct filename string from imagefilename and update filename index with imageindex
+
+    Parameters
+    ----------
+    prefix : str
+        prefix of imagefilename (excluding folder path) excluding digits number of the index
+        ('Cu_' for images named  'Cu_0020.tif')
+    index : int
+        index in filename
+    CCDLabel : str
+        label of the detector (default is 'sCMOS')
+    tifextension : str
+        extension of tif file (default is '.tif'). Sometimes extension is .tif  or .tiff
+
+    Returns
+    -------
+    filename : str
+        input filename with index replaced by input imageindex
+    """
     if CCDLabel in ('sCMOS',):
-        return prefix+'%04d'%index + '.tif'
+        return prefix+'%04d'%index + tifextension
     elif CCDLabel in ('MARCCD165',):
         return prefix+'%04d'%index + '.mccd'
     
