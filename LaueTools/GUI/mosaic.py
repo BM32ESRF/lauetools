@@ -2492,7 +2492,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
             if dict_param["NormalizeWithMonitor"]:
 
-                if ccdlabel in ("sCMOS", "sCMOS_fliplr"):
+                if ccdlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "sCMOS_9M"):
                     pedestal = 1000.0
                     dictMonitor = IOimage.read_header_scmos(filename)
                     print("dictMonitor.keys()", list(dictMonitor.keys()))
@@ -3283,6 +3283,8 @@ def CollectData_oneImage(param, outputfolder, ccdlabel="MARCCD165",
     peaklist : list of pixel X pixel Y (horiz, vert)   . For multiple detector : box around [[X, Y]] will be split
     boxsize_row = half boxsize (in pixel) // pixel X axis horiz
     boxsize_line = half boxsize (in pixel) // pixel Y axis vert
+
+    # todo add sCMOS 9M 4M ?? maybe this function is obsolete / datacollector.py
     """
     (dirname, filename, imageindex, peaklist, boxsize_row, boxsize_line) = param
 
