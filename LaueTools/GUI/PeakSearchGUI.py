@@ -4023,8 +4023,8 @@ class MainPeakSearchFrame(wx.Frame):
             self.extension,
         ) = DictLT.dict_CCD[self.initialParameter["CCDLabel"]]
 
-        if extension != self.extension:
-            txt = "warning : file extension does not match CCD type set in Set CCD File Parameters ??"
+        if extension != self.extension and extension not in ('tif','tiff'):
+            txt = f"warning : file extension {extension} does not match CCD type set in Set CCD File Parameters: {self.extension} ??"
             print(txt)
             wx.MessageBox(f'{txt}', 'Info')
 
@@ -4069,7 +4069,7 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 dirname=self.dirname,
                                                                 CCDLabel=self.CCDlabel)
 
-        if self.CCDlabel in ("sCMOS", "sCMOS_fliplr"):
+        if self.CCDlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "sCMOS_9M"):
             self.vminmin = 0
             self.vmiddle = 1010
             self.vmaxmax = 10000
