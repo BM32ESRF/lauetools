@@ -16,10 +16,13 @@ from skimage import filters, morphology, measure
 from skimage.segmentation import random_walker
 
 from astropy.stats import SigmaClip
-from photutils import Background2D, MedianBackground
 
 import photutils
-print('location photutils', photutils)
+print('location photutils and version', photutils, photutils.__version__)
+if photutils.__version__ < '3.2':
+    from photutils import Background2D, MedianBackground
+else:
+    from photutils.background import Background2D, MedianBackground
 
 # -------------------------------- Thresholding --------------------------------
 def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
