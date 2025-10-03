@@ -19,7 +19,7 @@ from astropy.stats import SigmaClip
 
 import photutils
 print('location photutils and version', photutils, photutils.__version__)
-if photutils.__version__ < '3.2':
+if photutils.__version__ < '2.3':
     from photutils import Background2D, MedianBackground
 else:
     from photutils.background import Background2D, MedianBackground

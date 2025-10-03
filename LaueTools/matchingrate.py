@@ -54,6 +54,8 @@ except ImportError:
 
 from typing import Dict, Tuple, Union, List, Iterable
 radian = float
+degree= float
+keV = float
 class tuple_2int(Tuple[int, int]):
     pass
 
@@ -85,7 +87,8 @@ def SpotLinks(twicetheta_exp,
                 Miller_ind,
                 energy,  # theoretical data
                 absoluteindex=None,
-                verbose=0):
+                verbose:int=0,
+                fastmode:bool=False):
     r"""
     Creates automatically links between close experimental and theoretical spots
     in 2theta, chi angles (kf) coordinates
@@ -135,8 +138,8 @@ def SpotLinks(twicetheta_exp,
                             proxtable=1,
                             angtol=veryclose_angletol,
                             verbose=0,
-                            signchi=1,
-                        )[:2]  # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+                            signchi=1, # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
+                        fastmode=fastmode)[:2]
 
     # ProxTable is table giving the closest exp.spot index for each theo. spot
     # len(Resi) = nb of theo spots
@@ -443,22 +446,26 @@ def getNbMatches(residues, thresholdsimilarity):
 def getProximity(TwicethetaChi,
                     data_theta,
                     data_chi,
-                    angtol=0.5,
+                    angtol:degree=0.5,
                     proxtable=0,
-                    verbose=0,
+                    verbose:int=0,
                     signchi=1,
-                    usecython=USE_CYTHON):
+                    usecython=USE_CYTHON,
+                    fastmode:bool=False,
+                    maxnbspots_MReval:int=10000):
     r"""
-    compute two sets of spots (TwicethetaChi  generally theo. spots, and data_theta, data_chi for exp.spots).
+    compute matching figures from two sets of spots (TwicethetaChi  generally theo. spots, and {data_theta, data_chi} for exp.spots).
+    
     if proxtable = 0, compute spots close enough (within angtol (default=0.5 deg) and properties.
-    return allresidues, res, nb_in_res, len(allresidues), meanres, maxi
+    return allresidues, res, nb_in_res, len(allresidues), meanres, maxresidues
+    
     if proxtable = 1, return allresidues, prox_table, table_dist, where prox_table is a 1D table of two spots indices of closest spots.
 
     :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
     :param data_theta: array of theta angles (of experimental spots)
     :param data_chi: array of chi (same length than data_theta!)
 
-    :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxi
+    :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxresidues
 
     .. warning:: TwicethetaChi contains 2theta instead of data_theta theta contains theta !
 
@@ -469,7 +476,9 @@ def getProximity(TwicethetaChi,
     # theo simul data
     theodata = array([TwicethetaChi[0] / 2.0, signchi * TwicethetaChi[1]]).T
     # exp data
-    sorted_data = array([data_theta, data_chi]).T
+    _sorted_data = array([data_theta, data_chi]).T
+
+    sorted_data = _sorted_data[:maxnbspots_MReval]
 
     #     table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
     #     print "table_dist_old", table_dist[:5, :5]
@@ -477,7 +486,7 @@ def getProximity(TwicethetaChi,
     #     print "table_dist_old", table_dist.shape
 
     if not usecython:
-        table_dist = GT.calculdist_from_thetachi(sorted_data, theodata)
+        table_dist = GT.calculdist_from_thetachi(sorted_data, theodata, fastmode=fastmode)
         #print('table_dist.shape',table_dist.shape)
 
         # for cartesian distance only, crude approximate for kf_direction=Z>0
@@ -542,15 +551,15 @@ def getProximity(TwicethetaChi,
         #         print "longueur_res", longueur_res
         if longueur_res <= 1:
             nb_in_res = longueur_res
-            maxi = -min(allresidues)
+            maxresidues = -min(allresidues)
             meanres = -1
         else:
-            nb_in_res = len(res)
-            maxi = max(res)
-            meanres = mean(res)
+            nb_in_res = len(res) # nb of pairs exp. theo spots within `angtol`
+            maxresidues = max(res)  # largest angular residue
+            meanres = mean(res)  # largest angular residue
             #print('res, nb_in_res, len(allresidues)',res, nb_in_res, len(allresidues))
 
-        return allresidues, res, nb_in_res, len(allresidues), meanres, maxi
+        return allresidues, res, nb_in_res, len(allresidues), meanres, maxresidues
 
     elif proxtable == 1:
         return allresidues, prox_table, table_dist
@@ -630,28 +639,30 @@ def getProximity_new(Twicetheta, Chi, data_theta, data_chi,
         #         print "longueur_res", longueur_res
         if longueur_res <= 1:
             nb_in_res = longueur_res
-            maxi = -min(allresidues)
+            maxresidues = -min(allresidues)
             meanres = -1
         else:
             nb_in_res = len(res)
-            maxi = max(res)
+            maxresidues = max(res)
             meanres = mean(res)
 
-        return allresidues, res, nb_in_res, len(allresidues), meanres, maxi
+        return allresidues, res, nb_in_res, len(allresidues), meanres, maxresidues
 
     elif proxtable == 1:
         return allresidues, prox_table, table_dist
 
 
-def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
-                                                                key_material="Si",
-                                                                emin=5,
-                                                                emax=25,
+def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol:degree=0.5,
+                                                                key_material:str="Si",
+                                                                emin:keV=5,
+                                                                emax:keV=25,
                                                                 ResolutionAngstrom=False,
                                                                 detectorparameters=None,
-                                                                onlyXYZ=False,
-                                                                simthreshold=0.999,
-                                                                dictmaterials=dict_Materials):
+                                                                onlyXYZ:bool=False,
+                                                                simthreshold:float=0.999,
+                                                                dictmaterials:dict=dict_Materials,
+                                                                fastmode:bool=False,
+                                                               maxnbspots_MReval:int=10000):
     r"""
     Computes angular residues between pairs of close exp. and
     theo. spots simulated according to test_Matrix, within tolerance angle
@@ -738,7 +749,8 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol=0.5,
 
         # no particular gain...?
         return getProximity(TwicethetaChi, twicetheta_data / 2.0, chi_data,
-                                                            angtol=ang_tol, proxtable=0)
+                            angtol=ang_tol, proxtable=0,
+                            fastmode=fastmode, maxnbspots_MReval=maxnbspots_MReval)
 
     else:
         Q_XYZ_onCam = LAUE.filterLaueSpots_full_np(spots2pi[0][0], None, onlyXYZ=True,

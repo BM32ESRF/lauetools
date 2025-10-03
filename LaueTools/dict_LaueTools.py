@@ -340,7 +340,7 @@ def readsinglelinedictfile(line):
     :return: key, value
     :rtype: tuple of 2 elements
     """
-    listval = re.split("[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
+    listval = re.split(r"[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
     #             print "listval", listval
     liststring = []
     listfloat = []

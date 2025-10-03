@@ -1814,7 +1814,7 @@ def read3linesasMatrix(fileobject):
     for i in list(range(3)):
         line = fileobject.readline()
 
-        listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
+        listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
         listelem = []
         for elem in listval:
             if elem not in ("",):
@@ -1839,7 +1839,7 @@ def readListofIntegers(fullpathtoFile):
     listelem = []
     for line in lines:
 
-        listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
+        listval = re.split(r"[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
 
         for elem in listval:
             if elem not in ("",):
@@ -1863,7 +1863,7 @@ def read_roisfile(fullpathtoFile):
         listrois = []
         for line in lines:
 
-            listval = re.split("[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
+            listval = re.split(r"[ ()\[\)\;\:\!\,\]\n\t\a\b\f\r\v]", line)
             nbelems = 0
             listroielems = []
             for elem in listval:
@@ -1904,7 +1904,7 @@ def readListofMatrices(fullpathtoFile):
     listelem = []
     for line in lines:
 
-        listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
+        listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
 
         for elem in listval:
             if elem not in ("",):
@@ -2164,7 +2164,7 @@ def readdataasmatrices(fileobject):
     listelem = []
     for line in lines:
 
-        listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
+        listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", line)
 
         for elem in listval:
             if elem not in ("",):

@@ -1218,9 +1218,9 @@ class LaueToolsGUImainframe(wx.Frame):
             paramraw = str(dlg.GetValue())
 
             if PYTHONVERSION_3p12_MIN:
-                listval = re.split("[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
+                listval = re.split(r"[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
             else:
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             listelem = []
             for elem in listval:
                 try:

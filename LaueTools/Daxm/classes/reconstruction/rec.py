@@ -22,7 +22,7 @@ class RecManager:
         self.calib = calib
         self.seg = seg
 
-        self.fitfile = None
+        self.fitfile = None   # str or None, path to .fit file to assign energy to pixels close to peaks in .fit file
 
         self.grid_ix = []
         self.grid_iy = []
@@ -63,6 +63,35 @@ class RecManager:
 
     def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc:int=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False, usefitfiles_peaks=False):
 
+        """
+        Reconstructs a series of 2D images around peaks.
+
+        use self.fitfile to assign energy to peaks
+        use
+
+        Parameters
+        ----------
+        depth_range : tuple of two floats
+            The range of depths to reconstruct the image for.
+        fileprefix : str
+            The prefix of the output image file names.
+        depth_step : float, optional
+            The step of depths to reconstruct the image for. Defaults to 0.001.
+        nproc : int, optional
+            The number of processes to use for the reconstruction. Defaults to 1.
+        directory : str, optional
+            The directory where the output image files will be saved. Defaults to "".
+        rec_par : dict, optional
+            The parameters for the reconstruction. Defaults to {}.
+        depth_range_print : tuple of two floats, optional
+            The range of depths to print the reconstructed image for. Defaults to None.
+        usefitfiles_peaks : bool, optional
+            If True, consider only pixels for reconstruction that are in a bounding box centered on peaks listed in the fitfile specified in `self.fitfile`. Default is False. 
+
+        Returns
+        -------
+        None
+        """
         DEFAULT_YSTEP = 0.001
 
         grid_depth = np.arange(depth_range_print[0], depth_range_print[1], depth_step)
@@ -111,8 +140,8 @@ class RecManager:
                     self.scan.goto(ix, iy)
                 
                 rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
-
-                if usefitfiles_peaks==True:
+                # consider pixels in a bounding box centered on peaks (no opencv segmentation)
+                if usefitfiles_peaks==True:  #  seg.par not
                     default_hbs = [12,12]
                     
                     print("[rec] > Optional read of fitfile(s) for peaks")
@@ -125,9 +154,7 @@ class RecManager:
                         for _k , fn in enumerate(self.fitfile):
                             #Alternate reusing code from 'scan.py set_abscoeff_fromfitfile'
                             data = rwa.readfitfile_multigrains(fn)[4] #20250613 - Pick element for blc15488/ech15_Z1 p25um files
-                            # print('Test CR fn value', fn)
-                            # print('Test CR data', data)
-                            # print('Test CR data type', type(data))
+                            
                            
                             if _k > 0:
                                 _d = np.concatenate((_d,data[:,7:9]))
@@ -137,10 +164,7 @@ class RecManager:
                         
                     else:
                         data = rwa.readfitfile_multigrains(self.fitfile) #data type <class 'tuple'>
-                        # print('*******')
-                        # print('Test data type', type(data))
-                        # print('Test data', data)
-                        # print('*******')
+
                         #CAUTION: Data = Tuple --> Extract element [4]
                         peaks_XY = data[4][:,7:9]
                         #For Example GOI fit file SHORT: Expected - TBC [array([[ 111.07, 1790.09], [1924.01, 1316.77]])]
@@ -164,14 +188,12 @@ class RecManager:
                     #Set regions (peaks + bounding box) on which to run the reconstruction
                     rec.set_regions(peaks_XY,halfboxsize)
 
-                #Standard method by Renversade et Molin:
+                #Standard method by Renversade et Molin: use opencv segmentation to find pixels for reconstruction. Pixels are gathered by peaks (with varying bounding box size)
                 else:
                     rec.set_regions_fromsearch(**self.seg)
 
                 if self.fitfile is None:
-
                     rec.init_abscoeff()
-
                 else:
                     rec.set_abscoeff_fromfitfile(self.fitfile)
 

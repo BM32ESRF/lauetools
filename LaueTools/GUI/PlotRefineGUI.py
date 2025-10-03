@@ -890,7 +890,7 @@ class Plot_RefineFrame(wx.Frame):
             paramraw = str(dlg.GetValue())
             import re
 
-            listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+            listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             #             print "listval", listval
             listelem = []
             for elem in listval:
