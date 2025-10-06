@@ -395,7 +395,7 @@ CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
 dict_CCD = {
     "MARCCD165": ((2048, 2048), 0.079142, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd", ),
     "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif"],
-    "IMSTAR_bin3": [(2064, 2048), 0.0252*3, 65535, "no", 3828, "uint16", "binned 3x3, ImageStar165 (36M), sCMOS", "tif"],  # = sCMOS_4M dims may not be read
+    "IMSTAR_bin3": [(2048, 2064), 0.0252*3, 65535, "no", 3828, "uint16", "binned 3x3, ImageStar165 (36M), sCMOS", "tif"],  # = sCMOS_4M dims may not be read
     "IMSTAR_bin2": [(3092, 3035), 0.0252*2, 65535, "no", 3828, "uint16", "binned 2x2 ImageStar165 (36M), sCMOS", "tif"],   # = = sCMOS_9M dims may not be read
     "IMSTAR_bin1": [(6185, 6070), 0.0252, 65535, "no", 3828, "uint16", "binned 1x1, ImageStar165 (36M), sCMOS", "tif"],# dims may not be read
     "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif"],
