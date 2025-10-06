@@ -1348,7 +1348,7 @@ def computefilteredimage(dataimage, bkg_image, CCDlabel, kernelsize=5, formulaex
     #     if framedim not in ((2048, 2048), [2048, 2048]):
     #         raise ValueError, "Background removal still implemented for non squared camera "
     # computing substraction on whole array
-    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_9M","sCMOS_4M", "sCMOS_fliplr", "EIGER_4M", "EIGER_4MCdTe",'MaxiPIXCdTe','Alban', 'psl_IN_tif', 'Alexiane','EIGER_1M'):
+    if CCDlabel in ("sCMOS", "sCMOS_16M","sCMOS_9M","sCMOS_4M", "IMSTAR_bin3","sCMOS_fliplr", "EIGER_4M", "EIGER_4MCdTe",'MaxiPIXCdTe','Alban', 'psl_IN_tif', 'Alexiane','EIGER_1M'):
         usemask = False
 
     if CCDlabel in ("EIGER_4M",): # rapid removal of -1 value. TODO better use NaN mask...
