@@ -519,8 +519,9 @@ class SimulationPlotFrame(wx.Frame):
                 global_spot_index = ind
 
                 infostuple = self.getsubgraininfos(global_spot_index)
+                E,(hh,kk,ll) = annote[:2]
                 print("the nearest simulated point is at (%.2f,%.2f)" % (x, y))
-                print("with E= %.3f keV and Miller indices %s" % (annote[0], annote[1:]))
+                print(f"with E= {E:.3f} keV and Miller indices [{hh},{kk},{ll}]")
                 # print("index : %d" % ind)
                 # print('infostuple', str(infostuple))
 
@@ -1077,8 +1078,9 @@ class SimulationPlotFrame(wx.Frame):
             list_close_pts.sort()
             # closest pt
             _distance, x, y, annote, ind = list_close_pts[0]
+            E,(hh,kk,ll) = annote[:2]
             print("the nearest simulated point is at (%.2f,%.2f)" % (x, y))
-            print("with E= %.3f keV and Miller indices %s" % (annote[0], annote[1:]))
+            print(f"with E= {E:.3f} keV and Miller indices [{hh},{kk},{ll}]")
             print("index : %d" % ind)
 
             global_spot_index = ind
