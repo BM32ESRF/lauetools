@@ -237,7 +237,7 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
     
     return outputfilename
 
-def get_spotprops_cor(allspotsprops: 'numpyArrayNx2', fullpathfile:str, sortintensities:bool=True,
+def get_spotprops_cor(allspotsprops: np.ndarray, fullpathfile:str, sortintensities:bool=True,
                                                                 defaultminimalnbcolumns:int=5,
                                                                 maxnbspots:int=None):
     """return other spot properties from .cor file (other than 2theta, Chi, X, Y, Intensity)
@@ -616,8 +616,8 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                 #     ccdlabel = 'IMSTAR_bin2'
                 elif abs(ps-0.0252) <= 0.001:
                     ccdlabel = 'IMSTAR_bin1'
-                elif abs(ps-0.0252*3) <= 0.001:
-                    ccdlabel = 'sCMOS_4M' # IMSTAAR_bin3
+                elif abs(ps-0.0252*3) <= 0.001:  #
+                    ccdlabel = 'IMSTAR_bin3'# ='sCMOS_4M'
                 elif abs(ps-0.2) <= 0.001:
                     ccdlabel = 'Alban'
                 elif abs(ps-0.4) <= 0.001:
