@@ -73,7 +73,7 @@ class CCDFileParameters(wx.Dialog):
 
         self.allCCD_names = GT.put_on_top_list(("sCMOS","sCMOS_16M" ,
                                             "sCMOS_9M",
-                                            "sCMOS_4M",
+                                            "IMSTAR_bin3",
                                             "----------",
                                             "MARCCD165",
                                             "PRINCETON",
