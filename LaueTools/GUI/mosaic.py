@@ -2492,7 +2492,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
             if dict_param["NormalizeWithMonitor"]:
 
-                if ccdlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "sCMOS_9M"):
+                if ccdlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "IMSTAR_bin3","sCMOS_9M"):
                     pedestal = 1000.0
                     dictMonitor = IOimage.read_header_scmos(filename)
                     print("dictMonitor.keys()", list(dictMonitor.keys()))

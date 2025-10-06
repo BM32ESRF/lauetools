@@ -4069,7 +4069,7 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 dirname=self.dirname,
                                                                 CCDLabel=self.CCDlabel)
 
-        if self.CCDlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "sCMOS_9M"):
+        if self.CCDlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "IMSTAR_bin3", "sCMOS_9M"):
             self.vminmin = 0
             self.vmiddle = 1010
             self.vmaxmax = 10000
