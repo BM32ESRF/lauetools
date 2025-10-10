@@ -2917,7 +2917,7 @@ class LT_fitfile:
 
     def __init__(self, filename, verbose=False):
         try:
-            with open(filename, "rU") as f:
+            with open(filename, "r") as f:  # python 3.12 no more rU
                 self.filename = filename
 
                 # read the header
