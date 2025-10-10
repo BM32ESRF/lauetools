@@ -3246,7 +3246,7 @@ class Plot_RefineFrame(wx.Frame):
 
         in Plot_RefineFrame
         """
-        if self.current_matrix != []:
+        if self.current_matrix is not None:
             self.mat_store_ind = len(self.Matrix_Store)
             if self.Bmat is not None and self.Umat is not None:
                 tostore = self.UBmat
