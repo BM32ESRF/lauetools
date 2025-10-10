@@ -526,7 +526,8 @@ class Calib:
             x0.append(dm0)
 
         for Iexp in self.exp_I:
-            if Iexp != []:
+            if len(Iexp) > 1:
+            #if Iexp != []:
                 keys.extend(['kM', 'km'])
                 x0.append(np.max(Iexp) - np.min(Iexp))
                 x0.append(np.min(Iexp))
