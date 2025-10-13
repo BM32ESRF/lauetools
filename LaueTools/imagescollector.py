@@ -38,7 +38,7 @@ def setfilename(prefix:str,index:int,CCDLabel:str='sCMOS', tifextension:str='.ti
     filename : str
         input filename with index replaced by input imageindex
     """
-    if CCDLabel in ('sCMOS',):
+    if CCDLabel in ('sCMOS','sCMOS_4M', 'IMSTAR_bin3'):
         return prefix+'%04d'%index + tifextension
     elif CCDLabel in ('MARCCD165',):
         return prefix+'%04d'%index + '.mccd'
@@ -141,7 +141,7 @@ def collectroisptp_singlefile(index, roicenters=None, prefix=None, folder =None,
 
 
 def collectroismax_singlefile(index, roicenters=None, prefix=None, folder =None,
-                            boxsize_row=10,boxsize_line=10,CCDLabel=None):
+                            boxsize_row=10,boxsize_line=10, CCDLabel=None):
     """ collect max intensity in some given rois centered on peaks defined in peaklist in 1 image
     
     
