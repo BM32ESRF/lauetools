@@ -392,6 +392,7 @@ def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
     return vals
 
 def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+    """TODO to improve or reject when roicenters are close to border wrt to framdim or invframedim"""
     dataimage= None
     framedim=None
 
@@ -414,7 +415,7 @@ def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sC
             # avoid to wrong indices when slicing the data
             imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                     framedim=framedim)
-
+            
             piece_dat = dataimage[imin:imax, jmin:jmax]
             piece_dat_m = None
 
