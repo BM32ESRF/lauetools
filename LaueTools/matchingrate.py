@@ -6,7 +6,7 @@ r"""
 """
 import copy
 import sys
-from numpy import array, where, argmin, amin, mean
+from numpy import array, where, amin, mean
 import numpy as np
 
 SCIKITLEARN = True
@@ -75,7 +75,7 @@ def getArgmin(tab_angulardist):
 
     .. todo:: to explicit documentation as a function of tab_angulardist properties only
     """
-    return argmin(tab_angulardist, axis=1)
+    return np.argmin(tab_angulardist, axis=1)
 
 
 def SpotLinks(twicetheta_exp,
@@ -130,24 +130,27 @@ def SpotLinks(twicetheta_exp,
     """
 
     if verbose>0:
-        print("\n In SpotLinks() ********** Spots Association ************** \n")
+        print("\n In MatchingRate.SpotLinks() ********** Spots Association ************** \n")
 
-    Resi, ProxTable = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
+    Resi, ProxTable, _ = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                             twicetheta_exp / 2.0,
                             chi_exp,  # warning theta, chi for exp
                             proxtable=1,
                             angtol=veryclose_angletol,
-                            verbose=0,
+                            verbose=verbose-1,
                             signchi=1, # sign of chi is +1 when apparently SIGN_OF_GAMMA=1
-                        fastmode=fastmode)[:2]
+                            fastmode=fastmode)#  True does not seem to work....
 
     # ProxTable is table giving the closest exp.spot index for each theo. spot
     # len(Resi) = nb of theo spots
     # len(ProxTable) = nb of theo spots
     # ProxTable[index_theo]  = index_exp   closest link
-    # print "Resi",Resi
-    # print "ProxTable",ProxTable
-    # print "Nb of theo spots", len(ProxTable)
+    assert len(Miller_ind)==len(twicetheta)
+    
+    if verbose>0:
+        print("Resi",Resi)
+        print("shape ProxTable  (nb theo, )", np.shape(ProxTable))
+        print("Nb of theo spots", len(twicetheta))
 
     # array of theo. spot index
     very_close_ind = np.where(Resi < veryclose_angletol)[0]
@@ -161,6 +164,12 @@ def SpotLinks(twicetheta_exp,
     # if nb of pairs between exp and theo spots is enough
     if len(very_close_ind) > 0:
         # loop over theo spots index
+        if verbose>0:
+            print('len Miller_ind', len(Miller_ind))
+            print("Nb of theo spots", len(twicetheta))
+        if verbose>1:
+            print('very_close_ind', very_close_ind)
+            print('len very_close_ind', len(very_close_ind))
         for theospot_ind in very_close_ind:
             # print "theospot_ind ",theospot_ind
             List_Exp_spot_close.append(ProxTable[theospot_ind])
@@ -450,8 +459,8 @@ def getProximity(TwicethetaChi,
                     proxtable=0,
                     verbose:int=0,
                     signchi=1,
-                    usecython=USE_CYTHON,
-                    fastmode:bool=False,
+                    usecython=False,#USE_CYTHON,
+                    fastmode:bool=False,  # True does not work (october 2025)
                     maxnbspots_MReval:int=10000):
     r"""
     compute matching figures from two sets of spots (TwicethetaChi  generally theo. spots, and {data_theta, data_chi} for exp.spots).
@@ -487,7 +496,9 @@ def getProximity(TwicethetaChi,
 
     if not usecython:
         table_dist = GT.calculdist_from_thetachi(sorted_data, theodata, fastmode=fastmode)
-        #print('table_dist.shape',table_dist.shape)
+        if verbose > 0:
+            print('table_dist.shape',table_dist.shape)
+            print('***** fastmode  ******',fastmode)
 
         # for cartesian distance only, crude approximate for kf_direction=Z>0
         # import scipy
@@ -511,7 +522,8 @@ def getProximity(TwicethetaChi,
 
     if proxtable == 1:
         prox_table = getArgmin(table_dist)
-    # print "shape table_dist",shape(table_dist)
+    
+    if verbose>0 : print("shape table_dist",np.shape(table_dist))
     # table_dist has shape (len(theo),len(exp))
     # tab[0] has len(exp) elements
     # tab[i] with i index of theo spot contains all distance from theo spot #i and all the exprimental spots
@@ -538,9 +550,9 @@ def getProximity(TwicethetaChi,
 
     allresidues = np.amin(table_dist, axis=1)
 
-    #     print "allresidues", allresidues
-
-    # len(allresidues)  = len(theo)
+    if verbose>0:
+        print("allresidues", allresidues)
+        print("len all residues  = len(theo)",len(allresidues))
 
     if proxtable == 0:
         cond = where(allresidues < angtol)
