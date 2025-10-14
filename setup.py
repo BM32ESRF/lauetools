@@ -5,7 +5,7 @@ if sys.version_info.major == 3:
     import LaueTools
     python3entry_points = {
     'console_scripts': [
-        'lauetools = LaueTools.LaueToolsGUI:start',
+        'lauetools = LaueTools.GUI.mainGUI:start',
 	'peaksearch = LaueTools.FileSeries.Peak_Search:start',
 	'indexrefine = LaueTools.FileSeries.Index_Refine:start',
 	'plotmeshGUI = LaueTools.plotmeshspecGUI:start',
