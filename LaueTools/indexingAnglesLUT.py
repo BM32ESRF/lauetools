@@ -2268,7 +2268,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     itertools.repeat(maxnbspots_MReval),
                     )
             with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
-                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices, miniter=20))
+                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices))
 
             for mat_ind, AngRes in enumerate(results):
                 if AngRes is None:
