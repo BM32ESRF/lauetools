@@ -106,11 +106,13 @@ CST_CONV_LAMBDA_KEV = DictLT.CST_ENERGYKEV
 # --- -----   old function  ---------------
 norme = GT.norme_vec
 
+mm=float
+
 # --- -------- geometrical functions relating 2theta, chi, pixel X, pixel Y, detector plane ----
-def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, verbose=0,
-                                                                    pixelsize=165.0 / 2048,
+def calc_uflab(xcam, ycam, detectorplaneparameters, offset:mm=0, returnAngles=1, verbose=0,
+                                                                    pixelsize:float=165.0 / 2048,
                                                                     rectpix=RECTPIX,
-                                                                    kf_direction="Z>0",
+                                                                    kf_direction:str="Z>0",
                                                                     version=1):
     r"""
     Computes scattered unit vector :math:`{\bf u_f}=\frac{\bf k_f}{\|k_f\|}` in laboratory frame corresponding to :math:`k_f`
@@ -125,7 +127,7 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
     :type ycam: list of floats
     :param detectorplaneparameters: list of 5 calibration parameters
 
-    :param offset: float, offset in position along incoming beam of source of scattered rays
+    :param offset: float, source of scattering offset in position along incoming beam
                 if positive: offset in sample depth
                 units: mm
 
@@ -224,7 +226,7 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
 
         ufprime = 1.0 * IpMlab / normedIpM
 
-        print("ufprime, uflab with source offset", ufprime)
+        if verbose>0:  print("ufprime, uflab with source offset", ufprime)
 
         uflab = ufprime
 
@@ -236,7 +238,7 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset=0, returnAngles=1, ve
 
     twicetheta = np.arccos(uflab[:, 1]) / DEG
 
-    if verbose:
+    if verbose>0:
         print("chi_JSM", chi)
         #         print "chi_XMAS", chiXMAS
         #         print "chi_XMAS2", chiXMAS2
@@ -269,7 +271,7 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
 
     # TODO: add offset like in reflection geometry
     """
-    print("transmission GEOMETRY")
+    if verbose>0:print("transmission GEOMETRY")
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
     #    print "pixelsize in calc_uflab ", pixelsize
 
@@ -320,14 +322,14 @@ def calc_uflab_trans(xcam, ycam, calib, returnAngles=1,
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     # print "uflab",uflab
 
-    print("transmission mode ", uflab[:, 1])
+    if verbose: print("transmission mode ", uflab[:, 1])
 
     chi = np.arctan2(-xM, zM) / DEG
     twicetheta = np.arccos(uflab[:, 1]) / DEG
     #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
     #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
 
-    if verbose:
+    if verbose>0:
         print("chi_JSM", chi)
         print("2theta", twicetheta)
 
@@ -420,12 +422,12 @@ def calc_uflab_trans_2(xcam, ycam, calib, returnAngles=1,
     uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     # print "uflab",uflab
 
-    print("transmission mode ", uflab[:, 0])
+    if verbose>0: print("transmission mode ", uflab[:, 0])
 
     chi = np.arctan2(yM, zM) / DEG
     twicetheta = np.arccos(uflab[:, 0]) / DEG
 
-    if verbose:
+    if verbose>0:
         print("chi_JSM", chi)
         print("2theta", twicetheta)
 
@@ -455,7 +457,7 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
 
     # TODO: add offset like in reflection geometry and merge with transmission geometry
     """
-    print("Back reflection GEOMETRY")
+    if verbose>0: print("Back reflection GEOMETRY")
     detect, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
     #    print "pixelsize in calc_uflab ", pixelsize
 
@@ -500,7 +502,7 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
 
     #uflab = np.transpose(np.array([xM, yM, zM]) / nIMlab)
     uflab = IMlab / np.reshape(nIMlab, (len(nIMlab), 1))
-    if verbose:
+    if verbose>0:
         print(np.array([0.0, -sinbeta, cosbeta]))
         print('xOM, yOM, zOM',xOM, yOM, zOM)
         print('xca0, yca0',xca0, yca0)
@@ -516,7 +518,7 @@ def calc_uflab_back(xcam, ycam, calib, returnAngles=1,
     #     chiXMAS = np.arctan(uflab[:, 0] / np.sqrt(uflab[:, 1] ** 2 + uflab[:, 2] ** 2)) / DEG
     #     chiXMAS2 = np.arctan(np.sqrt(uflab[:, 0] ** 2 + uflab[:, 1] ** 2) / uflab[:, 2]) / DEG
 
-    if verbose:
+    if verbose>0:
         print("chi_JSM", chi)
         print("2theta", twicetheta)
 
@@ -1802,7 +1804,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
         listcolumnsname = IOLT.getcolumnsname_dat(filename)
         nbcolumns = len(listcolumnsname)
 
-        if verbose:
+        if verbose>0:
             print('\n   In Compute_data2thetachi(): filename :', filename)
             print('nbpeaks', nbpeaks)
             print('alldata.shape', alldata.shape)
@@ -1820,7 +1822,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
         elif nbpeaks == 1:
             data_xyI = np.take(alldata, basic_colunms_idx, axis=0)
 
-        if verbose: print("data_spotsproperties.shape", data_spotsproperties.shape)
+        if verbose>0: print("data_spotsproperties.shape", data_spotsproperties.shape)
 
         if saturation:
             data_Ipixmax = alldata[:, -1]
@@ -1856,7 +1858,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
     else:
         param_det = detectorparams
 
-    if verbose:
+    if verbose>0:
         print("file :%s" % filename)
         print("containing %d peaks" % nb_peaks)
 
@@ -1883,7 +1885,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
     # 21Jul14  O. Robach---------------
     if alpha_xray_incidence_correction != None:
 
-        print("Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction)
+        if verbose>0: print("Using alpha_xray_incidence_correction = ", alpha_xray_incidence_correction)
         xystart = np.column_stack((data_x, data_y))
         #        print "xystart = ", xystart
         npics = np.shape(xystart)[0]
@@ -1910,7 +1912,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
 
         delta_xy = xynew - xystart
         #        print "delta_xy = ", delta_xy
-        print("maximum spot displacement |dx| |dy| : ",
+        if verbose>0: print("maximum spot displacement |dx| |dy| : ",
             (abs(delta_xy)).max(axis=0).round(decimals=3))
 
         data_x = xynew[:, 0]
@@ -1919,7 +1921,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
     # ----compute scattering angles2theta and chi --------------------------
     twicethetaraw, chiraw = calc_uflab(data_x, data_y, param_det[:5], returnAngles=1,
                                                                         pixelsize=pixelsize,
-                                                                        kf_direction=kf_direction)
+                                                                        kf_direction=kf_direction, verbose=verbose-1)
     #-----------------------------------------------------------------------
     if nb_peaks > 1 and sorting_intensity == "yes":
         listsorted = np.argsort(data_I)[::-1]

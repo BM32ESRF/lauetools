@@ -1411,7 +1411,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             X, Y = peaklist[:, :2].T
             (peakX, _, tokeep) = GT.removeClosePoints_two_sets([X, Y], XY_blacklisted,
                                                         dist_tolerance=maxPixelDistanceRejection,
-                                                        verbose=verbose-1)
+                                                        verbose=verbose)
 
             npeak_before = len(X)
             npeak_after = len(peakX)

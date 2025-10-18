@@ -176,7 +176,7 @@ def distfrom2thetachi(pt2D_1, pt2D_2):
     return np.arccos(cosang) / DEG
 
 
-def calculdist_from_thetachi(listpoints1:'arrayORListNx2', listpoints2:arrayORListNx2)->'numpyarrayNxM':
+def calculdist_from_thetachi(listpoints1:'arrayORListNx2', listpoints2:arrayORListNx2, fastmode=False)->'numpyarrayNxM':
     """
     From two lists of pairs (THETA, CHI) return:
 
@@ -191,22 +191,26 @@ def calculdist_from_thetachi(listpoints1:'arrayORListNx2', listpoints2:arrayORLi
     data2 = np.array(listpoints2)
     # print "data1",data1
     # print "data2",data2
-    longdata1 = data1[:, 0] * DEG  # theta
-    latdata1 = data1[:, 1] * DEG  # chi
-
-    longdata2 = data2[:, 0] * DEG  # theta
-    latdata2 = data2[:, 1] * DEG  # chi
-
-    deltalat = latdata1 - np.reshape(latdata2, (len(latdata2), 1))
-    longdata2new = np.reshape(longdata2, (len(longdata2), 1))
-    prodcos = np.cos(longdata1) * np.cos(longdata2new)
-    prodsin = np.sin(longdata1) * np.sin(longdata2new)
-
-    arccos_arg = np.around(prodsin + prodcos * np.cos(deltalat), decimals=9)
-
-    tab_angulardist = (1.0 / DEG) * np.arccos(arccos_arg)
-
+    if not fastmode:
+        longdata1 = data1[:, 0] * DEG  # theta
+        latdata1 = data1[:, 1] * DEG  # chi
+    
+        longdata2 = data2[:, 0] * DEG  # theta
+        latdata2 = data2[:, 1] * DEG  # chi
+    
+        deltalat = latdata1 - np.reshape(latdata2, (len(latdata2), 1))
+        longdata2new = np.reshape(longdata2, (len(longdata2), 1))
+        prodcos = np.cos(longdata1) * np.cos(longdata2new)
+        prodsin = np.sin(longdata1) * np.sin(longdata2new)
+    
+        arccos_arg = np.around(prodsin + prodcos * np.cos(deltalat), decimals=9)
+    
+        tab_angulardist = (1.0 / DEG) * np.arccos(arccos_arg)
+    else: # fastmode   euclidian distance, for small angular distance this approximation is good. For larger, this is non sense but stll large so able to exclude
+        tab_angulardist = pairwise_distances_numpy(data1,data2)
+    
     return tab_angulardist
+
 
 
 if NUMBAINSTALLED:
@@ -223,6 +227,13 @@ if NUMBAINSTALLED:
         cang = math.sin(Lo1)*math.sin(Lo2) + math.cos(Lo1)*math.cos(Lo2)*math.cos(delta)
 
         return math.acos(cang)/DEG
+
+def pairwise_distances_numpy(A, B):
+    A = np.asarray(A)
+    B = np.asarray(B)
+    diff = A[:, None, :] - B[None, :, :]  # shape (m,n,2)
+    return np.linalg.norm(diff, axis=2)
+
 
 def pairwise_mutualangles(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
     """
@@ -3065,7 +3076,9 @@ def lognorm(x, mu, s):
 
 def CCDintensitymodel(x):
     """
-    function to model response of CCD
+    function to model response efficiencyof CCD
+
+    x: float, energy
     """
     return np.piecewise(x, [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
         [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x])
@@ -3224,7 +3237,10 @@ def selectfirstelements(arraynd, n):
     return arraynd[:,:n]
 
 def buildgridroi(spacing=50, maxnbpixels=2015):
-    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array"""
+    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     nx= len(xx)
     tx = np.tile(xx, (nx,1))
@@ -3237,7 +3253,10 @@ def buildgridroi(spacing=50, maxnbpixels=2015):
 
 def buildgridroi_bottom(spacing=50, maxnbpixels=2015):
     """build a list of X,Y position (roi centers or peaklist)
-    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)"""
+    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     yy=np.arange(maxnbpixels//2,maxnbpixels-spacing//2,spacing)+spacing//2

@@ -146,7 +146,12 @@ class spotsset:
         self.LUT = None
         # should be set to False for multiprocessing at higher level
         self.useinternalmultiprocessing = True
+        self.crudeMReval = False # if True pairwise angular distance is symply evaluated by euclidian distance with theta, chi
+        self.maxnbspots_MReval = 10000 # max size of experimental spots set when computing matching rate (this number can be set to half of nb spots for large dataset 
         self.AngTol_LUTmatching = 0
+        self.printindexingstats = False
+        self.stop_Nb_Matches = 1000  # minimal value of nb of matches exp.-theo spots stopping iteration loop (not internal multiprocessing)
+        
         
         # indexing quantities
         
@@ -771,7 +776,8 @@ class spotsset:
                         use_spots_in_currentselection:bool=True,
                         selectbyspotsindices=None,
                         verbose:int=0,
-                        emax:float=None):
+                        emax:float=None,
+                        fastmode=False):
         r"""
         Assign hkl to the exp spot data set according to
         the orientation matrix within the tolerance angle
@@ -847,7 +853,8 @@ class spotsset:
                                                                     ResolutionAngstrom=False,#
                                                                     veryclose_angletol=AngleTol,
                                                                     verbose=verbose-1,
-                                                                    emax=emax)
+                                                                    emax=emax,
+                                                                    fastmode=fastmode)
         # TODO nb of links with getSpotsLinks() larger than nb of links used in previous refinement
         # self.pixelresidues
         #         print "AssignationHKL_res in AssignHKL", AssignationHKL_res
@@ -945,7 +952,10 @@ class spotsset:
                                                                 simulparameters=None,
                                                                 LUTfraction=1/2.,
                                                                 printmatchingresults=False,
-                                                                useparallelcomputing=True):
+                                                                useparallelcomputing=True,
+                                                                crudeMReval:bool=False,
+                                                                maxnbspots_MReval:int=10000,
+                                                                stop_Nb_Matches:int=1000):
         """
         class method to Find orientation matrices by angles recognition
         (look up table of angles in reference structure)
@@ -1043,7 +1053,10 @@ class spotsset:
                                                     dictmaterials=self.dict_Materials,
                                                     LUT_with_rules=True,
                                                     LUTfraction=LUTfraction,
-                                                    useparallelcomputing=useparallelcomputing)
+                                                    useparallelcomputing=useparallelcomputing,
+                                                    crudeMReval=crudeMReval,
+                                                    maxnbspots_MReval=maxnbspots_MReval,
+                                                    stop_Nb_Matches=stop_Nb_Matches)
         # when nbbestplot is very high  self.bestmat contain all matrices
         # with matching rate above Minimum_Nb_Matches
 
@@ -1113,7 +1126,8 @@ class spotsset:
                                                                 dictmaterials:str=None,
                                                                 choose_UB_MinEulerepresentative=True,
                                                                 emax_matchringrate=None,
-                                                                writefitfile=True):
+                                                                writefitfile=True,
+                                                                add_info_in_outputfilename=''):
         r"""
         General class method to index a set of experimental spots.
 
@@ -1313,8 +1327,9 @@ class spotsset:
 
             # exit the loop if too few spots
             # or when user requests to index a few number of grain
+            if verbose>1: print('nbgrains_found, nbGrainstoFind',nbgrains_found, nbGrainstoFind)
             if nb_remaining_spots <= MINIMUM_NB_SPOTS_FOR_INDEXING or (
-                isinstance(nbGrainstoFind, int) and nbgrains_found == nbGrainstoFind) or indexing_from_scratch_counter == 1:
+                isinstance(nbGrainstoFind, int) and nbgrains_found == nbGrainstoFind) or indexing_from_scratch_counter == nbGrainstoFind:  #indexing_from_scratch_counter==1
                 if verbose>1:
                     print("%d spots have been indexed over %d"
                         % (totalnbspots - nb_remaining_spots, totalnbspots))
@@ -1325,7 +1340,7 @@ class spotsset:
                     if verbose>1:
                         print("for the %d grain(s) that has(ve) been indexed as requested"
                             % nbGrainstoFind)
-                        print("Leaving Index and Refine procedures...")
+                        print("Leaving Index and Refine procedures...\n\n")
                 break
 
             if verbose>1:
@@ -1371,7 +1386,8 @@ class spotsset:
                 MatchRate, _, _ = self.AssignHKL(UB, grain_index, AngleTol=AngleTol_0,
                                                             use_spots_in_currentselection=True,
                                                             verbose=verbose-1,
-                                                            emax=self.emax_MR)
+                                                            emax=self.emax_MR,
+                                                            fastmode=self.crudeMReval)
                 if verbose>1:
                     print("before refinement MatchRate", MatchRate)
                     print('MATCHINGRATE_FOR_PREVIOUSRESULTS', MATCHINGRATE_FOR_PREVIOUSRESULTS)
@@ -1445,6 +1461,8 @@ class spotsset:
                     # TODO: build self.table_angdist but not yet effective
                     self.setTable_Angdist(nbmax=NBMAXPROBED)
                     if verbose>1:
+                        print('-- still in IndexSpotsSet()')
+                        print('spot_index_central_list', spot_index_central_list)
                         print("NBMAXPROBED", NBMAXPROBED)
                         print("set_central_spots_hkl", set_central_spots_hkl)
                     if set_central_spots_hkl is None and LUT is None:
@@ -1475,7 +1493,10 @@ class spotsset:
                                             exceptgrains=self.indexedgrains,
                                             verbose=verbose-1,
                                             LUTfraction=LUTfraction,
-                                            useparallelcomputing=self.useinternalmultiprocessing)
+                                            useparallelcomputing=self.useinternalmultiprocessing,
+                                            crudeMReval=self.crudeMReval,
+                                            maxnbspots_MReval=self.maxnbspots_MReval,
+                                            stop_Nb_Matches=self.stop_Nb_Matches)
                     # a way to launch indexing from scratch one time. and it provides only one UB mrix
                     NeedtoProvideNewMatrices = False
                     indexing_from_scratch_counter += 1
@@ -1744,7 +1765,8 @@ class spotsset:
                                                 corfilename=corfilename,
                                                 dirname=dirnameout_fitfile,
                                                 addpixdev=True,
-                                                add_strain_sampleframe=True)
+                                                add_strain_sampleframe=True,
+                                                add_info_in_outputfilename=add_info_in_outputfilename)
 
                             if fromIMM:
                                 # because IMM may provides once a list of matrices
@@ -1940,7 +1962,8 @@ class spotsset:
                                                             veryclose_angletol:float=1.0,
                                                             returnMissingReflections:bool=True,
                                                             verbose=0,
-                                                            emax=None):
+                                                            emax=None,
+                                                            fastmode=False):
         r"""
         return links (pairs or associations) between experimental and theoretical spots
         (i.e. simulated from a grain with UBOrientMatrix, key_material)
@@ -2012,7 +2035,8 @@ class spotsset:
                                         Miller_ind,
                                         Energy,
                                         absoluteindex=useabsoluteindex,
-                                        verbose=verbose-1)
+                                        verbose=verbose-1,
+                                        fastmode=fastmode)
 
         if res == 0 or len(res[1]) == 0:
             if not returnMissingReflections:
@@ -2184,7 +2208,9 @@ class spotsset:
         self.n_LUT = n_LUT
         if LUT is not None:
             self.LUT = LUT
-            if verbose>0: print("Using LUT previously calculated")
+            if verbose>0:
+                print('In setAnglesLUTmatchingParameters(): LUT is not None')
+                print("Using LUT previously calculated")
         else:
             # use B from material to compute LUT
             if verbose>0: print(f"Computing LUT from material {self.key_material}")
@@ -2204,10 +2230,16 @@ class spotsset:
                                 verbose=0,
                                 LUTfraction=1/2.,
                                 printmatchingresults=False,
-                                useparallelcomputing=True):
+                                useparallelcomputing=True,
+                                crudeMReval:bool=False,
+                                maxnbspots_MReval:int=10000,
+                                stop_Nb_Matches:int=1000):
         r"""
         get all orientation matrices from angular distance matching technique
-        with experimental spot data
+        with experimental spot data. Pairwise angular distances are calculated between two sets A, B.
+
+        :param spot_index_central: list of spot indices forming a set A
+        :param nbmax_probed: int, nb of spots in set B (range(0,nbmax_probed))
 
         :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
@@ -2227,6 +2259,9 @@ class spotsset:
         MatchingRate_Threshold   : in percent, matching rate above which loop is interrupted
                                     100   , never interrupted
         """
+        if verbose>0:
+            print('In get_all_UBs_fromAnglesLUT():---------------------')
+
         Minimum_Nb_Matches = max(Minimum_Nb_Matches, MINIMUM_NB_MATCHES_FOR_INDEXING)
 
         # self.TwiceTheta_Chi_Int, self.absolute_index = self.getSelectedExpSpotsData(exceptgrains=exceptgrains)
@@ -2253,10 +2288,15 @@ class spotsset:
                                                     LUTfraction=LUTfraction,
                                                     verbose=verbose,
                                                     printmatchingresults=printmatchingresults,
-                                                    useparallelcomputing=useparallelcomputing)
-        if verbose>0:
+                                                    useparallelcomputing=useparallelcomputing,
+                                                    crudeMReval=crudeMReval,
+                                                    maxnbspots_MReval=maxnbspots_MReval,
+                                                    stop_Nb_Matches=stop_Nb_Matches)
+        if verbose>0 or self.printindexingstats:
             print("Nb of potential UBs ", len(list_matrices))
             print('for spot_index_central:', spot_index_central)
+            print('list_stats',list_stats)
+
 
         if len(list_matrices) == 1:  # patch when only matrix found by self.FindOrientMatrices()
             list_stats = [list_stats[0][:3]]
@@ -2267,7 +2307,7 @@ class spotsset:
             spotindex_maxspotindex = spot_index_central
         else:
             raise ValueError
-        if list_matrices == []:
+        if len(list_matrices) == 0:
             return None, None, spotindex_maxspotindex, False
 
         MatchingRate_list = []
@@ -2277,6 +2317,9 @@ class spotsset:
             MatchingRate_list.append(MR)
 
         MatchingRates = np.array(MatchingRate_list)
+
+        if verbose>0:
+            print('\n------  end of get_all_UBs_fromAnglesLUT():---------------------')
 
         return list_matrices, list_stats, spotindex_maxspotindex, MatchingRates
 
@@ -2290,7 +2333,10 @@ class spotsset:
                                                                 exceptgrains=None,
                                                                 verbose=0,
                                                                 LUTfraction=1/2.,
-                                                                useparallelcomputing=True):
+                                                                useparallelcomputing=True,
+                                                                crudeMReval:bool=False,
+                                                                maxnbspots_MReval:int=10000,
+                                                                stop_Nb_Matches:int=1000):
         r"""
         get single best orientation matrix from angular distance matching technique
         with experimental spot data
@@ -2310,6 +2356,9 @@ class spotsset:
         MatchingRate_Threshold   : in percent, matching rate above which loop is interrupted
                                     100   , never interrupted
         """
+        if verbose > 0:
+            print('In get_bestUB_fromAnglesLUT() ----')
+
         NBsolutions_per_spot = 1
 
         Res = self.get_all_UBs_fromAnglesLUT(spot_index_central=spot_index_central,
@@ -2324,7 +2373,10 @@ class spotsset:
                                                 exceptgrains=exceptgrains,
                                                 verbose=verbose-1,
                                                 LUTfraction=LUTfraction,
-                                                useparallelcomputing=useparallelcomputing)
+                                                useparallelcomputing=useparallelcomputing,
+                                                crudeMReval=crudeMReval,
+                                                maxnbspots_MReval=maxnbspots_MReval,
+                                                stop_Nb_Matches=stop_Nb_Matches)
 
         #         print "Res", Res
         if Res[0] is None:
@@ -2343,6 +2395,7 @@ class spotsset:
 
         bestUB = OrientMatrix(matrix=matrix)
         if verbose>0:
+            print('still in get_bestUB_fromAnglesLUT() ')
             print('bestUB ', matrix)
             print('with matching rate',score)
 
@@ -2937,7 +2990,8 @@ class spotsset:
                                             addpixdev=False,
                                             verbose=0,
                                             add_strain_sampleframe=False,
-                                            add_grainindex_in_outputfilename=True):
+                                            add_grainindex_in_outputfilename=True,
+                                            add_info_in_outputfilename=''):
         r"""
         write a .fit file: = .cor file + h,k,l, energy grainindex...
         list of spots belonging to a single grain
@@ -2945,6 +2999,8 @@ class spotsset:
         :param corfilename: filename to deduce the prefix and set the output filename
 
         :param add_grainindex_in_outputfilename: add in filename '_g' and grainindex
+
+        :param add_info_in_outputfilename: additional info to add in filename. Default is ''. You may start with '_'.
 
         .. note:: output filename has additional info  '_g(grain_index).fit' for .fit
         with only data of grain number grain index
@@ -2954,9 +3010,9 @@ class spotsset:
         if corfilename is not None:
 
             if add_grainindex_in_outputfilename:
-                outputfilename = (corfilename.split(".")[0] + "_g%d" % grain_index + ".fit")
+                outputfilename = (corfilename.split(".")[0] + add_info_in_outputfilename + "_g%d" % grain_index + ".fit")
             else:
-                outputfilename = corfilename.split(".")[0] + ".fit"
+                outputfilename = corfilename.split(".")[0] + add_info_in_outputfilename +".fit"
 
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
@@ -5219,7 +5275,6 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 print('\n\nrefposfile written! It is %s\n\n'%firstrefposfile)
                 #refposfile = refposfileprefix + '.cor'
 
-
     #-----------------------------------------------------
     # ---   Building list of (image, file) indices -------
     #-----------------------------------------------------
@@ -5237,7 +5292,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
     elif fileindexrange[0].startswith(('[', '(', '{')) or ',' in fileindexrange[0]:
         # I do need to import again re here otherwise UnboundLocalError !!!!
         import re
-        listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", fileindexrange[0])
+        listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", fileindexrange[0])
 
         listindices = []
         for elem in listval:

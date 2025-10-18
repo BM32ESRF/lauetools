@@ -30,31 +30,30 @@ else:
     NDArray={float: float, int: int}
 
 from typing import List, Tuple, Union
-
-
-
+deg = float
+mm = float
 
 # Main source class
 class SecondarySource:
     # Constructors
-    def __init__(self, arg=None, ystep=0.001, angle:float=40.):
+    def __init__(self, arg=None, ystep:mm=0.001, angle:deg=40.):
 
         self.ystep = ystep
         self.angle = np.radians(angle)
 
         # components
-        self.cmpnt_qty = 0
-        self.cmpnt_elt = []
-        self.cmpnt_yrange = []
+        self.cmpnt_qty = 0  # nb of components
+        self.cmpnt_elt = []  # list (len = nb of components) of element symbols
+        self.cmpnt_yrange = [] # list (len = nb of components) of list or array of y values (depth) in mm
         self.cmpnt_vmass = []
 
         # component properties
         self.energy = None
         self.cmpnt_abscoeff = []
         self.cmpnt_fluo = []
-        self.cmpnt_Kedge = []
-        self.cmpnt_yield = []
-        self.cmpnt_Kfluo = []
+        self.cmpnt_Kedge = [] # list (len = nb of components) of K-edge energies
+        self.cmpnt_yield = [] # list (len = nb of components) of fluorescence yields
+        self.cmpnt_Kfluo = [] # list (len = nb of components) of fluorescence emission line energies
 
         # phases
         self.phase_cmpnt = []
@@ -410,9 +409,9 @@ class SecondarySource:
                 Efluo.append(self.cmpnt_Kfluo[i])
                 cmpnt.append(self.cmpnt_elt[i])
     
-        self.source_fluo_elt = cmpnt
-        self.source_fluo_I = Ifluo
-        self.source_fluo_E = Efluo
+        self.source_fluo_elt = cmpnt  # list of fluorescent elements
+        self.source_fluo_I = Ifluo   # list of fluorescence intensity
+        self.source_fluo_E = Efluo  # list of K edge energies
         
         # TODO: dy as a function of position y in sample...
         # pre-compute absorption coeffs and lengths through sample

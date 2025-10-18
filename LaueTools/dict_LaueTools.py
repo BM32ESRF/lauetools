@@ -35,6 +35,8 @@ dict_Materials = {
     "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
     "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
     "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
+    "Al13Fe4": ["Al13Fe4", [15.489, 8.0831, 12.476, 90.0, 107.72, 90.0], "SG12", ],  # SG12 monoclinic unique axis b cell choice 1 
+    "Al6Fe": ["Al6Fe", [7.437, 6.492, 8.788, 90.0, 90.0, 90.0], "SG36", ],  # SG36 orthorhombic 
     "Fe": ["Fe", [2.856, 2.856, 2.856, 90, 90, 90], "bcc"],
     "FeAl": ["FeAl", [5.871, 5.871, 5.871, 90, 90, 90], "fcc"],
     "Fe2Ta": ["Fe2Ta", [4.83, 4.83, 0.788, 90, 90, 120], "no"],
@@ -47,6 +49,7 @@ dict_Materials = {
     "CdHgTe": ["CdHgTe", [6.46678, 6.46678, 6.46678, 90, 90, 90], "dia"],
     "CdHgTe_fcc": ["CdHgTe_fcc", [6.46678, 6.46678, 6.46678, 90, 90, 90], "fcc"],
     "Cr": ["Cr", [2.87, 2.87, 2.87, 90, 90, 90], "bcc"],  # 229
+    "Cr_ref": ["Cr_ref", [2.8839, 2.8839, 2.8839, 90, 90, 90], "bcc"],  # 229
     "Ge": ["Ge", [5.6575, 5.6575, 5.6575, 90, 90, 90], "dia"],
     "Getest": ["Getest", [5.6575, 5.6575, 5.6574, 90, 90, 90], "dia", ],  # c is slightly lower
     "Au": ["Au", [4.078, 4.078, 4.078, 90, 90, 90], "fcc"],
@@ -56,6 +59,9 @@ dict_Materials = {
     "GaAs_wurtz": ["GaAs_wurtz", [5.65325, 5.65325, 5.9, 90, 90, 90], "wurtzite"],  # AsGa
     "ZrUO2_corium": ["ZrUO2_corium", [5.47, 5.47, 5.47, 90, 90, 90], "fcc"],
     "Cu": ["Cu", [3.6, 3.6, 3.6, 90, 90, 90], "fcc"],
+    "Mo": ["Mo", [3.146, 3.146, 3.146, 90, 90, 90], "bcc"],  # SG 229
+    "CuInGaSe": ["CuInGaSe", [5.7478,5.7478, 11.507, 90, 90, 90], "h+k+l=2n"],   # SG 122
+    "CuInGaSe_SG122": ["CuInGaSe_SG122", [5.7478,5.7478, 11.507, 90, 90, 90], "SG122"],   # SG 122
     "Crocidolite": ["Crocidolite", [9.811, 18.013, 5.326, 90, 103.68, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 103.6, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
     "Crocidolite_2_72deg": ["Crocidolite_2", [9.76, 17.93, 5.35, 90, 76.4, 90], "no", ],  # a= 9.811, b=18.013, c= 5.326A, beta=103,68°
@@ -75,6 +81,7 @@ dict_Materials = {
     "MgO": ["MgO", [4.211, 4.211, 4.211, 90, 90, 90], "fcc"],
     "MoO3": ["alpha_MoO3", [3.76, 3.97, 14.432, 90, 90, 90], "no"],  # SG62
     "literature_MoO3": ["literature_MoO3", [3.76, 3.97, 14.43, 90.0, 90.0, 90.0], "no"], #sg62
+    "Muscovite": ["Muscovite", [5.2, 9.027, 20.106, 90, 95.78, 90], "VO2_mono2"],  # ~ SG 15 C2/c
     "PMNPT": ["PMNPT", [3.9969, 3.9969, 4.0457, 90, 90, 90], "no"],# sg99
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
@@ -152,7 +159,8 @@ dict_Materials = {
     "ZnCuOCl": ["ZnCuOCl", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "SG166"],
     "ZnCuOCl_all": ["ZnCuOCl_all", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "no"],
     "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
-    "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194 
+    "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194
+    "Zr_ref": ["Zr_ref", [3.242, 3.242, 5.169, 90, 90, 120], "no"],  # 194 
     "Nb14W3O44": ["Nb14W3O44", [21.03,21.03,3.93,90, 90, 90], "h+k+l=2n"], #SG 82
     "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"],
     "CaWO4": ["CaWO4", [5.26, 5.26, 11.35, 90, 90, 90], "h+k+l=2n"], # SG88
@@ -190,6 +198,7 @@ dict_Materials_short = {
     "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc", ],  # GS 225 fcc extinction
     "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
     "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no", ],  # no extinction
+    "Muscovite": ["Muscovite", [5.2, 9.027, 20.106, 90, 95.78, 90], "VO2_mono2"],  # ~ SG 15 C2/c
     "NiTi": ["NiTi", [3.5506, 3.5506, 3.5506, 90, 90, 90], "fcc"],
     "Ni": ["Ni", [3.5238, 3.5238, 3.5238, 90, 90, 90], "fcc"],
     "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
@@ -249,7 +258,10 @@ dict_Extinc = {
     "SG141": "SG141",
     "137": "137",
     "R3m_sg160": "R3m_sg160",
-    "h+k=2n, modulated":"h+k=2n, modulated"
+    "h+k=2n, modulated":"h+k=2n, modulated",
+    'SG122':'SG122',
+    'SG12':'SG12',
+    'SG36':'SG36'
 }
 
 dict_Extinc_inv = {
@@ -273,7 +285,10 @@ dict_Extinc_inv = {
     "SG141": "SG141",
     "137": "137",
     "R3m_sg160":"R3m_sg160",
-    "h+k=2n, modulated":"h+k=2n, modulated"
+    "h+k=2n, modulated":"h+k=2n, modulated",
+    'SG122':'SG122',
+    'SG12':'SG12',
+    'SG36':'SG36'
 }
 
 def writeDict(_dict, filename, writemode='a', sep=', '):
@@ -327,7 +342,7 @@ def readsinglelinedictfile(line):
     :return: key, value
     :rtype: tuple of 2 elements
     """
-    listval = re.split("[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
+    listval = re.split(r"[ ()\[\)\;\:\,\]\n\t\a\b\f\r\v]", line)
     #             print "listval", listval
     liststring = []
     listfloat = []
@@ -382,13 +397,14 @@ CCD_CALIBRATION_PARAMETERS = ["dd", "xcen", "ycen", "xbet", "xgam", "pixelsize",
 dict_CCD = {
     "MARCCD165": ((2048, 2048), 0.079142, 65535, "no", 4096, "uint16", "MAR Research 165 mm now rayonix", "mccd", ),
     "sCMOS": [(2018, 2016), 0.0734, 65535, "no", 3828, "uint16", "file as produced by sCMOS camera with checked fliplr transform. CCD parameters read from tif header by fabio", "tif"],
-
-    "IMSTAR_bin2": [(3092, 3035), 0.0504, 65535, "no", 3828, "uint16", "", "tif"],
-    "IMSTAR_bin1": [(6185, 6070), 0.0252, 65535, "no", 3828, "uint16", "", "tif"],
+    "IMSTAR_bin3": [(2048, 2064), 0.0252*3, 65535, "no", 3828, "uint16", "binned 3x3, ImageStar165 (36M), sCMOS", "tif"],  # = sCMOS_4M dims may not be read
+    "IMSTAR_bin2": [(3092, 3035), 0.0252*2, 65535, "no", 3828, "uint16", "binned 2x2 ImageStar165 (36M), sCMOS", "tif"],   # = = sCMOS_9M dims may not be read
+    "IMSTAR_bin1": [(6185, 6070), 0.0252, 65535, "no", 3828, "uint16", "binned 1x1, ImageStar165 (36M), sCMOS", "tif"],# dims may not be read
     "sCMOS_fliplr": [(2018, 2016), 0.0734, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 2x2, CCD parameters read from tif header by fabio", "tif"],
     "sCMOS_fliplr_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "sCMOS_fliplr", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
     "sCMOS_16M": [(2 * 2018, 2 * 2016), 0.0734 / 2.0, 65535, "no", 3828, "uint16", "binned 1x1, CCD parameters binned 1x1 read from tif header by fabio ", "tif"],
-    "sCMOS_9M": [(3072, 3072), 0.0504 , 65535, "no", 3828, "uint16", "binned 2x2, CCD parameters binned 2x2 from  36M sCMOS", "tif"],
+    "sCMOS_9M": [(3072, 3072), 0.0504 , 65535, "no", 3828, "uint16", "binned 2x2 ImageStar165 (36M), sCMOS", "tif"],
+    "sCMOS_4M": [(2048, 2064), 0.0756 , 65535, "no", 3828, "uint16", "binned 3x3, ImageStar165 (36M), sCMOS", "tif"],
 
     "psl_IN_bmp": [(425, 640), 10/43., 256, "no", -1, "uint16", "camera from inst Neel ", "bmp", ],
     "psl_IN_tif": [(425, 640), 10/43., 65535, "no", -1, "uint16", "camera from inst Neel ", "tif", ],

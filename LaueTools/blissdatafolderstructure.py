@@ -3,6 +3,56 @@ r"""
 blissdatafolderstructures is a module to provide some helper functions given a folder on nice server by means of BLISS
 """
 import sys, os
+import LaueTools.generaltools as GT
+
+
+def getExperimentFolder_data_at_esrf(expId, nicefolder='visitor', projectsname=None, expDate=None):
+    """projectsname can be mapgrainxl if under /data/projects"""
+    if nicefolder != 'visitor':
+        if projectsname is not None:
+            nicefolder = os.path.join('projects',projectsname)
+        else:
+            raise ValueError(f'Please provide "projectsname" of your project. /data/projectsname')
+
+    #--------------------------------------------
+    ExperimentFolder = os.path.join('/data',nicefolder, f'{expId}/bm32/')
+
+    listdates = os.listdir(ExperimentFolder)
+    #print('possible dates',listdates)
+    if len(listdates)>1 and expDate is None:
+        txt = f'\nBe careful, there are several dates ... => {listdates}'
+        txt += f'\nPlease provide expDate  with the string date e.g. {listdates[0]}'
+        GT.printyellow(txt)
+    
+        # to uncomment two lines to precise the date if there are several ones
+        ExperimentFolder= setExperimentFolder_with_date(ExperimentFolder, expDate='20250212')
+        ExperimentFolder = os.path.join(ExperimentFolder,'RAW_DATA')
+    else:
+        ExperimentFolder= setExperimentFolder_with_date(ExperimentFolder)
+   
+
+    print('Data at ESRF: found ExperimentFolder at', ExperimentFolder)
+    return ExperimentFolder
+
+def getExperimentFolder(expId=None, folder=None, data_at_esrf= True, projectsname=None, expDate=None,
+                                    nicefolder='visitor', checkoutput=True):
+    ExperimentFolder = None
+    if data_at_esrf:
+        ExperimentFolder = getExperimentFolder_data_at_esrf(expId, nicefolder=nicefolder, projectsname=projectsname,
+                                                            expDate=expDate)
+    elif folder is not None:
+        ExperimentFolder = folder
+
+    if not checkoutput:
+        return ExperimentFolder
+
+    if os.path.exists(ExperimentFolder):
+        GT.printgreen(f'\n"ExperimentFolder" exists ! : \n{ExperimentFolder}')
+        
+    if data_at_esrf and 'RAW_DATA' not in ExperimentFolder:
+        GT.printyellow(f'\n"ExperimentFolder" does not contain "RAW_DATA"! Are you sure?')
+    
+    return ExperimentFolder
 
 
 def setExperimentFolder_with_date(ExperimentFolder, expDate=None, addfolder='RAW_DATA'):
@@ -133,3 +183,60 @@ def setimages_subfolder(fullpath, rootfolder='RAW_DATA'):
     
     return tail_subfolder
 
+
+def tree(path, max_level=2, prefix='', dirs_only=False, sort_by_date=False):
+    """List directory tree structure with optional filtering and sorting."""
+    if max_level < 0:
+        return
+
+    try:
+        entries = list(os.scandir(path))
+    except PermissionError:
+        print(f"{prefix}[Permission Denied]")
+        return
+
+    if dirs_only:
+        entries = [e for e in entries if e.is_dir()]
+
+    # Sorting logic
+    if sort_by_date:
+        entries.sort(key=lambda e: e.stat().st_mtime, reverse=True)  # Newest first
+    else:
+        # Dirs first, then files, alphabetical
+        entries.sort(key=lambda e: (not e.is_dir(), e.name.lower()) if not dirs_only else e.name.lower())
+
+    for index, entry in enumerate(entries):
+        connector = "└── " if index == len(entries) - 1 else "├── "
+        print(f"{prefix}{connector}{entry.name}")
+        if entry.is_dir():
+            next_prefix = prefix + ("    " if index == len(entries) - 1 else "│   ")
+            tree(entry.path, max_level - 1, next_prefix, dirs_only, sort_by_date)
+
+def find_files_sorted(root, extension='.h5', max_depth=None):
+    root_depth = root.rstrip(os.sep).count(os.sep)
+    lfiles = []
+    for folder, subfolders, files in os.walk(root):
+        current_depth = folder.rstrip(os.sep).count(os.sep) - root_depth
+        if max_depth is not None and current_depth >= max_depth:
+            # Prevent walking deeper by clearing subfolders list
+            subfolders[:] = []
+        for file in files:
+            if file.endswith(extension):
+                full_path = os.path.join(folder, file)
+                try:
+                    mod_time = os.path.getmtime(full_path)
+                    lfiles.append((full_path, mod_time))
+                except OSError:
+                    pass  # Skip unreadable files
+    # Sort by modification time (newest first)
+    lfiles.sort(key=lambda x: x[1], reverse=True)
+    return [path for path, _ in lfiles]
+
+
+def findmasterh5file(folder, max_depth=0):
+    lfiles = find_files_sorted(folder, '.h5', max_depth=max_depth)
+    if len(lfiles)>0:
+        return lfiles[0], True
+    else:
+        return None, False
+    

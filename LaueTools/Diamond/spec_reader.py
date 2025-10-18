@@ -129,7 +129,7 @@ class SpecFile:
         self.scan_dict = {}  # dictionary to store the position in the file of the scans
 
         try:
-            with open(spec_file, 'rU') as f:  # the U mode indicates universal line break, essential for accurate counting
+            with open(spec_file, 'r') as f:  # the U mode indicates universal line break, essential for accurate counting. # python3.12 anymore rU
               # first read the file header (mostly comments and motors definition)
               # up to the first scan (identified by a line starting with "#S"
                 reading_header = True
@@ -242,7 +242,7 @@ class Scan(SpecFile):
         self.scan_numbers = scan_numbers
         self.comments = ""
 
-        with open(self.file, 'rU') as f:
+        with open(self.file, 'r') as f: # python3.12 anymore rU
             # read the first (and possibly only) scan in the list
             # now try to find the scan
             f.seek(spec_file.scan_dict[scan_number])

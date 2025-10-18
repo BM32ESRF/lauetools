@@ -271,7 +271,7 @@ class LaueToolsGUImainframe(wx.Frame):
             (None, None, None, None),
             (wx.ID_OPEN, "&Open Image && PeakSearch", "View Image & Peak Search", self.OnOpenImage),
             (None, None, None, None),
-            (wx.ID_ANY, "&Detector Calibration", "Detector Calibration from a known reference crystal", self.OnDetectorCalibration),
+            (wx.ID_ANY, "&Pattern simulation && Detector Calibration", "Single Crystal Laue pattern simulation for Detector Calibration", self.OnDetectorCalibration),
             (5151, "&Set or Reset Detector Parameters",
                 "Open detector parameters board. Set or Reset calibration parameters dialog, compute Laue spots scattering angles", self.recomputeScatteringAngles),
             (None, None, None, None),
@@ -1218,9 +1218,9 @@ class LaueToolsGUImainframe(wx.Frame):
             paramraw = str(dlg.GetValue())
 
             if PYTHONVERSION_3p12_MIN:
-                listval = re.split("[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
+                listval = re.split(r"[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
             else:
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             listelem = []
             for elem in listval:
                 try:

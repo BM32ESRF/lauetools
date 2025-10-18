@@ -379,6 +379,110 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
         array_hkl = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
 
+    elif Extinc == "SG12":  # SG 12 ( Al13Fe4)
+        
+        #Pour Al13Fe4, SG12 unique axis b cell choice 1 (Mathieu Fevre, ONERA)
+        #hkl : h+k = 2n
+        #h0l : h = 2n
+        #0kl : k = 2n
+        #hk0 : h+k = 2n
+        #0k0 : k = 2n
+        #h00 : h = 2n
+       
+        #hkl : h+k = 2n –> cond1
+        cond1 = (H + K) % 2 == 0
+        array_hkl_1 = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+               
+        H, K, L = array_hkl_1.T
+                
+        #h0l : h = 2n --> cond2
+        cond2a = K == 0
+        cond2b = (H) % 2 != 0
+        cond2 = cond2a * cond2b
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        #0kl : k = 2n --> cond3
+        cond3a = H == 0
+        cond3b = (K) % 2 != 0
+        cond3 = cond3a * cond3b
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        #hk0 : h+k = 2n --> cond4
+        cond4a = L == 0
+        cond4b = (H + K) % 2 != 0
+        cond4 = cond4a * cond4b
+        array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        #0k0 : k = 2n --> cond5
+        cond5a = H == 0
+        cond5b = L == 0
+        cond5c = (K) % 2 != 0
+        cond5 = cond5a * cond5b * cond5c
+        array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+        
+        #h00 : h = 2n --> cond6
+        cond6a = K == 0
+        cond6b = L == 0
+        cond6c = (H) % 2 != 0
+        cond6 = cond6a * cond6b * cond6c
+        array_hkl = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
+    elif Extinc == "SG36":  # SG 36 ( Al6Fe)
+        
+        #Pour Al6Fe, SG36 cell choice [a,b,c] (Mathieu Fevre, ONERA)
+        #hkl : h+k = 2n
+        #0kl : k = 2n
+        #h0l : h, l = 2n
+        #hk0 : h+k = 2n
+        #h00 : h = 2n
+        #0k0 : k = 2n
+        #00l : l = 2n
+               
+        #hkl : h+k = 2n –> cond1
+        cond1 = (H + K) % 2 == 0
+        array_hkl_1 = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+               
+        H, K, L = array_hkl_1.T
+                
+        #0kl : k = 2n --> cond2
+        cond2a = H == 0
+        cond2b = (K) % 2 != 0
+        cond2 = cond2a * cond2b
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        #h0l : h,l = 2n --> cond3
+        cond3a = K == 0
+        cond3b = (H) % 2 != 0
+        cond3c = (L) % 2 != 0
+        cond3 = cond3a * cond3b * cond3c
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        #hk0 : h+k = 2n --> cond4
+        cond4a = L == 0
+        cond4b = (H + K) % 2 != 0
+        cond4 = cond4a * cond4b
+        array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        #h00 : h = 2n --> cond5
+        cond5a = K == 0
+        cond5b = L == 0
+        cond5c = (H) % 2 != 0
+        cond5 = cond5a * cond5b * cond5c
+        array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+        
+        #0k0 : k = 2n --> cond6
+        cond6a = H == 0
+        cond6b = L == 0
+        cond6c = (K) % 2 != 0
+        cond6 = cond6a * cond6b * cond6c
+        array_hkl_6 = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
+        #00l : l = 2n --> cond7
+        cond7a = H == 0
+        cond7b = K == 0
+        cond7c = (L) % 2 != 0
+        cond7 = cond7a * cond7b * cond7c
+        array_hkl = np.delete(array_hkl_6, np.where(cond7 == True)[0], axis=0)
     # no extinction rules
     else:
         array_hkl = HKL
@@ -1623,7 +1727,8 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
                                                     mat_from_lab_to_sample_frame=None,
                                                     results_in_OR_frames=1,
                                                     results_in_LT_frames=0,
-                                                    sampletilt=40.0):
+                                                    sampletilt=40.0,
+                                                    verbose=0):
     """Compute HKLs which are parallel to xyz axis of sample frame and lab frame.
 
     One of the two optional arguments (matstarlab or UBmat) must be input.
@@ -1652,7 +1757,7 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
     if UBmat is not None:
         matstarlab = matstarlabLaueTools_to_matstarlabOR(UBmat, returnMatrixInLine=True)
 
-    print("matstarlab = ", matstarlab)
+    if verbose>0: print("matstarlab = ", matstarlab)
 
     matstarlab3x3 = GT.matline_to_mat3x3(matstarlab)
 
@@ -1702,9 +1807,10 @@ def matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(matstarlab=None,  # OR
         for i in list(range(3)):
             HKL_xyz[i + 3] = (mat2[:, i] / max(abs(mat2[:, i]))).round(decimals=3)
 
-    print("HKL coordinates of lab and sample frame axes :")
-    for i in list(range(6)):
-        print(list_HKL_names[i], "\t", HKL_xyz[i, :])
+    if verbose>0:
+        print("HKL coordinates of lab and sample frame axes :")
+        for i in list(range(6)):
+            print(list_HKL_names[i], "\t", HKL_xyz[i, :])
 
     return (list_HKL_names, HKL_xyz)
 

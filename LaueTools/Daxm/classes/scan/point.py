@@ -182,8 +182,8 @@ class StaticPointScan(object):
 
     def init_spec(self):
 
-        self.print_msg("- Reading spec...")
-        print('reading spec or hdf5 file in StaticPointScan')
+        self.print_msg("- Reading hdf5 or spec file...")
+        print('Reading hdf5 or spec file in StaticPointScan')
 
         self.spec_file = self.input['specFile']  # can be hdf5 file
         self.filetype ='spec'  #default
@@ -669,39 +669,48 @@ class StaticPointScan(object):
         return fn
 
     def get_image_rect(self, i:int, xlim, ylim, xy:bool=True)->np.ndarray:
-        """return 2d array of image data in the rectangle defined by xlim and ylim"""
+        """
+        Return a single 2d array of small image pixel intensity data in the rectangle defined by xlim and ylim
+        for image located at index 'i' in self.img_filenames
 
+        If xy is True, transpose image
+
+        If image is missing, return roi imagelet with no signal value (pedestal or offset)
+        """
         fdir = self.img_folder
 
-        if self.number_images<=i:
-            res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset  # MODIF ROBIN
-        elif self.img_exist[i]:
-
+        if i >= self.number_images or not self.img_exist[i]:
+            res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset
+        else:
             res = rimg.read_image_rectangle(os.path.join(fdir, self.img_filenames[i]),
                                             xlim, ylim, CCDLabel=self.ccd_type)
-
-        else:
-
-            res = np.ones((ylim[1] - ylim[0] + 1, xlim[1] - xlim[0] + 1)) * self.img_offset
-
         if xy:
             res = res.transpose()
 
         return np.array(res, dtype=float)
 
     def get_images_rect(self, xlim, ylim, xy=True):
-        """return 2d array of image data in the rectangle defined by xlim and ylim for all images"""
+        """return a list of 2d array of image data in the rectangle defined by xlim and ylim for all images
+        
+        if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        if xy is True, transpose image
+        """
         return [self.get_image_rect(i, xlim, ylim, xy) for i in range(self.number_images)]
 
     def get_images_rect_corr(self, xlim, ylim, xy=True):
-        """return 2d array of image data in the rectangle defined by xlim and ylim for all images and corrected by monitor value"""
+        """return 2d array of image data in the rectangle defined by xlim and ylim for all images and corrected by monitor value
+        
+        if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        if xy is True, transpose image
+        """
         return [corr * (self.get_image_rect(i, xlim, ylim, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
     def get_image_roi(self, i:int, xcam:int, ycam:int, halfboxsize:Tuple, xy=True)->np.ndarray:
-        """return roi imagelet centered on xcam ycam for image located at index 'i' in self..img_filenames
+        """return single roi imagelet (small pixel intensity array) centered on xcam ycam for image located at index 'i' in self..img_filenames
         
         if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        if xy is True, transpose image
         """
         fdir = self.img_folder
 
@@ -721,10 +730,55 @@ class StaticPointScan(object):
 
     def get_images_roi(self, xcam:int, ycam:int, halfboxsize:Tuple=(1, 1), xy=True)->List:
 
+        """
+        return a list of roi imagelets (small pixel intensity arrays) centered on xcam ycam for all images
+
+        if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        if xy is True, transpose image
+
+        Parameters:
+        ----------
+        xcam : int
+            x coordinate of the ROI center
+        ycam : int
+            y coordinate of the ROI center
+        halfboxsize : tuple
+            half size of the box in pixels along x and y; default is (1, 1)
+        xy : bool
+            if True, transpose image; default is True
+
+        Returns:
+        -------
+        list
+            list of 2D arrays of intensity values
+        """
         return [self.get_image_roi(i, xcam, ycam, halfboxsize, xy) for i in range(self.number_images)]
 
     def get_images_roi_corr(self, xcam:int, ycam:int, halfboxsize=(1, 1), xy=True)->List:
 
+        """
+        return a list of roi imagelets (small pixel intensity arrays) centered on xcam ycam 
+        for all images and CORRECTED BY MONITOR VALUE
+
+        if image is missing, return roi imagelet with no signal value (pedestal or offset)
+        if xy is True, transpose image
+
+        Parameters:
+        ----------
+        xcam : int
+            x coordinate of the ROI center
+        ycam : int
+            y coordinate of the ROI center
+        halfboxsize : tuple
+            half size of the box in pixels along x and y; default is (1, 1)
+        xy : bool
+            if True, transpose image; default is True
+
+        Returns:
+        -------
+        list
+            list of 2D arrays of intensity values
+        """
         return [corr * (self.get_image_roi(i, xcam, ycam, halfboxsize, xy) - self.img_offset)
                 + self.img_offset for i, corr in enumerate(self.get_monitor())]
 
@@ -964,7 +1018,7 @@ class StaticPointScan(object):
 
         return I[:, np.array(self.img_idx_use)], pw[:, np.array(self.img_idx_use)]
 
-    def get_profile_manypixels_centred(self, wire, xycam, halfboxsize, span=3):
+    def get_profile_manypixels_centred(self, wire, xycam, halfboxsize, span=3, verbose=0):
 
         """
         Return the intensity profile at xycam pixels position as a function of the position of all the wires 
@@ -991,10 +1045,12 @@ class StaticPointScan(object):
         I_full, pw_full = self.get_profile_manypixels_full(xycam, halfboxsize)
 
         I, pw = [], []
-
+        
+        if verbose>0:
+            print('nb of wires: ',len(wire))
         for i, wire_id in enumerate(wire):
-
-            print('wire ... ',wire_id, type(wire_id))
+            if verbose>1:
+                print('wire ... ',wire_id, type(wire_id))
 
             p0 = self.calc_wire_intersect_ray(wire_id, *xycam[i])
 
