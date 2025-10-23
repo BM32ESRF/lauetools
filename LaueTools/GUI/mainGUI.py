@@ -2271,14 +2271,12 @@ class RedirectText:
 def start():
     """ launcher of LaueToolsGUI (as module) """
     LaueToolsGUIApp = wx.App()
-    LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
-                                            projectfolder=LaueToolsProjectFolder)
+    LaueToolsframe = LaueToolsGUImainframe(None, -1, "LaueToolsGUI    Laue Pattern Analysis & Simulation Program", projectfolder=LaueToolsProjectFolder)
     LaueToolsframe.Show()
 
     MySplash(LaueToolsframe, duration=500)
 
     LaueToolsGUIApp.MainLoop()
-
 
 if __name__ == "__main__":
     start()
