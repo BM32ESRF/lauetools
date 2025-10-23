@@ -6,4 +6,5 @@ recursive-include LaueTools/Documentation *
 recursive-include LaueTools/Daxm *
 recursive-include LaueTools/FileSeries *
 recursive-include LaueTools *
+recursive-include Lauetools/scripts *
 prune */__pycache__
