@@ -3885,7 +3885,7 @@ class MainCalibrationFrame(wx.Frame):
 
             #             print "Fsquare", Fsquare[:5]
 
-            sizespot = (100 * GT.CCDintensitymodel2(Energy) * Fsquare * Polariz
+            sizespot = (100 * GT.CCDintensitymodel3(Energy) * Fsquare * Polariz
                 * float(self.plotrangepanel.spotsizefactor.GetValue()))
 
             #             print "Polariz", Polariz
