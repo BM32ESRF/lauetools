@@ -1923,33 +1923,33 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
 def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                       energy_max:int,
                       Tab_angl_dist, Theta_exp, Chi_exp, n:int=3,
-                                            ResolutionAngstrom=False,
-                                            B=np.eye(3),  # for cubic
-                                            cubicSymmetry:bool=False,
-                                            hexagonalSymmetry=False,
-                                            LUT=None,
-                                            LUT_tol_angle:deg=0.5,
-                                            MR_tol_angle=0.2,
-                                            Minimum_Nb_Matches=15,
-                                            key_material="",
-                                            plot=0,
-                                            nbbestplot=1,
-                                            nbspots_plot="all",  # nb exp spots to display if plot = 1
-                                            addMatrix=None,
-                                            verbose=0,
-                                            detectorparameters=None,
-                                            set_central_spots_hkl=None,
-                                            verbosedetails=0,
-                                            gauge=None,
-                                            dictmaterials=DictLT.dict_Materials,
-                                            MaxRadiusHKL=False,
-                                            LUT_with_rules=True,
-                                            excludespotspairs=None,
-                                            LUTfraction=1/2.,
-                                            useparallelcomputing=True,
-                                            crudeMReval:bool=False,
-                                            maxnbspots_MReval:int=10000,
-                                            stop_Nb_Matches:int=1000):
+                            ResolutionAngstrom=False,
+                            B=np.eye(3),  # for cubic
+                            cubicSymmetry:bool=False,
+                            hexagonalSymmetry=False,
+                            LUT=None,
+                            LUT_tol_angle:deg=0.5,
+                            MR_tol_angle=0.2,
+                            Minimum_Nb_Matches=15,
+                            key_material="",
+                            plot=0,
+                            nbbestplot=1,
+                            nbspots_plot="all",  # nb exp spots to display if plot = 1
+                            addMatrix=None,
+                            verbose=0,
+                            detectorparameters=None,
+                            set_central_spots_hkl=None,
+                            verbosedetails=0,
+                            gauge=None,
+                            dictmaterials=DictLT.dict_Materials,
+                            MaxRadiusHKL=False,
+                            LUT_with_rules=True,
+                            excludespotspairs=None,
+                            LUTfraction=1/2.,
+                            useparallelcomputing=True,
+                            crudeMReval:bool=matchingrate.DEFAULT_FASTMODE_KF_DIRECTION_Zpositive,
+                            maxnbspots_MReval:int=10000,
+                            stop_Nb_Matches:int=1000):
     """
     Return all potential matrices
     
@@ -2268,7 +2268,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     itertools.repeat(maxnbspots_MReval),
                     )
             with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
-                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices, miniter=20))
+                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices))
 
             for mat_ind, AngRes in enumerate(results):
                 if AngRes is None:
@@ -2555,14 +2555,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
         if verbose> 0: print('add somes hkl to recognise orientation 001')
         Nmax = max(-np.amin(hkl_all),np.amax(hkl_all))
         # todo generate cleverly using Nmax as min and an other max value
-        addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
-                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11],
-                     [1,1,6],[1,1,7],[1,1,8], [1,1,9],
-                     [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
-                     [0,2,6],[0,2,7],[0,2,8],
-                     [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],
-                     [1,0,6],[1,0,7],[1,0,8], [1,0,9],
-                     [-1,2,6], [-1,2,8]]
+        addedhkls = FindO.ADDED_HKLS_HEXAGONAL
         hkl_all = np.r_[addedhkls,hkl_all]
 
 
