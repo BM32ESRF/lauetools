@@ -99,6 +99,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
     :param HKL: numpy array (n,3) of [H,K,L]
     :param Extinc: label for extinction (see genHKL_np())
+             if Extinc contains only a number (space group number) (eg. '152')
+             then extinctions rules are applied according to wyckpos_lauetools.py module
 
     :returns: numpy array (m,3) of [H,K,L]  m<=n
     """
@@ -109,9 +111,10 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
     if verbose:
         print("nb of reflections before extinctions %d" % len(HKL))
-
-    if Extinc.isdecimal():
-        array_hkl = testhklcond_generalrules_array(Extinc, HKL)
+    # no extinction rules.  true is also not explicit so considered as False
+    if Extinc in ["None", "no", "none","false","False", None, 'True'] or isinstance(Extinc, bool):
+        array_hkl = HKL
+    
     # 'dia' adds selection rules to those of 'fcc'
     elif Extinc in ("fcc", "dia"):
         cond = ((H - K) % 2 == 0) * ((H - L) % 2 == 0)
@@ -286,7 +289,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond = cond1 * cond2 * cond3
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
-    elif Extinc == "137":
+    elif Extinc == "SG137":
         cond2 = (L) % 2 == 0
         cond3 = (H + K + L) % 2 == 0
         cond =  cond2 * cond3
@@ -483,9 +486,11 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond7c = (L) % 2 != 0
         cond7 = cond7a * cond7b * cond7c
         array_hkl = np.delete(array_hkl_6, np.where(cond7 == True)[0], axis=0)
-    # no extinction rules
+
+    elif Extinc.isdecimal():  # if Extinc is a string with only digits, it is the extinction number
+            array_hkl = testhklcond_generalrules_array(Extinc, HKL)
     else:
-        array_hkl = HKL
+        raise ValueError("Unknown extinction rule '%s'" % str(Extinc))
 
     # removing the node 000
     pos000 = np.where(np.all((array_hkl == 0), axis=1) == True)[0]
