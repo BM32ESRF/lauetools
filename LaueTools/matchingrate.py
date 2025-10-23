@@ -67,6 +67,13 @@ class numpyArrayNx3(Iterable[float]):
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0
 
+# equivalent to crudeMReval (in some notebooks) 
+# True, compute angles between directions given by two angles by computing simply euclidian distance rather than accurate angle!
+# valid for 'kf_direction'='Z>0'
+# not valid for other 'kf_direction' because chi angles are defined mdoule 2pi. Two spots at the same 2theta but chi=2*pi and chi=epsilon are distant from each other of epsilon and not 2pi-epsilon... 
+DEFAULT_FASTMODE_KF_DIRECTION_Zpositive = True
+DEFAULT_FASTMODE = False
+
 #------ USE_CYTHON= FALSE ----------------
 def getArgmin(tab_angulardist):
     r"""
@@ -452,15 +459,15 @@ def getNbMatches(residues, thresholdsimilarity):
     # nb_in_res=counts_elements
     # return np.sum(counts_elements)
 
-def getProximity(TwicethetaChi,
-                    data_theta,
-                    data_chi,
+def getProximity(TwicethetaChi:np.ndarray,
+                    data_theta:np.ndarray,
+                    data_chi:np.ndarray,
                     angtol:degree=0.5,
-                    proxtable=0,
+                    proxtable:int=0,
                     verbose:int=0,
                     signchi=1,
                     usecython=False,#USE_CYTHON,
-                    fastmode:bool=False,  # True does not work (october 2025)
+                    fastmode:bool=False, 
                     maxnbspots_MReval:int=10000):
     r"""
     compute matching figures from two sets of spots (TwicethetaChi  generally theo. spots, and {data_theta, data_chi} for exp.spots).
@@ -472,7 +479,7 @@ def getProximity(TwicethetaChi,
 
     :param TwicethetaChi: (simulated or theoretical) two arrays of 2theta array and chi array (same length!)
     :param data_theta: array of theta angles (of experimental spots)
-    :param data_chi: array of chi (same length than data_theta!)
+    :param data_chi: array of chi angles (same length than data_theta!)
 
     :returns:  if proxtable = 1 : proxallresidues, res, nb_in_res, len(allresidues), meanres, maxresidues
 
@@ -498,7 +505,7 @@ def getProximity(TwicethetaChi,
         table_dist = GT.calculdist_from_thetachi(sorted_data, theodata, fastmode=fastmode)
         if verbose > 0:
             print('table_dist.shape',table_dist.shape)
-            print('***** fastmode  ******',fastmode)
+            print(f'***** used fastmode = {fastmode} ******')
 
         # for cartesian distance only, crude approximate for kf_direction=Z>0
         # import scipy
@@ -673,7 +680,7 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol:degree=0
                                                                 onlyXYZ:bool=False,
                                                                 simthreshold:float=0.999,
                                                                 dictmaterials:dict=dict_Materials,
-                                                                fastmode:bool=False,
+                                                                fastmode:bool=DEFAULT_FASTMODE_KF_DIRECTION_Zpositive,
                                                                maxnbspots_MReval:int=10000):
     r"""
     Computes angular residues between pairs of close exp. and
@@ -697,6 +704,11 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol:degree=0
                             'detectordistance', detector distance (mm)
                             'detectordiameter', detector diameter (mm)
                             'pixelsize' and 'dim'
+
+    :param fastmode: True, compute fast (at small angles  angular distance is close to euclidoan distance). Only available for 'Z>0' kf_direction
+    :param maxnbspots_MReval: maximum number of experimental spots to evaluate the matching rate
+
+    :return: allresidues, res, nb_in_res, nb_exp_spots, meanres, maxresidues
     """
     if detectorparameters is None:
         # use default parameter
@@ -759,7 +771,11 @@ def Angular_residues_np(test_Matrix, twicetheta_data, chi_data, ang_tol:degree=0
         if len(TwicethetaChi[0]) == 0: #'no peak found'
             return None
 
-        # no particular gain...?
+        if kf_direction == 'Z>0':
+            fastmode = DEFAULT_FASTMODE_KF_DIRECTION_Zpositive and fastmode
+        else:
+            fastmode = False
+
         return getProximity(TwicethetaChi, twicetheta_data / 2.0, chi_data,
                             angtol=ang_tol, proxtable=0,
                             fastmode=fastmode, maxnbspots_MReval=maxnbspots_MReval)
