@@ -37,7 +37,7 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0'],  # add fabio libtif ObjectListView2?
+			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0','fabio>=0.11.0'],  # add libtif ObjectListView2?
 
     include_package_data=True,
 
@@ -45,7 +45,7 @@ setup(
     # metadata for upload to PyPI
     author="J S Micha",
     author_email="micha@esrf.fr",
-    description="Distribution of LaueTools Package from gitlab.esrf.fr repository for pip",
+    description="Distribution of LaueTools Package from github.com/BM32ESRF/Lauetools repository for pip",
     long_description=long_description,
     long_description_content_type="text/markdown",
 	
@@ -64,6 +64,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+	package_data={
+        'lauetools': ['scripts/*']
+    },
 	entry_points = python3entry_points,
     # could also include long_description, download_url, classifiers, etc.
 )
