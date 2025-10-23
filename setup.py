@@ -13,7 +13,8 @@ if sys.version_info.major == 3:
 	'plotmap = LaueTools.FileSeries.Plot_Maps2:start',
 	'mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start',
 	'daxmgui = LaueTools.daxmgui:start',
-	'lauetools-copy=lauetools.cli:copy_resources']}
+	'lauetools-copy=lauetools.cli:copy_resources',
+	'lauetools-copy-materials=lauetools.cli:copy_materials']}
 else:
     python3entry_points= {}
 
