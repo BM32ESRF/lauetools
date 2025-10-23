@@ -65,7 +65,7 @@ setup(
         "Operating System :: OS Independent",
     ],
 	package_data={
-        'lauetools': ['scripts/*']
+        'Lauetools': ['scripts/*']
     },
 	entry_points = python3entry_points,
     # could also include long_description, download_url, classifiers, etc.
