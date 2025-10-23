@@ -231,7 +231,8 @@ def get_materials_file():
     if os.path.exists(user_path):
         return user_path
     else:
-        with resources.path(LAUETOOLSFOLDER, "materials.yaml") as default_path:
+        with resources.path('LaueTools', "materials.yaml") as default_path:
+        #with resources.path(LAUETOOLSFOLDER, "materials.yaml") as default_path:
             return str(default_path)
 
 yaml_file_path = get_materials_file()
