@@ -10,20 +10,42 @@ Lauetools project
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy
-import os
+import os, json
 import re
+from importlib import resources
 
 import numpy as np
 
+USE_OLD_MATERIALS_LIBRARY = True
+
+
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
+DEFAULT_MATERIALS_FILE = os.path.join(LAUETOOLSFOLDER, "materials.yaml")
 # print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
 # WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
+
+def _load_config():
+    cfg_file = os.path.join(LAUETOOLSFOLDER, "lauetools_config.json")
+    if os.path.exists(cfg_file):
+        with open(cfg_file) as f:
+            return json.load(f)
+    return {}
 
 #####   materials.yaml    #####
 import yaml
 
+def get_materials_file():
+    """Return path to active materials.yaml, considering saved user choice."""
+    cfg = _load_config()
+    if "materials_dir" in cfg:
+        user_path = os.path.join(cfg["materials_dir"], "materials.yaml")
+        if os.path.exists(user_path):
+            print('Using user materials.yaml: ', user_path)
+            return user_path
+
+
 class Materials:
-    def __init__(self, key_material=None, yaml_file_path=None):
+    def __init__(self, key_material=None, yaml_file_path=DEFAULT_MATERIALS_FILE, user_yaml_file_path=None):
         """
         Initialize the Materials with the YAML file.
 
@@ -38,6 +60,8 @@ class Materials:
         # print(library.get_material_as_list('Ag'))
         """
         self.yaml_file_path = yaml_file_path
+        if user_yaml_file_path is not None:
+            self.yaml_file_path = get_materials_file()
         self.key_material = key_material
         
         self.read_yaml()
@@ -127,6 +151,7 @@ class Materials:
     def read_yaml(self, yaml_file_path=None):
         if yaml_file_path is None:
             yaml_file_path = self.yaml_file_path
+
         with open(yaml_file_path, 'r') as file:
             self.materials = yaml.safe_load(file)
 
@@ -227,7 +252,8 @@ def get_materials_file():
     - User copy (~/.lauetools/materials.yaml) if present
     - Otherwise, the packaged default version
     """
-    user_path = os.path.join(os.path.expanduser("~"), ".Lauetools", "materials.yaml")
+    #user_path = os.path.join(os.path.expanduser("~"), ".LaueTools", "materials.yaml")
+    user_path = os.path.join(os.path.expanduser("~"), "temp", "materials.yaml")
     if os.path.exists(user_path):
         return user_path
     else:
@@ -238,9 +264,10 @@ def get_materials_file():
 yaml_file_path = get_materials_file()
 
 # either use of yaml_file_path
-dict_Materials = Materials(yaml_file_path=yaml_file_path)
+if not USE_OLD_MATERIALS_LIBRARY:
+    dict_Materials = Materials(yaml_file_path=yaml_file_path)
 # or old usual dictionary
-if 1:
+elif USE_OLD_MATERIALS_LIBRARY:
     #------------------------------------------------------------------------
     # --- -----------  HARD CODED Element-materials library
     #-------------------------------------------------------------------------
