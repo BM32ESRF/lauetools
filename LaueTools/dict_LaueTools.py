@@ -4,7 +4,7 @@ Dictionary of several parameters concerning Detectors, Materials, Transforms etc
 that are used in LaueTools and in LaueToolsGUI module
 
 Lauetools project
-2009 - October 2024
+2009 - October 2025
 
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -16,8 +16,8 @@ from importlib import resources
 
 import numpy as np
 
-USE_OLD_MATERIALS_LIBRARY = True
-
+USE_MATERIALS_LIBRARY = True
+USE_USER_MATERIALS_YAML_FILE = True
 
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
 DEFAULT_MATERIALS_FILE = os.path.join(LAUETOOLSFOLDER, "materials.yaml")
@@ -45,7 +45,7 @@ def get_materials_file():
 
 
 class Materials:
-    def __init__(self, key_material=None, yaml_file_path=DEFAULT_MATERIALS_FILE, user_yaml_file_path=None):
+    def __init__(self, key_material=None, yaml_file_path=DEFAULT_MATERIALS_FILE, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
         Initialize the Materials with the YAML file.
 
@@ -60,8 +60,16 @@ class Materials:
         # print(library.get_material_as_list('Ag'))
         """
         self.yaml_file_path = yaml_file_path
-        if user_yaml_file_path is not None:
-            self.yaml_file_path = get_materials_file()
+        self.use_user_yaml_file = use_user_yaml_file
+        
+        if use_user_yaml_file:
+            try:
+                yaml_file_path = get_materials_file()
+            except:
+                print('No user copy version of materials.yaml found. Using default materials.yaml')
+                yaml_file_path = DEFAULT_MATERIALS_FILE
+            self.yaml_file_path = yaml_file_path
+
         self.key_material = key_material
         
         self.read_yaml()
@@ -148,12 +156,29 @@ class Materials:
         """
         return self.materials
 
-    def read_yaml(self, yaml_file_path=None):
+    def read_yaml(self, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
+        """
+        Read a YAML file containing materials data.
+
+        If yaml_file_path is None, read the YAML file specified by self.yaml_file_path.
+        If use_user_yaml_file is True, try to read the user's materials.yaml file copy and editable version whose location is saved in lauetools_config.json file.
+        If no user materials.yaml file is found, read the default materials.yaml file.
+
+        :param yaml_file_path: Path to the YAML file to read.
+        :param use_user_yaml_file: If True, try to read the user's materials.yaml file.
+        """
         if yaml_file_path is None:
             yaml_file_path = self.yaml_file_path
+        if not(use_user_yaml_file):
+            try:
+                yaml_file_path = get_materials_file()
+            except:
+                print('No user materials.yaml found. Using default materials.yaml')
+                yaml_file_path = DEFAULT_MATERIALS_FILE
 
         with open(yaml_file_path, 'r') as file:
             self.materials = yaml.safe_load(file)
+            self.yaml_file_path = yaml_file_path
 
     def check_material(self, key_material):
         if key_material in self.materials.keys():
@@ -246,28 +271,13 @@ class Materials:
 import os
 from importlib import resources
 
-def get_materials_file():
-    """
-    Returns the path to the active materials.yaml:
-    - User copy (~/.lauetools/materials.yaml) if present
-    - Otherwise, the packaged default version
-    """
-    #user_path = os.path.join(os.path.expanduser("~"), ".LaueTools", "materials.yaml")
-    user_path = os.path.join(os.path.expanduser("~"), "temp", "materials.yaml")
-    if os.path.exists(user_path):
-        return user_path
-    else:
-        with resources.path('LaueTools', "materials.yaml") as default_path:
-        #with resources.path(LAUETOOLSFOLDER, "materials.yaml") as default_path:
-            return str(default_path)
-
 yaml_file_path = get_materials_file()
 
 # either use of yaml_file_path
-if not USE_OLD_MATERIALS_LIBRARY:
-    dict_Materials = Materials(yaml_file_path=yaml_file_path)
+if USE_MATERIALS_LIBRARY:
+    dict_Materials = Materials()
 # or old usual dictionary
-elif USE_OLD_MATERIALS_LIBRARY:
+elif not(USE_MATERIALS_LIBRARY):
     #------------------------------------------------------------------------
     # --- -----------  HARD CODED Element-materials library
     #-------------------------------------------------------------------------
