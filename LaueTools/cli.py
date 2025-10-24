@@ -1,8 +1,22 @@
-import os
-import shutil
-import argparse
+import os, shutil, argparse, json
+
 from importlib import resources
 
+LAUETOOLSFOLDER = os.path.split(__file__)[0]
+
+CONFIG_DIR = LAUETOOLSFOLDER
+CONFIG_FILE = os.path.join(CONFIG_DIR, "lauetools_config.json")
+
+def save_config(data):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE) as f:
+            return json.load(f)
+    return {}
 
 def copy_resources():
     """Copy example notebooks or scripts to a user-specified folder."""
@@ -54,6 +68,11 @@ def copy_materials():
     with resources.path("LaueTools", "materials.yaml") as src:
         dst_file = os.path.join(dest, "materials.yaml")
         shutil.copy2(src, dst_file)
+
+    # Save chosen folder in persistent config
+    cfg = load_config()
+    cfg["materials_dir"] = dest
+    save_config(cfg)
 
     print(f"Great materials.yaml copied to: {dst_file}")
     print("You can now edit this file freely.")
