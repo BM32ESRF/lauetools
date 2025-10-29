@@ -47,6 +47,7 @@ matplotlib.use("WXAgg")
 
 import numpy as np
 import wx
+import yaml
 
 print('----------------------------------------------')
 print('-----              Welcome            --------')
@@ -480,39 +481,41 @@ class LaueToolsGUImainframe(wx.Frame):
         self.last_epsil_fromindexation = {}
 
     def OnLoadMaterials(self, _):
-        """Load an ASCII file with Materials properties
-        """
-        wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
+        """Load a materials file (.dat, .mat legacy or .yaml modern format)."""
+        wcd = "All files (*)|*|dict_Materials files (*.dat)|*.dat|YAML materials (*.yaml;*.yml)|*.yaml;*.yml|Material files (*.mat)|*.mat"
         _dir = os.getcwd()
-        open_dlg = wx.FileDialog(self,
-                                    message="Choose a file",
-                                    defaultDir=_dir,
-                                    defaultFile="",
-                                    wildcard=wcd,
-                                    style=wx.OPEN)
 
+        open_dlg = wx.FileDialog(self, message="Choose a materials file",
+                                    defaultDir=_dir,
+                                    wildcard=wcd,
+                                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,)
+        
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
+            ext = os.path.splitext(path)[1].lower()
 
             try:
-                self.dict_Materials = readDict(path)
+                if ext in (".yaml", ".yml"):
+                    # --- Load YAML materials library
+                    with open(path, "r") as f:
+                        data = yaml.safe_load(f) or {}
+                    if not isinstance(data, dict):
+                        raise ValueError("Invalid YAML structure: expected a dictionary at top level")
+                    self.dict_Materials = data
 
-                # dict_Materials = self.dict_Materials
+                else:
+                    # --- Legacy format
+                    self.dict_Materials = readDict(path)
 
-            except IOError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
+                wx.MessageBox(f"Materials successfully loaded from:\n{path}",
+                            "Load Materials", wx.OK | wx.ICON_INFORMATION)
 
-            except UnicodeDecodeError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except ValueError as error:
-                dlg = wx.MessageDialog(self, "Error opening file: Something went wrong "
-                                                "when parsing materials line\n" + str(error))
-                dlg.ShowModal()
+            except (IOError, UnicodeDecodeError, yaml.YAMLError, ValueError) as error:
+                wx.MessageBox(f"Error opening file:\n{error}",
+                            "Load Error", wx.OK | wx.ICON_ERROR)
 
         open_dlg.Destroy()
+
 
     def recomputeScatteringAngles(self, _):
         """ update scattering angles 2theta chi from user entered value from Launch_DetectorParamBoard"""
