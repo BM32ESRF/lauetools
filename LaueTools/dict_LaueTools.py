@@ -54,7 +54,7 @@ class Materials:
         # Example usage:
         ll =  =DictLT.Materials('Fe')
         ==> ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc']
-        # library = Materials('materials.yaml')
+        # library = Materials(yaml_file_path='materials.yaml')
         # print(library.get_material_dict())
         # print(library.get_material('Ag'))
         # print(library.get_material_as_list('Ag'))
@@ -239,9 +239,11 @@ class Materials:
             return None
         return material['extinction']
 
-    def add_or_update_material(self, label, lattice, extinction):
+    def add_or_update_material(self, label, lattice, extinction, yaml_file_path=None):
         """
         Add or update a material in the dictionary and update the YAML file.
+
+        resets yaml_file_path if yaml_file_path is not None
 
         :param label: String label of the material.
         :param lattice: List of lattice parameters.
@@ -252,7 +254,8 @@ class Materials:
             'lattice': lattice,
             'extinction': extinction
         }
-
+        if yaml_file_path is not None:
+            self.yaml_file_path = yaml_file_path
         with open(self.yaml_file_path, 'w') as file:
             yaml.dump(self.materials, file, sort_keys=False, default_flow_style=False)
 
