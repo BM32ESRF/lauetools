@@ -40,7 +40,8 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0','fabio>=0.11.0'],  # add libtif ObjectListView2?
+			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0','fabio>=0.11.0',
+					 'PyYAML>=6.0.1'],  # add libtif ObjectListView2?
 
     include_package_data=True,
 
