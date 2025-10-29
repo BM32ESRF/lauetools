@@ -14,7 +14,8 @@ if sys.version_info.major == 3:
 	'mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start',
 	'daxmgui = LaueTools.daxmgui:start',
 	'lauetools-copy=LaueTools.cli:copy_resources',
-	'lauetools-copy-materials=LaueTools.cli:copy_materials']}
+	'lauetools-copy-materials=LaueTools.cli:copy_materials',
+	'lauetools-add-material = LaueTools.cli_add_material:main']}
 else:
     python3entry_points= {}
 
