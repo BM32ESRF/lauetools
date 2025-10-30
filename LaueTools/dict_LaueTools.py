@@ -12,7 +12,10 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import copy
 import os, json
 import re
-from importlib import resources
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 
 import numpy as np
 
@@ -80,14 +83,17 @@ class Materials:
         if key_material is not None:
             self.data = self.get_material_as_list(key_material)
         else:
-            self.data = None
+            self.data = 'Materials library located at: '
 
     def __repr__(self):
         """
-        Return the data if a key_material was provided.
+        Return the materials data if a key_material was provided.
         """
         if self.data is not None:
-            return str(self.data)
+            if not isinstance(self.data, str):
+                return str(self.data)
+            else:
+                return str(self.data)+self.yaml_file_path
         else:
             return None
 
@@ -272,7 +278,7 @@ class Materials:
                 yaml.dump(self.materials, file, sort_keys=False, default_flow_style=False)
 
 import os
-from importlib import resources
+
 
 yaml_file_path = get_materials_file()
 
