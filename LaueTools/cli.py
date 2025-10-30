@@ -1,6 +1,9 @@
 import os, shutil, argparse, json
 
-from importlib import resources
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
 
