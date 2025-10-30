@@ -22,7 +22,7 @@ def add_or_update_material(material_file, label, lattice, extinction):
     # Parse lattice string
     lattice_parts = lattice.split()
     if len(lattice_parts) != 6:
-        raise ValueError("Lattice must have 6 values: a b c alpha beta gamma")
+        raise ValueError("Lattice must have 6 values in a string: 'a b c alpha beta gamma'")
 
     data[label] = {
         "lattice": [float(x) for x in lattice_parts],
@@ -37,18 +37,18 @@ def add_or_update_material(material_file, label, lattice, extinction):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Add or update a material entry in materials.yaml."
+        description="Add or update a material entry in materials.yaml.\nlauetools-add-material -mat 'Aluminum' -l '4.05 4.05 4.05 90 90 90' -e 'fcc'\nFor the list of possible extinction rules, ask LaueTools's developers and see CrystalParameters.ApplyExtinctionrules() implementation."
     )
     parser.add_argument("-mat", "--material", required=True, help="Material label")
     parser.add_argument(
         "-l", "--lattice",
         required=True,
-        help="Lattice parameters: a b c alpha beta gamma"
+        help="Lattice parameters: 'a b c alpha beta gamma'"
     )
     parser.add_argument(
         "-e", "--extinction",
         required=True,
-        help="Extinction symbol (e.g. Fm-3m)"
+        help="Extinction symbol (e.g. 'bcc')"
     )
     parser.add_argument(
         "-file", "--file",
