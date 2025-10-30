@@ -23,6 +23,7 @@ import math
 import numpy as np
 
 import wx
+import yaml
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
@@ -273,7 +274,11 @@ class CrystalParamPanel(wx.Panel):
 
         self.listsorted_materials = sorted(DictLT.dict_Materials.keys())
         t2 = wx.StaticText(self, -1, "Element")
-        self.comboElem = wx.ComboBox(self, -1, "Ge",
+        if 'Ge' in self.listsorted_materials:
+            defaultmaterial='Ge'
+        else:
+            defaultmaterial=self.listsorted_materials[0]
+        self.comboElem = wx.ComboBox(self, -1, defaultmaterial,
                                         choices=self.listsorted_materials,
                                         style=wx.CB_READONLY)
 
@@ -437,41 +442,60 @@ class CrystalParamPanel(wx.Panel):
     def OnLoadMaterials(self, _):
         # self.mainframe.GetParent().OnLoadMaterials(1)
         # loadedmaterials = self.mainframe.GetParent().dict_Materials
-
-        wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
+        """Load a materials file (.dat, .mat legacy or .yaml modern format)."""
+        wcd = "All files (*)|*|dict_Materials files (*.dat)|*.dat|YAML materials (*.yaml;*.yml)|*.yaml;*.yml|Material files (*.mat)|*.mat"
         _dir = os.getcwd()
-        open_dlg = wx.FileDialog(self, message="Choose a file", defaultDir=_dir, defaultFile="",
-                                                                                    wildcard=wcd,
-                                                                                    style=wx.OPEN)
+
+        open_dlg = wx.FileDialog(self, message="Choose a materials file",
+                                    defaultDir=_dir,
+                                    wildcard=wcd,
+                                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,)
+        
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
+            ext = os.path.splitext(path)[1].lower()
 
             try:
-                loadedmaterials = DictLT.readDict(path)
+                if ext in (".yaml", ".yml"):
+                    libmaterials = DictLT.Materials()
+                    libmaterials.read_yaml(path)
+                    # # --- Load YAML materials library
+                    # with open(path, "r") as f:
+                    #     data = yaml.safe_load(f) or {}
+                    # if not isinstance(data, dict):
+                    #     raise ValueError("Invalid YAML structure: expected a dictionary at top level")
+                    loadedmaterials = libmaterials
+                    
+                    
+                    print('located in ', loadedmaterials.yaml_file_path)
 
-                DictLT.dict_Materials = loadedmaterials
+                else:
+                    # --- Legacy format
+                    print('reading old format materials file')
+                    loadedmaterials = DictLT.readDict(path)
 
-            except IOError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except UnicodeDecodeError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except ValueError as error:
-                dlg = wx.MessageDialog(self, "Error opening file: Something went wrong when parsing materials line\n" + str(error))
-                dlg.ShowModal()
+                wx.MessageBox(f"Materials successfully loaded from:\n{path}",
+                            "Load Materials", wx.OK | wx.ICON_INFORMATION)
+                print("Now loadedmaterials", loadedmaterials)
+                print('loadedmaterials.yaml_file_path',loadedmaterials.yaml_file_path)
+                
+            except (IOError, UnicodeDecodeError, yaml.YAMLError, ValueError) as error:
+                wx.MessageBox(f"Error opening file:\n{error}",
+                            "Load Error", wx.OK | wx.ICON_ERROR)
 
         open_dlg.Destroy()
 
+        DictLT.dict_Materials = loadedmaterials
         self.mainframe.dict_Materials = loadedmaterials
         self.comboElem.Clear()
         elements_keys = sorted(loadedmaterials.keys())
         self.comboElem.AppendItems(elements_keys)
+        self.comboElem.SetValue(elements_keys[0])
 
         if self.mainframe.GetParent():
             self.mainframe.GetParent().dict_Materials = loadedmaterials
+
+        self.mainframe.OnChangeElement(1)
 
 
 class CCDParamPanel(wx.Panel):
