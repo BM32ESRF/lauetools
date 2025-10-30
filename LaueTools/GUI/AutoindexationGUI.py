@@ -390,6 +390,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """ set material combo  from   self.dict_Materials
         .. todo:: better to use gridsizer and refresh/update of combo
         """
+        print('In SetMaterialsCombo() self.dict_Materials', self.dict_Materials)   
+
         self.list_materials = sorted(self.dict_Materials.keys())
 
         self.combokeymaterial = wx.ComboBox(self, -1, "Ge", (140, 170), size=(150, -1),
@@ -773,7 +775,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         print("General stats_res before filtering and removing duplicates", stats_res)
         nb_solutions = len(self.bestmatrices)
 
-        keep_only_equivalent = CP.isCubic(DictLT.dict_Materials[self.key_material][1])
+        keep_only_equivalent = CP.isCubic(self.dict_Materials[self.key_material][1])
 
         if set_central_spots_hkl not in (None, [None]):
             keep_only_equivalent = False
