@@ -306,6 +306,7 @@ class Plot_RefineFrame(wx.Frame):
             self.CCDLabel = self.mainframe.CCDLabel
 
         if StorageDict is not None:
+            print('in Plot_RefineFrame.__ini__(), StorageDict is known')
             self.mat_store_ind = StorageDict["mat_store_ind"]
             self.Matrix_Store = StorageDict["Matrix_Store"]
             self.dict_Rot = StorageDict["dict_Rot"]
@@ -2821,6 +2822,8 @@ class Plot_RefineFrame(wx.Frame):
         """
         # print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
         #     self.detectordiameter)
+        print('In Plot_RefineFrame.Simulate_Pattern()')
+        print('self.dict_Materials', self.dict_Materials)
 
         # for squared detector need to increase a bit
         if self.CCDLabel.startswith("sCMOS"):
