@@ -175,10 +175,50 @@ def distfrom2thetachi(pt2D_1, pt2D_2):
 
     return np.arccos(cosang) / DEG
 
-
-def calculdist_from_thetachi(points1:'arrayORListNx2', points2:arrayORListNx2, fastmode:bool=False)->'numpyarrayNxM':
+def mutual_angles(A_deg, B_deg):
     """
-    From two lists of pairs (THETA, CHI) return:
+    Compute all mutual angles (in degrees) between directions defined by (theta, phi) pairs.
+    Angles in A_deg and B_deg are given in degrees.
+    
+    Parameters
+    ----------
+    A_deg : array-like of shape (m, 2)
+        Each row: (theta, phi) in degrees.
+    B_deg : array-like of shape (n, 2)
+        Each row: (theta, phi) in degrees.
+
+    Returns
+    -------
+    angles_deg : ndarray of shape (n, m)
+        Mutual angles in degrees between all pairs.
+    """
+    # Convert to radians
+    A = np.radians(A_deg)
+    B = np.radians(B_deg)
+    
+    # Extract columns
+    theta_A, phi_A = A[:, 0][:, None], A[:, 1][:, None]  # (m, 1)
+    theta_B, phi_B = B[:, 0][None, :], B[:, 1][None, :]  # (1, n)
+
+    # Convert to Cartesian components (vectorized)
+    # Each element expands via broadcasting
+    xA, yA, zA = np.sin(theta_A) * np.cos(phi_A), np.sin(theta_A) * np.sin(phi_A), np.cos(theta_A)
+    xB, yB, zB = np.sin(theta_B) * np.cos(phi_B), np.sin(theta_B) * np.sin(phi_B), np.cos(theta_B)
+
+    # Compute cos(angle) using dot product formula (vectorized)
+    cos_angle = xA * xB + yA * yB + zA * zB
+
+    # Clamp to avoid numerical issues
+    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+
+    # Convert to angles in degrees
+    angles_deg = np.degrees(np.arccos(cos_angle))
+    return np.transpose(angles_deg)
+
+    
+def calculdist_from_thetachi(points1:'arrayORListNx2', points2:'arrayORListNx2', fastmode:bool=False)->'numpyarrayNxM':
+    """
+    compute angular distance between two lists of pairs (THETA, CHI) in degrees
 
     :param points1: array or list of 2 elements
     :param points2: array or list of 2 elements
