@@ -301,7 +301,7 @@ class MatrixEditor_Dialog(wx.Frame):
             else:
                 paramraw = str(self.text.GetValue())
 
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
                 listelem = []
                 for elem in listval:
                     try:

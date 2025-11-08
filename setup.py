@@ -5,14 +5,17 @@ if sys.version_info.major == 3:
     import LaueTools
     python3entry_points = {
     'console_scripts': [
-        'lauetools = LaueTools.LaueToolsGUI:start',
+        'lauetools = LaueTools.GUI.mainGUI:start',
 	'peaksearch = LaueTools.FileSeries.Peak_Search:start',
 	'indexrefine = LaueTools.FileSeries.Index_Refine:start',
 	'plotmeshGUI = LaueTools.plotmeshspecGUI:start',
 	'buildsummary = LaueTools.FileSeries.Build_Summary:start',
 	'plotmap = LaueTools.FileSeries.Plot_Maps2:start',
 	'mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start',
-	'daxmgui = LaueTools.daxmgui:start']}
+	'daxmgui = LaueTools.daxmgui:start',
+	'lauetools-copy=LaueTools.cli:copy_resources',
+	'lauetools-copy-materials=LaueTools.cli:copy_materials',
+	'lauetools-add-material = LaueTools.cli_add_material:main']}
 else:
     python3entry_points= {}
 
@@ -37,7 +40,8 @@ setup(
                       'wxpython>=3.0',
                       'networkx>=2.1',
 			'tqdm>=4.60.0',
-			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0'],  # add fabio libtif ObjectListView2?
+			'h5py>=3.1','scikit-image>=0.1.0','astropy>=3.0','fabio>=0.11.0',
+					 'PyYAML>=6.0.1'],  # add libtif ObjectListView2?
 
     include_package_data=True,
 
@@ -45,7 +49,7 @@ setup(
     # metadata for upload to PyPI
     author="J S Micha",
     author_email="micha@esrf.fr",
-    description="Distribution of LaueTools Package from gitlab.esrf.fr repository for pip",
+    description="Distribution of LaueTools Package from github.com/BM32ESRF/Lauetools repository for pip",
     long_description=long_description,
     long_description_content_type="text/markdown",
 	
@@ -64,6 +68,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+	package_data={
+        'LaueTools': ['scripts/*']
+    },
 	entry_points = python3entry_points,
     # could also include long_description, download_url, classifiers, etc.
 )

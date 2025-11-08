@@ -22,7 +22,7 @@ class RecManager:
         self.calib = calib
         self.seg = seg
 
-        self.fitfile = None
+        self.fitfile = None   # str or None, path to .fit file to assign energy to pixels close to peaks in .fit file
 
         self.grid_ix = []
         self.grid_iy = []
@@ -61,7 +61,38 @@ class RecManager:
 
         self.fitfile = fitfile
 
-    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False):
+    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc:int=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False, usefitfiles_peaks=False):
+
+        """
+        Reconstructs a series of 2D images around peaks.
+
+        use self.fitfile to assign energy to peaks
+        use
+
+        Parameters
+        ----------
+        depth_range : tuple of two floats
+            The range of depths to reconstruct the image for.
+        fileprefix : str
+            The prefix of the output image file names.
+        depth_step : float, optional
+            The step of depths to reconstruct the image for. Defaults to 0.001.
+        nproc : int, optional
+            The number of processes to use for the reconstruction. Defaults to 1.
+        directory : str, optional
+            The directory where the output image files will be saved. Defaults to "".
+        rec_par : dict, optional
+            The parameters for the reconstruction. Defaults to {}.
+        depth_range_print : tuple of two floats, optional
+            The range of depths to print the reconstructed image for. Defaults to None.
+        usefitfiles_peaks : bool, optional
+            If True, consider only pixels for reconstruction that are in a bounding box centered on peaks listed in the fitfile specified in `self.fitfile`. Default is False. 
+
+        Returns
+        -------
+        None
+        """
+        DEFAULT_YSTEP = 0.001
 
         grid_depth = np.arange(depth_range_print[0], depth_range_print[1], depth_step)
 
@@ -76,7 +107,8 @@ class RecManager:
 
         
 
-        ndigits = calc_ndigits(imgqty)
+        ndigits = 4#
+        #ndigits = calc_ndigits(imgqty)
 
         prev_index = 0
         for iy in self.grid_iy:
@@ -108,19 +140,66 @@ class RecManager:
                     self.scan.goto(ix, iy)
                 
                 rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
+                # consider pixels in a bounding box centered on peaks (no opencv segmentation)
+                if usefitfiles_peaks==True:  #  seg.par not
+                    default_hbs = [12,12]
+                    
+                    print("[rec] > Optional read of fitfile(s) for peaks")
+                    from LaueTools import IOLaueTools as rwa
+                    #Create list of peaks
+                    peaks_XY = []
+                    #Since the nature of 'self.fitfile' is not explicit we can define 2 cases
+                    if isinstance (self.fitfile,list):
+                        #fn = Single fit_file in 'self.fitfile'
+                        for _k , fn in enumerate(self.fitfile):
+                            #Alternate reusing code from 'scan.py set_abscoeff_fromfitfile'
+                            data = rwa.readfitfile_multigrains(fn)[4] #20250613 - Pick element for blc15488/ech15_Z1 p25um files
+                            
+                           
+                            if _k > 0:
+                                _d = np.concatenate((_d,data[:,7:9]))
+                            else:
+                                _d = data[:,7:9]
+                        peaks_XY = np.array(_d)
+                        
+                    else:
+                        data = rwa.readfitfile_multigrains(self.fitfile) #data type <class 'tuple'>
 
-                rec.set_regions_fromsearch(**self.seg)
+                        #CAUTION: Data = Tuple --> Extract element [4]
+                        peaks_XY = data[4][:,7:9]
+                        #For Example GOI fit file SHORT: Expected - TBC [array([[ 111.07, 1790.09], [1924.01, 1316.77]])]
+
+
+                    print('*******')
+                    # print('Test peaks_XY type', type(peaks_XY))
+                    print('peaks_XY', peaks_XY)
+                    print('*******')
+
+                    #CAUTION halfboxsize must be a List - Default halfboxsize proposed
+                    #Create default spot bounding box for all peaks - Same format than expected for ScanReconstructor
+                    halfboxsize = []
+                    
+                    for _ in range(peaks_XY.shape[0]):
+                        halfboxsize.append(default_hbs)
+                    print('*******')
+                    # print('Test halfboxsize type', type(halfboxsize))
+                    print('Test halfboxsize', halfboxsize)
+                    print('*******')
+                    #Set regions (peaks + bounding box) on which to run the reconstruction
+                    rec.set_regions(peaks_XY,halfboxsize)
+
+                #Standard method by Renversade et Molin: use opencv segmentation to find pixels for reconstruction. Pixels are gathered by peaks (with varying bounding box size)
+                else:
+                    rec.set_regions_fromsearch(**self.seg)
 
                 if self.fitfile is None:
-
                     rec.init_abscoeff()
-
                 else:
                     rec.set_abscoeff_fromfitfile(self.fitfile)
 
                 rec.assign_wire_peaks()
 
-                rec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=0.001, nproc=nproc, rec_args=rec_par)
+                rec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=DEFAULT_YSTEP, nproc=nproc, rec_args=rec_par)
 
                 if len(self.grid_x)>1:
                     rec.print_images(prefix=fileprefix, first_index=img_idx[ix][iy], directory=directory, yrange=depth_range_print, nbdigits=ndigits)

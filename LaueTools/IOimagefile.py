@@ -380,8 +380,10 @@ def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
                 #x = 2018 - x  # fliplr
                 f.seek(offset + 2 * (2016 * y + x))
                 vals[k]=struct.unpack("H", f.read(2))[0]
+            elif CCDLabel in ('IMSTAR_bin3','sCMOS_4M'):
+                f.seek(offset + 2 * (2064 * y + x))
+                vals[k]=struct.unpack("H", f.read(2))[0]
             elif CCDLabel == 'IMSTAR_bin2':
-                #x = 2018 - x  # fliplr
                 f.seek(offset + 2 * (3035 * y + x))
                 vals[k]=struct.unpack("H", f.read(2))[0]
             elif CCDLabel == 'MARCCD165':
@@ -390,6 +392,7 @@ def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
     return vals
 
 def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+    """TODO to improve or reject when roicenters are close to border wrt to framdim or invframedim"""
     dataimage= None
     framedim=None
 
@@ -412,7 +415,7 @@ def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sC
             # avoid to wrong indices when slicing the data
             imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
                                                                                     framedim=framedim)
-
+            
             piece_dat = dataimage[imin:imax, jmin:jmax]
             piece_dat_m = None
 
@@ -873,7 +876,9 @@ def read_motorsposition_fromheader(filename, CCDLabel="MARCCD165"):
 
     if CCDLabel not in ("MARCCD165","sCMOS", "sCMOS_fliplr"):
         if filename.endswith('.h5'):
-            # TODO read some groups in hd5 file 
+            # TODO read some groups in hd5 file
+            print('In read_motorsposition_fromheader()')
+            GT.printyellow('Not implemented yet to read corresponding groups in hd5 file.')
             pass
         return None, None
     
@@ -967,8 +972,8 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     #    if extension != extension:
     #        print "warning : file extension does not match CCD type set in Set CCD File Parameters"
     if FABIO_EXISTS and CCDLabel not in ('Alban','psl_IN_bmp','MaxiPIXCdTe', 'EIGER_4MCdTestack'):#,'EIGER_4M'):
-        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_4MCdTe","EIGER_1M","IMSTAR_bin2","IMSTAR_bin1","RXO",
-                        "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M", "sCMOS_16M","sCMOS_9M",
+        if CCDLabel in ('MARCCD165', "EDF", "EIGER_4M", "EIGER_4MCdTe","EIGER_1M","IMSTAR_bin3","IMSTAR_bin2","IMSTAR_bin1","RXO", "sCMOS", "sCMOS_fliplr", "sCMOS_fliplr_16M",
+                        "sCMOS_16M","sCMOS_9M", "sCMOS_4M",
                         "Rayonix MX170-HS", 'psl_weiwei', 'ImageStar_dia_2021',
                         'ImageStar_dia_2021_2x2','psl_IN_tif', 'Alexiane'):#, 'Alban'):
 
@@ -1142,7 +1147,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         if verbose > 1:
             print("using PIL's module Image")
         if CCDLabel in ("sCMOS", "MARCCD165", "sCMOS_16M"):
-            if verbose > 1: print('PIL is too slow. Better install libtiff or fabio. Meanwhile I will use PIL...')
+            if verbose > 1: GT.printyellow('PIL is too slow. Better install libtiff or fabio. Meanwhile I will use PIL...')
             USE_RAW_METHOD = True
         elif CCDLabel in ("VHR_PSI", "VHR_DLS", "MARCCD225", "Andrea", "pnCCD_Tuba", ):
             # data are compressed!
@@ -1169,7 +1174,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
     # RAW method knowing or deducing offsetheader and dataformat
     if USE_RAW_METHOD:
-        print("----> !!! not using libtiff, nor fabio, nor PIL!!!  ")
+        GT.printyellow("----> !!! not using libtiff, nor fabio, nor PIL!!!  ")
         if CCDLabel in ("MARCCD165",):
             print("for MARCCD not using libtiff, raw method ...")
             # offsetheader may change ...
@@ -1193,7 +1198,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             nbpixels = 3056
 
             offsetheader = filesize - nbpixels * nbpixels * bytes_per_pixels
-        elif CCDLabel in ("sCMOS",):
+        elif CCDLabel.startswith("sCMOS"):  # add imstar_bin1 2 3?
             if verbose > 0: print("for sCMOS not using libtiff, raw method ...")
             # offsetheader may change ...
             filesize = getfilesize(dirname, filename)

@@ -31,15 +31,15 @@ class SpotReconstructor:
         # inputs
         self.verbose = verbose
 
-        self.scan = scan
+        self.scan = scan  # corresponding DAXM (wires) scan
 
-        self.XYcam = XYcam
+        self.XYcam = XYcam  # 2D center pixel coordinates of the ROI (spot)
 
-        self.wire = wire
+        self.wire = wire  # corresponding wire(s)
 
-        self.yrange = yrange # y // beam   range  or depth along the beam (in mm)
+        self.yrange = yrange # y // beam   range (2 values) of depth along the beam (in mm)
 
-        self.abscoeff = abscoeff
+        self.abscoeff = abscoeff  # absorption coefficient of wire
 
         self.hbs = halfboxsize
 
@@ -55,17 +55,17 @@ class SpotReconstructor:
         self.grid_x = []
         self.grid_y = []
         self.grid_Pcam = []
-
-        self.pw_all = []
+        # wire positions (mm)
+        self.pw_all = []  # all motor positions (yf, zf) in mm holding the wire(s)
         self.pw_idx = []
         self.pw = []
 
         self.yw = []
         self.ygrid = []
 
-        self.frames_ini = []
-        self.frames_bkg = []
-        self.frames_cor = []
+        self.frames_ini = []  # raw images frames of the given ROI
+        self.frames_bkg = []  # background images frames of the given ROI. linear along X pixel and constant along Y pixel
+        self.frames_cor = [] # Xlinear-Yconstant background-corrected images frames
 
         self.rec = []
         self.is_reconstructed = False
@@ -77,12 +77,18 @@ class SpotReconstructor:
 
         self.init_grid()
 
-        self.init_depth()
+        self.init_depth(verbose=verbose)
 
         self.init_data()
 
     def init_hbs(self):
+        """
+        Initialize the ROI halfboxsize attribute of the class.
 
+        If self.hbs is a tuple, convert it to a list. If self.hbs is an int, use it as the half box size for the x and y directions. If self.hbs is a list or tuple of two elements, use the first element as the x half box size and the second element as the y half box size.
+
+        set self.hbs
+        """
         if isinstance(self.hbs, tuple):
             self.hbs = list(self.hbs)
 
@@ -90,7 +96,13 @@ class SpotReconstructor:
             self.hbs = [self.hbs] * 2
 
     def init_wire(self):
+        """
+        Initialize the wire attribute of the class. 
 
+        If self.wire is None, use the wire with the highest available information in scan data for a given Y pixel position (XYcam[1]). If self.wire is a list of CircularWire, use the first one. If self.wire is an int, use it as the index of the wire in self.scan.wire. If self.wire is a CircularWire, use it as is. Otherwise, raise an error.
+
+        set self.wire
+        """
         if self.wire is None or is_list_of(self.wire, mywire.CircularWire):
             self.init_wire_assign()
 
@@ -125,7 +137,7 @@ class SpotReconstructor:
         return assigned_wireindex
 
     def init_grid(self):
-        """init grid of points lying on detector plane
+        """init grid of pixel points lying on detector plane
         
         set self.grid_Pcam"""
 
@@ -161,9 +173,26 @@ class SpotReconstructor:
             for iy, y in enumerate(self.grid_y):
                 self.grid_Pcam[ix, iy] = geom.transf_pix_to_coo(par, x, y)
 
-    def init_depth(self):
+    def init_depth(self, verbose=False):
+        """
+        Initialize the wire position and corresponding depth position attributes of the class.
 
-        # wire pos
+        Calculates the motor positions of the wire(s) that cast a shadow on the entire ROI and their corresponding depth positions.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, prints out the calculated motor positions and depth positions.
+
+        Sets the following attributes:
+        - pw_all : 1D array of motor positions of the wire(s)
+        - pw_idx : 1D array of indices of pw_all, where the wire(s) cast a shadow on the entire ROI
+        - pw : 1D array of motor positions of the wire(s) that cast a shadow on the entire ROI
+        - yw : 1D array of depth positions of the wire(s) corresponding to pw
+        - ygrid : 1D array of interpolated middle values of yw
+        """
+        # motor pos of wire
+
         self.pw_all = self.scan.wire_position
 
         pfall, pball = [], []
@@ -185,20 +214,24 @@ class SpotReconstructor:
         pf = np.min(pfall)
         pb = np.max(pball)
 
-        # first index in pwire position wherex of wire that shadows the pixel
+        # indices of elements in motor position list corresponding to a shadowing of all ROI pixels
         self.pw_idx = np.logical_and(self.pw_all > pf, self.pw_all < pb).nonzero()[0]
 
-        # position wire
+        # list of motor position wire corresponding to a shadowing of all ROI pixels 
         self.pw = self.pw_all[self.pw_idx]
-        #print('self.pw', self.pw)
+        if verbose:
+            print('In init_depth() ----------')
+            print('self.pw', self.pw)
 
         # corresponding depth position (considering central pixel)
         self.yw, _ = self.wire.mask_fronts(self.pw, self.Pcam)
-        #print('self.yw', self.yw)
+        if verbose: print('self.yw', self.yw)
         # crude interpolated middle values of self.yw
         self.ygrid = 0.5 * (self.yw[:-1] + self.yw[1:])
-        print('self.ygrid', self.ygrid)
-        print('len(self.ygrid)', len(self.ygrid))
+        if verbose:
+            print('self.ygrid', self.ygrid)
+            print('len(self.ygrid)', len(self.ygrid))
+            print('End of init_depth() ----------')
 
 
     def init_data(self):
@@ -218,11 +251,20 @@ class SpotReconstructor:
             self.init_data_general()
 
     def init_data_general(self):
+        # set self.frames_cor  
 
+        """
+        set self.frames_cor from self.frames_ini (corrected by monitor value)
+        and bkg subtracted with a linear fit in the x direction
+        for each frame and each row of pixels
+        finaly transpose the array to have the shape:
+        (nz, ny, nx)
+        """
         xlim, ylim = self.grid_xlim, self.grid_ylim
 
         xmin, xmax = xlim[0] - 1, xlim[1] + 1
 
+        # read  roi pixel intensity (corrected by monitor value)
         self.frames_ini = np.array(self.scan.get_images_rect_corr([xmin, xmax], ylim,
                                                                   xy=False), dtype=float)[self.pw_idx]
 
@@ -231,11 +273,16 @@ class SpotReconstructor:
         xbkg = [0, 1, self.grid_nx, self.grid_nx + 1]
         xall = np.arange(0, self.grid_nx + 2)
 
+        # Iterate over each image in the initial frames array 
         for i, img in enumerate(self.frames_ini):
 
+            # Iterate over each profile in the image (row of pixels, i.e. along X pixel direction)
             for j, prof in enumerate(img):
+                # Perform a linear fit on the background pixels
                 p = np.polyfit(xbkg, prof[xbkg], 1)
 
+                # Evaluate the polynomial to get the background profile
+                # self.frames_bkg is a 2D array where each row is varying linearly (along X pixel direction)  and ech column is constant (along Y pixel direction)
                 self.frames_bkg[i][j] = np.polyval(p, xall)
 
         self.frames_cor = np.maximum(np.subtract(self.frames_ini, self.frames_bkg * 0.999),
@@ -247,6 +294,7 @@ class SpotReconstructor:
         print('after transpose shape self.frames_cor', self.frames_cor.shape)
 
     def init_data_leftb(self):
+        """not used,   background correction from the right border of roi rectangle"""
 
         xlim, ylim = self.grid_xlim, self.grid_ylim
         xlim[1] = xlim[1] + 4
@@ -272,7 +320,7 @@ class SpotReconstructor:
         self.frames_cor = np.transpose(self.frames_cor[:, :, :-4], axes=(1, 2, 0))
 
     def init_data_rightb(self):
-
+        """not used,   background correction from the left border of roi rectangle"""
         xlim, ylim = self.grid_xlim, self.grid_ylim
         xlim[0] = xlim[0] - 4
 
@@ -304,7 +352,6 @@ class SpotReconstructor:
         mask = self.scan.img_exist[self.pw_idx]
 
         # prep result
-
         self.rec = np.zeros((self.grid_nx, self.grid_ny, len(self.ygrid)), dtype=float)
 
         if regularize:
@@ -418,7 +465,6 @@ class SpotReconstructor:
     # Methods to print and plot
     def print_msg(self, msg, fmt=None, mode='I'):
         if self.verbose:
-
             if type == 'F':
                 pref = ''
             elif type == 'E':

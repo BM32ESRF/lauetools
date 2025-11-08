@@ -37,7 +37,27 @@ def calc_fluorescence(element, energy, intensity, vmass=-1, abs_coeff=None):
 
 
 def get_fluorescence_data(element):
-    
+    """
+    Return fluorescence data for a given element.
+
+    Parameters
+    ----------
+    element : str
+        Element symbol.
+
+    Returns
+    -------
+    fluo_yield : float
+        Fluorescence yield.
+    energy of the absorption K-edge (keV) : float
+        Energy K- edge of the line.
+    energy of the fluorescence line (keV) : float
+        Energy of the fluorescence line.
+
+    Notes
+    -----
+    Data are taken from X-ray Data Booklet, LBNL, 2009.
+    """
     return dm.dict_fluo_yield[element], dm.dict_fluo_K[element][1], dm.dict_fluo_K[element][2]  
 
 

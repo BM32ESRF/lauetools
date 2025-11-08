@@ -175,38 +175,88 @@ def distfrom2thetachi(pt2D_1, pt2D_2):
 
     return np.arccos(cosang) / DEG
 
-
-def calculdist_from_thetachi(listpoints1:'arrayORListNx2', listpoints2:arrayORListNx2)->'numpyarrayNxM':
+def mutual_angles(A_deg, B_deg):
     """
-    From two lists of pairs (THETA, CHI) return:
+    Compute all mutual angles (in degrees) between directions defined by (theta, phi) pairs.
+    Angles in A_deg and B_deg are given in degrees.
+    
+    Parameters
+    ----------
+    A_deg : array-like of shape (m, 2)
+        Each row: (theta, phi) in degrees.
+    B_deg : array-like of shape (n, 2)
+        Each row: (theta, phi) in degrees.
+
+    Returns
+    -------
+    angles_deg : ndarray of shape (n, m)
+        Mutual angles in degrees between all pairs.
+    """
+    # Convert to radians
+    A = np.radians(A_deg)
+    B = np.radians(B_deg)
+    
+    # Extract columns
+    theta_A, phi_A = A[:, 0][:, None], A[:, 1][:, None]  # (m, 1)
+    theta_B, phi_B = B[:, 0][None, :], B[:, 1][None, :]  # (1, n)
+
+    # Convert to Cartesian components (vectorized)
+    # Each element expands via broadcasting
+    xA, yA, zA = np.sin(theta_A) * np.cos(phi_A), np.sin(theta_A) * np.sin(phi_A), np.cos(theta_A)
+    xB, yB, zB = np.sin(theta_B) * np.cos(phi_B), np.sin(theta_B) * np.sin(phi_B), np.cos(theta_B)
+
+    # Compute cos(angle) using dot product formula (vectorized)
+    cos_angle = xA * xB + yA * yB + zA * zB
+
+    # Clamp to avoid numerical issues
+    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+
+    # Convert to angles in degrees
+    angles_deg = np.degrees(np.arccos(cos_angle))
+    return np.transpose(angles_deg)
+
+    
+def calculdist_from_thetachi(points1:'arrayORListNx2', points2:'arrayORListNx2', fastmode:bool=False)->'numpyarrayNxM':
+    """
+    compute angular distance between two lists of pairs (THETA, CHI) in degrees
+
+    :param points1: array or list of 2 elements
+    :param points2: array or list of 2 elements
+    :param fastmode: True, compute fast (at small angles  angular distance is close to euclidoan distance)
 
     return:
     tab_angulardist:   matrix of all mutual angular distance
                 whose shape is (len(list2),len(list1))
 
     WARNING: theta angle is used, i.e. NOT 2THETA!
-    TIP: used with listpoints1 = expspots  and listpoints2 = theospots
+    TIP: used with points1 = expspots  and points2 = theospots
     """
-    data1 = np.array(listpoints1)
-    data2 = np.array(listpoints2)
+    data1 = np.array(points1)
+    data2 = np.array(points2)
     # print "data1",data1
     # print "data2",data2
-    longdata1 = data1[:, 0] * DEG  # theta
-    latdata1 = data1[:, 1] * DEG  # chi
-
-    longdata2 = data2[:, 0] * DEG  # theta
-    latdata2 = data2[:, 1] * DEG  # chi
-
-    deltalat = latdata1 - np.reshape(latdata2, (len(latdata2), 1))
-    longdata2new = np.reshape(longdata2, (len(longdata2), 1))
-    prodcos = np.cos(longdata1) * np.cos(longdata2new)
-    prodsin = np.sin(longdata1) * np.sin(longdata2new)
-
-    arccos_arg = np.around(prodsin + prodcos * np.cos(deltalat), decimals=9)
-
-    tab_angulardist = (1.0 / DEG) * np.arccos(arccos_arg)
-
+    # accurate angle between two directions
+    if not fastmode:
+        longdata1 = data1[:, 0] * DEG  # theta
+        latdata1 = data1[:, 1] * DEG  # chi
+    
+        longdata2 = data2[:, 0] * DEG  # theta
+        latdata2 = data2[:, 1] * DEG  # chi
+    
+        deltalat = latdata1 - np.reshape(latdata2, (len(latdata2), 1))
+        longdata2new = np.reshape(longdata2, (len(longdata2), 1))
+        prodcos = np.cos(longdata1) * np.cos(longdata2new)
+        prodsin = np.sin(longdata1) * np.sin(longdata2new)
+    
+        arccos_arg = np.around(prodsin + prodcos * np.cos(deltalat), decimals=9)
+    
+        tab_angulardist = (1.0 / DEG) * np.arccos(arccos_arg)
+    else: # fastmode   euclidian distance, for small angular distance this approximation is good. For larger, this is non sense but still large so able to exclude
+        # dimension = (len(list2),len(list1)) ## (len(theo spots),len(exp spots))
+        tab_angulardist = np.transpose(pairwise_distances_numpy(data1,data2))
+    
     return tab_angulardist
+
 
 
 if NUMBAINSTALLED:
@@ -223,6 +273,13 @@ if NUMBAINSTALLED:
         cang = math.sin(Lo1)*math.sin(Lo2) + math.cos(Lo1)*math.cos(Lo2)*math.cos(delta)
 
         return math.acos(cang)/DEG
+
+def pairwise_distances_numpy(A, B):
+    A = np.asarray(A)
+    B = np.asarray(B)
+    diff = A[:, None, :] - B[None, :, :]  # shape (m,n,2)
+    return np.linalg.norm(diff, axis=2)
+
 
 def pairwise_mutualangles(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
     """
@@ -1083,6 +1140,54 @@ def getCommonPts(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance=0.5,
         ind_XY1, ind_XY2 = resmin[0], resmin[1]
 
     return ind_XY1, ind_XY2, WITHINTOLERANCE
+
+def getCommonPts3D(XYZ1:'arrayORListNx3', XYZ2:'arrayORListNx3', dist_tolerance=0.5, samelist:bool=False):
+    """
+    return indices in XYZ1 and in XYZ2 of common pts (3D) (or reciprocal nodes HKL) and
+    a flag is closest distances are below dist_tolerance
+
+    :param XYZ1: list of 3D elements
+    :param XYZ2: list of 3D elements
+    :param dist_tolerance: largest distance (in unit of XYZ1, XYZ2) to consider two elements close enough
+    :param samelist: boolean, default is False (when XYZ1 and XYZ2 are different). True if XY1=XY2 to
+    find close spots in a single list of points
+
+    :return:
+    [0] ind_XYZ1: index of points in XYZ1 which are seen in XYZ2
+    [1]  ind_XYZ2: index of points in XYZ2 which are seen in XYZ1
+    [2] boolean: True if at least 1 point belong to XYZ1 and XYZ2. False if no common points are found (within the tolerance)
+    """
+    WITHINTOLERANCE = True
+    x1, y1, z1 = np.array(XYZ1).T
+    x2, y2, z2 = np.array(XYZ2).T
+
+    diffx = x1[:, np.newaxis] - x2
+    diffy = y1[:, np.newaxis] - y2
+    diffz = z1[:, np.newaxis] - z2
+
+    _dist = np.sqrt(diffx**2 + diffy**2 + diffz**2)
+
+    if samelist:
+        # Add big distance in diagonal to avoid self-matching
+        np.fill_diagonal(_dist, np.amax(_dist) + 2 * dist_tolerance)
+
+    
+    # print('_dist.shape', _dist.shape)
+    _, n2 = _dist.shape
+
+    resmin = np.where(_dist <= dist_tolerance)
+
+    # closest distance beyond tolerance distance
+    #print('resmin in getCommonPts', resmin)
+    if len(resmin[0]) == 0:
+        posmin = np.argmin(_dist)
+        ind_XYZ1, ind_XYZ2 = posmin // n2, posmin % n2
+        # print('closest distance:', dist[ind_XY1, ind_XY2])
+        WITHINTOLERANCE = False
+    else:
+        ind_XYZ1, ind_XYZ2 = resmin[0], resmin[1]
+
+    return ind_XYZ1, ind_XYZ2, WITHINTOLERANCE
 
 def getPairsbetweenTwoSets(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
     """
@@ -2169,7 +2274,7 @@ def matRot(axis:Iterable[float], angle:'degrees')->'numpyarray3x3':
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
 
-def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False, verbose:int=0)-> 'numpyarray3x3':
+def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.,targetchi:'degrees'=0., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False, verbose:int=0)-> 'numpyarray3x3':
     """
     proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta and chi =0
 
@@ -2185,7 +2290,8 @@ def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.
         raise ValueError(f'{HKL} must have 3 elements!')
     hkl_central = np.array(HKL)
 
-    qdir = np.array([-np.sin(target2theta / 2. * DEG), 0, np.cos(target2theta / 2. * DEG)])
+    #qdir = np.array([-np.sin(target2theta / 2. * DEG), 0, np.cos(target2theta / 2. * DEG)])
+    qdir = np.array([-np.sin(target2theta / 2. * DEG), np.sin(targetchi * DEG)*np.cos(target2theta / 2. * DEG), np.cos(targetchi * DEG)*np.cos(target2theta / 2. * DEG)])
     # print('qdir',qdir)
     if B0matrix is None: #cubic case
         n_hklcentral = np.sqrt(np.sum(hkl_central**2))
@@ -2206,12 +2312,17 @@ def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.
     if verbose>0:
         print('matrot1',matrot1)
     matrot2 = matRot([0, 1, 0], 90. - target2theta / 2.)  # positive angle between qdir and -x
+    
+    matrotchi = matRot([1, 0, 0], -targetchi)
+
+    matrotqdirtqrget = np.dot(matrotchi, np.dot(matrot2, matrot1))
+    
     matrot3 = np.eye(3)
     # random rotation around qdir
     if randomrotation:
         matrot3 = matRot(qdir, np.random.random() * 360 - 180)
 
-    return np.dot(matrot3, np.dot(matrot2, matrot1))
+    return np.dot(matrot3, matrotqdirtqrget)
 
 
 def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->degrees:
@@ -3065,7 +3176,9 @@ def lognorm(x, mu, s):
 
 def CCDintensitymodel(x):
     """
-    function to model response of CCD
+    function to model response efficiencyof CCD
+
+    x: float, energy
     """
     return np.piecewise(x, [x < 7.0, (x >= 7.0) & (x <= 10.0), x > 10.0],
         [lambda x: 0.2, lambda x: 0.8 / 3.0 * x - 5.0 / 3, lambda x: 10.0 / x])
@@ -3077,7 +3190,14 @@ def CCDintensitymodel2(x):
     return np.piecewise(x, [x < 6.0, (x >= 6.0) & (x <= 10.0), x > 10.0],
         [lambda x: 0.05, lambda x: 0.95 / 4.0 * x - 5.5 / 4, lambda x: 10.0 / np.power(x, 0.95)])
 
+def CCDintensitymodel3(x, Emax=12, powerhighE=2):
+    """
+    function to model response efficiency of CCD and attenuation by air at low E
 
+    x: float, energy
+    """
+    return np.piecewise(x, [x < 7.0, (x >= 7.0) & (x <= Emax), x > Emax],
+        [lambda x: 0.2, lambda x: (1-0.2) / (Emax-7.0) * (x - 7) + 0.2, lambda x: Emax**powerhighE / x**powerhighE])
 # -------------------------  IN DEVELOPMENT  ----------------
 def removeduplicate2(listindice, tabangledist, ang_tol=1.0):
     """ retourne la liste d'indice de proximite sans dupliques
@@ -3224,7 +3344,10 @@ def selectfirstelements(arraynd, n):
     return arraynd[:,:n]
 
 def buildgridroi(spacing=50, maxnbpixels=2015):
-    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array"""
+    """build a list of X,Y position (roi centers or peaklist) located in a regular squared array
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     nx= len(xx)
     tx = np.tile(xx, (nx,1))
@@ -3237,7 +3360,10 @@ def buildgridroi(spacing=50, maxnbpixels=2015):
 
 def buildgridroi_bottom(spacing=50, maxnbpixels=2015):
     """build a list of X,Y position (roi centers or peaklist)
-    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)"""
+    located in a regular rectangular array in the lower part of the detector (y > maxnbpixels//2)
+    
+    maxnbpixels: size of the detector (largest X or Y value)
+    """
     
     xx=np.arange(0,maxnbpixels-spacing//2,spacing)+spacing//2
     yy=np.arange(maxnbpixels//2,maxnbpixels-spacing//2,spacing)+spacing//2

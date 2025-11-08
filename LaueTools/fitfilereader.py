@@ -149,7 +149,7 @@ class parsed_fitfile:
     
     def __init__(self, filename, verbose=False):
         try:
-            with open(filename, "rU") as f:
+            with open(filename, "r") as f:
                 self.filename = filename
 
                 # ----- read the header -----
@@ -513,7 +513,7 @@ class parsed_fitfileseries:
         For dev_sample   shape = (nb_files, 3, 3)
         For MeanDevPixel shape = (nb_files, 1,  )"""
         
-        my_list = np.full(shape, np.NaN)
+        my_list = np.full(shape, np.nan)
         
         nb_files = shape[0]
         for i in range(0, nb_files): 
@@ -527,7 +527,7 @@ class parsed_fitfileseries:
     # ----- class functions to access the spot parameters for  given miller indices -----
     
     def Xpos(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:
@@ -539,7 +539,7 @@ class parsed_fitfileseries:
         return my_list
     
     def Ypos(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:
@@ -551,7 +551,7 @@ class parsed_fitfileseries:
         return my_list
     
     def twotheta(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:
@@ -563,7 +563,7 @@ class parsed_fitfileseries:
         return my_list
     
     def chi(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:
@@ -575,7 +575,7 @@ class parsed_fitfileseries:
         return my_list
     
     def PixDev(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:
@@ -587,7 +587,7 @@ class parsed_fitfileseries:
         return my_list
     
     def intensity(self, miller_index: str) -> np.ndarray:
-        my_list = np.full(self.nb_files, np.NaN)
+        my_list = np.full(self.nb_files, np.nan)
         
         for i in range(0, self.nb_files):
             try:

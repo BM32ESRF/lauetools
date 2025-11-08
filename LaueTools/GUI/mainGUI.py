@@ -47,6 +47,7 @@ matplotlib.use("WXAgg")
 
 import numpy as np
 import wx
+import yaml
 
 print('----------------------------------------------')
 print('-----              Welcome            --------')
@@ -77,6 +78,7 @@ from LaueTools.dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict
                                 dict_Transforms, dict_Vect, dict_Rot,
                                 dict_Eul, list_CCD_file_extensions,
                                 readDict, getwildcardstring, LAUETOOLSFOLDER)
+import LaueTools.dict_LaueTools as DictLT
 from LaueTools.GUI.PeakSearchGUI import MainPeakSearchFrame
 from LaueTools.GUI.DetectorParameters import autoDetectDetectorType
 from LaueTools.GUI.DetectorCalibration import MainCalibrationFrame
@@ -271,7 +273,7 @@ class LaueToolsGUImainframe(wx.Frame):
             (None, None, None, None),
             (wx.ID_OPEN, "&Open Image && PeakSearch", "View Image & Peak Search", self.OnOpenImage),
             (None, None, None, None),
-            (wx.ID_ANY, "&Detector Calibration", "Detector Calibration from a known reference crystal", self.OnDetectorCalibration),
+            (wx.ID_ANY, "&Pattern simulation && Detector Calibration", "Single Crystal Laue pattern simulation for Detector Calibration", self.OnDetectorCalibration),
             (5151, "&Set or Reset Detector Parameters",
                 "Open detector parameters board. Set or Reset calibration parameters dialog, compute Laue spots scattering angles", self.recomputeScatteringAngles),
             (None, None, None, None),
@@ -480,39 +482,49 @@ class LaueToolsGUImainframe(wx.Frame):
         self.last_epsil_fromindexation = {}
 
     def OnLoadMaterials(self, _):
-        """Load an ASCII file with Materials properties
-        """
-        wcd = "All files(*)|*|dict_Materials files(*.dat)|*.mat"
+        """Load a materials file (.dat, .mat legacy or .yaml modern format)."""
+        wcd = "All files (*)|*|dict_Materials files (*.dat)|*.dat|YAML materials (*.yaml;*.yml)|*.yaml;*.yml|Material files (*.mat)|*.mat"
         _dir = os.getcwd()
-        open_dlg = wx.FileDialog(self,
-                                    message="Choose a file",
-                                    defaultDir=_dir,
-                                    defaultFile="",
-                                    wildcard=wcd,
-                                    style=wx.OPEN)
 
+        open_dlg = wx.FileDialog(self, message="Choose a materials file",
+                                    defaultDir=_dir,
+                                    wildcard=wcd,
+                                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,)
+        
         if open_dlg.ShowModal() == wx.ID_OK:
             path = open_dlg.GetPath()
+            ext = os.path.splitext(path)[1].lower()
 
             try:
-                self.dict_Materials = readDict(path)
+                if ext in (".yaml", ".yml"):
+                    libmaterials = DictLT.Materials()
+                    libmaterials.read_yaml(path)
+                    # # --- Load YAML materials library
+                    # with open(path, "r") as f:
+                    #     data = yaml.safe_load(f) or {}
+                    # if not isinstance(data, dict):
+                    #     raise ValueError("Invalid YAML structure: expected a dictionary at top level")
+                    self.dict_Materials = libmaterials
+                    
+                    
+                    print('located in ', self.dict_Materials.yaml_file_path)
 
-                # dict_Materials = self.dict_Materials
+                else:
+                    # --- Legacy format
+                    print('reading old format materials file')
+                    self.dict_Materials = readDict(path)
 
-            except IOError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except UnicodeDecodeError as error:
-                dlg = wx.MessageDialog(self, "Error opening file\n" + str(error))
-                dlg.ShowModal()
-
-            except ValueError as error:
-                dlg = wx.MessageDialog(self, "Error opening file: Something went wrong "
-                                                "when parsing materials line\n" + str(error))
-                dlg.ShowModal()
+                wx.MessageBox(f"Materials successfully loaded from:\n{path}",
+                            "Load Materials", wx.OK | wx.ICON_INFORMATION)
+                print("Now self.dict_Materials", self.dict_Materials)
+                print('self.dict_Materials.yaml_file_path',self.dict_Materials.yaml_file_path)
+                
+            except (IOError, UnicodeDecodeError, yaml.YAMLError, ValueError) as error:
+                wx.MessageBox(f"Error opening file:\n{error}",
+                            "Load Error", wx.OK | wx.ICON_ERROR)
 
         open_dlg.Destroy()
+
 
     def recomputeScatteringAngles(self, _):
         """ update scattering angles 2theta chi from user entered value from Launch_DetectorParamBoard"""
@@ -821,7 +833,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = dict_Rot
-        StorageDict["dict_Materials"] = dict_Materials
+        StorageDict["dict_Materials"] = self.dict_Materials
 
         titleboard = ("Spots interdistance Screening Indexation Board  file: %s" % self.DataPlot_filename)
 
@@ -927,7 +939,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = dict_Rot
-        StorageDict["dict_Materials"] = dict_Materials
+        StorageDict["dict_Materials"] = self.dict_Materials
 
         # Open manual indextion Board
         self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
@@ -1024,7 +1036,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = dict_Rot
-        StorageDict["dict_Materials"] = dict_Materials
+        StorageDict["dict_Materials"] = self.dict_Materials
 
         # Open manual indextion Board
         self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
@@ -1128,7 +1140,7 @@ class LaueToolsGUImainframe(wx.Frame):
         StorageDict["mat_store_ind"] = 0
         StorageDict["Matrix_Store"] = []
         StorageDict["dict_Rot"] = dict_Rot
-        StorageDict["dict_Materials"] = dict_Materials
+        StorageDict["dict_Materials"] = self.dict_Materials
         # Open manual indextion Board
         self.picky = ManualIndexFrame(self, -1, self.DataPlot_filename, data=self.data,
                                         kf_direction=self.kf_direction,
@@ -1218,9 +1230,9 @@ class LaueToolsGUImainframe(wx.Frame):
             paramraw = str(dlg.GetValue())
 
             if PYTHONVERSION_3p12_MIN:
-                listval = re.split("[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
+                listval = re.split(r"[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
             else:
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             listelem = []
             for elem in listval:
                 try:
@@ -1433,7 +1445,7 @@ class LaueToolsGUImainframe(wx.Frame):
             #            outputfile.write(str(self.UBB0mat) + '\n')
             outputfile.write(str(self.dict_grain_matrix[grain_index]) + "\n")
             outputfile.write("#B0 matrix (starting unit cell) in q= UB (B0) G*\n")
-            latticeparams = dict_Materials[key_material][1]
+            latticeparams = self.dict_Materials[key_material][1]
             B0matrix = calc_B_RR(latticeparams)
             outputfile.write(str(B0matrix) + "\n")
             outputfile.write("#deviatoric strain (10-3 unit)\n")
@@ -2118,7 +2130,7 @@ class CliquesFindingBoard(wx.Frame):
         key_material = 'Mg'
         nLUT = 4
 
-        latticeparameters = dict_Materials[key_material][1]
+        latticeparameters = self.dict_Materials[key_material][1]
         print('computing angles in material: %s.\n-- Wait a bit --'%key_material)
 
         if self.parent.kf_direction =='Z>0':
@@ -2271,14 +2283,12 @@ class RedirectText:
 def start():
     """ launcher of LaueToolsGUI (as module) """
     LaueToolsGUIApp = wx.App()
-    LaueToolsframe = LaueToolsGUImainframe(None, -1, "Image Viewer and PeakSearch Board",
-                                            projectfolder=LaueToolsProjectFolder)
+    LaueToolsframe = LaueToolsGUImainframe(None, -1, "LaueToolsGUI    Laue Pattern Analysis & Simulation Program", projectfolder=LaueToolsProjectFolder)
     LaueToolsframe.Show()
 
     MySplash(LaueToolsframe, duration=500)
 
     LaueToolsGUIApp.MainLoop()
-
 
 if __name__ == "__main__":
     start()

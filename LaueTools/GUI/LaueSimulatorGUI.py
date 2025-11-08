@@ -1134,6 +1134,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
     def onLoadMaterials(self, _):
         self.parent.OnLoadMaterials(1)
+        self.dict_Materials = self.parent.dict_Materials
         self.updatecombosmenus(1)
 
     def updatecombosmenus(self, _):
@@ -1168,8 +1169,9 @@ class parametric_Grain_Dialog3(wx.Frame):
         List_Vect_name.sort()
 
         # List_Elem_name = list(DictLT.dict_Materials.keys())
-        List_Elem_name = list(self.parent.dict_Materials.keys())
-        List_Elem_name.remove("inputB")
+        List_Elem_name = list(self.dict_Materials.keys())
+        if "inputB" in List_Elem_name:
+            List_Elem_name.remove("inputB")
         List_Elem_name.sort()
 
         List_Transform_name = list(DictLT.dict_Transforms.keys())
@@ -1191,7 +1193,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.CurrentGrain[0] = key_material
 
         # set extinction code corresponding to key_material
-        extinction_code = DictLT.dict_Materials[key_material][-1]
+        extinction_code = self.dict_Materials[key_material][2]
         #        print "extinction_code", extinction_code
         self.comboExtinc.SetValue(DictLT.dict_Extinc_inv[extinction_code])
         event.Skip()
@@ -1651,7 +1653,7 @@ class parametric_Grain_Dialog3(wx.Frame):
                                                 Transform_params=self.dict_transform,
                                                 SelectGrains=self.SelectGrains,
                                                 pixelsize=self.pixelsize,
-                                                dictmaterials=self.parent.dict_Materials)
+                                                dictmaterials=self.dict_Materials)
 
         # (list_twicetheta, list_chi,
         # list_energy, list_Miller,

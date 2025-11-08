@@ -336,7 +336,7 @@ class B0MatrixEditor(wx.Frame):
                 if self.rbeditor.GetValue():
                     paramraw = self.texts.GetValue()
 
-                    listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                    listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
                     #             print "listval", listval
                     listelem = []
                     for elem in listval:
@@ -443,7 +443,7 @@ class B0MatrixEditor(wx.Frame):
             else:  # read ASCII editor
                 paramraw = str(self.texts.GetValue())
 
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
                 #             print "listval", listval
                 listelem = []
                 for elem in listval:

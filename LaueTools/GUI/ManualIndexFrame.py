@@ -859,9 +859,12 @@ class ManualIndexFrame(wx.Frame):
             elif self.CCDLabel in ("VHR_PSI",):
                 self.ylim = (3000, 0)
                 self.xlim = (0, 4000)
-            elif self.CCDLabel.startswith("sCMOS"):
+            elif self.CCDLabel in ("sCMOS", "sCMOS_4M"):
                 self.ylim = (2050, 0)
                 self.xlim = (0, 2050)
+            elif self.CCDLabel == 'SCMOS_9M':
+                self.ylim = (3100, 0)
+                self.xlim = (0, 3100)
             elif self.CCDLabel.startswith("psl"):
                 self.ylim = (2000, 0)
                 self.xlim = (0, 1500)

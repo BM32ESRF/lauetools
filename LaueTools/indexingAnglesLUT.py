@@ -1923,34 +1923,41 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
 def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                       energy_max:int,
                       Tab_angl_dist, Theta_exp, Chi_exp, n:int=3,
-                                            ResolutionAngstrom=False,
-                                            B=np.eye(3),  # for cubic
-                                            cubicSymmetry:bool=False,
-                                            hexagonalSymmetry=False,
-                                            LUT=None,
-                                            LUT_tol_angle:deg=0.5,
-                                            MR_tol_angle=0.2,
-                                            Minimum_Nb_Matches=15,
-                                            key_material="",
-                                            plot=0,
-                                            nbbestplot=1,
-                                            nbspots_plot="all",  # nb exp spots to display if plot = 1
-                                            addMatrix=None,
-                                            verbose=0,
-                                            detectorparameters=None,
-                                            set_central_spots_hkl=None,
-                                            verbosedetails=0,
-                                            gauge=None,
-                                            dictmaterials=DictLT.dict_Materials,
-                                            MaxRadiusHKL=False,
-                                            LUT_with_rules=True,
-                                            excludespotspairs=None,
-                                            LUTfraction=1/2.,
-                                            useparallelcomputing=True):
+                            ResolutionAngstrom=False,
+                            B=np.eye(3),  # for cubic
+                            cubicSymmetry:bool=False,
+                            hexagonalSymmetry=False,
+                            LUT=None,
+                            LUT_tol_angle:deg=0.5,
+                            MR_tol_angle=0.2,
+                            Minimum_Nb_Matches=15,
+                            key_material="",
+                            plot=0,
+                            nbbestplot=1,
+                            nbspots_plot="all",  # nb exp spots to display if plot = 1
+                            addMatrix=None,
+                            verbose=0,
+                            detectorparameters=None,
+                            set_central_spots_hkl=None,
+                            verbosedetails=0,
+                            gauge=None,
+                            dictmaterials=DictLT.dict_Materials,
+                            MaxRadiusHKL=False,
+                            LUT_with_rules=True,
+                            excludespotspairs=None,
+                            LUTfraction=1/2.,
+                            useparallelcomputing=True,
+                            crudeMReval:bool=matchingrate.DEFAULT_FASTMODE_KF_DIRECTION_Zpositive,
+                            maxnbspots_MReval:int=10000,
+                            stop_Nb_Matches:int=1000):
     """
-    Return all matrices that have a matching rate Minimum_Nb_Matches.
+    Return all potential matrices
+    
     Distances between two spots are compared to a reference
     angles look up table (LUT).
+
+    Note:  after calculation of all matching rates, matrices are filtered to have a least a number of matched experimental spots larger than Minimum_Nb_Matches.
+
 
     .. note::
         - Used in AutoIndexation module (in LaueToolsGUI.py Classical Angular indexation)
@@ -1985,6 +1992,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
     :param useparallelcomputing: use parallel computing multiprocessing for matching rate evaluation with matchingrate.Angular_residues_np
 
+    :param stop_Nb_Matches: minimal value of the nb of matching pairs to stop the loop
+
     Output:
     [0]  candidate Matrices
     [1]  corresponding score (matching rate, nb of theo. Spots, mean angular deviation over exp and theo. links)
@@ -1994,6 +2003,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
     if verbose>0 or verbosedetails>0: #details:
         print('\n  -------   mode verbosedetails  in getOrientMatrices()---------------')
         print("print details\n")
+        print('crudeMReval',crudeMReval)
+
 
     if excludespotspairs is None:
         excludespotspairs = [[0, 0]]
@@ -2088,6 +2099,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
     # --- loop over central spots -------------------------------------------------------
     if verbose>0: print("*---****-----getOrientMatrices() ------------------------------------*")
+
+    reachedhighmatching = False  # stopping flag
     for k_centspot_index, spot_index_central in enumerate(list_spot_central_indices):
         if verbose>1:
             print("Calculating all possible matrices from exp spot #%d and the %d other(s)"
@@ -2136,7 +2149,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                                                         LUT_with_rules=LUT_with_rules,
                                                         excludespotspairs=excludespotspairs)
 
-        # if hkl for central spots IS NOT known  (ie hkl is None...)
+        # general use: if hkl for central spots IS NOT known  (ie hkl is None...)
         else:
             # TODO: retrieve cubic LUT if already calculated
             if cubicSymmetry:#  or hexagonalSymmetry:
@@ -2234,8 +2247,9 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
         nb_ub_matrices = len(list_orient_matrix)
 
-        if verbose>0: print("nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
+        if verbose>0: print(f"For spot {spot_index_central} nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
 
+        # multiprocessing way to compute matching figures
         if nb_ub_matrices>1250 and useparallelcomputing:  # empirical value to use multiple cpus
             
             args = zip(list_orient_matrix,
@@ -2250,9 +2264,11 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     itertools.repeat(False),
                     itertools.repeat(0.999),
                     itertools.repeat(dictmaterials),
+                    itertools.repeat(crudeMReval), # fastmode
+                    itertools.repeat(maxnbspots_MReval),
                     )
             with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
-                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=len(list_orient_matrix)))
+                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices))
 
             for mat_ind, AngRes in enumerate(results):
                 if AngRes is None:
@@ -2265,18 +2281,22 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     solutions_hklcouple.append(planes[mat_ind])
                     solutions_matchingscores.append([nbclose, nballres, std_closematch])
                     solutions_matchingrate.append(100.0 * nbclose / nballres)
-
+                if nbclose>=stop_Nb_Matches:
+                    if verbose>0: print('nbclose>=stop_Nb_Matches is True. Stopping the loop')
+                    reachedhighmatching=True
+                    break
+        # loop way to compute matching figures                
         else:
-            if verbosedetails>0:
+            if verbosedetails>0 or verbose>0:
                 
                 # print "key_material",key_material
-                # print "\n"
-                print("#mat nb<%.2f       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices"
-                    % (MR_tol_angle))
+                print(f'For spot {spot_index_central}')
+                print(f"#mat nb<{MR_tol_angle:.2f}       nb. theo. spots     mean       max    nb**2/nb_theo*mean     plane indices")
+
 
             # --- loop over orient matrix given from LUT recognition for one central spot
             currentspotindex2 = -1
-            for mat_ind in list(range(len(list_orient_matrix))):
+            for mat_ind in list(range(nb_ub_matrices)):
                 # compute matching (indexation) rate
                 AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                             twiceTheta_exp,
@@ -2295,7 +2315,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 # store matching rate  if it is high
                 if nbclose >= Minimum_Nb_Matches:
                     std_closematch = np.std(allres[allres < MR_tol_angle])
-                    if verbosedetails>1:
+                    if verbosedetails>1 or verbose>0:
                         print("%d        %d       %d       %.3f      %.3f       %.3f        %.3f"
                             % (mat_ind, nbclose, nballres, std_closematch, mean_residue,
                                         max_residue, nbclose ** 2 * 1.0 / nballres / std_closematch),
@@ -2315,9 +2335,11 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     solutions_matchingscores.append([nbclose, nballres, std_closematch])
                     solutions_matchingrate.append(100.0 * nbclose / nballres)
                     # print list_orient_matrix[mat_ind]
-                else:
-                    # print("Poor matching rate for exp. spots",pairspots[mat_ind])
-                    pass
+                if nbclose>=stop_Nb_Matches:
+                    if verbose>0: print('nbclose>=stop_Nb_Matches is True. Stopping the loop')
+                    reachedhighmatching=True
+                    break
+               
 
         BestScores_per_centralspot[k_centspot_index] = np.array(solutions_matchingscores)
 
@@ -2364,6 +2386,9 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 print("- increase angular tolerances (distance recognition and/or matching)")
                 print("- increase nbofpeaks (ISSS: Intense spot set size)")
                 print("- increase Energy max")
+
+        if reachedhighmatching:
+            break
 
     # Consider immediately (if any) a list of a priori known matrices
     if addMatrix is not None:
@@ -2527,15 +2552,10 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
     #hkl_all = GT.threeindices_up_to(n)
 
     if CP.isHexagonal(latticeparameters):  # add some high HKL present around 001
-        if verbose> 0: print('add somes hkl to recognisee orientation 001')
+        if verbose> 0: print('add somes hkl to recognise orientation 001')
         Nmax = max(-np.amin(hkl_all),np.amax(hkl_all))
         # todo generate cleverly using Nmax as min and an other max value
-        addedhkls = [[1,-1,6],[1,-1,7],[1,-1,8], [1,-1,9], [1,-1,10],[1,-1,11],
-                     [-1,1,6],[-1,1,7],[-1,1,8], [-1,1,9], [-1,1,10],[-1,1,11],
-                     [0,1,6],[0,1,7],[0,1,8], [0,1,9],[0,1,10],[0,1,11],
-                     [0,-1,6],[0,-1,7],[0,-1,8], [0,-1,9],[0,-1,10],[0,-1,11],
-                     [1,0,6],[1,0,7],[1,0,8], [1,0,9],[1,0,10],[1,0,11],
-                     [-1,2,6]]
+        addedhkls = FindO.ADDED_HKLS_HEXAGONAL
         hkl_all = np.r_[addedhkls,hkl_all]
 
 

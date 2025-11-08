@@ -246,13 +246,13 @@ class Plot_RefineFrame(wx.Frame):
             #             AllData = self.IndexationParameters['AllDataToIndex']
             self.dirname = self.IndexationParameters["dirname"]
             DataToIndex = self.IndexationParameters["DataToIndex"]
-            print("\n\***************\nEntering Plot_RefineFrame\nNumber of spots in DataToIndex: %d\n*****************\n"%
+            print("\n***************\nEntering Plot_RefineFrame\nNumber of spots in DataToIndex: %d\n*****************\n"%
                                                                     len(DataToIndex["data_theta"]))
             
-            if self.datatype is "2thetachi":
+            if self.datatype == "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
                 self.Data_Y = DataToIndex["data_chi"]
-            elif self.datatype is "pixels":
+            elif self.datatype == "pixels":
                 self.Data_X = DataToIndex["data_X"]
                 self.Data_Y = DataToIndex["data_Y"]
 
@@ -306,6 +306,7 @@ class Plot_RefineFrame(wx.Frame):
             self.CCDLabel = self.mainframe.CCDLabel
 
         if StorageDict is not None:
+            print('in Plot_RefineFrame.__ini__(), StorageDict is known')
             self.mat_store_ind = StorageDict["mat_store_ind"]
             self.Matrix_Store = StorageDict["Matrix_Store"]
             self.dict_Rot = StorageDict["dict_Rot"]
@@ -890,7 +891,7 @@ class Plot_RefineFrame(wx.Frame):
             paramraw = str(dlg.GetValue())
             import re
 
-            listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+            listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
             #             print "listval", listval
             listelem = []
             for elem in listval:
@@ -974,7 +975,7 @@ class Plot_RefineFrame(wx.Frame):
             if self.CCDLabel in ("MARCCD165", "PRINCETON"):
                 ylim = (2048, 0)
                 xlim = (0, 2048)
-            elif self.CCDLabel in ("VHR_PSI",):
+            elif self.CCDLabel in ("VHR_PSI","sCMOS_9M"):
                 ylim = (3000, 0)
                 xlim = (0, 4000)
             elif self.CCDLabel.startswith("sCMOS"):
@@ -1207,7 +1208,7 @@ class Plot_RefineFrame(wx.Frame):
                     self._replot()
 
             if collisionFound_exp or collisionFound_theo:
-                if tip_exp is not "":
+                if tip_exp != "":
                     fulltip = tip_exp + "\n" + tip_theo
                 else:
                     fulltip = tip_theo
@@ -1243,12 +1244,12 @@ class Plot_RefineFrame(wx.Frame):
         C4 = AllDataToIndex["data_pixX"][C0]
         C5 = AllDataToIndex["data_pixY"][C0]
 
-        if self.datatype is "2thetachi":
+        if self.datatype == "2thetachi":
             fields = ["Spot index", "2theta", "Chi", "Intensity"]
 
             to_put_in_dict = C0, C1, C2, C3
 
-        if self.datatype is "pixels":
+        if self.datatype == "pixels":
             fields = ["Spot index", "pixelX", "pixelY", "Intensity", "2Theta", "Chi"]
 
             to_put_in_dict = C0, C4, C5, C3, C1, C2
@@ -1275,7 +1276,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int16)
 
-        if self.datatype is "2thetachi":
+        if self.datatype == "2thetachi":
 
             self.data_2thetachi = col1, col2
             self.tth, self.chi = col1, col2
@@ -1287,7 +1288,7 @@ class Plot_RefineFrame(wx.Frame):
             self.pixelX, self.pixelY = self.data_XY
 
             print("\n****SELECTED and DISPLAYED PART OF EXPERIMENTAL SPOTS\n")
-        if self.datatype is "pixels":
+        if self.datatype == "pixels":
             col4, col5 = selectedSpotsPropsarray[4: 6]
             self.data_2thetachi = col4, col5
             self.tth, self.chi = col4, col5
@@ -1702,7 +1703,7 @@ class Plot_RefineFrame(wx.Frame):
 
 
         elif self.use_forfit2.GetValue():  # radio button filterlinks model
-            if self.linkedspots == []:
+            if len(self.linkedspots) == 0:
                 txt = "There are not existing links between simulated and experimental data for the refinement!!\n"
                 txt += 'Click first on "Auto Links" button and then filter and select data for the refinement'
                 wx.MessageBox(txt, "INFO")
@@ -2821,6 +2822,8 @@ class Plot_RefineFrame(wx.Frame):
         """
         # print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
         #     self.detectordiameter)
+        print('In Plot_RefineFrame.Simulate_Pattern()')
+        print('self.dict_Materials', self.dict_Materials)
 
         # for squared detector need to increase a bit
         if self.CCDLabel.startswith("sCMOS"):
@@ -3246,7 +3249,7 @@ class Plot_RefineFrame(wx.Frame):
 
         in Plot_RefineFrame
         """
-        if self.current_matrix != []:
+        if self.current_matrix is not None:
             self.mat_store_ind = len(self.Matrix_Store)
             if self.Bmat is not None and self.Umat is not None:
                 tostore = self.UBmat
@@ -3424,7 +3427,7 @@ class Plot_RefineFrame(wx.Frame):
         self.Close(True)
         self.parent.Close(True)
 
-        if self.indexationframe is not "unknown":
+        if self.indexationframe != "unknown":
             self.indexationframe.Close(True)
         else:
             # preventing to close the mainframe App !!

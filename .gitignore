@@ -23,7 +23,9 @@
 /LaueTools/DAXM/modules/__pycache__/*
 /LaueTools/DAXM/utils/__pycache__/*
 /LaueTools/dummy*
-
+*.pyc
+*.pyx
+__pycache__/
 /LaueTools/GUI/__pycache__/*
 
 .eggs/*

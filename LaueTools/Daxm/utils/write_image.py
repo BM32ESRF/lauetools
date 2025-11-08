@@ -15,8 +15,13 @@ import numpy as np
 
 import LaueTools.IOimagefile as rmccd
 import LaueTools.dict_LaueTools as dlt
+import LaueTools.generaltools as GT
 
-from fabio.TiffIO import TiffIO
+try:
+    from fabio.TiffIO import TiffIO
+except ImportError:
+    GT.printred('ERROR: fabio is missing')
+    
 
 
 def write_image(data, filename, CCDLabel='MARCCD165', dirname=None, verbose=0, header=None):
@@ -27,7 +32,7 @@ def write_image(data, filename, CCDLabel='MARCCD165', dirname=None, verbose=0, h
 
     dims, _, _, fliprot, _, dtype, _, ext = dlt.dict_CCD[CCDLabel]
 
-    if CCDLabel in ('MARCCD165', 'sCMOS', 'sCMOS_fliplr'):
+    if CCDLabel in ('MARCCD165', 'sCMOS', 'sCMOS_fliplr', 'sCMOS_4M', 'IMSTAR_bin3'):
 
         #preparing
         data = treat_fliprot(data, fliprot)
