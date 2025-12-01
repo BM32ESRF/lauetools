@@ -137,7 +137,7 @@ class RecognitionResultCheckBox(wx.Frame):
 
         # -----------Scrolled panel stuff
         self.scrolled_panel = scrolled.ScrolledPanel(panel, -1, 
-                                 style=wx.TAB_TRAVERSAL, name="panel1", size=(1000, height))
+                                 style=wx.TAB_TRAVERSAL, name="panel1",size=(1000, height))
 
         vbox3 = wx.BoxSizer(wx.VERTICAL)
 
@@ -223,10 +223,10 @@ class RecognitionResultCheckBox(wx.Frame):
         txt.SetFont(font3)
 
         emintxt = wx.StaticText(panel, -1, "Energy min: ")
-        self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150, size=(70, -1))
+        self.SCmin = wx.SpinCtrl(panel, -1, "5", min=5, max=150)#, size=(70, -1))
 
         emaxtxt = wx.StaticText(panel, -1, "Energy max: ")
-        self.SCmax = wx.SpinCtrl(panel, -1, str(int(self.emax)), min=6, max=150, size=(70, -1))
+        self.SCmax = wx.SpinCtrl(panel, -1, str(int(self.emax)), min=6, max=150)#, size=(70, -1))
 
         plotbtn = wx.Button(panel, -1, "Plot", size=(-1, 50))
         plotbtn.Bind(wx.EVT_BUTTON, self.OnPlot)
