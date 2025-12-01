@@ -132,6 +132,10 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond1 = (H + K) % 2 == 0
         array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
 
+    elif Extinc == "l=2n":  
+        cond1 = (L) % 2 == 0
+        array_hkl = np.take(HKL, np.where(cond1 == True)[0], axis=0)
+
     elif Extinc == "h+k=2n, modulated":  # group space 12  I2/m + modulation along q= k3 c*
         """we add only m=-1 and m=1 first satellite
         for each node we add h k l+k3 and h k l-k3 (if m=2 we would add h k l+2k3 and h k l-2k3) 
