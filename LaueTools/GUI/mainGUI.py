@@ -1223,16 +1223,20 @@ class LaueToolsGUImainframe(wx.Frame):
         dlg.SetValue(_param)
 
         dlg.SetToolTipString("please enter orientation matrix UB (or list of UB's). UB excludes reciprocal unit cell matrix B0. So only UB operator in q = UB B0 G*")
-
+        print('In EnterMatrix()')
         print('PYTHONVERSION_3p12_MIN', PYTHONVERSION_3p12_MIN)
 
         if dlg.ShowModal() == wx.ID_OK:
             paramraw = str(dlg.GetValue())
 
-            if PYTHONVERSION_3p12_MIN:
+            print('paramraw', paramraw)
+
+            if 0: #PYTHONVERSION_3p12_MIN:
                 listval = re.split(r"[ ()\\[\\)\\;\\,\\]\\n\\t\\a\\b\\f\\r\\v]", paramraw)
             else:
                 listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+            
+            print('listval', listval)
             listelem = []
             for elem in listval:
                 try:
