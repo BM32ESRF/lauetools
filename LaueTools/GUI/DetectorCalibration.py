@@ -2441,7 +2441,8 @@ class MainCalibrationFrame(wx.Frame):
                                         key_material,
                                         residues_non_weighted,
                                         nb_pairs,
-                                        constantlength="a", displayresults=True):
+                                        constantlength="a", displayresults=True,
+                                        verbose=0):
         """
         evaluate strain and display fitting results
         :param newUBmat: array, 3x3 orientation matrix UBrefined
@@ -2451,7 +2452,6 @@ class MainCalibrationFrame(wx.Frame):
         :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
         """
         # compute new lattice parameters  -----
-        verbose = self.verbose
 
         latticeparams = DictLT.dict_Materials[key_material][1]
         B0matrix = CP.calc_B_RR(latticeparams)
