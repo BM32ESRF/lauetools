@@ -709,7 +709,10 @@ def Generate_selectedLUT(hkl1, hkl2, key_material:str, verbose:int=0,
         if verbose> 0: print('add somes hkl to recognisee orientation 001')
         Nmax = max(-np.amin(),np.amax())
         # todo generate cleverly using Nmax as min and an other max value
-        addedhkls = ADDED_HKLS_HEXAGONAL
+        if latticeparams[2]/latticeparams[0]<1.7:
+            addedhkls = ADDED_HKLS_HEXAGONAL_covera_1p5
+        else:
+            addedhkls = ADDED_HKLS_HEXAGONAL_covera_2p5
         hkl1 = np.r_[addedhkls,hkl1]
 
 
@@ -775,8 +778,8 @@ HKL_HEXAGONAL_UP3 = [[0, 1, 0],[1, 0, 0], [1, 1, 0], [2, 1, 0],
                     [0, 1, 2],[1, 0, 2], [1, 1, 2], [1, 2, 2], [2, 1, 2], [3, 0, 2], 
                         [0, 3, 2]]
 
-# for c/a = 1.5
-ADDED_HKLS_HEXAGONAL = [[1,-1,5],[1,-1,6],[1,-1,7],[1,-1,8],
+# for c/a = 1.5 approx
+ADDED_HKLS_HEXAGONAL_covera_1p5 = [[1,-1,5],[1,-1,6],[1,-1,7],[1,-1,8],
                      [-1,1,5],[-1,1,6],[-1,1,7],[-1,1,8],
                      [1,1,5],[1,1,6],[1,1,7],[1,1,8],
                      [0,1,5],[0,1,6],[0,1,7],[0,1,8],
@@ -784,7 +787,15 @@ ADDED_HKLS_HEXAGONAL = [[1,-1,5],[1,-1,6],[1,-1,7],[1,-1,8],
                      [0,-1,5],[0,-1,6],[0,-1,7],[0,-1,8],
                      [1,0,5],[1,0,6],[1,0,7],[1,0,8],
                      [-1,2,5],[-1,2,6],[-1,2,7],[-1,2,8]]
-
+# for c/a = 2.5 approx
+ADDED_HKLS_HEXAGONAL_covera_2p5 = ADDED_HKLS_HEXAGONAL_covera_1p5+[[1,-1,9],[1,-1,10],[1,-1,11],
+                     [-1,1,9],[-1,1,10],[-1,1,11],
+                     [1,1,9],[1,1,10],[1,1,11],
+                     [0,1,9],[0,1,10],[0,1,11],
+                     [0,2,9],[0,2,10],[0,2,11],
+                     [0,-1,9],[0,-1,10],[0,-1,11],
+                     [1,0,9],[1,0,10],[1,0,11],
+                     [-1,2,9],[-1,2,10],[-1,2,11]]
 
 
 def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
@@ -1057,7 +1068,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., v
 
             planes_pairs = np.take(hkl_all, IJ_indices, axis=0)
 
-            if verbose>0:
+            if verbose>1:
                 print("\n within %.3f and close to %.9f deg" % (angular_tolerance_Recognition, angle_query))
                 for pair in planes_pairs:
                     print("< ", pair[0], "  ,  ", pair[1], " > = %.6f " % closest_angle)
