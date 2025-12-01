@@ -33,7 +33,9 @@ if mpl.__version__ < "2.2":
 else:
     MATPLOTLIB2p2 = True
 
-import matplotlib.cm as mplcm
+# from matplotlib 3.11
+#import matplotlib.cm as mplcm
+import matplotlib.pyplot as plt
 
 DEG = np.pi / 180.0
 
@@ -2960,24 +2962,24 @@ def getfileindex(filename:str)->int:
     return int(float(val))
 
 # ----- ------------  plot tools: colormap
-COPPER = mplcm.get_cmap("copper")
-GIST_EARTH_R = mplcm.get_cmap("gist_earth_r")
-JET = mplcm.get_cmap("jet")
-GREENS = mplcm.get_cmap("Greens")
-REDS = mplcm.get_cmap("Reds")
-GREYS = mplcm.get_cmap("Greys")
-BWR = mplcm.get_cmap("bwr")
-ORRD = mplcm.get_cmap("OrRd")
-SEISMIC = mplcm.get_cmap("seismic")
+# plt.get_cmap replaces mplcm.get_cmap for matplotlib 3.11
+COPPER = plt.get_cmap("copper")
+GIST_EARTH_R = plt.get_cmap("gist_earth_r")
+JET = plt.get_cmap("jet")
+GREENS = plt.get_cmap("Greens")
+REDS = plt.get_cmap("Reds")
+GREYS = plt.get_cmap("Greys")
+BWR = plt.get_cmap("bwr")
+ORRD = plt.get_cmap("OrRd")
+SEISMIC = plt.get_cmap("seismic")
 
 if MATPLOTLIB2p2:
-    SPECTRAL = mplcm.get_cmap("Spectral")
-    SPECTRAL_R = mplcm.get_cmap("Spectral_r")
+    SPECTRAL = plt.get_cmap("Spectral")
+    SPECTRAL_R = plt.get_cmap("Spectral_r")
 
 else:
-    SPECTRAL = mplcm.get_cmap("spectral")
-    SPECTRAL_R = mplcm.get_cmap("spectral_r")
-
+    SPECTRAL = plt.get_cmap("spectral")
+    SPECTRAL_R = plt.get_cmap("spectral_r")
 
 def format_getimageindex_imshow(x, y, mapdims=None):
     """fonction to show in matplotlib plot values of x,y, imageindex for 2D map (imshow)
