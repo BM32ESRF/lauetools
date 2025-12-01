@@ -691,7 +691,7 @@ def FilterHarmonics_2(hkl, return_indices_toremove=0):
 
 
 # ---- -----Unit Cell parameters - Reciprocal and Direct Lattice Parameters  -----
-def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
+def calc_B_RR(latticeparameters, directspace=1, setvolume=False, verbose=0):
     r"""
     * Calculate B0 matrix (columns = vectors a*,b*,c*) from direct (real) space lattice parameters (directspace=1)
     * Calculate a matrix (columns = vectors a,b,c) from direct (real) space lattice parameters (directspace=0)
@@ -736,6 +736,9 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False):
 
     .. math :: c^* \sin \beta^* \sin \alpha = 1/c
     """
+    if verbose>0:
+        print("In calc_B_RR() function in CrystalParameters")
+        print("latticeparameters", latticeparameters)
     B = np.zeros((3, 3), dtype=float)
 
     lat = 1.0 * np.array(latticeparameters)
@@ -1142,6 +1145,33 @@ def matstarlab_to_matdirlab(matstarlab, angles_in_deg=1, vec_in_columns=True):
 
     return matdirlab, reciprocal_lattice_parameters
 
+def is_ubmatrix_distorted_orthogonal_rotation(ubmatrix, tolerance = 0.05):
+    """
+    Check if ubmatrix is a distorted orthogonal rotation matrix
+    (i.e. check if it is close enough to an orthogonal rotation matrix)
+
+    q = ubmatrix B0 G*  where B0 (triangular up matrix) comes from lattice parameters input
+
+    :param ubmatrix: 3x3 matrix to be tested
+    :return: boolean, True if ubmatrix satisfies the conditions, False otherwise
+    """
+
+    dot_products = np.array([
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 1])),
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 2])),
+        np.abs(ubmatrix[:, 1].dot(ubmatrix[:, 2]))
+    ])
+
+    norms = np.array([
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 0])),
+        np.abs(ubmatrix[:, 1].dot(ubmatrix[:, 1])),
+        np.abs(ubmatrix[:, 2].dot(ubmatrix[:, 2]))
+    ])
+
+    conditions = (dot_products < tolerance) & (np.abs(norms - 1) < tolerance)
+
+    return np.all(conditions)
+
 
 def matrix_to_rlat(mat, angles_in_deg=1):
     r"""
@@ -1153,7 +1183,7 @@ def matrix_to_rlat(mat, angles_in_deg=1):
 
     .. note::
 
-        Reciprocal lattice parameters are contained in UB matrix : q =  mat G* frequently epxressed as q = UB B0 G* where UB is the orientatio matrix containing distortion (UB is not pure rotation)
+        Reciprocal lattice parameters are contained in UB matrix : q =  mat G* frequently epxressed as q = UB B0 G* where UB is the orientation matrix containing distortion (UB is not pure rotation)
     """
     rlat = np.zeros(6)
 
