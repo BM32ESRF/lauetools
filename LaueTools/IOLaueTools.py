@@ -74,7 +74,7 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
 
     :param data_props: [array of dataproperties, list columns name]  (ie  peak sizes, pixdev etc...  see .dat file)
 
-    :param param: list or dictionnary (5 or 6 elements) of detector geometry parameters (order and key is found in CCD_CALIBRATION_PARAMETERS)
+    :param param: list or dictionnary (5 or 6 elements) of detector geometry parameters (order and key is found in CCD_CALIBRATION_PARAMETERS) or dictionary of calibration parameters
 
     :param dict_data_spotsproperties: write additional columns from orignal peaksearch-based (.dat) spots properties.
     dict must have keys: 'columnsname' and 'data_spotsproperties'
