@@ -11,6 +11,7 @@ import copy
 import os
 import time
 import numpy as np
+import datetime
 
 try:
     import matplotlib.pyplot as plt
@@ -27,6 +28,252 @@ import LaueTools.IOLaueTools as IOLT
 import LaueTools.generaltools as GT
 import LaueTools.IOimagefile as IOimage
 
+class H5file:
+    defaultcolumns = ['start_time', 'end_time',
+                      'sample_dataset_scanindex', 'fullcommand',
+                                              'scanindex','scantype','motors','localhdf5file','imagefolder']
+    defaultCCDLabel = 'sCMOS'
+
+    def __init__(self, h5filefullpath, CCDLabel=None):
+        self.path = h5filefullpath
+        self.listscans = None
+        self.listcts = None
+        self.dfallscans = None # dataframe allscans
+        self.scans = {} # dict of scans  key is integer (datraframe index)
+        self.selectedscansindices = []  # list of selected scans indices
+        self.CCDLabel = CCDLabel
+
+    def setCCDLabel(self, CCDLabel):
+        self.CCDLabel = CCDLabel if CCDLabel is not None else H5file.defaultCCDLabel
+    
+    def getscans(self, verbose=False):
+        self.listscans, self.listcts = get_scans_cts(self.path)
+        self.listscans = [[str(_k)]+elem for _k, elem in enumerate(self.listscans)]
+        self.listcts = [[str(_k)]+elem for _k, elem in enumerate(self.listcts)]
+        if verbose:
+            print("number scans found :",len(self.listscans))
+            print("number saved count commands found: ",len(self.listcts))
+        self._build_dfallscans()
+
+    def _build_dfallscans(self):
+        pd.set_option('display.max_rows', None)
+        self.dfallscans = pd.DataFrame(self.listscans, columns=['logfile_scanindex']+H5file.defaultcolumns)
+        
+    def __getitem__(self, index):
+        return self.dfallscans.iloc[index]
+    
+    def getall(self, property):
+        """
+        Return a numpy array with the values of a given property for all scans
+
+        Parameters
+        ----------
+        property : str
+            Column name of the property to retrieve
+
+        Returns
+        -------
+        array : numpy array
+            Array with the values of the property
+
+        Raises
+        ------
+        KeyError
+            If the property is not found in the dataframe of scans
+        """
+        if self.dfallscans is None:
+            self._build_dfallscans()
+        if property not in self.dfallscans.columns:
+            raise KeyError("Unknown column property '%s' for H5file" % str(property))
+        return self.dfallscans[property].to_numpy()
+    
+    def build_dict_scan(self, item_idx:int, verbose=True)->dict:
+ 
+        """
+        Build a scan object from the pandas dataframe of all scans and given index
+        
+        Parameters
+        ----------
+        item_idx : int
+            Index of the scan to build
+        verbose : bool
+            Print a message when the scan is built
+        
+        Returns
+        -------
+        Scan
+            The built Scan object
+        """
+        if self.CCDLabel is None:
+            self.CCDLabel = H5file.defaultCCDLabel
+
+        scans_dict = build_dict_scan(item_idx, self.dfallscans, self.CCDLabel)
+        self.scans[item_idx]= Scan(scans_dict)
+        self.selectedscansindices.append(item_idx)
+
+        if verbose:
+            print("scan %d built and stored in self.scans"%item_idx)
+        return Scan(scans_dict)
+
+    def getselectedscansindices(self):
+        return sorted(self.selectedscansindices)
+
+
+    def selectscansGUI(self, nmax=None, additionalcolumns=['imagefolder'], verbose=True):
+
+        """
+        Interactive GUI to select scans from the h5file
+
+        Parameters
+        ----------
+        nmax : int, optional
+            Maximum number of scans to display. The default is None.
+        additionalcolumns : list, optional
+            Additional columns to display from the dataframe df. The default is ['imagefolder'].
+        verbose : bool, optional
+            Print message when a scan is selected. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
+        df =  self.dfallscans[:nmax]
+        
+        # List of labels (column headers)
+        #column_labels = df.columns.tolist()
+
+        column_labels = ['logfile_scanindex','sample_dataset_scanindex','fullcommand','motors']
+        if additionalcolumns is not None: column_labels += additionalcolumns
+
+        # Create an Output widget
+        output = widgets.Output()
+
+        # Create header dynamically
+        header = widgets.HBox([widgets.HTML(value="<b>_____________</b>")]+[
+            widgets.HTML(value=f"|________<b>{label}_______</b>") for label in column_labels
+        ])  
+
+        # Function to handle button click
+        def make_click_handler(index):
+            def on_click(b):
+                row = df.iloc[index]
+                with output:
+                    output.clear_output()
+                    self.build_dict_scan(index)
+                    GT.printgreen(f"Added scan {index} to H5file instance self.scans")
+            return on_click
+
+        # Generate rows
+        rows = []
+
+        for i, row in df.iterrows():
+            cell_widgets = [widgets.Label(value=str(row[label])+'  |  ') for label in column_labels]
+            action_button = widgets.Button(description="Select", layout=widgets.Layout(width="80px"))
+            action_button.on_click(make_click_handler(i))
+            
+            row_widget = widgets.HBox([action_button]+cell_widgets)
+            rows.append(row_widget)
+
+        rows.append(output)
+        # Display table
+        display(widgets.VBox([header] + rows))
+
+
+    def filterby(self, columnname, value, verbose=True, nmax=None, openGUI=True):
+        self._build_dfallscans()
+        self.dfallscans = self.dfallscans[self.dfallscans[columnname]==value]
+        if verbose:
+            print("number scans found after filtering: ",len(self.dfallscans))
+        if openGUI:
+            self.selectscansGUI(nmax=nmax)
+        return self.dfallscans
+    
+    def findstrings(self, string_dataset=None, string_fullcommand=None, columnnames=['sample_dataset_scanindex','fullcommand'], verbose=True, nmax=None, openGUI=True):
+        self._build_dfallscans()
+
+        if string_dataset is None: string_dataset = ''
+        if string_fullcommand is None: string_fullcommand = ''
+        conddataset=self.dfallscans[columnnames[0]].str.contains(string_dataset)
+        condfullcommand =self.dfallscans[columnnames[1]].str.contains(string_fullcommand)
+        cond = conddataset & condfullcommand
+        self.dfallscans = self.dfallscans[cond]
+        if verbose:
+            print("number scans found after filtering: ",len(self.dfallscans))
+        if openGUI:
+            self.selectscansGUI(nmax=nmax)
+        return self.dfallscans
+
+    def getscanfromimage(self, imagefullpath, verbose=True):
+        """
+        Retrieve scan information from an image file.
+
+        This function uses the image file's metadata to extract the associated
+        scan command, image date, and scan index from the log file.
+
+        Parameters:
+        -----------
+        imagefullpath : str
+            The full path to the image file from which scan information is to be extracted.
+        verbose : bool, optional
+            If True, prints additional information for debugging purposes (default is True).
+
+        Returns:
+        --------
+        blisscommand : str
+            The associated BLISS command for the scan.
+        imagedate : str
+            The date when the image was captured.
+        logfile_scanindex : int
+            The scan index as found in the log file.
+        """
+
+        blisscommand, imagedate, logfile_scanindex=IOimage.fromscmosdate2blisscommand(imagefullpath, self.dfallscans)
+        return blisscommand, imagedate, logfile_scanindex
+
+    def getscansfromdate(self, datetuple, timespan=None, verbose=True):
+        """
+        Retrieve scans occurring within a specified time frame around a given date.
+
+        This function filters scans from the dataframe `dfallscans` based on a query
+        date and an optional time span. If no time span is provided, it returns scans
+        that are active at the exact query date. If a time span is provided, it returns
+        scans that start and end within the specified minutes around the query date.
+
+        Parameters:
+        -----------
+        datetuple : tuple
+            A tuple representing the date and time for querying in the format 
+            (year, month, day, hour, minute, second).
+        timespan : int, float, optional
+            The time span in minutes around the query date to filter scans. If None,
+            only scans active at the query date are returned (default is None).
+        verbose : bool, optional
+            If True, prints additional information for debugging purposes (default is True).
+
+        Returns:
+        --------
+        DataFrame
+            A pandas DataFrame containing the scans that match the specified time frame.
+        """
+
+        querydate = datetime.datetime(*datetuple) # datetuple = (2025,7,24,23,33,30)  # y m d  h min sec
+        if verbose:
+            print('querydate',querydate)
+
+        df = self.dfallscans
+        if timespan is None:
+            mask = (df['end_time'] > querydate.isoformat()) & (df['start_time'] <= querydate.isoformat())
+        elif isinstance(timespan, (int, float)):  # in minutes
+            minidate = datetime.datetime.fromtimestamp(querydate.timestamp()-timespan*60)
+            maxidate = datetime.datetime.fromtimestamp(querydate.timestamp()+timespan*60)
+            mask = (df['end_time'] < maxidate.isoformat()) & (df['start_time'] > minidate.isoformat() )
+                    
+        dfallscansgoodperiod = df.loc[mask]
+
+        if verbose:
+            print(dfallscansgoodperiod.fullcommand.values)
+        return dfallscansgoodperiod
 
 class SpecFile:
     """
@@ -1117,6 +1364,7 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
 
         idx, postfix = key.split('.')
         #print('reading key %s'%key)
+        
         if h5py.__version__<'3.0':
             #maybe [()] is enough without decoding
             scancommand = f['%s.%s'%(idx,postfix)]['title'].value
@@ -1126,10 +1374,13 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
             #print('%s.%s'%(idx,postfix))
             scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
             startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
+            startdate = datetime.datetime.fromisoformat(startdate).strftime('%Y-%m-%dT%H:%M:%S')
             try:
                 enddate = f['%s.%s'%(idx,postfix)]['end_time'][()].decode('UTF-8')
+                enddate = datetime.datetime.fromisoformat(enddate).strftime('%Y-%m-%dT%H:%M:%S')
             except:
                 enddate = startdate
+        
         props = None
 
         if verbose:
