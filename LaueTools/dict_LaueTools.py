@@ -28,6 +28,7 @@ DEFAULT_MATERIALS_FILE = os.path.join(LAUETOOLSFOLDER, "materials.yaml")
 # WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
 
 def _load_config():
+    print('loading lauetools_config.json in ', LAUETOOLSFOLDER)
     cfg_file = os.path.join(LAUETOOLSFOLDER, "lauetools_config.json")
     if os.path.exists(cfg_file):
         with open(cfg_file) as f:
@@ -43,8 +44,11 @@ def get_materials_file():
     if "materials_dir" in cfg:
         user_path = os.path.join(cfg["materials_dir"], "materials.yaml")
         if os.path.exists(user_path):
-            print('Using user materials.yaml: ', user_path)
+            print('-> Using user materials.yaml: ', user_path)
             return user_path
+        else:
+            print('No user materials.yaml found. Using default materials.yaml')
+            return DEFAULT_MATERIALS_FILE
 
 
 class Materials:
