@@ -23,6 +23,9 @@ import multiprocessing
 from multiprocessing import cpu_count
 from tqdm import tqdm
 import itertools
+# for python >=3.12
+from concurrent.futures import ProcessPoolExecutor
+
 
 from typing import Union, List, Dict, Iterable, Tuple
 deg = float
@@ -621,7 +624,7 @@ def matrices_from_onespot_hkl(spot_index:int, LUT_tol_angle:deg, table_angdist, 
             nbpairs = len(hkls)
             PPs_list.append([hkls, spotindex_2, nbpairs])
             if verbose>0:
-                print("hkls, plane_indices spotindex_2, nbpairs", hkls, spotindex_2, nbpairs)
+                print("plane_indices, spot_index, spotindex_2, nbpairs", spot_index,spotindex_2, nbpairs)#, hkls)
                 print('angles', angles)
 
     coords_exp = np.array([twiceTheta_exp, Chi_exp]).T
@@ -681,6 +684,9 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
     # ang_tol,
     # table_angdist)
 
+    if verbose>0:
+        print('in matrices_from_onespot_new()-----------------')
+
     Distances_from_central_spot = table_angdist[spot_index]
 
     if excludespotspairs is None:
@@ -693,24 +699,25 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
         print("cubicSymmetry is False for an exhaustive LUT")
         LUT = build_AnglesLUT(B0, n, MaxRadiusHKL=MaxRadiusHKL, cubicSymmetry=False,
                                                         applyExtinctionRules=applyExtinctionRules, verbose=verbose-1)
-
+    print('still in in matrices_from_onespot_new()-----------------')
     for spotindex_2, angle in enumerate(Distances_from_central_spot):
         if angle ==0.0:
             continue
             
-        if verbose>0:
+        if verbose>1:
             print("\n-*-*-*----------------------------------------------------")
-            print("k,angle = ", spotindex_2, angle)
+            print("spot_index, spotindex_2 ,angle = ", spot_index, spotindex_2, angle)
             print("-*-*-*----------------------------------------------------\n")
 
         hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=0,
-                                  LUTfraction=LUTfraction,verbose=verbose-1)  # LUT is provided !
+                                  LUTfraction=LUTfraction,verbose=verbose-2)  # LUT is provided !
 
         if hkls is not None:
             nbpairs = len(hkls)
             PPs_list.append([hkls, spotindex_2, nbpairs])
-            if verbose>0:
-                print("hkls, plane_indices spotindex_2, nbpairs", hkls, spotindex_2, nbpairs)
+            
+            if verbose>1:
+                print("plane_indices, spot_index, spotindex_2, nbpairs", spot_index,spotindex_2, nbpairs)#, hkls)
 
     coords_exp = np.array([twiceTheta, Chi]).T
     coord_central_spot = coords_exp[spot_index]
@@ -1058,8 +1065,10 @@ def UBs_from_twospotsdistance(spot_index_1, spot_index_2, angle_tol, exp_angular
     if hkls is not None and (spot_index_1 != spot_index_2):
         nbpairs = len(hkls)
         PPs_list.append([hkls, spot_index_2, nbpairs])
+        
         if verbose>0:
-            print("hkls, plane_indices spotindex_2, nbpairs", hkls, spot_index_2, nbpairs)
+            
+            print("plane_indices, spot_index_1, spotindex_2, nbpairs", spot_index_1,spot_index_2, nbpairs)#, hkls)
             print('B matrix', B)
 
     matrix_list, pairplanes, pairspots = Loop_on_PlanesPairs_and_Get_Matrices(PPs_list,
@@ -1117,7 +1126,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
         if spotindex_2 == spot_index:
             continue
 
-        if verbose>0:
+        if verbose>1:
             print("** --\nLooking up for the %d planes pairs in LUT from exp. spots "
                         "(%d, %d): " % (nbplanepairs, spot_index, spotindex_2))
 
@@ -1140,7 +1149,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
         # if nb_pairs == 1:
         #     hkls = [hkls]
 
-        if verbose>0:
+        if verbose>1:
             print("\n************** k", k)
             print("PP[%d] = " % k, PP)
             print("hlks_shape", hlks_shape)
@@ -1161,35 +1170,38 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
                 continue
 
             matrix = FindO.OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B,
-                                                        verbose=0, frame="lauetools")
+                                                        verbose=verbose-2, frame="lauetools")
 
             #print("matrix",matrix)
 
             # matrix=givematorient(plane_1,[2*Theta[spot_index],Chi[spot_index]],plane_2,[2*Theta[spot_index_2],Chi[spot_index_2]],verbose=0)
-
-            if np.linalg.det(matrix)>0: # orientation matrix must be direct
+            if np.linalg.det(matrix)<=0: # orientation matrix must be direct   
+                if verbose>2:
+                    print('\n--- matrix rejected because of negative determinant')
+                    print('matrix',matrix)
+                    print('for planepair',hkl1, hkl2)
+            elif not CP.is_ubmatrix_distorted_orthogonal_rotation(matrix):
+                if verbose>2:
+                    print('\n--- matrix rejected because too far from being a distorted rotation matrix')
+                    print('matrix',matrix)
+            else: # orientation matrix must be direct and almost orthogonal
                 matrix_list.append(matrix)
                 pairplanes.append([hkl1, hkl2])
                 pairspots.append([spot_index, spotindex_2])
 
-                if verbose>0:
+                if verbose>2:
                     print("\n *** in matrices_from_onespot_new")
                     print("pair of lattice planes ", hkl1, hkl2)
                     print([coord1, coord2])
                     print("matrix", matrix)
-            else:    
-                if verbose>0:
-                    print('\n--- matrix rejected because of negative determinant')
-                    print('matrix',matrix)
-                    print('for planepair',hkl1, hkl2)
-                
+            
             # ---compute matrix by swaping hkl1 and hkl2
 
             matrix = FindO.OrientMatrix_from_2hkl(hkl2, coord1, hkl1, coord2, B,
-                                                        verbose=0, frame="lauetools")
+                                                        verbose=verbose-2, frame="lauetools")
 
             if np.linalg.det(matrix)<0:
-                if verbose>0:
+                if verbose>1:
                     print('\n--- matrix rejected because of negative determinant')
                     print('matrix',matrix)
                     print('for planepair',hkl2, hkl1)
@@ -1201,7 +1213,7 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
             pairplanes.append([hkl2, hkl1])
             pairspots.append([spot_index, spotindex_2])
 
-            if verbose>0:
+            if verbose>1:
                 print("\n**** in matrices_from_onespot_new (swaped)")
                 print("pair of lattice planes ", hkl2, hkl1)
                 print([coord1, coord2])
@@ -1263,6 +1275,9 @@ def getOrientMatrix_from_onespot(spot_index,
     TODO: to make it more compact !! there are too much copy-paste
     TODO: in the main loop should start at spot_index +1   !!!
     """
+    if verbose>0:
+        print('in getOrientMatrix_from_onespot() -----------')
+
     # test inputs
     if key_material is None:
         raise ValueError("need key_material to simulate data")
@@ -1291,7 +1306,7 @@ def getOrientMatrix_from_onespot(spot_index,
                                         LUTfraction=LUTfraction,
                                         useparallelcomputing=useparallelcomputing)
 
-        print("res_onespot", res_onespot)
+        if verbose>0:print("res_onespot", res_onespot)
         matrix = res_onespot[0][0]
         infos = res_onespot[1][0]
 
@@ -1321,7 +1336,7 @@ def getOrientMatrix_from_onespot(spot_index,
     coord1 = coord[spot_index]
 
     if LUT is None:
-        print("build LUT in getOrientMatrix_from_onespot()")
+        if verbose>0: print("build LUT in getOrientMatrix_from_onespot()")
         if LUT_with_rules:
             Rules = dictmaterials[key_material][2]
         else:
@@ -1334,7 +1349,7 @@ def getOrientMatrix_from_onespot(spot_index,
     for spotindex_2, angle in enumerate(Distances_from_central_spot):
         if verbose:
             print("\n----------------------------------------------------------")
-            print("k,angle = ", spotindex_2, angle)
+            print("spot_index (spotindex2), angle (deg) = ", spot_index, spotindex_2, angle)
             print("-----------------------------------------------------------\n")
 
         hkls = FindO.PlanePairs_2(angle, ang_tol, LUT, onlyclosest=1,
@@ -1343,7 +1358,7 @@ def getOrientMatrix_from_onespot(spot_index,
         if hkls is not None and (spot_index != spotindex_2):
             nbpairs = len(hkls)
             if verbose:
-                print("hkls, plane_indices spotindex_2, nbpairs", hkls, spotindex_2, nbpairs)
+                print("plane_indices, spot_index, spotindex_2, nbpairs", spot_index, spotindex_2, nbpairs)#, hkls)
 
             # handle hkls to compute a matrix and a matching rate
             if nbpairs == 1:
@@ -1919,6 +1934,67 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
 
     return BestMatrices, BestStats
 
+# for python3.12 on jupyter-slurm
+def worker_unpack(args_tuple):
+    """Top-level worker function so it is picklable under spawn."""
+    return matchingrate.Angular_residues_np(*args_tuple)
+
+def run_parallel(
+    list_orient_matrix,
+    twiceTheta_exp,
+    Chi_exp,
+    MR_tol_angle,
+    key_material,
+    energy_max,
+    ResolutionAngstrom,
+    detectorparameters,
+    dictmaterials,
+    crudeMReval,
+    maxnbspots_MReval,
+    nb_ub_matrices,
+    verbose=0,
+):
+    args_iter = zip(
+        list_orient_matrix,
+        itertools.repeat(twiceTheta_exp),
+        itertools.repeat(Chi_exp),
+        itertools.repeat(MR_tol_angle),
+        itertools.repeat(key_material),
+        itertools.repeat(5),
+        itertools.repeat(energy_max),
+        itertools.repeat(ResolutionAngstrom),
+        itertools.repeat(detectorparameters),
+        itertools.repeat(False),
+        itertools.repeat(0.999),
+        itertools.repeat(dictmaterials),
+        itertools.repeat(crudeMReval),
+        itertools.repeat(maxnbspots_MReval),
+    )
+
+    ncpus = max(multiprocessing.cpu_count() - 1, 1)
+
+    if verbose > 1:
+        from itertools import tee
+        args_copy, args_iter = tee(args_iter)
+        try:
+            print("args (first):", next(args_copy))
+        except StopIteration:
+            print("args is empty")
+        print("ncpus", ncpus)
+
+    # Safe start method
+    try:
+        multiprocessing.set_start_method("spawn")
+    except RuntimeError:
+        pass  # already set
+
+    chunksize = 1
+    results = []
+    with multiprocessing.Pool(processes=ncpus) as pool:
+        it = pool.imap(worker_unpack, args_iter, chunksize=chunksize)
+        for r in tqdm(it, total=nb_ub_matrices):
+            results.append(r)
+    return results
 
 def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                       energy_max:int,
@@ -1967,8 +2043,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
     spot_index_central:         :    Integer or list of integer  corresponding to index of exp. spot from which distances will be calculated with the rest of the exp. spots = len(Tab_angl_dist)
     energy_max :                 :    Maximum energy used in simulation of the Laue Pattern (the higher this value the larger
                                 the number of theo. spots)
-    Tab_angl_dist :             :    Symetric matrix whose elements are angular distances (deg) between mutual exp. spots as if they
-                                were corresponding to lattice planes (ie angle between lattice plane normals)
+    Tab_angl_dist :             :    Symetric matrix whose elements are angular distance (deg) between mutual exp. spots as if they
+                                were corresponding to lattice planes normals (ie angle between lattice plane normals)
     Theta_exp,Chi_exp :        :    experimental 2theta/2 and chi two 1d arrays
     n                          :  integer for the maximum index of probed hkl when computing the LUT
     B                          :  Triangular up matrix defining the reciprocal unit cell
@@ -2004,7 +2080,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
         print('\n  -------   mode verbosedetails  in getOrientMatrices()---------------')
         print("print details\n")
         print('crudeMReval',crudeMReval)
-
+        print('Tab_angl_dist.shape',Tab_angl_dist.shape)
+       
 
     if excludespotspairs is None:
         excludespotspairs = [[0, 0]]
@@ -2050,6 +2127,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
     if verbosedetails>0: print("set_central_spots_hkl", set_central_spots_hkl)
 
+    # if hkl of central spot is given
     if set_central_spots_hkl not in (None, "None"):
         
         set_central_spots_hkl = np.array(set_central_spots_hkl)
@@ -2080,9 +2158,6 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
     else:
         allow_restrictedLUT = cubicSymmetry
 
-    #     if cubicSymmetry:
-    #         hkl1s = FindO.HKL_CUBIC
-
     if verbosedetails>0: print("LUT_tol_angle", LUT_tol_angle)
 
     if gauge:
@@ -2098,7 +2173,9 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
     excludespotspairs = [[first_cspot_idx, first_cspot_idx]]
 
     # --- loop over central spots -------------------------------------------------------
-    if verbose>0: print("*---****-----getOrientMatrices() ------------------------------------*")
+    if verbose>0:
+        print("*---****-----getOrientMatrices() : starting a loop over -list_spot_central_indices-----------------------------------*")
+        print('list_spot_central_indices   min, max index', min(list_spot_central_indices), max(list_spot_central_indices))
 
     reachedhighmatching = False  # stopping flag
     for k_centspot_index, spot_index_central in enumerate(list_spot_central_indices):
@@ -2144,7 +2221,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                                                         hkl2=hkl2,
                                                         LUT=LUTspecific,
                                                         allow_restrictedLUT=allow_restrictedLUT,
-                                                        verbose=verbose-1,
+                                                        verbose=verbose-2,
                                                         dictmaterials=dictmaterials,
                                                         LUT_with_rules=LUT_with_rules,
                                                         excludespotspairs=excludespotspairs)
@@ -2163,18 +2240,9 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                         else:
                             print("LUTcubic is None for k_centspot_index %d in getOrientMatrices()" % k_centspot_index)
 
-                    if n == 3:
-                        hkl1 = FindO.HKL_CUBIC_UP3
-                    elif n == 4:
-                        hkl1 = FindO.HKL_CUBIC_UP4
-                    elif n == 5:
-                        hkl1 = FindO.HKL_CUBIC_UP5
-                    elif n == 6:
-                        hkl1 = FindO.HKL_CUBIC_UP6
-                    elif n == 7:
-                        hkl1 = FindO.HKL_CUBIC_UP7
-                    else:
-                        hkl1 = GT.threeindicesfamily(n)
+                    hkl1 = GT.threeindicesfamily(n)
+                    if n in [3, 4, 5, 6, 7]:
+                        hkl1 = getattr(FindO, f"HKL_CUBIC_UP{n}")
 
                     # Rules = dictmaterials[key_material][2]
                     # hkl1 = CP.ApplyExtinctionrules(np.array(hkl1), Rules)
@@ -2196,7 +2264,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                                                             hkl2=hkl2,
                                                             LUT=LUTcubic,
                                                             allow_restrictedLUT=allow_restrictedLUT,
-                                                            verbose=verbose-1,
+                                                            verbose=verbose-2,
                                                             dictmaterials=dictmaterials,
                                                             LUT_with_rules=LUT_with_rules,
                                                             excludespotspairs=excludespotspairs)
@@ -2205,7 +2273,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 # --- building angles reference Look up table (LUT) from B and n
                 if LUT is None:
                     # use following LUT
-                    if verbose>0: print("building LUT in getOrientMatrices()")
+                    if verbose>1: print("building LUT in getOrientMatrices()")
 
                     if LUT_with_rules:
                         Rules = dictmaterials[key_material][2]
@@ -2215,7 +2283,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                                                     cubicSymmetry=cubicSymmetry,
                                                     applyExtinctionRules=Rules, verbose=verbose-1)
 
-                if verbose>0: print("using general non cubic LUT")
+                if verbose>1: print("using general non cubic LUT")
                 # find some potential matrices from recognised distances in LUT
                 (list_orient_matrix, planes, pairspots) = matrices_from_onespot_new(
                                                                     spot_index_central,
@@ -2226,7 +2294,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                                                                     n,
                                                                     B,
                                                                     LUT=LUT,
-                                                                    verbose=verbose-1,
+                                                                    verbose=verbose-2,
                                                                     excludespotspairs=excludespotspairs,
                                                                     LUTfraction=LUTfraction)
         if len(list_orient_matrix) == 0 and verbose>0:
@@ -2247,7 +2315,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
         nb_ub_matrices = len(list_orient_matrix)
 
-        if verbose>0: print(f"For spot {spot_index_central} nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
+        if verbose>1:
+            print(f"For spot {spot_index_central} nb matrices  = len(list_orient_matrix)", nb_ub_matrices)
 
         # multiprocessing way to compute matching figures
         if nb_ub_matrices>1250 and useparallelcomputing:  # empirical value to use multiple cpus
@@ -2267,13 +2336,37 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     itertools.repeat(crudeMReval), # fastmode
                     itertools.repeat(maxnbspots_MReval),
                     )
-            with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
+            ncpus = max(cpu_count()-1,1)
+            if verbose>1:
+                #print('args of multiprocessing', next(args))
+                print('ncpus', ncpus)
+            # deprecated for python  3.12
+            with multiprocessing.Pool(ncpus) as pool:
                 results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices))
+            # ok for python  3.12
+            # results= run_parallel(list_orient_matrix,
+            #                         twiceTheta_exp,
+            #                         Chi_exp,
+            #                         MR_tol_angle,
+            #                         key_material,
+            #                         energy_max,
+            #                         ResolutionAngstrom,
+            #                         detectorparameters,
+            #                         dictmaterials,
+            #                         crudeMReval,  # fastmode
+            #                         maxnbspots_MReval,
+            #                         nb_ub_matrices,
+            #                         verbose=verbose-1)
 
+            if verbose>1:
+                print('len(results)', len(results))
+                print('Minimum_Nb_Matches', Minimum_Nb_Matches)
             for mat_ind, AngRes in enumerate(results):
                 if AngRes is None:
+                    #print('mat_ind', mat_ind, 'AngRes is None')
                     continue
                 (allres, _, nbclose, nballres, _, max_residue) = AngRes
+                #print('nbclose', nbclose)
                 if nbclose > Minimum_Nb_Matches:
                     std_closematch = np.std(allres[allres < MR_tol_angle])
                     solutions_matorient_index.append(mat_ind)
@@ -2287,7 +2380,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     break
         # loop way to compute matching figures                
         else:
-            if verbosedetails>0 or verbose>0:
+            if verbosedetails>0 or verbose>1:
                 
                 # print "key_material",key_material
                 print(f'For spot {spot_index_central}')
@@ -2339,8 +2432,10 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     if verbose>0: print('nbclose>=stop_Nb_Matches is True. Stopping the loop')
                     reachedhighmatching=True
                     break
-               
-
+        # ----   NOW TREATING  potential solutions -------------
+        if verbose>1:
+            print('solutions_matchingscores',solutions_matchingscores)
+        
         BestScores_per_centralspot[k_centspot_index] = np.array(solutions_matchingscores)
 
         # for one central spot if there are at least one potential solution
@@ -2378,7 +2473,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 List_Scores.append(bestscores)
 
         else:
-            if verbose>0: print("Sorryyy! No orientation matrix found with nb of matches larger than %d"
+            if verbose>0:
+                print("Sorryyy! No orientation matrix found with nb of matches larger than %d"
                 % Minimum_Nb_Matches)
             if verbose>1:
                 print("Try to:")
@@ -2448,27 +2544,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
     # results and plot for only one central spot
     if len(list_spot_central_indices) == 1:
 
-        if plot:
-            if nbspots_plot == "all":
-                _nbspots_plot = len(Chi_exp)
-            else:
-                _nbspots_plot = nbspots_plot
-
-            Plot_compare_2thetachi_multi(orient_index_fame[:9],
-                                        2 * Theta_exp,
-                                        Chi_exp,
-                                        EULER=list_UBs_for_plot,
-                                        key_material=key_material,
-                                        emax=energy_max,
-                                        verbose=0,
-                                        exp_spots_list_selection=_nbspots_plot,
-                                        title_plot=list(hall_of_fame),
-                                        figsize=(8, 8),
-                                        dpi=70)
-            # savefig('spot_'+str(spot_index_central[0])+'.png')
-
         if verbose>0: print("return best matrix and matching scores for the one central_spot")
-        # returned results for only one central spot
+        # return results for only one central spot
         return List_UBs, List_Scores
 
     # results and plot for many central spots
@@ -2555,7 +2632,10 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
         if verbose> 0: print('add somes hkl to recognise orientation 001')
         Nmax = max(-np.amin(hkl_all),np.amax(hkl_all))
         # todo generate cleverly using Nmax as min and an other max value
-        addedhkls = FindO.ADDED_HKLS_HEXAGONAL
+        if latticeparameters[2]/latticeparameters[0]<1.7:
+            addedhkls = FindO.ADDED_HKLS_HEXAGONAL_covera_1p5
+        else:
+            addedhkls = FindO.ADDED_HKLS_HEXAGONAL_covera_2p5
         hkl_all = np.r_[addedhkls,hkl_all]
 
 
