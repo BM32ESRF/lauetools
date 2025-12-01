@@ -207,7 +207,7 @@ class spotsset:
         
         self.key_material = key_material
 
-        if key_material not in DictLT.dict_Materials:
+        if key_material not in DictLT.dict_Materials.keys():
             if addeddictmaterials is None:
                 if self.dictmaterials_index is None:
                     raise ValueError(f'Unknown "key_material" and dictmaterials argument in indexSpotsSet() is None!')
@@ -977,6 +977,7 @@ class spotsset:
         if verbose>0:
             print('********  in FindOrientMatrices()  *************')
             print('spot_index_central',spot_index_central)
+            print('nbmax_probed',nbmax_probed)
 
         emax = self.emax_MR if self.emax_MR is not None else self.emax
 
@@ -1013,16 +1014,15 @@ class spotsset:
 
         # there is no precomputed angular distances between spots
         if not Tabledist:
-            # select 1rstly spots that have not been indexed and 2ndly reduced list by user
             index_to_select = np.take(
                 current_exp_spot_index_list, np.arange(nbspotmaxformatching))
 
-            select_theta = 0.5 * tth[index_to_select]
+            select_theta = 0.5 * tth[index_to_select]  # be careful of coef 0.5!
             select_chi = chi[index_to_select]
             # select_I = intensity[index_to_select]
             select_thetachi = np.array([select_theta, select_chi]).T
-            # compute angles between spots
-            Tabledistance = GT.calculdist_from_thetachi(select_thetachi, select_thetachi)
+            # compute angles between spots, for the recognition fastmode=False (no approximation)
+            Tabledistance = GT.calculdist_from_thetachi(select_thetachi, select_thetachi, fastmode=False)
 
         latticeparams = self.dict_Materials[key_material][1]
         B = CP.calc_B_RR(latticeparams)
@@ -1030,7 +1030,7 @@ class spotsset:
         # indexation procedure
         bestmat, stats_res = INDEX.getOrientMatrices(spot_index_central,
                                                     emax,
-                                                    Tabledistance[:nbmax_probed, :nbmax_probed],
+                                                    Tabledistance[:nbmax_probed+1, :nbmax_probed+1],
                                                     select_theta,
                                                     select_chi,
                                                     n=nLUT,
@@ -2482,7 +2482,7 @@ class spotsset:
         
 
         latticeparams = self.dict_Materials[self.key_material][1]
-        Bmatrix = CP.calc_B_RR(latticeparams)
+        Bmatrix = CP.calc_B_RR(latticeparams, verbose=verbose-1)
 
         if verbose > 1:
             print("\nInitial error--------------------------------------\n")
@@ -2570,20 +2570,33 @@ class spotsset:
 
         # building UBmat(= newmatrix)
         newUBmat = np.dot(np.dot(deltamat, starting_orientmatrix), varyingstrain)
-        if verbose > 1:
+        if verbose > 0:
             print("newUBmat", newUBmat)
+            print('starting_orientmatrix', starting_orientmatrix)
 
 
         Bstar_s = np.dot(newUBmat, Bmatrix)
-        if verbose > 1:
-            print("new UBs matrix in q= UBs G (s for strain)")
+        Bstar_0 = np.dot(starting_orientmatrix, Bmatrix)
+        if verbose > 0:
+            print("Bstar_s is the new UBs.B0 matrix in q= UBs.B0 G (s for strain)")
             print(Bstar_s)
+            print("Bstar_0 is the initial UB.B0 matrix in q= UB.B0 G")
+            print(Bstar_0)
 
         lattice_parameter_reciprocal = CP.matrix_to_rlat(Bstar_s)
+        lattice_parameter_reciprocal_0 = CP.matrix_to_rlat(Bstar_0)
         lattice_parameter_direct_strain = CP.dlat_to_rlat(lattice_parameter_reciprocal)
+        lattice_parameter_direct_0 = CP.dlat_to_rlat(lattice_parameter_reciprocal_0)
 
-        Bmatrix_direct_strain = CP.calc_B_RR(lattice_parameter_direct_strain, directspace=0)
-        Bmatrix_direct_unstrained = CP.calc_B_RR(latticeparams, directspace=0)
+        if verbose>0:
+            print("lattice_parameter_reciprocal strain", lattice_parameter_reciprocal)
+            print("lattice_parameter_reciprocal 0", lattice_parameter_reciprocal_0)
+            print("lattice_parameter_direct_strain", lattice_parameter_direct_strain)
+            print('lattice_parameter_direct_0', lattice_parameter_direct_0)   
+            print('initial latticeparams', latticeparams)
+
+        Bmatrix_direct_strain = CP.calc_B_RR(lattice_parameter_direct_strain, directspace=0, verbose=verbose-1)
+        Bmatrix_direct_unstrained = CP.calc_B_RR(latticeparams, directspace=0, verbose=verbose-1)
 
         Trans = np.dot(Bmatrix_direct_strain, np.linalg.inv(Bmatrix_direct_unstrained))
         strain_direct = (Trans + Trans.T) / 2.0 - np.eye(3)
