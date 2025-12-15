@@ -2479,7 +2479,6 @@ class spotsset:
                 self.detectorparameters + [1, 1, 0, 0, 0] + [0, 0, 0])
 
         arr_indexvaryingparameters = np.arange(5, 13)
-        
 
         latticeparams = self.dict_Materials[self.key_material][1]
         Bmatrix = CP.calc_B_RR(latticeparams, verbose=verbose-1)
