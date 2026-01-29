@@ -306,6 +306,7 @@ elif not(USE_MATERIALS_LIBRARY):
         "Al2O3_colombo": ['Al2O3_colombo', [4.788, 4.788, 13.032, 90, 90, 120], 'Al2O3'],
         "Al": ["Al", [4.05, 4.05, 4.05, 90, 90, 90], "fcc"],
         "Al2Cu": ["Al2Cu", [6.063, 6.063, 4.872, 90, 90, 90], "no"],
+        "Al3Ni": ["Al3Ni", [6.615, 7.3911, 4.8116, 90, 90, 90], "no"],  # SG 62  TODO add reflection rules
         "AlN": ["AlN", [3.11, 3.11, 4.98, 90.0, 90.0, 120.0], "wurtzite"],
         "Al13Fe4": ["Al13Fe4", [15.489, 8.0831, 12.476, 90.0, 107.72, 90.0], "SG12", ],  # SG12 monoclinic unique axis b cell choice 1 
         "Al6Fe": ["Al6Fe", [7.437, 6.492, 8.788, 90.0, 90.0, 90.0], "SG36", ],  # SG36 orthorhombic 
@@ -379,9 +380,9 @@ elif not(USE_MATERIALS_LIBRARY):
         "DIA": ["DIA", [5.0, 5.0, 5.0, 90, 90, 90], "dia", ],  #  small lattice Diamond like Structure
         "DIAs": ["DIAs", [3.56683, 3.56683, 3.56683, 90, 90, 90], "dia", ],  #  small lattice Diamond material Structure
         "FCC": ["FCC", [5.0, 5.0, 5.0, 90, 90, 90], "fcc"],  # small lattice fcc Structure
-        "SC": ["SC", [1.0, 1.0, 1.0, 90, 90, 90], "no"],  # 1Ang simple cubic Structure
-        "SC5": ["SC5", [5.0, 5.0, 5.0, 90, 90, 90], "no"],  # 5Ang simple cubic Structure
-        "SC7": ["SC7", [7.0, 7.0, 7.0, 90, 90, 90], "no"],  # 7Ang simple cubic Structure
+        "SimpleCubic1Ang": ["SimpleCubic1Ang", [1.0, 1.0, 1.0, 90, 90, 90], "no"],  # 1Ang simple cubic Structure
+        "SimpleCubic5Ang": ["SimpleCubic5Ang", [5.0, 5.0, 5.0, 90, 90, 90], "no"],  # 5Ang simple cubic Structure
+        "SimpleCubic7Ang": ["SimpleCubic7Ang", [7.0, 7.0, 7.0, 90, 90, 90], "no"],  # 7Ang simple cubic Structure
         "W": ["W", [3.1652, 3.1652, 3.1652, 90, 90, 90], "bcc"],
         "testindex": ["testindex", [2.0, 1.0, 4.0, 90, 90, 90], "no"],
         "testindex2": ["testindex2", [2.0, 1.0, 4.0, 75, 90, 120], "no"],
@@ -432,7 +433,8 @@ elif not(USE_MATERIALS_LIBRARY):
         "ZnCuOCl_all": ["ZnCuOCl_all", [6.839, 6.839, 14.08, 90.0, 90, 120.0], "no"],
         "FePS3": ["FePS3", [5, 10, 7, 90, 107, 90], "no"],
         "Zr": ["Zr", [3.24, 3.24, 5.17, 90, 90, 120], "no"],  # 194
-        "Zr_ref": ["Zr_ref", [3.242, 3.242, 5.169, 90, 90, 120], "no"],  # 194 
+        "Zr_ref": ["Zr_ref", [3.242, 3.242, 5.169, 90, 90, 120], "no"],  # 194
+        "Zr_ref_s3DXRD": ["Zr_ref_s3DXRD", [3.231, 3.231, 5.169, 90, 90, 120], "no"],  # 194
         "Nb14W3O44": ["Nb14W3O44", [21.03,21.03,3.93,90, 90, 90], "h+k+l=2n"], #SG 82
         "tourmaline" : ["tourmaline", [15.963, 15.963 , 7.148, 90, 90, 120], "R3m_sg160"],
         "CaWO4": ["CaWO4", [5.26, 5.26, 11.35, 90, 90, 90], "h+k+l=2n"], # SG88
@@ -638,10 +640,6 @@ def readsinglelinedictfile(line):
     keydict = liststring[0]
     valdict = [liststring[1], listfloat, liststring[2]]
     return keydict, valdict
-
-
-
-    
 
 
 dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"]}
