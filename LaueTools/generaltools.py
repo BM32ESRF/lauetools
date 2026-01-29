@@ -593,6 +593,33 @@ def UBdecomposition_RRPP(UBmat:'arrayORList3x3')->Tuple[arrayORList3x3]:
 
     return RR, PP
 
+def is_ubmatrix_distorted_orthogonal_rotation(ubmatrix, tolerance = 0.05):
+    """
+    Check if ubmatrix is a distorted orthogonal rotation matrix
+    (i.e. check if it is close enough to an orthogonal rotation matrix)
+
+    q = ubmatrix B0 G*  where B0 (triangular up matrix) comes from lattice parameters input
+
+    :param ubmatrix: 3x3 matrix to be tested
+    :return: boolean, True if ubmatrix satisfies the conditions, False otherwise
+    """
+
+    dot_products = np.array([
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 1])),
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 2])),
+        np.abs(ubmatrix[:, 1].dot(ubmatrix[:, 2]))
+    ])
+
+    norms = np.array([
+        np.abs(ubmatrix[:, 0].dot(ubmatrix[:, 0])),
+        np.abs(ubmatrix[:, 1].dot(ubmatrix[:, 1])),
+        np.abs(ubmatrix[:, 2].dot(ubmatrix[:, 2]))
+    ])
+
+    conditions = (dot_products < tolerance) & (np.abs(norms - 1) < tolerance)
+
+    return np.all(conditions)
+
 
 # ---- ------------------  TENSORS -------
 ##http://www.continuummechanics.org/coordxforms.html
