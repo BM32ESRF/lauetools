@@ -283,7 +283,14 @@ def EulerAngles(indexed_fileseries: parsed_fitfileseries, size: tuple = (21,6), 
 def EulerAngles2D(xech: np.ndarray, yech: np.ndarray, 
                   indexed_fileseries: parsed_fitfileseries, 
                   size: tuple = (10,6), maskingcondition:bool=None,
-                  vlimits=((None,None),(None,None),(None,None)), **kwargs) -> None:
+                  vlimits=((None,None),(None,None),(None,None)), figuretitle=None, **kwargs) -> None:
+    
+    txttitle = ''
+    if figuretitle is None:
+        if hasattr(indexed_fileseries, 'fitfilefolder'):
+            txttitle = indexed_fileseries.fitfilefolder
+    else:
+        txttitle = figuretitle
     
     fig, ax = plt.subplots(1,3)
     if size is not None:
@@ -328,7 +335,9 @@ def EulerAngles2D(xech: np.ndarray, yech: np.ndarray,
         #cbarax = fig.add_axes([axis.get_position().x1 + 0.01, axis.get_position().y0, 0.025, axis.get_position().height])
         fig.colorbar(im)#, cax=cbarax)
     
-    fig.suptitle('Euler Angles')
+    fig.suptitle(f'Euler Angles', fontsize=12)
+
+    plt.text(x=0.5, y=0.94, s= txttitle, fontsize=6, ha="center", transform=fig.transFigure)
 
     return phi, theta, psi
 
@@ -497,7 +506,7 @@ def StrainMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fit
         kk+=1
         plt.colorbar(im, ax=ax[axidx])
     fig.suptitle(f'Deviatoric strain components in {frame} frame')
-    fig.tight_layout()
+    #fig.tight_layout()
 
     return fig, ax
 
@@ -573,14 +582,29 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
     return fig, ax, fitgaussianresults
 
 def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries, 
-              scale: str = 'default', size = (21,10), **kwargs) -> tuple:
+              scale: str = 'default', size = (21,10),
+              vlimits=((None,None),(None,None),(None,None),(None,None),(None,None),(None,None)),
+                     maskingcondition=None,
+                     **kwargs) -> tuple:
     
-    a = indexed_fileseries.a_prime
-    b = indexed_fileseries.a_prime
-    c = indexed_fileseries.a_prime
-    alpha = indexed_fileseries.a_prime
-    beta  = indexed_fileseries.a_prime
-    gamma = indexed_fileseries.a_prime
+    a = (indexed_fileseries.a).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    b = (indexed_fileseries.b).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    c = (indexed_fileseries.c).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    alpha = (indexed_fileseries.alpha).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    beta  = (indexed_fileseries.beta).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    gamma = (indexed_fileseries.gamma).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+
+    if maskingcondition is not None:
+        if maskingcondition.shape != a.shape:
+            print('Be careful! maskingcondition has not the expected shape :', a.shape)
+            return None, None
+        
+        a = ma.masked_where(maskingcondition, a)
+        b = ma.masked_where(maskingcondition, b)
+        c = ma.masked_where(maskingcondition, c)
+        alpha = ma.masked_where(maskingcondition, alpha)
+        beta = ma.masked_where(maskingcondition, beta)
+        gamma = ma.masked_where(maskingcondition, gamma)
     
     if scale == 'default':
         plotvmin = np.repeat(None, 6)
@@ -599,22 +623,48 @@ def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: par
     else:
         raise Exception("scale must be in the list ['default', 'mean3sigma', 'uniform', 'other']")
     
-    titles = ['$a$', '$b$', '$c$', '$\alpha$', '$\beta$', '$\gamma$']
+    #titles = ['$a$', '$b$', '$c$', '$\alpha$', '$\beta$', '$\gamma$']
+    titles = ['a (Angst)', 'b (Angst)', 'c (Angst)', 'alpha (deg)', 'beta (deg)', 'gamma (deg)']
     
     latparams = [a,b,c, alpha, beta, gamma]
+
+    if len(xech)>1:
+        xechstep = np.fabs(xech[1]-xech[0])
+    else:
+        xechstep =0
+    if len(yech)>1:
+        yechstep = np.fabs(yech[1]-yech[0])
+    else:
+        yechstep =0
+    
+    print('xechstep',xechstep)
+    print('yechstep',yechstep)
+    print('alpha angle shape', alpha.shape)
+
+    fmtcoordfuncs = []
+    for kk, _data in enumerate(latparams):
+        def make_fmtcoordfunc(data2D):  # function factory to ensure "early binding"
+            def fmtcoord(x,y):
+                return GT.format_getimageindex_pcolormesh(x, y, data2D=data2D, mapdims=data2D.shape,
+                                                      xech_stepsize=xechstep,yech_stepsize=yechstep)
+            return fmtcoord
+        fmtcoordfuncs.append(make_fmtcoordfunc(_data))
     
     fig, ax = plt.subplots(2, 3)
     if size is not None:
         fig.set_size_inches(size[0], size[1])
-    
-    for axidx, data, title, plotmin, plotmax in zip(np.ndindex(ax.shape), latparams, titles, plotvmin, plotvmax):
-        im = ax[axidx].pcolormesh(xech, yech, data, vmin = plotmin, vmax = plotmax, **kwargs)
+
+    kk=0
+    for axidx, data, title, plotmin, plotmax in zip(np.ndindex(ax.shape), latparams, titles, vlimits):
+        im = ax[axidx].pcolormesh(xech, yech, data, vmin = vlimit[0], vmax = vlimit[1],**kwargs)
         ax[axidx].set_xlabel('Position [µm]')
         ax[axidx].set_ylabel('Position [µm]')
         ax[axidx].set_title(title)
         ax[axidx].set_aspect('equal')
         ax[axidx].title.set_size(16)
+        ax[axidx].format_coord = fmtcoordfuncs[kk]
+        kk+=1
+        plt.colorbar(im, ax=ax[axidx])
 
-        plt.colorbar(im)
-    
+    fig.suptitle(f'Distribution of lattice parameters')    
     return fig, ax
