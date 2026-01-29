@@ -59,8 +59,8 @@ except ImportError:
 
 try:
     import wx
-except ImportError:
-    print("wx is not installed! Could be some trouble from this lack...")
+except (ImportError, AttributeError):
+    print("wx is not installed! Could be some trouble from this lack... If on jupyter-slurm it is ok")
 
 from typing import Iterable, Dict, Tuple, List, Union
 
@@ -2375,7 +2375,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     solutions_matchingscores.append([nbclose, nballres, std_closematch])
                     solutions_matchingrate.append(100.0 * nbclose / nballres)
                 if nbclose>=stop_Nb_Matches:
-                    if verbose>0: print('nbclose>=stop_Nb_Matches is True. Stopping the loop')
+                    if verbose>0: print('After multiprocessing. nbclose>=stop_Nb_Matches is True. Stopping the loop')
                     reachedhighmatching=True
                     break
         # loop way to compute matching figures                
@@ -2434,7 +2434,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     break
         # ----   NOW TREATING  potential solutions -------------
         if verbose>1:
-            print('solutions_matchingscores',solutions_matchingscores)
+            print(f'solutions_matchingscores for k_centspot_index= {k_centspot_index}',solutions_matchingscores)
         
         BestScores_per_centralspot[k_centspot_index] = np.array(solutions_matchingscores)
 
@@ -2474,8 +2474,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
         else:
             if verbose>0:
-                print("Sorryyy! No orientation matrix found with nb of matches larger than %d"
-                % Minimum_Nb_Matches)
+                print("Sorry :[ ! No orientation matrix found with nb of matches larger than %d"% Minimum_Nb_Matches)
             if verbose>1:
                 print("Try to:")
                 print("- decrease Ns (MNMS: minimum number of matched spots)")
@@ -2484,6 +2483,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 print("- increase Energy max")
 
         if reachedhighmatching:
+            if verbose>1:
+                print('List_Scores', List_Scores)
             break
 
     # Consider immediately (if any) a list of a priori known matrices
@@ -2556,23 +2557,6 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
         nbmatrixfound = len(List_UBs)
         # print "MATOS",MATOS
         HF = List_Scores
-
-        if plot:
-            if nbspots_plot == "all":
-                _nbspots_plot = len(Chi_exp)
-            else:
-                _nbspots_plot = nbspots_plot
-
-            Plot_compare_2thetachi_multi(np.arange(min(nbmatrixfound, 9)),
-                                            2 * Theta_exp,
-                                            Chi_exp,
-                                            key_material=key_material,
-                                            emax=energy_max,
-                                            verbose=0,
-                                            EULER=MATOS,
-                                            exp_spots_list_selection=_nbspots_plot,
-                                            title_plot=list(HF))
-            # savefig('spot_'+str(spot_index_central[0])+'.png')
 
         # returned results for several central spots
         return MATOS, HF
