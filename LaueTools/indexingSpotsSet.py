@@ -207,7 +207,8 @@ class spotsset:
         
         self.key_material = key_material
 
-        if key_material not in DictLT.dict_Materials.keys():
+        #if key_material not in DictLT.dict_Materials.keys():
+        if key_material not in DictLT.dict_Materials:
             if addeddictmaterials is None:
                 if self.dictmaterials_index is None:
                     raise ValueError(f'Unknown "key_material" and dictmaterials argument in indexSpotsSet() is None!')
