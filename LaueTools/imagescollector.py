@@ -17,7 +17,6 @@ import LaueTools.dict_LaueTools as DictLT
 
 
 def setfilename(prefix:str,index:int,CCDLabel:str='sCMOS', tifextension:str='.tif')->str:
-
     """
     Reconstruct filename string from imagefilename and update filename index with imageindex
 
@@ -42,6 +41,8 @@ def setfilename(prefix:str,index:int,CCDLabel:str='sCMOS', tifextension:str='.ti
         return prefix+'%04d'%index + tifextension
     elif CCDLabel in ('MARCCD165',):
         return prefix+'%04d'%index + '.mccd'
+    elif CCDLabel in ('EIGER_4MCdTe',):
+        return prefix+'%04d'%index + '.h5'
     
 def collectroiarray_singlefile(imageindex, roicenter=None, prefix=None, folder =None,
                             boxsize_row=10,boxsize_line=10,CCDLabel=None):
@@ -57,8 +58,14 @@ def collectroiarray_singlefile(imageindex, roicenter=None, prefix=None, folder =
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
+    extension = '.tif'
+    if CCDLabel == 'EIGER_4MCdTe':
+        extension = '.h5'
+    elif CCDLabel == 'MARCCD165':
+        raise ValueError("MARCCD165 not supported yet")
+        #extension = '.mccd'
     
-    filename = prefix+'%04d'%imageindex + '.tif'   
+    filename = prefix+'%04d'%imageindex + extension 
     imagefilename = os.path.join(folder, filename)
     
     halfboxsizes = boxsize_row, boxsize_line  # along X, along Y
@@ -179,7 +186,14 @@ def collectroissum_singlefile(index, roicenters=None, prefix=None, folder =None,
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
-    filename = prefix+'%04d'%index + '.tif'   
+    extension = '.tif'
+    if CCDLabel == 'EIGER_4MCdTe':
+        extension = '.h5'
+    elif CCDLabel == 'MARCCD165':
+        raise ValueError("collectroissum_singlefile not implemented for MARCCD165")        
+        #extension = '.mccd'   
+    
+    filename = prefix+'%04d'%imageindex + extension     
     imagefilename = os.path.join(folder, filename)
 
     pixsums = IOimage.getroissum(imagefilename, roicenters=roicenters,
