@@ -1676,7 +1676,12 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
         dict_scan[key] = pdf[key][item_idx]
 
     dict_scan['folder'] = dict_scan['imagefolder']
-    dict_scan['prefix'] = 'img_'
+    if CCDLabel in  ('EIGER_4MCdTe',):
+        dict_scan['prefix'] = 'eiger4m_'
+        dict_scan['suffix'] = 'h5'
+    else:
+        dict_scan['suffix'] = 'tif' 
+        dict_scan['prefix'] = 'img_'
     dict_scan['listindices'] = np.arange(0,mapdimensions[0]*mapdimensions[1])
     dict_scan['nbimagesperline'] = mapdimensions[0]
     dict_scan['mapdimensions'] = mapdimensions
