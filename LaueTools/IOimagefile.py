@@ -153,7 +153,7 @@ def setfilename(imagefilename, imageindex, nbdigits=4, CCDLabel=None, verbose=0)
         prepart = str(imagefilename).rsplit('.',1)[0]
         prefix0, strindex = str(prepart).rsplit('_', 1)
 
-        if prepart.startswith(('mpxcdte_', 'eiger1_')):
+        if prepart.startswith(('mpxcdte_', 'eiger1_', 'eiger4m')):
 
             if nbdigits is not None or nbdigits == 0:  # zero padded   (4 digits)
                 #imagefilename = prefix0 + "_{:04d}.{}".format(imageindex, ext)
@@ -261,12 +261,12 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
     # for stacked images we return the position of image data in the stack as imagefileindex
     elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe","EIGER_4MCdTe", 'EIGER_1M'):
         _filename = os.path.split(imagefilename)[-1]
-        if _filename.startswith(('mpxcdte_','eiger1_')):
+        if _filename.startswith(('mpxcdte_','eiger1_', 'eiger4m_')):
             imageindex= int(_filename.split('.')[0].split('_')[-1])
         else:
             print('CCDLabel in getIndex_fromfilename',CCDLabel)
             imageindex = stackimageindex
-            print('imageindex',imageindex)
+            print('imageindex is stack image index',imageindex)
 
     elif imagefilename.endswith("mar.tiff"):
         imageindex = int(imagefilename[-(9 + nbdigits) : -9])
@@ -1005,7 +1005,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         else:
             USE_RAW_METHOD = True
     # special treatment: because fabio open only the fisrt image of stacked images hdf5 file!....
-    elif CCDLabel in ("EIGER_4Mstack"):  #made by PSL software
+    elif CCDLabel in ("EIGER_4Mstack"):  #made by PSI software
 
         import tables as Tab
 
