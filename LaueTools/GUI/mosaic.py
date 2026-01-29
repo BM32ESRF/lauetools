@@ -2413,7 +2413,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         if map_imageindex % 100 == 0:
             print('*** >>>>> Collected %d images over %d'%(map_imageindex,nbtotalimages))
         
-        if ccdlabel in ('EIGER_4MCdTestack'): # or other stack images detector
+        if ccdlabel in ('EIGER_4MCdTestack',''): # or other stack images detector
             print('in buildMosaic3')
             print('ccdlabel ', ccdlabel)
             filename = filename_representative
