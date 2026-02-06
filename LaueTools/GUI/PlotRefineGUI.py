@@ -166,6 +166,7 @@ class Plot_RefineFrame(wx.Frame):
                                                 IndexationParameters=None,
                                                 StorageDict=None,
                                                 DataSetObject=None,
+                                                verbose=1,
                                                 **kwds):
 
         wx.Frame.__init__(self, parent, _id, title, size=(1000, 1200), **kwds)
@@ -173,6 +174,10 @@ class Plot_RefineFrame(wx.Frame):
 
         self.panel = wx.Panel(self)
         self.parent = parent
+        if verbose is None:
+            self.verbose = 0
+        else:
+            self.verbose = verbose
 
         self.IndexationParameters = IndexationParameters
 
@@ -246,8 +251,8 @@ class Plot_RefineFrame(wx.Frame):
             #             AllData = self.IndexationParameters['AllDataToIndex']
             self.dirname = self.IndexationParameters["dirname"]
             DataToIndex = self.IndexationParameters["DataToIndex"]
-            print("\n***************\nEntering Plot_RefineFrame\nNumber of spots in DataToIndex: %d\n*****************\n"%
-                                                                    len(DataToIndex["data_theta"]))
+            if verbose>0:
+                print("\n***************\nEntering Plot_RefineFrame\nNumber of spots in DataToIndex: %d\n*****************\n"%len(DataToIndex["data_theta"]))
             
             if self.datatype == "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
@@ -276,7 +281,8 @@ class Plot_RefineFrame(wx.Frame):
         # simulation parameters
         # self.SimulParam =(grain, emin, self.emax.GetValue())
         self.SimulParam = Params_to_simulPattern
-        print("self.SimulParam in Plot_RefineFrame", self.SimulParam)
+        if self.verbose>0:
+            print("self.SimulParam in Plot_RefineFrame", self.SimulParam)
 
         self.kf_direction = kf_direction
 
@@ -284,16 +290,19 @@ class Plot_RefineFrame(wx.Frame):
             self.DataPlot_filename = IndexationParameters["DataPlot_filename"]
             self.current_processedgrain = IndexationParameters["current_processedgrain"]
         else:
-            print('WARNING! IndexationParameters dict is None!?')
+            if self.verbose>0:
+                print('WARNING! IndexationParameters dict is None!?')
             self.DataPlot_filename = self.mainframe.DataPlot_filename
             self.dirname = self.mainframe.pklistdirname
             self.current_processedgrain = self.mainframe.current_processedgrain
 
-        print('peaklist: Filename: %s\nFolder: %s'%(self.DataPlot_filename, self.dirname))
+        if self.verbose>0:
+            print('peaklist: Filename: %s\nFolder: %s'%(self.DataPlot_filename, self.dirname))
 
         # initial parameters of calibration ----------------------*
         if CCDdetectorparameters is not None:
-            print('CCDdetectorparameters is known in __init__ of Plot_RefineFrame')
+            if self.verbose>1:
+                print('CCDdetectorparameters is known in __init__ of Plot_RefineFrame')
             self.CCDcalib = CCDdetectorparameters["CCDcalib"]
             self.framedim = CCDdetectorparameters["framedim"]
             self.pixelsize = CCDdetectorparameters["pixelsize"]
@@ -306,7 +315,8 @@ class Plot_RefineFrame(wx.Frame):
             self.CCDLabel = self.mainframe.CCDLabel
 
         if StorageDict is not None:
-            print('in Plot_RefineFrame.__ini__(), StorageDict is known')
+            if self.verbose>1:
+                print('in Plot_RefineFrame.__ini__(), StorageDict is known')
             self.mat_store_ind = StorageDict["mat_store_ind"]
             self.Matrix_Store = StorageDict["Matrix_Store"]
             self.dict_Rot = StorageDict["dict_Rot"]
@@ -317,8 +327,9 @@ class Plot_RefineFrame(wx.Frame):
             self.dict_Rot = self.mainframe.dict_Rot
             self.dict_Materials = self.mainframe.dict_Materials
 
-        print("detector parameters in Plot_RefineFrame")
-        print(self.CCDcalib, self.framedim, self.pixelsize, self.CCDLabel)
+        if self.verbose>0:
+            print("detector parameters in Plot_RefineFrame")
+            print(self.CCDcalib, self.framedim, self.pixelsize, self.CCDLabel)
 
         # simulated 2theta,chi
         self.data_theo = data_added
@@ -380,7 +391,8 @@ class Plot_RefineFrame(wx.Frame):
         self.Bmat_tri = None
 
         self.UBmat = copy.copy(self.SimulParam[0][2])
-        print('self.UBmat: ', self.UBmat)
+        if self.verbose>0:
+            print('self.UBmat: ', self.UBmat)
         self.current_matrix = self.UBmat
         # saving previous unit cell strain and orientation
         self.previous_UBmat = self.UBmat
@@ -392,7 +404,8 @@ class Plot_RefineFrame(wx.Frame):
         self.constantlength = "a"
 
         self.DataSet = DataSetObject
-        print("self.DataSet.detectordiameter in init plot refine frame", self.DataSet.detectordiameter)
+        if self.verbose>1:
+            print("self.DataSet.detectordiameter in init plot refine frame", self.DataSet.detectordiameter)
 
         self.initGUI()
 
@@ -938,7 +951,8 @@ class Plot_RefineFrame(wx.Frame):
                 mname = inputmatrixname + "%d" % k
                 DictLT.dict_Rot[mname] = mat
                 self.comboUBmatrix.Append(mname)
-            print("len dict", len(DictLT.dict_Rot))
+            if self.verbose>1:    
+                print("len dict", len(DictLT.dict_Rot))
 
             self.comboUBmatrix.SetSelection(initlength)
 
@@ -957,7 +971,8 @@ class Plot_RefineFrame(wx.Frame):
         elif self.datatype == "pixels":
             self.tth, self.chi = self.data_2thetachi
             self.pixelX, self.pixelY = self.data_XY
-            print("pixels plot")
+            if self.verbose>0:
+                print("pixels plot")
 
     def getDataLimits(self):
         """
@@ -990,16 +1005,18 @@ class Plot_RefineFrame(wx.Frame):
     def OnSwitchCoords(self, _):
         """ from btn switch representation space for spots position"""
         if self.datatype == "2thetachi":
-            print("was 2theta")
+            if self.verbose>0:
+                print("was 2theta")
             self.datatype = "pixels"
 
         elif self.datatype == "pixels":
-            print("was pixels")
+            if self.verbose>0:
+                print("was pixels")
             self.datatype = "2thetachi"
 
         self.setcoordinates()
-
-        print("space coordinates is now:", self.datatype)
+        if self.verbose>0:
+            print("space coordinates is now:", self.datatype)
         self.datatype_unchanged = False
 
         self._replot()
@@ -1016,7 +1033,8 @@ class Plot_RefineFrame(wx.Frame):
         """   replot with UB matrix prior to refinement  """
         self.UBmat = copy.copy(self.previous_UBmat)
 
-        print("back to self.UBmat,self.Umat,self.Bmat")
+        if self.verbose>0:
+            print("back to self.UBmat,self.Umat,self.Bmat")
         print(self.UBmat)
 
         self.OnReplot(1)
@@ -1039,7 +1057,8 @@ class Plot_RefineFrame(wx.Frame):
             Grain[2] = DictLT.dict_Rot[str(self.comboUBmatrix.GetValue())]
 
             if self.UpdateFromRefinement.GetValue():
-                print("Using refined UB matrix")
+                if self.verbose>0:
+                    print("Using refined UB matrix")
                 #                 if self.Umat != None and self.Bmat != None:
                 if self.fit_completed:
                     # this comes from the end of onrefinePicky()
@@ -1078,8 +1097,9 @@ class Plot_RefineFrame(wx.Frame):
         """ onclick
         """
         if event.inaxes:
-            print(("inaxes x,y", event.x, event.y))
-            print(("inaxes  xdata, ydata", event.xdata, event.ydata))
+            if self.verbose>0:
+                print(("inaxes x,y", event.x, event.y))
+                print(("inaxes  xdata, ydata", event.xdata, event.ydata))
             self.centerx, self.centery = event.xdata, event.ydata
 
             if self.pointButton6.GetValue():
@@ -1163,7 +1183,8 @@ class Plot_RefineFrame(wx.Frame):
                 # if exp. spot is close enough
                 if _distanceexp < closedistance:
                     tip_exp = "spot index=%d. Intensity=%.1f" % (annote_exp[0], annote_exp[1])
-                    print('found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
+                    if self.verbose>0:
+                        print('found ->  at (%.2f,%.2f)'% (x, y), tip_exp)
                     self.updateStatusBar(x, y, annote_exp, spottype="exp")
 
                     self.highlightexpspot = annote_exp[0]
@@ -1199,7 +1220,8 @@ class Plot_RefineFrame(wx.Frame):
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
                     hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
-                    print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
+                    if self.verbose>0:
+                        print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
                 else:
                     self.sb.SetStatusText("", 0)
                     tip_theo = ""
@@ -1311,7 +1333,9 @@ class Plot_RefineFrame(wx.Frame):
             wx.MessageBox("There is not simulated data to plot and match with experimental data !!",
                 "INFO")
             return
-        print("\n ******  Matching Theo. and Exp. spots ***********\n")
+        
+        if self.verbose>0:
+            print("\n ******  Matching Theo. and Exp. spots ***********\n")
 
         veryclose_angletol = float(self.matr_ctrl.GetValue())  # in degrees
         # ---------  theoretical data
@@ -1325,12 +1349,14 @@ class Plot_RefineFrame(wx.Frame):
             twicetheta_exp, chi_exp, dataintensity_exp = self.tth, self.chi, self.Data_I
 
             #             print "twicetheta_exp",twicetheta_exp
-            print("nb of spots in OnAutoLinks", len(twicetheta_exp))
+            if self.verbose>0:
+                print("nb of spots in OnAutoLinks", len(twicetheta_exp))
         elif self.datatype == "pixels":
             twicetheta_exp, chi_exp = self.tth, self.chi
             dataintensity_exp = self.Data_I
 
-        print("Nb of exp. spots", len(twicetheta_exp))
+        if self.verbose>0:
+            print("Nb of exp. spots", len(twicetheta_exp))
         # print("twicetheta_exp", twicetheta_exp)
         # print("chi_exp", chi_exp)
         # print("theo 2theta", twicetheta)
@@ -1473,7 +1499,8 @@ class Plot_RefineFrame(wx.Frame):
                                                         Miller_spot[k],
                                                         Energy_spot[k]]
             else:
-                print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
+                if self.verbose>0:
+                    print("Experimental spot #%d may belong to several theo. spots!" % exp_index)
 
         # find theo spot linked to exp spot ---------------------------------
 
@@ -1489,8 +1516,9 @@ class Plot_RefineFrame(wx.Frame):
         #linkExpXY = []
         # Dataxy = []
 
-        # print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
-        # print('refine_indexed_spots', refine_indexed_spots)
+        if self.verbose>0:
+            print('self.selectedAbsoluteSpotIndices', self.selectedAbsoluteSpotIndices)
+            print('refine_indexed_spots', refine_indexed_spots)
 
         # val = [exp_index, theo_inde, Miller_spot, Energy_spot
         for val in list(refine_indexed_spots.values()):
@@ -1526,9 +1554,16 @@ class Plot_RefineFrame(wx.Frame):
 
         # check if peak search spots properties exist
         DataToIndex = self.IndexationParameters["DataToIndex"]
+        
         if 'select_spotsproperties' in DataToIndex:
             indExp = self.linkedspots_link[:,0]
-            arr_data = np.take(DataToIndex['select_spotsproperties'], indExp, axis=0)
+            if self.verbose>0:
+                print('indExp',indExp)  # absolute exp.spot index
+                localspotindices = np.where(np.isin(indExp, self.selectedAbsoluteSpotIndices))[0]
+                print('localspotindices',localspotindices)  # loacl exp.spot index
+                print("DataToIndex['select_spotsproperties'].shape",DataToIndex['select_spotsproperties'].shape)
+            
+            arr_data = np.take(DataToIndex['select_spotsproperties'], localspotindices, axis=0)
             # adding spot properties
             listkeys_spotsproperties = DataToIndex['columnsname_spotproperties']
 
@@ -1537,8 +1572,12 @@ class Plot_RefineFrame(wx.Frame):
                 self.fields.append(key)
                 self.linkSpotsProps_link.append(arr_data[:,ii])
 
+            if self.verbose>0:
+                print('len(self.linkSpotsProps_link)',len(self.linkSpotsProps_link))
+                print('len(self.linkSpotsProps_link[0])',len(self.linkSpotsProps_link[0]))
 
-        print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
+        if self.verbose>0:
+            print("Nb of links between exp. and theo. spots  : ", len(self.linkedspots_link))
 
         self.plotlinks = self.linkedspots_link
         self._replot()
@@ -1593,8 +1632,10 @@ class Plot_RefineFrame(wx.Frame):
         from data array"""
         ArrayReturn = np.array(data)
 
-        print('\nIn readdata_fromEditor_after() filter links: ')
-        print('ArrayReturn.shape',ArrayReturn.shape)
+        if self.verbose>0:
+            print('\nIn readdata_fromEditor_after() filter links: ')
+            print('ArrayReturn.shape',ArrayReturn.shape)
+    
 
         self.linkedspots = ArrayReturn[:, :2]
         self.linkMiller = np.take(ArrayReturn, [0, 2, 3, 4], axis=1)
@@ -2820,10 +2861,11 @@ class Plot_RefineFrame(wx.Frame):
 
         self.data_theo_pixXY = [posx, posy, Miller_ind, Twicetheta, Chi, energy]
         """
-        # print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
-        #     self.detectordiameter)
-        print('In Plot_RefineFrame.Simulate_Pattern()')
-        print('self.dict_Materials', self.dict_Materials)
+        if self.verbose>0:
+            print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
+                self.detectordiameter)
+            print('In Plot_RefineFrame.Simulate_Pattern()')
+            print('self.dict_Materials', self.dict_Materials)
 
         # for squared detector need to increase a bit
         if self.CCDLabel.startswith("sCMOS"):
@@ -2868,11 +2910,13 @@ class Plot_RefineFrame(wx.Frame):
         """
         in plot_RefineFrame
         """
-        print("EnterComboElem in RefineFrame")
+        if self.verbose>0:
+            print("EnterComboElem in RefineFrame")
         item = event.GetSelection()
         self.key_material = self.list_Materials[item]
 
-        print("self.key_material", self.key_material)
+        if self.verbose>0:
+            print("self.key_material", self.key_material)
 
         self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
 
@@ -2897,7 +2941,8 @@ class Plot_RefineFrame(wx.Frame):
         if flag:
             print("-------------------")
             print([butt.GetValue() for butt in self.listbuttons])
-            print("self.listbuttonstate", self.listbuttonstate)
+            if verbose>0:
+                print("self.listbuttonstate", self.listbuttonstate)
 
     def OnAcceptMatching(self, evt):  # accept AcceptMatching indexation
         """ accept current spots theo and exp. matching as completed indexation
@@ -3011,7 +3056,8 @@ class Plot_RefineFrame(wx.Frame):
         if self.ImageArray is not None and self.datatype == "pixels":
 
             # array to display: raw
-            print('self.data_dict["removebckg"]', self.data_dict["removebckg"])
+            if self.verbose>1:
+                print('self.data_dict["removebckg"]', self.data_dict["removebckg"])
             if not self.data_dict["removebckg"]:
                 self.ImageArray = self.ImageArrayInit
             # array to display: raw - bkg
@@ -3110,7 +3156,7 @@ class Plot_RefineFrame(wx.Frame):
                             **kwords)
 
         # ---------------------------------------------------------------
-        # plot experimental spots linked to 1 theo. spot)
+        # plot experimental spots linked to 1 theo. spot in yellow marker
         # ---------------------------------------------------------------
         if self.plotlinks is not None:
             exp_indices = np.array(np.array(self.plotlinks)[:, 0], dtype=np.int16)
@@ -3131,12 +3177,12 @@ class Plot_RefineFrame(wx.Frame):
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
         if self.highlighttheospot is not None:
-            iHL = self.highlighttheospot
+            iHL = self.highlighttheospot # theo spot index
             XtheoHL, YtheoHL = self.data_theo_displayed[0][iHL], self.data_theo_displayed[1][iHL]
             self.axes.scatter(XtheoHL, YtheoHL, s=100., alpha=0.5, c='k', marker='X')
 
         if self.highlightexpspot is not None:
-            indexHL = self.highlightexpspot
+            indexHL = self.highlightexpspot # exp spot index
             if self.datatype == "2thetachi":
                 XexpHL = self.data_2thetachi[0][indexHL]
                 YexpHL = self.data_2thetachi[1][indexHL]
