@@ -409,6 +409,7 @@ def OpenPeakList(parent, writecorfile=True, verbose=0):
 
         OpenCorfile(fullpathfilename, parent, verbose=verbose-1)
 
+        parent.dict_spotsproperties = {}
         parent.DataPlot_filename = filen
         parent.filenamepklist = parent.DataPlot_filename
         parent.dirnamepklist = folder
