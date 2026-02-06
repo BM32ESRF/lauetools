@@ -136,10 +136,15 @@ class LaueToolsGUImainframe(wx.Frame):
     class of the main window of LaueTools GUI
     """
     def __init__(self, parent, _id, title, filename="", consolefile="defaultLTlogfile.log",
-            projectfolder=None):
+            projectfolder=None, verbose=1):
 
         wx.Frame.__init__(self, parent, _id, title, size=(700, 500))
         panel = wx.Panel(self, -1)
+
+        if verbose is None:
+            self.verbose = 0
+        else:
+            self.verbose = verbose
 
         self.filename = filename
         self.dirname = projectfolder
@@ -474,7 +479,7 @@ class LaueToolsGUImainframe(wx.Frame):
         # create DB spots(dictionary)
         self.CreateSpotDB()
         self.setAllDataToIndex_Dict()
-        self.display_corfile_contents()
+        self.display_corfile_contents()  # display spots list on GUI windows
 
         self.current_processedgrain = 0
         self.last_orientmatrix_fromindexation = {}
@@ -506,12 +511,13 @@ class LaueToolsGUImainframe(wx.Frame):
                     #     raise ValueError("Invalid YAML structure: expected a dictionary at top level")
                     self.dict_Materials = libmaterials
                     
-                    
-                    print('located in ', self.dict_Materials.yaml_file_path)
+                    if self.verbose>0:
+                        print('located in ', self.dict_Materials.yaml_file_path)
 
                 else:
                     # --- Legacy format
-                    print('reading old format materials file')
+                    if self.verbose>0:
+                        print('reading old format materials file')
                     self.dict_Materials = readDict(path)
 
                 wx.MessageBox(f"Materials successfully loaded from:\n{path}",
@@ -536,11 +542,13 @@ class LaueToolsGUImainframe(wx.Frame):
 
         fullpathfile = os.path.join(self.dirname, self.DataPlot_filename)
 
-        print("self.defaultParam detector before ", self.defaultParam)
+        if self.verbose>0:
+            print("self.defaultParam detector before ", self.defaultParam)
 
         Launch_DetectorParamBoard(self)
 
-        print("self.defaultParam detector after", self.defaultParam)
+        if self.verbose>0:
+            print("self.defaultParam detector after", self.defaultParam)
 
         (twicetheta, chi, dataintensity,
         data_x, data_y, dict_data_spotsproperties) = Compute_data2thetachi(fullpathfile, sorting_intensity="yes",
@@ -558,8 +566,9 @@ class LaueToolsGUImainframe(wx.Frame):
                                                         initialfilename=self.PeakListDatFileName,
                                                         dirname_output=self.dirname,
                                                         dict_data_spotsproperties=dict_data_spotsproperties)  # check sortedexit = 0 or 1 to have decreasing intensity sorted data
-        print("%s has been created" % ("update_" + prefix + ".cor"))
-        print("%s" % str(self.defaultParam))
+        if self.verbose>0:
+            print("%s has been created" % ("update_" + prefix + ".cor"))
+            print("%s" % str(self.defaultParam))
         self.kf_direction_from_file = self.kf_direction
         # a .cor file is now created
         file_extension = "cor"
@@ -571,6 +580,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.dict_spotsproperties = {}
         # read peak list and detector calibration parameters
         OpenCorfile(self.DataPlot_filename, self)
+        if self.verbose>0:
+            print("self.dict_spotsproperties", self.dict_spotsproperties)
 
         # ---------------------------------------------
         self.filename = self.DataPlot_filename
@@ -623,7 +634,8 @@ class LaueToolsGUImainframe(wx.Frame):
         PB.ShowModal()
         PB.Destroy()
 
-        print("New write folder", self.writefolder)
+        if self.verbose>0:
+            print("New write folder", self.writefolder)
 
     # --- ------------ Indexation Functions
     def OnCheckOrientationMatrix(self, _):
@@ -636,7 +648,8 @@ class LaueToolsGUImainframe(wx.Frame):
 
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
 
-        print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
+        if self.verbose>0:
+            print("len(self.current_exp_spot_index_list)", len(self.current_exp_spot_index_list))
 
         self.select_theta = self.data_theta[self.current_exp_spot_index_list]
         self.select_chi = self.data_chi[self.current_exp_spot_index_list]
@@ -674,6 +687,10 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
+            if self.verbose>0:
+                print("\n************\nFANTASTIC: there are additional spots properties !!\n\n")
+                print("dataprops.shape", dataprops.shape)
+                print("nameprops", nameprops)
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
             self.indexation_parameters["DataToIndex"]["select_spotsproperties"] = self.select_spotsproperties
             self.indexation_parameters["DataToIndex"]["columnsname_spotproperties"] = nameprops
@@ -758,8 +775,12 @@ class LaueToolsGUImainframe(wx.Frame):
 
         see Autoindexation.py module
         """
+        if self.verbose>0:
+            print("In OnClassicalIndexation()")
         if self.data_theta is None:
             self.OpenDefaultData()
+        else:
+            print("Using loaded data of length:", len(self.data_theta))
 
         #print('self.pixelsize in OnClassicalIndexation for %s'%self.DataPlot_filename, self.pixelsize)
         self.current_exp_spot_index_list = self.getAbsoluteIndices_Non_Indexed_Spots_()
@@ -804,9 +825,13 @@ class LaueToolsGUImainframe(wx.Frame):
         self.indexation_parameters["DataToIndex"]["current_exp_spot_index_list"] = copy.copy(self.current_exp_spot_index_list)
         self.indexation_parameters["DataToIndex"]["ClassicalIndexation_Tabledist"] = None
         if self.dict_spotsproperties not in (None, {}):
-            print("\n************\nFANTASTIC: there are additional spots porperties !!\n\n")
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
+            if self.verbose>0:
+                print("\n************\nFANTASTIC: there are additional spots properties !!\n\n")
+                print("dataprops.shape", dataprops.shape)
+                print("nameprops", nameprops)
+
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
             self.indexation_parameters["DataToIndex"]["select_spotsproperties"] = self.select_spotsproperties
             self.indexation_parameters["DataToIndex"]["columnsname_spotproperties"] = nameprops
@@ -861,7 +886,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Plot 2theta-chi representation of data peaks list for manual indexation
         """
-
+        if self.verbose>0:
+                print("In OnPlot_2ThetaChi()")
         if self.data_theta is None:
             self.OpenDefaultData()
 
@@ -908,6 +934,10 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
+            if self.verbose>0:
+                print("\n************\nFANTASTIC: there are additional spots properties !!\n\n")
+                print("dataprops.shape", dataprops.shape)
+                print("nameprops", nameprops)
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
             self.indexation_parameters["DataToIndex"]["select_spotsproperties"] = self.select_spotsproperties
             self.indexation_parameters["DataToIndex"]["columnsname_spotproperties"] = nameprops
@@ -955,7 +985,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Plot gnomonic representation of data peaks list for manual indexation
         """
-
+        if self.verbose>0:
+            print("OnPlot_Gnomon")
         if self.data_theta is None:
             self.OpenDefaultData()
 
@@ -1003,6 +1034,10 @@ class LaueToolsGUImainframe(wx.Frame):
         if self.dict_spotsproperties not in (None, {}):
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
+            if self.verbose>0:
+                print("\n************\nFANTASTIC: there are additional spots properties !!\n\n")
+                print("dataprops.shape", dataprops.shape)
+                print("nameprops", nameprops)
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
             self.indexation_parameters["DataToIndex"]["select_spotsproperties"] = self.select_spotsproperties
             self.indexation_parameters["DataToIndex"]["columnsname_spotproperties"] = nameprops
@@ -1053,6 +1088,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Plot detector X,Y pixel representation of data peaks list for manual indexation
         """
+        if self.verbose>0:
+            print("In OnPlot_Pixels()")
         # select spots accroding to previous indexation
         if self.data_theta is None:
             self.OpenDefaultData()
@@ -1107,6 +1144,11 @@ class LaueToolsGUImainframe(wx.Frame):
             #print('self.dict_spotsproperties', self.dict_spotsproperties)
             dataprops = self.dict_spotsproperties['data_spotsproperties']
             nameprops = self.dict_spotsproperties['columnsname']
+            if self.verbose>0:
+                print("\n************\nFANTASTIC: there are additional spots properties !!\n\n")
+                print("dataprops.shape", dataprops.shape)
+                print("nameprops", nameprops)
+            
             self.select_spotsproperties = np.take(dataprops,self.current_exp_spot_index_list, axis=0)
             self.indexation_parameters["DataToIndex"]["select_spotsproperties"] = self.select_spotsproperties
             self.indexation_parameters["DataToIndex"]["columnsname_spotproperties"] = nameprops
@@ -1156,6 +1198,8 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         Method launching Calibration Board
         """
+        if self.verbose>0:
+            print("In OnDetectorCalibration()")
         starting_param = [77, 1000, 1000, 0, 0]
 
         #print("Starting param", starting_param)
@@ -1612,6 +1656,7 @@ class LaueToolsGUImainframe(wx.Frame):
         print('self.dirnamepklist', self.dirnamepklist)
         self.filenamepklist = DEFAULTFILE
         print('self.filenamepklist', self.filenamepklist)
+        
         if os.access(defaultdatafile, os.W_OK):
             self.writefolder = self.dirnamepklist
         else:
@@ -1622,6 +1667,8 @@ class LaueToolsGUImainframe(wx.Frame):
         self.dict_spotsproperties = {}
 
         OpenCorfile(defaultdatafile, self)
+        if self.verbose>0:
+            print("self.dict_spotsproperties", self.dict_spotsproperties)
 
         self.set_gnomonic_data()
 
@@ -1752,6 +1799,8 @@ class LaueToolsGUImainframe(wx.Frame):
     def getAbsoluteIndices_Non_Indexed_Spots_(self):
         """
         return list of exp. indices of exp. spots not yet indexed
+
+        read self.indexed_spots
 
         TODO seems to be the same than method select_exp_spots()
         """
