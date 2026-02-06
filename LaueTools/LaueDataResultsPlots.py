@@ -655,7 +655,7 @@ def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: par
         fig.set_size_inches(size[0], size[1])
 
     kk=0
-    for axidx, data, title, plotmin, plotmax in zip(np.ndindex(ax.shape), latparams, titles, vlimits):
+    for axidx, data, title, vlimit in zip(np.ndindex(ax.shape), latparams, titles, vlimits):
         im = ax[axidx].pcolormesh(xech, yech, data, vmin = vlimit[0], vmax = vlimit[1],**kwargs)
         ax[axidx].set_xlabel('Position [µm]')
         ax[axidx].set_ylabel('Position [µm]')
