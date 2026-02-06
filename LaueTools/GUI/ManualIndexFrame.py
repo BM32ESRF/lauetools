@@ -1349,8 +1349,12 @@ class ManualIndexFrame(wx.Frame):
 
     def RemoveLastRectangle(self):
         """ remove last added rectangle """
-        if isinstance(self.axes.patches[-1], Rectangle):
-            del self.axes.patches[-1]
+        if sys.version<'3.12':
+            if isinstance(self.axes.patches[-1], Rectangle):
+                del self.axes.patches[-1]
+        else:
+            patch=self.axes.patches[-1]
+            patch.remove()
 
     def addPatchRectangle(self, X, Y, size=50):
         """ add rectangle at X,Y in self.axes """
