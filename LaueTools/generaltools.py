@@ -2988,6 +2988,68 @@ def getfileindex(filename:str)->int:
     val = match.group()[:-len(fileextension)]
     return int(float(val))
 
+def get_largest_index_in_folder(folder_path: str, filename_prefix: str = 'img_', filename_suffix: str = 'tif') -> int:
+    """
+    Find the filename with the largest index in a folder.
+
+    Parameters
+    ----------
+    folder_path : str
+        folder path
+    filename_prefix : str, optional
+        prefix of filename, default is 'img_'
+
+    Returns
+    -------
+    largest_index : int
+        largest index in filename
+    """
+    files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'))
+    largest_index = int(Path(files[-1]).stem.split('_')[1])
+    return largest_index
+
+def filter_peaks_close_to_detector_edges(peak_list:np.ndarray, distance_x:int, distance_y:int,
+                             detector_label:str='sCMOS')->Tuple[np.ndarray, np.ndarray]:
+    """
+    Filter peaks by distance from detector frame borders.
+
+    Parameters
+    ----------
+    peak_list : array of shape (n,2)
+        List of peaks
+    distance_x : int
+        Distance from x-border
+    distance_y : int
+        Distance from y-border
+    detector_label : str, optional
+        Label of the detector, default is 'sCMOS'
+
+    Returns
+    -------
+    filtered_peaks : array of shape (m,2)
+        Filtered peak list
+    indices : array of shape (m,)
+        Indices of the filtered peak list in the original peak list
+    """
+    detector_dimensions = {
+        'sCMOS': (2010, 2010),
+        'sCMOS_4M': (2010, 2010),
+        'IMSTAR_bin3': (2010, 2010),
+        'MARCCD165': (2010, 2010),
+        'EIGER_4MCdTe': (2050, 2050),
+    }
+
+    max_x, max_y = detector_dimensions[detector_label]
+
+    x, y = peak_list.T
+    condition_x = np.logical_and(x > distance_x, x < max_x - distance_x)
+    condition_y = np.logical_and(y > distance_y, y < max_y - distance_y)
+    condition = np.logical_and(condition_x, condition_y)
+
+    indices = np.where(condition)[0]
+
+    return np.take(peak_list, indices, axis=0), indices
+
 # ----- ------------  plot tools: colormap
 # plt.get_cmap replaces mplcm.get_cmap for matplotlib 3.11
 COPPER = plt.get_cmap("copper")
