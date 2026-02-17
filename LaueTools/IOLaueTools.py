@@ -22,6 +22,11 @@ import io
 import numpy as np
 from pathlib import Path
 
+if sys.version_info>=(3,12):
+    linalgnorm=np.linalg.norm
+else:
+    linalgnorm=np.linalg.linalg.norm
+
 from typing import Union, List, Iterable, Dict, Tuple
 
 
@@ -2964,20 +2969,20 @@ class LT_fitfile:
                     self.c_prime = np.cross(self.astar_prime, self.bstar_prime
                     ) / np.dot(self.cstar_prime, np.cross(self.astar_prime, self.bstar_prime))
 
-                    self.boa = np.linalg.linalg.norm(self.b_prime
-                    ) / np.linalg.linalg.norm(self.a_prime)
-                    self.coa = np.linalg.linalg.norm(self.c_prime
-                    ) / np.linalg.linalg.norm(self.a_prime)
+                    self.boa = linalgnorm(self.b_prime
+                    ) / linalgnorm(self.a_prime)
+                    self.coa = linalgnorm(self.c_prime
+                    ) / linalgnorm(self.a_prime)
 
                     self.alpha = (np.arccos(np.dot(self.b_prime, self.c_prime)
-                            / np.linalg.linalg.norm(self.b_prime)
-                            / np.linalg.linalg.norm(self.c_prime)) * 180.0 / np.pi)
+                            / linalgnorm(self.b_prime)
+                            / linalgnorm(self.c_prime)) * 180.0 / np.pi)
                     self.beta = (np.arccos(np.dot(self.c_prime, self.a_prime)
-                            / np.linalg.linalg.norm(self.c_prime)
-                            / np.linalg.linalg.norm(self.a_prime)) * 180.0 / np.pi)
+                            / linalgnorm(self.c_prime)
+                            / linalgnorm(self.a_prime)) * 180.0 / np.pi)
                     self.gamma = (np.arccos(np.dot(self.a_prime, self.b_prime)
-                            / np.linalg.linalg.norm(self.a_prime)
-                            / np.linalg.linalg.norm(self.b_prime)) * 180.0 / np.pi)
+                            / linalgnorm(self.a_prime)
+                            / linalgnorm(self.b_prime)) * 180.0 / np.pi)
 
                 except ValueError:
                     print("could not compute the reciprocal space from the UBB0")
