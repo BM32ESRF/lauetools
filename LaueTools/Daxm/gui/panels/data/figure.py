@@ -7,6 +7,7 @@ __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
 import numpy as np
+import sys
 
 import wx
 #from wx.lib.pubsub import pub
@@ -671,7 +672,11 @@ class PanelDataFigure(wx.Panel):
                     #for line in lines:
                     self._fig_axes.lines.remove(lines)
                     #for patch in patches:
-                    self._fig_axes.patches.remove(patches)
+                    if sys.version<'3.12':
+                        self._fig_axes.patches.remove(patches)
+                    else:
+                        for patch in patches:
+                            patch.remove()      
 
                 for txt in self._disp_shadow_label:
                     self._fig_axes.texts.remove(txt)
