@@ -2976,6 +2976,8 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.initialParameter = _initialParameter
 
+        # self.verbose =1
+
         self.title = self.initialParameter["title"]
         self.imagefilename = self.initialParameter["imagefilename"]
         self.dirname = self.initialParameter["dirname"]
@@ -2986,7 +2988,11 @@ class MainPeakSearchFrame(wx.Frame):
         self.stackedimages = self.initialParameter["stackedimages"]
         self.stackimageindex = self.initialParameter["stackimageindex"]
         self.Nbstackedimages = self.initialParameter["Nbstackedimages"]
-        
+        if self.verbose>0:
+            print('In MainPeakSearchFrame')
+            print('self.stackedimages', self.stackedimages)
+            print('self.stackimageindex', self.stackimageindex)
+
         self.nbdigits = 4   # sCMOS with bliss
 
         (self.framedim, self.pixelsize, self.saturationvalue, self.fliprot, self.headeroffset,
@@ -3459,7 +3465,8 @@ class MainPeakSearchFrame(wx.Frame):
 
             self.imagefilename = filename
             self.dirname = dirname
-
+            if self.verbose>0:
+                print('in OpenImage, self.stackedimages', self.stackedimages)
             self.getIndex_fromfilename()
             self.resetfilename_and_plot()
 
@@ -3778,7 +3785,11 @@ class MainPeakSearchFrame(wx.Frame):
         """set filename from self.imagefilename, self.imageindex,
                                                     CCDLabel=self.CCDlabel
         """
-        print('***** \n\nself.image_with_index',self.image_with_index)
+        if self.verbose>0:
+                print("***  in  setfilename   *****")
+                print("self.CCDLabel", self.CCDlabel)
+                print('self.stackedimages', self.stackedimages)
+                print('***** \n\nself.image_with_index',self.image_with_index)
         
         if self.image_with_index and not self.stackedimages:
             self.misstext=''
@@ -3946,9 +3957,11 @@ class MainPeakSearchFrame(wx.Frame):
         self.resetfilename_and_plot()
 
     def resetfilename_and_plot(self):
-        print("***   resetfilename_and_plot   *****")
-
-        print("self.CCDLabel", self.CCDlabel)
+        
+        if self.verbose>0:
+                print("***   resetfilename_and_plot   *****")
+                print("self.CCDLabel", self.CCDlabel)
+                print('self.stackedimages', self.stackedimages)
 
         nbd = self.ImagesBrowser.nbdigitsctrl.GetValue()
         try:
@@ -4543,6 +4556,12 @@ class MainPeakSearchFrame(wx.Frame):
 
         else:
             pass
+
+        if self.verbose>0:
+            print("***  at the end of  onOpenBImage   *****")
+            print("self.CCDLabel", self.CCDlabel)
+            print('self.stackedimages', self.stackedimages)
+            print('***** \n\nself.image_with_index',self.image_with_index)
 
     def onOpenBlackListFile(self, _):
         myFileDialog = wx.FileDialog(self, "Choose a List of peaks not to be considered",
@@ -5247,6 +5266,8 @@ class MainPeakSearchFrame(wx.Frame):
 
         FitPixelDev = float(self.fitparampanel.FitPixelDev.GetValue())
 
+        if self.verbose>0:
+            print("CCDLabel", CCDLabel)
         tabIsorted, params_res, _ = RMCCD.fitoneimage_manypeaks(filename,
                                             peaklist,
                                             boxsize,
