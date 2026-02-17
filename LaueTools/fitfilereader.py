@@ -201,7 +201,7 @@ class parsed_fitfile:
                         
                     self.c_prime = np.cross(self.astar_prime, self.bstar_prime) / np.dot(self.cstar_prime, np.cross(self.astar_prime, self.bstar_prime))
 
-                    self.boa = linalgnormm(self.b_prime) / linalgnorm(self.a_prime)
+                    self.boa = linalgnorm(self.b_prime) / linalgnorm(self.a_prime)
                     self.coa = linalgnorm(self.c_prime) / linalgnorm(self.a_prime)
 
                     self.alpha = (np.arccos(np.dot(self.b_prime, self.c_prime) / linalgnorm(self.b_prime) / linalgnorm(self.c_prime)) * 180.0 / np.pi)
