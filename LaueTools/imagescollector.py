@@ -193,7 +193,7 @@ def collectroissum_singlefile(index, roicenters=None, prefix=None, folder =None,
         raise ValueError("collectroissum_singlefile not implemented for MARCCD165")        
         #extension = '.mccd'   
     
-    filename = prefix+'%04d'%imageindex + extension     
+    filename = prefix+'%04d'%index + extension     
     imagefilename = os.path.join(folder, filename)
 
     pixsums = IOimage.getroissum(imagefilename, roicenters=roicenters,
