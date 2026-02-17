@@ -121,8 +121,9 @@ class Materials:
         """
         return key_material in self.materials
     
-    def __contains__(self, key_material):    
-        raise NotImplementedError
+    def __contains__(self, key_material):
+        return key_material in list(self.materials.keys())  
+        #raise NotImplementedError
     
     def keys(self):
         """
