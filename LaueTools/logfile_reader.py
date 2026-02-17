@@ -13,6 +13,8 @@ import time
 import numpy as np
 import datetime
 
+import pandas as pd
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib.widgets import MultiCursor
@@ -284,7 +286,7 @@ class SpecFile:
     :param filetype: str, 'spec' or 'hdf5'
     :param collectallscans: bool, True, collect all scans
     :param onlywirescan: bool, True, collect only wire scan, ie ascan of zf or yf motor
-    :param onlymesh: bool, True, collect only amesh scan (ie 2D scan)
+    :param onlymesh: bool, True, collect only amesh scan or fscan2d(ie 2D scan)
     
     Definition:
     -----------
@@ -820,9 +822,12 @@ class Scan_hdf5(SpecFile):
         if hasattr(self,'command'):
             cmdstr = self.command
             lcmd = cmdstr.split()
-            if lcmd[0] == 'amesh':
+            if lcmd[0] == 'amesh' or lcmd[0] == 'fscan2d':
                 dimfast, dimslow = int(lcmd[4])+1, int(lcmd[8])+1
                 motorfast, motorslow = lcmd[1], lcmd[5]
+                if lcmd[0] == 'fscan2d':
+                    dimfast, dimslow = int(lcmd[8])+1, int(lcmd[4])+1
+                    motorfast, motorslow = lcmd[5], lcmd[1]
                 # this line is dangerous, better use the motors positions values
                 #fastmin, fastmax, slowmin,slowmax = float(lcmd[2]), float(lcmd[3]), float(lcmd[6]), float(lcmd[7])
                 valfastmotor=getattr(self,motorfast)
@@ -1343,7 +1348,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
 
             if not foundmotors:
                 continue
-            if scantype in ('ascan','amesh','loopscan','a2scan'):
+            if scantype in ('ascan','amesh','loopscan','a2scan','fscan2d','fscan'):
                 if only_mpxcdte_data:
                     if 'mpxcdte' in f[i_scan]['measurement']:
                         listscans.append(datasetdata)
@@ -1388,22 +1393,22 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
             print('startdate',startdate)
         isselected = False
         if onlymesh:
-            if 'amesh' in scancommand:
+            if any(cmd in scancommand for cmd in ("amesh", 'fscan2d')):
                 keyfilename = ffname[:-3]  #  removing .h5
                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif onlywirescan:
-            if 'zf' in scancommand or 'yf' in scancommand:
+            if any(cmd in scancommand for cmd in ("yf", "zf")):
                 keyfilename = ffname[:-3]  #  removing .h5
                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif collectallscans:
-            if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand:
+            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan')):
                 keyfilename = ffname[:-3]  #  removing .h5
                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
         elif collectall:
-            if 'loopscan' in scancommand or 'ascan' in scancommand or 'a2scan' in scancommand or 'amesh' in scancommand or 'ct' in scancommand:
+            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan',"ct")):
                 keyfilename = ffname[:-3]  #  removing .h5
                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
                 isselected=True
@@ -1611,6 +1616,16 @@ def read_fullcommand(fullcommand:str)->dict:
         
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     
+    elif scancommand in ('fscan2d',):
+        assert len(sc) == 11
+        listparams = ('slowmotor', 'smotmin', 'smotmax', 'smotnbsteps',
+                      'fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
+                    'expotime','unknown')
+       
+        listfmt = (str, float, float, int,
+                    str, float, float, int, float, float)
+        
+        dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     elif scancommand in ('ascan','dscan'):
         assert len(sc) == 6
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime')
@@ -1618,7 +1633,15 @@ def read_fullcommand(fullcommand:str)->dict:
         listfmt = (str, float, float, int, float)
         
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+    
+    elif scancommand in ('fscan',):
+        assert len(sc) == 7
+        listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime', 'unknown')
         
+        listfmt = (str, float, float, int, float, float)
+        
+        dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+    
     elif scancommand in ('a2scan','d2scan'):
         assert len(sc) == 9
         listparams = ('fastmotor', 'fmotmin', 'fmotmax',
@@ -1657,6 +1680,10 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
     if dict_command['scancommand'] == 'amesh':
         mapdimensions=dict_command['fmotnbsteps']+1, dict_command['smotnbsteps']+1
         dict_scan['scantype'] = 'map'
+
+    elif dict_command['scancommand'] == 'fscan2d':
+        mapdimensions=dict_command['fmotnbsteps'], dict_command['smotnbsteps']
+        dict_scan['scantype'] = 'map'
         
     elif dict_command['scancommand'] == 'ascan':
         mapdimensions=dict_command['fmotnbsteps']+1,1
@@ -1693,7 +1720,7 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
     return dict_scan
 
 
-def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf'),potential_scantypes=('ascan','amesh','loopscan','a2scan')):
+def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'), potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan')):
     res = getall_from_hdf5file(pathHDF5)   # scans and ct
 
     listscans = []
