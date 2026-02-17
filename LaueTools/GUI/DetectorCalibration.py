@@ -3952,6 +3952,9 @@ class MainCalibrationFrame(wx.Frame):
                                     facecolor="None")
 
         # plot EXPERIMENTAL data ----------------------------------------
+        if self.verbose>0:
+            print("ploting experimental data")
+            print('self.datatype',self.datatype)
         if self.datatype == "2thetachi":
             originChi = 0
 
@@ -4041,6 +4044,9 @@ class MainCalibrationFrame(wx.Frame):
 
                 Xlink = pixX - X_offset
                 Ylink = pixY - Y_offset
+            elif self.datatype == "gnomon":
+                GT.printyellow('Yellow links (pairing spots) in Gnomonic projection are not implemented yet...')
+                Xlink, Ylink = [], []
 
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
@@ -4663,7 +4669,15 @@ class MainCalibrationFrame(wx.Frame):
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
                     hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
-                    finaltxt = 'theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3])
+                    x,y,en = annote_theo[1:4]
+                    if not isinstance(x, float):
+                        x=annote_theo[1][0]
+                    if not isinstance(y, float):
+                        y=annote_theo[2][0]
+                    if not isinstance(en, float):
+                        en=annote_theo[3][0]
+                    finaltxt = 'theo spot index : %d, '%theoindex + hklstr
+                    finaltxt += ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(x,y,en)
                     if finaltxt != self.savedfinaltxt:
                         if verbose>0:
                             print(finaltxt)
@@ -5141,7 +5155,7 @@ def start():
 
 if __name__ == "__main__":
     import numpy as np
-    testfile = 2
+    testfile = 4
 
     initialParameter = {}
     initialParameter["dict_Materials"] = DictLT.dict_Materials
@@ -5164,6 +5178,12 @@ if __name__ == "__main__":
         initialParameter["CCDLabel"] = "sCMOS"
         initialParameter["filename"] = "img_Ge_sCMOS_0000_181peaks.dat"
         initialParameter["dirname"] = "/home/micha/Private"
+    elif testfile == 4:  # EIGER_4MCdTe
+        initialParameter["CCDParam"] = [99.99300, 1080.6200, 983.4800, 0.2070000, 0.3510000]
+        initialParameter["detectordiameter"] = 165.0
+        initialParameter["CCDLabel"] = "EIGER_4MCdTe"
+        initialParameter["filename"] = "eiger4m_0004_LT_3.dat"  # .cor
+        initialParameter["dirname"] = "/data/bm32/inhouse/LAUE/calibEIGER_4MCdTe/"
        
 
     filepathname = os.path.join(initialParameter["dirname"], initialParameter["filename"])
@@ -5174,13 +5194,15 @@ if __name__ == "__main__":
 
     kf_direction = 'Z>0'
 
+    pixelsize, framedim, _, fliprotoperator = DictLT.dict_CCD[initialParameter["CCDLabel"]][:4]
+
     CalibGUIApp = wx.App()
     CalibGUIFrame = MainCalibrationFrame(None, -1, "Detector Calibration Board", initialParameter,
                                                         file_peaks=filepathname,
-                                                        pixelsize=165.0 / 2048,
+                                                        pixelsize=pixelsize,
                                                         datatype="2thetachi",
-                                                        dim=(2048, 2048),
-                                                        fliprot="no",
+                                                        dim=framedim,
+                                                        fliprot=fliprotoperator,
                                                         data_added=None,
                                                         kf_direction=kf_direction)
     CalibGUIFrame.Show()
