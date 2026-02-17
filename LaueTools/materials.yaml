@@ -778,6 +778,26 @@ Ni:
   - 90
   - 90
   extinction: fcc
+N18_fcc:
+  label: N18_fcc
+  lattice:
+  - 3.5917
+  - 3.5917
+  - 3.5917
+  - 90
+  - 90
+  - 90
+  extinction: fcc
+N18_sc:
+  label: N18_sc
+  lattice:
+  - 3.5873
+  - 3.5873
+  - 3.5873
+  - 90
+  - 90
+  - 90
+  extinction: "no"
 NiMnIn:
   label: NiMnIn
   lattice:
