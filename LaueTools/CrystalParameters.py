@@ -299,6 +299,61 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond =  cond2 * cond3
         array_hkl = np.take(HKL, np.where(cond == True)[0], axis=0)
 
+    elif Extinc == 'SG167':
+        # Reflection conditions
+        # general
+        # hkil : −h + k + l = 3n
+        # hki0 :  −h + k = 3n
+        # hh2hl :  l = 3n
+        # hh̄0l :  h + l = 3n, l = 2n
+        # 000l :  l = 6n
+        # hh̄00 : h = 3n
+
+        # hkil : −h + k + l = 3n
+        cond = (H + K + L) % 3 == 0
+        array_hkl_1 = np.take(HKL, np.where(cond == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+        # hki0 :  −h + k = 3n
+        cond2a = L == 0
+        cond2b = (-H + K) % 3 != 0
+        cond2 = cond2a * cond2b
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        H, K, L = array_hkl_2.T
+
+        # hh2hl :  l = 3n
+        cond3a = (H - K) == 0
+        cond3b = L % 3 != 0
+        cond3 = cond3a * cond3b
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        H, K, L = array_hkl_3.T
+
+        # hh̄0l :  h + l = 3n, l = 2n
+        cond4c = (H + K) == 0
+        cond4a = (H + L) % 3 != 0
+        cond4b = L % 2 != 0
+        cond4 = cond4c * (cond4a + cond4b)
+        array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        H, K, L = array_hkl_4.T
+
+        # 000l :  l = 6n
+        cond5a = H == 0
+        cond5b = K == 0
+        cond5c = L % 6 != 0
+        cond5 = cond5a * cond5b * cond5c
+        array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
+        H, K, L = array_hkl_5.T
+        # hh̄0l :  h + l = 3n, l = 2n
+        cond6a = (H + K) == 0
+        cond6b = L == 0
+        cond6c = H % 3 != 0
+        cond6 = cond6c * cond6a * cond6b
+        array_hkl = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
     elif Extinc == "VO2_mono":
         cond1a = K == 0
         cond1b = (L) % 2 != 0
@@ -314,6 +369,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
         cond2 = cond2a * cond2b * cond2c
         array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        H, K, L = array_hkl_2.T
 
         cond3a = H == 0
         cond3b = K == 0
@@ -336,11 +393,15 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond2 = cond2a * cond2c
         array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
 
+        H, K, L = array_hkl_2.T
+
         cond3a = H == 0
         cond3c = (K) % 2 != 0
         cond3 = cond3a * cond3c
 
         array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        H, K, L = array_hkl_3.T
 
         cond4a = L == 0
         cond4c = (H + K) % 2 != 0
@@ -348,12 +409,16 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
         array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
 
+        H, K, L = array_hkl_4.T
+
         cond5a = H == 0
         cond5b = L == 0
         cond5c = (K) % 2 != 0
         cond5 = cond5a * cond5b * cond5c
 
         array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
+        H, K, L = array_hkl_5.T
 
         cond6a = K == 0
         cond6b = L == 0
@@ -379,12 +444,62 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond2 = cond2a * cond2b * cond2c
         array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
 
+        H, K, L = array_hkl_2.T
+
         cond3a = K == 0
         cond3b = L == 0
         cond3c = (H) % 2 != 0
         cond3 = cond3a * cond3b * cond3c
 
         array_hkl = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+    elif Extinc == "SG62":  # SG 62 ( CaCO3)
+        
+        #Reflection conditions
+        # general
+        # 0kl :        k + l = 2n
+        # hk0 :        h = 2n
+        # h00 :        h = 2n
+        # 0k0 :        k = 2n
+        # 00l :        l = 2n
+
+        cond1a = (H)  == 0
+        cond1b = (K + L) % 2 != 0
+        cond1 = cond1a * cond1b
+        array_hkl_1 = np.delete(HKL, np.where(cond1 == True)[0], axis=0)
+               
+        H, K, L = array_hkl_1.T
+                
+        cond2a = L == 0
+        cond2b = (H) % 2 != 0
+        cond2 = cond2a * cond2b
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        H, K, L = array_hkl_2.T
+
+        cond3a = K == 0
+        cond3b = L == 0
+        cond3c = (H) % 2 != 0
+        cond3 = cond3a * cond3b *cond3c
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        H, K, L = array_hkl_3.T
+
+        cond4a = H == 0
+        cond4b = L == 0
+        cond4c = (K) % 2 != 0
+        cond4 = cond4a * cond4b * cond4c
+        array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        H, K, L = array_hkl_4.T
+
+        #0k0 : k = 2n --> cond5
+        cond5a = H == 0
+        cond5b = K == 0
+        cond5c = (L) % 2 != 0
+        cond5 = cond5a * cond5b * cond5c
+        array_hkl = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
 
     elif Extinc == "SG12":  # SG 12 ( Al13Fe4)
         
@@ -408,11 +523,15 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond2 = cond2a * cond2b
         array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
 
+        H, K, L = array_hkl_2.T
+
         #0kl : k = 2n --> cond3
         cond3a = H == 0
         cond3b = (K) % 2 != 0
         cond3 = cond3a * cond3b
         array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        H, K, L = array_hkl_3.T
 
         #hk0 : h+k = 2n --> cond4
         cond4a = L == 0
@@ -420,12 +539,16 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond4 = cond4a * cond4b
         array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
 
+        H, K, L = array_hkl_4.T
+
         #0k0 : k = 2n --> cond5
         cond5a = H == 0
         cond5b = L == 0
         cond5c = (K) % 2 != 0
         cond5 = cond5a * cond5b * cond5c
         array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
+        H, K, L = array_hkl_5.T
         
         #h00 : h = 2n --> cond6
         cond6a = K == 0
@@ -433,6 +556,47 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond6c = (H) % 2 != 0
         cond6 = cond6a * cond6b * cond6c
         array_hkl = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
+    elif Extinc == "SG53":  # SG 53 ( CaCo3  aragonite)
+        
+        #Reflection conditions
+        # general,
+        #h0l : h + l = 2n
+        #hk0 : h = 2n
+        #h00 : h = 2n
+        #00l : l = 2n
+        
+        #h0l : h + l = 2n --> cond1
+        cond1a = K == 0
+        cond1b = (H + L) % 2 != 0
+        cond1 = cond1a * cond1b
+        array_hkl_1 = np.delete(HKL, np.where(cond1 == True)[0], axis=0)
+
+        H, K, L = array_hkl_1.T
+                
+        #hk0 : h = 2n
+        cond2a = L == 0
+        cond2b = (H) % 2 != 0
+        cond2 = cond2a * cond2b
+        array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
+
+        H, K, L = array_hkl_2.T
+
+        #h00 : h = 2n
+        cond3a = K == 0
+        cond3b = L == 0
+        cond3c = (L) % 2 != 0
+        cond3 = cond3a * cond3b * cond3c
+        array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
+
+        H, K, L = array_hkl_3.T
+
+        #00l : l = 2n
+        cond4a = H == 0
+        cond4b = K == 0
+        cond4c = (L) % 2 != 0
+        cond4 = cond4a * cond4b * cond4c
+        array_hkl = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
 
     elif Extinc == "SG36":  # SG 36 ( Al6Fe)
         
@@ -457,6 +621,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond2 = cond2a * cond2b
         array_hkl_2 = np.delete(array_hkl_1, np.where(cond2 == True)[0], axis=0)
 
+        H, K, L = array_hkl_2.T
+
         #h0l : h,l = 2n --> cond3
         cond3a = K == 0
         cond3b = (H) % 2 != 0
@@ -464,11 +630,15 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond3 = cond3a * cond3b * cond3c
         array_hkl_3 = np.delete(array_hkl_2, np.where(cond3 == True)[0], axis=0)
 
+        H, K, L = array_hkl_3.T
+
         #hk0 : h+k = 2n --> cond4
         cond4a = L == 0
         cond4b = (H + K) % 2 != 0
         cond4 = cond4a * cond4b
         array_hkl_4 = np.delete(array_hkl_3, np.where(cond4 == True)[0], axis=0)
+
+        H, K, L = array_hkl_4.T
 
         #h00 : h = 2n --> cond5
         cond5a = K == 0
@@ -476,6 +646,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond5c = (H) % 2 != 0
         cond5 = cond5a * cond5b * cond5c
         array_hkl_5 = np.delete(array_hkl_4, np.where(cond5 == True)[0], axis=0)
+
+        H, K, L = array_hkl_5.T
         
         #0k0 : k = 2n --> cond6
         cond6a = H == 0
@@ -483,6 +655,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond6c = (K) % 2 != 0
         cond6 = cond6a * cond6b * cond6c
         array_hkl_6 = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
+
+        H, K, L = array_hkl_6.T
 
         #00l : l = 2n --> cond7
         cond7a = H == 0
