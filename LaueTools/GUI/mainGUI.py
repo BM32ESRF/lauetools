@@ -452,8 +452,8 @@ class LaueToolsGUImainframe(wx.Frame):
                         h5browserBoard = CCDFileParameters(self, -1, "CCD File Parameters Board2", self.CCDLabel)
                         h5browserBoard.ShowModal()
                         h5browserBoard.Destroy()
-                    initialParameter["stackedimages"] = self.stackedimages
-                    initialParameter["stackimageindex"] = self.stackimageindex
+                    initialParameter["stackedimages"] = False
+                    initialParameter["stackimageindex"] = -1
                     initialParameter["Nbstackedimages"] = self.Nbstackedimages
 
                 peaksearchframe = MainPeakSearchFrame(self, -1, initialParameter,
