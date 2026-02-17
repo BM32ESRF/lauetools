@@ -1203,12 +1203,19 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     .. warning:: nb of output elements depends on 'return_histo' argument
     """
 
+    #verbose = 1
+
     if return_histo in (0, 1):
         return_nb_raw_blobs = 0
     if return_histo in (2,):
         return_nb_raw_blobs = 1
     if write_execution_time:
         t0 = ttt.time()
+
+    if verbose>0:
+        print("in Peaksearch ---------")
+        print('stackimageindex',stackimageindex)
+        print('CCDLabel',CCDLabel)
 
     # user input its own shaped Data array
     if isinstance(Data_for_localMaxima, np.ndarray):
@@ -1266,6 +1273,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             usemask = True
         # path to a background image file
         else:
+            if verbose>0: print("stackimageindex",stackimageindex)
             if stackimageindex != -1:
                 raise ValueError("Use stacked images as background is not implement")
             path_to_bkgfile = Data_for_localMaxima
