@@ -7,9 +7,7 @@
 
 """ this file in intended to be name logfilereader.py and be located in main lauetools folder"""
 
-import copy
-import os
-import time
+import copy, os, time
 import numpy as np
 import datetime
 
