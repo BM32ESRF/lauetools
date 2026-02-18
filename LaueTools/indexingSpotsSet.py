@@ -945,15 +945,15 @@ class spotsset:
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
                                                                 ResolutionAngstrom: Union[float, None]=None,
-                                                                AngTol_LUTmatching=0.5,
-                                                                MatchingRate_Angle_Tol=0.2,
-                                                                Minimum_Nb_Matches=15,
+                                                                AngTol_LUTmatching:float=0.5,
+                                                                MatchingRate_Angle_Tol:float=0.2,
+                                                                Minimum_Nb_Matches:int=15,
                                                                 verbose=0,
-                                                                nb_of_solutions_per_central_spot=1,
+                                                                nb_of_solutions_per_central_spot:int=1,
                                                                 simulparameters=None,
-                                                                LUTfraction=1/2.,
-                                                                printmatchingresults=False,
-                                                                useparallelcomputing=True,
+                                                                LUTfraction:float=1/2.,
+                                                                printmatchingresults:bool=False,
+                                                                useparallelcomputing:bool=True,
                                                                 crudeMReval:bool=False,
                                                                 maxnbspots_MReval:int=10000,
                                                                 stop_Nb_Matches:int=1000):
@@ -1105,12 +1105,12 @@ class spotsset:
 
         return bestmat, stats_properformat
 
-    def IndexSpotsSet(self, file_to_index, key_material, emin, emax, dict_parameters, database,
+    def IndexSpotsSet(self, file_to_index, key_material:str, emin:float, emax:float, dict_parameters:dict, database,
                                                                 starting_grainindex=0,
                                                                 use_file=1,
-                                                                verbose=0,
+                                                                verbose:int=0,
                                                                 plotintermediateresults=0,
-                                                                IMM=False,
+                                                                IMM:bool=False,
                                                                 nbGrainstoFind:Union[int,str]="max",
                                                                 LUT=None,
                                                                 n_LUT:int=3,
@@ -1118,7 +1118,7 @@ class spotsset:
                                                                 ResolutionAngstrom: Union[float, None]=None,
                                                                 MatchingRate_List=[50, 60, 80],
                                                                 angletol_list=[0.5, 0.2, 0.1],
-                                                                checkSigma3=False,
+                                                                checkSigma3:bool=False,
                                                                 previousResults=None,
                                                                 CheckOrientations=None,
                                                                 corfilename=None,
@@ -1126,9 +1126,9 @@ class spotsset:
                                                                 depth:microns=0.,
                                                                 dictmaterials:str=None,
                                                                 choose_UB_MinEulerepresentative=True,
-                                                                emax_matchringrate=None,
-                                                                writefitfile=True,
-                                                                add_info_in_outputfilename=''):
+                                                                emax_matchringrate:float=None,
+                                                                writefitfile:bool=True,
+                                                                add_info_in_outputfilename:str=''):
         r"""
         General class method to index a set of experimental spots.
 
@@ -2325,16 +2325,16 @@ class spotsset:
         return list_matrices, list_stats, spotindex_maxspotindex, MatchingRates
 
     def get_bestUB_fromAnglesLUT(self, spot_index_central=None, MatchingRate_Threshold=None,
-                                                                MatchingRate_Angle_Tol=0.5,
-                                                                nbmax_probed=10,
-                                                                Minimum_Nb_Matches=6,
+                                                                MatchingRate_Angle_Tol:float=0.5,
+                                                                nbmax_probed:int=10,
+                                                                Minimum_Nb_Matches:int=6,
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
                                                                 ResolutionAngstrom: Union[float, None]=None,
                                                                 exceptgrains=None,
-                                                                verbose=0,
-                                                                LUTfraction=1/2.,
-                                                                useparallelcomputing=True,
+                                                                verbose:int=0,
+                                                                LUTfraction:float=1/2.,
+                                                                useparallelcomputing:bool=True,
                                                                 crudeMReval:bool=False,
                                                                 maxnbspots_MReval:int=10000,
                                                                 stop_Nb_Matches:int=1000):
