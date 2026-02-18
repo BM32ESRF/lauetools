@@ -1,5 +1,6 @@
 /LaueTools/*.dat
 /LaueTools/*.pyc
+/LaueTools/GUI/*.pyc
 /LaueTools/*.bak
 /LaueTools/sorted*
 /doc/conf.py
@@ -27,7 +28,7 @@
 *.pyx
 __pycache__/
 /LaueTools/GUI/__pycache__/*
-
 .eggs/*
-
 LaueTools/test_toolbar.py
+LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-37.pyc
+
