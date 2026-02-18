@@ -3,10 +3,9 @@ r"""
 plotrefineGUI is a GUI class to plot laue pattern, index it and refine the corresponding unit cell strain
 
 This module belongs to the open source LaueTools project with a free code repository at
-https://gitlab.esrf.fr/micha/lauetools
-mailto: micha -at* esrf *dot- fr
+github/ESRFBM32/LaueTools
 
-March 2020
+Last revision Feb 2026
 """
 from __future__ import division
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
@@ -2941,7 +2940,7 @@ class Plot_RefineFrame(wx.Frame):
         if flag:
             print("-------------------")
             print([butt.GetValue() for butt in self.listbuttons])
-            if verbose>0:
+            if self.verbose>0:
                 print("self.listbuttonstate", self.listbuttonstate)
 
     def OnAcceptMatching(self, evt):  # accept AcceptMatching indexation
