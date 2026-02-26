@@ -1,5 +1,6 @@
 /LaueTools/*.dat
 /LaueTools/*.pyc
+/LaueTools/GUI/*.pyc
 /LaueTools/*.bak
 /LaueTools/sorted*
 /doc/conf.py
