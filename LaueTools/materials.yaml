@@ -988,6 +988,16 @@ Ti:
   - 90
   - 120
   extinction: "no"
+TiO2:
+  label: TiO2
+  lattice:
+  - 4.593
+  - 4.593
+  - 2.959
+  - 90
+  - 90
+  - 90
+  extinction: rutile
 Ti2AlN:
   label: Ti2AlN
   lattice:
