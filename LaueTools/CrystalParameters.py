@@ -427,7 +427,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
 
         array_hkl = np.delete(array_hkl_5, np.where(cond6 == True)[0], axis=0)
 
-    elif Extinc == "rutile":
+    elif Extinc == "rutile":  # SG 136
 
         cond1a = H == 0
         cond1b = (K + L) % 2 != 0
