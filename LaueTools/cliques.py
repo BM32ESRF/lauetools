@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("WXAgg")
 
 import numpy as np
-import wx  # wypthon
+import wx  # wypthon 4.02
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False
