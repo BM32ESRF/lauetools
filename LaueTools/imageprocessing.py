@@ -2,8 +2,8 @@
 r"""
 imageprocessing module is made to modify filter data array
 
-More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
-March 2020
+More tools can be found in LaueTools package at github
+March 2026
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
@@ -101,7 +101,7 @@ def check_array_indices(imin, imax, jmin, jmax, framedim=None):
         return
     imin = max(imin, 0)
     jmin = max(jmin, 0)
-    imax = min(framedim[0], imax)
+    imax = min(framedim[0], imax) # tobe cahcked  -1 or not
     jmax = min(framedim[1], jmax)
 
     return imin, imax, jmin, jmax
