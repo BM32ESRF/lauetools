@@ -13,7 +13,7 @@ import LaueTools.Daxm.material.dict_datamat as dm
 
 __path__ = os.path.dirname(__file__)
 
-if sys.version < '3.8':
+if sys.version_info < (3,8):
     print("WARNING. Could you better use a python version >= 3.8 please!")
 
 if np.__version__>='1.20':
