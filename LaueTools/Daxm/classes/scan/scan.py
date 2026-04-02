@@ -20,7 +20,7 @@ def is_type_scan(obj):
     return isinstance(obj, (PointScan, LineScan, MeshScan))
 
 
-def new_scan(scan_inp, verbose=True)->'ScanObject':
+def new_scan(scan_inp, verbose=False)->'ScanObject':
 
     """
     Return a ScanObject based on input
