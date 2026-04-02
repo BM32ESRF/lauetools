@@ -18,7 +18,7 @@ import LaueTools.Daxm.material.absorption as abso
 import LaueTools.Daxm.material.dict_datamat as dm
 import LaueTools.Daxm.modules.geometry as geom
 
-if sys.version < '3.8':
+if sys.version_info < (3,8):
     print("WARNING. Could you better use a python version >= 3.8 please!")
 
 if np.__version__ >= '1.20':
@@ -210,8 +210,9 @@ class CircularWire:
 
         self.set(**load_dict(filename, directory=directory))
 
-    def set_par(self, R:float, f1:float, f2:float, u1:float, u2:float, h:float, p0:float, material=None):
-
+    def set_par(self, R:float, f1:float, f2:float, u1:float, u2:float, h:float, p0:float, material=None, verbose=0):
+        if verbose>0:
+            print('In set_par(), R, f1, f2, u1, u2, h, p0', R, f1, f2, u1, u2, h, p0)
         self.set_radius(R)
 
         self.set_axis(f1, f2)
