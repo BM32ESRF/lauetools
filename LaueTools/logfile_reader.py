@@ -11,6 +11,8 @@ import copy, os, time
 import numpy as np
 import datetime
 
+minute=float
+
 import pandas as pd
 
 try:
@@ -18,7 +20,6 @@ try:
     from matplotlib.widgets import MultiCursor
 except:
     pass
-
 try:
     import h5py
 except ModuleNotFoundError:
@@ -27,6 +28,11 @@ except ModuleNotFoundError:
 import LaueTools.IOLaueTools as IOLT
 import LaueTools.generaltools as GT
 import LaueTools.IOimagefile as IOimage
+
+# DEFAULT_SCALAR_COUNTERS = ['mon','epoch','integration_time','fluo','fluoCu']
+# DEFAULT_POSITIONERS = ['xech', 'yech', 'zech', 'sx', 'sy', 'sz','hfoc', 'pfoc', 'zf', 'yf','xtech', 'ytech', 'thf', 'xps', 'yps', 'Edia', 'eigerth1']
+
+FORBIDDENCOUNTERS = ['eiger4m',]  # 2D counters and heavy to read without purpose
 
 class H5file:
     defaultcolumns = ['start_time', 'end_time',
@@ -39,18 +45,18 @@ class H5file:
         self.listscans = None
         self.listcts = None
         self.dfallscans = None # dataframe allscans
-        self.scans = {} # dict of scans  key is integer (datraframe index)
+        self.selectedscans = {} # dict of scans  key is integer (datraframe index)
         self.selectedscansindices = []  # list of selected scans indices
         self.CCDLabel = CCDLabel
 
     def setCCDLabel(self, CCDLabel):
         self.CCDLabel = CCDLabel if CCDLabel is not None else H5file.defaultCCDLabel
     
-    def getscans(self, verbose=False):
-        self.listscans, self.listcts = get_scans_cts(self.path)
+    def getscans(self, verbose:int=0):
+        self.listscans, self.listcts = get_scans_cts(self.path, verbose=verbose-1)
         self.listscans = [[str(_k)]+elem for _k, elem in enumerate(self.listscans)]
         self.listcts = [[str(_k)]+elem for _k, elem in enumerate(self.listcts)]
-        if verbose:
+        if verbose>0:
             print("number scans found :",len(self.listscans))
             print("number saved count commands found: ",len(self.listcts))
         self._build_dfallscans()
@@ -108,18 +114,19 @@ class H5file:
             self.CCDLabel = H5file.defaultCCDLabel
 
         scans_dict = build_dict_scan(item_idx, self.dfallscans, self.CCDLabel)
-        self.scans[item_idx]= Scan(scans_dict)
+
+        self.selectedscans[item_idx]= scans_dict
         self.selectedscansindices.append(item_idx)
 
         if verbose:
-            print("scan %d built and stored in self.scans"%item_idx)
-        return Scan(scans_dict)
+            print("scan %d built and stored in self.selectedscans"%item_idx)
+        return scans_dict
 
     def getselectedscansindices(self):
         return sorted(self.selectedscansindices)
 
 
-    def selectscansGUI(self, nmax=None, additionalcolumns=['imagefolder'], verbose=True):
+    def selectscansGUI(self, nmax:int=None, additionalcolumns:list=['imagefolder'], verbose:int=0):
 
         """
         Interactive GUI to select scans from the h5file
@@ -130,14 +137,15 @@ class H5file:
             Maximum number of scans to display. The default is None.
         additionalcolumns : list, optional
             Additional columns to display from the dataframe df. The default is ['imagefolder'].
-        verbose : bool, optional
-            Print message when a scan is selected. The default is True.
+        verbose : int, optional
+            Print message when a scan is selected. The default is 0.
 
         Returns
         -------
         None.
 
         """
+        from ipywidgets import widgets, interact, interactive, fixed, interact_manual
         df =  self.dfallscans[:nmax]
         
         # List of labels (column headers)
@@ -157,11 +165,12 @@ class H5file:
         # Function to handle button click
         def make_click_handler(index):
             def on_click(b):
+                print(f"Button clicked for index {index}, self: {self}")  # Debug
                 row = df.iloc[index]
                 with output:
                     output.clear_output()
                     self.build_dict_scan(index)
-                    GT.printgreen(f"Added scan {index} to H5file instance self.scans")
+                    GT.printgreen(f"Added scan {index} to self.selectedscans")
             return on_click
 
         # Generate rows
@@ -180,31 +189,63 @@ class H5file:
         display(widgets.VBox([header] + rows))
 
 
-    def filterby(self, columnname, value, verbose=True, nmax=None, openGUI=True):
+    def filterby(self, columnname, value, verbose:int=1, nmax=None, openGUI=True, resetscanslist=False):
         self._build_dfallscans()
-        self.dfallscans = self.dfallscans[self.dfallscans[columnname]==value]
-        if verbose:
-            print("number scans found after filtering: ",len(self.dfallscans))
+        filterdfscans = self.dfallscans[self.dfallscans[columnname]==value]
+        if resetscanslist:
+            self.dfallscans = filterdfscans
+        if verbose>0:
+            print("number scans found after filtering: ",len(filterdfscans))
         if openGUI:
-            self.selectscansGUI(nmax=nmax)
-        return self.dfallscans
+            self.selectscansGUI(nmax=nmax, verbose=verbose-1)
+        return filterdfscans
     
-    def findstrings(self, string_dataset=None, string_fullcommand=None, columnnames=['sample_dataset_scanindex','fullcommand'], verbose=True, nmax=None, openGUI=True):
+    def findstrings(self, string_dataset=None, string_fullcommand=None, columnnames=['sample_dataset_scanindex','fullcommand'], verbose:int=1, nmax=None, openGUI=False, resetscanslist=False):
+        """
+        Filter scans in the pandas dataframe by searching for strings in two columns.
+
+        Parameters
+        ----------
+        string_dataset : str, optional
+            String to search for in the 'sample_dataset_scanindex' default column. (or the first column of columnnames)
+            If None, no filtering is done on this column (default is None).
+        string_fullcommand : str, optional
+            String to search for in the 'fullcommand' default column. (or the second column of columnnames)
+            If None, no filtering is done on this column (default is None).
+        columnnames : list, optional
+            List of column names in which to search for strings.
+            The default is ['sample_dataset_scanindex','fullcommand'].
+        verbose : intbool, optional
+            If True, prints additional information for debugging purposes (default is 1).
+        nmax : int, optional
+            Maximum number of scans to display in the GUI. The default is None.
+        openGUI : bool, optional
+            If True, opens a GUI to select scans from the filtered dataframe (default is True).
+
+        Returns
+        -------
+        DataFrame
+            The filtered dataframe of scans.
+        """
         self._build_dfallscans()
 
         if string_dataset is None: string_dataset = ''
         if string_fullcommand is None: string_fullcommand = ''
-        conddataset=self.dfallscans[columnnames[0]].str.contains(string_dataset)
-        condfullcommand =self.dfallscans[columnnames[1]].str.contains(string_fullcommand)
+        conddataset=self.dfallscans[columnnames[0]].str.contains(string_dataset, case=False, regex=False)
+        condfullcommand =self.dfallscans[columnnames[1]].str.contains(string_fullcommand, case=False, regex=False)
+        
         cond = conddataset & condfullcommand
-        self.dfallscans = self.dfallscans[cond]
-        if verbose:
-            print("number scans found after filtering: ",len(self.dfallscans))
+        filterdfscans= self.dfallscans[cond]
+        if resetscanslist:
+            self.dfallscans = filterdfscans
+            GT.printyellow("resetting self.dfallscans")
+        if verbose>0:
+            print("number scans found after filtering: ",len(filterdfscans))
         if openGUI:
             self.selectscansGUI(nmax=nmax)
-        return self.dfallscans
+        return filterdfscans
 
-    def getscanfromimage(self, imagefullpath, verbose=True):
+    def getscanfromimage(self, imagefullpath, verbose=1, CCDLabel='sCMOS'):
         """
         Retrieve scan information from an image file.
 
@@ -227,11 +268,13 @@ class H5file:
         logfile_scanindex : int
             The scan index as found in the log file.
         """
+        if CCDLabel != 'sCMOS':
+            raise ValueError(f"date retrieval not implemented for {CCDLabel}")
 
         blisscommand, imagedate, logfile_scanindex=IOimage.fromscmosdate2blisscommand(imagefullpath, self.dfallscans)
         return blisscommand, imagedate, logfile_scanindex
 
-    def getscansfromdate(self, datetuple, timespan=None, verbose=True):
+    def getscansfromdate(self, datetuple, timespan:minute=None, verbose=True):
         """
         Retrieve scans occurring within a specified time frame around a given date.
 
@@ -248,8 +291,8 @@ class H5file:
         timespan : int, float, optional
             The time span in minutes around the query date to filter scans. If None,
             only scans active at the query date are returned (default is None).
-        verbose : bool, optional
-            If True, prints additional information for debugging purposes (default is True).
+        verbose : int, optional
+            If True, prints additional information for debugging purposes (default is 1).
 
         Returns:
         --------
@@ -258,7 +301,7 @@ class H5file:
         """
 
         querydate = datetime.datetime(*datetuple) # datetuple = (2025,7,24,23,33,30)  # y m d  h min sec
-        if verbose:
+        if verbose>0:
             print('querydate',querydate)
 
         df = self.dfallscans
@@ -271,7 +314,7 @@ class H5file:
                     
         dfallscansgoodperiod = df.loc[mask]
 
-        if verbose:
+        if verbose>0:
             print(dfallscansgoodperiod.fullcommand.values)
         return dfallscansgoodperiod
 
@@ -666,8 +709,7 @@ class Scan(SpecFile):
 
 class Scan_hdf5(SpecFile):
     """
-    Simple class to read extract single scan from bliss files. All the parameters of the scan and the data are read
-    and stored as attributes.
+    Simple class to read extract single scan from bliss files. All the parameters of the scan and the data are read and stored as attributes.
 
     Definition:
     -----------
@@ -702,10 +744,6 @@ class Scan_hdf5(SpecFile):
     # read the scan
     In : scan = Scan(sf, 265)
 
-    # read a series of scans
-    In : scan = Scan(sf, (265,266,270))
-    In : scan = Scan(sf, arange(265,270))
-
     # learn about the motors
     In : scan.motors
     Out:
@@ -721,12 +759,13 @@ class Scan_hdf5(SpecFile):
     # plot two counters vs each others
     In : plot(scan.th,scan.det/scan.IC1)
 
-    author: J.S. Micha
+    author: S. Tardif modified JS Micha
     """
     def __init__(self, spec_file, scan_key, collectallscans=True, onlywirescan=False,
                                                                 onlymesh=False,
                                                                 verbose=False):
 
+        if verbose: print('********** Beginning of __init__ of scan_hdf5 class')
         if type(spec_file) == str:
             spec_file = SpecFile(spec_file, filetype='hdf5')
         self.file = spec_file.file
@@ -749,13 +788,13 @@ class Scan_hdf5(SpecFile):
 
         #print('beginning of __init__ of scan_hdf5')
         selp, _ = getscans_from_hdf5file(spec_file.file)
-        tit, data, posmotors, fullpath, scan_date = readdata_from_hdf5key(selp, scan_key, outputdate=True)
+        tit, data, posmotors, fullpath, scan_date = readdata_from_hdf5key(selp, scan_key, outputdate=True, verbose=verbose)
 
         if verbose:
             print('tit',tit)
-            print('posmotors',posmotors)
+            # print('posmotors',posmotors)
             print('scan_date',scan_date)
-            print('data',data)
+            #print('data',data)
             print('fullpath', fullpath)
         # set the data as attributes with the counter name
         for key,val in data.items():
@@ -1179,27 +1218,27 @@ class Scan_hdf5(SpecFile):
             #multi = MultiCursor(fig.canvas, axs, color='r', lw=3, horizOn=True)
 
 
-def getmeshscan_from_hdf5file(filename, verbose=0):
+def getmeshscan_from_hdf5file(filename, verbose:int=0):
     return getscans_from_hdf5file(filename, collectallscans=False,
                                     onlymesh=True,
                                     verbose=verbose)[0]
 
-def getwirescan_from_hdf5file(filename, verbose=0):
+def getwirescan_from_hdf5file(filename, verbose:int=0):
     return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=True,
                                     verbose=verbose)[0]
 
-def getall_from_hdf5file(filename, verbose=0):
+def getall_from_hdf5file(filename, verbose:int=0):
     return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=False,collectall=True,
                                     verbose=verbose)
 
-def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywirescan=False, onlymesh=False,
-                           collectall=False):
+def getscans_from_hdf5file(filename, verbose:int=0, collectallscans:bool=True, onlywirescan:bool=False, onlymesh:bool=False,
+                           collectall:bool=False):
 
     if collectallscans:
         onlymesh=False
         onlywirescan=False
 
-    if verbose: print("getscans_from_hdf5file  %s"%filename)
+    if verbose>0: print(f"\n ***** In getscans_from_hdf5file (logfile_reader) filename is {filename}")
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
 
@@ -1207,7 +1246,12 @@ def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywiresc
     with h5py.File(filename, 'r') as f:
 
         listkeys = [kk for kk in f.keys()]
-        if verbose: print('filename: %s \n hdf5 keys:'%filename, listkeys)
+        if verbose>0:
+            print(f'filename: %s \n found {len(listkeys)} hdf5 keys:'%filename)
+            if len(listkeys)>10:    
+                print(listkeys[:10], '...')
+            else:
+                print(listkeys)
         nbkeys = len(listkeys)
         
         # if key =   #########_int.int  then it is a pointer to a file ########.h5
@@ -1224,7 +1268,7 @@ def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywiresc
             if isinstance(objlink, h5py._hl.group.ExternalLink):
                 
                 lowlevelpath = objlink.filename
-                if verbose: print('key = %s is External link to %s'%(_key,lowlevelpath))
+                if verbose>1: print('key = %s is External link to %s'%(_key,lowlevelpath))
                 foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
                 if foundfile:
                     # removing string before _interger.integer
@@ -1235,7 +1279,7 @@ def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywiresc
                                                 onlywirescan=onlywirescan,
                                                 collectall=collectall)
             elif isinstance(objlink, h5py._hl.group.HardLink):
-                if verbose: print('key = %s is Hard link to '%(_key))
+                if verbose>1: print('key = %s is Hard link to '%(_key))
                 props, isselected = getscanprops_lowest_hdf5(filename, _key,
                                                             collectallscans=collectallscans,
                                                             onlymesh=onlymesh,
@@ -1272,7 +1316,7 @@ def getscans_from_hdf5file(filename, verbose=0, collectallscans=True, onlywiresc
         return sortedlistprops, sortedlistallprops
 
 
-def findlowesthdf5file(filename, mainfolder='.', verbose=0):
+def findlowesthdf5file(filename, mainfolder='.', verbose:int=0):
     """ find the hdf5 file at the lowest level pointing to data
 
     note: To be improved to consider relative path
@@ -1281,7 +1325,7 @@ def findlowesthdf5file(filename, mainfolder='.', verbose=0):
     _, ffname = os.path.split(filename)
     absfolder = os.path.abspath(mainfolder)
     relativepath = os.path.join(absfolder,filename)
-    if verbose:
+    if verbose>0:
         print('filename',filename)
         print('relativepath', relativepath)
         print('ffname',ffname)
@@ -1290,7 +1334,7 @@ def findlowesthdf5file(filename, mainfolder='.', verbose=0):
         foundfile = relativepath
     elif ffname in os.listdir(absfolder): #local folder
         foundfile = os.path.join(absfolder,ffname)
-    if verbose:
+    if verbose>0:
         print('foundfile',foundfile)
     return foundfile
 
@@ -1356,7 +1400,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
                     listall.append(datasetdata)
     return listall, listscans, listcts
 
-def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose=0, collectall=False):
+def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose:int=0, collectall=False):
     """ get scan properties from hdf5 file and filter optionally wrt scan type (mesh or wirescan)"""
     #print('\n\nterminal hdf5 file')
     _,ext = filename.rsplit('.',1)
@@ -1386,7 +1430,7 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
         
         props = None
 
-        if verbose:
+        if verbose>0:
             print('scancommand',scancommand)
             print('startdate',startdate)
         isselected = False
@@ -1634,11 +1678,13 @@ def read_fullcommand(fullcommand:str)->dict:
     
     elif scancommand in ('fscan',):
         assert len(sc) == 7
+        # warning  arg[3]  is nb of images
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime', 'unknown')
         
         listfmt = (str, float, float, int, float, float)
         
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+        dict_command['fmotnbsteps']=dict_command['fmotnbsteps']-1
     
     elif scancommand in ('a2scan','d2scan'):
         assert len(sc) == 9
@@ -1659,7 +1705,7 @@ def build_dict_scan_from_imagefile(filepath:int, pdf:"PandasDataFrame", CCDLabel
     if isinstance(pdf_idx, int):
         return build_dict_scan(pdf_idx, pdf, CCDLabel=CCDLabel)
 
-def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->dict:
+def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS',verbose:int=0)->dict:
     """build dict of scan parameters from parsed item pandas dataframe object
     
     from 'fullcommand' key of pdf, keys of output dictionnary:
@@ -1683,8 +1729,10 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
         mapdimensions=dict_command['fmotnbsteps'], dict_command['smotnbsteps']
         dict_scan['scantype'] = 'map'
         
-    elif dict_command['scancommand'] == 'ascan':
+    elif dict_command['scancommand'] in ('fscan', 'ascan'):
+        
         mapdimensions=dict_command['fmotnbsteps']+1,1
+        
         if dict_command['fastmotor'] in ('zf, yf'):
             dict_scan['scantype'] = 'daxm'
         else:
@@ -1718,8 +1766,8 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS')->
     return dict_scan
 
 
-def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'), potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan')):
-    res = getall_from_hdf5file(pathHDF5)   # scans and ct
+def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'), potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan','loopscan'), verbose:int=0):
+    res = getall_from_hdf5file(pathHDF5, verbose=verbose-1)   # scans and ct
 
     listscans = []
     listcts = []
@@ -1798,7 +1846,8 @@ def ReadHdf5_v2(fname, scan, outputdate=False):
         else:
             return title, d, st
 
-def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
+def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False, usercounterslist=None,
+                          userpositionerslist=None):
     """read a lowest level hdf5 file pointing to data corresponding to the key 
 
     :param listkeyprops: array of strings which lists all the keys (see getmeshscan_from_hdf5file() of plotmeshspecGUI.py). Each element is:
@@ -1809,7 +1858,14 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    if verbose:
+    if usercounterslist is not None:
+        counterslist = usercounterslist
+    if userpositionerslist is not None:
+        positionerslist = userpositionerslist
+
+    if verbose: print('\n ----- In readdata_from_hdf5key()  -----')
+    if 0: #verbose:
+        print('In readdata_from_hdf5key(), Input parameters :')
         print('listkeyprops',listkeyprops)
         print('listkeyprops',type(listkeyprops))
         print('len listkeyprops',len(listkeyprops))
@@ -1821,10 +1877,10 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
     except:
         _ix = np.where(listkeyprops[0][:,0]==key)[0]
 
-    if verbose:
-        print('key',key)
-        print('listkeyprops[:,0]',listkeyprops[:,0])
-        print('_ix',_ix)
+    if 0: #verbose:
+        print('key : ',key)
+        print('listkeyprops[:,0] :',listkeyprops[:,0])
+        print('_ix :',_ix)
         print('listkeyprops[_ix]', listkeyprops[_ix])
 
     if len(_ix)==0:
@@ -1843,8 +1899,10 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
             # print('i_scan', i_scan)
             # print('fname', f)
             # print('fname[i_scan]', f[i_scan])
-            datasetnames = [key for key in f[i_scan]['measurement'].keys()]
+            datasetnames = [key for key in f[i_scan]['measurement'].keys() if key not in FORBIDDENCOUNTERS]
             d = {}
+            if verbose:
+                print('datasetnames', datasetnames)
             for _n in datasetnames:
                 d[_n] = f[i_scan]['measurement'][_n][()]
                 if _n =='mpxcdte':
@@ -1863,6 +1921,9 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False):
 
             positionersnames = [key for key in f[i_scan]['instrument']['positioners'].keys()]
             posmotors={}
+
+            if verbose:
+                print('positionersnames', positionersnames)
             for _n in positionersnames:
                 posmotors[_n] = f[i_scan]['instrument']['positioners'][_n][()]
             
