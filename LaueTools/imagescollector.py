@@ -170,6 +170,36 @@ def collectroismax_singlefile(index, roicenters=None, prefix=None, folder =None,
                                  halfboxsize=(boxsize_row,boxsize_line), CCDLabel=CCDLabel)
     return maxvals
 
+def collectrois_nbhotpixels(index, roicenters=None, prefix=None, folder =None,
+                            boxsize_row=10,boxsize_line=10,CCDLabel=None, threshold=200):
+    """ collect integrated intensity (sum of intensities)in some given rois centered on peaks defined in peaklist in 1 image
+    
+    
+        
+    :param index: int, image file index
+    :param roicenters: list or array of 2d PIXELS position
+    :param prefix: str, prefix of imagefilename (excluding folder path) excluding digits number of the index
+    ('Cu_' for images named  'Cu_0020.tif')
+    :param folder: str, path to folder containing all images
+    :param boxsize_row, boxsize_line: half boxsize along x and y of the roi (can be a list?)
+    :param CCDLabel: label of detector
+    
+    :return: array of max intensities: shape = (nbimages, nbpeaks)
+    """
+    extension = '.tif'
+    if CCDLabel == 'EIGER_4MCdTe':
+        extension = '.h5'
+    elif CCDLabel == 'MARCCD165':
+        raise ValueError("collectroissum_singlefile not implemented for MARCCD165")        
+        #extension = '.mccd'   
+    
+    filename = prefix+'%04d'%index + extension     
+    imagefilename = os.path.join(folder, filename)
+
+    pixsums = IOimage.getnbhotpixels(imagefilename, roicenters=roicenters,
+                                 halfboxsize=(boxsize_row,boxsize_line), CCDLabel=CCDLabel, threshold=threshold)
+    return pixsums
+
 def collectroissum_singlefile(index, roicenters=None, prefix=None, folder =None,
                             boxsize_row=10,boxsize_line=10,CCDLabel=None):
     """ collect integrated intensity (sum of intensities)in some given rois centered on peaks defined in peaklist in 1 image
