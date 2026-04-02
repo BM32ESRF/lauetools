@@ -12,7 +12,9 @@ import math, os, sys
 import numpy as np
 import numba as nb
 
-if sys.version < '3.8':
+radians = float
+
+if sys.version_info < (3,8):
     print("WARNING. Could you better use a python version >= 3.8 please!")
 
 if np.__version__ >= '1.20':
@@ -141,12 +143,12 @@ def calc_solid_angle_coeff(ccd_parameters, xcam, ycam):
 
 
 # Wire geometry
-def calc_axis(f1:float, f2:float)->numpyArray3float:
+def calc_axis(f1:radians, f2:radians)->numpyArray3float:
     """Return the 3D axis vector of a wire"""
     return  np.array([np.cos(f1) * np.cos(f2), np.sin(f1)  * np.cos(f2), -np.sin(f2)])
 
 
-def calc_traj(u1:float, u2:float)->numpyArray3float:
+def calc_traj(u1:radians, u2:radians)->numpyArray3float:
     """Return the translation vector of a wire"""
     return np.array([ -np.sin(u1) * np.cos(u2), np.cos(u1) * np.cos(u2), np.sin(u2)])  
 
