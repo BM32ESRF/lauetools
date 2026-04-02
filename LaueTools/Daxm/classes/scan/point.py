@@ -7,12 +7,14 @@ __author__ = "Loic Renversade, CRG-IF BM32 @ ESRF"
 __version__ = '$Revision$'
 
 # general imports
-import os
+import os, copy
 import json
 
 import math
 import numpy as np
 import scipy.interpolate as spi
+
+from multiprocessing import Pool
 
 import matplotlib.pylab as mplp
 
@@ -40,6 +42,11 @@ radian = float
 class tuple_2int(Tuple[int, int]):
     pass
 
+
+from concurrent.futures import ThreadPoolExecutor
+
+
+
 def new_scan_dict(scan_dict:Dict=None):
     """Return a default scan as dict."""
 
@@ -63,6 +70,8 @@ def new_scan_dict(scan_dict:Dict=None):
                 'monitor': 'spec',
                 'monitorROI': (1024, 1024, -1, -1),
                 'monitorOffset': 25} # since April 2024 it 25 approx, before this date 10000
+
+                # we may add scantype and fullcommand
 
     if scan_dict is not None:
         new_dict.update(scan_dict)
@@ -100,6 +109,7 @@ class StaticPointScan(object):
     def __init__(self, inp:Union[str, Dict], verbose:bool=True):
         self.verbose = verbose
         self.print_msg("Creating class instance...")
+        
         if verbose:
             print("Creating class instance... (init StaticPointScan)")
             print('input "inp"', inp)
@@ -120,7 +130,11 @@ class StaticPointScan(object):
         self.hdf5scanId = None  # specific to hdf5 file
         self.spec_scan = None
         self.spec_expo = None
-        self.scan_cmd = None  # scan command 
+
+        self.scan_cmd_fastscan = None
+        self.scan_cmd = None  # scan command
+        self.scantype = None
+
         self.spec_data = None
         self.spec_motor = None
         self.spec_monitor = None
@@ -129,7 +143,8 @@ class StaticPointScan(object):
         self.number_images:int = None   # nb of images collected (nb of points of scan = nb of steps +1)
 
         # open file and set self.filetype
-        self.init_spec()
+        if verbose: print('lauching init_spec()')
+        self.init_spec(verbose=verbose)
 
         # attributes related to detector and geometry
         self.ccd_type:str = None
@@ -137,6 +152,7 @@ class StaticPointScan(object):
         self.img_params: Dict = None
         self.detector_params: Dict = None
 
+        if verbose: print('lauching init_detector()')
         self.init_detector()
 
         # attributes related the wire(s)
@@ -147,6 +163,7 @@ class StaticPointScan(object):
         self.wire_params: List[Dict] = None
         self.wire: List[mywire.CircularWire] = None
 
+        if verbose: print('lauching init_wire()')
         self.init_wire()
 
         # attributes related to the data
@@ -158,9 +175,12 @@ class StaticPointScan(object):
         self.img_idx: np.ndarray = None
         self.img_filenames:List[str] = None
         self.img_idx_use: Tuple = None   # tuple of image indices used
-        self.img_exist: np.ndarray = None  
+        self.img_exist: np.ndarray = None
+
+        self._image_cache = {}
 
         if not hasattr(self, "disable_data") or not getattr(self, "disable_data"):
+            if verbose: print('lauching init_data()')
             self.init_data()
 
         # attributes relate to the monitor
@@ -172,6 +192,7 @@ class StaticPointScan(object):
         self.monitor_corrcoeff = None
 
         if not hasattr(self, "disable_mon") or not getattr(self, "disable_mon"):
+            if verbose: print('lauching init_mon()')
             self.init_mon()
 
         self.print_msg("Ready to work.")
@@ -180,7 +201,7 @@ class StaticPointScan(object):
             print('end of StaticPointScan init')
         # End of __init__
 
-    def init_spec(self):
+    def init_spec(self,verbose=False):
 
         self.print_msg("- Reading hdf5 or spec file...")
         print('Reading hdf5 or spec file in StaticPointScan')
@@ -200,29 +221,58 @@ class StaticPointScan(object):
                 self.hdf5scanId = self.input['hdf5scanId']
 
         self.spec_scan_num = self.input['scanNumber']
-        self.scan_cmd = self.input['scanCmd']
+        
         self.spec_data = None
         self.spec_motor = []
         self.spec_monitor = []
 
         # In case we can use the spec file,
         if self.spec_file is not None:
-            self.init_spec_file()
+            self.init_spec_file(verbose)
         # Otherwise,
         else:
             self.init_spec_custom()
 
+        if self.verbose:
+            print('in init_spec() after self.init_spec_file()')
+            print('self.scantype',self.scantype)
+            print('self.scan_cmd',self.scan_cmd)
+            print('self.scan_fullcommand',self.scan_fullcommand)
+        # default ascan type
         self.number_images = self.scan_cmd[2] + 1
+        exposuretime = float(self.scan_cmd[3])
 
         print('self.wire_position.shape',self.wire_position.shape)
         print('self.number_images',self.number_images)
         self.wire_step = np.diff(self.wire_position[0:self.number_images]).mean()
-        self.print_msg("   scanning step is {:.2f} um", fmt=(1000*self.wire_step,))
 
+        # if self.scantype == 'fscan':  # because fscan as the number of images directly as input
+        #     if self.verbose:
+        #         print('in init_spec() fscan !!!')
+        #         print('self.scan_cmd',self.scan_cmd)
+        #     self.number_images=int(self.scan_cmd[2])
+        #     self.wire_step = self.scan_cmd[1]
+        #     if self.scan_fullcommand.startswith('fscan'):
+        #         exposuretime = float(self.scan_fullcommand.split(' ')[-2])
+
+        #     else:
+        #         exposuretime = self.scan_cmd[3] 
+        #     nbsteps = self.number_images-1
+        #     motormin = self.scan_cmd[0]
+        #     motormax = self.scan_cmd[0] + nbsteps*self.wire_step
+        #     self.scan_cmd_fastscan = [motormin, motormax, nbsteps, exposuretime]
+        
+        self.print_msg("   scanning step is {:.2f} um", fmt=(1000*self.wire_step,))
+        self.print_msg("   exposure time is {:.3f} s", fmt=(exposuretime,))
+        self.print_msg("   with command: ",self.scan_fullcommand)
+        self.print_msg("   nb of images: ", fmt=(self.number_images,))
         
 
-    def init_spec_file(self):
-        print('self.filetype in init_spec_file of StaticPointScan  ==>', self.filetype)
+    def init_spec_file(self, verbose=False):
+
+        if verbose:
+            print('At the beginning of init_spec_file() self.filetype of StaticPointScan ==>', self.filetype)
+
         if self.filetype == 'spec':
             self.spec = rspec.SpecFile(self.spec_file)
             self.spec_data = rspec.Scan(self.spec, self.spec_scan_num)
@@ -231,43 +281,88 @@ class StaticPointScan(object):
             self.spec_motor = self.spec.cmd_list[self.spec_scan_num].split()[2]
 
         elif self.filetype == 'hdf5':
-            self.spec = logfiler.SpecFile(self.spec_file, filetype='hdf5', onlywirescan=True, collectallscans=False,onlymesh=False)
-            print('self.hdf5scanId',self.hdf5scanId)
-            print('self.spec_file (hdf5)', self.spec_file)
+            self.spec = logfiler.SpecFile(self.spec_file, filetype='hdf5',
+                                    onlywirescan=True, collectallscans=False,
+                                    onlymesh=False, verbose=verbose)
+            
+            if verbose:
+                print('\nself.hdf5scanId',self.hdf5scanId)
+                print('self.spec_file (hdf5)', self.spec_file)
+            
             # read single key scan (for the moment)
-            self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId)
-            print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
+            self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId, verbose=verbose)
+
+            self.scan_cmd = self.input['scanCmd']
+            self.scan_fullcommand = self.input.get('fullcommand', 'unknown')
+
+            if self.scantype is None:
+                self.scantype = self.input.get('scantype', None)
+            if self.scantype is None:
+                self.scantype = self.spec_data.command.split(' ')[0]
+
+            if verbose:
+                print('self.scantype',self.scantype)
+                print('self.spec.cmd_list[self.hdf5scanId]',self.spec.cmd_list[self.hdf5scanId])
+        
             cmd_parts = self.spec.cmd_list[self.hdf5scanId].split()
-            print('cmd_parts',cmd_parts)
+            
+            if verbose:
+                print('cmd_parts',cmd_parts)
             for mot in ['yf','zf']:
                 if mot in cmd_parts:
                     self.spec_motor = mot
-                    print('self.spec_motor  !!! ====> ',self.spec_motor)
+                    if verbose:
+                        print('self.spec_motor  !!! ====> ',self.spec_motor)
                     imot = cmd_parts.index(mot)
                     params = cmd_parts[imot+1:imot+4] # wiremin, wiremax, nbsteps
                     params.append(cmd_parts[-1]) # expo
                     break
 
-            self.scan_cmd = params
-            print('self.scan_cmd',self.scan_cmd)
+            if self.scantype == 'ascan':
+                self.scan_cmd = params
+                exposuretime = float(params[3])
+
+            elif self.scantype == 'fscan' and self.scan_cmd_fastscan is None:  # because fscan as the number of images directly as input
+                if verbose:
+                    print('in init_spec_file() fscan !!!')
+                    print('self.scan_cmd',self.scan_cmd)
+                self.number_images=int(params[2])
+                self.wire_step = float(params[1])  # mm
+                exposuretime = float(self.spec_data.command.split(' ')[-2])
+                    
+                nbsteps = self.number_images-1
+                motormin = float(params[0])
+                motormax = motormin + nbsteps*self.wire_step
+                # reconstruct scan command
+                self.scan_cmd_fastscan = [motormin, motormax, nbsteps, exposuretime]
+                self.scan_cmd = copy.copy(self.scan_cmd_fastscan)
+
+            else:
+                raise valueError('scantype not recognized')
+            
+    
+            if verbose:
+                print('in init_spec_file() self.scan_cmd',self.scan_cmd)
 
             self.spec_monitor = getattr(self.spec_data, "mon")
-            print('self.spec_monitor',self.spec_monitor)
+            if verbose:
+                print('self.spec_monitor',self.spec_monitor)
             
         for i, dtype in enumerate([float, float, int, float]):
             self.scan_cmd[i] = dtype(self.scan_cmd[i])
-        print('self.scan_cmd',self.scan_cmd)
         
-        self.spec_expo = self.scan_cmd[3]
+        if verbose: print('self.scan_cmd',self.scan_cmd)
+        
+        self.spec_expo = float(self.scan_cmd[3])
 
         self.wire_position = getattr(self.spec_data, self.spec_motor)
 
-        print('\nself.wire_position  ===>=>=>',self.wire_position)
+        if verbose: print('\nself.wire_position  ===>=>=>',self.wire_position)
 
         # Printing stuff
         self.print_msg("   from file: " + self.spec_file)
         self.print_msg('   retrieving scan #{}', fmt=(self.spec_scan_num,))
-        self.print_msg("   with command: ascan " + self.spec_motor + " {:f} {:f} {:d} {:f}", fmt=self.scan_cmd)
+        
 
     def init_spec_custom(self):
         self.spec_motor = "yf"
@@ -321,7 +416,7 @@ class StaticPointScan(object):
                 val = self.detector_params[key]
             self.print_msg("   {:<9s}: {}", fmt=(key, val))
 
-    def init_wire(self):
+    def init_wire(self, verbose=False):
 
         self.print_msg("- Preparing wires...")
 
@@ -341,9 +436,9 @@ class StaticPointScan(object):
                 dict_wire = mywire.new_dict(**ini)
             elif hasattr(ini, '__len__') and len(ini)==4:
                 dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3])
-                print('ini has got 4 elements',ini)
+                if verbose: print('ini has got 4 elements',ini)
             elif hasattr(ini, '__len__') and len(ini)==6:
-                print('ini has got 6 elements',ini)
+                if verbose: print('ini has got 6 elements',ini)
                 dict_wire = mywire.new_dict(material=ini[0], R=ini[1], h=ini[2], p0=ini[3], f1=ini[4], f2=ini[5])
             else:
                 dict_wire = []
@@ -446,7 +541,17 @@ class StaticPointScan(object):
 
     # Methods to get or set the parameters of the wires
     def get_wires_dict(self)->List[Dict]:
-
+        """
+        Return a list of dictionaries, each containing the parameters of a wire.
+        
+        The returned dictionaries will contain the keys 'material', 'R', 'h', 'p0', 'f1', 'f2', and 'u1', 'u2'.
+        The values of 'f1', 'f2', 'u1', and 'u2' will be in degrees.
+        
+        Returns
+        -------
+        List[Dict]
+            A list of dictionaries, each containing the parameters of a wire.
+        """
         return [self.get_wire_dict(i) for i in range(self.wire_qty)]
 
     def get_wire_dict(self, wire)->Dict:
@@ -568,15 +673,34 @@ class StaticPointScan(object):
         else:
             pass
 
-    def set_wire(self, wid, wire_dict):
+    def set_wire(self, wid:int, wire_dict:dict, verbose:int=3):
 
+        """
+        Set the parameters of a wire.
+
+        Parameters
+        ----------
+        wid : int
+            The index of the wire to set parameters for.
+        wire_dict : dict
+            A dictionary containing the parameters to set.
+        verbose : int, optional
+            The verbosity level (default is 1).
+
+        Notes
+        -----
+        This function updates the wire parameters and calls `set_par` on the wire object to apply the new parameters.
+        """
         self.wire_params[wid].update(wire_dict)
 
         new_dict = self.get_wire_dict(wid)
 
         new_dict.update(wire_dict)
+        if verbose>0:
+            print('In set_wire(), wire_dict', wire_dict)
+            print('new_dict', new_dict)
 
-        self.wire[wid].set_par(**new_dict)
+        self.wire[wid].set_par(**new_dict, verbose=verbose-1)
 
         if 'material' in wire_dict:
 
@@ -619,27 +743,65 @@ class StaticPointScan(object):
             res = res[0]
 
         return res
+
+    def load_image(self, idx: int, exist: bool = False) -> np.ndarray:
+        print(f"Loading image {idx} in parallel")  # Debug line
+        return self.get_image(idx, exist)
+
+    def preload_images_parallel(self, indices: list, exist: bool = False) -> list:
+        with ThreadPoolExecutor() as executor:
+            images = list(executor.map(self.load_image, indices))
+        return images
+
+    def get_images_corr_batch(self, indices: list, exist: bool = False) -> list:
+        # Load all images in parallel
+        images = self.preload_images_parallel(indices, exist)
+
+        # Get the monitor coefficients (cached)
+        monitor = self.get_monitor()
+
+        # Apply the correction to each image
+        corrected_images = [
+            monitor[frame] * (img - self.img_offset) + self.img_offset
+            for frame, img in zip(indices, images)
+        ]
+
+        return corrected_images
     
     def get_image(self, idx:int, exist:bool=False)->np.ndarray:
 
         if exist:
             frame = self.img_idx_use[idx]
+            
+        else:
+            frame = idx
+            
+
+        if frame in self._image_cache:
+            
+            return self._image_cache[frame].transpose()
+        else:
+            
+            fn = self.get_image_filedir(frame)
+            if self.img_exist[frame]:
+                img, _, _ = rmccd.readCCDimage(fn, self.ccd_type, verbose=False)
+            else:
+                img = np.zeros(self.get_img_params(['framedim'])[::-1])
+            self._image_cache[frame] = img
+           
+            return img.transpose()
+
+    def get_image_corr(self, idx: int, exist: bool = False) -> np.ndarray:
+        if exist:
+            frame = self.img_idx_use[idx]
         else:
             frame = idx
 
-        fn = self.get_image_filedir(frame)
+        img = self.get_image(frame, exist)
+        monitor = self.get_monitor()
+        return monitor[frame] * (img - self.img_offset) + self.img_offset
 
-        if self.img_exist[frame]:
-
-            img, _, _ = rmccd.readCCDimage(fn, self.ccd_type, verbose=False)
-
-        else:
-
-            img = np.zeros(self.get_img_params(['framedim'])[::-1])
-
-        return img.transpose()
-
-    def get_image_corr(self, idx:int, exist=False)->np.ndarray:
+    def get_image_corr_old(self, idx:int, exist=False)->np.ndarray:
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -864,6 +1026,7 @@ class StaticPointScan(object):
 
         else:
             self.print_msg("Unknown monitor argument... using None instead.", mode="W")
+            self.set_monitor_none()
 
         self.update_img_corrcoeff()
 
@@ -882,7 +1045,7 @@ class StaticPointScan(object):
 
     def set_monitor_spec(self):
 
-        expo = self.spec_expo if self.spec_expo > 0 else 1.
+        expo = self.spec_expo if self.spec_expo > 0 else 1.0
 
         self.monitor_val = np.array(self.spec_monitor, dtype=np.double) / expo - self.monitor_offset
 
@@ -994,6 +1157,26 @@ class StaticPointScan(object):
 
         pw = np.array([np.array(self.wire_position) for _ in xycam])
 
+        # Prepare arguments for the worker function
+        args = [(i, xycam, halfboxsize, self) for i in range(self.number_images)]
+
+        # Use multiprocessing.Pool.starmap to process images in parallel
+        with Pool() as pool:
+            results = pool.starmap(extract_pixels_for_image, args)
+
+        # Organize results: results is a list of (idx, pixel_values) tuples
+        I = np.zeros((len(xycam), self.number_images))
+        for idx, pixel_values in results:
+            for k in range(len(xycam)):
+                I[k, idx] = pixel_values[k]
+
+        return I[:, np.array(self.img_idx_use)], pw[:, np.array(self.img_idx_use)]
+
+    def get_profile_manypixels_full_old(self, xycam, halfboxsize):
+
+        pw = np.array([np.array(self.wire_position) for _ in xycam])
+
+        # Initialize the output array
         I = np.zeros((len(xycam), self.number_images, 2*halfboxsize[0]+1, 2*halfboxsize[1]+1))
 
         # prepare region indices
@@ -1006,11 +1189,20 @@ class StaticPointScan(object):
             xlims.append([xmin, xmax])
             ylims.append([ymin, ymax])
 
-        # extract profiles
-        for i in range(self.number_images):
+        # OLD WAY # extract profiles
+        # for i in range(self.number_images):
 
-            img = self.get_image_corr(i) #self.get_monitor()[i] *( - self.img_offset) + self.img_offset
+        #     img = self.get_image_corr(i) #self.get_monitor()[i] *( - self.img_offset) + self.img_offset
 
+        #     for k in range(len(xycam)):
+        #         I[k, i, :, :] = img[xlims[k][0]:xlims[k][1], ylims[k][0]:ylims[k][1]]
+
+        # Get all corrected images in a batch
+        indices = list(range(self.number_images))
+        corrected_images = self.get_images_corr_batch(indices, exist=False)
+
+        # Extract profiles from the batch of corrected images
+        for i, img in enumerate(corrected_images):
             for k in range(len(xycam)):
                 I[k, i, :, :] = img[xlims[k][0]:xlims[k][1], ylims[k][0]:ylims[k][1]]
 
@@ -1436,6 +1628,25 @@ class PointScan(StaticPointScan):
 
         return dict_res
 
+def extract_pixels_for_image(idx, xycam, halfboxsize, self_ref):
+
+    # Load the image
+    img = self_ref.get_image_corr(idx)
+
+    # Prepare region indices for all xycam positions
+    xlims, ylims = [], []
+    for xy in xycam:
+        xmin, xmax, ymin, ymax = self_ref.clip_bbox(xy, halfboxsize)
+        xlims.append([xmin, xmax])
+        ylims.append([ymin, ymax])
+
+    # Extract pixel values for all xycam positions
+    pixel_values = []
+    for k in range(len(xycam)):
+        pixels = img[xlims[k][0]:xlims[k][1], ylims[k][0]:ylims[k][1]]
+        pixel_values.append(np.mean(pixels))
+
+    return idx, pixel_values
 
 # End of scan module.
 if __name__ == "__main__":
