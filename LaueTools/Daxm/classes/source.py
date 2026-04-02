@@ -9,7 +9,17 @@ __version__ = '$Revision$'
 import os,sys
 
 import numpy as np
-import scipy.integrate as spi
+import scipy
+
+try:
+    from scipy.integrate import cumtrapz
+    print("Using 'cumtrapz' from scipy.integrate (older SciPy version)")
+except ImportError:
+    try:
+        from scipy.integrate import cumulative_trapezoid as cumtrapz
+        print("Using 'cumulative_trapezoid' as 'cumtrapz' (newer SciPy version)")
+    except ImportError:
+        print("Failed to import 'cumtrapz' or 'cumulative_trapezoid' from scipy.integrate")
 
 import matplotlib as mpl
 import matplotlib.pylab as mplp
@@ -21,7 +31,8 @@ import LaueTools.Daxm.material.absorption as abso
 import LaueTools.Daxm.material.fluorescence as fluo
 import LaueTools.Daxm.material.dict_datamat as dm
 
-if sys.version < '3.8':
+print('sys.version in source.py', sys.version)
+if sys.version_info < (3,8):
     print("WARNING. Could you better use a python version >= 3.8 please!")
 
 if np.__version__ >= '1.20':
@@ -386,7 +397,7 @@ class SecondarySource:
         
         I0 = np.interp(self.source_energy, Esrc, Isrc, left=0, right=0)
          
-        arg = spi.cumtrapz(np.array(self.mesh_sam_abscoeff), self.source_ysrc, axis=0, initial=0)
+        arg = cumtrapz(np.array(self.mesh_sam_abscoeff), self.source_ysrc, axis=0, initial=0)
         
         # beer-lambert law: I = I0*exp(-rho.mu.length)
         self.source_I = np.array([I0])*np.exp(-arg)
