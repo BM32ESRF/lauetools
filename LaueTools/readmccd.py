@@ -1094,7 +1094,8 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 formulaexpression="A-1.1*B",
                                                 listrois=None,
                                                 outputIpixmax=True,
-                                                computerrorbars=False):
+                                                computerrorbars=False,
+                                                npixels=10):
     r"""
     Find local intensity maxima as starting position for fittinng and return peaklist.
 
@@ -1433,6 +1434,12 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             Ipixmax = Ipixmax[tokeep]
     #-------------------------------------------------
 
+    if CCDLabel == 'EIGER_4MCdTe':
+        todelete = ptsindices_in_bands(peaklist, npixels=npixels, verbose=verbose-1)
+        if len(todelete[0]) > 0:
+            peaklist = np.delete(peaklist, todelete[0], axis=0)
+            Ipixmax = np.delete(Ipixmax, todelete[0], axis=0)
+            
     # ---- ----------- no FITTING ----------------------------
     # NO FIT  and return raw list of local maxima
     if fit_peaks_gaussian == 0:
@@ -1520,6 +1527,40 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                 use_data_corrected=Data_to_Fit,
                                 reject_negative_baseline=reject_negative_baseline,
                                 computerrorbars=computerrorbars)
+
+
+def ptsindices_in_bands(XYcam, npixels=2,verbose=False):
+    """
+    """
+    if verbose: print("Initial points:", XYcam)
+
+    XYcam = np.array(XYcam)
+
+    n = npixels
+    # Forbidden y bands
+    y_bands = [[512, 549], [1062, 1099], [1612, 1649]] + np.array([[-n,+n],[-n,+n],[-n,+n]])
+    # Forbidden x bands
+    x_bands = [[513, 514], [1028, 1039], [1553, 1554]] + np.array([[-n,+n],[-n,+n],[-n,+n]])
+
+    # Create masks for y and x bands
+    y_mask = np.zeros(len(XYcam), dtype=bool)
+    for band in y_bands:
+        y_mask |= (XYcam[:, 1] >= band[0]) & (XYcam[:, 1] <= band[1])
+
+    x_mask = np.zeros(len(XYcam), dtype=bool)
+    for band in x_bands:
+        x_mask |= (XYcam[:, 0] >= band[0]) & (XYcam[:, 0] <= band[1])
+
+    inbands = np.logical_or(y_mask, x_mask)
+    #print('inbands',inbands.shape)
+
+    # Count modifications
+    y_modified = np.sum(y_mask)
+    x_modified = np.sum(x_mask)
+
+    inbandsindex = np.where(inbands)
+        # Return modified list
+    return inbandsindex
 
 def Get_blacklisted_spots(filename):
     XY_blacklisted = None
