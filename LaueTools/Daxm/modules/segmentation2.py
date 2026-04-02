@@ -18,7 +18,7 @@ from skimage.segmentation import random_walker
 from astropy.stats import SigmaClip
 
 import photutils
-print('location photutils and version', photutils, photutils.__version__)
+#print('location photutils and version', photutils, photutils.__version__)
 if photutils.__version__ < '2.3':
     from photutils import Background2D, MedianBackground
 else:
