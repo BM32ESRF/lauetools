@@ -3,8 +3,7 @@ r"""
 IOimagefile module is made for reading data contained in binary image file
 fully or partially.
 
-More tools can be found in LaueTools package at sourceforge.net and gitlab.esrf.fr
-March 2020
+More tools can be found in LaueTools package in github march 2026
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
@@ -14,6 +13,7 @@ import os
 import copy
 import struct, math
 from scipy import ndimage as scind
+import scipy.ndimage as ndimage
 import h5py
 import datetime
 
@@ -391,7 +391,7 @@ def pixelvalat(imagefilename, xy=None, sortpeaks=False, CCDLabel='sCMOS'):
                 vals[k]=struct.unpack("H", f.read(2))[0]
     return vals
 
-def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
+def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS',verbose=False):
     """TODO to improve or reject when roicenters are close to border wrt to framdim or invframedim"""
     dataimage= None
     framedim=None
@@ -403,6 +403,13 @@ def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sC
     with fabio.open(imagefilename) as img:  # ok for sCMOS
         dataimage = img.data
         framedim = dataimage.shape
+        if CCDLabel == 'EIGER_4MCdTe':
+            if verbose:
+                print("EIGER_4MCdTe")
+                print("shape",dataimage.shape)
+            
+            framedim = dataimage.shape[1], dataimage.shape[0]
+        
         for roi_index, roi in enumerate(roicenters):
             center_pixel = (round(roi[0]), round(roi[1]))
 
@@ -477,6 +484,44 @@ def getroismax(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sC
                         CountersData["posY"][roi_index] = yDATA
     
     return CountersData["Imax"]
+
+
+def getnbhotpixels(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS', threshold=200):
+    dataimage= None
+    framedim=None
+
+    CountersData={}
+    CountersData["Nb"]=np.zeros(len(roicenters))
+    with fabio.open(imagefilename) as img:  # ok for sCMOS
+        dataimage = img.data
+        framedim = dataimage.shape
+        for roi_index, roi in enumerate(roicenters):
+            center_pixel = (round(roi[0]), round(roi[1]))
+
+            indicesborders = ImProc.getindices2cropArray((center_pixel[0], center_pixel[1]),
+                                                    (halfboxsize[0], halfboxsize[1]),
+                                                    framedim,
+                                                    flipxycenter=0)
+            imin, imax, jmin, jmax = indicesborders
+
+            # avoid to wrong indices when slicing the data
+            imin, imax, jmin, jmax = ImProc.check_array_indices(imin, imax + 1, jmin, jmax + 1,
+                                                                                    framedim=framedim)
+
+            piece_dat = dataimage[imin:imax, jmin:jmax]
+
+            #Nbhotpixels = np.sum(np.where(piece_dat, piece_dat>=threshold,1,0)[0])
+
+            bkg = np.amin(piece_dat)
+            # blob seach in dataroi
+            thrData_for_label = np.where((piece_dat-bkg) > threshold, 1, 0)
+
+            _, Nbhotpixels = ndimage.label(thrData_for_label)
+            #
+        
+            CountersData["Nb"][roi_index] = Nbhotpixels
+    
+    return CountersData["Nb"]
 
 def getroissum(imagefilename, roicenters=None, halfboxsize=(10,10), CCDLabel='sCMOS'):
     dataimage= None
