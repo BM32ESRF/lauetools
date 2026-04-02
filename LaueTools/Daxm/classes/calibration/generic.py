@@ -91,9 +91,9 @@ class Calib:
         self.var_ini = []
         self.var_cur = []
         self.var_lut = []
-        self.var_x0 = []
-        self.var_lb = []
-        self.var_ub = []
+        self.var_x0 = []  # absolute values for refinement
+        self.var_lb = []  # absolute lower boundaries values for refinement
+        self.var_ub = []  # absolute upper boundaries values
         self.var_key = []
         self.var_kM = []
         self.var_km = []
@@ -255,7 +255,7 @@ class Calib:
 
         wires_par = self.scan.get_wires_params(keys)
 
-        return [{key: val for key, val in zip(keys, wire)} for wire in wires_par]
+        return [{key: float(val) if not isinstance(val, str) else val for key, val in zip(keys, wire)} for wire in wires_par]
 
     def get_wires_traj(self):
 
@@ -263,7 +263,7 @@ class Calib:
 
         wire0_par = self.scan.get_wire_params(0, keys)
 
-        return {key: val for key, val in zip(keys, wire0_par)}
+        return {key: float(val) if not isinstance(val, str) else val for key, val in zip(keys, wire0_par)}
 
     def get_wire(self, wid, keys=None):
 
@@ -272,11 +272,12 @@ class Calib:
 
         wire_par = self.scan.get_wire_params(wid, keys)
 
-        return {key: val for key, val in zip(keys, wire_par)}
+        return {key: float(val) if not isinstance(val, str) else val for key, val in zip(keys, wire_par)}
 
     # Saving/Loading wire parameters
     def save_wires(self, filename, directory=""):
-        """ save a json file of wire(s) parameters. Output file has .calib extension"""
+        """ save a json file of wire(s) parameters.
+        Output file has .calib extension"""
         if directory == "" or os.path.isdir(directory):
 
             fn = os.path.join(directory, add_extension(filename, "calib"))
@@ -303,7 +304,7 @@ class Calib:
             self.print_msg("   directory is not valid or does not exist! ({})", (directory,), "E")
             Path(directory).mkdir(parents=True, exist_ok=True)
 
-    def load_wires(self, filename, directory=""):
+    def load_wires(self, filename, directory="", verbose=0):
 
         fn = os.path.join(directory, filename)
 
@@ -323,6 +324,11 @@ class Calib:
                 wires_dict[i]['f1'] = np.deg2rad(wires_dict[i]['f1'])
                 wires_dict[i]['f2'] = np.deg2rad(wires_dict[i]['f2'])
 
+            if verbose:
+                self.print_msg("Loaded parameters: ")
+                self.print_msg("Trajectory: {}", fmt=(traj_dict,))
+                self.print_msg("Wires: {}", fmt=(wires_dict,))
+
             self.set_wires(wires_dict, traj_dict)
 
             self.log_append(self.get_wires())
@@ -333,15 +339,16 @@ class Calib:
             self.print_msg(" file does not exit! ({})", (fn,), "E")
 
     # Calibration solver
-    def run(self, wire=None, var=None, bounds=None):
+    def run(self, wire=None, var=None, bounds=None, verbose:int=0):
+        """ Bounds are difference value from current value. bounds = [ [relative_min, relative_max]var0, [relative_min, relative_max]var1, ..., [relative_min, relative_max]varn-1] """
 
-        self.run_arg(wire, var, bounds)
+        self.run_arg(wire, var, bounds, verbose-1)
 
         self.print_msg("Calibration of {} on wires {}...", (var, wire))
 
         # prepare calibration
         self.print_msg("- Initializing:")
-        self.run_init()
+        self.run_init(verbose=verbose-1) 
 
         # run calibration
         self.print_msg("- Running...")
@@ -354,7 +361,13 @@ class Calib:
         # print report
         self.log_report()
 
-    def run_arg(self, wire, var, bounds):
+    def run_arg(self, wire, var, bounds, verbose=0):
+
+        if verbose>0:
+            print('In run_arg ----------generic.py-----')
+            print('wire:', wire)
+            print('var:', var)
+            print('bounds:', bounds)
 
         # wires to calibrate
         if wire is None:
@@ -401,7 +414,11 @@ class Calib:
                 self.opt_var.append(var)
                 self.opt_bnd.append(bnd)
 
-    def run_init(self):
+        if verbose>0:
+            print('self.opt_var:', self.opt_var)
+            print('self.opt_bnd:', self.opt_bnd)
+
+    def run_init(self, verbose=0):
 
         self.print_msg("- preparing data...")
         self.run_init_data()
@@ -537,6 +554,9 @@ class Calib:
 
     def run_init_bounds(self, bounds):
 
+        """ f1 f2 u1 u2 bounds in DEGREES in self.var_bnd from self.opt_bnd or bounds arguments
+        but values are in RADIANS !!"""
+
         # build LUT
         for key, bnd in zip(self.opt_var, self.opt_bnd):
             if bnd is not None:
@@ -545,7 +565,7 @@ class Calib:
         for key in ['f1', 'f2', 'u1', 'u2']:
             self.var_bnd[key] = np.deg2rad(self.var_bnd[key])
 
-        # init boundaries
+        # init boundaries ABSOLUTE values
         self.var_lb = []
         self.var_ub = []
 
@@ -593,12 +613,37 @@ class Calib:
 
             self.opt_objfun = calib.objfun_residuals
 
-    def run_optim(self):
+    def run_optim(self, verbose=False):
 
         self.opt_residuals = np.zeros(self.exp_size)
+        if verbose:
+            print('In run_optim ----------------')
+            print('self.var_lb',self.var_lb)
+            print('self.var_ub',self.var_ub)
+            print('self.var_x0',self.var_x0)
+            print('len(self.var_x0)',len(self.var_x0))
+            print('len(self.var_lb)',len(self.var_lb))
+            print('len(self.var_ub)',len(self.var_ub))
+
+        # For python 3.12 (or > 3.8) # scipy >=1.19 -------------------
+        # Find indices where lb == ub ------------- -------------------
+        # Ensure first var_lb and var_ub are 1D arrays
+        var_lb = np.atleast_1d(self.var_lb)
+        var_ub = np.atleast_1d(self.var_ub)
+        fixed_indices = np.where(var_lb == var_ub)[0]
+
+        if len(fixed_indices)>0:
+            print('fixed_indices',fixed_indices)
+            for i in fixed_indices:
+                print('i, self.var_key[i], self.var_x0[i]: ', i, self.var_key[i], self.var_x0[i])
+        
+        # Adjust bounds for fixed parameters
+        for i in fixed_indices:
+            var_lb[i] -= 1e-10
+            var_ub[i] += 1e-10
 
         res = spo.least_squares(self.run_optim_fun,
-                                self.var_x0, bounds=(self.var_lb, self.var_ub),
+                                self.var_x0, bounds=(var_lb, var_ub),
                                 method='trf', ftol=1e-08, xtol=1e-08, verbose=2)
 
         return res
@@ -736,11 +781,14 @@ class Calib:
         return result
 
     # Calibration log
-    def log_append(self, wdict, wlist=None, var=None, errors=None, dm=None, error_dm=None, kM=None, km=None, sim_I=None, fval=None, gof=None):
+    def log_append(self, wdict, wlist=None, var=None, errors=None, dm=None, error_dm=None, kM=None, km=None, sim_I=None, fval=None, gof=None, verbose=1):
 
         self.log_qty = self.log_qty + 1
         self.log_select = self.log_qty - 1
 
+        if verbose>0:
+            print('In log_append() of generic.py')
+            print('wdict:', wdict)
         self.log_wdict.append([dict(w) for w in wdict])
         self.log_wlist.append(wlist)
         self.log_var.append(var)
@@ -809,7 +857,7 @@ class Calib:
 
             self.print_msg(" #{} |".format(wireindex + 1) + " {:>8f} " * 7, par)
 
-    def log_report_current(self):
+    def log_report_current(self, verbose:int=1):
 
         var = ['R', 'h', 'p0', 'f1', 'f2', 'u1', 'u2']
         header = [key for key in var]
@@ -818,6 +866,9 @@ class Calib:
 
         self.print_msg("wire\\" + "{:^10}" * 7, header)
 
+        if verbose>0:
+            print('In log_report_current ----------generic.py-----')
+            print('CURRENT self.log_wdict[0]:', self.log_wdict[0])
         for wid in range(self.scan.wire_qty):
             par = self.log_wdict[0][wid]
             par = [np.rad2deg(par[key]) if key in ('u1', 'u2', 'f1', 'f2') else par[key] for key in var]
@@ -914,6 +965,25 @@ class Calib:
     # Miscellaneous
     def calc_nvar(self, wlist, var, algo):
 
+        """
+        Calculate the number of variables to be optimized in a given calibration.
+
+        Parameters
+        ----------
+        wlist : list
+            List of wire indices to consider for optimization.
+        var : dict
+            Dictionary of variables to be optimized.
+        algo : str
+            Optimization algorithm to use.
+
+        Returns
+        -------
+        nvar_wire : int
+            Number of variables related to the wire in the optimization.
+        nvar_prof : int
+            Number of variables related to the profile in the optimization.
+        """
         nvar_prof = sum([len(self.data_XYcam[i]) for i in wlist])
 
         nvar_wire = 0
