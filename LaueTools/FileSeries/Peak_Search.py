@@ -767,7 +767,7 @@ class MainFrame_peaksearch(wx.Frame):
         if nb_cpus <= 0:
             wx.MessageBox("nb of cpu(s) must be positive integer!", "Error")
             return
-
+            
         # check the first imagefile to read:
         #         print "dict_param in file series", dict_param
         # dict_param['listrois']=[(723,1530,35,35),(723,1530,5,5),(723,1538,7,7),(673,1769,15,41),]
@@ -799,6 +799,7 @@ class MainFrame_peaksearch(wx.Frame):
                                                             nb_of_cpu=nb_cpus,
                                                             verbose=0,
                                                             writeResultDicts=0)
+    
 
 
 LaueToolsProjectFolder = DictLT.LAUETOOLSFOLDER
