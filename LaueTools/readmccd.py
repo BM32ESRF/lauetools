@@ -948,12 +948,33 @@ def fitting_gauss(initial_guess_sum):
 
     return popt
 
-def peaksearch_skimage(filename, min_dist, pkid_threshold, bs, fit_peaks_gaussian, ccd_label, use_multiprocessing=False):
+def peaksearch_skimage(filename, min_dist:int, pkid_threshold:int, bs:int, fit_peaks_gaussian, ccd_label, use_multiprocessing=False, npixels=0, verbose=0):
+    """
+    Peak search using skimage.feature.peak_local_max and fitting with twoD_GaussianCF
+
+    Parameters:
+    filename (str): filename of the image to read
+    min_dist (int): minimum distance between peaks
+    pkid_threshold (int): threshold for peak detection
+    bs (int): half size of the sub-image to fit the peak
+    fit_peaks_gaussian (int): 0 (no fit), 1,2,3 to set type of fitting the peak with twoD_GaussianCF
+    ccd_label (str): CCD label
+    use_multiprocessing (bool): flag to use multiprocessing for peak fitting
+
+    Returns:
+    tabIsorted (numpy array): sorted table of peaks
+    peak_coords (numpy array): unsorted table of peaks
+    """
     start_time = time.time()
     data_raw = plt.imread(filename)
     ##BackGround correction with LaueTools
     backgroundimage = ImProc.compute_autobackground_image(data_raw, boxsizefilter=10)
-    data_raw = ImProc.computefilteredimage(data_raw, backgroundimage, ccd_label, usemask=True, formulaexpression="A-B")
+    if ccd_label == "sCMOS":
+        usemask=True
+    else:
+        usemask=False
+
+    data_raw = ImProc.computefilteredimage(data_raw, backgroundimage, ccd_label, usemask=usemask, formulaexpression="A-B")
     # Small median filter to remove any persistent noise
     img = ndi.median_filter(data_raw, size=2)
     # Set the parameters for the peak-finding
@@ -963,6 +984,17 @@ def peaksearch_skimage(filename, min_dist, pkid_threshold, bs, fit_peaks_gaussia
     peak_coords = np.fliplr(peak_coords)  # This is so that they go more nicely into the following functions
     intensity = []
     boxsize = []
+
+    if npixels != 0 and ccd_label in ('EIGER_4MCdTe','sCMOS'):
+        if ccd_label == 'EIGER_4MCdTe':
+            todelete = ptsindices_in_bands(peak_coords, npixels=npixels, verbose=verbose-1)
+            if len(todelete[0]) > 0:
+                peak_coords = np.delete(peak_coords, todelete[0], axis=0)
+        elif ccd_label == 'sCMOS':
+            todelete = ptsindices_in_bands_scmos(peak_coords, npixels=npixels, verbose=verbose-1)
+            if len(todelete[0]) > 0:
+                peak_coords = np.delete(peak_coords, todelete[0], axis=0)
+
     for i in range(len(peak_coords)):
         px, py = peak_coords[i]
         px, py = int(px), int(py)
@@ -1015,7 +1047,7 @@ def peaksearch_skimage(filename, min_dist, pkid_threshold, bs, fit_peaks_gaussia
                 for r in results:
                     r1 = r.get()
                     poptimized.append(r1)
-        else:
+        else:  # single CPU
             for ii in range(len(peak_coords)):
                 # Create data indices
                 px, py, Amp, bs = peak_coords[ii]
@@ -1439,6 +1471,11 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         if len(todelete[0]) > 0:
             peaklist = np.delete(peaklist, todelete[0], axis=0)
             Ipixmax = np.delete(Ipixmax, todelete[0], axis=0)
+
+    elif CCDLabel == 'sCMOS' and npixels > 0:
+            todelete = ptsindices_in_bands_scmos(peak_coords, npixels=npixels, verbose=verbose-1)
+            if len(todelete[0]) > 0:
+                peak_coords = np.delete(peak_coords, todelete[0], axis=0)
             
     # ---- ----------- no FITTING ----------------------------
     # NO FIT  and return raw list of local maxima
@@ -1529,9 +1566,40 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                 computerrorbars=computerrorbars)
 
 
-def ptsindices_in_bands(XYcam, npixels=2,verbose=False):
-    """
-    """
+def ptsindices_in_bands_scmos(XYcam, npixels=2,CCDLabel='sCMOS',verbose=False):
+    if CCDLabel != 'sCMOS': raise ValueError('ptsindices_in_bands is only implemented for bands of sCMOS separating 4 quadrants')
+    if verbose: print("Initial points:", XYcam)
+
+    XYcam = np.array(XYcam)
+
+    n = npixels
+    # Forbidden y bands
+    y_bands = [[1007, 1009]] + np.array([[-n,+n]])
+    # Forbidden x bands
+    x_bands = [[1007, 1009]] + np.array([[-n,+n]])
+
+    # Create masks for y and x bands
+    y_mask = np.zeros(len(XYcam), dtype=bool)
+    for band in y_bands:
+        y_mask |= (XYcam[:, 1] >= band[0]) & (XYcam[:, 1] <= band[1])
+
+    x_mask = np.zeros(len(XYcam), dtype=bool)
+    for band in x_bands:
+        x_mask |= (XYcam[:, 0] >= band[0]) & (XYcam[:, 0] <= band[1])
+
+    inbands = np.logical_or(y_mask, x_mask)
+    #print('inbands',inbands.shape)
+
+    # Count modifications
+    y_modified = np.sum(y_mask)
+    x_modified = np.sum(x_mask)
+
+    inbandsindex = np.where(inbands)
+        # Return modified list
+    return inbandsindex
+
+def ptsindices_in_bands(XYcam, npixels=2,CCDLabel='EIGER_4MCdTe',verbose=False):
+    if CCDLabel != 'EIGER_4MCdTe': raise ValueError('ptsindices_in_bands is only implemented for bands of EIGER_4MCdTe')
     if verbose: print("Initial points:", XYcam)
 
     XYcam = np.array(XYcam)
@@ -1704,7 +1772,14 @@ CONVERTKEY_dict = {"fit_peaks_gaussian": "fit_peaks_gaussian",
                     "fitpixeldev": "FitPixelDev",
                     "maxpixeldistancerejection": "maxPixelDistanceRejection",
                     "maxpeaksize": "MaxPeakSize",
-                    "minpeaksize": "MinPeakSize"}
+                    "minpeaksize": "MinPeakSize",
+                    "use_skimage": "use_skimage",
+                    "skimage_minimumdistance": "skimage_minimumdistance",
+                    "skimage_intensitythreshold": "skimage_intensitythreshold",
+                    "skimage_boxsize": "skimage_boxsize",
+                    "skimage_fitoption": "skimage_fitoption",
+                    "skimage_mode": "skimage_mode",
+                    "npixels_bandgap":  "npixels_bandgap"}
 
 LIST_OPTIONS_PEAKSEARCH = ["local_maxima_search_method",
                             "IntensityThreshold",
@@ -1717,7 +1792,14 @@ LIST_OPTIONS_PEAKSEARCH = ["local_maxima_search_method",
                             "position_definition",
                             "maxPixelDistanceRejection",
                             "MinPeakSize",
-                            "MaxPeakSize"]
+                            "MaxPeakSize",
+                            "use_skimage",
+                            "skimage_minimumdistance",
+                            "skimage_intensitythreshold",
+                            "skimage_boxsize",
+                            "skimage_fitoption",
+                            "skimage_mode",
+                            "npixels_bandgap"]
 
 LIST_OPTIONS_TYPE_PEAKSEARCH = ["integer flag",
                                 "integer count",
@@ -1730,9 +1812,18 @@ LIST_OPTIONS_TYPE_PEAKSEARCH = ["integer flag",
                                 "integer flag",
                                 "float",
                                 "float",
-                                "float"]
+                                "float",
+                                "boolean string",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "str",
+                                "int"]
 
-LIST_OPTIONS_VALUESPARAMS = [1, 1000, 5000, 15, 10, 1, 0.001, 2.0, 1, 15.0, 0.01, 3.0]
+LIST_OPTIONS_VALUESPARAMS = [1, 1000, 5000, 15, 10, 1, 0.001, 2.0, 1, 15.0, 0.01, 3.0,  # for LaueTools scipy.ndimage
+                             "False", 10, 5, 6, "Gaussian_Strictbounds", "single_CPU", # for skimage
+                             0]  # for bandgap detectors
 
 if (len(CONVERTKEY_dict) != len(LIST_OPTIONS_PEAKSEARCH)
                             != LIST_OPTIONS_TYPE_PEAKSEARCH != LIST_OPTIONS_VALUESPARAMS):
@@ -2013,13 +2104,44 @@ def peaksearch_fileseries(fileindexrange,
             PEAKSEARCHDICT_Convolve["formulaexpression"] = formulaexpression
             PEAKSEARCHDICT_Convolve["Fit_with_Data_for_localMaxima"] = True
 
+        npixels_bandgap = dictPeakSearch['npixels_bandgap']
         # --------------------------
         # launch peaksearch
         # -----------------------
-        Res = PeakSearch(filename_in, CCDLabel=CCDLABEL,
+        if dictPeakSearch['use_skimage'] not in (True, 'True', 'true'):
+            Res = PeakSearch(filename_in, CCDLabel=CCDLABEL,
                             Saturation_value=DictLT.dict_CCD[CCDLABEL][2],
                             Saturation_value_flatpeak=DictLT.dict_CCD[CCDLABEL][2],
-                            **PEAKSEARCHDICT_Convolve)
+                            **PEAKSEARCHDICT_Convolve,
+                            npixels=npixels_bandgap)
+        else:
+            #filename, min_dist:int, pkid_threshold:int, bs:int, fit_peaks_gaussian, ccd_label, use_multiprocessing=False
+            min_dist = dictPeakSearch['skimage_minimumdistance']
+            pkid_threshold = dictPeakSearch['skimage_intensitythreshold']
+            bs = dictPeakSearch['skimage_boxsize']
+            fitoption = dictPeakSearch['skimage_fitoption']
+
+            # from reamdccd:
+            #if fit_peaks_gaussian == 1:
+            #         popt, pcov = curve_fit(twoD_GaussianCF, imgSize, np.ravel(p), p0=initial_guess_sum)
+            #     elif fit_peaks_gaussian == 2:
+            #         popt, pcov = curve_fit(twoD_GaussianCF, imgSize, np.ravel(p), p0=initial_guess_sum,
+            #                    bounds=((10, 1, 1, -90, 0.5, 0.5), (1e6, imgSize-1, imgSize-1, 90, 5, 5)))
+            #     elif fit_peaks_gaussian == 3:
+            #         popt, pcov = curve_fit(twoD_GaussianCF, imgSize, np.ravel(p), p0=initial_guess_sum,
+            #                     bounds=((10, bs-1.5, bs-1.5, -90, 0.5, 0.5), (1e6, bs+1.5, bs+1.5, 90, 3, 3)))
+
+            processingmode = dictPeakSearch['skimage_mode']
+            if processingmode == 'single_CPU':
+                internalmultiprocessing = False
+            elif processingmode == 'multiprocessing':
+                internalmultiprocessing = True
+
+            print('using skimage for peaksearch')
+            print('filename_in, min_dist, pkid_threshold, bs, fitoption, CCDLABEL, internalmultiprocessing, npixels_bandgap',
+                  filename_in, min_dist, pkid_threshold, bs, fitoption, CCDLABEL, internalmultiprocessing, npixels_bandgap)
+
+            Res = peaksearch_skimage(filename_in, min_dist, pkid_threshold, bs, fitoption, ccd_label=CCDLABEL, use_multiprocessing=internalmultiprocessing, npixels=npixels_bandgap)
 
         if Res in (False, None):
             print("No peak found for image file: ", filename_in)
@@ -2027,7 +2149,7 @@ def peaksearch_fileseries(fileindexrange,
             nb_empty_files += 1
         #             Isorted, fitpeak, localpeak = None, None, None
         else:  # write file with comments
-            Isorted, _, _ = Res[:3]
+            Isorted = Res[0]
 
             params_comments = "Peak Search and Fit parameters\n"
 
