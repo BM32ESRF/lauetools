@@ -643,7 +643,9 @@ class FilterBackGroundPanel(wx.Panel):
         self.ShowblurImagebtn = wx.ToggleButton(sb, -1, "Show Blur Image")
         self.SaveBlurredImage = wx.Button(sb, -1, "Save Blur Image",)
         self.FilterImage = wx.CheckBox(sb, -1, "Substract blur as background")
-
+        self.bandgapstxt = wx.StaticText(sb, -1, "Distance from band gaps:")
+        self.bandgapsspinctrl = wx.SpinCtrl(sb, -1, "0", #size=(150, -1),
+                                                               min=0, max=9999)
         self.FilterImage.Bind(wx.EVT_CHECKBOX, self.OnSwitchFilterRawImage)
         self.FilterImage.SetValue(False)
 
@@ -690,8 +692,13 @@ class FilterBackGroundPanel(wx.Panel):
         hbox1.Add(self.ShowblurImagebtn, 0, wx.EXPAND|wx.ALL, 5)
         hbox1.Add(self.SaveBlurredImage, 0, wx.EXPAND|wx.ALL, 5)
 
+        hbox1b = wx.BoxSizer(wx.HORIZONTAL)
+        hbox1b.Add(self.FilterImage, 0, wx.EXPAND, 5)
+        hbox1b.Add(self.bandgapstxt, 0, wx.EXPAND|wx.ALL, 5)
+        hbox1b.Add(self.bandgapsspinctrl, 0, wx.EXPAND|wx.ALL, 5)
+
         v1box.Add(hbox1, 0, wx.EXPAND, 5)
-        v1box.Add(self.FilterImage, 0, wx.EXPAND, 5)
+        v1box.Add(hbox1b, 0, wx.EXPAND, 5)
 
         v2box = wx.StaticBoxSizer(sb2, wx.VERTICAL)
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -2971,12 +2978,12 @@ class MainPeakSearchFrame(wx.Frame):
     Class to show CCD frame pixel intensities
     and provide tools for searching peaks
     """
-    def __init__(self, parent, _id, _initialParameter, title, size=4):
+    def __init__(self, parent, _id, _initialParameter, title, size=4, verbose=0):
         wx.Frame.__init__(self, parent, _id, title, size=(600, 1000))
 
         self.initialParameter = _initialParameter
 
-        # self.verbose =1
+        self.verbose =verbose
 
         self.title = self.initialParameter["title"]
         self.imagefilename = self.initialParameter["imagefilename"]
@@ -5551,17 +5558,18 @@ class MainPeakSearchFrame(wx.Frame):
             fitfunc1 = str(currentLocalMaximaMethod.fitfunc_peak.GetValue())
             processMode = str(currentLocalMaximaMethod.processMode.GetValue())
             if processMode =="multiprocessing":
-                multip_peak = True
+                internal_multiprocessing = True
             else:
-                multip_peak = False
+                internal_multiprocessing = False
+
             if fitfunc1 == "NoFit":
-                fit_peaks_ = 0
+                fit_option = 0
             elif fitfunc1 == "Gaussian_nobounds":
-                fit_peaks_ = 1
+                fit_option = 1
             elif fitfunc1 == "Gaussian_Relaxedbounds":
-                fit_peaks_ = 2 
+                fit_option = 3 
             elif fitfunc1 == "Gaussian_Strictbounds":
-                fit_peaks_ = 3
+                fit_option = 2
         else:
             boxsizeSKIMAGE = self.fitparampanel.boxsize.GetValue()
         # build dict of common parameters --------------------------------------
@@ -5618,6 +5626,7 @@ class MainPeakSearchFrame(wx.Frame):
             #             Data_for_localMaxima = 'auto_background'
             reject_negative_baseline = True
 
+        
         Remove_BlackListedPeaks_fromfile = None
         maxPixelDistanceRejection = 0
         if self.ImageFilterpanel.RemoveBlackpeaks.GetValue():
@@ -5628,12 +5637,18 @@ class MainPeakSearchFrame(wx.Frame):
             self.dict_param["maxPixelDistanceRejection"] = maxPixelDistanceRejection
 
         self.dict_param_LocalMaxima = {}
+
+        # remove pixels that are closed to detector band gaps if any:
+        npixels_bandgap = int(self.ImageFilterpanel.bandgapsspinctrl.GetValue())
+        self.dict_param_LocalMaxima['npixels_bandgap'] = npixels_bandgap
+
         computerrorbars = True
         if self.method == 1:  # basic local maxima search (threshold on raw intensity)
             print('method threshold')
             print(self.stackimageindex, NB_MAX_FITS, self.dict_param["PixelNearRadius"],
                   self.dict_param["IntensityThreshold"], self.dict_param["boxsize"], fit_peaks_gaussian,
                   self.dict_param["xtol"], self.dict_param["FitPixelDev"], self.dict_param["MinIntensity"], Data_for_localMaxima, Fit_with_Data_for_localMaxima, maxPixelDistanceRejection, formulaexpression)
+            
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
                             stackimageindex=self.stackimageindex,
                             CCDLabel=self.CCDlabel,
@@ -5661,11 +5676,13 @@ class MainPeakSearchFrame(wx.Frame):
                             Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                             maxPixelDistanceRejection=maxPixelDistanceRejection,
                             formulaexpression=formulaexpression,
-                            computerrorbars=computerrorbars)
+                            computerrorbars=computerrorbars,
+                            npixels=npixels_bandgap)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 0
             self.dict_param_LocalMaxima["position_definition"] = self.position_definition
+            self.dict_param_LocalMaxima['use_skimage']=False
 
         if self.method == 2:  # shifted array maxima search
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
@@ -5696,11 +5713,13 @@ class MainPeakSearchFrame(wx.Frame):
                                     Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                                     maxPixelDistanceRejection=maxPixelDistanceRejection,
                                     formulaexpression=formulaexpression,
-                                    computerrorbars=computerrorbars)
+                                    computerrorbars=computerrorbars,
+                                    npixels=npixels_bandgap)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 1
             self.dict_param_LocalMaxima["position_definition"] = self.position_definition
+            self.dict_param_LocalMaxima['use_skimage']=False
 
         if self.method == 3:  # convolution for local maxima search
 
@@ -5741,25 +5760,35 @@ class MainPeakSearchFrame(wx.Frame):
                                         Remove_BlackListedPeaks_fromfile=Remove_BlackListedPeaks_fromfile,
                                         maxPixelDistanceRejection=maxPixelDistanceRejection,
                                         formulaexpression=formulaexpression,
-                                        computerrorbars=computerrorbars)
+                                        computerrorbars=computerrorbars,
+                                        npixels=npixels_bandgap)
 
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
             self.dict_param_LocalMaxima["local_maxima_search_method"] = 2
             self.dict_param_LocalMaxima["position_definition"] = self.position_definition
             self.dict_param_LocalMaxima["thresholdConvolve"] = Thresconvolve
+            self.dict_param_LocalMaxima['use_skimage']=False
         
         if self.method == 4:  # SKIMAGE PEAK SEARCH METHOD
             ResPeakSearch = RMCCD.peaksearch_skimage(imagefilename, 
                                                      self.dict_param["PixelNearRadius"], 
                                                      self.dict_param["IntensityThreshold"], 
                                                      self.dict_param["boxsizeSKIMAGE"], 
-                                                     fit_peaks_, 
+                                                     fit_option, 
                                                      self.CCDlabel,
-                                                     use_multiprocessing=multip_peak)
+                                                     use_multiprocessing=internal_multiprocessing,
+                                                     npixels=npixels_bandgap)
             
             self.dict_param_LocalMaxima["fit_peaks_gaussian"] = fit_peaks_gaussian
-            self.dict_param_LocalMaxima["local_maxima_search_method"] = 0
+            self.dict_param_LocalMaxima["local_maxima_search_method"] = 3
             self.dict_param_LocalMaxima["position_definition"] = self.position_definition
+
+            self.dict_param_LocalMaxima['use_skimage']=True
+            self.dict_param_LocalMaxima['skimage_minimumdistance']=self.dict_param["PixelNearRadius"]
+            self.dict_param_LocalMaxima['skimage_intensitythreshold']=self.dict_param["IntensityThreshold"]
+            self.dict_param_LocalMaxima['skimage_boxsize']=self.dict_param["boxsizeSKIMAGE"]
+            self.dict_param_LocalMaxima['skimage_fitoption']=fit_option
+            self.dict_param_LocalMaxima['skimage_mode']=processMode
             
         # print("ResPeakSearch", ResPeakSearch)
         if ResPeakSearch is not None:
