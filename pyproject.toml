@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "setuptools_scm[toml]>=6.2", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lauetools"
-dynamic = ["version"]
+version = "3.1.48"  # Replace with your current version
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
@@ -25,13 +25,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=2.7, <3.13"
+requires-python = ">=3.8, <3.13"
 dependencies = [
     "docutils>=0.3",
     "numpy>=1.0.3",
     "scipy>=0.15.0",
     "matplotlib>=2.0.0",
-    "wxpython>=3.0",
+    "wxpython>=3.0",  # Keep this here for runtime
     "networkx>=2.1",
     "tqdm>=4.60.0",
     "h5py>=3.1",
@@ -63,6 +63,3 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 LaueTools = ["scripts/*"]
-
-[tool.setuptools_scm]
-write_to = "LaueTools/_version.py"
