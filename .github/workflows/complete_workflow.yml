@@ -48,6 +48,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install setuptools-scm build twine
+      - name: Debug version
+        run: |
+          python -c "import setuptools_scm; print('Version:', setuptools_scm.get_version())"
       - name: Clean old build artifacts
         run: |
           rm -rf dist/ build/
