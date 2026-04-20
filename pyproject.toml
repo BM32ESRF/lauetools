@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
+requires = ["setuptools>=61.0.0", "setuptools-scm>=7.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lauetools"
-version = "3.1.48"  # Replace with your current version
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
