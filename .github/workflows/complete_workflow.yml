@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Critical for setuptools-scm
       - name: Set up Python 3.12
         uses: actions/setup-python@v2
         with:
