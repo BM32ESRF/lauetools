@@ -2,9 +2,6 @@
 requires = ["setuptools>=61.0.0", "setuptools-scm>=7.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-dynamic = ["version"]
-
 [tool.setuptools_scm]
 # Optional: write version to a file (e.g., for runtime access)
 write_to = "lauetools/_version.py"
@@ -65,6 +62,7 @@ Homepage = "https://github.com/BM32ESRF/lauetools"
 
 [tool.setuptools]
 packages = ["LaueTools"]
+dynamic = ["version"]
 include-package-data = true
 
 [tool.setuptools.package-data]
