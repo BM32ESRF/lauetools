@@ -3,7 +3,6 @@ requires = ["setuptools>=61.0.0", "setuptools-scm>=7.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-dynamic = ["version"]
 packages = ["LaueTools"]
 include-package-data = true
 
@@ -12,6 +11,7 @@ include-package-data = true
 
 [project]
 name = "lauetools"
+version = "3.1.60"
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
