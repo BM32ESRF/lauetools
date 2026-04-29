@@ -2583,38 +2583,13 @@ def norme(vec1):
     return nvec
 
 
-def matstarlab_to_matstarlabOND(matstarlab: "numpyarray9")->"numpyarray3x3":
-    """
-    transform matrix in a orthonormalized frame
-    (Schmid orthogonalisation procedure)
-
-    From O. Robach
-
-    TODO: to be moved to generaltools
-    """
-    astar1 = matstarlab[:3]
-    bstar1 = matstarlab[3:6]
-    #    cstar1 = matstarlab[6:]
-
-    astar0 = 1.0 * astar1 / norme(astar1)
-    cstar0 = np.cross(astar0, bstar1)
-    cstar0 = 1.0 * cstar0 / norme(cstar0)
-    bstar0 = np.cross(cstar0, astar0)
-
-    matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
-
-    # print matstarlabOND
-
-    return matstarlabOND
-
-
 def calc_Euler_angles(mat3x3:"numpyarray3x3")->Tuple[degrees,degrees,degrees]:
     """
     Calculates unique 3 euler angles representation of mat3x3
     from O Robach
     """
     # mat3x3 = matrix "minimized" in LT lab frame
-    # see F2TC.find_lowest_Euler_Angles_matrix
+    # see LaueGeometry.find_lowest_Euler_Angles_matrix()
     # phi 0, theta 1, psi 2
 
     mat = matline_to_mat3x3(matstarlab_to_matstarlabOND(mat3x3_to_matline(mat3x3)))
@@ -2689,9 +2664,8 @@ def getdirectbasiscosines(UBmatrix_array:'numpyarray3x3', B0:'numpyarray3x3'=np.
     cos2 = qsample.(010)/norme(qsample)
     cos3 = qsample.(001)/norme(qsample)
     """
-    if not isinstance(UBmatrix_array, np.array):
-        raise TypeError(f'{UBmatrix_array} must a numpy array not of type:', type(UBmatrix_array))
-
+    
+    print('In getdirectbasiscosines(), type of UBmatrix_array (should be numpy array):', type(UBmatrix_array))
 
     SAMPLETILT = 40.0
 
