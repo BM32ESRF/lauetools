@@ -103,6 +103,7 @@ class SecondarySource:
             self.initialize(arg)
 
     def initialize(self, arg):
+        
         print("arg in  initialize SecondarySource",arg)
         print("arg",type(arg))
         if isinstance(arg, str):
@@ -121,7 +122,6 @@ class SecondarySource:
 
     # Methods to add components
     def add_component(self, material, yi, vi=None):
-
         if vi is not None and vi <= 0:
             raise ValueError(f"Negative density value ({vi}) for '{material}'.")
 
@@ -158,6 +158,7 @@ class SecondarySource:
     def add_element_new(self, element:str, yi, vi):
 
         # append new component
+        
         self.cmpnt_qty = self.cmpnt_qty + 1
 
         self.cmpnt_elt.append(element)
