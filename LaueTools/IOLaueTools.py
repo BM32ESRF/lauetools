@@ -1345,7 +1345,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                        pixdev
 
                        and in addition if readmore is True:
-                       strain6, euler, all_UBB0mats_flat,
+                       strain6, strain_in_sampleframe, euler, all_UBB0mats_flat,
 
                where   list_indexedgrains_indices   : list of indices of indexed grains
                        list_nb_indexed_peaks        : list of numbers of indexed peaks for each grain
@@ -1354,19 +1354,26 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         all_UBmats_flat           : all 1D 9 elements UBmat matrix
                                                 in q = UBmat B0 G* in Lauetools Frame (ki//x)
                                                 WARNING! not OR or labframe (ki//y) !!!
-                        all_UBB0mats_flat       : all 1D 9 elements UBB0 matrix
+                        all_UBB0mats_flat       : all 1D 9 elements UBB0 matrix (= all matstarlab like matrices)
                         allgrains_spotsdata        :   array of all spots sorted by grains
                         calibJSM[:, :5]            : contains 5 detector geometric parameters
                         pixdev                    : list of pixel deviations after fit for each grain
                         strain6                    : list of 6 elements (voigt notation) of deviatoric strain
                                                     in 10-3 unit for each grain in CRYSTAL Frame
                                                     from Lauetools calculation
+                        strain_in_sampleframe      : list of 6 elements (voigt notation) of deviatoric strain
+                                                    in 10-3 unit for each grain in Sample Frame
                         euler                    : list of 3 Euler Angles for each grain
 
     """
+    
     if verbose > 0:
         print("\nIn readfitfile_multigrains(): ")
         print("reading fit file: %s " % fitfilename)
+
+    if readmore and verbose > 0:
+        print('WARNING: readmore is True, Since April2026, two elements added in output (ubmatrix, strain_in_sampleframe of Lauetools in output!')
+
 
     columns_headers = []
 
@@ -1423,7 +1430,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
 
     all_UBmats_flat = np.zeros((nbgrains, 9), float)
     all_UBB0mats_flat = np.zeros((nbgrains, 9), float)
-    strain6 = np.zeros((nbgrains, 6), float)
+    strain6 = np.zeros((nbgrains, 6), float)  # voigt notation strain components in crystal frame
+    strain_in_sampleframe = np.zeros((nbgrains, 6), float)  # voigt notation strain components in sample frame
     calib = np.zeros((nbgrains, 5), float)
     calibJSM = np.zeros((nbgrains, 7), float)
     euler = np.zeros((nbgrains, 3), float)
@@ -1622,8 +1630,8 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             #            # transformer aussi les HKL pour qu'ils soient coherents avec matmin
             #            hkl = data_fit[:, 2:5]
             #            data_fit[:, 2:5] = np.dot(transfmat, hkl.transpose()).transpose()
-            all_UBmats_flat[grain_index, :] = np.ravel(UBmat)
-            all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)
+            all_UBmats_flat[grain_index, :] = np.ravel(UBmat)  # all ub matrices
+            all_UBB0mats_flat[grain_index, :] = np.ravel(UBB0mat)  # all ubb0 matrices in q= (UB B0) G*
 
             # xx yy zz yz xz xy
             # voigt notation
@@ -1633,6 +1641,14 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                                                 strain[1, 2],
                                                 strain[0, 2],
                                                 strain[0, 1]])
+            
+            # voigt notation
+            strain_in_sampleframe[grain_index, :] = np.array([strain2[0, 0],
+                                                strain2[1, 1],
+                                                strain2[2, 2],
+                                                strain2[1, 2],
+                                                strain2[0, 2],
+                                                strain2[0, 1]])
 
             if grain_index == 0:
                 allgrains_spotsdata = dataspots * 1.0
@@ -1649,10 +1665,13 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
         print("list_indexedgrains_indices = ", list_indexedgrains_indices)
         print("all_UBmats_flat = ")
         print(all_UBmats_flat)
+        print("all_UBB0mats_flat = ")
+        print(all_UBB0mats_flat)
         print("list_nb_indexed_peaks = ", list_nb_indexed_peaks)
         print("list_starting_rows_in_data = ", list_starting_rows_in_data)
         print("pixdev = ", pixdev.round(decimals=4))
         print("strain6 = \n", strain6.round(decimals=2))
+        print("strain_in_sampleframe = \n", strain_in_sampleframe.round(decimals=2))
         print("euler = \n", euler.round(decimals=3))
 
     if not readmore:
@@ -1663,7 +1682,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     allgrains_spotsdata,
                     calibJSM[:, :5],
                     pixdev)
-    elif readmore:  # actually dev strain in sample2 frame is not saved there but it will be recomputed later ...
+    elif readmore:  # actually before April 2026, dev strain in sample2 frame was computed later in add_newcolumns()...
         toreturn = (list_indexedgrains_indices,
                     list_nb_indexed_peaks,
                     list_starting_rows_in_data,
@@ -1672,6 +1691,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                     calibJSM[:, :5],
                     pixdev,
                     strain6,
+                    strain_in_sampleframe,  # ADDED since April 2026
                     euler,
                     all_UBB0mats_flat)
     if return_toreindex:
