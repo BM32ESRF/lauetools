@@ -2603,15 +2603,15 @@ class spotsset:
 
         devstrain = strain_direct - np.trace(strain_direct) / 3.0 * np.eye(3)
 
-        devstrain1, lattice_parameter_direct_strain1 = CP.DeviatoricStrain_LatticeParams(
-                                                                        newUBmat,
-                                                                        latticeparams,
-                                                                        constantlength="a")
-        if verbose>0:
-            print("devstrain, lattice_parameter_direct_strain", devstrain,
-                                                lattice_parameter_direct_strain)
-            print("devstrain1, lattice_parameter_direct_strain1", devstrain1,
-                                                                lattice_parameter_direct_strain1)
+        # devstrain1, lattice_parameter_direct_strain1 = CP.DeviatoricStrain_LatticeParams(
+        #                                                                 newUBmat,
+        #                                                                 latticeparams,
+        #                                                                 constantlength="a")
+        # if verbose>0:
+        #     print("devstrain, lattice_parameter_direct_strain", devstrain,
+        #                                         lattice_parameter_direct_strain)
+        #     print("devstrain1, lattice_parameter_direct_strain1", devstrain1,
+        #                                                         lattice_parameter_direct_strain1)
 
         (devstrain,
         deviatoricstrain_sampleframe,
