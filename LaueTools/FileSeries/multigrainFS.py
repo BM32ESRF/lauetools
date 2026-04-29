@@ -8,12 +8,14 @@ from numpy.linalg import inv
 import math
 import matplotlib.pylab as p
 
+degrees=float
+
 sys.path.append("..")
 
 if sys.version_info.major == 3:
     import LaueTools.FileSeries.module_graphique as modgraph
     import LaueTools.LaueGeometry as F2TC
-    print('LaueGeometry is from lauetools distribution at :',F2TC.__file__)
+    print('For multigrainFS (FileSeries),LaueGeometry is from lauetools distribution at :',F2TC.__file__)
     import LaueTools.readmccd as rmccd
     #import LaueTools.LaueAutoAnalysis as LAA
     import LaueTools.indexingAnglesLUT as INDEX
@@ -30,7 +32,7 @@ if sys.version_info.major == 3:
 # set invisible parameters for serial_peak_search, serial_index_refine_multigrain
 import LaueTools.FileSeries.param_multigrain as PAR
 
-omega_sample_frame = 40.0
+omega_sample_frame = 40.0   # degrees
 
 if omega_sample_frame != None:
     omegadeg = omega_sample_frame * np.pi / 180.0
@@ -73,42 +75,75 @@ p.rcParams["ytick.major.pad"] = 8
 
 #########
 
-# calcul reseau reciproque
+# compute reciprocal lattice parameters
+
+import numpy as np
 
 def dlat_to_rlat(dlat):
     """
-    # Compute reciprocal lattice parameters. The convention used is that
-    # a[i]*b[j] = d[ij], i.e. no 2PI's in reciprocal lattice.
+    Compute reciprocal lattice parameters from direct lattice parameters.
+
+    Convention: a[i] * b[j] = d[ij], i.e., no 2π factors in reciprocal lattice.
+
+    Parameters
+    ----------
+    dlat : array-like, shape (6,)
+        Direct lattice parameters: [a, b, c, alpha, beta, gamma] angles in radians.
+
+    Returns
+    -------
+    rlat : ndarray, shape (6,)
+        Reciprocal lattice parameters: [a*, b*, c*, alpha*, beta*, gamma*] angles in radians.
     """
+    # Compute volume of the real lattice cell
+    cos_alpha, cos_beta, cos_gamma = np.cos(dlat[3:6])
+    sin_alpha, sin_beta, sin_gamma = np.sin(dlat[3:6])
 
+    volume = (
+        dlat[0] * dlat[1] * dlat[2] *
+        np.sqrt(
+            1 + 2 * cos_alpha * cos_beta * cos_gamma
+            - cos_alpha**2 - cos_beta**2 - cos_gamma**2
+        )
+    )
+
+    # Compute reciprocal lattice parameters
     rlat = np.zeros(6)
-    # compute volume of real lattice cell
+    rlat[0] = dlat[1] * dlat[2] * sin_alpha / volume
+    rlat[1] = dlat[0] * dlat[2] * sin_beta / volume
+    rlat[2] = dlat[0] * dlat[1] * sin_gamma / volume
 
-    volume = (dlat[0] * dlat[1] * dlat[2]
-        * np.sqrt(1 + 2 * np.cos(dlat[3]) * np.cos(dlat[4]) * np.cos(dlat[5])
-            - np.cos(dlat[3]) * np.cos(dlat[3])
-            - np.cos(dlat[4]) * np.cos(dlat[4])
-            - np.cos(dlat[5]) * np.cos(dlat[5])))
-
-    # compute reciprocal lattice parameters
-
-    rlat[0] = dlat[1] * dlat[2] * np.sin(dlat[3]) / volume
-    rlat[1] = dlat[0] * dlat[2] * np.sin(dlat[4]) / volume
-    rlat[2] = dlat[0] * dlat[1] * np.sin(dlat[5]) / volume
+    # Angles in reciprocal space
     rlat[3] = np.arccos(
-        (np.cos(dlat[4]) * np.cos(dlat[5]) - np.cos(dlat[3])) / (np.sin(dlat[4]) * np.sin(dlat[5])))
+        (cos_beta * cos_gamma - cos_alpha) / (sin_beta * sin_gamma)
+    )
     rlat[4] = np.arccos(
-        (np.cos(dlat[3]) * np.cos(dlat[5]) - np.cos(dlat[4])) / (np.sin(dlat[3]) * np.sin(dlat[5])))
+        (cos_alpha * cos_gamma - cos_beta) / (sin_alpha * sin_gamma)
+    )
     rlat[5] = np.arccos(
-        (np.cos(dlat[3]) * np.cos(dlat[4]) - np.cos(dlat[5])) / (np.sin(dlat[3]) * np.sin(dlat[4])))
+        (cos_alpha * cos_beta - cos_gamma) / (sin_alpha * sin_beta)
+    )
 
     return rlat
 
 
 def rad_to_deg(dlat):
-    """ convert 3 last elements of 6 lattice parameters from rad to deg
     """
-    dlatdeg = np.hstack((dlat[0:3], dlat[3:6] * 180.0 / math.pi))
+    Convert the last 3 elements of 6 lattice parameters from radians to degrees.
+
+    Note: lattice parameters may be in direct or reciprocal space
+
+    Parameters
+    ----------
+    dlat : array-like, shape (6,)
+        Lattice parameters: [a, b, c, alpha, beta, gamma]  angles in radians.
+
+    Returns
+    -------
+    dlatdeg : ndarray
+        Lattice parameters with angles converted to degrees: [a, b, c, alpha, beta, gamma].
+    """
+    dlatdeg = np.hstack((dlat[:3], dlat[3:] * 180.0 / math.pi))
     return dlatdeg
 
 
@@ -167,35 +202,57 @@ def epsmat_to_epsline(epsmat):  # 29May13
 
     return epsline
 
-def matstarlab_to_deviatoric_strain_sample(matstarlab, 
-                                           omega0=omega_sample_frame, 
-                                           version=2, 
-                                           returnmore=False,
-                                           reference_element_for_lattice_parameters="Ge"):
-    #29May13
-    epsp_crystal, dlatrdeg = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
-                                            version = version, 
-                                            reference_element_for_lattice_parameters = reference_element_for_lattice_parameters)
-
-    epsp_sample =  transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
-                                                                  epsp_crystal,
-                                                                  omega0 = omega0)
-    if returnmore == False:
-        return(epsp_sample)
-    else:
-        return(epsp_sample, epsp_crystal)   # add epsp_crystal
-
 
 def matstarlab_to_deviatoric_strain_crystal(matstarlab, version=2, elem_label="Ge"):
+    """
+    Compute the deviatoric strain and lattice parameters in degrees from a matstarlab matrix.
+
+    This function converts a matstarlab matrix to deviatoric strain and lattice parameters,
+    using either a simplified calculation for initially cubic unit cells (version=1) or a full
+    calculation for unit cells with any symmetry (version=2). The formulas are based on
+    Tamura's XMAS chapter in Barabash 2013 book (same as Chung and Ice 1999).
+
+    WARNING: matstarlab (3x3 matrix)is equal UB.B0 in LaueTools formula q = UB B0 G* and not UB !!!
+    WARNING2: matstarlab is 1D 9 elements array or list
+    WARNING: matstarlab seems to be 1D 9 elements array or list from np.transpose(UB.B0), since
+    astarlab = matstarlab[0:3]
+    bstarlab = matstarlab[3:6]
+    cstarlab = matstarlab[6:9]
+    WARNING4: frame of Odile's scripts is y // incoming beam, z pointing towards detector
+    (z belong to the plane defined by normal of detector plane and incoming beam)
+    x = y ^z
+    WARNING5: sample frame is not clearly defined from OR's frame
+
+
+    Parameters
+    ----------
+    matstarlab : ndarray
+        Input matrix in matstarlab format (1D 9 elements array or list).
+    version : int, optional
+        Version of the calculation:
+        - 1: Simplified calculation for initially cubic unit cells.
+        - 2: Full calculation for unit cells with any symmetry. Default is 2.
+    elem_label : str, optional
+        Label of the element (e.g., "Ge") to fetch reference lattice parameters from DictLT.dict_Materials.
+        Default is "Ge".
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - epsp : ndarray, shape (6,)
+            Deviatoric strain components [eps11, eps22, eps33, eps23, eps13, eps12] in microstrain (1e-6).
+        - dlatrdeg : ndarray, shape (6,)
+            Lattice parameters [a, b, c, alpha, beta, gamma] with angles in degrees.
+
+    Notes
+    -----
+    - Angles in the input `dlat` must be in radians.
+    - The first element of `dlat` can be any value, not necessarily 1.0.
+    - For `version=2`, reference lattice parameters are fetched from `DictLT.dict_Materials`.
+    - The deviatoric strain is calculated by removing the volumetric (dilatational) component.
+    """
     # 29May13
-    """
-    # version = 1 : simplified calculation for initially cubic unit cell
-    # version = 2 : full calculation for unit cell with any symmetry
-    # formulas from Tamura's XMAS chapter in Barabash 2013 book
-    # = same as Chung and Ice 1999 (but clearer explanation)
-    # needs angles in radians
-    # dlat[0] can be any value, not necessarily 1.0
-    """
 
     rlat = CP.mat_to_rlat(matstarlab)
     dlat = dlat_to_rlat(rlat)
@@ -435,6 +492,8 @@ def serial_indexerefine_multigrain( filepathdat, fileprefix, indimg, filesuffix,
                                                     filepathout,
                                                     filefitref=None):
 
+    """OBSOLETE """
+
     nimg = len(indimg)
     ngrains_found = np.zeros(nimg, int)
     npeaks = np.zeros((nimg, PAR.ngrains_index_refine), int)
@@ -563,7 +622,8 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
                                                         outputprefix="_SUMMARY_",
                                                         folderoutput=None,
                                                         default_file=None,
-                                                        verbose=0):  # 29May13
+                                                        verbose=0,
+                                                        after_april_2026=False):  # 29May13
     """
     write a file containing the summary of results from a set .fit file
     fileindex_list: list of file index
@@ -581,12 +641,23 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
     """
     if verbose > 0: print('\n In build_summary()  :')
     # filexyz : img 0 , xech 1, yech 2, zech 3, mon4 4, lambda 5
-    total_nb_cols = 25
+    
+    if not after_april_2026:
+        # before April 2026
+        total_nb_cols = 25
+        list_col_names2 = ["img", "gnumloc", "npeaks", "pixdev", "intensity"]  # 5 elements
+        
+        list_col_names = ["dxymicrons", "matstarlab", "strain6_crystal", "euler3"]  # 20 elements
+        number_col_list = np.array([2, 9, 6, 3])
+    else:
+        total_nb_cols = 25 + 6 + 9 # + 6 components strain_in_sampleframe (not OR frame but Lauetools sample frame) + 9 matrix ubb0
+        
+        # ubmatrix is ub of lauetools , whereas matstarlab is (ub.b0).T (in OR frame)
+        list_col_names = ["dxymicrons","matstarlab", "strain6_crystal", "strain6_sample", "euler3","UBB0"]  # 35 elements
+        list_col_names2 = ["img", "gnumloc", "npeaks", "pixdev", "intensity"] # 5 elements
+        number_col_list = np.array([2, 9, 6, 6, 3, 9])
 
-    list_col_names = ["dxymicrons", "matstarlab", "strain6_crystal", "euler3"]
-    number_col_list = np.array([2, 9, 6, 3])
-
-    list_col_names2 = ["img", "gnumloc", "npeaks", "pixdev", "intensity"]
+    
 
     for k in range(len(list_col_names)):
         for nbcol in range(number_col_list[k]):
@@ -617,7 +688,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
     list_files_in_folder = os.listdir(filepathfit)
     import re
 
-    test = re.compile("\.fit$", re.IGNORECASE)
+    test = re.compile(r"\.fit$", re.IGNORECASE)
     list_fitfiles_in_folder = list(filter(test.search, list_files_in_folder))
 
     # loop for reading each .fit file -------------------------
@@ -654,13 +725,20 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
                                             readmore=True,
                                             fileextensionmarker=".cor")
 
-        # print("res1  from readfitfile_multigrains in build_summary()", res1)
+        if verbose > 1: print("res1  from readfitfile_multigrains in build_summary()", res1)
 
         if res1 != 0:
             if verbose > 1:
                 print('Nb output elements of readfitfile_multigrains()', len(res1))
                 print('We select only 9 first of them ...')
-            gnumlist, npeaks, indstart, matstarlab, data_fit, calib, pixdev, strain6, euler = res1[:9]
+
+            strain_in_sampleframe = None
+            if not after_april_2026:  # before April 2026
+                gnumlist, npeaks, indstart, matstarlab, data_fit, calib, pixdev, strain6, euler = res1[:9]
+            else:
+                (gnumlist, npeaks, indstart, matstarlab,
+                  data_fit, calib, pixdev,
+                  strain6, strain_in_sampleframe, euler, ubb0) = res1[:11]
 
             if len(pixdev) == 0:
                 pixdev = np.zeros_like(gnumlist)
@@ -677,6 +755,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
             else:
                 intensity[0] = data_fit[:nbtopspots, 1].mean()
                 strain6 = strain6.reshape(1, 6)
+                strain_in_sampleframe = strain_in_sampleframe.reshape(1, 6)
                 euler = euler.reshape(1, 3)
 
             imnumlist = np.ones(ngrains, int) * fileindex
@@ -684,8 +763,12 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
             if verbose > 1:
                 print('dxylist', dxylist)
 
-            res = np.column_stack((imnumlist, gnumlist, npeaks, pixdev, intensity,
-                                    dxylist, matstarlab, strain6, euler))
+            if strain_in_sampleframe is None:  # before April 2026
+                res = np.column_stack((imnumlist, gnumlist, npeaks, pixdev, intensity,
+                                dxylist, matstarlab, strain6, euler))
+            else:
+                res = np.column_stack((imnumlist, gnumlist, npeaks, pixdev, intensity,
+                                dxylist, matstarlab, strain6, strain_in_sampleframe, euler, ubb0))
 
             if verbose > 1: print("intensity in build_summary()", intensity)
         else:
@@ -708,8 +791,12 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
         print("summary file will be saved in :")
         print(fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
-    header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, euler 22:25  \n"
-
+    if not after_april_2026:
+        header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22,"
+        header += "euler 22:25  \n"
+    else:
+        header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22,"
+        header += "strain6_sample 23:29, euler 30:33, UBB0 34:43  \n"
     # write summary file -------------
     try:
         from . import module_graphique as modgraph
@@ -995,7 +1082,7 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
     # print "pole axis - sample coord : ", upole_sample
     # print "pole axis - lab coord : ", upole_lab.round(decimals=3)
 
-    matstarlabOND = GT.matstarlab_to_matstarlabOND(matstarlab)
+    matstarlabOND = CP.matstarlab_to_matstarlabOND(matstarlab)
 
     mat = GT.matline_to_mat3x3(matstarlabOND)
 
@@ -1217,14 +1304,16 @@ def dlat_to_Bstar(dlat): #29May13
 
     return Bstar
 
-def matstarlab_to_matdirONDsample3x3(matstarlab,
-                                     omega0=None, # was PAR.omega_sample_frame
-                                     mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame): #29May13
 
+def matstarlab_to_matdirONDsample3x3(matstarlab,
+                                     omega0:degrees=None, # was PAR.omega_sample_frame
+                                     mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame): #29May13
+    """ omega0: angle in degrees to recalculate the 'mat_from_lab_to_sample_frame'. Default value is None, argument 'mat_from_lab_to_sample_frame' is used."""
     # uc unit cell
     # dir direct
     # uc_dir_OND : cartesian frame obtained by orthonormalizing direct unit cell
 
+    
     matdirlab3x3, rlat = matstarlab_to_matdirlab3x3(matstarlab)
     # dir_bmatrix = uc_dir on uc_dir_OND
 
@@ -1249,11 +1338,13 @@ def matstarlab_to_matdirONDsample3x3(matstarlab,
     return matdirONDsample3x3
 
 def transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
-                                          tensor_crystal_line,
-                                          omega0=None, # was PAR.omega_sample_frame,
-                                          mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame):
+                        tensor_crystal_line,
+                        omega0:degrees=None, # was PAR.omega_sample_frame,
+                        mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame):
     #29May13
     """
+     omega0: angle in degrees to recalculate the 'mat_from_lab_to_sample_frame'. Default value is None, argument 'mat_from_lab_to_sample_frame' is used.
+
     start from stress or strain tensor
     as 6 coord vector
     """
@@ -1273,11 +1364,13 @@ def transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
     return tensor_sample_line
 
 def matstarlab_to_deviatoric_strain_sample(matstarlab, 
-                                omega0=None, # was PAR.omega_sample_frame,
+                                omega0:degrees=None, # was PAR.omega_sample_frame,
                                 mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame,
                                 version=2,
                                 returnmore=False,
-                                elem_label="Ge"):
+                                elem_label:str="Ge"):
+    """
+     omega0: angle in degrees to recalculate the 'mat_from_lab_to_sample_frame'. Default value is None, argument 'mat_from_lab_to_sample_frame' is used."""
     #29May13
     epsp_crystal, _ = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
                                             version=version,
@@ -1345,33 +1438,99 @@ def deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(sigma_cry
     return tau_all
 
 def deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal_line):
-    #29May13
-    # cf formula (4.17) in book chapter by N. Tamura p 143
-    # book "strain and dislocation gradients from diffraction"
-    # eds R.I. Barabash and G.E. Ice
-    sig = sigma_crystal_line*1.0
-    von_mises = (sig[0]-sig[1])*(sig[0]-sig[1]) + \
-                (sig[1]-sig[2])*(sig[1]-sig[2]) + \
-                (sig[2]-sig[0])*(sig[2]-sig[0]) + \
-                6.* (sig[3]*sig[3] + sig[4]*sig[4] + sig[5]*sig[5])
-    von_mises = von_mises / 2.
-    von_mises = np.sqrt(von_mises)
+    """
+    Compute the von Mises stress from a deviatoric stress tensor in crystal coordinates.
+
+    The von Mises stress is a scalar value derived from the deviatoric stress tensor,
+    often used to predict yielding in ductile materials. This implementation follows
+    formula (4.17) from the book chapter by N. Tamura (p. 143) in "Strain and Dislocation
+    Gradients from Diffraction" (eds. R.I. Barabash and G.E. Ice).
+
+    Parameters
+    ----------
+    sigma_crystal_line : array-like, shape (6,)
+        Deviatoric stress tensor in Voigt notation (crystal coordinates):
+        [sigma_11, sigma_22, sigma_33, sigma_23, sigma_13, sigma_12].
+        Units are assumed to be consistent (e.g., MPa, GPa).
+
+    Returns
+    -------
+    float
+        Von Mises stress, computed as:
+        sqrt(0.5 * [(sigma_11 - sigma_22)^2 + (sigma_22 - sigma_33)^2 + (sigma_33 - sigma_11)^2
+                + 6 * (sigma_23^2 + sigma_13^2 + sigma_12^2)]).
+
+    Examples
+    --------
+    >>> # Test case: Pure shear stress (sigma_12 = 100 MPa, others = 0)
+    >>> sigma = np.array([0., 0., 0., 0., 0., 100.])
+    >>> von_mises = deviatoric_stress_crystal_to_von_mises_stress(sigma)
+    >>> print(f"Von Mises stress: {von_mises:.2f} MPa")
+    Von Mises stress: 173.21 MPa
+
+    Notes
+    -----
+    - The input stress tensor must be in **Voigt notation** (6-component vector).
+    - The function assumes the input is already deviatoric (i.e., trace(sigma) = 0).
+    - The result is always non-negative.
+    """
+    sig = sigma_crystal_line * 1.0
+    von_mises = (
+        (sig[0] - sig[1]) ** 2 +
+        (sig[1] - sig[2]) ** 2 +
+        (sig[2] - sig[0]) ** 2 +
+        6.0 * (sig[3] ** 2 + sig[4] ** 2 + sig[5] ** 2)
+    )
+    von_mises = np.sqrt(von_mises / 2.0)
     return von_mises
 
 def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
-    #23May16
-    # formula (1) from Chen et al. Geology 2014
-    # cf formula (4.14) in book chapter by N. Tamura p 142
-    # book "strain and dislocation gradients from diffraction"
-    # eds R.I. Barabash and G.E. Ice
+    """
+    Compute the equivalent strain from a deviatoric strain tensor in crystal coordinates.
 
-    eps = epsilon_crystal_line*1.
-    toto = (eps[0]-eps[1])*(eps[0]-eps[1]) + \
-                (eps[1]-eps[2])*(eps[1]-eps[2]) +\
-                (eps[2]-eps[0])*(eps[2]-eps[0]) + \
-                6.* (eps[3]*eps[3] + eps[4]*eps[4] + eps[5]*eps[5])
-    toto = toto / 2.
-    eq_strain = (2. / 3.) * np.sqrt(toto)
+    The equivalent strain is a scalar value derived from the deviatoric strain tensor,
+    often used to characterize the magnitude of distortion. This implementation follows
+    formula (1) from Chen et al. (Geology, 2014) and formula (4.14) from the book chapter
+    by N. Tamura (p. 142) in "Strain and Dislocation Gradients from Diffraction"
+    (eds. R.I. Barabash and G.E. Ice).
+
+    Parameters
+    ----------
+    epsilon_crystal_line : array-like, shape (6,)
+        Deviatoric strain tensor in Voigt notation (crystal coordinates):
+        [epsilon_11, epsilon_22, epsilon_33, epsilon_23, epsilon_13, epsilon_12].
+        Units are assumed to be consistent (e.g., dimensionless or microstrain).
+
+    Returns
+    -------
+    float
+        Equivalent strain, computed as:
+        (2/3) * sqrt(0.5 * [(epsilon_11 - epsilon_22)^2 + (epsilon_22 - epsilon_33)^2
+                          + (epsilon_33 - epsilon_11)^2
+                          + 6 * (epsilon_23^2 + epsilon_13^2 + epsilon_12^2)]).
+
+    Examples
+    --------
+    >>> # Test case: Pure shear strain (epsilon_12 = 0.01, others = 0)
+    >>> epsilon = np.array([0., 0., 0., 0., 0., 0.01])
+    >>> eq_strain = deviatoric_strain_crystal_to_equivalent_strain(epsilon)
+    >>> print(f"Equivalent strain: {eq_strain:.6f}")
+    Equivalent strain: 0.011547
+
+    Notes
+    -----
+    - The input strain tensor must be in **Voigt notation** (6-component vector).
+    - The function assumes the input is already deviatoric (i.e., trace(epsilon) = 0).
+    - The result is always non-negative.
+    """
+    eps = epsilon_crystal_line * 1.0
+    toto = (
+        (eps[0] - eps[1]) ** 2 +
+        (eps[1] - eps[2]) ** 2 +
+        (eps[2] - eps[0]) ** 2 +
+        6.0 * (eps[3] ** 2 + eps[4] ** 2 + eps[5] ** 2)
+    )
+    eq_strain = (2.0 / 3.0) * np.sqrt(toto / 2.0)
     return eq_strain
 
 def add_columns_to_summary_file_new(filesum:str,
@@ -1389,7 +1548,8 @@ def add_columns_to_summary_file_new(filesum:str,
                             maxpixdev_for_mean_matrix:float=0.25,
                             minnpeaks_for_mean_matrix:float=20,
                             filter_mean_matrix_by_intensity=0,
-                            minintensity_for_mean_matrix:float=20000.0):  # 29May13
+                            minintensity_for_mean_matrix:float=20000.0,
+                            after_april_2026=False):  # 29May13
 
     """
     :param filesum: str, previously generated file (.dat) with build_summary
@@ -1416,14 +1576,19 @@ def add_columns_to_summary_file_new(filesum:str,
        add rgby and wx wy wz
        09Jan14
        add rgbxyz_lab  - utile pour departager macles avec axe de maclage suivant x, y, ou z sample
-       24Jan14 : enleve strain columns
+
     """
+    if verbose > 0:
+        print("In add_columns_to_summary_file_new()")
+
     data1, list_column_names, nameline0 = read_summary_file(filesum, verbose=verbose - 1)
 
-    data_1 = np.array(data1, dtype=float)
+    data_1 = np.array(data1, dtype=float)  # 
 
     # print("data_1 in add_columns_to_summary_file_new()", data_1)
     # print("data_1.shape", data_1.shape)
+
+    if verbose > 0: print('list_column_names', list_column_names)
 
     list_col_names2 = list_column_names
 
@@ -1528,8 +1693,12 @@ def add_columns_to_summary_file_new(filesum:str,
     indimg = list_column_names.index("img")  # 3
     indpixdev = list_column_names.index("pixdev")  # 3
     indnpeaks = list_column_names.index("npeaks")  # 2
+    
     indmatstart = list_column_names.index("matstarlab_0")  # 7
     indintensity = list_column_names.index("intensity")  # 4
+
+    if after_april_2026:
+        indmatubb0start = list_column_names.index("UBB0_0")  # 7
     if verbose > 0:
         print('info position')
         print(indpixdev, indnpeaks, indmatstart, indintensity)
@@ -1541,7 +1710,9 @@ def add_columns_to_summary_file_new(filesum:str,
     pixdev_list = data_1[:, indpixdev]
     npeaks_list = data_1[:, indnpeaks]
     intensity_list = data_1[:, indintensity]
-    mat_list = data_1[:, indmat]
+    mat_list = data_1[:, indmat]  #
+    if after_april_2026:
+        ubb0_list = data_1[:, indmatubb0start:indmatubb0start + 9]
 
     if include_misorientation:
         indfilt2 = np.where(npeaks_list > 0.0)  # pour raccourcir le summary a la fin
@@ -1568,9 +1739,6 @@ def add_columns_to_summary_file_new(filesum:str,
             else:
                 matstarlabref = (mat_list[indfilt2[0]]).mean(axis=0)
 
-            # TO REMOVE
-        #            matmean = ((mat_list[indfilt[0]])[-10:]).mean(axis=0)   # test pour data Keckes
-
         else:
             matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(filefitref_for_orientation,
                                                                 readmore=True)
@@ -1579,9 +1747,15 @@ def add_columns_to_summary_file_new(filesum:str,
 
     k = 0
     for i in range(numig):
-        if verbose - 1 > 0: print("i : ", i, "img_list[i] : ", img_list[i], "\r")
+        if verbose - 1 > 0:
+            print("i : ", i, "img_list[i] : ", img_list[i], "\r")
+            print('npeaks_list[i] : ', npeaks_list[i], "\r")
+            
+        
         if npeaks_list[i] > 0.0:
             matstarlab = mat_list[i, :]
+            if after_april_2026:
+                ubb0 = ubb0_list[i, :]
             # print "x"
             matstarlabnew, transfmat, rgb_x[i, :] = calc_cosines_first_stereo_triangle(
                 matstarlab, xsample_sample_coord)
@@ -1595,23 +1769,48 @@ def add_columns_to_summary_file_new(filesum:str,
             matstarlabnew, transfmat, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
 
             if include_strain:
-                epsp_sample[i, :], epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
-                                                            matstarlab,
-                                                            omega0=omega_sample_frame,
-                                                            version=2,
-                                                            returnmore=True,
-                                                            elem_label=elem_label)
+                if after_april_2026:
 
-                sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
-                                                c_tensor, epsp_crystal[i, :])
-                sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                                        matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
+                    Transformframe = np.array([[0,1,0],[-1,0,0],[0,0,1]]) # to go from OR to LT frame laboratory frame (OR convention: ki // x, LT convention: ki // x, for both frames z towards detector, y // z^x)
+                    matstarlab = np.ravel(np.dot(Transformframe.T, ubb0.reshape((3,3))))
 
-                von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
+                    # Warning: matstarlab is now in OR convention
+                    # and stress in crystal and sample frame are in OR convention !!
+                    _, epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
+                                                                matstarlab,
+                                                                omega0=omega_sample_frame,
+                                                                version=2,
+                                                                returnmore=True,
+                                                                elem_label=elem_label)
 
-                tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                    sigma_crystal[i, :], schmid_tensors)
-                maxrss[i] = abs(tau1[i, :]).max()
+                    sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
+                                                    c_tensor, epsp_crystal[i, :])
+                    sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
+                                            matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
+
+                    von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
+
+                    tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
+                        sigma_crystal[i, :], schmid_tensors)
+                    maxrss[i] = abs(tau1[i, :]).max()
+                else:
+                    epsp_sample[i, :], epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
+                                                                matstarlab,
+                                                                omega0=omega_sample_frame,
+                                                                version=2,
+                                                                returnmore=True,
+                                                                elem_label=elem_label)
+
+                    sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
+                                                    c_tensor, epsp_crystal[i, :])
+                    sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
+                                            matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
+
+                    von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
+
+                    tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
+                        sigma_crystal[i, :], schmid_tensors)
+                    maxrss[i] = abs(tau1[i, :]).max()
 
             if include_misorientation:
                 #                mat2 = GT.matline_to_mat3x3(matstarlab)
@@ -1624,10 +1823,10 @@ def add_columns_to_summary_file_new(filesum:str,
                 if verbose - 1 > 0: print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
 
             if verbose > 0:
-                print('matstarlab', matstarlab)
+                print('matstarlab', matstarlab) # 9 elements   1D array
                 if include_strain:
-                    print("deviatoric strain crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
-                    print(epsp_crystal.round(decimals=2))
+                    print("deviatoric strain crystal : aa bb cc -dalf (ie angle between b and c), -dbet (ie angle between a and c), -dgam (ie angle between a and b) (1e-3 units) : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
+                    print(epsp_crystal[i, :].round(decimals=2))
                     print("deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)")
                     print(epsp_sample[i, :].round(decimals=2))
 
@@ -1952,57 +2151,90 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     list_column_names = [
         "img",
         "probed_grainindex",
-        "npeaks",
-        "pixdev",
-        "intensity",
-        "dxymicrons_0",
+        "npeaks",  #2
+        "pixdev",   #3
+        "intensity",    #4  
+        "dxymicrons_0",     #5
         "dxymicrons_1",
-        "matstarlab_0",
+        "matstarlab_0",     #7 :16
         "matstarlab_1",
         "matstarlab_2",
         "matstarlab_3",
-        "matstarlab_4",  # 7:16
+        "matstarlab_4",  
         "matstarlab_5",
         "matstarlab_6",
         "matstarlab_7",
         "matstarlab_8",
-        "strain6_crystal_0",
+        "strain6_crystal_0", #16:22
         "strain6_crystal_1",
         "strain6_crystal_2",
-        "strain6_crystal_3",  # 16:22
+        "strain6_crystal_3",  
         "strain6_crystal_4",
-        "strain6_crystal_5",
-        "euler3_0",
-        "euler3_1",
-        "euler3_2",  # 22:25
-        "strain6_sample_0",
+        "strain6_crystal_5", 
+        "strain6_sample_0",  #22:28
         "strain6_sample_1",
         "strain6_sample_2",
         "strain6_sample_3",
         "strain6_sample_4",
         "strain6_sample_5",
-        "rgb_x_sample_0",
+        "euler3_0",  #28:31
+        "euler3_1",
+        "euler3_2",
+        "UBB0_0",  #31:40
+        "UBB0_1",
+        "UBB0_2",
+        "UBB0_3",
+        "UBB0_4",
+        "UBB0_5",
+        "UBB0_6",
+        "UBB0_7",
+        "UBB0_8",
+        "rgb_x_sample_0",  #40:43
         "rgb_x_sample_1",
-        "rgb_x_sample_2",  # 25:31
-        "rgb_z_sample_0",
+        "rgb_x_sample_2",
+        "rgb_y_sample_0",  #43:46
+        "rgb_y_sample_1",
+        "rgb_y_sample_2",
+        "rgb_z_sample_0",  #46:49
         "rgb_z_sample_1",
         "rgb_z_sample_2",
-        "stress6_crystal_0",
+        "rgb_x_lab_0",  #49:52
+        "rgb_x_lab_1",
+        "rgb_x_lab_2",
+        "rgb_y_lab_0",  #52:55
+        "rgb_y_lab_1",
+        "rgb_y_lab_2",
+        "rgb_z_lab_0",  # 55:58
+        "rgb_z_lab_1",
+        "rgb_z_lab_2",
+        "strain6_crystal_0", #58:64
+        "strain6_crystal_1",
+        "strain6_crystal_2",
+        "strain6_crystal_3",  
+        "strain6_crystal_4",
+        "strain6_crystal_5", 
+        "strain6_sample_0", #64:70
+        "strain6_sample_1",
+        "strain6_sample_2",
+        "strain6_sample_3",
+        "strain6_sample_4",
+        "strain6_sample_5",
+        "stress6_crystal_0", #70:76
         "stress6_crystal_1",
-        "stress6_crystal_2",  # 31:37
+        "stress6_crystal_2",  
         "stress6_crystal_3",
         "stress6_crystal_4",
         "stress6_crystal_5",
-        "stress6_sample_0",
+        "stress6_sample_0",  #76:82
         "stress6_sample_1",
-        "stress6_sample_2",  # 37:43
+        "stress6_sample_2",  
         "stress6_sample_3",
         "stress6_sample_4",
         "stress6_sample_5",
-        "res_shear_stress_0",
+        "res_shear_stress_0",  #82:94
         "res_shear_stress_1",
         "res_shear_stress_2",
-        "res_shear_stress_3",  # 43:15
+        "res_shear_stress_3",  
         "res_shear_stress_4",
         "res_shear_stress_5",
         "res_shear_stress_6",
@@ -2011,10 +2243,10 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
         "res_shear_stress_9",
         "res_shear_stress_10",
         "res_shear_stress_11",
-        "max_rss",
-        "von_mises",  # 58 and # 59
-        "misorientation_angle",
-        "dalf"]
+        "max_rss",  # 94
+        "von_mises",  #95
+        "misorientation_angle",  # not used ??
+        "dalf"]  # not used ??
 
     #               list_column_names=['img', 'gnumloc', 'npeaks', 'pixdev',
     #         'intensity', 'dxymicrons_0', 'dxymicrons_1',
@@ -2024,6 +2256,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     #  'strain6_crystal_0', 'strain6_crystal_1', 'strain6_crystal_2',
     #  'strain6_crystal_3', 'strain6_crystal_4', 'strain6_crystal_5',
     #  'euler3_0', 'euler3_1', 'euler3_2',
+    #  UBB0_0 UBB0_1 UBB0_2 UBB0_3 UBB0_4 UBB0_5 UBB0_6 UBB0_7 UBB0_8  # NEW
     #  'strain6_sample_0', 'strain6_sample_1', 'strain6_sample_2',
     #  'strain6_sample_3', 'strain6_sample_4', 'strain6_sample_5',
     #  'rgb_x_sample_0', 'rgb_x_sample_1', 'rgb_x_sample_2',
