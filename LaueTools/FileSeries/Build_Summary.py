@@ -4,6 +4,8 @@ Created on Wed Jun 26 12:23:57 2013
 
 @author: micha
 
+last revision: April 2026
+
 from initially T. Cerba
 """
 import sys
@@ -281,7 +283,7 @@ class MainFrame_BuildSummary(wx.Frame):
         return
 
     def OnCreateSummary(self, _):
-
+        
         if not self.builddatfile.GetValue() and not self.buildhdf5.GetValue():
             wx.MessageBox("Check at least one type of summary file!", "Error")
 
@@ -317,13 +319,15 @@ class MainFrame_BuildSummary(wx.Frame):
                                     number_of_digits_in_image_name=nbdigits_for_zero_padding,
                                     folderoutput=folderresult,
                                     default_file=DEFAULT_FILE,
-                                    verbose=verboselevel - 1)
+                                    verbose=verboselevel - 1,
+                                    after_april_2026=True)
 
                 fullpath_summary_filename = MGFS.add_columns_to_summary_file_new(
                                                         fullpath_summary_filename,
                                                         elem_label=key_material,
                                                         filestf=stiffnessfile,
-                                                        verbose=verboselevel - 1)
+                                                        verbose=verboselevel - 1,
+                                                        after_april_2026=True)
                 
                 print("\nSummary file written (with added infos) in:", fullpath_summary_filename)
 
