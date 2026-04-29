@@ -922,7 +922,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False, verbose=0):
     lat = 1.0 * np.array(latticeparameters)
 
     if directspace:  # from lattice param in one space to a matrix in other space
-        rlat = dlat_to_rlat(lat, setvolume=setvolume)
+        rlat = dlat_to_rlat(lat, angles_in_deg=1, setvolume=setvolume)
 
         rlat[3:] *= DEG  # convert angles elements in radians
 
@@ -935,23 +935,34 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False, verbose=0):
         return B
 
     else:  # from lattice parameters in one space to a matrix in the same space
-        lat = np.array(lat)
-        lat[3:] *= DEG  # convert angles elements in radians
+        # lat = np.array(lat)
+        # lat[3:] *= DEG  # convert angles elements in radians
 
-        # A = B[0,0]x
-        # B = B[0,1]x+B[1,1]y
-        # C = B[0,2]x+B[1,2]y+B[2,2]
-        # A=(a,0,0)
-        # B=(bcosgam,bsingam,0)
-        # C=(ccosbeta,c/singamma*(cosalpha-cosgamma*cosbeta),0)
-        # C=(cx,cy,c*sqrt(1-cx**2-cy**2))
-        B[0, 0] = lat[0]
+        # # A = B[0,0]x
+        # # B = B[0,1]x+B[1,1]y
+        # # C = B[0,2]x+B[1,2]y+B[2,2]
+        # # A=(a,0,0)
+        # # B=(bcosgam,bsingam,0)
+        # # C=(ccosbeta,c/singamma*(cosalpha-cosgamma*cosbeta),0)
+        # # C=(cx,cy,c*sqrt(1-cx**2-cy**2))
+        # B[0, 0] = lat[0]
 
-        B[0, 1] = lat[1] * np.cos(lat[5])  # gamma angle
-        B[1, 1] = lat[1] * np.sin(lat[5])
-        B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle
-        B[1, 2] = (lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4])))
-        B[2, 2] = lat[2] * np.sqrt(1.0 - B[0, 2] ** 2 - B[1, 2] ** 2)
+        # B[0, 1] = lat[1] * np.cos(lat[5])  # gamma angle in radians
+        # B[1, 1] = lat[1] * np.sin(lat[5])
+        # B[0, 2] = lat[2] * np.cos(lat[4])  # beta angle  in radians
+        # B[1, 2] = (lat[2] / np.sin(lat[5]) * (np.cos(lat[3]) - np.cos(lat[5]) * np.cos(lat[4])))
+        # B[2, 2] = lat[2] * np.sqrt(1.0 - B[0, 2] ** 2 - B[1, 2] ** 2)
+        
+        # new version to solve error for beta > 90 degrees !! (April 2026)
+        B = np.zeros((3,3),dtype=float)
+        rlat = dlat_to_rlat(lat,angles_in_deg=1)
+        
+        B[0,0] = lat[0]
+        B[0,1] = lat[1]*np.cos(lat[5]* DEG)
+        B[1,1] = lat[1]*np.sin(lat[5]* DEG)
+        B[0,2] = lat[2]*np.cos(lat[4]* DEG)
+        B[1,2] = -lat[2]*np.sin(lat[4]* DEG)*np.cos(rlat[3] * DEG)
+        B[2,2] = 1.0/rlat[2]
 
         return B
 
@@ -1033,6 +1044,8 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
     Evaluate strain from UBmat matrix  (q = UBmat B0 G*)
 
     :returns:   devstrain, deviatoricstrain_sampleframe, lattice_parameters
+
+    USED in indexingSpotsSet.py:  refineUBspotsFamily and indexspotsset method of class spotsset
     """
     # compute new lattice parameters  -----
     latticeparams = dictmaterials[key_material][1]
@@ -1063,6 +1076,9 @@ def compute_deviatoricstrain(newUBmat, B0matrix, latticeparams, verbose=0):
         B0matrix = CP.calc_B_RR(latticeparams)
 
         q = newUBmat B0 G*
+
+    USED in indexingSpotsSet.py:  refineUBspotsFamily and indexspotsset method of class spotsset
+        in DetectorCalibration and PlotREfineGUI
     """
     if verbose: print("new UBs matrix in q= UBs G (s for strain)")
 
@@ -1099,6 +1115,8 @@ def computeLatticeParameters_from_UB(UBmatrix, key_material,
     :param key_material: str, reference material for reference length for rescaling lengthes (ratii of legnthes are kept...)
     :param  constantlength: str, 'a','b' or 'c'. Length of reference for the final values of unit cell lengthes
     :param dictmaterials: dict of materials reference lattice parameters
+    USED in indexingSpotsSet.py:  refineUBspotsFamily and indexspotsset method of class spotsset
+    in DetectorCalibration and PlotREfineGUI
     """
     # starting B0matrix corresponding to the unit cell   -----
     latticeparams = dictmaterials[key_material][1]
@@ -1161,10 +1179,16 @@ def computeDirectUnitCell_from_Bmatrix(Bmatrix):
 
 def mat_to_rlat(matstarlab):
     r"""
-    Computes reciprocal lattice parameters from orientation and deformation matrix
+    Computes reciprocal lattice parameters from orientation and deformation matrix: matstarlab=UBB0 like matrix
+
+    WARNING: matstarlab 9 elements array is something related to UB.B0 in LaueTools formula q = UB B0 G* and not UB !!!
+    WARNING2: matstarlab is 1D 9 elements array or list
+
+    Transformframe = np.array([[0,1,0],[-1,0,0],[0,0,1]]) # to go from OR to LT frame laboratory frame (OR convention: ki // x, LT convention: ki // x, for both frames z towards detector, y // z^x)
+    matstarlab = np.ravel(np.dot(Transformframe.T, ubb0.reshape((3,3))))
 
     :param matstarlab: 9 elements inline matrix
-    :returns: 6 reciprocal unit cell lattice parameters
+    :returns: 6 reciprocal unit cell lattice parameters whose angles are in radians
 
     .. note:: from Odile's scripts
     """
@@ -1357,7 +1381,7 @@ def matrix_to_rlat(mat, angles_in_deg=1):
 
     :param mat: matrix where columns are respectively a*,b*,c* coordinates in an orthonormal frame
 
-    :returns: [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees)
+    :returns: [a*,b*,c*, alpha*, beta*, gamma*] (angles are in degrees by default)
 
     .. note::
 
@@ -1383,7 +1407,7 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     r"""
     Computes RECIPROCAL lattice parameters from DIRECT lattice parameters `dlat`
 
-    :param dlat: [a,b,c, alpha, beta, gamma] angles are in degrees
+    :param dlat: [a,b,c, alpha, beta, gamma] (angles are in degrees by default)
     :param angles_in_deg: 1 when last three parameters are angle in degrees
     (then results angles are in degrees)
 
@@ -1725,6 +1749,31 @@ def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stre
         hydrostrain,
         deviatoricStrain_sampleframe)
 
+# moved from generaltools.py
+# def matstarlab_to_matstarlabOND(matstarlab: "numpyarray9")->"numpyarray3x3":
+#     """
+#     transform matrix in a orthonormalized frame
+#     (Schmid orthogonalisation procedure)
+
+#     From O. Robach
+
+#     TODO: to be moved to generaltools
+#     """
+#     astar1 = matstarlab[:3]
+#     bstar1 = matstarlab[3:6]
+#     #    cstar1 = matstarlab[6:]
+
+#     astar0 = 1.0 * astar1 / norme(astar1)
+#     cstar0 = np.cross(astar0, bstar1)
+#     cstar0 = 1.0 * cstar0 / norme(cstar0)
+#     bstar0 = np.cross(cstar0, astar0)
+
+#     matstarlabOND = np.hstack((astar0, bstar0, cstar0)).T
+
+#     # print matstarlabOND
+
+#     return matstarlabOND
+
 
 def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=0):  # OR
     r"""
@@ -1829,17 +1878,17 @@ def matstarlab_to_matdirONDsample(
 
 def directlatticeparameters_fromBmatrix(Bmatrix):
     r"""
-    computes direct space lattice parameters from Bmatrix (in reciprocal space)
+    computes direct space lattice parameters (angles in degrees) from Bmatrix (a*, b* c* matrix)
 
     :param Bmatrix: Bmatrix  columns are a*,b*,c* expressed in lauetools frame
     :type Bmatrix: 3x3 Matrix
 
-    :returns: lattice parameters   [a,b,c,alpha,beta,gamma]
+    :returns: lattice parameters   [a,b,c,alpha,beta,gamma] where angles in degrees
 
     .. todo:: To be merged with functions above
     """
-    lattice_parameter_reciprocal = matrix_to_rlat(Bmatrix)
-    lattice_parameter_direct = dlat_to_rlat(lattice_parameter_reciprocal)
+    lattice_parameter_reciprocal = matrix_to_rlat(Bmatrix, angles_in_deg=1)
+    lattice_parameter_direct = dlat_to_rlat(lattice_parameter_reciprocal, angles_in_deg=1)
     return lattice_parameter_direct
 
 
