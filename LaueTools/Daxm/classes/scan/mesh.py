@@ -28,7 +28,7 @@ class MeshScan(PointScan):
         self.iy:int = 0
         self.size:Tuple = (1, 1)
         self.skip:int = 0
-        self.line_subfolder:Union[str, False] = False
+        self.line_subfolder: Union[str, False] = False
         self.line_subname : Union[ str, emptystring]= ""
         self.line_subindex:int = 0
         self.img_mainfolder:Union[str, emptystring] = ""

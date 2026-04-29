@@ -29,6 +29,7 @@ class SpotReconstructor:
     def __init__(self, scan, XYcam, halfboxsize, yrange, abscoeff, wire=None, verbose=True):
 
         # inputs
+        
         self.verbose = verbose
 
         self.scan = scan  # corresponding DAXM (wires) scan
