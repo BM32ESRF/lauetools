@@ -11,7 +11,7 @@ include-package-data = true
 
 [project]
 name = "lauetools"
-version = "3.1.61"
+version = "3.1.64"
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
