@@ -5233,7 +5233,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
         list_files_in_folder = os.listdir(fitfile_folder)
         import re
 
-        test = re.compile("\.res$", re.IGNORECASE)
+        test = re.compile(r"\.res$", re.IGNORECASE)
         list_resfiles_in_folder = list(filter(test.search, list_files_in_folder))
 
     dict_LUT_material = {}
