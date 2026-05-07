@@ -211,7 +211,8 @@ class MainFrame_plotmaps(wx.Frame):
 
         maptype = dictpars["maptype"]
         grain_index = int(self.grainindexctrl.GetValue())
-        MGFS.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
+        #MGFS.plot_map_new2(self.dict_params, maptype, grain_index, App_parent=self)
+        MGFS.plot_map_new3(self.dict_params, maptype, grain_index, App_parent=self)
 
 
 class Stock_parameters_PlotMaps:

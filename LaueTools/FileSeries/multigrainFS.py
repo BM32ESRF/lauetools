@@ -796,7 +796,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
         header += "euler 22:25  \n"
     else:
         header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22,"
-        header += "strain6_sample 23:29, euler 30:33, UBB0 34:43  \n"
+        header += "euler 22:25, strain6_sample 25:31, UBB0 31:40  \n"
     # write summary file -------------
     try:
         from . import module_graphique as modgraph
@@ -819,8 +819,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
     return allres, fullpath_summary_filename
 
 
-def read_summary_file(filesum:str, read_all_cols="yes", verbose=0,
-    list_column_names=["img", "gnumloc", "npeaks", "pixdev", "intensity",
+LISTCOLS_BEFORE_2026=["img", "gnumloc", "npeaks", "pixdev", "intensity",
         "dxymicrons_0", "dxymicrons_1",
         "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3",
         "matstarlab_4", "matstarlab_5", "matstarlab_6", "matstarlab_7", "matstarlab_8",
@@ -829,13 +828,36 @@ def read_summary_file(filesum:str, read_all_cols="yes", verbose=0,
         "euler3_0", "euler3_1", "euler3_2",
         "strain6_sample_0", "strain6_sample_1", "strain6_sample_2",
         "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
+        "UBB0_0", "UBB0_1", "UBB0_2", "UBB0_3", "UBB0_4", "UBB0_5", "UBB0_6", "UBB0_7", "UBB0_8",
         "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2",
         "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
         "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
         "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
         "res_shear_stress_0", "res_shear_stress_1", "res_shear_stress_2", "res_shear_stress_3", "res_shear_stress_4", "res_shear_stress_5", "res_shear_stress_6", "res_shear_stress_7", "res_shear_stress_8", "res_shear_stress_9", "res_shear_stress_10", "res_shear_stress_11",
         "max_rss",
-        "von_mises"]):
+        "von_mises"]
+    
+LISTCOLS_AFTER_2026 = ["img", "gnumloc", "npeaks", "pixdev", "intensity",
+        "dxymicrons_0", "dxymicrons_1",
+        "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3",
+        "matstarlab_4", "matstarlab_5", "matstarlab_6", "matstarlab_7", "matstarlab_8",
+        "strain6_crystal_0", "strain6_crystal_1", "strain6_crystal_2",
+        "strain6_crystal_3", "strain6_crystal_4", "strain6_crystal_5",
+        "strain6_sample_0", "strain6_sample_1", "strain6_sample_2",
+        "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
+        "euler3_0", "euler3_1", "euler3_2",
+        "UBB0_0", "UBB0_1", "UBB0_2", "UBB0_3", "UBB0_4", "UBB0_5", "UBB0_6", "UBB0_7", "UBB0_8",
+        "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2",
+        "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
+        "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
+        "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
+        "res_shear_stress_0", "res_shear_stress_1", "res_shear_stress_2", "res_shear_stress_3", "res_shear_stress_4", "res_shear_stress_5", "res_shear_stress_6", "res_shear_stress_7", "res_shear_stress_8", "res_shear_stress_9", "res_shear_stress_10", "res_shear_stress_11",
+        "max_rss",
+        "von_mises"]
+
+
+def read_summary_file(filesum:str, read_all_cols="yes", verbose=0,
+    list_column_names=LISTCOLS_AFTER_2026):
     """
     used by plot_maps2
 
@@ -2540,6 +2562,253 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
                 App_parent.list_of_windows.append(plotobjet)
             else:
                 App_parent.list_of_windows = [plotobjet]
+
+import numpy as np
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Constants
+DEFAULT_PLOTMAPS_PARAMETERS_DICT = {}  # Define this as needed
+
+# Map maptype to its metadata: (colmin, nbdatacolumns, datatype, datasigntype)
+MAPTYPE_METADATA = {
+    "fit": (2, 2, "scalar", "positive"),
+    "orientation": (7, 9, "scalar", "relative"),
+    "rgb_x_sample": (25, 9, "RGBvector", None),
+    "rgb_x_lab": (34, 9, "scalar", "positive"),
+    "strain6_crystal": (16, 6, "symetricscalar", "relative"),
+    "strain6_sample": (49, 6, "symetricscalar", "relative"),
+    "stress6_crystal": (55, 6, "scalar", "relative"),
+    "stress6_sample": (60, 6, "symetricscalar", "relative"),
+    "res_shear_stress": (67, 12, "scalar", "relative"),
+    "max_rss": (79, 1, "scalar", "relative"),
+    "von_mises": (80, 1, "scalar", "relative"),
+    "euler3": (22, 3, "scalar", "relative"),
+    "intensity": (4, 1, "scalar", "positive"),
+    "misorientation_angle": (63, 1, "scalar", "relative"),
+    "dalf": (64, 1, "scalar", "relative"),
+}
+
+# Map maptype to plot labels
+PLOT_LABELS = {
+    "euler3": ["rgb_euler"],
+    "rgb_x_sample": ["x_sample", "y_sample", "z_sample"] * 3,
+    "orientation": ["x_sample", "y_sample", "z_sample"] * 3,
+    "rgb_x_lab": ["x_lab", "y_lab", "z_lab"],
+    "strain6_crystal": ["aa", "bb", "cc", "ca", "bc", "ab"],
+    "strain6_sample": ["XX", "YY", "ZZ", "YZ", "XZ", "XY"],
+    "stress6_crystal": ["aa", "bb", "cc", "ca", "bc", "ab"],
+    "stress6_sample": ["XX", "YY", "ZZ", "YZ", "XZ", "XY"],
+    "res_shear_stress": [f"rss{i}" for i in range(12)],
+    "max_rss": ["max_rss"],
+    "von_mises": ["von Mises stress"],
+    "fit": ["npeaks", "pixdev"],
+}
+
+
+def read_and_validate_data(summary_file, xyz_file):
+    """Read and validate data from summary and xyz files."""
+    try:
+        data, listname, nameline0 = read_summary_file(summary_file)
+        data_list = np.array(data, dtype=float)
+        map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(xyz_file)
+        map_imageindex_array = np.flipud(map_imageindex_array)  # Normal convention
+
+        # Replace rows where all values (except first two columns) are zero with np.nan
+        for i in range(len(data_list)):
+            row = data_list[i]
+            # Check if all values from column 2 onward are zero
+            if np.all(row[2:] == 0):
+                data_list[i, 2:] = np.nan  # Replace with np.nan
+
+        return data_list, map_imageindex_array, dxystep
+    except Exception as e:
+        logger.error(f"Error reading data: {e}")
+        raise
+
+def extract_grain_data(data_list, grain_index):
+    """Extract data for a specific grain index."""
+    nbgrains = int(np.amax(data_list[:, 1]) + 1)
+    if grain_index >= nbgrains:
+        raise ValueError(f"grain_index {grain_index} exceeds maximum grain index {nbgrains - 1}")
+
+    grains_data = []
+    for g_ix in range(nbgrains):
+        posg = np.where(data_list[:, 1] == float(g_ix))[0]
+        grains_data.append(data_list[posg])
+    return grains_data[grain_index]
+
+def get_maptype_metadata(maptype):
+    """Return metadata for a given maptype."""
+    if maptype not in MAPTYPE_METADATA:
+        raise ValueError(f"Unknown maptype: {maptype}")
+    return MAPTYPE_METADATA[maptype]
+
+def process_orientation_data(zvalues_Ncomponents, nlines, ncol):
+    """Process orientation data to extract cosines."""
+    UBmatrices = zvalues_Ncomponents
+    nbmatrices = len(UBmatrices)
+    rUBs = UBmatrices.reshape(nbmatrices, 3, 3)
+    cosines_array, list_vecs = GT.getdirectbasiscosines(rUBs)
+    return cosines_array, list_vecs
+
+def plot_component(
+    z_values,
+    maptype,
+    columnname,
+    map_imageindex_array,
+    dxystep,
+    datasigntype,
+    App_parent=None,
+    datatype="scalar"
+):
+    """Plot a single component of the data."""
+    nlines, ncol = z_values.shape[:2]
+    Tabindices1D = np.ravel(map_imageindex_array)
+    dict_param = {"datasigntype": datasigntype}
+    plotobjet = ImshowFrame(
+                                App_parent,
+                                -1,
+                                f"{maptype} {columnname}",
+                                z_values,
+                                Imageindices=Tabindices1D,
+                                nb_col=ncol,
+                                nb_lines=nlines,
+                                stepindex=1,
+                                boxsize_row=1,
+                                boxsize_line=1,
+                                imagename=columnname,
+                                mosaic=0,
+                                datatype=datatype,  
+                                dict_param=dict_param,
+                            )
+    plotobjet.Show(True)
+    if App_parent is not None:
+        if hasattr(App_parent, "list_of_windows") and App_parent.list_of_windows:
+            App_parent.list_of_windows.append(plotobjet)
+        else:
+            App_parent.list_of_windows = [plotobjet]
+    return plotobjet
+
+def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
+    """
+    Plot maps for a given maptype and grain index.
+
+    Parameters:
+    -----------
+    dict_params : dict
+        Dictionary of parameters (e.g., file paths, plotting options).
+    maptype : str
+        Type of map to plot (e.g., "fit", "euler3", "strain6_crystal").
+    grain_index : int
+        Index of the grain to plot (0-based).
+    App_parent : object, optional
+        Parent application object for GUI integration.
+
+    Returns:
+    --------
+    list
+        List of plot objects created.
+    """
+    d = DEFAULT_PLOTMAPS_PARAMETERS_DICT.copy()
+    d.update(dict_params)
+
+    logger.info(f"Plotting {maptype} for grain {grain_index} from {d['Map Summary File']}")
+
+    # Read and validate data
+    data_list, map_imageindex_array, dxystep = read_and_validate_data(
+        d["Map Summary File"], d["File xyz"]
+    )
+    nlines, ncol = map_imageindex_array.shape
+
+    # Extract grain data
+    grains_data = extract_grain_data(data_list, grain_index)
+    expimagesindices = grains_data[:, 0]
+
+    # Get maptype metadata
+    try:
+        colmin, nbdatacolumns, datatype, datasigntype = get_maptype_metadata(maptype)
+    except ValueError as e:
+        logger.error(e)
+        return []
+
+    # Initialize zvalues array
+    zvalues_Ncomponents = np.full((nlines * ncol, nbdatacolumns), np.nan)
+    exp_ix = 0
+    for k in range(nlines * ncol):
+        if k in expimagesindices:
+            zvalues_Ncomponents[k] = grains_data[exp_ix][colmin : colmin + nbdatacolumns]
+            exp_ix += 1
+    zvalues_Ncomponents = np.ma.masked_invalid(zvalues_Ncomponents)
+
+    if maptype == "fit":
+        datatype = "scalar"
+    elif maptype == "orientation":
+        datatype = "RGBvector"
+    elif maptype in ("strain6_crystal", "strain6_sample", "stress6_crystal", "stress6_sample"):
+        datatype = "symetricscalar"  # <-- This ensures symmetric scaling
+    elif maptype in ("euler3", "rgb_x_sample", "rgb_x_lab"):
+        datatype = "scalar"
+    else:
+        datatype = "scalar"  # Default fallback
+
+    # Handle orientation data separately
+    if maptype == "orientation":
+        cosines_array, list_vecs = process_orientation_data(
+            zvalues_Ncomponents, nlines, ncol
+        )
+        plot_maptype_list = PLOT_LABELS[maptype]
+        plot_objects = []
+        for index_component in range(nbdatacolumns):
+            z_values = cosines_array.reshape((nlines, ncol, 9))[:, :, index_component]
+            columnname = f"{list_vecs[index_component // 3]}{plot_maptype_list[index_component]}"
+            plot_objects.append(
+                plot_component(
+                    z_values,
+                    maptype,
+                    columnname,
+                    map_imageindex_array,
+                    dxystep,
+                    datasigntype,
+                    App_parent,
+                )
+            )
+        return plot_objects
+
+    # Handle other maptypes
+    plot_maptype_list = PLOT_LABELS.get(maptype, [f"component_{i}" for i in range(nbdatacolumns)])
+    plot_objects = []
+    for index_component in range(nbdatacolumns):
+        columnname = plot_maptype_list[index_component]
+        if datatype == "scalar":
+            z_values = zvalues_Ncomponents[:, index_component].reshape((nlines, ncol))
+        elif datatype == "symetricscalar":
+            z_values = zvalues_Ncomponents[:, index_component].reshape((nlines, ncol))
+        elif datatype == "RGBvector":
+            z_values = zvalues_Ncomponents[
+                :, index_component * 3 : (index_component + 1) * 3
+            ].reshape((nlines, ncol, 3))
+        else:
+            logger.warning(f"Unknown datatype: {datatype}")
+            continue
+
+        plot_objects.append(
+            plot_component(
+                z_values,
+                maptype,
+                columnname,
+                map_imageindex_array,
+                dxystep,
+                datasigntype,
+                App_parent,
+                datatype=datatype
+            )
+        )
+
+    return plot_objects
 
 
 def plot_map_new(dict_params, App_parent=None):  # 29May13
