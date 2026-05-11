@@ -399,6 +399,9 @@ class SecondarySource:
         I0 = np.interp(self.source_energy, Esrc, Isrc, left=0, right=0)
          
         arg = cumtrapz(np.array(self.mesh_sam_abscoeff), self.source_ysrc, axis=0, initial=0)
+
+        # fixed depreciation proposed by R Freville
+        # arg = spi.cumulative_trapezoid(np.array(self.mesh_sam_abscoeff), self.source_ysrc, axis=0, initial=0)
         
         # beer-lambert law: I = I0*exp(-rho.mu.length)
         self.source_I = np.array([I0])*np.exp(-arg)
