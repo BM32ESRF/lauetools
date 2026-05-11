@@ -194,7 +194,10 @@ class SpotReconstructor:
         """
         # motor pos of wire
 
-        self.pw_all = self.scan.wire_position
+        #self.pw_all = self.scan.wire_position
+
+        #proposition by R. Freville
+        self.pw_all = self.scan.wire_position[0:self.scan.number_images]
 
         pfall, pball = [], []
        
