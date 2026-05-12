@@ -133,7 +133,8 @@ class StaticPointScan(object):
 
         self.scan_cmd_fastscan = None
         self.scan_cmd = None  # scan command
-        self.scantype = None
+        self.scantype = None  # ascan or fscan, mesh ?
+        self.scan_fullcommand = None
 
         self.spec_data = None
         self.spec_motor = None
@@ -202,6 +203,52 @@ class StaticPointScan(object):
         # End of __init__
 
     def init_spec(self,verbose=False):
+        """
+        Initialize scan parameters from a log file (SPEC or BLISS made in HDF5 format) or use custom defaults.
+
+        This method reads the log file (SPEC or HDF5), determines the scan type,
+        and configures attributes like wire positions, exposure time, and scan commands.
+        If no spec file is provided, it falls back to custom defaults.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, prints additional debug information (default: False).
+
+        Attributes Set
+        --------------
+        spec_file : str
+            Path to the spec or HDF5 file, taken from `self.input['specFile']`.
+        filetype : str
+            Type of file, either 'spec' (default) or 'hdf5' (if file ends with '.h5').
+        hdf5scanId : str
+            Scan ID for HDF5 files. Extracted from `self.input['hdf5scanId']` or deduced
+            from the image folder path if not provided.
+        spec_scan_num : int or str
+            Scan number, taken from `self.input['scanNumber']`.
+        spec_data : object or None
+            Placeholder for spec data (initialized as None).
+        spec_motor : list
+            Placeholder for motor names (initialized as empty list).
+        spec_monitor : list
+            Placeholder for monitor values (initialized as empty list).
+        number_images : int
+            Number of images, computed as `scan_cmd[2] + 1`.
+        wire_step : float
+            Mean step size between wire positions (in mm), computed from `wire_position`.
+        exposuretime : float
+            Exposure time (in seconds), taken from `scan_cmd[3]`.
+
+        Notes
+        -----
+        - For HDF5 files, the `hdf5scanId` is deduced from the image folder path if not
+        explicitly provided in the input.
+        - Calls `init_spec_file(verbose)` if a spec file is provided, otherwise calls
+        `init_spec_custom()`.
+        - Logs the wire step (converted to micrometers), exposure time, scan command,
+        and number of images.
+        - Commented-out logic for `fscan` suggests future support for fast scans.
+        """
 
         self.print_msg("- Reading hdf5 or spec file...")
         print('Reading hdf5 or spec file in StaticPointScan')
@@ -229,7 +276,7 @@ class StaticPointScan(object):
         # In case we can use the spec file,
         if self.spec_file is not None:
             self.init_spec_file(verbose)
-        # Otherwise,
+        # Otherwise a default scan parameters are loaded
         else:
             self.init_spec_custom()
 
@@ -269,7 +316,58 @@ class StaticPointScan(object):
         
 
     def init_spec_file(self, verbose=False):
+        """
+        Initialize parameters from the log file (SPEC or BLISS made in HDF5 format) and parse scan metadata.
+        
+        spec must be meant as a log file where all scans (metadata and many data) are stored.
 
+        This method loads the spec file, extracts scan data, and configures attributes
+        such as scan commands, motor positions, monitor values, and exposure times.
+        Supports both traditional SPEC files and HDF5-based logs.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, prints debug information during initialization (default: False).
+
+        Attributes Set
+        --------------
+        spec : SpecFile or logfiler.SpecFile
+            The loaded spec file object.
+        spec_data : Scan or Scan_hdf5
+            The scan data extracted from the spec file.
+        scan_cmd : list
+            The parsed scan command (e.g., [start, end, steps, exposure]).
+        spec_monitor : str or float
+            Monitor value (e.g., "Monitor" for SPEC, "mon" for HDF5).
+        spec_motor : str
+            Motor name (e.g., 'yf', 'zf', or from SPEC command).
+        scantype : str or None
+            Type of scan (e.g., 'ascan', 'fscan'). Inferred from input or file if not set.
+        spec_expo : float
+            Exposure time (extracted from scan_cmd[3]).
+        wire_position : array-like
+            Position of the wire motor (from spec_data).
+        scan_cmd_fastscan : list, optional
+            Reconstructed scan command for fast scans (fscan).
+        number_images : int, optional
+            Number of images for fast scans (fscan).
+        wire_step : float, optional
+            Step size for wire motor (mm) for fast scans.
+
+        Raises
+        ------
+        ValueError
+            If the scan type is not recognized (neither 'ascan' nor 'fscan').
+
+        Notes
+        -----
+        - For HDF5 files, the motor is inferred from the command parts (e.g., 'yf' or 'zf').
+        - For fast scans (fscan), the number of images and wire step are derived from the command.
+        - The scan command is converted to [float, float, int, float] for consistency.
+        - Debug prints are controlled by the `verbose` flag.
+        """
+        
         if verbose:
             print('At the beginning of init_spec_file() self.filetype of StaticPointScan ==>', self.filetype)
 
@@ -322,7 +420,7 @@ class StaticPointScan(object):
                 self.scan_cmd = params
                 exposuretime = float(params[3])
 
-            elif self.scantype == 'fscan' and self.scan_cmd_fastscan is None:  # because fscan as the number of images directly as input
+            elif self.scantype == 'fscan' and self.scan_cmd_fastscan is None:  # because fscan has the number of images directly as input
                 if verbose:
                     print('in init_spec_file() fscan !!!')
                     print('self.scan_cmd',self.scan_cmd)
@@ -338,7 +436,7 @@ class StaticPointScan(object):
                 self.scan_cmd = copy.copy(self.scan_cmd_fastscan)
 
             else:
-                raise valueError('scantype not recognized')
+                raise ValueError('scantype not recognized')
             
     
             if verbose:
@@ -365,6 +463,34 @@ class StaticPointScan(object):
         
 
     def init_spec_custom(self):
+        """
+        Initialize a custom scan configuration with default values.
+
+        This method sets up a synthetic scan when no spec file is provided,
+        using the values from `self.scan_cmd` to define the motor, monitor,
+        exposure time, and wire positions.
+
+        Attributes Set
+        --------------
+        spec_motor : str
+            Motor name, hardcoded to "yf".
+        spec_monitor : numpy.ndarray
+            Array of ones with length `scan_cmd[2] + 1` (number of steps + 1).
+        spec_expo : float
+            Exposure time, taken from `scan_cmd[3]`.
+        wire_position : numpy.ndarray
+            Linearly spaced wire positions between `scan_cmd[0]` (start) and
+            `scan_cmd[1]` (end), with `scan_cmd[2] + 1` points.
+
+        Notes
+        -----
+        - Assumes `self.scan_cmd` is a list/tuple of the form:
+        `[start, end, num_steps, exposure_time]`.
+        - The monitor array is initialized to ones, simulating a constant monitor value.
+        - The wire positions are generated using `numpy.linspace`.
+        - Logs the custom command in the format:
+        `"ascan yf {start} {end} {num_steps} {exposure_time}"`.
+        """
         self.spec_motor = "yf"
         self.spec_monitor = np.ones(self.scan_cmd[2] + 1)
         self.spec_expo = self.scan_cmd[3]
@@ -417,7 +543,49 @@ class StaticPointScan(object):
             self.print_msg("   {:<9s}: {}", fmt=(key, val))
 
     def init_wire(self, verbose=False):
+        """
+        Initialize wire configurations for the scan, including trajectory and parameters.
 
+        This method processes the input wire definitions, creates wire objects,
+        and configures their trajectories. It supports multiple input formats for
+        wire specifications and logs the resulting wire properties.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, prints additional debug information for wire initialization (default: False).
+
+        Attributes Set
+        --------------
+        wire_traj_angle : float
+            Wire trajectory angle in radians, converted from `self.input['wireTrajAngle']`.
+        wire_ini : list
+            Initial wire definitions from `self.input['wire']`.
+        wire_traj : dict
+            Trajectory dictionary created using `mywire.new_dict_traj(u2=self.wire_traj_angle)`.
+        wire_qty : int
+            Number of wires, determined by the length of `self.wire_ini`.
+        wire_params : list of dict
+            List of wire parameter dictionaries for each wire.
+        wire : list of mywire.CircularWire
+            List of `CircularWire` objects created from the wire parameters and trajectory.
+
+        Notes
+        -----
+        - Supports multiple input formats for wire definitions:
+        - **String**: Interpreted as the wire material (e.g., "ZrCr").
+        - **Dictionary**: Passed directly to `mywire.new_dict`.
+        - **4-element list**: Interpreted as `[material, R, h, p0]`.
+        - **6-element list**: Interpreted as `[material, R, h, p0, f1, f2]`.
+        - For invalid wire definitions, logs an error message and appends an empty dictionary to `wire_params`.
+        - Logs the material and diameter (in micrometers) for each wire.
+        - Logs the wire trajectory angle in degrees relative to the beam.
+
+        Raises
+        ------
+        ValueError (implicitly)
+            If a wire definition is invalid, an error message is logged, but the method continues.
+        """
         self.print_msg("- Preparing wires...")
 
         self.wire_traj_angle = math.radians(self.input['wireTrajAngle'])
@@ -754,6 +922,37 @@ class StaticPointScan(object):
         return images
 
     def get_images_corr_batch(self, indices: list, exist: bool = False) -> list:
+        """
+        Load a batch of images in parallel and apply monitor-based correction.
+
+        This method loads images for the specified indices, retrieves cached monitor
+        coefficients, and applies a linear correction to each image to account for
+        variations in monitor readings (e.g., beam intensity). The correction is of
+        the form: `corrected_image = monitor[frame] * (image - offset) + offset`.
+
+        Parameters
+        ----------
+        indices : list
+            List of indices corresponding to the images to load and correct.
+        exist : bool, optional
+            Flag indicating whether the images already exist (default: False).
+            Passed to `preload_images_parallel`.
+
+        Returns
+        -------
+        list
+            List of corrected images, one for each index in `indices`. Each image is
+            corrected using the formula: `monitor[frame] * (img - self.img_offset) + self.img_offset`.
+
+        Notes
+        -----
+        - Uses `preload_images_parallel` for parallel loading of images.
+        - The monitor coefficients are assumed to be cached and retrieved via `get_monitor()`.
+        - The correction preserves the offset (`self.img_offset`) while scaling the image
+        by the monitor value for the corresponding frame.
+        - This is useful for normalizing images against fluctuations in experimental
+        conditions (e.g., beam intensity, detector sensitivity).
+        """
         # Load all images in parallel
         images = self.preload_images_parallel(indices, exist)
 
@@ -769,6 +968,38 @@ class StaticPointScan(object):
         return corrected_images
     
     def get_image(self, idx:int, exist:bool=False)->np.ndarray:
+        """
+        Retrieve an image by index, either from cache or by loading from disk.
+
+        This method fetches an image for the given index, using a cached version if available.
+        If the image is not cached, it loads the image from disk (or creates a zero-filled array
+        if the image does not exist) and caches it for future use. The returned image is always
+        transposed from the provided image read by `rmccd.readCCDimage`. So here first dimension is the pixel X axis and second dimension is the pixel Y axis in the Lauetools convention for laue pattern orientation.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the image to retrieve. If `exist=True`, this is mapped to the actual frame
+            index using `self.img_idx_use`.
+        exist : bool, optional
+            If True, `idx` is treated as an index into `self.img_idx_use` to resolve the actual
+            frame index (default: False).
+
+        Returns
+        -------
+        np.ndarray
+            The image as a NumPy array, transposed. If the image does not exist, returns a
+            zero-filled array with dimensions from `get_img_params(['framedim'])`.
+
+        Notes
+        -----
+        - Uses `self._image_cache` to store and retrieve images for efficiency.
+        - If the image file exists, it is loaded using `rmccd.readCCDimage` with the CCD type
+        specified by `self.ccd_type`.
+        - If the image does not exist, a zero-filled array is created with dimensions reversed
+        (e.g., `[height, width]` becomes `[width, height]` after transposition).
+        - The transposition is applied to match the expected image orientation.
+        """
 
         if exist:
             frame = self.img_idx_use[idx]
@@ -776,7 +1007,6 @@ class StaticPointScan(object):
         else:
             frame = idx
             
-
         if frame in self._image_cache:
             
             return self._image_cache[frame].transpose()
@@ -1154,7 +1384,35 @@ class StaticPointScan(object):
         return img[idx], pw[idx]
 
     def get_profile_manypixels_full(self, xycam, halfboxsize):
+        """
+        Compute pixel intensity profiles for multiple wire positions across all images in parallel.
 
+        This method extracts intensity values for each wire position for all pixels located in `xycam` from every image in the scan,
+        using parallel processing for efficiency. The results are organized into a 2D array of intensities
+        and a corresponding array of wire positions, both indexed by `self.img_idx_use`.
+
+        Parameters
+        ----------
+        xycam : array-like
+            List or array of pixels 2D positions for which to extract intensity values.
+        halfboxsize : int or float
+            Half the size of the box (in pixels) around each camera position from which to extract pixel values.
+            Used by `extract_pixels_for_image`.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            - **I**: 2D array of shape `(number of pixels, number images used)` containing the extracted pixel intensities.
+            
+            - **pw**: 2D array of shape `(number of pixels, number images used)` containing the wire positions.
+            
+        Notes
+        -----
+        - Uses `multiprocessing.Pool.starmap` to parallelize the extraction of pixel values across images.
+        - The worker function `extract_pixels_for_image` is called with arguments `(i, xycam, halfboxsize, self)` for each image index `i`.
+        - The returned arrays `I` and `pw` are filtered to only include indices specified in `self.img_idx_use`.
+        - This method is optimized for performance when processing large numbers of images.
+        """
         pw = np.array([np.array(self.wire_position) for _ in xycam])
 
         # Prepare arguments for the worker function
