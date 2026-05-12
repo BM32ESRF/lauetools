@@ -2004,68 +2004,84 @@ if WXPYTHON:
     
         def format_coord(self, x, y):
             """
-            ImshowFrame
+            ImshowFrame - Format coordinates for tooltip display.
+            Handles RGBVector data by displaying [R,G,B] values.
             """
             col = int(x + 0.5)
             row = int(y + 0.5)
-            numrows, numcols = self.data.shape
-            #         print "self.Imageindices", self.Imageindices
-            #         print "len()", len(self.Imageindices)
-            #         print "to be reshaped", (self.nb_lines, self.nb_columns)
-    
+
+            # Check if data is RGBVector (3D array)
+            if self.datatype == "RGBvector" and len(self.data.shape) == 3:
+                numrows, numcols, numchannels = self.data.shape
+                if col >= 0 and col < numcols and row >= 0 and row < numrows:
+                    if self.mosaic:
+                        self.currentpointedImageIndex = self.getImageIndexfromxy(x, y)
+                        r, g, b = self.data[row, col, :]
+                        if self.absolutecornerindices is not None:
+                            jmin, imin = self.absolutecornerindices
+                            xpixel, ypixel = (jmin + x % (2 * self.boxsize_row + 1),
+                                            imin + 2 * self.boxsize_line - y % (2 * self.boxsize_line + 1))
+                            return "x=%1.4f, y=%1.4f, [R,G,B]=[%1.4f,%1.4f,%1.4f], ImageIndex: %d" % (
+                                xpixel, ypixel, r, g, b, self.currentpointedImageIndex)
+                        else:
+                            return "x=%1.4f, y=%1.4f, [R,G,B]=[%1.4f,%1.4f,%1.4f], ImageIndex: %d" % (
+                                x, y, r, g, b, self.currentpointedImageIndex)
+                    else:
+                        self.currentpointedImageIndex = self.getImageIndexfromxy_scalarplot(x, y)
+                        r, g, b = self.data[row, col, :]
+                        return "x=%1.4f, y=%1.4f, [R,G,B]=[%1.4f,%1.4f,%1.4f], ImageIndex: %d" % (
+                            x, y, r, g, b, self.currentpointedImageIndex)
+                else:
+                    return "x=%1.4f, y=%1.4f" % (x, y)
+
+            # For non-RGB data (2D arrays)
+            try:
+                numrows, numcols = self.data.shape
+            except ValueError:
+                # Handle unexpected data shapes
+                return "x=%1.4f, y=%1.4f" % (x, y)
+
             if len(self.Imageindices) != (self.nb_lines * self.nb_columns):
-                print("WARNING:  display may not work , check strictly that ")
-                print("the number of images is a multiple of the number of lines !!!")
-    
-            #         print "self.tabindices", self.tabindices
+                print("WARNING: display may not work, check strictly that")
+                print("the number of images is a multiple of the number of lines!!!")
+
             if col >= 0 and col < numcols and row >= 0 and row < numrows:
-    
-                # print int(y/(2*self.boxsize_row)),int(x/(2*self.boxsize_line))
-    
                 if self.mosaic:
                     z = self.data[row, col]
-                    #                 print "hello in mosaic"
-                    logz = np.log(z)
-    
                     self.currentpointedImageIndex = self.getImageIndexfromxy(x, y)
-    
-                    #                 print "self.absolutecornerindices",self.absolutecornerindices
+
                     if self.absolutecornerindices is not None:
                         jmin, imin = self.absolutecornerindices
-                        #                     xpixel, ypixel = (jmin + x % (2 * self.boxsize_row + 1),
-                        #                                       imin + y % (2 * self.boxsize_line + 1))
                         xpixel, ypixel = (jmin + x % (2 * self.boxsize_row + 1),
-                            imin + 2 * self.boxsize_line - y % (2 * self.boxsize_line + 1))
+                                        imin + 2 * self.boxsize_line - y % (2 * self.boxsize_line + 1))
+                        logz = np.log(z) if z > 0 else -np.inf
                         return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % (
-                                            xpixel, ypixel, logz, z, self.currentpointedImageIndex)
+                            xpixel, ypixel, logz, z, self.currentpointedImageIndex)
                     else:
-                        return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % ( x, y,
-                                                            logz, z, self.currentpointedImageIndex)
+                        logz = np.log(z) if z > 0 else -np.inf
+                        return "x=%1.4f, y=%1.4f, log(I)=%1.4f, I=%5.1f, ImageIndex: %d" % (
+                            x, y, logz, z, self.currentpointedImageIndex)
                 else:
-                    #                 self.currentpointedImageIndex=self.getImageIndexfromxy(x,y)
                     self.currentpointedImageIndex = self.getImageIndexfromxy_scalarplot(x, y)
-    
+
                     if self.datatype == "Vector":
                         DxArray, DyArray, _ = self.dict_param["dataVector"]
                         Dx = DxArray[row, col]
                         Dy = DyArray[row, col]
                         Dnorm = np.hypot(Dx, Dy)
-    
                         return ("x=%1.4f, y=%1.4f, Dx=%.2f Dy=%.2f,\nDnorm %.2f, ImageIndex: %d"
                             % (x, y, Dx, Dy, Dnorm, self.currentpointedImageIndex))
                     elif self.datatype == "ReciprocalMap":
                         z = self.data[row, col]
                         qx, qz, qn, E = self.dict_param["QxyznE"][row, col]
                         sentence = "x=%1.4f, y=%1.4f, I=%5.1f, ImageIndex: %d" % (x, y, z,
-                                                                        self.currentpointedImageIndex)
+                                                                                self.currentpointedImageIndex)
                         sentence += "\n qx=%1.4f, qz=%1.4f, qn=%.5f, Energy: %.4f" % (qx, qz, qn, E)
                         return sentence
-    
                     else:
                         z = self.data[row, col]
                         return "x=%1.4f, y=%1.4f, I=%5.5f, ImageIndex: %d" % (x, y, z,
-                                                                        self.currentpointedImageIndex)
-    
+                                                                                self.currentpointedImageIndex)
             else:
                 return "x=%1.4f, y=%1.4f" % (x, y)
     
