@@ -655,21 +655,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
         # ubmatrix is ub of lauetools , whereas matstarlab is (ub.b0).T (in OR frame)
         list_col_names = ["dxymicrons","matstarlab", "strain6_crystal", "strain6_sample", "euler3","UBB0"]  # 35 elements
         list_col_names2 = ["img", "gnumloc", "npeaks", "pixdev", "intensity"] # 5 elements
-        number_col_list = np.array([2, 9, 6, 6, 3, 9])
-
-    
-
-    for k in range(len(list_col_names)):
-        for nbcol in range(number_col_list[k]):
-            lcn = list_col_names[k] + "_" + str(nbcol)
-            list_col_names2 += [lcn]
-
-    header2 = ""
-    for i in range(total_nb_cols):
-        header2 = header2 + list_col_names2[i] + " "
-    header2 += "\n"
-    if verbose > 0: print(header2)
-
+        number_col_list = np.array([2, 9, 6, 6, 3, 9])  # sum 35
 
     # read xyz position file
     posxyz = np.loadtxt(filexyz, skiprows=1)
@@ -792,11 +778,21 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
         print(fileprefix + "%s%s_to_%s.dat" % (outputprefix, str(startindex), str(finalindex)))
 
     if not after_april_2026:
+        total_nb_cols = 25
         header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22,"
-        header += "euler 22:25  \n"
+        header += "euler 22:25\n"
     else:
-        header = "img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22,"
-        header += "euler 22:25, strain6_sample 25:31, UBB0 31:40  \n"
+        total_nb_cols = 40
+        header = "img 0, gnumloc 1, npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, strain6_sample 22:28, euler 28:31, UBB0 31:40\n"
+
+    # Generate the full list of column names
+    list_col_names2 = ["img", "gnumloc", "npeaks", "pixdev", "intensity"]
+    for k in range(len(list_col_names)):
+        for nbcol in range(number_col_list[k]):
+            lcn = list_col_names[k] + "_" + str(nbcol)
+            list_col_names2 += [lcn]
+
+    header2 = " ".join(list_col_names2) + "\n"
     # write summary file -------------
     try:
         from . import module_graphique as modgraph
@@ -856,65 +852,65 @@ LISTCOLS_AFTER_2026 = ["img", "gnumloc", "npeaks", "pixdev", "intensity",
         "von_mises"]
 
 
-def read_summary_file(filesum:str, read_all_cols="yes", verbose=0,
-    list_column_names=LISTCOLS_AFTER_2026):
+def read_summary_file(filesum: str, read_all_cols: str = "yes", verbose: int = 0,
+                      list_column_names: list = None):
     """
-    used by plot_maps2
+    Read a summary file and return the data, column names, and first line.
 
     :param filesum: str, full path to summary file (.dat)
-
+    :param read_all_cols: str, "yes" to read all columns, "no" to read only specified columns
+    :param verbose: int, verbosity level
+    :param list_column_names: list, list of column names to read (if read_all_cols="no")
     :return: data_sum_select_col, list_column_names, firstline
     """
-    # 29May13
     if verbose > 0:
-        print("In read_summary_file(): summary file is %s"%filesum)
-        print("first two lines :")
-    f = open(filesum, "r")
-    i = 0
-    try:
-        for line in f:
-            if i == 0:
-                firstline = line.rstrip("  \n")
-            if i == 1:
-                nameline1 = line.rstrip("\n")
-            i = i + 1
-            if i > 2:
-                break
-    finally:
-        f.close()
+        print(f"In read_summary_file(): summary file is {filesum}")
+        print("First two lines:")
+
+    with open(filesum, "r") as f:
+        firstline = f.readline().rstrip(" \n")
+        nameline1 = f.readline().rstrip("\n")
 
     listname = nameline1.split()
 
     data_sum = np.loadtxt(filesum, skiprows=2)
 
-    if verbose > 0: print('data_sum.shape', data_sum.shape)
+    if verbose > 0:
+        print(f"data_sum.shape: {data_sum.shape}")
 
     if len(data_sum.shape) != 2:
-        raise ValueError(f'In read_summary_file(): data_sum.shape is {data_sum.shape} and should be 2 dimension')
+        raise ValueError(f"In read_summary_file(): data_sum.shape is {data_sum.shape} and should be 2D")
 
     if read_all_cols == "yes":
         return data_sum, listname, firstline
-
     else:
-        print('len(listname)',len(listname))
+        if list_column_names is None:
+            raise ValueError("list_column_names must be provided if read_all_cols is not 'yes'")
+
+        if verbose > 0:
+            print(f"len(listname): {len(listname)}")
+
         ncol = len(list_column_names)
+        ind0 = []
 
-        ind0 = np.zeros(ncol, int)
+        for col in list_column_names:
+            try:
+                ind0.append(listname.index(col))
+            except ValueError:
+                raise ValueError(f"Column {col} not found in the file. Available columns: {listname}")
 
-        for i in range(ncol):
-            ind0[i] = listname.index(list_column_names[i])
-
-        print('ind0',ind0)
+        if verbose > 0:
+            print(f"ind0: {ind0}")
 
         data_sum_select_col = data_sum[:, ind0]
 
         if verbose > 0:
-            print('some details in read_summary_file()')
-            print(np.shape(data_sum))
-            print(np.shape(data_sum_select_col))
-            print(filesum)
-            print(list_column_names)
-            print(data_sum_select_col[:5, :])
+            print("Some details in read_summary_file()")
+            print(f"data_sum.shape: {data_sum.shape}")
+            print(f"data_sum_select_col.shape: {data_sum_select_col.shape}")
+            print(f"filesum: {filesum}")
+            print(f"list_column_names: {list_column_names}")
+            print(f"data_sum_select_col[:5, :]: {data_sum_select_col[:5, :]}")
 
         return data_sum_select_col, list_column_names, firstline
 
@@ -1555,154 +1551,82 @@ def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
     eq_strain = (2.0 / 3.0) * np.sqrt(toto / 2.0)
     return eq_strain
 
-def add_columns_to_summary_file_new(filesum:str,
-                            elem_label:str="Ge",
-                            filestf=None,
-                            omega_sample_frame:float=40.0,
-                            verbose:int=0,
-                            include_misorientation=0,
-                            filefitref_for_orientation=None,  # seulement pour include_misorientation = 1
-                            include_strain=1,  # 0 seulement pour mat2spots ou fit calib ou EBSD
-                            # les 4 options suivantes seulement pour
-                            #  include_misorientation = 1
-                            # et filefitref_for_orientation = None
-                            filter_mean_matrix_by_pixdev_and_npeaks=1,
-                            maxpixdev_for_mean_matrix:float=0.25,
-                            minnpeaks_for_mean_matrix:float=20,
-                            filter_mean_matrix_by_intensity=0,
-                            minintensity_for_mean_matrix:float=20000.0,
-                            after_april_2026=False):  # 29May13
-
+def add_columns_to_summary_file_new(filesum: str,
+                                   elem_label: str = "Ge",
+                                   filestf: str = None,
+                                   omega_sample_frame: float = 40.0,
+                                   verbose: int = 0,
+                                   include_misorientation: int = 0,
+                                   filefitref_for_orientation: str = None,
+                                   include_strain: int = 1,
+                                   filter_mean_matrix_by_pixdev_and_npeaks: int = 1,
+                                   maxpixdev_for_mean_matrix: float = 0.25,
+                                   minnpeaks_for_mean_matrix: float = 20,
+                                   filter_mean_matrix_by_intensity: int = 0,
+                                   minintensity_for_mean_matrix: float = 20000.0,
+                                   after_april_2026: bool = False):
     """
-    :param filesum: str, previously generated file (.dat) with build_summary
-    strain in 1e-3 units
-    stress in 100 MPa units
-    add :
-        cosines rgb_x and rgb_z for orientation maps with color scale of first stereo triangle
-        reference x and z for rgb are in sample frame
-        strain in sample frame
-        stress in crystal frame
-        stress in sample frame
-        von mises stress
-        resolved shear stress RSS on glide planes
-        max RSS
-
-        if include_misorientation :  # seulement pour les analyses mono-grain
-            add  :
-                misorientation angle
-                w23 w13 w12 tires du vecteur de Rodrigues vector en coordonnees sample rx ry rz
-                par w23 = 2*rx,  w13 = 2*ry,  w12 = 2*rz,
-                calcul par Emeric Plancher inspire de Romain Quey doc Orilib
-
-       08Jan14
-       add rgby and wx wy wz
-       09Jan14
-       add rgbxyz_lab  - utile pour departager macles avec axe de maclage suivant x, y, ou z sample
-
+    Add columns to a summary file for orientation, strain, stress, and misorientation analysis.
+    Stress, RSS, max_rss, and von_mises are now always calculated (if filestf is provided).
+    The `include_strain` flag only controls whether these columns are added to the output file.
     """
     if verbose > 0:
         print("In add_columns_to_summary_file_new()")
 
+    # Read the input summary file
     data1, list_column_names, nameline0 = read_summary_file(filesum, verbose=verbose - 1)
+    data_1 = np.array(data1, dtype=float)
 
-    data_1 = np.array(data1, dtype=float)  # 
+    if verbose > 0:
+        print(f"list_column_names: {list_column_names}")
 
-    # print("data_1 in add_columns_to_summary_file_new()", data_1)
-    # print("data_1.shape", data_1.shape)
+    # Initialize the list of column names for the output file
+    list_col_names2 = list_column_names.copy()
 
-    if verbose > 0: print('list_column_names', list_column_names)
-
-    list_col_names2 = list_column_names
-
-    list_col_names_orient = ["rgb_x_sample",
-                            "rgb_y_sample",
-                            "rgb_z_sample",
-                            "rgb_x_lab",
-                            "rgb_y_lab",
-                            "rgb_z_lab"]
-
+    # Add orientation columns (always added)
+    list_col_names_orient = ["rgb_x_sample", "rgb_y_sample", "rgb_z_sample",
+                             "rgb_x_lab", "rgb_y_lab", "rgb_z_lab"]
     number_col_orient = np.array([3, 3, 3, 3, 3, 3])
 
-    for k in list(range(len(number_col_orient))):
-        for i in list(range(number_col_orient[k])):
-            str_column_name = list_col_names_orient[k] + "_" + str(i)
+    for k in range(len(number_col_orient)):
+        for i in range(number_col_orient[k]):
+            str_column_name = f"{list_col_names_orient[k]}_{i}"
             list_col_names2.append(str_column_name)
 
-    if include_strain:
+    # Extract data from the input file (needed to define numig)
+    numig = data_1.shape[0]  # <-- Define numig here
+    indimg = list_column_names.index("img")
+    indpixdev = list_column_names.index("pixdev")
+    indnpeaks = list_column_names.index("npeaks")
+    indmatstart = list_column_names.index("matstarlab_0")
+    indintensity = list_column_names.index("intensity")
 
-        list_col_names_strain = ["strain6_crystal",
-                                "strain6_sample",
-                                "stress6_crystal",
-                                "stress6_sample",
-                                "res_shear_stress",
-                                "max_rss",
-                                "von_mises"]
-        number_col_strain = np.array([6, 6, 6, 6, 12])
+    if after_april_2026:
+        indmatubb0start = list_column_names.index("UBB0_0")
 
-        for k in range(len(number_col_strain)):
-            for i in range(number_col_strain[k]):
-                toto = list_col_names_strain[k] + "_" + str(i)
-                list_col_names2.append(toto)
+    img_list = data_1[:, indimg]
+    pixdev_list = data_1[:, indpixdev]
+    npeaks_list = data_1[:, indnpeaks]
+    intensity_list = data_1[:, indintensity]
+    mat_list = data_1[:, indmatstart:indmatstart + 9]
 
-        for k in range(len(number_col_strain), len(number_col_strain) + 2):
-            list_col_names2.append(list_col_names_strain[k])
+    if after_april_2026:
+        ubb0_list = data_1[:, indmatubb0start:indmatubb0start + 9]
 
-    header2 = ""
-    for i in range(len(list_col_names2)):
-        header2 = header2 + list_col_names2[i] + " "
-
-    header = (nameline0+ ", rgb_x_sample, rgb_y_sample, rgb_z_sample, rgb_x_lab, rgb_y_lab, rgb_z_lab")
-
-    if include_strain:
-        header = (header
-            + ", strain6_crystal,  strain6_sample, stress6_crystal, stress6_sample, res_shear_stress_12, max_rss, von_mises")
-
-    if include_misorientation:
-        header = header + ", misorientation_angle, w_mrad_0, w_mrad_1, w_mrad_2 \n"
-        header2 = header2 + "misorientation_angle w_mrad_0 w_mrad_1 w_mrad_2 \n"
-    else:
-        header = header + "\n"
-        header2 = header2 + "\n"
-
-    if verbose > 0:
-        print('some headers')
-        print(header)
-        print(header2)
-        print(header2.split())
-
-    schmid_tensors = glide_systems_to_schmid_tensors(verbose=verbose-1)
-
-    if filestf != None:
-        c_tensor = read_stiffness_file(filestf, verbose - 1)
-
-    xsample_sample_coord = np.array([1.0, 0.0, 0.0])
-    ysample_sample_coord = np.array([0.0, 1.0, 0.0])
-    zsample_sample_coord = np.array([0.0, 0.0, 1.0])
-
-    omegarad = omega_sample_frame * np.pi / 180.0
-    ylab_sample_coord = np.array([0.0, np.cos(omegarad), -np.sin(omegarad)])
-    zlab_sample_coord = np.array([0.0, np.sin(omegarad), np.cos(omegarad)])
-    if verbose > 0:
-        print('Sample frame description')
-        print(":: x y z sample in sample frame : ", xsample_sample_coord,
-                                                ysample_sample_coord,
-                                                zsample_sample_coord)
-        print(":: ylab zlab in sample frame : ", ylab_sample_coord, zlab_sample_coord)
-
-    numig = np.shape(data_1)[0]
-
-    if verbose > 0:
-        print('data_1.shape', data_1.shape)
-
-    # numig = 10
-
+    # Initialize arrays for new columns
     rgb_x = np.zeros((numig, 3), float)
     rgb_y = np.zeros((numig, 3), float)
     rgb_z = np.zeros((numig, 3), float)
     rgb_xlab = np.zeros((numig, 3), float)
     rgb_ylab = np.zeros((numig, 3), float)
     rgb_zlab = np.zeros((numig, 3), float)
-    if include_strain:
+
+    # Load Schmid tensors and stiffness tensor (if filestf is provided)
+    if filestf is not None:
+        schmid_tensors = glide_systems_to_schmid_tensors(verbose=verbose - 1)
+        c_tensor = read_stiffness_file(filestf, verbose=verbose - 1)
+
+        # Initialize arrays for stress/RSS calculations
         epsp_crystal = np.zeros((numig, 6), float)
         epsp_sample = np.zeros((numig, 6), float)
         sigma_crystal = np.zeros((numig, 6), float)
@@ -1711,183 +1635,176 @@ def add_columns_to_summary_file_new(filesum:str,
         von_mises = np.zeros(numig, float)
         maxrss = np.zeros(numig, float)
 
-    #    img 0 , gnumloc 1 , npeaks 2, pixdev 3, intensity 4, dxymicrons 5:7, matstarlab 7:16, strain6_crystal 16:22, euler 22:25
-    indimg = list_column_names.index("img")  # 3
-    indpixdev = list_column_names.index("pixdev")  # 3
-    indnpeaks = list_column_names.index("npeaks")  # 2
-    
-    indmatstart = list_column_names.index("matstarlab_0")  # 7
-    indintensity = list_column_names.index("intensity")  # 4
+        # Add stress/RSS columns to list_col_names2 if include_strain=1
+        if include_strain:
+            list_col_names_strain = ["strain6_crystal", "strain6_sample",
+                                      "stress6_crystal", "stress6_sample",
+                                      "res_shear_stress", "max_rss", "von_mises"]
+            number_col_strain = np.array([6, 6, 6, 6, 12, 1, 1])
 
-    if after_april_2026:
-        indmatubb0start = list_column_names.index("UBB0_0")  # 7
+            for k in range(len(list_col_names_strain)):
+                if k < 4:  # For strain6_crystal, strain6_sample, stress6_crystal, stress6_sample
+                    for i in range(number_col_strain[k]):
+                        str_column_name = f"{list_col_names_strain[k]}_{i}"
+                        list_col_names2.append(str_column_name)
+                else:  # For res_shear_stress (12 components), max_rss, von_mises (1 component each)
+                    if k == 4:  # res_shear_stress
+                        for i in range(number_col_strain[k]):
+                            str_column_name = f"{list_col_names_strain[k]}_{i}"
+                            list_col_names2.append(str_column_name)
+                    else:  # max_rss, von_mises (no index)
+                        list_col_names2.append(list_col_names_strain[k])
+
+    # Generate header2 (column names)
+    header2 = " ".join(list_col_names2) + "\n"
+
+    # Generate header (description) dynamically
+    from collections import defaultdict
+    col_groups = defaultdict(list)
+    for col in list_col_names2:
+        if "_" in col:
+            prefix = col.rsplit("_", 1)[0]
+            col_groups[prefix].append(col)
+        else:
+            col_groups[col].append(col)
+
+    header_parts = []
+    for prefix, cols in col_groups.items():
+        if len(cols) > 1:
+            start = list_col_names2.index(cols[0])
+            end = list_col_names2.index(cols[-1])
+            header_parts.append(f"{prefix} {start}:{end + 1}")
+        else:
+            start = list_col_names2.index(cols[0])
+            header_parts.append(f"{prefix} {start}")
+    header = ", ".join(header_parts) + "\n"
+
     if verbose > 0:
-        print('info position')
-        print(indpixdev, indnpeaks, indmatstart, indintensity)
+        print("Headers:")
+        print(header)
+        print(header2)
 
-    indmat = np.arange(indmatstart, indmatstart + 9)
+    # Define sample and lab coordinate systems
+    xsample_sample_coord = np.array([1.0, 0.0, 0.0])
+    ysample_sample_coord = np.array([0.0, 1.0, 0.0])
+    zsample_sample_coord = np.array([0.0, 0.0, 1.0])
 
-    assert len(data_1.shape) == 2
-    img_list = data_1[:, indimg]
-    pixdev_list = data_1[:, indpixdev]
-    npeaks_list = data_1[:, indnpeaks]
-    intensity_list = data_1[:, indintensity]
-    mat_list = data_1[:, indmat]  #
-    if after_april_2026:
-        ubb0_list = data_1[:, indmatubb0start:indmatubb0start + 9]
+    omegarad = omega_sample_frame * np.pi / 180.0
+    ylab_sample_coord = np.array([0.0, np.cos(omegarad), -np.sin(omegarad)])
+    zlab_sample_coord = np.array([0.0, np.sin(omegarad), np.cos(omegarad)])
 
+    # Misorientation calculations (if requested)
     if include_misorientation:
-        indfilt2 = np.where(npeaks_list > 0.0)  # pour raccourcir le summary a la fin
+        indfilt2 = np.where(npeaks_list > 0.0)
         misorientation_angle = np.zeros(numig, float)
         omegaxyz = np.zeros((numig, 3), float)
 
-        if filefitref_for_orientation == None:
-
+        if filefitref_for_orientation is None:
             if filter_mean_matrix_by_pixdev_and_npeaks:
-                print("filter matmean by pixdev and npeaks")
-                indfilt = np.where(
-                    (pixdev_list < maxpixdev_for_mean_matrix)
-                    & (npeaks_list > minnpeaks_for_mean_matrix))
-                matstarlabref = (mat_list[indfilt[0]]).mean(axis=0)
-                print("number of points used to calculate matmean", len(indfilt[0]))
-
+                indfilt = np.where((pixdev_list < maxpixdev_for_mean_matrix) &
+                                  (npeaks_list > minnpeaks_for_mean_matrix))
+                matstarlabref = mat_list[indfilt[0]].mean(axis=0)
             elif filter_mean_matrix_by_intensity:
-                print("filter matmean by intensity")
-                indfilt = np.where((intensity_list > minintensity_for_mean_matrix)
-                    & (npeaks_list > 0.0))
-                matstarlabref = (mat_list[indfilt[0]]).mean(axis=0)
-                print("number of points used to calculate matmean", len(indfilt[0]))
-
+                indfilt = np.where((intensity_list > minintensity_for_mean_matrix) &
+                                  (npeaks_list > 0.0))
+                matstarlabref = mat_list[indfilt[0]].mean(axis=0)
             else:
-                matstarlabref = (mat_list[indfilt2[0]]).mean(axis=0)
-
+                matstarlabref = mat_list[indfilt2[0]].mean(axis=0)
         else:
-            matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(filefitref_for_orientation,
-                                                                readmore=True)
+            matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(
+                filefitref_for_orientation, readmore=True)
 
-    #        matmean3x3 = GT.matline_to_mat3x3(matmean)
-
-    k = 0
+    # Loop over images to compute new columns
     for i in range(numig):
-        if verbose - 1 > 0:
-            print("i : ", i, "img_list[i] : ", img_list[i], "\r")
-            print('npeaks_list[i] : ', npeaks_list[i], "\r")
-            
-        
         if npeaks_list[i] > 0.0:
             matstarlab = mat_list[i, :]
             if after_april_2026:
                 ubb0 = ubb0_list[i, :]
-            # print "x"
-            matstarlabnew, transfmat, rgb_x[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, xsample_sample_coord)
-            rgb_xlab[i, :] = rgb_x[i, :] * 1.0
-            # print "y"
-            matstarlabnew, transfmat, rgb_y[i, :] = calc_cosines_first_stereo_triangle(
-                matstarlab, ysample_sample_coord)
-            matstarlabnew, transfmat, rgb_ylab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
-            # print "z"
-            matstarlabnew, transfmat, rgb_z[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zsample_sample_coord)
-            matstarlabnew, transfmat, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
+                Transformframe = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+                matstarlab = np.ravel(np.dot(Transformframe.T, ubb0.reshape((3, 3))))
 
-            if include_strain:
-                if after_april_2026:
+            # Compute RGB orientation columns
+            _, _, rgb_x[i, :] = calc_cosines_first_stereo_triangle(matstarlab, xsample_sample_coord)
+            _, _, rgb_y[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ysample_sample_coord)
+            _, _, rgb_ylab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
+            _, _, rgb_z[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zsample_sample_coord)
+            _, _, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
+            rgb_xlab[i, :] = rgb_x[i, :]
 
-                    Transformframe = np.array([[0,1,0],[-1,0,0],[0,0,1]]) # to go from OR to LT frame laboratory frame (OR convention: ki // x, LT convention: ki // x, for both frames z towards detector, y // z^x)
-                    matstarlab = np.ravel(np.dot(Transformframe.T, ubb0.reshape((3,3))))
+            # Always compute strain/stress if filestf is provided
+            if filestf is not None:
+                epsp_sample[i, :], epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
+                    matstarlab, omega0=omega_sample_frame, version=2,
+                    returnmore=True, elem_label=elem_label)
 
-                    # Warning: matstarlab is now in OR convention
-                    # and stress in crystal and sample frame are in OR convention !!
-                    _, epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
-                                                                matstarlab,
-                                                                omega0=omega_sample_frame,
-                                                                version=2,
-                                                                returnmore=True,
-                                                                elem_label=elem_label)
+                sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
+                    c_tensor, epsp_crystal[i, :])
+                sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
+                    matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
 
-                    sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
-                                                    c_tensor, epsp_crystal[i, :])
-                    sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                                            matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
-
-                    von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
-
-                    tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                        sigma_crystal[i, :], schmid_tensors)
-                    maxrss[i] = abs(tau1[i, :]).max()
-                else:
-                    epsp_sample[i, :], epsp_crystal[i, :] = matstarlab_to_deviatoric_strain_sample(
-                                                                matstarlab,
-                                                                omega0=omega_sample_frame,
-                                                                version=2,
-                                                                returnmore=True,
-                                                                elem_label=elem_label)
-
-                    sigma_crystal[i, :] = deviatoric_strain_crystal_to_stress_crystal(
-                                                    c_tensor, epsp_crystal[i, :])
-                    sigma_sample[i, :] = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(
-                                            matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
-
-                    von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
-
-                    tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
-                        sigma_crystal[i, :], schmid_tensors)
-                    maxrss[i] = abs(tau1[i, :]).max()
+                von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
+                tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
+                    sigma_crystal[i, :], schmid_tensors)
+                maxrss[i] = np.abs(tau1[i, :]).max()
 
             if include_misorientation:
-                #                mat2 = GT.matline_to_mat3x3(matstarlab)
-                #                vec_crystal, vec_lab, misorientation_angle[i] = twomat_to_rotation(matmean3x3,mat2, verbose = 0)
+                vecRodrigues_sample, misorientation_angle[i] = twomat_to_rotation_Emeric(
+                    matstarlabref, matstarlab, omega0=omega_sample_frame)
+                omegaxyz[i, :] = vecRodrigues_sample * 2.0 * 1000.0  # units = mrad
 
-                (vecRodrigues_sample, misorientation_angle[i]) = twomat_to_rotation_Emeric(
-                                            matstarlabref, matstarlab, omega0=omega_sample_frame)
-                omegaxyz[i, :] = vecRodrigues_sample * 2.0 * 1000.0  # unites = mrad
-                # misorientation_angle : unites = degres
-                if verbose - 1 > 0: print(round(misorientation_angle[i], 3), omegaxyz[i, :].round(decimals=2))
-
-            if verbose > 0:
-                print('matstarlab', matstarlab) # 9 elements   1D array
-                if include_strain:
-                    print("deviatoric strain crystal : aa bb cc -dalf (ie angle between b and c), -dbet (ie angle between a and c), -dgam (ie angle between a and b) (1e-3 units) : aa bb cc -dalf bc, -dbet ac, -dgam ab (1e-3 units)")
-                    print(epsp_crystal[i, :].round(decimals=2))
-                    print("deviatoric strain sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (1e-3 units)")
-                    print(epsp_sample[i, :].round(decimals=2))
-
-                    print("deviatoric stress crystal : aa bb cc -dalf bc, -dbet ac, -dgam ab (100 MPa units)")
-                    print(sigma_crystal[i, :].round(decimals=2))
-
-                    print("deviatoric stress sample : xx yy zz -dalf yz, -dbet xz, -dgam xy (100 MPa units)")
-                    print(sigma_sample[i, :].round(decimals=2))
-
-                    print("Von Mises equivalent Stress (100 MPa units)",
-                        round(von_mises[i], 3))
-                    print("RSS resolved shear stresses on glide planes (100 MPa units) : ")
-                    print(tau1[i, :].round(decimals=3))
-                    print("Max RSS : ", round(maxrss[i], 3))
-        k = k + 1
-
-    # numig here for debug with smaller numig
+    # Stack all columns into the final output array
     data_list = np.column_stack((data_1[:numig, :], rgb_x, rgb_y, rgb_z, rgb_xlab, rgb_ylab, rgb_zlab))
 
-    if include_strain:
-        data_list = np.column_stack((data_list, epsp_crystal, epsp_sample, sigma_crystal, sigma_sample, tau1, maxrss, von_mises))
+    # Add strain/stress columns if include_strain=1 and filestf is provided
+    if include_strain and filestf is not None:
+        strain_columns = []
+        for col in list_col_names2:
+            if col.startswith("strain6_crystal_"):
+                idx = int(col.split("_")[-1])
+                strain_columns.append(epsp_crystal[:, idx])
+            elif col.startswith("strain6_sample_"):
+                idx = int(col.split("_")[-1])
+                strain_columns.append(epsp_sample[:, idx])
+            elif col.startswith("stress6_crystal_"):
+                idx = int(col.split("_")[-1])
+                strain_columns.append(sigma_crystal[:, idx])
+            elif col.startswith("stress6_sample_"):
+                idx = int(col.split("_")[-1])
+                strain_columns.append(sigma_sample[:, idx])
+            elif col.startswith("res_shear_stress_"):
+                idx = int(col.split("_")[-1])
+                strain_columns.append(tau1[:, idx])
+            elif col == "max_rss":
+                strain_columns.append(maxrss)
+            elif col == "von_mises":
+                strain_columns.append(von_mises)
+
+        if strain_columns:
+            data_list = np.column_stack((data_list, np.column_stack(strain_columns)))
 
     if include_misorientation:
-        data_list = np.column_stack((data_list, misorientation_angle, omegaxyz))
-        data_list = data_list[indfilt2[0], :]  # enleve les images avec zero grain indexe
+        misorientation_columns = []
+        for col in list_col_names2:
+            if col == "misorientation_angle":
+                misorientation_columns.append(misorientation_angle)
+            elif col.startswith("w_mrad_"):
+                idx = int(col.split("_")[-1])
+                misorientation_columns.append(omegaxyz[:, idx])
 
+        data_list = np.column_stack((data_list, np.column_stack(misorientation_columns)))
+        data_list = data_list[indfilt2[0], :]  # Remove rows with zero grain index
+
+    # Save the new summary file
     add_str = "_add_columns"
-    if filefitref_for_orientation != None:
-        add_str = add_str + "_use_orientref"
-        # TO REMOVE
-    #    add_str = add_str + "_use_mean_10_points"
+    if filefitref_for_orientation is not None:
+        add_str += "_use_orientref"
 
     outfilesum = filesum.rstrip(".dat") + add_str + ".dat"
-    if verbose > 0: print(outfilesum)
-    outputfile = open(outfilesum, "w")
-    # outputfile.write(header)
-    # outputfile.write(header2)
-    np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
-    outputfile.close()
+    if verbose > 0:
+        print(f"Output file: {outfilesum}")
+
+    with open(outfilesum, "w") as outputfile:
+        np.savetxt(outputfile, data_list, fmt="%.6f", header=header + header2, comments='')
 
     return outfilesum
 
@@ -2615,14 +2532,13 @@ def read_and_validate_data(summary_file, xyz_file):
         data, listname, nameline0 = read_summary_file(summary_file)
         data_list = np.array(data, dtype=float)
         map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(xyz_file)
-        map_imageindex_array = np.flipud(map_imageindex_array)  # Normal convention
+        map_imageindex_array = np.flipud(map_imageindex_array)
 
-        # Replace rows where all values (except first two columns) are zero with np.nan
+        # Replace rows where all values from column 4 onward are zero with np.nan
         for i in range(len(data_list)):
             row = data_list[i]
-            # Check if all values from column 2 onward are zero
-            if np.all(row[2:] == 0):
-                data_list[i, 2:] = np.nan  # Replace with np.nan
+            if np.all(row[4:] == 0):
+                data_list[i, 4:] = np.nan  # Skip first 4 columns (img, gnumloc, npeaks, pixdev)
 
         return data_list, map_imageindex_array, dxystep
     except Exception as e:
@@ -2643,6 +2559,21 @@ def extract_grain_data(data_list, grain_index):
 
 def get_maptype_metadata(maptype):
     """Return metadata for a given maptype."""
+    # Define metadata for each maptype: (colmin, nbdatacolumns, datatype, datasigntype)
+    MAPTYPE_METADATA = {
+        "fit": (2, 2, "scalar", "positive"),
+        "orientation": (7, 9, "RGBvector", "relative"),
+        "strain6_crystal": (16, 6, "symetricscalar", "relative"),
+        "strain6_sample": (22, 6, "symetricscalar", "relative"),  
+        "euler3": (28, 3, "scalar", "relative"),
+        "rgb_x_sample": (40, 9, "RGBvector", None),
+        "rgb_x_lab": (49, 9, "scalar", "positive"),
+        "stress6_crystal": (70, 6, "symetricscalar", "relative"),
+        "stress6_sample": (76, 6, "symetricscalar", "relative"),
+        "res_shear_stress": (82, 12, "scalar", "relative"),
+        "max_rss": (94, 1, "scalar", "relative"),
+        "von_mises": (95, 1, "scalar", "relative"),
+    }
     if maptype not in MAPTYPE_METADATA:
         raise ValueError(f"Unknown maptype: {maptype}")
     return MAPTYPE_METADATA[maptype]
@@ -2696,44 +2627,110 @@ def plot_component(
 def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
     """
     Plot maps for a given maptype and grain index.
-
-    Parameters:
-    -----------
-    dict_params : dict
-        Dictionary of parameters (e.g., file paths, plotting options).
-    maptype : str
-        Type of map to plot (e.g., "fit", "euler3", "strain6_crystal").
-    grain_index : int
-        Index of the grain to plot (0-based).
-    App_parent : object, optional
-        Parent application object for GUI integration.
-
-    Returns:
-    --------
-    list
-        List of plot objects created.
     """
     d = DEFAULT_PLOTMAPS_PARAMETERS_DICT.copy()
     d.update(dict_params)
 
     logger.info(f"Plotting {maptype} for grain {grain_index} from {d['Map Summary File']}")
 
-    # Read and validate data
-    data_list, map_imageindex_array, dxystep = read_and_validate_data(
-        d["Map Summary File"], d["File xyz"]
+    # Read the summary file to get column names and data
+    data_list, list_column_names, nameline0 = read_summary_file(
+        d["Map Summary File"], read_all_cols="yes", verbose=0
     )
+    map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(d["File xyz"])
+    map_imageindex_array = np.flipud(map_imageindex_array)  # Normal convention
     nlines, ncol = map_imageindex_array.shape
 
     # Extract grain data
     grains_data = extract_grain_data(data_list, grain_index)
-    expimagesindices = grains_data[:, 0]
+    expimagesindices = grains_data[:, 0]  # Column 0 is "img"
 
-    # Get maptype metadata
-    try:
-        colmin, nbdatacolumns, datatype, datasigntype = get_maptype_metadata(maptype)
-    except ValueError as e:
-        logger.error(e)
-        return []
+    # Replace rows with all zeros (except img and gnumloc) with NaN
+    for i in range(len(grains_data)):
+        row = grains_data[i]
+        if np.all(row[2:] == 0):  # Check from column 2 onward
+            grains_data[i, 2:] = np.nan  # Replace with NaN (skip img and gnumloc)
+
+    # Get column indices and datasigntype for the requested maptype
+    if maptype == "fit":
+        colmin = list_column_names.index("npeaks")
+        nbdatacolumns = 2  # npeaks and pixdev
+        datatype = "scalar"
+        datasigntype = "positive"
+    elif maptype == "npeaks":
+        colmin = list_column_names.index("npeaks")
+        nbdatacolumns = 1
+        datatype = "scalar"
+        datasigntype = "positive"
+    elif maptype == "pixdev":
+        colmin = list_column_names.index("pixdev")
+        nbdatacolumns = 1
+        datatype = "scalar"
+        datasigntype = "positive"
+    elif maptype == "intensity":
+        colmin = list_column_names.index("intensity")
+        nbdatacolumns = 1
+        datatype = "scalar"
+        datasigntype = "positive"
+    elif maptype == "orientation":
+        colmin = list_column_names.index("matstarlab_0")
+        nbdatacolumns = 9
+        datatype = "RGBvector"
+        datasigntype = "relative"  # Orientation data (not RGB)
+    elif maptype in ("strain6_sample", "strain6_crystal", "stress6_sample", "stress6_crystal"):
+        if maptype == "strain6_sample":
+            colmin = list_column_names.index("strain6_sample_0")
+        elif maptype == "strain6_crystal":
+            colmin = list_column_names.index("strain6_crystal_0")
+        elif maptype == "stress6_sample":
+            colmin = list_column_names.index("stress6_sample_0")
+        elif maptype == "stress6_crystal":
+            colmin = list_column_names.index("stress6_crystal_0")
+        nbdatacolumns = 6
+        datatype = "symetricscalar"
+        datasigntype = "relative"
+    elif maptype == "euler3":
+        colmin = list_column_names.index("euler3_0")
+        nbdatacolumns = 3
+        datatype = "scalar"
+        datasigntype = "relative"
+    elif maptype in ("rgb_x_sample", "rgb_x_lab", "rgb_y_sample", "rgb_y_lab", "rgb_z_sample", "rgb_z_lab"):
+        colmin = list_column_names.index(maptype + "_0")
+        nbdatacolumns = 9  # 9 values for 3 RGB components
+        datatype = "RGBvector"
+        datasigntype = "positive"  # RGB is positive-only
+    elif maptype == "res_shear_stress":
+        colmin = list_column_names.index("res_shear_stress_0")
+        nbdatacolumns = 12
+        datatype = "scalar"
+        datasigntype = "relative"
+    elif maptype == "max_rss":
+        colmin = list_column_names.index("max_rss")
+        nbdatacolumns = 1
+        datatype = "scalar"
+        datasigntype = "positive"
+    elif maptype == "von_mises":
+        colmin = list_column_names.index("von_mises")
+        nbdatacolumns = 1
+        datatype = "scalar"
+        datasigntype = "positive"
+    else:
+        # Default: try to find the maptype in list_column_names
+        try:
+            colmin = list_column_names.index(maptype + "_0")
+            nbdatacolumns = 6  # Default for tensor-like quantities
+            datatype = "symetricscalar"
+            datasigntype = "relative"
+        except ValueError:
+            logger.error(f"Unknown maptype: {maptype}. Available columns: {list_column_names}")
+            return []
+
+    # Debug: Print column indices
+    if logger.level <= logging.DEBUG:
+        print(f"Debug: maptype={maptype}, colmin={colmin}, nbdatacolumns={nbdatacolumns}")
+        print(f"Debug: grains_data shape: {grains_data.shape}")
+        print(f"Debug: First row of grains_data: {grains_data[0]}")
+        print(f"Debug: datasigntype={datasigntype}")
 
     # Initialize zvalues array
     zvalues_Ncomponents = np.full((nlines * ncol, nbdatacolumns), np.nan)
@@ -2743,17 +2740,6 @@ def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
             zvalues_Ncomponents[k] = grains_data[exp_ix][colmin : colmin + nbdatacolumns]
             exp_ix += 1
     zvalues_Ncomponents = np.ma.masked_invalid(zvalues_Ncomponents)
-
-    if maptype == "fit":
-        datatype = "scalar"
-    elif maptype == "orientation":
-        datatype = "RGBvector"
-    elif maptype in ("strain6_crystal", "strain6_sample", "stress6_crystal", "stress6_sample"):
-        datatype = "symetricscalar"  # <-- This ensures symmetric scaling
-    elif maptype in ("euler3", "rgb_x_sample", "rgb_x_lab"):
-        datatype = "scalar"
-    else:
-        datatype = "scalar"  # Default fallback
 
     # Handle orientation data separately
     if maptype == "orientation":
@@ -2774,11 +2760,39 @@ def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
                     dxystep,
                     datasigntype,
                     App_parent,
+                    datatype="RGBvector",
                 )
             )
         return plot_objects
 
-    # Handle other maptypes
+    # Handle RGB data (9 values = 3 RGB components)
+    if maptype in ("rgb_x_sample", "rgb_x_lab", "rgb_y_sample", "rgb_y_lab", "rgb_z_sample", "rgb_z_lab"):
+        plot_objects = []
+        for rgb_component in range(3):  # 3 RGB components per maptype
+            # Extract the 3 channels for this component (e.g., indices 0:3, 3:6, 6:9)
+            z_values = zvalues_Ncomponents[:, rgb_component * 3 : (rgb_component + 1) * 3]
+            # Check if z_values is empty or all NaN
+            if z_values.size == 0 or np.all(np.isnan(z_values)):
+                logger.warning(f"Empty or all-NaN RGB data for {maptype}, component {rgb_component}. Skipping.")
+                continue
+            # Reshape to (nlines, ncol, 3) for RGB plotting
+            z_values = z_values.reshape((nlines, ncol, 3))
+            columnname = f"{maptype}_component_{rgb_component}"
+            plot_objects.append(
+                plot_component(
+                    z_values,
+                    maptype,
+                    columnname,
+                    map_imageindex_array,
+                    dxystep,
+                    datasigntype,
+                    App_parent,
+                    datatype=datatype,
+                )
+            )
+        return plot_objects
+
+    # Handle other maptypes (scalar, symetricscalar)
     plot_maptype_list = PLOT_LABELS.get(maptype, [f"component_{i}" for i in range(nbdatacolumns)])
     plot_objects = []
     for index_component in range(nbdatacolumns):
@@ -2787,10 +2801,6 @@ def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
             z_values = zvalues_Ncomponents[:, index_component].reshape((nlines, ncol))
         elif datatype == "symetricscalar":
             z_values = zvalues_Ncomponents[:, index_component].reshape((nlines, ncol))
-        elif datatype == "RGBvector":
-            z_values = zvalues_Ncomponents[
-                :, index_component * 3 : (index_component + 1) * 3
-            ].reshape((nlines, ncol, 3))
         else:
             logger.warning(f"Unknown datatype: {datatype}")
             continue
@@ -2804,697 +2814,11 @@ def plot_map_new3(dict_params, maptype, grain_index, App_parent=None):
                 dxystep,
                 datasigntype,
                 App_parent,
-                datatype=datatype
+                datatype=datatype,
             )
         )
 
     return plot_objects
-
-
-def plot_map_new(dict_params, App_parent=None):  # 29May13
-    """
-        # gnumloc  = "indexing rank" of grain selected for mapping (for multigrain Laue patterns)
-        first grain = grain with most intense spot
-        first grain has gnumloc = 0  (LT summary files)
-        first grain has gnumloc = 1 (XMAS summary files (rebuilt))
-
-        filetype = "LT" or "XMAS"
-        maptype =  "fit"
-                or "euler3" or "rgb_x_sample"
-                or "strain6_crystal" or "strain6_sample"
-                or "stress6_crystal" or "stress6_sample"
-                or "res_shear_stress"
-                or 'max_rss'
-                or 'von_mises'
-
-        min/max = -/+ strainscale for strain plots
-        (and quantities derived from strain)
-        """
-
-    d = DEFAULT_PLOTMAPS_PARAMETERS_DICT
-
-    d.update(dict_params)
-
-    print("\n\nENTERING plot_map_new()\n\n")
-
-    print(d["Map Summary File"], d["File xyz"], d["maptype"], d["filetype"])
-    print(d["subtract_mean"], d["probed_grainindex"], d["filter_on_pixdev_and_npeaks"])
-
-    list_column_names = [
-        "img",
-        "probed_grainindex",
-        "npeaks",
-        "pixdev",
-        "intensity",
-        "dxymicrons_0", "dxymicrons_1",
-        "matstarlab_0", "matstarlab_1", "matstarlab_2", "matstarlab_3", "matstarlab_4", "matstarlab_5", "matstarlab_6", "matstarlab_7", "matstarlab_8",
-        "strain6_crystal_0", "strain6_crystal_1", "strain6_crystal_2", "strain6_crystal_3", "strain6_crystal_4", "strain6_crystal_5",
-        "euler3_0", "euler3_1", "euler3_2",
-        "strain6_sample_0", "strain6_sample_1", "strain6_sample_2", "strain6_sample_3", "strain6_sample_4", "strain6_sample_5",
-        "rgb_x_sample_0", "rgb_x_sample_1", "rgb_x_sample_2", "rgb_z_sample_0", "rgb_z_sample_1", "rgb_z_sample_2",
-        "stress6_crystal_0", "stress6_crystal_1", "stress6_crystal_2", "stress6_crystal_3", "stress6_crystal_4", "stress6_crystal_5",
-        "stress6_sample_0", "stress6_sample_1", "stress6_sample_2", "stress6_sample_3", "stress6_sample_4", "stress6_sample_5",
-        "res_shear_stress_0", "res_shear_stress_1", "res_shear_stress_2", "res_shear_stress_3", "res_shear_stress_4", "res_shear_stress_5", "res_shear_stress_6", "res_shear_stress_7", "res_shear_stress_8", "res_shear_stress_9", "res_shear_stress_10", "res_shear_stress_11",
-        "max_rss",
-        "von_mises",
-        "misorientation_angle",
-        "dalf"]
-
-    #  NB : misorientation_angle column seulement pour analyse mono-grain
-    # NB : dalf column seulement pour mat2spots ou fit calib
-
-    #        list_column_names =  ['img', 'probed_grainindex', 'npeaks', 'pixdev']
-
-    color_grid = "k"
-
-    if d["col_for_simple_map"] != None:
-        filter_on_pixdev_and_npeaks = 0
-        filter_mean_strain_on_misorientation = 0
-
-    data, listname, nameline0 = read_summary_file(d["Map Summary File"])
-
-    data_list = np.array(data, dtype=float)
-
-    print("Data of strain  \n\n************\n")
-    print("data.shape", data_list.shape)
-    print("shape = ((nb images)* nb grains , nb of data columns)")
-    nbgrains = int(np.amax(data_list[:, 1]) + 1)
-    nb_images = data_list.shape[0] // nbgrains
-
-    print("maximum nb of grains per image", nbgrains)
-    print("nb of images", nb_images)
-
-    grains_data = []
-    for grain_index in range(nbgrains):
-        grains_data.append(data_list[grain_index : grain_index + nb_images, :])
-
-    print(grains_data[0])
-    print(grains_data[0].shape)
-
-    strain6_crystal = []
-    strain6_sample = []
-    stress6_crystal = []
-    stress6_sample = []
-
-    for grain_index in range(nbgrains):
-        strain6_crystal.append(grains_data[grain_index][:, 16 : 16 + 6])
-        strain6_sample.append(grains_data[grain_index][:, 25 : 25 + 6])
-        stress6_crystal.append(grains_data[grain_index][:, 38 : 38 + 6])
-        stress6_sample.append(grains_data[grain_index][:, 44 : 44 + 6])
-
-    print("second grain, first image strain6_crystal", strain6_crystal[1][0])
-    print("second grain, last image strain6_crystal", strain6_crystal[1][-1])
-
-    numig = np.shape(data_list)[0]
-    print(numig)
-    ndata_cols = np.shape(data_list)[1]
-    print(ndata_cols)
-
-    indimg = listname.index("img")
-
-    print("data_list", data_list[:, 3])
-
-    if d["filter_on_intensity"]:
-        indintensity = listname.index("intensity")
-        intensitylist = np.array(data_list[:, indintensity], dtype=float)
-
-    if d["col_for_simple_map"] == None:
-        print("filling data")
-        indgnumloc = listname.index("gnumloc")
-        indnpeaks = listname.index("npeaks")
-        indpixdev = listname.index("pixdev")
-        indxech = listname.index("dxymicrons_0")
-        if "misorientation_angle" in listname:
-            indmisor = listname.index("misorientation_angle")
-            if filter_mean_strain_on_misorientation:
-                misor_list = np.array(data_list[:, indmisor], dtype=float)
-                if d["use_mrad_for_misorientation"] == "yes":
-                    print("converting misorientation angle into mrad")
-                    misor_list = misor_list * math.pi / 180.0 * 1000.0
-                indm = where(misor_list < d["max_misorientation"])
-                print("filtering out img with large misorientation > ",
-                    d["max_misorientation"])
-                print("nimg with low misorientation : ", shape(indm)[1])
-
-        gnumlist = np.array(data_list[:, indgnumloc], dtype=int)
-        pixdevlist = data_list[:, indpixdev]
-        npeakslist = np.array(data_list[:, indnpeaks], dtype=int)
-    else:
-        gnumlist = np.zeros(numig, int)
-        pixdevlist = np.zeros(numig, int)
-        npeakslist = ones(numig, int) * 25
-
-    # key = maptype , nb_values, nplot
-    # nb_values = nb of columns for these data
-    # nplot = 3 per rgb color map
-    # nb_plots = number of graphs
-    # ngraphline, ngraphcol = subplots
-    # ngraphlabels = subplot number -1 for putting xlabel and ylabel on axes
-    dict_nplot = {
-        "euler3": [3, 3, 1, 1, 1, 0, ["rgb_euler"]],
-        "rgb_x_sample": [9, 9, 3, 1, 3, 0, ["x_sample", "y_sample", "z_sample"]],
-        "rgb_x_lab": [9, 9, 3, 1, 3, 0, ["x_lab", "y_lab", "z_lab"]],
-        "strain6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
-        "strain6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
-        "stress6_crystal": [6, 18, 6, 2, 3, 3, ["aa", "bb", "cc", "ca", "bc", "ab"]],
-        "stress6_sample": [6, 18, 6, 2, 3, 3, ["XX", "YY", "ZZ", "YZ", "XZ", "XY"]],
-        "w_mrad": [3, 9, 3, 1, 3, 0, ["WX", "WY", "WZ"]],
-        "res_shear_stress": [12, 36, 12, 3, 4, 8, ["rss0",
-                                                    "rss1",
-                                                    "rss2",
-                                                    "rss3",
-                                                    "rss4",
-                                                    "rss5",
-                                                    "rss6",
-                                                    "rss7",
-                                                    "rss8",
-                                                    "rss9",
-                                                    "rss10",
-                                                    "rss11"]],
-        "max_rss": [1, 3, 1, 1, 1, 0, ["max_rss"]],
-        "von_mises": [1, 3, 1, 1, 1, 0, ["von Mises stress"]],
-        "misorientation_angle": [1, 3, 1, 1, 1, 0, ["misorientation angle"]],
-        "intensity": [1, 3, 1, 1, 1, 0, ["intensity"]],
-        "maxpixdev": [1, 3, 1, 1, 1, 0, ["maxpixdev"]],
-        "stdpixdev": [1, 3, 1, 1, 1, 0, ["stdpixdev"]],
-        "fit": [2, 6, 2, 1, 2, 0, ["npeaks", "pixdev"]],
-        "dalf": [1, 3, 1, 1, 1, 0, ["delta_alf exp-theor"]]}
-
-    nb_values = dict_nplot[d["maptype"]][0]
-    if d["maptype"] != "fit":
-        #            if maptype in ['max_rss','von_mises','misorientation_angle', 'dalf', "intensity"]:
-        if nb_values == 1:
-            map_first_col_name = d["maptype"]
-            if d["col_for_simple_map"] != None:
-                map_first_col_name = d["col_for_simple_map"]
-        else:
-            map_first_col_name = d["maptype"] + "_0"
-            if d["col_for_simple_map"] != None:
-                map_first_col_name = d["col_for_simple_map"]
-        ind_first_col = listname.index(map_first_col_name)
-        print("ind_first_col", ind_first_col)
-
-        indcolplot = np.arange(ind_first_col, ind_first_col + nb_values)
-
-    if d["zoom"] == "yes":
-        listxj = []
-        listyi = []
-
-    filexyz = d["File xyz"]
-    if filexyz == None:
-        # creation de filexyz a partir des colonnes de filesum
-        indxy = listname.index("dxymicrons_0")
-        imgxy = column_stack((data_list[:, indimg], data_list[:, indxy : indxy + 2]))
-        ind1 = where(gnumlist == 0)
-        imgxynew = imgxy[ind1[0], :]
-        print("min, max : img x y ", imgxynew.min(axis=0), imgxynew.max(axis=0))
-        print("first, second, last point : img x y :")
-        print(imgxynew[0, :])
-        print(imgxynew[1, :])
-        print(imgxynew[-1, :])
-        filexyz = "filexyz.dat"
-        header = "img 0 , xech 1, yech 2 \n"
-        outputfile = open(filexyz, "w")
-        outputfile.write(header)
-        np.savetxt(outputfile, imgxynew, fmt="%.4f")
-        outputfile.close()
-
-    filexyz_new = filexyz
-    xylim_new = d["xylim"]
-
-    if abs(d["map_rotation"]) > 0.1:
-        print("rotating map clockwise by : ", d["map_rotation"], "degrees")
-        filexyz_new, xylim_new = rotate_map(filexyz, d["map_rotation"], xylim=d["xylim"])
-
-    map_imageindex_array, dxystep, pixsize, impos_start = calc_map_imgnum(filexyz_new)
-
-    nlines = shape(map_imageindex_array)[0]
-    ncol = shape(map_imageindex_array)[1]
-    nplot = dict_nplot[d["maptype"]][1]
-    plotdat = np.zeros((nlines, ncol, nplot), float)
-    datarray_info = np.zeros((nlines, ncol, nplot), float)
-    ARRAY_INFO_FILLED = False
-
-    print("grain : ", d["probed_grainindex"])
-    print("npeakslist", npeakslist)
-    if d["filter_on_pixdev_and_npeaks"]:
-        print("filter_on_pixdev_and_npeaks")
-        print("filtering :")
-        print("maxpixdev ", d["maxpixdev_forfilter"])
-        print("minnpeaks ", d["minnpeaks_forfilter"])
-        indf = np.where((gnumlist == d["probed_grainindex"])
-            & (pixdevlist < d["maxpixdev_forfilter"])
-            & (npeakslist > d["minnpeaks_forfilter"]))
-    elif d["filter_on_intensity"]:
-        print("filter_on_intensity")
-        indf = np.where((gnumlist == d["probed_grainindex"])
-            & (npeakslist > 0)
-            & (intensitylist > d["min_intensity_forfilter"]))
-    else:
-        print("default filtering")
-        indf = where((gnumlist == d["probed_grainindex"]) & (npeakslist > 0))
-
-    # filtered data
-    data_list2 = data_list[indf[0], :]
-
-    if d["maptype"] == "euler3":
-        euler3 = data_list2[:, indcolplot]
-        ang0 = 360.0
-        ang1 = arctan(sqrt(2.0)) * 180.0 / np.pi
-        ang2 = 180.0
-        ang012 = np.array([ang0, ang1, ang2])
-        print(euler3[0, :])
-        euler3norm = euler3 / ang012
-        print(euler3norm[0, :])
-        # print min(euler3[:,0]), max(euler3[:,0])
-        # print min(euler3[:,1]), max(euler3[:,1])
-        # print min(euler3[:,2]), max(euler3[:,2])
-
-    elif d["maptype"][:5] == "rgb_x":
-        rgbxyz = data_list2[:, indcolplot]
-
-    elif d["maptype"] == "fit":
-        default_color_for_missing = np.array([1.0, 0.8, 0.8])
-        if d["color_for_missing"] == None:
-            color0 = default_color_for_missing
-        else:
-            color0 = d["color_for_missing"]
-        for j in range(nb_values):
-            plotdat[:, :, 3 * j : 3 * (j + 1)] = color0
-
-        print("pixdevlist", pixdevlist)
-        print("indf[0]", indf[0])
-
-        pixdevlist2 = pixdevlist[indf[0]]
-        npeakslist2 = npeakslist[indf[0]]
-        pixdevmin2 = pixdevlist2.min()
-        pixdevmax2 = pixdevlist2.max()
-        pixdevmean2 = pixdevlist2.mean()
-        npeaksmin2 = npeakslist2.min()
-        npeaksmax2 = npeakslist2.max()
-        npeaksmean2 = npeakslist2.mean()
-
-        print("npeakslist2", npeakslist2)
-
-        print("filesum", d["Map Summary File"])
-
-        print("pixdev : mean, min, max")
-        print(round(pixdevmean2, 3), round(pixdevmin2, 3), round(pixdevmax2, 3))
-        print("npeaks : mean min max")
-        print(round(npeaksmean2, 1), npeaksmin2, npeaksmax2)
-
-        if d["pixdevmin_forplot"] == None:
-            pixdevmin_forplot = pixdevmin2
-        else:
-            pixdevmin_forplot = d["pixdevmin_forplot"]
-        if d["pixdevmax_forplot"] == None:
-            pixdevmax_forplot = pixdevmax2
-        else:
-            pixdevmax_forplot = d["pixdevmax_forplot"]
-        if d["npeaksmin_forplot"] == None:
-            npeaksmin_forplot = npeaksmin2
-        else:
-            npeaksmin_forplot = d["npeaksmin_forplot"]
-        if d["npeaksmax_forplot"] == None:
-            npeaksmax_forplot = npeaksmax2
-        else:
-            npeaksmax_forplot = d["npeaksmax_forplot"]
-
-        print("for color map : ")
-        print("pixdev : min, max : ", pixdevmin_forplot, pixdevmax_forplot)
-        print("npeaks : min, max : ", npeaksmin_forplot, npeaksmax_forplot)
-        print("black = min for npeaks")
-        print("black = max for pixdev")
-        print("pink = missing")
-        if d["low_npeaks_as_red_in_npeaks_map"] != None:
-            print("npeaks : red < ", d["low_npeaks_as_red_in_npeaks_map"])
-
-        color_grid = "k"
-
-    # for strain and derived quantities
-    else:
-        maptype = d["maptype"]
-        print("maptype", maptype)
-        #            if maptype in ['max_rss','von_mises','misorientation_angle', "intensity"]:
-        if nb_values == 1:
-            default_color_for_missing = np.array([1.0, 0.8, 0.8])  # pink = color for missing data
-            if d["color_for_missing"] == None:
-                color0 = default_color_for_missing
-            else:
-                color0 = d["color_for_missing"]
-            plotdat[:, :, 0:3] = color0
-            color_filtered = np.array([0.0, 1.0, 0.0])
-            color_grid = "k"
-            if d["low_npeaks_as_missing"]:
-                color_filtered = np.array([1.0, 0.8, 0.8])
-        else:
-            for j in range(nb_values):
-                plotdat[:, :, 3 * j : 3 * (j + 1)] = 0.0  # black = color for missing data
-            if maptype != "dalf":
-                if maptype != "w_mrad":
-                    print("xx xy xz yy yz zz")
-                else:
-                    print("wx wy wz")
-            #                color_filtered = np.array([0.5,0.5,0.5])
-            color_filtered = np.zeros(3, float)
-            color_grid = "w"
-            if d["low_npeaks_as_missing"]:
-                color_filtered = np.array([0.0, 0.0, 0.0])
-
-        imglist1 = np.array(data_list[:, indimg], dtype=int)
-        for i in range(numig):
-            if i not in indf[0]:
-                ind2 = where(map_imageindex_array == imglist1[i])
-                iref, jref = ind2[0][0], ind2[1][0]
-
-                #                    if maptype in ['max_rss','von_mises','misorientation_angle', "intensity"]:
-                if nb_values == 1:
-                    plotdat[iref, jref, 0:3] = color_filtered
-                else:
-                    for j in range(nb_values):
-                        plotdat[iref, jref, 3 * j : 3 * j + 3] = color_filtered
-
-        list_plot = data_list2[:, indcolplot]
-        if (maptype == "misorientation_angle") & (
-            d["use_mrad_for_misorientation"] == "yes"):
-            print("converting misorientation angle into mrad")
-            list_plot = list_plot * np.pi / 180.0 * 1000.0
-        print(shape(list_plot))
-
-        if d["change_sign_xy_xz"] & (maptype == "strain6_sample"):
-            list_plot[:, 4] = -list_plot[:, 4]
-            list_plot[:, 5] = -list_plot[:, 5]
-        if d["filter_mean_strain_on_misorientation"]:
-            list_plot_mean = list_plot[indm[0]].mean(axis=0)
-        else:
-            list_plot_mean = list_plot.mean(axis=0)
-        if d["subtract_mean"] == "yes":
-            print("subtract mean")
-            list_plot = list_plot - list_plot_mean
-        print("subtract_constant", d["subtract_constant"])
-        if d["subtract_constant"] != None:
-            list_plot = list_plot - d["subtract_constant"]
-
-        list_plot_min = list_plot.min(axis=0)
-        list_plot_max = list_plot.max(axis=0)
-
-        print("min : ", list_plot_min.round(decimals=2))
-        print("max : ", list_plot_max.round(decimals=2))
-        print("mean : ", list_plot_mean.round(decimals=2))
-
-        if d["min_forplot"] != None:
-            list_plot_min = d["min_forplot"] * ones(nb_values, float)
-        if d["max_forplot"] != None:
-            list_plot_max = d["max_forplot"] * ones(nb_values, float)
-
-        print("for color map :")
-        print("min : ", list_plot_min.round(decimals=2))
-        print("max : ", list_plot_max.round(decimals=2))
-
-    maptype = d["maptype"]
-
-    imglist = np.array(data_list2[:, 0], dtype=int)
-
-    numig2 = shape(data_list2)[0]
-    if d["col_for_simple_map"] == None:
-        npeakslist = np.array(data_list2[:, indnpeaks], dtype=int)
-        xylist = np.array(data_list2[:, indxech : indxech + 2], dtype=float)
-    else:
-        npeakslist = ones(numig2, int) * 25
-        xylist = np.zeros((numig2, 2), float)
-
-    dxystep_abs = abs(dxystep)
-
-    #        if (maptype != "fit")&(maptype[:2] != "rgb"):
-    #            print maptype
-    #            print list_plot_min
-    #            print list_plot_max
-    #            list_plot_cen = (list_plot_max+list_plot_min)/2.0
-
-    # -----------------------------------------------
-    # filling array of data to plot  'plotdat'
-    for i in range(numig2):
-        ind2 = where(map_imageindex_array == imglist[i])
-        #                print imglist[i]
-        #                print ind2
-        iref, jref = ind2[0][0], ind2[1][0]
-        if (d["zoom"] == "yes") & (npeakslist[i] > 0):
-            listxj.append(xylist[i, 0])
-            listyi.append(xylist[i, 1])
-
-        if maptype == "euler3":
-            plotdat[iref, jref, :] = euler3norm[i, :]
-
-            val_euler = euler3norm[i, :]
-            datarray_info[iref, jref, :] = val_euler
-            ARRAY_INFO_FILLED = True
-
-        elif maptype[:5] == "rgb_x":
-            plotdat[iref, jref, :] = rgbxyz[i, :] * 1.0
-
-            val_rgb_x = rgbxyz[i, :]
-            datarray_info[iref, jref, :] = val_rgb_x
-            ARRAY_INFO_FILLED = True
-
-        elif maptype == "fit":
-            #                 print "npeaksmax_forplot", npeaksmax_forplot
-            #                 print "npeaksmin_forplot", npeaksmin_forplot
-            plotdat[iref, jref, 0:3] = (npeakslist2[i] - npeaksmin_forplot) / (
-                npeaksmax_forplot - npeaksmin_forplot)
-
-            # print 'pixdevlist2[i]',pixdevlist2[i]
-
-            if d["low_npeaks_as_red_in_npeaks_map"] != None:
-                if npeakslist2[i] < d["low_npeaks_as_red_in_npeaks_map"]:
-                    plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
-            else:
-                if npeakslist2[i] < npeaksmin_forplot:
-                    plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
-
-            plotdat[iref, jref, 3:6] = (pixdevmax_forplot - pixdevlist2[i]) / (
-                pixdevmax_forplot - pixdevmin_forplot)
-
-            if d["high_pixdev_as_blue_and_red_in_pixdev_map"] != None:
-                if pixdevlist2[i] > 0.25:
-                    plotdat[iref, jref, 3:6] = np.array([0.0, 0.0, 1.0])
-                if pixdevlist2[i] > 0.5:
-                    plotdat[iref, jref, 3:6] = np.array([1.0, 0.0, 0.0])
-            else:
-                if pixdevlist2[i] > pixdevmax_forplot:
-                    plotdat[iref, jref, 3:6] = np.array([1.0, 0.0, 0.0])
-                if d["low_pixdev_as_green_in_pixdev_map"] != None:
-                    if (pixdevlist2[i] < 0.25) & (npeakslist2[i] > 20):
-                        plotdat[iref, jref, 3:6] = np.array([0.0, 1.0, 0.0])
-
-            valnbpeaks = npeakslist2[i]
-            valpixdev = pixdevlist2[i]
-            datarray_info[iref, jref, :] = [valnbpeaks,
-                                            valnbpeaks,
-                                            valnbpeaks,
-                                            valpixdev,
-                                            valpixdev,
-                                            valpixdev]
-            ARRAY_INFO_FILLED = True
-
-        #                elif maptype in ['max_rss','von_mises', "misorientation_angle", "intensity"]:
-        elif nb_values == 1:
-            if list_plot[i] > list_plot_max:
-                plotdat[iref, jref, 0:3] = np.array([1.0, 0.0, 0.0])
-            elif list_plot[i] < list_plot_min:
-                plotdat[iref, jref, 0:3] = np.array([1.0, 1.0, 1.0])
-            else:
-                for j in range(3):
-                    plotdat[iref, jref, j] = (list_plot_max - list_plot[i]) / (
-                        list_plot_max - list_plot_min)
-
-            val_singlevalue = list_plot[i]
-            datarray_info[iref, jref, :] = [val_singlevalue,
-                                            val_singlevalue,
-                                            val_singlevalue]
-
-            ARRAY_INFO_FILLED = True
-
-        else:
-            for j in range(nb_values):
-                if list_plot[i, j] > list_plot_max[j]:
-                    plotdat[iref, jref, 3 * j : 3 * j + 3] = d[
-                        "color_for_max_strain_positive"]
-                elif list_plot[i, j] < list_plot_min[j]:
-                    plotdat[iref, jref, 3 * j : 3 * j + 3] = d[
-                        "color_for_max_strain_negative"]
-                else:
-                    toto = (list_plot[i, j] - list_plot_min[j]) / (
-                        list_plot_max[j] - list_plot_min[j])
-                    plotdat[iref, jref, 3 * j : 3 * j + 3] = np.array(cmap(toto))[:3]
-
-                val = list_plot[i, j]
-                datarray_info[iref, jref, 3 * j : 3 * j + 3] = [val, val, val]
-
-                ARRAY_INFO_FILLED = True
-
-        if d["color_for_duplicate_images"] != None:
-            if i > 0:
-                dimg = imglist[i] - imglist[i - 1]
-                if dimg == 0.0:
-                    print("warning : two grains on img ", imglist[i])
-                    plotdat[iref, jref, 0:3] = d["color_for_duplicate_images"]
-
-        # reperage de l'ordre des images dans la carto
-    # #                if imglist[i]==min(imglist) :
-    # #                    plotdat[iref, jref, :] = np.array([1., 0., 0.])
-    # #                if imglist[i]==min(imglist)+ncol-1 :
-    # #                    plotdat[iref, jref, :] = np.array([0., 1., 0.])
-    # #                if imglist[i]==max(imglist) :
-    # #                    plotdat[iref, jref, :] = np.array([0., 0., 1.])
-    # plotdat[iref, jref, :] = np.array([1.0, 1.0, 1.0])*float(imglist[i])/max(imglist)
-    # print plotdat[iref, jref, :]
-
-    # extent corrected 06Feb13
-    xrange1 = np.array([0.0, ncol * dxystep[0]])
-    yrange1 = np.array([0.0, nlines * dxystep[1]])
-    xmin, xmax = min(xrange1), max(xrange1)
-    ymin, ymax = min(yrange1), max(yrange1)
-    extent = xmin, xmax, ymin, ymax
-    print(extent)
-
-    nb_plots = dict_nplot[maptype][2]
-    ngraphline = dict_nplot[maptype][3]
-    ngraphcol = dict_nplot[maptype][4]
-    ngraphlabels = dict_nplot[maptype][5]
-    print("nb_plots, ngraphline, ngraphcol, ngraphlabels")
-    print(nb_plots, ngraphline, ngraphcol, ngraphlabels)
-    print("shape(plotdat)")
-    print(shape(plotdat))
-
-    if d["zoom"] == "yes":
-        listxj = np.array(listxj, dtype=float)
-        listyi = np.array(listyi, dtype=float)
-        minxj = listxj.min() - 2 * dxystep_abs[0]
-        maxxj = listxj.max() + 2 * dxystep_abs[0]
-        minyi = listyi.min() - 2 * dxystep_abs[1]
-        maxyi = listyi.max() + 2 * dxystep_abs[1]
-        print("zoom : minxj, maxxj, minyi, maxyi : ", minxj, maxxj, minyi, maxyi)
-
-    sys.path.append(os.path.abspath(".."))
-
-    p.rcParams["figure.subplot.right"] = 0.9
-    p.rcParams["figure.subplot.left"] = 0.1
-    p.rcParams["figure.subplot.bottom"] = 0.1
-    p.rcParams["figure.subplot.top"] = 0.9
-
-    #        p.rcParams['savefig.bbox'] = "tight"
-    for j in range(nb_plots):
-        #             fig1 = p.figure(1, figsize=(15, 10))
-        # #            print p.setp(fig1)
-        # #            print p.getp(fig1)
-        #             ax = p.subplot(ngraphline, ngraphcol, j + 1)
-        #             imrgb = p.imshow(plotdat[:, :, 3 * j:3 * (j + 1)], interpolation='nearest', extent=extent)
-        # #            print p.setp(imrgb)
-        if d["col_for_simple_map"] == None:
-            strname = dict_nplot[maptype][6][j]
-        else:
-            strname = d["col_for_simple_map"]
-        #             if remove_ticklabels_titles == 0 :
-        #                 p.title(strname)
-        #             if remove_ticklabels_titles:
-        # #                print p.getp(ax)
-        #                 p.subplots_adjust(wspace=0.05, hspace=0.05)
-        #                 p.setp(ax, xticklabels=[])
-        #                 p.setp(ax, yticklabels=[])
-        #             if plot_grid :
-        #                 ax.grid(color=color_grid, linestyle='-', linewidth=2)
-        #
-        #             if PAR.cr_string == "\n":
-        #                 ax.locator_params('x', tight=True, nbins=5)
-        #                 ax.locator_params('y', tight=True, nbins=5)
-        #             if remove_ticklabels_titles == 0 :
-        #                 if (j == ngraphlabels) :
-        #                     p.xlabel("dxech (microns)")
-        #                     p.ylabel("dyech (microns)")
-        #             if zoom == "yes" :
-        #                 p.xlim(minxj, maxxj)
-        #                 p.ylim(minyi, maxyi)
-        #             if xylim_new != None :
-        #                 p.xlim(xylim_new[0], xylim_new[1])
-        #                 p.ylim(xylim_new[2], xylim_new[3])
-
-        if ARRAY_INFO_FILLED:
-            AddedArrayInfo = datarray_info[:, :, 3 * j : 3 * (j + 1)]
-            print("AddedArrayInfo.shape", AddedArrayInfo.shape)
-        else:
-            AddedArrayInfo = None
-
-        datatype = None
-
-        print("\n\nmaptype:%s" % maptype)
-        if maptype in ("fit", "von_mises", "max_rss"):
-            datatype = "scalar"
-
-            if maptype == "fit":
-                if j == 0:
-                    col_data = 0
-                    colorbar_label = "Nb peaks"
-                elif j == 1:
-                    col_data = 3
-                    colorbar_label = "PixDev"
-                z_values = datarray_info[:, :, col_data]
-
-            if maptype == "von_mises":
-                col_data = 0
-                colorbar_label = "von_mises"
-                z_values = datarray_info[:, :, col_data]
-
-            if maptype == "max_rss":
-                col_data = 0
-                colorbar_label = "max_rss"
-                z_values = datarray_info[:, :, col_data]
-
-        elif maptype.startswith(("rgb_", "strain", "stress", "res_shear")):
-            datatype = "RGBvector"
-            if maptype.startswith("rgb_x"):
-                colorbar_label = "rgb_x"
-                z_values = datarray_info[:, :, 3 * j : 3 * (j + 1)]
-            elif maptype.startswith("strain"):
-                colorbar_label = "strain"
-                #                     z_values = datarray_info[:, :, 3 * j:3 * (j + 1)]
-                z_values = plotdat[:, :, 3 * j : 3 * (j + 1)]
-            elif maptype.startswith("stress"):
-                colorbar_label = "stress"
-                z_values = plotdat[:, :, 3 * j : 3 * (j + 1)]
-            elif maptype.startswith("res_shear"):
-                colorbar_label = "res_shear"
-                z_values = plotdat[:, :, 3 * j : 3 * (j + 1)]
-
-        # to fit with odile's conventions
-        z_values = flipud(z_values)
-        ncol = int(ncol)
-        nlines = int(nlines)
-        i_index, j_index = GT.twoindices_positive_up_to(ncol - 1, nlines - 1).T
-
-        posmotor_i = i_index * dxystep[0]
-        posmotor_j = j_index * dxystep[1]
-
-        ar_posmotor = np.array([posmotor_i, posmotor_j]).T
-
-        ar_posmotor = reshape(ar_posmotor, (nlines, ncol, 2))
-
-        plo = ImshowFrame_Scalar(App_parent, -1, strname, z_values,
-                                dataarray_info=ar_posmotor,
-                                datatype=datatype,
-                                xylabels=("dxech (microns)", "dyech (microns)"),
-                                posmotorname=("Xsample", "Ysample"),
-                                Imageindices=map_imageindex_array,
-                                absolute_motorposition_unit="micron",
-                                colorbar_label=colorbar_label)
-
-        if App_parent is not None:
-            if App_parent.list_of_windows not in ([],):
-                App_parent.list_of_windows.append(plo)
-            else:
-                App_parent.list_of_windows = [plo]
-        plo.Show(True)
-
-    return 0
 
 
 def rotate_map(filexyz, map_rotation, xylim=None):
