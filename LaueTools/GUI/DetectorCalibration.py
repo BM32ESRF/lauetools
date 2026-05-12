@@ -87,7 +87,6 @@ else:
     import orientations as ORI
 
 
-
 DEG = DictLT.DEG
 PI = DictLT.PI
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
