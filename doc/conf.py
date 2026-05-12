@@ -27,7 +27,7 @@ print('in conf.py sys.path',sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'LaueTools'
-copyright = '2024, J.S. Micha, O. Robach., S. Tardif'
+copyright = '2026, J.S. Micha, O. Robach., S. Tardif'
 author = 'JS Micha, O. Robach.,S. Tardif'
 
 # The short X.Y version
@@ -134,6 +134,14 @@ htmlhelp_basename = 'LaueToolsDoc'
 
 todo_include_todos=True
 
+# Enable the search functionality
+html_search_language = 'en'  # or your language code
+html_search_options = {
+    'type': 'default',
+}
+
+# Ensure these are not excluded
+exclude_patterns = ['_build']  # Do NOT exclude '_static' or '_templates'
 
 # -- Options for LaTeX output ------------------------------------------------
 
