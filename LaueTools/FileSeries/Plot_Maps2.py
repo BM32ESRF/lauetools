@@ -90,7 +90,7 @@ class MainFrame_plotmaps(wx.Frame):
         txt_mapparameters.SetFont(font)
 
         self.choice_maptype = wx.Choice(self.panel, -1,
-                        choices=["fit", "strain6_crystal", "rgb_x_sample",
+                        choices=["fit", "strain6_crystal", "rgb_x_sample", "rgb_x_lab",
                         "strain6_sample", "euler3", "stress6_crystal", "stress6_sample",
                         "res_shear_stress", "max_rss", "von_mises", "w_mrad", ], )
         self.choice_maptype.SetSelection(0)
