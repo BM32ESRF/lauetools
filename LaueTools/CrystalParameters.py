@@ -14,6 +14,11 @@ import sys
 import numpy as np
 from numpy.linalg import inv
 
+if sys.version_info>=(3,12):
+    linalgnorm=np.linalg.norm
+else:
+    linalgnorm=np.linalg.linalg.norm
+
 try:
     ELASTICITYMODULE = True
     from . import elasticity as el
@@ -2146,7 +2151,6 @@ def strain_from_metric_difference(Ginit, Gfinal):
 
 
 # ---- S. Tardif Part   copy from dhkl module  -----------
-from numpy.linalg.linalg import norm
 
 # import xray_tools as xrt
 """
@@ -2243,15 +2247,15 @@ def calculate_a(fitfile, energy, h, k, l):
     astar = fitfile.astar_prime
     bstar = fitfile.bstar_prime
     cstar = fitfile.cstar_prime
-    #  qxoverq = (h * astar + k * bstar + l * cstar)[0] / norm((h * astar + k * bstar + l * cstar))
+    #  qxoverq = (h * astar + k * bstar + l * cstar)[0] / linalgnorm((h * astar + k * bstar + l * cstar))
     # Bragg angle
     print("astar,bstar,cstar", astar, bstar, cstar)
     theta = (np.arccos((h * astar + k * bstar + l * cstar)[0]
-            / norm((h * astar + k * bstar + l * cstar))) - np.pi / 2.0)
+            / linalgnorm((h * astar + k * bstar + l * cstar))) - np.pi / 2.0)
 
     print("theta in rad", theta)
     print("theta in degree", theta / np.pi * 180.0)
-    normG = norm((h * astar + k * bstar + l * cstar))
+    normG = linalgnorm((h * astar + k * bstar + l * cstar))
     print("normG par norm linalg", normG)
     normGclassic = np.sqrt(np.sum((h * astar + k * bstar + l * cstar) ** 2))
     print("normGclassic", normGclassic)
@@ -2313,15 +2317,15 @@ def calculate_from_UB(UBB0, energy, h, k, l):
     c_prime = np.cross(astar_prime, bstar_prime) / np.dot(
         cstar_prime, np.cross(astar_prime, bstar_prime))
 
-    boa = norm(b_prime) / norm(a_prime)
-    coa = norm(c_prime) / norm(a_prime)
+    boa = linalgnorm(b_prime) / linalgnorm(a_prime)
+    coa = linalgnorm(c_prime) / linalgnorm(a_prime)
 
-    alpha = np.arccos(np.dot(b_prime, c_prime) / norm(b_prime) / norm(c_prime))
-    beta = np.arccos(np.dot(c_prime, a_prime) / norm(c_prime) / norm(a_prime))
-    gamma = np.arccos(np.dot(a_prime, b_prime) / norm(a_prime) / norm(b_prime))
+    alpha = np.arccos(np.dot(b_prime, c_prime) / linalgnorm(b_prime) / linalgnorm(c_prime))
+    beta = np.arccos(np.dot(c_prime, a_prime) / linalgnorm(c_prime) / linalgnorm(a_prime))
+    gamma = np.arccos(np.dot(a_prime, b_prime) / linalgnorm(a_prime) / linalgnorm(b_prime))
 
     theta = (np.arccos((h * astar_prime + k * bstar_prime + l * cstar_prime)[0]
-            / norm((h * astar_prime + k * bstar_prime + l * cstar_prime))
+            / linalgnorm((h * astar_prime + k * bstar_prime + l * cstar_prime))
         ) - np.pi / 2.0)
     a = (E2L(energy) * np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2.0 / np.sin(theta))
     return a
@@ -2343,15 +2347,15 @@ def calculate_energy_from_UB(UBB0, a0, h, k, l):
     c_prime = np.cross(astar_prime, bstar_prime) / np.dot(
         cstar_prime, np.cross(astar_prime, bstar_prime))
 
-    boa = norm(b_prime) / norm(a_prime)
-    coa = norm(c_prime) / norm(a_prime)
+    boa = linalgnorm(b_prime) / linalgnorm(a_prime)
+    coa = linalgnorm(c_prime) / linalgnorm(a_prime)
 
-    alpha = np.arccos(np.dot(b_prime, c_prime) / norm(b_prime) / norm(c_prime))
-    beta = np.arccos(np.dot(c_prime, a_prime) / norm(c_prime) / norm(a_prime))
-    gamma = np.arccos(np.dot(a_prime, b_prime) / norm(a_prime) / norm(b_prime))
+    alpha = np.arccos(np.dot(b_prime, c_prime) / linalgnorm(b_prime) / linalgnorm(c_prime))
+    beta = np.arccos(np.dot(c_prime, a_prime) / linalgnorm(c_prime) / linalgnorm(a_prime))
+    gamma = np.arccos(np.dot(a_prime, b_prime) / linalgnorm(a_prime) / linalgnorm(b_prime))
 
     theta = (np.arccos((h * astar_prime + k * bstar_prime + l * cstar_prime)[0]
-            / norm((h * astar_prime + k * bstar_prime + l * cstar_prime))
+            / linalgnorm((h * astar_prime + k * bstar_prime + l * cstar_prime))
         ) - np.pi / 2.0)
     energy = L2E(a0
         / (np.sqrt(fhkl(boa, coa, alpha, beta, gamma, h, k, l)) / 2.0 / np.sin(theta)))
