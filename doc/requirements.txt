@@ -1,0 +1,18 @@
+# Sphinx and documentation dependencies
+sphinx>=4.0
+sphinx-rtd-theme
+recommonmark
+
+# Project dependencies (from root requirements.txt)
+fabio
+h5py
+imageio
+matplotlib
+networkx
+numpy
+scikit-image
+scipy
+tqdm
+attrdict
+pyperclip
+astropy
