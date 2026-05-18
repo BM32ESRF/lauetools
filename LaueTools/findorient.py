@@ -1337,17 +1337,19 @@ def hkl_to_string(hkl):
     return result[:-1]
 
 
-def HKLs2strings(hkls):
-    r"""
-    convert a list a hkl into string using HKL2string()
-    """
-    res = []
-    if np.shape(np.array(hkls)) == (3,):
-        return HKL2string(hkls)
-    else:
-        for hkl in hkls:
-            res.append(HKL2string(hkl))
-        return res
+# def HKLs2strings(hkls):
+#     r"""
+#     NOT USED!
+
+#     convert a list a hkl into string using HKL2string()
+#     """
+#     res = []
+#     if np.shape(np.array(hkls)) == (3,):
+#         return HKL2string(hkls)
+#     else:
+#         for hkl in hkls:
+#             res.append(HKL2string(hkl))
+#         return res
 
 
 def FilterEquivalentPairsHKL(pairs_hkl):
