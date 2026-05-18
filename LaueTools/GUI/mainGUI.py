@@ -23,7 +23,7 @@ if sys.version_info.major == 3 and sys.version_info.minor >= 12:
 if PYTHONVERSION_3p12_MIN:
     from importlib.metadata import version
     __version__ = version('LaueTools')
-    print('LaueTools __verdion__', __version__)
+    print('LaueTools __version__', __version__)
 
 else:
     import pkg_resources
