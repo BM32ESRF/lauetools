@@ -22,10 +22,7 @@ import matplotlib as mpl
 
 from typing import List, Union, Tuple, Dict, Iterable
 degrees = float
-arrayORList1D = Union[List, 'numpyarrayn']
-arrayORListNx2 = 'arrayORListNx2'
-arrayORListNx3 = 'arrayORListNx3'
-arrayORList3x3 = 'arrayORList3x3'
+
 flag = '0_OR_1'
 
 if mpl.__version__ < "2.2":
@@ -43,6 +40,7 @@ IDENTITYMATRIX = np.eye(3)
 
 if sys.version_info.major == 3:
     from . import IOLaueTools as IOLT
+    from . import CrystalParameters as CP
 else:
     import IOLaueTools as IOLT
 
@@ -218,19 +216,40 @@ def mutual_angles(A_deg, B_deg):
     return np.transpose(angles_deg)
 
     
-def calculdist_from_thetachi(points1:'arrayORListNx2', points2:'arrayORListNx2', fastmode:bool=False)->'numpyarrayNxM':
+def calculdist_from_thetachi(points1: Union[List[Tuple[float, float]], np.ndarray],
+                            points2: Union[List[Tuple[float, float]], np.ndarray],
+                            fastmode: bool = False
+                        ) -> np.ndarray:
     """
-    compute angular distance between two lists of pairs (THETA, CHI) in degrees
+    Compute the angular distance (in degrees) between two sets of (THETA, CHI) pairs.
 
-    :param points1: array or list of 2 elements
-    :param points2: array or list of 2 elements
-    :param fastmode: True, compute fast (at small angles  angular distance is close to euclidoan distance)
+    This function calculates the angular distance between all pairs of points from two input sets,
+    where each point is represented as (THETA, CHI) in degrees. The result is a matrix of shape
+    (len(points2), len(points1)), where each element [i, j] is the angular distance between
+    `points2[i]` and `points1[j]`.
 
-    return:
-    tab_angulardist:   matrix of all mutual angular distance
-                whose shape is (len(list2),len(list1))
+    Parameters
+    ----------
+    points1 : Union[List[Tuple[float, float]], np.ndarray]
+        First set of (THETA, CHI) points, either as a list of tuples or a 2D NumPy array.
+        Shape: (N, 2), where N is the number of points.
+    points2 : Union[List[Tuple[float, float]], np.ndarray]
+        Second set of (THETA, CHI) points, same format as `points1`.
+        Shape: (M, 2), where M is the number of points.
+    fastmode : bool, optional
+        If True, uses Euclidean distance as an approximation (valid for small angles only).
+        If False (default), computes the accurate angular distance using spherical trigonometry.
 
-    WARNING: theta angle is used, i.e. NOT 2THETA!
+    Returns
+    -------
+    np.ndarray
+        A 2D NumPy array of shape (M, N) containing the angular distances (in degrees) between
+        all pairs of points from `points2` and `points1`.
+
+    Warnings
+    --------
+    - THETA is used directly (NOT 2*THETA).
+    - For `fastmode=True`, the approximation is only valid for small angular distances.
     TIP: used with points1 = expspots  and points2 = theospots
     """
     data1 = np.array(points1)
@@ -283,7 +302,7 @@ def pairwise_distances_numpy(A, B):
     return np.linalg.norm(diff, axis=2)
 
 
-def pairwise_mutualangles(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
+def pairwise_mutualangles(XY1:np.ndarray, XY2:np.ndarray)->np.ndarray:
     """
     From two lists of pairs (2THETA, CHI) return:
 
@@ -304,7 +323,7 @@ def pairwise_mutualangles(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarray
             #k+=1
     return D
 
-def pairwise_mutualangles_1D(XY1:'numpyarrayNx2', XY2:'numpyarrayNx2')->'numpyarrayNxM':
+def pairwise_mutualangles_1D(XY1:np.ndarray, XY2:np.ndarray)->np.ndarray:
     """
     From two lists of pairs (2THETA, CHI) return:
 
@@ -375,7 +394,7 @@ def norme_list(listvec):
     return normarray
 
 
-def tensile_along_u(v:'arrayORListNx3', tensile:float, u:Union[Iterable, str]="zsample"):
+def tensile_along_u(v:np.ndarray, tensile:float, u:Union[Iterable, str]="zsample"):
     """
     from list of vectors of q vectors expressed in absolute frame,
     transform them so that to expand or compress the q vector component along u axis by factor 'tensile'.
@@ -418,7 +437,7 @@ def tensile_along_u(v:'arrayORListNx3', tensile:float, u:Union[Iterable, str]="z
     return wholelistvecfiltered
 
 
-def rotate_around_u(v:'arrayORListNx3', angle:degrees, u:'arrayORlist3'):
+def rotate_around_u(v:np.ndarray, angle:degrees, u:np.ndarray):
     """
     from list of vectors of v in absolute frame, rotate q vector component around u
     angle in deg
@@ -437,7 +456,7 @@ def rotate_around_u(v:'arrayORListNx3', angle:degrees, u:'arrayORlist3'):
     return wholelistvecfiltered
 
 
-def reflect_on_u(v:'arrayORListNx3', u:'arrayORlist3'):
+def reflect_on_u(v:np.ndarray, u:np.ndarray):
     """
     from list of vectors of v in absolute frame, reflect vector on plane defined by its normal u
     angle in deg
@@ -454,7 +473,7 @@ def reflect_on_u(v:'arrayORListNx3', u:'arrayORlist3'):
     return wholelistvecfiltered
 
 
-def strain_along_u(v:'arrayORListNx3', alpha, u:Union[Iterable, str]="zsample", anglesample:degrees=40):
+def strain_along_u(v:np.ndarray, alpha, u:Union[Iterable, str]="zsample", anglesample:degrees=40):
     """
     from list of vectors of v in absolute frame,
     /alpha expand or contract one vector component along u
@@ -480,7 +499,7 @@ def strain_along_u(v:'arrayORListNx3', alpha, u:Union[Iterable, str]="zsample", 
 
 
 # ------ ---------  Matrices
-def matline_to_mat3x3(mat)->'arrayORList3x3':
+def matline_to_mat3x3(mat)->np.ndarray:
     """
     arrange  9 elements in columns in a 3*3 matrix
     """
@@ -492,7 +511,7 @@ def matline_to_mat3x3(mat)->'arrayORList3x3':
     return mat1
 
 
-def mat3x3_to_matline(mat:'arrayORList3x3'):
+def mat3x3_to_matline(mat:np.ndarray):
     """
     convert the three columns of 3*3 matrix in a 9 elements vector
 
@@ -552,7 +571,7 @@ def epsmat_to_epsline(epsmat):
     return epsline
 
 
-def Orthonormalization(mat:'arrayORList3x3')->'arrayORList3x3':
+def Orthonormalization(mat:np.ndarray)->np.ndarray:
     """
     return orthonormalized matrix M from a matrix where columns are expression
     of non unit and non orthogonal expression of basis vector in absolute frame
@@ -574,7 +593,7 @@ def Orthonormalization(mat:'arrayORList3x3')->'arrayORList3x3':
     return np.array([new1, new2, new3]).T
 
 
-def UBdecomposition_RRPP(UBmat:'arrayORList3x3')->Tuple[arrayORList3x3]:
+def UBdecomposition_RRPP(UBmat:np.ndarray)->Tuple[np.ndarray]:
     """
     decomposes UBmat in matrix product RR*PP
     where RR is pure rotation and PP symetric matrix
@@ -702,7 +721,7 @@ def properinteger(flo):
 
 
 # ----- ------------  SET
-def FindClosestPoint(arraypts:'arrayORListNx2', XY:'arrayORList2', returndist:flag=0):
+def FindClosestPoint(arraypts:np.ndarray, XY:np.ndarray, returndist:flag=0):
     """
     Returns the index of the closest point in arraypts from point XY =[X,Y]
 
@@ -716,7 +735,7 @@ def FindClosestPoint(arraypts:'arrayORListNx2', XY:'arrayORList2', returndist:fl
         return indclose
 
 
-def FindTwoClosestPoints(arraypts:'arrayORListNx2', XY:'arrayORList2'):
+def FindTwoClosestPoints(arraypts:np.ndarray, XY:np.ndarray):
     """
     Returns the index of the two closest points in arraypts from point XY =[X,Y]
 
@@ -730,7 +749,7 @@ def FindTwoClosestPoints(arraypts:'arrayORListNx2', XY:'arrayORList2'):
     return indclose, np.sqrt(np.sum(dist ** 2, axis=1))[indclose]
 
 
-def SortPoints_fromPositions(TestPoints:'arrayORListNx2', ReferencePoints:'arrayORListNx2', tolerancedistance:float=5):
+def SortPoints_fromPositions(TestPoints:np.ndarray, ReferencePoints:np.ndarray, tolerancedistance:float=5):
     """
     to sort list of points as a function of their proximity to a sorted reference list of spots
 
@@ -802,7 +821,7 @@ def SortPoints_fromPositions(TestPoints:'arrayORListNx2', ReferencePoints:'array
         isolated_pts_in_ReferencePoints)
 
 
-def prepend_in_list(list_to_modify:arrayORList1D, elems:arrayORList1D):
+def prepend_in_list(list_to_modify:np.ndarray, elems:np.ndarray):
     """
     move elements of list_to_modify those that are at the beginning of list_to_modify
 
@@ -839,7 +858,7 @@ def prepend_in_list(list_to_modify:arrayORList1D, elems:arrayORList1D):
     return elems + list_to_modify
 
 
-def find_closest(input_array:arrayORList1D, target_array:arrayORList1D, tol:float)->Tuple[Iterable]:
+def find_closest(input_array:np.ndarray, target_array:np.ndarray, tol:float)->Tuple[Iterable]:
     """
     Find the set of elements in input_array that are closest to
     elements in target_array.  Record the indices of the elements in
@@ -921,7 +940,7 @@ def find_closest(input_array:arrayORList1D, target_array:arrayORList1D, tol:floa
     return closest_indices, accept_indices, reject_indices
 
 
-def mutualpairs(ind1:arrayORList1D, ind2:arrayORList1D)->'arrayORList2D':
+def mutualpairs(ind1:np.ndarray, ind2:np.ndarray)->np.ndarray:
     """return all pairs from elements of 2 lists
 
     .. example::
@@ -938,31 +957,49 @@ def mutualpairs(ind1:arrayORList1D, ind2:arrayORList1D)->'arrayORList2D':
     return np.transpose([np.tile(ind1, len(ind2)), np.repeat(ind2, len(ind1))])
 
 
-def pairs_of_indices(n:int)->'arrayORListNx2':
+def pairs_of_indices(n: int) -> np.ndarray:
     """
-    return indice position of non zero and non diagonal elements in triangular up matrix (n*n)
-    pairs_of_indices(5)
+    Generate the indices of non-zero, non-diagonal elements in the upper triangular part of an n x n matrix.
+
+    This function returns all unique pairs (i, j) where i < j, which correspond to the positions of elements
+    in the upper triangular part of a square matrix (excluding the diagonal). Useful for operations involving
+    combinations of two distinct elements from a set (e.g., pairwise distances, interactions, or symmetric matrix construction).
+
+    Parameters
+    ----------
+    n : int
+        The size of the square matrix (n x n).
+
+    Returns
+    -------
+    np.ndarray
+        A 2D NumPy array of shape (m, 2), where m = n*(n-1)/2, containing all pairs (i, j) with i < j.
+        Each row is a tuple-like pair of integers (i, j).
+
+    Examples
+    --------
+    >>> pairs_of_indices(3)
     array([[0, 1],
-       [0, 2],
-       [0, 3],
-       [0, 4],
-       [1, 2],
-       [1, 3],
-       [1, 4],
-       [2, 3],
-       [2, 4],
-       [3, 4]])
+           [0, 2],
+           [1, 2]])
 
-    Useful to get elements coming from expression derived from two non identical elements of a set
+    >>> pairs_of_indices(5)
+    array([[0, 1],
+           [0, 2],
+           [0, 3],
+           [0, 4],
+           [1, 2],
+           [1, 3],
+           [1, 4],
+           [2, 3],
+           [2, 4],
+           [3, 4]])
     """
-    pairs = []
-    for i in list(range(n)):
-        for j in list(range(i + 1, n)):
-            pairs.append([i, j])
-    return np.array(pairs)
+    indices = np.array([(i, j) for i in range(n) for j in range(i + 1, n)])
+    return indices
 
 
-def allpairs_in_set(list_of_indices:arrayORList1D)->'arrayORListNx2':
+def allpairs_in_set(list_of_indices:np.ndarray)->np.ndarray:
     """
     return all combinations by pairs of elements in list_of_indices
 
@@ -992,7 +1029,7 @@ def allpairs_in_set(list_of_indices:arrayORList1D)->'arrayORListNx2':
     return np.take(list_of_indices, pairs)
 
 
-def return_pair(n:int, pairs:'arrayORListNx2'):
+def return_pair(n:int, pairs:np.ndarray):
     """
     return array of integer that are in correspondence in pairs with integer n
     """
@@ -1003,7 +1040,7 @@ def return_pair(n:int, pairs:'arrayORListNx2'):
     return Pairs[(i, j)]
 
 
-def getSets(pairs:'arrayORListNx2'):
+def getSets(pairs:np.ndarray):
     """
     find indices pairs from index connections given by a list from pairs of indices
 
@@ -1061,7 +1098,7 @@ def getSets(pairs:'arrayORListNx2'):
     return res_sets
 
 
-def Set_dict_frompairs(pairs_index:'arrayORListNx2', verbose:int=0):
+def Set_dict_frompairs(pairs_index:np.ndarray, verbose:int=0):
     """
     from association pairs of integers return dictionnary of associated integer
 
@@ -1116,7 +1153,7 @@ def Set_dict_frompairs(pairs_index:'arrayORListNx2', verbose:int=0):
     return res_final, res_dict
 
 
-def getCommonPts(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance=0.5, samelist:bool=False)->Tuple:
+def getCommonPts(XY1:np.ndarray, XY2:np.ndarray, dist_tolerance=0.5, samelist:bool=False)->Tuple:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1170,7 +1207,7 @@ def getCommonPts(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance=0.5,
 
     return ind_XY1, ind_XY2, WITHINTOLERANCE
 
-def getCommonPts3D(XYZ1:'arrayORListNx3', XYZ2:'arrayORListNx3', dist_tolerance=0.5, samelist:bool=False):
+def getCommonPts3D(XYZ1:np.ndarray, XYZ2:np.ndarray, dist_tolerance=0.5, samelist:bool=False):
     """
     return indices in XYZ1 and in XYZ2 of common pts (3D) (or reciprocal nodes HKL) and
     a flag is closest distances are below dist_tolerance
@@ -1218,7 +1255,7 @@ def getCommonPts3D(XYZ1:'arrayORListNx3', XYZ2:'arrayORListNx3', dist_tolerance=
 
     return ind_XYZ1, ind_XYZ2, WITHINTOLERANCE
 
-def getPairsbetweenTwoSets(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
+def getPairsbetweenTwoSets(XY1:np.ndarray, XY2:np.ndarray, dist_tolerance:float=0.5, samelist:bool=False)->Tuple[Iterable]:
     """
     return indices in XY1 and in XY2 of common pts (2D) and
     a flag is closest distances are below dist_tolerance
@@ -1250,7 +1287,7 @@ def getPairsbetweenTwoSets(XY1:'arrayORListNx2', XY2:'arrayORListNx2', dist_tole
         
     return in1, in2
 
-def sortclosestpoints(pt0:'arrayORListNx2', pts:'arrayORListNx2')->Tuple:
+def sortclosestpoints(pt0:np.ndarray, pts:np.ndarray)->Tuple:
     """return pt index in pts sorted by increasing distance from pt0
 
     Note: cartesian distance
@@ -1426,7 +1463,7 @@ def removeClosePoints_2(Twicetheta, Chi, dist_tolerance=0.5):
     return Twicetheta[tokeep], Chi[tokeep], tokeep
 
 
-def removeClosePoints(X:arrayORList1D, Y:arrayORList1D, dist_tolerance=0.5):
+def removeClosePoints(X:np.ndarray, Y:np.ndarray, dist_tolerance=0.5):
     r"""
     remove very close spots within dist_tolerance (cartesian distance)
     """
@@ -1653,6 +1690,7 @@ def LaueSpotsCorrelator_multiprocessing(fileindexrange, imageindexref, Parameter
 
 
 def log_result(result):
+    """in dev not finished"""
     if len(result) == 2:
         print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
         list_produced_files.append(str(result[1]))
@@ -1679,7 +1717,7 @@ def threeindices_up_to_old(n):
             return np.vstack((majorindices_neg, majorindices_pos))
 
 
-def threeindices_up_to(n:int, remove_negative_l:bool=False)->'numpyarraynx3':
+def threeindices_up_to(n:int, remove_negative_l:bool=False)->np.ndarray:
     """
     build major hkl indices up to n  (each scanned from -n to n)
 
@@ -1708,7 +1746,7 @@ def threeindices_up_to(n:int, remove_negative_l:bool=False)->'numpyarraynx3':
             return majorindices_000removed
 
 
-def twoindices_up_to(n:int)->'numpyarraynx2':
+def twoindices_up_to(n:int)->np.ndarray:
     """
     build major hkl indices up to n  (each scanned from -n to n)
     """
@@ -1807,7 +1845,7 @@ def best_prior_array_element(i:int, j:int, array2Dshape:Tuple, maxdist:float=1, 
     return [ic[b], jc[b]], absoluteindices[b], dist[b]
 
 
-def GCD(ar_hkl:'numpyarraynx3', verbose=0):
+def GCD(ar_hkl:np.ndarray, verbose=0):
     """
     return GCD for each element of an array of hkl:
     """
@@ -1911,7 +1949,7 @@ def reduceHKL(ar_hkl):
     return res
 
 
-def find_parallel_hkl(HKLs:'numpyarraynx3')->'numpyarraynxnx3':
+def find_parallel_hkl(HKLs:np.ndarray)->np.ndarray:
     """
     use the tip: 'better looping than broadcasting ...'
     http://www.scipy.org/EricsBroadcastingDoc
@@ -1965,7 +2003,7 @@ def extract2Dslice(center:int, halfsizes, inputarray2D, verbose:int=0):
     return extract_array((indices_center[0][0], indices_center[1][0]), halfsizes, inputarray2D)
 
 
-def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:'numpyarray2D')->'numpyarray2D':
+def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:np.ndarray)->np.ndarray:
     """
     extract a 2D slice array from inputarray2D center on 'indices_center'
     aa= array([[ 0,  1,  2,  3,  4,  5,  6],
@@ -2006,7 +2044,7 @@ def extract_array(indices_center:Tuple, halfsizes:Tuple, inputarray2D:'numpyarra
     return inputarray2D[imin : imax + 1, jmin : jmax + 1]
 
 
-def reshapepartial2D(d:'numpyarray', targetdim:Tuple)->'numpyarray2D':
+def reshapepartial2D(d:np.ndarray, targetdim:Tuple)->np.ndarray:
     """ reshape 1D data of size n to 2D one: targetdim where n < targetdim[0]*targetdim[1]
     targetdim[0] is the fastmotor axis dim size
     
@@ -2027,7 +2065,7 @@ def reshapepartial2D(d:'numpyarray', targetdim:Tuple)->'numpyarray2D':
     #print(lastline)
     return np.concatenate((ddd,[lastline]), axis=0)
 
-def to2Darray(a:'numpyarray2D', n2:int)->'numpyarray2D':
+def to2Darray(a:np.ndarray, n2:int)->np.ndarray:
     """ return a zero padded array from elements of a and new shape =(n1,n2)
     n2 is the number element in the 2nd axis (fast axis)
 
@@ -2044,7 +2082,7 @@ def to2Darray(a:'numpyarray2D', n2:int)->'numpyarray2D':
     return b.reshape((n1, n2))
 
 
-def splitarray(a: 'numpyarraynxm', ndivisions:Iterable[int]):
+def splitarray(a: np.ndarray, ndivisions:Iterable[int]):
     """ split array into several subarrays
 
     ndivisions: tuple of (n1divisions,n2divisions)
@@ -2139,7 +2177,7 @@ def fct_j(_, q):
     return q
 
 
-def indices_in_flatTriuMatrix(n:int)->'numpyarray':
+def indices_in_flatTriuMatrix(n:int)->np.ndarray:
     """
     return index in flattened array of triangular up element
     (excluding diagonal ones) in n*n matrix
@@ -2155,7 +2193,7 @@ def indices_in_flatTriuMatrix(n:int)->'numpyarray':
     return np.where(np.ravel(np.triu(np.fromfunction(fct_j, (n, n)), k=1)) != 0)[0]
 
 
-def indices_in_TriuMatrix(ar_indices:Iterable[int], n:int)->'numpyarraynx2':
+def indices_in_TriuMatrix(ar_indices:Iterable[int], n:int)->np.ndarray:
     """
      convert 1d triangular up (excluded diagonal) indices
      to  i,j 2D array indices of a square n*n M matrix
@@ -2270,7 +2308,7 @@ def getlist_fileindexrange_multiprocessing(index_start:int, index_final:int, nb_
 
 
 # ---- ---------------- Rotation matrices
-def rotY(angle:'degrees')->'numpyarray3x3':
+def rotY(angle:'degrees')->np.ndarray:
     """
     return rotation matrix around 2 basis vector (ie Y) with angle in DEGREES
     """
@@ -2281,7 +2319,7 @@ def rotY(angle:'degrees')->'numpyarray3x3':
     return np.array([[1, 0, 0.0], [0.0, ca, sa], [0, -sa, ca]])
 
 
-def matRot(axis:Iterable[float], angle:'degrees')->'numpyarray3x3':
+def matRot(axis:Iterable[float], angle:'degrees')->np.ndarray:
     """
     gives rotation matrix around axis and angle deg
     """
@@ -2303,7 +2341,7 @@ def matRot(axis:Iterable[float], angle:'degrees')->'numpyarray3x3':
         + (1 - np.cos(angrad)) * syme
         + np.sin(angrad) * antisyme)
 
-def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.,targetchi:'degrees'=0., B0matrix:'numpyarray3x3'=None, randomrotation:bool=False, verbose:int=0)-> 'numpyarray3x3':
+def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.,targetchi:'degrees'=0., B0matrix:np.ndarray=None, randomrotation:bool=False, verbose:int=0)-> np.ndarray:
     """
     proposes one (non unique) orientation matrix to put reflection hkl at 2theta=target2theta and chi =0
 
@@ -2354,7 +2392,7 @@ def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.
     return np.dot(matrot3, matrotqdirtqrget)
 
 
-def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->degrees:
+def getRotationAngleFrom2Matrices(A:np.ndarray, B:np.ndarray)->degrees:
     """
     return rotation angle (in degree) of operator R between two pure rotations A,B: B=RA
     tr(R)=1+2cos(theta)
@@ -2365,7 +2403,7 @@ def getRotationAngleFrom2Matrices(A:'numpyarray3x3', B:'numpyarray3x3')->degrees
         / np.pi)
 
 
-def randomRotationMatrix()->'numpyarray3x3':
+def randomRotationMatrix()->np.ndarray:
     """
     return a random rotation matrix
     """
@@ -2405,7 +2443,7 @@ def OrientMatrix_fromGL(filename="matrixfromopenGL.dat"):
     return result
 
 
-def extract_rawmatrix_fromGL(extfilename:str="matrixfromopenGL.dat")->'numpyarray3x3':
+def extract_rawmatrix_fromGL(extfilename:str="matrixfromopenGL.dat")->np.ndarray:
     """
         return orientation matrix from that given by openGL laue3d.py
     """
@@ -2417,7 +2455,7 @@ def extract_rawmatrix_fromGL(extfilename:str="matrixfromopenGL.dat")->'numpyarra
     return mat3x3fromGLtemp
 
 
-def fromMatrix_to_elemangles(mat:'numpyarray3x3')->List[float]:  # PROBLEME D'UNICITE de la decomposition
+def fromMatrix_to_elemangles(mat:np.ndarray)->List[float]:  # PROBLEME D'UNICITE de la decomposition
     # exemple :fromelemangles_toMatrix(fromMatrix_to_elemangles(
     #    [[-0.68125975000000005, 0.093353649999999996, -0.72606490999999995],
     #     [0.68874564999999999, 0.41666590999999997, -0.59331184999999997],
@@ -2488,7 +2526,7 @@ def fromelemangles_toMatrix(threeangles):
     return mat
 
 
-def fromEULERangles_toMatrix(angles: Iterable['degrees'])-> "numpyarray3x3":
+def fromEULERangles_toMatrix(angles: Iterable['degrees'])-> np.ndarray:
     """ gives the orientation matrix from the three EULER angles of rotations
     (Rz is applied first then Rx around the new rotated X,
     then Rz again around a rotated z axis
@@ -2533,7 +2571,7 @@ def fromEULERangles_toMatrix(angles: Iterable['degrees'])-> "numpyarray3x3":
     return mat
 
 
-def fromEULERangles_toMatrix2(angles:Iterable['degrees'])->"numpyarray3x3":
+def fromEULERangles_toMatrix2(angles:Iterable['degrees'])->np.ndarray:
     """ gives the orientation matrix from the three EULER angles of rotations
     
     (Rz is applied first then Rx around the new rotated X,
@@ -2583,7 +2621,7 @@ def norme(vec1):
     return nvec
 
 
-def calc_Euler_angles(mat3x3:"numpyarray3x3")->Tuple[degrees,degrees,degrees]:
+def calc_Euler_angles(mat3x3:np.ndarray)->Tuple[degrees,degrees,degrees]:
     """
     Calculates unique 3 euler angles representation of mat3x3
     from O Robach
@@ -2592,7 +2630,7 @@ def calc_Euler_angles(mat3x3:"numpyarray3x3")->Tuple[degrees,degrees,degrees]:
     # see LaueGeometry.find_lowest_Euler_Angles_matrix()
     # phi 0, theta 1, psi 2
 
-    mat = matline_to_mat3x3(matstarlab_to_matstarlabOND(mat3x3_to_matline(mat3x3)))
+    mat = matline_to_mat3x3(CP.matstarlab_to_matstarlabOND(mat3x3_to_matline(mat3x3)))
 
     RAD = 180.0 / np.pi
 
@@ -2623,7 +2661,7 @@ def calc_Euler_angles(mat3x3:"numpyarray3x3")->Tuple[degrees,degrees,degrees]:
         return euler
 
 
-def fromMatrix_to_EulerAngles(mat:'numpyarray3x3')->Tuple[degrees,degrees,degrees]:
+def fromMatrix_to_EulerAngles(mat:np.ndarray)->Tuple[degrees,degrees,degrees]:
     """
     following bunge's euler definition
 
@@ -2647,10 +2685,10 @@ def fromMatrix_to_EulerAngles(mat:'numpyarray3x3')->Tuple[degrees,degrees,degree
 #    return phi1, PHI, phi2
 
 
-def getdirectbasiscosines(UBmatrix_array:'numpyarray3x3', B0:'numpyarray3x3'=np.eye(3), frame:str="sample",
-                                                    vec1:Iterable[float]=[1, 0, 0],
-                                                    vec2:Iterable[float]=[0, 1, 0],
-                                                    vec3:Iterable[float]=[0, 0, 1])->Tuple['numpyarray9', 'numpyarray3x3']:
+def getdirectbasiscosines(UBmatrix_array:np.ndarray, B0:np.ndarray=np.eye(3), frame:str="sample",
+                                    vec1:Iterable[float]=[1, 0, 0],
+                                    vec2:Iterable[float]=[0, 1, 0],
+                                    vec3:Iterable[float]=[0, 0, 1])->Tuple[np.ndarray, np.ndarray]:
     """
     returns 3 cosines of for each of three vectors given the orientation matrix array of n matrices (shape = n,3,3)
 
@@ -2734,7 +2772,7 @@ def getdirectbasiscosines(UBmatrix_array:'numpyarray3x3', B0:'numpyarray3x3'=np.
 
 
 # --- ------------ Quaternions
-def fromQuat_to_MatrixRot(inputquat:Iterable[float])->'numpyarray3x3':
+def fromQuat_to_MatrixRot(inputquat:Iterable[float])->np.ndarray:
     """
     Converts the H quaternion quat into a new equivalent 3x3 rotation matrix.
     """
@@ -2800,7 +2838,7 @@ def fromQuat_to_MatrixRot(inputquat:Iterable[float])->'numpyarray3x3':
 # return np.array([[a00, a01, a02],[a10, a11, a12],[a20, a21, a22]])
 
 
-def fromMatrix_toQuat(matrix:'numpyarray3x3')->List[float]:
+def fromMatrix_toQuat(matrix:np.ndarray)->List[float]:
     """convert 3x3 rotation matrix to 4 elements quaternion"""
     qw = np.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2]) / 2.0
     qx = (matrix[2][1] - matrix[1][2]) / (4 * qw)
