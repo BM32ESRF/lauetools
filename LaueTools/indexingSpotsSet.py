@@ -71,7 +71,7 @@ class OrientMatrix:
     class of orientation matrix which may have several representation
     """
 
-    def __init__(self, matrix: 'numpyarray3x3'=None, eulers:Iterable[degrees]=None):
+    def __init__(self, matrix: np.ndarray=None, eulers:Iterable[degrees]=None):
         if matrix is not None:
             self.matrix = matrix
             self.eulers = None
@@ -1957,7 +1957,7 @@ class spotsset:
         else:
             return resclose[0]
 
-    def getSpotsLinks(self, UBOrientMatrix:'numpyArrayOrList3x3', exp_data=None, useabsoluteindex=None,
+    def getSpotsLinks(self, UBOrientMatrix:np.ndarray, exp_data=None, useabsoluteindex=None,
                                                             removeharmonics:int=1,
                                                             ResolutionAngstrom: Union[float, None]=None,
                                                             veryclose_angletol:float=1.0,
@@ -4845,6 +4845,7 @@ def mergeDictRes(list_of_dictfiles, outputfilename="MergedRes", dirname=None):
 list_produced_files = []
 
 def log_result(result):
+    """in dev not finished"""
     if len(result) == 2:
         print("********************\n\n\n\n %s \n\n\n\n\n******************" % result[1])
         list_produced_files.append(str(result[1]))
