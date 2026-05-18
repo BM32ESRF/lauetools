@@ -934,115 +934,219 @@ class StrainXtal(wx.Panel):
 
         self.SetSizer(vbox)
 
-    def update_latticeparameters(self):
+    # def update_latticeparameters(self):
 
+    #     self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
+    #     self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
+    #     self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material][1])
+
+    #     for k, key_param in enumerate(self.lattice_parameters_key):
+    #         self.lattice_parameters_dict[key_param] = self.lattice_parameters[k]
+    #         getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters[k]))
+
+    # def ModifyLatticeParamsStep(self, event, sign_of_step):
+    #     """
+    #     modify lattice parameters according to event.name and sign
+    #     """
+
+    #     #         print "sign_of_step", sign_of_step
+    #     name = event.GetEventObject().myname
+    #     #         print "name", name
+
+    #     key_param = name.split("_")[-1]
+
+    #     self.lattice_parameters_dict[key_param] = float(getattr(self,
+    #                                                     "currentctrl_%s" % key_param).GetValue())
+
+    #     if sign_of_step == "+":
+    #         stepsign = 1.0
+    #     elif sign_of_step == "-":
+    #         stepsign = -1.0
+
+    #     #         print "modify lattice parameter: %s and initial value: %.2f" % (key_param, self.lattice_parameters_dict[key_param])
+    #     self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self,
+    #                                                         "stepctrl_%s" % key_param).GetValue())
+
+    #     # now building or updating an element in dict_Materials
+    #     if "strained" not in self.key_material:
+    #         new_key_material = "strained_%s" % self.key_material
+    #     else:
+    #         new_key_material = self.key_material
+
+    #     #DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
+    #     # update label
+    #     #DictLT.dict_Materials[new_key_material][0] = new_key_material
+    #     DictLT.dict_Materials.add_or_update_material(
+    #                             label=new_key_material,
+    #                             lattice=self.key_material_initparams_in_dict['lattice'],
+    #                             extinction=self.key_material_initparams_in_dict['extinction'])
+        
+
+    #     if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
+    #         print("adding new material in comboelement list")
+    #         self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
+
+    #     new_lattice_params = []
+    #     for _key_param in self.lattice_parameters_key:
+    #         new_lattice_params.append(self.lattice_parameters_dict[_key_param])
+
+    #     #         print "from self.lattice_parameters_dict", self.lattice_parameters_dict
+
+    #     DictLT.dict_Materials[new_key_material][1] = new_lattice_params
+
+    #     print("new lattice parameters", new_lattice_params)
+    #     print("for material: %s" % new_key_material)
+
+    #     getattr(self,
+    #             "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
+
+    #     self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
+    #     self.mainframe._replot(1)
+
+    # def ModifyLatticeParams(self, event):
+
+    #     name = event.GetEventObject().myname
+
+    #     key_param = name.split("_")[-1]
+
+    #     formulaexpr = getattr(self,"currentctrl_%s" % key_param).GetValue()
+    #     self.lattice_parameters_dict[key_param] = float(eval(formulaexpr))
+
+    #     if "strained" not in self.key_material:
+    #         new_key_material = "strained_%s" % self.key_material
+    #     else:
+    #         new_key_material = self.key_material
+
+    #     DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
+    #     DictLT.dict_Materials[new_key_material][0] = new_key_material
+
+    #     if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
+    #         print("adding new material in comboelement list")
+    #         self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
+
+    #     new_lattice_params = []
+    #     for _key_param in self.lattice_parameters_key:
+    #         new_lattice_params.append(self.lattice_parameters_dict[_key_param])
+
+    #     DictLT.dict_Materials[new_key_material][1] = new_lattice_params
+
+    #     print("new lattice parameters", new_lattice_params)
+    #     print("for material: %s" % new_key_material)
+
+    #     # getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param])) 
+    #     getattr(self, "currentctrl_%s" % key_param).SetValue(formulaexpr)
+
+    #     self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
+    #     self.mainframe._replot(1)
+
+
+    def update_latticeparameters(self):
         self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
-        self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
-        self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material][1])
+
+        if isinstance(DictLT.dict_Materials, DictLT.Materials):
+            # Materials object: get_material_as_list returns [key, lattice, extinction]
+            material_list = DictLT.dict_Materials.get_material_as_list(self.key_material)
+            self.key_material_initparams_in_dict = {
+                'label': material_list[0],
+                'lattice': material_list[1],
+                'extinction': material_list[2]
+            }
+            self.lattice_parameters = copy.copy(material_list[1])
+        else:
+            # Basic dictionary: assume structure is {key: {'lattice': [...], 'extinction': '...'}}
+            self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
+            self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material]['lattice'])
 
         for k, key_param in enumerate(self.lattice_parameters_key):
             self.lattice_parameters_dict[key_param] = self.lattice_parameters[k]
             getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters[k]))
 
+
     def ModifyLatticeParamsStep(self, event, sign_of_step):
-        """
-        modify lattice parameters according to event.name and sign
-        """
-
-        #         print "sign_of_step", sign_of_step
         name = event.GetEventObject().myname
-        #         print "name", name
-
         key_param = name.split("_")[-1]
 
-        self.lattice_parameters_dict[key_param] = float(getattr(self,
-                                                        "currentctrl_%s" % key_param).GetValue())
+        self.lattice_parameters_dict[key_param] = float(getattr(self, "currentctrl_%s" % key_param).GetValue())
 
-        if sign_of_step == "+":
-            stepsign = 1.0
-        elif sign_of_step == "-":
-            stepsign = -1.0
+        stepsign = 1.0 if sign_of_step == "+" else -1.0
+        self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self, "stepctrl_%s" % key_param).GetValue())
 
-        #         print "modify lattice parameter: %s and initial value: %.2f" % (key_param, self.lattice_parameters_dict[key_param])
-        self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self,
-                                                            "stepctrl_%s" % key_param).GetValue())
+        # Build new_key_material
+        new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
 
-        # now building or updating an element in dict_Materials
-        if "strained" not in self.key_material:
-            new_key_material = "strained_%s" % self.key_material
+        # Update dict_Materials
+        if isinstance(DictLT.dict_Materials,DictLT.Materials):
+            # Materials object: use add_or_update_material
+            current_material = DictLT.dict_Materials.get_material_as_list(self.key_material)
+            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
+            DictLT.dict_Materials.add_or_update_material(
+                label=new_key_material,
+                lattice=new_lattice_params,
+                extinction=current_material[2]  # Preserve extinction
+            )
         else:
-            new_key_material = self.key_material
+            # Basic dictionary: direct assignment
+            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
+            DictLT.dict_Materials[new_key_material] = {
+                'lattice': new_lattice_params,
+                'extinction': DictLT.dict_Materials[self.key_material]['extinction']
+            }
 
-        DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
-        # update label
-        DictLT.dict_Materials[new_key_material][0] = new_key_material
-
+        # Update combo box if needed
         if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
-            print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
-        new_lattice_params = []
-        for _key_param in self.lattice_parameters_key:
-            new_lattice_params.append(self.lattice_parameters_dict[_key_param])
-
-        #         print "from self.lattice_parameters_dict", self.lattice_parameters_dict
-
-        DictLT.dict_Materials[new_key_material][1] = new_lattice_params
-
-        print("new lattice parameters", new_lattice_params)
-        print("for material: %s" % new_key_material)
-
-        getattr(self,
-                "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
-
+        # Update UI
+        getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
 
+    
     def ModifyLatticeParams(self, event):
-
         name = event.GetEventObject().myname
-
         key_param = name.split("_")[-1]
 
-        formulaexpr = getattr(self,"currentctrl_%s" % key_param).GetValue()
+        formulaexpr = getattr(self, "currentctrl_%s" % key_param).GetValue()
         self.lattice_parameters_dict[key_param] = float(eval(formulaexpr))
 
-        if "strained" not in self.key_material:
-            new_key_material = "strained_%s" % self.key_material
+        new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
+
+        # Update dict_Materials
+        if isinstance(DictLT.dict_Materials, DictLT.Materials):
+            # Materials object: use add_or_update_material
+            current_material = DictLT.dict_Materials.get_material_as_list(self.key_material)
+            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
+            DictLT.dict_Materials.add_or_update_material(
+                label=new_key_material,
+                lattice=new_lattice_params,
+                extinction=current_material[2]  # Preserve extinction
+            )
         else:
-            new_key_material = self.key_material
+            # Basic dictionary: direct assignment
+            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
+            DictLT.dict_Materials[new_key_material] = {
+                'lattice': new_lattice_params,
+                'extinction': DictLT.dict_Materials[self.key_material]['extinction']
+            }
 
-        DictLT.dict_Materials[new_key_material] = self.key_material_initparams_in_dict
-        DictLT.dict_Materials[new_key_material][0] = new_key_material
-
+        # Update combo box if needed
         if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
-            print("adding new material in comboelement list")
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
-        new_lattice_params = []
-        for _key_param in self.lattice_parameters_key:
-            new_lattice_params.append(self.lattice_parameters_dict[_key_param])
-
-        DictLT.dict_Materials[new_key_material][1] = new_lattice_params
-
-        print("new lattice parameters", new_lattice_params)
-        print("for material: %s" % new_key_material)
-
-        # getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param])) 
+        # Update UI
         getattr(self, "currentctrl_%s" % key_param).SetValue(formulaexpr)
-
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
 
-    def OnActivateRotation(self, _):
+        def OnActivateRotation(self, _):
 
-        self.mainframe.RotationActivated = not self.mainframe.RotationActivated
+            self.mainframe.RotationActivated = not self.mainframe.RotationActivated
 
-        if self.mainframe.RotationActivated:
-            print("Activate Rotation around axis")
-        else:
-            print("Disable Rotation around axis")
-            self.mainframe.SelectedRotationAxis = None
+            if self.mainframe.RotationActivated:
+                print("Activate Rotation around axis")
+            else:
+                print("Disable Rotation around axis")
+                self.mainframe.SelectedRotationAxis = None
 
 
 class TextFrame(wx.Frame):
