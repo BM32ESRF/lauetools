@@ -67,7 +67,7 @@ Al2Cu:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Al2O3:
   label: Al2O3
   lattice:
@@ -117,7 +117,7 @@ Al2O3_all:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 Al2O3_colombo:
   label: Al2O3_colombo
   lattice:
@@ -157,7 +157,7 @@ AmbiguousTriclinic:
   - 89
   - 90
   - 91
-  extinction: "no"
+  extinction: 'no'
 Au:
   label: Au
   lattice:
@@ -257,7 +257,7 @@ CdTeDiagB:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Cr:
   label: Cr
   lattice:
@@ -287,7 +287,7 @@ Crocidolite:
   - 90
   - 103.68
   - 90
-  extinction: "no"
+  extinction: 'no'
 Crocidolite_2:
   label: Crocidolite_2
   lattice:
@@ -297,7 +297,7 @@ Crocidolite_2:
   - 90
   - 103.6
   - 90
-  extinction: "no"
+  extinction: 'no'
 Crocidolite_2_72deg:
   label: Crocidolite_2_72deg
   lattice:
@@ -307,7 +307,7 @@ Crocidolite_2_72deg:
   - 90
   - 76.4
   - 90
-  extinction: "no"
+  extinction: 'no'
 Crocidolite_small:
   label: Crocidolite_small
   lattice:
@@ -317,7 +317,7 @@ Crocidolite_small:
   - 90
   - 103.6
   - 90
-  extinction: "no"
+  extinction: 'no'
 Crocidolite_whittaker_1949:
   label: Crocidolite_whittaker_1949
   lattice:
@@ -327,7 +327,7 @@ Crocidolite_whittaker_1949:
   - 90
   - 107.5
   - 90
-  extinction: "no"
+  extinction: 'no'
 Cu:
   label: Cu
   lattice:
@@ -347,7 +347,7 @@ Cu6Sn5_monoclinic:
   - 90
   - 98.84
   - 90
-  extinction: "no"
+  extinction: 'no'
 Cu6Sn5_tetra:
   label: Cu6Sn5_tetra
   lattice:
@@ -357,7 +357,7 @@ Cu6Sn5_tetra:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 CuInGaSe:
   label: CuInGaSe
   lattice:
@@ -387,7 +387,7 @@ CuZnAl_6M1:
   - 94.2
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 CuZnAl_betabrass:
   label: CuZnAl_betabrass
   lattice:
@@ -397,7 +397,7 @@ CuZnAl_betabrass:
   - 90
   - 88
   - 90
-  extinction: "no"
+  extinction: 'no'
 CuZnAl_betabrass_light:
   label: CuZnAl_betabrass_light
   lattice:
@@ -417,7 +417,7 @@ CuZnAl_tetra:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 CubicGarnet:
   label: CubicGarnet
   lattice:
@@ -427,7 +427,7 @@ CubicGarnet:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 DIA:
   label: DIA
   lattice:
@@ -457,7 +457,7 @@ DarinaMolecule:
   - 61.83
   - 84.555
   - 75.231
-  extinction: "no"
+  extinction: 'no'
 EastAlps:
   label: EastAlps
   lattice:
@@ -487,7 +487,7 @@ Fe2Ta:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 FeAl:
   label: FeAl
   lattice:
@@ -507,7 +507,7 @@ FePS3:
   - 90
   - 107
   - 90
-  extinction: "no"
+  extinction: 'no'
 FCC:
   label: FCC
   lattice:
@@ -557,7 +557,7 @@ GaN_all:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 GaN_PG_sub:
   label: GaN_PG_sub
   lattice:
@@ -627,7 +627,7 @@ Hematite:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 In:
   label: In
   lattice:
@@ -647,7 +647,7 @@ In2Bi:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 In_distorted:
   label: In_distorted
   lattice:
@@ -667,7 +667,7 @@ In_epsilon:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 InGaN:
   label: InGaN
   lattice:
@@ -707,7 +707,7 @@ Mg:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 MgO:
   label: MgO
   lattice:
@@ -737,7 +737,7 @@ MoO3:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Muscovite:
   label: Muscovite
   lattice:
@@ -757,7 +757,7 @@ Nb14W3O44:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Nd45:
   label: Nd45
   lattice:
@@ -797,7 +797,7 @@ N18_sc:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 NiMnIn:
   label: NiMnIn
   lattice:
@@ -837,7 +837,7 @@ NiO:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 NiTi:
   label: NiTi
   lattice:
@@ -857,7 +857,7 @@ Olivine_fayalite:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Olivine_forsterite:
   label: Olivine_forsterite
   lattice:
@@ -867,7 +867,7 @@ Olivine_forsterite:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Olivine_mantle:
   label: Olivine_mantle
   lattice:
@@ -877,7 +877,7 @@ Olivine_mantle:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 PMNPT:
   label: PMNPT
   lattice:
@@ -887,7 +887,7 @@ PMNPT:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Sb:
   label: Sb
   lattice:
@@ -897,7 +897,7 @@ Sb:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 SC:
   label: SC
   lattice:
@@ -907,7 +907,7 @@ SC:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 SC5:
   label: SC5
   lattice:
@@ -917,7 +917,7 @@ SC5:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 SC7:
   label: SC7
   lattice:
@@ -927,7 +927,7 @@ SC7:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Si:
   label: Si
   lattice:
@@ -957,7 +957,7 @@ Sn_beta_all:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 SRO:
   label: SRO
   lattice:
@@ -967,7 +967,7 @@ SRO:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 STO:
   label: STO
   lattice:
@@ -977,7 +977,7 @@ STO:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Ti:
   label: Ti
   lattice:
@@ -987,7 +987,7 @@ Ti:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 TiO2:
   label: TiO2
   lattice:
@@ -1037,7 +1037,7 @@ Ti_omega:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 Ti_s:
   label: Ti_s
   lattice:
@@ -1047,7 +1047,7 @@ Ti_s:
   - 90.5
   - 89.5
   - 120.5
-  extinction: "no"
+  extinction: 'no'
 UO2:
   label: UO2
   lattice:
@@ -1077,7 +1077,7 @@ VO2M2:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 VO2R:
   label: VO2R
   lattice:
@@ -1107,7 +1107,7 @@ Y2SiO5:
   - 90
   - 102.5
   - 90
-  extinction: "no"
+  extinction: 'no'
 YAG:
   label: YAG
   lattice:
@@ -1117,7 +1117,7 @@ YAG:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 Zr:
   label: Zr
   lattice:
@@ -1127,7 +1127,7 @@ Zr:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 ZrO2:
   label: ZrO2
   lattice:
@@ -1187,7 +1187,7 @@ Zr_ref:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 Zn:
   label: Zn
   lattice:
@@ -1217,7 +1217,7 @@ ZnCuOCl_all:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 ZnO:
   label: ZnO
   lattice:
@@ -1237,7 +1237,7 @@ alphaQuartz:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 betaQuartznew:
   label: betaQuartznew
   lattice:
@@ -1247,7 +1247,7 @@ betaQuartznew:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 dummy:
   label: dummy
   lattice:
@@ -1257,7 +1257,7 @@ dummy:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 fcc_mystere:
   label: fcc_mystere
   lattice:
@@ -1277,7 +1277,7 @@ feldspath:
   - 90
   - 116
   - 90
-  extinction: "no"
+  extinction: 'no'
 ferrydrite:
   label: ferrydrite
   lattice:
@@ -1287,7 +1287,7 @@ ferrydrite:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 hexagonal:
   label: hexagonal
   lattice:
@@ -1297,7 +1297,7 @@ hexagonal:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 inputB:
   label: inputB
   lattice:
@@ -1307,7 +1307,7 @@ inputB:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 literature_MoO3:
   label: literature_MoO3
   lattice:
@@ -1317,7 +1317,7 @@ literature_MoO3:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 quartz_alpha:
   label: quartz_alpha
   lattice:
@@ -1327,7 +1327,7 @@ quartz_alpha:
   - 90
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 smallpro:
   label: smallpro
   lattice:
@@ -1337,7 +1337,7 @@ smallpro:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 test_reference:
   label: test_reference
   lattice:
@@ -1367,7 +1367,7 @@ testindex:
   - 90
   - 90
   - 90
-  extinction: "no"
+  extinction: 'no'
 testindex2:
   label: testindex2
   lattice:
@@ -1377,7 +1377,7 @@ testindex2:
   - 75
   - 90
   - 120
-  extinction: "no"
+  extinction: 'no'
 tourmaline:
   label: tourmaline
   lattice:
@@ -1398,3 +1398,23 @@ myele:
   - 0
   - 0
   extinction: myextinction
+strained_Ge:
+  label: strained_Ge
+  lattice:
+  - 5.6575
+  - 5.6575
+  - 5.6575
+  - 90.29999999999998
+  - 90.39999999999998
+  - 90
+  extinction: dia
+strained_VO2M1:
+  label: strained_VO2M1
+  lattice:
+  - 4.75175
+  - 4.52596
+  - 5.38326
+  - 90.89999999999995
+  - 122.6148
+  - 90
+  extinction: VO2_mono
