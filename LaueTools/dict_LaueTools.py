@@ -12,6 +12,7 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 import copy
 import os, json
 import re
+import ast
 try:
     from importlib import resources
 except ImportError:
@@ -57,18 +58,19 @@ class Materials:
         Initialize the Materials with the YAML file.
 
         :param yaml_file_path: Path to the YAML file.
-        
-        # Example usage:
-        ll =  =DictLT.Materials('Fe')
+        :param use_user_yaml_file: If True, try to read the user's materials.yaml file.
+        :param key_material: Optional key to check and preload material data for.
+
+        Example usage:
+        ll = DictLT.Materials('Fe')
         ==> ['Fe', [2.856, 2.856, 2.856, 90, 90, 90], 'bcc']
-        # library = Materials(yaml_file_path='materials.yaml')
-        # print(library.get_material_dict())
-        # print(library.get_material('Ag'))
-        # print(library.get_material_as_list('Ag'))
         """
         self.yaml_file_path = yaml_file_path
         self.use_user_yaml_file = use_user_yaml_file
-        
+        self.key_material = key_material
+        self.materials = None  # Explicitly initialize as None
+
+        # Resolve the YAML file path
         if use_user_yaml_file:
             try:
                 yaml_file_path = get_materials_file()
@@ -77,17 +79,15 @@ class Materials:
                 yaml_file_path = DEFAULT_MATERIALS_FILE
             self.yaml_file_path = yaml_file_path
 
-        self.key_material = key_material
-        
-        self.read_yaml()
+        # Load the YAML file and populate self.materials
+        self.read_yaml(yaml_file_path, use_user_yaml_file)
 
+        # Check and preload material data if key_material is provided
         if key_material is not None:
             self.check_material(key_material)
-
-        if key_material is not None:
             self.data = self.get_material_as_list(key_material)
         else:
-            self.data = 'Materials library located at: '
+            self.data = 'Materials library located at: ' + self.yaml_file_path
 
     def __repr__(self):
         """
@@ -188,21 +188,21 @@ class Materials:
                 print('No user materials.yaml found. Using default materials.yaml')
                 yaml_file_path = DEFAULT_MATERIALS_FILE
 
-    def evaluate_yaml_value(value):
-        """Recursively evaluate strings containing mathematical expressions in YAML values."""
-        if isinstance(value, str):
-            try:
-                # Try to evaluate as a literal (e.g., "3.2095*1.04" -> 3.33788)
-                return ast.literal_eval(value)
-            except (ValueError, SyntaxError):
-                # If not a literal expression, return as-is (e.g., "martensite_verdier1")
+        def evaluate_yaml_value(value):
+            """Recursively evaluate strings containing mathematical expressions in YAML values."""
+            if isinstance(value, str):
+                try:
+                    # Try to evaluate as a literal (e.g., "3.2095*1.04" -> 3.33788)
+                    return ast.literal_eval(value)
+                except (ValueError, SyntaxError):
+                    # If not a literal expression, return as-is (e.g., "martensite_verdier1")
+                    return value
+            elif isinstance(value, list):
+                return [evaluate_yaml_value(item) for item in value]
+            elif isinstance(value, dict):
+                return {k: evaluate_yaml_value(v) for k, v in value.items()}
+            else:
                 return value
-        elif isinstance(value, list):
-            return [evaluate_yaml_value(item) for item in value]
-        elif isinstance(value, dict):
-            return {k: evaluate_yaml_value(v) for k, v in value.items()}
-        else:
-            return value
 
         with open(yaml_file_path, 'r') as file:
             loaded_data = yaml.safe_load(file)
