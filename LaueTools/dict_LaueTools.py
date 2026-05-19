@@ -170,6 +170,7 @@ class Materials:
     def read_yaml(self, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
         Read a YAML file containing materials data.
+        Evaluates mathematical expressions (e.g., "3.2095*1.04") in the YAML values.
 
         If yaml_file_path is None, read the YAML file specified by self.yaml_file_path.
         If use_user_yaml_file is True, try to read the user's materials.yaml file copy and editable version whose location is saved in lauetools_config.json file.
@@ -180,15 +181,33 @@ class Materials:
         """
         if yaml_file_path is None:
             yaml_file_path = self.yaml_file_path
-        if not(use_user_yaml_file):
+        if not use_user_yaml_file:
             try:
                 yaml_file_path = get_materials_file()
             except:
                 print('No user materials.yaml found. Using default materials.yaml')
                 yaml_file_path = DEFAULT_MATERIALS_FILE
 
+    def evaluate_yaml_value(value):
+        """Recursively evaluate strings containing mathematical expressions in YAML values."""
+        if isinstance(value, str):
+            try:
+                # Try to evaluate as a literal (e.g., "3.2095*1.04" -> 3.33788)
+                return ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                # If not a literal expression, return as-is (e.g., "martensite_verdier1")
+                return value
+        elif isinstance(value, list):
+            return [evaluate_yaml_value(item) for item in value]
+        elif isinstance(value, dict):
+            return {k: evaluate_yaml_value(v) for k, v in value.items()}
+        else:
+            return value
+
         with open(yaml_file_path, 'r') as file:
-            self.materials = yaml.safe_load(file)
+            loaded_data = yaml.safe_load(file)
+            # Recursively evaluate all values in the loaded YAML
+            self.materials = evaluate_yaml_value(loaded_data)
             self.yaml_file_path = yaml_file_path
 
     def check_material(self, key_material):
@@ -451,7 +470,8 @@ elif not(USE_MATERIALS_LIBRARY):
         "LTO_distor_all": ["LTO_distor_all", [10.869, 13.655,  8.459, 92.653, 63.159, 86.865], "no"],
         "LTO_distor_al2o3_ext": ["LTO_distor_al2o3_ext", [10.869, 13.655,  8.459, 92.653, 63.159, 86.865], "Al2O3"],
         "LTO_distor_bulk": ["LTO_distor_bulk", [5.130, 4.830,  11.958, 90.00, 92.80, 118.08], "R3m_sg160"],
-        "LTO_distor_bulk_fit": ["LTO_distor_bulk_fit", [5.13, 4.8301684, 5.9791912, 89.9987506, 92.8008151, 118.0844543], "R3m_sg160"]
+        "LTO_distor_bulk_fit": ["LTO_distor_bulk_fit", [5.13, 4.8301684, 5.9791912, 89.9987506, 92.8008151, 118.0844543], "R3m_sg160"],
+        "martensite_Verdier_21Apr26b" : ["martensite_Verdier_21Apr26b", [4.225*1.04 , 5.119*1.04, 12.234*1.04,90, 95.132, 90],"martensite_verdier1"],#OR14May26
     }
 
 
@@ -511,6 +531,7 @@ dict_Materials_short = {
     "VO2M1": ["VO2M1", [5.75175, 4.52596, 5.38326, 90.0, 122.6148, 90.0], "VO2_mono", ],  # SG 14
     "VO2M2": ["VO2M2", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "no", ],  # SG 136 (87 deg Celsius)  Rutile
     "VO2R": ["VO2R", [4.5546, 4.5546, 2.8514, 90.0, 90, 90.0], "rutile", ],  # SG 136 (87 deg Celsius)  Rutile
+    "martensite_Verdier_21Apr26b" : ["martensite_Verdier_21Apr26b", [4.225*1.04 , 5.119*1.04, 12.234*1.04,90, 95.132, 90],"martensite_verdier1"],#OR14May26
 }
 
 # --- -------------- Extinction Rules
@@ -539,6 +560,7 @@ dict_Extinc = {
     'SG122':'SG122',
     'SG12':'SG12',
     'SG36':'SG36',
+    "martensite_verdier1":"martensite_verdier1",#OR14May26
 }
 
 dict_Extinc_inv = {
@@ -565,7 +587,8 @@ dict_Extinc_inv = {
     "h+k=2n, modulated":"h+k=2n, modulated",
     'SG122':'SG122',
     'SG12':'SG12',
-    'SG36':'SG36'
+    'SG36':'SG36',
+    "martensite_verdier1":"martensite_verdier1",#OR14May26
 }
 
 def writeDict(_dict, filename, writemode='a', sep=', '):
