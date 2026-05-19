@@ -1039,8 +1039,8 @@ class StrainXtal(wx.Panel):
     #     self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
     #     self.mainframe._replot(1)
 
-
     def update_latticeparameters(self):
+        """Update lattice parameters from the selected material."""
         self.key_material = self.mainframe.crystalparampanel.comboElem.GetValue()
 
         if isinstance(DictLT.dict_Materials, DictLT.Materials):
@@ -1057,25 +1057,32 @@ class StrainXtal(wx.Panel):
             self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
             self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material]['lattice'])
 
+        # Initialize lattice_parameters_dict and update UI controls
         for k, key_param in enumerate(self.lattice_parameters_key):
-            self.lattice_parameters_dict[key_param] = self.lattice_parameters[k]
-            getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters[k]))
-
+            # Evaluate the lattice parameter in case it's a string expression (e.g., "4.225*1.04")
+            evaluated_value = evaluate_lattice_param(self.lattice_parameters[k])
+            self.lattice_parameters_dict[key_param] = evaluated_value
+            getattr(self, f"currentctrl_{key_param}").SetValue(str(evaluated_value))
 
     def ModifyLatticeParamsStep(self, event, sign_of_step):
+        """Modify lattice parameters by a step (increment/decrement)."""
         name = event.GetEventObject().myname
         key_param = name.split("_")[-1]
 
-        self.lattice_parameters_dict[key_param] = float(getattr(self, "currentctrl_%s" % key_param).GetValue())
+        # Get the current value from the control and evaluate it
+        current_value_str = getattr(self, f"currentctrl_{key_param}").GetValue()
+        self.lattice_parameters_dict[key_param] = evaluate_lattice_param(current_value_str)
 
+        # Apply the step
         stepsign = 1.0 if sign_of_step == "+" else -1.0
-        self.lattice_parameters_dict[key_param] += stepsign * float(getattr(self, "stepctrl_%s" % key_param).GetValue())
+        step_value = float(getattr(self, f"stepctrl_{key_param}").GetValue())
+        self.lattice_parameters_dict[key_param] += stepsign * step_value
 
         # Build new_key_material
         new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
 
         # Update dict_Materials
-        if isinstance(DictLT.dict_Materials,DictLT.Materials):
+        if isinstance(DictLT.dict_Materials, DictLT.Materials):
             # Materials object: use add_or_update_material
             current_material = DictLT.dict_Materials.get_material_as_list(self.key_material)
             new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
@@ -1097,17 +1104,18 @@ class StrainXtal(wx.Panel):
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
         # Update UI
-        getattr(self, "currentctrl_%s" % key_param).SetValue(str(self.lattice_parameters_dict[key_param]))
+        getattr(self, f"currentctrl_{key_param}").SetValue(str(self.lattice_parameters_dict[key_param]))
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
 
-    
     def ModifyLatticeParams(self, event):
+        """Modify lattice parameters using a formula expression."""
         name = event.GetEventObject().myname
         key_param = name.split("_")[-1]
 
-        formulaexpr = getattr(self, "currentctrl_%s" % key_param).GetValue()
-        self.lattice_parameters_dict[key_param] = float(eval(formulaexpr))
+        # Get the formula expression and evaluate it safely
+        formulaexpr = getattr(self, f"currentctrl_{key_param}").GetValue()
+        self.lattice_parameters_dict[key_param] = evaluate_lattice_param(formulaexpr)
 
         new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
 
@@ -1134,20 +1142,39 @@ class StrainXtal(wx.Panel):
             self.mainframe.crystalparampanel.comboElem.Append(new_key_material)
 
         # Update UI
-        getattr(self, "currentctrl_%s" % key_param).SetValue(formulaexpr)
+        getattr(self, f"currentctrl_{key_param}").SetValue(formulaexpr)
         self.mainframe.crystalparampanel.comboElem.SetValue(new_key_material)
         self.mainframe._replot(1)
 
-        def OnActivateRotation(self, _):
 
-            self.mainframe.RotationActivated = not self.mainframe.RotationActivated
+    def OnActivateRotation(self, _):
 
-            if self.mainframe.RotationActivated:
-                print("Activate Rotation around axis")
-            else:
-                print("Disable Rotation around axis")
-                self.mainframe.SelectedRotationAxis = None
+        self.mainframe.RotationActivated = not self.mainframe.RotationActivated
 
+        if self.mainframe.RotationActivated:
+            print("Activate Rotation around axis")
+        else:
+            print("Disable Rotation around axis")
+            self.mainframe.SelectedRotationAxis = None
+
+
+def evaluate_lattice_param(param):
+    """
+    Safely evaluate a lattice parameter string (e.g., "4.225*1.04") to a float.
+    Handles both plain numbers and mathematical expressions.
+    """
+    if isinstance(param, str):
+        try:
+            # Safely evaluate mathematical expressions (e.g., "4.225*1.04")
+            return eval(param, {"__builtins__": None}, {})
+        except:
+            try:
+                # Fallback for plain numbers as strings (e.g., "4.225")
+                return float(param)
+            except ValueError:
+                # If all else fails, return as-is (e.g., for non-numeric strings)
+                return param
+    return param  # Already a number
 
 class TextFrame(wx.Frame):
     def __init__(self, parent, _id, strexpression, index=0):
@@ -4752,7 +4779,7 @@ class MainCalibrationFrame(wx.Frame):
                     # print("\nthe nearest theo point is at(%.2f,%.2f)" % (x, y))
                     # print("with info (hkl, other coordinates, energy)", annote_theo)
 
-                    tip_theo = "Theo. [h k l]=%s Energy=%.2f keV" % (str(annote_theo[0]), annote_theo[3])
+                    tip_theo = "Theo. [h k l]=%s Energy=%.3f keV" % (str(annote_theo[0]), annote_theo[3])
                     if self.datatype == "pixels":
                         tip_theo += "\nTheo. (X,Y)=(%.2f,%.2f) (2theta,Chi)=(%.2f,%.2f)" % (
                             x, y, annote_theo[1], annote_theo[2])
@@ -4765,9 +4792,11 @@ class MainCalibrationFrame(wx.Frame):
                     self.updateStatusBar(x, y, annote_theo, spottype="theo")
 
                     # find theo spot index
+                    #print('annote_theo',annote_theo)
                     hkl0 = annote_theo[0]
                     #print('hkl0',hkl0)
                     hkls = self.data_theo[2]
+                    #print('hkls',hkls)
                     theoindex = np.where(np.sum(np.hypot(hkls - hkl0, 0), axis=1) < 0.01)[0]
                     #print('theoindex',theoindex)
                     self.highlighttheospot = theoindex
@@ -4779,6 +4808,9 @@ class MainCalibrationFrame(wx.Frame):
                         y=annote_theo[2][0]
                     if not isinstance(en, float):
                         en=annote_theo[3][0]
+                    #print(f"theoindex type: {type(theoindex)}, value: {theoindex} {hkls[theoindex]}")
+                    if len(theoindex)>1:
+                        theoindex = theoindex[0]
                     finaltxt = 'theo spot index : %d, '%theoindex + hklstr
                     finaltxt += ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(x,y,en)
                     if finaltxt != self.savedfinaltxt:
@@ -4823,7 +4855,9 @@ class MainCalibrationFrame(wx.Frame):
         if spottype == "theo":
             self.sb.SetStatusText(("%s= %.2f " % (Xplot, x)
                     + " %s= %.2f " % (Yplot, y)
-                    + "  HKL=%s " % str(annote)), 0)
+                    + "  HKL=%s " % str(annote[0])
+                    + "Xtheo, Ytheo=(%.2f,%.2f)" % (annote[1], annote[2])
+                    + "E=%.3f keV" % annote[3]), 0)
 
         elif spottype == "exp":
 
