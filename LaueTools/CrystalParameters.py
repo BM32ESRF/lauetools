@@ -6,6 +6,7 @@ Main authors are: Micha, O. Robach, S. Tardif May 2026
 """
 import copy
 import sys
+import ast
 from pathlib import Path
 
 import numpy as np
@@ -708,33 +709,58 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     return array_hkl
 
 
+def evaluate_lattice_param(param):
+    """Convert a lattice parameter (string or number) to a float."""
+    if isinstance(param, str):
+        try:
+            # Try to evaluate as a mathematical expression (e.g., "4.225*1.04")
+            return eval(param, {"__builtins__": None}, {})
+        except:
+            try:
+                # Fallback for plain numbers as strings (e.g., "4.225")
+                return float(param)
+            except ValueError:
+                # If all else fails, return as-is (e.g., for non-numeric strings)
+                return param
+    return param  # Already a number
+
 def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     r"""
-    create grain parameters list for the Laue pattern simulation
+    Create grain parameters list for the Laue pattern simulation.
 
-    Can handle material defined in dictionary by four elements instead of 6 lattice parameters
+    Can handle material defined in dictionary by four elements instead of 6 lattice parameters.
 
     :param key_material: material or structure label
     :type key_material: string
-
-    :return: grain (4 elements list),  contains_U (boolean)
+    :param dictmaterials: dictionary or Materials instance containing material data
+    :return: grain (4 elements list), contains_U (boolean)
     """
-    try:
-        elem_key, unitCellparameters, Structure_extinction = dictmaterials[key_material]
-    except KeyError:
-        raise KeyError("Unknown key '%s'for material" % str(key_material))
+    # --- Handle both dict and Materials instance ---
+    if isinstance(dictmaterials, dict):
+        # Case 1: dictmaterials is a plain dictionary
+        try:
+            elem_key, unitCellparameters, Structure_extinction = dictmaterials[key_material]
+        except KeyError:
+            raise KeyError(f"Unknown key '{key_material}' for material")
+    else:
+        # Case 2: dictmaterials is a Materials instance
+        material_data = dictmaterials.get_material(key_material)
+        if material_data is None:
+            raise KeyError(f"Unknown key '{key_material}' for material")
+        elem_key = material_data.get("label", key_material)
+        unitCellparameters = material_data["lattice"]
+        Structure_extinction = material_data["extinction"]
 
-    if len(unitCellparameters) == 6:  # a,b,c,alpha,beta,gamma
+    # --- Ensure all unitCellparameters are numeric ---
+    unitCellparameters = [evaluate_lattice_param(param) for param in unitCellparameters]
 
+    # --- Process based on length of unitCellparameters ---
+    if len(unitCellparameters) == 6:  # a, b, c, alpha, beta, gamma
         Bmat = calc_B_RR(unitCellparameters, directspace=1)
-        # Gstar = CP.Gstar_from_directlatticeparams(unitCellparameters*)
-
         grain = [Bmat, Structure_extinction, np.zeros((3, 3)), elem_key]
         contains_U = False
-        # U matrix needs to be added in grain
 
-    # 4 operators Da, U, B, Dc
-    elif len(unitCellparameters) == 4:
+    elif len(unitCellparameters) == 4:  # Da, U, B, Dc
         Da, U, B, Dc = unitCellparameters
         print("Da", Da)
         print(U)
