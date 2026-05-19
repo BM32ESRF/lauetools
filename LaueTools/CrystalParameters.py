@@ -2,14 +2,11 @@ r"""
 This module belong to LaueTools package. It gathers procedures to define crystal
 lattice parameters and strain calculations
 
-Main authors are JS Micha, O. Robach, S. Tardif June 2019
+Main authors are: Micha, O. Robach, S. Tardif May 2026
 """
 import copy
 import sys
-#import os
-
-# sys.path.insert(0, os.path.abspath('../..'))
-# print('sys.path in CrystalParameters', sys.path)
+from pathlib import Path
 
 import numpy as np
 from numpy.linalg import inv
@@ -29,9 +26,9 @@ except (ImportError, ValueError):
     ELASTICITYMODULE = False
 
 if sys.version_info.major == 3:
-    from . dict_LaueTools import dict_Materials, dict_Stiffness
+    from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
     from . import generaltools as GT
-    from . wyckpos_lauetools import testhklcond_generalrules_array
+    from . wyckpos_lauetools import testhklcond_generalrules_array, dict_Extinc
 else:
     from dict_LaueTools import dict_Materials, dict_Stiffness
     import generaltools as GT
@@ -670,6 +667,29 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         cond7 = cond7a * cond7b * cond7c
         array_hkl = np.delete(array_hkl_6, np.where(cond7 == True)[0], axis=0)
 
+    elif Extinc == "martensite_verdier1": #OR14May26
+   
+        if "martensite_verdier1" in  dict_Extinc.keys()   : # Verdier martensite 6M 28Apr26   # added 14May26
+
+            module_dir = Path(__file__).parent
+            fileHKL = module_dir / "HKL_6M_Marc_shorter.txt"  # HKLmax_abs 19 23 55
+            #fileHKL = "/mnt/multipath-shares/data/bm32/inhouse/lauetoolsenv2/lib/python3.12/site-packages/LaueTools/HKL_6M_Marc_shorter.txt" # HKLmax_abs 19 23 55
+            try:
+                list_HKL_mart = np.loadtxt(fileHKL)
+                list_HKL_mart = np.array(list_HKL_mart, int)
+            except:
+                raise ValueError("fileHKL not found %s" % fileHKL)
+            list_HKL_mart = np.loadtxt(fileHKL)
+            list_HKL_mart = np.array(list_HKL_mart, int)
+        else:
+            raise ValueError("Unknown extinction  '%s'" % str(Extinc))
+        # unités 6M
+        # L18R = 3*L6M + H6M
+        if 1 : #pour "HKL_6M_Marc_shorter.txt"   
+            # array_hkl = copy.copy(list_HKL)
+            list_HKL_eq = np.column_stack((list_HKL_mart[:,0],-list_HKL_mart[:,1],list_HKL_mart[:,2]))  # H -K L plan miroir
+            array_hkl = np.row_stack((list_HKL_mart, -list_HKL_mart, list_HKL_eq, -list_HKL_eq))
+    
     elif Extinc.isdecimal():  # if Extinc is a string with only digits, it is the extinction number
             array_hkl = testhklcond_generalrules_array(Extinc, HKL)
     else:
