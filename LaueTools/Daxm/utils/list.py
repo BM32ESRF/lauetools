@@ -9,9 +9,69 @@ __version__ = '$Revision$'
 
 import math
 
+import numpy as np
 
-def is_list_of(obj, thetype):
+
+from LaueTools.Daxm.classes.wire import CircularWire  # Import your CircularWire class
+
+def is_list_of(obj, type_=None):
+    """
+    Check if `obj` is a list or NumPy array of objects of type `type_`.
+    Special handling for CircularWire objects:
+    - Returns True if `obj` is a list/array of CircularWire objects.
+    - Returns False if `obj` is a single CircularWire object.
+
+    Parameters
+    ----------
+    obj : object
+        Object to check.
+    type_ : type, optional
+        Expected type of elements in the list/array.
+
+    Returns
+    -------
+    bool
+        True if `obj` is a list or NumPy array of objects of type `type_`.
+    """
+    # Explicitly check for list or np.ndarray (not subclasses)
+    if type(obj) is list or type(obj) is np.ndarray:
+        if type_ is None:
+            return True
+        # Special case: If type_ is CircularWire, check if all elements are CircularWire
+        if type_ is CircularWire:
+            return all(isinstance(x, CircularWire) for x in obj)
+        return all(isinstance(x, type_) for x in obj)
+    return False
+
+
+def is_list_of(obj, type_=None):
+    """
+    Check if `obj` is a list or NumPy array of objects of type `type_`.
+    Explicitly excludes custom objects (e.g., CircularWire) even if they inherit from list/array.
+
+    Parameters
+    ----------
+    obj : object
+        Object to check.
+    type_ : type, optional
+        Expected type of elements in the list/array.
+
+    Returns
+    -------
+    bool
+        True if `obj` is a list or NumPy array of objects of type `type_`.
+    """
+    # Explicitly check for list or np.ndarray, but not subclasses (e.g., custom objects)
+    if type(obj) is list or type(obj) is np.ndarray:
+        if type_ is None:
+            return True
+        return all(isinstance(x, type_) for x in obj)
+    return False
+
+def is_list_of_old(obj, thetype):
     # This if statement makes sure input is a list that is not empty
+    if 1: #verbose>0:
+        print(obj)
     if obj and isinstance(obj, list):
         return all(isinstance(s, thetype) for s in obj)
     else:
