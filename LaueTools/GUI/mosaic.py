@@ -60,6 +60,7 @@ if sys.version_info.major == 3:
     from .. import readmccd as RMCCD
     from .. import IOimagefile as IOimage
     from .. import imageprocessing as ImProc
+    import LaueTools.blissdatafolderstructure as bf
     if WXPYTHON:
         from . import Plot1DFrame as PLOT1D
         from .. import MessageCommand as MC
@@ -1011,7 +1012,7 @@ if WXPYTHON:
             print('\n******  detailed data  ***********')
             print('self.datatype', self.datatype)
             print('self.data.shape', self.data.shape)
-            print('self.Imageindices', self.Imageindices)
+            #print('self.Imageindices', self.Imageindices)
             print('self.tabindices', self.tabindices)
             self._replot()
     
@@ -2350,11 +2351,91 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
     verbose, optional
         show in stdout prints, by default 0 (no prints)
     """
+    print('\n In buildMosaic3(): dict_param : ',dict_param)
+
+    # dict_param :  {'imagesfolder': '/data/visitor/a321217/bm32/20260707/RAW_DATA/3Dmap_grain2/3Dmap_grain2_grid_index_3_row_col_0_3/scan0001', 'filename_representative': 'eiger4m_0003.h5', 'CCDLabel': 'EIGER_4MCdTe', 'nbdigits': 4, 'selected2Darray_imageindex': array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]), 'pixelX_center': np.float64(1473.0), 'pixelY_center': np.float64(824.0), 'pixelboxsize_X': 10, 'pixelboxsize_Y': 10, 'selectedcounters': ['mosaic'], 'NormalizeWithMonitor': False, 'monitoroffset': 0.0, 'transposeMap': False}
     
     CountersData = {}
 
-    print('\n In buildMosaic3(): dict_param : ',dict_param)
+    # branch to process in parallel all images in a folder
+    if dict_param['selectedcounters']==['mosaic']:
+        import itertools
+        import LaueTools.scripts.workflows as wf
+        import pandas as pd
 
+        CCDLabel = dict_param['CCDLabel']
+        if CCDLabel == 'EIGER_4MCdTe':
+            prefix = 'eiger4m_'
+        else:
+            prefix = 'img_'
+
+        imagesfolder = dict_param['imagesfolder']
+
+        samplename =None
+        expId = None
+        samplename, datasetname = None, None
+        scanindex = None
+        plottitle = 'imagesfolder'
+        if 'RAW_DATA' in imagesfolder:
+            (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(imagesfolder)
+
+            plottitle += f'expiId: {expId} samplename: {samplename}\ndatasetname: {datasetname} scanindex: {scanindex}'
+        
+
+            
+
+        # list_indices = self.params.get("listindices")
+        listindices2D = dict_param['selected2Darray_imageindex']
+        nlines, nbimagesperline = listindices2D.shape
+        d = {'folder': imagesfolder,
+            'scantype': 'map',
+            'prefix': prefix,
+            'listindices': np.arange(nbimagesperline*nlines), #np.arange(13041),
+            #'nbimagesperline': nbimagesperline,
+            'mapdimensions': (nbimagesperline, nlines), #(nbimagesperline, 161),# fast, slow
+            'CCDLabel': CCDLabel}
+
+        print('d',d)
+
+        # Example parameters for mosaic workflow: user choice
+        mosaic_params = {
+            "roicenter": (int(dict_param['pixelX_center']),int(dict_param['pixelY_center'])),
+            "boxsize_X": dict_param['pixelboxsize_X'],
+            "boxsize_Y": dict_param['pixelboxsize_Y'],
+            "collector": "mosaic",
+        }
+
+        print('mosaic_params',mosaic_params)
+
+        d.update(mosaic_params)
+        # Initialize use case handler
+        use_case_handler = wf.UseCaseHandler(None)
+
+        # Execute mosaic workflow
+        mosaic_dict_results = use_case_handler.execute_use_case("mosaic_2d_map", d)
+        print(f"Mosaic results shape: {mosaic_dict_results['mosaic_shape']}")
+
+        dat = mosaic_dict_results['singleimage']
+        jmin, imin = 0,0
+        nb_col, nb_lines = d['mapdimensions']
+        boxsize_col, boxsize_line = d['boxsize_X'], d['boxsize_Y']  #??
+        ploplo = ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
+                                    absolutecornerindices=(jmin, imin),
+                                    Imageindices=d['listindices'],  # 1D list
+                                    nb_col=nb_col,
+                                    nb_lines=nb_lines,
+                                    boxsize_row=boxsize_col,
+                                    stepindex=1,
+                                    #                                boxsize_row=boxsize_col,
+                                    boxsize_line=boxsize_line,
+                                    imagename=plottitle,
+                                    mosaic=1,
+                                    dict_param=dict_param)
+
+        ploplo.Show()
+        return
+        
+    
     #update and complement dictfittingparameters if needed 
     dictfittingparameters = {**DEFAULT_DICTfittingparameters,**dictfittingparameters}
 
@@ -2406,7 +2487,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         nb_col = datashape[1]
         nb_lines = datashape[0]
 
-    print("nb_lines,nb_col = (fast axis, slow axis)", nb_lines, nb_col) # #fast axis, slow axis dimensions
+    print("nb_lines,nb_col = (slow axis, fast axis)", nb_lines, nb_col) # 
 
     dict_map_imageindex = {}
     if verbose: print("selected1Darray_absoluteimageindex", selected1Darray_absoluteimageindex)
