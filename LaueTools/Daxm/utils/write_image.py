@@ -12,6 +12,7 @@ sys.path.append("../..")
 
 
 import numpy as np
+from pathlib import Path
 
 import LaueTools.IOimagefile as rmccd
 import LaueTools.dict_LaueTools as dlt
@@ -24,8 +25,14 @@ except ImportError:
     
 
 
-def write_image(data, filename, CCDLabel='MARCCD165', dirname=None, verbose=0, header=None):
+def write_image(data, filename, CCDLabel='MARCCD165', dirname=None, verbose=0, header=None, templateh5filename=None):
     """Main function to write image files in desired format."""
+
+    if verbose>0:
+        print('In write_image() in /daxm/utils/write_image.py')
+        print('CCDLabel', CCDLabel)
+        print('filename', filename)
+        print('dirname', dirname)
     if dirname is not None:
         
         filename = os.path.join(dirname, filename)
@@ -59,6 +66,10 @@ def write_image(data, filename, CCDLabel='MARCCD165', dirname=None, verbose=0, h
 
         print_msg("Wrote {}x{} image with {} format in {}.".format(dims[0], dims[1], CCDLabel, filename), verbose)
 
+    elif CCDLabel == 'EIGER_4MCdTe':
+        fullpath = os.path.join(str(Path(filename).parent), 'eiger4m_'+str(Path(filename).name)+'.h5')
+        rmccd.writeimage_singleh5(fullpath, data, templateh5filename=templateh5filename, verbose=verbose-1)
+        
     else:
         sys.exit("Required CCD format '{}' is not available in writeImage!".format(CCDLabel))
 
