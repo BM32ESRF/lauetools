@@ -12,6 +12,12 @@ import math
 import numpy as np
 import json
 
+from scipy import optimize as spo
+from numba import jit, prange
+from typing import Optional
+
+
+
 import matplotlib.pylab as mplp
 
 import LaueTools.Daxm.material.absorption as abso
@@ -289,6 +295,8 @@ class CircularWire:
 
         return Ox, Oy, Oz
 
+
+    
     def calc_crosslength(self, pw, ysrc:float, Pcam):
 
 
@@ -555,3 +563,58 @@ class CircularWire:
             fig.show()
 
 # End of class wire
+
+# --- Numba-optimized calc_crosslength ---
+
+
+@jit(nogil=True, fastmath=True)
+def calc_crosslength_optimized(pw: np.ndarray, ysrc: float, Pcam: np.ndarray, wire_axis: np.ndarray, wire_R: float) -> float:
+    """
+    Numba-optimized version of calc_crosslength.
+    Assumes pw is a 1D array of shape (3,), Pcam is a 1D array of shape (3,),
+    and wire_axis is a 1D array of shape (3,).
+    """
+    # Extract components of pw (no reshape needed)
+    pw_x, pw_y, pw_z = pw[0], pw[1], pw[2]
+
+    # OY = Ysrc - pw (vector from pw to ysrc)
+    OYx, OYy, OYz = -pw_x, ysrc - pw_y, -pw_z
+
+    # Components of v = YP / |YP|
+    vx, vy, vz = Pcam[0], Pcam[1] - ysrc, Pcam[2]
+    vn = np.sqrt(vx**2 + vy**2 + vz**2)
+    vx, vy, vz = vx / vn, vy / vn, vz / vn
+
+    # Cross product v × wire_axis
+    vfx = vy * wire_axis[2] - vz * wire_axis[1]
+    vfy = vz * wire_axis[0] - vx * wire_axis[2]
+    vfz = vx * wire_axis[1] - vy * wire_axis[0]
+    vf2 = vfx**2 + vfy**2 + vfz**2
+
+    # Cross product OY × wire_axis
+    Ofx = OYy * wire_axis[2] - OYz * wire_axis[1]
+    Ofy = OYz * wire_axis[0] - OYx * wire_axis[2]
+    Ofz = OYx * wire_axis[1] - OYy * wire_axis[0]
+    Of2 = Ofx**2 + Ofy**2 + Ofz**2
+
+    # Quadratic equation: A*d² + B*d + C = 0
+    A = vf2
+    B = 2.0 * (Ofx * vfx + Ofy * vfy + Ofz * vfz)
+    C = Of2 - wire_R**2
+    Delta = B**2 - 4.0 * A * C
+
+    # Traveled distance in the wire
+    if A == 0:
+        return 0.0
+    abslength = np.sqrt(np.maximum(Delta, 0.0)) / A
+    return abslength
+
+
+# --- Numba-optimized calc_transmission ---
+@jit(nogil=True, fastmath=True)
+def calc_transmission_optimized(pw: np.ndarray, ysrc: float, Pcam: np.ndarray, wire_axis: np.ndarray, wire_R: float, abscoeff: float) -> float:
+    """
+    Numba-optimized version of calc_transmission.
+    """
+    length = calc_crosslength_optimized(pw, ysrc, Pcam, wire_axis, wire_R)
+    return np.exp(-abscoeff * length)
