@@ -22,7 +22,7 @@ def add_or_update_material(material_file, label, lattice, extinction):
     # Parse lattice string
     lattice_parts = lattice.split()
     if len(lattice_parts) != 6:
-        raise ValueError("Lattice must have 6 values in a string: 'a b c alpha beta gamma'")
+        raise ValueError("Lattice must have 6 values in a string: 'a b c alpha beta gamma', without arithmetical expressions")
 
     data[label] = {
         "lattice": [float(x) for x in lattice_parts],
