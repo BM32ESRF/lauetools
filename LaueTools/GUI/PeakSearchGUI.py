@@ -7,6 +7,8 @@ import copy
 import numpy as np
 import wx
 
+import h5py
+
 if wx.__version__ < "4.":
     WXPYTHON4 = False
 else:
@@ -71,6 +73,9 @@ if sys.version_info.major == 3:
     from . import PeaksListBoard
     from .. import IOimagefile as IOimage
     from .. import imageprocessing as ImProc
+    import LaueTools.logfile_reader as logfile_reader
+    import LaueTools.blissdatafolderstructure as bf
+
 else:
     import dragpoints as DGP
     import GUI.mosaic as MOS
@@ -1176,6 +1181,11 @@ class MosaicAndMonitor(wx.Panel):
         self.txtmapstartingindex = wx.StaticText(self, -1, "Starting index")
         self.mapstartingimageindexctrl = wx.TextCtrl(self, -1, "0")
 
+        if self.mainframe.scan_dict is not None:
+            self.scancommandtxt = wx.StaticText(self, -1, f"scan command {self.mainframe.scan_dict['scan_blisscommand']} {self.mainframe.scan_dict['scan_end_reason']}")
+            self.stepctrl.SetValue(str(self.mainframe.scan_dict['scan_nbsteps_fastmotor']+1))
+
+
         self.btnMosaic = wx.Button(self, wx.ID_ANY, "Start")
         self.btnMosaic.Bind(wx.EVT_BUTTON, self.OnMosaic)
 
@@ -1254,6 +1264,8 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(NavigBoxsizer1, 0, wx.EXPAND)
 
         vbox.Add(txt4, 0, wx.EXPAND)
+        if self.mainframe.scan_dict is not None:
+            vbox.Add(self.scancommandtxt, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
         vbox.Add(self.btnMosaic, 0, wx.EXPAND)
 
@@ -2998,6 +3010,27 @@ class MainPeakSearchFrame(wx.Frame):
         self.LastLUT = self.initialParameter["mapsLUT"]
         self.writefolder = self.initialParameter["dirname"]
         self.CCDlabel = self.initialParameter["CCDLabel"]
+
+        self.scan_dict = None
+        if self.imagefilename.endswith('.h5'):
+            (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
+
+            if os.path.exists(localh5path):
+                
+                with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
+                    scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
+                    scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
+                    dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
+                    scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
+                    scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
+                    scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
+                    self.scan_dict = {'scan_end_reason': scan_end_reason,   
+                                    'scan_blisscommand': scan_blisscommand, 
+                                    'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
+                                    'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
+                                    'scan_largestimageindex': scan_largestimageindex}
+
+
         # for stacked images in hdf5 file
         self.stackedimages = self.initialParameter["stackedimages"]
         self.stackimageindex = self.initialParameter["stackimageindex"]
