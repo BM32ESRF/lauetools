@@ -3016,10 +3016,17 @@ def get_largest_index_in_folder(folder_path: str, filename_prefix: str = 'img_',
     largest_index : int
         largest index in filename
     """
-    files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'))
+    import re
+    def extract_number(path: Path):
+        return int(re.search(r'\d+$', path.stem).group())
+
+    files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'), key=extract_number)
+    
+    #files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'))
     largest_index = int(Path(files[-1]).stem.split('_')[1])
     return largest_index
 
+    
 def filter_peaks_close_to_detector_edges(peak_list:np.ndarray, distance_x:int, distance_y:int,
                              detector_label:str='sCMOS')->Tuple[np.ndarray, np.ndarray]:
     """
