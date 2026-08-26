@@ -12,9 +12,8 @@ import scipy.optimize as spo
 
 
 import LaueTools.Daxm.classes.wire as mywire
-
 import LaueTools.Daxm.modules.geometry as geom
-
+from LaueTools.Daxm.classes.wire import CircularWire
 from LaueTools.Daxm.utils.list import is_list_of
 
 
@@ -26,7 +25,7 @@ class RecError(Exception):
 # Spot reconstruction class
 class SpotReconstructor:
     # Constructors
-    def __init__(self, scan, XYcam, halfboxsize, yrange, abscoeff, wire=None, verbose=True):
+    def __init__(self, scan, XYcam, halfboxsize, yrange, abscoeff, wire=None, verbose=0):
 
         # inputs
         
@@ -36,7 +35,11 @@ class SpotReconstructor:
 
         self.XYcam = XYcam  # 2D center pixel coordinates of the ROI (spot)
 
-        self.wire = wire  # corresponding wire(s)
+        if verbose>0:
+            print('in SpotReconstructor __init__ in classes/reconstruction/spot.py')
+            print('wire: ', wire)
+
+        self.wire = wire  # corresponding wire 
 
         self.yrange = yrange # y // beam   range (2 values) of depth along the beam (in mm)
 
@@ -74,11 +77,11 @@ class SpotReconstructor:
         # init
         self.init_hbs()
 
-        self.init_wire()
+        self.init_wire(verbose=verbose-1)
 
         self.init_grid()
 
-        self.init_depth(verbose=verbose)
+        self.init_depth(verbose=verbose-1)
 
         self.init_data()
 
@@ -96,7 +99,7 @@ class SpotReconstructor:
         if not isinstance(self.hbs, (list, tuple)) and isinstance(self.hbs, int):
             self.hbs = [self.hbs] * 2
 
-    def init_wire(self):
+    def init_wire(self, verbose=0):
         """
         Initialize the wire attribute of the class. 
 
@@ -104,24 +107,39 @@ class SpotReconstructor:
 
         set self.wire
         """
-        if self.wire is None or is_list_of(self.wire, mywire.CircularWire):
-            self.init_wire_assign()
+        if verbose > 0:
+            print('In init_wire()')
+            print('self.wire before:', self.wire, type(self.wire))
 
+        if self.wire is None or is_list_of(self.wire, None): #  CircularWire):
+            if verbose > 0:
+                print("Calling init_wire_assign() because self.wire is None or a list of ...")
+            self.init_wire_assign()
+            if verbose > 0:
+                print('self.wire after init_wire_assign():', self.wire)
+                print('type(self.wire):', type(self.wire))
         elif isinstance(self.wire, int):
             self.wire = self.scan.wire[self.wire]
-
-        elif isinstance(self.wire, mywire.CircularWire):
+        elif isinstance(self.wire, CircularWire):
             pass
-
         else:
             self.print_msg("Invalid wire argument", mode='F')
 
-    def init_wire_assign(self, margin=0):
-        """determine and the wire withthe  highest available information in scan data for a given Y pixel position"""
+    def init_wire_assign(self, margin=0, verbose=0):
+        """determine from all wires and the wire, the one with the  largest available information (nb of images) in scan data for a given Y pixel position on detector"""
+        if self.verbose > 0:
+            print('In init_wire_assign()')
+            print('self.wire before:', self.wire, type(self.wire))
+
         if is_list_of(self.wire, mywire.CircularWire):
             wire = self.wire
+            if verbose>0:
+                print('wire from self.wire', wire)
         else:
             wire = self.scan.wire
+
+            if verbose>0:
+                print('wire from scan.wire', wire)
 
         # Y pixel boundaries for each wire 
         Yshadow_limits_list = self.scan.calc_wires_range_scan(wire=wire)
@@ -174,7 +192,7 @@ class SpotReconstructor:
             for iy, y in enumerate(self.grid_y):
                 self.grid_Pcam[ix, iy] = geom.transf_pix_to_coo(par, x, y)
 
-    def init_depth(self, verbose=False):
+    def init_depth(self, verbose:int=0):
         """
         Initialize the wire position and corresponding depth position attributes of the class.
 
@@ -182,8 +200,8 @@ class SpotReconstructor:
 
         Parameters
         ----------
-        verbose : bool, optional
-            If True, prints out the calculated motor positions and depth positions.
+        verbose : int, optional
+            If positive, prints out the calculated motor positions and depth positions.
 
         Sets the following attributes:
         - pw_all : 1D array of motor positions of the wire(s)
@@ -192,6 +210,9 @@ class SpotReconstructor:
         - yw : 1D array of depth positions of the wire(s) corresponding to pw
         - ygrid : 1D array of interpolated middle values of yw
         """
+
+        if verbose > 0:
+            print("in init_depth()")
         # motor pos of wire
 
         #self.pw_all = self.scan.wire_position
@@ -223,16 +244,16 @@ class SpotReconstructor:
 
         # list of motor position wire corresponding to a shadowing of all ROI pixels 
         self.pw = self.pw_all[self.pw_idx]
-        if verbose:
-            print('In init_depth() ----------')
+        if verbose>0:
+            print('In reconstruction/spot.py init_depth() ----------')
             print('self.pw', self.pw)
 
         # corresponding depth position (considering central pixel)
         self.yw, _ = self.wire.mask_fronts(self.pw, self.Pcam)
-        if verbose: print('self.yw', self.yw)
+        if verbose>0: print('self.yw', self.yw)
         # crude interpolated middle values of self.yw
         self.ygrid = 0.5 * (self.yw[:-1] + self.yw[1:])
-        if verbose:
+        if verbose>0:
             print('self.ygrid', self.ygrid)
             print('len(self.ygrid)', len(self.ygrid))
             print('End of init_depth() ----------')
@@ -254,7 +275,7 @@ class SpotReconstructor:
         else:
             self.init_data_general()
 
-    def init_data_general(self):
+    def init_data_general(self, verbose:int=0):
         # set self.frames_cor  
 
         """
@@ -264,13 +285,16 @@ class SpotReconstructor:
         finaly transpose the array to have the shape:
         (nz, ny, nx)
         """
+        if verbose>0:
+            print('In init_data_general()')
+
         xlim, ylim = self.grid_xlim, self.grid_ylim
 
         xmin, xmax = xlim[0] - 1, xlim[1] + 1
 
         # read  roi pixel intensity (corrected by monitor value)
         self.frames_ini = np.array(self.scan.get_images_rect_corr([xmin, xmax], ylim,
-                                                                  xy=False), dtype=float)[self.pw_idx]
+                                                                  xy=False, verbose=verbose-1), dtype=float)[self.pw_idx]
 
         self.frames_bkg = np.array(self.frames_ini, dtype=float)
 
@@ -291,11 +315,14 @@ class SpotReconstructor:
 
         self.frames_cor = np.maximum(np.subtract(self.frames_ini, self.frames_bkg * 0.999),
                                      0)
-        print('shape self.frames_cor', self.frames_cor.shape)
+        if verbose>0: print('shape self.frames_cor', self.frames_cor.shape)
 
         self.frames_cor = np.transpose(self.frames_cor[:, :, 1:-1], axes=(2, 1, 0))
 
-        print('after transpose shape self.frames_cor', self.frames_cor.shape)
+        if verbose>0: print('after transpose shape self.frames_cor', self.frames_cor.shape)
+
+        if verbose>0:
+            print('end of init_data_general()')
 
     def init_data_leftb(self):
         """not used,   background correction from the right border of roi rectangle"""
@@ -349,7 +376,103 @@ class SpotReconstructor:
         self.frames_cor = np.transpose(self.frames_cor[:, :, 4:], axes=(1, 2, 0))
 
     # Reconstruction methods
-    def reconstruct(self, regularize=False, reg_alpha=0.5, reg_method='ridge', oversamp=20):
+
+    # --- Optimized reconstruct method ---
+    def reconstruct(self, regularize: bool = False, reg_alpha: float = 0.5, reg_method: str = 'ridge', oversamp: int = 20, verbose: int = 0):
+        if verbose > 0:
+            print('In optimized reconstruct() of class SpotReconstructor.spot.py')
+
+        # --- Precompute yi ---
+        yi = [(1 - alpha) * self.yw[:-1] + alpha * self.yw[1:] for alpha in np.linspace(0, 1, oversamp)]
+
+        # --- Precompute mask ---
+        mask = self.scan.img_exist[self.pw_idx]
+
+        # --- Precompute all Pcam points (flattened grid) ---
+        grid_ix, grid_iy = np.meshgrid(np.arange(self.grid_nx), np.arange(self.grid_ny), indexing='ij')
+        grid_ix_flat = grid_ix.ravel()
+        grid_iy_flat = grid_iy.ravel()
+        Pcam_flat = np.array([self.grid_Pcam[ix][iy] for ix, iy in zip(grid_ix_flat, grid_iy_flat)])  # Shape: (n_grid_points, 3)
+
+        # --- Extract wire attributes for Numba ---
+        wire_axis = np.array(self.wire.axis)  # Assuming self.wire.axis is a np.ndarray
+        wire_R = float(self.wire.R)            # Assuming self.wire.R is a float
+        abscoeff = float(self.abscoeff)       # Ensure it's a float
+
+        # --- Precompute M_all (transmission matrices) ---
+        n_yi = len(yi)
+        n_pixels = len(self.pw)
+        n_grid_points = len(grid_ix_flat)
+        M_all = np.zeros((n_grid_points, n_pixels))  # Shape: (n_grid_points, n_pixels)
+
+        for k in range(n_grid_points):
+            for j, pw in enumerate(self.pw):
+                # Precompute M for all yi at once (vectorized over yi)
+                transmissions = np.array([
+                    mywire.calc_transmission_optimized(pw, y, Pcam_flat[k], wire_axis, wire_R, abscoeff)
+                    for y in yi
+                ])
+                M_all[k, j] = np.mean(transmissions)  # Average over yi
+
+        # --- Precompute S_all (frames_cor) ---
+        S_all = np.array([self.frames_cor[ix][iy] for ix, iy in zip(grid_ix_flat, grid_iy_flat)])  # Shape: (n_grid_points, n_pixels)
+
+        # --- Initialize rec ---
+        self.rec = np.zeros((self.grid_nx, self.grid_ny, len(self.ygrid)), dtype=float)
+
+        # --- Regularization functions (unchanged) ---
+        if regularize:
+            if reg_method == 'lasso':
+                def lnorm(x):
+                    return np.sum(np.abs(x))
+            else:
+                def lnorm(x):
+                    return np.sum(np.square(x))
+
+            def objfun(x, M, S):
+                Mx_S = np.dot(M, x) - S
+                fval = np.sum(np.square(Mx_S)) + reg_alpha * lnorm(x)
+                jac = 2.0 * (np.dot(M.T, Mx_S) + reg_alpha * x)
+                return fval, jac
+
+        # --- Vectorized reconstruction loop ---
+        for k in range(n_grid_points):
+            ix, iy = grid_ix_flat[k], grid_iy_flat[k]
+            M = M_all[k, :][mask]  # Apply mask
+            S = S_all[k, :][mask]  # Apply mask
+
+            if regularize:
+                if reg_method == "lasso":
+                    x0 = np.zeros(len(self.ygrid), dtype=float)
+                    ub = None
+                else:
+                    x0, _ = spo.nnls(M, S)
+                    ub = np.sum(x0)
+
+                res = spo.minimize(
+                    objfun,
+                    args=(M, S),
+                    jac=True,
+                    x0=x0,
+                    bounds=[(0, ub)] * len(x0),
+                    options={'eps': 1e-06, 'ftol': 1e-06}
+                )
+                self.rec[ix, iy] = res.x
+            else:
+                self.rec[ix, iy], _ = spo.nnls(M, S)
+
+        # --- Reverse ygrid if needed ---
+        if self.ygrid[0] > self.ygrid[-1]:
+            self.ygrid = self.ygrid[::-1]
+            self.rec = self.rec[:, :, ::-1]
+
+        self.is_reconstructed = True
+
+
+    def reconstruct_old(self, regularize:bool=False, reg_alpha:float=0.5, reg_method:str='ridge', oversamp:int=20, verbose:int=0):
+
+        if verbose>0:
+            print('In reconstruct() of class SpotReconstructor.spot.py')
 
         yi = [(1 - alpha) * self.yw[:-1] + alpha * self.yw[1:] for alpha in np.linspace(0, 1, oversamp)]
 
