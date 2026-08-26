@@ -22,6 +22,7 @@ except:
     pass
 try:
     import h5py
+    #TODO better use silx.io to avoid the locking issue and the h5py dependency
 except ModuleNotFoundError:
     print('warning: h5py is missing. It is useful for playing with hdf5 for some LaueTools modules. Install it with pip> pip install h5py')
 
@@ -37,10 +38,10 @@ FORBIDDENCOUNTERS = ['eiger4m',]  # 2D counters and heavy to read without purpos
 class H5file:
     defaultcolumns = ['start_time', 'end_time',
                       'sample_dataset_scanindex', 'fullcommand',
-                                              'scanindex','scantype','motors','localhdf5file','imagefolder']
+                                              'scanindex','scantype','motors','localhdf5file','imagefolder', 'endreason','samplename']
     defaultCCDLabel = 'sCMOS'
 
-    def __init__(self, h5filefullpath, CCDLabel=None):
+    def __init__(self, h5filefullpath, CCDLabel=None, name='logfile'):
         self.path = h5filefullpath
         self.listscans = None
         self.listcts = None
@@ -48,12 +49,24 @@ class H5file:
         self.selectedscans = {} # dict of scans  key is integer (datraframe index)
         self.selectedscansindices = []  # list of selected scans indices
         self.CCDLabel = CCDLabel
+        self.name = name # just an optional name of the object
 
     def setCCDLabel(self, CCDLabel):
         self.CCDLabel = CCDLabel if CCDLabel is not None else H5file.defaultCCDLabel
     
-    def getscans(self, verbose:int=0):
-        self.listscans, self.listcts = get_scans_cts(self.path, verbose=verbose-1)
+    def getscans(self, n_last:int=100000,
+                        node_prefix:str=None, 
+                        node_substrings: list = None,
+                        substrings_logic: str = "OR",
+                        only_endreason_SUCCESS:bool=False,
+                        exclude_substrings: list = None,
+                        verbose:int=0):
+                        
+        self.listscans, self.listcts = get_scans_cts(self.path,
+                                    n_last=n_last, node_prefix=node_prefix,
+                                    node_substrings=node_substrings,
+                                    substrings_logic=substrings_logic,only_endreason_SUCCESS=only_endreason_SUCCESS, exclude_substrings=exclude_substrings,
+                                    verbose=verbose-1)
         self.listscans = [[str(_k)]+elem for _k, elem in enumerate(self.listscans)]
         self.listcts = [[str(_k)]+elem for _k, elem in enumerate(self.listcts)]
         if verbose>0:
@@ -63,8 +76,21 @@ class H5file:
 
     def _build_dfallscans(self):
         pd.set_option('display.max_rows', None)
-        self.dfallscans = pd.DataFrame(self.listscans, columns=['logfile_scanindex']+H5file.defaultcolumns)
+        dfallscans = pd.DataFrame(self.listscans, columns=['logfile_scanindex']+H5file.defaultcolumns)
+
+
+        # Convert start_time and end_time to datetime
+        dfallscans['start_time'] = pd.to_datetime(dfallscans['start_time'])
+        dfallscans['end_time'] = pd.to_datetime(dfallscans['end_time'])
         
+        # Compute duration in hours (rounded to 2 decimals)
+        duration_hours = ((dfallscans['end_time'] - dfallscans['start_time']).dt.total_seconds() / 3600).round(2)
+        
+        # Insert the duration column at the 3rd position (index 2)
+        dfallscans.insert(2, 'duration_hours', duration_hours)
+
+        self.dfallscans = dfallscans
+            
     def __getitem__(self, index):
         return self.dfallscans.iloc[index]
     
@@ -94,7 +120,6 @@ class H5file:
         return self.dfallscans[property].to_numpy()
     
     def build_dict_scan(self, item_idx:int, verbose=True)->dict:
- 
         """
         Build a scan object from the pandas dataframe of all scans and given index
         
@@ -113,13 +138,17 @@ class H5file:
         if self.CCDLabel is None:
             self.CCDLabel = H5file.defaultCCDLabel
 
+        if item_idx >= len(self.dfallscans):
+            GT.printyellow(f'this index {item_idx} is not an entry (row) in logfile.dfallscans pandas dataframe')
+            return {}
+
         scans_dict = build_dict_scan(item_idx, self.dfallscans, self.CCDLabel)
 
         self.selectedscans[item_idx]= scans_dict
         self.selectedscansindices.append(item_idx)
 
         if verbose:
-            print("scan %d built and stored in self.selectedscans"%item_idx)
+            print(f"scan %d built and stored in {self.name}.selectedscans"%item_idx)
         return scans_dict
 
     def getselectedscansindices(self):
@@ -245,7 +274,7 @@ class H5file:
             self.selectscansGUI(nmax=nmax)
         return filterdfscans
 
-    def getscanfromimage(self, imagefullpath, verbose=1, CCDLabel='sCMOS'):
+    def getscanfromimage(self, imagefullpath:str, verbose:int=1, CCDLabel:str='sCMOS', timespan_minutes:minute=300):
         """
         Retrieve scan information from an image file.
 
@@ -258,6 +287,7 @@ class H5file:
             The full path to the image file from which scan information is to be extracted.
         verbose : bool, optional
             If True, prints additional information for debugging purposes (default is True).
+        timespan_minutes : int, timespan in minutes to look for the beginning of the scan to which belong the image for EIGER detector
 
         Returns:
         --------
@@ -268,11 +298,44 @@ class H5file:
         logfile_scanindex : int
             The scan index as found in the log file.
         """
-        if CCDLabel != 'sCMOS':
-            raise ValueError(f"date retrieval not implemented for {CCDLabel}")
+        blisscommand = None
+        imagedate = None
+        logfile_scanindex = None
+        if CCDLabel == 'sCMOS':
+            blisscommand, imagedate, logfile_scanindex, dfallscansgooddate=IOimage.fromscmosdate2blisscommand(imagefullpath, self.dfallscans, returndataframe=True)
 
-        blisscommand, imagedate, logfile_scanindex=IOimage.fromscmosdate2blisscommand(imagefullpath, self.dfallscans)
-        return blisscommand, imagedate, logfile_scanindex
+        elif CCDLabel == 'EIGER_4MCdTe':  # assuming EIGER detector single frame (not stacked images)
+            with h5py.File(imagefullpath,'r',locking=False) as f:
+                detectormodel = f['/entry_0000/CRGIF/eiger4m/detector_information/model'][()]
+                start_time = f['/entry_0000/start_time'][()]
+                # Decode the byte string to a regular string and parse it
+                date_str = start_time.decode('utf-8')
+                dt = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
+                # Extract the components as a tuple
+                querydatetuple = (dt.year, dt.month, dt.day, dt.hour+2, dt.minute, dt.second)
+                if verbose>0:
+                    print('detectormodel',detectormodel)
+                    print('start_time',start_time)
+                dfallscansgooddate = self.getscansfromdate(querydatetuple,timespan=timespan_minutes, verbose=verbose)
+
+                if len(dfallscansgooddate)==0:
+                    print("no scan found for this image")
+                elif len(dfallscansgooddate)>1:
+                    print("multiple scans found for this image, using first one")
+                    blisscommand = dfallscansgooddate.fullcommand.values[0]
+                    imagedate = datetime.datetime(*querydatetuple)
+                    logfile_scanindex = int(dfallscansgooddate.logfile_scanindex.values[0])
+                else:
+                    blisscommand = dfallscansgooddate.fullcommand.values
+                    imagedate = datetime.datetime(*querydatetuple)
+                    logfile_scanindex = int(dfallscansgooddate.logfile_scanindex.values)
+            
+        if verbose>0:
+            print("blisscommand: ",blisscommand)
+            print("imagedate: ",imagedate)
+            print("logfile_scanindex: ",logfile_scanindex)
+
+        return blisscommand, imagedate, logfile_scanindex, dfallscansgooddate
 
     def getscansfromdate(self, datetuple, timespan:minute=None, verbose=True):
         """
@@ -315,7 +378,9 @@ class H5file:
         dfallscansgoodperiod = df.loc[mask]
 
         if verbose>0:
-            print(dfallscansgoodperiod.fullcommand.values)
+            print('fullcommand',dfallscansgoodperiod.fullcommand.values)
+            print('imagefolder',dfallscansgoodperiod.imagefolder.values)
+            print('localhdf5file',dfallscansgoodperiod.localhdf5file.values)
         return dfallscansgoodperiod
 
 class SpecFile:
@@ -709,7 +774,9 @@ class Scan(SpecFile):
 
 class Scan_hdf5(SpecFile):
     """
-    Simple class to read extract single scan from bliss files. All the parameters of the scan and the data are read and stored as attributes.
+    Simple class to read extract single scan from bliss files. All the parameters of the scan and the data are read and stored as attributes
+
+    BUT VERY LONG IF H5 file is large (because it reads all nodes at any depth ... TODO to be corrected
 
     Definition:
     -----------
@@ -788,6 +855,8 @@ class Scan_hdf5(SpecFile):
 
         #print('beginning of __init__ of scan_hdf5')
         selp, _ = getscans_from_hdf5file(spec_file.file)
+        print('selp  at __init__  (selected scans)',selp)
+        print('scan_key',scan_key)
         tit, data, posmotors, fullpath, scan_date = readdata_from_hdf5key(selp, scan_key, outputdate=True, verbose=verbose)
 
         if verbose:
@@ -1227,93 +1296,248 @@ def getwirescan_from_hdf5file(filename, verbose:int=0):
     return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=True,
                                     verbose=verbose)[0]
 
-def getall_from_hdf5file(filename, verbose:int=0):
-    return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=False,collectall=True,
-                                    verbose=verbose)
+def getall_from_hdf5file(
+    filename,
+    verbose: int = 0,
+    n_last: int = None,
+    node_prefix: str = None,
+    node_substrings: list = None,
+    substrings_logic: str = "OR",
+    exclude_substrings: list = None  # New parameter
+):
+    return getscans_from_hdf5file(
+        filename,
+        collectallscans=False,
+        onlywirescan=False,
+        collectall=True,
+        verbose=verbose,
+        n_last=n_last,
+        node_prefix=node_prefix,
+        node_substrings=node_substrings,
+        substrings_logic=substrings_logic,
+        exclude_substrings=exclude_substrings  # Pass to getscans_from_hdf5file
+    )
 
-def getscans_from_hdf5file(filename, verbose:int=0, collectallscans:bool=True, onlywirescan:bool=False, onlymesh:bool=False,
-                           collectall:bool=False):
 
+def getscans_from_hdf5file(
+    filename,
+    verbose: int = 0,
+    collectallscans: bool = True,
+    onlywirescan: bool = False,
+    onlymesh: bool = False,
+    collectall: bool = False,
+    n_last: int = None,
+    time_attr: str = "start_time",
+    node_prefix: str = None,
+    node_substrings: list = None,
+    substrings_logic: str = "OR",
+    exclude_substrings: list = None 
+):
+    """
+    Retrieve and filter scan properties from an HDF5 file, with support for sorting by recency,
+    filtering by node name prefix/substrings, and excluding nodes with specific substrings.
+
+    Args:
+        exclude_substrings (list, optional): Exclude nodes containing any of these substrings. Defaults to None.
+    """
     if collectallscans:
-        onlymesh=False
-        onlywirescan=False
+        onlymesh = False
+        onlywirescan = False
 
-    if verbose>0: print(f"\n ***** In getscans_from_hdf5file (logfile_reader) filename is {filename}")
-    _,ext = filename.rsplit('.',1)
+    if verbose > 0:
+        print(f"\n ***** In getscans_from_hdf5file (logfile_reader) filename is {filename}")
+
+    _, ext = filename.rsplit('.', 1)
     headname, ffname = os.path.split(filename)
 
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    with h5py.File(filename, 'r') as f:
+    with h5py.File(filename, 'r', locking=False) as f:
+        # Step 1: Collect all nodes and their start_time, filtered by prefix, substrings, and exclusion
+        nodes_with_time = []
+        for name, obj in f.items():
+            # Skip nodes that don't match the prefix (if specified)
+            if node_prefix is not None and not name.startswith(node_prefix):
+                continue
 
-        listkeys = [kk for kk in f.keys()]
-        if verbose>0:
-            print(f'filename: %s \n found {len(listkeys)} hdf5 keys:'%filename)
-            if len(listkeys)>10:    
-                print(listkeys[:10], '...')
-            else:
-                print(listkeys)
-        nbkeys = len(listkeys)
-        
-        # if key =   #########_int.int  then it is a pointer to a file ########.h5
-        # if key =   int.int    this file contains truly the data
-        #  #########   =  collectionname_datasetname
-        listprops = []   # selected props
+            # Skip nodes that match any exclude_substrings (if specified)
+            if exclude_substrings is not None and any(exclude in name for exclude in exclude_substrings):
+                continue
+
+            # Skip nodes that don't match the substring logic (if specified)
+            if node_substrings is not None:
+                if substrings_logic == "OR":
+                    if not any(substring in name for substring in node_substrings):
+                        continue
+                elif substrings_logic == "AND":
+                    if not all(substring in name for substring in node_substrings):
+                        continue
+                else:
+                    raise ValueError("substrings_logic must be 'AND' or 'OR'")
+
+            start_time = None
+            if isinstance(obj, h5py.Group):
+                if time_attr in obj:
+                    try:
+                        start_time = obj[time_attr][()] if isinstance(obj[time_attr], h5py.Dataset) else obj[time_attr]
+                    except:
+                        start_time = None
+                elif time_attr in obj.attrs:
+                    start_time = obj.attrs[time_attr]
+            if start_time is not None:
+                nodes_with_time.append((name, start_time))
+
+        # Rest of the function remains unchanged
+        nodes_with_time.sort(key=lambda x: x[1], reverse=True)
+        listprops = []
         allprops = []
-        idx_key=0
-        while idx_key<nbkeys:
-            _key = listkeys[idx_key]
+        processed_nodes = 0
+
+        for name, start_time in nodes_with_time:
+            if n_last is not None and processed_nodes >= n_last:
+                break
+
+            _key = name
             objlink = f.get(_key, getlink=True)
             props = None
             isselected = False
+
             if isinstance(objlink, h5py._hl.group.ExternalLink):
-                
                 lowlevelpath = objlink.filename
-                if verbose>1: print('key = %s is External link to %s'%(_key,lowlevelpath))
-                foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
+                if verbose > 1:
+                    print(f'key = {_key} is External link to {lowlevelpath}')
+                foundfile = findlowesthdf5file(lowlevelpath, mainfolder=headname)
                 if foundfile:
-                    # removing string before _interger.integer
-                    _modified_key = _key.rsplit('_',1)[-1]
-                    props, isselected = getscanprops_lowest_hdf5(foundfile, _modified_key,
-                                                collectallscans=collectallscans,
-                                                onlymesh=onlymesh,
-                                                onlywirescan=onlywirescan,
-                                                collectall=collectall)
+                    _modified_key = _key.rsplit('_', 1)[-1]
+                    props, isselected = getscanprops_lowest_hdf5(
+                        foundfile, _modified_key,
+                        collectallscans=collectallscans,
+                        onlymesh=onlymesh,
+                        onlywirescan=onlywirescan,
+                        collectall=collectall
+                    )
             elif isinstance(objlink, h5py._hl.group.HardLink):
-                if verbose>1: print('key = %s is Hard link to '%(_key))
-                props, isselected = getscanprops_lowest_hdf5(filename, _key,
-                                                            collectallscans=collectallscans,
-                                                            onlymesh=onlymesh,
-                                                            onlywirescan=onlywirescan, collectall=collectall)
+                if verbose > 1:
+                    print(f'key = {_key} is Hard link to')
+                props, isselected = getscanprops_lowest_hdf5(
+                    filename, _key,
+                    collectallscans=collectallscans,
+                    onlymesh=onlymesh,
+                    onlywirescan=onlywirescan,
+                    collectall=collectall
+                )
+
             if props is not None:
                 allprops.append(props)
             if isselected:
                 listprops.append(props)
-            idx_key+=1
+            processed_nodes += 1
 
-    #print('allprops',allprops)
-    if listprops == []:
-        #wx.MessageBox('No mesh scan in the file: %s'%filename,'INFO')
-        print('\n\n*******\n!! No scan in the file: %s\n**********'%filename)
-        print(f'with filter: onlymesh :{onlymesh}, onlywirescan: {onlywirescan}, collectallscans: {collectallscans}')
-        return []
+        if listprops == []:
+            print('\n\n*******\n!! No scan in the file: %s\n**********' % filename)
+            print(f'with filter: onlymesh: {onlymesh}, onlywirescan: {onlywirescan}, collectallscans: {collectallscans}')
+            return []
 
-    # sorting by increasing date
-    ar_lp = np.array(listprops, dtype=object)
-    s_ix=np.argsort(ar_lp[:,3])
-    sortedlistprops = ar_lp[s_ix]
-    #print('sortedlistprops',sortedlistprops)
+        ar_lp = np.array(listprops, dtype=object)
+        s_ix = np.argsort(ar_lp[:, 3])
+        sortedlistprops = ar_lp[s_ix]
 
-    # sorting by increasing date
-    ar_lpall = np.array(allprops, dtype=object)
-    s_ix2=np.argsort(ar_lpall[:,3])
-    sortedlistallprops = ar_lpall[s_ix2]
-    #print('sortedlistprops',sortedlistprops)
+        ar_lpall = np.array(allprops, dtype=object)
+        s_ix2 = np.argsort(ar_lpall[:, 3])
+        sortedlistallprops = ar_lpall[s_ix2]
 
-    if isinstance(sortedlistprops,tuple):
-        arrayprops = sortedlistprops[0]
-        return arrayprops, sortedlistallprops
-    else:
-        return sortedlistprops, sortedlistallprops
+        if isinstance(sortedlistprops, tuple):
+            arrayprops = sortedlistprops[0]
+            return arrayprops, sortedlistallprops
+        else:
+            return sortedlistprops, sortedlistallprops
+
+# def getall_from_hdf5file(filename, verbose:int=0):
+#     return getscans_from_hdf5file(filename, collectallscans=False, onlywirescan=False,collectall=True,
+#                                     verbose=verbose)
+
+# def getscans_from_hdf5file(filename, verbose:int=0, collectallscans:bool=True, onlywirescan:bool=False, onlymesh:bool=False,
+#                            collectall:bool=False):
+
+#     if collectallscans:
+#         onlymesh=False
+#         onlywirescan=False
+
+#     if verbose>0: print(f"\n ***** In getscans_from_hdf5file (logfile_reader) filename is {filename}")
+#     _,ext = filename.rsplit('.',1)
+#     headname, ffname = os.path.split(filename)
+
+#     #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"   old style
+#     # better use silx.io
+#     with h5py.File(filename, 'r', locking=False) as f:
+
+#         listkeys = [kk for kk in f.keys()]
+#         if verbose>0:
+#             print(f'filename: %s \n found {len(listkeys)} hdf5 keys:'%filename)
+#             if len(listkeys)>10:    
+#                 print(listkeys[:10], '...')
+#             else:
+#                 print(listkeys)
+#         nbkeys = len(listkeys)
+        
+#         # if key =   #########_int.int  then it is a pointer to a file ########.h5
+#         # if key =   int.int    this file contains truly the data
+#         #  #########   =  collectionname_datasetname
+#         listprops = []   # selected props
+#         allprops = []
+#         idx_key=0
+#         while idx_key<nbkeys:
+#             _key = listkeys[idx_key]
+#             objlink = f.get(_key, getlink=True)
+#             props = None
+#             isselected = False
+#             if isinstance(objlink, h5py._hl.group.ExternalLink):
+                
+#                 lowlevelpath = objlink.filename
+#                 if verbose>1: print('key = %s is External link to %s'%(_key,lowlevelpath))
+#                 foundfile = findlowesthdf5file(lowlevelpath,mainfolder=headname)
+#                 if foundfile:
+#                     # removing string before _interger.integer
+#                     _modified_key = _key.rsplit('_',1)[-1]
+#                     props, isselected = getscanprops_lowest_hdf5(foundfile, _modified_key,
+#                                                 collectallscans=collectallscans,
+#                                                 onlymesh=onlymesh,
+#                                                 onlywirescan=onlywirescan,
+#                                                 collectall=collectall)
+#             elif isinstance(objlink, h5py._hl.group.HardLink):
+#                 if verbose>1: print('key = %s is Hard link to '%(_key))
+#                 props, isselected = getscanprops_lowest_hdf5(filename, _key,
+#                                                             collectallscans=collectallscans,
+#                                                             onlymesh=onlymesh,
+#                                                             onlywirescan=onlywirescan, collectall=collectall)
+#             if props is not None:
+#                 allprops.append(props)
+#             if isselected:
+#                 listprops.append(props)
+#             idx_key+=1
+
+#     #print('allprops',allprops)
+#     if listprops == []:
+#         #wx.MessageBox('No mesh scan in the file: %s'%filename,'INFO')
+#         print('\n\n*******\n!! No scan in the file: %s\n**********'%filename)
+#         print(f'with filter: onlymesh :{onlymesh}, onlywirescan: {onlywirescan}, collectallscans: {collectallscans}')
+#         return []
+
+#     # sorting by increasing date
+#     ar_lp = np.array(listprops, dtype=object)
+#     s_ix=np.argsort(ar_lp[:,3])
+#     sortedlistprops = ar_lp[s_ix]
+#     #print('sortedlistprops',sortedlistprops)
+
+#     # sorting by increasing date
+#     ar_lpall = np.array(allprops, dtype=object)
+#     s_ix2=np.argsort(ar_lpall[:,3])
+#     sortedlistallprops = ar_lpall[s_ix2]
+#     #print('sortedlistprops',sortedlistprops)
+
+#     if isinstance(sortedlistprops,tuple):
+#         arrayprops = sortedlistprops[0]
+#         return arrayprops, sortedlistallprops
+#     else:
+#         return sortedlistprops, sortedlistallprops
 
 
 def findlowesthdf5file(filename, mainfolder='.', verbose:int=0):
@@ -1342,7 +1566,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
     """get all keys (scan or ct) from an hdf5 file generated by BLISS 
     
     return lists of keys and properties:  listall (scans + cts), listscans, listcts"""
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     listscans = []
     listcts = []
     listall = []
@@ -1351,7 +1575,7 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
 
     res = getall_from_hdf5file(filename)   # scans and ct
 
-    with h5py.File(filename, 'r') as f:
+    with h5py.File(filename, 'r', locking=False) as f:
 
         for elem in res[0]:
             #print('elem',elem)
@@ -1400,61 +1624,139 @@ def get_allkeys_blissdataset(filename, selectmotors=(), only_mpxcdte_data=True):
                     listall.append(datasetdata)
     return listall, listscans, listcts
 
-def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose:int=0, collectall=False):
+def getscanprops_lowest_hdf5(filename, key,
+                            collectallscans=True, onlymesh=False,
+                            onlywirescan=False,
+                            verbose:int=0,
+                            collectall=False):
     """ get scan properties from hdf5 file and filter optionally wrt scan type (mesh or wirescan)"""
-    #print('\n\nterminal hdf5 file')
-    _,ext = filename.rsplit('.',1)
+    _, ext = filename.rsplit('.', 1)
     headname, ffname = os.path.split(filename)
 
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    with h5py.File(filename, 'r') as f:
-
+    with h5py.File(filename, 'r', locking=False) as f:
         idx, postfix = key.split('.')
-        #print('reading key %s'%key)
-        
-        if h5py.__version__<'3.0':
-            #maybe [()] is enough without decoding
-            scancommand = f['%s.%s'%(idx,postfix)]['title'].value
-            startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
-            enddate = f['%s.%s'%(idx,postfix)]['end_time'].value
+        if verbose > 0:
+            print(f'reading key {key}')
+
+        if h5py.__version__ < '3.0':
+            scancommand = f['%s.%s' % (idx, postfix)]['title'].value
+            startdate = f['%s.%s' % (idx, postfix)]['start_time'].value
+            enddate = f['%s.%s' % (idx, postfix)]['end_time'].value
         else:
-            #print('%s.%s'%(idx,postfix))
-            scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
-            startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
+            scancommand = f['%s.%s' % (idx, postfix)]['title'][()].decode('UTF-8')
+            startdate = f['%s.%s' % (idx, postfix)]['start_time'][()].decode('UTF-8')
             startdate = datetime.datetime.fromisoformat(startdate).strftime('%Y-%m-%dT%H:%M:%S')
             try:
-                enddate = f['%s.%s'%(idx,postfix)]['end_time'][()].decode('UTF-8')
+                enddate = f['%s.%s' % (idx, postfix)]['end_time'][()].decode('UTF-8')
                 enddate = datetime.datetime.fromisoformat(enddate).strftime('%Y-%m-%dT%H:%M:%S')
             except:
                 enddate = startdate
-        
-        props = None
 
-        if verbose>0:
-            print('scancommand',scancommand)
-            print('startdate',startdate)
+        # Read end_reason from the node (dataset or attribute)  h5py > 3.0
+        end_reason = None
+        node_path = f'%s.%s' % (idx, postfix)
+        if node_path in f:
+            node = f[node_path]
+            if 'end_reason' in node:
+                try:
+                    end_reason = node['end_reason'][()].decode('UTF-8') if isinstance(node['end_reason'][()], bytes) else node['end_reason'][()]
+                except:
+                    end_reason = None
+            elif 'end_reason' in node.attrs:
+                end_reason = node.attrs['end_reason']
+
+        # read samplename
+        try:
+            samplename = f['%s.%s' % (idx, postfix)]['sample/name'][()]
+        except:
+            samplename = ''
+
+        props = None
         isselected = False
+
+        if verbose > 0:
+            print('scancommand', scancommand)
+            print('startdate', startdate)
+            print('end_reason', end_reason)
+
         if onlymesh:
             if any(cmd in scancommand for cmd in ("amesh", 'fscan2d')):
-                keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-                isselected=True
+                keyfilename = ffname[:-3]  # removing .h5
+                props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
+                isselected = True
         elif onlywirescan:
             if any(cmd in scancommand for cmd in ("yf", "zf")):
-                keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-                isselected=True
+                keyfilename = ffname[:-3]  # removing .h5
+                props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
+                isselected = True
         elif collectallscans:
-            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan')):
-                keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-                isselected=True
+            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d', 'fscan')):
+                keyfilename = ffname[:-3]  # removing .h5
+                props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
+                isselected = True
         elif collectall:
-            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan',"ct")):
-                keyfilename = ffname[:-3]  #  removing .h5
-                props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
-                isselected=True
+            if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d', 'fscan', "ct")):
+                keyfilename = ffname[:-3]  # removing .h5
+                props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
+                isselected = True
+
     return props, isselected
+
+# def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False, onlywirescan=False, verbose:int=0, collectall=False):
+#     """ get scan properties from hdf5 file and filter optionally wrt scan type (mesh or wirescan)"""
+#     #print('\n\nterminal hdf5 file')
+#     _,ext = filename.rsplit('.',1)
+#     headname, ffname = os.path.split(filename)
+
+#     # os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+#     with h5py.File(filename, 'r', locking=False) as f:
+
+#         idx, postfix = key.split('.')
+#         #print('reading key %s'%key)
+        
+#         if h5py.__version__<'3.0':
+#             #maybe [()] is enough without decoding
+#             scancommand = f['%s.%s'%(idx,postfix)]['title'].value
+#             startdate = f['%s.%s'%(idx,postfix)]['start_time'].value
+#             enddate = f['%s.%s'%(idx,postfix)]['end_time'].value
+#         else:
+#             #print('%s.%s'%(idx,postfix))
+#             scancommand = f['%s.%s'%(idx,postfix)]['title'][()].decode('UTF-8')
+#             startdate = f['%s.%s'%(idx,postfix)]['start_time'][()].decode('UTF-8')
+#             startdate = datetime.datetime.fromisoformat(startdate).strftime('%Y-%m-%dT%H:%M:%S')
+#             try:
+#                 enddate = f['%s.%s'%(idx,postfix)]['end_time'][()].decode('UTF-8')
+#                 enddate = datetime.datetime.fromisoformat(enddate).strftime('%Y-%m-%dT%H:%M:%S')
+#             except:
+#                 enddate = startdate
+        
+#         props = None
+
+#         if verbose>0:
+#             print('scancommand',scancommand)
+#             print('startdate',startdate)
+#         isselected = False
+#         if onlymesh:
+#             if any(cmd in scancommand for cmd in ("amesh", 'fscan2d')):
+#                 keyfilename = ffname[:-3]  #  removing .h5
+#                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+#                 isselected=True
+#         elif onlywirescan:
+#             if any(cmd in scancommand for cmd in ("yf", "zf")):
+#                 keyfilename = ffname[:-3]  #  removing .h5
+#                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+#                 isselected=True
+#         elif collectallscans:
+#             if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan')):
+#                 keyfilename = ffname[:-3]  #  removing .h5
+#                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+#                 isselected=True
+#         elif collectall:
+#             if any(cmd in scancommand for cmd in ("loopscan", "ascan", "a2scan", "amesh", 'fscan2d','fscan',"ct")):
+#                 keyfilename = ffname[:-3]  #  removing .h5
+#                 props=['%s_%s'%(keyfilename,idx),idx, postfix, startdate, enddate, '%s_%s %s'%(keyfilename, idx, scancommand), filename]
+#                 isselected=True
+#     return props, isselected
 
 def ReadSpec(fname, scan, outputdate=False):
     """
@@ -1714,11 +2016,14 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS',ve
     """
 
     dict_scan = {}
-    
-    dict_scan['scantype'] = None
-    
-    fullcommand = pdf['fullcommand'][item_idx]
 
+    try:
+        fullcommand = pdf['fullcommand'][item_idx]
+    except KeyError:
+        GT.printyellow(f'Unknown key {item_idx} !!')
+        return dict_scan
+
+    dict_scan['scantype'] = None
     dict_command = read_fullcommand(fullcommand)
 
     if dict_command['scancommand'] == 'amesh':
@@ -1745,10 +2050,12 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS',ve
         return dict_scan
 
     for key in ('start_time', 'end_time','sample_dataset_scanindex', 'fullcommand',
-                                                  'scanindex','motors','localhdf5file','imagefolder'):
+                                                  'scanindex','motors','localhdf5file','imagefolder', 'endreason','samplename'):
         dict_scan[key] = pdf[key][item_idx]
 
     dict_scan['folder'] = dict_scan['imagefolder']
+    concat_sample_dataset_name, scannumber = dict_scan['sample_dataset_scanindex'].rsplit('_', 1)
+    dict_scan['nodeinhdf5file'] = dict_scan['samplename'].decode('UTF-8')+f'/{concat_sample_dataset_name}/{scannumber}.1'
     if CCDLabel in  ('EIGER_4MCdTe',):
         dict_scan['prefix'] = 'eiger4m_'
         dict_scan['suffix'] = 'h5'
@@ -1763,17 +2070,60 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS',ve
     dict_scan['slowaxis'] = dict_command.get('slowmotor', None)
     dict_scan['collector'] = 'pixelval'
     dict_scan['CCDLabel'] = CCDLabel
+
+    GT.printgreen(f'scan dictionary created for key {item_idx} :) ')
+    
     return dict_scan
 
 
-def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'), potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan','loopscan'), verbose:int=0):
-    res = getall_from_hdf5file(pathHDF5, verbose=verbose-1)   # scans and ct
+def get_unique_node_prefixes(hdf5_path, delimiter: str = "_"):
+    """
+    Retrieve the list of unique prefixes from node names in an HDF5 file.
+
+    Args:
+        hdf5_path (str): Path to the HDF5 file.
+        delimiter (str): Delimiter used to split node names (default: "_").
+
+    Returns:
+        list: Unique prefixes of node names.
+    """
+    with h5py.File(hdf5_path, 'r', locking=False) as f:
+        prefixes = set()
+        for name in f.keys():
+            # Split the node name by the delimiter and take the first part as the prefix
+            prefix = name.split(delimiter)[0]
+            prefixes.add(prefix)
+        return sorted(prefixes)  # Return sorted list for readability
+        
+
+def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'),
+                            potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan','loopscan'),
+                            n_last:int=1000,
+                            node_prefix:str=None,
+                            node_substrings: list = None,
+                            substrings_logic: str = "OR",
+                            only_endreason_SUCCESS=False,
+                            exclude_substrings: list = None,
+                            verbose:int=0):
+
+    res = getall_from_hdf5file(pathHDF5, n_last=n_last,
+                                    node_prefix=node_prefix,
+                                    node_substrings=node_substrings,
+                                    substrings_logic=substrings_logic,
+                                    exclude_substrings=exclude_substrings,
+                                    verbose=verbose-1)   # scans and ct
 
     listscans = []
     listcts = []
+    if len(res)==0:
+        GT.printyellow(f'Any node fullfills the conditions:\nnode_prefix={node_prefix}\nnode_substrings={node_substrings}')
+        GT.printyellow(f'Try to be less restrictive !!')
+        return [],[]
     for elem in res[0]:
         #print('elem',elem)
-        kkey,scanindex,jj,ddate,edate, longcommand, localhdf5file = elem
+        kkey,scanindex,jj,ddate,edate, longcommand, localhdf5file, endreason, samplename = elem
+        if only_endreason_SUCCESS and endreason not in ('SUCCESS',):
+            continue
         fullcommand = longcommand.split(kkey)[-1].strip()
         scantype = fullcommand.split(' ')[0]
         #print(scantype)
@@ -1793,12 +2143,12 @@ def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','
         #imagefolder = os.path.join(pathHDF5.split('/RAW_DATA/')[1].rsplit('/',1)[0],'scan%04d'%int(scanindex))
         imagefolder = os.path.join(os.path.split(localhdf5file)[0], 'scan%04d'%int(scanindex))
         if scantype in ('ct'):
-            listcts.append([ddate,edate, kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder])
+            listcts.append([ddate,edate, kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder, endreason, samplename])
 
         if not foundmotors:
             continue
         if scantype in potential_scantypes:
-            listscans.append([ddate,edate, kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder])
+            listscans.append([ddate,edate, kkey,fullcommand,scanindex,scantype, motors, localhdf5file, imagefolder, endreason, samplename])
 
     return listscans, listcts
     
@@ -1815,9 +2165,9 @@ def ReadHdf5_v2(fname, scan, outputdate=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    # os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    with h5py.File(fname, 'r') as f:
+    with h5py.File(fname, 'r', locking=False) as f:
 
         i_scan = '%d' % scan + '.1'
         print('i_scan', i_scan)
@@ -1890,10 +2240,11 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False, verbose=False, us
         print('key Not Reachable')
     else:
         assert len(_ix)==1
-        general_id, idx, postfix, startdate, endtime, commandtitle, fullpath = listkeyprops[_ix[0]]
+        print('listkeyprops[_ix[0]]', listkeyprops[_ix[0]])
+        general_id, idx, postfix, startdate, endtime, commandtitle, fullpath, endreason, samplename = listkeyprops[_ix[0]]
         
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        with h5py.File(fullpath, 'r') as f:
+        #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        with h5py.File(fullpath, 'r', locking=False) as f:
 
             i_scan = '%s.%s'%(idx, postfix)
             # print('i_scan', i_scan)
@@ -1947,9 +2298,9 @@ def ReadHdf5(fname, scan, outputdate=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    with h5py.File(fname, 'r') as f:
+    with h5py.File(fname, 'r', locking=False) as f:
 
         i_scan = '%d' % scan + '.1'
         print('i_scan', i_scan)
