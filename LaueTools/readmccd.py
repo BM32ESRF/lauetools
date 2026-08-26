@@ -1323,13 +1323,20 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         Data = ImProc.computefilteredimage(Data, backgroundimage, CCDLabel, usemask=usemask,
                                                             formulaexpression=formulaexpression)
 
-    if verbose>0: print("Data.shape for local maxima", Data.shape)
+    if verbose>0:
+        print("Data.shape for local maxima", Data.shape)
+        print("min max intensity", np.amin(Data), np.amax(Data))
 
     # --- PRE SELECTION OF HOT PIXELS as STARTING POINTS FOR FITTING ---------
     # first method ---------- "Basic Intensity Threshold"
     if local_maxima_search_method in (0, "0"):
 
-        if verbose>0: print("Using simple intensity thresholding to detect local maxima (method 1/3)")
+        if 1:#verbose>0:
+            print("Using simple intensity thresholding to detect local maxima (method 1/3)")
+            print("IntensityThreshold", IntensityThreshold)
+            print('listrois',listrois)
+            print('framedim',framedim)
+            print('outputIpixmax',outputIpixmax)
         res = ImProc.LocalMaxima_from_thresholdarray(Data, IntensityThreshold=IntensityThreshold,
                                                     rois=listrois,
                                                     framedim=framedim,
@@ -1565,6 +1572,52 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                 reject_negative_baseline=reject_negative_baseline,
                                 computerrorbars=computerrorbars)
 
+
+def filter_points_far_from_border(points, min_distance_x, min_distance_y, CCDLabel=None):
+    """
+    Filters 2D points to keep only those far from the borders, with separate tolerances for X and Y.
+
+    Parameters:
+    - points: 2D array of shape (N, 2) representing the points.
+    - tuple of maximum dimensions
+    - min_distance_x: Minimum distance from X borders to keep a point.
+    - min_distance_y: Minimum distance from Y borders to keep a point.
+
+    Returns:
+    - filtered_points: Filtered 2D array of points.
+    - kept_indices: Indices of the points that are kept.
+    """
+    framedim = DictLT.dict_CCD[CCDLabel][0]
+    print('framedim  (pixelY, pixelX)',framedim)
+
+    if CCDLabel == 'EIGER_4MCdTe':
+        dimY, dimX = framedim
+    else:
+        dimX, dimY = framedim
+    
+    x_min, x_max = 0, dimX
+    y_min, y_max = 0, dimY
+
+    # Calculate the distance from each point to the X and Y borders
+    distance_to_x_borders = np.minimum(
+        np.abs(points[:, 0] - x_min),
+        np.abs(points[:, 0] - x_max)
+    )
+    distance_to_y_borders = np.minimum(
+        np.abs(points[:, 1] - y_min),
+        np.abs(points[:, 1] - y_max)
+    )
+
+    # Determine which points are far enough from both X and Y borders
+    far_from_x = distance_to_x_borders >= min_distance_x
+    far_from_y = distance_to_y_borders >= min_distance_y
+    kept_mask = far_from_x & far_from_y
+
+    # Get the indices and filtered points
+    kept_indices = np.where(kept_mask)[0]
+    filtered_points = points[kept_mask]
+
+    return filtered_points, kept_indices
 
 def ptsindices_in_bands_scmos(XYcam, npixels=2,CCDLabel='sCMOS',verbose=False):
     if CCDLabel != 'sCMOS': raise ValueError('ptsindices_in_bands is only implemented for bands of sCMOS separating 4 quadrants')
