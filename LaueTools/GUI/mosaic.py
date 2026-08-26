@@ -2375,15 +2375,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         expId = None
         samplename, datasetname = None, None
         scanindex = None
-        plottitle = 'imagesfolder'
+        plottitle = f'imagesfolder {imagesfolder}\n'
         if 'RAW_DATA' in imagesfolder:
             (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(imagesfolder)
 
             plottitle += f'expiId: {expId} samplename: {samplename}\ndatasetname: {datasetname} scanindex: {scanindex}'
         
-
-            
-
         # list_indices = self.params.get("listindices")
         listindices2D = dict_param['selected2Darray_imageindex']
         nlines, nbimagesperline = listindices2D.shape
