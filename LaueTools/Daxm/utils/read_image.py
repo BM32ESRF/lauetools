@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 
@@ -13,7 +12,7 @@ import re
 
 import numpy as np
 
-import LaueTools.IOimagefile as rmccd
+import LaueTools.IOimagefile as ioimage
 import LaueTools.dict_LaueTools as dlt
 
 from LaueTools.Daxm.utils.num import is_int
@@ -71,68 +70,127 @@ def split_linesubfolder(folder:str)->tuple:
 
     return result
 
-def read_image_rectangle(filename:str,  xlim:tuple_2int, ylim:tuple_2int, dirname:Union[str, None]=None, CCDLabel:str='MARCCD165')->np.ndarray:
+def read_image_rectangle(
+    filename: str,
+    xlim: tuple,
+    ylim: tuple,
+    dirname: Union[str, None] = None,
+    CCDLabel: str = "MARCCD165",
+) -> np.ndarray:
     """
-    returns a 2d array of integers from a binary image file. 
-    Data are taken only from a rectangle defined by xlim, ylim
+    Returns a 2D array of integers from a binary image file.
+    Data are taken only from a rectangle defined by xlim, ylim.
 
-    
-    Returns
+    This function now calls readrectangle_in_image() internally,
+    deriving pixx, pixy, halfboxx, halfboxy from xlim and ylim.
+
+    Parameters
     ----------
-    dataimage : 2D array
-                image data pixel intensity
-    """
-    (framedim,
-     pixelsize,
-    saturationvalue,
-    fliprot,
-    offsetheader,
-    formatdata,
-    comments,
-    extension) = dlt.dict_CCD[CCDLabel]
-    
-    #print "framedim read from DictLT.dict_CCD in readrectangle_in_image()",framedim
-    #print "formatdata",formatdata
-    #print 'offsetheader',offsetheader
-    # recompute headersize
-    if dirname is not None:
-        fullpathfilename = os.path.join(dirname,filename)
-    else:
-        dirname = os.curdir
-        fullpathfilename = filename
-        
-    if formatdata in ("uint16",):
-        nbBytesPerElement=2
-    if formatdata in ("uint32",):
-        nbBytesPerElement=4
-    
-    try:
-        filesize = os.path.getsize(fullpathfilename)
-    except OSError:
-        print('missing file %s'%fullpathfilename)
-        return None
+    filename : str
+        Name of the image file.
+    xlim : tuple of 2 ints
+        (xmin, xmax) for the rectangular region.
+    ylim : tuple of 2 ints
+        (ymin, ymax) for the rectangular region.
+    dirname : str, optional
+        Directory containing the file. Defaults to current directory.
+    CCDLabel : str
+        Label for the detector (e.g., "MARCCD165", "EIGER_4MCdTe").
 
-    # uint16
-    offsetheader = filesize-(framedim[0]*framedim[1])*nbBytesPerElement
+    Returns
+    -------
+    rectangle2D : np.ndarray
+        2D array of the extracted rectangular region.
+    """
+    xmin, xmax = xlim
+    ymin, ymax = ylim
+
+    # Derive halfboxx and halfboxy (must be odd integers)
+    halfboxx = (xmax - xmin + 1) // 2
+    halfboxy = (ymax - ymin + 1) // 2
+
+    # Derive pixx and pixy (center of the box)
+    pixx = xmin + halfboxx
+    pixy = ymin + halfboxy
+
+    # Call readrectangle_in_image
+    return ioimage.readrectangle_in_image(
+        filename=filename,
+        pixx=pixx,
+        pixy=pixy,
+        halfboxx=halfboxx,
+        halfboxy=halfboxy,
+        dirname=dirname,
+        CCDLabel=CCDLabel,
+        verbose=0,
+        stackimageindex=-1,
+    )
+
+
+
+# def read_image_rectangle(filename:str,  xlim:tuple_2int, ylim:tuple_2int, dirname:Union[str, None]=None, CCDLabel:str='MARCCD165')->np.ndarray:
+#     """
+#     returns a 2d array of integers from a binary image file. 
+#     Data are taken only from a rectangle defined by xlim, ylim
+
     
-    #print 'calculated offset of header from file size...',offsetheader
+#     Returns
+#     ----------
+#     dataimage : 2D array
+#                 image data pixel intensity
+#     """
+#     (framedim,
+#      pixelsize,
+#     saturationvalue,
+#     fliprot,
+#     offsetheader,
+#     formatdata,
+#     comments,
+#     extension) = dlt.dict_CCD[CCDLabel]
+    
+#     #print "framedim read from DictLT.dict_CCD in readrectangle_in_image()",framedim
+#     #print "formatdata",formatdata
+#     #print 'offsetheader',offsetheader
+#     # recompute headersize
+#     if dirname is not None:
+#         fullpathfilename = os.path.join(dirname,filename)
+#     else:
+#         dirname = os.curdir
+#         fullpathfilename = filename
+        
+#     if formatdata in ("uint16",):
+#         nbBytesPerElement=2
+#     if formatdata in ("uint32",):
+#         nbBytesPerElement=4
+    
+#     try:
+#         filesize = os.path.getsize(fullpathfilename)
+#     except OSError:
+#         print('missing file %s'%fullpathfilename)
+#         return None
+
+#     # uint16
+#     offsetheader = filesize-(framedim[0]*framedim[1])*nbBytesPerElement
+    
+#     #print 'calculated offset of header from file size...',offsetheader
      
-    xpixmin, xpixmax = xlim
-    ypixmin, ypixmax = ylim
+#     xpixmin, xpixmax = xlim
+#     ypixmin, ypixmax = ylim
     
-    lineFirstElemIndex = ypixmin
-    lineLastElemIndex = ypixmax
+#     lineFirstElemIndex = ypixmin
+#     lineLastElemIndex = ypixmax
     
-    band = rmccd.readoneimage_band(fullpathfilename, framedim=framedim, dirname=None,
-                 offset=offsetheader,
-                 line_startindex=lineFirstElemIndex,
-                 line_finalindex=lineLastElemIndex,
-                 formatdata="uint16")
+#     band = rmccd.readoneimage_band(fullpathfilename, framedim=framedim, dirname=None,
+#                  offset=offsetheader,
+#                  line_startindex=lineFirstElemIndex,
+#                  line_finalindex=lineLastElemIndex,
+#                  formatdata="uint16",
+#                  CCDLabel=CCDLabel)
     
-    nblines = lineLastElemIndex-lineFirstElemIndex+1
+#     nblines = lineLastElemIndex-lineFirstElemIndex+1
     
-    band2D=np.reshape(band,(nblines,framedim[1]))    
+#     band2D=np.reshape(band,(nblines,framedim[1]))    
     
-    rectangle2D = band2D[:,xpixmin:xpixmax+1]
+#     rectangle2D = band2D[:,xpixmin:xpixmax+1]
     
-    return rectangle2D
+#     return rectangle2D
