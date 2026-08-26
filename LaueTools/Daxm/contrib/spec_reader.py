@@ -319,8 +319,8 @@ def getmeshscan_from_hdf5file(filename, verbose:int=0):
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
 
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    with h5py.File(filename, 'r') as f:
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    with h5py.File(filename, 'r', locking=False) as f:
 
         listkeys = [kk for kk in f.keys()]
         if verbose:print('hdf5 keys',listkeys)
@@ -380,8 +380,8 @@ def getwirescan_from_hdf5file(filename, verbose=0, collectallscans=True, onlywir
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
 
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    with h5py.File(filename, 'r') as f:
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    with h5py.File(filename, 'r', locking=False) as f:
 
         listkeys = [kk for kk in f.keys()]
         if verbose: print('filename: %s \n hdf5 keys:'%filename, listkeys)
@@ -467,8 +467,8 @@ def getscanprops_lowest_hdf5(filename, key, collectallscans=True, onlymesh=False
     _,ext = filename.rsplit('.',1)
     headname, ffname = os.path.split(filename)
 
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    with h5py.File(filename, 'r') as f:
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    with h5py.File(filename, 'r', locking=False) as f:
 
         idx, postfix = key.split('.')
         #print('reading key %s'%key)
@@ -824,9 +824,9 @@ def ReadHdf5_v2(fname, scan, outputdate=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    with h5py.File(fname, 'r') as f:
+    with h5py.File(fname, 'r', locking=False) as f:
 
         i_scan = '%d' % scan + '.1'
         print('i_scan', i_scan)
@@ -882,8 +882,8 @@ def readdata_from_hdf5key(listkeyprops, key, outputdate=False):
         assert len(_ix)==1
         general_id, idx, postfix, startdate, commandtitle, fullpath = listkeyprops[_ix[0]]
         
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        with h5py.File(fullpath, 'r') as f:
+        #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        with h5py.File(fullpath, 'r', locking=False) as f:
 
             i_scan = '%s.%s'%(idx, postfix)
             # print('i_scan', i_scan)
@@ -928,9 +928,9 @@ def ReadHdf5(fname, scan, outputdate=False):
     :param outputdate: output starting date of the scan in ascii format, defaults to False
     :type outputdate: bool, optional
     """
-    os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+    #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    with h5py.File(fname, 'r') as f:
+    with h5py.File(fname, 'r', locking=False) as f:
 
         i_scan = '%d' % scan + '.1'
         print('i_scan', i_scan)
