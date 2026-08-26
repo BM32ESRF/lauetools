@@ -1107,8 +1107,11 @@ class MosaicAndMonitor(wx.Panel):
         txt2 = wx.StaticText(self, -1, "Image file indices selection")
         txt2.SetFont(font3)
 
+        self.allindicesradiobtn = wx.RadioButton(self, -1, "All")
+        self.allindicesradiobtn.SetValue(True)
+        
         self.generalindexradiobtn = wx.RadioButton(self, -1, "-->")
-        self.generalindexradiobtn.SetValue(True)
+        self.generalindexradiobtn.SetValue(False)
 
         self.startindex = wx.StaticText(self, -1, "Start ")
         self.startindexctrl = wx.SpinCtrl(self, -1, "0", min=0, max=9999)
@@ -1158,11 +1161,11 @@ class MosaicAndMonitor(wx.Panel):
         self.relativexyposcounter = wx.CheckBox(self, -1, "Peak Displacement") # from fit with 2D gaussuan
         self.peaksizecounter = wx.CheckBox(self, -1, "Peak Size") # from fit with 2D gaussuan
 
-        self.normalizechck = wx.CheckBox(self, -1, "Norm. to Monitor")
+        self.normalizechck = wx.CheckBox(self, -1, "Monitor Normalization")
         self.monitoroffsetctrl = wx.TextCtrl(self, -1, "0")
 
         self.mosaiccounter.SetValue(True)
-        self.normalizechck.SetValue(True)
+        self.normalizechck.SetValue(False)
 
         txt4 = wx.StaticText(self, -1, "Map Properties")
         txt4.SetFont(font3)
@@ -1202,6 +1205,9 @@ class MosaicAndMonitor(wx.Panel):
         NavigBoxsizer1.Add(self.normalizechck, 0, wx.ALL, 2)
         NavigBoxsizer1.Add(self.monitoroffsetctrl, 0, wx.ALL, 2)
 
+        self.NavigBoxsizer20 = wx.BoxSizer(wx.HORIZONTAL)
+        self.NavigBoxsizer20.Add(self.allindicesradiobtn, 0, wx.ALL, 5)
+
         self.NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer2.Add(self.generalindexradiobtn, 0, wx.ALL, 5)
         self.NavigBoxsizer2.Add(self.startindex, 0, wx.ALL, 5)
@@ -1238,6 +1244,7 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(txt1, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
         vbox.Add(txt2, 0, wx.EXPAND)
+        vbox.Add(self.NavigBoxsizer20, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
         vbox.Add(ROIBoxsizer, 0, wx.EXPAND)
@@ -4403,8 +4410,31 @@ class MainPeakSearchFrame(wx.Frame):
 
         # filepathname = os.path.join(dirname, filename)
 
+        if self.Monitor.allindicesradiobtn.GetValue():
+
+            nbimages_per_line = int(self.Monitor.stepctrl.GetValue())
+            
+            imagefolder = self.dirname
+
+            if self.CCDlabel == 'EIGER_4MCdTe':
+                prefix='eiger4m_'
+                suffix='h5'
+            elif self.CCDlabel.startswith('sCMOS'):
+                prefix='img_'
+                suffix='tif'
+
+            # get the largest index in the folder
+            maxindex = int(GT.get_largest_index_in_folder(imagefolder, prefix, suffix))
+
+            # TODO? add a txtctrl for nb of lines to analyse?
+
+            selected2Darray_imageindex = np.arange(0, maxindex+1, 1)
+            selected2Darray_imageindex.shape = (-1, nbimages_per_line)
+
+            nb_lines = selected2Darray_imageindex.shape[0]
+
         # use images indices from start final and step fields
-        if self.Monitor.generalindexradiobtn.GetValue():
+        elif self.Monitor.generalindexradiobtn.GetValue():
 
             startind = int(self.Monitor.startindexctrl.GetValue())
             endind = int(self.Monitor.lastindexctrl.GetValue())
@@ -4528,6 +4558,7 @@ class MainPeakSearchFrame(wx.Frame):
         dict_param["nbdigits"] = nbdigits
 
         dict_param["selected2Darray_imageindex"] = selected2Darray_imageindex
+        dict_param["nbimagesperline"]=nbimages_per_line
         dict_param["pixelX_center"], dict_param["pixelY_center"] = xpic, ypic
         dict_param["pixelboxsize_X"], dict_param["pixelboxsize_Y"] = (boxsize_col, boxsize_line)
 
