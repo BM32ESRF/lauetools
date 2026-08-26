@@ -13,8 +13,13 @@ from LaueTools import dict_LaueTools as DictLT
 
 
 from typing import Dict, Any, List, Optional, Tuple, Union
-
-from tqdm.notebook import tqdm
+try:
+    # Check if running in a Jupyter notebook
+    get_ipython()
+    from tqdm.notebook import tqdm  # Use notebook version
+except NameError:
+    from tqdm import tqdm  # Use standard version for scripts
+#from tqdm.notebook import tqdm
 import multiprocessing
 from multiprocessing import Pool, cpu_count, active_children
 
