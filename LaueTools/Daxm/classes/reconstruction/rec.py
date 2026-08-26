@@ -15,7 +15,7 @@ from LaueTools.Daxm.classes.reconstruction.scan import ScanReconstructor
 
 
 class RecManager:
-    # Constructors
+    """ To manage a set of scan reconstructors"""
     def __init__(self, scan, calib, seg):
 
         self.scan = scan
@@ -61,7 +61,7 @@ class RecManager:
 
         self.fitfile = fitfile
 
-    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc:int=1, directory="", rec_par={}, depth_range_print=None, addscan0001=False, usefitfiles_peaks=False):
+    def reconstruct(self, depth_range, fileprefix, depth_step=0.001, nproc:int=1, directory="", rec_par={}, depth_range_print=None, addscan0001:bool=False, usefitfiles_peaks:bool=False, verbose:int=0):
 
         """
         Reconstructs a series of 2D images around peaks.
@@ -125,10 +125,12 @@ class RecManager:
 
             print("[rec]  > computing tophat image for the line...")
 
+            # add segmentation parameters
             if len(self.grid_x) > 1:
                 self.seg.update({"I": self.scan.get_images_tophat(iy=iy)})
             else:
-                self.seg.update({"I": self.scan.get_images_tophat()})
+                print('using self.scan.get_images_tophat() with step=35')
+                self.seg.update({"I": self.scan.get_images_tophat(step=35)})
 
             for ix, x in zip(self.grid_ix, self.grid_x):
 
@@ -139,12 +141,14 @@ class RecManager:
                 if len(self.grid_x)>1:
                     self.scan.goto(ix, iy)
                 
-                rec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y))
+                # several daxm scan reconstructions
+                scanrec = ScanReconstructor(self.scan, wires = self.calib.get_wires(y), verbose=verbose-1)
+                
                 # consider pixels in a bounding box centered on peaks (no opencv segmentation)
                 if usefitfiles_peaks==True:  #  seg.par not
                     default_hbs = [12,12]
                     
-                    print("[rec] > Optional read of fitfile(s) for peaks")
+                    print("[scanrec] > Optional read of fitfile(s) for peaks")
                     from LaueTools import IOLaueTools as rwa
                     #Create list of peaks
                     peaks_XY = []
@@ -186,26 +190,30 @@ class RecManager:
                     print('Test halfboxsize', halfboxsize)
                     print('*******')
                     #Set regions (peaks + bounding box) on which to run the reconstruction
-                    rec.set_regions(peaks_XY,halfboxsize)
+                    scanrec.set_regions(peaks_XY,halfboxsize)
 
                 #Standard method by Renversade et Molin: use opencv segmentation to find pixels for reconstruction. Pixels are gathered by peaks (with varying bounding box size)
                 else:
-                    rec.set_regions_fromsearch(**self.seg)
+                    scanrec.set_regions_fromsearch(verbose=verbose-1, **self.seg)
 
                 if self.fitfile is None:
-                    rec.init_abscoeff()
+                    scanrec.init_abscoeff()
                 else:
-                    rec.set_abscoeff_fromfitfile(self.fitfile)
+                    scanrec.set_abscoeff_fromfitfile(self.fitfile)
 
-                rec.assign_wire_peaks()
+                if verbose > 0:
+                    print("[scanrec] > assigning peaks to wires...")
+                    print('scanrec.wires', scanrec.wires)
 
-                rec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=DEFAULT_YSTEP, nproc=nproc, rec_args=rec_par)
+                scanrec.assign_wire_peaks()
+
+                scanrec.reconstruct(yrange=depth_range, halfboxsize=None, ystep=DEFAULT_YSTEP, nproc=nproc, rec_args=rec_par, verbose=verbose-1)
 
                 if len(self.grid_x)>1:
-                    rec.print_images(prefix=fileprefix, first_index=img_idx[ix][iy], directory=directory, yrange=depth_range_print, nbdigits=ndigits)
+                    scanrec.print_images(prefix=fileprefix, first_index=img_idx[ix][iy], directory=directory, yrange=depth_range_print, nbdigits=ndigits,verbose=verbose-1)
                 else:
-                    rec.print_images(prefix=fileprefix, first_index=0, directory=directory, yrange=depth_range_print, nbdigits=ndigits)
+                    scanrec.print_images(prefix=fileprefix, first_index=0, directory=directory, yrange=depth_range_print, nbdigits=ndigits, verbose=verbose-1)
 
-                rec.free()
+                scanrec.free()
 
-                print("[rec] elapsed time = %s seconds" % (time.time() - start_time))
+                print("[scanrec] elapsed time = %s seconds" % (time.time() - start_time))
