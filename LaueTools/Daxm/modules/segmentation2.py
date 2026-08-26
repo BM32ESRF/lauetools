@@ -14,6 +14,8 @@ import scipy.ndimage as ndimage
 
 from skimage import filters, morphology, measure
 from skimage.segmentation import random_walker
+from skimage.morphology import erosion, dilation, disk, remove_small_objects
+
 
 from astropy.stats import SigmaClip
 
@@ -24,52 +26,96 @@ if photutils.__version__ < '2.3':
 else:
     from photutils.background import Background2D, MedianBackground
 
-# -------------------------------- Thresholding --------------------------------
+
 def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
+    """
+    Apply a threshold to an image using background subtraction and morphological operations.
 
+    Parameters:
+    -----------
+    img : ndarray
+        Input image.
+    max_size : int, optional
+        Maximum size for background estimation. Default is 100.
+    min_size : int, optional
+        Minimum size for small objects to be removed. Default is 3.
+    thr : int, optional
+        Threshold value. Default is 20.
+    erode : int, optional
+        Number of erosion iterations. Default is 2.
+    dilate : int, optional
+        Number of dilation iterations. Default is 2.
+
+    Returns:
+    --------
+    mask : ndarray
+        Binary mask of the thresholded image.
+    bkg : ndarray
+        Estimated background.
+    """
     bkg = calc_background(img, max_size, min_size, thr) + thr
-
     mask = img > bkg + thr
+    mask = remove_small_objects(mask, min_size**2)
 
-    mask = morphology.remove_small_objects(mask, min_size**2)#, in_place=True)
+    # Replace binary_erosion with erosion
+    for _ in range(erode):
+        mask = erosion(mask, footprint=disk(1))
 
-    for i in range(erode):
-        mask = morphology.binary_erosion(mask)
-
-    for i in range(dilate):
-        mask = morphology.binary_dilation(mask, morphology.disk(2))
+    # Replace binary_dilation with dilation
+    for _ in range(dilate):
+        mask = dilation(mask, footprint=disk(2))
 
     return mask, bkg
+# -------------------------------- Thresholding --------------------------------
+# def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
+
+#     bkg = calc_background(img, max_size, min_size, thr) + thr
+
+#     mask = img > bkg + thr
+
+#     mask = morphology.remove_small_objects(mask, min_size**2)#, in_place=True)
+
+#     for i in range(erode):
+#         mask = morphology.binary_erosion(mask)
+
+#     for i in range(dilate):
+#         mask = morphology.binary_dilation(mask, morphology.disk(2))
+
+#     return mask, bkg
+
 
 
 def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
-
     """
     Calculate the background of an image using a multi-scale approach.
 
-    This function estimates the background of an image by iteratively applying a 
-    background subtraction and mask refinement process over multiple scales. The 
-    background is calculated using the Background2D method with sigma-clipping 
+    This function estimates the background of an image by iteratively applying a
+    background subtraction and mask refinement process over multiple scales. The
+    background is calculated using the Background2D method with sigma-clipping
     for robust estimation.
 
     Parameters:
-    img (ndarray): The input image for which the background is to be calculated.
-    max_size (int, optional): The maximum size for the background estimation box. 
-        Default is 100.
-    min_size (int, optional): The minimum size for small objects to be removed. 
-        Default is 3.
-    thr (int, optional): The threshold value for mask creation. Default is 20.
-    erode (int, optional): The number of erosion iterations to refine the mask. 
-        Default is 2.
-    dilate (int, optional): The number of dilation iterations to refine the mask. 
-        Default is 2.
+    -----------
+    img : ndarray
+        The input image for which the background is to be calculated.
+    max_size : int, optional
+        The maximum size for the background estimation box. Default is 100.
+    min_size : int, optional
+        The minimum size for small objects to be removed. Default is 3.
+    thr : int, optional
+        The threshold value for mask creation. Default is 20.
+    erode : int, optional
+        The number of erosion iterations to refine the mask. Default is 2.
+    dilate : int, optional
+        The number of dilation iterations to refine the mask. Default is 2.
 
     Returns:
-    ndarray: The estimated background of the input image.
+    --------
+    ndarray
+        The estimated background of the input image.
 
-    WARNING: depending on version Background2D() requires argument mask=mask ...
+    WARNING: Depending on the version, Background2D() may require the argument mask=mask.
     """
-
     mask = np.zeros(img.shape, dtype=np.int32)
     bkg = np.zeros(img.shape)
 
@@ -79,17 +125,77 @@ def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
     bsize = range(max_size, 10, -20)
 
     for i, s in enumerate(bsize):
-        tmp = Background2D(img - bkg, (s, s), filter_size=(3, 3),
-                           sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask)
+        tmp = Background2D(
+            img - bkg,
+            (s, s),
+            filter_size=(3, 3),
+            sigma_clip=sigma_clip,
+            bkg_estimator=bkg_estimator,
+            mask=mask
+        )
         bkg = bkg + tmp.background
         mask = (img - bkg) > thr
-        for i in range(erode):
-            mask = morphology.binary_erosion(mask)
-        mask = morphology.remove_small_objects(mask, min_size) #, in_place=True)
-        for i in range(dilate):
-            mask = morphology.binary_dilation(mask, morphology.disk(2))
+
+        # Replace binary_erosion with erosion
+        for _ in range(erode):
+            mask = erosion(mask, footprint=disk(1))  # disk(1) is a 3x3 cross-shaped footprint
+
+        mask = remove_small_objects(mask, min_size)
+
+        # Replace binary_dilation with dilation
+        for _ in range(dilate):
+            mask = dilation(mask, footprint=disk(2))
 
     return bkg
+
+# def calc_background(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
+
+#     """
+#     Calculate the background of an image using a multi-scale approach.
+
+#     This function estimates the background of an image by iteratively applying a 
+#     background subtraction and mask refinement process over multiple scales. The 
+#     background is calculated using the Background2D method with sigma-clipping 
+#     for robust estimation.
+
+#     Parameters:
+#     img (ndarray): The input image for which the background is to be calculated.
+#     max_size (int, optional): The maximum size for the background estimation box. 
+#         Default is 100.
+#     min_size (int, optional): The minimum size for small objects to be removed. 
+#         Default is 3.
+#     thr (int, optional): The threshold value for mask creation. Default is 20.
+#     erode (int, optional): The number of erosion iterations to refine the mask. 
+#         Default is 2.
+#     dilate (int, optional): The number of dilation iterations to refine the mask. 
+#         Default is 2.
+
+#     Returns:
+#     ndarray: The estimated background of the input image.
+
+#     WARNING: depending on version Background2D() requires argument mask=mask ...
+#     """
+
+#     mask = np.zeros(img.shape, dtype=np.int32)
+#     bkg = np.zeros(img.shape)
+
+#     sigma_clip = SigmaClip(sigma=3.)
+#     bkg_estimator = MedianBackground()
+
+#     bsize = range(max_size, 10, -20)
+
+#     for i, s in enumerate(bsize):
+#         tmp = Background2D(img - bkg, (s, s), filter_size=(3, 3),
+#                            sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask)
+#         bkg = bkg + tmp.background
+#         mask = (img - bkg) > thr
+#         for i in range(erode):
+#             mask = morphology.binary_erosion(mask)
+#         mask = morphology.remove_small_objects(mask, min_size) #, in_place=True)
+#         for i in range(dilate):
+#             mask = morphology.binary_dilation(mask, morphology.disk(2))
+
+#     return bkg
 
 
 # -------------------------------- Bounding box and filtering -------------------------------
