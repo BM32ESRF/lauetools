@@ -46,7 +46,7 @@ def __gaussian__(x, A, mu, sigma):
 
 
 
-#with h5py.File('path/to/h5') as f:
+#with h5py.File('path/to/h5', 'r', locking=False) as f:
 #    xech = f['scan_nb/measurement/xech'][:]
 #    yech = f['scan_nb/measurement/yech'][:]
 #    
