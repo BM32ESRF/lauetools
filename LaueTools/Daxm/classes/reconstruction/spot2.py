@@ -262,7 +262,10 @@ class SpotReconstructor:
         self.frames_cor = np.transpose(self.frames_cor[:, :, 4:], axes=(1, 2, 0))
 
     # Reconstruction methods
-    def reconstruct(self, regularize=False, reg_alpha=0.5, reg_method='ridge', oversamp=20):
+    def reconstruct(self, regularize=False, reg_alpha=0.5, reg_method='ridge', oversamp=20, verbose=0):
+
+        if verbose>0:
+            print('In reconstruct() of class SpotReconstructor.spot2.py')
 
         yi = [(1 - alpha) * self.yw[:-1] + alpha * self.yw[1:] for alpha in np.linspace(0, 1, oversamp)]
 
