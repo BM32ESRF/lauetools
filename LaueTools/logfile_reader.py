@@ -1965,11 +1965,15 @@ def read_fullcommand(fullcommand:str)->dict:
         listparams = ('slowmotor', 'smotmin', 'smotmax', 'smotnbsteps',
                       'fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
                     'expotime','unknown')
-       
+        # warning  arg[3] and arg[7]  are nb of images
         listfmt = (str, float, float, int,
                     str, float, float, int, float, float)
         
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
+
+        dict_command['smotnbsteps']-=1
+        dict_command['fmotnbsteps']-=1
+        
     elif scancommand in ('ascan','dscan'):
         assert len(sc) == 6
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime')
