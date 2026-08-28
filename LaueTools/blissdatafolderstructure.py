@@ -62,12 +62,16 @@ def getinfos_from_blisspath(fullpath, verbose=0):
     # Split the path into parts
     parts = path_obj.parts
 
+    rd_idx = parts.index("RAW_DATA")
+
     # Extract components
-    expId = parts[3]  # a321217
-    expDate = parts[5]  # 20260707
-    samplename = parts[7]  # Zr5dimanche
-    datasetname = parts[8].split('_')[1]  # searchgrains (from Zr5dimanche_searchgrains)
-    scanindex = int(parts[9].replace('scan', ''))  # 1 (from scan0001)
+    expId = parts[rd_idx-3]  # a321217
+    expDate = parts[rd_idx-1]  # 20260707
+    samplename = parts[rd_idx+1]  # Zr5dimanche
+    datasetname = parts[rd_idx+2].rsplit('_')[1]  # searchgrains (from Zr5dimanche_searchgrains)
+    print(datasetname)
+    print('parts[9]',parts[rd_idx+3])
+    scanindex = int(parts[rd_idx+3].replace('scan', ''))  # 1 (from scan0001)
 
     # Build the desired file path
     localh5path = (
