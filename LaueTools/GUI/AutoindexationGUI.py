@@ -889,7 +889,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             
 
         if nb_solutions > 1:
-            print("Merging matrices")
+            print("Merging matrices ")
             # print("keep_only_equivalent = %s" % keep_only_equivalent)
             self.bestmatrices, stats_res = ISS.MergeSortand_RemoveDuplicates(
                                                         self.bestmatrices,
