@@ -27,6 +27,41 @@ def ls_folder(folder_path):
             return None
             
 def extract_path_up_to_2_subfolders_after_raw_data(full_path):
+    """
+    Extract path up to and including 2 subfolders after 'RAW_DATA' marker.
+    
+    Extracts a subset of a path that includes 'RAW_DATA' and the next 2 subfolders.
+    Useful for handling BLISS experiment folder structures at ESRF.
+
+    Parameters
+    ----------
+    full_path : str
+        Full path containing 'RAW_DATA' directory and at least 2 subfolders after it.
+
+    Returns
+    -------
+    str
+        Path from the root up to and including the 2nd subfolder after 'RAW_DATA'.
+
+    Raises
+    ------
+    ValueError
+        If 'RAW_DATA' is not found in the path.
+    ValueError
+        If there are not enough subfolders after 'RAW_DATA'.
+
+    Examples
+    --------
+    >>> path = '/data/visitor/a321217/bm32/20260707/RAW_DATA/Zr5dimanche/Zr5dimanche_searchgrains/scan0001'
+    >>> result = extract_path_up_to_2_subfolders_after_raw_data(path)
+    >>> print(result)
+    /data/visitor/a321217/bm32/20260707/RAW_DATA/Zr5dimanche/Zr5dimanche_searchgrains
+    
+    >>> extract_path_up_to_2_subfolders_after_raw_data('/some/path/without/raw_data')  # doctest: +SKIP
+    Traceback (most recent call last):
+        ...
+    ValueError: 'RAW_DATA' not found in the path.
+    """
     # Split the path into components
     path_parts = [part for part in full_path.split('/') if part]
 
@@ -69,8 +104,8 @@ def getinfos_from_blisspath(fullpath, verbose=0):
     expDate = parts[rd_idx-1]  # 20260707
     samplename = parts[rd_idx+1]  # Zr5dimanche
     datasetname = parts[rd_idx+2].rsplit('_')[1]  # searchgrains (from Zr5dimanche_searchgrains)
-    print(datasetname)
-    print('parts[9]',parts[rd_idx+3])
+    # print(datasetname)
+    # print('parts[9]',parts[rd_idx+3])
     scanindex = int(parts[rd_idx+3].replace('scan', ''))  # 1 (from scan0001)
 
     # Build the desired file path

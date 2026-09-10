@@ -96,6 +96,46 @@ def isHexagonal(latticeparams):
 
     return Hexagonal
 
+
+def isAragonite(latticeparameters, dictmaterials=dict_Materials):
+    r"""
+    :param latticeparams: 6 elements list
+    :type latticeparams: iterable object with float or integers elements
+
+    :return: True or False
+    """
+    key_material = 'aragonite'
+
+    if not isinstance(latticeparameters, (list, tuple, np.ndarray)):
+        raise ValueError("latticeparams is not a list of the 6 lattice parameters")
+
+    if len(latticeparameters) != 6:
+        raise ValueError("latticeparams is not a list of the 6 lattice parameters")
+
+    if isinstance(dictmaterials, dict):
+        # Case 1: dictmaterials is a plain dictionary
+        try:
+            #print("key_material", key_material)
+            #print("dictmaterials[key_material]", dictmaterials[key_material])
+            elem_key, unitCellparameters, Structure_extinction = dictmaterials[key_material]
+        except KeyError:
+            raise KeyError(f"Unknown key '{key_material}' for material")
+        except ValueError:
+            elem_key = dictmaterials[key_material].get("label", key_material)
+            unitCellparameters = dictmaterials[key_material]["lattice"]
+            Structure_extinction = dictmaterials[key_material]["extinction"]
+    else:
+        # Case 2: dictmaterials is a Materials instance
+        material_data = dictmaterials.get_material(key_material)
+        if material_data is None:
+            raise KeyError(f"Unknown key '{key_material}' for material")
+        elem_key = material_data.get("label", key_material)
+        unitCellparameters = material_data["lattice"]
+        Structure_extinction = material_data["extinction"]
+
+    return GT.are_all_close_elementwise(latticeparameters, unitCellparameters, rel_tol=0.005)
+
+
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     r"""
     Apply selection rules to hkl reflections to remove forbidden ones
@@ -739,9 +779,15 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     if isinstance(dictmaterials, dict):
         # Case 1: dictmaterials is a plain dictionary
         try:
+            #print("key_material", key_material)
+            #print("dictmaterials[key_material]", dictmaterials[key_material])
             elem_key, unitCellparameters, Structure_extinction = dictmaterials[key_material]
         except KeyError:
             raise KeyError(f"Unknown key '{key_material}' for material")
+        except ValueError:
+            elem_key = dictmaterials[key_material].get("label", key_material)
+            unitCellparameters = dictmaterials[key_material]["lattice"]
+            Structure_extinction = dictmaterials[key_material]["extinction"]
     else:
         # Case 2: dictmaterials is a Materials instance
         material_data = dictmaterials.get_material(key_material)
@@ -966,7 +1012,7 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False, verbose=0):
     .. math :: c^* \sin \beta^* \sin \alpha = 1/c
     """
     if verbose>0:
-        print("In calc_B_RR() function in CrystalParameters")
+        print(f"In calc_B_RR() function in CrystalParameters    ----- verboselevel={verbose} -----")
         print("latticeparameters", latticeparameters)
     B = np.zeros((3, 3), dtype=float)
 
