@@ -4098,7 +4098,7 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
     :param tol: resolution angle: maximum misorientation angle between two orientation matrices to be considered as equal 
     """
     if verbose>0:
-        print(f'In MergeSortand_RemoveDuplicates:')
+        print(f'--In MergeSortand_RemoveDuplicates ():   verboselevel={verbose}')
         print('Initial Scores', Scores)
 
     if OrientMatrices is None or len(OrientMatrices) == 0 or Scores is None or len(Scores) == 0:
