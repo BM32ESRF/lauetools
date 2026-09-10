@@ -461,7 +461,7 @@ def givematorient(hkl1, coord1, hkl2, coord2, verbose="yes", frame="lauetools"):
     return matorient
 
 
-def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose=0, frame="lauetools"):
+def OrientMatrix_from_2hkl(hkl1, coord1, hkl2, coord2, B, verbose:int=0, frame="lauetools"):
     r"""
     Returns orientation matrix from two spots from theirs hkls and coordinates
 
@@ -702,18 +702,29 @@ def Generate_selectedLUT(hkl1, hkl2, key_material:str, verbose:int=0,
 
     see doc of GenerateLookUpTable_from2sets()
     """
+
+    if verbose> 0:
+        print("\n---- In Generate_selectedLUT()")
     latticeparams = dictmaterials[key_material][1]
     Gstar = CP.Gstar_from_directlatticeparams(*latticeparams)
 
     if CP.isHexagonal(latticeparams):  # add some high HKL present around 001
-        if verbose> 0: print('add somes hkl to recognisee orientation 001')
-        Nmax = max(-np.amin(),np.amax())
+        if verbose> 0: print('add somes hkl to recognise orientation 001 of hexagonal material')
+        
         # todo generate cleverly using Nmax as min and an other max value
         if latticeparams[2]/latticeparams[0]<1.7:
             addedhkls = ADDED_HKLS_HEXAGONAL_covera_1p5
         else:
             addedhkls = ADDED_HKLS_HEXAGONAL_covera_2p5
         hkl1 = np.r_[addedhkls,hkl1]
+
+    elif key_material in ["aragonite", ]:
+        if verbose> 0: print('add somes hkl to recognise orientation 001 of aragonite')
+        addedhkls = ADDED_HKLS_ARAGONITE_around001
+        if len(hkl1)==1:  #central spot hkl is set, so update hkl2 with added hkls
+            hkl2 = np.r_[addedhkls,hkl2]
+        else: #central spot hkl is not set, so populate hkl1 with added hkls
+            hkl1 = np.r_[addedhkls,hkl1]
 
 
     if applyExtinctionRules:
@@ -737,6 +748,10 @@ def Generate_selectedLUT(hkl1, hkl2, key_material:str, verbose:int=0,
             hkl1 = CP.FilterHarmonics_2(hkl1)
         if hkl2.shape != (3,):
             hkl2 = CP.FilterHarmonics_2(hkl2)
+
+    if verbose> 0:
+        print("hkl1", hkl1)
+        print("hkl2", hkl2)
 
     return GenerateLookUpTable_from2sets(np.array(hkl1), np.array(hkl2), Gstar, verbose=verbose)
 
@@ -798,6 +813,12 @@ ADDED_HKLS_HEXAGONAL_covera_2p5 = ADDED_HKLS_HEXAGONAL_covera_1p5+[[1,-1,9],[1,-
                      [-1,2,9],[-1,2,10],[-1,2,11]]
 
 
+ADDED_HKLS_ARAGONITE_around001 = [[-1, 1, 5], [-1, -1, 7], [-1, 1, 9],
+                        [-1, 1, 7], [0, 2, 6], [-1, -3, 7],
+                        [1, -1, 9], [1, -1, 7], [1, -3, 7], [-1, 3, 5], [2, 0, 10], [0, -2, 10],
+                        [0, -2, 6], [2, 0, 6], [1, 3, 7]]
+
+
 def Generate_LUT_for_Cubic(hkl2, Gstar, verbose=0):
     """
     Generate Look Up Table of angles between HKL_CUBIC_UP3 (up to order 3) and hkl2 directions
@@ -841,6 +862,12 @@ def GenerateLookUpTable_from2sets(hkl1, hkl2, Gstar, verbose=0):
     indy                : array of indices where angle between hkls are taken in the flattened pairs angles matrix (originally square)
     tab_side_size        : shape of the squared matrix of mutual angles between pairs
     """
+
+    if verbose> 0:
+        print("In GenerateLookUpTable_from2sets()")
+        print("hkl1", hkl1)
+        print("hkl2", hkl2)
+
     # compute square matrix containing angles
     tab_angulardist = CP.AngleBetweenNormals(hkl1, hkl2, Gstar)
     # shape of tab_angulardist  (len(hkl1), len(hkl2))
@@ -1000,8 +1027,9 @@ def RecogniseAngle(angle, tol, nLUT, latticeparams_or_material,
 
     return sol
 
-
-def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., verbose=0):
+deg = float
+positivefloat = float
+def PlanePairs_2(query_angle:deg, angle_tol:deg, LUT, onlyclosest=1, LUTfraction:positivefloat=1/2., verbose:int=0):
     """
     return pairs of lattice hkl planes
     whose mutual angles between normals are the closest to the given query_angle within tolerance
@@ -1009,21 +1037,24 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., v
     USED in manual indexation
 
     input:
-    query_angle        : angle in deg to look up in the generated angle table
-    angle_tol            : angular tolerance when look up in the generated reference angle table
+    query_angle    : float, single angle in deg to be looked up in the generated angle table (LUT)
+    angle_tol      :float, angular tolerance when look up in the generated reference angle table
 
-    Gstar                : metric tensor of the unit cell structure
-    n                    : maximum index for generating reference angle table from Gstar
+    Gstar          : metric tensor of the unit cell structure
+    n              : maximum index for generating reference angle table from Gstar
 
-    onlyclosest            : 1 for considering only one angle value closest to query_angle
+    onlyclosest    : 1 for considering only one angle value closest to query_angle
                             (only planes pairs corresponding to one matched angle are returned)
                         : 0 for considering all angle close to query_angle within angle_tol
 
-    LUTfraction:   fraction reference angles from 0 to 180 deg to consider. 1/2 is sufficient (0-90 deg)
-                            for common 2D plane detector geometry (top reflection)
+    LUTfraction    :   fraction reference angles from 0 to 180 deg to consider. 1/2 is sufficient (0-90 deg) for common 2D plane detector geometry (top reflection)
 
     TODO: many target angles
     """
+    if verbose>0:
+        print(f'\n ------------ in PlanePairs_2()  ----- verboselevel={verbose} ')
+        
+
     sorted_ind, sorted_angles, indy, tab_side_size, hkl_all = LUT
 
     RefAngles = sorted_angles[:int(len(sorted_angles)*LUTfraction)]
@@ -1050,7 +1081,7 @@ def PlanePairs_2(query_angle, angle_tol, LUT, onlyclosest=1, LUTfraction=1/2., v
         closest_angle = RefAngles[closest_index_in_sorted_angles_raw][0]
         # print "Closest_angle",closest_angle
 
-        if abs(closest_angle - angle_query) <= angle_tol:
+        if abs(closest_angle - angle_query) <= angular_tolerance_Recognition:
 
             # in case of many similar angles...
             close_angles_duplicates = np.where(RefAngles == closest_angle)[0]
@@ -1143,23 +1174,36 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
 
     TODO: many target angles in this function
     """
+    if verbose>0:
+        print(f'\n ------------ in PlanePairs_from2sets()  ----- verboselevel={verbose} ')
+        print("hkl1", hkl1)
+        print("hkl2", hkl2)
+        print("key_material", key_material)
+        print("onlyclosest", onlyclosest)
+        print("LUT_with_rules", LUT_with_rules)
+
     if isinstance(hkl1, list):
         hkl1 = np.array(hkl1)
     if isinstance(hkl2, list):
         hkl2 = np.array(hkl2)
 
-    # print('in PlanePairs_from2sets')
-    # print("hkl1", hkl1)
-    # print("hkl2", hkl2)
-
-    if LUT is None:
-        # GenerateLookUpTable
-        if verbose>0: print("Calculating LUT in PlanePairs_from2sets()")
+    if LUT is None:  # will use  GenerateLookUpTable
+        
+        if verbose>0:
+            print("NEEDS to Calculate LUT with %d hkl1 and %d hkl2 with Generate_selectedLUT()" % (len(hkl1), len(hkl2)))
         if LUT_with_rules:
             rules = (None, dictmaterials[key_material][2])
         else:
             rules = None
-        LUT = Generate_selectedLUT(hkl1, hkl2, key_material, verbose=verbose-1, dictmaterials=dictmaterials, filterharmonics=True, applyExtinctionRules=rules)
+
+        LUT = Generate_selectedLUT(hkl1, hkl2,
+                                   key_material, verbose=verbose-1,
+                                   dictmaterials=dictmaterials,
+                                   filterharmonics=True,
+                                   applyExtinctionRules=rules)
+
+    else:  # since LUT is know=n,  no need anymore of hk1, hk2, etc...!
+        pass
 
     # (sorted_ind, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
     (_, sorted_angles, sorted_ind_ij, tab_angulardist_shape) = LUT
@@ -1212,9 +1256,12 @@ def PlanePairs_from2sets(query_angle, angle_tol, hkl1, hkl2, key_material,
 
     IJ_indices = np.take(sorted_ind_ij, closest_index_in_sorted_angles_raw, axis=0)
 
-    #print('hkl1  in PlanePairs_from2sets', hkl1)
+    if verbose>0:
+        print('hkl1 in PlanePairs_from2sets', hkl1)
+        print('IJ_indices[:, 0]', IJ_indices[:, 0])
+        print('len(hkl1)', len(hkl1))
 
-    plane_1 = np.take(hkl1, IJ_indices[:, 0], axis=0)
+    plane_1 = np.take(hkl1, IJ_indices[:, 0], axis=0)  # list or 1D array of 3d vectors
     plane_2 = np.take(hkl2, IJ_indices[:, 1], axis=0)
 
     nbplane_1 = plane_1.shape[0]

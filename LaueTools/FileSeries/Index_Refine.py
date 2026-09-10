@@ -398,7 +398,7 @@ class PageMaterialPanel(wx.Panel):
                 flag = False
 
         if kk == 12:
-            if val == "None":
+            if isinstance(val, str) and val == "None":
                 return True
             try:
                 vals = val.split(",")

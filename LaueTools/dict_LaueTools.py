@@ -20,8 +20,8 @@ except ImportError:
 
 import numpy as np
 
-USE_MATERIALS_LIBRARY = True
-USE_USER_MATERIALS_YAML_FILE = True
+USE_MATERIALS_LIBRARY = False
+USE_USER_MATERIALS_YAML_FILE = False
 
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
 DEFAULT_MATERIALS_FILE = os.path.join(LAUETOOLSFOLDER, "materials.yaml")
@@ -336,6 +336,8 @@ elif not(USE_MATERIALS_LIBRARY):
         "Si": ["Si", [5.4309, 5.4309, 5.4309, 90, 90, 90], "dia"],
         "3H-SiC": ["3H-SiC", [4.3596, 4.3596, 4.3596, 90, 90, 90], "dia"],  # zinc blende  SG 216
         "4H-SiC": ["4H-SiC", [3.073, 3.073, 10.053, 90, 90, 120], "wurtzite"],  # wurtzite  = 6H-SiC also  SG 186
+        "aragonite": ["aragonite", [4.9606, 7.9701, 5.7418, 90, 90, 90], "no"],  # SG62
+        "calcite": ["calcite", [4.98, 4.98, 17.192,90,90, 120], "no"], 
         "Cazadero": ["Cazadero", [11.637, 11.637, 11.6443, 90, 90, 90], "SG141"], # normally SG142
         "EastAlps": ["EastAlps", [11.5935, 11.5935, 11.5987, 90, 90, 90], "SG141"], # normally SG142
         "CubicGarnet": ["CubicGarnet", [11.6,11.6,11.6, 90, 90, 90], "no"], # fictius garnet

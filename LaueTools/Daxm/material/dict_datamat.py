@@ -9,7 +9,8 @@ __version__ = '$Revision$'
 # predefined material             elements              weight percentage      density
 dict_mat = {'316L'  : (('Fe', 'Cr','Ni','Mo'), [0.685, 0.17, 0.12, 0.025], 7.950),
             'Ni5Ti' : (('Ni', 'Ti')          , [0.95, 0.05],               8.489), # approx density
-            'YSZ-8' : (('Zr', 'Y', 'O')      , [0.639, 0.108, 0.253],      6.10) # note sure ?
+            'YSZ-8' : (('Zr', 'Y', 'O')      , [0.639, 0.108, 0.253],      6.10), # note sure ?
+            'BaTiO3' : (('Ba', 'Ti', 'O')      , [0.5, 0.35, 0.15],      6.10) # very approx TBD
             }
     
 # typical densities of elements g/cm3

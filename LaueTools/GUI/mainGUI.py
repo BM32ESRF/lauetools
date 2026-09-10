@@ -116,7 +116,7 @@ DEG = PI / 180.0
 # DEFAULT_DETECTORPARAMETERS = [77., 1975., 2110., 0.43, -0.22] # sCMOS_16M, sans flip LR' # after debug readmccd 17Jul18
 # DEFAULT_DETECTORPARAMETERS = [77.4, 983., 977., 0.32, -0.28] # sCMOS, sans flip LR #
 
-DEFAULT_CCDCAMERA = "sCMOS"
+DEFAULT_CCDCAMERA = "EIGER_4MCdTe" #"sCMOS"
 DEFAULT_DETECTORPARAMETERS = [77.088, 1012.45, 1049.92, 0.423, 0.172]  # with intern bin 2x2 and flip LR
 
 # --- --------  SOME GUI parameters
@@ -1696,7 +1696,7 @@ class LaueToolsGUImainframe(wx.Frame):
         fullpath = os.path.join(self.dirnamepklist, self.filenamepklist)
         warningflag = self.DataSet.importdatafromfile(fullpath)
         if warningflag:
-            wx.MessageBox(warningflag + 'Please set an other Laue geometry if needed from the menu!', 'Info')
+            wx.MessageBox(warningflag + '   Default Laue geometry is considered.Please set an other Laue geometry if needed from the menu!', 'INFO')
         self.DataSet.pixelsize = self.pixelsize
 
         self.SetTitle()  # Update the window title with the new filename

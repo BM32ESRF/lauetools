@@ -354,7 +354,7 @@ class spotsset:
             - ...
         """
         if verbose>0:
-            print('\nIn importdatafromfile(): ')
+            print(f'\nIn importdatafromfile():  verbose level={verbose}')
             print("Import Data for DATASET indexation procedure")
 
             print("fullpathfile in importdatafromfile()", fullpathfile)
@@ -802,7 +802,7 @@ class spotsset:
         MINIMUM_SPOTS = 8
 
         if verbose>0:
-            print('\n----- start of AssignHKL() -------\n')
+            print(f'\n----- start of AssignHKL() ------- verboselevel={verbose}\n')
         if len(self.indexed_spots_dict) < MINIMUM_SPOTS:
             if verbose>0: print("too few spots to index in spotsset object")
             return None, None, None
@@ -976,7 +976,7 @@ class spotsset:
         """
 
         if verbose>0:
-            print('********  in FindOrientMatrices()  *************')
+            print(f'********  in FindOrientMatrices()  *************\nverboselevel={verbose}')
             print('spot_index_central',spot_index_central)
             print('nbmax_probed',nbmax_probed)
 
@@ -1084,6 +1084,7 @@ class spotsset:
                                                                 stats_res,
                                                                 Minimum_Nb_Matches,
                                                                 tol=0.0001,
+                                                                verbose=verbose-1,
                                                                 keep_only_equivalent=keep_only_equivalent)
 
         if printmatchingresults:
@@ -1986,7 +1987,7 @@ class spotsset:
          res, nb_of_simulated_spots, Missing_Reflections_Data
         """
         if verbose>0:
-                print("\n--- start in getSpotsLinks() ---")
+                print(f"\n--- In getSpotsLinks() --- verboselevel={verbose}")
         # experimental data
         if exp_data is not None:
             twicetheta_data, chi_data, I_data = exp_data[:3]
@@ -3965,65 +3966,116 @@ def AreTwinned(matA, matB, tol=0.001, allpermu=None):
     return np.any(resflag), resflag
 
 
+def _normalize_score_rows(scores):
+    r"""Return a list of score rows preserving the original row content.
+
+    The legacy code expects a simple iterable of score rows and may pass a single
+    row, a NumPy array, or a nested sequence. This helper keeps the exact row
+    objects while guaranteeing a flat list structure for downstream indexing.
+    """
+    if scores is None:
+        return []
+
+    try:
+        score_rows = list(scores)
+    except TypeError:
+        score_rows = [scores]
+
+    if len(score_rows) == 0:
+        return []
+
+    if np.asarray(score_rows).ndim == 0:
+        return [score_rows]
+
+    normalized = []
+    for row in score_rows:
+        if isinstance(row, np.ndarray) and row.ndim == 0:
+            normalized.append(row.item())
+        else:
+            normalized.append(row)
+    return normalized
+
+
 def RemoveDuplicatesOrientationMatrix(matrices, scores, tol=0.0001,
                             allpermu=None, OutputMatricesOnly=0, verbose=0):
     r"""
     remove duplicates matrix in the sense of comparematrices()
+
+    Keep the original score rows aligned with the kept matrices by tracking the
+    input indices during the deduplication pass. The returned score entries are
+    the exact original rows from ``scores`` and are never rewritten or
+    re-normalized in-place.
     """
+    if matrices is None:
+        empty_matrices = np.empty((0, 3, 3), dtype=float)
+        if OutputMatricesOnly:
+            return empty_matrices
+        return empty_matrices, []
+
+    matrices_array = np.asarray(matrices)
+    if matrices_array.ndim == 2 and matrices_array.shape == (3, 3):
+        matrices = [matrices_array]
+    elif matrices_array.ndim == 0:
+        matrices = [matrices_array]
+
+    if len(matrices) == 0:
+        empty_matrices = np.empty((0, 3, 3), dtype=float)
+        if OutputMatricesOnly:
+            return empty_matrices
+        return empty_matrices, []
+
+    # Preserve the original score rows exactly as supplied by the caller. We
+    # only index into them here; we do not normalize or mutate them.
+    if scores is None:
+        score_rows = []
+    else:
+        try:
+            score_rows = list(scores)
+        except TypeError:
+            score_rows = [scores]
+
+    if len(score_rows) == 0:
+        empty_matrices = np.empty((0, 3, 3), dtype=float)
+        if OutputMatricesOnly:
+            return empty_matrices
+        return empty_matrices, []
+
     if len(matrices) == 1:
-        return matrices
-
-    #best scored matrices
-    BSM = matrices.tolist()
-
-    # print "len(BSM)",len(BSM)
+        single_matrix = np.asarray(matrices, dtype=float)
+        if OutputMatricesOnly:
+            return single_matrix
+        return single_matrix, [score_rows[0]]
 
     if allpermu is None:
         print("**** -- Loading default cubic permutations!  --****")
         allpermu = DictLT.OpSymArray
 
-    FilteredMatrixList = []
-    FilteredScoreList = []
+    remaining = [(np.asarray(mat), idx) for idx, mat in enumerate(np.asarray(matrices))]
+    kept_matrices = []
+    kept_indices = []
 
-    Dict_mat = {}
-    for k, elem in enumerate(BSM):
-        Dict_mat[k] = elem
+    while remaining:
+        current_matrix, current_index = remaining[0]
+        kept_matrices.append(current_matrix)
+        kept_indices.append(current_index)
 
-    # filtering loop
-    # from six.moves import filter
-    k = 0
-    while BSM:
-
-        def Matrixcomparewith(m):
-            """
-            Return False if m == BSM[0] in the sense of comparematrices()
-            """
-            boolval = not comparematrices(BSM[0], m, tol=tol, allpermu=allpermu)[0]
-            #print("\n*********boolval", boolval)
-            return boolval
+        remaining = [
+            (mat, idx)
+            for mat, idx in remaining[1:]
+            if not comparematrices(current_matrix, mat, tol=tol, allpermu=allpermu)[0]
+        ]
 
         if verbose:
-            print("k,FilteredMatrixList", k, FilteredMatrixList)
-        FilteredMatrixList.append(BSM[0])
-        # BSM = [m for m in BSM if Matrixcomparewith(m)]
+            print("Kept matrix:", current_index)
+            print("Remaining candidates:", len(remaining))
 
-        BSM = list(filter(lambda m: Matrixcomparewith(np.array(m)), np.array(BSM)))
-
-        k += 1
+    kept_matrices = np.asarray(kept_matrices)
 
     if OutputMatricesOnly:
-        return FilteredMatrixList
-    else:
-        # updating scores list
-        if verbose:
-            print("FilteredMatrixList")
-            print(FilteredMatrixList)
-        for mat in FilteredMatrixList:
-            if isinstance(mat, (np.ndarray, )):
-                mat = mat.tolist()
-            FilteredScoreList.append(scores[list(Dict_mat.values()).index(mat)])
+        return kept_matrices
 
-        return FilteredMatrixList, FilteredScoreList
+    kept_scores = [score_rows[idx] for idx in kept_indices]
+    return kept_matrices, kept_scores
 
 
 def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
@@ -4045,51 +4097,78 @@ def MergeSortand_RemoveDuplicates(OrientMatrices, Scores, threshold_matching,
                                 0, None or False    all matrices even duplicates
     :param tol: resolution angle: maximum misorientation angle between two orientation matrices to be considered as equal 
     """
-    if verbose:
-        print('Scores', Scores)
+    if verbose>0:
+        print(f'In MergeSortand_RemoveDuplicates:')
+        print('Initial Scores', Scores)
 
-    _hhh = []
-    for elem in Scores:
-        _hhh.append(elem[:3])
-    ar_hhh = np.array(_hhh)
+    if OrientMatrices is None or len(OrientMatrices) == 0 or Scores is None or len(Scores) == 0:
+        return np.asarray([]), []
 
-    # threshold
-    ind_sup = np.where(ar_hhh[:, 0] >= threshold_matching)[0]
+    # Scores may contain extra metadata arrays (e.g. matched spots / planes) in
+    # the last columns. Those entries are not numeric and therefore cannot be
+    # converted with a single np.asarray(..., dtype=float) call. We keep the
+    # full score rows for downstream processing, but extract only the numeric
+    # fields used for filtering and sorting.
+    score_array = np.asarray(Scores, dtype=object)
+    if score_array.ndim == 0:
+        return np.asarray([]), []
+    if score_array.ndim == 1:
+        if score_array.size == 0:
+            return np.asarray([]), []
+        score_array = score_array.reshape(1, -1)
 
-    ar_hhh = np.take(ar_hhh, ind_sup, axis=0)
-    OrientMatrices = np.take(OrientMatrices, ind_sup, axis=0)
+    if score_array.shape[0] != len(OrientMatrices):
+        # Keep compatibility with legacy callers that pass a single matrix while
+        # scores remain a list of rows; in that case, the score rows are still
+        # represented correctly after reshaping above.
+        if len(OrientMatrices) == 1 and score_array.shape[0] == 1:
+            pass
+        else:
+            raise ValueError("OrientMatrices and Scores must have compatible lengths")
 
-    # sort
-    colnbmatch = np.array(ar_hhh[:, 0], dtype=np.uint16)
-    colres = -1.*np.array(ar_hhh[:, 2] * 10000, dtype=np.uint16)
-    # hint: lexsort sort lexicographically starting with last key and then second-to-last key!!
-    rank = np.lexsort(keys=(colres, colnbmatch))[::-1]
+    try:
+        numeric_score_array = np.asarray(
+            [np.asarray(row[:3], dtype=float) for row in score_array],
+            dtype=float,
+        )
+    except (TypeError, ValueError):
+        numeric_score_array = np.asarray(
+            [[float(row[0]), float(row[1]), float(row[2])] for row in score_array],
+            dtype=float,
+        )
 
-    # print("sorting MAtrices according to rank")
-    # print("rank", rank)
+    # threshold: keep only solutions whose match count is above the requested value
+    keep = numeric_score_array[:, 0] >= threshold_matching
+    if not np.any(keep):
+        return np.asarray([]), []
 
-    Bestsortedmatrices = np.take(OrientMatrices, rank, axis=0)
-    Besthhh = np.take(ar_hhh, rank, axis=0)
+    filtered_matrices = np.asarray(OrientMatrices, dtype=object)[keep]
+    score_array = score_array[keep]
+    numeric_score_array = numeric_score_array[keep]
 
-    # print "len(OrientMatrices)",len(OrientMatrices)
+    # Sort by more matches first, then smaller angular residual.
+    # np.lexsort uses the last key as the primary sorting key, so we keep the
+    # match count as the primary key (descending) and the residual as the
+    # secondary key (ascending).
+    nb_matches = numeric_score_array[:, 0]
+    angular_residual = numeric_score_array[:, 2]
+    rank = np.lexsort((angular_residual, -nb_matches))
+
+    Bestsortedmatrices = filtered_matrices[rank]
+    Besthhh = [score_array[idx] for idx in rank]
 
     # --- we may want to select only matrices above a threshold
     # load list of symetry operators
     if keep_only_equivalent:
-        # print("keep_only_equivalent cubic matrices")
         allpermu = DictLT.OpSymArray
-        # remove duplicates
-        (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(
-                                Bestsortedmatrices, Besthhh, tol=tol, allpermu=allpermu)
-        MATRICES = NonEquivalentMatrices
-        SCORES = FilteredScores
-    elif keep_only_equivalent in (0, None, False):
-        (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(
-                                Bestsortedmatrices, Besthhh, tol=tol, allpermu='Id')
-        MATRICES = NonEquivalentMatrices
-        SCORES = FilteredScores
+    else:
+        allpermu = 'Id'
 
-    return MATRICES, SCORES
+    # remove duplicates
+    (NonEquivalentMatrices, FilteredScores) = RemoveDuplicatesOrientationMatrix(
+        Bestsortedmatrices, Besthhh, tol=tol, allpermu=allpermu)
+
+    return NonEquivalentMatrices, FilteredScores
 
 
 # --- -----------  Orientation Matrix handling in map

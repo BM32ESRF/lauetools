@@ -208,7 +208,7 @@ class PlotRangePanel(wx.Panel):
 
         self.mainframe.USEDEFAULTDATAFILE = False
         if verbose>0:
-            print('in opendata(): ')
+            print(f'in opendata():  verboselevel={verbose}')
             print('self.mainframe.USEDEFAULTDATAFILE', self.mainframe.USEDEFAULTDATAFILE)
         
         OSLFGUI.OpenPeakList(self.mainframe, writecorfile=True, verbose=verbose-1)  # (not(self.mainframe.USEDEFAULTDATAFILE))
@@ -1096,7 +1096,7 @@ class StrainXtal(wx.Panel):
             new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
             DictLT.dict_Materials[new_key_material] = {
                 'lattice': new_lattice_params,
-                'extinction': DictLT.dict_Materials[self.key_material]['extinction']
+                'extinction': DictLT.dict_Materials[self.key_material][-1]
             }
 
         # Update combo box if needed
@@ -1711,7 +1711,7 @@ class MainCalibrationFrame(wx.Frame):
         verbose= self.verbose
 
         if verbose>0:
-            GT.printyellow('\n\nIn ReadExperimentData(): ------------- \n')
+            GT.printyellow(f'\nIn ReadExperimentData(): ------------- verboselevel={verbose} ------------- \n')
             print('self.USEDEFAULTDATAFILE', self.USEDEFAULTDATAFILE)
             print("self.dirnamepklist", self.dirnamepklist)
             print("self.filename", self.filename)
@@ -2762,7 +2762,7 @@ class MainCalibrationFrame(wx.Frame):
             return
 
         if verbose>0:
-            GT.printyellow("\nIn StartFit()-------------")
+            GT.printyellow(f"\nIn StartFit()------------- verboselevel={verbose}")
             print('Peaklist in: ')
             print('folder:  self.initialParameter["dirname"]', self.initialParameter["dirname"])
             print('file: self.filename', self.filename)
@@ -4700,8 +4700,9 @@ class MainCalibrationFrame(wx.Frame):
                                                 self.data_theo[1],
                                                 list(zip(*self.data_theo[2:])))
         elif self.datatype == "pixels":
-            xdata, ydata, _annotes_exp = (self.data_XY[0],
-                                        self.data_XY[1],
+            
+            xdata, ydata, _annotes_exp = (self.data_x,
+                                        self.data_y,
                                         list(zip(self.Data_index_expspot, self.Data_I)))
 
             xdata_theo, ydata_theo, _annotes_theo = (self.data_theo[3],
@@ -4808,10 +4809,13 @@ class MainCalibrationFrame(wx.Frame):
                         y=annote_theo[2][0]
                     if not isinstance(en, float):
                         en=annote_theo[3][0]
-                    #print(f"theoindex type: {type(theoindex)}, value: {theoindex} {hkls[theoindex]}")
+                    # print(f"theoindex type: {type(theoindex)}, value: {theoindex} {hkls[theoindex]}")
                     if len(theoindex)>1:
                         theoindex = theoindex[0]
-                    finaltxt = 'theo spot index : %d, '%theoindex + hklstr
+                    else:
+                        theoindex = theoindex[0]
+                        # print("theoindex is empty or has more than one value, setting to 0:", theoindex)
+                    finaltxt = 'theo spot index : %d, '%int(theoindex) + hklstr
                     finaltxt += ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(x,y,en)
                     if finaltxt != self.savedfinaltxt:
                         if verbose>0:
@@ -5024,20 +5028,22 @@ class MainCalibrationFrame(wx.Frame):
         return 3D vector of rotation axis from twtheta and chi axis coordinates
         """
         if self.datatype == "gnomon":
+            print('compute rotation axis from gnomon coordinates')
             RES = IIM.Fromgnomon_to_2thetachi([np.array([twtheta, twtheta]),
                                                     np.array([chi, chi])], 0)[:2]
             twtheta = RES[0][0]
             chi = RES[1][0]
         elif self.datatype == 'pixels':
-            wx.MessageBox('Not implement yet','Info')
-        #             twthetas, chis = F2TC.calc_uflab(np.array([twtheta, twtheta]),
-        #                                          np.array([chi, chi]),
-        #                                         self.CCDParam[:5],
-        #                                         pixelsize=self.pixelsize,
-        #                                         kf_direction=self.kf_direction)
-        #             twtheta, chi = twthetas[0], chis[0]
+            print('compute rotation axis from pixels coordinates')
+            # wx.MessageBox('Not implement yet (in selectrotationaxis)','Info')
+            twthetas, chis = F2TC.calc_uflab(np.array([twtheta, twtheta]),np.array([chi, chi]),
+                        self.CCDParam[:5],
+                        pixelsize=self.pixelsize,
+                        kf_direction=self.kf_direction)
+            twtheta, chi = twthetas[0], chis[0]
 
-        #         print "twtheta, chi", twtheta, chi
+            print("twtheta, chi", twtheta, chi)
+
         theta = twtheta / 2.0
 
         sintheta = np.sin(theta * DEG)

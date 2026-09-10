@@ -216,7 +216,14 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.showplotBox = wx.CheckBox(self, -1, "Plot Best result")
         self.showplotBox.SetValue(False)
+
         self.indexation_index = 0
+        self.writestatsfile = wx.CheckBox(self, -1, "Write stats file")
+        self.indexingstats_filename = (f'indexingresults_beforefiltering_{self.indexation_index}.txt')
+        self.indexingstatstctrl = wx.TextCtrl(self, -1, "%s" % self.indexingstats_filename)
+        self.writestatsfile.SetValue(False)
+
+        
         self.config_irp_filename = (self.DataPlot_filename[: -4] + "_%d.irp" % self.indexation_index)
         spcftxt= wx.StaticText(self, -1, "Saving parameters in config file")
         self.output_irp = wx.TextCtrl(self, -1, "%s" % self.config_irp_filename,
@@ -285,6 +292,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         h8box.Add(self.verbosetxt, 0, wx.EXPAND|wx.ALL, 10)
         h8box.Add(self.verboselevel, 0, wx.EXPAND|wx.ALL, 10)
 
+        h8bisbox = wx.BoxSizer(wx.HORIZONTAL)
+        h8bisbox.Add(self.showplotBox, 0, wx.EXPAND, 10)
+        h8bisbox.Add(self.writestatsfile, 0, wx.EXPAND, 10)
+        h8bisbox.Add(self.indexingstatstctrl, 0, wx.EXPAND, 10)
+
         h9box = wx.BoxSizer(wx.HORIZONTAL)
         h9box.Add(spcftxt, 0, wx.EXPAND, 10)
         h9box.Add(self.output_irp, 0, wx.EXPAND, 10)
@@ -314,7 +326,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         vbox.AddSpacer(5)
         vbox.Add(pptxt, 0, wx.EXPAND, 5)
         vbox.Add(h8box, 0, wx.EXPAND, 5)
-        vbox.Add(self.showplotBox, 0, wx.EXPAND, 5)
+        vbox.Add(h8bisbox, 0, wx.EXPAND, 5)
         vbox.Add(h9box, 0, wx.EXPAND, 5)
         vbox.Add(h10box, 0, wx.EXPAND, 5)
 
@@ -390,24 +402,70 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """ set material combo  from   self.dict_Materials
         .. todo:: better to use gridsizer and refresh/update of combo
         """
-        print('In SetMaterialsCombo() self.dict_Materials', self.dict_Materials)   
+        #print('In SetMaterialsCombo()')
+        #print('self.dict_Materials', self.dict_Materials)
 
         self.list_materials = sorted(self.dict_Materials.keys())
 
         self.combokeymaterial = wx.ComboBox(self, -1, "Ge", (140, 170), size=(150, -1),
-                                        choices=self.list_materials, style=wx.CB_READONLY)
+                                        choices=self.list_materials)#, style=wx.CB_READONLY)
 
+        # Bind to EVT_COMBOBOX (for dropdown selection)
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)
+
+        # Bind to EVT_TEXT (for typing)
+        self.combokeymaterial.Bind(wx.EVT_TEXT, self.OnTypeCombokeymaterial)
+
+        # Optional: Bind to EVT_TEXT_ENTER (for Enter key)
+        self.combokeymaterial.Bind(wx.EVT_TEXT_ENTER, self.OnEnterCombokeymaterial)
+
+    # def EnterCombokeymaterial(self, event):
+    #     """
+    #     in classicalindexation
+    #     """
+    #     item = event.GetSelection()
+    #     self.key_material = self.list_materials[item]
+    #     self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
+
+    #     self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
+    #     event.Skip()
 
     def EnterCombokeymaterial(self, event):
         """
-        in classicalindexation
+        Handle dropdown selection.
         """
         item = event.GetSelection()
         self.key_material = self.list_materials[item]
         self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
-
         self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
+        event.Skip()
+
+    def OnTypeCombokeymaterial(self, event):
+        """
+        Handle typing in the ComboBox.
+        """
+        typed_text = event.GetString()
+        if typed_text in self.list_materials:
+            self.key_material = typed_text
+            self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
+            self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
+        else:
+            # Optional: Handle invalid input (e.g., show a warning)
+            pass
+        event.Skip()
+
+    def OnEnterCombokeymaterial(self, event):
+        """
+        Handle Enter key press (optional).
+        """
+        typed_text = event.GetString()
+        if typed_text in self.list_materials:
+            self.key_material = typed_text
+            self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
+            self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
+        else:
+            # Optional: Revert to the last valid selection
+            self.combokeymaterial.SetValue(self.key_material)
         event.Skip()
 
     def getparams_for_irpfile(self):
@@ -463,30 +521,41 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     def readspotssetctrl(self, txtctrl):
         """read, parse a spotset txtctrl
         """
-        spot_list = txtctrl.GetValue()
+        spot_list = str(txtctrl.GetValue()).strip()
         israngefromzero = False
+
+        if not spot_list:
+            return 0, 1, israngefromzero
+
         if spot_list[0] != "-":
             # print "coucou"
             # this a list of spots
             if spot_list.startswith("["):
                 # print "coucou2"
                 spot_index_central = str(spot_list)[1:-1].split(",")
+                spot_index_central = [int(item.strip()) for item in spot_index_central if item.strip()]
                 # print spot_index_central
-                arr_index = np.array(spot_index_central)
-
-                # print np.array(arr_index, dtype = int)
-                spot_index_central = list(np.array(arr_index, dtype=int))
                 nb_central_spots = len(spot_index_central)
+                if nb_central_spots == 0:
+                    return 0, 1, False
+                spot_index_central = list(spot_index_central)
 
             # this is range from 0 to a spot index
             elif spot_list.startswith("to"):
-                spot_index_central = list(range(int(spot_list[2:]) + 1))
+                try:
+                    end_index = int(spot_list[2:].strip())
+                except ValueError:
+                    return 0, 1, False
+                spot_index_central = list(range(end_index + 1))
                 nb_central_spots = len(spot_index_central)
                 israngefromzero = True
 
             #this is a single spot index (integer)
             else:
-                spot_index_central = int(spot_list)
+                try:
+                    spot_index_central = int(spot_list)
+                except ValueError:
+                    return 0, 1, False
                 nb_central_spots = 1
 
         else:  # minus in front of integer
@@ -514,12 +583,13 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             if nbA == 1:
                 wx.MessageBox("if only spots set A is checked, you must provide a set of spots "
                 "by filling 'to5' or '[5,1,4,3]'", "Error")
+                return None, None, None, None, None
 
-            nbmax_probed = maxindA+1
+            nbmax_probed = maxindA + 1
             spot_index_central = spotsA
             nb_central_spots = nbA
             # this is a range set
-            if (nbA-1) == maxindA:
+            if (nbA - 1) == maxindA:
                 spotssettype = 'rangeset'
             # this is a list of spots
             else:
@@ -530,6 +600,11 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #spotB is checked
         else:
             spotsB, nbB, israngeB = self.readspotssetctrl(self.spotlistB)
+            if nbB == 1 and not isinstance(spotsB, (list, tuple, np.ndarray)) and spotsB == 0:
+                wx.MessageBox("if Spots Set B is checked, please provide a valid set of spots "
+                              "by filling 'to5' or '[5,1,4,3]'", "Error")
+                return None, None, None, None, None
+
             nbmax_probed = nbB
             spot_index_central = spotsA
             nb_central_spots = nbA
@@ -561,7 +636,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         else:
             ResolutionAngstrom = float(ResolutionAngstrom)
         
-        if verbose>0: print("ResolutionAngstrom in OnStart Classical indexation", ResolutionAngstrom)
+        if verbose>0: print("ResolutionAngstrom in OnStart Classical indexation: ", ResolutionAngstrom)
 
         self.key_material = str(self.combokeymaterial.GetValue())
         latticeparams = self.dict_Materials[self.key_material][1]
@@ -589,9 +664,19 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #         print "Matching tolerance angle ", fine_tolangle
 
         #----------   Spots set Selection for mutual angle computation
-        (spotssettype, spot_index_central, nb_central_spots,
-                                nbmax_probed, spotsB) = self.parse_spotssetctrls()
-        if verbose>0: print("--spotssettype --#\n\n    ", self.parse_spotssetctrls(), "      \n\n*")
+        (spotssettype,
+         spot_index_central,
+         nb_central_spots,
+         nbmax_probed, spotsB) = self.parse_spotssetctrls()
+        
+        if verbose>0:
+            print("--spotssettype --    ",spotssettype)
+            print("--spot_index_central --    ",spot_index_central)
+            print("--nb_central_spots --    ",nb_central_spots)
+            print("--nbmax_probed --    ",nbmax_probed)
+            print("--spotsB --    ",spotsB)
+            print("-------------------\n") 
+        
 
         # TODO spot_index_central and spotsB to be combined to find UBS
         #------------------------------------------------
@@ -678,8 +763,8 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             self.key_material, dictmaterials=self.dict_Materials)
 
         if verbose>0:
-            print("set_central_spots_hkl", set_central_spots_hkl)
-            print("restrictLUT_cubicSymmetry", restrictLUT_cubicSymmetry)
+            print("set_central_spots_hkl      :", set_central_spots_hkl)
+            print("restrictLUT_cubicSymmetry  :", restrictLUT_cubicSymmetry)
 
         LUT_with_rules = self.applyrulesLUT.GetValue()
 
@@ -692,10 +777,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
 
-        
+        if verbose>0:
+            print('To decide to use getOrientMatrices() or getOrientMatrices_fromTwoSets()')
+            print('spotssettype   :', spotssettype)
 
-       
-        if verbose>0: print('spotssettype', spotssettype)
         if spotssettype in ("rangeset", ):
             res = INDEX.getOrientMatrices(spot_index_central,
                                     energy_max,
@@ -731,30 +816,38 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             if spotssettype in ('listsetA', ):
                 spotsB = spot_index_central
 
-            if verbose>0:
+            if verbose>4:
                 print('arguments of  getOrientMatrices_fromTwoSets()')
-                print("--->",spot_index_central, spotsB,
-                                                    energy_max, self.select_theta, self.select_chi,
-                                                    n, self.key_material, rough_tolangle,
-                                                    detectorparameters,
-                                                    set_central_spots_hkl,
-                                                    Minimum_MatchesNb,
-                                                    LUT_with_rules,
-                                                    None,
-                                                    LUTfraction)
+                print("--->")
+                print('spot_index_central',spot_index_central)
+                print('spotsB',spotsB)
+                print('energy_max', energy_max)
+                print('self.select_theta', self.select_theta)
+                print('self.select_chi', self.select_chi)
+                print('n', n)
+                print('self.key_material', self.key_material)
+                print('rough_tolangle', rough_tolangle)
+                print('detectorparameters', detectorparameters)
+                print('set_central_spots_hkl', set_central_spots_hkl)
+                print('Minimum_MatchesNb', Minimum_MatchesNb)
+                print('LUT_with_rules', LUT_with_rules)
+                print('LUTfraction', LUTfraction)
+
             res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
-                                                energy_max, self.select_theta, self.select_chi,
-                                                n, self.key_material, rough_tolangle,
-                                                detectorparameters,
-                                                set_hkl_1=set_central_spots_hkl,
-                                                minimumNbMatches=Minimum_MatchesNb,
-                                                LUT_with_rules=LUT_with_rules,
-                                                excludespotspairs=None,
-                                                LUTfraction=LUTfraction)
+                                energy_max, self.select_theta, self.select_chi,
+                                n, self.key_material, rough_tolangle,
+                                detectorparameters,
+                                set_hkl_1=set_central_spots_hkl,
+                                minimumNbMatches=Minimum_MatchesNb,
+                                LUT_with_rules=LUT_with_rules,
+                                excludespotspairs=None,
+                                LUTfraction=LUTfraction,
+                                verbose=verboselevel-1)
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res
-            print('getOrientMatrices_SubSpotsSets found %d solutions', len(res[0]))
+            self.bestmatrices = [np.asarray(matrix, dtype=float) for matrix in self.bestmatrices]
+            print('getOrientMatrices_SubSpotsSets found %d solutions'%len(res[0]))
         else:
             wx.MessageBox('Sorry! Nothing found !!\nTry to increase nLUT or the nb of spots '
                                                             'probed in spots sets A and B')
@@ -781,9 +874,20 @@ class DistanceScreeningIndexationBoard(wx.Frame):
             keep_only_equivalent = False
 
         # print("self.bestmatrices before")
-        for ra, ub in enumerate(self.bestmatrices):
-            print("\nrank : %d" % ra)
-            print(ub)
+        if verbose>0:
+            for ra, ub in enumerate(self.bestmatrices):
+                print("\nrank : %d" % ra)
+                print(ub)
+
+        if self.writestatsfile.GetValue():
+            statsfilename = str(self.indexingstatstctrl.GetValue())
+            fullpathstats = os.path.join(self.IndexationParameters["writefolder"], statsfilename)
+            print("Writing indexing stats (before filtering) in %s" % fullpathstats)
+
+            IOLT.write_statsfile(fullpathstats, stats_res, self.bestmatrices)
+
+            
+
         if nb_solutions > 1:
             print("Merging matrices")
             # print("keep_only_equivalent = %s" % keep_only_equivalent)
@@ -792,8 +896,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                                                         stats_res,
                                                         Minimum_MatchesNb,
                                                         tol=0.005,
+                                                        verbose=verbose-1,
                                                         keep_only_equivalent=keep_only_equivalent,
                                                     )
+            self.bestmatrices = [np.asarray(matrix, dtype=float) for matrix in self.bestmatrices]
 
         print("stats_res", stats_res)
         nb_solutions = len(self.bestmatrices)

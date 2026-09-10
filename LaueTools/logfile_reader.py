@@ -2035,7 +2035,7 @@ def build_dict_scan(item_idx:int, pdf:"PandasDataFrame", CCDLabel:str='sCMOS',ve
         dict_scan['scantype'] = 'map'
 
     elif dict_command['scancommand'] == 'fscan2d':
-        mapdimensions=dict_command['fmotnbsteps'], dict_command['smotnbsteps']
+        mapdimensions=dict_command['fmotnbsteps']+1, dict_command['smotnbsteps']+1
         dict_scan['scantype'] = 'map'
         
     elif dict_command['scancommand'] in ('fscan', 'ascan'):
@@ -2100,7 +2100,7 @@ def get_unique_node_prefixes(hdf5_path, delimiter: str = "_"):
         return sorted(prefixes)  # Return sorted list for readability
         
 
-def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps'),
+def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','xtech','ytech', 'thf','xps','yps', 'sx','sy'),
                             potential_scantypes=('ascan','amesh','loopscan','a2scan', 'fscan2d', 'fscan','loopscan'),
                             n_last:int=1000,
                             node_prefix:str=None,

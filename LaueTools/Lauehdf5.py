@@ -1736,7 +1736,7 @@ class TableMap:
 
     # --- ------  Read or modify images and peaklist
     def setPeaksearchnFitParams(self):
-        self.CCDlabel = "PRINCETON"
+        self.CCDLabel = "PRINCETON"
         self.framedim = (2048, 2048)
         self.offset = 4096
         self.format = "uint16"
@@ -1768,7 +1768,7 @@ class TableMap:
                                     formatdata="uint16",
                                     fliprot="no")
 
-        self.kwds_peaksearch = dict(CCDLabel=self.CCDlabel,
+        self.kwds_peaksearch = dict(CCDLabel=self.CCDLabel,
                                     PixelNearRadius=self.dict_param["PixelNearRadius"],
                                     removeedge=2,
                                     IntensityThreshold=self.dict_param["IntensityThreshold"],
@@ -1782,8 +1782,8 @@ class TableMap:
                                     xtol=self.dict_param["xtol"],
                                     FitPixelDev=self.dict_param["FitPixelDev"],
                                     return_histo=0,
-                                    Saturation_value=DictLT.dict_CCD[self.CCDlabel][2],
-                                    Saturation_value_flatpeak=DictLT.dict_CCD[self.CCDlabel][2],
+                                    Saturation_value=DictLT.dict_CCD[self.CCDLabel][2],
+                                    Saturation_value_flatpeak=DictLT.dict_CCD[self.CCDLabel][2],
                                     write_execution_time=1)
 
     #

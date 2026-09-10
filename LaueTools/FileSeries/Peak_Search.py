@@ -391,7 +391,7 @@ class MainFrame_peaksearch(wx.Frame):
         self.objet_PS = objet_PS
 
         self.allMaterialsnames = LIST_OF_CCDS
-        self.CCDlabel = None
+        self.CCDLabel = None
 
         if WXPYTHON4:
             grid = wx.FlexGridSizer(3, 7, 7)
@@ -558,15 +558,15 @@ class MainFrame_peaksearch(wx.Frame):
 
     def EnterComboCCD(self, event):
         item = event.GetSelection()
-        self.CCDlabel = self.allMaterialsnames[item]
+        self.CCDLabel = self.allMaterialsnames[item]
         print("item", item)
-        print("CCDlabel", self.CCDlabel)
+        print("CCDlabel", self.CCDLabel)
 
-        if self.CCDlabel == "VHR_Mar13":
-            extension = str(dict_CCD[self.CCDlabel][7])
+        if self.CCDLabel == "VHR_Mar13":
+            extension = str(dict_CCD[self.CCDLabel][7])
             self.list_txtctrl[4].SetValue("varying")
         else:
-            extension = "." + str(dict_CCD[self.CCDlabel][7])
+            extension = "." + str(dict_CCD[self.CCDLabel][7])
 
         self.list_txtctrl[3].SetValue(extension)
 
@@ -669,8 +669,8 @@ class MainFrame_peaksearch(wx.Frame):
 
         print("Peak Search parameters", dict_param)
 
-        self.CCDlabel = self.comboCCD.GetValue()
-        print("self.CCDlabel", self.CCDlabel)
+        self.CCDLabel = self.comboCCD.GetValue()
+        print("self.CCDLabel", self.CCDLabel)
 
         try:
             imageindexmin = int(self.list_txtctrl[5].GetValue())
@@ -779,7 +779,7 @@ class MainFrame_peaksearch(wx.Frame):
                                                         dirname_in=dirname_in,
                                                         outputname=None,
                                                         dirname_out=dirname_out,
-                                                        CCDLABEL=self.CCDlabel,
+                                                        CCDLABEL=self.CCDLabel,
                                                         KF_DIRECTION="Z>0",
                                                         dictPeakSearch=dict_param,
                                                         verbose=0,
@@ -793,7 +793,7 @@ class MainFrame_peaksearch(wx.Frame):
                                                             dirname_in=dirname_in,
                                                             outputname=None,
                                                             dirname_out=dirname_out,
-                                                            CCDLABEL=self.CCDlabel,
+                                                            CCDLABEL=self.CCDLabel,
                                                             KF_DIRECTION="Z>0",
                                                             dictPeakSearch=dict_param,
                                                             nb_of_cpu=nb_cpus,

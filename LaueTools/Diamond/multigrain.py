@@ -682,7 +682,7 @@ def deviatoric_strain_crystal_to_equivalent_strain(epsilon_crystal_line):
 
 def uflab_to_xycam(uflab, 
                    calib,
-                   pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]):
+                   pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     # modif 04 Mar 2010 xbet xgam en degres au lieu de radians
 
@@ -749,7 +749,7 @@ def uflab_to_xycam(uflab,
 
 def uqlab_to_xycam(uqlab,
                    calib,
-                   pixelsize=DictLT.dict_CCD[PAR.CCDlabel][1]):
+                   pixelsize=DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     uflab = zeros(3, float)
     xycam = zeros(2, float)
@@ -1890,7 +1890,7 @@ def test_index_refine(filedat, paramdetector_top, proposed_matrix=None,
     
     if remove_sat :
         col_Ipixmax = -1  # adapter au format du .dat
-        saturation = DictLT.dict_CCD[PAR.CCDlabel][2]
+        saturation = DictLT.dict_CCD[PAR.CCDLabel][2]
         data_sat = zeros(nspots, int)
         data_Ipixmax = np.array(data_dat[:, col_Ipixmax], dtype=int)
         ind0 = where(data_Ipixmax == saturation)
@@ -2449,7 +2449,7 @@ def save_fit_results(filename,
 def save_det_results(filedat, filecor, matLTmin, filesuffix, newparam, elem_label) :
 
 #    pixelsize = 165. / 2048
-    pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]
+    pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]
     dim = (2048.0, 2048.0)
 
     outputfilename = filecor.split('.')[0] + filesuffix + '.det'
@@ -2851,7 +2851,7 @@ def convert_xmas_str_to_LT_fit(filestr,
                                elem_label = "W",
                                stiffness_c_tensor = None, 
                                schmid_tensors = None,
-                               CCDlabel = PAR.CCDlabel,
+                               CCDlabel = PAR.CCDLabel,
                                recalculate_strain_from_matrix = 0,
                                min_matLT = False):
     
@@ -3314,7 +3314,7 @@ def read_any_fitfitfile_multigrain(filefitmg,
                   check_Etheor = 0,  # any structure
                   elem_label = PAR.elem_label_index_refine,   # seulement pour check_Etheor = 1
                   check_pixdev = 0 ,
-                  pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1], # seulement pour check_pixdev = 1
+                  pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1], # seulement pour check_pixdev = 1
                   min_matLT = 1,   # seulement pour cubique
                   check_pixdev_JSM = 1
                   ): # 21Oct14,  25Nov14
@@ -3669,7 +3669,7 @@ def read_any_fitfitfile_multigrain(filefitmg,
                 if verbose : print("pixelsize from fitfile = ", pixelsize_fit)
                 toto = abs(pixelsize_fit-pixelsize)
                 if toto > 0.0001 :
-                    print("does not match pixelsize from MG.PAR.CCDlabel", pixelsize)
+                    print("does not match pixelsize from MG.PAR.CCDLabel", pixelsize)
                     exhjkqsdq
             if eulerfound & (i == lineeuler):
                 euler[k,:] = np.array(line.replace('[', '').replace(']', '').split()[:3], dtype=float)
@@ -3765,7 +3765,7 @@ def read_any_fitfitfile_multigrain(filefitmg,
             dictCCD = {}
             dictCCD['CCDparam'] = calib[0]
             dictCCD['pixelsize'] = pixelsize
-            dictCCD['dim'] = DictLT.dict_CCD[PAR.CCDlabel][0]
+            dictCCD['dim'] = DictLT.dict_CCD[PAR.CCDLabel][0]
             if verbose :
                 for key, value in dictCCD.items():
                     print(key, value)
@@ -3977,7 +3977,7 @@ def calc_pixdev(matstarlab,
                 calib, 
                 data_xy, 
                 data_hkl,
-                pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1],
+                pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1],
                 verbose = 0,
                 return_xydev_list = None):
     
@@ -4165,7 +4165,7 @@ def compare_multigrain_fit(filefitmg1,
         if compare_calib :
             dcalibn = zeros(5, float)
 #            pixelsize = 165.0 / 2048.0
-            pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]
+            pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]
             RAD = PI / 180.0
             dcalib = calib2[j] - calib1[i]
             print("difference of calibration")
@@ -4638,7 +4638,7 @@ def serial_peak_search(filepathim,
                        thresholdConvolve = PAR.thresholdConvolve,
                        number_of_digits_in_image_name = PAR.number_of_digits_in_image_name,
                        overwrite_peak_search = PAR.overwrite_peak_search,
-                       CCDlabel=PAR.CCDlabel) :
+                       CCDlabel=PAR.CCDLabel) :
 
     print("peak search in series of images (or single image)")
 
@@ -4736,7 +4736,7 @@ def index_refine_multigrain_one_image(filedat1,
                                      Nb_criterium=PAR.Nb_criterium,
                                      NBRP=PAR.NBRP, 
                                      mark_bad_spots=PAR.mark_bad_spots,
-                                     CCDlabel = PAR.CCDlabel,
+                                     CCDlabel = PAR.CCDLabel,
                                      calib = None,
                                      use_weights = False):
 
@@ -4892,7 +4892,7 @@ def spotlink_OR(matwithlatpar_inv_nm, calib, xyexp, cryst_struct, showall, dxyto
     print("matwithlatpar_inv_nm :\n", matwithlatpar_inv_nm)
     
     spotlist1 =  spotlist_gen(Emin, Emax, "top", matwithlatpar_inv_nm, cryst_struct, showall, \
-             calib, pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1], remove_harmonics = "yes")
+             calib, pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1], remove_harmonics = "yes")
              
     hkl1 = spotlist1[:,:3]
     
@@ -4943,7 +4943,7 @@ def serial_index_refine_multigrain(filepathdat,
                                      Nb_criterium=PAR.Nb_criterium,
                                      NBRP=PAR.NBRP, 
                                      mark_bad_spots=PAR.mark_bad_spots,
-                                     CCDlabel = PAR.CCDlabel,
+                                     CCDlabel = PAR.CCDLabel,
                                      proposed_matstarlab = None,
                                      calib = None,
                                      verbose = 1
@@ -5100,7 +5100,7 @@ def serial_index_refine_monograin_use_filemat(filepathdat,
                                      Nb_criterium=PAR.Nb_criterium,
                                      NBRP=PAR.NBRP, 
 #                                     mark_bad_spots=PAR.mark_bad_spots,
-                                     CCDlabel = PAR.CCDlabel,
+                                     CCDlabel = PAR.CCDLabel,
                                      calib = None,
                                      verbose = 1,
                                      use_weights = False
@@ -9899,7 +9899,7 @@ def plot_all_grain_maps(filegrains,
     
 def xycam_to_uflab(xycam,
                    calib, 
-                   pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]):
+                   pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     # modif 04 Mar 2010 xbet xgam en degres au lieu de radians
 
@@ -9958,7 +9958,7 @@ def xycam_to_uflab(xycam,
     
 def xycam_to_uqlab(xycam, 
                    calib, 
-                   pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]):
+                   pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     # modif 04 Mar 2010
     uqlab = zeros(3,float)
@@ -9985,7 +9985,7 @@ def xycam_to_uqlab(xycam,
 def two_spots_to_mat_gen(hkl,
                      xycam,
                      calib, 
-                     pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1],
+                     pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1],
                     elem_label = "Ge",
                     verbose = 1):
 
@@ -10099,7 +10099,7 @@ def two_spots_to_mat_gen(hkl,
 def two_spots_to_mat(hkl,
                      xycam,
                      calib, 
-                     pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1],
+                     pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1],
                         verbose = 1):
 
     # modif 04 Mar 2010
@@ -11341,7 +11341,7 @@ def four_spots_to_mat_new(quad,
                       data_hkl, 
                       calib, 
                       verbose = 1,
-                      pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]):
+                      pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     data_xy = np.array(data_xy, float)        
     data_hkl = np.array(data_hkl, float)
@@ -11452,7 +11452,7 @@ def four_spots_to_mat(quad,
                       data_hkl, 
                       calib, 
                       showall = 1,
-                      pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1]):
+                      pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1]):
 
     # recup de calcdef_include apres enlevement des intensites
 
@@ -12062,7 +12062,7 @@ def serial_four_spots_to_mat(filepathout,
                                    calib, 
                                     test = 0,
                                     add_str = "",
-                                    pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1],
+                                    pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1],
                                     threshold_on_Imax_ratio = 0.002,
                                     imgref_for_superimposing_spot_trajectories = None,
                                     test_quad = "no",
@@ -12234,7 +12234,7 @@ def serial_two_spots_to_mat(filepathout,
                                    calib, 
                                     test = 0,
                                     add_str = "",
-                                    pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1],
+                                    pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1],
                                     threshold_on_Imax_ratio = 0.002,
                                     imgref_for_superimposing_spot_trajectories = None,
                                     omega = None, # was PAR.omega_sample_frame,
@@ -12517,8 +12517,8 @@ def RefineUB_from_xycam(
                                         Bmat=starting_Bmatrix,
                                         pureRotation=0, 
                                         verbose=1, 
-                                        pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1] ,
-                                        dim = DictLT.dict_CCD[PAR.CCDlabel][0],
+                                        pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1] ,
+                                        dim = DictLT.dict_CCD[PAR.CCDLabel][0],
                                         weights=weights)
         #print "Initial residues",residues
         #print "---------------------------------------------------\n"
@@ -12532,8 +12532,8 @@ def RefineUB_from_xycam(
                         pixX, pixY,
                         initrot=starting_orientmatrix,
                         Bmat=starting_Bmatrix,
-                        pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1] ,
-                        dim = DictLT.dict_CCD[PAR.CCDlabel][0],
+                        pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1] ,
+                        dim = DictLT.dict_CCD[PAR.CCDLabel][0],
                         verbose=0,
                         weights=weights)
 
@@ -12554,8 +12554,8 @@ def RefineUB_from_xycam(
                                         initrot=starting_orientmatrix,
                                         Bmat=starting_Bmatrix,
                                         pureRotation=0, verbose=1, 
-                                        pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1] ,
-                                        dim = DictLT.dict_CCD[PAR.CCDlabel][0],
+                                        pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1] ,
+                                        dim = DictLT.dict_CCD[PAR.CCDLabel][0],
                                         weights=weights)
 
         residues_non_weighted = FitO.error_function_on_demand_strain(results,
@@ -12567,8 +12567,8 @@ def RefineUB_from_xycam(
                                         initrot=starting_orientmatrix,
                                         Bmat=starting_Bmatrix,
                                         pureRotation=0, verbose=1, 
-                                        pixelsize = DictLT.dict_CCD[PAR.CCDlabel][1] ,
-                                        dim = DictLT.dict_CCD[PAR.CCDlabel][0],
+                                        pixelsize = DictLT.dict_CCD[PAR.CCDLabel][1] ,
+                                        dim = DictLT.dict_CCD[PAR.CCDLabel][0],
                                         weights=None) [0]
 
         #print "Final residues",residues
@@ -12748,7 +12748,7 @@ def refine_again_one_grain(filepathfit_out,
                            all_spots = "no",
                            test = "no",
                            imgtest = None,
-                           CCDlabel = PAR.CCDlabel):
+                           CCDlabel = PAR.CCDLabel):
                                
 #    latticeparam =np.array(DictLT.dict_Materials[PAR.elem_label_index_refine][1][0], dtype = float)
     #print latticeparam
@@ -12929,7 +12929,7 @@ def serial_peak_search_monograin(filepathim,
             print(filepathout + filedat)
             
         Isorted, fitpeak, localpeak = rmccd.PeakSearch(filename,
-                                                    CCDLabel=PAR.CCDlabel,
+                                                    CCDLabel=PAR.CCDLabel,
                                                     PixelNearRadius=PAR.PixelNearRadius ,
                                                     IntensityThreshold=PAR.IntensityThreshold,
                                                     boxsize=PAR.boxsize,
@@ -12941,8 +12941,8 @@ def serial_peak_search_monograin(filepathim,
                                                     FitPixelDev=PAR.FitPixelDev,
                                                     local_maxima_search_method=PAR.local_maxima_search_method,
                                                     thresholdConvolve=PAR.thresholdConvolve,
-                                                    Saturation_value=DictLT.dict_CCD[PAR.CCDlabel][2],
-                                                    Saturation_value_flatpeak=DictLT.dict_CCD[PAR.CCDlabel][2]
+                                                    Saturation_value=DictLT.dict_CCD[PAR.CCDLabel][2],
+                                                    Saturation_value_flatpeak=DictLT.dict_CCD[PAR.CCDLabel][2]
                                                     )
         npeaks[k] = shape(Isorted)[0]
 
@@ -13701,7 +13701,7 @@ def read_scan_in_specfile(spec_file,
                           "yech": [1,2,0.],
                             "zech" :[1,3,0.]                    
                             },   
-                          CCDlabel = PAR.CCDlabel):    
+                          CCDlabel = PAR.CCDLabel):    
  
 # example of list of motors in specfile header                             
 #O0     rien     light       vg3       hg3       vo3       ho3      pfoc      hfoc

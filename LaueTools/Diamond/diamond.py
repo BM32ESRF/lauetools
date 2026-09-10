@@ -600,7 +600,7 @@ def build_spotlistref_sample(filefit_sample_max_npeaks=None,
                             elem_label="Ge",
                             fitfile_type="GUI_strain",
                             fileextensionmarker=".cor",  # no more used, kept for compatibility,
-                            pixelsize=DictLT.dict_CCD[MG.PAR.CCDlabel][1],
+                            pixelsize=DictLT.dict_CCD[MG.PAR.CCDLabel][1],
                             min_matLT=0):  # MG multigrain, GUI, FS fileseries
     """Write a file with exhaustive list of spots properties with harmonics from .fit and .dat file.
     Outputname is filedat_sample with addition of '_spotlistref_with_harmonics.dat' """
@@ -1244,7 +1244,7 @@ def build_mosaic_and_fit_spot_position(indimg,
                                         plot_map_Ibox=0,
                                         filexyz=None,  # pour plot_map_Ibox = 1
                                         calib=np.array([69.0, 1024.0, 1024.0, 0.0, 0.0]),
-                                        CCDlabel=MG.PAR.CCDlabel,
+                                        CCDlabel=MG.PAR.CCDLabel,
                                         return_mosaic_filename=0,
                                         mon_in_scan=None):
     """
@@ -1911,7 +1911,7 @@ def serial_Ipix_vs_img(imfile_path,
                         imfile_suffix,
                         filepathout,
                         user_comment_list=None,
-                        CCDlabel=MG.PAR.CCDlabel,
+                        CCDlabel=MG.PAR.CCDLabel,
                         img_reflist=None,
                         dict_xy_E=None,
                         scan_list=None,
@@ -4947,7 +4947,7 @@ def read_dict_diaexp(filediaexp):
     return dict_exp
 
 
-def hkl_to_xycam(matstarlab, hkl, calib, CCDlabel=MG.PAR.CCDlabel):
+def hkl_to_xycam(matstarlab, hkl, calib, CCDlabel=MG.PAR.CCDLabel):
 
     uflab_cen = np.array([0.0, 0.0, 1.0])
     uilab = np.array([0.0, 1.0, 0.0])
@@ -5110,11 +5110,11 @@ def build_dict_xy_E(img_list,
                     list_spot_keys=[0],
                     datfile_suffix=".dat",
                     fitfile_suffix="_t_UWN.fit",
-                    CCDlabel=MG.PAR.CCDlabel,
+                    CCDlabel=MG.PAR.CCDLabel,
                     elem_label="Ge",
                     min_matLT=0,
                     fitfile_type="MGnew",
-                    pixelsize=DictLT.dict_CCD[MG.PAR.CCDlabel][1]):
+                    pixelsize=DictLT.dict_CCD[MG.PAR.CCDLabel][1]):
 
     dxy_tol = 1.0
     #   pour un dmesh thf xs ou une serie de scans en thf a differents xs ys zech
@@ -5490,7 +5490,7 @@ def write_mesh_thf_macro(filepathout, motor_name, motor_list, thf_list):
 def dxycam_to_dthf(xycam_list, xycam_ref, slope_thf_vs_Edia, HKLspot, calib, elem_label,
                                                     Edia_ref,
                                                     thf_ref,
-                                                    pixelsize=DictLT.dict_CCD[MG.PAR.CCDlabel][1]):
+                                                    pixelsize=DictLT.dict_CCD[MG.PAR.CCDLabel][1]):
 
     uilab = np.array([0.0, 1.0, 0.0])
     # cubic lattice only, zero strain

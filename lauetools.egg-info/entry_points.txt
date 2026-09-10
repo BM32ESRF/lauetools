@@ -1,0 +1,12 @@
+[console_scripts]
+buildsummary = LaueTools.FileSeries.Build_Summary:start
+daxmgui = LaueTools.daxmgui:start
+indexrefine = LaueTools.FileSeries.Index_Refine:start
+lauetools = LaueTools.GUI.mainGUI:start
+lauetools-add-material = LaueTools.cli_add_material:main
+lauetools-copy = LaueTools.cli:copy_resources
+lauetools-copy-materials = LaueTools.cli:copy_materials
+mapanalyzer = LaueTools.FileSeries.mainFileSeriesGUI:start
+peaksearch = LaueTools.FileSeries.Peak_Search:start
+plotmap = LaueTools.FileSeries.Plot_Maps2:start
+plotmeshGUI = LaueTools.plotmeshspecGUI:start

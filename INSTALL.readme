@@ -1,0 +1,9 @@
+conda create -p /data/bm32/inhouse/SOFT/lauetools  python=3.12
+conda activate /data/bm32/inhouse/SOFT/lauetools
+mamba install --file conda_requirements.txt
+python -m pip install --no-deps /data/bm32/inhouse/SOFT/lauetools/lauetools
+
+OR
+
+python -m pip install --no-deps -e /data/bm32/inhouse/SOFT/lauetoolsDEV/lauetools
+

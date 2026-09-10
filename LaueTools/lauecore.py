@@ -41,8 +41,13 @@ else:
     # TODO: LTGeo to be removed
     import LaueGeometry as LTGeo
 
-try: # cython library
-    import generatehkl
+try:  # cython library (package-relative import first, then legacy top-level import)
+    import importlib
+
+    try:
+        generatehkl = importlib.import_module(".generatehkl", __package__)
+    except ImportError:
+        generatehkl = importlib.import_module("generatehkl")
 
     USE_CYTHON = True
 except ImportError:
@@ -245,8 +250,6 @@ def Quicklist(OrientMatrix, ReciprocBasisVectors, listRSnorm, lambdamin, verbose
     except ValueError:
         return None
 
-def joel():
-    print("hello joel")
 
 def genHKL_np(listn, Extinc):
     r"""
@@ -410,7 +413,8 @@ def getLaueSpots(wavelmin:float, wavelmax:float, crystalsParams,
     # loop over grains
     for i in list(range(nb_of_grains)):
         try:
-            key_material = dictmaterials[crystalsParams[i][3]][0]
+            #print("crystalsParams[i]", crystalsParams[i])
+            key_material = dictmaterials[crystalsParams[i][3]]
         except (IndexError, TypeError, KeyError):
             smsg = "wrong type of input paramters: must be a list of 4 elements"
             raise ValueError(smsg)

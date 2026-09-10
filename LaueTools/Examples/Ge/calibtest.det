@@ -1,0 +1,19 @@
+68.26400, 1049.3500, 1118.8800, -0.1250000, -0.3430000, 0.07914200, 2018, 2016
+Sample-Detector distance(IM), xO, yO, angle1, angle2, pixelsize, dim1, dim2
+Calibration done with strained_Ge at Mon May 18 10:22:32 2026 with LaueToolsGUI.py
+Experimental Data file: /gpfs/jazzy/data/bm32/inhouse/SOFT/lauetoolsDEV/lauetools/LaueTools/Examples/Ge/Ge0001.dat
+Orientation Matrix:
+[[0.0881250,-0.9733267,-0.2118233],[0.5870594,0.2225441,-0.7783543],[0.8047331,-0.0557604,0.5910122]]
+# Material : strained_Ge
+# dd : 68.264
+# xcen : 1049.35
+# ycen : 1118.88
+# xbet : -0.125
+# xgam : -0.343
+# pixelsize : 0.079142
+# xpixelsize : 0.079142
+# ypixelsize : 0.079142
+# CCDLabel : sCMOS
+# framedim : (2018, 2016)
+# detectordiameter : 165.0
+# kf_direction : Z>0

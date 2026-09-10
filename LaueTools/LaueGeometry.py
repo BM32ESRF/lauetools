@@ -1805,7 +1805,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
         nbcolumns = len(listcolumnsname)
 
         if verbose>0:
-            print('\n   In Compute_data2thetachi(): filename :', filename)
+            print(f'\n  ---- In Compute_data2thetachi(): filename : {filename} verboselevel={verbose}')
             print('nbpeaks', nbpeaks)
             print('alldata.shape', alldata.shape)
             print('raw nbcolumns', nbcolumns)

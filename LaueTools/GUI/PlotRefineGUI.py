@@ -1215,12 +1215,18 @@ class Plot_RefineFrame(wx.Frame):
                     hkl0 = annote_theo[0]
                     #print('hkl0',hkl0)
                     hkls = self.data_theo[2]
-                    theoindex = np.where(np.sum(np.hypot(hkls - hkl0, 0), axis=1) < 0.01)[0]
-                    #print('theoindex',theoindex)
-                    self.highlighttheospot = theoindex
-                    hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
-                    if self.verbose>0:
-                        print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
+                    #print('hkls',hkls)
+
+                    
+                    matches = np.where(np.sum(np.hypot(hkls - hkl0, 0), axis=1) < 0.01)[0]
+                    theoindex = int(matches[0]) if len(matches) > 0 else None 
+                    if theoindex is not None:      
+                        print('theoindex',theoindex)
+                        self.highlighttheospot = theoindex
+                        
+                        if self.verbose>0:
+                            hklstr = '[h,k,l]=[%d,%d,%d]'%(annote_theo[0][0], annote_theo[0][1], annote_theo[0][2])
+                            print('theo spot index : %d, '%theoindex + hklstr + ' X,Y=(%.2f,%.2f) Energy=%.3f keV'%(annote_theo[1], annote_theo[2], annote_theo[3]))
                 else:
                     self.sb.SetStatusText("", 0)
                     tip_theo = ""
@@ -2731,7 +2737,7 @@ class Plot_RefineFrame(wx.Frame):
         suffix = ""
         if self.incrementfilename.GetValue():
             self.savedfileindex += 1
-            suffix = "_fitnb_%d" % self.savedfileindex
+            suffix = "grain_%d" % self.savedfileindex
 
         outputfilename = self.DataPlot_filename.split(".")[0] + suffix + ".fit"
 
@@ -2860,7 +2866,7 @@ class Plot_RefineFrame(wx.Frame):
 
         self.data_theo_pixXY = [posx, posy, Miller_ind, Twicetheta, Chi, energy]
         """
-        if self.verbose>0:
+        if self.verbose>2:
             print(" self.detectordiameter in plot_RefineFrame.Simulate_Pattern() ",
                 self.detectordiameter)
             print('In Plot_RefineFrame.Simulate_Pattern()')

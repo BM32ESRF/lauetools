@@ -1158,7 +1158,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
 
     :param paramsHat: mexican hat kernel parameters (see :func:`LocalMaxima_ndimage`)
 
-    :param PixelNearRadius: integer, pixel distance between two regions considered as peaks.
+    :param PixelNearRadius: integer, pixel distance between two regions considered as peaks. (for local maxima search method 2 and 3, (array shit and convolve))
     
     .. note:: Start rather with a large value. If too low, there are very much peaks duplicates and this is very time consuming.
 
@@ -1246,7 +1246,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         t0 = ttt.time()
 
     if verbose>0:
-        print("in Peaksearch ---------")
+        print(f"-----In Peaksearch --------- verboselevel={verbose}")
         print('stackimageindex',stackimageindex)
         print('CCDLabel',CCDLabel)
 

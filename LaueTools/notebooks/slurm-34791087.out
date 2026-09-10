@@ -1,0 +1,6 @@
+/data/bm32/inhouse/SOFT/lauetoolsDEV/bin/python
+launching python script to load daxm scans
+len 1156
+('/data/visitor/a321217/bm32/20260707/RAW_DATA/CrZr/CrZr_fast_daxm_grid_1fileperscan/CrZr_fast_daxm_grid_1fileperscan.h5', 1, (slice(241, 265, None), slice(1767, 1768, None), slice(620, 621, None)))
+Loaded 1156 scans in 41.70 sec
+Results saved to /data/visitor/a321217/bm32/20260707/PROCESSED_DATA/loaddaxmscans_results.h5

@@ -137,7 +137,7 @@ def SpotLinks(twicetheta_exp,
     """
 
     if verbose>0:
-        print("\n In MatchingRate.SpotLinks() ********** Spots Association ************** \n")
+        print(f"\n In MatchingRate.SpotLinks() ********** Spots Association ******verboselevel={verbose}****** \n")
 
     Resi, ProxTable, _ = getProximity(np.array([twicetheta, chi]),  # warning array(2theta, chi)
                             twicetheta_exp / 2.0,

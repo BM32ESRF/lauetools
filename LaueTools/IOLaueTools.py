@@ -86,7 +86,7 @@ def writefile_cor(prefixfilename:str, twicetheta:List, chi:list, data_x:List, da
 
     if data_sat list, add column to .cor file to mark saturated peaks
     """
-    if verbose>0: GT.printyellow('In writefile_cor(): -------------\n')
+    if verbose>0: GT.printyellow(f'In writefile_cor(): -------verboselevel={verbose}------\n')
 
     nbspots = len(twicetheta)
 
@@ -313,7 +313,7 @@ def readfile_cor(fullpathfile:str, output_CCDparamsdict:Dict=False, output_only5
 
     #TODO: output 2theta ?
     """
-    if verbose>0: GT.printyellow('In readfile_cor(): ------------------')
+    if verbose>0: GT.printyellow(f'---In readfile_cor(): ------------------ verboselevel={verbose} ---')
 
     SKIPROWS = 1
     # read first line
@@ -729,7 +729,7 @@ def writefile_Peaklist(outputprefixfilename, Data_array, overwrite=True,
 
     TODO: simplify to implement larger number of spot properties
     """
-    if verbose>0: GT.printyellow('\n In writefile_Peaklist(): -------------')
+    if verbose>0: GT.printyellow(f'\n In writefile_Peaklist(): ------------- verboselevel={verbose} -------------')
     if Data_array is None:
         if verbose>0:
             print("No data peak to write")
@@ -2748,6 +2748,41 @@ def getpeaks_fromfit2d(fullpathfile):
     fric.close()
     print("X,Y, int list in %s" % (outputfilename))
     return len(peaklist)
+
+def write_statsfile(outputfilename, stats_res, bestmatrices):
+    # Column headers
+    header = (
+        "nb_exp_matched\tnb_theo\tstd_angle\t"
+        "spot_index_1\tspot_index_2\t"
+        "hkl1\thkl2\t"
+        "ub_matrix"
+    )
+
+    # Write to file
+    with open(outputfilename, "w") as f:
+        f.write(header + "\n")
+        for (row, ub_matrix) in zip(stats_res, bestmatrices):
+            nb_exp_matched, nb_theo, std_angle, spot_indices, hkl_pairs = row
+
+            # Split spot_indices into two columns
+            spot_index_1, spot_index_2 = spot_indices
+
+            # Split hkl_pairs into two columns (hkl1 and hkl2)
+            hkl1, hkl2 = hkl_pairs
+            hkl1_str = f"[{', '.join(map(str, hkl1))}]"
+            hkl2_str = f"[{', '.join(map(str, hkl2))}]"
+
+            # Format ub_matrix
+            ub_matrix_str = f"[[{'], ['.join(', '.join(map(str, row)) for row in ub_matrix)}]]"
+
+            # Write the row
+            line = (
+                f"{nb_exp_matched}\t{nb_theo}\t{std_angle}\t"
+                f"{spot_index_1}\t{spot_index_2}\t"
+                f"{hkl1_str}\t{hkl2_str}\t"
+                f"{ub_matrix_str}"
+            )
+            f.write(line + "\n")
 
 # ----------------------------------
 # Lauetools .fit file parser

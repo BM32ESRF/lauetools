@@ -649,7 +649,10 @@ class FilterBackGroundPanel(wx.Panel):
         self.SaveBlurredImage = wx.Button(sb, -1, "Save Blur Image",)
         self.FilterImage = wx.CheckBox(sb, -1, "Substract blur as background")
         self.bandgapstxt = wx.StaticText(sb, -1, "Distance from band gaps:")
-        self.bandgapsspinctrl = wx.SpinCtrl(sb, -1, "0", #size=(150, -1),
+        killdistance = 0
+        if self.mainframe.CCDLabel == 'EIGER_4MCdTe':
+            killdistance = 5
+        self.bandgapsspinctrl = wx.SpinCtrl(sb, -1,str(killdistance), #size=(150, -1),
                                                                min=0, max=9999)
         self.FilterImage.Bind(wx.EVT_CHECKBOX, self.OnSwitchFilterRawImage)
         self.FilterImage.SetValue(False)
@@ -790,7 +793,7 @@ class FilterBackGroundPanel(wx.Panel):
         if self.blurimage is not None:
             print("ok, I have got self.blurimage")
             print("Computing self.filteredimage")
-            CCDlabel = self.mainframe.CCDlabel
+            CCDlabel = self.mainframe.CCDLabel
 
             self.filteredimage = ImProc.computefilteredimage(self.mainframe.dataimage_ROI,
                                                             self.blurimage, CCDlabel, kernelsize=5)
@@ -803,7 +806,7 @@ class FilterBackGroundPanel(wx.Panel):
 
         set self.blurimage
         """
-        CCDlabel = self.mainframe.CCDlabel
+        CCDlabel = self.mainframe.CCDLabel
 
         print('min of self.mainframe.dataimage_ROI in onComputeBlurImage',np.amin(self.mainframe.dataimage_ROI))
 
@@ -848,7 +851,7 @@ class FilterBackGroundPanel(wx.Panel):
         dirname = self.mainframe.dirname
         OUTPUTFILENAME_RESULTIMAGE = "result_" + filename
 
-        CCDlabel = self.mainframe.CCDlabel
+        CCDlabel = self.mainframe.CCDLabel
 
         _header = IOimage.readheader(os.path.join(dirname, filename), CCDLabel=CCDlabel)
 
@@ -2148,7 +2151,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
 
         self.methodnumber = 1
         mainframe = parent.GetParent().GetParent()
-        CCDlabel = mainframe.CCDlabel
+        CCDlabel = mainframe.CCDLabel
         if CCDlabel.startswith("sCMOS"):
             pedestal = 1000
         else:
@@ -2159,6 +2162,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
 
         mintxt = wx.StaticText(self, -1, "MinimumDistance")
         self.PNR = wx.SpinCtrl(self, -1, "10", (100, -1), min=2, max=9999)
+        self.PNR.Disable()  # disable for method 1, not used
 
         ittxt = wx.StaticText(self, -1, "IntensityThreshold")
         self.IT = wx.SpinCtrl(self, -1, str(defaultthreshold), #(100, -1),
@@ -2415,7 +2419,7 @@ class FitParametersPanel(wx.Panel):
 
         this granparent must have following attributes and methods:
         OnPeakSearch()
-        GetParent().CCDlabel
+        GetParent().CCDLabel
         """
 
         self.granparent = parent.GetParent()
@@ -2460,11 +2464,11 @@ class FitParametersPanel(wx.Panel):
         peaksizetxt = wx.StaticText(self, -1, "Guessed Peak size")
         self.peaksizectrl = wx.TextCtrl(self, -1, "0.9")
 
-        # rejection
+        # rejection parameters after refinement
         txt2 = wx.StaticText(self, -1, "Rejection parameters")
         txt2.SetFont(font3)
 
-        saturation_value = DictLT.dict_CCD[self.granparent.GetParent().CCDlabel][2]
+        saturation_value = DictLT.dict_CCD[self.granparent.GetParent().CCDLabel][2]
 
         pixdevtxt = wx.StaticText(self, -1, "Max. Deviation (pixel)")
         self.FitPixelDev = wx.TextCtrl(self, -1, "6.0")
@@ -3009,26 +3013,32 @@ class MainPeakSearchFrame(wx.Frame):
         self.dirname = self.initialParameter["dirname"]
         self.LastLUT = self.initialParameter["mapsLUT"]
         self.writefolder = self.initialParameter["dirname"]
-        self.CCDlabel = self.initialParameter["CCDLabel"]
+        self.CCDLabel = self.initialParameter["CCDLabel"]
 
         self.scan_dict = None
         if self.imagefilename.endswith('.h5'):
             (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
 
             if os.path.exists(localh5path):
-                
-                with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
-                    scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
-                    scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
-                    dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
-                    scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
-                    scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
-                    scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
-                    self.scan_dict = {'scan_end_reason': scan_end_reason,   
-                                    'scan_blisscommand': scan_blisscommand, 
-                                    'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
-                                    'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
-                                    'scan_largestimageindex': scan_largestimageindex}
+                try:
+                    with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
+                        scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
+                        scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
+                        if scan_blisscommand.startswith(("ascan", "dscan", "amesh", "dmesh","f2dscan","fdmap")):
+                            dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
+                            scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
+                            scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
+                            scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
+                            self.scan_dict = {'scan_end_reason': scan_end_reason,   
+                                            'scan_blisscommand': scan_blisscommand, 
+                                            'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
+                                            'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
+                                            'scan_largestimageindex': scan_largestimageindex}
+
+                except:
+                    print('scan my be not finished or smth else, cannot read scan info from h5 file')
+                    print(localh5path)
+                    pass
 
 
         # for stacked images in hdf5 file
@@ -3044,7 +3054,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         (self.framedim, self.pixelsize, self.saturationvalue, self.fliprot, self.headeroffset,
                 self.dataformat, self.comments,
-                self.file_extension, ) = DictLT.dict_CCD[self.CCDlabel]
+                self.file_extension, ) = DictLT.dict_CCD[self.CCDLabel]
 
         self.figsize = size
 
@@ -3499,7 +3509,7 @@ class MainPeakSearchFrame(wx.Frame):
         # wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
 
         filepath_dlg = wx.FileDialog(self, "Select binary image file",
-                                                wildcard=DictLT.getwildcardstring(self.CCDlabel))
+                                                wildcard=DictLT.getwildcardstring(self.CCDLabel))
         if filepath_dlg.ShowModal() == wx.ID_OK:
 
             abspath = filepath_dlg.GetPath()
@@ -3524,7 +3534,7 @@ class MainPeakSearchFrame(wx.Frame):
         """Enter manually CCD file params
         Launch Entry dialog
         """
-        DPBoard = CCDParamGUI.CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDlabel)
+        DPBoard = CCDParamGUI.CCDFileParameters(self, -1, "CCD File Parameters Board", self.CCDLabel)
         DPBoard.ShowModal()
         DPBoard.Destroy()
 
@@ -3820,7 +3830,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.image_with_index = True
         try:
             self.imageindex = IOimage.getIndex_fromfilename(self.imagefilename,
-                                                            CCDLabel=self.CCDlabel,
+                                                            CCDLabel=self.CCDLabel,
                                                             stackimageindex=self.stackimageindex,
                                                             nbdigits=self.nbdigits)
             print("************\n\n\nself.imageindex %d \n\n****************" % self.imageindex)
@@ -3830,11 +3840,11 @@ class MainPeakSearchFrame(wx.Frame):
 
     def setfilename(self):
         """set filename from self.imagefilename, self.imageindex,
-                                                    CCDLabel=self.CCDlabel
+                                                    CCDLabel=self.CCDLabel
         """
         if self.verbose>0:
                 print("***  in  setfilename   *****")
-                print("self.CCDLabel", self.CCDlabel)
+                print("self.CCDLabel", self.CCDLabel)
                 print('self.stackedimages', self.stackedimages)
                 print('***** \n\nself.image_with_index',self.image_with_index)
         
@@ -3842,7 +3852,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.misstext=''
             self.lastimagefilename = self.imagefilename
             self.imagefilename = IOimage.setfilename(self.imagefilename, self.imageindex,
-                                                    CCDLabel=self.CCDlabel, nbdigits=self.nbdigits)
+                                                    CCDLabel=self.CCDLabel, nbdigits=self.nbdigits)
             print('self.imagefilename',self.imagefilename)
             print('self.dirname',self.dirname)
             if not self.imagefilename in os.listdir(self.dirname):
@@ -3898,7 +3908,7 @@ class MainPeakSearchFrame(wx.Frame):
         #        print self.canvas.GetScreenRect()
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
         if self.stackedimages:
-            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            #         if self.CCDLabel in ('EIGER_4Mstack',):
             self.stackimageindex += self.stepindex
             self.stackimageindex = max(0,self.stackimageindex)
         else:
@@ -3913,7 +3923,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
         if self.stackedimages:
-            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            #         if self.CCDLabel in ('EIGER_4Mstack',):
             self.stackimageindex -= self.stepindex
             self.stackimageindex = max(0,self.stackimageindex)
         else:
@@ -3946,7 +3956,7 @@ class MainPeakSearchFrame(wx.Frame):
         """
         print('onMinus')
         if self.stackedimages:
-            #         if self.CCDlabel in ('EIGER_4Mstack',):
+            #         if self.CCDLabel in ('EIGER_4Mstack',):
             self.stackimageindex -= 1
             self.stackimageindex = max(0,self.stackimageindex)
         else:
@@ -4007,7 +4017,7 @@ class MainPeakSearchFrame(wx.Frame):
         
         if self.verbose>0:
                 print("***   resetfilename_and_plot   *****")
-                print("self.CCDLabel", self.CCDlabel)
+                print("self.CCDLabel", self.CCDLabel)
                 print('self.stackedimages', self.stackedimages)
 
         nbd = self.ImagesBrowser.nbdigitsctrl.GetValue()
@@ -4088,15 +4098,15 @@ class MainPeakSearchFrame(wx.Frame):
             print(txt)
             wx.MessageBox(f'{txt}', 'Info')
 
-        if self.CCDlabel == "LaueImaging":
+        if self.CCDLabel == "LaueImaging":
 
             self.paramsHat = (6, 8, 4)
 
-        print("CCD label in PeakSearchGUI: ", self.CCDlabel)
+        print("CCD label in PeakSearchGUI: ", self.CCDLabel)
         print("self.stackimageindex", self.stackimageindex)
 
         dataimage, framedim, _ = IOimage.readCCDimage(imagefilename,
-                                                        CCDLabel=self.CCDlabel,
+                                                        CCDLabel=self.CCDLabel,
                                                         dirname=self.dirname,
                                                         stackimageindex=self.stackimageindex)
 
@@ -4105,9 +4115,9 @@ class MainPeakSearchFrame(wx.Frame):
         else:  # TODO better use self.format ??
             # type np.int to test with cython module arr.pyx
             #             self.dataimage_ROI = dataimage.astype(np.int16)
-            if self.CCDlabel in ("EIGER_4M","EIGER_4MCdTe", "EIGER_4MCdTestack", 'EIGER_1M'):
+            if self.CCDLabel in ("EIGER_4M","EIGER_4MCdTe", "EIGER_4MCdTestack", 'EIGER_1M'):
                 img_dataformat = np.uint32
-            elif self.CCDlabel in ("MaxiPIXCdTe",):
+            elif self.CCDLabel in ("MaxiPIXCdTe",):
                 img_dataformat = np.int32
                 if self.stackedimages:
                     self.Nbstackedimages = framedim[0]
@@ -4127,9 +4137,9 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 int(self.boxx),
                                                                 int(self.boxy),
                                                                 dirname=self.dirname,
-                                                                CCDLabel=self.CCDlabel)
+                                                                CCDLabel=self.CCDLabel)
 
-        if self.CCDlabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "IMSTAR_bin3", "sCMOS_9M"):
+        if self.CCDLabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "IMSTAR_bin3", "sCMOS_9M"):
             self.vminmin = 0
             self.vmiddle = 1010
             self.vmaxmax = 10000
@@ -4204,7 +4214,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.IminDisplayed = 1
         # highest pixel intensity
-        #        self.ImaxDisplayed = DictLT.dict_CCD[self.CCDlabel][2]
+        #        self.ImaxDisplayed = DictLT.dict_CCD[self.CCDLabel][2]
         # value defined
         self.ImaxDisplayed = self.viewingLUTpanel.slider_vmax.GetValue()
         self.IminDisplayed = self.viewingLUTpanel.slider_vmin.GetValue()
@@ -4449,10 +4459,10 @@ class MainPeakSearchFrame(wx.Frame):
             
             imagefolder = self.dirname
 
-            if self.CCDlabel == 'EIGER_4MCdTe':
+            if self.CCDLabel == 'EIGER_4MCdTe':
                 prefix='eiger4m_'
                 suffix='h5'
-            elif self.CCDlabel.startswith('sCMOS'):
+            elif self.CCDLabel.startswith('sCMOS'):
                 prefix='img_'
                 suffix='tif'
 
@@ -4571,7 +4581,7 @@ class MainPeakSearchFrame(wx.Frame):
         #                 boxsize_col, boxsize_line,
         #                 selectedcounters)
         #         MOS.buildMosaic2(param, dirname,
-        #                          ccdlabel=self.CCDlabel,
+        #                          ccdlabel=self.CCDLabel,
         #                          parent=parent)
 
         # continuous indices extract
@@ -4587,7 +4597,7 @@ class MainPeakSearchFrame(wx.Frame):
         dict_param = {}
         dirname = dict_param["imagesfolder"] = self.dirname
         dict_param["filename_representative"] = self.imagefilename
-        dict_param["CCDLabel"] = self.CCDlabel
+        dict_param["CCDLabel"] = self.CCDLabel
         dict_param["nbdigits"] = nbdigits
 
         dict_param["selected2Darray_imageindex"] = selected2Darray_imageindex
@@ -4612,7 +4622,7 @@ class MainPeakSearchFrame(wx.Frame):
         outputfolder = dirname
 
         MOS.buildMosaic3(dict_param, outputfolder, parent=parent,
-                         ccdlabel=self.CCDlabel, dictfittingparameters=dictfittingparameters)
+                         ccdlabel=self.CCDLabel, dictfittingparameters=dictfittingparameters)
 
     def onOpenBImage(self, _):
         self.FileDialog = wx.FileDialog(self, "Choose an image", style=wx.OPEN,
@@ -4630,7 +4640,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         if self.verbose>0:
             print("***  at the end of  onOpenBImage   *****")
-            print("self.CCDLabel", self.CCDlabel)
+            print("self.CCDLabel", self.CCDLabel)
             print('self.stackedimages', self.stackedimages)
             print('***** \n\nself.image_with_index',self.image_with_index)
 
@@ -4679,7 +4689,7 @@ class MainPeakSearchFrame(wx.Frame):
         print("use formula to calculate new image")
         print(formulaexpression)
 
-        SaturationLevel = DictLT.dict_CCD[self.CCDlabel][2]
+        SaturationLevel = DictLT.dict_CCD[self.CCDLabel][2]
 
         newarray = ImProc.applyformula_on_images(self.dataimage_ROI,
                                                 self.dataimage_ROI_B,
@@ -5323,7 +5333,7 @@ class MainPeakSearchFrame(wx.Frame):
 
         filename = self.imagefilename
         dirname = os.path.abspath(self.dirname)
-        CCDLabel = self.CCDlabel
+        CCDLabel = self.CCDLabel
 
         # use image resulting form formula e.g. : A =  A-B
         if self.ImageFilterpanel.usealsoforfit.GetValue():
@@ -5393,7 +5403,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.plot_singlefitresults_chck.GetValue():  # showplot:
             framedim = self.framedim
             # patch ------------------------------------
-            if self.CCDlabel in ("VHR_PSI","EIGER_4M"):#, "EIGER_4MCdTe"):
+            if self.CCDLabel in ("VHR_PSI","EIGER_4M"):#, "EIGER_4MCdTe"):
                 framedim = self.framedim[1], self.framedim[0]
             # ----------------------------
             # crop data for local fit
@@ -5715,7 +5725,7 @@ class MainPeakSearchFrame(wx.Frame):
             
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
                             stackimageindex=self.stackimageindex,
-                            CCDLabel=self.CCDlabel,
+                            CCDLabel=self.CCDLabel,
                             NumberMaxofFits=NB_MAX_FITS,
                             PixelNearRadius=self.dict_param["PixelNearRadius"],
                             removeedge=2,
@@ -5751,7 +5761,7 @@ class MainPeakSearchFrame(wx.Frame):
         if self.method == 2:  # shifted array maxima search
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
                                     stackimageindex=self.stackimageindex,
-                                    CCDLabel=self.CCDlabel,
+                                    CCDLabel=self.CCDLabel,
                                     NumberMaxofFits=NB_MAX_FITS,
                                     PixelNearRadius=self.dict_param["PixelNearRadius"],
                                     removeedge=2,
@@ -5796,7 +5806,7 @@ class MainPeakSearchFrame(wx.Frame):
 
             ResPeakSearch = RMCCD.PeakSearch(imagefilename,
                                         stackimageindex=self.stackimageindex,
-                                        CCDLabel=self.CCDlabel,
+                                        CCDLabel=self.CCDLabel,
                                         NumberMaxofFits=NB_MAX_FITS,
                                         PixelNearRadius=self.dict_param["PixelNearRadius"],
                                         removeedge=2,
@@ -5839,7 +5849,7 @@ class MainPeakSearchFrame(wx.Frame):
                                                      self.dict_param["IntensityThreshold"], 
                                                      self.dict_param["boxsizeSKIMAGE"], 
                                                      fit_option, 
-                                                     self.CCDlabel,
+                                                     self.CCDLabel,
                                                      use_multiprocessing=internal_multiprocessing,
                                                      npixels=npixels_bandgap)
             

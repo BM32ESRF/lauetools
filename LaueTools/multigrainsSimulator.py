@@ -370,7 +370,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                                                             angle_list[ChildGrain_index],
                                                             u=axis_list[ChildGrain_index])
                 
-                print('qvectors_ChildGrain',qvectors_ChildGrain)
+                #print('qvectors_ChildGrain',qvectors_ChildGrain)
                 # list of spot which are on camera(without harmonics)
                 # hkl are common to all child grains
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
@@ -423,7 +423,7 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     factor_list[2][ChildGrain_index],
                     u=axis_list[2][ChildGrain_index])
                 # list of spots for a child grain (on camera + without harmonics)
-                print('qvectors_ChildGrain.shape',qvectors_ChildGrain.shape)
+                #print('qvectors_ChildGrain.shape',qvectors_ChildGrain.shape)
 
                 spots2pi = [qvectors_ChildGrain], HKLs_ParentGrain
 

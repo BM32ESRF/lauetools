@@ -411,7 +411,8 @@ def tensile_along_u(v:np.ndarray, tensile:float, u:Union[Iterable, str]="zsample
     """
     omegasurfacesample = 40 * DEG  # 40 deg sample inclination
     real_expansion_coef = tensile
-    if u == "zsample":
+    print('u', u)
+    if isinstance(u, str) and u == "zsample":
         # u direction traction in q space in absolute frame
         direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])
     else:
@@ -482,7 +483,7 @@ def strain_along_u(v:np.ndarray, alpha, u:Union[Iterable, str]="zsample", angles
     result is an array
     """
     omegasurfacesample = anglesample * DEG  # 40 deg sample inclination
-    if u == "zsample":
+    if isinstance(u, str) and u == "zsample":
         # u direction traction in q space in absolute frame
         direction_traction = np.array([-np.sin(omegasurfacesample), 0, np.cos(omegasurfacesample)])
     else:
@@ -3068,6 +3069,28 @@ def filter_peaks_close_to_detector_edges(peak_list:np.ndarray, distance_x:int, d
     indices = np.where(condition)[0]
 
     return np.take(peak_list, indices, axis=0), indices
+
+
+def are_all_close_elementwise(values, references, rel_tol=0.001):
+    """
+    Check if all values in the list are element-wise close to the corresponding references,
+    within a 0.1% relative tolerance.
+
+    Args:
+        values (list): List of 6 real values to test.
+        references (list): List of 6 reference values.
+        rel_tol (float): Relative tolerance (0.1% = 0.001).
+
+    Returns:
+        bool: True if all element-wise comparisons are close, False otherwise.
+    """
+    if len(values) != 6 or len(references) != 6:
+        raise ValueError("Both 'values' and 'references' must be lists of 6 elements.")
+
+    for val, ref in zip(values, references):
+        if not np.isclose(val, ref, rtol=rel_tol):
+            return False
+    return True
 
 # ----- ------------  plot tools: colormap
 # plt.get_cmap replaces mplcm.get_cmap for matplotlib 3.11
