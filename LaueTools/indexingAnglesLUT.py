@@ -2534,7 +2534,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
         else:
             if verbose>1:
-                print("Sorry :[ ! No orientation matrix found with nb of matches larger than %d"% Minimum_Nb_Matches)
+                print("Sorry :[ !No orientation matrix found with nb of matches larger than %d"% Minimum_Nb_Matches)
             if verbose>2:
                 print("Try to:")
                 print("- decrease Ns (MNMS: minimum number of matched spots)")
