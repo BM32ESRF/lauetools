@@ -1752,16 +1752,16 @@ def matxmas_to_matstarlab(satocr, calib):
     return matstarlab2
 
 
-def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=None,
-                                                        kf_direction="Z>0",
-                                                        verbose=0,
-                                                        pixelsize:float=165.0 / 2048,
-                                                        dim=(2048, 2048),
-                                                        saturation=0,
-                                                        forceextension_lines_to_extract=None,
-                                                        col_isbadspot=None,
-                                                        alpha_xray_incidence_correction=None,
-                                                        addspotproperties=False):
+def Compute_data2thetachi(filename:str, sorting_intensity:str="yes", detectorparams=None,
+                                    kf_direction="Z>0",
+                                    verbose=0,
+                                    pixelsize:float=165.0 / 2048,
+                                    dim=(2048, 2048),
+                                    saturation=0,
+                                    forceextension_lines_to_extract=None,
+                                    col_isbadspot=None,
+                                    alpha_xray_incidence_correction=None,
+                                    addspotproperties=False):
     r"""
     Read a file and convert spot positions x,y to scattering angles 2theta, chi according to detector parameters
 
@@ -1966,7 +1966,7 @@ def Compute_data2thetachi(filename:str, sorting_intensity="yes", detectorparams=
         return twicetheta, chi, dataintensity, data_x, data_y, dict_spotsproperties
 
 def convertdat2corfile(filename_dat:str, fullpath_det:str, dirname_in:str=None,
-                                        dirname_out:str=None, verbose=0):
+                                        dirname_out:str=None, verbose:int=0):
     """
     Write a .cor file from a .dat file (peaksearch made peaks list) taking into account a .det file (calibration file)
 
@@ -2010,7 +2010,7 @@ def convertdat2corfile(filename_dat:str, fullpath_det:str, dirname_in:str=None,
 
     #dict_spotsproperties = IOLT.getspotsproperties_dat(datfilename_in)
 
-    if verbose:
+    if verbose>0:
         print('In convertdat2corfile() :')
         print('pixelsize',pixelsize)
         print('CCDCalibdict',CCDCalibdict)
@@ -2027,7 +2027,7 @@ def convertdat2corfile(filename_dat:str, fullpath_det:str, dirname_in:str=None,
 
 def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None, dirname_out:str=None,
                                         pixelsize:float=165.0 / 2048,
-                                        CCDCalibdict=None, add_props=False,
+                                        CCDCalibdict:dict=None, add_props:bool=False,
                                         addspotproperties:bool=False,
                                         verbose:int=0):
     r"""
@@ -2050,7 +2050,7 @@ def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None
 
     TODO:  remove add_props
     """
-    if verbose:
+    if verbose>0:
         print('In convert2corfile(): ')
     if dirname_in != None:
         fullpathdat_in = os.path.join(dirname_in, filename_dat)
@@ -2144,7 +2144,7 @@ def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None
                                                             dict_data_spotsproperties=dict_spotsproperties,
                                                             dirname_output=dirname_out,
                                                             verbose=verbose)
-    if verbose:
+    if verbose>0:
         print('In convert2corfile()  at the end: ')
         print('Writing .cor file in ',finalcorfilename)
         if dirname_out is not None:
