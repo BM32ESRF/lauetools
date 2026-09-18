@@ -764,7 +764,7 @@ def evaluate_lattice_param(param):
                 return param
     return param  # Already a number
 
-def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
+def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials, verbose=0):
     r"""
     Create grain parameters list for the Laue pattern simulation.
 
@@ -775,9 +775,14 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     :param dictmaterials: dictionary or Materials instance containing material data
     :return: grain (4 elements list), contains_U (boolean)
     """
+    if verbose>0:
+        print("In GrainParameter_from_Material()  --------")
+        
     # --- Handle both dict and Materials instance ---
     if isinstance(dictmaterials, dict):
         # Case 1: dictmaterials is a plain dictionary
+        if verbose>0:
+            print("# Case 1: dictmaterials is a plain dictionary")
         try:
             #print("key_material", key_material)
             #print("dictmaterials[key_material]", dictmaterials[key_material])
@@ -790,6 +795,8 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
             Structure_extinction = dictmaterials[key_material]["extinction"]
     else:
         # Case 2: dictmaterials is a Materials instance
+        if verbose>0:
+            print("# Case 2: dictmaterials is a Materials instance")
         material_data = dictmaterials.get_material(key_material)
         if material_data is None:
             raise KeyError(f"Unknown key '{key_material}' for material")
@@ -803,7 +810,8 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
     # --- Process based on length of unitCellparameters ---
     if len(unitCellparameters) == 6:  # a, b, c, alpha, beta, gamma
         Bmat = calc_B_RR(unitCellparameters, directspace=1)
-        grain = [Bmat, Structure_extinction, np.zeros((3, 3)), elem_key]
+        Umat = np.zeros((3, 3))
+        grain = [Bmat, Structure_extinction, Umat, elem_key]
         contains_U = False
 
     elif len(unitCellparameters) == 4:  # Da, U, B, Dc
@@ -817,8 +825,18 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials):
         grain = [Bmat, Structure_extinction, Umat, elem_key]
         contains_U = True
 
+    
+
     else:
         raise TypeError("Something is wrong in the material definition in dict_Materials")
+
+    if verbose>0:
+        print('\n----at the end of GrainParameter_from_Material()------')
+        print("grain", grain)
+        print("contains_U", contains_U)
+        print('Umat', Umat)
+        print('type Umat', type(Umat))
+        print('end of GrainParameter_from_Material()---------\n')
 
     return grain, contains_U
 
@@ -832,7 +850,9 @@ def isOrientMatrix(mat):
 
     :return: boolean
     """
+
     try:
+        mat = np.array(mat, dtype=np.float64)
         val = np.linalg.det(np.array(mat))
     except (TypeError, ValueError, np.linalg.LinAlgError):
         raise TypeError("OrientMatrix is not a matrix!")
@@ -841,7 +861,7 @@ def isOrientMatrix(mat):
     return True
 
 
-def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dictmaterials:dict=dict_Materials):
+def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dictmaterials:dict=dict_Materials, verbose:int=0):
     r"""
     Constructor of the grain (crystal) parameters for Laue pattern simulation
 
@@ -858,12 +878,28 @@ def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dic
             otherwise use other extinction correspondoing to the label
     :type force_extinction: str
     """
+    if verbose>0:
+            print("In Prepare_Grain()  --------")
+            print("key_material", key_material)
+            print("type dictmaterials", type(dictmaterials))
+            print('OrientMatrix', OrientMatrix)
+            print('type OrientMatrix', type(OrientMatrix))
+            print('OrientMatrix dtype', OrientMatrix.dtype)
 
     if key_material not in list(dictmaterials.keys()):
         raise KeyError("%s is unknown! You need to create before using"
             " Prepare_Grain." % key_material)
 
-    grain, contains_U = GrainParameter_from_Material(key_material, dictmaterials)
+    
+
+    grain, contains_U = GrainParameter_from_Material(key_material, dictmaterials, verbose=verbose)
+
+    if verbose>0:
+        print("grain", grain)
+        print("contains_U", contains_U)
+        print('Umat', grain[2])
+        print('type Umat', type(grain[2]))
+        
 
     if force_extinction is not None:
         grain[1] = force_extinction
@@ -871,6 +907,11 @@ def Prepare_Grain(key_material:str, OrientMatrix, force_extinction:str=None, dic
     if contains_U:  # grain contains an orient matrix
         return grain
     else:
+        if verbose>0:
+            print('OrientMatrix to be used in grain', OrientMatrix)
+            print('type OrientMatrix', type(OrientMatrix))
+            print('OrientMatrix dtype', OrientMatrix.dtype)
+
         if OrientMatrix is not None:
             if isOrientMatrix(OrientMatrix):
                 grain[2] = OrientMatrix
@@ -1673,6 +1714,7 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
     P = GT.matRot([0, 1, 0], -sampletilt)
     #    M = np.dot(np.linalg.inv(P), UBmat)
     # P pure rotation matrix : inverse = transposed
+    UBmat = np.array(UBmat, dtype=np.float64)
     M = np.dot(P.transpose(), UBmat) 
     invM = np.dot(np.linalg.inv(UBmat), P)
 

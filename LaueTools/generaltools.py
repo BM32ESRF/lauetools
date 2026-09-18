@@ -2338,9 +2338,9 @@ def matRot(axis:Iterable[float], angle:'degrees')->np.ndarray:
                     [-unitvec[1], unitvec[0], 0.0]])
     angrad = angle * DEG
 
-    return (np.cos(angrad) * IDENTITYMATRIX
+    return np.array(np.cos(angrad) * IDENTITYMATRIX
         + (1 - np.cos(angrad)) * syme
-        + np.sin(angrad) * antisyme)
+        + np.sin(angrad) * antisyme, dtype=np.float64)
 
 def propose_orientation_from_hkl(HKL:Iterable[float], target2theta:'degrees'=90.,targetchi:'degrees'=0., B0matrix:np.ndarray=None, randomrotation:bool=False, verbose:int=0)-> np.ndarray:
     """

@@ -318,6 +318,9 @@ def parse_grainparameters(SingleCrystalParams):
         raise ValueError("wrong B matrix format!")
     if np.array(Orientmatrix).shape != (3, 3):
         raise ValueError("wrong Orientmatrix format!")
+
+    Orientmatrix = np.array(Orientmatrix, dtype=np.float64)
+
     return Bmatrix, Extinc, Orientmatrix, key_for_dict
 
 
@@ -1632,9 +1635,12 @@ def calcSpots_fromHKLlist(UB, B0, HKL, dictCCD):
     # H,K,L
     tHKL = np.transpose(HKL)
 
+    tHKL = np.array(tHKL, dtype=np.float64)
+
     # initial lattice rotation and distorsion
 
     tQ = np.dot(np.dot(UB, B0), tHKL)
+    tQ=np.array(tQ, dtype=np.float64)
     # results are qx,qy,qz
 
     # Q**2

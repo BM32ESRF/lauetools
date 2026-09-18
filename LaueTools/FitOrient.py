@@ -100,6 +100,7 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
 
     # selecting nspots of DATA_Q
     DATAQ = np.take(DATA_Q, nspots, axis=0)
+    DATAQ = np.array(DATAQ, dtype=np.float64)
     trQ = np.transpose(DATAQ)  # np.array(Hs, Ks,Ls) for further computations
 
     if initrot is not None:
@@ -133,6 +134,7 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
         matfromQuat = np.eye(3)
 
     Qrot = np.dot(matfromQuat, trQ)  # lattice rotation due to quaternion
+    Qrot = np.array(Qrot, dtype=np.float64)
     Qrotn = np.sqrt(np.sum(Qrot ** 2, axis=0))  # norms of Q vectors
 
     twthe, chi = F2TC.from_qunit_to_twchi(1.*Qrot / Qrotn)

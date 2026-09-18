@@ -3017,29 +3017,33 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.scan_dict = None
         if self.imagefilename.endswith('.h5'):
-            (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
+            try:
+                (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
+            
 
-            if os.path.exists(localh5path):
-                try:
-                    with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
-                        scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
-                        scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
-                        if scan_blisscommand.startswith(("ascan", "dscan", "amesh", "dmesh","f2dscan","fdmap")):
-                            dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
-                            scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
-                            scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
-                            scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
-                            self.scan_dict = {'scan_end_reason': scan_end_reason,   
-                                            'scan_blisscommand': scan_blisscommand, 
-                                            'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
-                                            'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
-                                            'scan_largestimageindex': scan_largestimageindex}
+                if os.path.exists(localh5path):
+                    try:
+                        with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
+                            scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
+                            scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
+                            if scan_blisscommand.startswith(("ascan", "dscan", "amesh", "dmesh","f2dscan","fdmap")):
+                                dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
+                                scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
+                                scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
+                                scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
+                                self.scan_dict = {'scan_end_reason': scan_end_reason,   
+                                                'scan_blisscommand': scan_blisscommand, 
+                                                'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
+                                                'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
+                                                'scan_largestimageindex': scan_largestimageindex}
 
-                except:
-                    print('scan my be not finished or smth else, cannot read scan info from h5 file')
-                    print(localh5path)
-                    pass
-
+                    except:
+                        print('scan my be not finished or smth else, cannot read scan info from h5 file')
+                        print(localh5path)
+                        pass
+            except:
+                print('cannot reach read scan info from h5 file. The folder must follow the tree organization of bliss. The folder is: %s' % self.dirname)
+                pass
 
         # for stacked images in hdf5 file
         self.stackedimages = self.initialParameter["stackedimages"]

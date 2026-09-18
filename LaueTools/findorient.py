@@ -576,6 +576,8 @@ def find_lowest_Euler_Angles_matrix(mat, verbose=0):
     :param mat: UB matrix
     :return: matfinal, transfmat
     """
+    mat = np.array(mat, dtype=np.float64)
+
     if LA.det(mat) < 0.0:
         raise ValueError("warning : det < 0 in input of find_lowest_Euler_Angles_matrix")
 

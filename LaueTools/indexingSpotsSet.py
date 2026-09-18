@@ -1147,7 +1147,7 @@ class spotsset:
         :type emin: integer
         :param emax: maximum energy bandpass (for structural refinement). self.emax_MR sets the maximum energy for angular matching rate computation
         :type emax: integer
-        :param dict_parameters: dictionary of parameters for the loop and spots set size
+        :param dict_parameters: dictionary of parameters for the spots set size and the refinement procedure (see LaueTools.dict_LaueTools.dict_parameters)
         :type dict_parameters: dictionary
         :param database: if not None, big array of templates for image matching indextion
         :type database: array
@@ -2004,7 +2004,11 @@ class spotsset:
             print("self.key_material in getSpotsLinks()", self.key_material)
             print('emax_simul',emax_simul)
         # simulated data
-        grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix, dictmaterials=self.dict_Materials)
+        grain = CP.Prepare_Grain(self.key_material, UBOrientMatrix, dictmaterials=self.dict_Materials, verbose=verbose-1)
+
+        if verbose>0:
+            print("grain in getSpotsLinks()", grain)
+            print("self.key_material in getSpotsLinks()", self.key_material)
         
         
 

@@ -1194,40 +1194,40 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
     if "UBmat" in dict_matrices:
         footer += "UB matrix in q= (UB) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        footer += str(dict_matrices["UBmat"].round(decimals=9)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["UBmat"], dtype=np.float64), decimals=9)) + "\n"
 
     # added O Robach fields   ------------------------
     if "Umat2" in dict_matrices:
         footer += "Umatrix in q_lab= (Umatrix) (B) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        footer += str(dict_matrices["Umat2"].round(decimals=9)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["Umat2"], dtype=np.float64), decimals=9)) + "\n"
 
     if "Bmat_tri" in dict_matrices:
         footer += "Bmatrix in q_lab= (U) (Bmatrix) B0 G* \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
-        footer += str(dict_matrices["Bmat_tri"].round(decimals=9)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["Bmat_tri"], dtype=np.float64),    decimals=9)) + "\n"
 
         footer += "(B-I)*1000 \n"
         #            outputfile.write(str(self.UBB0mat) + '\n')
         smattri = (dict_matrices["Bmat_tri"] - np.eye(3)) * 1000.0
-        footer += str(smattri.round(decimals=3)) + "\n"
+        footer += str(np.round(np.array(smattri, dtype=np.float64), decimals=3)) + "\n"
 
     if ("HKLxyz_names" in dict_matrices) and ("HKLxyz" in dict_matrices):
         footer += "HKL coord. of lab and sample frame axes :\n"
         for k in list(range(6)):
             footer += dict_matrices["HKLxyz_names"][k] + "\t"
-            footer += str(dict_matrices["HKLxyz"][k].round(decimals=3)) + "\n"
+            footer += str(np.round(np.array(dict_matrices["HKLxyz"][k], dtype=np.float64), decimals=3)) + "\n"
 
     # ---------- end O Robach fields
     if "B0" in dict_matrices:
         footer += "B0 matrix in q= UB (B0) G*\n"
-        footer += str(dict_matrices["B0"].round(decimals=8)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["B0"], dtype=np.float64), decimals=8)) + "\n"
 
     if "UBB0" in dict_matrices:
         footer += "UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns "
         footer += "in LT frame: astar = UBB0[:,0], bstar = UBB0[:,1], cstar = UBB0[:,2]. (abcstar as columns on xyzlab1, "
         footer += "xlab1 = ui, ui = unit vector along incident beam)\n"
-        footer += str(dict_matrices["UBB0"].round(decimals=8)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["UBB0"], dtype=np.float64), decimals=8)) + "\n"
 
     if "euler_angles" in dict_matrices:
         footer += "Euler angles phi theta psi (deg)\n"
@@ -1236,25 +1236,25 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
     if "mastarlab" in dict_matrices:
         footer += "matstarlab , abcstar on xyzlab2, ylab2 = ui : astar_lab2 = matstarlab[0:3] "
         footer += ",bstar_lab2 = matstarlab[3:6], cstar_lab2 = matstarlab[6:9] \n"
-        footer += str(dict_matrices["matstarlab"].round(decimals=7)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["matstarlab"], dtype=np.float64), decimals=7)) + "\n"
 
     if "matstarsample" in dict_matrices:
         footer += "matstarsample , abcstar on xyzsample2, xyzsample2 obtained by rotating xyzlab2 "
         footer += "by MG.PAR.omega_sample_frame around xlab2, astar_sample2 = matstarsample[0:3] "
         footer += ",bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
-        footer += str(dict_matrices["matstarsample"].round(decimals=8)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["matstarsample"], dtype=np.float64), decimals=8)) + "\n"
 
     if "devstrain_crystal" in dict_matrices:
         footer += "deviatoric strain in direct crystal frame (10-3 unit)\n"
-        footer += str((dict_matrices["devstrain_crystal"] * 1000.0).round(decimals=2)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["devstrain_crystal"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
 
     if "devstrain_sample" in dict_matrices:
         footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
-        footer += str((dict_matrices["devstrain_sample"] * 1000.0).round(decimals=2)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["devstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
 
     if "LatticeParameters" in dict_matrices:
         footer += "new lattice parameters\n"
-        footer += str(dict_matrices["LatticeParameters"].round(decimals=7)) + "\n"
+        footer += str(np.round(np.array(dict_matrices["LatticeParameters"], dtype=np.float64), decimals=7)) + "\n"
 
     if "CCDLabel" in dict_matrices:
         footer += "CCDLabel\n"
