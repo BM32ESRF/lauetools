@@ -781,6 +781,9 @@ if WXPYTHON:
             self.dataraw =copy.copy(dataarray)
             # data to be displayed
             self.data = dataarray
+
+            self.data = np.clip(self.data, 1, None)  # Clip values below 1 to avoid log scale issues
+
             self.datatype = datatype
     
             self.absolutecornerindices = absolutecornerindices
