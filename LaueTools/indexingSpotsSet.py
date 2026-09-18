@@ -2301,7 +2301,7 @@ class spotsset:
 
 
         if len(list_matrices) == 1:  # patch when only matrix found by self.FindOrientMatrices()
-            list_stats = [list_stats[0][:3]]
+            list_stats = [list_stats[0][:5]]
 
         if isinstance(spot_index_central, int):
             spotindex_maxspotindex = spot_index_central
@@ -2314,7 +2314,7 @@ class spotsset:
 
         MatchingRate_list = []
         for stat in list_stats:
-            nbmatches, nbtheo, _ = stat
+            nbmatches, nbtheo, _ ,_,_= stat
             MR = 100.0 * nbmatches / nbtheo
             MatchingRate_list.append(MR)
 
