@@ -1055,7 +1055,10 @@ class StrainXtal(wx.Panel):
         else:
             # Basic dictionary: assume structure is {key: {'lattice': [...], 'extinction': '...'}}
             self.key_material_initparams_in_dict = copy.copy(DictLT.dict_Materials[self.key_material])
-            self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material]['lattice'])
+            try:
+                self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material]['lattice'])
+            except TypeError:
+                self.lattice_parameters = copy.copy(DictLT.dict_Materials[self.key_material][1])
 
         # Initialize lattice_parameters_dict and update UI controls
         for k, key_param in enumerate(self.lattice_parameters_key):
