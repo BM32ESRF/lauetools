@@ -1269,20 +1269,20 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
         if CCDLabel in ("EIGER_4Munstacked",):
             dataimage = np.ma.masked_where(dataimage > 4000000, dataimage)
-            if verbose > 0:
+            if verbose > 1:
                 print("framedim", framedim)
                 print("offsetheader", offsetheader)
                 print("formatdata", formatdata)
                 print("dataimage", dataimage)
 
-    if verbose:
+    if verbose>0:
         print("CCDLabel: ", CCDLabel)
         print("nb of pixels", np.shape(dataimage))
 
     # need to reshape data from 1D to 2D
     try:
         if len(dataimage.shape) == 1:
-            if verbose:
+            if verbose>1:
                 print("nb elements", len(dataimage))
                 print("framedim", framedim)
                 print("framedim nb of elements", framedim[0] * framedim[1])
