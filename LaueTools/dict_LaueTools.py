@@ -373,7 +373,9 @@ elif not(USE_MATERIALS_LIBRARY):
         "Magnetite_fcc": ["Magnetite_fcc", [8.391, 8.391, 8.391, 90, 90, 90], "fcc"],  # GS 225 fcc extinction
         "Magnetite": ["Magnetite", [8.391, 8.391, 8.391, 90, 90, 90], "dia"],  # GS 227
         "Magnetite_sc": ["Magnetite_sc", [8.391, 8.391, 8.391, 90, 90, 90], "no"],  # no extinction
+        "MgFe2O4": ["MgFe2O4", [8.35, 8.35,8.35, 90, 90, 90], "SG227"],
         "MgO": ["MgO", [4.211, 4.211, 4.211, 90, 90, 90], "fcc"],
+        "MgO_double": ["MgO_double", [2*4.211, 2*4.211, 2*4.211, 90, 90, 90], "fcc"],
         "MoO3": ["alpha_MoO3", [3.76, 3.97, 14.432, 90, 90, 90], "no"],  # SG62
         "literature_MoO3": ["literature_MoO3", [3.76, 3.97, 14.43, 90.0, 90.0, 90.0], "no"], #sg62
         "Muscovite": ["Muscovite", [5.2, 9.027, 20.106, 90, 95.78, 90], "VO2_mono2"],  # ~ SG 15 C2/c
