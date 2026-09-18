@@ -3021,6 +3021,9 @@ def get_largest_index_in_folder(folder_path: str, filename_prefix: str = 'img_',
     def extract_number(path: Path):
         return int(re.search(r'\d+$', path.stem).group())
 
+    if filename_suffix.startswith('.'):
+        filename_suffix= filename_suffix[1:]
+
     files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'), key=extract_number)
     
     #files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'))
