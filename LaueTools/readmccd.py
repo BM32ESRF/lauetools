@@ -17,6 +17,8 @@ import copy
 import time as ttt
 import numpy as np
 
+print('loading readmccd.py')
+
 # lauetools modules
 if sys.version_info.major == 3:
     import configparser as CONF
@@ -1331,7 +1333,7 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
     # first method ---------- "Basic Intensity Threshold"
     if local_maxima_search_method in (0, "0"):
 
-        if 1:#verbose>0:
+        if verbose>0:
             print("Using simple intensity thresholding to detect local maxima (method 1/3)")
             print("IntensityThreshold", IntensityThreshold)
             print('listrois',listrois)
@@ -1619,9 +1621,11 @@ def filter_points_far_from_border(points, min_distance_x, min_distance_y, CCDLab
 
     return filtered_points, kept_indices
 
-def ptsindices_in_bands_scmos(XYcam, npixels=2,CCDLabel='sCMOS',verbose=False):
-    if CCDLabel != 'sCMOS': raise ValueError('ptsindices_in_bands is only implemented for bands of sCMOS separating 4 quadrants')
-    if verbose: print("Initial points:", XYcam)
+def ptsindices_in_bands_scmos(XYcam, npixels:int=2,CCDLabel:str='sCMOS',verbose:int=0):
+    if CCDLabel != 'sCMOS':
+        raise ValueError('ptsindices_in_bands is only implemented for bands of sCMOS separating 4 quadrants')
+    if verbose>0:
+        print("Initial points:", XYcam)
 
     XYcam = np.array(XYcam)
 
@@ -1651,9 +1655,11 @@ def ptsindices_in_bands_scmos(XYcam, npixels=2,CCDLabel='sCMOS',verbose=False):
         # Return modified list
     return inbandsindex
 
-def ptsindices_in_bands(XYcam, npixels=2,CCDLabel='EIGER_4MCdTe',verbose=False):
-    if CCDLabel != 'EIGER_4MCdTe': raise ValueError('ptsindices_in_bands is only implemented for bands of EIGER_4MCdTe')
-    if verbose: print("Initial points:", XYcam)
+def ptsindices_in_bands(XYcam, npixels:int=2,CCDLabel:str='EIGER_4MCdTe',verbose:int=0):
+    if CCDLabel != 'EIGER_4MCdTe':
+        raise ValueError('ptsindices_in_bands is only implemented for bands of EIGER_4MCdTe')
+    if verbose>0:
+        print("Initial points:", XYcam)
 
     XYcam = np.array(XYcam)
 
