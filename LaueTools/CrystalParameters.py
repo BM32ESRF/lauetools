@@ -1928,6 +1928,7 @@ def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=0):  # O
     if matstarlab is not None:
         if verbose:
             print("matstarlab = ", matstarlab)
+        matstarlab = np.array(matstarlab, dtype=np.float64)
         astar1 = matstarlab[:3]
         bstar1 = matstarlab[3:6]
         # cstar1 = matstarlab[6:]
@@ -1935,6 +1936,7 @@ def matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=None, verbose=0):  # O
     elif matLT3x3 is not None:
         if verbose:
             print("matLT3x3 = ", matLT3x3)
+        matLT3x3 = np.array(matLT3x3, dtype=np.float64)
         astar1 = matLT3x3[:, 0]
         bstar1 = matLT3x3[:, 1]
         # cstar1 = matLT3x3[:, 2]
