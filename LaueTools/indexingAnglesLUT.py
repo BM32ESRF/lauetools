@@ -2224,7 +2224,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
             hkl = None
 
 
-        print('hkl for central spot #%d' % spot_index_central, hkl)
+        if verbose>1:
+            print('hkl for central spot #%d' % spot_index_central, hkl)
         if hkl is not None:
 
             # find some potential matrices from recognised distances
