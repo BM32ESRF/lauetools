@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["LaueTools"]
-include-package-data = true
+include-package-data = false  # Disable automatic inclusion of non-Python files
 
 [tool.setuptools_scm]
 # Optional: write_to = "src/lauetools/_version.py"  # Only if you need runtime access
 
 [project]
 name = "lauetools"
-version = "3.2.7"
+version = "3.2.9"
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
@@ -50,5 +50,27 @@ lauetools-add-material = "LaueTools.cli_add_material:main"
 [project.urls]
 Homepage = "https://github.com/BM32ESRF/lauetools"
 
+# Explicitly include only necessary files
 [tool.setuptools.package-data]
-LaueTools = ["scripts/*"]
+LaueTools = [
+    "scripts/*",  # Include scripts
+    "icons/*",     # Include icons (assuming they are small)
+    # Include only small example images (e.g., < 1 MB each)
+    "LaueImages/small_example_*.tif",
+    "LaueImages/small_example_*.dat",
+    # Include output-free notebooks (if any)
+    "notebooks/*.ipynb",
+]
+
+# Exclude all other heavy files
+[tool.setuptools.exclude-package-data]
+"" = [
+    "*.ipynb_checkpoints/*",  # Exclude checkpoint files
+    "*.cor",
+    "*.fit",
+    "*.irp",
+    "*.psp",
+    "*.out",
+    "*.sh",
+    "Documentation/*",        # Exclude documentation (host externally)
+]
