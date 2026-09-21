@@ -20,6 +20,8 @@ import numpy.ma as ma
 import scipy.spatial.distance as ssd
 import matplotlib as mpl
 
+from scipy.spatial.distance import cdist
+
 from typing import List, Union, Tuple, Dict, Iterable
 degrees = float
 
@@ -3094,6 +3096,71 @@ def are_all_close_elementwise(values, references, rel_tol=0.001):
         if not np.isclose(val, ref, rtol=rel_tol):
             return False
     return True
+
+
+def filter_close_points(points, threshold, sort_method="lex"):
+    """
+    Filter points that are too close to each other, keeping only the barycenter of each cluster.
+    The final list can be sorted either lexicographically (X then Y) or by shortest path.
+
+    Args:
+        points: numpy.ndarray, shape (N, 2), the list of 2D points.
+        threshold: float, the maximum distance for two points to be considered "too close".
+        sort_method: str, either "lex" (default) or "path".
+
+    Returns:
+        numpy.ndarray, shape (M, 2), the filtered and sorted list of points (barycenters).
+    """
+    if len(points) == 0:
+        return np.array([])
+
+    # Compute pairwise distances
+    distances = cdist(points, points, 'euclidean')
+
+    # Initialize a list to keep track of visited points
+    visited = [False] * len(points)
+    filtered_points = []
+
+    for i in range(len(points)):
+        if not visited[i]:
+            # Find all points within the threshold distance of points[i]
+            close_indices = np.where(distances[i] <= threshold)[0]
+            cluster = points[close_indices]
+
+            # Mark all points in the cluster as visited
+            for idx in close_indices:
+                visited[idx] = True
+
+            # Compute the barycenter of the cluster
+            barycenter = np.mean(cluster, axis=0)
+            filtered_points.append(barycenter)
+
+    # Convert to numpy array
+    filtered_points = np.array(filtered_points)
+
+    # Sort based on the chosen method
+    if sort_method == "lex":
+        # Sort by X, then by Y
+        filtered_points = filtered_points[np.lexsort((filtered_points[:, 1], filtered_points[:, 0]))]
+    elif sort_method == "path":
+        # Sort by shortest path starting from the lowest and leftmost point
+        filtered_points = filtered_points[np.lexsort((filtered_points[:, 1], filtered_points[:, 0]))]
+        path = [filtered_points[0]]
+        remaining_points = filtered_points[1:]
+
+        while len(remaining_points) > 0:
+            last_point = path[-1]
+            dists = np.linalg.norm(remaining_points - last_point, axis=1)
+            next_idx = np.argmin(dists)
+            path.append(remaining_points[next_idx])
+            remaining_points = np.delete(remaining_points, next_idx, axis=0)
+
+        filtered_points = np.array(path)
+    else:
+        raise ValueError("sort_method must be either 'lex' or 'path'")
+
+    return filtered_points
+
 
 # ----- ------------  plot tools: colormap
 # plt.get_cmap replaces mplcm.get_cmap for matplotlib 3.11
