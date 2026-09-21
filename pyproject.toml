@@ -11,7 +11,7 @@ include-package-data = false  # Disable automatic inclusion of non-Python files
 
 [project]
 name = "lauetools"
-version = "3.2.9"
+version = "3.2.10"
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
@@ -64,7 +64,7 @@ LaueTools = [
 
 # Exclude all other heavy files
 [tool.setuptools.exclude-package-data]
-"" = [
+"lauetools" = [
     "*.ipynb_checkpoints/*",  # Exclude checkpoint files
     "*.cor",
     "*.fit",
