@@ -19,7 +19,7 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 1- Download LaueTools code
 ***************************
-
+- It is highly recommended to create a conda (or pip) environment. See INSTALL.readme
 - the very last version of the code running with python3 is now on github (you are also welcome to fork this project):
 
 	https://github.com/BM32ESRF/lauetools
@@ -31,6 +31,8 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 	if pip is installed:
 
 	   pip install lauetools
+
+
 
 2a- Launch Graphical User Interfaces of LaueTools
 *************************************************
