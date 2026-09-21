@@ -64,7 +64,7 @@ LaueTools = [
 
 # Exclude all other heavy files
 [tool.setuptools.exclude-package-data]
-"" = [
+"lauetools" = [
     "*.ipynb_checkpoints/*",  # Exclude checkpoint files
     "*.cor",
     "*.fit",
