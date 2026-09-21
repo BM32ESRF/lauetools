@@ -1,10 +1,12 @@
 include *.md
 recursive-include LaueTools/icons *
+recursive-include LaueTools/scripts *
 recursive-include LaueTools/LaueImages *
 recursive-include LaueTools/Examples *
-recursive-include LaueTools/Documentation *
+ecursive-include LaueTools/Documentation *
 recursive-include LaueTools/Daxm *
 recursive-include LaueTools/FileSeries *
 recursive-include LaueTools *
-recursive-include Lauetools/scripts *
+# Include output-free notebooks (if any)
+recursive-include LaueTools/notebooks/*.ipynb
 prune */__pycache__
