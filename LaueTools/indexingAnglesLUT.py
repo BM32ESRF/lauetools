@@ -2705,7 +2705,7 @@ def build_AnglesLUT_fromlatticeparameters(latticeparameters, n,
             print('hkl_all.shape', hkl_all.shape)
     # filterharmonics
     hkl_all = CP.FilterHarmonics_2(hkl_all)
-    print('\n nb of hkl after harmonics removal', len(hkl_all))
+    if verbose> 0: print('\n nb of hkl after harmonics removal', len(hkl_all))
 
     if MaxRadiusHKL not in (False, 0, 0.0):
         B0matrix = CP.calc_B_RR(latticeparameters)
