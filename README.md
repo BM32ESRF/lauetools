@@ -30,8 +30,6 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	if pip is installed:
 
-	.. code-block:: python
-
 	   pip install lauetools
 
 2a- Launch Graphical User Interfaces of LaueTools
