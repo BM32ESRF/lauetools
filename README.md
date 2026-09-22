@@ -59,14 +59,15 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
 
-2c- Some useful notebooks workflow to treat images dataset
+### Some useful notebooks workflow to treat images dataset
 
-	- PixelMonitoring_multiptocressing.ipynb  :   mosaic plot (map of 2D Roi centered on user defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantitities)
+- **PixelMonitoring_multiprocessing.ipynb**: Mosaic plot (map of 2D ROI centered on user-defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantities).
 
-	-  [PeakSearch_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/PeakSearch_MultiProcessing.ipynb):  peak search and write .dat and .cor files
+- **[PeakSearch_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/PeakSearch_MultiProcessing.ipynb)**:
+  Peak search and write `.dat` and `.cor` files.
 
-	- Indexing_Multiprocessing.ipynb(https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/Indexation_MultiProcessing_april2025.ipynb): Index laue pattern (find UB and refine lattice parameters or strain) and write .fit file
-
+- **[Indexing_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/Indexation_MultiProcessing_april2025.ipynb)**:
+  Index Laue pattern (find UB and refine lattice parameters or strain) and write `.fit` file.
 
 
 
