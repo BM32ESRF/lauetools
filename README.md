@@ -1,8 +1,3 @@
-
-![til](https://github.com/BM32ESRF/lauetools/blob/master/animation_Si.gif)
-
-[![Conda](https://img.shields.io/conda/pn/bm32esrf/lauetools?color=green&label=supported%20platform)](https://anaconda.org/bm32esrf/lauetools)
-
 [![Lint, test, build, and publish (PYPI, CONDA)](https://github.com/BM32ESRF/lauetools/actions/workflows/complete_workflow.yml/badge.svg)](https://github.com/BM32ESRF/lauetools/actions/workflows/complete_workflow.yml)
 [![PyPI](https://img.shields.io/pypi/v/LaueTools)](https://pypi.python.org/pypi/LaueTools/)
 [![Conda](https://img.shields.io/conda/v/bm32esrf/lauetools?style=flat-square)](https://anaconda.org/bm32esrf/lauetools)
@@ -15,7 +10,7 @@
 Welcome to LaueTools's DOCUMENTATION!
 =====================================
 
-Last revision (April 2025)
+Last revision (Sept. 2026)
 
 LaueTools information on BM32 beamline website:
 
@@ -24,7 +19,7 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 1- Download LaueTools code
 ***************************
-
+- It is highly recommended to create a conda (or pip) environment. See INSTALL.readme
 - the very last version of the code running with python3 is now on github (you are also welcome to fork this project):
 
 	https://github.com/BM32ESRF/lauetools
@@ -35,9 +30,9 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	if pip is installed:
 
-	.. code-block:: python
-
 	   pip install lauetools
+
+
 
 2a- Launch Graphical User Interfaces of LaueTools
 *************************************************
@@ -63,6 +58,14 @@ With pip installation, LaueTools package will be included to python packages. Th
 	-In [1] : import LaueTools.readmccd as rmccd
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
+
+2c- Some useful notebooks workflow to treat images dataset
+
+	- PixelMonitoring_multiptocressing.ipynb  :   mosaic plot (map of 2D Roi centered on user defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantitities)
+
+	- PeakSearch_Multiprocessing.ipynb :  peak search and write .dat and .cor files
+
+	- Indexing_Multiprocessing.ipynb: Index laue pattern (find UB and refine lattice parameters or strain) and write .fit file
 
 
 
