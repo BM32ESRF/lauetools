@@ -61,7 +61,9 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 ### Some useful notebooks workflow to treat images dataset
 
-- **PixelMonitoring_multiprocessing.ipynb**: Mosaic plot (map of 2D ROI centered on user-defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantities).
+- **[PixelMonitoring](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.ipynb)**:
+  Mosaic plot (map of 2D ROI centered on user-defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantities).
+  [PixelMonitoring.html](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.html)
 
 - **[PeakSearch_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/PeakSearch_MultiProcessing.ipynb)**:
   Peak search and write `.dat` and `.cor` files.
