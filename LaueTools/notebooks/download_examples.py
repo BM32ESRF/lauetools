@@ -14,10 +14,12 @@ EXAMPLE_FILES = {
 def download_examples(save_dir="."):
     """Download example notebooks and data to the specified directory."""
     save_dir = Path(save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
 
     for filename, url in EXAMPLE_FILES.items():
         save_path = save_dir / filename
+        # Create parent directories if they don't exist
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+
         if not save_path.exists():
             print(f"Downloading {filename}...")
             response = requests.get(url)
