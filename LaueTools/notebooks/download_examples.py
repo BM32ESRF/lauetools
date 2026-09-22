@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 from pathlib import Path
 
@@ -10,10 +11,10 @@ EXAMPLE_FILES = {
     # Add more files as needed
 }
 
-def download_examples(save_dir="lauetools_examples"):
-    """Download example notebooks and data."""
+def download_examples(save_dir="."):
+    """Download example notebooks and data to the specified directory."""
     save_dir = Path(save_dir)
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
 
     for filename, url in EXAMPLE_FILES.items():
         save_path = save_dir / filename
@@ -28,4 +29,6 @@ def download_examples(save_dir="lauetools_examples"):
     print(f"Examples downloaded to: {save_dir.absolute()}")
 
 if __name__ == "__main__":
-    download_examples()
+    # Use the first command-line argument as save_dir, or default to current directory
+    save_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    download_examples(save_dir)
