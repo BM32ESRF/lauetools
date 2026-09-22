@@ -19,7 +19,7 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 1- Download LaueTools code
 ***************************
-- It is highly recommended to create a conda (or pip) environment. See INSTALL.readme
+- It is highly recommended to create a conda (or pip) environment. See [INSTALL.readme](https://github.com/BM32ESRF/lauetools/raw/master/INSTALL.readme)
 - the very last version of the code running with python3 is now on github (you are also welcome to fork this project):
 
 	https://github.com/BM32ESRF/lauetools
@@ -63,9 +63,9 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 	- PixelMonitoring_multiptocressing.ipynb  :   mosaic plot (map of 2D Roi centered on user defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantitities)
 
-	- PeakSearch_Multiprocessing.ipynb :  peak search and write .dat and .cor files
+	-  [PeakSearch_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/PeakSearch_MultiProcessing.ipynb):  peak search and write .dat and .cor files
 
-	- Indexing_Multiprocessing.ipynb: Index laue pattern (find UB and refine lattice parameters or strain) and write .fit file
+	- Indexing_Multiprocessing.ipynb(https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/Indexation_MultiProcessing_april2025.ipynb): Index laue pattern (find UB and refine lattice parameters or strain) and write .fit file
 
 
 
