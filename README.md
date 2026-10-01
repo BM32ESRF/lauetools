@@ -19,7 +19,7 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 1- Download LaueTools code
 ***************************
-- It is highly recommended to create a conda (or pip) environment. See INSTALL.readme
+- It is highly recommended to create a conda (or pip) environment. See [INSTALL.readme](https://github.com/BM32ESRF/lauetools/raw/master/INSTALL.readme)
 - the very last version of the code running with python3 is now on github (you are also welcome to fork this project):
 
 	https://github.com/BM32ESRF/lauetools
@@ -69,14 +69,17 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 	-In [2] : rmccd.readCCDimage(‘myimage.tif’)
 
-2c- Some useful notebooks workflow to treat images dataset
+### Some useful notebooks workflow to treat images dataset
 
-	- PixelMonitoring_multiptocressing.ipynb  :   mosaic plot (map of 2D Roi centered on user defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantitities)
+- **[PixelMonitoring.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.ipynb)**:
+  Mosaic plot (map of 2D ROI centered on user-defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantities).
+  [PixelMonitoring.html](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.html)
 
-	- PeakSearch_Multiprocessing.ipynb :  peak search and write .dat and .cor files
+- **[PeakSearch_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/PeakSearch_MultiProcessing.ipynb)**:
+  Peak search and write `.dat` and `.cor` files.
 
-	- Indexing_Multiprocessing.ipynb: Index laue pattern (find UB and refine lattice parameters or strain) and write .fit file
-
+- **[Indexing_Multiprocessing.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-data/Indexation_MultiProcessing_april2025.ipynb)**:
+  Index Laue pattern (find UB and refine lattice parameters or strain) and write `.fit` file.
 
 
 
