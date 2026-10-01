@@ -32,6 +32,14 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	   pip install lauetools
 
+- optional features need extra packages, installed by adding their name in brackets:
+
+	   pip install "lauetools[daxm]"   depth-resolved Laue analysis (DAXM, daxmgui): numba, photutils, pypubsub
+	   pip install "lauetools[hdf5]"   .hdf5 summary files (buildsummary), EIGER stacked hdf5 images: tables
+	   pip install "lauetools[all]"    all optional features
+
+	Without them, LaueTools works normally; only these features are disabled (a message tells which package is missing).
+
 
 
 2a- Launch Graphical User Interfaces of LaueTools
@@ -48,6 +56,8 @@ Normally, in a command window (if environment variables are well set) several GU
 	> plotmap    to plot 2D map of structural quantities from file built previously
  
 	> plotmeshgui   to plot 2D map from counters values in (spec) logfile
+
+	> daxmgui   for depth-resolved Laue analysis with wire scans (needs: pip install "lauetools[daxm]")
 
 
 2b- Use LaueTools module as a library
