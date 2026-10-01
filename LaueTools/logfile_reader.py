@@ -1947,11 +1947,23 @@ def read_fullcommand(fullcommand:str)->dict:
     {'fastmotor': 'xech', 'fmotmin': 9.12759, 'fmotmax': 9.1576, 'fmotnbsteps': 30,
     'slowmotor': 'yech', 'smotmin': -1.51773, 'smotmax': -1.2, 'smotnbsteps': 22,
     'expotime': 0.1}
+
+    Common keys added for any scan type (to be used to shape a map of images):
+    'npts_fast', 'npts_slow' (nb of points, i.e. images, along fast and slow axes; npts_slow=1 for 1D scan),
+    'scandim' (2 for 2D raster scan, 1 for 1D scan, 0 for unknown command e.g. 'ct')
+    Extra trailing arguments are ignored. Raise ValueError if too few arguments.
     """
     sc = fullcommand.split()
     scancommand = sc[0]
+
+    nbargs_min = {'amesh': 10, 'dmesh': 10, 'fscan2d': 11, 'ascan': 6, 'dscan': 6, 'fscan': 7,
+                  'a2scan': 9, 'd2scan': 9}
+    if scancommand not in nbargs_min:
+        return {'scancommand': scancommand, 'scandim': 0}
+    if len(sc) < nbargs_min[scancommand]:
+        raise ValueError(f'Too few arguments in scan command: {fullcommand}')
+
     if scancommand in ('amesh','dmesh'):
-        assert len(sc) == 10
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
                     'slowmotor', 'smotmin', 'smotmax', 'smotnbsteps', 'expotime')
         
@@ -1961,7 +1973,6 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     
     elif scancommand in ('fscan2d',):
-        assert len(sc) == 11
         listparams = ('slowmotor', 'smotmin', 'smotmax', 'smotnbsteps',
                       'fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
                     'expotime','unknown')
@@ -1975,7 +1986,6 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command['fmotnbsteps']-=1
         
     elif scancommand in ('ascan','dscan'):
-        assert len(sc) == 6
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime')
         
         listfmt = (str, float, float, int, float)
@@ -1983,7 +1993,6 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     
     elif scancommand in ('fscan',):
-        assert len(sc) == 7
         # warning  arg[3]  is nb of images
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime', 'unknown')
         
@@ -1993,7 +2002,6 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command['fmotnbsteps']=dict_command['fmotnbsteps']-1
     
     elif scancommand in ('a2scan','d2scan'):
-        assert len(sc) == 9
         listparams = ('fastmotor', 'fmotmin', 'fmotmax',
                     'slowmotor', 'smotmin', 'smotmax', 'fmotnbsteps', 'expotime')
         
@@ -2003,6 +2011,15 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
         
     dict_command['scancommand']=scancommand
+
+    # fmotnbsteps and smotnbsteps are nb of intervals (nb of points - 1)
+    dict_command['npts_fast'] = dict_command['fmotnbsteps'] + 1
+    if scancommand in ('amesh', 'dmesh', 'fscan2d'):
+        dict_command['npts_slow'] = dict_command['smotnbsteps'] + 1
+        dict_command['scandim'] = 2
+    else:
+        dict_command['npts_slow'] = 1
+        dict_command['scandim'] = 1
             
     return dict_command
 

@@ -89,6 +89,10 @@ def getinfos_from_blisspath(fullpath, verbose=0):
     from either of the two folder formats:
     1. Original: /.../RAW_DATA/{samplename}/{samplename}_{dataset}/scan{scanindex}
     2. New:      /mnt/Local_data/{expID}/{samplename}_{dataset}/scan{scanindex}
+
+    The dataset h5 file is {datasetfolder}/{datasetfolder}.h5 where datasetfolder is the parent folder of scan{scanindex}.
+    In format 1, datasetname is datasetfolder without the leading '{samplename}_' (both may contain '_').
+    In format 2, if this h5 file is missing, it is searched in /data/visitor/{expID}/bm32/*/RAW_DATA/*/{datasetfolder}/
     """
     if 'scan' not in fullpath:
         raise ValueError('fullpath must contain "scan"')
@@ -99,30 +103,34 @@ def getinfos_from_blisspath(fullpath, verbose=0):
     if 'RAW_DATA' in parts:
         # --- Original format ---
         rd_idx = parts.index("RAW_DATA")
-        expId = parts[rd_idx-3]  # a321217
+        if len(parts) < rd_idx + 4:
+            raise ValueError(f'Expected .../RAW_DATA/samplename/datasetfolder/scanXXXX in {fullpath}')
+        expId = parts[rd_idx-3] if rd_idx >= 3 else None  # a321217
         expDate = parts[rd_idx-1]  # 20260707
         samplename = parts[rd_idx+1]  # Zr5dimanche
-        datasetname = parts[rd_idx+2].rsplit('_', 1)[1]  # searchgrains (from Zr5dimanche_searchgrains)
+        datasetfolder = parts[rd_idx+2]  # Zr5dimanche_searchgrains
+        if datasetfolder.startswith(samplename + '_'):
+            datasetname = datasetfolder[len(samplename) + 1:]  # searchgrains
+        else:
+            datasetname = datasetfolder.rsplit('_', 1)[-1]
         scanindex = int(parts[rd_idx+3].replace('scan', ''))  # 1 (from scan0001)
 
-        # Build the desired file path (original format)
-        localh5path = (
-            f"/data/visitor/{expId}/bm32/{expDate}/RAW_DATA/{samplename}/{samplename}_{datasetname}/"
-            f"{samplename}_{datasetname}.h5"
-        )
+        localh5path = str(Path(*parts[:rd_idx+3]) / f"{datasetfolder}.h5")
     else:
         # --- New format: /mnt/Local_data/{expID}/{samplename}_{dataset}/scan{scanindex} ---
         expId = parts[3]  # {expID} (e.g., a321217)
-        samplename_dataset = parts[4]  # {samplename}_{dataset} (e.g., Zr5dimanche_searchgrains)
-        samplename, datasetname = samplename_dataset.split('_', 1)
+        datasetfolder = parts[4]  # {samplename}_{dataset} (e.g., Zr5dimanche_searchgrains)
+        # ambiguous if samplename contains '_'
+        samplename, datasetname = datasetfolder.split('_', 1)
         scanindex = int(parts[5].replace('scan', ''))  # scan{scanindex} (e.g., scan0001 -> 1)
-
-        # Build the desired file path (adjust as needed)
-        localh5path = (
-            f"/data/visitor/{expId}/bm32/RAW_DATA/{samplename}/{samplename}_{datasetname}/"
-            f"{samplename}_{datasetname}.h5"
-        )
         expDate = None  # No date in the new format
+
+        localh5path = str(Path(*parts[:5]) / f"{datasetfolder}.h5")
+        if not os.path.exists(localh5path):
+            import glob
+            candidates = sorted(glob.glob(f"/data/visitor/{expId}/bm32/*/RAW_DATA/*/{datasetfolder}/{datasetfolder}.h5"))
+            if candidates:
+                localh5path = candidates[-1]
 
     if verbose > 0:
         print(f"expId: {expId}")

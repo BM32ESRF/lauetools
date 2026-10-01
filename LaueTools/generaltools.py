@@ -10,6 +10,7 @@ package gathering general tools
 import copy
 import pickle
 import multiprocessing
+import os
 import sys
 
 from pathlib import Path
@@ -3003,6 +3004,22 @@ def getfileindex(filename:str)->int:
     val = match.group()[:-len(fileextension)]
     return int(float(val))
 
+def list_image_indices_in_folder(folder_path: str, filename_prefix: str = 'img_', filename_suffix: str = 'tif') -> list:
+    """
+    Sorted list of integer indices of files named {filename_prefix}{digits}.{filename_suffix} in a folder.
+    Other files (e.g. {filename_prefix}0001_bis.tif) are ignored.
+    """
+    if filename_suffix.startswith('.'):
+        filename_suffix = filename_suffix[1:]
+    pattern = re.compile(re.escape(filename_prefix) + r'(\d+)\.' + re.escape(filename_suffix) + '$')
+    indices = []
+    for name in os.listdir(folder_path):
+        m = pattern.match(name)
+        if m:
+            indices.append(int(m.group(1)))
+    return sorted(indices)
+
+
 def get_largest_index_in_folder(folder_path: str, filename_prefix: str = 'img_', filename_suffix: str = 'tif') -> int:
     """
     Find the filename with the largest index in a folder.
@@ -3018,19 +3035,16 @@ def get_largest_index_in_folder(folder_path: str, filename_prefix: str = 'img_',
     -------
     largest_index : int
         largest index in filename
+
+    Raises
+    ------
+    ValueError
+        if no file {filename_prefix}{digits}.{filename_suffix} is found
     """
-    import re
-    def extract_number(path: Path):
-        return int(re.search(r'\d+$', path.stem).group())
-
-    if filename_suffix.startswith('.'):
-        filename_suffix= filename_suffix[1:]
-
-    files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'), key=extract_number)
-    
-    #files = sorted(Path(folder_path).glob(f'{filename_prefix}*.{filename_suffix}'))
-    largest_index = int(Path(files[-1]).stem.split('_')[1])
-    return largest_index
+    indices = list_image_indices_in_folder(folder_path, filename_prefix, filename_suffix)
+    if not indices:
+        raise ValueError(f'No file {filename_prefix}XXXX.{filename_suffix} in folder {folder_path}')
+    return indices[-1]
 
     
 def filter_peaks_close_to_detector_edges(peak_list:np.ndarray, distance_x:int, distance_y:int,

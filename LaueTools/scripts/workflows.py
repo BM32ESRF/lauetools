@@ -235,12 +235,13 @@ class MosaicWorkflow:
             #self.logger.error("ROI center is not set.")
             return False
         x_roi, y_roi = self.roicenter
-        max_dimension = 2015  # Adjust based on detector specs
+        # framedim = (nb lines, nb columns) i.e. (along Y, along X)
+        dim_Y, dim_X = DictLT.dict_CCD[self.params.get("CCDLabel")][0]
         if (
             x_roi - self.boxsize_X < 0
-            or x_roi + self.boxsize_X > max_dimension
+            or x_roi + self.boxsize_X >= dim_X
             or y_roi - self.boxsize_Y < 0
-            or y_roi + self.boxsize_Y > max_dimension
+            or y_roi + self.boxsize_Y >= dim_Y
         ):
             # self.logger.error(
             #     f"ROI center {self.roicenter} is too close to the detector border for boxsize: {(self.boxsize_X, self.boxsize_Y)}"
@@ -312,14 +313,15 @@ class MosaicWorkflow:
             # processing and rearranging collected ROIs imagelets
             dimfast, dimslow = mapdimensions
             #print('axis dimensions: dimslow, dimfast',dimslow, dimfast)
-            mosaic = np.zeros((dimslow, dimfast, 2*boxsize_Y+1, 2*boxsize_X+1))
+            # NaN (blank) for map positions without image (e.g. not completed scan)
+            mosaic = np.full((dimslow, dimfast, 2*boxsize_Y+1, 2*boxsize_X+1), np.nan)
             #print('mosaic.shape', mosaic.shape)
             dict_map_imageindex ={}
         
             #print(d['listindices'])
             
             sm = mosaic.shape
-            bigimage = np.zeros((sm[0]*sm[2],sm[1]*sm[3]))
+            bigimage = np.full((sm[0]*sm[2],sm[1]*sm[3]), np.nan)
             
             
             if dimfast > 0:
@@ -368,9 +370,16 @@ class MosaicWorkflow:
                   itertools.repeat(boxsize_X),
                   itertools.repeat(boxsize_Y),
                    itertools.repeat(CCDLabel)"""
-        # Placeholder for actual implementation
-        
-        return collectroiarray_singlefile(index,roicenter,prefix, folder, boxsize_X, boxsize_Y, ccd_label)
+        # missing or unreadable image (e.g. not completed scan or file being written): blank ROI
+        blank = np.full((2 * boxsize_Y + 1, 2 * boxsize_X + 1), np.nan)
+        try:
+            roi = collectroiarray_singlefile(index,roicenter,prefix, folder, boxsize_X, boxsize_Y, ccd_label)
+        except Exception as exc:
+            print(f'cannot read ROI in image index {index} in {folder}: {exc}')
+            return blank
+        if roi is None or roi.shape != blank.shape:
+            return blank
+        return roi
 
 
 

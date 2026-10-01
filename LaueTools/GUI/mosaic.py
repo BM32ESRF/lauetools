@@ -317,7 +317,7 @@ if WXPYTHON:
         def OnChangeLUT(self, _):
             print("OnChangeLUT")
             strcmap = str(self.comboLUT.GetValue())
-            self.cmap = mplcm.get_cmap(strcmap)
+            self.cmap = plt.get_cmap(strcmap)  # matplotlib.cm.get_cmap removed in matplotlib 3.9
             self.cmap.set_over("k", self.maxvals)
             self.cmap.set_under("k", self.minvals)
             self.myplot.set_cmap(self.cmap)
@@ -889,9 +889,9 @@ if WXPYTHON:
                 self.slider_max.SetTickFreq(50, 1)
             self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMax, self.slider_max)
     
-            self.vmintxtctrl = wx.TextCtrl(self.panel, -1, str(np.amin(self.data)),
+            self.vmintxtctrl = wx.TextCtrl(self.panel, -1, str(np.nanmin(self.data)),
                                                                             style=wx.TE_PROCESS_ENTER)
-            self.vmaxtxtctrl = wx.TextCtrl(self.panel, -1, str(np.amax(self.data)),
+            self.vmaxtxtctrl = wx.TextCtrl(self.panel, -1, str(np.nanmax(self.data)),
                                                                             style=wx.TE_PROCESS_ENTER)
             self.vmintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmin)
             self.vmaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmax)
@@ -1405,7 +1405,7 @@ if WXPYTHON:
             self._replot()
     
         def getMeanLevel(self):
-            return np.mean(self.data)
+            return np.nanmean(self.data)
     
         def Oncheckgrid(self, _):
             self.plotgrid = not self.plotgrid
@@ -1572,8 +1572,8 @@ if WXPYTHON:
                 else:
                     # Use user-defined vmin/vmax (or default to data range)
                     if not shrinkrange:
-                        self.maxvals = np.amax(self.data)
-                        self.minvals = np.amin(self.data)
+                        self.maxvals = np.nanmax(self.data)
+                        self.minvals = np.nanmin(self.data)
                     else:
                         self.maxvals = self.ImaxDisplayed
                         self.minvals = self.IminDisplayed
@@ -2390,7 +2390,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         d = {'folder': imagesfolder,
             'scantype': 'map',
             'prefix': prefix,
-            'listindices': np.arange(nbimagesperline*nlines), #np.arange(13041),
+            # absolute image indices, row by row (missing images give blank ROI)
+            'listindices': np.ravel(listindices2D),
             #'nbimagesperline': nbimagesperline,
             'mapdimensions': (nbimagesperline, nlines), #(nbimagesperline, 161),# fast, slow
             'CCDLabel': CCDLabel}

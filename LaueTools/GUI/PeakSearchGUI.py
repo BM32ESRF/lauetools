@@ -1,5 +1,6 @@
 # --- ------------  IMAGE VIEWER and PEAK SEARCH Tools GUI
 import os
+import re
 import sys
 import time
 import copy
@@ -51,7 +52,7 @@ if not ObjectListView_Present:
         from ObjectListView import ObjectListView, ColumnDefn #, GroupListView
         ObjectListView_Present = True
     except ImportError:
-        print("ObjectListView is missing! You may want to have it: pip install ObjectListView")
+        print("ObjectListView2 is missing (peaks list editor disabled): pip install ObjectListView2")
         ObjectListView_Present = False
 
 # LaueTools modules
@@ -1122,10 +1123,10 @@ class MosaicAndMonitor(wx.Panel):
         self.generalindexradiobtn.SetValue(False)
 
         self.startindex = wx.StaticText(self, -1, "Start ")
-        self.startindexctrl = wx.SpinCtrl(self, -1, "0", min=0, max=9999)
+        self.startindexctrl = wx.SpinCtrl(self, -1, "0", min=0, max=999999)
         #        self.Bind(wx.EVT_SPINCTRL, self.OnBoxSizes, self.boxxctrl)
         self.lastindex = wx.StaticText(self, -1, "Last")
-        self.lastindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=9999)
+        self.lastindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=999999)
 
         self.stepimageindex = wx.StaticText(self, -1, "Step")
         self.stepimageindexctrl = wx.SpinCtrl(self, -1, "1", min=0, max=9999)
@@ -1133,7 +1134,7 @@ class MosaicAndMonitor(wx.Panel):
         self.rectangleindexradiobtn = wx.RadioButton(self, -1, "-->")
 
         self.txtimagecenter = wx.StaticText(self, -1, "Center")
-        self.centerindexctrl = wx.SpinCtrl(self, -1, "0", min=0, max=9999)
+        self.centerindexctrl = wx.SpinCtrl(self, -1, "0", min=0, max=999999)
 
         self.txtimagefastindexbox = wx.StaticText(self, -1, "Boxsize (X)")
         self.txtimagefastindexboxctrl = wx.SpinCtrl(self, -1, "1", min=1, max=9999)
@@ -1184,9 +1185,9 @@ class MosaicAndMonitor(wx.Panel):
         self.txtmapstartingindex = wx.StaticText(self, -1, "Starting index")
         self.mapstartingimageindexctrl = wx.TextCtrl(self, -1, "0")
 
-        if self.mainframe.scan_dict is not None:
-            self.scancommandtxt = wx.StaticText(self, -1, f"scan command {self.mainframe.scan_dict['scan_blisscommand']} {self.mainframe.scan_dict['scan_end_reason']}")
-            self.stepctrl.SetValue(str(self.mainframe.scan_dict['scan_nbsteps_fastmotor']+1))
+        # scan metadata: BLISS command (on the right of 'All') and summary (see update_from_scan_dict())
+        self.blisscommandtxt = wx.StaticText(self, -1, "")
+        self.scancommandtxt = wx.StaticText(self, -1, "")
 
 
         self.btnMosaic = wx.Button(self, wx.ID_ANY, "Start")
@@ -1220,6 +1221,7 @@ class MosaicAndMonitor(wx.Panel):
 
         self.NavigBoxsizer20 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer20.Add(self.allindicesradiobtn, 0, wx.ALL, 5)
+        self.NavigBoxsizer20.Add(self.blisscommandtxt, 0, wx.ALL, 5)
 
         self.NavigBoxsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         self.NavigBoxsizer2.Add(self.generalindexradiobtn, 0, wx.ALL, 5)
@@ -1267,8 +1269,7 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(NavigBoxsizer1, 0, wx.EXPAND)
 
         vbox.Add(txt4, 0, wx.EXPAND)
-        if self.mainframe.scan_dict is not None:
-            vbox.Add(self.scancommandtxt, 0, wx.EXPAND)
+        vbox.Add(self.scancommandtxt, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
         vbox.Add(self.btnMosaic, 0, wx.EXPAND)
 
@@ -1395,6 +1396,33 @@ class MosaicAndMonitor(wx.Panel):
                 cselected.append(selected)
 
         self.cselected = cselected
+
+    def update_from_scan_dict(self):
+        """preset map properties and image indices from scan metadata (mainframe.scan_dict)"""
+        # Last index: largest image index in the folder of the current image
+        prefix, suffix = self.mainframe.get_imagefile_prefix_suffix()
+        if prefix is not None:
+            indices = GT.list_image_indices_in_folder(self.mainframe.dirname, prefix, suffix)
+            if indices:
+                self.lastindexctrl.SetValue(indices[-1])
+
+        scan_dict = self.mainframe.scan_dict
+        if scan_dict is None:
+            # 'All' workflow needs scan metadata from BLISS h5 file
+            self.allindicesradiobtn.Disable()
+            self.generalindexradiobtn.SetValue(True)
+            self.blisscommandtxt.SetLabel("(no BLISS h5 logfile found)")
+            self.scancommandtxt.SetLabel("")
+            self.Layout()
+            return
+        self.allindicesradiobtn.Enable()
+        self.allindicesradiobtn.SetValue(True)
+        self.blisscommandtxt.SetLabel(f"{scan_dict['scan_blisscommand']} [{scan_dict['scan_end_reason']}]")
+        self.scancommandtxt.SetLabel(scan_dict['summary'])
+        self.stepctrl.SetValue(str(scan_dict['nbimages_per_line']))
+        self.mapstartingimageindexctrl.SetValue("0")
+        self.startindexctrl.SetValue(0)
+        self.Layout()
 
     def OnClearChildWindows(self, _):
         print("killing children!")
@@ -3015,35 +3043,8 @@ class MainPeakSearchFrame(wx.Frame):
         self.writefolder = self.initialParameter["dirname"]
         self.CCDLabel = self.initialParameter["CCDLabel"]
 
-        self.scan_dict = None
-        if self.imagefilename.endswith('.h5'):
-            try:
-                (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
-            
-
-                if os.path.exists(localh5path):
-                    try:
-                        with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
-                            scan_end_reason = str(h5pyfile[f'{scanindex}.1/end_reason'][()].decode('UTF-8'))
-                            scan_blisscommand = str(h5pyfile[f'{scanindex}.1/title'][()].decode('UTF-8'))
-                            if scan_blisscommand.startswith(("ascan", "dscan", "amesh", "dmesh","f2dscan","fdmap")):
-                                dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
-                                scan_nbsteps_fastmotor = dictcommand['fmotnbsteps']
-                                scan_nbsteps_slowmotor = dictcommand['smotnbsteps']
-                                scan_largestimageindex = (scan_nbsteps_fastmotor+1) * (scan_nbsteps_slowmotor+1)-1
-                                self.scan_dict = {'scan_end_reason': scan_end_reason,   
-                                                'scan_blisscommand': scan_blisscommand, 
-                                                'scan_nbsteps_fastmotor': scan_nbsteps_fastmotor,            
-                                                'scan_nbsteps_slowmotor':scan_nbsteps_slowmotor,                
-                                                'scan_largestimageindex': scan_largestimageindex}
-
-                    except:
-                        print('scan my be not finished or smth else, cannot read scan info from h5 file')
-                        print(localh5path)
-                        pass
-            except:
-                print('cannot reach read scan info from h5 file. The folder must follow the tree organization of bliss. The folder is: %s' % self.dirname)
-                pass
+        # metadata of BLISS scan to preset map parameters (mosaic, monitor, images browser)
+        self.load_scan_metadata()
 
         # for stacked images in hdf5 file
         self.stackedimages = self.initialParameter["stackedimages"]
@@ -3143,6 +3144,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.sb = self.CreateStatusBar()
         self.create_main_panel()
         self.init_figure_draw()
+        self.apply_scan_metadata_to_panels()
 
     def createMenuBar(self):
         menubar = wx.MenuBar()
@@ -3524,11 +3526,19 @@ class MainPeakSearchFrame(wx.Frame):
             self.initialParameter["imagefilename"] = filename
             self.initialParameter["dirname"] = dirname
 
+            folderchanged = os.path.normpath(dirname) != os.path.normpath(self.dirname)
+            # results follow the images folder unless user has chosen another one
+            if folderchanged and self.writefolder == self.dirname:
+                self.writefolder = dirname
+
             self.imagefilename = filename
             self.dirname = dirname
             if self.verbose>0:
                 print('in OpenImage, self.stackedimages', self.stackedimages)
             self.getIndex_fromfilename()
+            if folderchanged:
+                self.load_scan_metadata()
+                self.apply_scan_metadata_to_panels()
             self.resetfilename_and_plot()
 
             self.ImageFilterpanel.UseImage.SetValue(False)
@@ -3826,6 +3836,122 @@ class MainPeakSearchFrame(wx.Frame):
                 print("file present and correct size!")
 
         return condition
+
+    def get_imagefile_prefix_suffix(self):
+        """return (prefix, extension) of current image filename {prefix}{digits}.{extension}
+        e.g. ('eiger4m_', 'h5') for 'eiger4m_0003.h5', or (None, None) if filename has no index"""
+        match = re.match(r'^(.*?)(\d+)\.([^.]+)$', self.imagefilename)
+        if match is None:
+            return None, None
+        return match.group(1), match.group(3)
+
+    def load_scan_metadata(self):
+        """Read the scan command of the current image folder in the BLISS dataset h5 file
+        (.../RAW_DATA/{sample}/{sample}_{dataset}/scanXXXX/image) and set self.scan_dict
+        (None if not found) to preset map parameters of mosaic, monitor and images browser.
+
+        2D scan (amesh, dmesh, fscan2d): nb of images per line = nb of points along fast motor,
+        and map contains all expected images even if the scan is not completed (missing images
+        give blank ROI).
+        1D scan (ascan, dscan, fscan, a2scan, d2scan): images on disk (up to the largest index)
+        are arranged in a quasi square map with nb of images per line = round(sqrt(nb images)).
+        """
+        self.scan_dict = None
+        if not re.match(r'^scan\d+$', os.path.basename(os.path.normpath(self.dirname))):
+            return
+        try:
+            (_, _, _, _, scanindex, localh5path) = bf.getinfos_from_blisspath(self.dirname)
+        except (ValueError, IndexError) as exc:
+            print(f'cannot get scan infos from folder {self.dirname}: {exc}')
+            return
+        if not os.path.exists(localh5path):
+            print(f'missing BLISS dataset h5 file {localh5path}')
+            return
+
+        def h5str(value):
+            return value.decode('UTF-8') if isinstance(value, bytes) else str(value)
+
+        try:
+            with h5py.File(localh5path, 'r', locking=False) as h5pyfile:
+                scangroup = h5pyfile[f'{scanindex}.1']
+                scan_blisscommand = h5str(scangroup['title'][()])
+                # end_reason is written by BLISS only at the end of the scan
+                if 'end_reason' in scangroup:
+                    scan_end_reason = h5str(scangroup['end_reason'][()])
+                else:
+                    scan_end_reason = 'RUNNING'
+        except (OSError, KeyError) as exc:
+            print(f'cannot read scan {scanindex}.1 in {localh5path}: {exc}')
+            return
+
+        try:
+            dictcommand = logfile_reader.read_fullcommand(scan_blisscommand)
+        except ValueError as exc:
+            print(exc)
+            return
+        if dictcommand['scandim'] == 0:
+            print(f'scan command not handled to build a map: {scan_blisscommand}')
+            return
+
+        npts_fast, npts_slow = dictcommand['npts_fast'], dictcommand['npts_slow']
+        nbimages_expected = npts_fast * npts_slow
+
+        nbimages_on_disk, largestindex_on_disk = 0, -1
+        prefix, suffix = self.get_imagefile_prefix_suffix()
+        if prefix is not None:
+            indices = GT.list_image_indices_in_folder(self.dirname, prefix, suffix)
+            nbimages_on_disk = len(indices)
+            if indices:
+                largestindex_on_disk = indices[-1]
+
+        if dictcommand['scandim'] == 2:
+            nbimages_per_line = npts_fast
+            nbimages_map = nbimages_expected
+        else:
+            nbimages_map = largestindex_on_disk + 1
+            nbimages_per_line = max(1, int(round(np.sqrt(nbimages_map))))
+        nb_lines = int(np.ceil(nbimages_map / nbimages_per_line))
+
+        completed = scan_end_reason == 'SUCCESS' and nbimages_on_disk >= nbimages_expected
+        summary = (f"{nbimages_on_disk}/{nbimages_expected} images on disk -> map of "
+                   f"{nb_lines} lines x {nbimages_per_line} images")
+        if not completed and dictcommand['scandim'] == 2:
+            summary += "\nNOT COMPLETED scan: missing images give blank ROIs"
+        elif not completed:
+            summary += "\nNOT COMPLETED scan: map built with images on disk"
+
+        self.scan_dict = {'scan_end_reason': scan_end_reason,
+                          'scan_blisscommand': scan_blisscommand,
+                          'scandim': dictcommand['scandim'],
+                          'npts_fast': npts_fast,
+                          'npts_slow': npts_slow,
+                          'nbimages_expected': nbimages_expected,
+                          'nbimages_on_disk': nbimages_on_disk,
+                          'largestindex_on_disk': largestindex_on_disk,
+                          'nbimages_map': nbimages_map,
+                          'nbimages_per_line': nbimages_per_line,
+                          'nb_lines': nb_lines,
+                          'completed': completed,
+                          'summary': summary,
+                          'scan_nbsteps_fastmotor': npts_fast - 1,
+                          'scan_nbsteps_slowmotor': npts_slow - 1,
+                          'scan_largestimageindex': nbimages_expected - 1}
+        print('scan metadata:', summary)
+
+    def apply_scan_metadata_to_panels(self):
+        """preset Mosaic & Monitor and images browser panels with self.scan_dict"""
+        if self.Monitor is not None:
+            self.Monitor.update_from_scan_dict()
+        if self.scan_dict is None or self.ImagesBrowser is None:
+            return
+        self.ImagesBrowser.imageindexmax = max(self.scan_dict['nbimages_map'] - 1, 1)
+        self.ImagesBrowser.imagemaxtxtctrl.SetValue(str(self.ImagesBrowser.imageindexmax))
+        # SpinCtrl min is 2
+        self.ImagesBrowser.stepctrl.SetValue(max(2, self.scan_dict['nbimages_per_line']))
+        self.OnStepChange(None)
+        if not self.scan_dict['completed']:
+            self.sb.SetStatusText(f"{self.scan_dict['scan_blisscommand']} | "
+                                  + self.scan_dict['summary'].replace('\n', ' | '), 0)
 
     def getIndex_fromfilename(self):
         """
@@ -4460,25 +4586,28 @@ class MainPeakSearchFrame(wx.Frame):
         if self.Monitor.allindicesradiobtn.GetValue():
 
             nbimages_per_line = int(self.Monitor.stepctrl.GetValue())
-            
+
             imagefolder = self.dirname
+            prefix, suffix = self.get_imagefile_prefix_suffix()
+            if prefix is None:
+                wx.MessageBox(f"Cannot get image index from filename {self.imagefilename}", "INFO")
+                return
 
-            if self.CCDLabel == 'EIGER_4MCdTe':
-                prefix='eiger4m_'
-                suffix='h5'
-            elif self.CCDLabel.startswith('sCMOS'):
-                prefix='img_'
-                suffix='tif'
+            # get the largest index in the folder (read now since scan may be running)
+            try:
+                maxindex = GT.get_largest_index_in_folder(imagefolder, prefix, suffix)
+            except ValueError as exc:
+                wx.MessageBox(str(exc), "INFO")
+                return
 
-            # get the largest index in the folder
-            maxindex = int(GT.get_largest_index_in_folder(imagefolder, prefix, suffix))
+            nbimages_total = maxindex + 1
+            # not completed 2D scan: map with all expected images, missing ones give blank ROI
+            if self.scan_dict is not None and self.scan_dict['scandim'] == 2:
+                nbimages_total = max(nbimages_total, self.scan_dict['nbimages_expected'])
 
-            # TODO? add a txtctrl for nb of lines to analyse?
-
-            selected2Darray_imageindex = np.arange(0, maxindex+1, 1)
-            selected2Darray_imageindex.shape = (-1, nbimages_per_line)
-
-            nb_lines = selected2Darray_imageindex.shape[0]
+            # last line is completed with indices of missing images (blank ROI)
+            nb_lines = int(np.ceil(nbimages_total / nbimages_per_line))
+            selected2Darray_imageindex = np.arange(nb_lines * nbimages_per_line).reshape((nb_lines, nbimages_per_line))
 
         # use images indices from start final and step fields
         elif self.Monitor.generalindexradiobtn.GetValue():
