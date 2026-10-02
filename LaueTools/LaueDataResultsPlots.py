@@ -10,8 +10,9 @@ List of functions for Laue data (ASCII file and laue pattern image)  data visual
 - EulerAngles              : 
 - EulerAngles2D            : 
 - StrainMap            : plot the 6 strain components for a scan
-- StrainMapHistogram  :
+- StrainMapHistogram  : histograms of the 6 strain components (masked points excluded)
 - LatticeParamsMap
+- LatticeParamsHistogram : histograms of the 6 lattice parameters (masked points excluded)
 
 this module has been originally written by S. Bongiornio, S. Tardif, and B. De Goes Foschiani
 in 2024-2025
@@ -43,6 +44,95 @@ from LaueTools.fitfilereader import parsed_fitfile, parsed_fitfileseries
 
 def __gaussian__(x, A, mu, sigma):
     return A*np.exp(-(x-mu)**2/(2*sigma**2))
+
+
+def __valid_values__(data, maskingcondition=None) -> np.ndarray:
+    """return 1D array of finite values of data where maskingcondition is False
+
+    NB: matplotlib hist() ignores the mask of masked arrays (and counts NaN), so data must be filtered
+    maskingcondition: bool array with the same number of elements as data (1D or 2D), True = rejected
+    """
+    data = np.ravel(np.asarray(ma.getdata(data), dtype=float))
+    keep = np.isfinite(data)
+    if maskingcondition is not None:
+        mask = np.ravel(np.asarray(maskingcondition, dtype=bool))
+        if mask.size != data.size:
+            raise ValueError(f'maskingcondition has {mask.size} elements, expected {data.size}')
+        keep &= np.logical_not(mask)
+    return data[keep]
+
+
+def __fit_gaussian__(counts: np.ndarray, bins: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """fit histogram (counts, bins edges) by a gaussian. Initial guess from data.
+    return [A, mu, sigma] or [nan, nan, nan] if the fit fails"""
+    bin_centers = bins[:-1] + np.diff(bins)/2
+    sigma0 = np.std(values) if np.std(values) > 0 else np.diff(bins).mean()
+    try:
+        fit_params, _ = curve_fit(__gaussian__, bin_centers, counts, p0=(counts.max(), np.mean(values), sigma0))
+        fit_params[2] = np.fabs(fit_params[2])
+        return fit_params
+    except (RuntimeError, ValueError, TypeError):
+        return np.full(3, np.nan)
+
+
+def __histograms_panel__(datasets, xlabels, maskingcondition, size, fit, suptitle,
+                         percentile_range=None, fmt='.3f', **kwargs):
+    """2x3 histograms of 6 datasets (only finite and unmasked values), optional gaussian fit
+
+    kwargs['bins'] may be a list of 6 bins specifications (one per dataset)
+    percentile_range: (low, high) histogram range from percentiles of each dataset when bins is an int
+    """
+    fig, ax = plt.subplots(2, 3)
+    fig.subplots_adjust(hspace = 0.35, wspace = 0.25)
+    if size is not None:
+        fig.set_size_inches(size[0], size[1])
+
+    bins_list = kwargs.pop('bins', 50)
+    if not (isinstance(bins_list, (list, tuple)) and len(bins_list) == 6):
+        bins_list = [bins_list] * 6
+
+    fitgaussianresults = []
+    for axidx, data, xlabel, bins in zip(np.ndindex(ax.shape), datasets, xlabels, bins_list):
+        values = __valid_values__(data, maskingcondition)
+        titleplot = xlabel + f'  (N = {len(values)})'
+        if len(values) == 0:
+            fitgaussianresults.append(np.full(3, np.nan))
+            ax[axidx].set_title(titleplot + '\nno data')
+            continue
+        histkwargs = dict(kwargs)
+        if np.ndim(bins) == 0 and 'range' not in histkwargs:
+            if np.ptp(values) == 0:  # constant value: narrow range around it
+                halfwidth = max(1e-4 * np.fabs(values[0]), 1e-6)
+                histkwargs['range'] = (values[0] - halfwidth, values[0] + halfwidth)
+            elif percentile_range is not None:
+                low, high = np.percentile(values, percentile_range)
+                if high > low:
+                    histkwargs['range'] = (low, high)
+        counts, edges, _ = ax[axidx].hist(values, bins=bins, **histkwargs)
+        nb_out = len(values) - int(counts.sum())
+        if nb_out:
+            titleplot += f', {nb_out} out of range'
+
+        if fit:
+            if np.ptp(values) > 0:
+                fit_params = __fit_gaussian__(counts, edges, values)
+            else:  # constant value: nothing to fit
+                fit_params = np.array([len(values), values[0], 0.])
+            fitgaussianresults.append(fit_params)
+            if np.all(np.isfinite(fit_params)) and fit_params[2] > 0:
+                xvals = np.linspace(edges[0], edges[-1], 200)
+                ax[axidx].plot(xvals, __gaussian__(xvals, *fit_params), color = 'red', linewidth = 2)
+            titleplot += f'\nμ = {fit_params[1]:{fmt}}, σ = {fit_params[2]:{fmt}}'
+        else:
+            titleplot += f'\nmean = {np.mean(values):{fmt}}, std = {np.std(values):{fmt}}'
+
+        ax[axidx].set_xlabel(xlabel)
+        ax[axidx].set_ylabel('Counts')
+        ax[axidx].set_title(titleplot)
+        ax[axidx].title.set_size(10)
+
+    fig.suptitle(suptitle)
+    return fig, ax, fitgaussianresults
 
 
 
@@ -530,56 +620,39 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
         exz = (indexed_fileseries.exz_sample).reshape(indexed_fileseries.nb_files) * multiplier
         eyz = (indexed_fileseries.eyz_sample).reshape(indexed_fileseries.nb_files) * multiplier
 
-    if maskingcondition is not None:
-        if maskingcondition.shape != exx.shape:
-            print('Be careful! maskingcondition has not the expected shape :', exx.shape)
-            return None, None
-        
-        exx = ma.masked_where(maskingcondition, exx)
-        eyy = ma.masked_where(maskingcondition, eyy)
-        ezz = ma.masked_where(maskingcondition, ezz)
-        exy = ma.masked_where(maskingcondition, exy)
-        exz = ma.masked_where(maskingcondition, exz)
-        eyz = ma.masked_where(maskingcondition, eyz)
-    
+    # maskingcondition: True = rejected point, 1D (nb_files) or 2D map with nb_files elements
+    if maskingcondition is not None and np.size(maskingcondition) != exx.size:
+        print('Be careful! maskingcondition has not the expected number of elements :', exx.size)
+        return None, None, None
+
     strain  = [exx, eyy, ezz, exy, exz, eyz]
-    xlabels = ['ε$_{xx}$', 'ε$_{yy}$', 'ε$_{zz}$', 'ε$_{xy}$', 'ε$_{xz}$', 'ε$_{yz}$']
-    
-    fig, ax = plt.subplots(2, 3)
-    fig.subplots_adjust(hspace = 0.25, wspace = 0.2)
+    xlabels = [f'ε$_{{{comp}}}$ (x{1/multiplier:.0E})' for comp in ('xx', 'yy', 'zz', 'xy', 'xz', 'yz')]
 
-    fitgaussianresults= []
-    if size is not None:
-        fig.set_size_inches(size[0], size[1])
-    
-    for axidx, data, xlabel in zip(np.ndindex(ax.shape), strain, xlabels):
-        counts, bins, patches = ax[axidx].hist(data, **kwargs)
-        
-        titleplot = xlabel
-        if fit:       
-            # Compute the bins centers. Used when evaluating the fitting function (__gaussian__)
-            bin_centers = bins[:-1] + np.diff(bins)/2
-            # Compute the fit_params [A, mu, sigma], returned covariance is trashed   
-            fit_params, _ = curve_fit(__gaussian__, bin_centers, counts, p0 = (50, 0, 2))
-            
-            # Plot result
-            xlims = ax[axidx].get_xlim()
-            xvals = np.linspace(xlims[0], xlims[1], 200)
+    return __histograms_panel__(strain, xlabels, maskingcondition, size, fit,
+                                f'Distribution strain components in {frame} frame', **kwargs)
 
-            fitgaussianresults.append(fit_params)
-            
-            ax[axidx].plot(xvals, __gaussian__(xvals, *fit_params), color = 'red', linewidth = 2)
-            titleplot += f'\nA = {fit_params[0]:.3f}, μ = {fit_params[1]:.3f}, σ = {fit_params[2]:.3f}'
-            
-    
-        ax[axidx].set_xlabel(xlabel+f' (x{1/multiplier:.0E})')
-        ax[axidx].set_ylabel('Counts')
-        ax[axidx].set_title(titleplot)
-        ax[axidx].title.set_size(10)
-        
-    fig.suptitle(f'Distribution strain components in {frame} frame')
-    
-    return fig, ax, fitgaussianresults
+
+def LatticeParamsHistogram(indexed_fileseries: parsed_fitfileseries, maskingcondition: bool = None,
+                           size: tuple = (18,10), fit: bool = False,
+                           percentile_range: tuple = (0.5, 99.5), **kwargs) -> tuple:
+    """histograms of the 6 lattice parameters a, b, c (Angstrom), alpha, beta, gamma (deg)
+
+    maskingcondition: True = rejected point (1D or 2D with nb_files elements)
+    bins: int (default 50) or list of 6 bins specifications
+    percentile_range: histogram range from these percentiles of each parameter (when bins is an int)
+                      to avoid outliers flattening the distribution. None: full range
+    fit: gaussian fit of each histogram
+    return fig, ax, list of 6 [A, mu, sigma] (if fit)
+    """
+    latparams = [indexed_fileseries.a, indexed_fileseries.b, indexed_fileseries.c,
+                 indexed_fileseries.alpha, indexed_fileseries.beta, indexed_fileseries.gamma]
+    if maskingcondition is not None and np.size(maskingcondition) != np.size(latparams[0]):
+        print('Be careful! maskingcondition has not the expected number of elements :', np.size(latparams[0]))
+        return None, None, None
+    xlabels = ['a (Angst)', 'b (Angst)', 'c (Angst)', 'alpha (deg)', 'beta (deg)', 'gamma (deg)']
+    return __histograms_panel__(latparams, xlabels, maskingcondition, size, fit,
+                                'Distribution of lattice parameters', percentile_range=percentile_range,
+                                fmt='.5f', **kwargs)
 
 def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries, 
               scale: str = 'default', size = (21,10),
@@ -617,12 +690,13 @@ def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: par
             
             plotvmin = np.repeat(plotvmin, 6)
             plotvmax = np.repeat(plotvmax, 6)
+            vlimits = list(zip(plotvmin, plotvmax))
         except KeyError:
             raise KeyError("If you select scale = 'other' you must specify vmin and vmax")
-    
+
     else:
-        raise Exception("scale must be in the list ['default', 'mean3sigma', 'uniform', 'other']")
-    
+        raise Exception("scale must be in the list ['default', 'other']")
+
     #titles = ['$a$', '$b$', '$c$', '$\alpha$', '$\beta$', '$\gamma$']
     titles = ['a (Angst)', 'b (Angst)', 'c (Angst)', 'alpha (deg)', 'beta (deg)', 'gamma (deg)']
     
