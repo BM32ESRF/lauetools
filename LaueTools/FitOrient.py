@@ -1563,7 +1563,7 @@ def error_function_general(varying_parameters_values_array,
             in ("T00", "T01", "T02", "T10", "T11", "T12", "T20", "T21", "T22")):
             for i in list(range(3)):
                 for j in list(range(3)):
-                    if parameter_name is "T%d%d" % (i, j):
+                    if parameter_name == "T%d%d" % (i, j):
                         if nb_varying_parameters > 1:
                             T[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
@@ -1574,7 +1574,7 @@ def error_function_general(varying_parameters_values_array,
             in ("Ts00", "Ts01", "Ts02", "Ts10", "Ts11", "Ts12", "Ts20", "Ts21", "Ts22")):
             for i in list(range(3)):
                 for j in list(range(3)):
-                    if parameter_name is "Ts%d%d" % (i, j):
+                    if parameter_name == "Ts%d%d" % (i, j):
                         if nb_varying_parameters > 1:
                             Ts[i, j] = varying_parameters_values_array[varying_parameter_index]
                         else:
