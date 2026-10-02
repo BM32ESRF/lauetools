@@ -52,6 +52,12 @@ def check_material(key_material, rng, sampletilt=40.0):
     assert np.abs(res["fullstrain_sample"] - np.dot(M, np.dot(eps_true, M.T))).max() < 1e-5
     assert abs(res["stress_sample"][2, 2]) < 1e-9
 
+    # lattice parameters of the reference cell deformed by the true strain (exact) vs computed ones
+    exact = CP.latticeparameters_from_strain(eps_true, lat)
+    lp = res["latticeparameters"]
+    assert np.abs((lp[:3] - exact[:3]) / exact[:3]).max() < 5e-5
+    assert np.abs(np.radians(lp[3:] - exact[3:])).max() < 5e-5
+
 
 def test_fullstrain_stresszz0():
     rng = np.random.default_rng(0)
@@ -60,11 +66,19 @@ def test_fullstrain_stresszz0():
             check_material(key_material, rng)
 
 
+def test_latticeparameters_zero_strain():
+    for key_material in ("Si", "Ti", "Zr"):
+        lat = dict_Materials[key_material][1]
+        lp = CP.latticeparameters_from_strain(np.zeros((3, 3)), lat)
+        assert np.allclose(lp, lat)
+
+
 def test_no_stiffness_data():
     assert CP.fullstrain_from_deviatoricstrain(np.zeros((3, 3)), np.eye(3), "CdTe") is None
 
 
 if __name__ == "__main__":
     test_fullstrain_stresszz0()
+    test_latticeparameters_zero_strain()
     test_no_stiffness_data()
     print("full strain tests passed")

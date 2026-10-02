@@ -1283,6 +1283,10 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
         footer += "hydrostatic strain (trace of full strain, relative volume change) assuming stress_zz=0 (10-3 unit)\n"
         footer += "%.3f\n" % (dict_matrices["hydrostaticstrain"] * 1000.0)
 
+    if "latticeparameters_fullstrain" in dict_matrices:
+        footer += "lattice parameters from full strain assuming stress_zz=0: a b c (Angstrom) alpha beta gamma (deg)\n"
+        footer += str(np.round(np.array(dict_matrices["latticeparameters_fullstrain"], dtype=np.float64), decimals=6)) + "\n"
+
     if "stress_sample" in dict_matrices:
         footer += "stress in sample2 frame assuming stress_zz=0 (MPa)\n"
         footer += str(np.round(np.array(dict_matrices["stress_sample"] * 1000.0, dtype=np.float64), decimals=1)) + "\n"

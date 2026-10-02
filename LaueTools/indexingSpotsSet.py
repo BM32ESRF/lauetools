@@ -112,6 +112,7 @@ class spotsset:
         self.dict_grain_equivalentstrain = {}  # von Mises equivalent strain (frame independent scalar)
         self.dict_grain_fullstrain_sample = {}  # 3x3 full strain in sample frame (stress_zz=0 assumption)
         self.dict_grain_stress_sample = {}  # 3x3 stress (GPa) in sample frame (stress_zz=0 assumption)
+        self.dict_grain_fullstrain_latticeparameters = {}  # a,b,c,alpha,beta,gamma from full strain (stress_zz=0)
         self.dict_grain_latticeparameters = {}
         self.dict_grain_Ts = {}
         self.dict_grain_matching_rate = {} 
@@ -181,6 +182,7 @@ class spotsset:
         self.fullstrain_sampleframe = None  # needs stiffness of material in dict_Stiffness
         self.stress_sampleframe = None
         self.hydrostaticstrain = None
+        self.fullstrain_latticeparameters = None  # a,b,c,alpha,beta,gamma from full strain (stress_zz=0)
         self.sampletilt = 40.0  # sample surface tilt (deg) used for stress_zz=0 assumption
         self.new_latticeparameters = None
         self.refinedUBmatrix = None
@@ -2695,16 +2697,19 @@ class spotsset:
                                                 sampletilt=self.sampletilt,
                                                 verbose=verbose)
         self.hydrostaticstrain = None
+        self.fullstrain_latticeparameters = None
         if res is not None:
             self.fullstrain_sampleframe = res["fullstrain_sample"]
             self.stress_sampleframe = res["stress_sample"]
             self.hydrostaticstrain = res["hydrostaticstrain"]
+            self.fullstrain_latticeparameters = res["latticeparameters"]
         if CP.PRINT_FULLSTRAIN and (res is not None or verbose > 0):
             print("%s grain #%d: %s" % (self.key_material, grain_index,
                                         CP.fullstrain_text(res, self.key_material, self.sampletilt)))
 
         self.dict_grain_fullstrain_sample[grain_index] = self.fullstrain_sampleframe
         self.dict_grain_stress_sample[grain_index] = self.stress_sampleframe
+        self.dict_grain_fullstrain_latticeparameters[grain_index] = self.fullstrain_latticeparameters
 
     def refineStrainElementsSpotsFamily(self, grain_index:int, initial_matrix,
                                                             use_weights=1, verbose=0):
@@ -3264,6 +3269,7 @@ class spotsset:
                     dict_matrices["fullstrain_sample"] = self.fullstrain_sampleframe
                     dict_matrices["stress_sample"] = self.stress_sampleframe
                     dict_matrices["hydrostaticstrain"] = self.hydrostaticstrain
+                    dict_matrices["latticeparameters_fullstrain"] = self.fullstrain_latticeparameters
 
             dict_matrices["LatticeParameters"] = self.new_latticeparameters
 

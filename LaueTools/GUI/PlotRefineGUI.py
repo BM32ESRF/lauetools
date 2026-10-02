@@ -2853,6 +2853,7 @@ class Plot_RefineFrame(wx.Frame):
         if self.fullstrain_results is not None:
             dict_matrices["fullstrain_sample"] = self.fullstrain_results["fullstrain_sample"]
             dict_matrices["hydrostaticstrain"] = self.fullstrain_results["hydrostaticstrain"]
+            dict_matrices["latticeparameters_fullstrain"] = self.fullstrain_results["latticeparameters"]
             dict_matrices["stress_sample"] = self.fullstrain_results["stress_sample"]
         dict_matrices["CCDLabel"] = self.CCDLabel
         dict_matrices["detectorparameters"] = self.CCDcalib
@@ -3794,10 +3795,10 @@ class FitResultsBoard(wx.Dialog):
             self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 60))
         # full strain and stress assuming stress_zz=0 (sample frame)
         self.fullstrainsample = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 190))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 240))
 
         self.HKLxyz_names = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 190))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 240))
         self.HKLxyz = wx.TextCtrl(
             self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 60))
 
@@ -3836,13 +3837,13 @@ class FitResultsBoard(wx.Dialog):
         horizontalBox3.Add(self.b0, proportion=1, border=0)
 
         horizontalBox = wx.BoxSizer()
-        horizontalBox.Add(self.devstraincryst, proportion=1, border=0)
-        horizontalBox.Add(self.devstrainsample, proportion=1, border=0)
+        horizontalBox.Add(self.devstraincryst, proportion=1, flag=wx.EXPAND, border=0)
+        horizontalBox.Add(self.devstrainsample, proportion=1, flag=wx.EXPAND, border=0)
 
         # full strain (stress_zz=0) next to HKL of lab and sample axes
         horizontalBox4 = wx.BoxSizer()
-        horizontalBox4.Add(self.HKLxyz_names, proportion=1, border=0)
-        horizontalBox4.Add(self.fullstrainsample, proportion=1, border=0)
+        horizontalBox4.Add(self.HKLxyz_names, proportion=1, flag=wx.EXPAND, border=0)
+        horizontalBox4.Add(self.fullstrainsample, proportion=1, flag=wx.EXPAND, border=0)
 
         horizontalBox5 = wx.BoxSizer()
         horizontalBox5.Add(self.Ts, proportion=1, border=0)

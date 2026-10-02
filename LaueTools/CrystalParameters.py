@@ -1983,6 +1983,30 @@ def strain_from_crystal_to_sample_frame_corrected(strain, UBmat, latticeparams, 
     return np.dot(M, np.dot(strain, M.T))
 
 
+def latticeparameters_from_strain(strain, latticeparams):
+    r"""
+    Direct lattice parameters of the reference unit cell deformed by a (full) strain tensor
+
+    a_i = (Id + strain) a0_i  where a0_i are the reference direct basis vectors (columns of
+    calc_B_RR(latticeparams, directspace=0), cartesian frame x // a, z // c*) in which strain must be expressed
+    (as fullstrain_crystal from fullstrain_from_deviatoricstrain()). Rotation is not needed:
+    lattice parameters do not depend on it.
+
+    :param strain: 3x3 symmetric strain tensor in direct crystal frame (x // a)
+    :param latticeparams: reference (unstrained) direct lattice parameters [a, b, c, alpha, beta, gamma] (deg)
+    :return: array of 6 elements [a, b, c, alpha, beta, gamma] (same length unit as latticeparams, angles in deg)
+    """
+    Adirect0 = calc_B_RR(latticeparams, directspace=0)
+    Adirect = np.dot(np.eye(3) + np.array(strain, dtype=np.float64), Adirect0)
+    avec, bvec, cvec = Adirect.T
+    lengths = [np.sqrt(np.dot(v, v)) for v in (avec, bvec, cvec)]
+
+    def angle(u, v):
+        return np.arccos(np.clip(np.dot(u, v) / np.sqrt(np.dot(u, u) * np.dot(v, v)), -1.0, 1.0)) * RAD
+
+    return np.array(lengths + [angle(bvec, cvec), angle(cvec, avec), angle(avec, bvec)])
+
+
 def fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
                                     dictmaterials=dict_Materials,
                                     dictstiffness=dict_Stiffness,
@@ -2014,6 +2038,8 @@ def fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
         'fullstrain_crystal', 'fullstrain_sample' : 3x3 full strain
         'stress_crystal', 'stress_sample' : 3x3 stress
         'hydrostaticstrain' : trace of full strain (relative volume change)
+        'latticeparameters' : [a, b, c, alpha, beta, gamma] of the reference cell of key_material
+                              deformed by the full strain (angles in deg)
         'devstrain_sample' : 3x3 deviatoric strain in sample frame
         or None if no stiffness data are available for key_material
     """
@@ -2055,7 +2081,9 @@ def fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
                "fullstrain_sample": np.dot(M, np.dot(fullstrain_crystal, M.T)),
                "devstrain_sample": np.dot(M, np.dot(devstrain, M.T)),
                "stress_crystal": stress_crystal,
-               "stress_sample": np.dot(M, np.dot(stress_crystal, M.T))}
+               "stress_sample": np.dot(M, np.dot(stress_crystal, M.T)),
+               "latticeparameters": latticeparameters_from_strain(fullstrain_crystal,
+                                                                  dictmaterials[key_material][1])}
 
     if verbose > 0:
         print("hydrostatic strain (trace) (10-3 unit)", hydrostrain * 1000)
@@ -2080,10 +2108,13 @@ def fullstrain_text(res, key_material="", sampletilt=40.0):
     if res is None:
         return ("Full strain (stress_zz=0 assumption): no elastic constants for material '%s' "
                 "in dict_Stiffness (dict_LaueTools.py)\n" % key_material)
-    txt = "Full Strain (10-3 units) in sample frame (tilt=%.0fdeg), assumption stress_zz=0\n" % sampletilt
+    txt = "Full Strain (10-3) sample frame (tilt=%.0fdeg), stress_zz=0\n" % sampletilt
     for k in range(3):
         txt += "%.3f   %.3f   %.3f\n" % tuple(np.round(res["fullstrain_sample"][k] * 1000.0, decimals=3))
     txt += "Hydrostatic strain (trace, 10-3 units): %.3f\n" % (res["hydrostaticstrain"] * 1000.0)
+    if "latticeparameters" in res:
+        txt += "Lattice parameters: a b c (Angst.), alpha beta gamma (deg)\n"
+        txt += "%.5f   %.5f   %.5f   %.4f   %.4f   %.4f\n" % tuple(res["latticeparameters"])
     txt += "Stress (MPa) in sample frame\n"
     for k in range(3):
         txt += "%.1f   %.1f   %.1f\n" % tuple(np.round(res["stress_sample"][k] * 1000.0, decimals=1))
