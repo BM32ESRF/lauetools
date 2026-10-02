@@ -228,6 +228,8 @@ class Plot_RefineFrame(wx.Frame):
         self.previous_Bmat = None
         self.UBB0mat = None
         self.deviatoricstrain_sampleframe = None
+        self.deviatoricstrain_sampleframe_old = None  # TEMPORARY-STRAINFIX
+        self.fullstrain_results = None  # full strain & stress assuming stress_zz=0
         self.HKLxyz_names = None
         self.HKLxyz = None
 
@@ -2078,19 +2080,36 @@ class Plot_RefineFrame(wx.Frame):
 
         print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
 
+        # latticeparams: strain of compute_deviatoricstrain() is in direct crystal frame (x // a)
         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
-                                                                        devstrain, UBmat)
+                                                                        devstrain, UBmat,
+                                                                        latticeparams=latticeparams)
 
         devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
+
+        # TEMPORARY-STRAINFIX: OLD deviatoric strain in sample frame as computed before Oct. 2026
+        deviatoricstrain_sampleframe_old = CP.strain_from_crystal_to_sample_frame_OLD(devstrain, UBmat)
+        devstrain_sampleframe_old_round = np.round(deviatoricstrain_sampleframe_old * 1000, decimals=3)
+        CP.print_devstrain_sample_comparison(deviatoricstrain_sampleframe_old,
+                                            deviatoricstrain_sampleframe, label=key_material)
+
+        # full strain and stress assuming stress_zz = 0 in sample frame (needs elastic constants of material)
+        fullstrain_results = CP.fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
+                                                                 dictmaterials=self.dict_Materials)
+        fullstrain_txt = CP.fullstrain_text(fullstrain_results, key_material)
+        if CP.PRINT_FULLSTRAIN:
+            print(fullstrain_txt)
         devstrain_round = np.round(devstrain * 1000, decimals=3)
 
         self.new_latticeparameters = lattice_parameter_direct_strain
         self.deviatoricstrain = devstrain
         self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
+        self.deviatoricstrain_sampleframe_old = deviatoricstrain_sampleframe_old  # TEMPORARY-STRAINFIX
+        self.fullstrain_results = fullstrain_results
 
 
         # ADDONS: strain in lauetools frame:
-        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat)*1000,decimals=3)
+        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat, latticeparams=latticeparams)*1000,decimals=3)
         print('====> **** devstrain_LTframe',devstrain_LTframe)
         print('*************************************\n')
 
@@ -2151,11 +2170,18 @@ class Plot_RefineFrame(wx.Frame):
         txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
         for k in range(3):
             txt1 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_round[k])
+        equivalentstrain = CP.equivalent_strain(devstrain)
+        txt1 += "Equivalent (von Mises) strain (10-3 units, frame independent): %.3f\n" % (equivalentstrain * 1000)
+        print("Equivalent (von Mises) strain (10-3 units, frame independent): %.3f" % (equivalentstrain * 1000))
         texts_dict["devstrain_crystal"] = txt1
 
         txt2 = "Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n"
         for k in range(3):
             txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_round[k])
+        # TEMPORARY-STRAINFIX: OLD values (before Oct. 2026, wrong for non orthogonal cells)
+        txt2 += "[TEMPORARY] OLD values (before Oct. 2026, wrong for hexagonal, trigonal, monoclinic, triclinic)\n"
+        for k in range(3):
+            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_old_round[k])
         texts_dict["devstrain_sample"] = txt2
 
         #         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
@@ -2163,6 +2189,7 @@ class Plot_RefineFrame(wx.Frame):
         #         for k in range(3):
         #             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
         txt3 = ""
+        txt3 = fullstrain_txt
         texts_dict["fullstrain_sample"] = txt3
 
         txtinitlattice = "Initial Lattice Parameters\n"
@@ -2818,7 +2845,15 @@ class Plot_RefineFrame(wx.Frame):
         dict_matrices["B0"] = self.B0matrix
         dict_matrices["UBB0"] = self.UBB0mat
         dict_matrices["devstrain_crystal"] = self.deviatoricstrain
+        if self.deviatoricstrain is not None:
+            dict_matrices["equivalent_strain"] = CP.equivalent_strain(self.deviatoricstrain)
         dict_matrices["devstrain_sample"] = self.deviatoricstrain_sampleframe
+        if self.deviatoricstrain_sampleframe_old is not None:  # TEMPORARY-STRAINFIX
+            dict_matrices["devstrain_sample_old"] = self.deviatoricstrain_sampleframe_old
+        if self.fullstrain_results is not None:
+            dict_matrices["fullstrain_sample"] = self.fullstrain_results["fullstrain_sample"]
+            dict_matrices["hydrostaticstrain"] = self.fullstrain_results["hydrostaticstrain"]
+            dict_matrices["stress_sample"] = self.fullstrain_results["stress_sample"]
         dict_matrices["CCDLabel"] = self.CCDLabel
         dict_matrices["detectorparameters"] = self.CCDcalib
         dict_matrices["pixelsize"] = self.pixelsize
@@ -3731,7 +3766,8 @@ class FitResultsBoard(wx.Dialog):
         textHKLxyz = data_dict["HKLxyz"]
 
 
-        wx.Dialog.__init__(self, parent, -1, title=title, pos=(200, 200), size=(810, 660))
+        wx.Dialog.__init__(self, parent, -1, title=title, pos=(200, 50),
+                           style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         # Start of sizers and widgets contained within.
         self.background = self  # wx.Panel(self)
@@ -3743,26 +3779,27 @@ class FitResultsBoard(wx.Dialog):
 
         self.txtnbresidues = wx.StaticText(self.background, -1, texttnbresidues)
         self.initlat = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
         self.finallat = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
         self.ub = wx.TextCtrl(
             self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.b0 = wx.TextCtrl(
             self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
         self.devstraincryst = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 170))
         self.devstrainsample = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 100))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 170))
         self.Ts = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 60))
+        # full strain and stress assuming stress_zz=0 (sample frame)
         self.fullstrainsample = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 120))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 190))
 
         self.HKLxyz_names = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 190))
         self.HKLxyz = wx.TextCtrl(
-            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 140))
+            self.background, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER, size=(WIDTH, 60))
 
         self.initlat.SetValue(textil)
         self.finallat.SetValue(textrl)
@@ -3802,24 +3839,26 @@ class FitResultsBoard(wx.Dialog):
         horizontalBox.Add(self.devstraincryst, proportion=1, border=0)
         horizontalBox.Add(self.devstrainsample, proportion=1, border=0)
 
+        # full strain (stress_zz=0) next to HKL of lab and sample axes
         horizontalBox4 = wx.BoxSizer()
-        horizontalBox4.Add(self.Ts, proportion=1, border=0)
+        horizontalBox4.Add(self.HKLxyz_names, proportion=1, border=0)
         horizontalBox4.Add(self.fullstrainsample, proportion=1, border=0)
 
         horizontalBox5 = wx.BoxSizer()
-        horizontalBox5.Add(self.HKLxyz_names, proportion=1, border=0)
+        horizontalBox5.Add(self.Ts, proportion=1, border=0)
         horizontalBox5.Add(self.HKLxyz, proportion=1, border=0)
 
         verticalBox = wx.BoxSizer(wx.VERTICAL)
         verticalBox.Add(horizontalBox1, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox2, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox3, proportion=0, flag=wx.EXPAND, border=5)
-        verticalBox.Add(horizontalBox, proportion=0, flag=wx.EXPAND, border=5)
+        verticalBox.Add(horizontalBox, proportion=1, flag=wx.EXPAND, border=5)
+        verticalBox.Add(horizontalBox4, proportion=1, flag=wx.EXPAND, border=5)
         verticalBox.Add(horizontalBox5, proportion=0, flag=wx.EXPAND, border=5)
         verticalBox.Add(self.OKBtn, proportion=0, flag=wx.EXPAND, border=0)
-        verticalBox.Add(horizontalBox4, proportion=0, flag=wx.EXPAND, border=5)
 
-        self.background.SetSizer(verticalBox)
+        # dialog size fitted to its content (all rows above OK button)
+        self.background.SetSizerAndFit(verticalBox)
 
         self.CentreOnParent(wx.BOTH)
         self.SetFocus()

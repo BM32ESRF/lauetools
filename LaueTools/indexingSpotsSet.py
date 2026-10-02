@@ -20,6 +20,7 @@ from typing import Iterable, List, Tuple, Dict, Union
 microns = float
 mm=float
 degrees = float
+keV = float
 
 if sys.version_info.major == 3:
     import configparser as CONF
@@ -107,6 +108,10 @@ class spotsset:
         self.dict_grain_matrix = {}  # UB matrices
         self.dict_grain_devstrain = {}  # 3x3 deviatoric strain in crsytal frame
         self.dict_grain_devstrain_sample = {}  # 3x3 deviatoric strain in sample frame
+        self.dict_grain_devstrain_sample_old = {}  # TEMPORARY-STRAINFIX: as computed before Oct. 2026
+        self.dict_grain_equivalentstrain = {}  # von Mises equivalent strain (frame independent scalar)
+        self.dict_grain_fullstrain_sample = {}  # 3x3 full strain in sample frame (stress_zz=0 assumption)
+        self.dict_grain_stress_sample = {}  # 3x3 stress (GPa) in sample frame (stress_zz=0 assumption)
         self.dict_grain_latticeparameters = {}
         self.dict_grain_Ts = {}
         self.dict_grain_matching_rate = {} 
@@ -171,6 +176,12 @@ class spotsset:
         self.refinedTS = None
         self.deviatoricstrain = None
         self.deviatoricstrain_sampleframe = None
+        self.deviatoricstrain_sampleframe_old = None  # TEMPORARY-STRAINFIX: as computed before Oct. 2026
+        self.equivalentstrain = None  # von Mises equivalent strain of deviatoric strain
+        self.fullstrain_sampleframe = None  # needs stiffness of material in dict_Stiffness
+        self.stress_sampleframe = None
+        self.hydrostaticstrain = None
+        self.sampletilt = 40.0  # sample surface tilt (deg) used for stress_zz=0 assumption
         self.new_latticeparameters = None
         self.refinedUBmatrix = None
         self.B0matrix = None
@@ -773,12 +784,12 @@ class spotsset:
 
     def AssignHKL(self, Orientation:Union[OrientMatrix, Iterable[float]],
                         grain_index:int,
-                        AngleTol:float=1.0,
+                        AngleTol:degrees=1.0,
                         use_spots_in_currentselection:bool=True,
                         selectbyspotsindices=None,
                         verbose:int=0,
-                        emax:float=None,
-                        fastmode=False):
+                        emax:keV=None,
+                        fastmode:bool=False):
         r"""
         Assign hkl to the exp spot data set according to
         the orientation matrix within the tolerance angle
@@ -1624,6 +1635,10 @@ class spotsset:
                     self.dict_grain_matrix[grain_index] = None
                     self.dict_grain_devstrain[grain_index] = None
                     self.dict_grain_devstrain_sample[grain_index] = None
+                    self.dict_grain_devstrain_sample_old[grain_index] = None  # TEMPORARY-STRAINFIX
+                    self.dict_grain_equivalentstrain[grain_index] = None
+                    self.dict_grain_fullstrain_sample[grain_index] = None
+                    self.dict_grain_stress_sample[grain_index] = None
                     self.dict_grain_Ts[grain_index] = None
                     self.dict_grain_latticeparameters[grain_index] = None
                     self.refinedTs = None
@@ -1755,6 +1770,21 @@ class spotsset:
                                                             verbose=verbose-1)
                             
                             self.dict_grain_latticeparameters[grain_index] = self.new_latticeparameters
+
+                            # von Mises equivalent strain (frame independent)
+                            self.equivalentstrain = CP.equivalent_strain(self.deviatoricstrain)
+                            self.dict_grain_equivalentstrain[grain_index] = self.equivalentstrain
+
+                            # TEMPORARY-STRAINFIX: OLD deviatoric strain in sample frame (as before Oct. 2026)
+                            self.deviatoricstrain_sampleframe_old = CP.strain_from_crystal_to_sample_frame_OLD(
+                                                    self.deviatoricstrain, self.refinedUBmatrix)
+                            self.dict_grain_devstrain_sample_old[grain_index] = self.deviatoricstrain_sampleframe_old
+                            CP.print_devstrain_sample_comparison(self.deviatoricstrain_sampleframe_old,
+                                                    self.deviatoricstrain_sampleframe,
+                                                    label="%s grain #%d" % (self.key_material, grain_index))
+
+                            # full strain and stress assuming stress_zz = 0 (sample surface normal)
+                            self.computeFullStrain(grain_index, verbose=verbose-1)
 
                             # write .fit file of single grain spots results
                             #print('self.pixelresidues', self.pixelresidues)
@@ -2643,6 +2673,39 @@ class spotsset:
         return newmatrix, devstrain
 
 
+    def computeFullStrain(self, grain_index:int, verbose:int=0):
+        r"""
+        compute full strain and stress in sample frame from self.deviatoricstrain and self.refinedUBmatrix
+        assuming a zero normal stress to the sample surface (stress_zz = 0)
+        (see CP.fullstrain_from_deviatoricstrain())
+
+        Needs elastic constants of material self.key_material in dict_Stiffness (dict_LaueTools.py)
+
+        set attributes self.fullstrain_sampleframe, self.stress_sampleframe (GPa)
+        and self.dict_grain_fullstrain_sample[grain_index], self.dict_grain_stress_sample[grain_index]
+        (None if stiffness data are not available)
+        """
+        self.fullstrain_sampleframe = None
+        self.stress_sampleframe = None
+
+        res = CP.fullstrain_from_deviatoricstrain(self.deviatoricstrain,
+                                                self.refinedUBmatrix,
+                                                self.key_material,
+                                                dictmaterials=self.dict_Materials,
+                                                sampletilt=self.sampletilt,
+                                                verbose=verbose)
+        self.hydrostaticstrain = None
+        if res is not None:
+            self.fullstrain_sampleframe = res["fullstrain_sample"]
+            self.stress_sampleframe = res["stress_sample"]
+            self.hydrostaticstrain = res["hydrostaticstrain"]
+        if CP.PRINT_FULLSTRAIN and (res is not None or verbose > 0):
+            print("%s grain #%d: %s" % (self.key_material, grain_index,
+                                        CP.fullstrain_text(res, self.key_material, self.sampletilt)))
+
+        self.dict_grain_fullstrain_sample[grain_index] = self.fullstrain_sampleframe
+        self.dict_grain_stress_sample[grain_index] = self.stress_sampleframe
+
     def refineStrainElementsSpotsFamily(self, grain_index:int, initial_matrix,
                                                             use_weights=1, verbose=0):
         r"""
@@ -3002,6 +3065,15 @@ class spotsset:
             outputfile.write("#deviatoric strain sample frame (10-3 unit)\n")
             outputfile.write(str(self.dict_grain_devstrain_sample[grain_index] * 1000.0) + "\n")
 
+            if self.dict_grain_equivalentstrain.get(grain_index) is not None:
+                outputfile.write("#equivalent (von Mises) strain (10-3 unit)\n")
+                outputfile.write("%.3f\n" % (self.dict_grain_equivalentstrain[grain_index] * 1000.0))
+
+            # TEMPORARY-STRAINFIX
+            if self.dict_grain_devstrain_sample_old.get(grain_index) is not None:
+                outputfile.write("#[TEMPORARY] OLD (before Oct. 2026) deviatoric strain sample frame (10-3 unit)\n")
+                outputfile.write(str(self.dict_grain_devstrain_sample_old[grain_index] * 1000.0) + "\n")
+
         outputfile.close()
 
     def writeFitFile(self, grain_index, corfilename=None, dirname=None,
@@ -3178,11 +3250,20 @@ class spotsset:
             dict_matrices["euler_angles"] = euler_angles
 
             dict_matrices["devstrain_crystal"] = self.deviatoricstrain
+            if self.deviatoricstrain is not None:
+                dict_matrices["equivalent_strain"] = CP.equivalent_strain(self.deviatoricstrain)
             dict_matrices["detectorparameters"] = self.detectorparameters
             dict_matrices["pixelsize"] = self.pixelsize
             dict_matrices["framedim"] = self.dim
             if add_strain_sampleframe:
                 dict_matrices["devstrain_sample"] = deviatoricstrain_sampleframe
+                # TEMPORARY-STRAINFIX
+                if self.deviatoricstrain_sampleframe_old is not None:
+                    dict_matrices["devstrain_sample_old"] = self.deviatoricstrain_sampleframe_old
+                if self.fullstrain_sampleframe is not None:
+                    dict_matrices["fullstrain_sample"] = self.fullstrain_sampleframe
+                    dict_matrices["stress_sample"] = self.stress_sampleframe
+                    dict_matrices["hydrostaticstrain"] = self.hydrostaticstrain
 
             dict_matrices["LatticeParameters"] = self.new_latticeparameters
 
@@ -4793,7 +4874,7 @@ def getallMisorientation(dmat, dmr, dnb):
     """
     in dvpt
     """
-    zvalue = [np.NaN] * len(dmat)
+    zvalue = [np.nan] * len(dmat)
     listkeys = sorted(dmat.keys())
     for k in listkeys:
         zvalue[k - listkeys[0]] = ORI.getMisorientation(dmat[k][0],

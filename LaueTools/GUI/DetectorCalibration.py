@@ -2600,16 +2600,31 @@ class MainCalibrationFrame(wx.Frame):
 
         if verbose>0: print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
 
+        # latticeparams: strain of compute_deviatoricstrain() is in direct crystal frame (x // a)
         deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
-                                                                        devstrain, UBmat)
+                                                                        devstrain, UBmat,
+                                                                        latticeparams=latticeparams)
 
         devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
+
+        # TEMPORARY-STRAINFIX: OLD deviatoric strain in sample frame as computed before Oct. 2026
+        deviatoricstrain_sampleframe_old = CP.strain_from_crystal_to_sample_frame_OLD(devstrain, UBmat)
+        devstrain_sampleframe_old_round = np.round(deviatoricstrain_sampleframe_old * 1000, decimals=3)
+        CP.print_devstrain_sample_comparison(deviatoricstrain_sampleframe_old,
+                                            deviatoricstrain_sampleframe, label=key_material)
+
+        # full strain and stress assuming stress_zz = 0 in sample frame (needs elastic constants of material)
+        fullstrain_results = CP.fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
+                                                                 dictmaterials=DictLT.dict_Materials)
+        fullstrain_txt = CP.fullstrain_text(fullstrain_results, key_material)
+        if CP.PRINT_FULLSTRAIN:
+            print(fullstrain_txt)
         devstrain_round = np.round(devstrain * 1000, decimals=3)
 
 
 
         # ADDONS: strain in lauetools frame:
-        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat)*1000,decimals=3)
+        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat, latticeparams=latticeparams)*1000,decimals=3)
         if verbose>0:
             print('====> **** devstrain_LTframe',devstrain_LTframe)
             print('*************************************\n')
@@ -2673,11 +2688,18 @@ class MainCalibrationFrame(wx.Frame):
         txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
         for k in range(3):
             txt1 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_round[k])
+        equivalentstrain = CP.equivalent_strain(devstrain)
+        txt1 += "Equivalent (von Mises) strain (10-3 units, frame independent): %.3f\n" % (equivalentstrain * 1000)
+        print("Equivalent (von Mises) strain (10-3 units, frame independent): %.3f" % (equivalentstrain * 1000))
         texts_dict["devstrain_crystal"] = txt1
 
         txt2 = "Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n"
         for k in range(3):
             txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_round[k])
+        # TEMPORARY-STRAINFIX: OLD values (before Oct. 2026, wrong for non orthogonal cells)
+        txt2 += "[TEMPORARY] OLD values (before Oct. 2026, wrong for hexagonal, trigonal, monoclinic, triclinic)\n"
+        for k in range(3):
+            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_old_round[k])
         texts_dict["devstrain_sample"] = txt2
 
         #         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
@@ -2685,6 +2707,7 @@ class MainCalibrationFrame(wx.Frame):
         #         for k in range(3):
         #             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
         txt3 = ""
+        txt3 = fullstrain_txt
         texts_dict["fullstrain_sample"] = txt3
 
         txtinitlattice = "Initial Lattice Parameters\n"

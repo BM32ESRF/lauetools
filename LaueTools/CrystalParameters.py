@@ -729,7 +729,7 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
         if 1 : #pour "HKL_6M_Marc_shorter.txt"   
             # array_hkl = copy.copy(list_HKL)
             list_HKL_eq = np.column_stack((list_HKL_mart[:,0],-list_HKL_mart[:,1],list_HKL_mart[:,2]))  # H -K L plan miroir
-            array_hkl = np.row_stack((list_HKL_mart, -list_HKL_mart, list_HKL_eq, -list_HKL_eq))
+            array_hkl = np.vstack((list_HKL_mart, -list_HKL_mart, list_HKL_eq, -list_HKL_eq))
     
     elif Extinc.isdecimal():  # if Extinc is a string with only digits, it is the extinction number
             array_hkl = testhklcond_generalrules_array(Extinc, HKL)
@@ -1197,7 +1197,8 @@ def evaluate_strain_fromUBmat(UBmat, key_material, constantlength="a", dictmater
     if verbose>0:
         print("final lattice_parameters", lattice_parameters)
 
-    deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(devstrain, UBmat)
+    deviatoricstrain_sampleframe = strain_from_crystal_to_sample_frame2(devstrain, UBmat,
+                                                                        latticeparams=latticeparams)
 
     # devstrain_sampleframe_round = np.round(
     #     deviatoricstrain_sampleframe * 1000, decimals=3
@@ -1357,6 +1358,25 @@ def rlat_to_Bstar(rlat):  # 29May13
         # dlat  direct lattice parameters
         # en radians
         """
+    Bstar = np.zeros((3, 3), dtype=float)
+    # rlat angles are in radians (fixed Oct. 2026: dlat_to_rlat() was called with angles_in_deg=1)
+    dlat = dlat_to_rlat(rlat, angles_in_deg=0)
+
+    Bstar[0, 0] = rlat[0]
+    Bstar[0, 1] = rlat[1] * np.cos(rlat[5])
+    Bstar[1, 1] = rlat[1] * np.sin(rlat[5])
+    Bstar[0, 2] = rlat[2] * np.cos(rlat[4])
+    Bstar[1, 2] = -rlat[2] * np.sin(rlat[4]) * np.cos(dlat[3])
+    Bstar[2, 2] = 1.0 / dlat[2]
+
+    return Bstar
+
+def rlat_to_Bstar_OLD(rlat):
+    r"""
+    TEMPORARY-STRAINFIX: OLD (wrong) version of rlat_to_Bstar() used before Oct. 2026
+    (dlat_to_rlat() called with angles_in_deg=1 although angles of rlat are in radians).
+    Only used to compare old and corrected results. To be removed.
+    """
     Bstar = np.zeros((3, 3), dtype=float)
     dlat = dlat_to_rlat(rlat)
 
@@ -1684,7 +1704,38 @@ def calc_epsp_cubic(dlat):
     return epsp
 
 
-def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
+def pure_rotation_part(UBmat):
+    r"""
+    Pure rotation part R of a 3x3 matrix by polar decomposition: UBmat = R S (S symmetric)
+
+    Used to transform a tensor (strain, stress) from crystal frame to lab or sample frame
+    with tensor_new = R tensor R.T (UB tensor UB-1 is not a pure rotation: it slightly breaks
+    the tensor symmetry, at the second order in strain)
+
+    :param UBmat: 3x3 orientation matrix (rotation x small distortion)
+    :return: 3x3 orthogonal matrix
+    """
+    uu, _, vvt = np.linalg.svd(np.array(UBmat, dtype=np.float64))
+    return np.dot(uu, vvt)
+
+
+def directframe_to_B0frame(latticeparams):
+    r"""
+    Rotation Q from the direct crystal cartesian frame (x // a, z // c*, frame of calc_B_RR(directspace=0)
+    where compute_deviatoricstrain() expresses the strain) to the frame of B0 (x // a*, z // c) on which UB acts
+
+    tensor_B0frame = Q tensor_directframe Q.T
+
+    Q = Id for cubic, tetragonal and orthorhombic cells, rotation of 30 deg around c for hexagonal cells
+
+    :param latticeparams: reference direct lattice parameters (angles in deg) used to build B0
+    """
+    B0 = calc_B_RR(latticeparams)
+    Adirect = calc_B_RR(latticeparams, directspace=0)
+    return np.dot(np.linalg.inv(B0).T, np.linalg.inv(Adirect))
+
+
+def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0, latticeparams=None):
     r"""
     Compute strain components in sample frame:
     Zsample perpendicular to sample surface
@@ -1696,6 +1747,10 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
     :param strain: 3x3 symmetric array describing the strain in crystal frame
     :param UBmat: 3x3 array, orientation matrix
     :param sampletilt: float, sample tilt angle in degree (default = 40 degress approx on BM32)
+    :param latticeparams: reference lattice parameters used to build B0. If given, strain is assumed to be
+        expressed in direct crystal frame (x // a) as given by compute_deviatoricstrain() and is first
+        rotated in B0 frame (x // a*). Mandatory for non orthogonal cells (hexagonal, trigonal, monoclinic,
+        triclinic); without it the result is wrong for these cells (LaueTools behaviour before Oct. 2026)
     :return: 3x3 symmetric array describing the strain in sample frame
  
     .. note::
@@ -1709,21 +1764,22 @@ def strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=40.0):
 
         then:
 
-        operator_sample_frame= P-1 UB operator_crystal_frame UB-1 P
-    """
-    P = GT.matRot([0, 1, 0], -sampletilt)
-    #    M = np.dot(np.linalg.inv(P), UBmat)
-    # P pure rotation matrix : inverse = transposed
-    UBmat = np.array(UBmat, dtype=np.float64)
-    M = np.dot(P.transpose(), UBmat) 
-    invM = np.dot(np.linalg.inv(UBmat), P)
+        operator_sample_frame= P-1 R operator_crystal_frame R-1 P   (R pure rotation part of UB)
 
-    strain_sampleframe = np.dot(M, np.dot(strain, invM))
+    """
+    if latticeparams is not None:
+        Q = directframe_to_B0frame(latticeparams)
+        strain = np.dot(Q, np.dot(strain, Q.T))
+    P = GT.matRot([0, 1, 0], -sampletilt)
+    # pure rotation from crystal to sample frame (P and rotation part of UB): inverse = transposed
+    M = np.dot(P.transpose(), pure_rotation_part(UBmat))
+
+    strain_sampleframe = np.dot(M, np.dot(strain, M.T))
 
     return strain_sampleframe
 
 
-def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
+def strain_from_crystal_to_LaueToolsframe(strain, UBmat, latticeparams=None):
     r"""
     to express strain in lauetools frame (x // ki, z towards detector, y // z^x)
     
@@ -1734,9 +1790,15 @@ def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
 
     Normally pure rotational part of UBmat must be considered...It should be Ok for small deformation in UBmat
 
-    operator_LT= UB operator_crystal UB-1
+    operator_LT= R operator_crystal R-1  (R pure rotation part of UB)
+
+    :param latticeparams: see strain_from_crystal_to_sample_frame2() (mandatory for non orthogonal cells)
     """
-    strain_LaueToolsframe = np.dot(UBmat, np.dot(strain, np.linalg.inv(UBmat)))
+    if latticeparams is not None:
+        Q = directframe_to_B0frame(latticeparams)
+        strain = np.dot(Q, np.dot(strain, Q.T))
+    R = pure_rotation_part(UBmat)
+    strain_LaueToolsframe = np.dot(R, np.dot(strain, R.T))
 
     return strain_LaueToolsframe
 
@@ -1773,120 +1835,290 @@ def strain_from_crystal_to_LaueToolsframe(strain, UBmat):
 #     return deviatoric_strain_sampleframe
 
 
+def get_stiffness_matrix(key_material, dictstiffness=dict_Stiffness):
+    r"""
+    Build the 6x6 stiffness matrix (Voigt notation, GPa) of a material from dict_Stiffness
+
+    dictstiffness[key_material] = [name, constants, symmetry] with symmetry and constants:
+
+    * 'cubic':        [C11, C12, C44]
+    * 'hexagonal':    [C11, C12, C13, C33, C44]   (C66 = (C11-C12)/2)
+    * 'tetragonal':   [C11, C12, C13, C33, C44, C66]
+    * 'orthorhombic': [C11, C22, C33, C12, C13, C23, C44, C55, C66]
+    * 'voigt6x6':     full 6x6 matrix (or flat list of 36 elements)
+
+    Constants are expressed in the crystal cartesian frame with x // a, z // c* (perpendicular to a and b)
+    (standard IEEE frame for cubic, tetragonal, orthorhombic and hexagonal crystals)
+
+    :return: 6x6 array or None if material has no stiffness data
+    """
+    if key_material not in dictstiffness:
+        return None
+
+    constants = dictstiffness[key_material][1]
+    symmetry = dictstiffness[key_material][2]
+
+    C = np.zeros((6, 6), dtype=np.float64)
+    if symmetry == "cubic":
+        c11, c12, c44 = constants
+        C[:3, :3] = c12
+        C[[0, 1, 2], [0, 1, 2]] = c11
+        C[[3, 4, 5], [3, 4, 5]] = c44
+    elif symmetry in ("hexagonal", "tetragonal"):
+        if symmetry == "hexagonal":
+            c11, c12, c13, c33, c44 = constants
+            c66 = (c11 - c12) / 2.0
+        else:
+            c11, c12, c13, c33, c44, c66 = constants
+        C[0, 0] = C[1, 1] = c11
+        C[2, 2] = c33
+        C[0, 1] = C[1, 0] = c12
+        C[0, 2] = C[2, 0] = C[1, 2] = C[2, 1] = c13
+        C[3, 3] = C[4, 4] = c44
+        C[5, 5] = c66
+    elif symmetry == "orthorhombic":
+        c11, c22, c33, c12, c13, c23, c44, c55, c66 = constants
+        C[[0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5]] = c11, c22, c33, c44, c55, c66
+        C[0, 1] = C[1, 0] = c12
+        C[0, 2] = C[2, 0] = c13
+        C[1, 2] = C[2, 1] = c23
+    elif symmetry == "voigt6x6":
+        C = np.array(constants, dtype=np.float64).reshape((6, 6))
+    else:
+        raise ValueError("Unknown symmetry '%s' for stiffness of material %s" % (symmetry, key_material))
+
+    return C
+
+
+def equivalent_strain(strain):
+    r"""
+    Von Mises equivalent strain of the deviatoric part of a 3x3 strain tensor
+
+    eps_eq = sqrt(2/3 eps':eps')   with eps' = eps - trace(eps)/3 Id
+
+    Same as multigrainFS.deviatoric_strain_crystal_to_equivalent_strain() (Tamura, formula 4.14).
+    This scalar is invariant by rotation: it does not depend on the frame (crystal, sample, lab).
+
+    :param strain: 3x3 strain tensor (tensorial shear components eps_ij, not engineering 2*eps_ij)
+    :return: float, equivalent strain (same unit as strain)
+    """
+    strain = np.array(strain, dtype=np.float64)
+    devstrain = strain - np.trace(strain) / 3.0 * np.eye(3)
+    return np.sqrt(2.0 / 3.0 * np.sum(devstrain * devstrain))
+
+
+# TEMPORARY-STRAINFIX: comparison of old (wrong for non orthogonal cells) and corrected
+# deviatoric strain in sample frame. To be removed once the correction is validated
+TEMPORARY_PRINT_STRAIN_COMPARISON = True
+
+
+def strain_from_crystal_to_sample_frame_OLD(strain, UBmat, sampletilt=40.0):
+    r"""
+    TEMPORARY-STRAINFIX: OLD sample frame transform used before Oct. 2026 (no a // x -> a* // x frame
+    rotation, wrong for hexagonal, trigonal, monoclinic and triclinic cells). Only used for comparison.
+    """
+    return strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=sampletilt, latticeparams=None)
+
+
+def print_devstrain_sample_comparison(devstrain_sample_old, devstrain_sample_corrected, label=""):
+    r"""
+    TEMPORARY-STRAINFIX: print old and corrected deviatoric strain in sample frame (10-3 unit)
+    and the max absolute difference
+    """
+    if not TEMPORARY_PRINT_STRAIN_COMPARISON:
+        return
+    old = np.round(np.array(devstrain_sample_old, dtype=np.float64) * 1000.0, decimals=3)
+    new = np.round(np.array(devstrain_sample_corrected, dtype=np.float64) * 1000.0, decimals=3)
+    print("[TEMPORARY-STRAINFIX] %s deviatoric strain in LT sample frame (10-3 unit)" % label)
+    print("        OLD (before Oct. 2026)                          CORRECTED")
+    for k in range(3):
+        print("  %8.3f %8.3f %8.3f      |   %8.3f %8.3f %8.3f" % (tuple(old[k]) + tuple(new[k])))
+    print("  max |OLD - CORRECTED| = %.3f (10-3 unit)" % np.amax(np.fabs(old - new)))
+    eq_old = equivalent_strain(devstrain_sample_old) * 1000.0
+    eq_new = equivalent_strain(devstrain_sample_corrected) * 1000.0
+    eq_diff = equivalent_strain(np.array(devstrain_sample_old) - np.array(devstrain_sample_corrected)) * 1000.0
+    print("  equivalent (von Mises) strain (10-3 unit): OLD %.3f   CORRECTED %.3f" % (eq_old, eq_new))
+    print("  equivalent strain of OLD - CORRECTED: %.3f (10-3 unit), i.e. %.1f %% of CORRECTED one"
+          % (eq_diff, 100.0 * eq_diff / eq_new if eq_new > 0 else np.nan))
+
+
+def rotation_directcrystal_to_sample_frame(UBmat, latticeparams, sampletilt=40.0):
+    r"""
+    Rotation matrix M from the direct crystal cartesian frame (x // a, z // c*, frame of
+    calc_B_RR(directspace=0) where compute_deviatoricstrain() expresses the strain) to the sample frame
+
+    operator_sample = M operator_crystal M.T
+
+    Sample frame: LaueTools frame rotated by sampletilt around yLT
+    (Zsample normal to sample surface, Xsample in (xLT, zLT) plane, Ysample = yLT)
+
+    .. note:: UB acts on the frame of B0 (x // a*): Q links both frames
+        (Q = Id for cubic, tetragonal and orthorhombic cells, 30 deg rotation around c for hexagonal cells)
+
+    :param UBmat: 3x3 orientation matrix in q = UB B0 G* (LaueTools frame)
+    :param latticeparams: reference direct lattice parameters (angles in deg) used to build B0
+    :param sampletilt: sample surface tilt angle (deg) w.r.t. incoming beam (40 deg on BM32)
+    :return: 3x3 orthogonal matrix M
+    """
+    Q = directframe_to_B0frame(latticeparams)
+    # pure rotation part of UB (polar decomposition, UB = R (Id + small distortion))
+    R_UB = pure_rotation_part(UBmat)
+    # sample frame to LaueTools frame
+    P = GT.matRot([0, 1, 0], -sampletilt)
+
+    return np.dot(P.T, np.dot(R_UB, Q))
+
+
+def strain_from_crystal_to_sample_frame_corrected(strain, UBmat, latticeparams, sampletilt=40.0):
+    r"""
+    Corrected version of strain_from_crystal_to_sample_frame2() valid for any crystal symmetry
+    (takes into account the a // x convention of the frame of strain, see rotation_directcrystal_to_sample_frame())
+
+    :param strain: 3x3 symmetric strain in direct crystal frame (as given by compute_deviatoricstrain())
+    :param UBmat: 3x3 orientation matrix in q = UB B0 G*
+    :param latticeparams: reference direct lattice parameters (angles in deg) used to build B0
+    :return: 3x3 symmetric strain in sample frame
+    """
+    M = rotation_directcrystal_to_sample_frame(UBmat, latticeparams, sampletilt=sampletilt)
+    return np.dot(M, np.dot(strain, M.T))
+
+
+def fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
+                                    dictmaterials=dict_Materials,
+                                    dictstiffness=dict_Stiffness,
+                                    Cvoigt=None,
+                                    sampletilt=40.0,
+                                    verbose=0):
+    r"""
+    Compute the full strain tensor (and stress) from the deviatoric strain
+    assuming a zero stress component normal to the sample surface (sigma_zz = 0 in sample frame)
+
+    The Laue pattern gives only the deviatoric strain eps_dev. The full strain is
+    eps = eps_dev + eps_h/3 Id, where eps_h = trace(eps) is the only unknown.
+    With sigma = C:eps and n the sample surface normal:
+
+    n.sigma.n = 0   =>   eps_h = -3 (n n : C : eps_dev) / (n n : C : Id)
+
+    The condition is written in the crystal frame, then no rotation of C is needed
+    and any crystal symmetry can be used.
+
+    :param devstrain: 3x3 deviatoric strain in direct crystal frame (x // a, z // c*),
+                    as given by compute_deviatoricstrain() or evaluate_strain_fromUBmat()
+    :param UBmat: 3x3 orientation matrix in q = UB B0 G* (LaueTools frame)
+    :param key_material: key of material in dictmaterials (lattice parameters) and dictstiffness
+    :param Cvoigt: optional 6x6 stiffness matrix (Voigt notation, crystal frame x // a, z // c*).
+                    If None, it is built from dictstiffness[key_material]
+    :param sampletilt: sample surface tilt angle (deg) w.r.t. incoming beam (40 deg on BM32)
+
+    :return: dict with keys (strains without unit, stresses in unit of C, i.e. GPa by default):
+        'fullstrain_crystal', 'fullstrain_sample' : 3x3 full strain
+        'stress_crystal', 'stress_sample' : 3x3 stress
+        'hydrostaticstrain' : trace of full strain (relative volume change)
+        'devstrain_sample' : 3x3 deviatoric strain in sample frame
+        or None if no stiffness data are available for key_material
+    """
+    if Cvoigt is None:
+        Cvoigt = get_stiffness_matrix(key_material, dictstiffness=dictstiffness)
+        if Cvoigt is None:
+            if verbose > 0:
+                print("No stiffness data for material %s. Full strain can not be computed" % key_material)
+            return None
+
+    devstrain = np.array(devstrain, dtype=np.float64)
+    UBmat = np.array(UBmat, dtype=np.float64)
+
+    # operator_sample = M operator_crystal M.T
+    M = rotation_directcrystal_to_sample_frame(UBmat, dictmaterials[key_material][1],
+                                                sampletilt=sampletilt)
+
+    # sample surface normal in crystal frame
+    n = M[2]
+
+    # Voigt weights: n.sigma.n = w . sigma_voigt
+    w = np.array([n[0] ** 2, n[1] ** 2, n[2] ** 2,
+                  2 * n[1] * n[2], 2 * n[0] * n[2], 2 * n[0] * n[1]])
+    # strain Voigt vector with engineering shear (factor 2)
+    devstrain_voigt = np.array([devstrain[0, 0], devstrain[1, 1], devstrain[2, 2],
+                                2 * devstrain[1, 2], 2 * devstrain[0, 2], 2 * devstrain[0, 1]])
+    identity_voigt = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+
+    wC = np.dot(w, Cvoigt)
+    hydrostrain = -3.0 * np.dot(wC, devstrain_voigt) / np.dot(wC, identity_voigt)
+
+    fullstrain_crystal = devstrain + hydrostrain / 3.0 * np.eye(3)
+    stress_voigt = np.dot(Cvoigt, devstrain_voigt + hydrostrain / 3.0 * identity_voigt)
+    s1, s2, s3, s4, s5, s6 = stress_voigt
+    stress_crystal = np.array([[s1, s6, s5], [s6, s2, s4], [s5, s4, s3]])
+
+    results = {"hydrostaticstrain": hydrostrain,
+               "fullstrain_crystal": fullstrain_crystal,
+               "fullstrain_sample": np.dot(M, np.dot(fullstrain_crystal, M.T)),
+               "devstrain_sample": np.dot(M, np.dot(devstrain, M.T)),
+               "stress_crystal": stress_crystal,
+               "stress_sample": np.dot(M, np.dot(stress_crystal, M.T))}
+
+    if verbose > 0:
+        print("hydrostatic strain (trace) (10-3 unit)", hydrostrain * 1000)
+        print("full strain sample frame (10-3 unit)\n", results["fullstrain_sample"] * 1000)
+        print("stress sample frame (GPa)\n", results["stress_sample"])
+        print("stress_zz sample frame (must be 0)", results["stress_sample"][2, 2])
+
+    return results
+
+
+# print full strain results (indexing and GUIs) when elastic constants of material are available
+PRINT_FULLSTRAIN = True
+
+
+def fullstrain_text(res, key_material="", sampletilt=40.0):
+    r"""
+    Format results of fullstrain_from_deviatoricstrain() as a text (for printouts and GUI boards)
+
+    :param res: dict returned by fullstrain_from_deviatoricstrain(), or None (no elastic constants)
+    :return: str
+    """
+    if res is None:
+        return ("Full strain (stress_zz=0 assumption): no elastic constants for material '%s' "
+                "in dict_Stiffness (dict_LaueTools.py)\n" % key_material)
+    txt = "Full Strain (10-3 units) in sample frame (tilt=%.0fdeg), assumption stress_zz=0\n" % sampletilt
+    for k in range(3):
+        txt += "%.3f   %.3f   %.3f\n" % tuple(np.round(res["fullstrain_sample"][k] * 1000.0, decimals=3))
+    txt += "Hydrostatic strain (trace, 10-3 units): %.3f\n" % (res["hydrostaticstrain"] * 1000.0)
+    txt += "Stress (MPa) in sample frame\n"
+    for k in range(3):
+        txt += "%.1f   %.1f   %.1f\n" % tuple(np.round(res["stress_sample"][k] * 1000.0, decimals=1))
+    return txt
+
+
 def hydrostaticStrain(deviatoricStrain, key_material, UBmatrix, assumption="stresszz=0",
                                                                         sampletilt=40.0):
     r"""
-    Computes full strain & stress from deviatoricStrain (voigt notation in crystal frame), material
-    and mechanical assumtion
+    Computes full strain & stress from deviatoricStrain (3x3 in crystal frame), material
+    and mechanical assumption (only stresszz=0 is implemented)
 
-    C a*b*c* = (UB-1P)**2 C sample (P-1 UB)**2
-    qxyzLT = P qsample
-    qxyzLT=UB qcrystal(a*b*c*)
-    stress xyzLT = P stress sample P-1
+    see fullstrain_from_deviatoricstrain()
 
-    sigma =C eps
-    rank 2 = rank 4 rank 2
-
-    voigt notation
-    sigma = C eps
-
-    (s11,s22,s33,s23,s13,s12)=C (eps11,eps22,eps33,2*eps23,2*eps13,2*eps12)
-    with C = 6x6 'matrix'
-
-    full strain = deviatoric_strain + hydrostatic_strain/3 * Identity
-      eps =eps_dev+eps_h/3 * Idmatrix(3,3):
-     (s11,s22,s33,s23,s13,s12)=C (eps_dev11+eps_h/3,
-                                 eps_dev22+eps_h/3,
-                                eps_dev33+eps_h/3,
-                                 2*eps_dev23,
-                                 2*eps_dev13,
-                                 2*eps_dev12)
-    to get  eps_h since
-    mechanical assumption on sigmazz=0 corresponds to third component calcutation:
-    scalar product of C[2] with eps =0
-
+    :return: fullstrain_sampleframe (3x3), fullstress_voigt_sampleframe (6 elements), hydrostrain,
+            deviatoricStrain_sampleframe (3x3)
     """
-    if not ELASTICITYMODULE:
-        print('You need to install elasticity.py module!')
-        return
-
     if assumption != "stresszz=0":
         print("not yet implemented")
         return None
 
-    symmetry = dict_Stiffness[key_material][2]
-    if symmetry != "cubic":
-        print("not yet implemented")
+    res = fullstrain_from_deviatoricstrain(deviatoricStrain, UBmatrix, key_material,
+                                            sampletilt=sampletilt, verbose=1)
+    if res is None:
         return None
-    # constant in crystal frame
-    c11, c12, c44 = dict_Stiffness[key_material][1]
 
-    print("c11, c12, c44", c11, c12, c44)
+    stress = res["stress_sample"]
+    fullstress_voigt_sampleframe = np.array([stress[0, 0], stress[1, 1], stress[2, 2],
+                                            stress[1, 2], stress[0, 2], stress[0, 1]])
 
-    # Cmatrix = np.array( [ [c11, c12, c12, 0, 0, 0],
-    #         [c12, c11, c12, 0, 0, 0],
-    #         [c12, c12, c11, 0, 0, 0],
-    #         [0, 0, 0, c44, 0, 0],
-    #         [0, 0, 0, 0, c44, 0],
-    #         [0, 0, 0, 0, 0, c44], ], dtype=float, )
-
-    P = GT.matRot([0, 1, 0], -sampletilt)
-
-    transformmatrix = np.dot(np.linalg.inv(UBmatrix), P)
-    #     invtransformmatrix = np.linalg.inv(transformmatrix)
-    #     transformmatrix = np.eye(3)
-
-    C_sampleframe = el.rotate_cubic_elastic_constants(c11, c12, c44, transformmatrix)
-
-    print("C_sampleframe", C_sampleframe)
-
-    deviatoricStrain_sampleframe = strain_from_crystal_to_sample_frame2(
-        deviatoricStrain, UBmatrix)
-
-    # with UBmatrix=np.eye(3)
-    #     deviatoricStrain_crystalframe=np.array([[ 0.00082635, -0.00076604, -0.00098481],
-    #                                    [ 0.        , -0.001     ,  0.        ],
-    #                                    [-0.00098481, -0.00064279,  0.00117365]])
-
-    #     deviatoricStrain_sampleframe = np.array([[-0.001, -0.0, 0], [0.0, -0.001, 0], [0, 0, 0.002]])
-    print("deviatoricStrain_sampleframe", deviatoricStrain_sampleframe)
-
-    # use elasticity module instead
-    devstrain_voigt_sampleframe = np.zeros(6)
-    for i in list(range(6)):
-        val = deviatoricStrain_sampleframe[el.Voigt_notation[i]]
-        if i >= 3:
-            val *= 2.0
-        devstrain_voigt_sampleframe[i] = val
-
-    print("devstrain_voigt_sampleframe", devstrain_voigt_sampleframe)
-
-    print(" numerator", np.dot(devstrain_voigt_sampleframe, C_sampleframe[2]))
-    print("denominator", np.sum(C_sampleframe[2][:3]))
-    print("C_sampleframe[2]", C_sampleframe[2])
-
-    # third row gives an equation where eps_hydro can be extracted
-    # 0 = np.dot(devstrain_voigt,C_sampleframe[2])+eps_hydro/3.*np.sum(np.dot(devstrain_voigt[:3],C_sampleframe[2][3:]))
-    hydrostrain = (-np.dot(devstrain_voigt_sampleframe, C_sampleframe[2]) * 3
-        / np.sum(C_sampleframe[2][:3]))
-
-    print("hydrostatic strain", hydrostrain)
-
-    fullstrain_sampleframe = deviatoricStrain_sampleframe + hydrostrain / 3.0 * np.eye(3)
-
-    fullstrain_voigt_sampleframe = (
-        devstrain_voigt_sampleframe + hydrostrain / 3.0 * np.array([1, 1, 1, 0, 0, 0]))
-
-    fullstress_voigt_sampleframe = np.dot(C_sampleframe, fullstrain_voigt_sampleframe)
-
-    print("fullstress_voigt_sampleframe", fullstress_voigt_sampleframe)
-    print("fullstress_voigt_sampleframe[2] stress normal to sample surface (must be 0)",
-        fullstress_voigt_sampleframe[2])
-
-    return (fullstrain_sampleframe,
+    return (res["fullstrain_sample"],
         fullstress_voigt_sampleframe,
-        hydrostrain,
-        deviatoricStrain_sampleframe)
+        res["hydrostaticstrain"],
+        res["devstrain_sample"])
+
 
 # moved from generaltools.py
 # def matstarlab_to_matstarlabOND(matstarlab: "numpyarray9")->"numpyarray3x3":

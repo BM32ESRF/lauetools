@@ -671,7 +671,29 @@ def readsinglelinedictfile(line):
     return keydict, valdict
 
 
-dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"]}
+# Elastic stiffness constants (GPa, room temperature) used to compute full strain & stress
+# (see CrystalParameters.get_stiffness_matrix() for the list of constants for each symmetry)
+# crystal cartesian frame: x // a, z // c* (perpendicular to a and b)
+# Literature values (e.g. Simmons & Wang 1971 compilation): check them for quantitative work
+dict_Stiffness = {"Ge": ["Ge", [126, 44, 67.7], "cubic"],
+                  "Si": ["Si", [165.7, 63.9, 79.6], "cubic"],
+                  "GaAs": ["GaAs", [118.8, 53.8, 59.4], "cubic"],
+                  "Cu": ["Cu", [168.4, 121.4, 75.4], "cubic"],
+                  "Al": ["Al", [107.3, 60.9, 28.3], "cubic"],
+                  "Ni": ["Ni", [246.5, 147.3, 124.7], "cubic"],
+                  "Au": ["Au", [192.2, 162.8, 42.0], "cubic"],
+                  "Ag": ["Ag", [124.0, 93.4, 46.1], "cubic"],
+                  "W": ["W", [522.4, 204.4, 160.6], "cubic"],
+                  "Fe": ["Fe", [231.4, 134.7, 116.4], "cubic"],
+                  "MgO": ["MgO", [297.0, 95.2, 155.7], "cubic"],
+                  "UO2": ["UO2", [389.3, 118.7, 59.7], "cubic"],
+                  # hexagonal: C11, C12, C13, C33, C44
+                  "Ti": ["Ti", [162.4, 92.0, 69.0, 180.7, 46.7], "hexagonal"],
+                  "Mg": ["Mg", [59.7, 26.2, 21.7, 61.7, 16.4], "hexagonal"],
+                  "Zr": ["Zr", [143.4, 72.8, 65.3, 164.8, 32.0], "hexagonal"],
+                  "GaN": ["GaN", [390.0, 145.0, 106.0, 398.0, 105.0], "hexagonal"],
+                  "ZnO": ["ZnO", [209.7, 121.1, 105.1, 210.9, 42.5], "hexagonal"],
+                  }
 
 
 ######## Geometrey Default  ##############

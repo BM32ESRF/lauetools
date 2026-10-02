@@ -1252,6 +1252,41 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
         footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
         footer += str(np.round(np.array(dict_matrices["devstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
 
+    if "equivalent_strain" in dict_matrices:
+        footer += "equivalent (von Mises) strain sqrt(2/3 dev:dev), frame independent (10-3 unit)\n"
+        footer += "%.3f\n" % (dict_matrices["equivalent_strain"] * 1000.0)
+
+    # TEMPORARY-STRAINFIX: label must not start with 'deviatoric strain' (fit file readers)
+    if "devstrain_sample_old" in dict_matrices:
+        footer += ("[TEMPORARY] OLD deviatoric strain in LT sample frame as computed before Oct. 2026 "
+                   "(wrong for hexagonal, trigonal, monoclinic, triclinic) (10-3 unit)\n")
+        footer += str(np.round(np.array(dict_matrices["devstrain_sample_old"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+        if "devstrain_sample" in dict_matrices:
+            old = np.array(dict_matrices["devstrain_sample_old"], dtype=np.float64)
+            new = np.array(dict_matrices["devstrain_sample"], dtype=np.float64)
+            footer += "[TEMPORARY] max abs difference OLD - corrected (10-3 unit): %.3f\n" % (np.amax(np.fabs(old - new)) * 1000.0)
+            try:  # lazy import (TEMPORARY-STRAINFIX)
+                from . import CrystalParameters as CP
+            except ImportError:
+                import CrystalParameters as CP
+            eqdiff = CP.equivalent_strain(old - new)
+            eqcorr = CP.equivalent_strain(new)
+            footer += ("[TEMPORARY] equivalent strain of OLD - corrected (10-3 unit): %.3f (%.1f %% of corrected one)\n"
+                       % (eqdiff * 1000.0, 100.0 * eqdiff / eqcorr if eqcorr > 0 else np.nan))
+
+    # full strain and stress assuming stress_zz = 0 in sample frame (needs material elastic constants)
+    if "fullstrain_sample" in dict_matrices:
+        footer += "full strain in sample2 frame assuming stress_zz=0 (10-3 unit)\n"
+        footer += str(np.round(np.array(dict_matrices["fullstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+
+    if "hydrostaticstrain" in dict_matrices:
+        footer += "hydrostatic strain (trace of full strain, relative volume change) assuming stress_zz=0 (10-3 unit)\n"
+        footer += "%.3f\n" % (dict_matrices["hydrostaticstrain"] * 1000.0)
+
+    if "stress_sample" in dict_matrices:
+        footer += "stress in sample2 frame assuming stress_zz=0 (MPa)\n"
+        footer += str(np.round(np.array(dict_matrices["stress_sample"] * 1000.0, dtype=np.float64), decimals=1)) + "\n"
+
     if "LatticeParameters" in dict_matrices:
         footer += "new lattice parameters\n"
         footer += str(np.round(np.array(dict_matrices["LatticeParameters"], dtype=np.float64), decimals=7)) + "\n"
@@ -1653,7 +1688,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             if grain_index == 0:
                 allgrains_spotsdata = dataspots * 1.0
             elif grain_index:
-                allgrains_spotsdata = np.row_stack((allgrains_spotsdata, dataspots))
+                allgrains_spotsdata = np.vstack((allgrains_spotsdata, dataspots))
 
     for grain_index in list(range(1, nbgrains)):
         list_starting_rows_in_data[grain_index] = (list_starting_rows_in_data[grain_index - 1]
