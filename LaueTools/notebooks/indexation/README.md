@@ -30,3 +30,17 @@ papermill 1_index_refine.ipynb run_my_experiment.ipynb -p CONFIG configs/my_expe
 ## Examples
 
 `configs/` contains the configurations of BM32 datasets (Al/Al2Cu, MgO, Zr, Zn, ZrO2). They need access to the ESRF `/data` file system.
+
+## HTML versions
+
+The `.html` files show the notebooks with the outputs of an example run (MgO), anonymized: proposal id, date, sample and dataset names, machine names and local paths are replaced by `<proposal>`, `<date>`, `<sample>`, ... in the code, the printed outputs and the figures.
+
+```bash
+# saved outputs (only texts are anonymized: check the figures)
+python -m LaueTools.scripts.notebook_to_html 1_index_refine.ipynb --anonymize -p CONFIG=configs/my_experiment.yaml
+# notebooks executed again (temporary copy, static figures, texts of the figures anonymized)
+python -m LaueTools.scripts.notebook_to_html 2_postprocess_maps.ipynb 3_segmentation_grains.ipynb \
+    --anonymize --execute -p CONFIG=configs/my_experiment.yaml
+```
+
+Names to be replaced are found in the `/data/visitor/` paths of the notebook and of the configuration file. Other names (e.g. a sample name used alone in a title) can be added in a YAML file: `--anonymize my_rules.yaml` (see the docstring of `LaueTools/scripts/notebook_to_html.py`). `1_index_refine.ipynb` is not executed again: it would index the whole map (or submit SLURM jobs) again.
