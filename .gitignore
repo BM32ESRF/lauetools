@@ -35,3 +35,4 @@ LaueTools/test_toolbar.py
 LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-37.pyc
 LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-36.pyc
 
+.ipynb_checkpoints/
