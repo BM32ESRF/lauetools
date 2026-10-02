@@ -50,8 +50,9 @@ try:
     import tables
 
     PYTABLES_EXISTS = True
-except IOError:
-    print("Unable to load tables module from pytables... Try install vitables by \n pip install vitables")
+except ImportError:  # was IOError: a missing tables module raised ModuleNotFoundError
+    print("PyTables (tables module) is not installed: .hdf5 summary file is disabled.\n"
+          "To enable it: pip install \"lauetools[hdf5]\" (or pip install tables)")
     PYTABLES_EXISTS = False
 
 LIST_TXTPARAM_BS = ["Folder .fit file",

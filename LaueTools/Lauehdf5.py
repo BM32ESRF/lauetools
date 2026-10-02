@@ -4,10 +4,15 @@ import pickle
 import numpy as np
 import pylab as pp
 import scipy.ndimage as SCI
-import tables as Tab
+try:
+    import tables as Tab
+except ImportError as err:
+    raise ImportError("Lauehdf5 needs PyTables: pip install \"lauetools[hdf5]\" (or pip install tables)") from err
 import h5py 
 
-if Tab.__version__ >= "3.4.3":
+# PyTables >= 3 renamed methods (openFile -> open_file ...). Test the attribute, not the version string
+# (string comparison "3.11.1" >= "3.4.3" is False)
+if hasattr(Tab, "open_file"):
     Tab.openFile = Tab.open_file
     Tab.File.createGroup = Tab.File.create_group
     Tab.File.createTable = Tab.File.create_table
@@ -829,11 +834,32 @@ def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fi
         filefitmg = os.path.join(fitfiles_folder, _filename)
 
         # read data from .fit file (grains and unindexed spots)
-        resfit = IOLT.readfitfile_multigrains(filefitmg,
+        resfit, dict_column_header = IOLT.readfitfile_multigrains(filefitmg,
                                                                 verbose=0,
                                                                 readmore=True,
                                                                 fileextensionmarker=".cor",
-                                                                returnUnindexedSpots=True)
+                                                                returnUnindexedSpots=True,
+                                                                return_columnheaders=True)
+
+        # columns of indexed spots are found by their names (several .fit file formats exist):
+        # old format: spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev
+        # new format: spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo ...
+        def column_index(*names):
+            for name in names:
+                if name in dict_column_header:
+                    return dict_column_header[name]
+            return None
+
+        spot_columns = {"spotindex": column_index("spot_index", "#spot_index"),
+                        "intensity": column_index("Intensity", "intensity"),
+                        "H": column_index("h", "H"), "K": column_index("k", "K"), "L": column_index("l", "L"),
+                        "twotheta": column_index("2theta_exp", "2theta"),
+                        "chi": column_index("chi_exp", "Chi", "chi"),
+                        "pixX": column_index("Xexp"), "pixY": column_index("Yexp"),
+                        "energy": column_index("energy(keV)", "Energy", "energy"),
+                        "grainindex": column_index("GrainIndex", "grainindex"),
+                        "PixDev": column_index("PixDev", "pixDev")}
+
         if len(resfit) == 2:
             resIndexed, resUnindexed = resfit
         else:
@@ -841,9 +867,10 @@ def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fi
 
         if resIndexed != 0:
 
+            # readfitfile_multigrains(readmore=True) returns 11 elements since April 2026
             (list_indexedgrains_indices, list_nb_indexed_peaks, list_starting_rows_in_data,
                 all_UBmats_flat, allgrains_spotsdata, calibJSM,
-                list_pixdev, list_strain6, list_euler) = resIndexed[:9]
+                list_pixdev, list_strain6, list_strain6_sample, list_euler) = resIndexed[:10]
 
             if verbose > 1: print("read hdf5 : list_pixdev", list_pixdev)
             if len(list_pixdev) == 0:
@@ -861,15 +888,13 @@ def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fi
             for spot_data in spotsdata_for_this_grain:
                 allIndexedSpots["fileindex"] = key_image
 
-                (allIndexedSpots["spotindex"],
-                    allIndexedSpots["intensity"],
-                    allIndexedSpots["H"], allIndexedSpots["K"], allIndexedSpots["L"],
-                    allIndexedSpots["twotheta"], allIndexedSpots["chi"],
-                    allIndexedSpots["pixX"], allIndexedSpots["pixY"],
-                    allIndexedSpots["energy"],
-                    allIndexedSpots["grainindex"],
-                    allIndexedSpots["PixDev"],
-                ) = spot_data
+                for field, icol in spot_columns.items():
+                    if icol is not None:
+                        allIndexedSpots[field] = spot_data[icol]
+                    elif field == "grainindex":  # new .fit format: one grain per block
+                        allIndexedSpots[field] = grain_index
+                    else:
+                        allIndexedSpots[field] = DEFAULT_DICT_NONINDEXEDSPOTS_VALUES.get(field, -1)
 
                 # new fields
                 #                 allIndexedSpots['MatchingRate'] = 0.0
@@ -885,6 +910,8 @@ def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fi
                     UBmatrix_flat = all_UBmats_flat[k]
 
                     devstrainmatrix = list_strain6[k]
+                    # deviatoric strain in sample frame as written in .fit file (zeros if absent)
+                    devstrainsamplematrix = list_strain6_sample[k]
                 else:
                     UBmatrix_flat = DEFAULT_TO_RESET[5 : 5 + 9]
                     devstrainmatrix = DEFAULT_TO_RESET[14 : 14 + 6]

@@ -1058,7 +1058,11 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
     # special treatment: because fabio open only the fisrt image of stacked images hdf5 file!....
     elif CCDLabel in ("EIGER_4Mstack"):  #made by PSI software
 
-        import tables as Tab
+        try:
+            import tables as Tab
+        except ImportError as err:
+            raise ImportError("Reading EIGER_4Mstack hdf5 images needs PyTables: "
+                              "pip install \"lauetools[hdf5]\" (or pip install tables)") from err
 
         if dirname is not None:
             pathtofile = os.path.join(dirname, filename)
@@ -1066,7 +1070,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
             pathtofile = filename
 
         # TODO check to correct version transition
-        if Tab.__version__ >= "3.4.2":
+        if hasattr(Tab, "open_file"):  # PyTables >= 3 (string version comparison failed for 3.11)
             hdf5file = Tab.open_file(pathtofile)
         else:
             hdf5file = Tab.openFile(pathtofile)

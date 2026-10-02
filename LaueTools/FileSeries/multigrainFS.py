@@ -203,7 +203,7 @@ def epsmat_to_epsline(epsmat):  # 29May13
     return epsline
 
 
-def matstarlab_to_deviatoric_strain_crystal(matstarlab, version=2, elem_label="Ge"):
+def matstarlab_to_deviatoric_strain_crystal(matstarlab, version=2, elem_label="Ge", old_wrong=False):
     """
     Compute the deviatoric strain and lattice parameters in degrees from a matstarlab matrix.
 
@@ -283,10 +283,13 @@ def matstarlab_to_deviatoric_strain_crystal(matstarlab, version=2, elem_label="G
         # print dlat.round(decimals = 4)
 
         # matstarlab construite pour avoir norme(astar) = 1
-        Bdir0 = CP.rlat_to_Bstar(dlat0)
+        # TEMPORARY-STRAINFIX: old_wrong=True reproduces results before Oct. 2026 (CP.rlat_to_Bstar bug)
+        rlat_to_Bstar = CP.rlat_to_Bstar_OLD if old_wrong else CP.rlat_to_Bstar
+
+        Bdir0 = rlat_to_Bstar(dlat0)
         Bdir0 = Bdir0 / dlat0[0]
 
-        Bdir = CP.rlat_to_Bstar(dlat)
+        Bdir = rlat_to_Bstar(dlat)
         Bdir = Bdir / dlat[0]
 
         # print Bdir0.round(decimals=4)
@@ -696,7 +699,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
             if iloop == 0:
                 allres = res
             else:
-                allres = np.row_stack((allres, res))
+                allres = np.vstack((allres, res))
             if verbose > 1: print('allres.shape',allres.shape)
             iloop += 1
             continue
@@ -718,13 +721,13 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
                 print('Nb output elements of readfitfile_multigrains()', len(res1))
                 print('We select only 9 first of them ...')
 
-            strain_in_sampleframe = None
-            if not after_april_2026:  # before April 2026
-                gnumlist, npeaks, indstart, matstarlab, data_fit, calib, pixdev, strain6, euler = res1[:9]
-            else:
-                (gnumlist, npeaks, indstart, matstarlab,
-                  data_fit, calib, pixdev,
-                  strain6, strain_in_sampleframe, euler, ubb0) = res1[:11]
+            # readfitfile_multigrains(readmore=True) returns 11 elements since April 2026
+            (gnumlist, npeaks, indstart, matstarlab,
+              data_fit, calib, pixdev,
+              strain6, strain_in_sampleframe, euler, ubb0) = res1[:11]
+            if not after_april_2026:  # summary format before April 2026 (without these two quantities)
+                strain_in_sampleframe = None
+                ubb0 = None
 
             if len(pixdev) == 0:
                 pixdev = np.zeros_like(gnumlist)
@@ -741,7 +744,8 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
             else:
                 intensity[0] = data_fit[:nbtopspots, 1].mean()
                 strain6 = strain6.reshape(1, 6)
-                strain_in_sampleframe = strain_in_sampleframe.reshape(1, 6)
+                if strain_in_sampleframe is not None:  # None when after_april_2026=False
+                    strain_in_sampleframe = strain_in_sampleframe.reshape(1, 6)
                 euler = euler.reshape(1, 3)
 
             imnumlist = np.ones(ngrains, int) * fileindex
@@ -766,7 +770,7 @@ def build_summary(fileindex_list:list, filepathfit:str, fileprefix:str, filesuff
         if iloop == 0:
             allres = res
         else:
-            allres = np.row_stack((allres, res))
+            allres = np.vstack((allres, res))
 
         iloop += 1
 
@@ -966,7 +970,7 @@ def glide_systems_to_schmid_tensors(n_ref=np.array([1., 1., 1.]),
     indgoodop = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47])
     goodop = allop[indgoodop]
 
-    hkl_2 = np.row_stack((n_ref, b_ref))
+    hkl_2 = np.vstack((n_ref, b_ref))
     normehkl = np.zeros(2, float)
 
     uqref = np.zeros((2, 3), float)
@@ -1032,6 +1036,57 @@ def read_stiffness_file(filestf:str, verbose:int=0): #29May13
         print(c_tensor)
 
     return c_tensor
+
+
+def get_stiffness_tensor(filestf, elem_label: str, verbose: int = 0):
+    """
+    Get the 6x6 stiffness tensor (Voigt notation, 1e11 N/m2 units as XMAS .stf files) of material elem_label
+
+    Search order:
+    1- filestf if its first line starts with the material name (e.g. 'Cu stiffness constant ...')
+    2- file <elem_label>.stf (case insensitive) in the folder of filestf, then in Examples/CuSi of LaueTools
+    3- elastic constants of dict_Stiffness (dict_LaueTools.py, GPa) converted in 1e11 N/m2
+    4- filestf whatever its material (with a warning)
+
+    :return: c_tensor (6x6 array) or None, str describing the source
+    """
+    def material_of_stf(fname):
+        try:
+            with open(fname, "r") as f:
+                words = f.readline().split()
+            return words[0] if words else ""
+        except (OSError, UnicodeDecodeError):
+            return ""
+
+    filestf_ok = filestf not in (None, "") and os.path.isfile(filestf)
+    if filestf_ok and material_of_stf(filestf).lower() == elem_label.lower():
+        return read_stiffness_file(filestf, verbose=verbose), filestf
+
+    folders = []
+    if filestf_ok:
+        folders.append(os.path.dirname(os.path.abspath(filestf)))
+    folders.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Examples", "CuSi"))
+    for folder in folders:
+        if not os.path.isdir(folder):
+            continue
+        for fname in os.listdir(folder):
+            if fname.lower() == elem_label.lower() + ".stf":
+                fullpath = os.path.join(folder, fname)
+                print("stiffness tensor of %s read from %s" % (elem_label, fullpath))
+                return read_stiffness_file(fullpath, verbose=verbose), fullpath
+
+    Cvoigt = CP.get_stiffness_matrix(elem_label)
+    if Cvoigt is not None:
+        print("stiffness tensor of %s taken from dict_Stiffness (dict_LaueTools.py)" % elem_label)
+        return Cvoigt / 100.0, "dict_Stiffness"
+
+    if filestf_ok:
+        print("WARNING: no stiffness data found for %s. Stiffness file %s of material '%s' is used!"
+              % (elem_label, filestf, material_of_stf(filestf)))
+        return read_stiffness_file(filestf, verbose=verbose), filestf
+
+    print("No stiffness data for %s: strain and stress columns are not computed" % elem_label)
+    return None, None
 
 
 def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matrot, uqref_cr) : # return_matrix = "yes", return_cosines = "no") : #, xyz_sample_azimut):
@@ -1234,8 +1289,9 @@ def calc_cosines_first_stereo_triangle(matstarlab, axis_pole_sample) :  # , matr
 
     cos_end_abs = abs(cos_end)
     if (cos_end_abs[0] < cos0) | (cos_end_abs[1] < cos1) | (cos_end_abs[2] < cos2):
-        print("problem : pole axis not in first triangle")
-        exit()
+        # was exit() (stopped the whole python session): raise an error that callers may catch
+        raise ValueError("calc_cosines_first_stereo_triangle(): pole axis %s (sample frame) "
+                         "not in first stereographic triangle (cosines %s)" % (str(axis_pole_sample), str(cos_end)))
     # else : print "cosines OK"
 
     # print "new crystal coordinates of axis_pole :"
@@ -1386,13 +1442,15 @@ def matstarlab_to_deviatoric_strain_sample(matstarlab,
                                 mat_from_lab_to_sample_frame=mat_from_lab_to_sample_frame,
                                 version=2,
                                 returnmore=False,
-                                elem_label:str="Ge"):
+                                elem_label:str="Ge",
+                                old_wrong=False):
     """
      omega0: angle in degrees to recalculate the 'mat_from_lab_to_sample_frame'. Default value is None, argument 'mat_from_lab_to_sample_frame' is used."""
     #29May13
     epsp_crystal, _ = matstarlab_to_deviatoric_strain_crystal(matstarlab, 
                                             version=version,
-                                            elem_label=elem_label)
+                                            elem_label=elem_label,
+                                            old_wrong=old_wrong)
 
     epsp_sample = transform_2nd_order_tensor_from_crystal_frame_to_sample_frame(matstarlab,
                                                 epsp_crystal,
@@ -1613,6 +1671,21 @@ def add_columns_to_summary_file_new(filesum: str,
     if after_april_2026:
         ubb0_list = data_1[:, indmatubb0start:indmatubb0start + 9]
 
+    # matstarlab (OR frame, a*, b*, c* as successive 3 elements) for each row, built from UB B0 in LaueTools frame
+    # (fixed Oct. 2026: after April 2026 matstarlab was transposed; before, 'matstarlab' columns contain
+    # ravel(UB) in LaueTools frame without B0, they were used as they are)
+    B0_elem = CP.calc_B_RR(DictLT.dict_Materials[elem_label][1])
+    M_LT_to_OR = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    matstarlab_all = np.zeros((numig, 9), float)
+    matstarlab_old_all = np.array(mat_list, dtype=float)  # TEMPORARY-STRAINFIX: matrix used before Oct. 2026
+    for i in range(numig):
+        if after_april_2026:
+            UBB0_i = ubb0_list[i, :].reshape((3, 3))
+            matstarlab_old_all[i] = np.ravel(np.dot(M_LT_to_OR, UBB0_i))  # TEMPORARY-STRAINFIX
+        else:
+            UBB0_i = np.dot(mat_list[i, :].reshape((3, 3)), B0_elem)
+        matstarlab_all[i] = np.ravel(np.dot(M_LT_to_OR, UBB0_i).T)
+
     # Initialize arrays for new columns
     rgb_x = np.zeros((numig, 3), float)
     rgb_y = np.zeros((numig, 3), float)
@@ -1621,10 +1694,11 @@ def add_columns_to_summary_file_new(filesum: str,
     rgb_ylab = np.zeros((numig, 3), float)
     rgb_zlab = np.zeros((numig, 3), float)
 
-    # Load Schmid tensors and stiffness tensor (if filestf is provided)
+    # Load stiffness tensor of material elem_label (from filestf or else, see get_stiffness_tensor())
+    # and Schmid tensors. filestf is set to None if no stiffness data is found (no strain/stress columns)
+    c_tensor, filestf = get_stiffness_tensor(filestf, elem_label, verbose=verbose - 1)
     if filestf is not None:
         schmid_tensors = glide_systems_to_schmid_tensors(verbose=verbose - 1)
-        c_tensor = read_stiffness_file(filestf, verbose=verbose - 1)
 
         # Initialize arrays for stress/RSS calculations
         epsp_crystal = np.zeros((numig, 6), float)
@@ -1632,6 +1706,8 @@ def add_columns_to_summary_file_new(filesum: str,
         sigma_crystal = np.zeros((numig, 6), float)
         sigma_sample = np.zeros((numig, 6), float)
         tau1 = np.zeros((numig, 12), float)
+        epsp_crystal_old = np.zeros((numig, 6), float)  # TEMPORARY-STRAINFIX
+        epsp_sample_old = np.zeros((numig, 6), float)  # TEMPORARY-STRAINFIX
         von_mises = np.zeros(numig, float)
         maxrss = np.zeros(numig, float)
 
@@ -1654,6 +1730,12 @@ def add_columns_to_summary_file_new(filesum: str,
                             list_col_names2.append(str_column_name)
                     else:  # max_rss, von_mises (no index)
                         list_col_names2.append(list_col_names_strain[k])
+
+            # TEMPORARY-STRAINFIX: OLD (wrong, before Oct. 2026) deviatoric strain (OR sample frame, 10-3 unit)
+            # to compare with strain6_crystal and strain6_sample (prefixes must not start with 'strain6_')
+            for corrname in ("oldstrain6_crystal", "oldstrain6_sample"):
+                for i in range(6):
+                    list_col_names2.append(f"{corrname}_{i}")
 
     # Generate header2 (column names)
     header2 = " ".join(list_col_names2) + "\n"
@@ -1703,13 +1785,13 @@ def add_columns_to_summary_file_new(filesum: str,
             if filter_mean_matrix_by_pixdev_and_npeaks:
                 indfilt = np.where((pixdev_list < maxpixdev_for_mean_matrix) &
                                   (npeaks_list > minnpeaks_for_mean_matrix))
-                matstarlabref = mat_list[indfilt[0]].mean(axis=0)
+                matstarlabref = matstarlab_all[indfilt[0]].mean(axis=0)
             elif filter_mean_matrix_by_intensity:
                 indfilt = np.where((intensity_list > minintensity_for_mean_matrix) &
                                   (npeaks_list > 0.0))
-                matstarlabref = mat_list[indfilt[0]].mean(axis=0)
+                matstarlabref = matstarlab_all[indfilt[0]].mean(axis=0)
             else:
-                matstarlabref = mat_list[indfilt2[0]].mean(axis=0)
+                matstarlabref = matstarlab_all[indfilt2[0]].mean(axis=0)
         else:
             matstarlabref, data_fit, calib, pixdev = F2TC.readlt_fit(
                 filefitref_for_orientation, readmore=True)
@@ -1717,19 +1799,20 @@ def add_columns_to_summary_file_new(filesum: str,
     # Loop over images to compute new columns
     for i in range(numig):
         if npeaks_list[i] > 0.0:
-            matstarlab = mat_list[i, :]
-            if after_april_2026:
-                ubb0 = ubb0_list[i, :]
-                Transformframe = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-                matstarlab = np.ravel(np.dot(Transformframe.T, ubb0.reshape((3, 3))))
+            matstarlab = matstarlab_all[i]
 
-            # Compute RGB orientation columns
-            _, _, rgb_x[i, :] = calc_cosines_first_stereo_triangle(matstarlab, xsample_sample_coord)
-            _, _, rgb_y[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ysample_sample_coord)
-            _, _, rgb_ylab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
-            _, _, rgb_z[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zsample_sample_coord)
-            _, _, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
-            rgb_xlab[i, :] = rgb_x[i, :]
+            # Compute RGB orientation columns (NaN for this image if the colour can not be computed)
+            try:
+                _, _, rgb_x[i, :] = calc_cosines_first_stereo_triangle(matstarlab, xsample_sample_coord)
+                _, _, rgb_y[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ysample_sample_coord)
+                _, _, rgb_ylab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, ylab_sample_coord)
+                _, _, rgb_z[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zsample_sample_coord)
+                _, _, rgb_zlab[i, :] = calc_cosines_first_stereo_triangle(matstarlab, zlab_sample_coord)
+                rgb_xlab[i, :] = rgb_x[i, :]
+            except ValueError as err:
+                print("WARNING: row %d (image %d): orientation colours set to NaN. %s" % (i, int(img_list[i]), err))
+                for rgb_array in (rgb_x, rgb_y, rgb_z, rgb_xlab, rgb_ylab, rgb_zlab):
+                    rgb_array[i, :] = np.nan
 
             # Always compute strain/stress if filestf is provided
             if filestf is not None:
@@ -1743,6 +1826,11 @@ def add_columns_to_summary_file_new(filesum: str,
                     matstarlab, sigma_crystal[i, :], omega0=omega_sample_frame)
 
                 von_mises[i] = deviatoric_stress_crystal_to_von_mises_stress(sigma_crystal[i, :])
+
+                # TEMPORARY-STRAINFIX: OLD (wrong) strain as computed before Oct. 2026
+                epsp_sample_old[i, :], epsp_crystal_old[i, :] = matstarlab_to_deviatoric_strain_sample(
+                    matstarlab_old_all[i], omega0=omega_sample_frame, version=2,
+                    returnmore=True, elem_label=elem_label, old_wrong=True)
                 tau1[i, :] = deviatoric_stress_crystal_to_resolved_shear_stress_on_glide_planes(
                     sigma_crystal[i, :], schmid_tensors)
                 maxrss[i] = np.abs(tau1[i, :]).max()
@@ -1758,7 +1846,8 @@ def add_columns_to_summary_file_new(filesum: str,
     # Add strain/stress columns if include_strain=1 and filestf is provided
     if include_strain and filestf is not None:
         strain_columns = []
-        for col in list_col_names2:
+        # loop only over added columns (fixed Oct. 2026: input columns with the same names were duplicated)
+        for col in list_col_names2[len(list_column_names):]:
             if col.startswith("strain6_crystal_"):
                 idx = int(col.split("_")[-1])
                 strain_columns.append(epsp_crystal[:, idx])
@@ -1776,15 +1865,41 @@ def add_columns_to_summary_file_new(filesum: str,
                 strain_columns.append(tau1[:, idx])
             elif col == "max_rss":
                 strain_columns.append(maxrss)
+            elif col.startswith("oldstrain6_crystal_"):  # TEMPORARY-STRAINFIX
+                strain_columns.append(epsp_crystal_old[:, int(col.split("_")[-1])])
+            elif col.startswith("oldstrain6_sample_"):  # TEMPORARY-STRAINFIX
+                strain_columns.append(epsp_sample_old[:, int(col.split("_")[-1])])
             elif col == "von_mises":
                 strain_columns.append(von_mises)
 
         if strain_columns:
             data_list = np.column_stack((data_list, np.column_stack(strain_columns)))
 
+        # TEMPORARY-STRAINFIX: global comparison old (before Oct. 2026) / corrected
+        if CP.TEMPORARY_PRINT_STRAIN_COMPARISON:
+            ind_ok = np.where(npeaks_list > 0.0)[0]
+            if len(ind_ok):
+                print("[TEMPORARY-STRAINFIX] summary %s (%d grains): OR sample frame deviatoric strain (10-3 unit)"
+                      % (filesum, len(ind_ok)))
+                print("  max |oldstrain6_sample - strain6_sample|   = %.3f"
+                      % np.amax(np.fabs(epsp_sample_old[ind_ok] - epsp_sample[ind_ok])))
+                print("  max |oldstrain6_crystal - strain6_crystal| = %.3f"
+                      % np.amax(np.fabs(epsp_crystal_old[ind_ok] - epsp_crystal[ind_ok])))
+                # equivalent (von Mises) strain, frame independent (10-3 unit as epsp arrays)
+                eq_old = np.array([CP.equivalent_strain(epsline_to_epsmat(epsp_crystal_old[j])) for j in ind_ok])
+                eq_corr = np.array([CP.equivalent_strain(epsline_to_epsmat(epsp_crystal[j])) for j in ind_ok])
+                eq_diff = np.array([CP.equivalent_strain(epsline_to_epsmat(epsp_sample_old[j] - epsp_sample[j]))
+                                    for j in ind_ok])
+                rel = 100.0 * eq_diff / np.where(eq_corr > 0, eq_corr, np.nan)
+                print("  equivalent strain OLD:       median %.3f  max %.3f" % (np.median(eq_old), np.amax(eq_old)))
+                print("  equivalent strain CORRECTED: median %.3f  max %.3f" % (np.median(eq_corr), np.amax(eq_corr)))
+                print("  equivalent strain of (OLD - CORRECTED) sample frame: median %.3f  max %.3f"
+                      "  (median %.1f %%, max %.1f %% of CORRECTED one)"
+                      % (np.median(eq_diff), np.amax(eq_diff), np.nanmedian(rel), np.nanmax(rel)))
+
     if include_misorientation:
         misorientation_columns = []
-        for col in list_col_names2:
+        for col in list_col_names2[len(list_column_names):]:
             if col == "misorientation_angle":
                 misorientation_columns.append(misorientation_angle)
             elif col.startswith("w_mrad_"):
@@ -2012,10 +2127,12 @@ def calc_map_imgnum(filexyz):  # 31May13
 # from matplotlib import mpl
 # cmap = mpl.cm.PiYG
 
-import matplotlib.cm as mpl
+import matplotlib as mpl
+import matplotlib.colorbar  # mpl.colorbar used in plot_strain_stress_color_bar()
 
-cmap = mpl.get_cmap("PiYG")
-cmap = mpl.get_cmap("RdBu_r")
+# matplotlib.cm.get_cmap() was removed in matplotlib 3.9: pyplot.get_cmap() works with all versions
+cmap = p.get_cmap("PiYG")
+cmap = p.get_cmap("RdBu_r")
 # cmap = mpl.cm.RdBu_r
 
 
@@ -2377,7 +2494,7 @@ def plot_map_new2(dict_params, maptype, grain_index, App_parent=None):  # JSM Ma
     #         print "z_values.shape",z_values.shape
     # print('nbdatacolumns',nbdatacolumns)
     # print('colmin',colmin)
-    zvalues_Ncomponents = np.full((nlines*ncol,nbdatacolumns), np.NaN)
+    zvalues_Ncomponents = np.full((nlines*ncol,nbdatacolumns), np.nan)
 
     grainsdata = grains_data[grain_index]
 
