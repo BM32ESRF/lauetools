@@ -32,7 +32,14 @@ dependencies = [
     "astropy>=3.0",
     "fabio>=0.11.0",
     "PyYAML>=6.0.1",
+    "ObjectListView2",  # peaks list editor in PeakSearchGUI (pure python, wxPython widget)
 ]
+
+# optional features: pip install "lauetools[daxm]", "lauetools[hdf5]" or "lauetools[all]"
+[project.optional-dependencies]
+daxm = ["numba", "photutils", "pypubsub"]  # depth-resolved Laue analysis (DAXM, daxmgui)
+hdf5 = ["tables"]  # .hdf5 summary files (Build_Summary, Lauehdf5), EIGER stacked hdf5 images
+all = ["lauetools[daxm,hdf5]"]
 
 [project.scripts]
 lauetools = "LaueTools.GUI.mainGUI:start"
@@ -60,6 +67,11 @@ LaueTools = [
     "LaueImages/small_example_*.dat",
     # Include output-free notebooks (if any)
     "notebooks/*.ipynb",
+    # indexing notebooks and their YAML configuration files
+    "notebooks/indexation/*.ipynb",
+    "notebooks/indexation/*.yaml",
+    "notebooks/indexation/*.md",
+    "notebooks/indexation/configs/*.yaml",
 ]
 
 # Exclude all other heavy files

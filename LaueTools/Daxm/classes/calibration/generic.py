@@ -15,6 +15,9 @@ except ImportError:
     pass
 
 import numpy as np
+
+# np.trapz was renamed np.trapezoid in numpy 2.0 (np.trapz removed later)
+trapezoid = getattr(np, "trapezoid", None) or np.trapz
 import scipy.optimize as spo
 from pathlib import Path
 
@@ -468,7 +471,7 @@ class Calib:
         for i, Pcam in enumerate(self.exp_Pcam):
             d1 = geom.calc_sample_abslength(self.model_src.angle, self.src_y[np.newaxis, :], Pcam, relative=False)
             I0 = [np.array([Isrc]) * np.exp(-d1 * self.src_mu[i][k]) for k, Isrc in enumerate(self.src_I[i])]
-            I0_integ = np.sum(np.trapz(I0, self.src_y, axis=2), axis=(0, 1))
+            I0_integ = np.sum(trapezoid(I0, self.src_y, axis=2), axis=(0, 1))
             self.sim_I0.append(I0 / I0_integ)
 
         self.sim_I = [np.zeros(len(Iexp)) for Iexp in self.exp_I]
@@ -694,7 +697,7 @@ class Calib:
             Iabs = [np.exp(-dist * mu) for mu in self.wire_mu[i]]
 
             Isim.append(
-                self.var_kM[i] * np.sum(np.trapz(self.sim_I0[i] * Iabs * dmask, self.src_y[0], axis=2), axis=0)
+                self.var_kM[i] * np.sum(trapezoid(self.sim_I0[i] * Iabs * dmask, self.src_y[0], axis=2), axis=0)
                 + self.var_km[i])
 
         return Isim

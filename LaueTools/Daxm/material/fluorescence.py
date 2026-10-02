@@ -8,6 +8,9 @@ __version__ = '$Revision$'
 
 import numpy as np
 
+# np.trapz was renamed np.trapezoid in numpy 2.0 (np.trapz removed later)
+trapezoid = getattr(np, "trapezoid", None) or np.trapz
+
 import LaueTools.Daxm.material.dict_datamat as dm
 import LaueTools.Daxm.material.absorption as abso
 
@@ -33,7 +36,7 @@ def calc_fluorescence(element, energy, intensity, vmass=-1, abs_coeff=None):
     
     mask = np.atleast_2d(mask)
     
-    return fluo_yield * np.trapz(vmass * mask * abs_coeff * intensity, energy, axis=1)
+    return fluo_yield * trapezoid(vmass * mask * abs_coeff * intensity, energy, axis=1)
 
 
 def get_fluorescence_data(element):

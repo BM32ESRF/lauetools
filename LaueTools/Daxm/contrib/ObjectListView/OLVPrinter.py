@@ -25,8 +25,8 @@ usage should be as simple as::
 
 import wx
 
-from ObjectListView import GroupListView
-from WordWrapRenderer import WordWrapRenderer
+from .ObjectListView import GroupListView  # relative imports (Python 3): bundled copy
+from .WordWrapRenderer import WordWrapRenderer
 
 #======================================================================
 

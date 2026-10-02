@@ -592,7 +592,7 @@ def glide_systems_to_schmid_tensors(n_ref=array([1., 1., 1.]),
     indgoodop = array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47])
     goodop = allop[indgoodop]
 
-    hkl_2 = row_stack((n_ref, b_ref))
+    hkl_2 = vstack((n_ref, b_ref))
     normehkl = zeros(2, float)
 
     uqref = zeros((2, 3), float)
@@ -3272,7 +3272,7 @@ def readlt_fit_mg(filefitmg,
         if k == 0 :
            data_fit_all = data_fit * 1.0
         else :
-           data_fit_all = row_stack((data_fit_all, data_fit))
+           data_fit_all = vstack((data_fit_all, data_fit))
 
     f.close()
     
@@ -3945,7 +3945,7 @@ def read_any_fitfitfile_multigrain(filefitmg,
         if k == 0 :
            data_fit_all = data_fit * 1.0
         else :
-           data_fit_all = row_stack((data_fit_all, data_fit))
+           data_fit_all = vstack((data_fit_all, data_fit))
                       
     f.close()
     
@@ -5489,7 +5489,7 @@ def build_xy_list_by_hand(filepathout,
             indimg = toto
             for k in range(1, nlines):
                 toto = toto + ncol + n1
-                indimg = np.row_stack((indimg, toto))
+                indimg = np.vstack((indimg, toto))
             nimg = np.shape(indimg)[0] * np.shape(indimg)[1]    
             indimg = indimg.reshape(nimg,)   
         else :
@@ -5690,7 +5690,7 @@ def build_summary(indimg,
                     if i == 0 :
                             allres = toto
                     else :
-                            allres = row_stack((allres, toto))                   
+                            allres = vstack((allres, toto))                   
                     i = i+1
                     
                 else :                    
@@ -7338,7 +7338,7 @@ def plot_map(filesum,
                     list_xy_filtered = toto
                     first_time = 0
                 else :
-                    list_xy_filtered = row_stack((list_xy_filtered,toto))
+                    list_xy_filtered = vstack((list_xy_filtered,toto))
         
             if len(ind_filtered[0])>0 :
                 list_xy_filtered = list_xy_filtered + dxystep/2.0 
@@ -7431,7 +7431,7 @@ def plot_map(filesum,
                     color_filtered =  array([1.0,0.8,0.8]) # array([1.,1.,1.]) #
                     for j in range(ncolplot) : plotdat[:,:,3*j:3*(j+1)] = array([1.0,0.8,0.8]) # array([1.,1.,1.]) #                
                 else :  
-                    for j in range(ncolplot) : plotdat[:,:,3*j:3*(j+1)] = NaN #  0. # black = color for missing data
+                    for j in range(ncolplot) : plotdat[:,:,3*j:3*(j+1)] = nan #  0. # black = color for missing data
                 if maptype != "dalf" : 
                     if maptype != "w_mrad" :
                         print("xx xy xz yy yz zz")
@@ -7526,7 +7526,7 @@ def plot_map(filesum,
                         list_xy_strain_below_min_negative = toto
                         first_time = 0
                     else :
-                        list_xy_strain_below_min_negative = row_stack((list_xy_strain_below_min_negative,toto))
+                        list_xy_strain_below_min_negative = vstack((list_xy_strain_below_min_negative,toto))
             
                 if len(ind_strain_below_min_negative[0])>0 :
                     list_xy_strain_below_min_negative = list_xy_strain_below_min_negative + dxystep/2.0 
@@ -7546,7 +7546,7 @@ def plot_map(filesum,
                         list_xy_strain_above_max_positive = toto
                         first_time = 0
                     else :
-                        list_xy_strain_above_max_positive = row_stack((list_xy_strain_above_max_positive,toto))
+                        list_xy_strain_above_max_positive = vstack((list_xy_strain_above_max_positive,toto))
             
                 list_xy_strain_above_max_positive = list_xy_strain_above_max_positive + dxystep/2.0 
 
@@ -7560,7 +7560,7 @@ def plot_map(filesum,
                         list_xy_strain_positive = toto
                         first_time = 0
                     else : 
-                        list_xy_strain_positive = row_stack((list_xy_strain_positive,toto))            
+                        list_xy_strain_positive = vstack((list_xy_strain_positive,toto))            
                 list_xy_strain_positive = list_xy_strain_positive + dxystep/2.0 
                 
                 
@@ -7573,7 +7573,7 @@ def plot_map(filesum,
                         list_xy_strain_negative = toto
                         first_time = 0
                     else : 
-                        list_xy_strain_negative = row_stack((list_xy_strain_negative,toto))            
+                        list_xy_strain_negative = vstack((list_xy_strain_negative,toto))            
                 list_xy_strain_negative = list_xy_strain_negative + dxystep/2.0 
                 
                 
@@ -7603,7 +7603,7 @@ def plot_map(filesum,
                     list_xy_pixdev_above_level2 = toto
                     first_time = 0
                 else :
-                    list_xy_pixdev_above_level2 = row_stack((list_xy_pixdev_above_level2,toto))
+                    list_xy_pixdev_above_level2 = vstack((list_xy_pixdev_above_level2,toto))
 
             first_time = 1
             for i in ind_npeaks_below_level3[0] :
@@ -7616,7 +7616,7 @@ def plot_map(filesum,
                     list_xy_npeaks_below_level3 = toto
                     first_time = 0
                 else :
-                    list_xy_npeaks_below_level3 = row_stack((list_xy_npeaks_below_level3,toto))
+                    list_xy_npeaks_below_level3 = vstack((list_xy_npeaks_below_level3,toto))
 
             print("dxystep =", dxystep) 
                          
@@ -9560,7 +9560,7 @@ def plot_all_grain_maps(filegrains,
                             list_xy_npeaks_below_level3 = toto
                             first_time = 0
                         else :
-                            list_xy_npeaks_below_level3 = row_stack((list_xy_npeaks_below_level3,toto))
+                            list_xy_npeaks_below_level3 = vstack((list_xy_npeaks_below_level3,toto))
         
 
                     list_xy_npeaks_below_level3 = list_xy_npeaks_below_level3 + dxystep/2.0
@@ -9582,7 +9582,7 @@ def plot_all_grain_maps(filegrains,
                             list_xy_pixdev_above_level2 = toto
                             first_time = 0
                         else :
-                            list_xy_pixdev_above_level2 = row_stack((list_xy_pixdev_above_level2,toto))
+                            list_xy_pixdev_above_level2 = vstack((list_xy_pixdev_above_level2,toto))
          
                     list_xy_pixdev_above_level2 = list_xy_pixdev_above_level2 + dxystep/2.0
                          

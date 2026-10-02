@@ -21,10 +21,10 @@ from astropy.stats import SigmaClip
 
 import photutils
 #print('location photutils and version', photutils, photutils.__version__)
-if photutils.__version__ < '2.3':
-    from photutils import Background2D, MedianBackground
-else:
+try:  # photutils >= 2.3 (string version comparison '2.10' < '2.3' was True)
     from photutils.background import Background2D, MedianBackground
+except ImportError:
+    from photutils import Background2D, MedianBackground
 
 
 def apply_threshold(img, max_size=100, min_size=3, thr=20, erode=2, dilate=2):
@@ -377,7 +377,7 @@ def roi(img, xy, hbs):
     x1 = min(xy[0] + hbs[0] + 1, img.shape[0])
     y1 = min(xy[1] + hbs[1] + 1, img.shape[1])
 
-    return np.array(img[x0:x1, y0:y1], dtype=np.float), x0, y0
+    return np.array(img[x0:x1, y0:y1], dtype=float), x0, y0
 
 
 def gaussian2d(x_cen, y_cen, sigma_maj, sigma_min, theta, amplitude, pedestal):

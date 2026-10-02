@@ -92,7 +92,7 @@ def draw_bbox_dilate(mask, min_size, dilate, erode=True):
     if mask.any():
         min_area = np.round(np.pi * min_size * min_size)
 
-        mask = morphology.remove_small_objects(mask.astype(bool), min_area, in_place=True)
+        mask = morphology.remove_small_objects(mask.astype(bool), min_area)  # in_place removed in scikit-image 0.26
 
         for _ in range(dilate):
             mask = morphology.binary_dilation(mask, morphology.disk(2))
@@ -251,7 +251,7 @@ def roi(img, xy, hbs):
     x1 = min(xy[0] + hbs[0] + 1, img.shape[0])
     y1 = min(xy[1] + hbs[1] + 1, img.shape[1])
 
-    return np.array(img[x0:x1, y0:y1], dtype=np.float), x0, y0
+    return np.array(img[x0:x1, y0:y1], dtype=float), x0, y0
 
 
 def gaussian2d(x_cen, y_cen, sigma_maj, sigma_min, theta, amplitude, pedestal):

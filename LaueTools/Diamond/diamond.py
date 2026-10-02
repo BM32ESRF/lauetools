@@ -776,7 +776,7 @@ def build_spotlistref_sample(filefit_sample_max_npeaks=None,
                             # print "np.shape(data_add) =", np.shape(data_add)
                             # print data_add[0]
                         else:
-                            data_add = np.row_stack((data_add, data_new[i]))
+                            data_add = np.vstack((data_add, data_new[i]))
                             data_add[-1, 9] = Etheor[k]
                             data_add[-1, 5:8] = hkltheor[k, :]
                             data_add[-1, 10:13] = uqlab1[k, :]
@@ -829,7 +829,7 @@ def build_spotlistref_sample(filefit_sample_max_npeaks=None,
     if nadd == 0:
         tt = data_new
     else:
-        tt = np.row_stack((data_new, data_add))
+        tt = np.vstack((data_new, data_add))
     data_new = MG.sort_list_decreasing_column(tt, 8)
 
     print("total number of spots after adding harmonics : ", np.shape(data_new)[0])
@@ -2034,7 +2034,7 @@ def read_xypic_in_file_Ipix_vs_img(file_Ipix_vs_img):
         if j == 0:
             allres = tt2 * 1
         else:
-            allres = np.row_stack((allres, tt2))
+            allres = np.vstack((allres, tt2))
     xypic = allres.transpose()
 
     #     print "xypic list in file_Ipix_vs_img :\n", xypic
@@ -2644,9 +2644,9 @@ def build_diamond_spotlist_360_v2(thf_list,
                 nspots = len(ind2[0])
                 tt = thf * np.ones(nspots, float)
                 spotlistnew = np.column_stack((spotlist2[ind2[0]], tt))
-                spotlistref = np.row_stack((spotlistref, spotlistnew))
+                spotlistref = np.vstack((spotlistref, spotlistnew))
                 hklnew = hkl2[ind2[0]]
-                hklref = np.row_stack((hklref, hklnew))
+                hklref = np.vstack((hklref, hklnew))
 
         print("k =", k)
         print("nspots = ", np.shape(spotlistref)[0])

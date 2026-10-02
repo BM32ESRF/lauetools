@@ -666,7 +666,7 @@ def simulateLauePatterns(crystals, emin, emax,
     sorted_idx = np.argsort(s_intensity[1:])[::-1]
     
         
-    return s_tth[1:][sorted_idx], s_chi[1:][sorted_idx], s_miller[1:][sorted_idx], s_posx[1:][sorted_idx], s_posy[1:][sorted_idx], s_E[1:][sorted_idx],s_intensity[1:][sorted_idx], np.array(s_grainindex[1:], dtype=np.int)[sorted_idx]
+    return s_tth[1:][sorted_idx], s_chi[1:][sorted_idx], s_miller[1:][sorted_idx], s_posx[1:][sorted_idx], s_posy[1:][sorted_idx], s_E[1:][sorted_idx],s_intensity[1:][sorted_idx], np.array(s_grainindex[1:], dtype=int)[sorted_idx]
 
 # ----------    MAIN -------------------
 # --------------------------------------

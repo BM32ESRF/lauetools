@@ -265,7 +265,7 @@ def rotate_cubic_elastic_constants(C11, C12, C44, A, tol=1e-6):
     A = np.asarray(A)
 
     # Is this a rotation matrix?
-    if np.sometrue(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) -
+    if np.any(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) -
                           np.eye(3, dtype=float)) > tol):
         raise RuntimeError('Matrix *A* does not describe a rotation.')
 
@@ -315,7 +315,7 @@ def rotate_elastic_constants(C, A, tol=1e-6):
     A = np.asarray(A)
 
     # Is this a rotation matrix?
-    if np.sometrue(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) -
+    if np.any(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) -
                           np.eye(3, dtype=float)) > tol):
         raise RuntimeError('Matrix *A* does not describe a rotation.')
 
@@ -356,7 +356,7 @@ def rotate_elastic_constants(C, A, tol=1e-6):
 #         A = np.asarray(A)
 # 
 #         # Is this a rotation matrix?
-#         if np.sometrue(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) - 
+#         if np.any(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) - 
 #                               np.eye(3, dtype=float)) > self.tol):
 #             raise RuntimeError('Matrix *A* does not describe a rotation.')
 # 
@@ -387,7 +387,7 @@ def rotate_elastic_constants(C, A, tol=1e-6):
 #         A = np.asarray(A)
 # 
 #         # Is this a rotation matrix?
-#         if np.sometrue(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) - 
+#         if np.any(np.abs(np.dot(np.array(A), np.transpose(np.array(A))) - 
 #                               np.eye(3, dtype=float)) > self.tol):
 #             raise RuntimeError('Matrix *A* does not describe a rotation.')
 # 
@@ -1082,7 +1082,7 @@ def rotate_elastic_constants(C, A, tol=1e-6):
 #         R = np.asarray(R)
 # 
 #         # Is this a rotation matrix?
-#         if np.sometrue(np.abs(np.dot(np.array(R), np.transpose(np.array(R))) - 
+#         if np.any(np.abs(np.dot(np.array(R), np.transpose(np.array(R))) - 
 #                               np.eye(3, dtype=float)) > tol):
 #             raise RuntimeError('Matrix *R* does not describe a rotation.')
 #     else:
