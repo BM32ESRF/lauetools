@@ -55,6 +55,26 @@ if not ObjectListView_Present:
         print("ObjectListView2 is missing (peaks list editor disabled): pip install ObjectListView2")
         ObjectListView_Present = False
 
+if ObjectListView_Present:
+    # ObjectListView 1.3.1 passes float sizes to wx (Python 3 true division):
+    # TypeError in Window.SetSize() and ListCtrl.SetColumnWidth() with wxPython 4
+    def _OLV_HandleSize(self, evt):
+        """ The ListView is being resized (integer sizes) """
+        self._PossibleFinishCellEdit()
+        evt.Skip()
+        self._ResizeSpaceFillingColumns()
+        # Make sure our empty msg is reasonably positioned
+        sz = self.GetClientSize()
+        self.stEmptyListMsg.SetSize(0, sz.GetHeight() // 3, sz.GetWidth(), sz.GetHeight())
+
+    _OLV_SetColumnWidth = ObjectListView.SetColumnWidth
+
+    def _OLV_SetColumnWidth_int(self, col, width):
+        return _OLV_SetColumnWidth(self, col, int(width))
+
+    ObjectListView._HandleSize = _OLV_HandleSize
+    ObjectListView.SetColumnWidth = _OLV_SetColumnWidth_int
+
 # LaueTools modules
 if sys.version_info.major == 3:
     from .. import dragpoints as DGP
