@@ -180,14 +180,14 @@ class ManualIndexFrame(wx.Frame):
 
         if indexation_parameters is not None:
             DataToIndex = self.indexation_parameters["DataToIndex"]
-            if self.datatype is "2thetachi":
+            if self.datatype == "2thetachi":
                 self.Data_X = 2.0 * DataToIndex["data_theta"]
                 self.Data_Y = DataToIndex["data_chi"]
-            elif self.datatype is "pixels":
+            elif self.datatype == "pixels":
                 self.Data_X = DataToIndex["data_X"]
                 self.Data_Y = DataToIndex["data_Y"]
 
-            elif self.datatype is "gnomon":
+            elif self.datatype == "gnomon":
                 self.Data_X = DataToIndex["data_gnomonX"]
                 self.Data_Y = DataToIndex["data_gnomonY"]
                 self.data_gnomonXY = (
@@ -700,17 +700,17 @@ class ManualIndexFrame(wx.Frame):
         C6 = AllDataToIndex["data_gnomonX"][C0]
         C7 = AllDataToIndex["data_gnomonY"][C0]
 
-        if self.datatype is "2thetachi":
+        if self.datatype == "2thetachi":
             fields = ["Spot index", "2theta", "Chi", "Intensity"]
 
             to_put_in_dict = C0, C1, C2, C3
 
-        if self.datatype is "pixels":
+        if self.datatype == "pixels":
             fields = ["Spot index", "pixelX", "pixelY", "Intensity", "2Theta", "Chi"]
 
             to_put_in_dict = C0, C4, C5, C3, C1, C2
 
-        if self.datatype is "gnomon":
+        if self.datatype == "gnomon":
             fields = ["Spot index", "gnomonX", "gnomonY", "Intensity", "2Theta", "Chi"]
             to_put_in_dict = C0, C6, C7, C3, C1, C2
 
@@ -739,7 +739,7 @@ class ManualIndexFrame(wx.Frame):
         print("\n****SELECTED and DISPLAYED PART OF EXPERIMENTAL SPOTS\n")
         self.selectedAbsoluteSpotIndices = np.array(col0, dtype=np.int16)
 
-        if self.datatype is "2thetachi":
+        if self.datatype == "2thetachi":
 
             self.data_2thetachi = col1, col2
             self.tth, self.chi = col1, col2
@@ -747,14 +747,14 @@ class ManualIndexFrame(wx.Frame):
             self.data_XY = (self.indexation_parameters["AllDataToIndex"]["data_pixX"][
                     self.selectedAbsoluteSpotIndices], self.indexation_parameters["AllDataToIndex"]["data_pixY"][self.selectedAbsoluteSpotIndices])
 
-        elif self.datatype is "pixels":
+        elif self.datatype == "pixels":
             self.data_2thetachi = col1, col2
             self.tth, self.chi = col1, col2
             self.Data_I = col3
             self.pixelX, self.pixelY = (self.indexation_parameters["AllDataToIndex"]["data_pixX"][
                     self.selectedAbsoluteSpotIndices], self.indexation_parameters["AllDataToIndex"]["data_pixY"][self.selectedAbsoluteSpotIndices])
 
-        elif self.datatype is "gnomon":
+        elif self.datatype == "gnomon":
             self.data_2thetachi = col1, col2
             self.tth, self.chi = col1, col2
             self.Data_I = col3
@@ -1349,12 +1349,9 @@ class ManualIndexFrame(wx.Frame):
 
     def RemoveLastRectangle(self):
         """ remove last added rectangle """
-        if sys.version<'3.12':
-            if isinstance(self.axes.patches[-1], Rectangle):
-                del self.axes.patches[-1]
-        else:
-            patch=self.axes.patches[-1]
-            patch.remove()
+        # axes.patches is read-only since matplotlib 3.5: remove the artist itself
+        if len(self.axes.patches) > 0 and isinstance(self.axes.patches[-1], Rectangle):
+            self.axes.patches[-1].remove()
 
     def addPatchRectangle(self, X, Y, size=50):
         """ add rectangle at X,Y in self.axes """

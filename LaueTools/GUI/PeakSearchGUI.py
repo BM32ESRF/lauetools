@@ -4294,10 +4294,9 @@ class MainPeakSearchFrame(wx.Frame):
         print("self.justcheckedShowValues in OnCheckPlotValues ", self.justcheckedShowValues)
 
         if not self.numvalues_chck.GetValue():
-            if len(self.axes.texts) > 0:
-                for txt in self.axes.texts:
-                    txt.set_visible(False)
-            self.axes.texts = []
+            # axes.texts is read-only since matplotlib 3.5: remove each text artist
+            for txt in list(self.axes.texts):
+                txt.remove()
             self.canvas.draw()
         else:
             self.PlotValues()
@@ -4309,10 +4308,9 @@ class MainPeakSearchFrame(wx.Frame):
         if not self.numvalues_chck.GetValue():
             return
 
-        if len(self.axes.texts) > 0:
-            for txt in self.axes.texts:
-                txt.set_visible(False)
-            self.axes.texts = []
+        # axes.texts is read-only since matplotlib 3.5: remove each text artist
+        for txt in list(self.axes.texts):
+            txt.remove()
 
         xmin, xmax, ymin, ymax = self.getDisplayedImageSize()
 
@@ -5089,9 +5087,9 @@ class MainPeakSearchFrame(wx.Frame):
         self.ROIs[labelroiindex][6] = "visible"
 
     def RemoveLastRectangle(self):
-
-        if type(self.axes.patches[-1]) == type(Rectangle((1, 1), 1, 1)):
-            del self.axes.patches[-1]
+        # axes.patches is read-only since matplotlib 3.5: remove the artist itself
+        if len(self.axes.patches) > 0 and isinstance(self.axes.patches[-1], Rectangle):
+            self.axes.patches[-1].remove()
 
     def addPatchRectangle(self, X, Y, size=50):
         hsize = size / 2.0

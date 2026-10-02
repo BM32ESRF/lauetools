@@ -595,7 +595,7 @@ class SimulationPlotFrame(wx.Frame):
                     collisionFound_theo = False
 
             if collisionFound_exp or collisionFound_theo:
-                if tip_exp is not "":
+                if tip_exp != "":
                     fulltip = tip_exp + "\n" + tip_theo
                 else:
                     fulltip = tip_theo
