@@ -1,0 +1,34 @@
+# tetragonal ZrO2 (Guinebretiere et al, a321206, june 2025)
+name: a321206 ZrO2
+description: ZrO2 1330C scan0002, 301x100 map, sCMOS
+
+scan:
+  cor_folder: /data/visitor/a321206/bm32/20250603/RAW_DATA/ZrO2/ZrO2_ZrO2_1330C/scan0002/datfiles_notebook
+  prefix: img_
+  nbdigits: 4
+  CCDLabel: sCMOS
+  detfile: /data/visitor/a321206/bm32/20250603/RAW_DATA/ZrO2/ZrO2_Ge/scan0001/calibGe001_A321206_mardi.det
+  image_folder: /data/visitor/a321206/bm32/20250603/RAW_DATA/ZrO2/ZrO2_ZrO2_1330C/scan0002
+  mapdims: [301, 100]
+
+output:
+  fit_folder: ~/LaueTutorialsResults/Indexation_a321206/fitfiles_ZrO2
+
+material:
+  key_material: ZrO2_1200C
+
+indexing:
+  e_min: 5
+  e_max: 22
+  e_max_MR: 19
+  nbGrainstoFind: 1
+
+run:
+  nb_cpus: 64
+  test_image_index: 0
+
+selection:
+  image_range: [29300, 30100]
+
+postprocess:
+  symmetry: auto            # cubic symmetry is used only for cubic materials

@@ -1,0 +1,90 @@
+# =====================================================================================
+#  LaueTools - configuration of indexing & refinement of a 2D map of Laue patterns
+#
+#  1) copy this file (e.g. configs/my_experiment.yaml) and edit it
+#  2) set CONFIG = 'configs/my_experiment.yaml' in the first cell of the notebooks
+#
+#  Paths: absolute, or relative to the folder of this file. '~' and $VARIABLES are expanded.
+#  Parameters left out take their default value (see LaueTools/indexing_batch.py DEFAULT_CONFIG)
+# =====================================================================================
+name: my experiment
+description: >
+  sample, material, beamtime ...
+
+scan:
+  # folder of .cor files (results of peaksearch, see PeakSearch_MultiProcessing notebook)
+  cor_folder: /data/visitor/<proposal>/bm32/<date>/PROCESSED_DATA/<sample>/<dataset>/scan0001/corfiles
+  prefix: img_              # img_0023.cor -> 'img_'
+  nbdigits: 4               # img_0023.cor -> 4
+  CCDLabel: sCMOS           # sCMOS, sCMOS_4M, EIGER_4MCdTe, ...
+  detfile: null             # calibration .det file (information only: calibration is in .cor files)
+  image_folder: null        # folder of images (information only)
+  hdf5_logfile: null        # BLISS hdf5 file (optional, to read the scan command)
+  # map dimensions: from BLISS command  dmesh motor1 v v nbsteps1 motor2 v v nbsteps2 exposure_time
+  # mapdims = [nbsteps1 + 1, nbsteps2 + 1] = [nb points fast motor, nb points slow motor]
+  mapdims: [51, 51]
+  fast_motor: yech          # labels of plots axes
+  slow_motor: xech
+  stepsizes: [1., 1.]       # [fast, slow] step sizes (micron) for plots
+
+output:
+  # .fit files written by indexing and read by postprocessing (created if needed)
+  fit_folder: ~/LaueResults/my_experiment/fitfiles
+  results_folder: null      # allresults_<stamp>.pickle folder (default: fit_folder)
+  results_stamp: null       # default: key_material
+
+material:
+  key_material: MgO         # key of LaueTools dict of materials (or of mymaterials below)
+  # own materials: {key: [key, [a, b, c, alpha, beta, gamma], extinction rules]}
+  # extinction rules: 'no', 'fcc', 'bcc', 'dia', 'wurtzite', ... (see dict_LaueTools, CrystalParameters)
+  mymaterials: null
+  #  MyPhase: [MyPhase, [4.4, 5.3, 3.8, 90, 88, 90], 'no']
+
+indexing:
+  e_min: 5                  # keV
+  e_max: 22                 # keV, for strain refinement
+  e_max_MR: 19              # keV, for matching rate during indexing step
+  nbGrainstoFind: 1         # nb of grains (orientations) to find per image
+  depth: 0                  # micron (normal to sample surface)
+  stop_Nb_Matches: 40       # stop exploring when a solution has this nb of matches (speed)
+  maxnbspots_MReval: 10000
+  MIN_NUMBERSPOTS_FOR_INDEXING: 6
+  MAX_NUMBERSPOTS_FOR_INDEXING: 10000
+  MatchingRate_List: null   # min matching rates (%) to go on refining; default [2, 2, ...]
+  dict_indexrefine:
+    # spots set A: n (-> 0..n-1), 'start:stop', or list [0, 2, 58]. CAUTION max(A) < NBMAXPROBED
+    central spots indices: 10
+    NBMAXPROBED: 25         # spots set B = 0 .. NBMAXPROBED-1
+    AngleTolLUT: 0.2        # deg, tolerance to recognise angles in the angular LUT
+    nlutmax: 4              # max Miller index in the angular LUT
+    MATCHINGRATE_ANGLE_TOL: 0.2
+    MinimumMatchingRate: 5
+    MinimumNumberMatches: 10
+    list matching tol angles: [0.2, 0.15, 0.1]   # refinement steps tolerance (deg)
+
+run:
+  nb_cpus: 32               # null: all cpus - 1
+  ignorefitfileresults: true  # true: reanalyse all; false: only images without _g0.fit
+  # false: indexing from scratch
+  # fromfitfile: refine the UB matrix of existing _g0.fit file of each image
+  # [name1, name2] (names of ub_matrices below): refine these matrices first
+  usepreviousUB: false
+  skipindexing: false       # true: only refine usepreviousUB matrices (no indexing from scratch)
+  writefitfile: true
+  verboselevel: 0
+  test_image_index: 0       # image for single image tests
+
+selection:
+  image_range: null         # [start, stop] (stop included); null: all .cor files
+  roi: null                 # [center image index, [half size fast, half size slow]]
+
+postprocess:
+  grainindex: 0             # read ####_g<grainindex>.fit files
+  MinimumNbIndexedSpots: 20
+  LargestMeanPixelResidue: 0.6
+  reference_image_index: null   # for misorientation maps
+  symmetry: auto            # auto (cubic if material is cubic), cubic, or null (raw angles)
+  laue_group: auto          # IPF colors: auto (from lattice parameters), m-3m, 6/mmm, -3m1 (trigonal: Al2O3), 4/mmm, mmm
+
+ub_matrices: {}
+#  myUB: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]

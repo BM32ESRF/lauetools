@@ -1,0 +1,44 @@
+# Al polycrystal (practical course utr20, march 2026)
+# NB: in the former notebook, 'central spots indices' (20) was larger than NBMAXPROBED (12): NBMAXPROBED set to 20
+name: utr20 Al
+description: Al afternoon map 2D, EIGER 4M (practical course)
+
+scan:
+  cor_folder: /data/visitor/utr20/bm32/20260310/PROCESSED_DATA/RAW_DATA/Alafternoon/Alafternoon_map2D/scan0001/corfiles
+  prefix: eiger4m_
+  nbdigits: 4
+  CCDLabel: EIGER_4MCdTe
+  detfile: /data/visitor/utr20/bm32/20260310/RAW_DATA/Alafternoon/Alafternoon_Ge/scan0001/calib_Ge_001_EIGER4M.det
+  image_folder: /data/visitor/utr20/bm32/20260310/RAW_DATA/Alafternoon/Alafternoon_map2D/scan0001
+  hdf5_logfile: /data/visitor/utr20/bm32/20260310/RAW_DATA/utr20_bm32.h5
+  mapdims: [51, 51]
+  fast_motor: yech
+  slow_motor: xech
+
+output:
+  fit_folder: /data/visitor/utr20/bm32/20260310/PROCESSED_DATA/fitfiles_Al
+
+material:
+  key_material: Al
+
+indexing:
+  e_min: 5
+  e_max: 22
+  e_max_MR: 19
+  nbGrainstoFind: 1
+  dict_indexrefine:
+    central spots indices: 20
+    NBMAXPROBED: 20
+    AngleTolLUT: 0.2
+    nlutmax: 5
+    MATCHINGRATE_ANGLE_TOL: 0.2
+    MinimumMatchingRate: 0
+    MinimumNumberMatches: 10
+    list matching tol angles: [0.5, 0.2, 0.1]
+
+run:
+  nb_cpus: 32
+  test_image_index: 0
+
+postprocess:
+  symmetry: cubic

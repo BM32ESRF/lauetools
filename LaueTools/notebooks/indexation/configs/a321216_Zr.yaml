@@ -1,0 +1,59 @@
+# Zr polycrystal (with Cr grains) (Ribart et al, a321216, oct 2025)
+# For Cr grains: key_material: Cr, central spots indices: 4, NBMAXPROBED: 30, nlutmax: 3
+name: a321216 Zr
+description: ech15_R1 Z1 2D map 50x60 um, 1 um step, sCMOS 4M
+
+scan:
+  cor_folder: /data/visitor/a321216/bm32/20251008/RAW_DATA/ech15_R1/ech15_R1_Z1_2dmap_50x60um_1umstep_GOOD_0002/scan0001/img_CORfiles
+  prefix: img_
+  nbdigits: 4
+  CCDLabel: sCMOS_4M
+  detfile: /data/visitor/a321216/bm32/20251008/RAW_DATA/Ge1/Ge1_calib_std/scan0001/Ge1.det
+  image_folder: /data/visitor/a321216/bm32/20251008/RAW_DATA/ech15_R1/ech15_R1_Z1_2dmap_50x60um_1umstep_GOOD_0002/scan0001
+  hdf5_logfile: /data/visitor/a321216/bm32/20251008/RAW_DATA/a321216_bm32.h5
+  mapdims: [51, 61]
+  fast_motor: yech
+  slow_motor: xech
+
+output:
+  fit_folder: ~/LaueTutorialsResults/Indexation_a321216/fitfiles_Zr
+
+material:
+  key_material: Zr
+
+indexing:
+  e_min: 5
+  e_max: 22
+  e_max_MR: 19
+  nbGrainstoFind: 3
+  stop_Nb_Matches: 60
+  dict_indexrefine:
+    central spots indices: [0, 1, 2, 3]
+    NBMAXPROBED: 12
+    AngleTolLUT: 0.2
+    nlutmax: 3
+    MATCHINGRATE_ANGLE_TOL: 0.2
+    MinimumMatchingRate: 5
+    MinimumNumberMatches: 10
+    list matching tol angles: [0.2, 0.15, 0.1]
+
+run:
+  nb_cpus: 64
+  test_image_index: 0
+
+postprocess:
+  symmetry: auto            # cubic symmetry is used only for cubic materials
+
+ub_matrices:
+  UB_Zr_1: [[-0.715649128, 0.083196626, -0.693582905],
+            [-0.274818874, -0.946425938, 0.169636022],
+            [-0.642010804, 0.310566961, 0.701280083]]
+  UB_Zr_3: [[0.448549611, 0.103010639, -0.887987377],
+            [0.212069947, 0.953211693, 0.217324011],
+            [0.868557547, -0.284717106, 0.406654304]]
+  UB_Zr_828: [[0.286398422302201, -0.662359423093821, -0.69545143910691],
+              [0.956705409395281, 0.235980441180103, 0.170780837853894],
+              [0.051855826535398, -0.712277801417387, 0.700105128281243]]
+  UB_Cr_1: [[0.253734688, -0.966571946, -0.036701339],
+            [-0.151499426, -0.001523219, -0.98836153],
+            [0.955351885, 0.258303731, -0.148071266]]

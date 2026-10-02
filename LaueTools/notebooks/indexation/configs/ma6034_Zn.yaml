@@ -1,0 +1,56 @@
+# Zn dendrites (Zheng et al, ma6034, june 2024)
+# indexing parameters of the saved run allresults_all.pickle
+name: ma6034 Zn
+description: sample5 30 min coarse large map, sCMOS
+
+scan:
+  cor_folder: /data/projects/zndendrites/ma6034/bm32/20240625/RAW_DATA/sample1_test/sample1_test_sample5-30m-new2-coarse-large/scan0001/datfiles_notebook
+  prefix: img_
+  nbdigits: 4
+  CCDLabel: sCMOS
+  detfile: /data/projects/zndendrites/ma6034/bm32/20240625/RAW_DATA/sample1_test/sample1_test_Ge_20240628/scan0001/Ge111calib_28june2024.det
+  image_folder: /data/projects/zndendrites/ma6034/bm32/20240625/RAW_DATA/sample1_test/sample1_test_sample5-30m-new2-coarse-large/scan0001
+  mapdims: [41, 41]
+
+output:
+  fit_folder: ~/LaueTutorialsResults/Indexation_ma6034/fitfiles_notebook
+
+material:
+  key_material: Zn
+
+indexing:
+  e_min: 5
+  e_max: 27
+  e_max_MR: 18
+  nbGrainstoFind: 1
+  dict_indexrefine:
+    central spots indices: [0, 1, 2]
+    NBMAXPROBED: 5
+    AngleTolLUT: 0.1
+    nlutmax: 4
+    MATCHINGRATE_ANGLE_TOL: 0.3
+    MinimumMatchingRate: 0
+    MinimumNumberMatches: 20
+    list matching tol angles: [0.5, 0.2, 0.1]
+
+run:
+  nb_cpus: 64
+  usepreviousUB: false      # e.g. [UB_2, UB_1] to test these orientations first
+  test_image_index: 547
+
+postprocess:
+  symmetry: auto            # cubic symmetry is used only for cubic materials
+
+ub_matrices:
+  UB_1: [[0.800890339, 0.111020812, 0.588618058],
+         [0.006589284, -0.983840123, 0.176252946],
+         [0.59871938, -0.137579654, -0.788529267]]
+  UB_2: [[-0.944886962989832, -0.16481648329929, 0.282364299451425],
+         [0.325288903402363, -0.401682702128187, 0.855560084566674],
+         [-0.027898445634874, 0.899571897959609, 0.434481129960923]]
+  UB547: [[-0.944920932918629, -0.164116940216228, 0.28227572173489],
+          [0.325197212589104, -0.401535417654801, 0.855019004360563],
+          [-0.027816725726933, 0.89905990210913, 0.434389207372524]]
+  UB218: [[-0.496826852073101, -0.638273298777973, -0.588555208999875],
+          [0.848892814668109, -0.497871277128914, -0.176531037918834],
+          [-0.180000922484652, -0.587384245192303, 0.788803460478765]]

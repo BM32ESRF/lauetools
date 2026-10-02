@@ -1,0 +1,60 @@
+# Al / Al2Cu on Al2O3 substrate (Akamatsu et al, 32-02-812)
+# For the Al2Cu phase: key_material: Al2Cu, central spots indices: 20, NBMAXPROBED: 21, nlutmax: 3,
+#   stop_Nb_Matches: 140, fit_folder: .../fitfiles_Al2Cu
+# Substrate spots (Al2O3) can be removed from .cor files: see notebook 1, section [OPTION] remove spots
+name: 322812 Al/Al2Cu
+description: Al / Al2Cu solidification, sCMOS, 17x17 map
+
+scan:
+  cor_folder: /data/bm32/inhouse/data/laue/32-02-812/PROCESSED_DATA/corfiles
+  prefix: ech28_
+  nbdigits: 4
+  CCDLabel: sCMOS
+  detfile: /data/bm32/inhouse/data/laue/32-02-812/calibGe111_sCMOS_3202812_vendredi_ech44.det
+  image_folder: /data/bm32/inhouse/data/laue/32-02-812
+  mapdims: [17, 17]
+  fast_motor: xech
+  slow_motor: yech
+
+output:
+  fit_folder: /data/bm32/inhouse/data/laue/32-02-812/PROCESSED_DATA/fitfiles_Al
+  results_folder: /data/bm32/inhouse/data/laue/32-02-812/PROCESSED_DATA/corfiles
+  results_stamp: Almap
+
+material:
+  key_material: Al
+
+indexing:
+  e_min: 5
+  e_max: 22
+  e_max_MR: 19
+  nbGrainstoFind: 1
+  stop_Nb_Matches: 25
+  dict_indexrefine:
+    central spots indices: '40:150'
+    NBMAXPROBED: 151
+    AngleTolLUT: 0.2
+    nlutmax: 3
+    MATCHINGRATE_ANGLE_TOL: 0.2
+    MinimumMatchingRate: 5
+    MinimumNumberMatches: 10
+    list matching tol angles: [0.2, 0.2, 0.2]
+
+run:
+  nb_cpus: 64
+  usepreviousUB: false      # [Al] + skipindexing: true to refine the Al orientation only
+  test_image_index: 0
+
+postprocess:
+  symmetry: cubic
+
+ub_matrices:
+  Al: [[0.7137304815562723, -0.32484826788496546, -0.6189301007684953],
+       [0.17670781204314376, 0.9378438988921185, -0.2909351071253641],
+       [0.6761917710332851, 0.09937432302387145, 0.7299839723927166]]
+  Al2Cu: [[-0.22400746452984244, 0.5537594407709006, 0.8022866301439912],
+          [-0.9573545423301522, -0.2783487963905804, -0.07520625862254801],
+          [0.18261536418532037, -0.7858999473682405, 0.5920433997814928]]
+  Al2O3_1: [[-0.60826032, -0.75608103, -0.23205090],
+            [-0.05385452, 0.33412222, -0.93619230],
+            [0.79214276, -0.56128431, -0.24275414]]

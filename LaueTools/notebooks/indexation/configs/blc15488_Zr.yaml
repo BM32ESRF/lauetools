@@ -1,0 +1,63 @@
+# Zr polycrystal (blc15488, june 2024)  -- marked 'not ready' in the former notebook
+# indexing parameters of the run 'All_Map_Refine_Tol_0p05_Depth_Correct_25um' (allresults pickle)
+# image 276 contains two grains (UB_275 and UB_277)
+name: blc15488 Zr
+description: ech15 map 2D expo 0.1 s, sCMOS
+
+scan:
+  cor_folder: /data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/ech15/ech15_map2Dexpo0p1sec/scan0001/img_CORfiles
+  prefix: img_
+  nbdigits: 4
+  CCDLabel: sCMOS
+  detfile: /data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/ech15/ech15_Ge/scan0001/calibGe.det
+  image_folder: /data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/ech15/ech15_map2Dexpo0p1sec/scan0001
+  hdf5_logfile: /data/projects/mapgrainxl/blc15488/bm32/20240601/RAW_DATA/blc15488_bm32.h5
+  mapdims: [61, 51]
+  fast_motor: xech
+  slow_motor: yech
+
+output:
+  fit_folder: ~/LaueTutorialsResults/Indexation_blc15488/fitfiles_Zr
+
+material:
+  key_material: Zr
+
+indexing:
+  e_min: 5
+  e_max: 27
+  e_max_MR: 18
+  nbGrainstoFind: 1
+  depth: 25
+  dict_indexrefine:
+    central spots indices: 4
+    NBMAXPROBED: 10
+    AngleTolLUT: 0.2
+    nlutmax: 5
+    MATCHINGRATE_ANGLE_TOL: 0.3
+    MinimumMatchingRate: 15
+    MinimumNumberMatches: 35
+    list matching tol angles: [0.2, 0.1, 0.05]
+
+run:
+  nb_cpus: 64
+  test_image_index: 276
+
+postprocess:
+  symmetry: auto            # cubic symmetry is used only for cubic materials
+
+ub_matrices:
+  UB_IMG208_Zr_G0: [[-0.112798277273925, 0.264283768936951, -0.959088148240022],
+                    [-0.877156117029428, 0.42783166935261, 0.220801693524999],
+                    [0.466630682114979, 0.865400738208747, 0.184125402405369]]
+  UB_IMG208_Zr_G1: [[-0.562705662991257, -0.506301694554734, 0.665247385476388],
+                    [0.415142984485895, 0.528172588649008, 0.743784341650145],
+                    [-0.719449839503281, 0.67927978351221, -0.090500747250987]]
+  UB_275: [[-0.113180544631654, 0.263473707596578, -0.959258848306088],
+           [-0.877214237188706, 0.427278082255405, 0.221286229492941],
+           [0.466428820807118, 0.865351376268245, 0.184347402849626]]
+  UB_276: [[-0.099087799344665, 0.866739015441018, -0.492689495609321],
+           [-0.964786607680811, 0.037622194858899, 0.261014947015799],
+           [0.243513004295334, 0.498923595942045, 0.831496960311785]]
+  UB_277: [[-0.796892278514895, -0.418385992456327, -0.444032005207359],
+           [0.125405032242812, -0.822248179289292, 0.554246490939731],
+           [-0.590966116554159, 0.379689719474418, 0.705497427650818]]
