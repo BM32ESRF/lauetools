@@ -45,7 +45,7 @@ def setfilename(prefix:str,index:int,CCDLabel:str='sCMOS', tifextension:str='.ti
         return prefix+'%04d'%index + '.h5'
     
 def collectroiarray_singlefile(imageindex, roicenter=None, prefix=None, folder =None,
-                            boxsize_row=10,boxsize_line=10,CCDLabel=None):
+                            boxsize_row=10,boxsize_line=10,CCDLabel=None, nbframes_per_file=1):
     """ collect pixel intensity array in given SINGLE roi 
         
     :param index: int, image file index
@@ -55,17 +55,24 @@ def collectroiarray_singlefile(imageindex, roicenter=None, prefix=None, folder =
     :param folder: str, path to folder containing all images
     :param boxsize_row, boxsize_line: half boxsize along x and y of the roi (can be a list?)
     :param CCDLabel: label of detector
+    :param nbframes_per_file: for stacked images files, nb of frames per file. imageindex is then
+        the global index of the image (file number = imageindex // nbframes_per_file)
     
     :return: array of max intensities: shape = (nbimages, nbpeaks)
     """
     extension = '.tif'
-    if CCDLabel == 'EIGER_4MCdTe':
+    if CCDLabel in ('EIGER_4MCdTe', 'EIGER_4MCdTestack'):
         extension = '.h5'
     elif CCDLabel == 'MARCCD165':
         raise ValueError("MARCCD165 not supported yet")
         #extension = '.mccd'
-    
-    filename = prefix+'%04d'%imageindex + extension 
+
+    stackimageindex = -1
+    fileindex = imageindex
+    if CCDLabel in IOimage.STACK_CCDLABELS:
+        fileindex, stackimageindex = divmod(int(imageindex), int(nbframes_per_file))
+
+    filename = prefix+'%04d'%fileindex + extension 
     imagefilename = os.path.join(folder, filename)
     
     halfboxsizes = boxsize_row, boxsize_line  # along X, along Y
@@ -78,8 +85,6 @@ def collectroiarray_singlefile(imageindex, roicenter=None, prefix=None, folder =
 #         stackimageindex = imageindex
 #         print("filename",filename)
 #         print("stackimageindex",stackimageindex)
-    
-    stackimageindex = -1
 
     framedimraw = DictLT.dict_CCD[CCDLabel][0]
     fliprot = DictLT.dict_CCD[CCDLabel][3]

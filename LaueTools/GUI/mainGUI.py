@@ -79,6 +79,7 @@ from LaueTools.dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict
                                 dict_Eul, list_CCD_file_extensions,
                                 readDict, getwildcardstring, LAUETOOLSFOLDER)
 import LaueTools.dict_LaueTools as DictLT
+import LaueTools.IOimagefile as IOimage
 from LaueTools.GUI.PeakSearchGUI import MainPeakSearchFrame
 from LaueTools.GUI.DetectorParameters import autoDetectDetectorType
 from LaueTools.GUI.DetectorCalibration import MainCalibrationFrame
@@ -431,6 +432,10 @@ class LaueToolsGUImainframe(wx.Frame):
                 DPBoard.ShowModal()
                 DPBoard.Destroy()
 
+                # EIGER_4MCdTe hdf5 file may contain a single image or a stack of images
+                self.CCDLabel, nbframes = IOimage.autodetect_eiger_stack_label(self.CCDLabel,
+                                                os.path.join(self.imgdirname, self.imgfilename))
+
                 initialParameter = {}
                 initialParameter["title"] = "peaksearch Board"
                 initialParameter["imagefilename"] = self.imgfilename
@@ -445,7 +450,7 @@ class LaueToolsGUImainframe(wx.Frame):
                 if self.CCDLabel in ("EIGER_4Mstack","EIGER_4MCdTestack"):
                     initialParameter["stackedimages"] = True
                     initialParameter["stackimageindex"] = 0
-                    initialParameter["Nbstackedimages"] = None  #maybe non useful
+                    initialParameter["Nbstackedimages"] = nbframes
 
                 elif self.CCDLabel in ("MaxiPIXCdTe","EIGER_4MCdTe","EIGER_1M"):
                     if os.path.split(self.imgfilename)[0].startswith(('mpxcdte_','eiger1_')):  # never enter this branch??
@@ -1952,7 +1957,8 @@ class LaueToolsGUImainframe(wx.Frame):
         except:
             wcd = wcd0
 
-        return dict(message="Choose an Image File", defaultDir=self.dirname, wildcard=wcd)
+        # start in the folder of the last opened image
+        return dict(message="Choose an Image File", defaultDir=self.imgdirname, wildcard=wcd)
 
     def OnDocumentationpdf(self, _):
         """ open pdf file of Lauetools Documentation """

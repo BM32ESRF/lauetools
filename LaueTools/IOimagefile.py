@@ -10,6 +10,7 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 # built-in modules
 import sys
 import os
+import re
 import copy
 import struct, math
 from scipy import ndimage as scind
@@ -987,6 +988,184 @@ def readoneimage_full(filename, frametype="mccd", dirname=None):
     return pilimage, np.reshape(ravdata, shapeCCD)
 
 
+EIGER_H5_DATAPATH = 'entry_0000/measurement/data'  # BLISS (LIMA) hdf5 file of EIGER4M CdTe at BM32
+EIGER_SINGLE_STACK_LABELS = ('EIGER_4MCdTe', 'EIGER_4MCdTestack')
+
+
+def get_eiger_h5_nbframes(pathfile:str):
+    r"""return the number of frames stored in a BLISS EIGER hdf5 image file
+    (first dimension of dataset 'entry_0000/measurement/data' of shape (nbframes, dim1, dim2)),
+    or None if file cannot be read or has not this structure
+
+    .. note:: entry_0000/.../acquisition/nb_frames is the number of frames of the whole scan
+        (not of this file) and is then not used.
+    """
+    try:
+        with h5py.File(pathfile, 'r', locking=False) as f:
+            shape = f[EIGER_H5_DATAPATH].shape
+    except (OSError, KeyError) as exc:
+        print(f'cannot read nb of frames of {pathfile}: {exc}')
+        return None
+    if len(shape) == 2:  # single 2D image
+        return 1
+    return shape[0]
+
+
+def _is_frame_recorded(dataset, frameindex:int):
+    r"""return True if frame frameindex of stacked images dataset contains data (not only zeros).
+    BLISS creates the whole stacked images dataset filled with zeros before recording frames.
+
+    Fast checks without reading data (frame chunked dataset): chunk not allocated -> not recorded,
+    compressed chunk larger than 1% of raw frame -> recorded (a frame of zeros is much more compressed)
+    """
+    if frameindex < 0 or frameindex >= dataset.shape[0]:
+        return False
+    if dataset.chunks is not None and dataset.chunks[0] == 1:
+        try:
+            chunkinfo = dataset.id.get_chunk_info_by_coord((frameindex,) + (0,) * (dataset.ndim - 1))
+        except (AttributeError, ValueError, RuntimeError):  # old h5py or hdf5 library
+            chunkinfo = None
+        if chunkinfo is not None:
+            if chunkinfo.byte_offset is None:
+                return False
+            rawframesize = np.prod(dataset.chunks) * dataset.dtype.itemsize
+            if chunkinfo.size > 0.01 * rawframesize:
+                return True
+    return bool(np.any(dataset[frameindex]))
+
+
+def is_stack_frame_recorded(pathfile:str, frameindex:int):
+    r"""return True if frame frameindex of BLISS stacked images hdf5 file contains data"""
+    try:
+        with h5py.File(pathfile, 'r', locking=False) as f:
+            return _is_frame_recorded(f[EIGER_H5_DATAPATH], frameindex)
+    except (OSError, KeyError) as exc:
+        print(f'cannot read frame {frameindex} of {pathfile}: {exc}')
+        return False
+
+
+def get_eiger_h5_nbframes_recorded(pathfile:str):
+    r"""return the number of frames already recorded in a BLISS stacked images hdf5 file
+    (or None if file cannot be read).
+
+    The dataset is created filled with zeros and frames are recorded in increasing order:
+    the first frame full of zeros is found by bisection (about log2(nbframes) frames probed)
+    """
+    try:
+        with h5py.File(pathfile, 'r', locking=False) as f:
+            dataset = f[EIGER_H5_DATAPATH]
+            if dataset.ndim == 2:
+                return 1 if np.any(dataset[()]) else 0
+            nbframes = dataset.shape[0]
+            if nbframes == 0 or not _is_frame_recorded(dataset, 0):
+                return 0
+            if _is_frame_recorded(dataset, nbframes - 1):
+                return nbframes
+            # frame lo is recorded, frame hi is not
+            lo, hi = 0, nbframes - 1
+            while hi - lo > 1:
+                mid = (lo + hi) // 2
+                if _is_frame_recorded(dataset, mid):
+                    lo = mid
+                else:
+                    hi = mid
+            return hi
+    except (OSError, KeyError) as exc:
+        print(f'cannot read nb of recorded frames of {pathfile}: {exc}')
+        return None
+
+
+def autodetect_eiger_stack_label(CCDLabel:str, pathfile:str):
+    r"""for EIGER_4MCdTe or EIGER_4MCdTestack labels, return the label corresponding
+    to the content of the hdf5 file (stack if it contains more than 1 frame) and the nb of frames
+
+    :return: (CCDLabel, nbframes) with nbframes None if label is not concerned or file unreadable
+    """
+    if CCDLabel not in EIGER_SINGLE_STACK_LABELS or not str(pathfile).endswith('.h5'):
+        return CCDLabel, None
+    nbframes = get_eiger_h5_nbframes(pathfile)
+    if nbframes is None:
+        return CCDLabel, None
+    detectedlabel = 'EIGER_4MCdTestack' if nbframes > 1 else 'EIGER_4MCdTe'
+    if detectedlabel != CCDLabel:
+        print(f'{os.path.basename(pathfile)} contains {nbframes} frame(s): CCDLabel {CCDLabel} -> {detectedlabel}')
+    return detectedlabel, nbframes
+
+
+# --- stacked images files: global image index <-> (file, frame in file)
+# a scan with stacked images may be saved in several files {prefix}{filenumber}.h5 having all
+# nbframes_per_file frames (except the last one). The global image index of the scan is then
+# imageindex = filenumber * nbframes_per_file + frameindex
+STACK_CCDLABELS = ('EIGER_4MCdTestack',)
+
+
+def split_indexed_filename(filename:str):
+    r"""return (prefix, filenumber, nbdigits, extension) of filename {prefix}{digits}.{extension}
+    (folder path kept in prefix) or None if filename has no index
+    e.g. ('/folder/eiger4m_', 3, 4, 'h5') for '/folder/eiger4m_0003.h5'"""
+    folder, basename = os.path.split(str(filename))
+    match = re.match(r'^(.*?)(\d+)\.([^.]+)$', basename)
+    if match is None:
+        return None
+    return (os.path.join(folder, match.group(1)), int(match.group(2)), len(match.group(2)),
+            match.group(3))
+
+
+def stack_file_and_frame(filename_representative:str, imageindex:int, nbframes_per_file:int):
+    r"""return (filename of stacked images file, frame index in this file) of global image index
+
+    :param filename_representative: filename of one file of the series (folder path is kept)
+    :param imageindex: global image index in the scan
+    :param nbframes_per_file: nb of frames in each file (except the last one)
+    """
+    parts = split_indexed_filename(filename_representative)
+    if parts is None or not nbframes_per_file:  # single file
+        return filename_representative, int(imageindex)
+    prefix, _, nbdigits, ext = parts
+    filenumber, frameindex = divmod(int(imageindex), int(nbframes_per_file))
+    return f'{prefix}{filenumber:0{nbdigits}d}.{ext}', frameindex
+
+
+def stack_imageindex(filename:str, frameindex:int, nbframes_per_file:int):
+    r"""return global image index of frame frameindex in stacked images file filename
+    (inverse of stack_file_and_frame())"""
+    parts = split_indexed_filename(filename)
+    frameindex = max(0, int(frameindex))
+    if parts is None or not nbframes_per_file:
+        return frameindex
+    return parts[1] * int(nbframes_per_file) + frameindex
+
+
+def get_stack_nbframes_per_file(pathfile:str):
+    r"""return nb of frames per file of the series of stacked images files containing pathfile.
+    Read in the first file of the series (file number 0, the last file may contain less frames)
+    and in pathfile if not found"""
+    parts = split_indexed_filename(pathfile)
+    if parts is not None:
+        prefix, _, nbdigits, ext = parts
+        firstfile = f'{prefix}{0:0{nbdigits}d}.{ext}'
+        if os.path.exists(firstfile):
+            nbframes = get_eiger_h5_nbframes(firstfile)
+            if nbframes is not None:
+                return nbframes
+    return get_eiger_h5_nbframes(pathfile)
+
+
+def get_stack_nbimages_in_folder(pathfile:str, nbframes_per_file:int):
+    r"""return total nb of images (frames) already recorded in the series of stacked images files
+    containing pathfile (up to the file with the largest number, read now since the scan may be running).
+    In the last file, frames not yet recorded (full of zeros) are not counted"""
+    parts = split_indexed_filename(pathfile)
+    if parts is None or not nbframes_per_file:
+        return get_eiger_h5_nbframes_recorded(pathfile)
+    prefix, _, nbdigits, ext = parts
+    folder, basenameprefix = os.path.split(prefix)
+    lastfilenumber = GT.get_largest_index_in_folder(folder or os.curdir, basenameprefix, ext)
+    lastfile = f'{prefix}{lastfilenumber:0{nbdigits}d}.{ext}'
+    nbframes_lastfile = get_eiger_h5_nbframes_recorded(lastfile) or 0
+    return lastfilenumber * nbframes_per_file + nbframes_lastfile
+
+
 def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-1, verbose=0):
     r"""general function to read raw data binary (Laue pattern) image file recorder on 2D detector.
 
@@ -1056,7 +1235,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         else:
             USE_RAW_METHOD = True
     # special treatment: because fabio open only the fisrt image of stacked images hdf5 file!....
-    elif CCDLabel in ("EIGER_4Mstack"):  #made by PSI software
+    elif CCDLabel in ("EIGER_4Mstack",):  #made by PSI software
 
         try:
             import tables as Tab
@@ -1082,7 +1261,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
         dataimage = alldata[stackimageindex]
         framedim = dataimage.shape
 
-    elif CCDLabel in ("EIGER_4MCdTestack"):  #made by ESRF BLISS software
+    elif CCDLabel in ("EIGER_4MCdTestack",):  #made by ESRF BLISS software
         if dirname is not None:
             pathfile=os.path.join(dirname, filename)
         else:
@@ -1090,12 +1269,14 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
 
         #os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
         with h5py.File(pathfile, 'r', locking=False) as f:
+            stackeddata = f[EIGER_H5_DATAPATH]
             try:
                 if stackimageindex < 0:
                     stackimageindex = 0
-                dataimage = f['entry_0000']['measurement']['data'][()][stackimageindex]
-            except IndexError:
-                stackedimagesshape = f['entry_0000']['measurement']['data'][()].shape
+                # read only the requested frame (not the whole stack)
+                dataimage = stackeddata[stackimageindex]
+            except (IndexError, ValueError):
+                stackedimagesshape = stackeddata.shape
                 nbmaximages = stackedimagesshape[0]
                 print('\n---------------\nWARNING !! For this file : %s'%filename)
                 print(f'Requested stackindex {stackimageindex} exceeds the number of stacked images: {nbmaximages}')
@@ -1103,7 +1284,7 @@ def readCCDimage(filename, CCDLabel="MARCCD165", dirname=None, stackimageindex=-
                 dataimage=np.zeros((stackedimagesshape[1], stackedimagesshape[2]))
 
             framedim = dataimage.shape
-            print('framedim EIGER_4MCdTestack',framedim) 
+            if verbose > 0: print('framedim EIGER_4MCdTestack',framedim)
             fliprot = 'no'
 
     elif filename.endswith('h5'):  #  maxipix  hdf5 file
@@ -1515,7 +1696,7 @@ def readrectangle_in_image(filename:str, pixx:int, pixy:int, halfboxx:oddinteger
     # uint16
     offsetheader = filesize - (framedim[0] * framedim[1]) * nbBytesPerElement
 
-    if CCDLabel in ('EIGER_4MCdTe'):  # not useful ?
+    if CCDLabel in ('EIGER_4MCdTe',):  # not useful ?
         oneimagesize = (framedim[0] * framedim[1]) * nbBytesPerElement
         offsetheader = filesize % oneimagesize
 
@@ -1550,9 +1731,8 @@ def readrectangle_in_image(filename:str, pixx:int, pixy:int, halfboxx:oddinteger
 
         #print('shape of band2D', band2D.shape)
 
-    elif CCDLabel in ('EIGER_4MCdTestack'):
-        print('stackimageindex', stackimageindex)
-        print('filename',filename)
+    elif CCDLabel in ('EIGER_4MCdTestack',):
+        if verbose > 0: print('stackimageindex', stackimageindex, 'filename', filename)
         _data, _dims, _ = readCCDimage(filename, CCDLabel=CCDLabel, dirname=dirname, stackimageindex=stackimageindex, verbose=0)
         band2D = _data[ypixmin:ypixmax+1]
 
