@@ -1920,7 +1920,7 @@ def strain_from_crystal_to_sample_frame_OLD(strain, UBmat, sampletilt=40.0):
     return strain_from_crystal_to_sample_frame2(strain, UBmat, sampletilt=sampletilt, latticeparams=None)
 
 
-def print_devstrain_sample_comparison(devstrain_sample_old, devstrain_sample_corrected, label=""):
+def print_devstrain_sample_comparison(devstrain_sample_old, devstrain_sample_corrected, label:str="", verbose:int=0):
     r"""
     TEMPORARY-STRAINFIX: print old and corrected deviatoric strain in sample frame (10-3 unit)
     and the max absolute difference
@@ -1929,17 +1929,22 @@ def print_devstrain_sample_comparison(devstrain_sample_old, devstrain_sample_cor
         return
     old = np.round(np.array(devstrain_sample_old, dtype=np.float64) * 1000.0, decimals=3)
     new = np.round(np.array(devstrain_sample_corrected, dtype=np.float64) * 1000.0, decimals=3)
-    print("[TEMPORARY-STRAINFIX] %s deviatoric strain in LT sample frame (10-3 unit)" % label)
-    print("        OLD (before Oct. 2026)                          CORRECTED")
-    for k in range(3):
-        print("  %8.3f %8.3f %8.3f      |   %8.3f %8.3f %8.3f" % (tuple(old[k]) + tuple(new[k])))
-    print("  max |OLD - CORRECTED| = %.3f (10-3 unit)" % np.amax(np.fabs(old - new)))
+
+    if verbose>0:
+
+        print("[TEMPORARY-STRAINFIX] %s deviatoric strain in LT sample frame (10-3 unit)" % label)
+        print("        OLD (before Oct. 2026)                          CORRECTED")
+        for k in range(3):
+            print("  %8.3f %8.3f %8.3f      |   %8.3f %8.3f %8.3f" % (tuple(old[k]) + tuple(new[k])))
+        print("  max |OLD - CORRECTED| = %.3f (10-3 unit)" % np.amax(np.fabs(old - new)))
     eq_old = equivalent_strain(devstrain_sample_old) * 1000.0
     eq_new = equivalent_strain(devstrain_sample_corrected) * 1000.0
     eq_diff = equivalent_strain(np.array(devstrain_sample_old) - np.array(devstrain_sample_corrected)) * 1000.0
-    print("  equivalent (von Mises) strain (10-3 unit): OLD %.3f   CORRECTED %.3f" % (eq_old, eq_new))
-    print("  equivalent strain of OLD - CORRECTED: %.3f (10-3 unit), i.e. %.1f %% of CORRECTED one"
-          % (eq_diff, 100.0 * eq_diff / eq_new if eq_new > 0 else np.nan))
+    
+    if verbose>0:
+        print("  equivalent (von Mises) strain (10-3 unit): OLD %.3f   CORRECTED %.3f" % (eq_old, eq_new))
+        print("  equivalent strain of OLD - CORRECTED: %.3f (10-3 unit), i.e. %.1f %% of CORRECTED one"
+            % (eq_diff, 100.0 * eq_diff / eq_new if eq_new > 0 else np.nan))
 
 
 def rotation_directcrystal_to_sample_frame(UBmat, latticeparams, sampletilt=40.0):
@@ -2097,7 +2102,6 @@ def fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
 # print full strain results (indexing and GUIs) when elastic constants of material are available
 PRINT_FULLSTRAIN = True
 
-
 def fullstrain_text(res, key_material="", sampletilt=40.0):
     r"""
     Format results of fullstrain_from_deviatoricstrain() as a text (for printouts and GUI boards)
@@ -2108,6 +2112,7 @@ def fullstrain_text(res, key_material="", sampletilt=40.0):
     if res is None:
         return ("Full strain (stress_zz=0 assumption): no elastic constants for material '%s' "
                 "in dict_Stiffness (dict_LaueTools.py)\n" % key_material)
+                
     txt = "Full Strain (10-3) sample frame (tilt=%.0fdeg), stress_zz=0\n" % sampletilt
     for k in range(3):
         txt += "%.3f   %.3f   %.3f\n" % tuple(np.round(res["fullstrain_sample"][k] * 1000.0, decimals=3))
