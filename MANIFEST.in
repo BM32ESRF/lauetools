@@ -1,12 +1,15 @@
+# sdist content: setuptools-scm adds all files tracked by git; heavy files are removed below.
+# Example images, notebooks HTML and generated documentation are published as GitHub release
+# assets (see LaueTools/notebooks/download_examples.py) to keep each PyPI release small.
 include *.md
-recursive-include LaueTools/icons *
-recursive-include LaueTools/scripts *
-recursive-include LaueTools/LaueImages *
-recursive-include LaueTools/Examples *
-ecursive-include LaueTools/Documentation *
-recursive-include LaueTools/Daxm *
-recursive-include LaueTools/FileSeries *
-recursive-include LaueTools *
-# Include output-free notebooks (if any)
-recursive-include LaueTools/notebooks/*.ipynb
+graft LaueTools
+prune doc/build
+prune doc/_build
+prune LaueTools/LaueImages
+global-exclude *.html *.mccd *.tif *.tiff *.h5 *.hdf5 *.angles *.pickle *.npy
+global-exclude *.local.ipynb *.local.yaml
+global-exclude *.pyc
 prune */__pycache__
+exclude LaueTools/Diamond/*.ipynb
+# small example images needed by tests and tutorials
+include LaueTools/LaueImages/small_example_*
