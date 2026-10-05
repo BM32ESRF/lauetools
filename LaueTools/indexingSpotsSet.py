@@ -1783,7 +1783,8 @@ class spotsset:
                             self.dict_grain_devstrain_sample_old[grain_index] = self.deviatoricstrain_sampleframe_old
                             CP.print_devstrain_sample_comparison(self.deviatoricstrain_sampleframe_old,
                                                     self.deviatoricstrain_sampleframe,
-                                                    label="%s grain #%d" % (self.key_material, grain_index))
+                                                    label="%s grain #%d" % (self.key_material, grain_index),
+                                                    verbose=verbose-1)
 
                             # full strain and stress assuming stress_zz = 0 (sample surface normal)
                             self.computeFullStrain(grain_index, verbose=verbose-1)
@@ -2695,7 +2696,7 @@ class spotsset:
                                                 self.key_material,
                                                 dictmaterials=self.dict_Materials,
                                                 sampletilt=self.sampletilt,
-                                                verbose=verbose)
+                                                verbose=verbose-1)
         self.hydrostaticstrain = None
         self.fullstrain_latticeparameters = None
         if res is not None:
@@ -2703,9 +2704,11 @@ class spotsset:
             self.stress_sampleframe = res["stress_sample"]
             self.hydrostaticstrain = res["hydrostaticstrain"]
             self.fullstrain_latticeparameters = res["latticeparameters"]
-        if CP.PRINT_FULLSTRAIN and (res is not None or verbose > 0):
-            print("%s grain #%d: %s" % (self.key_material, grain_index,
-                                        CP.fullstrain_text(res, self.key_material, self.sampletilt)))
+        
+        if verbose>0:
+            if CP.PRINT_FULLSTRAIN and res is not None:
+                print("%s grain #%d: %s" % (self.key_material, grain_index,
+                                            CP.fullstrain_text(res, self.key_material, self.sampletilt)))
 
         self.dict_grain_fullstrain_sample[grain_index] = self.fullstrain_sampleframe
         self.dict_grain_stress_sample[grain_index] = self.stress_sampleframe
