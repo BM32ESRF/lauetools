@@ -2091,7 +2091,7 @@ class Plot_RefineFrame(wx.Frame):
         deviatoricstrain_sampleframe_old = CP.strain_from_crystal_to_sample_frame_OLD(devstrain, UBmat)
         devstrain_sampleframe_old_round = np.round(deviatoricstrain_sampleframe_old * 1000, decimals=3)
         CP.print_devstrain_sample_comparison(deviatoricstrain_sampleframe_old,
-                                            deviatoricstrain_sampleframe, label=key_material)
+                                            deviatoricstrain_sampleframe, label=key_material, verbose=1)
 
         # full strain and stress assuming stress_zz = 0 in sample frame (needs elastic constants of material)
         fullstrain_results = CP.fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
