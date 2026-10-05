@@ -1264,13 +1264,13 @@ def filterLaueSpots(vec_and_indices, HarmonicsRemoval=1,
         # list of elements which are composed by two arrays (2theta, chi) (1 element / grain)
         return (np.concatenate(Oncam2theta) / DEG, np.concatenate(Oncamchi) / DEG)
 
-
+mm=float
 def filterLaueSpots_full_np(veccoord, indicemiller, onlyXYZ=False, HarmonicsRemoval=1,
                                                         fastcompute=0,
                                                         kf_direction=DEFAULT_TOP_GEOMETRY,
                                                         detectordistance=DEFAULT_DETECTOR_DISTANCE,
                                                         detectordiameter=DEFAULT_DETECTOR_DIAMETER,
-                                                        pixelsize=165.0 / 2048,
+                                                        pixelsize:mm=165.0 / 2048,
                                                         dim=(2048, 2048),
                                                         grainindex=0,
                                                         shiftcentercamera=None):
