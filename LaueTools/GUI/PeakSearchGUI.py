@@ -96,6 +96,7 @@ if sys.version_info.major == 3:
     from .. import imageprocessing as ImProc
     import LaueTools.logfile_reader as logfile_reader
     import LaueTools.blissdatafolderstructure as bf
+    import LaueTools.scripts.workflowlauncher as WL
 
 else:
     import dragpoints as DGP
@@ -1006,6 +1007,10 @@ class BrowseCropPanel(wx.Panel):
         imagepropstxt = wx.StaticText(self, -1, "Image indices properties (2D map arrangement)")
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
         imagepropstxt.SetFont(font3)
+        # BLISS scan command and end reason (set by mainframe.apply_scan_metadata_to_panels())
+        self.blisscommandtxt = wx.StaticText(self, -1, "")
+        # last recorded image (see mainframe.update_last_image_info())
+        self.lastimagetxt = wx.StaticText(self, -1, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
 
         # layout ------------------------
         self.NavigBoxsizer0 = wx.BoxSizer(wx.HORIZONTAL)
@@ -1048,6 +1053,8 @@ class BrowseCropPanel(wx.Panel):
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
         vbox.Add(imagepropstxt, 0, wx.EXPAND)
+        vbox.Add(self.blisscommandtxt, 0, wx.EXPAND)
+        vbox.Add(self.lastimagetxt, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer4, 0, wx.EXPAND)
         vbox.Add(self.slider_image, 0, wx.EXPAND)
 
@@ -1208,7 +1215,54 @@ class MosaicAndMonitor(wx.Panel):
         # scan metadata: BLISS command (on the right of 'All') and summary (see update_from_scan_dict())
         self.blisscommandtxt = wx.StaticText(self, -1, "")
         self.scancommandtxt = wx.StaticText(self, -1, "")
+        # last recorded image (see mainframe.update_last_image_info())
+        self.lastimagetxt = wx.StaticText(self, -1, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
 
+        # computing resources (see scripts/workflowlauncher.py). None: sequential computation in GUI
+        txt5 = wx.StaticText(self, -1, "Computing")
+        txt5.SetFont(font3)
+        self.computing_resources = list(WL.COMPUTING_RESOURCES) + [None]
+        self.nbcpus_local = WL.wf.available_cpus()
+        labels = []
+        for name in self.computing_resources:
+            if name is None:
+                labels.append("GUI (sequential)")
+            elif name == "local":
+                labels.append("local machine (%d cpus)" % self.nbcpus_local)
+            else:
+                labels.append("%s (SLURM)" % name)
+        self.txtcomputing = wx.StaticText(self, -1, "Run on")
+        self.computingchoice = wx.Choice(self, -1, choices=labels)
+        self.computingchoice.SetSelection(0)
+        self.computingchoice.Bind(wx.EVT_CHOICE, self.OnChangeComputingResource)
+        self.txtnbcpus = wx.StaticText(self, -1, "CPUs")
+        self.nbcpusctrl = wx.SpinCtrl(self, -1, "1", min=1, max=4096)
+        self.OnChangeComputingResource(None)
+        self.btnCancelJob = wx.Button(self, wx.ID_ANY, "Cancel")
+        # output folder of results files and plots (see WL.resolve_output_folder())
+        txt6 = wx.StaticText(self, -1, "Output")
+        txt6.SetFont(font3)
+        self.outimagefolderbtn = wx.RadioButton(self, -1, "image folder", style=wx.RB_GROUP)
+        self.outmirrorbtn = wx.RadioButton(self, -1, "PROCESSED_DATA mirror")
+        self.outotherbtn = wx.RadioButton(self, -1, "other:")
+        self.outimagefolderbtn.SetValue(True)
+        self.outotherctrl = wx.TextCtrl(self, -1, "", size=(250, -1), style=wx.TE_PROCESS_ENTER)
+        self.outbrowsebtn = wx.Button(self, -1, "Browse")
+        self.outbrowsebtn.Bind(wx.EVT_BUTTON, self.OnBrowseOutputFolder)
+        for btn in (self.outimagefolderbtn, self.outmirrorbtn, self.outotherbtn):
+            btn.Bind(wx.EVT_RADIOBUTTON, self.update_output_folder_label)
+        self.outotherctrl.Bind(wx.EVT_TEXT_ENTER, self.update_output_folder_label)
+        self.outotherctrl.Bind(wx.EVT_KILL_FOCUS, lambda evt: (self.update_output_folder_label(), evt.Skip()))
+        self.outputfoldertxt = wx.StaticText(self, -1, "", style=wx.ST_ELLIPSIZE_MIDDLE | wx.ST_NO_AUTORESIZE)
+        self.saveresultschck = wx.CheckBox(self, -1, "Save results files (.h5, maps .txt)")
+        self.saveresultschck.SetValue(True)
+        self.saveplotschck = wx.CheckBox(self, -1, "Save plots (.png)")
+        self.saveplotschck.SetValue(False)
+        self.btnCancelJob.Bind(wx.EVT_BUTTON, self.OnCancelJobs)
+        # state of last launched workflow (see mosaic.WorkflowJobMonitor)
+        self.jobstatustxt = wx.StaticText(self, -1, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
+        # progress of last launched workflow (nb of processed images)
+        self.jobgauge = wx.Gauge(self, -1, range=100, size=(150, -1))
 
         self.btnMosaic = wx.Button(self, wx.ID_ANY, "Start")
         self.btnMosaic.Bind(wx.EVT_BUTTON, self.OnMosaic)
@@ -1275,11 +1329,28 @@ class MosaicAndMonitor(wx.Panel):
         self.NavigBoxsizer3.Add(self.txtmapstartingindex, 0, wx.ALL, 5)
         self.NavigBoxsizer3.Add(self.mapstartingimageindexctrl, 0, wx.ALL, 5)
 
+        computingsizer = wx.BoxSizer(wx.HORIZONTAL)
+        computingsizer.Add(self.txtcomputing, 0, wx.ALL, 5)
+        computingsizer.Add(self.computingchoice, 0, wx.ALL, 5)
+        computingsizer.Add(self.txtnbcpus, 0, wx.ALL, 5)
+        computingsizer.Add(self.nbcpusctrl, 0, wx.ALL, 5)
+        computingsizer.Add(self.btnCancelJob, 0, wx.ALL, 5)
+
+        outputsizer = wx.BoxSizer(wx.HORIZONTAL)
+        for widget in (self.outimagefolderbtn, self.outmirrorbtn, self.outotherbtn):
+            outputsizer.Add(widget, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        outputsizer.Add(self.outotherctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        outputsizer.Add(self.outbrowsebtn, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        savesizer = wx.BoxSizer(wx.HORIZONTAL)
+        savesizer.Add(self.saveresultschck, 0, wx.ALL, 5)
+        savesizer.Add(self.saveplotschck, 0, wx.ALL, 5)
+
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(txt1, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer0, 0, wx.EXPAND)
         vbox.Add(txt2, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer20, 0, wx.EXPAND)
+        vbox.Add(self.lastimagetxt, 0, wx.EXPAND | wx.LEFT, 10)
         vbox.Add(self.NavigBoxsizer2, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
         vbox.Add(ROIBoxsizer, 0, wx.EXPAND)
@@ -1291,6 +1362,16 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(txt4, 0, wx.EXPAND)
         vbox.Add(self.scancommandtxt, 0, wx.EXPAND)
         vbox.Add(self.NavigBoxsizer3, 0, wx.EXPAND)
+        vbox.Add(txt5, 0, wx.EXPAND)
+        vbox.Add(computingsizer, 0, wx.EXPAND)
+        jobstatussizer = wx.BoxSizer(wx.HORIZONTAL)
+        jobstatussizer.Add(self.jobgauge, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
+        jobstatussizer.Add(self.jobstatustxt, 1, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
+        vbox.Add(jobstatussizer, 0, wx.EXPAND)
+        vbox.Add(txt6, 0, wx.EXPAND)
+        vbox.Add(outputsizer, 0, wx.EXPAND)
+        vbox.Add(self.outputfoldertxt, 0, wx.EXPAND | wx.LEFT, 10)
+        vbox.Add(savesizer, 0, wx.EXPAND)
         vbox.Add(self.btnMosaic, 0, wx.EXPAND)
 
         self.SetSizer(vbox)
@@ -1368,6 +1449,42 @@ class MosaicAndMonitor(wx.Panel):
         self.txtnbdigits.SetToolTipString(tpdigits)
         self.nbdigitsctrl.SetToolTipString(tpdigits)
 
+        tpcomputing = ("Where to compute counters (images are processed in parallel):\n"
+                    "- local machine: parallel processes on this computer (GUI stays responsive)\n"
+                    "- SLURM: job submitted to ESRF cluster partition (through ssh on %s if SLURM is "
+                    "not available on this computer)\n"
+                    "- GUI (sequential): former computation in GUI, one image after the other\n"
+                    "Results (.h5, config, log) are written in PROCESSED_DATA mirror folder of images folder.\n"
+                    "Same workflow from command line: python -m LaueTools.scripts.workflowlauncher"
+                    % WL.SLURM_SUBMIT_HOST)
+        self.txtcomputing.SetToolTipString(tpcomputing)
+        self.computingchoice.SetToolTipString(tpcomputing)
+        tpcpus = ("Nb of cpus (worker processes) used to process images in parallel.\n"
+                  "local machine: computed in this GUI session, default 64 cpus (machine may be shared)\n"
+                  "SLURM: nb of cpus requested for the job (--cpus-per-task)\n"
+                  "Speed gain is small above ~64 cpus for maps of a few hundreds images "
+                  "(reading of compressed images files dominates)")
+        self.txtnbcpus.SetToolTipString(tpcpus)
+        self.nbcpusctrl.SetToolTipString(tpcpus)
+        self.btnCancelJob.SetToolTipString("Cancel running workflow(s) launched from this panel")
+        self.transposemap.SetToolTipString("Fast motor along vertical axis of maps (lines of map along "
+                    "fast motor).\nPreset from BLISS scan command so that y motor (yech, yps, sy) is "
+                    "along vertical axis\nand x motor (xech, xps, sx) along horizontal axis")
+        self.jobgauge.SetToolTip("Progress of last launched workflow (nb of processed images)")
+        wx.CallAfter(self.update_output_folder_label)
+        tpout = ("Folder where results files and plots are written:\n"
+                 "- image folder (default): folder of the displayed image\n"
+                 "- PROCESSED_DATA mirror: .../PROCESSED_DATA/{sample}/{sample}_{dataset}/scanXXXX\n"
+                 "- other: any folder\n"
+                 "If the folder is not writable, the PROCESSED_DATA mirror folder is used")
+        for widget in (txt6, self.outimagefolderbtn, self.outmirrorbtn, self.outotherbtn,
+                       self.outotherctrl, self.outbrowsebtn, self.outputfoldertxt):
+            widget.SetToolTip(tpout)
+        self.saveplotschck.SetToolTip("Save each result plot (mosaic, maps, profiles) as .png in output folder")
+        self.saveresultschck.SetToolTipString("Write mosaic and counters maps and profiles (text files) "
+                    "and workflow results (.h5) on disk.\nUnchecked: results are only plotted "
+                    "(job files are removed once results are loaded, kept if job fails)")
+
     #     def onSortROIname(self, evt):
     #         listROI = self.dict_ROI.keys()
     #         listROIs = sorted(listROI, key=str.lower)
@@ -1378,6 +1495,60 @@ class MosaicAndMonitor(wx.Panel):
         ROIselected = self.comboROI.GetValue()
         print("selected ", ROIselected)
         print(self.dict_ROI[ROIselected])
+
+    def get_computing_resource(self):
+        """selected computing resource name (see WL.COMPUTING_RESOURCES), None for sequential
+        computation in GUI"""
+        return self.computing_resources[self.computingchoice.GetSelection()]
+
+    def OnChangeComputingResource(self, _):
+        """set default nb of cpus of selected computing resource"""
+        resource = self.get_computing_resource()
+        if resource is None:
+            nbcpus = 1
+        elif resource == "local":
+            # no speed gain measured above ~64 cpus (reading of compressed images files dominates)
+            # and machine may be shared
+            nbcpus = max(1, min(64, self.nbcpus_local - 4))
+        else:
+            nbcpus = WL.COMPUTING_RESOURCES[resource].get("nbcpus", 32)
+        self.nbcpusctrl.SetValue(nbcpus)
+        self.nbcpusctrl.Enable(resource is not None)
+
+    def get_output_folder_mode(self):
+        """'image', 'mirror' or path of folder (see WL.resolve_output_folder())"""
+        if self.outmirrorbtn.GetValue():
+            return "mirror"
+        if self.outotherbtn.GetValue() and self.outotherctrl.GetValue().strip():
+            return os.path.abspath(os.path.expanduser(self.outotherctrl.GetValue().strip()))
+        return "image"
+
+    def resolve_output_folder(self):
+        """(output folder, note) for images folder of main frame"""
+        return WL.resolve_output_folder(self.mainframe.dirname, self.get_output_folder_mode())
+
+    def update_output_folder_label(self, _=None):
+        """show output folder of results (updated when folder of images changes)"""
+        if getattr(self.mainframe, "dirname", None) is None:
+            return
+        folder, note = self.resolve_output_folder()
+        self.outputfoldertxt.SetLabel("-> %s%s" % (folder, "   (%s)" % note if note else ""))
+        self.outputfoldertxt.SetToolTip(folder + ("\n" + note if note else ""))
+
+    def OnBrowseOutputFolder(self, _):
+        dlg = wx.DirDialog(self, "Choose output folder of results",
+                           defaultPath=self.outotherctrl.GetValue() or self.mainframe.dirname)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.outotherctrl.SetValue(dlg.GetPath())
+            self.outotherbtn.SetValue(True)
+            self.update_output_folder_label()
+        dlg.Destroy()
+
+    def OnCancelJobs(self, _):
+        """cancel running workflows launched from this panel (see mosaic.WorkflowJobMonitor)"""
+        for monitor in list(getattr(self, "workflowmonitors", [])):
+            print("cancelling", monitor.job)
+            monitor.cancel()
 
     def OnMosaic(self, _):
         """  launch main procedure of computing mosaic and displaying it
@@ -1418,14 +1589,9 @@ class MosaicAndMonitor(wx.Panel):
         self.cselected = cselected
 
     def update_from_scan_dict(self):
-        """preset map properties and image indices from scan metadata (mainframe.scan_dict)"""
-        # Last index: largest image index in the folder of the current image
-        prefix, suffix = self.mainframe.get_imagefile_prefix_suffix()
-        if prefix is not None:
-            indices = GT.list_image_indices_in_folder(self.mainframe.dirname, prefix, suffix)
-            if indices:
-                self.lastindexctrl.SetValue(indices[-1])
-
+        """preset map properties and image indices from scan metadata (mainframe.scan_dict)
+        (Last index is set by mainframe.update_last_image_info())"""
+        self.update_output_folder_label()
         scan_dict = self.mainframe.scan_dict
         if scan_dict is None:
             # 'All' workflow needs scan metadata from BLISS h5 file
@@ -1442,6 +1608,14 @@ class MosaicAndMonitor(wx.Panel):
         self.stepctrl.SetValue(str(scan_dict['nbimages_per_line']))
         self.mapstartingimageindexctrl.SetValue("0")
         self.startindexctrl.SetValue(0)
+        if scan_dict['scandim'] == 2:
+            # y motor along vertical axis of maps
+            fastmotor, slowmotor = scan_dict['fastmotor'], scan_dict['slowmotor']
+            transposed = MOS.map_transposed(fastmotor, slowmotor)
+            self.transposemap.SetValue(transposed)
+            xlabel, ylabel = MOS.map_axes_labels(fastmotor, slowmotor, transposed)
+            self.scancommandtxt.SetLabel(scan_dict['summary']
+                                        + "\nmaps axes: horizontal %s, vertical %s" % (xlabel, ylabel))
         self.Layout()
 
     def OnClearChildWindows(self, _):
@@ -3070,6 +3244,7 @@ class MainPeakSearchFrame(wx.Frame):
         self.stackedimages = self.initialParameter["stackedimages"]
         self.stackimageindex = self.initialParameter["stackimageindex"]
         self.Nbstackedimages = self.initialParameter["Nbstackedimages"]
+        self.update_stack_mode()
         if self.verbose>0:
             print('In MainPeakSearchFrame')
             print('self.stackedimages', self.stackedimages)
@@ -3534,7 +3709,8 @@ class MainPeakSearchFrame(wx.Frame):
     def OpenImage(self, _):
         # wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
 
-        filepath_dlg = wx.FileDialog(self, "Select binary image file",
+        # start in the folder of the current image
+        filepath_dlg = wx.FileDialog(self, "Select binary image file", defaultDir=self.dirname,
                                                 wildcard=DictLT.getwildcardstring(self.CCDLabel))
         if filepath_dlg.ShowModal() == wx.ID_OK:
 
@@ -3553,11 +3729,16 @@ class MainPeakSearchFrame(wx.Frame):
 
             self.imagefilename = filename
             self.dirname = dirname
+            # remember last images folder in LaueToolsGUI main window for next image opening
+            if hasattr(self.GetParent(), 'imgdirname'):
+                self.GetParent().imgdirname = dirname
+            self.update_stack_mode()
             if self.verbose>0:
                 print('in OpenImage, self.stackedimages', self.stackedimages)
             self.getIndex_fromfilename()
             if folderchanged:
                 self.load_scan_metadata()
+            if folderchanged or self.stackedimages:
                 self.apply_scan_metadata_to_panels()
             self.resetfilename_and_plot()
 
@@ -3877,6 +4058,8 @@ class MainPeakSearchFrame(wx.Frame):
         are arranged in a quasi square map with nb of images per line = round(sqrt(nb images)).
         """
         self.scan_dict = None
+        # nb of images of finished scan written by BLISS (shape of {scanindex}.1/measurement/{detector})
+        self.bliss_nbimages = None
         if not re.match(r'^scan\d+$', os.path.basename(os.path.normpath(self.dirname))):
             return
         try:
@@ -3900,6 +4083,13 @@ class MainPeakSearchFrame(wx.Frame):
                     scan_end_reason = h5str(scangroup['end_reason'][()])
                 else:
                     scan_end_reason = 'RUNNING'
+                # images dataset (virtual dataset pointing to image files) e.g. measurement/eiger4m
+                # its shape is used only for finished scan (it may be not final during the scan)
+                prefix, _ = self.get_imagefile_prefix_suffix()
+                detectorname = 'eiger4m' if prefix is None else prefix.rstrip('_')
+                imagesdatapath = f'measurement/{detectorname}'
+                if scan_end_reason != 'RUNNING' and imagesdatapath in scangroup:
+                    self.bliss_nbimages = scangroup[imagesdatapath].shape[0]
         except (OSError, KeyError) as exc:
             print(f'cannot read scan {scanindex}.1 in {localh5path}: {exc}')
             return
@@ -3945,6 +4135,9 @@ class MainPeakSearchFrame(wx.Frame):
                           'scandim': dictcommand['scandim'],
                           'npts_fast': npts_fast,
                           'npts_slow': npts_slow,
+                          # sample motors (fast motor is the first one in amesh/dmesh, the second in fscan2d)
+                          'fastmotor': dictcommand.get('fastmotor'),
+                          'slowmotor': dictcommand.get('slowmotor'),
                           'nbimages_expected': nbimages_expected,
                           'nbimages_on_disk': nbimages_on_disk,
                           'largestindex_on_disk': largestindex_on_disk,
@@ -3962,8 +4155,19 @@ class MainPeakSearchFrame(wx.Frame):
         """preset Mosaic & Monitor and images browser panels with self.scan_dict"""
         if self.Monitor is not None:
             self.Monitor.update_from_scan_dict()
-        if self.scan_dict is None or self.ImagesBrowser is None:
+        if self.ImagesBrowser is None:
             return
+        self.update_last_image_info()
+        if self.scan_dict is None:
+            blisscommand = "(no BLISS h5 logfile found)"
+        else:
+            blisscommand = f"{self.scan_dict['scan_blisscommand']} [{self.scan_dict['scan_end_reason']}]"
+        self.ImagesBrowser.blisscommandtxt.SetLabel(blisscommand)
+        self.ImagesBrowser.Layout()
+        # Min and Max (without scan metadata) are set by update_last_image_info()
+        if self.scan_dict is None:
+            return
+        # all expected images of the map (scan may not be completed)
         self.ImagesBrowser.imageindexmax = max(self.scan_dict['nbimages_map'] - 1, 1)
         self.ImagesBrowser.imagemaxtxtctrl.SetValue(str(self.ImagesBrowser.imageindexmax))
         # SpinCtrl min is 2
@@ -3973,11 +4177,144 @@ class MainPeakSearchFrame(wx.Frame):
             self.sb.SetStatusText(f"{self.scan_dict['scan_blisscommand']} | "
                                   + self.scan_dict['summary'].replace('\n', ' | '), 0)
 
+    def get_images_in_folder_info(self):
+        """return dict on images recorded in the folder of the current image (read now since
+        scan may be running), or None if not found. Keys:
+        indexmin, indexmax (global indices of frames for stacked images files), nbimages,
+        lastfile, lastframe (frame in lastfile, None if not stacked), mtime (of lastfile), text
+
+        Result is cached and folder is read again only if folder or last file has changed
+        """
+        key = (self.dirname, self.imagefilename if self.stackedimages
+                                else self.get_imagefile_prefix_suffix(), self.CCDLabel)
+        cache = getattr(self, '_folderinfo_cache', None)
+        stamp = self._folderinfo_stamp(None if cache is None or cache[0] != key else cache[2])
+        if cache is not None and cache[0] == key and cache[1] == stamp:
+            return cache[2]
+        info = self._read_images_in_folder_info()
+        # stamp after reading (with new last file)
+        self._folderinfo_cache = (key, self._folderinfo_stamp(info), info)
+        return info
+
+    def _folderinfo_stamp(self, info):
+        """modification times of folder (new files) and of last file (new frames in stacked file)"""
+        try:
+            stamp = [os.stat(self.dirname).st_mtime_ns]
+            if info is not None:
+                stamp.append(os.stat(os.path.join(self.dirname, info['lastfile'])).st_mtime_ns)
+        except OSError:
+            return None
+        return tuple(stamp)
+
+    def _read_images_in_folder_info(self):
+        """read folder (and stacked images files) for get_images_in_folder_info()"""
+        if self.stackedimages and self.CCDLabel in IOimage.STACK_CCDLABELS:
+            pathfile = os.path.join(self.dirname, self.imagefilename)
+            if getattr(self, 'bliss_nbimages', None):
+                # finished scan: nb of images given by BLISS file (no probing of image files)
+                nbimages = self.bliss_nbimages
+            else:
+                try:
+                    nbimages = IOimage.get_stack_nbimages_in_folder(pathfile, self.nbframes_per_file)
+                except ValueError:
+                    return None
+            if not nbimages:
+                return None
+            self.nbstackimages_total = nbimages
+            lastfile, lastframe = IOimage.stack_file_and_frame(self.imagefilename, nbimages - 1,
+                                                                self.nbframes_per_file)
+            nbfiles = IOimage.split_indexed_filename(lastfile)[1] + 1 \
+                            if IOimage.split_indexed_filename(lastfile) is not None else 1
+            info = dict(indexmin=0, indexmax=nbimages - 1, nbimages=nbimages,
+                        lastfile=lastfile, lastframe=lastframe)
+            details = "%s frame %d (%d images in %d file(s) of %d frames)" % (lastfile, lastframe,
+                                                    nbimages, nbfiles, self.nbframes_per_file)
+        else:
+            prefix, suffix = self.get_imagefile_prefix_suffix()
+            if prefix is None:
+                return None
+            indices = GT.list_image_indices_in_folder(self.dirname, prefix, suffix)
+            if not indices:
+                return None
+            lastfile = IOimage.split_indexed_filename(self.imagefilename)
+            lastfile = f"{lastfile[0]}{indices[-1]:0{lastfile[2]}d}.{lastfile[3]}"
+            info = dict(indexmin=indices[0], indexmax=indices[-1], nbimages=len(indices),
+                        lastfile=lastfile, lastframe=None)
+            details = "%s (%d images" % (lastfile, len(indices))
+            nbmissing = indices[-1] - indices[0] + 1 - len(indices)
+            if nbmissing > 0:
+                details += ", %d missing" % nbmissing
+            details += ")"
+        try:
+            info['mtime'] = os.path.getmtime(os.path.join(self.dirname, info['lastfile']))
+            recorded = time.strftime(" recorded %Y-%m-%d %H:%M:%S", time.localtime(info['mtime']))
+        except OSError:
+            info['mtime'], recorded = None, ""
+        info['text'] = "last image: index %d = %s%s" % (info['indexmax'], details, recorded)
+        return info
+
+    def update_last_image_info(self):
+        """show last recorded image in Browse & Crop and Mosaic & Monitor panels
+        and set Last index of Mosaic & Monitor panel. Return info dict (see get_images_in_folder_info())"""
+        t0 = time.time()
+        info = self.get_images_in_folder_info()
+        text = "last image: not found" if info is None else info['text']
+        print("%s  [folder read in %.1f ms]" % (text, (time.time() - t0) * 1000))
+        for panel in (self.ImagesBrowser, self.Monitor):
+            if panel is not None:
+                panel.lastimagetxt.SetLabel(text)
+                panel.lastimagetxt.SetToolTip(text)
+        if info is None:
+            return info
+        if self.Monitor is not None:
+            self.Monitor.lastindexctrl.SetValue(info['indexmax'])
+        # Min and Max of Browse & Crop panel: smallest and largest image index on disk
+        # (with scan metadata, Max is the last index of the whole expected map)
+        if self.ImagesBrowser is not None:
+            self.ImagesBrowser.imagemintxtctrl.SetValue(str(info['indexmin']))
+            if self.scan_dict is None:
+                self.ImagesBrowser.imageindexmax = max(info['indexmax'], 1)
+                self.ImagesBrowser.imagemaxtxtctrl.SetValue(str(self.ImagesBrowser.imageindexmax))
+                self.OnStepChange(None)
+        return info
+
+    def update_stack_mode(self):
+        """switch between EIGER_4MCdTe (single image) and EIGER_4MCdTestack (stacked images)
+        according to the nb of frames in current hdf5 file, and set stack browsing attributes"""
+        pathfile = os.path.join(self.dirname, self.imagefilename)
+        ccdlabel, nbframes = IOimage.autodetect_eiger_stack_label(self.CCDLabel, pathfile)
+        if nbframes is None:
+            return
+        self.CCDLabel = self.initialParameter["CCDLabel"] = ccdlabel
+        self.Nbstackedimages = nbframes
+        if ccdlabel in IOimage.STACK_CCDLABELS:
+            if not self.stackedimages:
+                self.stackimageindex = 0
+            self.stackedimages = True
+            # same stack index if possible when opening another stacked file
+            self.stackimageindex = min(max(0, self.stackimageindex), nbframes - 1)
+            # global self.imageindex = filenumber * self.nbframes_per_file + self.stackimageindex
+            self.nbframes_per_file = IOimage.get_stack_nbframes_per_file(pathfile) or nbframes
+            try:
+                self.nbstackimages_total = IOimage.get_stack_nbimages_in_folder(pathfile,
+                                                                        self.nbframes_per_file)
+            except ValueError:
+                self.nbstackimages_total = nbframes
+        else:
+            self.stackedimages = False
+            self.stackimageindex = -1
+
     def getIndex_fromfilename(self):
         """
         get index of image from the image filename
+        (for stacked images, global index of frame self.stackimageindex in the series of files)
         """
         self.image_with_index = True
+        if self.stackedimages and self.CCDLabel in IOimage.STACK_CCDLABELS:
+            self.imageindex = IOimage.stack_imageindex(self.imagefilename, self.stackimageindex,
+                                                        self.nbframes_per_file)
+            self.lastindex = self.imageindex
+            return
         try:
             self.imageindex = IOimage.getIndex_fromfilename(self.imagefilename,
                                                             CCDLabel=self.CCDLabel,
@@ -4010,6 +4347,7 @@ class MainPeakSearchFrame(wx.Frame):
                 self.misstext="MISSING FILE with index %d\nfilename: %s"%(self.imageindex,self.imagefilename)
 
                 self.axes.set_title(self.misstext, color='red')
+                self.update_last_image_info()
 
                 self.imageindex = self.lastindex
                 self.imagefilename = self.lastimagefilename
@@ -4023,9 +4361,42 @@ class MainPeakSearchFrame(wx.Frame):
             return True
 
         if self.stackedimages:
-            print('setfilename() in PeakSearchGUI()')
-            print('self.imagefilename  unchanged ... only stack index',self.imagefilename)
+            return self.setfilename_stack()
+
+    def setfilename_stack(self):
+        """set self.imagefilename and self.stackimageindex from global self.imageindex
+        for stacked images files
+        """
+        self.imageindex = max(0, self.imageindex)
+        if self.CCDLabel not in IOimage.STACK_CCDLABELS:  # single file: frame index = imageindex
+            self.stackimageindex = self.imageindex
             return True
+
+        filename, frameindex = IOimage.stack_file_and_frame(self.imagefilename, self.imageindex,
+                                                            self.nbframes_per_file)
+        nbframes = None
+        if filename in os.listdir(self.dirname):
+            pathfile = os.path.join(self.dirname, filename)
+            nbframes = IOimage.get_eiger_h5_nbframes(pathfile)
+            # frame not yet recorded (stacked images file is created full of zeros)
+            if nbframes is not None and not IOimage.is_stack_frame_recorded(pathfile, frameindex):
+                nbframes = None
+        if nbframes is None or frameindex >= nbframes:
+            self.misstext = "MISSING IMAGE with index %d\nfile: %s frame: %d" % (self.imageindex,
+                                                                            filename, frameindex)
+            print("\n\n %s" % self.misstext)
+            self.axes.set_title(self.misstext, color='red')
+            self.update_last_image_info()
+            self.imageindex = self.lastindex
+            self.canvas.draw()
+            return False
+
+        self.misstext = ''
+        self.imagefilename = filename
+        self.stackimageindex = frameindex
+        self.Nbstackedimages = nbframes
+        self.axes.set_title('', color='black')
+        return True
 
     def OnStepChange(self, _):
         self.ImagesBrowser.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
@@ -4053,18 +4424,13 @@ class MainPeakSearchFrame(wx.Frame):
     def OnLargePlus(self, _):
         """increase self.imageindex by self.stepindex (vertical descending in sample raster scan)
         and read new image and plot
+
+        Note: for stacked images, self.imageindex is the global index of the image in the scan
+        (see setfilename())
         """
-        #        print self.canvas.GetRect()
-        #        print self.canvas.GetScreenRect()
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-        if self.stackedimages:
-            #         if self.CCDLabel in ('EIGER_4Mstack',):
-            self.stackimageindex += self.stepindex
-            self.stackimageindex = max(0,self.stackimageindex)
-        else:
-            self.lastindex = self.imageindex
-            self.imageindex += self.stepindex
-        
+        self.lastindex = self.imageindex
+        self.imageindex += self.stepindex
         self.resetfilename_and_plot()
 
     def OnLargeMinus(self, _):
@@ -4072,95 +4438,48 @@ class MainPeakSearchFrame(wx.Frame):
         and read new image and plot
         """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-        if self.stackedimages:
-            #         if self.CCDLabel in ('EIGER_4Mstack',):
-            self.stackimageindex -= self.stepindex
-            self.stackimageindex = max(0,self.stackimageindex)
-        else:
-            self.lastindex = self.imageindex
-            self.imageindex -= self.stepindex
+        self.lastindex = self.imageindex
+        self.imageindex = max(0, self.imageindex - self.stepindex)
         self.resetfilename_and_plot()
 
     def OnPlus(self, _):
         """increase  self.imageindex by 1 (horizontal ascending to the right in sample raster scan)
         and read new image and plot
-
-        Note: if self.stackedimages is True: imageindex is used for stackimageindex
         """
-        print(self.canvas.GetRect())
-        print(self.canvas.GetScreenRect())
-        if self.stackedimages:
-            print('\n!!stacked images!!\n')
-            print('self.Nbstackedimages', self.Nbstackedimages)
-            self.stackimageindex += 1
-            self.stackimageindex = max(0,self.stackimageindex)
-        else:
-            self.lastindex = self.imageindex
-            self.imageindex += 1
-
+        self.lastindex = self.imageindex
+        self.imageindex += 1
         self.resetfilename_and_plot()
 
     def OnMinus(self, _):
         """decrease  self.imageindex by 1 (horizontal descending to the left in sample raster scan)
         and read new image and plot
         """
-        print('onMinus')
-        if self.stackedimages:
-            #         if self.CCDLabel in ('EIGER_4Mstack',):
-            self.stackimageindex -= 1
-            self.stackimageindex = max(0,self.stackimageindex)
-        else:
-            self.lastindex = self.imageindex
-            self.imageindex -= 1
-
+        self.lastindex = self.imageindex
+        self.imageindex = max(0, self.imageindex - 1)
         self.resetfilename_and_plot()
 
     def OnGoto(self, _):
         """
         read image with selected self.imageindex and plot
         """
-        if self.stackedimages:
-            self.stackimageindex = int(self.ImagesBrowser.fileindexctrl.GetValue())
-            self.stackimageindex = max(0,self.stackimageindex)
-        else:
-            self.imageindex = int(self.ImagesBrowser.fileindexctrl.GetValue())
-
+        self.lastindex = self.imageindex
+        self.imageindex = max(0, int(self.ImagesBrowser.fileindexctrl.GetValue()))
         self.resetfilename_and_plot()
 
     def onChangeIndex_slider_image(self, _):
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-
-        print("self.ImagesBrowser.slider_image.GetValue()",
-            self.ImagesBrowser.slider_image.GetValue())
-
-        print("self.imageindex before", self.imageindex)
-        if self.stackedimages:
-            pass
-        #             self.stackimageindex=int(self.ImagesBrowser.fileindexctrl.GetValue())
-        #             self.stackimageindex=(self.stackimageindex%self.Nbstackedimages)
-        else:
-            self.imageindex = int(self.ImagesBrowser.slider_image.GetValue()) + \
-                                self.stepindex * int(self.ImagesBrowser.slider_imagevert.GetValue())
-
-        print("self.imageindex after", self.imageindex)
-
+        self.lastindex = self.imageindex
+        self.imageindex = int(self.ImagesBrowser.slider_image.GetValue()) + \
+                            self.stepindex * int(self.ImagesBrowser.slider_imagevert.GetValue())
         self.resetfilename_and_plot()
 
     def onChangeIndex_slider_imagevert(self, _):
         """plot new image obtained by new index changed by vertical (slow axis) slider
         """
         self.stepindex = int(self.ImagesBrowser.stepctrl.GetValue())
-
-        print("self.ImagesBrowser.slider_imagevert.GetValue()",
-                                                    self.ImagesBrowser.slider_imagevert.GetValue())
-        if self.stackedimages:
-            pass
-        #             self.stackimageindex=int(self.ImagesBrowser.fileindexctrl.GetValue())
-        #             self.stackimageindex=(self.stackimageindex%self.Nbstackedimages)
-        else:
-            self.imageindex = int(self.ImagesBrowser.slider_image.GetValue()
-            ) + self.stepindex * int(self.ImagesBrowser.slider_imagevert.GetValue())
-
+        self.lastindex = self.imageindex
+        self.imageindex = int(self.ImagesBrowser.slider_image.GetValue()
+        ) + self.stepindex * int(self.ImagesBrowser.slider_imagevert.GetValue())
         self.resetfilename_and_plot()
 
     def resetfilename_and_plot(self):
@@ -4287,7 +4606,8 @@ class MainPeakSearchFrame(wx.Frame):
                                                                 int(self.boxx),
                                                                 int(self.boxy),
                                                                 dirname=self.dirname,
-                                                                CCDLabel=self.CCDLabel)
+                                                                CCDLabel=self.CCDLabel,
+                                                                stackimageindex=self.stackimageindex)
 
         if self.CCDLabel in ("sCMOS", "sCMOS_fliplr", "sCMOS_4M", "IMSTAR_bin3", "sCMOS_9M"):
             self.vminmin = 0
@@ -4372,18 +4692,10 @@ class MainPeakSearchFrame(wx.Frame):
                                     norm=LogNorm(vmin=self.IminDisplayed, vmax=self.ImaxDisplayed))
 
         title = self.imagefilename
-        suptitle = self.dirname
-        if len(suptitle)>30:
-            splitwords =['RAW_DATA','inhouse']
-            for sw in splitwords:
-                if sw in suptitle:
-                    s1,s2 = suptitle.split(sw)
-                    s1sw = os.path.join(s1,sw)
-                    suptitle= '%s\n%s'%(s1sw,s2)
         if self.stackedimages:
-            title += "\nsstack index %d" % self.stackimageindex
+            title += "\nimage index %d (frame %d in file)" % (self.imageindex, self.stackimageindex)
         self.axes.set_title(title)
-        self.fig.suptitle(suptitle)
+        self.updateFolderSupTitle()
         # self.myplot.set_clim=(1,200)  # work?
         self.myplot.set_cmap(self.viewingLUTpanel.comboLUT.GetValue())
 
@@ -4435,15 +4747,30 @@ class MainPeakSearchFrame(wx.Frame):
 
         self.OnSpinCtrl_IminDisplayed(event)
 
-    def updatePlotTitle(self, datatype=None):
-        """update plot title
+    def updateFolderSupTitle(self):
+        """set figure suptitle with folder of current image (split in 2 lines if long)
         """
+        suptitle = self.dirname
+        if len(suptitle)>30:
+            splitwords =['RAW_DATA','inhouse']
+            for sw in splitwords:
+                if sw in suptitle:
+                    s1,s2 = suptitle.split(sw, 1)
+                    s1sw = os.path.join(s1,sw)
+                    suptitle= '%s\n%s'%(s1sw,s2)
+                    break
+        self.fig.suptitle(suptitle)
+
+    def updatePlotTitle(self, datatype=None):
+        """update plot title (and figure suptitle with folder of current image)
+        """
+        self.updateFolderSupTitle()
         if datatype == None:
             datatype = ""
         titlestring = "%s\n%s" % (self.imagefilename, datatype)
 
         if self.stackedimages:
-            titlestring += "\nsstack index %d" % self.stackimageindex
+            titlestring += "\nimage index %d (frame %d in file)" % (self.imageindex, self.stackimageindex)
         if 1:  # not self.OnFlyMode:
             if self.peaklistPixels is not None:
                 nbpeaks = len(self.peaklistPixels)
@@ -4613,12 +4940,17 @@ class MainPeakSearchFrame(wx.Frame):
 
             # get the largest index in the folder (read now since scan may be running)
             try:
-                maxindex = GT.get_largest_index_in_folder(imagefolder, prefix, suffix)
+                if self.stackedimages and self.CCDLabel in IOimage.STACK_CCDLABELS:
+                    # all frames of all stacked images files
+                    nbimages_total = IOimage.get_stack_nbimages_in_folder(
+                                            os.path.join(imagefolder, self.imagefilename),
+                                            self.nbframes_per_file)
+                else:
+                    nbimages_total = GT.get_largest_index_in_folder(imagefolder, prefix, suffix) + 1
             except ValueError as exc:
                 wx.MessageBox(str(exc), "INFO")
                 return
 
-            nbimages_total = maxindex + 1
             # not completed 2D scan: map with all expected images, missing ones give blank ROI
             if self.scan_dict is not None and self.scan_dict['scandim'] == 2:
                 nbimages_total = max(nbimages_total, self.scan_dict['nbimages_expected'])
@@ -4750,6 +5082,15 @@ class MainPeakSearchFrame(wx.Frame):
         dict_param["filename_representative"] = self.imagefilename
         dict_param["CCDLabel"] = self.CCDLabel
         dict_param["nbdigits"] = nbdigits
+        # image index -> (file, frame in file) for stacked images files
+        dict_param["nbframes_per_file"] = 1
+        dict_param["nbimages_recorded"] = None
+        if self.stackedimages and self.CCDLabel in IOimage.STACK_CCDLABELS:
+            dict_param["nbframes_per_file"] = self.nbframes_per_file
+            # images with larger index are not yet recorded (zeros) and are not read
+            info = self.update_last_image_info()
+            if info is not None:
+                dict_param["nbimages_recorded"] = info['nbimages']
 
         dict_param["selected2Darray_imageindex"] = selected2Darray_imageindex
         dict_param["nbimagesperline"]=nbimages_per_line
@@ -4764,13 +5105,29 @@ class MainPeakSearchFrame(wx.Frame):
             dict_param["NormalizeWithMonitor"] = True
         dict_param["monitoroffset"] = float(self.Monitor.monitoroffsetctrl.GetValue())
         dict_param["transposeMap"] = self.Monitor.transposemap.GetValue()
+        # axes labels of 2D maps plots: motors of BLISS mesh scan
+        if self.scan_dict is not None and self.scan_dict['scandim'] == 2:
+            dict_param["xlabel"], dict_param["ylabel"] = MOS.map_axes_labels(self.scan_dict['fastmotor'],
+                                                    self.scan_dict['slowmotor'], dict_param["transposeMap"])
         
 
         # for fitting peak over several images
         guessed_peaksize = float(self.fitparampanel.peaksizectrl.GetValue())
         dictfittingparameters = {'peaksizeStart':guessed_peaksize}
 
-        outputfolder = dirname
+        # parallel workflow on local machine or SLURM partition (None: sequential in GUI)
+        dict_param["computing_resource"] = self.Monitor.get_computing_resource()
+        dict_param["nbcpus"] = int(self.Monitor.nbcpusctrl.GetValue())
+        # False: mosaic and counters maps are only plotted, not written on disk
+        dict_param["save_results"] = self.Monitor.saveresultschck.GetValue()
+        dict_param["save_plots"] = self.Monitor.saveplotschck.GetValue()
+        # output folder: image folder (default), PROCESSED_DATA mirror or user folder
+        dict_param["outputfolder_mode"] = self.Monitor.get_output_folder_mode()
+        if dict_param["save_results"] or dict_param["save_plots"]:
+            outputfolder = WL.output_folder(self.dirname, dict_param["outputfolder_mode"])
+        else:
+            outputfolder = None
+        self.Monitor.update_output_folder_label()
 
         MOS.buildMosaic3(dict_param, outputfolder, parent=parent,
                          ccdlabel=self.CCDLabel, dictfittingparameters=dictfittingparameters)

@@ -64,6 +64,7 @@ if sys.version_info.major == 3:
     if WXPYTHON:
         from . import Plot1DFrame as PLOT1D
         from .. import MessageCommand as MC
+        from .rangeslider import RangeSlider, EVT_RANGE_SLIDER
 else:
     import dict_LaueTools as DictLT
     import generaltools as GT
@@ -73,6 +74,7 @@ else:
     if WXPYTHON:
         import Plot1DFrame as PLOT1D
         import MessageCommand as MC
+        from rangeslider import RangeSlider, EVT_RANGE_SLIDER
 
 if WXPYTHON:
     
@@ -736,9 +738,11 @@ if WXPYTHON:
                                                         imagename="",
                                                         mosaic=1,
                                                         dict_param=None,
-                                                        datatype="Intensity"):
+                                                        datatype="Intensity",
+                                                        quantity=""):
             """
             datatype = Intensity, PositionX, PositionY, RadialPosition
+            quantity: name (and unit) of plotted quantity (title and colorbar label)
     
             """
             print("\n\n*****\nCREATING PLOT of 2D Map of Scalar data: %s\n****\n"%title)
@@ -751,6 +755,7 @@ if WXPYTHON:
                 self.dict_ROI = None
             self.parent = parent
             self.mosaic = mosaic
+            self.quantity = quantity
     
             self.panel = wx.Panel(self)
     
@@ -782,7 +787,8 @@ if WXPYTHON:
             # data to be displayed
             self.data = dataarray
 
-            self.data = np.clip(self.data, 1, None)  # Clip values below 1 to avoid log scale issues
+            if mosaic:  # pixel intensities: clip values below 1 to avoid log scale issues
+                self.data = np.clip(self.data, 1, None)
 
             self.datatype = datatype
     
@@ -862,39 +868,12 @@ if WXPYTHON:
             self.LastLUT = self.palette
             self.plotgrid = False
     
-            self.IminDisplayed = 0
-            self.ImaxDisplayed = 100
-            #         if self.datatype == 'scalar':
-            self.slidertxt_min = wx.StaticText(self.panel, -1, "Min :")
-            self.slider_min = wx.Slider(self.panel, -1, size=(200, 50),
-                                        value=self.IminDisplayed,
-                                        minValue=0,
-                                        maxValue=99,
-                                        style=wx.SL_AUTOTICKS | wx.SL_LABELS)
-            if WXPYTHON4:
-                self.slider_min.SetTickFreq(50)
-            else:
-                self.slider_min.SetTickFreq(50, 1)
-            self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
-    
-            self.slidertxt_max = wx.StaticText(self.panel, -1, "Max :")
-            self.slider_max = wx.Slider(self.panel, -1, size=(200, 50),
-                                        value=self.ImaxDisplayed,
-                                        minValue=1,
-                                        maxValue=100,
-                                        style=wx.SL_AUTOTICKS | wx.SL_LABELS)
-            if WXPYTHON4:
-                self.slider_max.SetTickFreq(50)
-            else:
-                self.slider_max.SetTickFreq(50, 1)
-            self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMax, self.slider_max)
-    
-            self.vmintxtctrl = wx.TextCtrl(self.panel, -1, str(np.nanmin(self.data)),
-                                                                            style=wx.TE_PROCESS_ENTER)
-            self.vmaxtxtctrl = wx.TextCtrl(self.panel, -1, str(np.nanmax(self.data)),
-                                                                            style=wx.TE_PROCESS_ENTER)
-            self.vmintxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmin)
-            self.vmaxtxtctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangeVmax)
+            # color scale limits (absolute values), None: whole data range
+            self.vmin, self.vmax = None, None
+            self.rangetxt = wx.StaticText(self.panel, -1, "Color scale")
+            datamin, datamax = self.colorscale_datarange()
+            self.rangeslider = RangeSlider(self.panel, datamin, datamax)
+            self.rangeslider.Bind(EVT_RANGE_SLIDER, self.OnColorRange)
     
             # loading LUTS
             self.mapsLUT = [m for m in pcm.datad if not m.endswith("_r")]
@@ -903,7 +882,7 @@ if WXPYTHON:
             self.luttxt = wx.StaticText(self.panel, -1, "LUT")
             self.comboLUT = wx.ComboBox(self.panel,
                                         -1,
-                                        str(self.LastLUT),
+                                        getattr(self.LastLUT, "name", str(self.LastLUT)),  # colormap name
                                         choices=self.mapsLUT,
                                         style=wx.TE_PROCESS_ENTER)
     
@@ -1032,12 +1011,8 @@ if WXPYTHON:
             h0box.Add(self.chckgrid, 0)
     
             hbox = wx.BoxSizer(wx.HORIZONTAL)
-            hbox.Add(self.slidertxt_min, 0)
-            hbox.Add(self.vmintxtctrl, 0)
-            hbox.Add(self.slider_min, 0)
-            hbox.Add(self.slidertxt_max, 0)
-            hbox.Add(self.slider_max, 0)
-            hbox.Add(self.vmaxtxtctrl, 0)
+            hbox.Add(self.rangetxt, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, 5)
+            hbox.Add(self.rangeslider, 1, wx.ALIGN_CENTER_VERTICAL)
     
             if self.datatype in ("Intensity", "PositionX", "PositionY"):
                 hbox.Add(self.bkgchckbox, 0)
@@ -1179,14 +1154,18 @@ if WXPYTHON:
         def OnSave(self, _):
             """  save image as png or tiff (for mosaic)"""
     
-            dlg = wx.TextEntryDialog(self, "Enter filename for image with extension (.png, .tiff)", "Saving image")
+            # starts in output folder of results (see finalize_result_windows())
+            dlg = wx.FileDialog(self, "Save image (.png, or .tiff for data)",
+                                defaultDir=self.dirname or os.getcwd(),
+                                defaultFile="".join(c if c.isalnum() else "_" for c in self.GetTitle()) + ".png",
+                                wildcard="PNG image (*.png)|*.png|TIFF data (*.tiff)|*.tiff",
+                                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
     
             if dlg.ShowModal() == wx.ID_OK:
-                filename = str(dlg.GetValue())
-                if self.dirname is None:
-                    self.dirname = os.path.curdir
-    
-                fullpath = os.path.join(str(self.dirname), str(filename))
+                fullpath = dlg.GetPath()
+                self.dirname = os.path.dirname(fullpath)
+                if not fullpath.endswith(('.png', '.tiff')):
+                    fullpath += '.tiff' if dlg.GetFilterIndex() == 1 else '.png'
     
                 if fullpath.endswith('.png'):
                     self.axes.get_figure().savefig(fullpath)
@@ -1270,35 +1249,12 @@ if WXPYTHON:
             self.OnMaskWeakPeaks()
             self._replot()
     
-        def OnChangeVmin(self, _):
-            self.IminDisplayed = float(self.vmintxtctrl.GetValue())
-            self.user_set_vmin_vmax = True  # User manually set vmin
-            self.normalizeplot(shrinkrange=True)
-            self.canvas.draw()
-
-        def OnChangeVmax(self, _):
-            self.ImaxDisplayed = float(self.vmaxtxtctrl.GetValue())
-            self.user_set_vmin_vmax = True  # User manually set vmax
-            self.normalizeplot(shrinkrange=True)
-            self.canvas.draw()
-    
-        def OnSliderMin(self, _):
-            self.IminDisplayed = int(self.slider_min.GetValue())
-            if self.IminDisplayed > self.ImaxDisplayed:
-                self.slider_min.SetValue(self.ImaxDisplayed - 1)
-                self.IminDisplayed = self.ImaxDisplayed - 1
-            self.user_set_vmin_vmax = True  # User manually set vmin
+        def OnColorRange(self, _):
+            """color scale limits changed with range slider"""
+            self.vmin, self.vmax = self.rangeslider.GetValues()
+            self.user_set_vmin_vmax = True
             self.normalizeplot()
-            self.canvas.draw()
-
-        def OnSliderMax(self, _):
-            self.ImaxDisplayed = int(self.slider_max.GetValue())
-            if self.ImaxDisplayed < self.IminDisplayed:
-                self.slider_max.SetValue(self.IminDisplayed + 1)
-                self.ImaxDisplayed = self.IminDisplayed + 1
-            self.user_set_vmin_vmax = True  # User manually set vmax
-            self.normalizeplot()
-            self.canvas.draw()
+            self.canvas.draw_idle()
     
         def OnSliderArrowSize(self, _):
             self.arrowWidthDisplayed = int(self.slider_arrowwidth.GetValue())
@@ -1551,52 +1507,59 @@ if WXPYTHON:
     
             return FilteredfittedPeaksData
     
-        def normalizeplot(self, shrinkrange=False):
+        def colorscale_data(self):
+            """data whose values are represented by colors (vectors norm for Vector datatype)"""
             if self.datatype in ("Vector",):
-                # Existing vector logic
-                ...
-            else:
-                # Check if symmetric scaling is needed AND user hasn't overridden it
-                is_symmetric = (
-                    self.datatype in ("symetricscalar",) or
-                    (self.datatype and "strain" in self.datatype.lower()) or
-                    (self.datatype and "stress" in self.datatype.lower()) or
-                    self.datasigntype == "relative"
-                )
+                DxArray, DyArray, _ = self.dict_param["dataVector"]
+                return np.hypot(DxArray, DyArray)
+            return np.asarray(self.data, dtype=float)
 
-                if is_symmetric and not self.user_set_vmin_vmax:
-                    # Apply symmetric scaling only if user hasn't set vmin/vmax
-                    data_max = np.nanmax(np.abs(self.data))
-                    vmin, vmax = -data_max, data_max
-                    self.cNorm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-                else:
-                    # Use user-defined vmin/vmax (or default to data range)
-                    if not shrinkrange:
-                        self.maxvals = np.nanmax(self.data)
-                        self.minvals = np.nanmin(self.data)
-                    else:
-                        self.maxvals = self.ImaxDisplayed
-                        self.minvals = self.IminDisplayed
-                    self.deltavals = (self.maxvals - self.minvals) / 100.0
-                    vmin = self.minvals + self.IminDisplayed * self.deltavals
-                    vmax = self.minvals + self.ImaxDisplayed * self.deltavals
-                    if self.scaletype == "Linear":
-                        self.cNorm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-                    elif self.scaletype == "Log":
-                        if self.minvals <= 0.0:
-                            self.minvals = 0.000000000001
-                            vmin = 0.000000000001
-                        self.cNorm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
-                    else:
-                        self.cNorm = None
+        def is_symmetric_scale(self):
+            """color scale centered on zero by default"""
+            return (self.datatype in ("symetricscalar",)
+                    or (self.datatype and "strain" in self.datatype.lower())
+                    or (self.datatype and "stress" in self.datatype.lower())
+                    or self.datasigntype == "relative")
+
+        def colorscale_datarange(self):
+            """(min, max) of color scale data, symmetric around 0 for symmetric scale"""
+            data = self.colorscale_data()
+            finite = data[np.isfinite(data)]
+            if finite.size == 0:
+                return 0., 1.
+            if self.is_symmetric_scale():
+                absmax = float(np.amax(np.abs(finite)))
+                return -absmax, absmax
+            return float(np.amin(finite)), float(np.amax(finite))
+
+        def normalizeplot(self, shrinkrange=False):
+            """set color normalization of plot from color scale limits self.vmin, self.vmax
+            (whole data range if not set by user) and scale type (Linear or Log)"""
+            datamin, datamax = self.colorscale_datarange()
+            if not self.user_set_vmin_vmax or self.vmin is None:
+                self.vmin, self.vmax = datamin, datamax
+            vmin, vmax = self.vmin, self.vmax
+            if hasattr(self, "rangeslider"):
+                self.rangeslider.SetRange(datamin, datamax)
+                self.rangeslider.SetValues(vmin, vmax)
+            if self.scaletype == "Linear":
+                self.cNorm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+            elif self.scaletype == "Log":
+                if vmin <= 0.0:  # smallest positive value
+                    data = self.colorscale_data()
+                    positive = data[np.isfinite(data) & (data > 0)]
+                    vmin = float(np.amin(positive)) if positive.size else 1e-12
+                vmax = max(vmax, vmin * 1.0001)
+                self.cNorm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
+            else:
+                self.cNorm = None
+            self.minvals, self.maxvals = vmin, vmax
             self.myplot.set_norm(self.cNorm)
-    
+
         def _replot(self):
             """
             in ImshowFrame
             """
-            # Reset the flag to reapply symmetric scaling on new data
-            self.user_set_vmin_vmax = False
     
             def fromindex_to_pixelpos_x(index, _):
                 return index  # self.center[0]-self.boxsize[0]+index
@@ -1674,6 +1637,7 @@ if WXPYTHON:
                     self.colorbar = self.fig.colorbar(self.myplot)
                 else:
                     self.colorbar.update_normal(self.myplot)
+                self.colorbar.set_label(self.quantity)
     
                 if self.plotgrid:
                     # adding grid to separate imagelet
@@ -1697,7 +1661,10 @@ if WXPYTHON:
             font0 = FontProperties()
             font0.set_size("x-small")
     
-            self.axes.set_title("%s\n" % self.imagename)
+            if self.quantity:
+                self.axes.set_title("%s\n%s" % (self.quantity, self.imagename), fontsize="medium")
+            else:
+                self.axes.set_title("%s\n" % self.imagename)
     
             self.axes.set_aspect("auto")
     
@@ -2332,6 +2299,14 @@ DEFAULT_DICTfittingparameters = {
                 'FitPixelDev':None,
             }
 
+def results_writers(save=True):
+    """return np.savetxt and a function opening a file for writing, or functions writing nothing
+    if save is False (results files of buildMosaic3() and plot_counters_results())"""
+    if save:
+        return np.savetxt, lambda path: open(path, "w")
+    return (lambda *args, **kwargs: None), lambda path: open(os.devnull, "w")
+
+
 def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=True, parent=None, dictfittingparameters=DEFAULT_DICTfittingparameters, verbose:int=0):
     """
     build mosaic image from arrangement of image ROI data taken from selected images
@@ -2359,82 +2334,17 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
     # dict_param :  {'imagesfolder': '/data/visitor/a321217/bm32/20260707/RAW_DATA/3Dmap_grain2/3Dmap_grain2_grid_index_3_row_col_0_3/scan0001', 'filename_representative': 'eiger4m_0003.h5', 'CCDLabel': 'EIGER_4MCdTe', 'nbdigits': 4, 'selected2Darray_imageindex': array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]), 'pixelX_center': np.float64(1473.0), 'pixelY_center': np.float64(824.0), 'pixelboxsize_X': 10, 'pixelboxsize_Y': 10, 'selectedcounters': ['mosaic'], 'NormalizeWithMonitor': False, 'monitoroffset': 0.0, 'transposeMap': False}
     
     CountersData = {}
+    # dict_param['save_results'] False: no results files written
+    savetxt, open_w = results_writers(dict_param.get("save_results", True))
 
-    # branch to process in parallel all images in a folder
-    if dict_param['selectedcounters']==['mosaic']:
-        import itertools
-        import LaueTools.scripts.workflows as wf
-        import pandas as pd
+    # parallel workflow (on local machine or SLURM partition, see scripts/workflowlauncher.py)
+    # for all counters, if images files are supported
+    if parent is not None and dict_param.get('computing_resource') and parallel_workflow_supported(dict_param):
+        return launch_counters_workflow(dict_param, parent, dictfittingparameters, outputfolder)
 
-        CCDLabel = dict_param['CCDLabel']
-        if CCDLabel == 'EIGER_4MCdTe':
-            prefix = 'eiger4m_'
-        else:
-            prefix = 'img_'
-
-        imagesfolder = dict_param['imagesfolder']
-
-        samplename =None
-        expId = None
-        samplename, datasetname = None, None
-        scanindex = None
-        plottitle = f'imagesfolder {imagesfolder}\n'
-        if 'RAW_DATA' in imagesfolder:
-            (expId, expDate, samplename, datasetname, scanindex, localh5path) = bf.getinfos_from_blisspath(imagesfolder)
-
-            plottitle += f'expiId: {expId} samplename: {samplename}\ndatasetname: {datasetname} scanindex: {scanindex}'
-        
-        # list_indices = self.params.get("listindices")
-        listindices2D = dict_param['selected2Darray_imageindex']
-        nlines, nbimagesperline = listindices2D.shape
-        d = {'folder': imagesfolder,
-            'scantype': 'map',
-            'prefix': prefix,
-            # absolute image indices, row by row (missing images give blank ROI)
-            'listindices': np.ravel(listindices2D),
-            #'nbimagesperline': nbimagesperline,
-            'mapdimensions': (nbimagesperline, nlines), #(nbimagesperline, 161),# fast, slow
-            'CCDLabel': CCDLabel}
-
-        print('d',d)
-
-        # Example parameters for mosaic workflow: user choice
-        mosaic_params = {
-            "roicenter": (int(dict_param['pixelX_center']),int(dict_param['pixelY_center'])),
-            "boxsize_X": dict_param['pixelboxsize_X'],
-            "boxsize_Y": dict_param['pixelboxsize_Y'],
-            "collector": "mosaic",
-        }
-
-        print('mosaic_params',mosaic_params)
-
-        d.update(mosaic_params)
-        # Initialize use case handler
-        use_case_handler = wf.UseCaseHandler(None)
-
-        # Execute mosaic workflow
-        mosaic_dict_results = use_case_handler.execute_use_case("mosaic_2d_map", d)
-        print(f"Mosaic results shape: {mosaic_dict_results['mosaic_shape']}")
-
-        dat = mosaic_dict_results['singleimage']
-        jmin, imin = 0,0
-        nb_col, nb_lines = d['mapdimensions']
-        boxsize_col, boxsize_line = d['boxsize_X'], d['boxsize_Y']  #??
-        ploplo = ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
-                                    absolutecornerindices=(jmin, imin),
-                                    Imageindices=d['listindices'],  # 1D list
-                                    nb_col=nb_col,
-                                    nb_lines=nb_lines,
-                                    boxsize_row=boxsize_col,
-                                    stepindex=1,
-                                    #                                boxsize_row=boxsize_col,
-                                    boxsize_line=boxsize_line,
-                                    imagename=plottitle,
-                                    mosaic=1,
-                                    dict_param=dict_param)
-
-        ploplo.Show()
-        return
+    # result windows created by this function (see finalize_result_windows())
+    nbwindows_before = len(getattr(parent, "list_of_windows", []))
+    outputfolder = outputfolder or ""  # None when nothing is saved
         
     
     #update and complement dictfittingparameters if needed 
@@ -2519,19 +2429,37 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
     nbtotalimages = len(selected1Darray_absoluteimageindex)
 
+    # progress bar in terminal and in 'Mosaic & Monitor' panel gauge (if any)
+    from tqdm import tqdm
+    progressbar = tqdm(total=nbtotalimages, unit='image', desc='ROI counters (GUI sequential)')
+    statuspanel = parent if hasattr(parent, "jobgauge") else getattr(getattr(parent, "mainframe", None),
+                                                                        "Monitor", None)
+    gauge = getattr(statuspanel, "jobgauge", None)
+    gaugestep = max(1, nbtotalimages // 100)
+    if gauge is not None:
+        gauge.SetRange(max(1, nbtotalimages))
+        statuspanel.jobstatustxt.SetLabel("[GUI sequential] RUNNING %d images" % nbtotalimages)
+
     for map_imageindex, absolute_imageindex in enumerate(selected1Darray_absoluteimageindex):
         imageindex = absolute_imageindex
 
-        if map_imageindex % 100 == 0:
-            print('*** >>>>> Collected %d images over %d'%(map_imageindex,nbtotalimages))
+        progressbar.update(1)
+        if gauge is not None and ((map_imageindex + 1) % gaugestep == 0 or map_imageindex + 1 == nbtotalimages):
+            gauge.SetValue(map_imageindex + 1)
+            # immediate repaint: GUI events are not processed during this loop
+            gauge.Update()
+
+        # image not yet recorded in stacked images files: not read
+        nbimages_recorded = dict_param.get('nbimages_recorded', None)
+        if nbimages_recorded is not None and imageindex >= nbimages_recorded:
+            continue
         
-        if ccdlabel in ('EIGER_4MCdTestack',''): # or other stack images detector
-            print('in buildMosaic3')
-            print('ccdlabel ', ccdlabel)
-            filename = filename_representative
-            stackimageindex = imageindex
-            print("filename",filename)
-            print("stackimageindex",stackimageindex)
+        if ccdlabel in IOimage.STACK_CCDLABELS: # or other stack images detector
+            # global image index -> (stacked images file, frame in this file)
+            filename, stackimageindex = IOimage.stack_file_and_frame(filename_representative,
+                                                    imageindex,
+                                                    dict_param.get('nbframes_per_file', 1))
+            if verbose > 0: print("filename, stackimageindex", filename, stackimageindex)
         else:
             filename = IOimage.setfilename(filename_representative,
                                     imageindex,
@@ -2653,6 +2581,9 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
         print('datcrop max ',np.amax(datcrop))
 
     # ----------   end of images scan
+    progressbar.close()
+    if gauge is not None:
+        statuspanel.jobstatustxt.SetLabel("[GUI sequential] COMPLETED %d images" % nbtotalimages)
 
     title = "%s [%06d-%06d] " % (filename_representative, startind, endind)
     title += "pixel ROI at [%d,%d]" % (xpic, ypic)
@@ -2691,14 +2622,14 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                     boxsize_line=1,
                                     imagename=title,
                                     mosaic=0,
-                                    dict_param=dict_param)
+                                    dict_param=dict_param, quantity=counter_quantity(counter, dict_param))
 
                 plapla.Show()
 
                 # saving this format is worst than the next one ?!
                 outfilename = os.path.join(outputfolder, "%s" % (counter + "_2D"))
-                with open(outfilename + "_%s" % myformattime(), 'w') as f:
-                    np.savetxt(f, dat)
+                with open_w(outfilename + "_%s" % myformattime()) as f:
+                    savetxt(f, dat)
 
                 parent.list_of_windows.append(plapla)
 
@@ -2718,19 +2649,19 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
             CountersData[counter + "1D"] = XYdat
 
             outfilename = os.path.join(outputfolder, "%s" % (counter + "_1D"))
-            with open(outfilename + "_%s" % myformattime(), 'w') as f:
+            with open_w(outfilename + "_%s" % myformattime()) as f:
                 f.write('#File generated by mosaic.py. Date: %s\n'%myformattime())
                 f.write('#Datatype: %s\n'%title)
                 f.write('#Original 2D dimensions shape: (fast, slow) (%d, %d)\n'%(dat.shape[1], dat.shape[0]))
                 f.write('#image fastindex slowindex intensity\n')
-                np.savetxt(f, np.array(XYdatsaved).T)
+                savetxt(f, np.array(XYdatsaved).T)
 
             if plot:
 
                 plotI = PLOT1D.Plot1DFrame(parent, -1, counter + " Intensity",
                                             title + " Intensity",
                                             XYdat,
-                                            logscale=0)
+                                            logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param))
                 plotI.Show(True)
 
                 parent.list_of_windows.append(plotI)
@@ -2758,7 +2689,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                     boxsize_line=boxsize_line,
                                     imagename=title,
                                     mosaic=1,
-                                    dict_param=dict_param)
+                                    dict_param=dict_param, quantity=counter_quantity("mosaic", dict_param))
 
                 ploplo.Show()
 
@@ -2775,9 +2706,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                 headerstr+='# title: %s'%title
 
                 
-                f=open(fullpathout,'w')
 
-                np.savetxt(fullpathout, dat, header=headerstr,comments='')
+                savetxt(fullpathout, dat, header=headerstr,comments='')
 
                 parent.list_of_windows.append(ploplo)
 
@@ -2864,23 +2794,23 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plotX = PLOT1D.Plot1DFrame(parent, -1, counter + "Xpos", title + "Xpos",
                                             XYdat_x,
-                                            logscale=0)
+                                            logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param, "X"))
                 plotX.Show(True)
 
                 outfilename = os.path.join(outputfolder, "%s" % (counter + "Xpos"))
 
-                np.savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_x).T)
+                savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_x).T)
 
                 parent.list_of_windows.append(plotX)
 
                 plotY = PLOT1D.Plot1DFrame(parent, -1, counter + "Ypos", title + "Ypos",
                                             XYdat_y,
-                                            logscale=0)
+                                            logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param, "Y"))
                 plotY.Show(True)
 
                 outfilename = os.path.join(outputfolder, "%s" % (counter + "Ypos"))
 
-                np.savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_y).T)
+                savetxt(outfilename + "_%s" % myformattime(), np.array(XYdat_y).T)
 
                 parent.list_of_windows.append(plotY)
 
@@ -2898,12 +2828,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                         boxsize_line=0,
                                         imagename=title,
                                         mosaic=0,
-                                        dict_param=dict_param,
+                                        dict_param=dict_param, quantity=counter_quantity(counter, dict_param, "X"),
                                         datatype="PositionX")
 
                 plot2DX.Show()
 
-                np.savetxt("%s_2D_X_" % counter + "_%s" % myformattime(), dataX_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_X_" % counter + "_%s" % myformattime()), dataX_2D)
 
                 parent.list_of_windows.append(plot2DX)
 
@@ -2919,12 +2849,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                         boxsize_line=0,
                                         imagename=title,
                                         mosaic=0,
-                                        dict_param=dict_param,
+                                        dict_param=dict_param, quantity=counter_quantity(counter, dict_param, "Y"),
                                         datatype="PositionY")
 
                 plot2DY.Show()
 
-                np.savetxt("%s_2D_Y_" % counter + "_%s" % myformattime(), dataY_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_Y_" % counter + "_%s" % myformattime()), dataY_2D)
 
                 parent.list_of_windows.append(plot2DY)
 
@@ -2949,12 +2879,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                             boxsize_line=0,
                                             imagename=title,
                                             mosaic=0,
-                                            dict_param=dict_param,
+                                            dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                             datatype="RadialPosition")
 
                 plot2Dradial.Show()
 
-                np.savetxt("%s_2D_radial_" % counter + "_%s" % myformattime(), radialdistance_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_radial_" % counter + "_%s" % myformattime()), radialdistance_2D)
 
                 parent.list_of_windows.append(plot2Dradial)
 
@@ -2974,14 +2904,14 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                             boxsize_line=0,
                                             imagename=title,
                                             mosaic=0,
-                                            dict_param=dict_param,
+                                            dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                             datatype="PositionX")
 
                 plot2Dpeaksize.Show()
 
-                np.savetxt("%s_2D_size_" % counter + "_%s" % myformattime(), maxpeaksize2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_size_" % counter + "_%s" % myformattime()), maxpeaksize2D)
 
-                np.savetxt("%s_2Dshape_" % counter + "_%s" % myformattime(), FilteredfittedPeaksData[:, 3:6])
+                savetxt(os.path.join(outputfolder, "%s_2Dshape_" % counter + "_%s" % myformattime()), FilteredfittedPeaksData[:, 3:6])
 
                 parent.list_of_windows.append(plot2Dpeaksize)
 
@@ -3001,12 +2931,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                                 boxsize_line=0,
                                                 imagename=title,
                                                 mosaic=0,
-                                                dict_param=dict_param,
+                                                dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                                 datatype="PositionX")
 
                 plot2Dpeaksize.Show()
 
-                np.savetxt("%s_2D_Amplitude_" % counter + "_%s" % myformattime(), PeakAmplitude2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_Amplitude_" % counter + "_%s" % myformattime()), PeakAmplitude2D)
 
                 parent.list_of_windows.append(plot2Dpeaksize)
 
@@ -3016,12 +2946,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                                         counter + "Amplitude",
                                                         title + "Amplitude",
                                                         dataamplitude,
-                                                        logscale=0)
+                                                        logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param))
                 plotAmplitude.Show(True)
 
                 outfilename = os.path.join(outputfolder, "%s" % (counter + "Amplitude"))
 
-                np.savetxt(outfilename + "_%s" % myformattime(), np.array(dataamplitude).T)
+                savetxt(outfilename + "_%s" % myformattime(), np.array(dataamplitude).T)
 
                 parent.list_of_windows.append(plotAmplitude)
 
@@ -3049,13 +2979,476 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                                                 boxsize_line=0,
                                                 imagename=title,
                                                 mosaic=0,
-                                                dict_param=dict_param,
+                                                dict_param=dict_param, quantity=counter_quantity("DisplacementVector", dict_param),
                                                 datatype=datatypevector)
 
                 plotvec.Show()
 
                 parent.list_of_windows.append(plotvec)
 
+    if plot and parent is not None:
+        finalize_result_windows(parent.list_of_windows[nbwindows_before:], dict_param, outputfolder)
+    return CountersData
+
+
+# sample motors of 2D maps (mesh scans): x motors along horizontal axis and y motors along vertical
+# axis of maps plots
+MAP_HORIZONTAL_MOTORS = ("xech", "xps", "sx")
+MAP_VERTICAL_MOTORS = ("yech", "yps", "sy")
+
+
+def map_transposed(fastmotor, slowmotor):
+    """True if map of images (lines along slow motor) must be transposed to have the y motor along
+    the vertical axis, i.e. fast motor is a y motor (e.g. 'amesh yech ... xech ...',
+    'fscan2d xech ... yech ...')"""
+    return fastmotor in MAP_VERTICAL_MOTORS or (slowmotor in MAP_HORIZONTAL_MOTORS
+                                                and fastmotor not in MAP_HORIZONTAL_MOTORS)
+
+
+def map_axes_labels(fastmotor, slowmotor, transposed):
+    """(xlabel, ylabel) of 2D map plots: map lines are along slow motor (fast motor varies along
+    horizontal axis), or along fast motor if map is transposed"""
+    if transposed:
+        return "%s (slow motor)" % slowmotor, "%s (fast motor)" % fastmotor
+    return "%s (fast motor)" % fastmotor, "%s (slow motor)" % slowmotor
+
+
+# plotted quantity of GUI counters (title and colorbar label of plots), %s: X or Y
+COUNTERS_QUANTITY = {"mosaic": "ROI pixel intensity",
+                     "mean": "mean intensity in ROI",
+                     "max": "max intensity in ROI",
+                     "ptp": "peak to peak intensity in ROI (max - min)",
+                     "Position Centroid": "centroid %s position (pixel)",
+                     "Position MAX": "highest intensity pixel %s position (pixel)",
+                     "Position XY": "fitted peak %s position (pixel)",
+                     "Displacement": "peak displacement from mean position (pixel)",
+                     "DisplacementVector": "peak displacement vector, color: norm (pixel)",
+                     "Amplitude": "fitted peak amplitude (above background)",
+                     "Shape": "fitted peak size: largest gaussian width (pixel)"}
+
+
+def counter_quantity(counter, dict_param, component=None):
+    """name of quantity plotted for GUI counter (component: 'X' or 'Y' for positions)"""
+    quantity = COUNTERS_QUANTITY.get(counter, counter)
+    if "%s" in quantity:
+        quantity = quantity % (component or "")
+    if dict_param.get("NormalizeWithMonitor", False) and counter in ("mosaic", "mean", "max", "ptp",
+                                                                       "Amplitude"):
+        quantity += " / monitor"
+    return quantity
+
+
+# GUI counters (see buildMosaic3()) -> counters of workflows.ROICountersWorkflow
+GUI_TO_WORKFLOW_COUNTERS = {"mosaic": "mosaic",
+                            "mean": "mean",
+                            "max": "max",
+                            "ptp": "ptp",
+                            "Position Centroid": "XYcentroid",
+                            "Position MAX": "XYmax",
+                            "Position XY": "fit",
+                            "Amplitude": "fit",
+                            "Displacement": "fit",
+                            "Shape": "fit"}
+
+
+def parallel_workflow_supported(dict_param):
+    """True if counters and images of dict_param (see buildMosaic3()) can be handled by
+    workflows.ROICountersWorkflow"""
+    ccdlabel = dict_param["CCDLabel"]
+    return (ccdlabel in DictLT.dict_CCD
+            and ccdlabel not in ("MARCCD165",)
+            and not dict_param["filename_representative"].endswith(".gz")
+            and all(counter in GUI_TO_WORKFLOW_COUNTERS for counter in dict_param["selectedcounters"]))
+
+
+def launch_counters_workflow(dict_param, parent, dictfittingparameters=DEFAULT_DICTfittingparameters,
+                             outputfolder=None):
+    """launch workflows.ROICountersWorkflow for counters selected in GUI on computing resource
+    dict_param['computing_resource'] (see scripts/workflowlauncher.py) with dict_param['nbcpus'] cpus.
+    Results are plotted at the end of the job (see plot_counters_results()).
+
+    dict_param: see buildMosaic3()
+    :return: WorkflowJobMonitor
+    """
+    import LaueTools.scripts.workflowlauncher as WL
+
+    dictfittingparameters = {**DEFAULT_DICTfittingparameters, **dictfittingparameters}
+    array2Dimageindices = np.atleast_2d(dict_param["selected2Darray_imageindex"])
+    if dict_param.get("transposeMap", False):  # fast axis is yech so xech and yech must be swapped
+        array2Dimageindices = array2Dimageindices.T
+    nb_lines, nb_col = array2Dimageindices.shape
+    xpic, ypic = int(dict_param["pixelX_center"]), int(dict_param["pixelY_center"])
+    counters = []
+    for counter in dict_param["selectedcounters"]:
+        if GUI_TO_WORKFLOW_COUNTERS[counter] not in counters:
+            counters.append(GUI_TO_WORKFLOW_COUNTERS[counter])
+
+    params = {"folder": dict_param["imagesfolder"],
+              "filename_representative": dict_param["filename_representative"],
+              "CCDLabel": dict_param["CCDLabel"],
+              "nbdigits": dict_param.get("nbdigits", 4),
+              "nbframes_per_file": dict_param.get("nbframes_per_file", 1),
+              "nbimages_recorded": dict_param.get("nbimages_recorded", None),
+              "scantype": "map",
+              # absolute image indices, line by line (missing images give NaN)
+              "listindices": np.ravel(array2Dimageindices),
+              "mapdimensions": (nb_col, nb_lines),  # (fast, slow)
+              "roicenters": [(xpic, ypic)],
+              "boxsize_X": dict_param["pixelboxsize_X"],
+              "boxsize_Y": dict_param["pixelboxsize_Y"],
+              "counters": counters,
+              "NormalizeWithMonitor": dict_param.get("NormalizeWithMonitor", False),
+              "monitoroffset": dict_param.get("monitoroffset", 0.),
+              "fitparameters": {key: dictfittingparameters[key]
+                                for key in ("modelFunction", "positionStart", "peaksizeStart")}}
+
+    resource = dict_param["computing_resource"]
+    save = dict_param.get("save_results", True)
+    if outputfolder is None and (save or resource != "local"):
+        # folder of results files (and of job files for SLURM job)
+        outputfolder = WL.output_folder(dict_param["imagesfolder"], dict_param.get("outputfolder_mode", "image"))
+    if resource != "local" and not WL.is_shared_folder(outputfolder):
+        wx.MessageBox(f"Output folder {outputfolder} is not visible from SLURM cluster nodes.\n"
+                      "Choose an output folder in /data", "Workflow launch error")
+        return None
+    if save or resource != "local":
+        output = os.path.join(outputfolder, "roicounters_X%d_Y%d_%s.h5" % (xpic, ypic, myformattime()))
+    else:  # no results file
+        output = None
+    config = WL.make_config(params, output)
+    try:
+        if resource == "local":
+            # computed in this GUI session (no new python process importing LaueTools),
+            # results .h5 file written only if results are saved
+            job = WL.InSessionJob(config, nbcpus=dict_param.get("nbcpus"))
+        else:
+            job = WL.launch(config, resource=resource, nbcpus=dict_param.get("nbcpus"))
+    except (RuntimeError, OSError) as exc:
+        wx.MessageBox(f"Cannot launch workflow on {resource}:\n\n{exc}\n\n"
+                      f"For SLURM partitions, check that 'ssh {WL.SLURM_SUBMIT_HOST}' works without "
+                      "password (or set LAUETOOLS_SLURM_SUBMIT_HOST)", "Workflow launch error")
+        return None
+    if config["output"]:
+        print(f"results will be written in {output}")
+
+    def on_completed(results):
+        if not dict_param.get("save_results", True):
+            # results .h5 file and job files were only needed to get results from the job
+            job.remove_files()
+        plot_counters_results(results, dict_param, parent, outputfolder, dictfittingparameters)
+
+    # job state is shown in 'Mosaic & Monitor' panel (where job can be cancelled)
+    statuspanel = parent
+    if not hasattr(parent, "jobstatustxt"):
+        statuspanel = getattr(getattr(parent, "mainframe", None), "Monitor", None) or parent
+    return WorkflowJobMonitor(statuspanel, job, on_completed)
+
+
+class WorkflowJobMonitor:
+    """follow a job of workflowlauncher.launch() with a wx.Timer, show its state and progress in
+    panel.jobstatustxt and panel.jobgauge (if any) and in a progress bar in the terminal, and call
+    on_completed(results) when job is completed"""
+
+    def __init__(self, panel, job, on_completed, period_ms=None):
+        import LaueTools.scripts.workflowlauncher as WL
+
+        if period_ms is None:  # status of job in this session is in memory: frequent polling is cheap
+            period_ms = 300 if isinstance(job, WL.InSessionJob) else 1000
+
+        self.panel = panel
+        self.job = job
+        self.on_completed = on_completed
+        # progress bar in terminal
+        self.progressbar = WL.JobProgressBar(job)
+        if not hasattr(panel, "workflowmonitors"):
+            panel.workflowmonitors = []
+        panel.workflowmonitors.append(self)
+        self.timer = wx.Timer(panel)
+        panel.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
+        self.timer.Start(period_ms)
+        self.show_status(job.status())
+
+    def show_status(self, status):
+        text = self.job.describe(status)
+        statustxt = getattr(self.panel, "jobstatustxt", None)
+        if statustxt is not None:
+            statustxt.SetLabel(text)
+            statustxt.SetToolTip(f"{text}\nlog: {self.job.files.get('log', 'terminal of this GUI')}")
+        gauge = getattr(self.panel, "jobgauge", None)
+        if gauge is not None:
+            if status.get("total"):
+                gauge.SetRange(status["total"])
+                gauge.SetValue(min(status.get("done") or 0, status["total"]))
+            elif status["state"] in ("PENDING", "RUNNING"):  # progress not yet known
+                gauge.Pulse()
+            else:
+                gauge.SetValue(0)
+        self.progressbar.update(status)
+
+    def OnTimer(self, _):
+        status = self.job.status()
+        self.show_status(status)
+        if status["state"] not in ("COMPLETED", "FAILED", "CANCELLED"):
+            return
+        self.stop()
+        if status["state"] == "COMPLETED":
+            self.on_completed(self.job.results())
+        elif status["state"] == "FAILED":
+            wx.MessageBox(f"{self.job.describe(status)}\n\nlog file: {self.job.files.get('log', 'terminal of this GUI')}\n\n"
+                          f"{self.job.log_tail()}", "Workflow failed")
+
+    def stop(self):
+        self.timer.Stop()
+        self.progressbar.close()
+        if self in getattr(self.panel, "workflowmonitors", []):
+            self.panel.workflowmonitors.remove(self)
+
+    def cancel(self):
+        self.job.cancel()
+        self.show_status(self.job.status())
+        self.stop()
+
+
+def finalize_result_windows(windows, dict_param, outputfolder):
+    """set output folder of result plot windows (File/Save) and save them as .png if
+    dict_param['save_plots'] (file names: {scan folder}_X{x}_Y{y}_{window title}_{date}.png)"""
+    if not outputfolder:
+        return
+    prefix = "%s_X%d_Y%d_%s" % (os.path.basename(os.path.normpath(dict_param["imagesfolder"])),
+                                 int(dict_param["pixelX_center"]), int(dict_param["pixelY_center"]),
+                                 myformattime())
+    for window in windows:
+        window.dirname = outputfolder
+        if dict_param.get("save_plots", False) and hasattr(window, "fig"):
+            name = "".join(c if c.isalnum() else "_" for c in window.GetTitle()).strip("_")
+            pngpath = os.path.join(outputfolder, "%s_%s.png" % (prefix, name))
+            window.fig.savefig(pngpath, dpi=150)
+            print("plot saved in", pngpath)
+
+
+def plot_counters_results(results, dict_param, parent, outputfolder,
+                            dictfittingparameters=DEFAULT_DICTfittingparameters):
+    """plot and save results of workflows.ROICountersWorkflow launched by launch_counters_workflow()
+    for counters selected in GUI (dict_param['selectedcounters']), as buildMosaic3() does
+
+    :return: CountersData dict (see buildMosaic3())
+    """
+    import LaueTools.scripts.workflows as WF
+
+    savetxt, open_w = results_writers(dict_param.get("save_results", True))
+    outputfolder = outputfolder or ""  # None when results are not saved
+    params = results["params"]
+    mapdimensions = params["mapdimensions"]
+    nb_col, nb_lines = mapdimensions
+    tabindices = np.array(params["listindices"])
+    xpic, ypic = params["roicenters"][0]
+    boxsize_col, boxsize_line = params["boxsize_X"], params["boxsize_Y"]
+    startind, endind = tabindices[0], tabindices[-1]
+    timestamp = myformattime()
+
+    title = "%s [%06d-%06d] " % (dict_param["filename_representative"], startind, endind)
+    title += "pixel ROI at [%d,%d]" % (xpic, ypic)
+    if "RAW_DATA" in params["folder"]:
+        try:
+            (expId, _, samplename, datasetname, scanindex, _) = bf.getinfos_from_blisspath(params["folder"])
+            title += f"\n{expId} {samplename} {datasetname} scan {scanindex}"
+        except Exception:  # title without BLISS infos
+            pass
+
+    windows = []
+
+    def show(frame):
+        frame.Show(True)
+        windows.append(frame)
+        if hasattr(parent, "list_of_windows"):
+            parent.list_of_windows.append(frame)
+
+    def map2D(values):
+        return WF.counter_map2D(values, mapdimensions)
+
+    print(f"plotting results of {params['counters']}"
+          + (f", files written in {outputfolder}" if dict_param.get("save_results", True) else ""))
+    CountersData = {}
+    for counter in dict_param["selectedcounters"]:
+
+        if counter == "mosaic":
+            dat = WF.arrange_mosaic2D(results["mosaic"][:, 0], mapdimensions)["singleimage"]
+            CountersData[counter + "2D"] = dat
+            show(ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
+                             absolutecornerindices=(xpic - boxsize_col, ypic - boxsize_line),
+                             Imageindices=tabindices,
+                             nb_col=nb_col,
+                             nb_lines=nb_lines,
+                             boxsize_row=boxsize_col,
+                             stepindex=1,
+                             boxsize_line=boxsize_line,
+                             imagename=title,
+                             mosaic=1,
+                             dict_param=dict_param, quantity=counter_quantity("mosaic", dict_param)))
+
+            headerstr = "# datatype: MOSAIC\n# dims: %d %d\n" % dat.shape
+            headerstr += "# Imageindices: " + " ".join("%d" % elem for elem in tabindices) + "\n"
+            headerstr += "# nb_col: %d\n# nb_lines: %d\n" % (nb_col, nb_lines)
+            headerstr += "# boxsize_col: %d\n# boxsize_line: %d\n" % (boxsize_col, boxsize_line)
+            headerstr += "# title: %s" % title.replace("\n", " ")
+            savetxt(os.path.join(outputfolder, "MOSAIC_image_Plot_%s" % timestamp), dat,
+                       header=headerstr, comments="")
+
+        elif counter in ("mean", "max", "ptp"):
+            Intens = results[counter][:, 0, 0]
+            dat = map2D(Intens)
+            CountersData[counter + "2D"] = dat
+            show(ImshowFrame(parent, -1, "image Plot %s" % counter, dat,
+                             Imageindices=tabindices,
+                             nb_col=nb_col,
+                             nb_lines=nb_lines,
+                             stepindex=1,
+                             boxsize_row=1,
+                             boxsize_line=1,
+                             imagename=title,
+                             mosaic=0,
+                             dict_param=dict_param, quantity=counter_quantity(counter, dict_param)))
+            savetxt(os.path.join(outputfolder, "%s_2D_%s" % (counter, timestamp)), dat)
+
+            XYdat = [tabindices, Intens]
+            CountersData[counter + "1D"] = XYdat
+            ii, jj = np.indices(dat.shape)
+            with open_w(os.path.join(outputfolder, "%s_1D_%s" % (counter, timestamp))) as f:
+                f.write("#File generated by mosaic.py. Date: %s\n" % timestamp)
+                f.write("#Datatype: %s\n" % title.replace("\n", " "))
+                f.write("#Original 2D dimensions shape: (fast, slow) (%d, %d)\n" % (nb_col, nb_lines))
+                f.write("#image fastindex slowindex intensity\n")
+                savetxt(f, np.array([tabindices, np.ravel(ii)[:len(tabindices)],
+                                        np.ravel(jj)[:len(tabindices)], Intens]).T)
+            show(PLOT1D.Plot1DFrame(parent, -1, counter + " Intensity", title + " Intensity",
+                                    XYdat, logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param)))
+
+        elif counter in ("Position XY", "Position MAX", "Position Centroid", "Displacement",
+                         "Amplitude", "Shape"):
+            if counter == "Position MAX":
+                XY = results["XYmax"][:, 0]
+            elif counter == "Position Centroid":
+                XY = results["XYcentroid"][:, 0]
+            else:  # from 2D gaussian fit
+                fit = results["fit"][:, 0]
+                icol = {name: k for k, name in enumerate(WF.FIT_COLUMNS)}
+                FitPixelDev = dictfittingparameters["FitPixelDev"]
+                if FitPixelDev is None:  # limited by boxsize
+                    FitPixelDev = max(2 * boxsize_col + 1, 2 * boxsize_line + 1)
+                XYmasked, FilteredfittedPeaksData = filter_fitted_peaks(
+                                fit[:, :7], fit[:, icol["nfev"]], fit[:, icol["startbaseline"]],
+                                np.array([[xpic, ypic]] * len(fit), dtype=float),
+                                reject_negative_baseline=True,
+                                reject_large_PixelDeviation=dictfittingparameters["reject_large_PixelDeviation"],
+                                reject_weakPeaks=dictfittingparameters["reject_weakPeaks"],
+                                FitPixelDev=FitPixelDev,
+                                MinimumPeakAmplitude=dictfittingparameters["MinimumPeakAmplitude"])
+                dict_param["FilteredfittedPeaksData"] = FilteredfittedPeaksData
+                # rejected fits: NaN
+                XY = np.ma.filled(np.ma.array(XYmasked, dtype=float), np.nan)
+
+            xDATA, yDATA = XY.T
+            CountersData["posX"] = XYdat_x = [tabindices, xDATA]
+            CountersData["posY"] = XYdat_y = [tabindices, yDATA]
+            dataX_2D = map2D(xDATA)
+            dataY_2D = map2D(yDATA)
+
+            if counter in ("Position XY", "Position MAX", "Position Centroid"):
+                for comp, XYdat, data2D, datatype in (("X", XYdat_x, dataX_2D, "PositionX"),
+                                                      ("Y", XYdat_y, dataY_2D, "PositionY")):
+                    show(PLOT1D.Plot1DFrame(parent, -1, counter + "%spos" % comp,
+                                            title + "%spos" % comp, XYdat, logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param, comp)))
+                    savetxt(os.path.join(outputfolder, "%s%spos_%s" % (counter, comp, timestamp)),
+                               np.array(XYdat).T)
+                    show(ImshowFrame(parent, -1, "image 2D Plot %s %s" % (comp, counter), data2D,
+                                     Imageindices=tabindices,
+                                     nb_col=nb_col,
+                                     nb_lines=nb_lines,
+                                     stepindex=1,
+                                     boxsize_row=0,
+                                     boxsize_line=0,
+                                     imagename=title,
+                                     mosaic=0,
+                                     dict_param=dict_param, quantity=counter_quantity(counter, dict_param, comp),
+                                     datatype=datatype))
+                    savetxt(os.path.join(outputfolder, "%s_2D_%s_%s" % (counter, comp, timestamp)),
+                               data2D)
+
+            elif counter == "Displacement":
+                pixelCenter = (np.nanmean(dataX_2D), np.nanmean(dataY_2D))
+                radialdistance_2D = np.hypot(dataX_2D - pixelCenter[0], dataY_2D - pixelCenter[1])
+                dict_param["dataRadialPosition"] = (dataX_2D, dataY_2D, pixelCenter)
+                show(ImshowFrame(parent, -1, "image 2D Plot radial %s" % counter, radialdistance_2D,
+                                 Imageindices=tabindices,
+                                 nb_col=nb_col,
+                                 nb_lines=nb_lines,
+                                 stepindex=1,
+                                 boxsize_row=0,
+                                 boxsize_line=0,
+                                 imagename=title,
+                                 mosaic=0,
+                                 dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
+                                 datatype="RadialPosition"))
+                savetxt(os.path.join(outputfolder, "%s_2D_radial_%s" % (counter, timestamp)),
+                           radialdistance_2D)
+
+                VectorX = dataX_2D - pixelCenter[0]
+                VectorY = dataY_2D - pixelCenter[1]
+                dict_param["dataVector"] = [VectorX, VectorY, pixelCenter]
+                show(ImshowFrame(parent, -1, "image 2D vector %s" % counter, np.hypot(VectorX, VectorY),
+                                 Imageindices=tabindices,
+                                 nb_col=nb_col,
+                                 nb_lines=nb_lines,
+                                 stepindex=1,
+                                 boxsize_row=0,
+                                 boxsize_line=0,
+                                 imagename=title,
+                                 mosaic=0,
+                                 dict_param=dict_param, quantity=counter_quantity("DisplacementVector", dict_param),
+                                 datatype="Vector"))
+
+            elif counter == "Shape":
+                maxpeaksize2D = map2D(np.ma.filled(np.ma.amax(FilteredfittedPeaksData[:, 3:5], axis=1)
+                                                   .astype(float), np.nan))
+                show(ImshowFrame(parent, -1, "image 2D Plot peak size %s" % counter, maxpeaksize2D,
+                                 Imageindices=tabindices,
+                                 nb_col=nb_col,
+                                 nb_lines=nb_lines,
+                                 stepindex=1,
+                                 boxsize_row=0,
+                                 boxsize_line=0,
+                                 imagename=title,
+                                 mosaic=0,
+                                 dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
+                                 datatype="PositionX"))
+                savetxt(os.path.join(outputfolder, "%s_2D_size_%s" % (counter, timestamp)), maxpeaksize2D)
+                savetxt(os.path.join(outputfolder, "%s_2Dshape_%s" % (counter, timestamp)),
+                           np.ma.filled(FilteredfittedPeaksData[:, 3:6].astype(float), np.nan))
+
+            elif counter == "Amplitude":
+                PeakAmplitude = np.ma.filled((FilteredfittedPeaksData[:, 2]
+                                              - FilteredfittedPeaksData[:, 8]).astype(float), np.nan)
+                PeakAmplitude2D = map2D(PeakAmplitude)
+                show(ImshowFrame(parent, -1, "image 2D Plot peak amplitude %s" % counter, PeakAmplitude2D,
+                                 Imageindices=tabindices,
+                                 nb_col=nb_col,
+                                 nb_lines=nb_lines,
+                                 stepindex=1,
+                                 boxsize_row=0,
+                                 boxsize_line=0,
+                                 imagename=title,
+                                 mosaic=0,
+                                 dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
+                                 datatype="PositionX"))
+                savetxt(os.path.join(outputfolder, "%s_2D_Amplitude_%s" % (counter, timestamp)),
+                           PeakAmplitude2D)
+                dataamplitude = [tabindices, PeakAmplitude]
+                show(PLOT1D.Plot1DFrame(parent, -1, counter + "Amplitude", title + "Amplitude",
+                                        dataamplitude, logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param)))
+                savetxt(os.path.join(outputfolder, "%sAmplitude_%s" % (counter, timestamp)),
+                           np.array(dataamplitude).T)
+
+    finalize_result_windows(windows, dict_param, outputfolder)
     return CountersData
 
 
@@ -3110,7 +3503,37 @@ def FitPeakOnMap(mosaic,
     # filter fit results
     params, cov, info, message, baseline = Resfit
 
-    par = np.array(params)
+    return filter_fitted_peaks(np.array(params), [inf["nfev"] for inf in info], baseline, CentralPeaks,
+                                reject_negative_baseline=reject_negative_baseline,
+                                reject_large_PixelDeviation=reject_large_PixelDeviation,
+                                reject_weakPeaks=reject_weakPeaks,
+                                FitPixelDev=FitPixelDev,
+                                MinimumPeakAmplitude=MinimumPeakAmplitude,
+                                verbose=verbose)
+
+
+def filter_fitted_peaks(par, nfev, baseline, CentralPeaks,
+                        reject_negative_baseline=True,
+                        reject_large_PixelDeviation=True,
+                        reject_weakPeaks=True,
+                        FitPixelDev=10,
+                        MinimumPeakAmplitude=25,
+                        verbose=1):
+    """
+    filter results of peak fits (see FitPeakOnMap())
+
+    :param par: array of fit results (nb fits, 7): background, amplitude, X, Y, sigma1, sigma2, angle
+    :param nfev: nb of function evaluations of each fit
+    :param baseline: starting baseline of each fit
+    :param CentralPeaks: array (nb fits, 2) of ROIs centers
+    :return: XY (masked array (nb fits, 2) of positions, rejected fits are masked),
+        FilteredfittedPeaksData (masked array (nb fits, 10), see below)
+    """
+    par = np.asarray(par, dtype=float)
+    nfev = np.asarray(nfev, dtype=float)
+    baseline = np.asarray(baseline, dtype=float)
+    if FitPixelDev is None:
+        FitPixelDev = np.inf
 
     peak_bkg = par[:, 0]
     peak_I = par[:, 1]
@@ -3130,14 +3553,11 @@ def FitPeakOnMap(mosaic,
 
     # --- --- PEAKS REJECTION -------------------------------
 
-    to_reject = []
-    k = 0
-    for inf in info:
-        if inf["nfev"] > 1550:
-            if verbose:
-                print("k= %d   too much iteration" % k)
-            to_reject.append(k)
-        k += 1
+    to_reject = list(np.where(nfev > 1550)[0])
+    if verbose and to_reject:
+        print("too much iterations for", to_reject)
+    # no fit (missing image)
+    to_reject += list(np.where(np.isnan(peak_X) | np.isnan(peak_Y))[0])
 
     #                 if CCDLabel == 'FRELONID15_corrected':
     #                     reject_negative_baseline = False

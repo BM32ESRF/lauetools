@@ -17,6 +17,8 @@ class Plot1DFrame(wx.Frame):
                                                                     radius=1.0,
                                                                     logscale=1,
                                                                     size=(500, 500),
+                                                                    xlabel="",
+                                                                    ylabel="",
                                                                     **kwds):
 
         wx.Frame.__init__(self, parent, _id, title, size=size)
@@ -26,6 +28,9 @@ class Plot1DFrame(wx.Frame):
 
         self.title = title
         self.title2 = title2
+        # axes labels (e.g. image index, plotted quantity)
+        self.xlabel = xlabel
+        self.ylabel = ylabel
 
         self.figsize = figsize
         self.dpi = dpi
@@ -146,6 +151,8 @@ class Plot1DFrame(wx.Frame):
         #         print "self.plot_kwds", self.plot_kwds
         self.line, = self.axes.plot(self.dataX, self.dataY, "bo-", **self.plot_kwds)
         self.axes.set_title(self.title2)
+        self.axes.set_xlabel(self.xlabel)
+        self.axes.set_ylabel(self.ylabel)
 
         def fromindex_to_pixelpos_x(index, _):
             return index
