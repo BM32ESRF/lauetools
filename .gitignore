@@ -36,3 +36,7 @@ LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-37.pyc
 LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-36.pyc
 
 .ipynb_checkpoints/
+
+# private copies of notebooks (real paths, outputs) and anonymization rules (see LaueTools/scripts/notebook_to_html.py)
+*.local.ipynb
+*.local.yaml

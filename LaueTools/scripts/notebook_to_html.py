@@ -37,6 +37,15 @@ Typical use (in notebooks/indexation/)::
         --anonymize --execute -p CONFIG=configs/a321220_MgO.yaml
 
 the .html files are written next to the notebooks (or in --output-dir)
+
+With --strip, the notebook itself is written anonymized and without outputs (version to be committed)
+instead of the HTML. In the folder of the notebook, the original notebook (real paths, outputs) is
+kept as <name>.local.ipynb (ignored by git), e.g.::
+
+    python -m LaueTools.scripts.notebook_to_html MyNotebook.ipynb --anonymize my_rules.local.yaml           # MyNotebook.html
+    python -m LaueTools.scripts.notebook_to_html MyNotebook.ipynb --anonymize my_rules.local.yaml --strip   # MyNotebook.ipynb
+
+HTML and stripped notebook of <name>.local.ipynb are named <name>.html and <name>.ipynb.
 """
 import base64
 import copy
@@ -257,6 +266,17 @@ def _png_outputs(png: bytes, caption: str) -> list:
              'data': {'image/png': base64.b64encode(png).decode(), 'text/plain': ['<Figure>']}}]
 
 
+def _widget_caption(data: dict) -> str:
+    """text replacing a widget output without saved image"""
+    text = data.get('text/plain', '')
+    text = ''.join(text) if isinstance(text, list) else str(text)
+    if text.startswith('Canvas('):
+        return '[interactive figure (ipympl): image not saved in the notebook]\n'
+    if 'Progress' in text or text.startswith('HBox(children=(HTML'):
+        return '[progress bar]\n'
+    return '[interactive widget (ipywidgets)]\n'
+
+
 def static_outputs(nb: dict, snapshots: Optional[Dict[str, bytes]] = None) -> dict:
     """copy of notebook nb (json dict) with widget outputs replaced by static ones
 
@@ -283,9 +303,82 @@ def static_outputs(nb: dict, snapshots: Optional[Dict[str, bytes]] = None) -> di
                 if key:
                     outputs += _png_outputs(snapshots[key], SNAPSHOT_CAPTION)
                 else:
-                    outputs.append({'output_type': 'stream', 'name': 'stdout', 'text': '[progress bar]\n'})
+                    outputs.append({'output_type': 'stream', 'name': 'stdout', 'text': _widget_caption(data)})
         cell['outputs'] = outputs
     return nb
+
+
+def mask_images(nb: dict, masks: Dict[int, List[Tuple[int, int]]]) -> dict:
+    """copy of nb where rows y0 to y1 (included) of PNG outputs of cells are painted white,
+    e.g. to hide a non anonymized path in a figure title of saved outputs
+
+    masks: {cell index (in the notebook, first cell 0): [(y0, y1), ...]}
+    """
+    import matplotlib.image as mpimg
+    nb = copy.deepcopy(nb)
+    for index, bands in masks.items():
+        for out in nb['cells'][index].get('outputs', []):
+            data = out.get('data', {})
+            if 'image/png' not in data:
+                continue
+            png = data['image/png']
+            image = mpimg.imread(io.BytesIO(base64.b64decode(''.join(png) if isinstance(png, list) else png)),
+                                 format='png').copy()
+            for y0, y1 in bands:
+                image[y0:y1 + 1] = 1.   # white (and opaque for RGBA)
+            buf = io.BytesIO()
+            mpimg.imsave(buf, image, format='png')
+            data['image/png'] = base64.b64encode(buf.getvalue()).decode()
+    return nb
+
+
+def parse_masks(items: List[str]) -> Dict[int, List[Tuple[int, int]]]:
+    """['96:52-73', '118:8-22'] -> {96: [(52, 73)], 118: [(8, 22)]}"""
+    masks: Dict[int, List[Tuple[int, int]]] = {}
+    for item in items:
+        cell, _, rows = item.partition(':')
+        y0, _, y1 = rows.partition('-')
+        masks.setdefault(int(cell), []).append((int(y0), int(y1)))
+    return masks
+
+
+def public_stem(nbfile: Union[str, Path]) -> str:
+    """name of notebook without '.local' (private copy with real paths and outputs)"""
+    stem = Path(nbfile).stem
+    return stem[:-len('.local')] if stem.endswith('.local') else stem
+
+
+def strip_outputs(nb: dict) -> dict:
+    """copy of notebook without outputs, execution counts and widgets state"""
+    nb = copy.deepcopy(nb)
+    nb['metadata'].pop('widgets', None)
+    for cell in nb['cells']:
+        cell['metadata'].pop('execution', None)
+        if cell['cell_type'] == 'code':
+            cell['outputs'] = []
+            cell['execution_count'] = None
+    return nb
+
+
+def strip_notebook(nbfile: Union[str, Path], output_dir: Optional[Union[str, Path]] = None,
+                   anonymize: bool = False, rulesfile: Optional[Union[str, Path]] = None) -> Path:
+    """write <name>.ipynb without outputs (anonymized if anonymize) in output_dir (default: folder of the
+    notebook). If it would overwrite the notebook, the notebook is first renamed <name>.local.ipynb"""
+    nbfile = Path(nbfile).resolve()
+    output_dir = Path(output_dir).resolve() if output_dir else nbfile.parent
+    nb = json.loads(nbfile.read_text(encoding='utf-8'))
+    outfile = output_dir / f'{public_stem(nbfile)}.ipynb'
+    if outfile == nbfile:
+        localfile = nbfile.with_name(f'{nbfile.stem}.local.ipynb')
+        if localfile.exists():
+            raise FileExistsError(f'{localfile} exists: strip {localfile.name} instead of {nbfile.name}')
+        nbfile.rename(localfile)
+        print(f'original notebook kept as {localfile}')
+    nb = strip_outputs(nb)
+    if anonymize:
+        nb = anonymize_notebook(nb, make_anonymizer(load_rules(rulesfile, notebook_texts(nb))))
+    outfile.write_text(json.dumps(nb, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+    return outfile
 
 
 def _parameters_cell(parameters: Dict[str, object]) -> dict:
@@ -343,11 +436,13 @@ def notebook_to_html(nbfile: Union[str, Path], output_dir: Optional[Union[str, P
                      snapshots: Optional[Dict[str, bytes]] = None, execute: bool = False,
                      parameters: Optional[Dict[str, object]] = None, anonymize: bool = False,
                      rulesfile: Optional[Union[str, Path]] = None, kernel_name: Optional[str] = None,
-                     timeout: Optional[int] = None) -> Path:
+                     timeout: Optional[int] = None,
+                     masks: Optional[Dict[int, List[Tuple[int, int]]]] = None) -> Path:
     """write <notebook name>.html (images embedded) in output_dir (default: folder of the notebook)
 
     execute: execute a temporary copy (with parameters) instead of using the saved outputs
     anonymize: replace proposal, date, sample, dataset names, hosts, local paths (rules: see load_rules())
+    masks: rows of saved figures painted white (see mask_images()), saved outputs only
     """
     nbfile = Path(nbfile).resolve()
     output_dir = Path(output_dir) if output_dir else nbfile.parent
@@ -365,6 +460,8 @@ def notebook_to_html(nbfile: Union[str, Path], output_dir: Optional[Union[str, P
     if execute:
         print(f'executing {nbfile.name} ...')
         nb = execute_notebook(nb, nbfile.parent, parameters, rules, kernel_name, timeout)
+    if masks and not execute:
+        nb = mask_images(nb, masks)
     nb = static_outputs(nb, snapshots)
     if rules:
         nb = anonymize_notebook(nb, make_anonymizer(rules))
@@ -373,14 +470,14 @@ def notebook_to_html(nbfile: Union[str, Path], output_dir: Optional[Union[str, P
                       if any('image/png' in out.get('data', {}) for out in cell.get('outputs', []))]
             if images:
                 print(f'WARNING: {nbfile.name}: images of saved outputs are not anonymized, check them '
-                      f'(cells {images}) or use --execute')
+                      f'(cells {images}) or use --execute (or --mask to hide rows of figures)')
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmpfile = Path(tmpdir) / nbfile.name
+        tmpfile = Path(tmpdir) / f'{public_stem(nbfile)}.ipynb'
         tmpfile.write_text(json.dumps(nb, indent=1), encoding='utf-8')
         subprocess.run(['jupyter', 'nbconvert', '--to', 'html', '--embed-images', str(tmpfile),
                         '--output-dir', str(output_dir)], check=True)
-    return output_dir / f'{nbfile.stem}.html'
+    return output_dir / f'{public_stem(nbfile)}.html'
 
 
 def main(argv=None):
@@ -397,6 +494,12 @@ def main(argv=None):
                              '(optional YAML file of extra names and patterns)')
     parser.add_argument('--kernel', default=None, help='[--execute] kernel name (default: kernel of the notebook)')
     parser.add_argument('--timeout', type=int, default=None, help='[--execute] max time per cell (s)')
+    parser.add_argument('--mask', action='append', default=[], metavar='CELL:Y0-Y1',
+                        help='[saved outputs] paint white rows Y0 to Y1 of figures of cell CELL (index of the '
+                             'cell in the notebook, from 0), e.g. to hide a path in a title')
+    parser.add_argument('--strip', action='store_true',
+                        help='write the notebook (anonymized with --anonymize) without outputs instead of the '
+                             'HTML; in the folder of the notebook, the original is kept as <name>.local.ipynb')
     parser.add_argument('--segmentation', metavar='CONFIG', default=None,
                         help='[saved outputs] YAML configuration file: static views of the cluster browsers '
                              '(3_segmentation_grains)')
@@ -418,9 +521,13 @@ def main(argv=None):
         snapshots = segmentation_snapshots(args.segmentation, args.fit_folder, args.threshold, args.min_size,
                                            rules=rules)
     for nbfile in args.notebooks:
+        if args.strip:
+            print('written:', strip_notebook(nbfile, args.output_dir, anonymize=anonymize, rulesfile=rulesfile))
+            continue
         print('written:', notebook_to_html(nbfile, args.output_dir, snapshots, execute=args.execute,
                                            parameters=parameters, anonymize=anonymize, rulesfile=rulesfile,
-                                           kernel_name=args.kernel, timeout=args.timeout))
+                                           kernel_name=args.kernel, timeout=args.timeout,
+                                           masks=parse_masks(args.mask)))
 
 
 if __name__ == '__main__':
