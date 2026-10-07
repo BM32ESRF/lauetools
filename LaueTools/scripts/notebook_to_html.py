@@ -46,6 +46,15 @@ kept as <name>.local.ipynb (ignored by git), e.g.::
     python -m LaueTools.scripts.notebook_to_html MyNotebook.ipynb --anonymize my_rules.local.yaml --strip   # MyNotebook.ipynb
 
 HTML and stripped notebook of <name>.local.ipynb are named <name>.html and <name>.ipynb.
+
+With --publish, both versions to be committed are written in one step from the working notebook (with outputs):
+<name>.html (anonymized, with outputs) and <name>.ipynb (anonymized, without outputs; --keep-outputs: with
+anonymized text outputs). The working notebook is kept as <name>.local.ipynb (ignored by git): continue to work
+in <name>.local.ipynb, and publish it again. Without RULES.yaml, the first anonymize_rules.local.yaml found in
+the folder of the notebook or in its parent folders is used::
+
+    python -m LaueTools.scripts.notebook_to_html --publish quickstart/laue_maps_quickstart.ipynb
+    python -m LaueTools.scripts.notebook_to_html --publish quickstart/laue_maps_quickstart.local.ipynb   # later
 """
 import base64
 import copy
@@ -239,11 +248,14 @@ def segmentation_snapshots(configfile: Union[str, Path], fit_folder: Optional[Un
         install_text_anonymizer(rules)
     cfg = IB.load_config(configfile)
     scan, post = cfg['scan'], cfg['postprocess']
+    layout = IB.fitfiles_layout(cfg)
     result, analyzer = OC.analyze_ub_matrices(input_dir=str(fit_folder or cfg['output']['fit_folder']),
                                               threshold=threshold, mapdimension=scan['invmapdims'],
                                               prefix=scan['prefix'], symmetry=post['symmetry'],
                                               spatial_connectivity=True, connectivity_type='8',
-                                              min_cluster_size=min_size, check_symmetry=False)
+                                              min_cluster_size=min_size, check_symmetry=False,
+                                              nbfiles_per_folder=layout['fit_nbfiles_per_folder'],
+                                              subfolder_prefix=layout['subfolder_prefix'])
     pngs = []
     install_static_browsers(pngs.append)
     snapshots = {}
@@ -381,6 +393,59 @@ def strip_notebook(nbfile: Union[str, Path], output_dir: Optional[Union[str, Pat
     return outfile
 
 
+def has_outputs(nb: dict) -> bool:
+    return any(cell.get('outputs') for cell in nb['cells'])
+
+
+def default_rulesfile(nbfile: Union[str, Path], name: str = 'anonymize_rules.local.yaml',
+                      levels: int = 3) -> Optional[Path]:
+    """first file <name> found in the folder of nbfile or in its parent folders (levels at most)"""
+    folder = Path(nbfile).resolve().parent
+    for candidate in [folder] + list(folder.parents)[:levels]:
+        if (candidate / name).is_file():
+            return candidate / name
+    return None
+
+
+def publish_notebook(nbfile: Union[str, Path], rulesfile: Optional[Union[str, Path]] = None,
+                     keep_outputs: bool = False, snapshots: Optional[Dict[str, bytes]] = None,
+                     masks: Optional[Dict[int, List[Tuple[int, int]]]] = None) -> Tuple[Path, Path]:
+    """versions of a notebook to be committed, written next to it from the working notebook (with outputs):
+    <name>.html (anonymized, with outputs) and <name>.ipynb (anonymized, without outputs unless keep_outputs)
+
+    The working notebook (real paths, outputs) is kept as <name>.local.ipynb (ignored by git). nbfile may be
+    <name>.ipynb (first time) or <name>.local.ipynb. If <name>.local.ipynb exists, it is the working notebook,
+    unless <name>.ipynb has outputs too (both edited: error, the other one must be renamed first).
+    """
+    nbfile = Path(nbfile).resolve()
+    stem = public_stem(nbfile)
+    public = nbfile.with_name(f'{stem}.ipynb')
+    localfile = nbfile.with_name(f'{stem}.local.ipynb')
+    if nbfile == public and localfile.exists():
+        if has_outputs(json.loads(public.read_text(encoding='utf-8'))):
+            raise FileExistsError(f'{localfile.name} exists and {public.name} has outputs: keep the one with '
+                                  f'your latest work as {localfile.name} (rename or delete the other one)')
+        nbfile = localfile
+    if rulesfile is None:
+        rulesfile = default_rulesfile(nbfile)
+    print(f'working notebook: {nbfile.name}, anonymization rules: {rulesfile or "built-in only"}')
+
+    html = notebook_to_html(nbfile, None, snapshots, anonymize=True, rulesfile=rulesfile, masks=masks)
+
+    nb = json.loads(nbfile.read_text(encoding='utf-8'))
+    rules = load_rules(rulesfile, notebook_texts(nb))   # names harvested also from the outputs, as for the HTML
+    if not keep_outputs:
+        nb = strip_outputs(nb)
+    elif masks:
+        nb = mask_images(nb, masks)
+    nb = anonymize_notebook(nb, make_anonymizer(rules))
+    if nbfile == public:
+        nbfile.rename(localfile)
+        print(f'working notebook kept as {localfile} (ignored by git): edit and run this one from now on')
+    public.write_text(json.dumps(nb, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+    return html, public
+
+
 def _parameters_cell(parameters: Dict[str, object]) -> dict:
     source = '# Parameters (notebook_to_html)\n' + ''.join(f'{key} = {val!r}\n' for key, val in parameters.items())
     return {'cell_type': 'code', 'execution_count': None, 'metadata': {'tags': [PARAMETERS_TAG]},
@@ -500,6 +565,13 @@ def main(argv=None):
     parser.add_argument('--strip', action='store_true',
                         help='write the notebook (anonymized with --anonymize) without outputs instead of the '
                              'HTML; in the folder of the notebook, the original is kept as <name>.local.ipynb')
+    parser.add_argument('--publish', action='store_true',
+                        help='write the versions to be committed: <name>.html (anonymized, with outputs) and '
+                             '<name>.ipynb (anonymized, without outputs); the working notebook is kept as '
+                             '<name>.local.ipynb. Default rules: anonymize_rules.local.yaml of the notebook '
+                             'folder or of its parent folders')
+    parser.add_argument('--keep-outputs', action='store_true',
+                        help='[--publish] keep the (anonymized) text outputs in <name>.ipynb')
     parser.add_argument('--segmentation', metavar='CONFIG', default=None,
                         help='[saved outputs] YAML configuration file: static views of the cluster browsers '
                              '(3_segmentation_grains)')
@@ -521,6 +593,10 @@ def main(argv=None):
         snapshots = segmentation_snapshots(args.segmentation, args.fit_folder, args.threshold, args.min_size,
                                            rules=rules)
     for nbfile in args.notebooks:
+        if args.publish:
+            print('written:', *publish_notebook(nbfile, rulesfile, keep_outputs=args.keep_outputs,
+                                                snapshots=snapshots, masks=parse_masks(args.mask)))
+            continue
         if args.strip:
             print('written:', strip_notebook(nbfile, args.output_dir, anonymize=anonymize, rulesfile=rulesfile))
             continue
