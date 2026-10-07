@@ -1482,9 +1482,10 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
             Ipixmax = np.delete(Ipixmax, todelete[0], axis=0)
 
     elif CCDLabel == 'sCMOS' and npixels > 0:
-            todelete = ptsindices_in_bands_scmos(peak_coords, npixels=npixels, verbose=verbose-1)
-            if len(todelete[0]) > 0:
-                peak_coords = np.delete(peak_coords, todelete[0], axis=0)
+        todelete = ptsindices_in_bands_scmos(peaklist, npixels=npixels, verbose=verbose-1)
+        if len(todelete[0]) > 0:
+            peaklist = np.delete(peaklist, todelete[0], axis=0)
+            Ipixmax = np.delete(Ipixmax, todelete[0], axis=0)
             
     # ---- ----------- no FITTING ----------------------------
     # NO FIT  and return raw list of local maxima
